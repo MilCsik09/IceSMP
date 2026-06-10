@@ -163,8 +163,14 @@ factions:
 
 relics:
   enabled: true
+  # Inaktivitás-kezelés: a megadott számú nap után a relikvia törlődik
+  # a tulajdonos inventoryjából belépéskor, és újra megszerezhetővé válik.
+  inactivity:
+    enabled: true
+    expiry-days: 14
   messages:
     cooldown: "&cA relikvia pihen: &f%seconds%s &cmaradék"
+    expired: "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."
   definitions:
     metelytepo:
       display-name: "Mételytépő"
@@ -178,3 +184,44 @@ relics:
         - "&7Ősi mágia övezi, melynek segítségével"
         - "&7ez a harci fejsze lesújt a bűnösökre,"
         - "&7igazságot szolgáltatva a világnak."
+
+# ===== Távolság-alapú mob szintezés =====
+# A spawn ponttól távolodva a mobok erősödnek: szint = távolság / blocks-per-level.
+mob-scaling:
+  enabled: true
+  blocks-per-level: 1000
+  max-level: 10
+  health-per-level: 2.0
+  damage-per-level: 1.0
+  # Csak ellenséges (Monster) mobok skálázódjanak.
+  hostile-only: true
+  # Ezekkel az okokkal spawnoló mobok nem skálázódnak (pl. spawner farmok).
+  ignored-spawn-reasons:
+    - "SPAWNER"
+    - "CUSTOM"
+    - "COMMAND"
+  name:
+    enabled: true
+    visible: true
+    prefix: "&7[Lvl %level%] "
+    color: "WHITE"
+
+# ===== Kaszt-alapú craftolási korlátozások =====
+# required-job: kaszt azonosító (pl. "warrior", "wizard") vagy "ANY" (bármely kaszt megfelel).
+crafting-restrictions:
+  enabled: true
+  notify-cooldown-seconds: 3
+  rules:
+    netherite-gear:
+      required-job: "ANY"
+      required-level: 30
+      materials:
+        - "NETHERITE_SWORD"
+        - "NETHERITE_PICKAXE"
+        - "NETHERITE_AXE"
+        - "NETHERITE_SHOVEL"
+        - "NETHERITE_HOE"
+        - "NETHERITE_HELMET"
+        - "NETHERITE_CHESTPLATE"
+        - "NETHERITE_LEGGINGS"
+        - "NETHERITE_BOOTS"

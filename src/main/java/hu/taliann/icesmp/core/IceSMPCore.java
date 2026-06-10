@@ -12,21 +12,26 @@ import hu.taliann.icesmp.gui.ProfileGUI;
 import hu.taliann.icesmp.items.SpellbookItemFactory;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
+import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
+import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
 import hu.taliann.icesmp.listeners.ProfileGUIListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
+import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
 import hu.taliann.icesmp.listeners.SpellbookListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.AngryChickenSpell;
@@ -71,6 +76,8 @@ public final class IceSMPCore {
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
+    private final MobScalingManager mobScalingManager;
+    private final CraftingRestrictionManager craftingRestrictionManager;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -89,13 +96,16 @@ public final class IceSMPCore {
         this.spellbookListener = new SpellbookListener(plugin, jobManager, spellRegistry, spellbookItemFactory, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, messageManager);
+        this.mobScalingManager = new MobScalingManager(plugin, configManager);
+        this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
                 spellbookListener,
                 jobManager,
                 currencyManager,
                 factionManager,
                 metelytepoManager,
-                relicManager
+                relicManager,
+                craftingRestrictionManager
         );
 
         spellRegistry.register(new DoubleJumpSpell(messageManager));
@@ -124,6 +134,8 @@ public final class IceSMPCore {
         currencyManager.load();
         factionManager.load();
         relicManager.load();
+        mobScalingManager.load();
+        craftingRestrictionManager.load();
         registerListeners();
         registerCommands();
 
@@ -174,8 +186,11 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
+        pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
+        pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
+            pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicItemRefreshListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicTriggerListener(relicManager), plugin);
             pluginManager.registerEvents(new MetelytepoRelicListener(metelytepoManager, messageManager), plugin);

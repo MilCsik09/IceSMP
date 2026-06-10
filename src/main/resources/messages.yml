@@ -51,6 +51,10 @@ messages:
     wisplight:
       name: "Wisplight"
 
+  crafting:
+    restricted: "&cEhhez a tárgyhoz &f{job} &ckaszt szükséges (min. &f{level}&c. szint)."
+    restricted-any: "&cEhhez a tárgyhoz legalább &f{level}&c. szintű kaszt szükséges."
+
   admin:
     icesmp:
       reload:

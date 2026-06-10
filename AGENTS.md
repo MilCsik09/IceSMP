@@ -14,7 +14,7 @@
   - `JobManager` -> player PDC keys (`job_primary`, `job_secondary`, `*_xp`, `unlocked_spells`) rather than a plugin YAML file; manages class progression and spell unlock state.
   - `SpellRegistry` -> holds 15 registered spells (DoubleJumpSpell, FriendshipSpell, FeatherfootSpell, AngryChickenSpell, InnerFocusSpell, RootSpell, WisplightSpell, FeastSpell, RainDanceSpell, SunDanceSpell, ArmamentSpell, ConfusionSpell, HideSpell, GustSpell, LuckyStarSpell); populated in `IceSMPCore` constructor via explicit `spellRegistry.register(new ...Spell(...))` calls; spells define cost type (HUNGER or XP) and cost amount.
   - `SpellbookItemFactory` -> creates spellbook items with `is_spellbook` and `unique_id` PDC tags; player spell state uses `selected_spell_index` + `cd_*` cooldown keys.
-  - `RelicManager` -> loads relic cosmetics/triggers from `config.yml` (relics.definitions.*) on top of a hardcoded relic seed (`metelytepo`); runtime persistence hook is `save()` (currently no-op).
+  - `RelicManager` -> loads relic cosmetics/triggers from `config.yml` (relics.definitions.*) on top of a hardcoded relic seed (`metelytepo`); persists singleton relic ownership + last-seen timestamps to `relics.yml` (`save()`/`loadOwnerships()`); join-time inactivity sweep removes expired relics (`relics.inactivity.*` config, `RelicInactivityListener`).
   - `RelicCooldownService` -> manages in-memory relic cooldowns per player/relic/trigger; `isOnCooldown()`, `startCooldown()`, `getRemainingMillis()`, `clearPlayer()` for session cleanup.
   - `MetelytepoManager` -> player PDC sinner flag (`is_sinner`) + in-memory runtime cooldown/state maps; handles "Mételytépő" relic special mechanics.
 - Commands are registered in code (not in `paper-plugin.yml`) via `plugin.registerCommand(...)` inside `IceSMPCore.registerCommands()`.
@@ -48,7 +48,9 @@ Set-Location "C:\Users\csikm\Desktop\IceSMP"
 ## Integration points and gotchas
 - External API surface is intentionally thin: `compileOnly(dev.folia:folia-api)` (via `libs.folia-api`); no DB driver dependency right now.
 - `RelicAbilityRegistry` exists, but no abilities are registered yet; trigger configs referencing `ability-id` will no-op with warning.
-- `RelicManager.save()` is currently a no-op placeholder; relic ownership/timers are not persisted to a dedicated relic data file yet.
+- `RelicManager.save()` persists relic ownership records to `relics.yml`; expired (default 14+ day inactive) relics are removed from the holder's inventory on join with a smoke effect.
+- `MobScalingManager` + `MobScalingListener` implement distance-based mob leveling (`mob-scaling.*` config); levels are tagged on entities via the `mob_level` PDC key.
+- `CraftingRestrictionManager` + `JobCraftRestrictionListener` enforce job/level based crafting rules (`crafting-restrictions.*` config) for both crafting table and smithing table results.
 - Spell cooldown persistence is split in `SpellbookListener`: cooldowns for spells with `cooldown >= 60s` are persisted to player PDC via `cd_*` keys, shorter cooldowns stay in-memory.
 - Per-player volatile state cleanup is centralized in `listeners/PlayerSessionCleanupListener` (quit/kick + plugin disable loop in `IceSMPCore.disable()`).
 - `run/` contains mutable runtime artifacts (worlds, logs, plugin data); treat it as diagnostics/runtime state, not source of truth.

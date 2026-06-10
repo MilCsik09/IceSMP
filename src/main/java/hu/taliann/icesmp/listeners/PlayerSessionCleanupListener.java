@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.gui.JobGUIHolder;
 import hu.taliann.icesmp.gui.ProfileHolder;
+import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
@@ -30,19 +31,22 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final FactionManager factionManager;
     private final MetelytepoManager metelytepoManager;
     private final RelicManager relicManager;
+    private final CraftingRestrictionManager craftingRestrictionManager;
 
     public PlayerSessionCleanupListener(final SpellbookListener spellbookListener,
                                         final JobManager jobManager,
                                         final CurrencyManager currencyManager,
                                         final FactionManager factionManager,
                                         final MetelytepoManager metelytepoManager,
-                                        final RelicManager relicManager) {
+                                        final RelicManager relicManager,
+                                        final CraftingRestrictionManager craftingRestrictionManager) {
         this.spellbookListener = spellbookListener;
         this.jobManager = jobManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.metelytepoManager = metelytepoManager;
         this.relicManager = relicManager;
+        this.craftingRestrictionManager = craftingRestrictionManager;
     }
 
     @EventHandler
@@ -64,6 +68,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         factionManager.clearPlayerState(playerId);
         metelytepoManager.clearPlayerState(playerId);
         relicManager.clearPlayerState(playerId);
+        craftingRestrictionManager.clearPlayerState(playerId);
 
         HideSpell.clearPlayerState(playerId);
         LuckyStarSpell.clearPlayerState(playerId);

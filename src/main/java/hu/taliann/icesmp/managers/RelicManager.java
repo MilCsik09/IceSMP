@@ -3,6 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.items.RelicItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
+import hu.taliann.icesmp.relics.RelicOwnership;
 import hu.taliann.icesmp.relics.RelicRegistry;
 import hu.taliann.icesmp.relics.RelicTrigger;
 import hu.taliann.icesmp.relics.RelicTriggerConfig;
@@ -11,19 +12,26 @@ import hu.taliann.icesmp.relics.ability.RelicAbility;
 import hu.taliann.icesmp.relics.ability.RelicAbilityContext;
 import hu.taliann.icesmp.relics.ability.RelicAbilityRegistry;
 import hu.taliann.icesmp.utils.TextUtil;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public final class RelicManager {
@@ -35,8 +43,12 @@ public final class RelicManager {
     private final RelicCooldownService cooldownService;
     private final RelicAbilityRegistry abilityRegistry;
     private final Map<String, EnumMap<RelicTrigger, RelicTriggerConfig>> triggerConfigs = new java.util.HashMap<>();
+    private final Map<String, RelicOwnership> ownerships = new ConcurrentHashMap<>();
+    private final File ownershipFile;
 
     private boolean enabled;
+    private boolean inactivityEnabled;
+    private long inactivityExpiryMillis;
 
     public RelicManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -45,12 +57,19 @@ public final class RelicManager {
         this.itemFactory = new RelicItemFactory(plugin);
         this.cooldownService = new RelicCooldownService();
         this.abilityRegistry = new RelicAbilityRegistry();
+        this.ownershipFile = new File(plugin.getDataFolder(), "relics.yml");
+        plugin.getDataFolder().mkdirs();
     }
 
     public void load() {
         enabled = configManager.getBoolean("relics.enabled", true);
+        inactivityEnabled = configManager.getBoolean("relics.inactivity.enabled", true);
+        final long expiryDays = Math.max(0L, configManager.getLong("relics.inactivity.expiry-days", 14L));
+        inactivityExpiryMillis = expiryDays * 24L * 60L * 60L * 1000L;
         registry.clear();
         triggerConfigs.clear();
+        // Ownerships are loaded even when the system is disabled so a later save() cannot wipe them.
+        loadOwnerships();
 
         if (!enabled) {
             plugin.getLogger().info("Relic system is disabled in config.");
@@ -137,7 +156,174 @@ public final class RelicManager {
     }
 
     public void save() {
-        // Runtime relic ownership/timer persistence will be handled here.
+        try {
+            final YamlConfiguration yaml = new YamlConfiguration();
+
+            for (final Map.Entry<String, RelicOwnership> entry : ownerships.entrySet()) {
+                final String basePath = "ownerships." + entry.getKey();
+                yaml.set(basePath + ".owner", entry.getValue().owner().toString());
+                yaml.set(basePath + ".last-seen", entry.getValue().lastSeenMillis());
+            }
+
+            yaml.save(ownershipFile);
+        } catch (final IOException exception) {
+            plugin.getLogger().severe("Failed to save relic ownerships: " + exception.getMessage());
+        }
+    }
+
+    private void loadOwnerships() {
+        ownerships.clear();
+
+        if (!ownershipFile.exists()) {
+            return;
+        }
+
+        try {
+            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(ownershipFile);
+            final ConfigurationSection ownershipSection = yaml.getConfigurationSection("ownerships");
+            if (ownershipSection == null) {
+                return;
+            }
+
+            for (final String relicId : ownershipSection.getKeys(false)) {
+                final String rawOwner = ownershipSection.getString(relicId + ".owner");
+                final long lastSeenMillis = ownershipSection.getLong(relicId + ".last-seen", 0L);
+                if (rawOwner == null || rawOwner.isBlank()) {
+                    continue;
+                }
+
+                try {
+                    final UUID owner = UUID.fromString(rawOwner);
+                    ownerships.put(relicId.toLowerCase(Locale.ROOT), new RelicOwnership(owner, lastSeenMillis));
+                } catch (final IllegalArgumentException exception) {
+                    plugin.getLogger().warning("Invalid owner UUID in relics.yml for relic '" + relicId + "': " + rawOwner);
+                }
+            }
+
+            plugin.getLogger().info("Loaded " + ownerships.size() + " relic ownership record(s).");
+        } catch (final Exception exception) {
+            plugin.getLogger().severe("Failed to load relic ownerships: " + exception.getMessage());
+        }
+    }
+
+    /**
+     * Gets the persistent ownership record of a relic.
+     *
+     * @param relicId the relic identifier
+     * @return the ownership record, or null if the relic is unclaimed
+     */
+    public RelicOwnership getOwnership(final String relicId) {
+        if (relicId == null || relicId.isBlank()) {
+            return null;
+        }
+
+        return ownerships.get(relicId.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * Records a player as the current owner of a relic and refreshes the last-seen timestamp.
+     *
+     * @param relicId the relic identifier
+     * @param owner the owning player's UUID
+     */
+    public void recordOwnership(final String relicId, final UUID owner) {
+        if (relicId == null || relicId.isBlank() || owner == null) {
+            return;
+        }
+
+        ownerships.put(relicId.toLowerCase(Locale.ROOT), new RelicOwnership(owner, System.currentTimeMillis()));
+        save();
+    }
+
+    /**
+     * Releases the ownership of a relic so it can be claimed again.
+     *
+     * @param relicId the relic identifier
+     */
+    public void releaseOwnership(final String relicId) {
+        if (relicId == null || relicId.isBlank()) {
+            return;
+        }
+
+        if (ownerships.remove(relicId.toLowerCase(Locale.ROOT)) != null) {
+            save();
+        }
+    }
+
+    private boolean isExpired(final RelicOwnership ownership) {
+        return inactivityEnabled
+                && inactivityExpiryMillis > 0L
+                && ownership != null
+                && (System.currentTimeMillis() - ownership.lastSeenMillis()) > inactivityExpiryMillis;
+    }
+
+    /**
+     * Handles the join-time relic inactivity sweep:
+     * expired relics are removed from the joining player's inventory with a smoke effect,
+     * while active relics owned by the player get a refreshed last-seen timestamp.
+     *
+     * @param player the joining player
+     */
+    public void handlePlayerJoin(final Player player) {
+        if (!enabled) {
+            return;
+        }
+
+        final UUID playerId = player.getUniqueId();
+        final long now = System.currentTimeMillis();
+        final PlayerInventory inventory = player.getInventory();
+        final ItemStack[] contents = inventory.getContents();
+        boolean inventoryChanged = false;
+        boolean ownershipChanged = false;
+
+        for (int slot = 0; slot < contents.length; slot++) {
+            final ItemStack itemStack = contents[slot];
+            final RelicDefinition definition = identify(itemStack);
+            if (definition == null) {
+                continue;
+            }
+
+            final String relicId = definition.id().toLowerCase(Locale.ROOT);
+            final RelicOwnership ownership = ownerships.get(relicId);
+
+            if (isExpired(ownership)) {
+                contents[slot] = null;
+                inventoryChanged = true;
+                ownerships.remove(relicId);
+                ownershipChanged = true;
+                playExpiryEffect(player);
+                sendExpiryMessage(player, definition);
+                continue;
+            }
+
+            final UUID itemOwner = itemFactory.getOwner(itemStack);
+            if (itemOwner == null || itemOwner.equals(playerId)) {
+                ownerships.put(relicId, new RelicOwnership(playerId, now));
+                ownershipChanged = true;
+            }
+        }
+
+        if (inventoryChanged) {
+            inventory.setContents(contents);
+        }
+
+        if (ownershipChanged) {
+            save();
+        }
+    }
+
+    private void playExpiryEffect(final Player player) {
+        final Location effectLocation = player.getLocation().add(0.0D, 1.0D, 0.0D);
+        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, effectLocation, 40, 0.3D, 0.5D, 0.3D, 0.02D);
+        player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXTINGUISH_FIRE, 1.0F, 0.8F);
+    }
+
+    private void sendExpiryMessage(final Player player, final RelicDefinition definition) {
+        final String expiredMessage = configManager.getString(
+                "relics.messages.expired",
+                "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."
+        );
+        player.sendMessage(TextUtil.color(expiredMessage.replace("%relic_name%", definition.displayName())));
     }
 
     public boolean isEnabled() {
@@ -171,6 +357,13 @@ public final class RelicManager {
             return false;
         }
 
+        final String normalizedId = definition.id().toLowerCase(Locale.ROOT);
+        final RelicOwnership currentOwnership = ownerships.get(normalizedId);
+        if (currentOwnership != null && !currentOwnership.owner().equals(player.getUniqueId()) && !isExpired(currentOwnership)) {
+            // Singleton rule: only one instance of each relic may exist while its owner is active.
+            return false;
+        }
+
         int remaining = amount;
         while (remaining > 0) {
             final ItemStack itemStack = itemFactory.create(definition, player.getUniqueId());
@@ -182,6 +375,7 @@ public final class RelicManager {
             remaining -= itemStack.getAmount();
         }
 
+        recordOwnership(normalizedId, player.getUniqueId());
         return true;
     }
 
@@ -370,6 +564,33 @@ public final class RelicManager {
 
     public void clearPlayerState(final UUID playerId) {
         cleanup(playerId);
+        markOwnerSeen(playerId);
+    }
+
+    /**
+     * Refreshes the last-seen timestamp on every relic owned by the given player.
+     * Called on quit/kick so inactivity is measured from the player's last session.
+     *
+     * @param playerId the player UUID
+     */
+    public void markOwnerSeen(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+
+        final long now = System.currentTimeMillis();
+        boolean changed = false;
+
+        for (final Map.Entry<String, RelicOwnership> entry : ownerships.entrySet()) {
+            if (playerId.equals(entry.getValue().owner())) {
+                entry.setValue(new RelicOwnership(playerId, now));
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            save();
+        }
     }
 }
 

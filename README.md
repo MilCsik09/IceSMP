@@ -131,19 +131,19 @@ A világ a spawn ponttól távolodva fokozatosan veszélyesebbé válik.
 - [x] item-alapú valuta tokenek PDC-vel és custom model data-val
 
 ### Fázis 3 – Ereklyék
-- [ ] PDC utilok
-- [ ] ereklye tárgyak generálása
-- [ ] rituálé időzítő
-- [ ] inaktivitás-törlő task
+- [x] PDC utilok
+- [x] ereklye tárgyak generálása
+- [x] rituálé időzítő
+- [x] inaktivitás-törlő (belépéskori ellenőrzés, 14 nap után törlés + füst effekt, `relics.yml` perzisztencia)
 
 ### Fázis 4 – Világ & Harc
-- [ ] mob skálázó rendszer a `CreatureSpawnEvent` alapján
-- [ ] spawn távolság szerinti attribútum-módosítások
-- [ ] névkezelés és szint kijelzés
+- [x] mob skálázó rendszer a `CreatureSpawnEvent` alapján (`MobScalingManager` + `MobScalingListener`)
+- [x] spawn távolság szerinti attribútum-módosítások (max élet, sebzés)
+- [x] névkezelés és szint kijelzés (`[Lvl X] <mob neve>`)
 
 ### Fázis 5 – Szakmák / extra szabályok
-- [ ] opcionális craftolási korlátozások
-- [ ] szint vagy kaszt alapú tiltások
+- [x] opcionális craftolási korlátozások (`crafting-restrictions` config szekció)
+- [x] szint vagy kaszt alapú tiltások (craft + smithing eredmény blokkolás)
 
 ## Konvenciók
 
