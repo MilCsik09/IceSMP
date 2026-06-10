@@ -1,0 +1,277 @@
+package hu.taliann.icesmp.managers;
+
+import hu.taliann.icesmp.utils.MessageManager;
+
+import org.bukkit.entity.Entity;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.entity.Monster;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+public final class MetelytepoManager {
+
+    private static final String RELIC_ID = "metelytepo";
+    public static final String ABILITY_JUSTICE = "justice";
+    public static final String ABILITY_HONOR_EYE = "honor_eye";
+    private static final long JUSTICE_COOLDOWN_MILLIS = 30_000L;
+    private static final long HONOR_EYE_COOLDOWN_MILLIS = 240_000L;
+
+    private final JavaPlugin plugin;
+    private final MessageManager messageManager;
+    private final NamespacedKey relicIdKey;
+    private final NamespacedKey sinnerKey;
+    private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> abilityDamageBypass = new ConcurrentHashMap<>();
+    private final Set<EntityType> protectedEntityTypes = EnumSet.of(
+            EntityType.PLAYER,
+            EntityType.VILLAGER,
+            EntityType.IRON_GOLEM,
+            EntityType.PIGLIN
+    );
+    private final Set<EntityType> undeadTypes = EnumSet.of(
+            EntityType.ZOMBIE,
+            EntityType.ZOMBIE_VILLAGER,
+            EntityType.HUSK,
+            EntityType.DROWNED,
+            EntityType.SKELETON,
+            EntityType.STRAY,
+            EntityType.WITHER_SKELETON,
+            EntityType.BOGGED,
+            EntityType.PHANTOM,
+            EntityType.WITHER,
+            EntityType.ZOGLIN,
+            EntityType.ZOMBIFIED_PIGLIN
+    );
+
+    public MetelytepoManager(final JavaPlugin plugin, final MessageManager messageManager) {
+        this.plugin = plugin;
+        this.messageManager = messageManager;
+        this.relicIdKey = new NamespacedKey(plugin, "relic_id");
+        this.sinnerKey = new NamespacedKey(plugin, "is_sinner");
+    }
+
+    public String relicId() {
+        return RELIC_ID;
+    }
+
+    public boolean isMetelytepo(final ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType().isAir() || !itemStack.hasItemMeta()) {
+            return false;
+        }
+
+        final String relicId = itemStack.getItemMeta().getPersistentDataContainer().get(relicIdKey, PersistentDataType.STRING);
+        return RELIC_ID.equalsIgnoreCase(relicId);
+    }
+
+    /**
+     * Checks if a player is on the Justice ability cooldown.
+     *
+     * @param player the player to check
+     * @return true if on cooldown, false otherwise
+     */
+    public boolean isOnJusticeCooldown(final Player player) {
+        return isOnCooldown(player, ABILITY_JUSTICE);
+    }
+
+    /**
+     * Gets the remaining cooldown time for Justice ability in milliseconds.
+     *
+     * @param player the player
+     * @return remaining milliseconds, or 0 if not on cooldown
+     */
+    public long getJusticeRemainingMillis(final Player player) {
+        return getRemainingMillis(player, ABILITY_JUSTICE);
+    }
+
+    /**
+     * Triggers the Justice ability cooldown for a player.
+     *
+     * @param player the player
+     */
+    public void triggerJusticeCooldown(final Player player) {
+        startCooldown(player, ABILITY_JUSTICE, JUSTICE_COOLDOWN_MILLIS);
+    }
+
+    /**
+     * Checks if a player is on the Honor Eye ability cooldown.
+     *
+     * @param player the player to check
+     * @return true if on cooldown, false otherwise
+     */
+    public boolean isOnHonorEyeCooldown(final Player player) {
+        return isOnCooldown(player, ABILITY_HONOR_EYE);
+    }
+
+    /**
+     * Gets the remaining cooldown time for Honor Eye ability in milliseconds.
+     *
+     * @param player the player
+     * @return remaining milliseconds, or 0 if not on cooldown
+     */
+    public long getHonorEyeRemainingMillis(final Player player) {
+        return getRemainingMillis(player, ABILITY_HONOR_EYE);
+    }
+
+    /**
+     * Triggers the Honor Eye ability cooldown for a player.
+     *
+     * @param player the player
+     */
+    public void triggerHonorEyeCooldown(final Player player) {
+        startCooldown(player, ABILITY_HONOR_EYE, HONOR_EYE_COOLDOWN_MILLIS);
+    }
+
+    public boolean isProtectedEntityType(final EntityType type) {
+        return protectedEntityTypes.contains(type);
+    }
+
+    public boolean isSinner(final Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+
+        if (entity instanceof Player player) {
+            return player.getPersistentDataContainer().getOrDefault(sinnerKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+        }
+
+        if (isProtectedEntityType(entity.getType())) {
+            return false;
+        }
+
+        return entity instanceof Monster;
+    }
+
+    public void markAsSinner(final Player player) {
+        player.getPersistentDataContainer().set(sinnerKey, PersistentDataType.BYTE, (byte) 1);
+    }
+
+    public void clearSinner(final Player player) {
+        if (player == null) {
+            return;
+        }
+
+        if (!player.getPersistentDataContainer().has(sinnerKey, PersistentDataType.BYTE)) {
+            return;
+        }
+
+        player.getPersistentDataContainer().remove(sinnerKey);
+        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.6F);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 0.7F, 1.8F);
+        player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 24, 0.35D, 0.5D, 0.35D, 0.02D);
+        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D), 16, 0.25D, 0.4D, 0.25D, 0.01D);
+        player.sendMessage(messageManager.getMessage("sinner.cleansed", "<green><i>Megtisztultal a buneidtol...</i></green>"));
+    }
+
+    public boolean isSinnerTarget(final LivingEntity target) {
+        return isSinner(target);
+    }
+
+    public boolean isUndead(final LivingEntity target) {
+        return undeadTypes.contains(target.getType());
+    }
+
+    public void freezeUndead(final LivingEntity target, final long ticks) {
+        final AttributeInstance speedAttribute = target.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (speedAttribute != null) {
+            frozenSpeed.put(target.getUniqueId(), speedAttribute.getBaseValue());
+            speedAttribute.setBaseValue(0.0D);
+        }
+        target.setAI(false);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!target.isValid()) {
+                    return;
+                }
+
+                target.setAI(true);
+                final Double original = frozenSpeed.remove(target.getUniqueId());
+                if (original != null) {
+                    final AttributeInstance speed = target.getAttribute(Attribute.MOVEMENT_SPEED);
+                    if (speed != null) {
+                        speed.setBaseValue(original);
+                    }
+                }
+            }
+        }.runTaskLater(plugin, ticks);
+    }
+
+    public void markAbilityDamageBypass(final LivingEntity target, final long millis) {
+        abilityDamageBypass.put(target.getUniqueId(), System.currentTimeMillis() + millis);
+    }
+
+    public boolean consumeAbilityDamageBypass(final LivingEntity target) {
+        final Long expiresAt = abilityDamageBypass.get(target.getUniqueId());
+        if (expiresAt == null) {
+            return false;
+        }
+
+        if (expiresAt < System.currentTimeMillis()) {
+            abilityDamageBypass.remove(target.getUniqueId());
+            return false;
+        }
+
+        abilityDamageBypass.remove(target.getUniqueId());
+        return true;
+    }
+
+    private boolean isOnCooldown(final Player player, final String ability) {
+        return getRemainingMillis(player, ability) > 0L;
+    }
+
+    private long getRemainingMillis(final Player player, final String ability) {
+        final Map<String, Long> playerCooldowns = cooldowns.get(player.getUniqueId());
+        if (playerCooldowns == null) {
+            return 0L;
+        }
+
+        final Long expiresAt = playerCooldowns.get(ability);
+        return remainingMillis(expiresAt);
+    }
+
+    private void startCooldown(final Player player, final String ability, final long cooldownMillis) {
+        cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())
+                .put(ability, System.currentTimeMillis() + cooldownMillis);
+    }
+
+    private long remainingMillis(final Long expiresAt) {
+        if (expiresAt == null) {
+            return 0L;
+        }
+
+        return Math.max(0L, expiresAt - System.currentTimeMillis());
+    }
+
+    public void cleanup(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+
+        cooldowns.remove(playerId);
+        frozenSpeed.remove(playerId);
+        abilityDamageBypass.remove(playerId);
+    }
+
+    public void clearPlayerState(final UUID playerId) {
+        cleanup(playerId);
+    }
+}
+
+

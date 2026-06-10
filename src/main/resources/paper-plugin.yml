@@ -1,0 +1,14 @@
+name: IceSMP
+description: $description
+version: '$version'
+
+main: hu.taliann.icesmp.IceSMP
+bootstrapper: hu.taliann.icesmp.IceSMPBootstrap
+loader: hu.taliann.icesmp.IceSMPLoader
+api-version: '1.21.11'
+load: POSTWORLD
+
+folia-supported: true
+
+authors: [ Taliann ]
+

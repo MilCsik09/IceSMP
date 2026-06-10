@@ -1,0 +1,229 @@
+package hu.taliann.icesmp.utils;
+
+import hu.taliann.icesmp.managers.ConfigManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
+import java.util.Map;
+
+/**
+ * Manager for localized and configurable messages throughout the plugin.
+ * Provides centralized access to all user-facing strings with configuration support.
+ */
+public final class MessageManager {
+
+    private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+
+    private final JavaPlugin plugin;
+    private final File messagesFile;
+    private YamlConfiguration messagesConfiguration;
+
+    /**
+     * Constructs a new MessageManager.
+     *
+     * @param plugin the plugin instance
+     * @param configManager the configuration manager
+     */
+    public MessageManager(final JavaPlugin plugin, final ConfigManager configManager) {
+        this.plugin = plugin;
+        this.messagesFile = new File(plugin.getDataFolder(), "messages.yml");
+        load();
+    }
+
+    public void load() {
+        plugin.getDataFolder().mkdirs();
+        if (!messagesFile.exists()) {
+            plugin.saveResource("messages.yml", false);
+        }
+
+        messagesConfiguration = YamlConfiguration.loadConfiguration(messagesFile);
+    }
+
+    public void reload() {
+        load();
+    }
+
+    // ===== CURRENCY MESSAGES =====
+
+    /**
+     * Gets the currency help header message.
+     *
+     * @return formatted help header
+     */
+    public String getCurrencyHelpHeader() {
+        return get("messages.currency-help-header", "&6/currency &7- elérhető parancsok:");
+    }
+
+    /**
+     * Gets the balance message for a player.
+     *
+     * @param currencyName the currency name
+     * @param balance the balance amount
+     * @return formatted balance message
+     */
+    public String getBalance(final String currencyName, final double balance) {
+        return get("messages.balance", "&eAktuális egyenleg - " + currencyName + ": &6" + balance);
+    }
+
+    // ===== FACTION MESSAGES =====
+
+    /**
+     * Gets the sinner marking message.
+     *
+     * @return sinner notification message
+     */
+    public String getSinnerMarked() {
+        return get("messages.sinner-marked",
+                "&5A Metelytepo igazsagot latott: &cbunos lettel.");
+    }
+
+    /**
+     * Gets the ability cooldown message.
+     *
+     * @param remainingSeconds seconds remaining
+     * @return cooldown message
+     */
+    public String getAbilityCooldown(final long remainingSeconds) {
+        return get("messages.ability-cooldown",
+                "&cKepesseg toltodik: &f%s &cmp", remainingSeconds);
+    }
+
+    /**
+     * Gets the no target message.
+     *
+     * @return no target message
+     */
+    public String getNoTarget() {
+        return get("messages.no-target",
+                "&7Nincs celpont a latoterben.");
+    }
+
+    /**
+     * Gets the target not sinner message.
+     *
+     * @return not sinner message
+     */
+    public String getTargetNotSinner() {
+        return get("messages.target-not-sinner",
+                "&7A celpont nem bunos.");
+    }
+
+    /**
+     * Gets the justice activated message.
+     *
+     * @return justice message
+     */
+    public String getJusticeActivated() {
+        return get("messages.justice-activated",
+                "&dJustice aktivodott");
+    }
+
+    /**
+     * Gets the honor eye message.
+     *
+     * @return honor eye message
+     */
+    public String getHonorEyeActivated() {
+        return get("messages.honor-eye-activated",
+                "&dHonor Eye: &bbunosok &dfelfedve");
+    }
+
+    // ===== GENERIC HELPER METHODS =====
+
+    /**
+     * Gets a message from configuration with a fallback default.
+     *
+     * @param key the message key (dot notation)
+     * @param defaultValue the fallback value if not found
+     * @return the message with fallback
+     */
+    public String get(final String key, final String defaultValue) {
+        return TextUtil.color(resolveMessage(key, defaultValue));
+    }
+
+    /**
+     * Gets a message from configuration with multiple format arguments.
+     *
+     * @param key the message key
+     * @param defaultValue the fallback value
+     * @param args format arguments (%s substitutions)
+     * @return formatted message
+     */
+    public String get(final String key, final String defaultValue, final Object... args) {
+        final String template = resolveMessage(key, defaultValue);
+        try {
+            return TextUtil.color(String.format(template, args));
+        } catch (final Exception e) {
+            plugin.getLogger().warning("Message format error for key: " + key);
+            return TextUtil.color(defaultValue);
+        }
+    }
+
+    public String get(final String key, final String defaultValue, final Map<String, String> placeholders) {
+        String message = resolveMessage(key, defaultValue);
+        for (final Map.Entry<String, String> entry : placeholders.entrySet()) {
+            message = message.replace("{" + entry.getKey() + "}", entry.getValue() == null ? "" : entry.getValue());
+        }
+        return TextUtil.color(message);
+    }
+
+    public Component getMessage(final String key) {
+        return getMessage(key, "", Map.of());
+    }
+
+    public Component getMessage(final String key, final String defaultValue) {
+        return getMessage(key, defaultValue, Map.of());
+    }
+
+    public Component getMessage(final String key, final String defaultValue, final Map<String, String> placeholders) {
+        String message = resolveMessage(key, defaultValue);
+        for (final Map.Entry<String, String> entry : placeholders.entrySet()) {
+            message = message.replace("{" + entry.getKey() + "}", entry.getValue() == null ? "" : entry.getValue());
+        }
+
+        if (message.contains("<") && message.contains(">")) {
+            try {
+                return MINI_MESSAGE.deserialize(message);
+            } catch (final Exception ignored) {
+                // Fall back to legacy parsing if MiniMessage tags are invalid.
+            }
+        }
+
+        return SECTION_SERIALIZER.deserialize(TextUtil.color(message));
+    }
+
+    public Component getComponent(final String key, final String defaultValue) {
+        return SECTION_SERIALIZER.deserialize(get(key, defaultValue));
+    }
+
+    public Component getComponent(final String key, final String defaultValue, final Object... args) {
+        return SECTION_SERIALIZER.deserialize(get(key, defaultValue, args));
+    }
+
+    private String resolveMessage(final String key, final String defaultValue) {
+        if (messagesConfiguration == null) {
+            load();
+        }
+
+        final String normalized = normalizeKey(key);
+        return messagesConfiguration.getString(normalized, defaultValue);
+    }
+
+    private String normalizeKey(final String key) {
+        if (key == null || key.isBlank()) {
+            return "messages.unknown";
+        }
+
+        if (key.startsWith("messages.")) {
+            return key;
+        }
+
+        return "messages." + key;
+    }
+}
+
