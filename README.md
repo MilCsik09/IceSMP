@@ -7,6 +7,7 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
 > 📘 **Technikai dokumentáció:** [TECHNICAL.md](TECHNICAL.md) — architektúra, parancs- és
 > jogosultság-referencia, config leírás, adattárolás, fejlesztői útmutató.
+> ✅ **Pontos készültségi állapot:** [STATUS.md](STATUS.md) — mi van kész, ismert korlátok, mi hiányzik.
 > 💡 **Ötlettár / tervek:** [ideas.md](ideas.md)
 
 ---
