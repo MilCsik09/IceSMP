@@ -25,7 +25,7 @@ import java.util.UUID;
 
 public final class PlayerSessionCleanupListener implements Listener {
 
-    private final SpellbookListener spellbookListener;
+    private final AbilityCatalystListener abilityCatalystListener;
     private final JobManager jobManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
@@ -33,14 +33,14 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final RelicManager relicManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
 
-    public PlayerSessionCleanupListener(final SpellbookListener spellbookListener,
+    public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
                                         final CurrencyManager currencyManager,
                                         final FactionManager factionManager,
                                         final MetelytepoManager metelytepoManager,
                                         final RelicManager relicManager,
                                         final CraftingRestrictionManager craftingRestrictionManager) {
-        this.spellbookListener = spellbookListener;
+        this.abilityCatalystListener = abilityCatalystListener;
         this.jobManager = jobManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
@@ -62,7 +62,7 @@ public final class PlayerSessionCleanupListener implements Listener {
     public void cleanupPlayerState(final UUID playerId) {
         final Player player = Bukkit.getPlayer(playerId);
 
-        spellbookListener.clearPlayerState(playerId);
+        abilityCatalystListener.clearPlayerState(playerId);
         jobManager.clearPlayerState(playerId);
         currencyManager.clearPlayerState(playerId);
         factionManager.clearPlayerState(playerId);

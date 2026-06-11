@@ -2,14 +2,14 @@ package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.commands.job.JobAddXpSubcommand;
 import hu.taliann.icesmp.commands.job.JobAdminSubcommand;
-import hu.taliann.icesmp.commands.job.JobGiveSpellbookSubcommand;
+import hu.taliann.icesmp.commands.job.JobGiveCatalystSubcommand;
 import hu.taliann.icesmp.commands.job.JobListSpellsSubcommand;
 import hu.taliann.icesmp.commands.job.JobSetXpSubcommand;
 import hu.taliann.icesmp.commands.job.JobStatusSubcommand;
 import hu.taliann.icesmp.commands.job.JobSubcommand;
 import hu.taliann.icesmp.commands.job.JobUnlockSpellSubcommand;
-import hu.taliann.icesmp.items.SpellbookItemFactory;
-import hu.taliann.icesmp.listeners.SpellbookListener;
+import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -31,16 +31,16 @@ public final class JobCommand implements BasicCommand {
     private final MessageManager messageManager;
 
     public JobCommand(final JobManager jobManager, final SpellRegistry spellRegistry,
-                      final SpellbookItemFactory spellbookItemFactory, final SpellbookListener spellbookListener,
+                      final CatalystItemFactory catalystItemFactory, final AbilityCatalystListener abilityCatalystListener,
                       final MessageManager messageManager) {
         this.messageManager = messageManager;
         register(new JobAddXpSubcommand(jobManager, messageManager));
         register(new JobSetXpSubcommand(jobManager, messageManager));
         register(new JobStatusSubcommand(jobManager, messageManager));
         register(new JobUnlockSpellSubcommand(jobManager, spellRegistry, messageManager));
-        register(new JobGiveSpellbookSubcommand(spellbookItemFactory, messageManager));
+        register(new JobGiveCatalystSubcommand(jobManager, catalystItemFactory, messageManager));
         register(new JobListSpellsSubcommand(spellRegistry, messageManager));
-        register(new JobAdminSubcommand(jobManager, spellRegistry, spellbookListener, messageManager));
+        register(new JobAdminSubcommand(jobManager, spellRegistry, abilityCatalystListener, messageManager));
     }
 
     private void register(final JobSubcommand subcommand) {

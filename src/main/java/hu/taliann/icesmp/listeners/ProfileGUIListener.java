@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.gui.JobGUI;
 import hu.taliann.icesmp.gui.ProfileHolder;
+import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Material;
@@ -19,10 +20,13 @@ public final class ProfileGUIListener implements Listener {
     private static final int JOB_SLOT = 11;
 
     private final JobManager jobManager;
+    private final CatalystItemFactory catalystItemFactory;
     private final MessageManager messageManager;
 
-    public ProfileGUIListener(final JobManager jobManager, final MessageManager messageManager) {
+    public ProfileGUIListener(final JobManager jobManager, final CatalystItemFactory catalystItemFactory,
+                              final MessageManager messageManager) {
         this.jobManager = jobManager;
+        this.catalystItemFactory = catalystItemFactory;
         this.messageManager = messageManager;
     }
 
@@ -46,7 +50,7 @@ public final class ProfileGUIListener implements Listener {
         final boolean isKnowledgeBook = clicked != null && clicked.getType() == Material.KNOWLEDGE_BOOK;
         if (event.getRawSlot() == JOB_SLOT || isKnowledgeBook) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
-            JobGUI.openJobMenu(player, jobManager, messageManager);
+            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
         }
     }
 

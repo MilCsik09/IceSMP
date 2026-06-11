@@ -51,9 +51,9 @@ IceSMPCore.disable()
 | `managers` | Üzleti logika és állapot (lásd 2. fejezet) |
 | `listeners` | Bukkit/Folia eseménykezelők — vékonyak, managerbe delegálnak |
 | `commands` | Paper `BasicCommand` implementációk; nagy domainekhez router + subcommand split (`commands/currency`, `commands/faction`, `commands/job`) |
-| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 21 spell implementáció, `SpellTargetingUtil` |
+| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 23 spell implementáció, `SpellTargetingUtil` |
 | `relics` | Relic framework: definíciók, triggerek, ability registry, ownership rekord |
-| `items` | Item factory-k PDC tagekkel: `CurrencyItemFactory`, `RelicItemFactory`, `SpellbookItemFactory` |
+| `items` | Item factory-k PDC tagekkel: `CurrencyItemFactory`, `RelicItemFactory`, `CatalystItemFactory` |
 | `gui` | `ProfileGUI`, `JobGUI` + holderek, `ProfileBookFactory` |
 | `utils` | `MessageManager`, `TextUtil`, `ExperienceUtil` |
 
@@ -73,7 +73,7 @@ IceSMPCore.disable()
 | `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
 | `ProfessionManager` | Szakma + XP/szint (max 50), tevékenység-alapú XP jóváírás | játékos PDC |
 | `CraftingRestrictionManager` | Config-vezérelt craft szabályok: kaszt- és/vagy szakma-követelmény anyagonként; üzenet-throttle | — |
-| `SpellRegistry` | A 21 regisztrált spell nyilvántartása id szerint | — |
+| `SpellRegistry` | A 23 regisztrált spell nyilvántartása id szerint | — |
 | `RelicManager` | Relic definíciók (config + beépített seed), singleton tulajdonjog, 14 napos inaktivitás-lejárat, belépéskori sweep | relics.yml |
 | `RelicCooldownService` | Per játékos/relic/trigger cooldownok | memória |
 | `MetelytepoManager` | Mételytépő mechanikák: sinner flag, **dark pact** (örök sinner), Justice/Honor Eye képességek, fagyasztás | játékos PDC + memória |
@@ -109,7 +109,7 @@ inventoryból és felszabadul.
 | `/currency` | `money`, `eco` | `balance`, `pay`, `set`, `exchange`, `rates` | `set`: `icesmp.currency.admin` |
 | `/bank` | `wallet`, `vault` | `balance`, `deposit`, `withdraw <valuta> <összeg>` | — |
 | `/faction` | `f` | `join`, `leave`, `set` | `set`: `icesmp.faction.admin` |
-| `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givespellbook`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
+| `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givecatalyst`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
 | `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `addxp` | admin ágak: `icesmp.admin.profession` |
 | `/spec` | `specialization` | `list`, `choose`, `info`, `reset` | `reset`: `icesmp.admin.spec` |
 | `/talent` | `talents` | `list`, `spend <class\|profession> <talent>` | — |
@@ -129,7 +129,7 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 
 | Listener | Esemény(ek) | Funkció |
 |---|---|---|
-| `SpellbookListener` | `PlayerInteractEvent`, `PlayerAnimationEvent` | Jobb katt: cast; sneak+ütés: spell váltás; költség/cooldown pipeline |
+| `AbilityCatalystListener` | `PlayerInteractEvent`, `PlayerAnimationEvent` | Jobb katt: cast; sneak+ütés: spell váltás; költség/cooldown pipeline |
 | `SpellProjectileListener`, `SpellStateListener` | projektil/állapot események | Spell-specifikus utókezelés |
 | `ClassXpListener` | `EntityDeathEvent` | Kaszt XP ölésből (+mob szint bónusz, +talent XP%, másodlagos kaszt rész) |
 | `ProfessionXpListener` | `BlockBreakEvent`, `CraftItemEvent`, `SmithItemEvent`, `PlayerFishEvent` | Szakma XP tevékenységből (+talent XP%) |
@@ -174,13 +174,35 @@ a rövidebbek memóriában élnek.
 | `armament` | Fegyverzet | 300 | 352 XP | harcos 5 |
 | `inner_focus` | Belső Fókusz | 480 | 20 éhség | harcos 10 |
 | `hide` | Elrejtőzés | 480 | 550 XP | Fantom spec 25 |
-| `confusion` | Megzavarás | 1200 | 160 XP | varázsló 10 / Méregkeverő spec 25 |
+| `confusion` | Megzavarás | 1200 | 160 XP | varázsló 10 |
 | `rain_dance` | Esőtánc | 3600 | 352 XP | varázsló 15 |
 | `sun_dance` | Naptánc | 3600 | 352 XP | Elementalista spec 25 |
 | `lucky_star` | Lucky Star | 0 (toggle) | XP-t éget | Elementalista spec 30 |
+| `bulwark` | Bástya | 120 | 8 éhség | Védelmező spec 25 |
+| `venom_strike` | Méregcsapás | 60 | 6 éhség | Méregkeverő spec 25 |
 
 A feloldási szintek a `config.yml`-ben szabadon átírhatók (`classes.*.spell-unlocks`,
-`specializations.*.spell-unlocks`).
+`specializations.*.spell-unlocks`). **Minden kaszt és specializáció saját, egyedi
+spell-készletet tanul** — egy spell sem szerepel két feloldási listában.
+
+### Képesség Katalizátor (a varázskönyv utódja)
+
+A spellek használatához kaszt-tematikus katalizátor item kell (`CatalystItemFactory`,
+PDC: `is_ability_catalyst` + `unique_id`):
+
+| Kaszt | Material | Név | CMD | Váltás hangja |
+|---|---|---|---|---|
+| WIZARD | `ENCHANTED_BOOK` | Mágikus Kódex | 5201 | `ITEM_BOOK_PAGE_TURN` |
+| WARRIOR | `GOAT_HORN` | Harci Kürt | 5202 | `ITEM_GOAT_HORN_PLAY` (rövid, pitch 2.0) |
+| ARCHER | `RABBIT_HIDE` | Vadásztarsoly | 5203 | `ITEM_CROSSBOW_LOADING_START` |
+| ASSASSIN | `FLINT` | Árnyékamulett | 5204 | `BLOCK_CANDLE_EXTINGUISH` |
+
+Interakciók (`AbilityCatalystListener`): jobb katt = cast (a kecskekürt vanilla
+megfújása letiltva); sneak + ütés = spellváltás kaszt-hanggal és a spell nevét +
+költségét mutató action barral. Megszerzés: Job GUI katalizátor-gomb (saját igénylés,
+duplikáció-védelemmel) vagy admin `/job givecatalyst`. A `CatalystCraftSafetyListener`
+megakadályozza, hogy a katalizátor craft-hozzávalóként vagy kemence-üzemanyagként
+elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 
 ---
 
@@ -234,7 +256,7 @@ cooldownok), `is_sinner`, `dark_pact`, `profession`, `profession_xp`, `class_spe
 `profession_spec`, `talents_class` és `talents_profession` (`id:rang,...` formátum).
 
 **Itemen:** `currency_type`; `relic_id`, `relic_owner`, `relic_created_at`;
-`is_spellbook`, `unique_id`; armament tag (idézett kard jelölése).
+`is_ability_catalyst`, `unique_id`; armament tag (idézett kard jelölése).
 
 **Entitáson:** `mob_level` (skálázott mob szintje).
 

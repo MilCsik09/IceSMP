@@ -2,7 +2,7 @@
 
 Az **IceSMP** egy Folia-alapú Minecraft plugin (1.21.11, Paper API kompatibilis), amely egy
 fantasy "királyságos" SMP szerver teljes játékmenet-rendszerét adja: frakciók, kasztok és
-specializációk, talentek, szakmák, varázskönyv-alapú képességek, legendás relikviák,
+specializációk, talentek, szakmák, katalizátor-alapú képességek, legendás relikviák,
 dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
 > 📘 **Technikai dokumentáció:** [TECHNICAL.md](TECHNICAL.md) — architektúra, parancs- és
@@ -51,15 +51,26 @@ legerősebb képességek csak így érhetők el:
 | Íjász | 🎯 Mesterlövész • 🐺 Vadmester |
 | Orgyilkos | ☠ Méregkeverő • 👻 Fantom |
 
-### ✨ Varázskönyv és képességek
+### ✨ Képesség Katalizátor
 
-A varázskönyvvel (admin adja: `/job givespellbook`) használod a feloldott képességeket:
+Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a képességeit
+(a kasztválasztó GUI-ból bármikor igényelhető, ha elveszett; admin: `/job givecatalyst`):
 
-- **Jobb katt** — kiválasztott varázslat elsütése
-- **Lopakodás + ütés (bal katt)** — váltás a feloldott varázslatok között
+| Kaszt | Katalizátor |
+|---|---|
+| Varázsló (és Nekromanta) | 📖 **Mágikus Kódex** (bűvölt könyv) |
+| Harcos | 📯 **Harci Kürt** (kecskekürt) |
+| Íjász | 🎒 **Vadásztarsoly** (nyúlbőr) |
+| Orgyilkos | 🪨 **Árnyékamulett** (kovakő) |
 
-Minden varázslatnak költsége (éhség vagy XP) és visszatöltési ideje van. 21 varázslat van a
-rendszerben a Dupla Ugrástól a Naptáncon át az Életszívásig.
+- **Jobb katt** — kiválasztott képesség elsütése
+- **Lopakodás + ütés (bal katt)** — váltás a feloldott képességek között, kaszt-specifikus
+  hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
+  mutató action bar kijelzéssel
+
+Minden képességnek költsége (éhség vagy XP) és visszatöltési ideje van. 23 képesség van a
+rendszerben, és **minden kaszt és specializáció saját, egyedi képességeket tanul** — nincs
+átfedés a kasztok között.
 
 ### 🌟 Talentek
 

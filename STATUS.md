@@ -34,7 +34,7 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   másodlagos kaszt 50%-ot kap; csak ellenséges mobok (mind configolható)
 - **Automatikus spell-feloldás** szint alapján (`classes.<kaszt>.spell-unlocks` config),
   minden XP-úton érvényesül (kill XP, admin parancsok), üzenettel
-- Admin parancsok: `/job addxp | setxp | status | unlockspell | givespellbook | listspells | admin`
+- Admin parancsok: `/job addxp | setxp | status | unlockspell | givecatalyst | listspells | admin`
 
 ### 3. Specializációk
 - **Kasztonként 2 spec** (`SpecializationType`): Elementalista/Nekromanta (varázsló),
@@ -71,11 +71,15 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - Craftoló asztal **és smithing asztal** eredményét is blokkolja, throttle-olt üzenettel
 - Alapszabály: **netherite felszerelés csak 25+ szintű Kovácsnak**
 
-### 7. Varázslat (spell) rendszer
-- **21 regisztrált spell** (lista: [TECHNICAL.md 5. fejezet](TECHNICAL.md)) — ebből 6 új
-  kaszt-skill: Sasszem, Sortűz, Árnyéklépés, Füstbomba, Életszívás, Csontfagy
-- Varázskönyv item (PDC-tagelt): jobb katt = cast, sneak + ütés = spellváltás,
-  action bar visszajelzéssel
+### 7. Képesség (spell) rendszer + Képesség Katalizátor
+- **23 regisztrált spell** (lista: [TECHNICAL.md 5. fejezet](TECHNICAL.md)); **minden kaszt
+  és specializáció saját, egyedi spell-készletet tanul** (nincs átfedés a feloldási listákban)
+- **Kaszt-tematikus Képesség Katalizátor** (`CatalystItemFactory`, `is_ability_catalyst` PDC):
+  Mágikus Kódex (varázsló), Harci Kürt (harcos), Vadásztarsoly (íjász), Árnyékamulett (orgyilkos)
+- Interakciók (`AbilityCatalystListener`): jobb katt = cast; sneak + ütés = spellváltás
+  **kaszt-specifikus hanggal** és a spell nevét + költségét mutató action barral
+- Megszerzés: Job GUI katalizátor-gomb (saját igénylés, duplikáció-védelemmel) vagy admin
+  `/job givecatalyst`; craft/kemence-védelem (`CatalystCraftSafetyListener`)
 - Költség rendszer (éhség vagy XP), cooldown rendszer (60 mp felett PDC-perzisztens,
   alatta memória), debounce védelem
 - Session-állapot központi takarítása kilépéskor (`PlayerSessionCleanupListener`)
@@ -116,7 +120,8 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 
 ### 12. Profil és GUI-k
 - `/profile` — profil könyv (név, frakció, mind a 4 valuta-egyenleg, bank gombok) + GUI
-- Job GUI — kasztválasztás állapotjelzéssel (kiválasztott, szint, zárolt másodlagos)
+- Job GUI — kasztválasztás állapotjelzéssel (kiválasztott, szint, zárolt másodlagos) +
+  **katalizátor-igénylő gomb** (tematikus item, duplikáció-védelemmel)
 
 ### 13. Infrastruktúra
 - Folia-kompatibilis (`folia-supported: true`, szinkron taskok, `teleportAsync`)

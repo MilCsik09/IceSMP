@@ -13,7 +13,8 @@ import hu.taliann.icesmp.commands.SpecCommand;
 import hu.taliann.icesmp.commands.TalentCommand;
 import hu.taliann.icesmp.commands.TerritoryCommand;
 import hu.taliann.icesmp.gui.ProfileGUI;
-import hu.taliann.icesmp.items.SpellbookItemFactory;
+import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.listeners.CatalystCraftSafetyListener;
 import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
@@ -29,7 +30,7 @@ import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
-import hu.taliann.icesmp.listeners.SpellbookListener;
+import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.listeners.TalentAttributeListener;
@@ -51,6 +52,7 @@ import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.spells.AngryChickenSpell;
 import hu.taliann.icesmp.spells.ArmamentSpell;
 import hu.taliann.icesmp.spells.BoneChillSpell;
+import hu.taliann.icesmp.spells.BulwarkSpell;
 import hu.taliann.icesmp.spells.ConfusionSpell;
 import hu.taliann.icesmp.spells.DoubleJumpSpell;
 import hu.taliann.icesmp.spells.EagleEyeSpell;
@@ -68,6 +70,7 @@ import hu.taliann.icesmp.spells.RootSpell;
 import hu.taliann.icesmp.spells.ShadowstepSpell;
 import hu.taliann.icesmp.spells.SmokeBombSpell;
 import hu.taliann.icesmp.spells.SunDanceSpell;
+import hu.taliann.icesmp.spells.VenomStrikeSpell;
 import hu.taliann.icesmp.spells.WisplightSpell;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -91,8 +94,8 @@ public final class IceSMPCore {
     private final FactionManager factionManager;
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
-    private final SpellbookItemFactory spellbookItemFactory;
-    private final SpellbookListener spellbookListener;
+    private final CatalystItemFactory catalystItemFactory;
+    private final AbilityCatalystListener abilityCatalystListener;
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
@@ -117,8 +120,8 @@ public final class IceSMPCore {
         this.factionManager = new FactionManager(plugin);
         this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
-        this.spellbookItemFactory = new SpellbookItemFactory(plugin);
-        this.spellbookListener = new SpellbookListener(plugin, jobManager, spellRegistry, spellbookItemFactory, messageManager);
+        this.catalystItemFactory = new CatalystItemFactory(plugin);
+        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry, catalystItemFactory, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, messageManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
@@ -131,7 +134,7 @@ public final class IceSMPCore {
         this.territoryManager = new TerritoryManager(plugin);
         jobManager.setXpChangeHook(specializationManager::applyClassSpecializationUnlocks);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
-                spellbookListener,
+                abilityCatalystListener,
                 jobManager,
                 currencyManager,
                 factionManager,
@@ -161,6 +164,8 @@ public final class IceSMPCore {
         spellRegistry.register(new SmokeBombSpell(messageManager));
         spellRegistry.register(new LifeDrainSpell(messageManager));
         spellRegistry.register(new BoneChillSpell(messageManager));
+        spellRegistry.register(new BulwarkSpell(messageManager));
+        spellRegistry.register(new VenomStrikeSpell(messageManager));
     }
 
     /**
@@ -207,7 +212,7 @@ public final class IceSMPCore {
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, messageManager));
-        plugin.registerCommand("job", "Kaszt admin parancsok", List.of("class"), new JobCommand(jobManager, spellRegistry, spellbookItemFactory, spellbookListener, messageManager));
+        plugin.registerCommand("job", "Kaszt admin parancsok", List.of("class"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
         plugin.registerCommand("profile", "Játékos profil", List.of("status", "info"), new ProfileCommand(messageManager, metelytepoManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia framework parancsok", List.of("relics"), new RelicCommand(relicManager, messageManager));
@@ -224,9 +229,10 @@ public final class IceSMPCore {
         final PluginManager pluginManager = plugin.getServer().getPluginManager();
         pluginManager.registerEvents(new CurrencyCraftListener(currencyManager), plugin);
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
-        pluginManager.registerEvents(new ProfileGUIListener(jobManager, messageManager), plugin);
-        pluginManager.registerEvents(new JobGUIListener(jobManager, metelytepoManager, messageManager), plugin);
-        pluginManager.registerEvents(spellbookListener, plugin);
+        pluginManager.registerEvents(new ProfileGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new JobGUIListener(jobManager, metelytepoManager, catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(abilityCatalystListener, plugin);
+        pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);

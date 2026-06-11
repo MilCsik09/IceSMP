@@ -12,14 +12,14 @@
   - `CurrencyManager` -> `currency-balances.yml` in plugin data folder; multi-currency with `CurrencyType` enum (RED, BLUE, NEUTRAL).
   - `FactionManager` -> `factions.yml` in plugin data folder; maps players to `FactionType` enum.
   - `JobManager` -> player PDC keys (`job_primary`, `job_secondary`, `*_xp`, `unlocked_spells`) rather than a plugin YAML file; manages class progression and spell unlock state.
-  - `SpellRegistry` -> holds 15 registered spells (DoubleJumpSpell, FriendshipSpell, FeatherfootSpell, AngryChickenSpell, InnerFocusSpell, RootSpell, WisplightSpell, FeastSpell, RainDanceSpell, SunDanceSpell, ArmamentSpell, ConfusionSpell, HideSpell, GustSpell, LuckyStarSpell); populated in `IceSMPCore` constructor via explicit `spellRegistry.register(new ...Spell(...))` calls; spells define cost type (HUNGER or XP) and cost amount.
-  - `SpellbookItemFactory` -> creates spellbook items with `is_spellbook` and `unique_id` PDC tags; player spell state uses `selected_spell_index` + `cd_*` cooldown keys.
+  - `SpellRegistry` -> holds 23 registered spells, populated in `IceSMPCore` constructor via explicit `spellRegistry.register(new ...Spell(...))` calls; spells define cost type (HUNGER or XP) and cost amount; every class and specialization has its own unique unlock list (no spell appears in two lists).
+  - `CatalystItemFactory` -> creates class-themed Ability Catalyst items with `is_ability_catalyst` and `unique_id` PDC tags; player spell state uses `selected_spell_index` + `cd_*` cooldown keys.
   - `RelicManager` -> loads relic cosmetics/triggers from `config.yml` (relics.definitions.*) on top of a hardcoded relic seed (`metelytepo`); persists singleton relic ownership + last-seen timestamps to `relics.yml` (`save()`/`loadOwnerships()`); join-time inactivity sweep removes expired relics (`relics.inactivity.*` config, `RelicInactivityListener`).
   - `RelicCooldownService` -> manages in-memory relic cooldowns per player/relic/trigger; `isOnCooldown()`, `startCooldown()`, `getRemainingMillis()`, `clearPlayer()` for session cleanup.
   - `MetelytepoManager` -> player PDC sinner flag (`is_sinner`) + in-memory runtime cooldown/state maps; handles "Mételytépő" relic special mechanics.
 - Commands are registered in code (not in `paper-plugin.yml`) via `plugin.registerCommand(...)` inside `IceSMPCore.registerCommands()`.
 - Command handlers are routers or thin executors; business logic stays in managers/subcommands (see `commands/currency/*`, `commands/faction/*`, `commands/job/*`, plus direct handlers in `commands/BankCommand.java`, `commands/ProfileCommand.java`, `commands/SinnerCommand.java`, `commands/RelicCommand.java`).
-- Item-backed systems rely on PDC tags: currency uses `currency_type` (`items/CurrencyItemFactory.java`); relics use `relic_id`, `relic_owner`, `relic_created_at` (`items/RelicItemFactory.java`); spellbooks use `is_spellbook` + `unique_id` (`items/SpellbookItemFactory.java`) and player spell state uses `selected_spell_index` + `cd_*` keys (`listeners/SpellbookListener.java`).
+- Item-backed systems rely on PDC tags: currency uses `currency_type` (`items/CurrencyItemFactory.java`); relics use `relic_id`, `relic_owner`, `relic_created_at` (`items/RelicItemFactory.java`); ability catalysts use `is_ability_catalyst` + `unique_id` (`items/CatalystItemFactory.java`) and player spell state uses `selected_spell_index` + `cd_*` keys (`listeners/AbilityCatalystListener.java`).
 - GUIs: `ProfileGUI` (read-only profile display with book factory); `JobGUI` + `JobGUIHolder` (class/job selection and spell management).
 ## Developer workflows (verified)
 - List available tasks:
@@ -37,12 +37,12 @@ Set-Location "C:\Users\csikm\Desktop\IceSMP"
 - `runServer` comes from `xyz.jpenilla.run-paper`; it uses the local `run/` directory for server state/logs.
 - **Folia-specific testing:** All tasks are sync; verify new code doesn't use `runTaskAsynchronously()` (not supported). Ensure null-checks when accessing players/entities delayed after task scheduling (Folia may relocate them across regions).
 ## Codebase-specific conventions
-- Prefer `MessageManager` + `messages.yml` for player-facing text (examples: `messages.currency-help-*`, `messages.faction-help-*`, `messages.job-help-*`, `messages.relic-help-*`, `messages.spellbook.*`, `messages.system.*`, `messages.admin.icesmp.reload.*`).
+- Prefer `MessageManager` + `messages.yml` for player-facing text (examples: `messages.currency-help-*`, `messages.faction-help-*`, `messages.job-help-*`, `messages.relic-help-*`, `messages.catalyst.*`, `messages.system.*`, `messages.admin.icesmp.reload.*`).
 - Color formatting uses `TextUtil.color(...)` (Adventure serializer bridge), not deprecated Bukkit `ChatColor`.
 - Enums accept both internal IDs and localized names (`FactionType.fromInput`, `CurrencyType.fromInput`).
 - Safety listeners intentionally block crafting with tagged custom items (`CurrencyCraftListener`, `RelicCraftSafetyListener`).
 - Inventory refresh patterns are system-specific: currency items refresh sync on next tick after click/drag (`CurrencyItemRefreshListener`), while relic visuals refresh on join (`RelicItemRefreshListener`).
-- **Spell system:** Each spell specifies cost type (`SpellCostType.HUNGER` or `SpellCostType.XP`) and cost amount; spells with cooldown `>= 60s` persist via PDC keys (`cd_*`), shorter cooldowns stay in-memory (`SpellbookListener` line 41-50); all spell task cleanup is centralized in `PlayerSessionCleanupListener`.
+- **Spell system:** Each spell specifies cost type (`SpellCostType.HUNGER` or `SpellCostType.XP`) and cost amount; spells with cooldown `>= 60s` persist via PDC keys (`cd_*`), shorter cooldowns stay in-memory (`AbilityCatalystListener` line 41-50); all spell task cleanup is centralized in `PlayerSessionCleanupListener`.
 - **Job progression:** Jobs use level-based XP with `JobManager` managing primary/secondary slots; `JobGUI` provides in-game class selection UI; spell unlocks are per-player via PDC `unlocked_spells` key.
 - **Relic system:** Relic triggers (`RelicTrigger` enum: `RIGHT_CLICK_AIR`, `RIGHT_CLICK_BLOCK`) dispatch through `RelicTriggerListener`; cooldowns managed per player/relic/trigger by `RelicCooldownService` (always call `clearPlayer()` on session cleanup).
 ## Integration points and gotchas
@@ -59,7 +59,7 @@ Set-Location "C:\Users\csikm\Desktop\IceSMP"
 - `ProfessionManager` (PDC keys `profession`, `profession_xp`) + `ProfessionXpListener` + `/profession` command implement grind professions (armorer, miner, farmer, fisherman).
 - `FactionType`/`CurrencyType` include DARK; `FactionPassiveListener` applies passive faction bonuses (`factions.passives.*` config).
 - `ExchangeRateService` computes supply-driven dynamic exchange rates (`currency.dynamic-exchange.*` config); `/currency rates` shows live values; `CurrencyManager.getTotalSupply` sums banked balances.
-- Spell cooldown persistence is split in `SpellbookListener`: cooldowns for spells with `cooldown >= 60s` are persisted to player PDC via `cd_*` keys, shorter cooldowns stay in-memory.
+- Spell cooldown persistence is split in `AbilityCatalystListener`: cooldowns for spells with `cooldown >= 60s` are persisted to player PDC via `cd_*` keys, shorter cooldowns stay in-memory.
 - Per-player volatile state cleanup is centralized in `listeners/PlayerSessionCleanupListener` (quit/kick + plugin disable loop in `IceSMPCore.disable()`).
 - `run/` contains mutable runtime artifacts (worlds, logs, plugin data); treat it as diagnostics/runtime state, not source of truth.
 - README.md is the player/admin-facing overview; TECHNICAL.md holds the full technical reference (commands, permissions, config, persistence, listener/spell tables). Prefer source files for exact current behavior.

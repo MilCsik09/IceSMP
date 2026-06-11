@@ -118,7 +118,7 @@ messages:
   job-help-setxp: "&e/job setxp <játékos> <primary|secondary> <mennyiség> &7- XP beállítása (Admin)."
   job-help-status: "&e/job status <játékos> &7- Kaszt állapot megtekintése (Admin)."
   job-help-unlockspell: "&e/job unlockspell <játékos> <spellId> &7- Varázslat feloldása (Admin)."
-  job-help-givespellbook: "&e/job givespellbook <játékos> &7- Varázskönyv átadása (Admin)."
+  job-help-givecatalyst: "&e/job givecatalyst <játékos> &7- Kaszt-specifikus Képesség Katalizátor átadása (Admin)."
   job-help-listspells: "&e/job listspells &7- Regisztrált varázslatok listája (Admin)."
   job-unknown-subcommand: "&cIsmeretlen alparancs: &f%s"
   job-invalid-slot: "&cA slot csak 'primary' vagy 'secondary' lehet."
@@ -128,7 +128,7 @@ messages:
   job-addxp-success: "&aXP hozzáadva: &f%s &7| Slot: &f%s &7| +&f%s XP &7| Új XP: &f%s &7| Szint: &f%s"
   job-setxp-success: "&aXP beállítva: &f%s &7| Slot: &f%s &7| XP: &f%s &7| Szint: &f%s"
   job-unlockspell-success: "&aVarázslat feloldva: &f%s &7-> &e%s"
-  job-givespellbook-success: "&aVarázskönyv átadva: &f%s"
+  job-givecatalyst-success: "&aKatalizátor átadva: &f%s"
   job-listspells-empty: "&eNincsenek regisztrált varázslatok a rendszerben."
   job-listspells-result: "&6Regisztrált varázslatok (%s db): &e%s"
   job-status-none: "nincs"
@@ -283,7 +283,8 @@ specializations:
     spell-unlocks:
       feast: 25
   guardian:
-    spell-unlocks: {}
+    spell-unlocks:
+      bulwark: 25
   sharpshooter:
     spell-unlocks:
       featherfoot: 25
@@ -293,7 +294,7 @@ specializations:
       angry_chicken: 30
   poisoner:
     spell-unlocks:
-      confusion: 25
+      venom_strike: 25
   phantom:
     spell-unlocks:
       hide: 25
