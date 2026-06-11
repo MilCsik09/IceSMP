@@ -187,6 +187,21 @@ factions:
   passives:
     enabled: true
     blue-hunger-slow-chance: 0.5
+  # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
+  # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
+  # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  tax:
+    enabled: true
+    interval-minutes: 60
+    rate-percent: 2.0
+    exempt:
+      - "NEUTRAL"
+  # ===== Bűn-számláló és száműzetés =====
+  # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
+  # frakcióba (örök sötét paktummal).
+  sins:
+    murder-counts: true
+    exile-threshold: 4
 
 relics:
   enabled: true

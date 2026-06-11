@@ -25,13 +25,15 @@ IceSMP.onEnable()
             ├─ mobScalingManager.load()    — mob-scaling config cache
             ├─ craftingRestrictionManager.load() — craft szabályok cache
             ├─ territoryManager.load()     — territories.yml
+            ├─ factionTreasuryManager.load() — treasury.yml
             ├─ registerListeners()
-            └─ registerCommands()          — Paper BasicCommand API (kódból, nem paper-plugin.yml-ből)
+            ├─ registerCommands()          — Paper BasicCommand API (kódból, nem paper-plugin.yml-ből)
+            └─ scheduleTaxCollection()     — global region scheduler (Paper + Folia)
 
 IceSMPCore.disable()
   ├─ minden online játékos session-állapotának takarítása (PlayerSessionCleanupListener)
   ├─ ProfileGUI.closeAll()
-  └─ currency/faction/relic/territory save()
+  └─ currency/faction/relic/territory/treasury save() + adó-task leállítása
 ```
 
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` (fő osztály), `IceSMPBootstrap`, `IceSMPLoader`.
@@ -68,6 +70,7 @@ IceSMPCore.disable()
 | `CurrencyManager` | Többvalutás egyenlegek, befizetés/kivét/utalás/váltás, item tokenek, `getTotalSupply()` | currency-balances.yml |
 | `ExchangeRateService` | Kínálat-alapú dinamikus árfolyam: `érték = base × clamp((ref/supply)^elaszticitás, min, max)`; `getRate(from,to) = value(from)/value(to)` | — (configból számol) |
 | `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
+| `FactionTreasuryManager` | Frakciókasszák (adomány + időszakos állampolgári adó, money sink); a tax a global region scheduleren fut | treasury.yml |
 | `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (progresszív görbe: az n. szintlépés ára `base-xp + (n-1)*increment`, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
 | `SpecializationManager` | Kaszt- és szakma-specializációk: feltétel-ellenőrzés (szint, frakció, sinner), kiválasztás, spec spell unlock (`specializations.<id>.spell-unlocks`) | játékos PDC |
 | `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, WoW-szerű talent-kötések (`requires-job`/`requires-spec`/`requires-profession`), respec utáni pont-visszatérítés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
@@ -117,13 +120,13 @@ inventoryból és felszabadul.
 | `/icesmp` | `ismp` | `reload` | `icesmp.admin.reload` |
 | `/currency` | `money`, `eco` | `balance`, `pay`, `set`, `exchange`, `rates` | `set`: `icesmp.currency.admin` |
 | `/bank` | `wallet`, `vault` | `balance`, `deposit`, `withdraw <valuta> <összeg>` | — |
-| `/faction` | `f` | `join`, `leave`, `set` | `set`: `icesmp.faction.admin` |
+| `/faction` | `f` | `join`, `leave`, `set`, `treasury [withdraw <összeg>]`, `donate <összeg>` | `set`/`treasury withdraw`: `icesmp.faction.admin` |
 | `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givecatalyst`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
 | `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `clear`, `addxp` | admin ágak: `icesmp.admin.profession` |
 | `/spec` | `specialization` | `list`, `choose`, `info`, `respec <class\|profession>`, `reset` | `reset`: `icesmp.admin.spec` |
 | `/talent` | `talents` | `list`, `spend <class\|profession> <talent>` | — |
 | `/profile` | `status`, `info` | — | — |
-| `/sinner` | — | `<játékos> set\|clear` | `icesmp.admin` |
+| `/sinner` | — | `<játékos> set\|clear\|add\|status` | `icesmp.admin` |
 | `/relic` | `relics` | `list`, `give` | `give`: `icesmp.relic.admin` |
 | `/territory` | `terulet` | `setcapital`, `claim`, `remove`, `list`, `info` | `icesmp.admin.territory` |
 
@@ -153,6 +156,7 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `TalentAttributeListener` | `PlayerJoinEvent` | Talent attribútum-módosítók idempotens újra-alkalmazása |
 | `TerritoryListener` | `PlayerMoveEvent` (blokk-váltásra szűrve), `BlockBreak/PlaceEvent`, `PlayerQuitEvent` | Határátlépés action bar + opcionális építésvédelem |
 | `MinionProtectionListener` | `EntityTargetLivingEntityEvent` | Idézett minion soha nem támadja a gazdáját vagy a gazda másik minionját |
+| `SinListener` | `PlayerDeathEvent` | Gyilkosság = +1 bűn; a küszöbnél automatikus száműzetés a Sötét frakcióba |
 | `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
 | `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |
 
@@ -237,7 +241,7 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `currency` | Alapvaluta, szimbólum, **fix** árfolyam + díj (fallback), item tokenek (anyag, model-data, név per valuta — RED/BLUE/NEUTRAL/DARK) |
 | `currency.dynamic-exchange` | `enabled`, `reference-supply`, `elasticity`, `min/max-multiplier`, `base-values.<VALUTA>` — a kínálat-alapú árfolyam paraméterei |
 | `messages` | (örökölt, nem használt — a futásidejű üzenetforrás a `messages.yml`) |
-| `factions` | Frakció megjelenítési nevek + `passives.enabled`, `passives.blue-hunger-slow-chance` |
+| `factions` | Frakció megjelenítési nevek + `passives.*` + `tax.*` (enabled, interval-minutes, rate-percent, exempt) + `sins.*` (murder-counts, exile-threshold) |
 | `relics` | `enabled`, `inactivity.enabled` + `expiry-days`, üzenetek, `definitions.<id>` (vizuál + triggerek + ability-id + cooldown) |
 | `mob-scaling` | `enabled`, `blocks-per-level`, `max-level`, `health/damage-per-level`, `hostile-only`, `ignored-spawn-reasons`, `name.*` |
 | `classes` | `xp.*` (per-kill, per-mob-level, secondary-share-percent, hostile-only), `leveling.*` (progresszív görbe), `specialization.required-level`, `<kaszt>.spell-unlocks` |
@@ -268,13 +272,14 @@ frissülnek garantáltan.
 | `factions.yml` | `<uuid>: FRAKCIÓ` | FactionManager |
 | `relics.yml` | `ownerships.<relicId>.owner` + `.last-seen` | RelicManager |
 | `territories.yml` | `territories.<id>`: faction, name, world, x, z, radius, capital | TerritoryManager |
+| `treasury.yml` | `treasury.<FAKCIÓ>: összeg` | FactionTreasuryManager |
 
 ### PDC kulcsok (namespace: a plugin, `icesmp`)
 
 **Játékoson:**
 `job_primary`, `job_primary_xp`, `job_secondary`, `job_secondary_xp`, `unlocked_spells`
 (vesszővel elválasztott spell idk), `selected_spell_index`, `cd_<spellId>` (hosszú spell
-cooldownok), `is_sinner`, `dark_pact`, `profession_gathering`, `profession_crafting`,
+cooldownok), `is_sinner`, `sin_count`, `dark_pact`, `profession_gathering`, `profession_crafting`,
 `profession_xp_<szakmaId>` (szakmánkénti XP), `class_spec`,
 `profession_spec`, `talents_class` és `talents_profession` (`id:rang,...` formátum).
 

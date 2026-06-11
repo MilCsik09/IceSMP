@@ -24,6 +24,14 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   - Belépéskor `dark_pact` PDC jelölő — a sinner státusz **soha többé nem törölhető**
     (a `/sinner clear` ilyenkor megtagadja), frakcióelhagyás után is megmarad
   - Admin `/faction set <player> dark` is megpecsételi a paktumot (ha a célpont online)
+- **Frakciókassza** (`FactionTreasuryManager`, `treasury.yml`): `/faction treasury` (megtekintés,
+  admin: kivét a bankba), `/faction donate <összeg>` (adomány a saját valutából)
+- **Állampolgári adó** (todo.md ötlet): időszakonként (alapból óránként) a nem mentesített
+  frakciók polgárai a saját valuta-egyenlegük 2%-át a kasszába fizetik — offline polgárok is;
+  a global region scheduleren fut (Folia-helyes); money sink a dinamikus árfolyamhoz
+- **Bűn-számláló + automatikus száműzetés** (todo.md ötlet): gyilkosság = +1 bűn
+  (`SinListener`), a küszöb (alapból 4) elérésekor automatikus száműzetés a Sötét frakcióba
+  örök paktummal + szerver-broadcast; admin: `/sinner <player> add | status`
 
 ### 2. Kaszt (class) rendszer
 - 4 alap kaszt: **Varázsló, Harcos, Íjász, Orgyilkos** (`JobType`), PDC-ben tárolva

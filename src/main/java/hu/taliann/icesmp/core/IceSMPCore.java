@@ -31,6 +31,7 @@ import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
+import hu.taliann.icesmp.listeners.SinListener;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
@@ -41,6 +42,7 @@ import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.FactionTreasuryManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MinionManager;
@@ -110,6 +112,8 @@ public final class IceSMPCore {
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
+    private final FactionTreasuryManager factionTreasuryManager;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -127,8 +131,9 @@ public final class IceSMPCore {
         this.catalystItemFactory = new CatalystItemFactory(plugin);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry, catalystItemFactory, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
-        this.metelytepoManager = new MetelytepoManager(plugin, messageManager);
+        this.metelytepoManager = new MetelytepoManager(plugin, configManager, messageManager, factionManager);
         this.minionManager = new MinionManager(plugin);
+        this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
@@ -187,8 +192,10 @@ public final class IceSMPCore {
         mobScalingManager.load();
         craftingRestrictionManager.load();
         territoryManager.load();
+        factionTreasuryManager.load();
         registerListeners();
         registerCommands();
+        scheduleTaxCollection();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
@@ -198,6 +205,11 @@ public final class IceSMPCore {
      * Disables the plugin core by saving all manager data.
      */
     public void disable() {
+        if (taxTask != null) {
+            taxTask.cancel();
+            taxTask = null;
+        }
+
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
         }
@@ -207,9 +219,31 @@ public final class IceSMPCore {
         factionManager.save();
         relicManager.save();
         territoryManager.save();
+        factionTreasuryManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
     }
 
+
+    /**
+     * Schedules the periodic faction tax on the global region scheduler,
+     * which runs on both Paper and Folia (the tax touches no entities, only
+     * in-memory balances).
+     */
+    private void scheduleTaxCollection() {
+        if (!configManager.getBoolean("factions.tax.enabled", true)) {
+            return;
+        }
+
+        final long intervalTicks = Math.max(1L, configManager.getLong("factions.tax.interval-minutes", 60L)) * 60L * 20L;
+        taxTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin,
+                task -> factionTreasuryManager.collectTaxes(),
+                intervalTicks,
+                intervalTicks
+        );
+        plugin.getLogger().info("Faction tax scheduled every "
+                + configManager.getLong("factions.tax.interval-minutes", 60L) + " minute(s).");
+    }
 
     /**
      * Registers all command handlers.
@@ -218,7 +252,7 @@ public final class IceSMPCore {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(configManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
-        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, messageManager));
+        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, messageManager));
         plugin.registerCommand("job", "Kaszt admin parancsok", List.of("class"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
         plugin.registerCommand("profile", "Játékos profil", List.of("status", "info"), new ProfileCommand(messageManager, metelytepoManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése", List.of(), new SinnerCommand(metelytepoManager, messageManager));
@@ -251,6 +285,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new TalentAttributeListener(talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
+        pluginManager.registerEvents(new SinListener(metelytepoManager, configManager, messageManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);

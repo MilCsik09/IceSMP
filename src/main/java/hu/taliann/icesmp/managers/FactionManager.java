@@ -90,6 +90,16 @@ public final class FactionManager {
     }
 
     /**
+     * Gets a snapshot of every stored player → faction assignment
+     * (used by the periodic faction tax).
+     *
+     * @return immutable copy of the assignments
+     */
+    public Map<UUID, FactionType> getFactionAssignments() {
+        return Map.copyOf(playerFactions);
+    }
+
+    /**
      * Sets the faction for a player.
      *
      * @param uuid the player UUID

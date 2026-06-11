@@ -22,12 +22,12 @@ mob szintezés) épül.
 - **Királyok és választás:** frakciónként 1 király (összesen 2 + a Sötét "Főnekromanta").
   A királyt a frakció tagjai választják X naponta; a király hirdethet raidet, adót
   állíthat be, és hadi kasszát kezel.
-- **Állampolgári kötelesség:** a Piros/Kék tagok heti "adót" fizetnek a frakció
-  kasszájába (a dinamikus árfolyam miatt ez a valutakínálatot is szabályozza — money sink!).
-  A semlegeseknek nincs kötelességük, de a frakció-bónuszaik is gyengébbek.
-- **Bűn- és száműzetés-rendszer:** a meglévő sinner flag kiterjesztése számlálóvá.
-  4–5 bűn (gyilkosság, lopás, árulás) után automatikus száműzetés a Sötét frakcióba.
-  A Sötétből visszaút csak hosszú "vezeklés" quest-lánccal lehetséges.
+- ✅ **Állampolgári kötelesség (KÉSZ):** időszakos adó a frakciókasszába a saját valuta
+  banki egyenlegéből (`factions.tax.*` config, semlegesek mentesítve) — money sink a
+  dinamikus árfolyamhoz. Kassza: `/faction treasury`, adomány: `/faction donate`.
+- ✅ **Bűn- és száműzetés-rendszer (KÉSZ, részben):** sin_count számláló, gyilkosság = +1 bűn,
+  a küszöbnél (alapból 4) automatikus száműzetés a Sötét frakcióba örök paktummal.
+  Hátra van: lopás/árulás detektálás, és a "vezeklés" quest-lánc (quest-keretrendszer kell).
 - **Frakció-reputáció:** NPC kereskedők árai a frakciók közti viszonytól függnek;
   háborúban álló frakció boltjában drágább minden.
 
@@ -110,7 +110,7 @@ már él — a World of Warcraft class/profession irányt ezek mélyítenék el:
 
 ## 8. Technikai ötletek (következő lépések)
 
-- Frakció-kassza és adórendszer (`FactionTreasuryManager`, a CurrencyManager mintájára).
+- ✅ Frakció-kassza és adórendszer (`FactionTreasuryManager`) — KÉSZ.
 - Quest-keretrendszer (config-vezérelt lépések, PDC-ben tárolt haladás) — a kaszt- és
   vezeklés-questek alapja.
 - Hologram-API integráció az árfolyam-táblákhoz (vagy TextDisplay entity, az 1.19.4+
