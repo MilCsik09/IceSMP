@@ -4,15 +4,20 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 public enum JobType {
-    WIZARD("wizard", "<dark_purple>Var\u00e1zsl\u00f3</dark_purple>"),
-    WARRIOR("warrior", "<red>Harcos</red>");
+    WIZARD("wizard", "<dark_purple>Varázsló</dark_purple>", null),
+    WARRIOR("warrior", "<red>Harcos</red>", null),
+    ARCHER("archer", "<green>Íjász</green>", null),
+    ASSASSIN("assassin", "<gray>Orgyilkos</gray>", null),
+    NECROMANCER("necromancer", "<dark_gray>Nekromanta</dark_gray>", FactionType.DARK);
 
     private final String id;
     private final Component displayName;
+    private final FactionType requiredFaction;
 
-    JobType(final String id, final String displayName) {
+    JobType(final String id, final String displayName, final FactionType requiredFaction) {
         this.id = id;
         this.displayName = MiniMessage.miniMessage().deserialize(displayName);
+        this.requiredFaction = requiredFaction;
     }
 
     public String getId() {
@@ -21,6 +26,15 @@ public enum JobType {
 
     public Component getDisplayName() {
         return displayName;
+    }
+
+    /**
+     * Gets the faction membership required to select this class.
+     *
+     * @return the required faction, or null if the class is available to everyone
+     */
+    public FactionType getRequiredFaction() {
+        return requiredFaction;
     }
 
     public static JobType fromId(final String id) {
@@ -37,5 +51,3 @@ public enum JobType {
         return null;
     }
 }
-
-

@@ -47,6 +47,7 @@ public final class ProfileBookFactory {
                     case RED -> messageManager.getMessage("system.profile.book.faction.red", "<red>Piros</red>");
                     case BLUE -> messageManager.getMessage("system.profile.book.faction.blue", "<blue>Kek</blue>");
                     case NEUTRAL -> messageManager.getMessage("system.profile.book.faction.neutral", "<dark_purple>Semleges</dark_purple>");
+                    case DARK -> messageManager.getMessage("system.profile.book.faction.dark", "<dark_gray>Sötét</dark_gray>");
                 };
 
         return Component.text()
@@ -63,6 +64,8 @@ public final class ProfileBookFactory {
                 .append(balanceLine("Kék", NamedTextColor.BLUE, currencyManager.getBalance(player, FactionType.BLUE)))
                 .append(Component.newline())
                 .append(balanceLine("Semleges", NamedTextColor.DARK_PURPLE, currencyManager.getBalance(player, FactionType.NEUTRAL)))
+                .append(Component.newline())
+                .append(balanceLine("Sötét", NamedTextColor.DARK_GRAY, currencyManager.getBalance(player, FactionType.DARK)))
                 .build();
     }
 
@@ -83,6 +86,9 @@ public final class ProfileBookFactory {
                 .append(Component.newline())
                 .append(actionButton(messageManager.get("system.profile.book.bank.withdraw-neutral.label", "WITHDRAW NEUTRAL"), NamedTextColor.DARK_PURPLE, "/bank withdraw neutral ",
                         messageManager.get("system.profile.book.bank.withdraw-neutral.hover", "Javasolja a semleges valuta kivetelt.")))
+                .append(Component.newline())
+                .append(actionButton(messageManager.get("system.profile.book.bank.withdraw-dark.label", "WITHDRAW DARK"), NamedTextColor.DARK_GRAY, "/bank withdraw dark ",
+                        messageManager.get("system.profile.book.bank.withdraw-dark.hover", "Javasolja a sotet valuta kivetelt.")))
                 .append(Component.newline())
                 .append(Component.newline())
                 .append(messageManager.getMessage("system.profile.book.bank.tip", "<dark_gray>Tipp: ezek elo muveletek, a /profile ujranyitasa frissiti az egyenleget.</dark_gray>"))

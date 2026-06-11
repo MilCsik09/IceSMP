@@ -3,10 +3,12 @@ package hu.taliann.icesmp.commands;
 import hu.taliann.icesmp.commands.currency.CurrencyBalanceSubcommand;
 import hu.taliann.icesmp.commands.currency.CurrencyExchangeSubcommand;
 import hu.taliann.icesmp.commands.currency.CurrencyPaySubcommand;
+import hu.taliann.icesmp.commands.currency.CurrencyRatesSubcommand;
 import hu.taliann.icesmp.commands.currency.CurrencySetSubcommand;
 import hu.taliann.icesmp.commands.currency.CurrencySubcommand;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TextUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -25,12 +27,14 @@ public final class CurrencyCommand implements BasicCommand {
     private final Map<String, CurrencySubcommand> subcommands = new LinkedHashMap<>();
     private final MessageManager messageManager;
 
-    public CurrencyCommand(final CurrencyManager currencyManager, final ConfigManager configManager, final MessageManager messageManager) {
+    public CurrencyCommand(final CurrencyManager currencyManager, final ConfigManager configManager,
+                           final ExchangeRateService exchangeRateService, final MessageManager messageManager) {
         this.messageManager = messageManager;
         register(new CurrencyBalanceSubcommand(currencyManager, messageManager));
         register(new CurrencyPaySubcommand(currencyManager, messageManager));
         register(new CurrencySetSubcommand(currencyManager, messageManager));
-        register(new CurrencyExchangeSubcommand(currencyManager, configManager, messageManager));
+        register(new CurrencyExchangeSubcommand(currencyManager, configManager, exchangeRateService, messageManager));
+        register(new CurrencyRatesSubcommand(currencyManager, exchangeRateService, messageManager));
     }
 
     private void register(final CurrencySubcommand subcommand) {

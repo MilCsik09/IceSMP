@@ -5,18 +5,22 @@ import hu.taliann.icesmp.commands.CurrencyCommand;
 import hu.taliann.icesmp.commands.FactionCommand;
 import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
+import hu.taliann.icesmp.commands.ProfessionCommand;
 import hu.taliann.icesmp.commands.ProfileCommand;
 import hu.taliann.icesmp.commands.RelicCommand;
 import hu.taliann.icesmp.commands.SinnerCommand;
 import hu.taliann.icesmp.gui.ProfileGUI;
 import hu.taliann.icesmp.items.SpellbookItemFactory;
+import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
+import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
+import hu.taliann.icesmp.listeners.ProfessionXpListener;
 import hu.taliann.icesmp.listeners.ProfileGUIListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
@@ -28,25 +32,33 @@ import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.AngryChickenSpell;
 import hu.taliann.icesmp.spells.ArmamentSpell;
+import hu.taliann.icesmp.spells.BoneChillSpell;
 import hu.taliann.icesmp.spells.ConfusionSpell;
 import hu.taliann.icesmp.spells.DoubleJumpSpell;
+import hu.taliann.icesmp.spells.EagleEyeSpell;
 import hu.taliann.icesmp.spells.FeastSpell;
 import hu.taliann.icesmp.spells.FeatherfootSpell;
 import hu.taliann.icesmp.spells.FriendshipSpell;
 import hu.taliann.icesmp.spells.GustSpell;
 import hu.taliann.icesmp.spells.HideSpell;
 import hu.taliann.icesmp.spells.InnerFocusSpell;
+import hu.taliann.icesmp.spells.LifeDrainSpell;
 import hu.taliann.icesmp.spells.LuckyStarSpell;
+import hu.taliann.icesmp.spells.MultishotSpell;
 import hu.taliann.icesmp.spells.RainDanceSpell;
 import hu.taliann.icesmp.spells.RootSpell;
+import hu.taliann.icesmp.spells.ShadowstepSpell;
+import hu.taliann.icesmp.spells.SmokeBombSpell;
 import hu.taliann.icesmp.spells.SunDanceSpell;
 import hu.taliann.icesmp.spells.WisplightSpell;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -77,7 +89,9 @@ public final class IceSMPCore {
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
     private final MobScalingManager mobScalingManager;
+    private final ProfessionManager professionManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
+    private final ExchangeRateService exchangeRateService;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -90,14 +104,16 @@ public final class IceSMPCore {
         this.messageManager = new MessageManager(plugin, configManager);
         this.currencyManager = new CurrencyManager(plugin, configManager);
         this.factionManager = new FactionManager(plugin);
-        this.jobManager = new JobManager(plugin);
+        this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
         this.spellbookItemFactory = new SpellbookItemFactory(plugin);
         this.spellbookListener = new SpellbookListener(plugin, jobManager, spellRegistry, spellbookItemFactory, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, messageManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
-        this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager);
+        this.professionManager = new ProfessionManager(plugin);
+        this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
+        this.exchangeRateService = new ExchangeRateService(configManager, currencyManager);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
                 spellbookListener,
                 jobManager,
@@ -123,6 +139,12 @@ public final class IceSMPCore {
         spellRegistry.register(new HideSpell(plugin, messageManager));
         spellRegistry.register(new GustSpell(messageManager));
         spellRegistry.register(new LuckyStarSpell(plugin, messageManager));
+        spellRegistry.register(new EagleEyeSpell(messageManager));
+        spellRegistry.register(new MultishotSpell(messageManager));
+        spellRegistry.register(new ShadowstepSpell(messageManager));
+        spellRegistry.register(new SmokeBombSpell(messageManager));
+        spellRegistry.register(new LifeDrainSpell(messageManager));
+        spellRegistry.register(new BoneChillSpell(messageManager));
     }
 
     /**
@@ -164,13 +186,14 @@ public final class IceSMPCore {
      */
     private void registerCommands() {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(configManager, messageManager));
-        plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, messageManager));
+        plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, messageManager));
         plugin.registerCommand("job", "Kaszt admin parancsok", List.of("class"), new JobCommand(jobManager, spellRegistry, spellbookItemFactory, spellbookListener, messageManager));
         plugin.registerCommand("profile", "Játékos profil", List.of("status", "info"), new ProfileCommand(messageManager, metelytepoManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia framework parancsok", List.of("relics"), new RelicCommand(relicManager, messageManager));
+        plugin.registerCommand("profession", "Szakma parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
     }
 
     /**
@@ -188,6 +211,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
+        pluginManager.registerEvents(new ClassXpListener(jobManager, mobScalingManager, configManager), plugin);
+        pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager), plugin);
+        pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);

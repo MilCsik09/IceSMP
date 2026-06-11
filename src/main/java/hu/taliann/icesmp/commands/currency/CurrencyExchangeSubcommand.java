@@ -1,24 +1,30 @@
 package hu.taliann.icesmp.commands.currency;
 
+import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
 
     private final CurrencyManager currencyManager;
     private final ConfigManager configManager;
+    private final ExchangeRateService exchangeRateService;
     private final MessageManager messageManager;
 
-    public CurrencyExchangeSubcommand(final CurrencyManager currencyManager, final ConfigManager configManager, final MessageManager messageManager) {
+    public CurrencyExchangeSubcommand(final CurrencyManager currencyManager, final ConfigManager configManager,
+                                      final ExchangeRateService exchangeRateService, final MessageManager messageManager) {
         this.currencyManager = currencyManager;
         this.configManager = configManager;
+        this.exchangeRateService = exchangeRateService;
         this.messageManager = messageManager;
     }
 
@@ -74,8 +80,13 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
             return true;
         }
 
-        final double rate = configManager.getDouble("currency.exchange-rate", 1.0D);
-        final double feePercent = configManager.getDouble("currency.exchange-fee-percent", 0.0D);
+        final double rate;
+        if (exchangeRateService.isEnabled()) {
+            rate = exchangeRateService.getRate(CurrencyType.fromFactionType(fromType), CurrencyType.fromFactionType(toType));
+        } else {
+            rate = configManager.getDouble("currency.exchange-rate", 1.0D);
+        }
+        final double feePercent = exchangeRateService.getFeePercent();
         if (rate <= 0.0D || feePercent < 0.0D) {
             sender.sendMessage(messageManager.get("messages.currency-exchange-config-invalid", "&cA valuta váltó beállításai hibásak."));
             return true;
@@ -94,7 +105,7 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
                 fromType.getDisplayName(),
                 received,
                 toType.getDisplayName(),
-                rate,
+                String.format(Locale.ROOT, "%.3f", rate),
                 feePercent
         ));
         return true;

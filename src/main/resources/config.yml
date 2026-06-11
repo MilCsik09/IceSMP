@@ -17,8 +17,23 @@ currency:
   default-type: "NEUTRAL"
   symbol: "⛃"
   default-balance: 0
+  # Fix árfolyam, csak akkor érvényes, ha a dynamic-exchange ki van kapcsolva.
   exchange-rate: 1.0
   exchange-fee-percent: 0.0
+  # ===== Dinamikus, kínálat-alapú árfolyam =====
+  # Egy valuta értéke: base-value * clamp((reference-supply / kínálat)^elasticity, min, max).
+  # Minél több van egy valutából a szerveren, annál kevesebbet ér a többihez képest.
+  dynamic-exchange:
+    enabled: true
+    reference-supply: 10000
+    elasticity: 0.5
+    min-multiplier: 0.25
+    max-multiplier: 4.0
+    base-values:
+      RED: 1.0
+      BLUE: 1.0
+      NEUTRAL: 1.0
+      DARK: 1.5
   item:
     material: "PAPER"
     default-model-data: 1000
@@ -33,6 +48,9 @@ currency:
       NEUTRAL:
         model-data: 1003
         display-name: "&5Semleges Token"
+      DARK:
+        model-data: 1004
+        display-name: "&8Sötét Token"
 
 messages:
   startup: "&aAz IceSMP rendszer sikeresen elindult."
@@ -160,6 +178,15 @@ factions:
     display-name: "Kék"
   neutral:
     display-name: "Semleges"
+  dark:
+    display-name: "Sötét"
+  # Passzív frakció bónuszok:
+  # RED: tűz-immunitás | BLUE: fagy-immunitás + lassabb éhség
+  # NEUTRAL: lopakodás közben láthatatlanság, nem-ellenséges mobok békések
+  # DARK: wither-immunitás, élőhalottak nem támadják
+  passives:
+    enabled: true
+    blue-hunger-slow-chance: 0.5
 
 relics:
   enabled: true
@@ -206,15 +233,67 @@ mob-scaling:
     prefix: "&7[Lvl %level%] "
     color: "WHITE"
 
-# ===== Kaszt-alapú craftolási korlátozások =====
-# required-job: kaszt azonosító (pl. "warrior", "wizard") vagy "ANY" (bármely kaszt megfelel).
+# ===== Kasztok: progresszió és szint-alapú skill feloldás =====
+# Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.
+# A spell-unlocks térkép szerint a kaszt adott szintjén a varázslat automatikusan feloldódik.
+classes:
+  xp:
+    hostile-only: true
+    per-kill: 5
+    per-mob-level: 2
+    secondary-share-percent: 50
+  wizard:
+    spell-unlocks:
+      wisplight: 2
+      root: 5
+      confusion: 10
+      rain_dance: 15
+      sun_dance: 20
+      lucky_star: 30
+  warrior:
+    spell-unlocks:
+      armament: 5
+      inner_focus: 10
+      gust: 15
+      feast: 20
+  archer:
+    spell-unlocks:
+      eagle_eye: 3
+      multishot: 8
+      double_jump: 15
+      featherfoot: 20
+  assassin:
+    spell-unlocks:
+      shadowstep: 5
+      smoke_bomb: 12
+      hide: 20
+  necromancer:
+    spell-unlocks:
+      life_drain: 5
+      bone_chill: 12
+      angry_chicken: 18
+      friendship: 25
+
+# ===== Szakmák (grind-alapú progresszió) =====
+professions:
+  xp:
+    mining-ore: 5
+    farming-harvest: 3
+    crafting-gear: 8
+    smithing: 15
+    fishing: 4
+
+# ===== Kaszt/szakma-alapú craftolási korlátozások =====
+# required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
+# required-profession: szakma azonosító (pl. "armorer") + required-profession-level.
+# Ha mindkettő meg van adva, mindkét feltételnek teljesülnie kell.
 crafting-restrictions:
   enabled: true
   notify-cooldown-seconds: 3
   rules:
     netherite-gear:
-      required-job: "ANY"
-      required-level: 30
+      required-profession: "armorer"
+      required-profession-level: 25
       materials:
         - "NETHERITE_SWORD"
         - "NETHERITE_PICKAXE"

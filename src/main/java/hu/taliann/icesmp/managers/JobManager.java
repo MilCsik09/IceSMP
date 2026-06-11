@@ -1,7 +1,10 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -10,19 +13,28 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public final class JobManager {
 
     public static final int MAX_JOB_LEVEL = 50;
 
+    private final ConfigManager configManager;
+    private final MessageManager messageManager;
+    private final FactionManager factionManager;
     private final NamespacedKey jobPrimaryKey;
     private final NamespacedKey jobPrimaryXpKey;
     private final NamespacedKey jobSecondaryKey;
     private final NamespacedKey jobSecondaryXpKey;
     private final NamespacedKey unlockedSpellsKey;
 
-    public JobManager(final JavaPlugin plugin) {
+    public JobManager(final JavaPlugin plugin, final ConfigManager configManager,
+                      final MessageManager messageManager, final FactionManager factionManager) {
+        this.configManager = configManager;
+        this.messageManager = messageManager;
+        this.factionManager = factionManager;
         this.jobPrimaryKey = new NamespacedKey(plugin, "job_primary");
         this.jobPrimaryXpKey = new NamespacedKey(plugin, "job_primary_xp");
         this.jobSecondaryKey = new NamespacedKey(plugin, "job_secondary");
@@ -75,7 +87,7 @@ public final class JobManager {
     }
 
     public boolean canSelectPrimary(final Player player, final JobType job) {
-        if (job == null || hasPrimaryJob(player)) {
+        if (job == null || hasPrimaryJob(player) || !meetsFactionRequirement(player, job)) {
             return false;
         }
 
@@ -84,12 +96,30 @@ public final class JobManager {
     }
 
     public boolean canSelectSecondary(final Player player, final JobType job) {
-        if (job == null || !hasPrimaryJob(player) || hasSecondaryJob(player) || !isPrimaryJobAtMaxLevel(player)) {
+        if (job == null || !hasPrimaryJob(player) || hasSecondaryJob(player) || !isPrimaryJobAtMaxLevel(player)
+                || !meetsFactionRequirement(player, job)) {
             return false;
         }
 
         final JobType primary = getPrimaryJob(player);
         return primary == null || primary != job;
+    }
+
+    /**
+     * Checks whether the player satisfies the faction requirement of a class
+     * (e.g. the Necromancer is only available to the Dark faction).
+     *
+     * @param player the player to check
+     * @param job the class to select
+     * @return true if the class has no faction requirement or the player is in the required faction
+     */
+    public boolean meetsFactionRequirement(final Player player, final JobType job) {
+        final FactionType requiredFaction = job == null ? null : job.getRequiredFaction();
+        if (requiredFaction == null) {
+            return true;
+        }
+
+        return factionManager.getFaction(player.getUniqueId()) == requiredFaction;
     }
 
     public boolean setPrimaryJob(final Player player, final JobType job) {
@@ -100,6 +130,7 @@ public final class JobManager {
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.set(jobPrimaryKey, PersistentDataType.STRING, job.getId());
         pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
+        applyAutoUnlocks(player, true);
         return true;
     }
 
@@ -124,7 +155,44 @@ public final class JobManager {
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         final NamespacedKey xpKey = toPrimary ? jobPrimaryXpKey : jobSecondaryXpKey;
         pdc.set(xpKey, PersistentDataType.INTEGER, Math.max(0, xp));
+        applyAutoUnlocks(player, toPrimary);
         return true;
+    }
+
+    /**
+     * Unlocks every config-mapped spell of the given job slot whose required level
+     * has been reached. Mapping lives under 'classes.&lt;jobId&gt;.spell-unlocks' in config.yml.
+     *
+     * @param player the player to check
+     * @param primary true for the primary slot, false for the secondary
+     */
+    public void applyAutoUnlocks(final Player player, final boolean primary) {
+        final JobType job = primary ? getPrimaryJob(player) : getSecondaryJob(player);
+        if (job == null || configManager.getConfiguration() == null) {
+            return;
+        }
+
+        final ConfigurationSection unlockSection = configManager.getConfiguration()
+                .getConfigurationSection("classes." + job.getId() + ".spell-unlocks");
+        if (unlockSection == null) {
+            return;
+        }
+
+        final int level = getLevel(player, primary);
+        for (final String spellId : unlockSection.getKeys(false)) {
+            final int requiredLevel = unlockSection.getInt(spellId, Integer.MAX_VALUE);
+            if (level < requiredLevel || hasUnlockedSpell(player, spellId)) {
+                continue;
+            }
+
+            if (unlockSpell(player, spellId)) {
+                player.sendMessage(messageManager.getMessage(
+                        "job-spell-auto-unlocked",
+                        "&aÚj képesség feloldva: &e{spell} &7(szint {level})",
+                        Map.of("spell", spellId.toLowerCase(Locale.ROOT), "level", String.valueOf(requiredLevel))
+                ));
+            }
+        }
     }
 
     public boolean setSecondaryJob(final Player player, final JobType job) {
@@ -136,6 +204,7 @@ public final class JobManager {
 
         pdc.set(jobSecondaryKey, PersistentDataType.STRING, job.getId());
         pdc.set(jobSecondaryXpKey, PersistentDataType.INTEGER, 0);
+        applyAutoUnlocks(player, false);
         return true;
     }
 

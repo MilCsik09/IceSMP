@@ -50,10 +50,53 @@ messages:
         furnace-input: "<gray>DEBUG: {type} -> {amount}x {input}</gray>"
     wisplight:
       name: "Wisplight"
+    eagle_eye:
+      name: "Sasszem"
+      activated: "<green>Sasszem aktív: élesedik a látásod és gyorsulnak a lépteid.</green>"
+    multishot:
+      name: "Sortűz"
+    shadowstep:
+      name: "Árnyéklépés"
+    smoke_bomb:
+      name: "Füstbomba"
+    life_drain:
+      name: "Életszívás"
+    bone_chill:
+      name: "Csontfagy"
+      activated: "<dark_gray>A csontfagy dermesztő hulláma söpör végig a környezeteden.</dark_gray>"
 
   crafting:
     restricted: "&cEhhez a tárgyhoz &f{job} &ckaszt szükséges (min. &f{level}&c. szint)."
     restricted-any: "&cEhhez a tárgyhoz legalább &f{level}&c. szintű kaszt szükséges."
+    restricted-profession: "&cEhhez a tárgyhoz &f{profession} &cszakma szükséges (min. &f{level}&c. szint)."
+
+  job-spell-auto-unlocked: "&aÚj képesség feloldva: &e{spell} &7(szint {level})"
+
+  profession-help-header: "&6/profession &7- Elérhető parancsok:"
+  profession-help-join: "&e/profession join <szakma> &7- Szakma kiválasztása."
+  profession-help-info: "&e/profession info &7- Szakma állapot megtekintése."
+  profession-help-list: "&e/profession list &7- Elérhető szakmák listája."
+  profession-help-set: "&e/profession set <játékos> <szakma|none> &7- Szakma beállítása (Admin)."
+  profession-help-addxp: "&e/profession addxp <játékos> <mennyiség> &7- XP hozzáadása (Admin)."
+  profession-unknown-subcommand: "&cIsmeretlen alparancs: &f%s"
+  profession-join-usage: "&cHasználat: /profession join <szakma>"
+  profession-unknown: "&cIsmeretlen szakma: &f%s"
+  profession-already-set: "&cMár van szakmád. Szakmaváltást csak admin végezhet."
+  profession-join-success: "&aSzakma kiválasztva:"
+  profession-none: "&eNincs szakmád. Válassz: &f/profession join <szakma>"
+  profession-info: "&6Szakmád: &f{profession} &7| Szint: &f{level}&7/&f{max} &7| XP: &f{xp}"
+  profession-list: "&6Elérhető szakmák: &e%s"
+  profession-set-usage: "&cHasználat: /profession set <játékos> <szakma|none>"
+  profession-set-cleared: "&aSzakma törölve: &f%s"
+  profession-set-success: "&aSzakma beállítva: &f%s &7-> &e%s"
+  profession-addxp-usage: "&cHasználat: /profession addxp <játékos> <mennyiség>"
+  profession-addxp-failed: "&cNem sikerült XP-t adni (nincs szakma vagy hibás összeg)."
+  profession-addxp-success: "&aXP hozzáadva: &f%s &7| +&f%s XP &7| Szint: &f%s"
+
+  currency-rates-static: "&eA dinamikus árfolyam ki van kapcsolva; fix árfolyam érvényes."
+  currency-rates-header: "&6Aktuális árfolyamok (kínálat alapú):"
+  currency-rates-line: "&e%s &7| Kínálat: &f%s &7| Érték: &f%s &7| 1 egység = &f%s %s"
+  currency-help-rates: "&e/currency rates &7- Aktuális árfolyamok megtekintése."
 
   admin:
     icesmp:

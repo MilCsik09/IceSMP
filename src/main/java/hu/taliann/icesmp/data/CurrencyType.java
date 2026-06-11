@@ -5,7 +5,8 @@ import org.bukkit.Material;
 public enum CurrencyType {
     RED(FactionType.RED, 1001),
     BLUE(FactionType.BLUE, 1002),
-    NEUTRAL(FactionType.NEUTRAL, 1003);
+    NEUTRAL(FactionType.NEUTRAL, 1003),
+    DARK(FactionType.DARK, 1004);
 
     private final FactionType factionType;
     private final int customModelData;

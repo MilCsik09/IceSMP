@@ -70,7 +70,17 @@ public final class JobCraftRestrictionListener implements Listener {
             return;
         }
 
-        final String levelText = String.valueOf(rule.requiredLevel());
+        if (craftingRestrictionManager.failsProfessionRequirement(player, rule)) {
+            final String professionName = PlainTextComponentSerializer.plainText().serialize(rule.requiredProfession().getDisplayName());
+            player.sendMessage(messageManager.getMessage(
+                    "crafting.restricted-profession",
+                    "&cEhhez a tárgyhoz &f{profession} &cszakma szükséges (min. &f{level}&c. szint).",
+                    Map.of("profession", professionName, "level", String.valueOf(rule.requiredProfessionLevel()))
+            ));
+            return;
+        }
+
+        final String levelText = String.valueOf(rule.requiredJobLevel());
         if (rule.requiredJob() == null) {
             player.sendMessage(messageManager.getMessage(
                     "crafting.restricted-any",

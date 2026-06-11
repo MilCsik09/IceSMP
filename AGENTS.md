@@ -50,7 +50,11 @@ Set-Location "C:\Users\csikm\Desktop\IceSMP"
 - `RelicAbilityRegistry` exists, but no abilities are registered yet; trigger configs referencing `ability-id` will no-op with warning.
 - `RelicManager.save()` persists relic ownership records to `relics.yml`; expired (default 14+ day inactive) relics are removed from the holder's inventory on join with a smoke effect.
 - `MobScalingManager` + `MobScalingListener` implement distance-based mob leveling (`mob-scaling.*` config); levels are tagged on entities via the `mob_level` PDC key.
-- `CraftingRestrictionManager` + `JobCraftRestrictionListener` enforce job/level based crafting rules (`crafting-restrictions.*` config) for both crafting table and smithing table results.
+- `CraftingRestrictionManager` + `JobCraftRestrictionListener` enforce job/profession level based crafting rules (`crafting-restrictions.*` config) for both crafting table and smithing table results.
+- `JobType` has 5 classes (wizard, warrior, archer, assassin, necromancer); `JobType.getRequiredFaction()` gates faction-locked classes (necromancer -> DARK). `JobManager.setXp` auto-unlocks spells mapped under `classes.<jobId>.spell-unlocks`; class XP comes from kills via `ClassXpListener`.
+- `ProfessionManager` (PDC keys `profession`, `profession_xp`) + `ProfessionXpListener` + `/profession` command implement grind professions (armorer, miner, farmer, fisherman).
+- `FactionType`/`CurrencyType` include DARK; `FactionPassiveListener` applies passive faction bonuses (`factions.passives.*` config).
+- `ExchangeRateService` computes supply-driven dynamic exchange rates (`currency.dynamic-exchange.*` config); `/currency rates` shows live values; `CurrencyManager.getTotalSupply` sums banked balances.
 - Spell cooldown persistence is split in `SpellbookListener`: cooldowns for spells with `cooldown >= 60s` are persisted to player PDC via `cd_*` keys, shorter cooldowns stay in-memory.
 - Per-player volatile state cleanup is centralized in `listeners/PlayerSessionCleanupListener` (quit/kick + plugin disable loop in `IceSMPCore.disable()`).
 - `run/` contains mutable runtime artifacts (worlds, logs, plugin data); treat it as diagnostics/runtime state, not source of truth.

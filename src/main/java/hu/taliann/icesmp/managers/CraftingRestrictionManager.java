@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CraftingRule;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.ProfessionType;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -17,25 +18,29 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manager for job/level based crafting restrictions.
+ * Manager for job/profession level based crafting restrictions.
  * Rules are loaded from the 'crafting-restrictions' config section and matched
- * against crafting and smithing results.
+ * against crafting and smithing results. Every requirement present on a rule
+ * (class and/or profession) must be satisfied.
  */
 public final class CraftingRestrictionManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final JobManager jobManager;
+    private final ProfessionManager professionManager;
     private final List<CraftingRule> rules = new ArrayList<>();
     private final Map<UUID, Long> lastNotifyMillis = new ConcurrentHashMap<>();
 
     private boolean enabled;
     private long notifyCooldownMillis;
 
-    public CraftingRestrictionManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager) {
+    public CraftingRestrictionManager(final JavaPlugin plugin, final ConfigManager configManager,
+                                      final JobManager jobManager, final ProfessionManager professionManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.jobManager = jobManager;
+        this.professionManager = professionManager;
     }
 
     public void load() {
@@ -77,18 +82,45 @@ public final class CraftingRestrictionManager {
                 continue;
             }
 
-            final String rawJob = ruleSection.getString("required-job", "ANY");
+            final boolean hasJobRequirement = ruleSection.contains("required-job") || ruleSection.contains("required-level");
             JobType requiredJob = null;
-            if (rawJob != null && !"ANY".equalsIgnoreCase(rawJob.trim())) {
-                requiredJob = JobType.fromId(rawJob.trim());
-                if (requiredJob == null) {
-                    plugin.getLogger().warning("Unknown job '" + rawJob + "' in crafting rule '" + ruleId + "'; skipping.");
+            if (hasJobRequirement) {
+                final String rawJob = ruleSection.getString("required-job", "ANY");
+                if (rawJob != null && !"ANY".equalsIgnoreCase(rawJob.trim())) {
+                    requiredJob = JobType.fromId(rawJob.trim());
+                    if (requiredJob == null) {
+                        plugin.getLogger().warning("Unknown job '" + rawJob + "' in crafting rule '" + ruleId + "'; skipping.");
+                        continue;
+                    }
+                }
+            }
+            final int requiredJobLevel = Math.max(1, ruleSection.getInt("required-level", 1));
+
+            ProfessionType requiredProfession = null;
+            if (ruleSection.contains("required-profession")) {
+                final String rawProfession = ruleSection.getString("required-profession", "");
+                requiredProfession = ProfessionType.fromId(rawProfession);
+                if (requiredProfession == null) {
+                    plugin.getLogger().warning("Unknown profession '" + rawProfession + "' in crafting rule '" + ruleId + "'; skipping.");
                     continue;
                 }
             }
+            final int requiredProfessionLevel = Math.max(1, ruleSection.getInt("required-profession-level", 1));
 
-            final int requiredLevel = Math.max(1, ruleSection.getInt("required-level", 1));
-            rules.add(new CraftingRule(ruleId.toLowerCase(Locale.ROOT), materials, requiredJob, requiredLevel));
+            if (!hasJobRequirement && requiredProfession == null) {
+                plugin.getLogger().warning("Crafting rule '" + ruleId + "' has no requirements; skipping.");
+                continue;
+            }
+
+            rules.add(new CraftingRule(
+                    ruleId.toLowerCase(Locale.ROOT),
+                    materials,
+                    hasJobRequirement,
+                    requiredJob,
+                    requiredJobLevel,
+                    requiredProfession,
+                    requiredProfessionLevel
+            ));
         }
 
         plugin.getLogger().info("Loaded " + rules.size() + " crafting restriction rule(s).");
@@ -121,21 +153,46 @@ public final class CraftingRestrictionManager {
         return null;
     }
 
+    /**
+     * Checks whether the player fails the profession part of a rule
+     * (used by the listener to pick the right feedback message).
+     *
+     * @param player the player
+     * @param rule the violated rule
+     * @return true if the profession requirement is present and unmet
+     */
+    public boolean failsProfessionRequirement(final Player player, final CraftingRule rule) {
+        return rule.requiredProfession() != null && !meetsProfessionRequirement(player, rule);
+    }
+
     private boolean meetsRequirement(final Player player, final CraftingRule rule) {
+        if (rule.hasJobRequirement() && !meetsJobRequirement(player, rule)) {
+            return false;
+        }
+
+        return rule.requiredProfession() == null || meetsProfessionRequirement(player, rule);
+    }
+
+    private boolean meetsJobRequirement(final Player player, final CraftingRule rule) {
         final JobType requiredJob = rule.requiredJob();
         if (requiredJob == null) {
-            return hasJobAtLevel(player, true, rule.requiredLevel()) || hasJobAtLevel(player, false, rule.requiredLevel());
+            return hasJobAtLevel(player, true, rule.requiredJobLevel()) || hasJobAtLevel(player, false, rule.requiredJobLevel());
         }
 
         if (jobManager.hasPrimaryJob(player)
                 && jobManager.getPrimaryJob(player) == requiredJob
-                && jobManager.getPrimaryLevel(player) >= rule.requiredLevel()) {
+                && jobManager.getPrimaryLevel(player) >= rule.requiredJobLevel()) {
             return true;
         }
 
         return jobManager.hasSecondaryJob(player)
                 && jobManager.getSecondaryJob(player) == requiredJob
-                && jobManager.getSecondaryLevel(player) >= rule.requiredLevel();
+                && jobManager.getSecondaryLevel(player) >= rule.requiredJobLevel();
+    }
+
+    private boolean meetsProfessionRequirement(final Player player, final CraftingRule rule) {
+        return professionManager.getProfession(player) == rule.requiredProfession()
+                && professionManager.getLevel(player) >= rule.requiredProfessionLevel();
     }
 
     private boolean hasJobAtLevel(final Player player, final boolean primary, final int requiredLevel) {

@@ -164,6 +164,25 @@ public final class CurrencyManager {
         return new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(amount);
     }
 
+    /**
+     * Gets the total circulating supply of a currency across every stored wallet.
+     * Used by the dynamic exchange rate model: scarcer currencies become more valuable.
+     *
+     * @param currencyType the currency to sum
+     * @return the total banked amount of the currency on the server
+     */
+    public double getTotalSupply(final CurrencyType currencyType) {
+        if (currencyType == null) {
+            return 0.0D;
+        }
+
+        double total = 0.0D;
+        for (final EnumMap<CurrencyType, Double> playerBalances : balances.values()) {
+            total += playerBalances.getOrDefault(currencyType, 0.0D);
+        }
+        return total;
+    }
+
     public void setBalance(final Player player, final long amount) {
         setBalance(player, defaultCurrencyType, amount);
     }

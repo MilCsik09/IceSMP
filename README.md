@@ -145,6 +145,17 @@ A világ a spawn ponttól távolodva fokozatosan veszélyesebbé válik.
 - [x] opcionális craftolási korlátozások (`crafting-restrictions` config szekció)
 - [x] szint vagy kaszt alapú tiltások (craft + smithing eredmény blokkolás)
 
+### Fázis 6 – Kasztok, szakmák, gazdaság
+- [x] 5 kaszt: Varázsló, Harcos, Íjász, Orgyilkos, Nekromanta (utóbbi csak Sötét frakcióval)
+- [x] kaszt XP mob ölésből (skálázott mobok bónusz XP-t adnak), szint-alapú automatikus skill-feloldás
+- [x] 6 új kaszt-skill: Sasszem, Sortűz, Árnyéklépés, Füstbomba, Életszívás, Csontfagy
+- [x] szakma rendszer (`/profession`): Kovács, Bányász, Földműves, Halász — tevékenység-alapú XP
+- [x] netherite craft a magas szintű Kovácshoz kötve
+- [x] 4. frakció: Sötét (saját valutával és passzívokkal)
+- [x] passzív frakció bónusz listener (tűz/fagy/wither immunitás, éhség-lassítás, lopakodó láthatatlanság)
+- [x] dinamikus, kínálat-alapú valutaárfolyam (`/currency rates`)
+- további ötletek: lásd `ideas.md`
+
 ## Konvenciók
 
 - A rendszer legyen **moduláris** és könnyen tesztelhető.
