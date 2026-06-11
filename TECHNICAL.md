@@ -51,7 +51,7 @@ IceSMPCore.disable()
 | `managers` | Üzleti logika és állapot (lásd 2. fejezet) |
 | `listeners` | Bukkit/Folia eseménykezelők — vékonyak, managerbe delegálnak |
 | `commands` | Paper `BasicCommand` implementációk; nagy domainekhez router + subcommand split (`commands/currency`, `commands/faction`, `commands/job`) |
-| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 120 spell (kézzel írt osztályok + `SpellCatalog` deklaratív definíciók a `ConfiguredSpell`/`ProjectileBurstSpell`/`BlinkSpell` építőelemekből), `SpellTargetingUtil` |
+| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 124 spell (kézzel írt osztályok + `SpellCatalog` deklaratív definíciók a `ConfiguredSpell`/`ProjectileBurstSpell`/`BlinkSpell` építőelemekből), `SpellTargetingUtil` |
 | `relics` | Relic framework: definíciók, triggerek, ability registry, ownership rekord |
 | `items` | Item factory-k PDC tagekkel: `CurrencyItemFactory`, `RelicItemFactory`, `CatalystItemFactory` |
 | `gui` | `ProfileGUI`, `JobGUI` + holderek, `ProfileBookFactory` |
@@ -73,10 +73,11 @@ IceSMPCore.disable()
 | `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
 | `ProfessionManager` | Szakma + XP/szint (max 50), tevékenység-alapú XP jóváírás | játékos PDC |
 | `CraftingRestrictionManager` | Config-vezérelt craft szabályok: kaszt- és/vagy szakma-követelmény anyagonként; üzenet-throttle | — |
-| `SpellRegistry` | A 120 regisztrált spell nyilvántartása id szerint | — |
+| `SpellRegistry` | A 124 regisztrált spell nyilvántartása id szerint | — |
 | `RelicManager` | Relic definíciók (config + beépített seed), singleton tulajdonjog, 14 napos inaktivitás-lejárat, belépéskori sweep | relics.yml |
 | `RelicCooldownService` | Per játékos/relic/trigger cooldownok | memória |
 | `MetelytepoManager` | Mételytépő mechanikák: sinner flag, **dark pact** (örök sinner), Justice/Honor Eye képességek, fagyasztás | játékos PDC + memória |
+| `MinionManager` | Idézett minionok gazda-jelölése (`minion_owner` PDC); a hűség-szabályokat a `MinionProtectionListener` érvényesíti | entitás PDC |
 | `MobScalingManager` | Távolság-alapú mob szint: attribútum skálázás, névcímke, `mob_level` PDC | entitás PDC |
 | `TerritoryManager` | Kör alakú frakcióterületek és fővárosok, `getTerritoryAt(Location)` | territories.yml |
 
@@ -143,6 +144,7 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `FactionPassiveListener` | `EntityDamageEvent`, `FoodLevelChangeEvent`, `PlayerToggleSneakEvent`, `EntityTargetLivingEntityEvent` | Frakció passzívok |
 | `TalentAttributeListener` | `PlayerJoinEvent` | Talent attribútum-módosítók idempotens újra-alkalmazása |
 | `TerritoryListener` | `PlayerMoveEvent` (blokk-váltásra szűrve), `BlockBreak/PlaceEvent`, `PlayerQuitEvent` | Határátlépés action bar + opcionális építésvédelem |
+| `MinionProtectionListener` | `EntityTargetLivingEntityEvent` | Idézett minion soha nem támadja a gazdáját vagy a gazda másik minionját |
 | `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
 | `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |
 
@@ -155,7 +157,7 @@ A cast pipeline: kiválasztott spell → `canCast` → költség-ellenőrzés (`
 cooldown indítás. A **60 mp-nél hosszabb** cooldownok PDC-be (`cd_<spellId>`) perzisztálódnak,
 a rövidebbek memóriában élnek.
 
-**Összesen 120 spell, 12 poolban (4 kaszt + 8 spec), poolonként pontosan 10 egyedi képesség.**
+**Összesen 124 spell, 12 poolban (4 kaszt + 8 spec), poolonként legalább 10 egyedi képesség (a Nekromanta és a Vadmester 12-t kap az idézésekkel).**
 A bővítő poolokat a `spells/SpellCatalog` definiálja deklaratívan a generikus építőelemekből:
 `ConfiguredSpell` (builder: self/target/AOE célzás, sebzés, gyógyítás, ignite/fagyasztás,
 villám, lökés/felrántás/odahúzás, dash, potion effekt listák, partikula+hang),
@@ -270,7 +272,7 @@ cooldownok), `is_sinner`, `dark_pact`, `profession`, `profession_xp`, `class_spe
 **Itemen:** `currency_type`; `relic_id`, `relic_owner`, `relic_created_at`;
 `is_ability_catalyst`, `unique_id`; armament tag (idézett kard jelölése).
 
-**Entitáson:** `mob_level` (skálázott mob szintje).
+**Entitáson:** `mob_level` (skálázott mob szintje), `minion_owner` (idézett minion gazdájának UUID-ja).
 
 **Attribútum módosítók (játékoson, talentekből):** `icesmp:talent_max_health`,
 `icesmp:talent_movement_speed`, `icesmp:talent_attack_damage` — belépéskor remove+add

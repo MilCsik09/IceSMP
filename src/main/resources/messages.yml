@@ -163,6 +163,12 @@ messages:
       name: "Kísértetforma"
     soul_harvest:
       name: "Lélekaratás"
+    raise_horde:
+      name: "Holtak Hada"
+      activated: "<dark_gray>A föld megnyílik: a holtak hada engedelmeskedik a hívásodnak.</dark_gray>"
+    bone_archers:
+      name: "Csontíjászok"
+      activated: "<dark_gray>Csontíjászok emelkednek ki a sírjukból, hogy szolgáljanak.</dark_gray>"
     # --- Berserker ---
     rage:
       name: "Düh"
@@ -240,6 +246,12 @@ messages:
       name: "Sólyomcsapás"
     king_of_beasts:
       name: "Vadak Ura"
+    panda_guard:
+      name: "Pandaőrség"
+      activated: "<dark_green>Két harcias panda csörtet a segítségedre.</dark_green>"
+    wild_pack:
+      name: "Vad Falka"
+      activated: "<dark_green>Vad falka tör elő a vadonból, és melléd szegődik.</dark_green>"
     # --- Méregkeverő ---
     toxin_dart:
       name: "Toxinnyíl"

@@ -22,6 +22,7 @@ import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
+import hu.taliann.icesmp.listeners.MinionProtectionListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
 import hu.taliann.icesmp.listeners.ProfessionXpListener;
@@ -42,6 +43,7 @@ import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.RelicManager;
@@ -100,6 +102,7 @@ public final class IceSMPCore {
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
+    private final MinionManager minionManager;
     private final MobScalingManager mobScalingManager;
     private final ProfessionManager professionManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
@@ -125,6 +128,7 @@ public final class IceSMPCore {
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry, catalystItemFactory, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, messageManager);
+        this.minionManager = new MinionManager(plugin);
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
         this.professionManager = new ProfessionManager(plugin);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
@@ -168,6 +172,7 @@ public final class IceSMPCore {
         spellRegistry.register(new BulwarkSpell(messageManager));
         spellRegistry.register(new VenomStrikeSpell(messageManager));
         SpellCatalog.registerExpansionSpells(spellRegistry, messageManager);
+        SpellCatalog.registerSummonSpells(spellRegistry, messageManager, plugin, minionManager);
     }
 
     /**
@@ -245,6 +250,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);

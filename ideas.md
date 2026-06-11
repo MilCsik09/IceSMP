@@ -93,6 +93,21 @@ mob szintezés) épül.
 - **Szezonális liga:** 2–3 havonta pontverseny a frakciók közt (raid győzelmek, gazdasági
   mutatók, boss killek) — a győztes frakció kap egy szezonális kozmetikai relikviát.
 
+## 7.5 WoW-stílusú pet/idéző rendszer továbbfejlesztése
+
+Az alap idéző-keretrendszer (MinionManager, zombihorda, csontíjászok, pandaőrség, vad falka)
+már él — a World of Warcraft class/profession irányt ezek mélyítenék el:
+
+- **Pet parancsok**: a katalizátorral sneak+jobb katt a saját minionra → mód-váltás
+  (támadás / kövess / maradj), mint a WoW vadász pet-vezérlése.
+- **Megnevezett, fejlődő pet**: a Vadmester állandó társa (Farkashívás) szintet léphetne a
+  gazda killjeiből; név, szint a custom name-ben ("Bodri [Lv 7]").
+- **Nekromanta lélek-erőforrás**: a minionok halálakor "lélekszilánk" gyűlik, amiből
+  erősebb idézések (pl. Wither Skeleton bajnok) fizethetők.
+- **Idézés-limitek**: egyszerre max N aktív minion / játékos (spam-védelem raidekben).
+- **Specializáció-szinergiák**: a talentek hassanak a minionokra is (pl. Életerő talent →
+  minion +HP), ahogy a WoW-ban a pet skálázódik a gazdával.
+
 ## 8. Technikai ötletek (következő lépések)
 
 - Frakció-kassza és adórendszer (`FactionTreasuryManager`, a CurrencyManager mintájára).

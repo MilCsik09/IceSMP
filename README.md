@@ -68,7 +68,7 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
 
-Minden képességnek költsége (éhség vagy XP) és visszatöltési ideje van. 120 képesség van a
+Minden képességnek költsége (éhség vagy XP) és visszatöltési ideje van. 124 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
 átfedés a kasztok között.
 

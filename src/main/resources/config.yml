@@ -320,8 +320,10 @@ specializations:
       dread_aura: 32
       bone_spear: 34
       plague_touch: 36
+      raise_horde: 38
       death_pact: 39
       wraith_form: 42
+      bone_archers: 44
       soul_harvest: 45
   berserker:
     spell-unlocks:
@@ -367,9 +369,11 @@ specializations:
       angry_chicken: 30
       primal_bond: 32
       thick_hide: 34
+      panda_guard: 35
       predator_senses: 37
       stampede: 39
       falcon_strike: 42
+      wild_pack: 43
       king_of_beasts: 45
   poisoner:
     spell-unlocks:

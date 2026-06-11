@@ -1,9 +1,18 @@
 package hu.taliann.icesmp.spells;
 
+import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.entity.AbstractSkeleton;
+import org.bukkit.entity.Panda;
+import org.bukkit.entity.Skeleton;
+import org.bukkit.entity.Wolf;
+import org.bukkit.entity.Zombie;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffectType;
 
 /**
@@ -33,6 +42,58 @@ public final class SpellCatalog {
         registerBeastMaster(registry, mm);
         registerPoisoner(registry, mm);
         registerPhantom(registry, mm);
+    }
+
+    /**
+     * Summoning spells (WoW-style combat pets): the necromancer raises undead
+     * minions, the beast master calls wild animals. Registered separately
+     * because they need the plugin instance and the MinionManager.
+     */
+    public static void registerSummonSpells(final SpellRegistry registry, final MessageManager mm,
+                                            final JavaPlugin plugin, final MinionManager minionManager) {
+        // --- NEKROMANTA idézések ---
+        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+                "raise_horde", "Holtak Hada", 240, SpellCostType.XP, 90,
+                Zombie.class, 4, 45,
+                (mob, owner) -> {
+                    final Zombie zombie = (Zombie) mob;
+                    zombie.setShouldBurnInDay(false);
+                    zombie.setAdult();
+                },
+                Particle.SOUL, Sound.ENTITY_ZOMBIE_AMBIENT, 0.7F,
+                "<dark_gray>A föld megnyílik: a holtak hada engedelmeskedik a hívásodnak.</dark_gray>"));
+        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+                "bone_archers", "Csontíjászok", 240, SpellCostType.XP, 100,
+                Skeleton.class, 2, 45,
+                (mob, owner) -> {
+                    final AbstractSkeleton skeleton = (AbstractSkeleton) mob;
+                    skeleton.setShouldBurnInDay(false);
+                    skeleton.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
+                    skeleton.getEquipment().setItemInMainHandDropChance(0.0F);
+                },
+                Particle.SOUL_FIRE_FLAME, Sound.ENTITY_SKELETON_AMBIENT, 0.7F,
+                "<dark_gray>Csontíjászok emelkednek ki a sírjukból, hogy szolgáljanak.</dark_gray>"));
+
+        // --- VADMESTER idézések ---
+        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+                "panda_guard", "Pandaőrség", 240, SpellCostType.HUNGER, 8,
+                Panda.class, 2, 40,
+                (mob, owner) -> {
+                    final Panda panda = (Panda) mob;
+                    panda.setMainGene(Panda.Gene.AGGRESSIVE);
+                    panda.setHiddenGene(Panda.Gene.AGGRESSIVE);
+                },
+                Particle.CLOUD, Sound.ENTITY_PANDA_AGGRESSIVE_AMBIENT, 1.0F,
+                "<dark_green>Két harcias panda csörtet a segítségedre.</dark_green>"));
+        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+                "wild_pack", "Vad Falka", 240, SpellCostType.HUNGER, 9,
+                Wolf.class, 3, 40,
+                (mob, owner) -> {
+                    final Wolf wolf = (Wolf) mob;
+                    wolf.setAngry(true);
+                },
+                Particle.CLOUD, Sound.ENTITY_WOLF_GROWL, 0.8F,
+                "<dark_green>Vad falka tör elő a vadonból, és melléd szegődik.</dark_green>"));
     }
 
     // ===== VARÁZSLÓ (wizard) =====
