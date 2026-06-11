@@ -296,7 +296,22 @@ public final class JobManager {
     }
 
     private int getLevel(final int xp) {
-        return Math.min(MAX_JOB_LEVEL, (Math.max(0, xp) / 100) + 1);
+        final int baseXp = Math.max(1, configManager.getInt("classes.leveling.base-xp", 100));
+        final int increment = Math.max(0, configManager.getInt("classes.leveling.increment-per-level", 20));
+
+        int level = 1;
+        int remaining = Math.max(0, xp);
+        while (level < MAX_JOB_LEVEL) {
+            // Progressive curve: level n -> n+1 costs base-xp + (n-1) * increment XP.
+            final int levelCost = baseXp + ((level - 1) * increment);
+            if (remaining < levelCost) {
+                break;
+            }
+            remaining -= levelCost;
+            level++;
+        }
+
+        return level;
     }
 }
 

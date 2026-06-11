@@ -242,6 +242,10 @@ classes:
     per-kill: 5
     per-mob-level: 2
     secondary-share-percent: 50
+  # WoW-szerű progresszív szintgörbe: az n. szintlépés ára base-xp + (n-1) * increment.
+  leveling:
+    base-xp: 100
+    increment-per-level: 20
   specialization:
     # Az elsődleges kaszt ezen a szinten specializálódhat (/spec choose).
     required-level: 25
@@ -299,6 +303,8 @@ classes:
 # örök bűnös (dark pact) jelöléssel választható. A spec-spellek a kaszt
 # szintjéhez kötve oldódnak fel.
 specializations:
+  # A /spec respec ára a játékos saját frakcióvalutájában (banki egyenlegből).
+  respec-cost: 100
   elementalist:
     spell-unlocks:
       sun_dance: 25
@@ -401,14 +407,18 @@ specializations:
       spectre: 45
 
 # ===== Talentek =====
-# Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár a szakma szintekből
-# termel pontot (points-per-levels szintenként 1 pont).
+# Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár az összes szakma
+# szintjéből termel pontot (points-per-levels szintenként 1 pont).
 # Effektek: max-health, movement-speed, attack-damage (attribútum módosítók),
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
+# WoW-szerű kötések: requires-job / requires-spec / requires-profession —
+# csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
+# Respec után a spec-talentek pontjai automatikusan visszatérülnek.
 talents:
   class:
     points-per-levels: 5
     definitions:
+      # --- Általános kaszt-talentek ---
       vitality:
         display-name: "Életerő"
         effect: "max-health"
@@ -429,6 +439,68 @@ talents:
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 4
+      # --- Kaszt-kötött talentek ---
+      weapon_mastery:
+        display-name: "Fegyvermesteri Fokozat"
+        requires-job: "warrior"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      fleet_hunter:
+        display-name: "Fürge Vadász"
+        requires-job: "archer"
+        effect: "movement-speed"
+        per-rank: 0.005
+        max-rank: 3
+      # --- Specializáció-kötött talentek (1 / spec) ---
+      elemental_attunement:
+        display-name: "Elemi Ráhangolódás"
+        requires-spec: "elementalist"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      soul_pact:
+        display-name: "Lélekpaktum"
+        requires-spec: "necromancer"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      brutality:
+        display-name: "Brutalitás"
+        requires-spec: "berserker"
+        effect: "attack-damage"
+        per-rank: 1.0
+        max-rank: 3
+      stalwart:
+        display-name: "Rendíthetetlen"
+        requires-spec: "guardian"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      fleetfoot:
+        display-name: "Szélvész Léptek"
+        requires-spec: "sharpshooter"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
+      pack_leader:
+        display-name: "Falkavezér"
+        requires-spec: "beast_master"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      viper_reflexes:
+        display-name: "Vipera Reflexek"
+        requires-spec: "poisoner"
+        effect: "movement-speed"
+        per-rank: 0.006
+        max-rank: 4
+      ghostwalk:
+        display-name: "Kísértetjárás"
+        requires-spec: "phantom"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
   profession:
     points-per-levels: 10
     definitions:
@@ -442,15 +514,38 @@ talents:
         effect: "max-health"
         per-rank: 1.0
         max-rank: 3
+      # --- Szakma-kötött talentek ---
+      miners_endurance:
+        display-name: "Bányász Állóképesség"
+        requires-profession: "miner"
+        effect: "max-health"
+        per-rank: 1.0
+        max-rank: 2
+      arcane_insight:
+        display-name: "Arkán Belátás"
+        requires-profession: "enchanter"
+        effect: "class-xp-bonus"
+        per-rank: 5.0
+        max-rank: 2
 
-# ===== Szakmák (grind-alapú progresszió) =====
+# ===== Szakmák (WoW-szerű: 1 gyűjtögető + 1 készítő főszakma + másodlagosak) =====
+# Gyűjtögető: miner (Bányász), herbalist (Gyógynövényész), lumberjack (Favágó)
+# Készítő: armorer (Kovács), alchemist (Alkimista), enchanter (Bűvölő)
+# Másodlagos (mindenkié, automatikusan): fisherman (Halász), cook (Szakács)
 professions:
+  leveling:
+    base-xp: 100
+    increment-per-level: 15
   xp:
     mining-ore: 5
-    farming-harvest: 3
+    herbalism-harvest: 3
+    logging: 2
     crafting-gear: 8
     smithing: 15
+    enchanting: 10
+    brewing: 12
     fishing: 4
+    cooking: 3
   specialization:
     # A szakma ezen a szinten specializálódhat (/spec choose).
     required-level: 25

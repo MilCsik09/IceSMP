@@ -104,6 +104,11 @@ public final class TalentCommand implements BasicCommand {
                 continue;
             }
 
+            // WoW-style gating: only list talents whose class/spec/profession requirements are met.
+            if (!talentManager.isAvailable(player, classPool, talentId)) {
+                continue;
+            }
+
             player.sendMessage(messageManager.getMessage(
                     "talent-line",
                     "&e{name} &7({id}) &8| &7Rang: &f{rank}&7/&f{max} &8| &7Hatás: &f{effect} +{per-rank}/rang",

@@ -108,8 +108,8 @@ public final class SpecializationManager {
             return false;
         }
 
-        return professionManager.getProfession(player) == specialization.getParentProfession()
-                && professionManager.getLevel(player) >= getRequiredProfessionLevel();
+        return professionManager.hasProfession(player, specialization.getParentProfession())
+                && professionManager.getLevel(player, specialization.getParentProfession()) >= getRequiredProfessionLevel();
     }
 
     public boolean selectProfessionSpecialization(final Player player, final ProfessionSpecializationType specialization) {
@@ -127,8 +127,26 @@ public final class SpecializationManager {
      * @param player the player to reset
      */
     public void resetSpecializations(final Player player) {
+        resetClassSpecialization(player);
+        resetProfessionSpecialization(player);
+    }
+
+    public void resetClassSpecialization(final Player player) {
         player.getPersistentDataContainer().remove(classSpecKey);
+    }
+
+    public void resetProfessionSpecialization(final Player player) {
         player.getPersistentDataContainer().remove(professionSpecKey);
+    }
+
+    /**
+     * Gets the respec price (paid in the player's own faction currency) for
+     * dropping a chosen specialization via /spec respec.
+     *
+     * @return the configured respec cost
+     */
+    public double getRespecCost() {
+        return Math.max(0.0D, configManager.getDouble("specializations.respec-cost", 100.0D));
     }
 
     /**

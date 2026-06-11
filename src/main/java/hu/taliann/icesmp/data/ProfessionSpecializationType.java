@@ -4,18 +4,34 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 /**
- * Profession specializations, mirroring the class specialization system:
- * available once the profession reaches the configured level.
+ * Profession specializations (2 per profession), mirroring the class
+ * specialization system: available once the profession reaches the configured level.
  */
 public enum ProfessionSpecializationType {
-    WEAPONSMITH("weaponsmith", "<red>Fegyverkovács</red>", ProfessionType.ARMORER),
-    ARMORSMITH("armorsmith", "<gold>Páncélkovács</gold>", ProfessionType.ARMORER),
+    // Bányász
     PROSPECTOR("prospector", "<yellow>Aranyásó</yellow>", ProfessionType.MINER),
     EXCAVATOR("excavator", "<gray>Vájármester</gray>", ProfessionType.MINER),
-    BOTANIST("botanist", "<green>Botanikus</green>", ProfessionType.FARMER),
-    RANCHER("rancher", "<gold>Állattenyésztő</gold>", ProfessionType.FARMER),
+    // Gyógynövényész
+    BOTANIST("botanist", "<green>Botanikus</green>", ProfessionType.HERBALIST),
+    NATURALIST("naturalist", "<dark_green>Természetbúvár</dark_green>", ProfessionType.HERBALIST),
+    // Favágó
+    FORESTER("forester", "<dark_green>Erdész</dark_green>", ProfessionType.LUMBERJACK),
+    CARPENTER("carpenter", "<gold>Ácsmester</gold>", ProfessionType.LUMBERJACK),
+    // Kovács
+    WEAPONSMITH("weaponsmith", "<red>Fegyverkovács</red>", ProfessionType.ARMORER),
+    ARMORSMITH("armorsmith", "<gold>Páncélkovács</gold>", ProfessionType.ARMORER),
+    // Alkimista
+    POTION_MASTER("potion_master", "<light_purple>Főzetmester</light_purple>", ProfessionType.ALCHEMIST),
+    TRANSMUTER("transmuter", "<dark_purple>Transzmutátor</dark_purple>", ProfessionType.ALCHEMIST),
+    // Bűvölő
+    RUNEKEEPER("runekeeper", "<aqua>Rúnamester</aqua>", ProfessionType.ENCHANTER),
+    ARCANIST("arcanist", "<dark_aqua>Arkanista</dark_aqua>", ProfessionType.ENCHANTER),
+    // Halász
     ANGLER("angler", "<aqua>Horgászmester</aqua>", ProfessionType.FISHERMAN),
-    TREASURE_HUNTER("treasure_hunter", "<light_purple>Kincsvadász</light_purple>", ProfessionType.FISHERMAN);
+    TREASURE_HUNTER("treasure_hunter", "<light_purple>Kincsvadász</light_purple>", ProfessionType.FISHERMAN),
+    // Szakács
+    CHEF("chef", "<red>Séf</red>", ProfessionType.COOK),
+    BUTCHER("butcher", "<dark_red>Hentes</dark_red>", ProfessionType.COOK);
 
     private final String id;
     private final Component displayName;

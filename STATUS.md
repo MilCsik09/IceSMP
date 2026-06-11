@@ -29,7 +29,8 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - 4 alap kaszt: **Varázsló, Harcos, Íjász, Orgyilkos** (`JobType`), PDC-ben tárolva
 - Elsődleges + másodlagos kaszt; a másodlagos csak az elsődleges **max szintje (50)** után
   választható; kiválasztás a Job GUI-ból (`/profile` → kasztok)
-- Szintezés: `szint = XP/100 + 1`, max 50
+- Szintezés: **progresszív görbe** (az n. szintlépés ára `base-xp + (n-1)×increment`,
+  configolható a `classes.leveling` alatt), max 50
 - **Kaszt XP mob ölésből** (`ClassXpListener`): alap 5 XP + skálázott mob szintenként +2;
   másodlagos kaszt 50%-ot kap; csak ellenséges mobok (mind configolható)
 - **Automatikus spell-feloldás** szint alapján (`classes.<kaszt>.spell-unlocks` config),
@@ -39,8 +40,9 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 ### 3. Specializációk
 - **Kasztonként 2 spec** (`SpecializationType`): Elementalista/Nekromanta (varázsló),
   Berserker/Védelmező (harcos), Mesterlövész/Vadmester (íjász), Méregkeverő/Fantom (orgyilkos)
-- Csak az **elsődleges** kaszt specializálódhat, a 25. szinttől (configolható); a választás
-  végleges (admin `/spec reset` törölheti)
+- Csak az **elsődleges** kaszt specializálódhat, a 25. szinttől (configolható)
+- **Respec frakcióvalutáért** (`/spec respec <class|profession>`, ár: `specializations.respec-cost`,
+  money sink): a spec-kötött talentek pontjai automatikusan visszatérülnek; admin `/spec reset` ingyen töröl
 - **Nekromanta = a Varázsló sötét specializációja**: csak DARK frakcióval ÉS sinner
   státusszal választható
 - Spec-spellek kaszt-szinthez kötött feloldása (`specializations.<spec>.spell-unlocks`),
@@ -51,19 +53,31 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 
 ### 4. Talent rendszer
 - **Két ponttár**: kaszt (5 kasztszintenként 1 pont, elsődleges + másodlagos szintek összege)
-  és szakma (10 szintenként 1 pont)
-- Config-vezérelt talent definíciók (`talents.*.definitions`), alapból:
-  Életerő (+2 max élet/rang), Fürgeség (+mozgás/rang), Erő (+0.5 sebzés/rang),
-  Tudásszomj (+5% kaszt XP/rang), Szorgalom (+10% szakma XP/rang), Kitartás (+1 élet/rang)
+  és szakma (az összes szakma szintjei összesen, 10 szintenként 1 pont)
+- Config-vezérelt talent definíciók (`talents.*.definitions`): általános talentek (Életerő,
+  Fürgeség, Erő, Tudásszomj, Szorgalom, Kitartás) + **WoW-szerű kötött talentek**:
+  kaszt-kötött (`requires-job`), spec-kötött (`requires-spec`, 1/kaszt-spec, pl. Brutalitás,
+  Lélekpaktum, Falkavezér) és szakma-kötött (`requires-profession`) talentek
+- A kötött talenteket csak a feltételt teljesítő játékos látja/költheti, hatásuk a feltétel
+  megszűntével (pl. respec) inaktiválódik, pontjaik respec-kor visszatérülnek
 - Attribútum-effektek valódi attribútum-módosítóként, belépéskor **idempotensen**
   újra-alkalmazva; XP-bónuszokat az XP-listenerek számítják be
 - `/talent` (áttekintés + pontok), `/talent spend <class|profession> <talent>`
 
-### 5. Szakma (profession) rendszer
-- 4 szakma: **Kovács, Bányász, Földműves, Halász** (`ProfessionType`), PDC-ben, max 50 szint
-- **Tevékenység-alapú XP** (`ProfessionXpListener`): érc bányászása (+5), érett termény
-  betakarítása (+3), páncél/pajzs craft (+8), smithing (+15), horgászat (+4) — configolható
-- `/profession join | info | list` + admin `set | addxp`
+### 5. Szakma (profession) rendszer — WoW-minta
+- **8 szakma 3 kategóriában** (`ProfessionType` + `ProfessionCategory`):
+  - Gyűjtögető (1 választható): Bányász, Gyógynövényész, Favágó
+  - Készítő (1 választható): Kovács, Alkimista, Bűvölő
+  - Másodlagos (mindenkié automatikusan): Halász, Szakács
+- **Tevékenység-alapú XP** mind a 8 szakmának: érc, termény/virág/bogyó, rönk, páncélcraft +
+  smithing, bűvölőasztal, főzet kivétele a főzőállványból, horgászat, étel sütése —
+  mind configolható (`professions.xp.*`)
+- **Szakmánkénti XP-tárolás** (`profession_xp_<id>` PDC): szakmaváltás után a régi szint
+  megmarad és visszatanulható
+- **Progresszív szintgörbe** (`professions.leveling`): minden szint egyre több XP
+- `/profession join | info | list` + admin `set | clear | addxp`
+- **Szakmánként 2 specializáció** (16 összesen): pl. Fegyverkovács/Páncélkovács,
+  Főzetmester/Transzmutátor, Rúnamester/Arkanista, Séf/Hentes
 
 ### 6. Craftolási korlátozások
 - Config-vezérelt szabályok (`crafting-restrictions.rules`): anyaglista + kaszt- és/vagy
@@ -148,7 +162,7 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 | `config.yml` `messages:` szekció | Örökölt duplikátum, a kód **nem használja** (a forrás a `messages.yml`) — törölhető lenne. |
 | Specializáció GUI | A specializációk csak paranccsal (`/spec`) érhetők el, a Job GUI nem mutatja őket. |
 | Hide + Semleges passzív | A NEUTRAL lopakodás-láthatatlanság és a Hide spell ugyanazt a potion effektet használja — lopakodás abbahagyása lebonthatja a Hide láthatatlanságát. |
-| Szakma XP anti-abuse | A játékos által lerakott érc újrabányászása is ad Bányász XP-t (nincs blokk-eredet követés). |
+| Szakma XP anti-abuse | A játékos által lerakott érc/rönk újrabányászása is ad XP-t (nincs blokk-eredet követés). Az Alkimista XP a főzőállvány eredmény-slotjának kattintásához kötött heurisztika — ki-be pakolással duplán is jóváírható. |
 | Területvédelem hatóköre | Csak blokk törés/lerakás ellen véd; láda-hozzáférést, robbantást, vödröt, pisztont nem kezel. |
 | Dinamikus árfolyam kínálata | Csak a **banki** egyenlegeket számolja; a játékosoknál lévő fizikai tokenek nincsenek a kínálatban. |
 | Dark pact offline célpontra | Admin `/faction set <offline játékos> dark` esetén a paktum csak a játékos következő online állapotában pecsételhető (PDC-hez online játékos kell) — jelenleg ilyenkor nem pecsételődik automatikusan. |

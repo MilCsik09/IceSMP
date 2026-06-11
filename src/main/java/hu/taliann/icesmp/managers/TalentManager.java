@@ -1,5 +1,8 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.data.SpecializationType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -33,6 +36,7 @@ public final class TalentManager {
     private final ConfigManager configManager;
     private final JobManager jobManager;
     private final ProfessionManager professionManager;
+    private final SpecializationManager specializationManager;
     private final NamespacedKey classTalentsKey;
     private final NamespacedKey professionTalentsKey;
     private final NamespacedKey healthModifierKey;
@@ -40,10 +44,12 @@ public final class TalentManager {
     private final NamespacedKey damageModifierKey;
 
     public TalentManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final JobManager jobManager, final ProfessionManager professionManager) {
+                         final JobManager jobManager, final ProfessionManager professionManager,
+                         final SpecializationManager specializationManager) {
         this.configManager = configManager;
         this.jobManager = jobManager;
         this.professionManager = professionManager;
+        this.specializationManager = specializationManager;
         this.classTalentsKey = new NamespacedKey(plugin, "talents_class");
         this.professionTalentsKey = new NamespacedKey(plugin, "talents_profession");
         this.healthModifierKey = new NamespacedKey(plugin, "talent_max_health");
@@ -115,8 +121,95 @@ public final class TalentManager {
             return totalLevels / perLevels;
         }
 
+        // Profession pool: every profession contributes its levels above 1
+        // (unlearned professions sit at level 1 with 0 XP, contributing nothing).
         final int perLevels = Math.max(1, configManager.getInt("talents.profession.points-per-levels", 10));
-        return professionManager.hasProfession(player) ? professionManager.getLevel(player) / perLevels : 0;
+        int totalLevels = 0;
+        for (final ProfessionType professionType : ProfessionType.values()) {
+            totalLevels += Math.max(0, professionManager.getLevel(player, professionType) - 1);
+        }
+        return totalLevels / perLevels;
+    }
+
+    /**
+     * Checks whether a talent is available to the player. WoW-style gating via
+     * optional definition keys: 'requires-job' (either class slot),
+     * 'requires-spec' (current class specialization) and 'requires-profession'
+     * (actively practiced profession).
+     *
+     * @param player the player
+     * @param classPool true for the class pool, false for the profession pool
+     * @param talentId the talent definition id
+     * @return true if the player meets every requirement of the talent
+     */
+    public boolean isAvailable(final Player player, final boolean classPool, final String talentId) {
+        final ConfigurationSection definitions = getDefinitions(classPool);
+        if (definitions == null || talentId == null) {
+            return false;
+        }
+
+        final ConfigurationSection talentSection = definitions.getConfigurationSection(talentId.toLowerCase(Locale.ROOT));
+        return talentSection != null && meetsRequirements(player, talentSection);
+    }
+
+    private boolean meetsRequirements(final Player player, final ConfigurationSection talentSection) {
+        final String requiredJobId = talentSection.getString("requires-job");
+        if (requiredJobId != null && !requiredJobId.isBlank()) {
+            final JobType requiredJob = JobType.fromId(requiredJobId);
+            final boolean hasJob = requiredJob != null
+                    && (jobManager.getPrimaryJob(player) == requiredJob || jobManager.getSecondaryJob(player) == requiredJob);
+            if (!hasJob) {
+                return false;
+            }
+        }
+
+        final String requiredSpecId = talentSection.getString("requires-spec");
+        if (requiredSpecId != null && !requiredSpecId.isBlank()) {
+            final SpecializationType requiredSpec = SpecializationType.fromId(requiredSpecId);
+            if (requiredSpec == null || specializationManager.getClassSpecialization(player) != requiredSpec) {
+                return false;
+            }
+        }
+
+        final String requiredProfessionId = talentSection.getString("requires-profession");
+        if (requiredProfessionId != null && !requiredProfessionId.isBlank()) {
+            final ProfessionType requiredProfession = ProfessionType.fromId(requiredProfessionId);
+            if (requiredProfession == null || !professionManager.hasProfession(player, requiredProfession)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Removes every ranked talent whose requirements the player no longer meets
+     * (e.g. after a specialization respec) and re-applies the attribute effects —
+     * the refunded points become spendable again.
+     *
+     * @param player the player
+     * @param classPool true for the class pool, false for the profession pool
+     * @return the number of refunded points
+     */
+    public int refundUnavailableTalents(final Player player, final boolean classPool) {
+        final Map<String, Integer> ranks = getRanks(player, classPool);
+        int refunded = 0;
+
+        final var iterator = ranks.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<String, Integer> entry = iterator.next();
+            if (!isAvailable(player, classPool, entry.getKey())) {
+                refunded += entry.getValue();
+                iterator.remove();
+            }
+        }
+
+        if (refunded > 0) {
+            saveRanks(player, classPool, ranks);
+            applyAttributeTalents(player);
+        }
+
+        return refunded;
     }
 
     public int getSpentPoints(final Player player, final boolean classPool) {
@@ -148,7 +241,7 @@ public final class TalentManager {
 
         final String normalizedId = talentId.toLowerCase(Locale.ROOT);
         final ConfigurationSection talentSection = definitions.getConfigurationSection(normalizedId);
-        if (talentSection == null) {
+        if (talentSection == null || !meetsRequirements(player, talentSection)) {
             return false;
         }
 
@@ -222,6 +315,11 @@ public final class TalentManager {
         for (final Map.Entry<String, Integer> entry : getRanks(player, classPool).entrySet()) {
             final ConfigurationSection talentSection = definitions.getConfigurationSection(entry.getKey());
             if (talentSection == null || !effect.equalsIgnoreCase(talentSection.getString("effect", ""))) {
+                continue;
+            }
+
+            // Talents whose requirements lapsed (e.g. after a respec) stop contributing.
+            if (!meetsRequirements(player, talentSection)) {
                 continue;
             }
 

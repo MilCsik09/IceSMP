@@ -130,12 +130,12 @@ public final class IceSMPCore {
         this.metelytepoManager = new MetelytepoManager(plugin, messageManager);
         this.minionManager = new MinionManager(plugin);
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
-        this.professionManager = new ProfessionManager(plugin);
+        this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager);
-        this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager);
+        this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.territoryManager = new TerritoryManager(plugin);
         jobManager.setXpChangeHook(specializationManager::applyClassSpecializationUnlocks);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
@@ -224,7 +224,7 @@ public final class IceSMPCore {
         plugin.registerCommand("sinner", "Bűnös állapot kezelése", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia framework parancsok", List.of("relics"), new RelicCommand(relicManager, messageManager));
         plugin.registerCommand("profession", "Szakma parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
-        plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization"), new SpecCommand(specializationManager, jobManager, professionManager, messageManager));
+        plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent parancsok", List.of("talents"), new TalentCommand(talentManager, messageManager));
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
     }

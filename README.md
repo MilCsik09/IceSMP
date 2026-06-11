@@ -38,11 +38,12 @@ elsődleges max szintje után nyílik meg, és nem specializálódhat):
 - **Orgyilkos** — lopakodás és meglepetés
 
 A kasztok **mob ölésből** kapnak XP-t (minél messzebb merészkedsz a spawntól, annál erősebb
-mobok jönnek — és annál több XP-t adnak). A képességek (spellek) a szintekkel
-**automatikusan feloldódnak**.
+mobok jönnek — és annál több XP-t adnak). A szintek WoW-mintára **egyre több XP-be
+kerülnek**, a képességek (spellek) pedig a szintekkel **automatikusan feloldódnak**.
 
-A 25. szinttől **specializálódhatsz** (`/spec choose <id>`) — ez végleges döntés, és a
-legerősebb képességek csak így érhetők el:
+A 25. szinttől **specializálódhatsz** (`/spec choose <id>`), és a legerősebb képességek
+csak így érhetők el. A döntés nem örök: a `/spec respec` paranccsal **frakcióvalutáért
+visszaválthatod** a speced (a spec-talentjeid pontjai ilyenkor visszatérülnek):
 
 | Kaszt | Specializációk |
 |---|---|
@@ -75,20 +76,32 @@ rendszerben — kasztonként és specializációnként legalább 10 —, és **m
 ### 🌟 Talentek
 
 A kaszt- és szakmaszintek **talentpontokat** termelnek (alapból 5 kasztszintenként, illetve
-10 szakmaszintenként 1 pont). A pontokat passzív erősítésekre költheted (`/talent`):
-több élet, gyorsabb mozgás, nagyobb sebzés, vagy extra XP-szerzés.
+összesen 10 szakmaszintenként 1 pont). A pontokat passzív erősítésekre költheted (`/talent`):
+több élet, gyorsabb mozgás, nagyobb sebzés, vagy extra XP-szerzés. WoW-mintára vannak
+**kaszt-, specializáció- és szakma-kötött talentek** is (pl. a Berserker „Brutalitás"-a
+vagy a Bányász „Állóképesség"-e) — ezeket csak a feltételt teljesítő játékos látja és
+használhatja, respec után pedig a pontjaik automatikusan visszatérülnek.
 
-### ⚒️ Szakmák
+### ⚒️ Szakmák — WoW-mintára
 
-Egy szakmát választhatsz (`/profession join <szakma>`), amely a tényleges tevékenységből fejlődik:
+Két fő szakmád lehet: **egy gyűjtögető és egy készítő** (`/profession join <szakma>`),
+a másodlagos szakmák pedig mindenkinek maguktól fejlődnek:
 
-- **Kovács** — páncél/pajzs craftolás és smithing
-- **Bányász** — ércek kibányászása
-- **Földműves** — érett termények betakarítása
-- **Halász** — horgászat
+| Kategória | Szakmák |
+|---|---|
+| 🧺 **Gyűjtögető** (1 választható) | ⛏ Bányász • 🌿 Gyógynövényész • 🪓 Favágó |
+| 🔨 **Készítő** (1 választható) | ⚒ Kovács • ⚗ Alkimista • ✨ Bűvölő |
+| 🎣 **Másodlagos** (mindenkié) | 🐟 Halász • 🍲 Szakács |
 
-A **netherite felszerelést csak a 25+ szintű Kovács** készítheti el! A 25. szinttől a
-szakmák is specializálódhatnak (pl. Fegyverkovács / Páncélkovács).
+A párosítások a WoW logikáját követik (Bányász→Kovács, Gyógynövényész→Alkimista,
+Favágó→Bűvölő). Minden szakma a tényleges tevékenységből fejlődik: bányászat, aratás és
+virágszedés, favágás, páncélcraft és smithing, bűvölőasztal, főzetek kivétele a
+főzőállványból, horgászat, étel sütése. A szintek **egyre több XP-be kerülnek**
+(progresszív görbe), és a XP szakmánként megmarad akkor is, ha az admin szakmát vált neked.
+
+A **netherite felszerelést csak a 25+ szintű Kovács** készítheti el! A 25. szinttől
+minden szakma specializálódhat — szakmánként 2 irány (pl. Fegyverkovács / Páncélkovács,
+Főzetmester / Transzmutátor, Séf / Hentes).
 
 ### 🗡 Relikviák
 

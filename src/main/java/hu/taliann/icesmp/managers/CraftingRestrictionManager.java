@@ -191,8 +191,8 @@ public final class CraftingRestrictionManager {
     }
 
     private boolean meetsProfessionRequirement(final Player player, final CraftingRule rule) {
-        return professionManager.getProfession(player) == rule.requiredProfession()
-                && professionManager.getLevel(player) >= rule.requiredProfessionLevel();
+        return professionManager.hasProfession(player, rule.requiredProfession())
+                && professionManager.getLevel(player, rule.requiredProfession()) >= rule.requiredProfessionLevel();
     }
 
     private boolean hasJobAtLevel(final Player player, final boolean primary, final int requiredLevel) {

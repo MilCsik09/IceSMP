@@ -68,10 +68,10 @@ IceSMPCore.disable()
 | `CurrencyManager` | Többvalutás egyenlegek, befizetés/kivét/utalás/váltás, item tokenek, `getTotalSupply()` | currency-balances.yml |
 | `ExchangeRateService` | Kínálat-alapú dinamikus árfolyam: `érték = base × clamp((ref/supply)^elaszticitás, min, max)`; `getRate(from,to) = value(from)/value(to)` | — (configból számol) |
 | `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
-| `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (szint = xp/100+1, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
+| `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (progresszív görbe: az n. szintlépés ára `base-xp + (n-1)*increment`, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
 | `SpecializationManager` | Kaszt- és szakma-specializációk: feltétel-ellenőrzés (szint, frakció, sinner), kiválasztás, spec spell unlock (`specializations.<id>.spell-unlocks`) | játékos PDC |
-| `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
-| `ProfessionManager` | Szakma + XP/szint (max 50), tevékenység-alapú XP jóváírás | játékos PDC |
+| `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, WoW-szerű talent-kötések (`requires-job`/`requires-spec`/`requires-profession`), respec utáni pont-visszatérítés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
+| `ProfessionManager` | WoW-szerű szakmák: 1 gyűjtögető + 1 készítő főszakma-slot, másodlagosak mindenkinek; szakmánkénti XP (megmarad szakmaváltáskor is), progresszív szintgörbe | játékos PDC |
 | `CraftingRestrictionManager` | Config-vezérelt craft szabályok: kaszt- és/vagy szakma-követelmény anyagonként; üzenet-throttle | — |
 | `SpellRegistry` | A 124 regisztrált spell nyilvántartása id szerint | — |
 | `RelicManager` | Relic definíciók (config + beépített seed), singleton tulajdonjog, 14 napos inaktivitás-lejárat, belépéskori sweep | relics.yml |
@@ -93,7 +93,15 @@ IceSMPCore.disable()
    frakció + sinner.
 
 **Specializáció szabályok:** csak az **elsődleges** kaszt specializálódhat; egy játékosnak
-max. 1 kaszt-spec és 1 szakma-spec lehet; a választás végleges (admin `/spec reset` törli).
+max. 1 kaszt-spec és 1 szakma-spec lehet. A spec a `/spec respec <class|profession>`
+paranccsal váltható vissza a saját frakcióvaluta `specializations.respec-cost` árán
+(banki egyenlegből, money sink) — kaszt-respec után a spec-kötött talentek pontjai
+automatikusan visszatérülnek; admin `/spec reset` ingyen töröl.
+
+**Szakma szabályok (WoW-minta):** 1 gyűjtögető + 1 készítő főszakma választható
+(`/profession join`); a másodlagos szakmák (halász, szakács) mindenkinek automatikusan
+aktívak. Az XP szakmánként tárolódik (`profession_xp_<id>`), így admin szakmaváltás után
+a régi szakma szintje megmarad és visszatanulható.
 
 **Relic singleton:** `RelicManager.giveRelic` elutasítja az átadást, ha a relicnek aktív
 (nem lejárt) tulajdonosa van. Lejárat: utolsó látás + `relics.inactivity.expiry-days`
@@ -111,8 +119,8 @@ inventoryból és felszabadul.
 | `/bank` | `wallet`, `vault` | `balance`, `deposit`, `withdraw <valuta> <összeg>` | — |
 | `/faction` | `f` | `join`, `leave`, `set` | `set`: `icesmp.faction.admin` |
 | `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givecatalyst`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
-| `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `addxp` | admin ágak: `icesmp.admin.profession` |
-| `/spec` | `specialization` | `list`, `choose`, `info`, `reset` | `reset`: `icesmp.admin.spec` |
+| `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `clear`, `addxp` | admin ágak: `icesmp.admin.profession` |
+| `/spec` | `specialization` | `list`, `choose`, `info`, `respec <class\|profession>`, `reset` | `reset`: `icesmp.admin.spec` |
 | `/talent` | `talents` | `list`, `spend <class\|profession> <talent>` | — |
 | `/profile` | `status`, `info` | — | — |
 | `/sinner` | — | `<játékos> set\|clear` | `icesmp.admin` |
@@ -133,7 +141,7 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `AbilityCatalystListener` | `PlayerInteractEvent`, `PlayerAnimationEvent` | Jobb katt: cast; sneak+ütés: spell váltás; költség/cooldown pipeline |
 | `SpellProjectileListener`, `SpellStateListener` | projektil/állapot események | Spell-specifikus utókezelés |
 | `ClassXpListener` | `EntityDeathEvent` | Kaszt XP ölésből (+mob szint bónusz, +talent XP%, másodlagos kaszt rész) |
-| `ProfessionXpListener` | `BlockBreakEvent`, `CraftItemEvent`, `SmithItemEvent`, `PlayerFishEvent` | Szakma XP tevékenységből (+talent XP%) |
+| `ProfessionXpListener` | `BlockBreakEvent`, `PlayerHarvestBlockEvent`, `CraftItemEvent`, `SmithItemEvent`, `EnchantItemEvent`, `InventoryClickEvent` (főzőállvány), `PlayerFishEvent`, `FurnaceExtractEvent` | Szakma XP tevékenységből a 8 szakmának (+talent XP%) |
 | `JobCraftRestrictionListener` | `PrepareItemCraftEvent`, `PrepareSmithingEvent` | Tiltott craft eredmény nullázása + throttle-olt üzenet |
 | `CurrencyCraftListener`, `RelicCraftSafetyListener` | `PrepareItemCraftEvent` | Tagelt itemek craft-védelme |
 | `CurrencyItemRefreshListener`, `RelicItemRefreshListener` | click/join | Item vizuálok frissítése |
@@ -232,10 +240,10 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `factions` | Frakció megjelenítési nevek + `passives.enabled`, `passives.blue-hunger-slow-chance` |
 | `relics` | `enabled`, `inactivity.enabled` + `expiry-days`, üzenetek, `definitions.<id>` (vizuál + triggerek + ability-id + cooldown) |
 | `mob-scaling` | `enabled`, `blocks-per-level`, `max-level`, `health/damage-per-level`, `hostile-only`, `ignored-spawn-reasons`, `name.*` |
-| `classes` | `xp.*` (per-kill, per-mob-level, secondary-share-percent, hostile-only), `specialization.required-level`, `<kaszt>.spell-unlocks` |
-| `specializations` | `<spec>.spell-unlocks` — spec-spellek kaszt-szinthez kötve |
-| `talents` | `class` és `profession` tár: `points-per-levels` + `definitions.<id>` (`display-name`, `effect`, `per-rank`, `max-rank`) |
-| `professions` | `xp.*` (tevékenység XP értékek), `specialization.required-level` |
+| `classes` | `xp.*` (per-kill, per-mob-level, secondary-share-percent, hostile-only), `leveling.*` (progresszív görbe), `specialization.required-level`, `<kaszt>.spell-unlocks` |
+| `specializations` | `respec-cost` (a /spec respec ára frakcióvalutában), `<spec>.spell-unlocks` — spec-spellek kaszt-szinthez kötve |
+| `talents` | `class` és `profession` tár: `points-per-levels` + `definitions.<id>` (`display-name`, `effect`, `per-rank`, `max-rank`, opcionális `requires-job`/`requires-spec`/`requires-profession`) |
+| `professions` | `leveling.*` (progresszív görbe), `xp.*` (tevékenység XP a 8 szakmának), `specialization.required-level` |
 | `crafting-restrictions` | `enabled`, `notify-cooldown-seconds`, `rules.<id>`: `materials` lista + `required-job`/`required-level` és/vagy `required-profession`/`required-profession-level` (minden megadott feltételnek teljesülnie kell) |
 | `territory` | `notify.enabled` (action bar), `protection.enabled` (építésvédelem) |
 
@@ -266,7 +274,8 @@ frissülnek garantáltan.
 **Játékoson:**
 `job_primary`, `job_primary_xp`, `job_secondary`, `job_secondary_xp`, `unlocked_spells`
 (vesszővel elválasztott spell idk), `selected_spell_index`, `cd_<spellId>` (hosszú spell
-cooldownok), `is_sinner`, `dark_pact`, `profession`, `profession_xp`, `class_spec`,
+cooldownok), `is_sinner`, `dark_pact`, `profession_gathering`, `profession_crafting`,
+`profession_xp_<szakmaId>` (szakmánkénti XP), `class_spec`,
 `profession_spec`, `talents_class` és `talents_profession` (`id:rang,...` formátum).
 
 **Itemen:** `currency_type`; `relic_id`, `relic_owner`, `relic_created_at`;
