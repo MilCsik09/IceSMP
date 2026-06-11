@@ -146,7 +146,7 @@ A világ a spawn ponttól távolodva fokozatosan veszélyesebbé válik.
 - [x] szint vagy kaszt alapú tiltások (craft + smithing eredmény blokkolás)
 
 ### Fázis 6 – Kasztok, szakmák, gazdaság
-- [x] 5 kaszt: Varázsló, Harcos, Íjász, Orgyilkos, Nekromanta (utóbbi csak Sötét frakcióval)
+- [x] 4 alap kaszt: Varázsló, Harcos, Íjász, Orgyilkos
 - [x] kaszt XP mob ölésből (skálázott mobok bónusz XP-t adnak), szint-alapú automatikus skill-feloldás
 - [x] 6 új kaszt-skill: Sasszem, Sortűz, Árnyéklépés, Füstbomba, Életszívás, Csontfagy
 - [x] szakma rendszer (`/profession`): Kovács, Bányász, Földműves, Halász — tevékenység-alapú XP
@@ -155,6 +155,14 @@ A világ a spawn ponttól távolodva fokozatosan veszélyesebbé válik.
 - [x] passzív frakció bónusz listener (tűz/fagy/wither immunitás, éhség-lassítás, lopakodó láthatatlanság)
 - [x] dinamikus, kínálat-alapú valutaárfolyam (`/currency rates`)
 - további ötletek: lásd `ideas.md`
+
+### Fázis 7 – Specializációk, talentek, területek
+- [x] specializációs rendszer (`/spec`): kasztonként 2 spec a 25. szinttől, csak az elsődleges kaszt specializálódhat
+- [x] a Nekromanta a Varázsló sötét specializációja — csak bűnösként (sinner) és Sötét frakcióval választható
+- [x] Sötét frakcióba lépés csak bűnösként; belépéskor örök "sötét paktum" (a sinner jelölés többé nem törölhető)
+- [x] szakma specializációk (Fegyverkovács/Páncélkovács, Aranyásó/Vájármester, Botanikus/Állattenyésztő, Horgászmester/Kincsvadász)
+- [x] talent rendszer (`/talent`): kaszt és szakma ponttár, attribútum (élet/sebesség/sebzés) és XP-bónusz talentek
+- [x] frakció területek és fővárosok kijelölése admin paranccsal (`/territory`), határátlépés-jelzés, opcionális építésvédelem
 
 ## Konvenciók
 

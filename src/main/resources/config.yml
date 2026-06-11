@@ -242,37 +242,104 @@ classes:
     per-kill: 5
     per-mob-level: 2
     secondary-share-percent: 50
+  specialization:
+    # Az elsődleges kaszt ezen a szinten specializálódhat (/spec choose).
+    required-level: 25
   wizard:
     spell-unlocks:
       wisplight: 2
       root: 5
       confusion: 10
       rain_dance: 15
-      sun_dance: 20
-      lucky_star: 30
   warrior:
     spell-unlocks:
       armament: 5
       inner_focus: 10
       gust: 15
-      feast: 20
   archer:
     spell-unlocks:
       eagle_eye: 3
       multishot: 8
       double_jump: 15
-      featherfoot: 20
   assassin:
     spell-unlocks:
       shadowstep: 5
       smoke_bomb: 12
-      hide: 20
+
+# ===== Specializációk =====
+# A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
+# örök bűnös (dark pact) jelöléssel választható. A spec-spellek a kaszt
+# szintjéhez kötve oldódnak fel.
+specializations:
+  elementalist:
+    spell-unlocks:
+      sun_dance: 25
+      lucky_star: 30
   necromancer:
     spell-unlocks:
-      life_drain: 5
-      bone_chill: 12
-      angry_chicken: 18
+      life_drain: 25
+      bone_chill: 30
+  berserker:
+    spell-unlocks:
+      feast: 25
+  guardian:
+    spell-unlocks: {}
+  sharpshooter:
+    spell-unlocks:
+      featherfoot: 25
+  beast_master:
+    spell-unlocks:
       friendship: 25
+      angry_chicken: 30
+  poisoner:
+    spell-unlocks:
+      confusion: 25
+  phantom:
+    spell-unlocks:
+      hide: 25
+
+# ===== Talentek =====
+# Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár a szakma szintekből
+# termel pontot (points-per-levels szintenként 1 pont).
+# Effektek: max-health, movement-speed, attack-damage (attribútum módosítók),
+# class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
+talents:
+  class:
+    points-per-levels: 5
+    definitions:
+      vitality:
+        display-name: "Életerő"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 5
+      swiftness:
+        display-name: "Fürgeség"
+        effect: "movement-speed"
+        per-rank: 0.005
+        max-rank: 5
+      power:
+        display-name: "Erő"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 5
+      scholar:
+        display-name: "Tudásszomj"
+        effect: "class-xp-bonus"
+        per-rank: 5.0
+        max-rank: 4
+  profession:
+    points-per-levels: 10
+    definitions:
+      diligence:
+        display-name: "Szorgalom"
+        effect: "profession-xp-bonus"
+        per-rank: 10.0
+        max-rank: 5
+      vigor:
+        display-name: "Kitartás"
+        effect: "max-health"
+        per-rank: 1.0
+        max-rank: 3
 
 # ===== Szakmák (grind-alapú progresszió) =====
 professions:
@@ -282,6 +349,19 @@ professions:
     crafting-gear: 8
     smithing: 15
     fishing: 4
+  specialization:
+    # A szakma ezen a szinten specializálódhat (/spec choose).
+    required-level: 25
+
+# ===== Frakció területek =====
+territory:
+  notify:
+    # Action bar üzenet területhatár átlépésekor.
+    enabled: true
+  protection:
+    # Ha true, idegen frakció területén nem lehet építeni/bontani
+    # (bypass: icesmp.admin.territory.bypass jogosultság).
+    enabled: false
 
 # ===== Kaszt/szakma-alapú craftolási korlátozások =====
 # required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.

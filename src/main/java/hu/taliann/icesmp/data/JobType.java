@@ -7,8 +7,7 @@ public enum JobType {
     WIZARD("wizard", "<dark_purple>Varázsló</dark_purple>", null),
     WARRIOR("warrior", "<red>Harcos</red>", null),
     ARCHER("archer", "<green>Íjász</green>", null),
-    ASSASSIN("assassin", "<gray>Orgyilkos</gray>", null),
-    NECROMANCER("necromancer", "<dark_gray>Nekromanta</dark_gray>", FactionType.DARK);
+    ASSASSIN("assassin", "<gray>Orgyilkos</gray>", null);
 
     private final String id;
     private final Component displayName;

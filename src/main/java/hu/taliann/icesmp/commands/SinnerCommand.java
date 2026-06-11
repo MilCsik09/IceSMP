@@ -54,7 +54,14 @@ public final class SinnerCommand implements BasicCommand {
                 ));
             }
             case "clear" -> {
-                metelytepoManager.clearSinner(target);
+                if (!metelytepoManager.clearSinner(target)) {
+                    sender.sendMessage(messageManager.getMessage(
+                            "sinner.clear-blocked-dark-pact",
+                            "<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>",
+                            java.util.Map.of("player", target.getName())
+                    ));
+                    return;
+                }
                 sender.sendMessage(messageManager.getMessage(
                         "sinner.clear-success",
                         "<green>A jatekos megtisztult: <white>{player}</white></green>",

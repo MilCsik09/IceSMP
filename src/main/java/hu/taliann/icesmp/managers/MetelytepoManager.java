@@ -35,6 +35,7 @@ public final class MetelytepoManager {
     private final MessageManager messageManager;
     private final NamespacedKey relicIdKey;
     private final NamespacedKey sinnerKey;
+    private final NamespacedKey darkPactKey;
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, Double> frozenSpeed = new ConcurrentHashMap<>();
     private final Map<UUID, Long> abilityDamageBypass = new ConcurrentHashMap<>();
@@ -64,6 +65,7 @@ public final class MetelytepoManager {
         this.messageManager = messageManager;
         this.relicIdKey = new NamespacedKey(plugin, "relic_id");
         this.sinnerKey = new NamespacedKey(plugin, "is_sinner");
+        this.darkPactKey = new NamespacedKey(plugin, "dark_pact");
     }
 
     public String relicId() {
@@ -161,13 +163,43 @@ public final class MetelytepoManager {
         player.getPersistentDataContainer().set(sinnerKey, PersistentDataType.BYTE, (byte) 1);
     }
 
-    public void clearSinner(final Player player) {
+    /**
+     * Seals the dark pact on a player who joined the Dark faction:
+     * the sinner mark becomes permanent and can never be cleansed again.
+     *
+     * @param player the player joining the Dark faction
+     */
+    public void sealDarkPact(final Player player) {
         if (player == null) {
             return;
         }
 
+        player.getPersistentDataContainer().set(darkPactKey, PersistentDataType.BYTE, (byte) 1);
+        markAsSinner(player);
+    }
+
+    public boolean hasDarkPact(final Player player) {
+        return player != null
+                && player.getPersistentDataContainer().getOrDefault(darkPactKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /**
+     * Clears the sinner mark unless the player is bound by the dark pact.
+     *
+     * @param player the player to cleanse
+     * @return true if the mark was removed (or was absent), false if the dark pact blocks it
+     */
+    public boolean clearSinner(final Player player) {
+        if (player == null) {
+            return true;
+        }
+
+        if (hasDarkPact(player)) {
+            return false;
+        }
+
         if (!player.getPersistentDataContainer().has(sinnerKey, PersistentDataType.BYTE)) {
-            return;
+            return true;
         }
 
         player.getPersistentDataContainer().remove(sinnerKey);
@@ -176,6 +208,7 @@ public final class MetelytepoManager {
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 24, 0.35D, 0.5D, 0.35D, 0.02D);
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D), 16, 0.25D, 0.4D, 0.25D, 0.01D);
         player.sendMessage(messageManager.getMessage("sinner.cleansed", "<green><i>Megtisztultal a buneidtol...</i></green>"));
+        return true;
     }
 
     public boolean isSinnerTarget(final LivingEntity target) {

@@ -2,20 +2,25 @@ package hu.taliann.icesmp.commands.faction;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public final class FactionSetSubcommand implements FactionSubcommand {
 
     private static final String PERMISSION = "icesmp.faction.admin";
 
     private final FactionManager factionManager;
+    private final MetelytepoManager metelytepoManager;
     private final MessageManager messageManager;
 
-    public FactionSetSubcommand(final FactionManager factionManager, final MessageManager messageManager) {
+    public FactionSetSubcommand(final FactionManager factionManager, final MetelytepoManager metelytepoManager,
+                                final MessageManager messageManager) {
         this.factionManager = factionManager;
+        this.metelytepoManager = metelytepoManager;
         this.messageManager = messageManager;
     }
 
@@ -55,6 +60,12 @@ public final class FactionSetSubcommand implements FactionSubcommand {
         }
 
         factionManager.setFaction(target.getUniqueId(), factionType);
+
+        // Admin placement into the Dark faction also seals the permanent pact (requires the target online).
+        if (factionType == FactionType.DARK && target.getPlayer() instanceof Player onlineTarget) {
+            metelytepoManager.sealDarkPact(onlineTarget);
+        }
+
         sender.sendMessage(messageManager.get(
                 "messages.faction-set-target-success",
                 "&aFrakció beállítva: &f%s &7-> &f%s",

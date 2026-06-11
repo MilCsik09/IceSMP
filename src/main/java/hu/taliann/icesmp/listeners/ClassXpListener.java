@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.TalentManager;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -19,12 +20,14 @@ public final class ClassXpListener implements Listener {
     private final JobManager jobManager;
     private final MobScalingManager mobScalingManager;
     private final ConfigManager configManager;
+    private final TalentManager talentManager;
 
     public ClassXpListener(final JobManager jobManager, final MobScalingManager mobScalingManager,
-                           final ConfigManager configManager) {
+                           final ConfigManager configManager, final TalentManager talentManager) {
         this.jobManager = jobManager;
         this.mobScalingManager = mobScalingManager;
         this.configManager = configManager;
+        this.talentManager = talentManager;
     }
 
     @EventHandler
@@ -42,7 +45,8 @@ public final class ClassXpListener implements Listener {
         final int baseXp = Math.max(0, configManager.getInt("classes.xp.per-kill", 5));
         final int perLevelXp = Math.max(0, configManager.getInt("classes.xp.per-mob-level", 2));
         final int mobLevel = mobScalingManager.getLevel(entity);
-        final int totalXp = baseXp + (mobLevel * perLevelXp);
+        final double xpBonusPercent = Math.max(0.0D, talentManager.getEffectTotal(killer, "class-xp-bonus"));
+        final int totalXp = (int) Math.round((baseXp + (mobLevel * perLevelXp)) * (1.0D + (xpBonusPercent / 100.0D)));
         if (totalXp <= 0) {
             return;
         }

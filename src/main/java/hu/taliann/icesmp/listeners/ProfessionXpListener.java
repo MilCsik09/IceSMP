@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
+import hu.taliann.icesmp.managers.TalentManager;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -32,10 +33,20 @@ public final class ProfessionXpListener implements Listener {
 
     private final ProfessionManager professionManager;
     private final ConfigManager configManager;
+    private final TalentManager talentManager;
 
-    public ProfessionXpListener(final ProfessionManager professionManager, final ConfigManager configManager) {
+    public ProfessionXpListener(final ProfessionManager professionManager, final ConfigManager configManager,
+                                final TalentManager talentManager) {
         this.professionManager = professionManager;
         this.configManager = configManager;
+        this.talentManager = talentManager;
+    }
+
+    private void awardXp(final Player player, final ProfessionType profession, final String configPath, final int fallback) {
+        final int baseXp = Math.max(0, configManager.getInt(configPath, fallback));
+        final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
+        final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
+        professionManager.addXpFor(player, profession, totalXp);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -45,15 +56,13 @@ public final class ProfessionXpListener implements Listener {
         final Material material = block.getType();
 
         if (isOre(material)) {
-            professionManager.addXpFor(player, ProfessionType.MINER,
-                    Math.max(0, configManager.getInt("professions.xp.mining-ore", 5)));
+            awardXp(player, ProfessionType.MINER, "professions.xp.mining-ore", 5);
             return;
         }
 
         if (CROPS.contains(material) && block.getBlockData() instanceof Ageable ageable
                 && ageable.getAge() >= ageable.getMaximumAge()) {
-            professionManager.addXpFor(player, ProfessionType.FARMER,
-                    Math.max(0, configManager.getInt("professions.xp.farming-harvest", 3)));
+            awardXp(player, ProfessionType.FARMER, "professions.xp.farming-harvest", 3);
         }
     }
 
@@ -65,8 +74,7 @@ public final class ProfessionXpListener implements Listener {
 
         final ItemStack result = event.getRecipe().getResult();
         if (isArmorerCraft(result.getType())) {
-            professionManager.addXpFor(player, ProfessionType.ARMORER,
-                    Math.max(0, configManager.getInt("professions.xp.crafting-gear", 8)));
+            awardXp(player, ProfessionType.ARMORER, "professions.xp.crafting-gear", 8);
         }
     }
 
@@ -76,8 +84,7 @@ public final class ProfessionXpListener implements Listener {
             return;
         }
 
-        professionManager.addXpFor(player, ProfessionType.ARMORER,
-                Math.max(0, configManager.getInt("professions.xp.smithing", 15)));
+        awardXp(player, ProfessionType.ARMORER, "professions.xp.smithing", 15);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -86,8 +93,7 @@ public final class ProfessionXpListener implements Listener {
             return;
         }
 
-        professionManager.addXpFor(event.getPlayer(), ProfessionType.FISHERMAN,
-                Math.max(0, configManager.getInt("professions.xp.fishing", 4)));
+        awardXp(event.getPlayer(), ProfessionType.FISHERMAN, "professions.xp.fishing", 4);
     }
 
     private boolean isOre(final Material material) {

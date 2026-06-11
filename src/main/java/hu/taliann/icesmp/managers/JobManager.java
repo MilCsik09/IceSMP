@@ -24,6 +24,7 @@ public final class JobManager {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
+    private java.util.function.Consumer<Player> xpChangeHook;
     private final NamespacedKey jobPrimaryKey;
     private final NamespacedKey jobPrimaryXpKey;
     private final NamespacedKey jobSecondaryKey;
@@ -156,7 +157,21 @@ public final class JobManager {
         final NamespacedKey xpKey = toPrimary ? jobPrimaryXpKey : jobSecondaryXpKey;
         pdc.set(xpKey, PersistentDataType.INTEGER, Math.max(0, xp));
         applyAutoUnlocks(player, toPrimary);
+        if (xpChangeHook != null) {
+            xpChangeHook.accept(player);
+        }
         return true;
+    }
+
+    /**
+     * Registers a hook invoked after every XP change (setter injection breaks the
+     * JobManager &lt;-&gt; SpecializationManager dependency cycle). Used for
+     * specialization spell unlocks.
+     *
+     * @param hook the callback receiving the affected player
+     */
+    public void setXpChangeHook(final java.util.function.Consumer<Player> hook) {
+        this.xpChangeHook = hook;
     }
 
     /**

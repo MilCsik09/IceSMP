@@ -5,6 +5,7 @@ import hu.taliann.icesmp.commands.faction.FactionLeaveSubcommand;
 import hu.taliann.icesmp.commands.faction.FactionSetSubcommand;
 import hu.taliann.icesmp.commands.faction.FactionSubcommand;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TextUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -23,11 +24,12 @@ public final class FactionCommand implements BasicCommand {
     private final Map<String, FactionSubcommand> subcommands = new LinkedHashMap<>();
     private final MessageManager messageManager;
 
-    public FactionCommand(final FactionManager factionManager, final MessageManager messageManager) {
+    public FactionCommand(final FactionManager factionManager, final MetelytepoManager metelytepoManager,
+                          final MessageManager messageManager) {
         this.messageManager = messageManager;
-        register(new FactionJoinSubcommand(factionManager, messageManager));
+        register(new FactionJoinSubcommand(factionManager, metelytepoManager, messageManager));
         register(new FactionLeaveSubcommand(factionManager, messageManager));
-        register(new FactionSetSubcommand(factionManager, messageManager));
+        register(new FactionSetSubcommand(factionManager, metelytepoManager, messageManager));
     }
 
     private void register(final FactionSubcommand subcommand) {
