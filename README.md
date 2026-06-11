@@ -1,191 +1,154 @@
 # IceSMP
 
-Az **IceSMP** egy Folia-alapú, 1.21.11-es kompatibilis Minecraft plugin, amelynek célja egy moduláris, jól karbantartható **SMP** szerverélmény felépítése.
+Az **IceSMP** egy Folia-alapú Minecraft plugin (1.21.11, Paper API kompatibilis), amely egy
+fantasy "királyságos" SMP szerver teljes játékmenet-rendszerét adja: frakciók, kasztok és
+specializációk, talentek, szakmák, varázskönyv-alapú képességek, legendás relikviák,
+dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
-## Áttekintés
+> 📘 **Technikai dokumentáció:** [TECHNICAL.md](TECHNICAL.md) — architektúra, parancs- és
+> jogosultság-referencia, config leírás, adattárolás, fejlesztői útmutató.
+> 💡 **Ötlettár / tervek:** [ideas.md](ideas.md)
 
-A projekt három fő rendszer köré épül:
+---
 
-1. **Frakció rendszer** – királyságok / factionök kezelése, passzív bónuszokkal és saját valutákkal.
-2. **Alkotói ereklyék** – ritka, egyedi képességet adó tárgyak PDC alapú védelemmel.
-3. **Távolság-alapú szintezés** – a spawn ponttól távolodva erősödő mobok.
+## Mit tud a plugin? (közérthetően)
 
-A fejlesztés célja, hogy a kód jól szétválasztott modulokból álljon, és később könnyen bővíthető legyen.
+### ⚔️ Frakciók — négy oldal, négy sors
 
-## Technológiai stack
+| Frakció | Belépés | Passzív bónusz |
+|---|---|---|
+| 🔴 **Piros** | `/faction join red` | Immunis a tűz, láva és forró blokkok sebzésére |
+| 🔵 **Kék** | `/faction join blue` | Immunis a fagyásra, lassabban éhezik |
+| ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | Lopakodás közben láthatatlan; a nem-ellenséges mobok békén hagyják |
+| ⚫ **Sötét** | `/faction join dark` — **csak bűnösként!** | Immunis a wither-sebzésre; az élőhalottak nem támadják |
 
-- **Szerver API:** Folia 1.21.11 (Paper API kompatibilis)
-- **Kompatibilitás:** Luminol
-- **Nyelv:** Java 21
-- **JDK:** Temurin 21
-- **Build system:** Gradle
-- **Plugin meta:** `paper-plugin.yml`
+**A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
+**bűnössé (sinner)** bélyegzett. Belépéskor megköttetik a **sötét paktum** — onnantól a
+bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később elhagyod a frakciót.
 
-## Jelenlegi belépési pontok
+### 🧙 Kasztok és specializációk
 
-A projekt jelenlegi fő osztályai a következők:
+Négy alap kaszt választható a profil GUI-ból (max. 2 kaszt / játékos; a másodlagos csak az
+elsődleges max szintje után nyílik meg, és nem specializálódhat):
 
-- `hu.taliann.icesmp.IceSMP` – a fő plugin osztály
-- `hu.taliann.icesmp.IceSMPBootstrap` – bootstrapper
-- `hu.taliann.icesmp.IceSMPLoader` – loader
+- **Varázsló** — támogató és elemi mágia
+- **Harcos** — közelharci erő és kitartás
+- **Íjász** — távolsági harc és mozgékonyság
+- **Orgyilkos** — lopakodás és meglepetés
 
-> Megjegyzés: Folia plugin módban a parancsok nem a `paper-plugin.yml`-ben vannak deklarálva, hanem kódból regisztrálódnak az `IceSMPCore` indulásakor.
+A kasztok **mob ölésből** kapnak XP-t (minél messzebb merészkedsz a spawntól, annál erősebb
+mobok jönnek — és annál több XP-t adnak). A képességek (spellek) a szintekkel
+**automatikusan feloldódnak**.
 
-> Megjegyzés: a jelenlegi package név `hu.Taliann.iceSMP`. A későbbi egységesítés során érdemes lehet teljesen kisbetűs Java package konvencióra váltani, például `hu.taliann.icesmp`.
+A 25. szinttől **specializálódhatsz** (`/spec choose <id>`) — ez végleges döntés, és a
+legerősebb képességek csak így érhetők el:
 
-## Javasolt mappastruktúra
+| Kaszt | Specializációk |
+|---|---|
+| Varázsló | 🌊 Elementalista • 💀 **Nekromanta** (csak bűnösként, Sötét frakcióval!) |
+| Harcos | 🩸 Berserker • 🛡 Védelmező |
+| Íjász | 🎯 Mesterlövész • 🐺 Vadmester |
+| Orgyilkos | ☠ Méregkeverő • 👻 Fantom |
 
-A projekt modulos felépítése:
+### ✨ Varázskönyv és képességek
 
-- `core/` – fő plugin osztály, config betöltés, lifecycle kezelése
-- `data/` – enumok és adatmodellek
-- `managers/` – rendszerek logikája és vezérlése
-- `listeners/` – Bukkit/Folia eseménykezelők
-- `commands/` – játékos és admin parancsok
-- `tasks/` – ismétlődő és aszinkron feladatok
-- `utils/` – segédfüggvények, pl. színek, PDC, matek
+A varázskönyvvel (admin adja: `/job givespellbook`) használod a feloldott képességeket:
 
-## Fő rendszerek
+- **Jobb katt** — kiválasztott varázslat elsütése
+- **Lopakodás + ütés (bal katt)** — váltás a feloldott varázslatok között
 
-### 1. Frakció rendszer
+Minden varázslatnak költsége (éhség vagy XP) és visszatöltési ideje van. 21 varázslat van a
+rendszerben a Dupla Ugrástól a Naptáncon át az Életszívásig.
 
-A szerver alapját ez a modul adja.
+### 🌟 Talentek
 
-**Adattárolás:**
-- SQLite adatbázis, vagy
-- `factions.yml` alapú mentés
+A kaszt- és szakmaszintek **talentpontokat** termelnek (alapból 5 kasztszintenként, illetve
+10 szakmaszintenként 1 pont). A pontokat passzív erősítésekre költheted (`/talent`):
+több élet, gyorsabb mozgás, nagyobb sebzés, vagy extra XP-szerzés.
 
-**Tervezett parancsok:**
-- `/faction join <királyság>`
-- `/faction leave`
-- opcionális admin parancsok: `/faction set`
+### ⚒️ Szakmák
 
-**Tervezett listenerek:**
-- `EntityDamageEvent` – tűzsebzés tiltása a Pirosaknak, jég bónusz a Kékeknek
-- `FoodLevelChangeEvent` – éhség lassítása a Kékeknek
-- `PlayerToggleSneakEvent` – láthatatlanság adása a Semlegeseknek
-- `EntityTargetEvent` – semleges mobok békésen tartása a Semleges frakciónak
+Egy szakmát választhatsz (`/profession join <szakma>`), amely a tényleges tevékenységből fejlődik:
 
-### 2. Valutaváltó / frakciógazdaság
+- **Kovács** — páncél/pajzs craftolás és smithing
+- **Bányász** — ércek kibányászása
+- **Földműves** — érett termények betakarítása
+- **Halász** — horgászat
 
-A szerveren több, frakciókhoz kötött valuta fut, és ezek **külön itemként** jelennek meg PDC-vel és custom model data-val. A játékosok a `/currency exchange` parancssal tudnak váltani közöttük. A váltás árfolyama és díja konfigurálható, így később frakciók közti kereskedelem és elfogadás is erre épülhet.
+A **netherite felszerelést csak a 25+ szintű Kovács** készítheti el! A 25. szinttől a
+szakmák is specializálódhatnak (pl. Fegyverkovács / Páncélkovács).
 
-### 3. Játékos profil UI
+### 🗡 Relikviák
 
-A `/profile` parancs egy egyszerű UI-t nyit meg, ahol látható a játékos frakciója és az egyenlege.
+Egyedi, legendás tárgyak (jelenleg: **A Mételytépő** harci fejsze, amely megbélyegzi a
+bűnösöket és ítéletet hajt végre rajtuk). Szabályaik:
 
-### 4. Alkotói ereklyék
+- Egy relikviából **csak egy létezhet** a szerveren.
+- **14 nap inaktivitás** után a relikvia füstként elenyészik, és újra megszerezhetővé válik.
 
-Egyedi, rendkívül ritka tárgyak, amelyek különleges képességeket adnak.
+### 💰 Gazdaság — dinamikus árfolyammal
 
-**Adattárolás:**
-- `PersistentDataContainer` a tárgyon
-- `relics.yml` a tulajdonosi / időadatok követésére
+Minden frakciónak saját valutája van (Piros / Kék / Semleges / Sötét token), amelyek fizikai
+itemként és banki egyenlegként is léteznek:
 
-**Fő mechanikák:**
-- egyedi tárgyak létrehozása `CustomModelData` használatával
-- általános rituálé időzítővel (`BukkitRunnable`)
-- inaktivitás-ellenőrzés belépéskor
-- trigger + cooldown framework (`RIGHT_CLICK_AIR`, `RIGHT_CLICK_BLOCK`)
-- config-alapú ability binding (`ability-id`)
+- `/bank deposit` — a nálad lévő tokenek bankba helyezése; `/bank withdraw` — kivét itemként
+- `/currency pay` — utalás játékosok közt; `/currency exchange` — valutaváltás
+- **Az árfolyam élő:** egy valuta értékét a szerveren lévő összmennyisége határozza meg.
+  Ha egy frakció elárasztja a gazdaságot a pénzével, az inflálódik és kevesebbet ér.
+  Az aktuális árfolyamokat a `/currency rates` mutatja.
 
+### 🧟 Távolság-alapú nehézség
 
-**Inaktivitás-kezelés:**
-- belépéskor ellenőrzés, hogy a játékos relikviája lejárt-e
-- lejárat esetén a tárgy eltávolítása az inventoryból
-- füst effekt lejátszása
+A spawntól távolodva a világ veszélyesebbé válik: minden 1000 blokk +1 mob szint
+(`[Lvl X] Zombi` névvel, több élettel és sebzéssel). A spawner-/parancs-spawnolt mobok nem
+skálázódnak, így a farmok nem törhetik el a rendszert.
 
-### 5. Távolság-alapú szintező
+### 🏰 Frakcióterületek
 
-A világ a spawn ponttól távolodva fokozatosan veszélyesebbé válik.
+Adminok fővárosokat és területeket jelölhetnek ki (`/territory setcapital`, `/territory claim`).
+A határátlépést a játékosok action bar üzenetben látják ("✦ Piros főváros ✦"), és opcionálisan
+bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehet építeni/bontani.
 
-**Tervezett listener:**
-- `CreatureSpawnEvent`
+---
 
-**Szintképlet:**
-- `távolság / 1000 = szint`
-- példa: `2000 blokk = Lvl 2`
+## Parancsok (gyorsreferencia)
 
-**Módosítások:**
-- `Attribute.GENERIC_MAX_HEALTH`
-- `Attribute.GENERIC_ATTACK_DAMAGE`
-- custom name: `[Lvl X] Zombi`
+| Parancs | Aliasok | Mire való |
+|---|---|---|
+| `/profile` | `status`, `info` | Profil megnyitása (frakció, egyenlegek, kasztválasztás) |
+| `/faction join/leave` | `f` | Frakcióba lépés / kilépés |
+| `/spec list/choose/info` | `specialization` | Specializációk |
+| `/talent`, `/talent spend` | `talents` | Talentek megtekintése és fejlesztése |
+| `/profession join/info/list` | `prof`, `szakma` | Szakma választás és állapot |
+| `/bank balance/deposit/withdraw` | `wallet`, `vault` | Banki műveletek |
+| `/currency balance/pay/exchange/rates` | `money`, `eco` | Valutaműveletek és árfolyamok |
+| `/job …` | `class` | Kaszt adminisztráció (admin) |
+| `/relic list/give` | `relics` | Relikvia adminisztráció (admin) |
+| `/sinner <játékos> set/clear` | — | Bűnös státusz kezelése (admin) |
+| `/territory …` | `terulet` | Területek kijelölése (admin) |
+| `/icesmp reload` | `ismp` | Konfiguráció újratöltése (admin) |
 
-## Fejlesztési ütemterv
+A teljes parancs- és jogosultság-referencia a [TECHNICAL.md](TECHNICAL.md)-ben található.
 
-### Fázis 1 – Alapok
-- [x] Főosztály felmérése
-- [x] `config.yml` létrehozása
-- [x] `FactionType` enum megírása
-- [x] Alap valuta rendszer (`CurrencyManager`, `currency.yml`)
+---
 
-### Fázis 2 – Királyságok
-- [x] adatbázis vagy YAML alapú mentés
-- [x] `/faction` parancs váz és subcommand router
-- [x] passzív frakció listenerek alapjai
+## Telepítés és build
 
-### Fázis 2.5 – Valuták és váltó
-- [x] többvalutás `CurrencyManager`
-- [x] `/currency exchange` alparancs
-- [x] valutaárfolyam és díj configból
-- [x] item-alapú valuta tokenek PDC-vel és custom model data-val
+**Követelmények:** Java 21 (Temurin ajánlott), Folia/Luminol 1.21.11 szerver.
 
-### Fázis 3 – Ereklyék
-- [x] PDC utilok
-- [x] ereklye tárgyak generálása
-- [x] rituálé időzítő
-- [x] inaktivitás-törlő (belépéskori ellenőrzés, 14 nap után törlés + füst effekt, `relics.yml` perzisztencia)
+```bash
+./gradlew build      # plugin jar a build/libs alá
+./gradlew runServer  # helyi tesztszerver indítása (run/ mappa)
+```
 
-### Fázis 4 – Világ & Harc
-- [x] mob skálázó rendszer a `CreatureSpawnEvent` alapján (`MobScalingManager` + `MobScalingListener`)
-- [x] spawn távolság szerinti attribútum-módosítások (max élet, sebzés)
-- [x] névkezelés és szint kijelzés (`[Lvl X] <mob neve>`)
-
-### Fázis 5 – Szakmák / extra szabályok
-- [x] opcionális craftolási korlátozások (`crafting-restrictions` config szekció)
-- [x] szint vagy kaszt alapú tiltások (craft + smithing eredmény blokkolás)
-
-### Fázis 6 – Kasztok, szakmák, gazdaság
-- [x] 4 alap kaszt: Varázsló, Harcos, Íjász, Orgyilkos
-- [x] kaszt XP mob ölésből (skálázott mobok bónusz XP-t adnak), szint-alapú automatikus skill-feloldás
-- [x] 6 új kaszt-skill: Sasszem, Sortűz, Árnyéklépés, Füstbomba, Életszívás, Csontfagy
-- [x] szakma rendszer (`/profession`): Kovács, Bányász, Földműves, Halász — tevékenység-alapú XP
-- [x] netherite craft a magas szintű Kovácshoz kötve
-- [x] 4. frakció: Sötét (saját valutával és passzívokkal)
-- [x] passzív frakció bónusz listener (tűz/fagy/wither immunitás, éhség-lassítás, lopakodó láthatatlanság)
-- [x] dinamikus, kínálat-alapú valutaárfolyam (`/currency rates`)
-- további ötletek: lásd `ideas.md`
-
-### Fázis 7 – Specializációk, talentek, területek
-- [x] specializációs rendszer (`/spec`): kasztonként 2 spec a 25. szinttől, csak az elsődleges kaszt specializálódhat
-- [x] a Nekromanta a Varázsló sötét specializációja — csak bűnösként (sinner) és Sötét frakcióval választható
-- [x] Sötét frakcióba lépés csak bűnösként; belépéskor örök "sötét paktum" (a sinner jelölés többé nem törölhető)
-- [x] szakma specializációk (Fegyverkovács/Páncélkovács, Aranyásó/Vájármester, Botanikus/Állattenyésztő, Horgászmester/Kincsvadász)
-- [x] talent rendszer (`/talent`): kaszt és szakma ponttár, attribútum (élet/sebesség/sebzés) és XP-bónusz talentek
-- [x] frakció területek és fővárosok kijelölése admin paranccsal (`/territory`), határátlépés-jelzés, opcionális építésvédelem
-
-## Konvenciók
-
-- A rendszer legyen **moduláris** és könnyen tesztelhető.
-- Az üzleti logika kerüljön a `managers/` és `data/` rétegekbe.
-- A listenerek csak delegáljanak, ne tartalmazzanak túl sok logikát.
-- A helper függvények maradjanak a `utils/` csomagban.
-
-## Következő lépés
-
-A következő fejlesztési lépés a **Frakció rendszer** alapjainak megírása:
-
-1. `FactionType` enum
-2. config betöltés
-3. mentési réteg
-4. `/faction` parancs
-5. passzív frakció bónuszok
+A plugin első indításkor létrehozza a `config.yml` és `messages.yml` fájlokat a plugin
+adatmappájában — minden játékmeneti érték és üzenet ott testreszabható.
 
 ## Projekt állapota
 
-- **Név:** IceSMP
-- **API:** Folia 1.21.11 (Paper API kompatibilis)
-- **Nyelv:** Java 21
-- **Build:** Gradle
-- **Státusz:** tervezési / kezdeti fejlesztési fázis
-
+- **API:** Folia 1.21.11 (Paper API kompatibilis) • **Nyelv:** Java 21 • **Build:** Gradle
+- **Folia-kompatibilis:** `folia-supported: true`, minden ütemezett feladat szinkron
+- Minden tervezett fázis (1–7) elkészült: alapok, frakciók, valuták és váltó, relikviák,
+  mob skálázás, szakmák és craft-korlátozások, kasztok/specializációk/talentek, területek.
+- A következő irányok az [ideas.md](ideas.md)-ben: raid eventek, frakció-kassza és adó,
+  quest-keretrendszer, relikvia-elytrák, világesemények.

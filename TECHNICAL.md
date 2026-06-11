@@ -1,0 +1,280 @@
+# IceSMP — Technikai dokumentáció
+
+Ez a dokumentum a plugin teljes technikai referenciája: architektúra, modulok, parancsok,
+jogosultságok, konfiguráció, adattárolás és fejlesztői útmutató.
+
+- Közérthető áttekintés: [README.md](README.md)
+- Tervek, ötletek: [ideas.md](ideas.md)
+- Agent/fejlesztői gyorsjegyzet: [AGENTS.md](AGENTS.md)
+
+---
+
+## 1. Architektúra
+
+### Életciklus
+
+```
+IceSMP.onEnable()
+  └─ new IceSMPCore(plugin)        // minden manager felépítése, spellek regisztrálása
+       └─ IceSMPCore.enable()
+            ├─ configManager.load()        — config.yml betöltés (copyDefaults)
+            ├─ messageManager.reload()     — messages.yml betöltés
+            ├─ currencyManager.load()      — currency-balances.yml
+            ├─ factionManager.load()       — factions.yml
+            ├─ relicManager.load()         — relic definíciók + relics.yml ownership
+            ├─ mobScalingManager.load()    — mob-scaling config cache
+            ├─ craftingRestrictionManager.load() — craft szabályok cache
+            ├─ territoryManager.load()     — territories.yml
+            ├─ registerListeners()
+            └─ registerCommands()          — Paper BasicCommand API (kódból, nem paper-plugin.yml-ből)
+
+IceSMPCore.disable()
+  ├─ minden online játékos session-állapotának takarítása (PlayerSessionCleanupListener)
+  ├─ ProfileGUI.closeAll()
+  └─ currency/faction/relic/territory save()
+```
+
+- **Belépési pontok** (`paper-plugin.yml`): `IceSMP` (fő osztály), `IceSMPBootstrap`, `IceSMPLoader`.
+- **Folia-kompatibilitás:** `folia-supported: true`; minden ütemezett feladat szinkron
+  (nincs `runTaskAsynchronously`); entitás-módosítás mindig a tulajdonos régiószálon
+  (event handlerben) történik; a teleport `teleportAsync`-kal megy (`ShadowstepSpell`).
+- **Dependency injection:** kizárólag konstruktor-injektálás; egyetlen kivétel a
+  `JobManager.setXpChangeHook(...)` setter, amely a `JobManager ↔ SpecializationManager`
+  körkörös függést oldja fel.
+
+### Csomagstruktúra
+
+| Csomag | Tartalom |
+|---|---|
+| `core` | `IceSMPCore` — lifecycle, wiring |
+| `data` | Enumok és rekordok: `FactionType`, `CurrencyType`, `JobType`, `ProfessionType`, `SpecializationType`, `ProfessionSpecializationType`, `CraftingRule`, `Territory`, `Wallet`, `RelicOwnership` (relics csomagban) |
+| `managers` | Üzleti logika és állapot (lásd 2. fejezet) |
+| `listeners` | Bukkit/Folia eseménykezelők — vékonyak, managerbe delegálnak |
+| `commands` | Paper `BasicCommand` implementációk; nagy domainekhez router + subcommand split (`commands/currency`, `commands/faction`, `commands/job`) |
+| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 21 spell implementáció, `SpellTargetingUtil` |
+| `relics` | Relic framework: definíciók, triggerek, ability registry, ownership rekord |
+| `items` | Item factory-k PDC tagekkel: `CurrencyItemFactory`, `RelicItemFactory`, `SpellbookItemFactory` |
+| `gui` | `ProfileGUI`, `JobGUI` + holderek, `ProfileBookFactory` |
+| `utils` | `MessageManager`, `TextUtil`, `ExperienceUtil` |
+
+---
+
+## 2. Manager referencia
+
+| Manager | Felelősség | Perzisztencia |
+|---|---|---|
+| `ConfigManager` | `config.yml` elérés fallback-ekkel | config.yml |
+| `MessageManager` | Lokalizált üzenetek (`messages.*` kulcsok, legacy `&` és MiniMessage formátum) | messages.yml |
+| `CurrencyManager` | Többvalutás egyenlegek, befizetés/kivét/utalás/váltás, item tokenek, `getTotalSupply()` | currency-balances.yml |
+| `ExchangeRateService` | Kínálat-alapú dinamikus árfolyam: `érték = base × clamp((ref/supply)^elaszticitás, min, max)`; `getRate(from,to) = value(from)/value(to)` | — (configból számol) |
+| `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
+| `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (szint = xp/100+1, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
+| `SpecializationManager` | Kaszt- és szakma-specializációk: feltétel-ellenőrzés (szint, frakció, sinner), kiválasztás, spec spell unlock (`specializations.<id>.spell-unlocks`) | játékos PDC |
+| `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
+| `ProfessionManager` | Szakma + XP/szint (max 50), tevékenység-alapú XP jóváírás | játékos PDC |
+| `CraftingRestrictionManager` | Config-vezérelt craft szabályok: kaszt- és/vagy szakma-követelmény anyagonként; üzenet-throttle | — |
+| `SpellRegistry` | A 21 regisztrált spell nyilvántartása id szerint | — |
+| `RelicManager` | Relic definíciók (config + beépített seed), singleton tulajdonjog, 14 napos inaktivitás-lejárat, belépéskori sweep | relics.yml |
+| `RelicCooldownService` | Per játékos/relic/trigger cooldownok | memória |
+| `MetelytepoManager` | Mételytépő mechanikák: sinner flag, **dark pact** (örök sinner), Justice/Honor Eye képességek, fagyasztás | játékos PDC + memória |
+| `MobScalingManager` | Távolság-alapú mob szint: attribútum skálázás, névcímke, `mob_level` PDC | entitás PDC |
+| `TerritoryManager` | Kör alakú frakcióterületek és fővárosok, `getTerritoryAt(Location)` | territories.yml |
+
+### Kulcs-szabályok (üzleti logika)
+
+**Sötét paktum lánc:**
+1. Sinner jelölést a Mételytépő (`MetelytepoManager.markAsSinner`) vagy admin (`/sinner set`) ad.
+2. `/faction join dark` csak sinnerként engedélyezett → belépéskor `sealDarkPact()`:
+   `dark_pact` PDC + sinner garantálva.
+3. `clearSinner()` visszautasítja a tisztítást, ha `dark_pact` van a játékoson (örökre bűnös),
+   függetlenül attól, hogy később elhagyja-e a frakciót.
+4. A NECROMANCER specializáció feltétele: WIZARD elsődleges kaszt a spec-szinten + DARK
+   frakció + sinner.
+
+**Specializáció szabályok:** csak az **elsődleges** kaszt specializálódhat; egy játékosnak
+max. 1 kaszt-spec és 1 szakma-spec lehet; a választás végleges (admin `/spec reset` törli).
+
+**Relic singleton:** `RelicManager.giveRelic` elutasítja az átadást, ha a relicnek aktív
+(nem lejárt) tulajdonosa van. Lejárat: utolsó látás + `relics.inactivity.expiry-days`
+(alapból 14 nap); a lejárt relic a tulajdonos belépésekor füst effekttel törlődik az
+inventoryból és felszabadul.
+
+---
+
+## 3. Parancsok és jogosultságok
+
+| Parancs | Aliasok | Alparancsok | Jogosultság |
+|---|---|---|---|
+| `/icesmp` | `ismp` | `reload` | `icesmp.admin.reload` |
+| `/currency` | `money`, `eco` | `balance`, `pay`, `set`, `exchange`, `rates` | `set`: `icesmp.currency.admin` |
+| `/bank` | `wallet`, `vault` | `balance`, `deposit`, `withdraw <valuta> <összeg>` | — |
+| `/faction` | `f` | `join`, `leave`, `set` | `set`: `icesmp.faction.admin` |
+| `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givespellbook`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
+| `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `addxp` | admin ágak: `icesmp.admin.profession` |
+| `/spec` | `specialization` | `list`, `choose`, `info`, `reset` | `reset`: `icesmp.admin.spec` |
+| `/talent` | `talents` | `list`, `spend <class\|profession> <talent>` | — |
+| `/profile` | `status`, `info` | — | — |
+| `/sinner` | — | `<játékos> set\|clear` | `icesmp.admin` |
+| `/relic` | `relics` | `list`, `give` | `give`: `icesmp.relic.admin` |
+| `/territory` | `terulet` | `setcapital`, `claim`, `remove`, `list`, `info` | `icesmp.admin.territory` |
+
+További jogosultság: `icesmp.admin.territory.bypass` — építésvédelem megkerülése.
+
+A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztrálódnak
+(`IceSMPCore.registerCommands()`), mindegyik `suggest(...)` tab-complete lefedettséggel.
+
+---
+
+## 4. Eseménykezelők (listeners)
+
+| Listener | Esemény(ek) | Funkció |
+|---|---|---|
+| `SpellbookListener` | `PlayerInteractEvent`, `PlayerAnimationEvent` | Jobb katt: cast; sneak+ütés: spell váltás; költség/cooldown pipeline |
+| `SpellProjectileListener`, `SpellStateListener` | projektil/állapot események | Spell-specifikus utókezelés |
+| `ClassXpListener` | `EntityDeathEvent` | Kaszt XP ölésből (+mob szint bónusz, +talent XP%, másodlagos kaszt rész) |
+| `ProfessionXpListener` | `BlockBreakEvent`, `CraftItemEvent`, `SmithItemEvent`, `PlayerFishEvent` | Szakma XP tevékenységből (+talent XP%) |
+| `JobCraftRestrictionListener` | `PrepareItemCraftEvent`, `PrepareSmithingEvent` | Tiltott craft eredmény nullázása + throttle-olt üzenet |
+| `CurrencyCraftListener`, `RelicCraftSafetyListener` | `PrepareItemCraftEvent` | Tagelt itemek craft-védelme |
+| `CurrencyItemRefreshListener`, `RelicItemRefreshListener` | click/join | Item vizuálok frissítése |
+| `RelicInactivityListener` | `PlayerJoinEvent` | 14 napos lejárat-sweep + last-seen frissítés |
+| `RelicTriggerListener` | interakció | Relic trigger dispatch (`RIGHT_CLICK_AIR/BLOCK`) |
+| `MetelytepoRelicListener` | harc események | Mételytépő: sinner bélyegzés, Justice, Honor Eye |
+| `MobScalingListener` | `CreatureSpawnEvent` | Mob szintezés (attribútumok + név + PDC) |
+| `FactionPassiveListener` | `EntityDamageEvent`, `FoodLevelChangeEvent`, `PlayerToggleSneakEvent`, `EntityTargetLivingEntityEvent` | Frakció passzívok |
+| `TalentAttributeListener` | `PlayerJoinEvent` | Talent attribútum-módosítók idempotens újra-alkalmazása |
+| `TerritoryListener` | `PlayerMoveEvent` (blokk-váltásra szűrve), `BlockBreak/PlaceEvent`, `PlayerQuitEvent` | Határátlépés action bar + opcionális építésvédelem |
+| `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
+| `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |
+
+---
+
+## 5. Spell referencia
+
+A cast pipeline: kiválasztott spell → `canCast` → költség-ellenőrzés (`HUNGER` éhségpont /
+`XP` összes tapasztalatpont) → cooldown ellenőrzés → `execute(player)` → költség levonás +
+cooldown indítás. A **60 mp-nél hosszabb** cooldownok PDC-be (`cd_<spellId>`) perzisztálódnak,
+a rövidebbek memóriában élnek.
+
+| Spell id | Név | Cooldown (mp) | Költség | Alap feloldás |
+|---|---|---|---|---|
+| `double_jump` | Dupla Ugrás | 0 | 3 éhség | íjász 15 |
+| `wisplight` | Wisplight | 0 | 1 éhség | varázsló 2 |
+| `featherfoot` | Pehelykönnyű Lépte | 45 | 1 éhség | Mesterlövész spec 25 |
+| `friendship` | Barátság | 45 | 4 éhség | Vadmester spec 25 |
+| `multishot` | Sortűz | 45 | 5 éhség | íjász 8 |
+| `angry_chicken` | Mérgező Csirke | 30 | 5 éhség | Vadmester spec 30 |
+| `eagle_eye` | Sasszem | 90 | 4 éhség | íjász 3 |
+| `shadowstep` | Árnyéklépés | 60 | 6 éhség | orgyilkos 5 |
+| `smoke_bomb` | Füstbomba | 120 | 6 éhség | orgyilkos 12 |
+| `gust` | Lökéshullám | 60 | 30 XP | harcos 15 |
+| `life_drain` | Életszívás | 60 | 20 XP | Nekromanta spec 25 |
+| `bone_chill` | Csontfagy | 90 | 25 XP | Nekromanta spec 30 |
+| `root` | Gyökerezés | 300 | 8 éhség | varázsló 5 |
+| `feast` | Lakoma | 120 | 352 XP | Berserker spec 25 |
+| `armament` | Fegyverzet | 300 | 352 XP | harcos 5 |
+| `inner_focus` | Belső Fókusz | 480 | 20 éhség | harcos 10 |
+| `hide` | Elrejtőzés | 480 | 550 XP | Fantom spec 25 |
+| `confusion` | Megzavarás | 1200 | 160 XP | varázsló 10 / Méregkeverő spec 25 |
+| `rain_dance` | Esőtánc | 3600 | 352 XP | varázsló 15 |
+| `sun_dance` | Naptánc | 3600 | 352 XP | Elementalista spec 25 |
+| `lucky_star` | Lucky Star | 0 (toggle) | XP-t éget | Elementalista spec 30 |
+
+A feloldási szintek a `config.yml`-ben szabadon átírhatók (`classes.*.spell-unlocks`,
+`specializations.*.spell-unlocks`).
+
+---
+
+## 6. Konfiguráció referencia (`config.yml`)
+
+| Szekció | Mit vezérel |
+|---|---|
+| `settings` | `default-faction`, `debug` |
+| `hud.profile` | Profil HUD paraméterek |
+| `currency` | Alapvaluta, szimbólum, **fix** árfolyam + díj (fallback), item tokenek (anyag, model-data, név per valuta — RED/BLUE/NEUTRAL/DARK) |
+| `currency.dynamic-exchange` | `enabled`, `reference-supply`, `elasticity`, `min/max-multiplier`, `base-values.<VALUTA>` — a kínálat-alapú árfolyam paraméterei |
+| `messages` | (örökölt, nem használt — a futásidejű üzenetforrás a `messages.yml`) |
+| `factions` | Frakció megjelenítési nevek + `passives.enabled`, `passives.blue-hunger-slow-chance` |
+| `relics` | `enabled`, `inactivity.enabled` + `expiry-days`, üzenetek, `definitions.<id>` (vizuál + triggerek + ability-id + cooldown) |
+| `mob-scaling` | `enabled`, `blocks-per-level`, `max-level`, `health/damage-per-level`, `hostile-only`, `ignored-spawn-reasons`, `name.*` |
+| `classes` | `xp.*` (per-kill, per-mob-level, secondary-share-percent, hostile-only), `specialization.required-level`, `<kaszt>.spell-unlocks` |
+| `specializations` | `<spec>.spell-unlocks` — spec-spellek kaszt-szinthez kötve |
+| `talents` | `class` és `profession` tár: `points-per-levels` + `definitions.<id>` (`display-name`, `effect`, `per-rank`, `max-rank`) |
+| `professions` | `xp.*` (tevékenység XP értékek), `specialization.required-level` |
+| `crafting-restrictions` | `enabled`, `notify-cooldown-seconds`, `rules.<id>`: `materials` lista + `required-job`/`required-level` és/vagy `required-profession`/`required-profession-level` (minden megadott feltételnek teljesülnie kell) |
+| `territory` | `notify.enabled` (action bar), `protection.enabled` (építésvédelem) |
+
+Talent effektek: `max-health`, `movement-speed`, `attack-damage` (attribútum módosító),
+`class-xp-bonus`, `profession-xp-bonus` (százalék).
+
+`/icesmp reload` újratölti a `config.yml`-t és `messages.yml`-t. Megjegyzés: a betöltéskor
+cache-elő managerek (mob scaling, craft szabályok, relic definíciók) értékei teljes újraindításnál
+frissülnek garantáltan.
+
+---
+
+## 7. Adattárolás
+
+### YAML fájlok (plugin adatmappa)
+
+| Fájl | Tartalom | Író |
+|---|---|---|
+| `config.yml` | Konfiguráció | ConfigManager (copyDefaults) |
+| `messages.yml` | Lokalizált üzenetek | MessageManager (resource másolás) |
+| `currency-balances.yml` | `players.<uuid>.<VALUTA>: összeg` | CurrencyManager |
+| `factions.yml` | `<uuid>: FRAKCIÓ` | FactionManager |
+| `relics.yml` | `ownerships.<relicId>.owner` + `.last-seen` | RelicManager |
+| `territories.yml` | `territories.<id>`: faction, name, world, x, z, radius, capital | TerritoryManager |
+
+### PDC kulcsok (namespace: a plugin, `icesmp`)
+
+**Játékoson:**
+`job_primary`, `job_primary_xp`, `job_secondary`, `job_secondary_xp`, `unlocked_spells`
+(vesszővel elválasztott spell idk), `selected_spell_index`, `cd_<spellId>` (hosszú spell
+cooldownok), `is_sinner`, `dark_pact`, `profession`, `profession_xp`, `class_spec`,
+`profession_spec`, `talents_class` és `talents_profession` (`id:rang,...` formátum).
+
+**Itemen:** `currency_type`; `relic_id`, `relic_owner`, `relic_created_at`;
+`is_spellbook`, `unique_id`; armament tag (idézett kard jelölése).
+
+**Entitáson:** `mob_level` (skálázott mob szintje).
+
+**Attribútum módosítók (játékoson, talentekből):** `icesmp:talent_max_health`,
+`icesmp:talent_movement_speed`, `icesmp:talent_attack_damage` — belépéskor remove+add
+mintával idempotensen újra-alkalmazva.
+
+---
+
+## 8. Build és fejlesztés
+
+```bash
+./gradlew build        # fordítás + jar
+./gradlew test
+./gradlew runServer    # xyz.jpenilla.run-paper, run/ mappában
+```
+
+- **Verziókatalógus:** `gradle/libs.versions.toml` (minecraft, `dev.folia:folia-api`,
+  run-paper plugin). A folia-api `compileOnly` — futásidőben a szerver adja.
+- **Java 21**, `org.gradle.configuration-cache` engedélyezve.
+
+### Új funkció hozzáadása (minták)
+
+- **Manager:** konstruktor `(plugin, configManager, ...)` → példányosítás az `IceSMPCore`
+  konstruktorban → `load()` az `enable()`-ben, `save()` a `disable()`-ben, ha perzisztens →
+  `clearPlayerState(UUID)` ha van per-session állapota (kösd be a
+  `PlayerSessionCleanupListener`-be).
+- **Parancs:** `BasicCommand` implementáció `execute` + `suggest` lefedettséggel →
+  regisztrálás `IceSMPCore.registerCommands()`-ban.
+- **Spell:** `BaseSpell` leszármazott (id, név, cooldown, költség) → `spellRegistry.register(...)`
+  az `IceSMPCore`-ban → név a `messages.yml` `messages.spell.<id>.name` kulcsán → feloldási
+  szint a configban. Statikus/volatile állapothoz adj `clearPlayerState`-et és kösd a cleanup
+  listenerbe.
+- **Item mechanika:** PDC tag a megfelelő `*ItemFactory`-ban + craft-védelem listenerrel.
+- **Kódstílus:** `final` paraméterek és mezők, `public final class`, konstruktor-injektálás,
+  játékos-szöveg mindig `MessageManager`-en át (`messages.yml`), szín a `TextUtil.color`-ral.
+
+### Folia-szabályok
+
+- Ne használj `runTaskAsynchronously`-t; az időzített feladatok szinkron futnak.
+- Késleltetett task után mindig `isValid()`/null ellenőrzés entitásra és játékosra.
+- Entitást csak a tulajdonos régiószálán módosíts (event handler kontextus biztonságos).
+- Teleporthoz `teleportAsync`-ot használj.

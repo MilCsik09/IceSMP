@@ -62,7 +62,7 @@ Set-Location "C:\Users\csikm\Desktop\IceSMP"
 - Spell cooldown persistence is split in `SpellbookListener`: cooldowns for spells with `cooldown >= 60s` are persisted to player PDC via `cd_*` keys, shorter cooldowns stay in-memory.
 - Per-player volatile state cleanup is centralized in `listeners/PlayerSessionCleanupListener` (quit/kick + plugin disable loop in `IceSMPCore.disable()`).
 - `run/` contains mutable runtime artifacts (worlds, logs, plugin data); treat it as diagnostics/runtime state, not source of truth.
-- README is partly roadmap-oriented; prefer source files above for current behavior.
+- README.md is the player/admin-facing overview; TECHNICAL.md holds the full technical reference (commands, permissions, config, persistence, listener/spell tables). Prefer source files for exact current behavior.
 ## When adding features
 - Wire new systems through `IceSMPCore` (construct manager -> `load()` in `enable()` -> `save()` in `disable()` if persistent).
 - For new commands, follow existing patterns: router/subcommand split for grouped domains (`commands/currency`, `commands/faction`, `commands/job`) and thin single-class handlers for focused commands (`BankCommand`, `ProfileCommand`, `SinnerCommand`, `RelicCommand`), always with `suggest(...)` tab-complete coverage.
