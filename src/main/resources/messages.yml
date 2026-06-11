@@ -69,6 +69,216 @@ messages:
       activated: "<gold>Bástyává szilárdulsz: a csapások lepattannak rólad.</gold>"
     venom_strike:
       name: "Méregcsapás"
+    # --- Varázsló bővítés ---
+    mana_dart:
+      name: "Mana Nyíl"
+    frost_touch:
+      name: "Fagyérintés"
+    arcane_shield:
+      name: "Arkán Pajzs"
+    blink:
+      name: "Villanás"
+    arcane_nova:
+      name: "Arkán Lökés"
+    gravity_well:
+      name: "Gravitációs Örvény"
+    # --- Harcos bővítés ---
+    battle_shout:
+      name: "Csatakiáltás"
+    heroic_leap:
+      name: "Hősi Szökellés"
+    pommel_strike:
+      name: "Markolatütés"
+    second_wind:
+      name: "Második Lendület"
+    whirlwind:
+      name: "Forgószél"
+    iron_skin:
+      name: "Vasbőr"
+    intimidate:
+      name: "Megfélemlítés"
+    # --- Íjász bővítés ---
+    hunters_mark:
+      name: "Vadászjel"
+    disengage:
+      name: "Hátraszökkenés"
+    piercing_bolt:
+      name: "Átütő Lövedék"
+    snare:
+      name: "Csapdázás"
+    camouflage:
+      name: "Álcázás"
+    arrow_storm:
+      name: "Nyílzápor"
+    swift_steps:
+      name: "Szélléptek"
+    # --- Orgyilkos bővítés ---
+    dagger_throw:
+      name: "Tőrhajítás"
+    adrenaline:
+      name: "Adrenalin"
+    hamstring:
+      name: "Ínmetszés"
+    blackout:
+      name: "Elsötétítés"
+    evasion:
+      name: "Kitérés"
+    garrote:
+      name: "Fojtás"
+    shadow_dash:
+      name: "Árnyéksuhanás"
+    death_mark:
+      name: "Haláljegy"
+    # --- Elementalista ---
+    fireball:
+      name: "Tűzgolyó"
+    frost_nova:
+      name: "Fagyrobbanás"
+    thunder_strike:
+      name: "Mennykőcsapás"
+    ember_storm:
+      name: "Parázsvihar"
+    riptide_pull:
+      name: "Örvényrántás"
+    stone_skin:
+      name: "Kőbőr"
+    gale_burst:
+      name: "Viharlöket"
+    elemental_overload:
+      name: "Elemi Túltöltés"
+    # --- Nekromanta ---
+    grave_grasp:
+      name: "Sírkéz"
+    soul_siphon:
+      name: "Lélekszívás"
+    dread_aura:
+      name: "Rettegésaura"
+    bone_spear:
+      name: "Csontdárda"
+    plague_touch:
+      name: "Dögvészérintés"
+    death_pact:
+      name: "Halálpaktum"
+    wraith_form:
+      name: "Kísértetforma"
+    soul_harvest:
+      name: "Lélekaratás"
+    # --- Berserker ---
+    rage:
+      name: "Düh"
+    reckless_swing:
+      name: "Vakmerő Csapás"
+    blood_frenzy:
+      name: "Vérszomj"
+    ground_slam:
+      name: "Földcsapás"
+    roar:
+      name: "Üvöltés"
+    unstoppable:
+      name: "Megállíthatatlan"
+    savage_leap:
+      name: "Vad Ugrás"
+    bloodbath:
+      name: "Vérfürdő"
+    berserk:
+      name: "Berserk"
+    # --- Védelmező ---
+    taunt:
+      name: "Kihívás"
+    fortify:
+      name: "Megerősítés"
+    shield_wall:
+      name: "Pajzsfal"
+    healing_word:
+      name: "Gyógyító Szó"
+    iron_bastion:
+      name: "Vasbástya"
+    shield_charge:
+      name: "Pajzsroham"
+    aegis:
+      name: "Égisz"
+    retribution:
+      name: "Megtorlás"
+    last_stand:
+      name: "Végső Ellenállás"
+    # --- Mesterlövész ---
+    deadeye:
+      name: "Sasles"
+    headshot:
+      name: "Fejlövés"
+    double_tap:
+      name: "Duplalövés"
+    flare:
+      name: "Jelzőfény"
+    kneecap:
+      name: "Térdlövés"
+    high_perch:
+      name: "Magasles"
+    perfect_focus:
+      name: "Tökéletes Fókusz"
+    spectral_volley:
+      name: "Szellemsortűz"
+    masterful_shot:
+      name: "Mesterlövés"
+    # --- Vadmester ---
+    wolf_call:
+      name: "Farkashívás"
+      activated: "<dark_green>Hű farkas társ érkezik a hívásodra.</dark_green>"
+    bee_swarm:
+      name: "Méhraj"
+    primal_bond:
+      name: "Ősi Kötelék"
+      activated: "<dark_green>Az ősi kötelék megerősíti a társaidat.</dark_green>"
+      no-companions: "<gray>Nincs a közeledben megszelídített társad.</gray>"
+    thick_hide:
+      name: "Vastag Irha"
+    predator_senses:
+      name: "Ragadozó Érzékek"
+    stampede:
+      name: "Csorda Rohama"
+    falcon_strike:
+      name: "Sólyomcsapás"
+    king_of_beasts:
+      name: "Vadak Ura"
+    # --- Méregkeverő ---
+    toxin_dart:
+      name: "Toxinnyíl"
+    acid_splash:
+      name: "Savfröccs"
+    numbing_agent:
+      name: "Zsibbasztószer"
+    antidote:
+      name: "Ellenméreg"
+      activated: "<green>A mérgek elhagyják a testedet.</green>"
+    contagion:
+      name: "Ragály"
+    paralytic_strike:
+      name: "Bénító Csapás"
+    toxic_cloud:
+      name: "Mérgező Felhő"
+    debilitating_poison:
+      name: "Sorvasztó Méreg"
+    deathcap:
+      name: "Gyilkos Galóca"
+    # --- Fantom ---
+    ghost_step:
+      name: "Szellemléptek"
+    phase_blink:
+      name: "Fázisugrás"
+    haunt:
+      name: "Kísértés"
+    terror:
+      name: "Rémület"
+    cold_spot:
+      name: "Hidegfolt"
+    ethereal_form:
+      name: "Éteri Forma"
+    phantom_grip:
+      name: "Fantomszorítás"
+    dread_whisper:
+      name: "Rémsuttogás"
+    spectre:
+      name: "Kísértet"
 
   crafting:
     restricted: "&cEhhez a tárgyhoz &f{job} &ckaszt szükséges (min. &f{level}&c. szint)."

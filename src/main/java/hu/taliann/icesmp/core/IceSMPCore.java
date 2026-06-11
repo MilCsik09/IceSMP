@@ -69,6 +69,7 @@ import hu.taliann.icesmp.spells.RainDanceSpell;
 import hu.taliann.icesmp.spells.RootSpell;
 import hu.taliann.icesmp.spells.ShadowstepSpell;
 import hu.taliann.icesmp.spells.SmokeBombSpell;
+import hu.taliann.icesmp.spells.SpellCatalog;
 import hu.taliann.icesmp.spells.SunDanceSpell;
 import hu.taliann.icesmp.spells.VenomStrikeSpell;
 import hu.taliann.icesmp.spells.WisplightSpell;
@@ -166,6 +167,7 @@ public final class IceSMPCore {
         spellRegistry.register(new BoneChillSpell(messageManager));
         spellRegistry.register(new BulwarkSpell(messageManager));
         spellRegistry.register(new VenomStrikeSpell(messageManager));
+        SpellCatalog.registerExpansionSpells(spellRegistry, messageManager);
     }
 
     /**

@@ -72,8 +72,11 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - Alapszabály: **netherite felszerelés csak 25+ szintű Kovácsnak**
 
 ### 7. Képesség (spell) rendszer + Képesség Katalizátor
-- **23 regisztrált spell** (lista: [TECHNICAL.md 5. fejezet](TECHNICAL.md)); **minden kaszt
-  és specializáció saját, egyedi spell-készletet tanul** (nincs átfedés a feloldási listákban)
+- **120 regisztrált spell**: 23 kézzel írt osztály + 97 deklaratívan definiált képesség a
+  `SpellCatalog`-ban (újrafelhasználható építőelemekből: `ConfiguredSpell` builder,
+  `ProjectileBurstSpell`, `BlinkSpell`, plusz egyedi osztályok mint a Farkashívás/Méhraj)
+- **Minden kaszt és specializáció pontosan 10 saját, egyedi képességet tanul** (4 kaszt +
+  8 spec = 12 pool, átfedés nélkül); a feloldási szintek configolhatók
 - **Kaszt-tematikus Képesség Katalizátor** (`CatalystItemFactory`, `is_ability_catalyst` PDC):
   Mágikus Kódex (varázsló), Harci Kürt (harcos), Vadásztarsoly (íjász), Árnyékamulett (orgyilkos)
 - Interakciók (`AbilityCatalystListener`): jobb katt = cast; sneak + ütés = spellváltás

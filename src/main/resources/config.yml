@@ -248,23 +248,51 @@ classes:
   wizard:
     spell-unlocks:
       wisplight: 2
+      mana_dart: 3
       root: 5
+      frost_touch: 7
+      arcane_shield: 9
       confusion: 10
+      blink: 12
       rain_dance: 15
+      arcane_nova: 18
+      gravity_well: 21
   warrior:
     spell-unlocks:
+      battle_shout: 3
       armament: 5
+      heroic_leap: 7
+      pommel_strike: 9
       inner_focus: 10
+      second_wind: 12
       gust: 15
+      whirlwind: 18
+      iron_skin: 20
+      intimidate: 22
   archer:
     spell-unlocks:
+      hunters_mark: 2
       eagle_eye: 3
+      disengage: 5
       multishot: 8
+      piercing_bolt: 10
+      snare: 12
       double_jump: 15
+      camouflage: 17
+      arrow_storm: 20
+      swift_steps: 22
   assassin:
     spell-unlocks:
+      dagger_throw: 2
+      adrenaline: 4
       shadowstep: 5
+      hamstring: 8
+      blackout: 10
       smoke_bomb: 12
+      evasion: 15
+      garrote: 18
+      shadow_dash: 20
+      death_mark: 24
 
 # ===== Specializációk =====
 # A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
@@ -274,30 +302,99 @@ specializations:
   elementalist:
     spell-unlocks:
       sun_dance: 25
+      fireball: 26
+      frost_nova: 28
+      thunder_strike: 30
       lucky_star: 30
+      ember_storm: 33
+      riptide_pull: 36
+      stone_skin: 39
+      gale_burst: 42
+      elemental_overload: 45
   necromancer:
     spell-unlocks:
       life_drain: 25
+      grave_grasp: 26
+      soul_siphon: 28
       bone_chill: 30
+      dread_aura: 32
+      bone_spear: 34
+      plague_touch: 36
+      death_pact: 39
+      wraith_form: 42
+      soul_harvest: 45
   berserker:
     spell-unlocks:
       feast: 25
+      rage: 26
+      reckless_swing: 27
+      blood_frenzy: 29
+      ground_slam: 32
+      roar: 34
+      unstoppable: 37
+      savage_leap: 39
+      bloodbath: 42
+      berserk: 45
   guardian:
     spell-unlocks:
       bulwark: 25
+      taunt: 26
+      fortify: 27
+      shield_wall: 29
+      healing_word: 32
+      iron_bastion: 34
+      shield_charge: 37
+      aegis: 39
+      retribution: 42
+      last_stand: 45
   sharpshooter:
     spell-unlocks:
       featherfoot: 25
+      deadeye: 26
+      headshot: 27
+      double_tap: 29
+      flare: 32
+      kneecap: 34
+      high_perch: 37
+      perfect_focus: 39
+      spectral_volley: 42
+      masterful_shot: 45
   beast_master:
     spell-unlocks:
       friendship: 25
+      wolf_call: 26
+      bee_swarm: 28
       angry_chicken: 30
+      primal_bond: 32
+      thick_hide: 34
+      predator_senses: 37
+      stampede: 39
+      falcon_strike: 42
+      king_of_beasts: 45
   poisoner:
     spell-unlocks:
       venom_strike: 25
+      toxin_dart: 26
+      acid_splash: 27
+      numbing_agent: 29
+      antidote: 32
+      contagion: 34
+      paralytic_strike: 37
+      toxic_cloud: 39
+      debilitating_poison: 42
+      deathcap: 45
   phantom:
     spell-unlocks:
       hide: 25
+      ghost_step: 26
+      phase_blink: 27
+      haunt: 29
+      terror: 32
+      cold_spot: 34
+      ethereal_form: 37
+      phantom_grip: 39
+      dread_whisper: 42
+      spectre: 45
 
 # ===== Talentek =====
 # Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár a szakma szintekből

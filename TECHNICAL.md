@@ -51,7 +51,7 @@ IceSMPCore.disable()
 | `managers` | Üzleti logika és állapot (lásd 2. fejezet) |
 | `listeners` | Bukkit/Folia eseménykezelők — vékonyak, managerbe delegálnak |
 | `commands` | Paper `BasicCommand` implementációk; nagy domainekhez router + subcommand split (`commands/currency`, `commands/faction`, `commands/job`) |
-| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 23 spell implementáció, `SpellTargetingUtil` |
+| `spells` | `Spell` interfész, `BaseSpell` ősosztály, 120 spell (kézzel írt osztályok + `SpellCatalog` deklaratív definíciók a `ConfiguredSpell`/`ProjectileBurstSpell`/`BlinkSpell` építőelemekből), `SpellTargetingUtil` |
 | `relics` | Relic framework: definíciók, triggerek, ability registry, ownership rekord |
 | `items` | Item factory-k PDC tagekkel: `CurrencyItemFactory`, `RelicItemFactory`, `CatalystItemFactory` |
 | `gui` | `ProfileGUI`, `JobGUI` + holderek, `ProfileBookFactory` |
@@ -73,7 +73,7 @@ IceSMPCore.disable()
 | `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
 | `ProfessionManager` | Szakma + XP/szint (max 50), tevékenység-alapú XP jóváírás | játékos PDC |
 | `CraftingRestrictionManager` | Config-vezérelt craft szabályok: kaszt- és/vagy szakma-követelmény anyagonként; üzenet-throttle | — |
-| `SpellRegistry` | A 23 regisztrált spell nyilvántartása id szerint | — |
+| `SpellRegistry` | A 120 regisztrált spell nyilvántartása id szerint | — |
 | `RelicManager` | Relic definíciók (config + beépített seed), singleton tulajdonjog, 14 napos inaktivitás-lejárat, belépéskori sweep | relics.yml |
 | `RelicCooldownService` | Per játékos/relic/trigger cooldownok | memória |
 | `MetelytepoManager` | Mételytépő mechanikák: sinner flag, **dark pact** (örök sinner), Justice/Honor Eye képességek, fagyasztás | játékos PDC + memória |
@@ -154,6 +154,18 @@ A cast pipeline: kiválasztott spell → `canCast` → költség-ellenőrzés (`
 `XP` összes tapasztalatpont) → cooldown ellenőrzés → `execute(player)` → költség levonás +
 cooldown indítás. A **60 mp-nél hosszabb** cooldownok PDC-be (`cd_<spellId>`) perzisztálódnak,
 a rövidebbek memóriában élnek.
+
+**Összesen 120 spell, 12 poolban (4 kaszt + 8 spec), poolonként pontosan 10 egyedi képesség.**
+A bővítő poolokat a `spells/SpellCatalog` definiálja deklaratívan a generikus építőelemekből:
+`ConfiguredSpell` (builder: self/target/AOE célzás, sebzés, gyógyítás, ignite/fagyasztás,
+villám, lökés/felrántás/odahúzás, dash, potion effekt listák, partikula+hang),
+`ProjectileBurstSpell` (nyíl/szellemnyíl/tűzgolyó/széltöltet sortüzek), `BlinkSpell`
+(teleportAsync-alapú villanás), plusz egyedi osztályok (Farkashívás, Méhraj, Ősi Kötelék,
+Ellenméreg). A teljes pool-kiosztás és a feloldási szintek a `config.yml`
+`classes.*.spell-unlocks` és `specializations.*.spell-unlocks` szekcióiban vannak.
+
+Az alábbi tábla a kézzel írt törzs-spelleket sorolja fel (a katalógus-spellek paraméterei a
+`SpellCatalog`-ban olvashatók):
 
 | Spell id | Név | Cooldown (mp) | Költség | Alap feloldás |
 |---|---|---|---|---|
