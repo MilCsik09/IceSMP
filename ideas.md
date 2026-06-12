@@ -19,9 +19,9 @@ mob szintezés) épül.
 
 ## 2. Frakció-mechanikák
 
-- **Királyok és választás:** frakciónként 1 király (összesen 2 + a Sötét "Főnekromanta").
-  A királyt a frakció tagjai választják X naponta; a király hirdethet raidet, adót
-  állíthat be, és hadi kasszát kezel.
+- ✅ **Királyok és választás (KÉSZ):** /faction king vote alapú választás (min. szavazat +
+  listavezetés = korona, ciklusonként újraindul); a király raidet hirdet és a kasszából
+  vehet ki. Hátra van: adókulcs-állítás királyként.
 - ✅ **Állampolgári kötelesség (KÉSZ):** időszakos adó a frakciókasszába a saját valuta
   banki egyenlegéből (`factions.tax.*` config, semlegesek mentesítve) — money sink a
   dinamikus árfolyamhoz. Kassza: `/faction treasury`, adomány: `/faction donate`.
@@ -33,23 +33,19 @@ mob szintezés) épül.
 
 ## 3. Raid és háború
 
-- **Raid eventek:** csak király hirdetheti meg, 10v10, előre kijelölt arénában vagy a
-  célpont főváros külső gyűrűjében. Raid alatt a sinner tag nem aktiválódik (engedélyezett PvP).
-- **Hadizsákmány:** a vesztes frakció kasszájának egy százaléka + ideiglenes buff a
-  győztesnek (pl. +10% szakma XP 2 napig).
+- ✅ **Raid eventek (KÉSZ, alap):** csak király hirdetheti (/faction raid), raid alatt a
+  hadviselők közti ölés nem bűn, hanem pont. Hátra van: 10v10 limit, aréna/terület-kötés.
+- ✅ **Hadizsákmány (KÉSZ, alap):** a győztes a vesztes kasszájának configolható %-át kapja.
+  Hátra van: győztes-buff (pl. +10% szakma XP 2 napig).
 - **Ostromgépek:** craftolható, drága "ostrom-itemek" (pl. robbantó ágyú), amelyek csak
   raid közben használhatók — money sink és kovács-tartalom egyben.
 
 ## 4. Relikviák és legendás tárgyak
 
-- **4 frakció – 4 elytra relikvia:** frakciónként egy egyedi képességű elytra
-  (todo.md ötlet). Pl.: Piros – Főnix-szárny (zuhanásnál tűzlökés, lávaimmunitás repülés
-  közben); Kék – Zúzmara-szárny (víz fölött siklásbónusz, fagyaura); Semleges –
-  Vándorszél (gyorsabb sikló, nyom nélküli repülés); Sötét – Csontszárny (éjjel
-  erősebb, rövid wraith-forma).
-- **Fegyver-relikviák PvP-ben gazdát cserélhetnek** (todo szabály): a gyilkos
-  megszerezheti a megölt játékos kezében lévő fegyver-relikviát; a passzív relikviák
-  védettek. A meglévő ownership-nyilvántartás (relics.yml) erre már alkalmas.
+- ✅ **4 frakció – 4 elytra relikvia (KÉSZ):** Főnix-szárny, Zúzmara-szárny, Vándorszél,
+  Csontszárny — frakcióhoz és tulajdonoshoz kötött effektekkel (ElytraRelicListener).
+- ✅ **Fegyver-relikviák PvP gazdacseréje (KÉSZ):** a droppolt fegyver-relikviák
+  (relics.weapon-relics) a gyilkosé lesznek; a passzívak védettek.
 - **Rituálé-oltárok:** a relikviák nem craftolhatók, hanem több játékos közös
   rituáléjával idézhetők meg (idő + áldozati anyagok + adott helyszín, pl. a romváros
   oltára). A meglévő ritual timer erre építhető.
@@ -78,8 +74,8 @@ mob szintezés) épül.
   adatait mutatja élőben; "tőzsdei" hangulat.
 - **Heti gazdasági esemény:** véletlenszerű "kereslet-sokk" (pl. a szerver +20%
   base-value-t ad a Kék valutának 2 napra) — kereskedési lehetőség a figyelmes játékosoknak.
-- **Sötét valuta = lélekkő:** a Sötét frakció valutája mobok lelkéből "desztillálható"
-  (magas szintű moboktól drop) — így a külső gyűrűk grindje gazdaságilag is értelmes.
+- ✅ **Sötét valuta = lélekkő (KÉSZ):** magas szintű skálázott mobok eséllyel DARK tokent
+  dobnak (currency.soul-drop config) — a külső gyűrűk grindje gazdaságilag is megéri.
 
 ## 7. Események és világesemények
 

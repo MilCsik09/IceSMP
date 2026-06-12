@@ -89,6 +89,40 @@ public final class RelicManager {
                 List.of("&7A törpék rejtélyes civilizációjának...", "&7egy relikviája.")
         );
 
+        // A 4 frakció-elytra relikvia (ideas.md: "4 frakció – 4 elytra relikvia").
+        registerRelic(
+                "phoenix_wing",
+                Material.ELYTRA,
+                4201,
+                "Főnix-szárny",
+                "RED",
+                List.of("&7A Piros királyság lángoló ereklyéje.", "&7Viselőjét nem égeti tűz, és zuhanása", "&7lángviharban végződik.")
+        );
+        registerRelic(
+                "frost_wing",
+                Material.ELYTRA,
+                4202,
+                "Zúzmara-szárny",
+                "AQUA",
+                List.of("&7A Kék királyság jeges ereklyéje.", "&7Szárnyra kapva megfagyasztja", "&7a körülötte lévőket.")
+        );
+        registerRelic(
+                "wander_wind",
+                Material.ELYTRA,
+                4203,
+                "Vándorszél",
+                "WHITE",
+                List.of("&7A Semlegesek szabad szele.", "&7Gyorsabb sikló, és a föld", "&7sosem üti meg viselőjét.")
+        );
+        registerRelic(
+                "bone_wing",
+                Material.ELYTRA,
+                4204,
+                "Csontszárny",
+                "DARK_GRAY",
+                List.of("&7Az összeomlott királyság csontból", "&7szőtt szárnya. Éjjel a viselője", "&7maga is árnyékká válik.")
+        );
+
         plugin.getLogger().info("Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");
     }
 
@@ -400,6 +434,40 @@ public final class RelicManager {
     public boolean canUse(final Player player, final ItemStack itemStack) {
         final UUID owner = itemFactory.getOwner(itemStack);
         return owner == null || owner.equals(player.getUniqueId());
+    }
+
+    /**
+     * Checks whether a relic is a weapon relic — those may change hands in PvP
+     * (todo.md rule), while passive relics stay protected.
+     *
+     * @param relicId the relic identifier
+     * @return true if the relic is configured as a weapon relic
+     */
+    public boolean isWeaponRelic(final String relicId) {
+        if (relicId == null || relicId.isBlank()) {
+            return false;
+        }
+
+        final List<String> configured = configManager.getStringList("relics.weapon-relics");
+        final List<String> effective = configured.isEmpty() ? List.of("metelytepo") : configured;
+        return effective.stream().anyMatch(id -> id.equalsIgnoreCase(relicId));
+    }
+
+    /**
+     * Transfers a relic's ownership to a new owner: rewrites the item PDC and
+     * the persistent ownership record (used by the PvP weapon-relic transfer).
+     *
+     * @param relicId the relic identifier
+     * @param itemStack the relic item to rewrite
+     * @param newOwner the new owner
+     */
+    public void transferOwnership(final String relicId, final ItemStack itemStack, final Player newOwner) {
+        if (relicId == null || newOwner == null) {
+            return;
+        }
+
+        itemFactory.setOwner(itemStack, newOwner.getUniqueId());
+        recordOwnership(relicId.toLowerCase(Locale.ROOT), newOwner.getUniqueId());
     }
 
     public boolean handleTrigger(final Player player, final ItemStack itemStack, final RelicTrigger trigger) {

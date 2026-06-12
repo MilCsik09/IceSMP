@@ -23,6 +23,12 @@ currency:
   # ===== Dinamikus, kínálat-alapú árfolyam =====
   # Egy valuta értéke: base-value * clamp((reference-supply / kínálat)^elasticity, min, max).
   # Minél több van egy valutából a szerveren, annál kevesebbet ér a többihez képest.
+  # ===== Lélekkő-drop: Sötét valuta magas szintű skálázott mobokból =====
+  soul-drop:
+    enabled: true
+    min-mob-level: 3
+    chance-percent: 25
+    max-amount: 5
   dynamic-exchange:
     enabled: true
     reference-supply: 10000
@@ -198,10 +204,27 @@ factions:
       - "NEUTRAL"
   # ===== Bűn-számláló és száműzetés =====
   # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
-  # frakcióba (örök sötét paktummal).
+  # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
   sins:
     murder-counts: true
     exile-threshold: 4
+  # ===== Királyok és választás =====
+  # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
+  # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.
+  kings:
+    min-votes: 2
+    term-days: 7
+    excluded:
+      - "NEUTRAL"
+  # ===== Raid =====
+  # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
+  # A győztes (több ölés) a vesztes kasszájának spoils-percent %-át zsákmányolja.
+  raid:
+    duration-minutes: 15
+    entry-cost: 200
+    spoils-percent: 20
+    protected:
+      - "NEUTRAL"
 
 relics:
   enabled: true
@@ -210,6 +233,11 @@ relics:
   inactivity:
     enabled: true
     expiry-days: 14
+  # Fegyver-relikviák: PvP-ben gazdát cserélhetnek (a passzívak védettek).
+  weapon-relics:
+    - "metelytepo"
+  pvp-transfer:
+    enabled: true
   messages:
     cooldown: "&cA relikvia pihen: &f%seconds%s &cmaradék"
     expired: "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."
@@ -226,6 +254,34 @@ relics:
         - "&7Ősi mágia övezi, melynek segítségével"
         - "&7ez a harci fejsze lesújt a bűnösökre,"
         - "&7igazságot szolgáltatva a világnak."
+    phoenix_wing:
+      display-name: "Főnix-szárny"
+      display-color: "&c"
+      lore:
+        - "&7A Piros királyság lángoló ereklyéje."
+        - "&7Viselőjét nem égeti tűz, és zuhanása"
+        - "&7lángviharban végződik."
+    frost_wing:
+      display-name: "Zúzmara-szárny"
+      display-color: "&b"
+      lore:
+        - "&7A Kék királyság jeges ereklyéje."
+        - "&7Szárnyra kapva megfagyasztja"
+        - "&7a körülötte lévőket."
+    wander_wind:
+      display-name: "Vándorszél"
+      display-color: "&f"
+      lore:
+        - "&7A Semlegesek szabad szele."
+        - "&7Gyorsabb sikló, és a föld"
+        - "&7sosem üti meg viselőjét."
+    bone_wing:
+      display-name: "Csontszárny"
+      display-color: "&8"
+      lore:
+        - "&7Az összeomlott királyság csontból"
+        - "&7szőtt szárnya. Éjjel a viselője"
+        - "&7maga is árnyékká válik."
 
 # ===== Távolság-alapú mob szintezés =====
 # A spawn ponttól távolodva a mobok erősödnek: szint = távolság / blocks-per-level.

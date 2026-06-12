@@ -18,6 +18,7 @@ import hu.taliann.icesmp.listeners.CatalystCraftSafetyListener;
 import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
+import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
@@ -30,7 +31,9 @@ import hu.taliann.icesmp.listeners.ProfileGUIListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
+import hu.taliann.icesmp.listeners.RelicPvpTransferListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
+import hu.taliann.icesmp.listeners.SoulstoneListener;
 import hu.taliann.icesmp.listeners.SinListener;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
@@ -44,10 +47,12 @@ import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
+import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
@@ -113,6 +118,8 @@ public final class IceSMPCore {
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
     private final FactionTreasuryManager factionTreasuryManager;
+    private final KingManager kingManager;
+    private final RaidManager raidManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
 
     /**
@@ -134,6 +141,8 @@ public final class IceSMPCore {
         this.metelytepoManager = new MetelytepoManager(plugin, configManager, messageManager, factionManager);
         this.minionManager = new MinionManager(plugin);
         this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
+        this.raidManager = new RaidManager(plugin, configManager, factionTreasuryManager, messageManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
@@ -193,6 +202,7 @@ public final class IceSMPCore {
         craftingRestrictionManager.load();
         territoryManager.load();
         factionTreasuryManager.load();
+        kingManager.load();
         registerListeners();
         registerCommands();
         scheduleTaxCollection();
@@ -209,6 +219,7 @@ public final class IceSMPCore {
             taxTask.cancel();
             taxTask = null;
         }
+        raidManager.shutdown();
 
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
@@ -220,6 +231,7 @@ public final class IceSMPCore {
         relicManager.save();
         territoryManager.save();
         factionTreasuryManager.save();
+        kingManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
     }
 
@@ -252,7 +264,7 @@ public final class IceSMPCore {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(configManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
-        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, messageManager));
+        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, kingManager, raidManager, messageManager));
         plugin.registerCommand("job", "Kaszt admin parancsok", List.of("class"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
         plugin.registerCommand("profile", "Játékos profil", List.of("status", "info"), new ProfileCommand(messageManager, metelytepoManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése", List.of(), new SinnerCommand(metelytepoManager, messageManager));
@@ -285,13 +297,16 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new TalentAttributeListener(talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
-        pluginManager.registerEvents(new SinListener(metelytepoManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, configManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicItemRefreshListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicTriggerListener(relicManager), plugin);
             pluginManager.registerEvents(new MetelytepoRelicListener(metelytepoManager, messageManager), plugin);
+            pluginManager.registerEvents(new ElytraRelicListener(relicManager, factionManager, messageManager), plugin);
+            pluginManager.registerEvents(new RelicPvpTransferListener(relicManager, configManager, messageManager), plugin);
         }
     }
 }

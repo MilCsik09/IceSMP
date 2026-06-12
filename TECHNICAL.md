@@ -71,6 +71,8 @@ IceSMPCore.disable()
 | `ExchangeRateService` | Kínálat-alapú dinamikus árfolyam: `érték = base × clamp((ref/supply)^elaszticitás, min, max)`; `getRate(from,to) = value(from)/value(to)` | — (configból számol) |
 | `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
 | `FactionTreasuryManager` | Frakciókasszák (adomány + időszakos állampolgári adó, money sink); a tax a global region scheduleren fut | treasury.yml |
+| `KingManager` | Királyválasztás (szavazás, min-votes, ciklus-reset) és uralkodói jogok (kassza-kivét, raid) | kings.yml |
+| `RaidManager` | Raid életciklus: hirdetés (nevezési díj), bűn-mentes hadi PvP, kill-számolás, hadizsákmány | memória |
 | `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (progresszív görbe: az n. szintlépés ára `base-xp + (n-1)*increment`, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
 | `SpecializationManager` | Kaszt- és szakma-specializációk: feltétel-ellenőrzés (szint, frakció, sinner), kiválasztás, spec spell unlock (`specializations.<id>.spell-unlocks`) | játékos PDC |
 | `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, WoW-szerű talent-kötések (`requires-job`/`requires-spec`/`requires-profession`), respec utáni pont-visszatérítés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
@@ -120,7 +122,7 @@ inventoryból és felszabadul.
 | `/icesmp` | `ismp` | `reload` | `icesmp.admin.reload` |
 | `/currency` | `money`, `eco` | `balance`, `pay`, `set`, `exchange`, `rates` | `set`: `icesmp.currency.admin` |
 | `/bank` | `wallet`, `vault` | `balance`, `deposit`, `withdraw <valuta> <összeg>` | — |
-| `/faction` | `f` | `join`, `leave`, `set`, `treasury [withdraw <összeg>]`, `donate <összeg>` | `set`/`treasury withdraw`: `icesmp.faction.admin` |
+| `/faction` | `f` | `join`, `leave`, `set`, `treasury [withdraw <összeg>]`, `donate <összeg>`, `king [vote/set/clear]`, `raid <frakció>` | `set`/king `set|clear`: `icesmp.faction.admin`; `treasury withdraw`: admin VAGY király; `raid`: csak király |
 | `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givecatalyst`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
 | `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `clear`, `addxp` | admin ágak: `icesmp.admin.profession` |
 | `/spec` | `specialization` | `list`, `choose`, `info`, `respec <class\|profession>`, `reset` | `reset`: `icesmp.admin.spec` |
@@ -156,7 +158,10 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `TalentAttributeListener` | `PlayerJoinEvent` | Talent attribútum-módosítók idempotens újra-alkalmazása |
 | `TerritoryListener` | `PlayerMoveEvent` (blokk-váltásra szűrve), `BlockBreak/PlaceEvent`, `PlayerQuitEvent` | Határátlépés action bar + opcionális építésvédelem |
 | `MinionProtectionListener` | `EntityTargetLivingEntityEvent` | Idézett minion soha nem támadja a gazdáját vagy a gazda másik minionját |
-| `SinListener` | `PlayerDeathEvent` | Gyilkosság = +1 bűn; a küszöbnél automatikus száműzetés a Sötét frakcióba |
+| `SinListener` | `PlayerDeathEvent` | Gyilkosság = +1 bűn (raid alatt a hadviselők közt: bűn helyett raid-pont); küszöbnél száműzetés |
+| `ElytraRelicListener` | `EntityToggleGlideEvent`, `EntityDamageEvent` | A 4 frakció-elytra relikvia effektjei (tulajdonos + frakció ellenőrzéssel) |
+| `RelicPvpTransferListener` | `PlayerDeathEvent` | Fegyver-relikviák gazdacseréje PvP-ben |
+| `SoulstoneListener` | `EntityDeathEvent` | Lélekkő-drop: magas szintű skálázott mobok DARK tokent dobhatnak |
 | `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
 | `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |
 
@@ -239,10 +244,11 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `settings` | `default-faction`, `debug` |
 | `hud.profile` | Profil HUD paraméterek |
 | `currency` | Alapvaluta, szimbólum, **fix** árfolyam + díj (fallback), item tokenek (anyag, model-data, név per valuta — RED/BLUE/NEUTRAL/DARK) |
+| `currency.soul-drop` | Lélekkő-drop: `enabled`, `min-mob-level`, `chance-percent`, `max-amount` |
 | `currency.dynamic-exchange` | `enabled`, `reference-supply`, `elasticity`, `min/max-multiplier`, `base-values.<VALUTA>` — a kínálat-alapú árfolyam paraméterei |
 | `messages` | (örökölt, nem használt — a futásidejű üzenetforrás a `messages.yml`) |
-| `factions` | Frakció megjelenítési nevek + `passives.*` + `tax.*` (enabled, interval-minutes, rate-percent, exempt) + `sins.*` (murder-counts, exile-threshold) |
-| `relics` | `enabled`, `inactivity.enabled` + `expiry-days`, üzenetek, `definitions.<id>` (vizuál + triggerek + ability-id + cooldown) |
+| `factions` | Frakció nevek + `passives.*` + `tax.*` + `sins.*` + `kings.*` (min-votes, term-days, excluded) + `raid.*` (duration-minutes, entry-cost, spoils-percent, protected) |
+| `relics` | `enabled`, `inactivity.*`, `weapon-relics` lista + `pvp-transfer.enabled`, üzenetek, `definitions.<id>` (vizuál + triggerek; az 5 beépített relic: metelytepo + 4 frakció-elytra) |
 | `mob-scaling` | `enabled`, `blocks-per-level`, `max-level`, `health/damage-per-level`, `hostile-only`, `ignored-spawn-reasons`, `name.*` |
 | `classes` | `xp.*` (per-kill, per-mob-level, secondary-share-percent, hostile-only), `leveling.*` (progresszív görbe), `specialization.required-level`, `<kaszt>.spell-unlocks` |
 | `specializations` | `respec-cost` (a /spec respec ára frakcióvalutában), `<spec>.spell-unlocks` — spec-spellek kaszt-szinthez kötve |
@@ -273,6 +279,7 @@ frissülnek garantáltan.
 | `relics.yml` | `ownerships.<relicId>.owner` + `.last-seen` | RelicManager |
 | `territories.yml` | `territories.<id>`: faction, name, world, x, z, radius, capital | TerritoryManager |
 | `treasury.yml` | `treasury.<FAKCIÓ>: összeg` | FactionTreasuryManager |
+| `kings.yml` | `kings.<FAKCIÓ>`: king UUID, election-start, votes | KingManager |
 
 ### PDC kulcsok (namespace: a plugin, `icesmp`)
 

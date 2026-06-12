@@ -5,6 +5,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
+import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -23,13 +24,16 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     private final FactionTreasuryManager treasuryManager;
     private final FactionManager factionManager;
     private final CurrencyManager currencyManager;
+    private final KingManager kingManager;
     private final MessageManager messageManager;
 
     public FactionTreasurySubcommand(final FactionTreasuryManager treasuryManager, final FactionManager factionManager,
-                                     final CurrencyManager currencyManager, final MessageManager messageManager) {
+                                     final CurrencyManager currencyManager, final KingManager kingManager,
+                                     final MessageManager messageManager) {
         this.treasuryManager = treasuryManager;
         this.factionManager = factionManager;
         this.currencyManager = currencyManager;
+        this.kingManager = kingManager;
         this.messageManager = messageManager;
     }
 
@@ -83,8 +87,9 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     }
 
     private boolean handleWithdraw(final Player player, final String rawAmount) {
-        if (!player.hasPermission(ADMIN_PERMISSION)) {
-            player.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogod ehhez a parancshoz."));
+        // The crowned king commands their own faction's treasury; admins can always withdraw.
+        if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)) {
+            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA kasszából csak a frakció királya (vagy admin) vehet ki."));
             return true;
         }
 
@@ -119,7 +124,9 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1 && sender.hasPermission(ADMIN_PERMISSION)) {
+        final boolean canWithdraw = sender.hasPermission(ADMIN_PERMISSION)
+                || (sender instanceof Player player && kingManager.isKing(player));
+        if (args.length == 1 && canWithdraw) {
             return "withdraw".startsWith(args[0].toLowerCase()) ? List.of("withdraw") : List.of();
         }
         return List.of();

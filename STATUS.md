@@ -32,6 +32,15 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - **Bűn-számláló + automatikus száműzetés** (todo.md ötlet): gyilkosság = +1 bűn
   (`SinListener`), a küszöb (alapból 4) elérésekor automatikus száműzetés a Sötét frakcióba
   örök paktummal + szerver-broadcast; admin: `/sinner <player> add | status`
+- **Királyok és választás** (`KingManager`, `kings.yml`): a tagok szavaznak
+  (`/faction king vote`), min. szavazatszám + listavezetés = koronázás (broadcast);
+  ciklus lejártakor a szavazás újraindul; admin `set`/`clear`; a király jogai:
+  kassza-kivét és raid-hirdetés
+- **Raid-rendszer** (`RaidManager`, ideas.md): a király hirdet (`/faction raid <frakció>`),
+  nevezési díj a kasszából (money sink); a raid ideje alatt a hadviselő frakciók közti
+  ölés **nem bűn**, hanem pontot ér; a végén a több ölést szerző fél a vesztes
+  kasszájának 20%-át zsákmányolja (configolható; NEUTRAL védett); a lezáró időzítő a
+  global region scheduleren fut
 
 ### 2. Kaszt (class) rendszer
 - 4 alap kaszt: **Varázsló, Harcos, Íjász, Orgyilkos** (`JobType`), PDC-ben tárolva
@@ -121,6 +130,13 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - **Tulajdonjog-nyilvántartás** (`relics.yml`): egy relicből csak 1 létezhet aktív
   tulajdonossal; **14 nap inaktivitás** után belépéskor füst effekttel törlődik és újra
   megszerezhető; last-seen belépéskor és kilépéskor is frissül
+- **4 frakció-elytra relikvia** (ideas.md/todo.md): Főnix-szárny (RED: tűz/láva-immunitás,
+  zuhanás = lángvihar), Zúzmara-szárny (BLUE: fagyimmunitás, felszálláskor fagyaura),
+  Vándorszél (NEUTRAL: nincs zuhanósebzés, széllökés-boost), Csontszárny (DARK: éjjeli
+  repüléskor árnyforma) — csak a tulajdonos ÉS a megfelelő frakció tagja használhatja
+- **Fegyver-relikvia PvP gazdacsere** (todo.md szabály): a megölt játékos droppolt
+  fegyver-relikviái (`relics.weapon-relics`) a gyilkosé lesznek (item PDC + relics.yml
+  átírva); a passzív relikviák védettek
 - `/relic list | give` parancs
 
 ### 9. Gazdaság — valuták és dinamikus árfolyam
