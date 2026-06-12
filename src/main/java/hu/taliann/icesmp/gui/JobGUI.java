@@ -22,6 +22,7 @@ public final class JobGUI {
     private static final int SIZE = 36;
     private static final int BACK_SLOT = 31;
     private static final int CATALYST_SLOT = 33;
+    private static final int SKILL_TREE_SLOT = 29;
     private static final int[] JOB_SLOTS = {11, 13, 15, 20, 22, 24};
 
     private JobGUI() {
@@ -42,6 +43,7 @@ public final class JobGUI {
         placeJobItems(inventory, viewer, jobManager, messageManager);
         inventory.setItem(BACK_SLOT, createBackButton(messageManager));
         inventory.setItem(CATALYST_SLOT, createCatalystButton(viewer, jobManager, catalystItemFactory, messageManager));
+        inventory.setItem(SKILL_TREE_SLOT, createSkillTreeButton(messageManager));
 
         viewer.openInventory(inventory);
     }
@@ -62,6 +64,20 @@ public final class JobGUI {
 
     public static int getCatalystSlot() {
         return CATALYST_SLOT;
+    }
+
+    public static int getSkillTreeSlot() {
+        return SKILL_TREE_SLOT;
+    }
+
+    private static ItemStack createSkillTreeButton(final MessageManager messageManager) {
+        final ItemStack button = new ItemStack(Material.KNOWLEDGE_BOOK);
+        final ItemMeta meta = button.getItemMeta();
+        meta.displayName(messageManager.getComponent("messages.job-gui-skilltree", "&5Képesség-fa"));
+        meta.lore(List.of(messageManager.getComponent("messages.job-gui-skilltree-lore", "&7A kasztod képességei és feloldási szintjei.")));
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+        button.setItemMeta(meta);
+        return button;
     }
 
     private static ItemStack createCatalystButton(final Player viewer, final JobManager jobManager,

@@ -29,6 +29,16 @@ currency:
     min-mob-level: 3
     chance-percent: 25
     max-amount: 5
+  # ===== Heti gazdasági esemény: véletlen kereslet-sokk =====
+  # Időnként egy véletlen valuta base-value-ja átmenetileg megugrik —
+  # kereskedési lehetőség a figyelmes játékosoknak.
+  economy-event:
+    enabled: true
+    check-interval-minutes: 60
+    chance-percent: 25
+    duration-hours: 48
+    min-multiplier: 1.2
+    max-multiplier: 1.6
   dynamic-exchange:
     enabled: true
     reference-supply: 10000
@@ -719,6 +729,13 @@ quests:
         type: "NEUTRAL"
         amount: 100
       cleanse-sins: true
+
+# ===== Piactér =====
+# Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);
+# vásárlás a /market GUI-ból banki egyenlegből. A fee-percent elég (money sink).
+market:
+  max-listings-per-player: 5
+  fee-percent: 10
 
 # ===== Frakció területek =====
 territory:

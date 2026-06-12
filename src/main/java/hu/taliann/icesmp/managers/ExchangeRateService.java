@@ -14,10 +14,13 @@ public final class ExchangeRateService {
 
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
+    private final EconomyEventManager economyEventManager;
 
-    public ExchangeRateService(final ConfigManager configManager, final CurrencyManager currencyManager) {
+    public ExchangeRateService(final ConfigManager configManager, final CurrencyManager currencyManager,
+                               final EconomyEventManager economyEventManager) {
         this.configManager = configManager;
         this.currencyManager = currencyManager;
+        this.economyEventManager = economyEventManager;
     }
 
     public boolean isEnabled() {
@@ -31,8 +34,10 @@ public final class ExchangeRateService {
      * @return the scarcity-adjusted value of one unit
      */
     public double getValue(final CurrencyType currencyType) {
+        // Demand-shock events temporarily inflate one currency's base value.
         final double baseValue = Math.max(0.0001D, configManager.getDouble(
-                "currency.dynamic-exchange.base-values." + currencyType.name(), 1.0D));
+                "currency.dynamic-exchange.base-values." + currencyType.name(), 1.0D))
+                * economyEventManager.getMultiplier(currencyType);
         if (!isEnabled()) {
             return baseValue;
         }

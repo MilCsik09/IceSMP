@@ -133,6 +133,17 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   `specializations.necromancer.required-quest`), és a 3 részes **vezeklés-lánc** — a
   teljesítése az egyetlen visszaút a sötét paktumból (todo.md/ideas.md ötlet)
 
+### 7.6 Piactér, gazdasági események, skill-fa
+- **Piactér** (`MarketManager`, `market.yml`): `/market sell <ár> [valuta]` listázza a kézben
+  tartott tárgyat; `/market` GUI-ból vásárlás banki egyenlegből; `/market cancel` visszavonás;
+  eladási díj (alapból 10%) elég = money sink; tétel-limit játékosonként
+- **Heti gazdasági esemény** (`EconomyEventManager`, ideas.md "kereslet-sokk"): időnként egy
+  véletlen valuta base-value-ja átmenetileg megugrik (broadcast indul/lecseng), a dinamikus
+  árfolyamba az `ExchangeRateService` számítja be; restart-túlélő (`economy-event.yml`)
+- **Skill-fa GUI** (ideas.md): a Job GUI "Képesség-fa" gombja megnyitja a kaszt + választott
+  spec spelljeit feloldási szint szerint rendezve — a feloldottak ragyognak, a zároltak a
+  szükséges szintet mutatják
+
 ### 8. Relikvia rendszer
 - Relic framework: config-vezérelt definíciók (vizuál, custom model data, triggerek,
   cooldown), PDC-tagelt itemek, craft-védelem

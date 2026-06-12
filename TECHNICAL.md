@@ -68,6 +68,8 @@ IceSMPCore.disable()
 | `ConfigManager` | `config.yml` elérés fallback-ekkel | config.yml |
 | `MessageManager` | Lokalizált üzenetek (`messages.*` kulcsok, legacy `&` és MiniMessage formátum) | messages.yml |
 | `CurrencyManager` | Többvalutás egyenlegek, befizetés/kivét/utalás/váltás, item tokenek, `getTotalSupply()` | currency-balances.yml |
+| `EconomyEventManager` | Heti kereslet-sokk: véletlen valuta base-value szorzó időkorláttal; global scheduler tick | economy-event.yml |
+| `MarketManager` | Piactér: listázás kézből, vásárlás banki egyenlegből, eladási díj (money sink) | market.yml |
 | `ExchangeRateService` | Kínálat-alapú dinamikus árfolyam: `érték = base × clamp((ref/supply)^elaszticitás, min, max)`; `getRate(from,to) = value(from)/value(to)` | — (configból számol) |
 | `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
 | `FactionTreasuryManager` | Frakciókasszák (adomány + időszakos állampolgári adó, money sink); a tax a global region scheduleren fut | treasury.yml |
@@ -136,6 +138,7 @@ inventoryból és felszabadul.
 | `/profile` | `status`, `info` | — | — |
 | `/sinner` | — | `<játékos> set\|clear\|add\|status` | `icesmp.admin` |
 | `/quest` | `quests`, `kuldetes` | `list`, `info`, `accept`, `abandon`, `complete` | `complete`: `icesmp.admin.quest` |
+| `/market` | `piac`, `ah` | `(browse)`, `sell <ár> [valuta]`, `cancel` | — |
 | `/relic` | `relics` | `list`, `give` | `give`: `icesmp.relic.admin` |
 | `/territory` | `terulet` | `setcapital`, `claim`, `remove`, `list`, `info` | `icesmp.admin.territory` |
 
@@ -253,6 +256,8 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `hud.profile` | Profil HUD paraméterek |
 | `currency` | Alapvaluta, szimbólum, **fix** árfolyam + díj (fallback), item tokenek (anyag, model-data, név per valuta — RED/BLUE/NEUTRAL/DARK) |
 | `currency.soul-drop` | Lélekkő-drop: `enabled`, `min-mob-level`, `chance-percent`, `max-amount` |
+| `currency.economy-event` | Kereslet-sokk: `enabled`, `check-interval-minutes`, `chance-percent`, `duration-hours`, `min/max-multiplier` |
+| `market` | `max-listings-per-player`, `fee-percent` (eladási díj = money sink) |
 | `currency.dynamic-exchange` | `enabled`, `reference-supply`, `elasticity`, `min/max-multiplier`, `base-values.<VALUTA>` — a kínálat-alapú árfolyam paraméterei |
 | `messages` | (örökölt, nem használt — a futásidejű üzenetforrás a `messages.yml`) |
 | `factions` | Frakció nevek + `passives.*` + `tax.*` + `sins.*` + `kings.*` (min-votes, term-days, excluded) + `raid.*` (duration-minutes, entry-cost, spoils-percent, protected) |
@@ -289,6 +294,8 @@ frissülnek garantáltan.
 | `territories.yml` | `territories.<id>`: faction, name, world, x, z, radius, capital | TerritoryManager |
 | `treasury.yml` | `treasury.<FAKCIÓ>: összeg` | FactionTreasuryManager |
 | `kings.yml` | `kings.<FAKCIÓ>`: king UUID, election-start, votes | KingManager |
+| `market.yml` | `listings.<uuid>`: seller, price, currency, item (szerializált), created-at | MarketManager |
+| `economy-event.yml` | aktív kereslet-sokk (currency, multiplier, ends-at) | EconomyEventManager |
 
 ### PDC kulcsok (namespace: a plugin, `icesmp`)
 

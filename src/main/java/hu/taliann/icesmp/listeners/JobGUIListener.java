@@ -4,9 +4,13 @@ import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.gui.JobGUI;
 import hu.taliann.icesmp.gui.JobGUIHolder;
 import hu.taliann.icesmp.gui.ProfileGUI;
+import hu.taliann.icesmp.gui.SkillTreeGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Sound;
@@ -25,13 +29,21 @@ public final class JobGUIListener implements Listener {
     private final JobManager jobManager;
     private final MetelytepoManager metelytepoManager;
     private final CatalystItemFactory catalystItemFactory;
+    private final SpecializationManager specializationManager;
+    private final SpellRegistry spellRegistry;
+    private final ConfigManager configManager;
     private final MessageManager messageManager;
 
     public JobGUIListener(final JobManager jobManager, final MetelytepoManager metelytepoManager,
-                          final CatalystItemFactory catalystItemFactory, final MessageManager messageManager) {
+                          final CatalystItemFactory catalystItemFactory, final SpecializationManager specializationManager,
+                          final SpellRegistry spellRegistry, final ConfigManager configManager,
+                          final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.metelytepoManager = metelytepoManager;
         this.catalystItemFactory = catalystItemFactory;
+        this.specializationManager = specializationManager;
+        this.spellRegistry = spellRegistry;
+        this.configManager = configManager;
         this.messageManager = messageManager;
     }
 
@@ -64,6 +76,12 @@ public final class JobGUIListener implements Listener {
 
         if (event.getRawSlot() == JobGUI.getCatalystSlot()) {
             handleCatalystClaim(player);
+            return;
+        }
+
+        if (event.getRawSlot() == JobGUI.getSkillTreeSlot()) {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.2F);
+            SkillTreeGUI.open(player, jobManager, specializationManager, spellRegistry, configManager, messageManager);
             return;
         }
 

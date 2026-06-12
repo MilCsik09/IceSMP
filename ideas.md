@@ -60,19 +60,19 @@ mob szintezés) épül.
   Orgyilkos → Méregkeverő / Fantom; Nekromanta → Lélekidéző / Pestisúr.
 - **Ultimate képességek:** kasztonként 1 nagy cooldownos (30–60 perc) látványos ulti,
   pl. Nekromanta: 3 csontváz-szolga idézése 60 mp-re.
-- **Skill-fa GUI:** a meglévő JobGUI bővítése egy skill-fa nézettel, ahol a szint-alapú
-  feloldások (classes.*.spell-unlocks) vizuálisan is láthatók.
+- ✅ **Skill-fa GUI (KÉSZ):** a Job GUI Képesség-fa gombja a kaszt + spec spelljeit
+  mutatja feloldási szint szerint, állapot-jelzéssel.
 
 ## 6. Gazdaság (a dinamikus árfolyamra építve)
 
 - **Money sinkek:** adó, raid-nevezési díj, rituálé-anyagok, NPC szolgáltatások —
   ezek nélkül a kínálat csak nő, és minden valuta elinflálódik.
-- **Piaci tábla / aukciósház:** player-to-player kereskedés a saját frakcióvaluta
-  kínálatát mozgatja, így a kereskedelmi súlypont tényleg eltolja az árfolyamot.
+- ✅ **Piaci tábla / aukciósház (KÉSZ, alap):** /market sell + GUI-vásárlás banki
+  egyenlegből, eladási díjjal (money sink). Hátra van: lapozás, keresés, fizikai piactábla.
 - **Árfolyam-kijelző tábla:** a fővárosokban hologram/tábla, ami a /currency rates
   adatait mutatja élőben; "tőzsdei" hangulat.
-- **Heti gazdasági esemény:** véletlenszerű "kereslet-sokk" (pl. a szerver +20%
-  base-value-t ad a Kék valutának 2 napra) — kereskedési lehetőség a figyelmes játékosoknak.
+- ✅ **Heti gazdasági esemény (KÉSZ):** véletlen kereslet-sokk (configolható szorzó és
+  időtartam), broadcast-tel és restart-túléléssel.
 - ✅ **Sötét valuta = lélekkő (KÉSZ):** magas szintű skálázott mobok eséllyel DARK tokent
   dobnak (currency.soul-drop config) — a külső gyűrűk grindje gazdaságilag is megéri.
 

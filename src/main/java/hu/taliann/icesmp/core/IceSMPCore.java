@@ -5,6 +5,7 @@ import hu.taliann.icesmp.commands.CurrencyCommand;
 import hu.taliann.icesmp.commands.FactionCommand;
 import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
+import hu.taliann.icesmp.commands.MarketCommand;
 import hu.taliann.icesmp.commands.ProfessionCommand;
 import hu.taliann.icesmp.commands.ProfileCommand;
 import hu.taliann.icesmp.commands.QuestCommand;
@@ -23,6 +24,7 @@ import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
+import hu.taliann.icesmp.listeners.MarketGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.MinionProtectionListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
@@ -35,6 +37,7 @@ import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
 import hu.taliann.icesmp.listeners.RelicPvpTransferListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
+import hu.taliann.icesmp.listeners.SkillTreeGUIListener;
 import hu.taliann.icesmp.listeners.SoulstoneListener;
 import hu.taliann.icesmp.listeners.SinListener;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
@@ -45,11 +48,13 @@ import hu.taliann.icesmp.listeners.TerritoryListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.EconomyEventManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.KingManager;
+import hu.taliann.icesmp.managers.MarketManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
@@ -117,6 +122,8 @@ public final class IceSMPCore {
     private final ProfessionManager professionManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
+    private final EconomyEventManager economyEventManager;
+    private final MarketManager marketManager;
     private final QuestManager questManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
@@ -125,6 +132,7 @@ public final class IceSMPCore {
     private final KingManager kingManager;
     private final RaidManager raidManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -150,7 +158,9 @@ public final class IceSMPCore {
         this.mobScalingManager = new MobScalingManager(plugin, configManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
-        this.exchangeRateService = new ExchangeRateService(configManager, currencyManager);
+        this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
+        this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
+        this.marketManager = new MarketManager(plugin, configManager, currencyManager);
         this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
                 currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
@@ -212,9 +222,12 @@ public final class IceSMPCore {
         territoryManager.load();
         factionTreasuryManager.load();
         kingManager.load();
+        economyEventManager.load();
+        marketManager.load();
         registerListeners();
         registerCommands();
         scheduleTaxCollection();
+        scheduleEconomyEvents();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
@@ -229,6 +242,10 @@ public final class IceSMPCore {
             taxTask = null;
         }
         raidManager.shutdown();
+        if (economyEventTask != null) {
+            economyEventTask.cancel();
+            economyEventTask = null;
+        }
 
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
@@ -241,6 +258,8 @@ public final class IceSMPCore {
         territoryManager.save();
         factionTreasuryManager.save();
         kingManager.save();
+        economyEventManager.save();
+        marketManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
     }
 
@@ -267,6 +286,24 @@ public final class IceSMPCore {
     }
 
     /**
+     * Schedules the periodic economy-event tick (demand shocks) on the global
+     * region scheduler.
+     */
+    private void scheduleEconomyEvents() {
+        if (!configManager.getBoolean("currency.economy-event.enabled", true)) {
+            return;
+        }
+
+        final long intervalTicks = Math.max(1L, configManager.getLong("currency.economy-event.check-interval-minutes", 60L)) * 60L * 20L;
+        economyEventTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin,
+                task -> economyEventManager.tick(),
+                intervalTicks,
+                intervalTicks
+        );
+    }
+
+    /**
      * Registers all command handlers.
      */
     private void registerCommands() {
@@ -283,6 +320,7 @@ public final class IceSMPCore {
         plugin.registerCommand("talent", "Talent parancsok", List.of("talents"), new TalentCommand(talentManager, messageManager));
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(questManager, messageManager));
+        plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
     }
 
     /**
@@ -293,7 +331,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new CurrencyCraftListener(currencyManager), plugin);
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
         pluginManager.registerEvents(new ProfileGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new JobGUIListener(jobManager, metelytepoManager, catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new JobGUIListener(jobManager, metelytepoManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new MarketGUIListener(marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
