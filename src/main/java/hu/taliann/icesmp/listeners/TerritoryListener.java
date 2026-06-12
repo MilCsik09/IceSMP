@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Location;
@@ -31,14 +32,17 @@ public final class TerritoryListener implements Listener {
     private final TerritoryManager territoryManager;
     private final FactionManager factionManager;
     private final ConfigManager configManager;
+    private final QuestManager questManager;
     private final MessageManager messageManager;
     private final Map<UUID, String> lastTerritoryIds = new ConcurrentHashMap<>();
 
     public TerritoryListener(final TerritoryManager territoryManager, final FactionManager factionManager,
-                             final ConfigManager configManager, final MessageManager messageManager) {
+                             final ConfigManager configManager, final QuestManager questManager,
+                             final MessageManager messageManager) {
         this.territoryManager = territoryManager;
         this.factionManager = factionManager;
         this.configManager = configManager;
+        this.questManager = questManager;
         this.messageManager = messageManager;
     }
 
@@ -70,6 +74,9 @@ public final class TerritoryListener implements Listener {
             ));
             return;
         }
+
+        // VISIT_TERRITORY quest objectives complete on border crossing.
+        questManager.handleTerritoryEnter(player, territory.id());
 
         player.sendActionBar(messageManager.getMessage(
                 territory.capital() ? "territory-enter-capital" : "territory-enter",

@@ -52,10 +52,9 @@ mob szintezés) épül.
 
 ## 5. Kasztok és progresszió
 
-- **Kaszt-questek:** a kaszt felvétele ne csak GUI-katt legyen: rövid bevezető quest
-  (Íjász: lőtáblapálya teljesítése; Orgyilkos: észrevétlen lopakodás egy NPC mögé;
-  Nekromanta: a romváros oltárán végzett sötét rituálé + DARK frakció tagság — ez utóbbi
-  feltétel már implementálva van).
+- ✅ **Kaszt-questek (KÉSZ, alap):** 4 bevezető kaszt-próba quest + a Nekromanta spec
+  quest-kapus beavatása (Sötét Beavatás, VISIT_TERRITORY a romvárosban). Hátra van:
+  NPC-s/parkour jellegű egyedi próbapályák.
 - **Specializációk max szinten:** Varázsló → Elementalista / Gyógyító;
   Harcos → Berserker / Védelmező; Íjász → Beast Master (idézhető farkas!) / Mesterlövész;
   Orgyilkos → Méregkeverő / Fantom; Nekromanta → Lélekidéző / Pestisúr.
@@ -107,8 +106,8 @@ már él — a World of Warcraft class/profession irányt ezek mélyítenék el:
 ## 8. Technikai ötletek (következő lépések)
 
 - ✅ Frakció-kassza és adórendszer (`FactionTreasuryManager`) — KÉSZ.
-- Quest-keretrendszer (config-vezérelt lépések, PDC-ben tárolt haladás) — a kaszt- és
-  vezeklés-questek alapja.
+- ✅ Quest-keretrendszer (QuestManager, 6 objective-típus, láncok, jutalmak) — KÉSZ;
+  a vezeklés-lánc (penance_1..3) megtöri a sötét paktumot.
 - Hologram-API integráció az árfolyam-táblákhoz (vagy TextDisplay entity, az 1.19.4+
   display entity-k Folián is jól működnek).
 - A 4 elytra relikvia a meglévő relic framework triggereivel (RelicTrigger bővítés:

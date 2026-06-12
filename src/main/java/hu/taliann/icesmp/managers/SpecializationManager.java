@@ -30,19 +30,21 @@ public final class SpecializationManager {
     private final ProfessionManager professionManager;
     private final FactionManager factionManager;
     private final MetelytepoManager metelytepoManager;
+    private final QuestManager questManager;
     private final NamespacedKey classSpecKey;
     private final NamespacedKey professionSpecKey;
 
     public SpecializationManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager, final JobManager jobManager,
                                  final ProfessionManager professionManager, final FactionManager factionManager,
-                                 final MetelytepoManager metelytepoManager) {
+                                 final MetelytepoManager metelytepoManager, final QuestManager questManager) {
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.jobManager = jobManager;
         this.professionManager = professionManager;
         this.factionManager = factionManager;
         this.metelytepoManager = metelytepoManager;
+        this.questManager = questManager;
         this.classSpecKey = new NamespacedKey(plugin, "class_spec");
         this.professionSpecKey = new NamespacedKey(plugin, "profession_spec");
     }
@@ -90,7 +92,14 @@ public final class SpecializationManager {
             return false;
         }
 
-        return !specialization.requiresSinner() || metelytepoManager.isSinner(player);
+        if (specialization.requiresSinner() && !metelytepoManager.isSinner(player)) {
+            return false;
+        }
+
+        // Quest gate (e.g. the necromancer initiation ritual in the ruined city).
+        final String requiredQuest = configManager.getString(
+                "specializations." + specialization.getId() + ".required-quest", "");
+        return requiredQuest.isBlank() || questManager.hasCompleted(player, requiredQuest);
     }
 
     public boolean selectClassSpecialization(final Player player, final SpecializationType specialization) {

@@ -247,6 +247,28 @@ public final class MetelytepoManager {
     }
 
     /**
+     * Breaks the dark pact (the only path: the completed penance quest chain).
+     * Removes the pact, the sinner mark and the sin counter with a redemption effect.
+     *
+     * @param player the redeemed player
+     */
+    public void breakDarkPact(final Player player) {
+        if (player == null) {
+            return;
+        }
+
+        player.getPersistentDataContainer().remove(darkPactKey);
+        player.getPersistentDataContainer().remove(sinCountKey);
+        player.getPersistentDataContainer().remove(sinnerKey);
+        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1.0F, 1.4F);
+        player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 60, 0.5D, 0.8D, 0.5D, 0.05D);
+        player.sendMessage(messageManager.getMessage(
+                "sinner.pact-broken",
+                "<gold>A vezeklésed teljes: a sötét paktum megtört, bűneid feloldozást nyertek.</gold>"
+        ));
+    }
+
+    /**
      * Clears the sinner mark unless the player is bound by the dark pact.
      *
      * @param player the player to cleanse

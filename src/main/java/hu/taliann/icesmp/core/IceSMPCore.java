@@ -7,6 +7,7 @@ import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
 import hu.taliann.icesmp.commands.ProfessionCommand;
 import hu.taliann.icesmp.commands.ProfileCommand;
+import hu.taliann.icesmp.commands.QuestCommand;
 import hu.taliann.icesmp.commands.RelicCommand;
 import hu.taliann.icesmp.commands.SinnerCommand;
 import hu.taliann.icesmp.commands.SpecCommand;
@@ -28,6 +29,7 @@ import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
 import hu.taliann.icesmp.listeners.ProfessionXpListener;
 import hu.taliann.icesmp.listeners.ProfileGUIListener;
+import hu.taliann.icesmp.listeners.QuestProgressListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
 import hu.taliann.icesmp.listeners.RelicItemRefreshListener;
@@ -52,6 +54,7 @@ import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
+import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
@@ -114,6 +117,7 @@ public final class IceSMPCore {
     private final ProfessionManager professionManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
+    private final QuestManager questManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -147,11 +151,16 @@ public final class IceSMPCore {
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager);
+        this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
+                currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
-                jobManager, professionManager, factionManager, metelytepoManager);
+                jobManager, professionManager, factionManager, metelytepoManager, questManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.territoryManager = new TerritoryManager(plugin);
-        jobManager.setXpChangeHook(specializationManager::applyClassSpecializationUnlocks);
+        jobManager.setXpChangeHook(player -> {
+            specializationManager.applyClassSpecializationUnlocks(player);
+            questManager.handleLevelChange(player);
+        });
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
                 abilityCatalystListener,
                 jobManager,
@@ -273,6 +282,7 @@ public final class IceSMPCore {
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent parancsok", List.of("talents"), new TalentCommand(talentManager, messageManager));
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
+        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(questManager, messageManager));
     }
 
     /**
@@ -295,7 +305,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(talentManager), plugin);
-        pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
+        pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, configManager), plugin);

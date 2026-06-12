@@ -389,6 +389,8 @@ specializations:
       gale_burst: 42
       elemental_overload: 45
   necromancer:
+    # A Nekromanta beavatása quest-hez kötött (sötét rituálé a romvárosban).
+    required-quest: "necromancer_initiation"
     spell-unlocks:
       life_drain: 25
       grave_grasp: 26
@@ -620,6 +622,103 @@ professions:
   specialization:
     # A szakma ezen a szinten specializálódhat (/spec choose).
     required-level: 25
+
+# ===== Küldetések (quest-keretrendszer) =====
+# Objective típusok: KILL_MOBS (count, opcionális entity-type + min-mob-level),
+# BREAK_BLOCKS / CRAFT_ITEMS (materials + count), CATCH_FISH (count),
+# VISIT_TERRITORY (territory), REACH_LEVEL (level).
+# Feltételek: requires-job, requires-faction, requires-level, requires-quest (lánc).
+# Jutalmak: class-xp, currency {type, amount}, unlock-spell, cleanse-sins.
+quests:
+  # --- Kaszt-próbák (bevezető questek) ---
+  warrior_trial:
+    display-name: "A Harcos Próbája"
+    description: "Bizonyítsd erődet: ejts el 15 szörnyet."
+    requires-job: "warrior"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+    rewards:
+      class-xp: 200
+  archer_trial:
+    display-name: "Az Íjász Próbája"
+    description: "Vadássz le 12 szörnyet."
+    requires-job: "archer"
+    objective:
+      type: "KILL_MOBS"
+      count: 12
+    rewards:
+      class-xp: 200
+  wizard_trial:
+    display-name: "A Varázsló Próbája"
+    description: "Gyűjts mágikus reagenseket: szedj 10 virágot."
+    requires-job: "wizard"
+    objective:
+      type: "BREAK_BLOCKS"
+      count: 10
+      materials:
+        - "DANDELION"
+        - "POPPY"
+        - "BLUE_ORCHID"
+        - "ALLIUM"
+        - "OXEYE_DAISY"
+        - "CORNFLOWER"
+        - "LILY_OF_THE_VALLEY"
+    rewards:
+      class-xp: 200
+  assassin_trial:
+    display-name: "Az Orgyilkos Próbája"
+    description: "Némítsd el a sötétség 10 teremtményét."
+    requires-job: "assassin"
+    objective:
+      type: "KILL_MOBS"
+      count: 10
+    rewards:
+      class-xp: 200
+  # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
+  necromancer_initiation:
+    display-name: "Sötét Beavatás"
+    description: "Zarándokolj el a Sötét romvárosba, és hajts végre rituálét az oltárnál."
+    requires-faction: "DARK"
+    objective:
+      type: "VISIT_TERRITORY"
+      territory: "dark-capital"
+    rewards:
+      class-xp: 100
+  # --- Vezeklés-lánc: az egyetlen visszaút a sötét paktumból ---
+  penance_1:
+    display-name: "Vezeklés I. — A Penge"
+    description: "Fordítsd erődet a sötétség ellen: pusztíts el 30 erős szörnyet (min. Lvl 2)."
+    requires-faction: "DARK"
+    objective:
+      type: "KILL_MOBS"
+      count: 30
+      min-mob-level: 2
+    rewards:
+      class-xp: 150
+  penance_2:
+    display-name: "Vezeklés II. — Az Alázat"
+    description: "Tanulj alázatot: fogj ki 20 halat."
+    requires-quest: "penance_1"
+    objective:
+      type: "CATCH_FISH"
+      count: 20
+    rewards:
+      class-xp: 150
+  penance_3:
+    display-name: "Vezeklés III. — A Feloldozás"
+    description: "Az utolsó próba: győzz le 50 elit szörnyet (min. Lvl 4). A paktum megtörik."
+    requires-quest: "penance_2"
+    objective:
+      type: "KILL_MOBS"
+      count: 50
+      min-mob-level: 4
+    rewards:
+      class-xp: 400
+      currency:
+        type: "NEUTRAL"
+        amount: 100
+      cleanse-sins: true
 
 # ===== Frakció területek =====
 territory:

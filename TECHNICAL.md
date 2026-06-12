@@ -72,6 +72,7 @@ IceSMPCore.disable()
 | `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
 | `FactionTreasuryManager` | Frakciókasszák (adomány + időszakos állampolgári adó, money sink); a tax a global region scheduleren fut | treasury.yml |
 | `KingManager` | Királyválasztás (szavazás, min-votes, ciklus-reset) és uralkodói jogok (kassza-kivét, raid) | kings.yml |
+| `QuestManager` | Config-vezérelt küldetések: 6 objective-típus, lánc/kaszt/frakció/szint feltételek, jutalmak (class-xp, valuta, spell, cleanse-sins) | játékos PDC |
 | `RaidManager` | Raid életciklus: hirdetés (nevezési díj), bűn-mentes hadi PvP, kill-számolás, hadizsákmány | memória |
 | `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (progresszív görbe: az n. szintlépés ára `base-xp + (n-1)*increment`, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
 | `SpecializationManager` | Kaszt- és szakma-specializációk: feltétel-ellenőrzés (szint, frakció, sinner), kiválasztás, spec spell unlock (`specializations.<id>.spell-unlocks`) | játékos PDC |
@@ -87,6 +88,11 @@ IceSMPCore.disable()
 | `TerritoryManager` | Kör alakú frakcióterületek és fővárosok, `getTerritoryAt(Location)` | territories.yml |
 
 ### Kulcs-szabályok (üzleti logika)
+
+**Quest-kapuk:** a `specializations.<spec>.required-quest` config kulcs quest-teljesítéshez
+köti a spec felvételét (alapból: necromancer → `necromancer_initiation`); a vezeklés-lánc
+(`penance_1..3`) zárótagjának `cleanse-sins` jutalma az egyetlen mód a sötét paktum
+megtörésére (`MetelytepoManager.breakDarkPact`).
 
 **Sötét paktum lánc:**
 1. Sinner jelölést a Mételytépő (`MetelytepoManager.markAsSinner`) vagy admin (`/sinner set`) ad.
@@ -129,6 +135,7 @@ inventoryból és felszabadul.
 | `/talent` | `talents` | `list`, `spend <class\|profession> <talent>` | — |
 | `/profile` | `status`, `info` | — | — |
 | `/sinner` | — | `<játékos> set\|clear\|add\|status` | `icesmp.admin` |
+| `/quest` | `quests`, `kuldetes` | `list`, `info`, `accept`, `abandon`, `complete` | `complete`: `icesmp.admin.quest` |
 | `/relic` | `relics` | `list`, `give` | `give`: `icesmp.relic.admin` |
 | `/territory` | `terulet` | `setcapital`, `claim`, `remove`, `list`, `info` | `icesmp.admin.territory` |
 
@@ -162,6 +169,7 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `ElytraRelicListener` | `EntityToggleGlideEvent`, `EntityDamageEvent` | A 4 frakció-elytra relikvia effektjei (tulajdonos + frakció ellenőrzéssel) |
 | `RelicPvpTransferListener` | `PlayerDeathEvent` | Fegyver-relikviák gazdacseréje PvP-ben |
 | `SoulstoneListener` | `EntityDeathEvent` | Lélekkő-drop: magas szintű skálázott mobok DARK tokent dobhatnak |
+| `QuestProgressListener` | `EntityDeathEvent`, `BlockBreakEvent`, `CraftItemEvent`, `PlayerFishEvent` | Quest-haladás (a VISIT_TERRITORY a TerritoryListenerből, a REACH_LEVEL a JobManager hookból érkezik) |
 | `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
 | `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |
 
@@ -256,6 +264,7 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `professions` | `leveling.*` (progresszív görbe), `xp.*` (tevékenység XP a 8 szakmának), `specialization.required-level` |
 | `crafting-restrictions` | `enabled`, `notify-cooldown-seconds`, `rules.<id>`: `materials` lista + `required-job`/`required-level` és/vagy `required-profession`/`required-profession-level` (minden megadott feltételnek teljesülnie kell) |
 | `territory` | `notify.enabled` (action bar), `protection.enabled` (építésvédelem) |
+| `quests` | `quests.<id>`: display-name, description, objective (type/count/...), requires-* feltételek, rewards (class-xp, currency, unlock-spell, cleanse-sins) |
 
 Talent effektek: `max-health`, `movement-speed`, `attack-damage` (attribútum módosító),
 `class-xp-bonus`, `profession-xp-bonus` (százalék).
@@ -285,7 +294,7 @@ frissülnek garantáltan.
 
 **Játékoson:**
 `job_primary`, `job_primary_xp`, `job_secondary`, `job_secondary_xp`, `unlocked_spells`
-(vesszővel elválasztott spell idk), `selected_spell_index`, `cd_<spellId>` (hosszú spell
+(vesszővel elválasztott spell idk), `quests_active`, `quests_completed`, `quest_progress_<id>`, `selected_spell_index`, `cd_<spellId>` (hosszú spell
 cooldownok), `is_sinner`, `sin_count`, `dark_pact`, `profession_gathering`, `profession_crafting`,
 `profession_xp_<szakmaId>` (szakmánkénti XP), `class_spec`,
 `profession_spec`, `talents_class` és `talents_profession` (`id:rang,...` formátum).

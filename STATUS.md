@@ -122,6 +122,17 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   alatta memória), debounce védelem
 - Session-állapot központi takarítása kilépéskor (`PlayerSessionCleanupListener`)
 
+### 7.5 Quest-keretrendszer
+- **Config-vezérelt küldetések** (`quests.<id>`, `QuestManager`): 6 objective-típus
+  (KILL_MOBS szinttel/típussal, BREAK_BLOCKS, CRAFT_ITEMS, CATCH_FISH, VISIT_TERRITORY,
+  REACH_LEVEL), lánc-feltételek (requires-quest) + kaszt/frakció/szint kapuk
+- Haladás PDC-ben, action bar visszajelzéssel; jutalmak: kaszt XP, valuta, spell-feloldás,
+  **cleanse-sins** (a sötét paktum megtörése)
+- `/quest list | info | accept | abandon` + admin `complete`
+- **Beépített questek**: 4 kaszt-próba, Sötét Beavatás (a Nekromanta spec quest-kapuja:
+  `specializations.necromancer.required-quest`), és a 3 részes **vezeklés-lánc** — a
+  teljesítése az egyetlen visszaút a sötét paktumból (todo.md/ideas.md ötlet)
+
 ### 8. Relikvia rendszer
 - Relic framework: config-vezérelt definíciók (vizuál, custom model data, triggerek,
   cooldown), PDC-tagelt itemek, craft-védelem
