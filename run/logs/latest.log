@@ -1,0 +1,288 @@
+[20:11:59] [ServerMain/INFO]: [bootstrap] Running Java 21 (OpenJDK 64-Bit Server VM 21.0.10+7-LTS; Eclipse Adoptium Temurin-21.0.10+7) on Windows 11 10.0 (amd64)
+[20:11:59] [ServerMain/INFO]: [bootstrap] Loading Paper 1.21.11-130-ver/1.21.11@c5a2736 (2026-04-11T11:14:19Z) for Minecraft 1.21.11
+[20:12:00] [ServerMain/INFO]: [PluginInitializerManager] Initializing plugins...
+[20:12:01] [ServerMain/INFO]: [PluginInitializerManager] Initialized 1 plugin
+[20:12:01] [ServerMain/INFO]: [PluginInitializerManager] Paper plugins (1):
+ - IceSMP (1.0-SNAPSHOT)
+[20:12:05] [ServerMain/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[20:12:07] [ServerMain/INFO]: Loaded 1470 recipes
+[20:12:07] [ServerMain/INFO]: Loaded 1584 advancements
+[20:12:07] [ServerMain/INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[20:12:07] [ServerMain/INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 276.3ms
+[20:12:07] [Server thread/INFO]: Starting minecraft server version 1.21.11
+[20:12:07] [Server thread/INFO]: Loading properties
+[20:12:07] [Server thread/INFO]: This server is running Paper version 1.21.11-130-ver/1.21.11@c5a2736 (2026-04-11T11:14:19Z) (Implementing API version 1.21.11-R0.1-SNAPSHOT)
+[20:12:07] [Server thread/INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[20:12:07] [Server thread/INFO]: Server Ping Player Sample Count: 12
+[20:12:07] [Server thread/INFO]: Using 4 threads for Netty based IO
+[20:12:08] [Server thread/INFO]: [MoonriseCommon] Paper is using 8 worker threads, 1 I/O threads
+[20:12:08] [Server thread/INFO]: Default game type: SURVIVAL
+[20:12:08] [Server thread/INFO]: Generating keypair
+[20:12:08] [Server thread/INFO]: Starting Minecraft server on *:25565
+[20:12:08] [Server thread/INFO]: Paper: Using Java compression from Velocity.
+[20:12:08] [Server thread/INFO]: Paper: Using Java cipher from Velocity.
+[20:12:08] [Server thread/INFO]: [IceSMP] Loading server plugin IceSMP v1.0-SNAPSHOT
+[20:12:08] [Server thread/INFO]: Server permissions file permissions.yml is empty, ignoring it
+[20:12:08] [Server thread/INFO]: Preparing level "world"
+[20:12:09] [Server thread/INFO]: Loading 0 persistent chunks for world 'minecraft:overworld'...
+[20:12:09] [Server thread/INFO]: Preparing spawn area: 100%
+[20:12:09] [Server thread/INFO]: Prepared spawn area in 3 ms
+[20:12:09] [Server thread/INFO]: Loading 0 persistent chunks for world 'minecraft:the_nether'...
+[20:12:09] [Server thread/INFO]: Prepared spawn area in 0 ms
+[20:12:09] [Server thread/INFO]: Loading 0 persistent chunks for world 'minecraft:the_end'...
+[20:12:09] [Server thread/INFO]: Prepared spawn area in 0 ms
+[20:12:09] [Server thread/INFO]: Done preparing level "world" (0.562s)
+[20:12:09] [Server thread/INFO]: [IceSMP] Enabling IceSMP v1.0-SNAPSHOT
+[20:12:09] [Server thread/INFO]: [IceSMP] Loaded 1 faction assignments.
+[20:12:09] [Server thread/INFO]: [IceSMP] Loaded 1 hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.
+[20:12:09] [Server thread/INFO]: [IceSMP] IceSMP core enabled.
+[20:12:09] [Server thread/INFO]: [IceSMP] Available factions: Piros, Kék, Semleges
+[20:12:09] [Server thread/INFO]: [spark] Starting background profiler...
+[20:12:09] [Server thread/INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[20:12:09] [Server thread/INFO]: Running delayed init tasks
+[20:12:09] [Server thread/INFO]: Done (10.377s)! For help, type "help"
+[20:13:52] [User Authenticator #0/INFO]: UUID of player Taliann is 2d47d7b6-294e-4a14-922c-befacd66ee6d
+[20:13:56] [Server thread/INFO]: Taliann joined the game
+[20:13:56] [Server thread/INFO]: Taliann[/127.0.0.1:49377] logged in with entity id 46 at ([world]-74.72392547247686, 72.0, 32.317631324268056)
+[20:14:23] [Server thread/INFO]: Taliann issued server command: /pl
+[20:14:28] [Server thread/INFO]: Taliann issued server command: /gamemode creative
+[20:14:28] [Server thread/INFO]: [Taliann: Set own game mode to Creative Mode]
+[20:15:04] [Server thread/INFO]: Taliann issued server command: /spark profiler open
+[20:15:07] [Server thread/INFO]: Taliann issued server command: /spark profiler start
+[20:15:09] [Paper Async Task Handler Thread - 0/WARN]: [spark] A command execution has not completed after 5 seconds, it *might* be stuck. Trace: 
+  java.base/jdk.internal.misc.Unsafe.park(Native Method)
+  java.base/java.util.concurrent.locks.LockSupport.park(LockSupport.java:221)
+  java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquire(AbstractQueuedSynchronizer.java:788)
+  java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1133)
+  java.base/java.util.concurrent.CountDownLatch.await(CountDownLatch.java:230)
+  me.lucko.spark.paper.lib.bytesocks.ws.client.WebSocketClient.connectBlocking(WebSocketClient.java:395)
+  me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl.connect(BytesocksClientImpl.java:110)
+  me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl.createAndConnect(BytesocksClientImpl.java:54)
+  me.lucko.spark.paper.common.ws.ViewerSocketConnection.<init>(ViewerSocketConnection.java:60)
+  me.lucko.spark.paper.common.ws.ViewerSocket.<init>(ViewerSocket.java:70)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.handleOpen(SamplerModule.java:465)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profilerOpen(SamplerModule.java:353)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:126)
+  me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472)
+  me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370)
+  io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59)
+  java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+  java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+  java.base/java.lang.Thread.run(Thread.java:1583)
+[20:15:09] [Paper Async Task Handler Thread - 0/WARN]: [spark] If the command subsequently completes without any errors, this warning should be ignored. :)
+[20:15:10] [Server thread/INFO]: Taliann issued server command: /spark profiler stop
+[20:15:14] [Paper Async Task Handler Thread - 0/WARN]: [spark] A command execution has not completed after 10 seconds, it *might* be stuck. Trace: 
+  java.base/jdk.internal.misc.Unsafe.park(Native Method)
+  java.base/java.util.concurrent.locks.LockSupport.park(LockSupport.java:221)
+  java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquire(AbstractQueuedSynchronizer.java:788)
+  java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1133)
+  java.base/java.util.concurrent.CountDownLatch.await(CountDownLatch.java:230)
+  me.lucko.spark.paper.lib.bytesocks.ws.client.WebSocketClient.connectBlocking(WebSocketClient.java:395)
+  me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl.connect(BytesocksClientImpl.java:110)
+  me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl.createAndConnect(BytesocksClientImpl.java:54)
+  me.lucko.spark.paper.common.ws.ViewerSocketConnection.<init>(ViewerSocketConnection.java:60)
+  me.lucko.spark.paper.common.ws.ViewerSocket.<init>(ViewerSocket.java:70)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.handleOpen(SamplerModule.java:465)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profilerOpen(SamplerModule.java:353)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:126)
+  me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472)
+  me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370)
+  io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59)
+  java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+  java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+  java.base/java.lang.Thread.run(Thread.java:1583)
+[20:15:14] [Paper Async Task Handler Thread - 0/WARN]: [spark] If the command subsequently completes without any errors, this warning should be ignored. :)
+[20:15:19] [Paper Async Task Handler Thread - 0/WARN]: [spark] A command execution has not completed after 15 seconds, it *might* be stuck. Trace: 
+  java.base/jdk.internal.misc.Unsafe.park(Native Method)
+  java.base/java.util.concurrent.locks.LockSupport.park(LockSupport.java:221)
+  java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquire(AbstractQueuedSynchronizer.java:788)
+  java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1133)
+  java.base/java.util.concurrent.CountDownLatch.await(CountDownLatch.java:230)
+  me.lucko.spark.paper.lib.bytesocks.ws.client.WebSocketClient.connectBlocking(WebSocketClient.java:395)
+  me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl.connect(BytesocksClientImpl.java:110)
+  me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl.createAndConnect(BytesocksClientImpl.java:54)
+  me.lucko.spark.paper.common.ws.ViewerSocketConnection.<init>(ViewerSocketConnection.java:60)
+  me.lucko.spark.paper.common.ws.ViewerSocket.<init>(ViewerSocket.java:70)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.handleOpen(SamplerModule.java:465)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profilerOpen(SamplerModule.java:353)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:126)
+  me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472)
+  me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370)
+  io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59)
+  java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+  java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+  java.base/java.lang.Thread.run(Thread.java:1583)
+[20:15:19] [Paper Async Task Handler Thread - 0/WARN]: [spark] If the command subsequently completes without any errors, this warning should be ignored. :)
+[20:15:25] [WebSocketConnectReadThread-127/INFO]: [spark] Socket error: java.net.ConnectException Connection timed out: connect
+java.net.ConnectException: Connection timed out: connect
+	at java.base/sun.nio.ch.Net.connect0(Native Method) ~[?:?]
+	at java.base/sun.nio.ch.Net.connect(Net.java:601) ~[?:?]
+	at java.base/sun.nio.ch.Net.connect(Net.java:590) ~[?:?]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:583) ~[?:?]
+	at java.base/java.net.Socket.connect(Socket.java:751) ~[?:?]
+	at me.lucko.spark.paper.lib.bytesocks.ws.client.WebSocketClient.run(WebSocketClient.java:491) ~[spark-paper-1.10.152.jar:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+[20:15:29] [Paper Async Task Handler Thread - 1/INFO]: [⚡] Profiler live viewer:
+[20:15:29] [Paper Async Task Handler Thread - 1/INFO]: https://spark.lucko.me/v8QZdrFo1Y
+[20:15:29] [Paper Async Task Handler Thread - 1/INFO]: 
+[20:15:29] [Paper Async Task Handler Thread - 1/INFO]: (NOTE: this link is temporary and will expire after a short period of time. If you need a link to share with other people (e.g. in a bug report), please use /spark profiler stop instead.)
+[20:15:29] [Paper Async Task Handler Thread - 0/WARN]: [spark] Exception occurred while sending data to the socket
+me.lucko.spark.paper.lib.bytesocks.ws.exceptions.WebsocketNotConnectedException
+	at me.lucko.spark.paper.lib.bytesocks.ws.WebSocketImpl.send(WebSocketImpl.java:669) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.lib.bytesocks.ws.WebSocketImpl.send(WebSocketImpl.java:645) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.lib.bytesocks.ws.client.WebSocketClient.send(WebSocketClient.java:445) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.lib.bytesocks.BytesocksClientImpl$SocketImpl.send(BytesocksClientImpl.java:136) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.ws.ViewerSocketConnection.sendRawPacket(ViewerSocketConnection.java:168) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.ws.ViewerSocketConnection.sendPacket(ViewerSocketConnection.java:152) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.ws.ViewerSocketConnection.sendPacket(ViewerSocketConnection.java:132) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.ws.ViewerSocket.close(ViewerSocket.java:139) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.ws.ViewerSocket.processSamplerStopped(ViewerSocket.java:134) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.sampler.AbstractSampler.stop(AbstractSampler.java:138) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.sampler.java.JavaSampler.stop(JavaSampler.java:106) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.command.modules.SamplerModule.profilerStart(SamplerModule.java:163) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:146) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370) ~[spark-paper-1.10.152.jar:?]
+	at io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59) ~[paper-1.21.11.jar:1.21.11-130-c5a2736]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Starting a new profiler, please wait...
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Profiler is now running! (built-in java)
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] It will run in the background until it is stopped by an admin.
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] To stop the profiler and upload the results, run:
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡]   /spark profiler stop
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] To view the profiler while it's running, run:
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡]   /spark profiler open
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Stopping the profiler & uploading results, please wait...
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Profiler stopped & upload complete!
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: https://spark.lucko.me/Q3QLUjcmfd
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[20:15:29] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Restarted the background profiler. (If you don't want this to happen, run: /spark profiler cancel)
+[20:15:39] [Server thread/INFO]: Taliann issued server command: /spark profiler stop
+[20:15:39] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Stopping the profiler & uploading results, please wait...
+[20:15:44] [Paper Async Task Handler Thread - 1/WARN]: [spark] A command execution has not completed after 5 seconds, it *might* be stuck. Trace: 
+  java.base/sun.nio.ch.Net.poll(Native Method)
+  java.base/sun.nio.ch.NioSocketImpl.park(NioSocketImpl.java:191)
+  java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:548)
+  java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+  java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+  java.base/java.net.Socket.connect(Socket.java:751)
+  java.base/sun.security.ssl.SSLSocketImpl.connect(SSLSocketImpl.java:304)
+  java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178)
+  java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:531)
+  java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:636)
+  java.base/sun.net.www.protocol.https.HttpsClient.<init>(HttpsClient.java:264)
+  java.base/sun.net.www.protocol.https.HttpsClient.New(HttpsClient.java:377)
+  java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(AbstractDelegateHttpsURLConnection.java:193)
+  java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1257)
+  java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1143)
+  java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:179)
+  java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(HttpsURLConnectionImpl.java:141)
+  me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:67)
+  me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:84)
+  me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:94)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.handleUpload(SamplerModule.java:427)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profilerStop(SamplerModule.java:406)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:141)
+  me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472)
+  me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370)
+  io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59)
+  java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+  java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+  java.base/java.lang.Thread.run(Thread.java:1583)
+[20:15:44] [Paper Async Task Handler Thread - 1/WARN]: [spark] If the command subsequently completes without any errors, this warning should be ignored. :)
+[20:15:49] [Paper Async Task Handler Thread - 1/WARN]: [spark] A command execution has not completed after 10 seconds, it *might* be stuck. Trace: 
+  java.base/sun.nio.ch.Net.poll(Native Method)
+  java.base/sun.nio.ch.NioSocketImpl.park(NioSocketImpl.java:191)
+  java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:548)
+  java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+  java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+  java.base/java.net.Socket.connect(Socket.java:751)
+  java.base/sun.security.ssl.SSLSocketImpl.connect(SSLSocketImpl.java:304)
+  java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178)
+  java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:531)
+  java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:636)
+  java.base/sun.net.www.protocol.https.HttpsClient.<init>(HttpsClient.java:264)
+  java.base/sun.net.www.protocol.https.HttpsClient.New(HttpsClient.java:377)
+  java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(AbstractDelegateHttpsURLConnection.java:193)
+  java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1257)
+  java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1143)
+  java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:179)
+  java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(HttpsURLConnectionImpl.java:141)
+  me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:67)
+  me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:84)
+  me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:94)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.handleUpload(SamplerModule.java:427)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profilerStop(SamplerModule.java:406)
+  me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:141)
+  me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472)
+  me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370)
+  io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59)
+  java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+  java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+  java.base/java.lang.Thread.run(Thread.java:1583)
+[20:15:49] [Paper Async Task Handler Thread - 1/WARN]: [spark] If the command subsequently completes without any errors, this warning should be ignored. :)
+[20:15:49] [Paper Async Task Handler Thread - 0/INFO]: [⚡] An error occurred whilst uploading the results. Attempting to save to disk instead.
+[20:15:49] [Paper Async Task Handler Thread - 0/WARN]: [spark] Error whilst uploading profiler results
+java.io.IOException: Server returned HTTP response code: 400 for URL: https://spark-usercontent.lucko.me/post
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:2028) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1629) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getInputStream(HttpsURLConnectionImpl.java:223) ~[?:?]
+	at me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:78) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:84) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.util.BytebinClient.postContent(BytebinClient.java:94) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.command.modules.SamplerModule.handleUpload(SamplerModule.java:427) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.command.modules.SamplerModule.profilerStop(SamplerModule.java:406) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.command.modules.SamplerModule.profiler(SamplerModule.java:141) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.SparkPlatform.executeCommand0(SparkPlatform.java:472) ~[spark-paper-1.10.152.jar:?]
+	at me.lucko.spark.paper.common.SparkPlatform.lambda$executeCommand$3(SparkPlatform.java:370) ~[spark-paper-1.10.152.jar:?]
+	at io.papermc.paper.SparksFly$1.lambda$catching$0(SparksFly.java:59) ~[paper-1.21.11.jar:1.21.11-130-c5a2736]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+[20:15:49] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Profiler stopped & save complete!
+[20:15:49] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Data has been written to: plugins\spark\profile-2026-04-16_20.15.49.sparkprofile
+[20:15:49] [Paper Async Task Handler Thread - 0/INFO]: [⚡] You can view the profile file using the web app @ https://spark.lucko.me/
+[20:15:49] [Paper Async Task Handler Thread - 0/INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[20:15:49] [Paper Async Task Handler Thread - 0/INFO]: [⚡] Restarted the background profiler. (If you don't want this to happen, run: /spark profiler cancel)
+[20:16:23] [Server thread/INFO]: Taliann issued server command: /stop
+[20:16:23] [Server thread/INFO]: [Taliann: Stopping the server]
+[20:16:23] [Server thread/INFO]: Stopping server
+[20:16:23] [Server thread/INFO]: [IceSMP] Disabling IceSMP v1.0-SNAPSHOT
+[20:16:23] [Server thread/INFO]: [IceSMP] Saved 1 faction assignments.
+[20:16:23] [Server thread/INFO]: [IceSMP] IceSMP core disabled.
+[20:16:23] [Server thread/INFO]: Saving players
+[20:16:23] [Server thread/INFO]: Taliann lost connection: Server closed
+[20:16:23] [Server thread/INFO]: Taliann left the game
+[20:16:23] [Server thread/INFO]: Saving worlds
+[20:16:23] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[20:16:23] [Server thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world'
+[20:16:23] [Server thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world'
+[20:16:23] [Server thread/INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Saved 675 block chunks, 675 entity chunks, 0 poi chunks in world 'world' in 1.27s
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world'
+[20:16:25] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world_nether]'/minecraft:the_nether
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_nether'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world_nether'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world_nether'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world_nether' in 0.00s
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_nether'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_nether'
+[20:16:25] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world_the_end]'/minecraft:the_end
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_the_end'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world_the_end'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world_the_end'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world_the_end' in 0.00s
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_the_end'
+[20:16:25] [Server thread/INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_the_end'
+[20:16:25] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[20:16:25] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[20:16:25] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[20:16:25] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[20:16:25] [Server thread/INFO]: Waiting for all RegionFile I/O tasks to complete...
+[20:16:25] [Server thread/INFO]: All RegionFile I/O tasks to complete
+[20:16:25] [Server thread/INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[20:16:25] [Server thread/INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...
