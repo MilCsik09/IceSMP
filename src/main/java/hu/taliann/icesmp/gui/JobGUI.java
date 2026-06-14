@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.gui;
 
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
@@ -20,13 +21,16 @@ public final class JobGUI {
 
     private static final int SIZE = 36;
     private static final int BACK_SLOT = 31;
+    private static final int CATALYST_SLOT = 33;
+    private static final int SKILL_TREE_SLOT = 29;
     private static final int[] JOB_SLOTS = {11, 13, 15, 20, 22, 24};
 
     private JobGUI() {
     }
 
-    public static void openJobMenu(final Player viewer, final JobManager jobManager, final MessageManager messageManager) {
-        if (viewer == null || jobManager == null || messageManager == null) {
+    public static void openJobMenu(final Player viewer, final JobManager jobManager,
+                                   final CatalystItemFactory catalystItemFactory, final MessageManager messageManager) {
+        if (viewer == null || jobManager == null || catalystItemFactory == null || messageManager == null) {
             return;
         }
 
@@ -38,6 +42,8 @@ public final class JobGUI {
         fillBackground(inventory);
         placeJobItems(inventory, viewer, jobManager, messageManager);
         inventory.setItem(BACK_SLOT, createBackButton(messageManager));
+        inventory.setItem(CATALYST_SLOT, createCatalystButton(viewer, jobManager, catalystItemFactory, messageManager));
+        inventory.setItem(SKILL_TREE_SLOT, createSkillTreeButton(messageManager));
 
         viewer.openInventory(inventory);
     }
@@ -54,6 +60,50 @@ public final class JobGUI {
 
     public static int getBackSlot() {
         return BACK_SLOT;
+    }
+
+    public static int getCatalystSlot() {
+        return CATALYST_SLOT;
+    }
+
+    public static int getSkillTreeSlot() {
+        return SKILL_TREE_SLOT;
+    }
+
+    private static ItemStack createSkillTreeButton(final MessageManager messageManager) {
+        final ItemStack button = new ItemStack(Material.KNOWLEDGE_BOOK);
+        final ItemMeta meta = button.getItemMeta();
+        meta.displayName(messageManager.getComponent("messages.job-gui-skilltree", "&5Képesség-fa"));
+        meta.lore(List.of(messageManager.getComponent("messages.job-gui-skilltree-lore", "&7A kasztod képességei és feloldási szintjei.")));
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+        button.setItemMeta(meta);
+        return button;
+    }
+
+    private static ItemStack createCatalystButton(final Player viewer, final JobManager jobManager,
+                                                  final CatalystItemFactory catalystItemFactory,
+                                                  final MessageManager messageManager) {
+        final JobType primaryJob = jobManager.getPrimaryJob(viewer);
+        if (primaryJob == null) {
+            final ItemStack lockedButton = new ItemStack(Material.BARRIER);
+            final ItemMeta lockedMeta = lockedButton.getItemMeta();
+            lockedMeta.displayName(messageManager.getComponent("messages.job-gui-catalyst-locked", "&cKépesség Katalizátor"));
+            lockedMeta.lore(List.of(messageManager.getComponent("messages.job-gui-catalyst-locked-lore", "&7Előbb válassz elsődleges kasztot!")));
+            lockedMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+            lockedButton.setItemMeta(lockedMeta);
+            return lockedButton;
+        }
+
+        final ItemStack button = new ItemStack(catalystItemFactory.getMaterial(primaryJob));
+        final ItemMeta meta = button.getItemMeta();
+        meta.displayName(catalystItemFactory.getDisplayName(primaryJob));
+        meta.lore(List.of(
+                messageManager.getComponent("messages.job-gui-catalyst-lore", "&7A kasztod Képesség Katalizátora."),
+                messageManager.getComponent("messages.job-gui-catalyst-claim", "&eKattints az igényléshez, ha elveszett!")
+        ));
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
+        button.setItemMeta(meta);
+        return button;
     }
 
     private static void fillBackground(final Inventory inventory) {

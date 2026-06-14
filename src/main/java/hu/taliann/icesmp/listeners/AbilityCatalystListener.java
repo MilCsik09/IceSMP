@@ -1,12 +1,11 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.items.SpellbookItemFactory;
+import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -27,11 +26,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class SpellbookListener implements Listener {
+/**
+ * Interaction handler for the class-themed Ability Catalyst item:
+ * right click casts the selected spell, sneak + arm swing cycles spells with a
+ * class-specific sound. Owns the cast pipeline (cost check, cooldowns with PDC
+ * persistence for cooldowns >= 60s) and the per-session spell state cleanup.
+ */
+public final class AbilityCatalystListener implements Listener {
 
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
-    private final SpellbookItemFactory spellbookItemFactory;
+    private final CatalystItemFactory catalystItemFactory;
     private final MessageManager messageManager;
     private final NamespacedKey selectedSpellIndexKey;
     private final Map<String, NamespacedKey> longCooldownKeys = new ConcurrentHashMap<>();
@@ -39,12 +44,12 @@ public final class SpellbookListener implements Listener {
     private final Map<UUID, Long> cycleDebounce = new ConcurrentHashMap<>();
     private final Map<UUID, Long> castDebounce = new ConcurrentHashMap<>();
 
-    public SpellbookListener(final JavaPlugin plugin, final JobManager jobManager,
-                             final SpellRegistry spellRegistry, final SpellbookItemFactory spellbookItemFactory,
-                             final MessageManager messageManager) {
+    public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
+                                   final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
+                                   final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
-        this.spellbookItemFactory = spellbookItemFactory;
+        this.catalystItemFactory = catalystItemFactory;
         this.messageManager = messageManager;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
     }
@@ -57,7 +62,7 @@ public final class SpellbookListener implements Listener {
 
         final Player player = event.getPlayer();
         final ItemStack mainHand = player.getInventory().getItemInMainHand();
-        if (!spellbookItemFactory.isSpellbook(mainHand)) {
+        if (!catalystItemFactory.isCatalyst(mainHand)) {
             return;
         }
 
@@ -66,7 +71,7 @@ public final class SpellbookListener implements Listener {
             return;
         }
 
-        // Block vanilla item/block behavior but keep event flow for reliable cast handling.
+        // Block vanilla item/block behavior (e.g. the goat horn blast) but keep event flow for reliable cast handling.
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
 
@@ -91,7 +96,7 @@ public final class SpellbookListener implements Listener {
             return;
         }
 
-        if (!spellbookItemFactory.isSpellbook(player.getInventory().getItemInMainHand())) {
+        if (!catalystItemFactory.isCatalyst(player.getInventory().getItemInMainHand())) {
             return;
         }
 
@@ -108,7 +113,7 @@ public final class SpellbookListener implements Listener {
     private void cycleSpell(final Player player) {
         final List<String> unlocked = resolveUnlockedSpellIds(player);
         if (unlocked.isEmpty()) {
-            player.sendActionBar(messageManager.getMessage("spellbook.no-spells", "<red>Nincs elerheto varazslat.</red>"));
+            player.sendActionBar(messageManager.getMessage("catalyst.no-spells", "<red>Nincs elérhető képesség.</red>"));
             return;
         }
 
@@ -119,28 +124,32 @@ public final class SpellbookListener implements Listener {
 
         final Spell selected = spellRegistry.getById(unlocked.get(nextIndex));
         if (selected == null) {
-            player.sendActionBar(messageManager.getMessage("spellbook.current-spell-unknown", "<gray>Aktualis varazslat: Ismeretlen</gray>"));
+            player.sendActionBar(messageManager.getMessage("catalyst.current-spell-unknown", "<gray>Aktuális képesség: Ismeretlen</gray>"));
             return;
         }
 
         player.sendActionBar(messageManager.getMessage(
-                "spellbook.current-spell",
-                "<gray>Aktualis varazslat: <gold>{spell}</gold></gray>",
-                Map.of("spell", selected.getName())
+                "catalyst.current-spell",
+                "<gray>Aktuális képesség: <gold>{spell}</gold> <dark_gray>({cost} {resource})</dark_gray></gray>",
+                Map.of(
+                        "spell", selected.getName(),
+                        "cost", String.valueOf(selected.getCostAmount()),
+                        "resource", resolveResourceName(selected)
+                )
         ));
-        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8F, 1.2F);
+        catalystItemFactory.playCycleSound(player, jobManager.getPrimaryJob(player));
     }
 
     private void castSelectedSpell(final Player player) {
         final List<String> unlocked = resolveUnlockedSpellIds(player);
         if (unlocked.isEmpty()) {
-            player.sendActionBar(messageManager.getMessage("spellbook.no-unlocked", "<red>Nincs feloldott varazslatod.</red>"));
+            player.sendActionBar(messageManager.getMessage("catalyst.no-unlocked", "<red>Még nem oldottál fel egyetlen képességet sem.</red>"));
             return;
         }
 
         final Spell selected = resolveSelectedSpell(player, unlocked);
         if (selected == null) {
-            player.sendActionBar(messageManager.getMessage("spellbook.invalid-selection", "<red>A kivalasztott varazslat nem erheto el.</red>"));
+            player.sendActionBar(messageManager.getMessage("catalyst.invalid-selection", "<red>A kiválasztott képesség nem érhető el.</red>"));
             return;
         }
 
@@ -149,28 +158,24 @@ public final class SpellbookListener implements Listener {
         if (remainingMs > 0L) {
             final long remainingSeconds = (long) Math.ceil(remainingMs / 1000.0D);
             player.sendActionBar(messageManager.getMessage(
-                    "spellbook.cooldown",
-                    "<red>Varj meg {seconds} mp-et!</red>",
+                    "catalyst.cooldown",
+                    "<red>Várj még {seconds} mp-et!</red>",
                     Map.of("seconds", String.valueOf(remainingSeconds))
             ));
             return;
         }
 
         if (!selected.canCast(player)) {
-            player.sendActionBar(messageManager.getMessage("spellbook.not-ready", "<red>Most nem tudod hasznalni ezt a varazslatot.</red>"));
+            player.sendActionBar(messageManager.getMessage("catalyst.not-ready", "<red>Most nem tudod használni ezt a képességet.</red>"));
             return;
         }
 
         if (!selected.hasRequiredCost(player)) {
-            final String resource = switch (selected.getCostType()) {
-                case HUNGER -> messageManager.get("system.resources.hunger", "ehseg");
-                case XP -> messageManager.get("system.resources.xp", "XP");
-            };
             player.sendActionBar(messageManager.getMessage(
-                    "spellbook.no-cost",
-                    "<red>Nincs eleg {resource}! Szukseges: {amount}</red>",
+                    "catalyst.no-cost",
+                    "<red>Nincs elég {resource}! Szükséges: {amount}</red>",
                     Map.of(
-                            "resource", resource,
+                            "resource", resolveResourceName(selected),
                             "amount", String.valueOf(selected.getCostAmount())
                     )
             ));
@@ -180,6 +185,13 @@ public final class SpellbookListener implements Listener {
         selected.consumeCost(player);
         selected.execute(player);
         putCooldown(player, selected, now);
+    }
+
+    private String resolveResourceName(final Spell spell) {
+        return switch (spell.getCostType()) {
+            case HUNGER -> messageManager.get("system.resources.hunger", "éhség");
+            case XP -> messageManager.get("system.resources.xp", "XP");
+        };
     }
 
     private Spell resolveSelectedSpell(final Player player, final List<String> unlocked) {
@@ -284,4 +296,3 @@ public final class SpellbookListener implements Listener {
         return longCooldownKeys.computeIfAbsent(normalized, id -> new NamespacedKey("icesmp", "cd_" + id));
     }
 }
-

@@ -1,0 +1,184 @@
+package hu.taliann.icesmp.commands.faction;
+
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.KingManager;
+import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * /faction king — uralkodó és választás:
+ * (arg nélkül) info; vote <játékos>; admin: set <frakció> <játékos>, clear <frakció>
+ */
+public final class FactionKingSubcommand implements FactionSubcommand {
+
+    private static final String ADMIN_PERMISSION = "icesmp.faction.admin";
+
+    private final KingManager kingManager;
+    private final FactionManager factionManager;
+    private final MessageManager messageManager;
+
+    public FactionKingSubcommand(final KingManager kingManager, final FactionManager factionManager,
+                                 final MessageManager messageManager) {
+        this.kingManager = kingManager;
+        this.factionManager = factionManager;
+        this.messageManager = messageManager;
+    }
+
+    @Override
+    public String name() {
+        return "king";
+    }
+
+    @Override
+    public String description() {
+        return messageManager.get("messages.faction-desc-king", "Uralkodó és királyválasztás.");
+    }
+
+    @Override
+    public String usage() {
+        return messageManager.get("messages.faction-usage-king", "/faction king [vote <játékos>]");
+    }
+
+    @Override
+    public boolean execute(final CommandSender sender, final String[] args) {
+        if (args.length >= 2 && "vote".equalsIgnoreCase(args[0])) {
+            return handleVote(sender, args[1]);
+        }
+
+        if (args.length >= 2 && "set".equalsIgnoreCase(args[0])) {
+            return handleSet(sender, args);
+        }
+
+        if (args.length >= 2 && "clear".equalsIgnoreCase(args[0])) {
+            return handleClear(sender, args[1]);
+        }
+
+        return handleInfo(sender);
+    }
+
+    private boolean handleInfo(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+            return true;
+        }
+
+        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        if (kingManager.isFactionExcluded(faction)) {
+            sender.sendMessage(messageManager.get("messages.faction-king-excluded", "&7A(z) %s frakciónak nincs uralkodója.", faction.getDisplayName()));
+            return true;
+        }
+
+        final UUID king = kingManager.getKing(faction);
+        sender.sendMessage(messageManager.get(
+                "messages.faction-king-info",
+                "&6%s uralkodója: &f%s",
+                faction.getDisplayName(),
+                king == null
+                        ? messageManager.get("messages.faction-king-none", "nincs (szavazz: /faction king vote <játékos>)")
+                        : String.valueOf(Bukkit.getOfflinePlayer(king).getName())
+        ));
+
+        final Map<UUID, Integer> tally = kingManager.getTally(faction);
+        for (final Map.Entry<UUID, Integer> entry : tally.entrySet()) {
+            sender.sendMessage(messageManager.get(
+                    "messages.faction-king-tally-line",
+                    "&7 - %s: &f%s szavazat",
+                    String.valueOf(Bukkit.getOfflinePlayer(entry.getKey()).getName()),
+                    entry.getValue()
+            ));
+        }
+        return true;
+    }
+
+    private boolean handleVote(final CommandSender sender, final String candidateName) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+            return true;
+        }
+
+        final Player candidate = Bukkit.getPlayerExact(candidateName);
+        if (candidate == null) {
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA célpont játékos nem elérhető."));
+            return true;
+        }
+
+        if (!kingManager.vote(player, candidate.getUniqueId())) {
+            sender.sendMessage(messageManager.get(
+                    "messages.faction-king-vote-failed",
+                    "&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója)."
+            ));
+            return true;
+        }
+
+        sender.sendMessage(messageManager.get("messages.faction-king-vote-success", "&aSzavazat leadva: &f%s", candidate.getName()));
+        return true;
+    }
+
+    private boolean handleSet(final CommandSender sender, final String[] args) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogod ehhez a parancshoz."));
+            return true;
+        }
+
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("messages.faction-king-set-usage", "&cHasználat: /faction king set <frakció> <játékos>"));
+            return true;
+        }
+
+        final FactionType faction = FactionType.fromInput(args[1]);
+        final Player target = Bukkit.getPlayerExact(args[2]);
+        if (faction == null || target == null) {
+            sender.sendMessage(messageManager.get("messages.faction-king-set-usage", "&cHasználat: /faction king set <frakció> <játékos>"));
+            return true;
+        }
+
+        kingManager.setKing(faction, target.getUniqueId());
+        sender.sendMessage(messageManager.get("messages.faction-king-set-success", "&aUralkodó beállítva: &f%s &7-> &e%s", faction.getDisplayName(), target.getName()));
+        return true;
+    }
+
+    private boolean handleClear(final CommandSender sender, final String rawFaction) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogod ehhez a parancshoz."));
+            return true;
+        }
+
+        final FactionType faction = FactionType.fromInput(rawFaction);
+        if (faction == null) {
+            sender.sendMessage(messageManager.get("messages.faction-unknown", "&cIsmeretlen frakció: &f%s", rawFaction));
+            return true;
+        }
+
+        kingManager.setKing(faction, null);
+        sender.sendMessage(messageManager.get("messages.faction-king-clear-success", "&aA(z) %s trónja megüresedett.", faction.getDisplayName()));
+        return true;
+    }
+
+    @Override
+    public List<String> tabComplete(final CommandSender sender, final String[] args) {
+        if (args.length == 1) {
+            final String prefix = args[0].toLowerCase(Locale.ROOT);
+            final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
+                    ? List.of("vote", "set", "clear")
+                    : List.of("vote");
+            return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        }
+
+        if (args.length == 2 && "vote".equalsIgnoreCase(args[0])) {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .toList();
+        }
+
+        return List.of();
+    }
+}

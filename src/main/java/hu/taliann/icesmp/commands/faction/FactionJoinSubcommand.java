@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands.faction;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -11,10 +12,13 @@ import java.util.List;
 public final class FactionJoinSubcommand implements FactionSubcommand {
 
     private final FactionManager factionManager;
+    private final MetelytepoManager metelytepoManager;
     private final MessageManager messageManager;
 
-    public FactionJoinSubcommand(final FactionManager factionManager, final MessageManager messageManager) {
+    public FactionJoinSubcommand(final FactionManager factionManager, final MetelytepoManager metelytepoManager,
+                                 final MessageManager messageManager) {
         this.factionManager = factionManager;
+        this.metelytepoManager = metelytepoManager;
         this.messageManager = messageManager;
     }
 
@@ -51,6 +55,24 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
+        if (factionType == FactionType.DARK) {
+            if (!metelytepoManager.isSinner(player)) {
+                sender.sendMessage(messageManager.get(
+                        "messages.faction-dark-sinners-only",
+                        "&5A Sötét frakcióba csak bűnösök léphetnek be."
+                ));
+                return true;
+            }
+
+            factionManager.setFaction(player.getUniqueId(), FactionType.DARK);
+            metelytepoManager.sealDarkPact(player);
+            sender.sendMessage(messageManager.get(
+                    "messages.faction-dark-pact-sealed",
+                    "&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad."
+            ));
+            return true;
+        }
+
         factionManager.setFaction(player.getUniqueId(), factionType);
         sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s", factionType.getDisplayName()));
         return true;
@@ -59,7 +81,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
         if (args.length == 1) {
-            return List.of("red", "blue", "neutral");
+            return List.of("red", "blue", "neutral", "dark");
         }
         return List.of();
     }

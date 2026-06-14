@@ -1,0 +1,13 @@
+# Version catalog for the IceSMP build.
+# Keep the folia-api version in sync with the targeted Minecraft version.
+
+[versions]
+minecraft = "1.21.11"
+folia-api = "1.21.11-R0.1-SNAPSHOT"
+run-paper = "2.3.1"
+
+[libraries]
+folia-api = { module = "dev.folia:folia-api", version.ref = "folia-api" }
+
+[plugins]
+run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }

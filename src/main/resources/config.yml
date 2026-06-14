@@ -17,8 +17,39 @@ currency:
   default-type: "NEUTRAL"
   symbol: "⛃"
   default-balance: 0
+  # Fix árfolyam, csak akkor érvényes, ha a dynamic-exchange ki van kapcsolva.
   exchange-rate: 1.0
   exchange-fee-percent: 0.0
+  # ===== Dinamikus, kínálat-alapú árfolyam =====
+  # Egy valuta értéke: base-value * clamp((reference-supply / kínálat)^elasticity, min, max).
+  # Minél több van egy valutából a szerveren, annál kevesebbet ér a többihez képest.
+  # ===== Lélekkő-drop: Sötét valuta magas szintű skálázott mobokból =====
+  soul-drop:
+    enabled: true
+    min-mob-level: 3
+    chance-percent: 25
+    max-amount: 5
+  # ===== Heti gazdasági esemény: véletlen kereslet-sokk =====
+  # Időnként egy véletlen valuta base-value-ja átmenetileg megugrik —
+  # kereskedési lehetőség a figyelmes játékosoknak.
+  economy-event:
+    enabled: true
+    check-interval-minutes: 60
+    chance-percent: 25
+    duration-hours: 48
+    min-multiplier: 1.2
+    max-multiplier: 1.6
+  dynamic-exchange:
+    enabled: true
+    reference-supply: 10000
+    elasticity: 0.5
+    min-multiplier: 0.25
+    max-multiplier: 4.0
+    base-values:
+      RED: 1.0
+      BLUE: 1.0
+      NEUTRAL: 1.0
+      DARK: 1.5
   item:
     material: "PAPER"
     default-model-data: 1000
@@ -33,6 +64,9 @@ currency:
       NEUTRAL:
         model-data: 1003
         display-name: "&5Semleges Token"
+      DARK:
+        model-data: 1004
+        display-name: "&8Sötét Token"
 
 messages:
   startup: "&aAz IceSMP rendszer sikeresen elindult."
@@ -100,7 +134,7 @@ messages:
   job-help-setxp: "&e/job setxp <játékos> <primary|secondary> <mennyiség> &7- XP beállítása (Admin)."
   job-help-status: "&e/job status <játékos> &7- Kaszt állapot megtekintése (Admin)."
   job-help-unlockspell: "&e/job unlockspell <játékos> <spellId> &7- Varázslat feloldása (Admin)."
-  job-help-givespellbook: "&e/job givespellbook <játékos> &7- Varázskönyv átadása (Admin)."
+  job-help-givecatalyst: "&e/job givecatalyst <játékos> &7- Kaszt-specifikus Képesség Katalizátor átadása (Admin)."
   job-help-listspells: "&e/job listspells &7- Regisztrált varázslatok listája (Admin)."
   job-unknown-subcommand: "&cIsmeretlen alparancs: &f%s"
   job-invalid-slot: "&cA slot csak 'primary' vagy 'secondary' lehet."
@@ -110,7 +144,7 @@ messages:
   job-addxp-success: "&aXP hozzáadva: &f%s &7| Slot: &f%s &7| +&f%s XP &7| Új XP: &f%s &7| Szint: &f%s"
   job-setxp-success: "&aXP beállítva: &f%s &7| Slot: &f%s &7| XP: &f%s &7| Szint: &f%s"
   job-unlockspell-success: "&aVarázslat feloldva: &f%s &7-> &e%s"
-  job-givespellbook-success: "&aVarázskönyv átadva: &f%s"
+  job-givecatalyst-success: "&aKatalizátor átadva: &f%s"
   job-listspells-empty: "&eNincsenek regisztrált varázslatok a rendszerben."
   job-listspells-result: "&6Regisztrált varázslatok (%s db): &e%s"
   job-status-none: "nincs"
@@ -160,11 +194,63 @@ factions:
     display-name: "Kék"
   neutral:
     display-name: "Semleges"
+  dark:
+    display-name: "Sötét"
+  # Passzív frakció bónuszok:
+  # RED: tűz-immunitás | BLUE: fagy-immunitás + lassabb éhség
+  # NEUTRAL: lopakodás közben láthatatlanság, nem-ellenséges mobok békések
+  # DARK: wither-immunitás, élőhalottak nem támadják
+  passives:
+    enabled: true
+    blue-hunger-slow-chance: 0.5
+  # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
+  # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
+  # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  tax:
+    enabled: true
+    interval-minutes: 60
+    rate-percent: 2.0
+    exempt:
+      - "NEUTRAL"
+  # ===== Bűn-számláló és száműzetés =====
+  # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
+  # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
+  sins:
+    murder-counts: true
+    exile-threshold: 4
+  # ===== Királyok és választás =====
+  # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
+  # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.
+  kings:
+    min-votes: 2
+    term-days: 7
+    excluded:
+      - "NEUTRAL"
+  # ===== Raid =====
+  # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
+  # A győztes (több ölés) a vesztes kasszájának spoils-percent %-át zsákmányolja.
+  raid:
+    duration-minutes: 15
+    entry-cost: 200
+    spoils-percent: 20
+    protected:
+      - "NEUTRAL"
 
 relics:
   enabled: true
+  # Inaktivitás-kezelés: a megadott számú nap után a relikvia törlődik
+  # a tulajdonos inventoryjából belépéskor, és újra megszerezhetővé válik.
+  inactivity:
+    enabled: true
+    expiry-days: 14
+  # Fegyver-relikviák: PvP-ben gazdát cserélhetnek (a passzívak védettek).
+  weapon-relics:
+    - "metelytepo"
+  pvp-transfer:
+    enabled: true
   messages:
     cooldown: "&cA relikvia pihen: &f%seconds%s &cmaradék"
+    expired: "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."
   definitions:
     metelytepo:
       display-name: "Mételytépő"
@@ -178,3 +264,553 @@ relics:
         - "&7Ősi mágia övezi, melynek segítségével"
         - "&7ez a harci fejsze lesújt a bűnösökre,"
         - "&7igazságot szolgáltatva a világnak."
+    phoenix_wing:
+      display-name: "Főnix-szárny"
+      display-color: "&c"
+      lore:
+        - "&7A Piros királyság lángoló ereklyéje."
+        - "&7Viselőjét nem égeti tűz, és zuhanása"
+        - "&7lángviharban végződik."
+    frost_wing:
+      display-name: "Zúzmara-szárny"
+      display-color: "&b"
+      lore:
+        - "&7A Kék királyság jeges ereklyéje."
+        - "&7Szárnyra kapva megfagyasztja"
+        - "&7a körülötte lévőket."
+    wander_wind:
+      display-name: "Vándorszél"
+      display-color: "&f"
+      lore:
+        - "&7A Semlegesek szabad szele."
+        - "&7Gyorsabb sikló, és a föld"
+        - "&7sosem üti meg viselőjét."
+    bone_wing:
+      display-name: "Csontszárny"
+      display-color: "&8"
+      lore:
+        - "&7Az összeomlott királyság csontból"
+        - "&7szőtt szárnya. Éjjel a viselője"
+        - "&7maga is árnyékká válik."
+
+# ===== Távolság-alapú mob szintezés =====
+# A spawn ponttól távolodva a mobok erősödnek: szint = távolság / blocks-per-level.
+mob-scaling:
+  enabled: true
+  blocks-per-level: 1000
+  max-level: 10
+  health-per-level: 2.0
+  damage-per-level: 1.0
+  # Csak ellenséges (Monster) mobok skálázódjanak.
+  hostile-only: true
+  # Ezekkel az okokkal spawnoló mobok nem skálázódnak (pl. spawner farmok).
+  ignored-spawn-reasons:
+    - "SPAWNER"
+    - "CUSTOM"
+    - "COMMAND"
+  name:
+    enabled: true
+    visible: true
+    prefix: "&7[Lvl %level%] "
+    color: "WHITE"
+
+# ===== Kasztok: progresszió és szint-alapú skill feloldás =====
+# Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.
+# A spell-unlocks térkép szerint a kaszt adott szintjén a varázslat automatikusan feloldódik.
+classes:
+  xp:
+    hostile-only: true
+    per-kill: 5
+    per-mob-level: 2
+    secondary-share-percent: 50
+  # WoW-szerű progresszív szintgörbe: az n. szintlépés ára base-xp + (n-1) * increment.
+  leveling:
+    base-xp: 100
+    increment-per-level: 20
+  specialization:
+    # Az elsődleges kaszt ezen a szinten specializálódhat (/spec choose).
+    required-level: 25
+  wizard:
+    spell-unlocks:
+      wisplight: 2
+      mana_dart: 3
+      root: 5
+      frost_touch: 7
+      arcane_shield: 9
+      confusion: 10
+      blink: 12
+      rain_dance: 15
+      arcane_nova: 18
+      gravity_well: 21
+  warrior:
+    spell-unlocks:
+      battle_shout: 3
+      armament: 5
+      heroic_leap: 7
+      pommel_strike: 9
+      inner_focus: 10
+      second_wind: 12
+      gust: 15
+      whirlwind: 18
+      iron_skin: 20
+      intimidate: 22
+  archer:
+    spell-unlocks:
+      hunters_mark: 2
+      eagle_eye: 3
+      disengage: 5
+      multishot: 8
+      piercing_bolt: 10
+      snare: 12
+      double_jump: 15
+      camouflage: 17
+      arrow_storm: 20
+      swift_steps: 22
+  assassin:
+    spell-unlocks:
+      dagger_throw: 2
+      adrenaline: 4
+      shadowstep: 5
+      hamstring: 8
+      blackout: 10
+      smoke_bomb: 12
+      evasion: 15
+      garrote: 18
+      shadow_dash: 20
+      death_mark: 24
+
+# ===== Specializációk =====
+# A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
+# örök bűnös (dark pact) jelöléssel választható. A spec-spellek a kaszt
+# szintjéhez kötve oldódnak fel.
+specializations:
+  # A /spec respec ára a játékos saját frakcióvalutájában (banki egyenlegből).
+  respec-cost: 100
+  elementalist:
+    spell-unlocks:
+      sun_dance: 25
+      fireball: 26
+      frost_nova: 28
+      thunder_strike: 30
+      lucky_star: 30
+      ember_storm: 33
+      riptide_pull: 36
+      stone_skin: 39
+      gale_burst: 42
+      elemental_overload: 45
+  necromancer:
+    # A Nekromanta beavatása quest-hez kötött (sötét rituálé a romvárosban).
+    required-quest: "necromancer_initiation"
+    spell-unlocks:
+      life_drain: 25
+      grave_grasp: 26
+      soul_siphon: 28
+      bone_chill: 30
+      dread_aura: 32
+      bone_spear: 34
+      plague_touch: 36
+      raise_horde: 38
+      death_pact: 39
+      wraith_form: 42
+      bone_archers: 44
+      soul_harvest: 45
+  berserker:
+    spell-unlocks:
+      feast: 25
+      rage: 26
+      reckless_swing: 27
+      blood_frenzy: 29
+      ground_slam: 32
+      roar: 34
+      unstoppable: 37
+      savage_leap: 39
+      bloodbath: 42
+      berserk: 45
+  guardian:
+    spell-unlocks:
+      bulwark: 25
+      taunt: 26
+      fortify: 27
+      shield_wall: 29
+      healing_word: 32
+      iron_bastion: 34
+      shield_charge: 37
+      aegis: 39
+      retribution: 42
+      last_stand: 45
+  sharpshooter:
+    spell-unlocks:
+      featherfoot: 25
+      deadeye: 26
+      headshot: 27
+      double_tap: 29
+      flare: 32
+      kneecap: 34
+      high_perch: 37
+      perfect_focus: 39
+      spectral_volley: 42
+      masterful_shot: 45
+  beast_master:
+    spell-unlocks:
+      friendship: 25
+      wolf_call: 26
+      bee_swarm: 28
+      angry_chicken: 30
+      primal_bond: 32
+      thick_hide: 34
+      panda_guard: 35
+      predator_senses: 37
+      stampede: 39
+      falcon_strike: 42
+      wild_pack: 43
+      king_of_beasts: 45
+  poisoner:
+    spell-unlocks:
+      venom_strike: 25
+      toxin_dart: 26
+      acid_splash: 27
+      numbing_agent: 29
+      antidote: 32
+      contagion: 34
+      paralytic_strike: 37
+      toxic_cloud: 39
+      debilitating_poison: 42
+      deathcap: 45
+  phantom:
+    spell-unlocks:
+      hide: 25
+      ghost_step: 26
+      phase_blink: 27
+      haunt: 29
+      terror: 32
+      cold_spot: 34
+      ethereal_form: 37
+      phantom_grip: 39
+      dread_whisper: 42
+      spectre: 45
+
+# ===== Talentek =====
+# Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár az összes szakma
+# szintjéből termel pontot (points-per-levels szintenként 1 pont).
+# Effektek: max-health, movement-speed, attack-damage (attribútum módosítók),
+# class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
+# WoW-szerű kötések: requires-job / requires-spec / requires-profession —
+# csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
+# Respec után a spec-talentek pontjai automatikusan visszatérülnek.
+talents:
+  class:
+    points-per-levels: 5
+    definitions:
+      # --- Általános kaszt-talentek ---
+      vitality:
+        display-name: "Életerő"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 5
+      swiftness:
+        display-name: "Fürgeség"
+        effect: "movement-speed"
+        per-rank: 0.005
+        max-rank: 5
+      power:
+        display-name: "Erő"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 5
+      scholar:
+        display-name: "Tudásszomj"
+        effect: "class-xp-bonus"
+        per-rank: 5.0
+        max-rank: 4
+      # --- Kaszt-kötött talentek ---
+      weapon_mastery:
+        display-name: "Fegyvermesteri Fokozat"
+        requires-job: "warrior"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      fleet_hunter:
+        display-name: "Fürge Vadász"
+        requires-job: "archer"
+        effect: "movement-speed"
+        per-rank: 0.005
+        max-rank: 3
+      # --- Specializáció-kötött talentek (1 / spec) ---
+      elemental_attunement:
+        display-name: "Elemi Ráhangolódás"
+        requires-spec: "elementalist"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      soul_pact:
+        display-name: "Lélekpaktum"
+        requires-spec: "necromancer"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      brutality:
+        display-name: "Brutalitás"
+        requires-spec: "berserker"
+        effect: "attack-damage"
+        per-rank: 1.0
+        max-rank: 3
+      stalwart:
+        display-name: "Rendíthetetlen"
+        requires-spec: "guardian"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      fleetfoot:
+        display-name: "Szélvész Léptek"
+        requires-spec: "sharpshooter"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
+      pack_leader:
+        display-name: "Falkavezér"
+        requires-spec: "beast_master"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      viper_reflexes:
+        display-name: "Vipera Reflexek"
+        requires-spec: "poisoner"
+        effect: "movement-speed"
+        per-rank: 0.006
+        max-rank: 4
+      ghostwalk:
+        display-name: "Kísértetjárás"
+        requires-spec: "phantom"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
+  profession:
+    points-per-levels: 10
+    definitions:
+      diligence:
+        display-name: "Szorgalom"
+        effect: "profession-xp-bonus"
+        per-rank: 10.0
+        max-rank: 5
+      vigor:
+        display-name: "Kitartás"
+        effect: "max-health"
+        per-rank: 1.0
+        max-rank: 3
+      # --- Szakma-kötött talentek ---
+      miners_endurance:
+        display-name: "Bányász Állóképesség"
+        requires-profession: "miner"
+        effect: "max-health"
+        per-rank: 1.0
+        max-rank: 2
+      arcane_insight:
+        display-name: "Arkán Belátás"
+        requires-profession: "enchanter"
+        effect: "class-xp-bonus"
+        per-rank: 5.0
+        max-rank: 2
+
+# ===== Szakmák (WoW-szerű: 1 gyűjtögető + 1 készítő főszakma + másodlagosak) =====
+# Gyűjtögető: miner (Bányász), herbalist (Gyógynövényész), lumberjack (Favágó)
+# Készítő: armorer (Kovács), alchemist (Alkimista), enchanter (Bűvölő)
+# Másodlagos (mindenkié, automatikusan): fisherman (Halász), cook (Szakács)
+professions:
+  leveling:
+    base-xp: 100
+    increment-per-level: 15
+  xp:
+    mining-ore: 5
+    herbalism-harvest: 3
+    logging: 2
+    crafting-gear: 8
+    smithing: 15
+    enchanting: 10
+    brewing: 12
+    fishing: 4
+    cooking: 3
+  specialization:
+    # A szakma ezen a szinten specializálódhat (/spec choose).
+    required-level: 25
+
+# ===== Küldetések (quest-keretrendszer) =====
+# Objective típusok: KILL_MOBS (count, opcionális entity-type + min-mob-level),
+# BREAK_BLOCKS / CRAFT_ITEMS (materials + count), CATCH_FISH (count),
+# VISIT_TERRITORY (territory), REACH_LEVEL (level).
+# Feltételek: requires-job, requires-faction, requires-level, requires-quest (lánc).
+# Jutalmak: class-xp, currency {type, amount}, unlock-spell, cleanse-sins.
+quests:
+  # --- Kaszt-próbák (bevezető questek) ---
+  warrior_trial:
+    display-name: "A Harcos Próbája"
+    description: "Bizonyítsd erődet: ejts el 15 szörnyet."
+    requires-job: "warrior"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+    rewards:
+      class-xp: 200
+  archer_trial:
+    display-name: "Az Íjász Próbája"
+    description: "Vadássz le 12 szörnyet."
+    requires-job: "archer"
+    objective:
+      type: "KILL_MOBS"
+      count: 12
+    rewards:
+      class-xp: 200
+  wizard_trial:
+    display-name: "A Varázsló Próbája"
+    description: "Gyűjts mágikus reagenseket: szedj 10 virágot."
+    requires-job: "wizard"
+    objective:
+      type: "BREAK_BLOCKS"
+      count: 10
+      materials:
+        - "DANDELION"
+        - "POPPY"
+        - "BLUE_ORCHID"
+        - "ALLIUM"
+        - "OXEYE_DAISY"
+        - "CORNFLOWER"
+        - "LILY_OF_THE_VALLEY"
+    rewards:
+      class-xp: 200
+  assassin_trial:
+    display-name: "Az Orgyilkos Próbája"
+    description: "Némítsd el a sötétség 10 teremtményét."
+    requires-job: "assassin"
+    objective:
+      type: "KILL_MOBS"
+      count: 10
+    rewards:
+      class-xp: 200
+  # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
+  necromancer_initiation:
+    display-name: "Sötét Beavatás"
+    description: "Zarándokolj el a Sötét romvárosba, és hajts végre rituálét az oltárnál."
+    requires-faction: "DARK"
+    objective:
+      type: "VISIT_TERRITORY"
+      territory: "dark-capital"
+    rewards:
+      class-xp: 100
+  # --- Vezeklés-lánc: az egyetlen visszaút a sötét paktumból ---
+  penance_1:
+    display-name: "Vezeklés I. — A Penge"
+    description: "Fordítsd erődet a sötétség ellen: pusztíts el 30 erős szörnyet (min. Lvl 2)."
+    requires-faction: "DARK"
+    objective:
+      type: "KILL_MOBS"
+      count: 30
+      min-mob-level: 2
+    rewards:
+      class-xp: 150
+  penance_2:
+    display-name: "Vezeklés II. — Az Alázat"
+    description: "Tanulj alázatot: fogj ki 20 halat."
+    requires-quest: "penance_1"
+    objective:
+      type: "CATCH_FISH"
+      count: 20
+    rewards:
+      class-xp: 150
+  penance_3:
+    display-name: "Vezeklés III. — A Feloldozás"
+    description: "Az utolsó próba: győzz le 50 elit szörnyet (min. Lvl 4). A paktum megtörik."
+    requires-quest: "penance_2"
+    objective:
+      type: "KILL_MOBS"
+      count: 50
+      min-mob-level: 4
+    rewards:
+      class-xp: 400
+      currency:
+        type: "NEUTRAL"
+        amount: 100
+      cleanse-sins: true
+
+# ===== Idézett társak (pet/minion) =====
+# max-active: hány aktív idézett társa lehet egyszerre egy játékosnak (spam-védelem);
+# talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.
+# Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
+pets:
+  max-active: 8
+  talent-health-share: 0.5
+
+# ===== Piactér =====
+# Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);
+# vásárlás a /market GUI-ból banki egyenlegből. A fee-percent elég (money sink).
+market:
+  max-listings-per-player: 5
+  fee-percent: 10
+
+# ===== Frakció területek =====
+territory:
+  notify:
+    # Action bar üzenet területhatár átlépésekor.
+    enabled: true
+  protection:
+    # Ha true, idegen frakció területén nem lehet építeni/bontani
+    # (bypass: icesmp.admin.territory.bypass jogosultság).
+    enabled: false
+
+# ===== Világesemények (7. szekció) =====
+# Egy közös időzítő (check-interval-seconds) hajtja a vérholdat, a világbosst
+# és a szezon-lejáratot; mindegyik a saját enabled kapcsolójával vezérelhető.
+world-events:
+  check-interval-seconds: 60
+  # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
+  blood-moon:
+    enabled: true
+    chance-percent: 15
+    bonus-mob-levels: 2
+    soul-drop-multiplier: 2.0
+  # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
+  world-boss:
+    enabled: true
+    check-interval-minutes: 90
+    chance-percent: 35
+    lifetime-minutes: 20
+    entity-type: "RAVAGER"
+    display-name: "&4&l☠ A Gyűrűk Őre &c[Világboss]"
+    health: 300.0
+    damage-multiplier: 2.0
+    treasury-reward: 300.0
+    season-points: 10
+    buff-minutes: 10
+  # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
+  season:
+    enabled: true
+    length-days: 60
+    treasury-reward: 1000.0
+  # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
+  intro:
+    enabled: true
+    stagger-seconds: 4
+    lines:
+      - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
+      - "&6Válassz frakciót||&7Piros, Kék, Semleges vagy Sötét"
+      - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
+
+# ===== Kaszt/szakma-alapú craftolási korlátozások =====
+# required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
+# required-profession: szakma azonosító (pl. "armorer") + required-profession-level.
+# Ha mindkettő meg van adva, mindkét feltételnek teljesülnie kell.
+crafting-restrictions:
+  enabled: true
+  notify-cooldown-seconds: 3
+  rules:
+    netherite-gear:
+      required-profession: "armorer"
+      required-profession-level: 25
+      materials:
+        - "NETHERITE_SWORD"
+        - "NETHERITE_PICKAXE"
+        - "NETHERITE_AXE"
+        - "NETHERITE_SHOVEL"
+        - "NETHERITE_HOE"
+        - "NETHERITE_HELMET"
+        - "NETHERITE_CHESTPLATE"
+        - "NETHERITE_LEGGINGS"
+        - "NETHERITE_BOOTS"

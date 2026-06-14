@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.commands.job;
 
-import hu.taliann.icesmp.listeners.SpellbookListener;
+import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
@@ -18,14 +18,14 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
-    private final SpellbookListener spellbookListener;
+    private final AbilityCatalystListener abilityCatalystListener;
     private final MessageManager messageManager;
 
     public JobAdminSubcommand(final JobManager jobManager, final SpellRegistry spellRegistry,
-                              final SpellbookListener spellbookListener, final MessageManager messageManager) {
+                              final AbilityCatalystListener abilityCatalystListener, final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
-        this.spellbookListener = spellbookListener;
+        this.abilityCatalystListener = abilityCatalystListener;
         this.messageManager = messageManager;
     }
 
@@ -69,7 +69,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
         }
 
         if ("resetcd".equals(action)) {
-            spellbookListener.resetCooldowns(target);
+            abilityCatalystListener.resetCooldowns(target);
             sender.sendMessage(messageManager.get(
                     "admin.job.reset-cooldowns.success",
                     "&aVarazslat cooldownok torolve: &f%s",
@@ -92,7 +92,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
         }
 
         jobManager.setUnlockedSpellIds(target, List.of());
-        spellbookListener.resetAllSpellState(target);
+        abilityCatalystListener.resetAllSpellState(target);
         sender.sendMessage(messageManager.get(
                 "admin.job.reset-skills.success",
                 "&aMinden varazslat allapot alaphelyzetbe allitva: &f%s",
