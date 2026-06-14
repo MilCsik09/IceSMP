@@ -202,7 +202,9 @@ Tőrhajítás, Adrenalin (sebesség + sietség), Árnyéklépés (a célpont mö
 
 > **Idézett társak (minionok):** a Nekromanta és a Vadmester idézései **gazda-hűek** — sosem
 > fordulnak ellened vagy a többi társad ellen —, automatikusan rátámadnak a célpontodra, és
-> egy idő után eltűnnek.
+> egy idő után eltűnnek. **Vezérlés:** lopakodás + jobb katt a saját társadon → állásmód-váltás
+> (**Támadás** → **Passzív**, nem támad → **Maradj**, helyben fagy). Egyszerre korlátozott
+> számú társad lehet, és a **kaszt Életerő-talentjeid a társaidat is erősítik** (+HP).
 
 ---
 
@@ -379,8 +381,9 @@ Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rá
 - ⏳ **Rituálé-oltárok:** a relikviák közös rituáléval való megidézése.
 - ⏳ **Ultimate képességek** külön rendszerként (jelenleg a spec-ultik töltik be ezt a szerepet).
 - ⏳ **Árfolyam-kijelző hologramok** a fővárosokban.
-- ⏳ **WoW-stílusú pet-fejlesztések:** pet-parancsok (támadás/kövess/maradj), megnevezett és
-  szintet lépő állandó társ, Nekromanta lélekszilánk-erőforrás, idézés-limitek.
+- ⏳ **WoW-stílusú pet-fejlesztések:** a pet-parancsok, az idézés-limit és a talent→pet
+  szinergia már **kész**; hátra van a **megnevezett, szintet lépő állandó társ** és a
+  **Nekromanta lélekszilánk-erőforrás**.
 - ⏳ **Világépítés:** a fővárosok, a Sötét romváros és a távolság-gyűrűk loot-asztalai a szerver
   csapatának feladata (a plugin a `/territory` paranccsal adja hozzá az eszközt a kijelölésükhöz).
 

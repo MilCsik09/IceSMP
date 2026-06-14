@@ -1,7 +1,9 @@
 package hu.taliann.icesmp.spells;
 
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -50,9 +52,10 @@ public final class SpellCatalog {
      * because they need the plugin instance and the MinionManager.
      */
     public static void registerSummonSpells(final SpellRegistry registry, final MessageManager mm,
-                                            final JavaPlugin plugin, final MinionManager minionManager) {
+                                            final JavaPlugin plugin, final MinionManager minionManager,
+                                            final ConfigManager configManager, final TalentManager talentManager) {
         // --- NEKROMANTA idézések ---
-        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
                 "raise_horde", "Holtak Hada", 240, SpellCostType.XP, 90,
                 Zombie.class, 4, 45,
                 (mob, owner) -> {
@@ -62,7 +65,7 @@ public final class SpellCatalog {
                 },
                 Particle.SOUL, Sound.ENTITY_ZOMBIE_AMBIENT, 0.7F,
                 "<dark_gray>A föld megnyílik: a holtak hada engedelmeskedik a hívásodnak.</dark_gray>"));
-        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
                 "bone_archers", "Csontíjászok", 240, SpellCostType.XP, 100,
                 Skeleton.class, 2, 45,
                 (mob, owner) -> {
@@ -75,7 +78,7 @@ public final class SpellCatalog {
                 "<dark_gray>Csontíjászok emelkednek ki a sírjukból, hogy szolgáljanak.</dark_gray>"));
 
         // --- VADMESTER idézések ---
-        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
                 "panda_guard", "Pandaőrség", 240, SpellCostType.HUNGER, 8,
                 Panda.class, 2, 40,
                 (mob, owner) -> {
@@ -85,7 +88,7 @@ public final class SpellCatalog {
                 },
                 Particle.CLOUD, Sound.ENTITY_PANDA_AGGRESSIVE_AMBIENT, 1.0F,
                 "<dark_green>Két harcias panda csörtet a segítségedre.</dark_green>"));
-        registry.register(new SummonMinionsSpell(plugin, minionManager, mm,
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
                 "wild_pack", "Vad Falka", 240, SpellCostType.HUNGER, 9,
                 Wolf.class, 3, 40,
                 (mob, owner) -> {

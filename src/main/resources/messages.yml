@@ -408,6 +408,7 @@ messages:
   events-bloodmoon-active: "&cVérhold tombol!"
   events-bloodmoon-inactive: "&7Jelenleg nincs vérhold."
   events-intro-replayed: "&aIntro lejátszva: &f%s"
+  pet-stance: "<gray>Társ parancs: <gold>{stance}</gold></gray>"
 
   currency-rates-static: "&eA dinamikus árfolyam ki van kapcsolva; fix árfolyam érvényes."
   currency-rates-header: "&6Aktuális árfolyamok (kínálat alapú):"

@@ -29,6 +29,7 @@ import hu.taliann.icesmp.listeners.JobGUIListener;
 import hu.taliann.icesmp.listeners.MarketGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.MinionProtectionListener;
+import hu.taliann.icesmp.listeners.PetCommandListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
 import hu.taliann.icesmp.listeners.ProfessionXpListener;
@@ -221,7 +222,7 @@ public final class IceSMPCore {
         spellRegistry.register(new BulwarkSpell(messageManager));
         spellRegistry.register(new VenomStrikeSpell(messageManager));
         SpellCatalog.registerExpansionSpells(spellRegistry, messageManager);
-        SpellCatalog.registerSummonSpells(spellRegistry, messageManager, plugin, minionManager);
+        SpellCatalog.registerSummonSpells(spellRegistry, messageManager, plugin, minionManager, configManager, talentManager);
     }
 
     /**
@@ -391,6 +392,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
+        pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

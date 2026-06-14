@@ -1,10 +1,14 @@
 package hu.taliann.icesmp.spells;
 
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.MinionManager;
+import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -31,6 +35,8 @@ public final class SummonMinionsSpell extends BaseSpell {
 
     private final JavaPlugin plugin;
     private final MinionManager minionManager;
+    private final ConfigManager configManager;
+    private final TalentManager talentManager;
     private final Class<? extends Mob> entityClass;
     private final int count;
     private final int lifespanTicks;
@@ -41,6 +47,7 @@ public final class SummonMinionsSpell extends BaseSpell {
     private final String activatedMessage;
 
     public SummonMinionsSpell(final JavaPlugin plugin, final MinionManager minionManager,
+                              final ConfigManager configManager, final TalentManager talentManager,
                               final MessageManager messageManager, final String id, final String defaultName,
                               final int cooldown, final SpellCostType costType, final int costAmount,
                               final Class<? extends Mob> entityClass, final int count, final int lifespanSeconds,
@@ -49,6 +56,8 @@ public final class SummonMinionsSpell extends BaseSpell {
         super(messageManager, id, defaultName, cooldown, costType, costAmount);
         this.plugin = plugin;
         this.minionManager = minionManager;
+        this.configManager = configManager;
+        this.talentManager = talentManager;
         this.entityClass = entityClass;
         this.count = Math.max(1, count);
         this.lifespanTicks = Math.max(20, lifespanSeconds * 20);
@@ -60,12 +69,24 @@ public final class SummonMinionsSpell extends BaseSpell {
     }
 
     @Override
+    public boolean canCast(final Player player) {
+        // Summon cap (spam protection): block if the player has no free minion slot.
+        return remainingSlots(player) > 0;
+    }
+
+    @Override
     public void execute(final Player player) {
         final LivingEntity target = resolveTarget(player);
         final Location center = player.getLocation();
 
-        for (int index = 0; index < count; index++) {
-            final double angle = (2.0D * Math.PI * index) / count;
+        // Never summon more than the player's remaining slots allow.
+        final int toSummon = Math.min(count, remainingSlots(player));
+        // Class "max-health" talents also empower the owner's minions.
+        final double bonusHealth = Math.max(0.0D, talentManager.getEffectTotal(player, "max-health")
+                * Math.max(0.0D, configManager.getDouble("pets.talent-health-share", 0.5D)));
+
+        for (int index = 0; index < toSummon; index++) {
+            final double angle = (2.0D * Math.PI * index) / toSummon;
             final Location spawnLocation = center.clone().add(
                     Math.cos(angle) * SUMMON_RING_RADIUS,
                     0.0D,
@@ -77,6 +98,14 @@ public final class SummonMinionsSpell extends BaseSpell {
             minionManager.tag(minion, player.getUniqueId());
             if (customizer != null) {
                 customizer.accept(minion, player);
+            }
+
+            if (bonusHealth > 0.0D) {
+                final AttributeInstance maxHealth = minion.getAttribute(Attribute.MAX_HEALTH);
+                if (maxHealth != null) {
+                    maxHealth.setBaseValue(maxHealth.getBaseValue() + bonusHealth);
+                    minion.setHealth(maxHealth.getValue());
+                }
             }
 
             if (target != null) {
@@ -91,6 +120,11 @@ public final class SummonMinionsSpell extends BaseSpell {
 
         player.playSound(center, sound, 1.0F, soundPitch);
         player.sendMessage(resolveMessage("spell." + getId() + ".activated", activatedMessage));
+    }
+
+    private int remainingSlots(final Player player) {
+        final int maxActive = Math.max(1, configManager.getInt("pets.max-active", 8));
+        return maxActive - minionManager.countActive(player.getUniqueId());
     }
 
     private LivingEntity resolveTarget(final Player player) {

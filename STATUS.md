@@ -112,6 +112,10 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   zombihordát (Holtak Hada) és Csontíjászokat idéz, a Vadmester Pandaőrséget és Vad Falkát —
   a minionok gazda-jelöltek (sosem fordulnak a gazdájuk ellen), automatikusan célpontot
   vesznek fel, és lejáró élettartamuk van (per-entity scheduler, Folia-helyes)
+- **Pet-vezérlés** (`PetCommandListener`): lopakodás + jobb katt a saját minionon →
+  állásmód-váltás (Támadás / Passzív / Maradj); **idézés-limit** játékosonként
+  (`pets.max-active`); a gazda kaszt max-health talentjei +HP-t adnak a minionoknak
+  (`pets.talent-health-share`)
 - **Kaszt-tematikus Képesség Katalizátor** (`CatalystItemFactory`, `is_ability_catalyst` PDC):
   Mágikus Kódex (varázsló), Harci Kürt (harcos), Vadásztarsoly (íjász), Árnyékamulett (orgyilkos)
 - Interakciók (`AbilityCatalystListener`): jobb katt = cast; sneak + ütés = spellváltás

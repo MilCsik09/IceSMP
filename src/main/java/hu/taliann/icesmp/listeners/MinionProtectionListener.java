@@ -27,6 +27,12 @@ public final class MinionProtectionListener implements Listener {
             return;
         }
 
+        // PASSIVE/STAY stance minions never pick a target.
+        if (minionManager.getStance(event.getEntity()) != MinionManager.Stance.ACTIVE) {
+            event.setCancelled(true);
+            return;
+        }
+
         if (event.getTarget() instanceof Player player && player.getUniqueId().equals(minionOwner)) {
             event.setCancelled(true);
             return;

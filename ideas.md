@@ -94,15 +94,16 @@ mob szintezés) épül.
 Az alap idéző-keretrendszer (MinionManager, zombihorda, csontíjászok, pandaőrség, vad falka)
 már él — a World of Warcraft class/profession irányt ezek mélyítenék el:
 
-- **Pet parancsok**: a katalizátorral sneak+jobb katt a saját minionra → mód-váltás
-  (támadás / kövess / maradj), mint a WoW vadász pet-vezérlése.
-- **Megnevezett, fejlődő pet**: a Vadmester állandó társa (Farkashívás) szintet léphetne a
-  gazda killjeiből; név, szint a custom name-ben ("Bodri [Lv 7]").
+- ✅ **Pet parancsok (KÉSZ):** lopakodás + jobb katt a saját minionon → állásmód-váltás
+  (Támadás / Passzív / Maradj), action bar visszajelzéssel.
+- ⏳ **Megnevezett, fejlődő pet:** a Vadmester állandó, szintet lépő társa (még nincs;
+  perzisztens companion entitás kell hozzá).
 - **Nekromanta lélek-erőforrás**: a minionok halálakor "lélekszilánk" gyűlik, amiből
   erősebb idézések (pl. Wither Skeleton bajnok) fizethetők.
-- **Idézés-limitek**: egyszerre max N aktív minion / játékos (spam-védelem raidekben).
-- **Specializáció-szinergiák**: a talentek hassanak a minionokra is (pl. Életerő talent →
-  minion +HP), ahogy a WoW-ban a pet skálázódik a gazdával.
+- ✅ **Idézés-limitek (KÉSZ):** max N aktív minion / játékos (`pets.max-active`), a túl-idézés
+  blokkolva, a pakk a szabad helyekre korlátozódik.
+- ✅ **Specializáció-szinergiák (KÉSZ, alap):** a gazda kaszt "max-health" talentjei +HP-t
+  adnak a minionoknak (`pets.talent-health-share`). Hátra van: több attribútum-átöröklés.
 
 ## 8. Technikai ötletek (következő lépések)
 

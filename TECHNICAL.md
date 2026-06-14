@@ -89,7 +89,7 @@ IceSMPCore.disable()
 | `RelicManager` | Relic definíciók (config + beépített seed), singleton tulajdonjog, 14 napos inaktivitás-lejárat, belépéskori sweep | relics.yml |
 | `RelicCooldownService` | Per játékos/relic/trigger cooldownok | memória |
 | `MetelytepoManager` | Mételytépő mechanikák: sinner flag, **dark pact** (örök sinner), Justice/Honor Eye képességek, fagyasztás | játékos PDC + memória |
-| `MinionManager` | Idézett minionok gazda-jelölése (`minion_owner` PDC); a hűség-szabályokat a `MinionProtectionListener` érvényesíti | entitás PDC |
+| `MinionManager` | Idézett minionok gazda-jelölése (`minion_owner`) + állásmód (`minion_stance`); per-gazda aktív-minion regiszter az idézés-limithez | entitás PDC + memória |
 | `MobScalingManager` | Távolság-alapú mob szint: attribútum skálázás, névcímke, `mob_level` PDC | entitás PDC |
 | `TerritoryManager` | Kör alakú frakcióterületek és fővárosok, `getTerritoryAt(Location)` | territories.yml |
 
@@ -173,6 +173,7 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `TalentAttributeListener` | `PlayerJoinEvent` | Talent attribútum-módosítók idempotens újra-alkalmazása |
 | `TerritoryListener` | `PlayerMoveEvent` (blokk-váltásra szűrve), `BlockBreak/PlaceEvent`, `PlayerQuitEvent` | Határátlépés action bar + opcionális építésvédelem |
 | `MinionProtectionListener` | `EntityTargetLivingEntityEvent` | Idézett minion soha nem támadja a gazdáját vagy a gazda másik minionját |
+| `PetCommandListener` | `PlayerInteractEntityEvent` | Társ-vezérlés: lopakodás+jobb katt a saját minionon → állásmód-váltás |
 | `SinListener` | `PlayerDeathEvent` | Gyilkosság = +1 bűn (raid alatt a hadviselők közt: bűn helyett raid-pont); küszöbnél száműzetés |
 | `ElytraRelicListener` | `EntityToggleGlideEvent`, `EntityDamageEvent` | A 4 frakció-elytra relikvia effektjei (tulajdonos + frakció ellenőrzéssel) |
 | `RelicPvpTransferListener` | `PlayerDeathEvent` | Fegyver-relikviák gazdacseréje PvP-ben |
@@ -262,6 +263,7 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `currency` | Alapvaluta, szimbólum, **fix** árfolyam + díj (fallback), item tokenek (anyag, model-data, név per valuta — RED/BLUE/NEUTRAL/DARK) |
 | `currency.soul-drop` | Lélekkő-drop: `enabled`, `min-mob-level`, `chance-percent`, `max-amount` |
 | `currency.economy-event` | Kereslet-sokk: `enabled`, `check-interval-minutes`, `chance-percent`, `duration-hours`, `min/max-multiplier` |
+| `pets` | `max-active` (idézés-limit), `talent-health-share` (talent→minion HP) |
 | `market` | `max-listings-per-player`, `fee-percent` (eladási díj = money sink) |
 | `world-events` | `check-interval-seconds` + `blood-moon.*`, `world-boss.*`, `season.*`, `intro.*` |
 | `currency.dynamic-exchange` | `enabled`, `reference-supply`, `elasticity`, `min/max-multiplier`, `base-values.<VALUTA>` — a kínálat-alapú árfolyam paraméterei |

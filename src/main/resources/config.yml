@@ -730,6 +730,14 @@ quests:
         amount: 100
       cleanse-sins: true
 
+# ===== Idézett társak (pet/minion) =====
+# max-active: hány aktív idézett társa lehet egyszerre egy játékosnak (spam-védelem);
+# talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.
+# Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
+pets:
+  max-active: 8
+  talent-health-share: 0.5
+
 # ===== Piactér =====
 # Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);
 # vásárlás a /market GUI-ból banki egyenlegből. A fee-percent elég (money sink).
