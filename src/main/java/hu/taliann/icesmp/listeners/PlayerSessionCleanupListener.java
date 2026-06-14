@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.gui.JobGUIHolder;
 import hu.taliann.icesmp.gui.ProfileHolder;
+import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
@@ -24,25 +25,28 @@ import java.util.UUID;
 
 public final class PlayerSessionCleanupListener implements Listener {
 
-    private final SpellbookListener spellbookListener;
+    private final AbilityCatalystListener abilityCatalystListener;
     private final JobManager jobManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
     private final MetelytepoManager metelytepoManager;
     private final RelicManager relicManager;
+    private final CraftingRestrictionManager craftingRestrictionManager;
 
-    public PlayerSessionCleanupListener(final SpellbookListener spellbookListener,
+    public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
                                         final CurrencyManager currencyManager,
                                         final FactionManager factionManager,
                                         final MetelytepoManager metelytepoManager,
-                                        final RelicManager relicManager) {
-        this.spellbookListener = spellbookListener;
+                                        final RelicManager relicManager,
+                                        final CraftingRestrictionManager craftingRestrictionManager) {
+        this.abilityCatalystListener = abilityCatalystListener;
         this.jobManager = jobManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.metelytepoManager = metelytepoManager;
         this.relicManager = relicManager;
+        this.craftingRestrictionManager = craftingRestrictionManager;
     }
 
     @EventHandler
@@ -58,12 +62,13 @@ public final class PlayerSessionCleanupListener implements Listener {
     public void cleanupPlayerState(final UUID playerId) {
         final Player player = Bukkit.getPlayer(playerId);
 
-        spellbookListener.clearPlayerState(playerId);
+        abilityCatalystListener.clearPlayerState(playerId);
         jobManager.clearPlayerState(playerId);
         currencyManager.clearPlayerState(playerId);
         factionManager.clearPlayerState(playerId);
         metelytepoManager.clearPlayerState(playerId);
         relicManager.clearPlayerState(playerId);
+        craftingRestrictionManager.clearPlayerState(playerId);
 
         HideSpell.clearPlayerState(playerId);
         LuckyStarSpell.clearPlayerState(playerId);

@@ -3,7 +3,8 @@ package hu.taliann.icesmp.data;
 public enum FactionType {
     RED("Piros"),
     BLUE("Kék"),
-    NEUTRAL("Semleges");
+    NEUTRAL("Semleges"),
+    DARK("Sötét");
 
     private final String displayName;
 

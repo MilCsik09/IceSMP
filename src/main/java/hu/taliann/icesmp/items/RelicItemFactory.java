@@ -97,6 +97,22 @@ public final class RelicItemFactory {
         }
     }
 
+    /**
+     * Rewrites the owner tag on a relic item (PvP ownership transfer).
+     *
+     * @param itemStack the relic item
+     * @param owner the new owner UUID
+     */
+    public void setOwner(final ItemStack itemStack, final UUID owner) {
+        if (itemStack == null || !itemStack.hasItemMeta() || owner == null) {
+            return;
+        }
+
+        final ItemMeta meta = itemStack.getItemMeta();
+        meta.getPersistentDataContainer().set(relicOwnerKey, PersistentDataType.STRING, owner.toString());
+        itemStack.setItemMeta(meta);
+    }
+
     public void refresh(final ItemStack itemStack, final RelicDefinition definition) {
         if (itemStack == null || definition == null || !itemStack.hasItemMeta()) {
             return;

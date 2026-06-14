@@ -45,6 +45,24 @@ public final class SinnerCommand implements BasicCommand {
 
         final String action = args[1].toLowerCase();
         switch (action) {
+            case "add" -> {
+                final int newCount = metelytepoManager.addSin(target, 1);
+                sender.sendMessage(messageManager.getMessage(
+                        "sinner.add-success",
+                        "<green>Bűn rögzítve: <white>{player}</white> <gray>(bűnök: <white>{count}</white>)</gray></green>",
+                        java.util.Map.of("player", target.getName(), "count", String.valueOf(newCount))
+                ));
+            }
+            case "status" -> sender.sendMessage(messageManager.getMessage(
+                    "sinner.status",
+                    "<gray>{player}: bűnös: <white>{sinner}</white> | bűnök: <white>{count}</white> | sötét paktum: <white>{pact}</white></gray>",
+                    java.util.Map.of(
+                            "player", target.getName(),
+                            "sinner", metelytepoManager.isSinner(target) ? "igen" : "nem",
+                            "count", String.valueOf(metelytepoManager.getSinCount(target)),
+                            "pact", metelytepoManager.hasDarkPact(target) ? "igen" : "nem"
+                    )
+            ));
             case "set" -> {
                 metelytepoManager.markAsSinner(target);
                 sender.sendMessage(messageManager.getMessage(
@@ -54,14 +72,21 @@ public final class SinnerCommand implements BasicCommand {
                 ));
             }
             case "clear" -> {
-                metelytepoManager.clearSinner(target);
+                if (!metelytepoManager.clearSinner(target)) {
+                    sender.sendMessage(messageManager.getMessage(
+                            "sinner.clear-blocked-dark-pact",
+                            "<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>",
+                            java.util.Map.of("player", target.getName())
+                    ));
+                    return;
+                }
                 sender.sendMessage(messageManager.getMessage(
                         "sinner.clear-success",
                         "<green>A jatekos megtisztult: <white>{player}</white></green>",
                         java.util.Map.of("player", target.getName())
                 ));
             }
-            default -> sender.sendMessage(messageManager.getMessage("sinner.invalid-action", "<red>Ervenytelen muvelet. Hasznald: set vagy clear.</red>"));
+            default -> sender.sendMessage(messageManager.getMessage("sinner.invalid-action", "<red>Érvénytelen művelet. Használd: set, clear, add vagy status.</red>"));
         }
     }
 
@@ -79,7 +104,7 @@ public final class SinnerCommand implements BasicCommand {
         }
 
         if (args.length == 2) {
-            return java.util.stream.Stream.of("set", "clear")
+            return java.util.stream.Stream.of("set", "clear", "add", "status")
                     .filter(option -> option.startsWith(args[1].toLowerCase()))
                     .toList();
         }

@@ -1,0 +1,73 @@
+package hu.taliann.icesmp.listeners;
+
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.RaidManager;
+import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
+
+import java.util.Map;
+
+/**
+ * Records sins for player murder: the killer gains a sin point, and the
+ * MetelytepoManager exiles repeat offenders to the Dark faction once the
+ * configured threshold is reached. Sanctioned raid kills (between the two
+ * warring factions) carry no sin and score for the killer's side instead.
+ */
+public final class SinListener implements Listener {
+
+    private final MetelytepoManager metelytepoManager;
+    private final RaidManager raidManager;
+    private final FactionManager factionManager;
+    private final ConfigManager configManager;
+    private final MessageManager messageManager;
+
+    public SinListener(final MetelytepoManager metelytepoManager, final RaidManager raidManager,
+                       final FactionManager factionManager, final ConfigManager configManager,
+                       final MessageManager messageManager) {
+        this.metelytepoManager = metelytepoManager;
+        this.raidManager = raidManager;
+        this.factionManager = factionManager;
+        this.configManager = configManager;
+        this.messageManager = messageManager;
+    }
+
+    @EventHandler
+    public void onPlayerDeath(final PlayerDeathEvent event) {
+        final Player victim = event.getEntity();
+        final Player killer = victim.getKiller();
+        if (killer == null || killer.getUniqueId().equals(victim.getUniqueId())) {
+            return;
+        }
+
+        // Raid rule (ideas.md): sanctioned war kills carry no sin — they score for the raid.
+        final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
+        final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
+        if (raidManager.isAtWar(killerFaction, victimFaction)) {
+            raidManager.recordKill(killerFaction);
+            killer.sendMessage(messageManager.getMessage(
+                    "faction-raid-kill",
+                    "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>",
+                    Map.of("faction", killerFaction.getDisplayName())
+            ));
+            return;
+        }
+
+        if (!configManager.getBoolean("factions.sins.murder-counts", true)) {
+            return;
+        }
+
+        final int sinCount = metelytepoManager.addSin(killer, 1);
+        final int threshold = Math.max(0, configManager.getInt("factions.sins.exile-threshold", 4));
+        killer.sendMessage(messageManager.getMessage(
+                "sinner.sin-recorded",
+                "<dark_purple>Bűnt követtél el: gyilkosság. <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>",
+                Map.of("count", String.valueOf(sinCount), "threshold", String.valueOf(threshold))
+        ));
+    }
+}
