@@ -5,6 +5,7 @@ import hu.taliann.icesmp.commands.CurrencyCommand;
 import hu.taliann.icesmp.commands.FactionCommand;
 import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
+import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
 import hu.taliann.icesmp.commands.ProfessionCommand;
 import hu.taliann.icesmp.commands.ProfileCommand;
@@ -22,6 +23,7 @@ import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
+import hu.taliann.icesmp.listeners.IntroListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
 import hu.taliann.icesmp.listeners.MarketGUIListener;
@@ -39,16 +41,19 @@ import hu.taliann.icesmp.listeners.RelicPvpTransferListener;
 import hu.taliann.icesmp.listeners.RelicTriggerListener;
 import hu.taliann.icesmp.listeners.SkillTreeGUIListener;
 import hu.taliann.icesmp.listeners.SoulstoneListener;
+import hu.taliann.icesmp.listeners.WorldBossListener;
 import hu.taliann.icesmp.listeners.SinListener;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.listeners.TalentAttributeListener;
 import hu.taliann.icesmp.listeners.TerritoryListener;
+import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.EconomyEventManager;
+import hu.taliann.icesmp.managers.IntroManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
@@ -62,10 +67,12 @@ import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.RelicManager;
+import hu.taliann.icesmp.managers.SeasonManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
+import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.spells.AngryChickenSpell;
 import hu.taliann.icesmp.spells.ArmamentSpell;
 import hu.taliann.icesmp.spells.BoneChillSpell;
@@ -131,8 +138,13 @@ public final class IceSMPCore {
     private final FactionTreasuryManager factionTreasuryManager;
     private final KingManager kingManager;
     private final RaidManager raidManager;
+    private final BloodMoonManager bloodMoonManager;
+    private final SeasonManager seasonManager;
+    private final WorldBossManager worldBossManager;
+    private final IntroManager introManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -154,8 +166,12 @@ public final class IceSMPCore {
         this.minionManager = new MinionManager(plugin);
         this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
-        this.raidManager = new RaidManager(plugin, configManager, factionTreasuryManager, messageManager);
-        this.mobScalingManager = new MobScalingManager(plugin, configManager);
+        this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
+        this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager);
+        this.raidManager = new RaidManager(plugin, configManager, factionTreasuryManager, seasonManager, messageManager);
+        this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
+        this.introManager = new IntroManager(plugin, configManager);
+        this.mobScalingManager = new MobScalingManager(plugin, configManager, bloodMoonManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
@@ -224,10 +240,12 @@ public final class IceSMPCore {
         kingManager.load();
         economyEventManager.load();
         marketManager.load();
+        seasonManager.load();
         registerListeners();
         registerCommands();
         scheduleTaxCollection();
         scheduleEconomyEvents();
+        scheduleWorldEvents();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
@@ -246,6 +264,10 @@ public final class IceSMPCore {
             economyEventTask.cancel();
             economyEventTask = null;
         }
+        if (worldEventsTask != null) {
+            worldEventsTask.cancel();
+            worldEventsTask = null;
+        }
 
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
@@ -260,7 +282,27 @@ public final class IceSMPCore {
         kingManager.save();
         economyEventManager.save();
         marketManager.save();
+        seasonManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
+    }
+
+    /**
+     * Schedules the shared world-events tick (blood moon, world boss, season
+     * expiry) on the global region scheduler. Each manager guards its own
+     * config toggle, so this single timer drives all of section 7.
+     */
+    private void scheduleWorldEvents() {
+        final long intervalTicks = Math.max(1L, configManager.getLong("world-events.check-interval-seconds", 60L)) * 20L;
+        worldEventsTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin,
+                task -> {
+                    bloodMoonManager.tick();
+                    worldBossManager.tick();
+                    seasonManager.tick();
+                },
+                intervalTicks,
+                intervalTicks
+        );
     }
 
 
@@ -321,6 +363,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, introManager, messageManager));
     }
 
     /**
@@ -349,7 +392,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, configManager), plugin);
+        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
+        pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
+        pluginManager.registerEvents(new IntroListener(introManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);

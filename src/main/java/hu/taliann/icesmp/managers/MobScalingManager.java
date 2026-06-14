@@ -30,6 +30,7 @@ public final class MobScalingManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final BloodMoonManager bloodMoonManager;
     private final NamespacedKey mobLevelKey;
     private final Set<SpawnReason> ignoredSpawnReasons = EnumSet.noneOf(SpawnReason.class);
 
@@ -44,9 +45,11 @@ public final class MobScalingManager {
     private String namePrefix;
     private NamedTextColor nameColor;
 
-    public MobScalingManager(final JavaPlugin plugin, final ConfigManager configManager) {
+    public MobScalingManager(final JavaPlugin plugin, final ConfigManager configManager,
+                             final BloodMoonManager bloodMoonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.bloodMoonManager = bloodMoonManager;
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
     }
 
@@ -103,7 +106,8 @@ public final class MobScalingManager {
             return;
         }
 
-        final int level = resolveLevel(entity.getLocation());
+        // Blood moon nights spawn every mob with bonus levels (may exceed max-level).
+        final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels();
         if (level < 1) {
             return;
         }

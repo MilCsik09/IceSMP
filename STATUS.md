@@ -144,6 +144,20 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   spec spelljeit feloldási szint szerint rendezve — a feloldottak ragyognak, a zároltak a
   szükséges szintet mutatják
 
+### 7.7 Világesemények (7. szekció)
+- **Vérhold-éjszaka** (`BloodMoonManager`): ritka éjjel a skálázott mobok +N szintet kapnak
+  (a `MobScalingManager` a spawnnál beépíti), és a lélekkő-drop felszorzódik; broadcast jelzi
+- **Világboss** (`WorldBossManager`): időnként egy boss-grade szörny (configolható típus, élet,
+  sebzés) spawnol egy véletlen játékos közelében — a régiószálon spawnol (Folia-helyes),
+  per-entity despawn időzítővel; a legyőző frakciója kasszát + szezon-pontot kap, a slayer buffot
+- **Szezonális liga** (`SeasonManager`, `season.yml`): a frakciók raid- és boss-győzelmekből
+  pontot gyűjtenek; a szezon (alapból 60 nap) végén a bajnok kasszája jutalmat kap, a pontok
+  resetelnek; `/events season` mutatja az állást
+- **Első belépéses intro** (`IntroManager`): egyszer lejátszódó, configból szerkeszthető
+  cím-szekvencia (a játékos saját schedulerén időzítve); admin `/events intro [játékos]` újrajátssza
+- Egy közös `world-events.check-interval-seconds` időzítő hajtja mindhárom esemény-tickjét a
+  global region scheduleren; `/events` parancs (`event`, `esemeny` alias)
+
 ### 8. Relikvia rendszer
 - Relic framework: config-vezérelt definíciók (vizuál, custom model data, triggerek,
   cooldown), PDC-tagelt itemek, craft-védelem

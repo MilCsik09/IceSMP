@@ -78,15 +78,16 @@ mob szintezés) épül.
 
 ## 7. Események és világesemények
 
-- **Első belépés "videó":** kliensoldali videó nem lehetséges vanilla kliensen, de
-  jól emulálható: title-szekvenciák + kamera-utaztatás (spectator teleport útvonalon) +
-  resource pack zene. Alternatíva: interaktív "prológus" ösvény a spawnon.
-- **Világ-bossok:** gyűrűhatárokon időzítve megjelenő, mob-szintezett bossok; a kill
-  frakció-szintű jutalmat ad (kassza + buff), így frakciók versenyeznek érte.
-- **Vérhold-éjszaka:** ritka éjszaka, amikor minden mob +2 szintet kap és a Sötét
-  frakció passzívjai felerősödnek; cserébe ilyenkor hullik a legtöbb lélekkő.
-- **Szezonális liga:** 2–3 havonta pontverseny a frakciók közt (raid győzelmek, gazdasági
-  mutatók, boss killek) — a győztes frakció kap egy szezonális kozmetikai relikviát.
+- ✅ **Első belépés "videó" (KÉSZ, alap):** első belépéskor időzített cím-szekvencia
+  (`IntroManager`, configból szerkeszthető sorok), egyszer fut, admin `/events intro` újrajátssza.
+  Hátra van: kamera-utaztatás/spectator-útvonal.
+- ✅ **Világ-bossok (KÉSZ):** időnként boss-szörny spawnol egy véletlen játékos közelében
+  (`WorldBossManager`); a legyőző frakciója kasszát + liga-pontot kap, a slayer buffot.
+- ✅ **Vérhold-éjszaka (KÉSZ):** ritka éjjel a skálázott mobok +N szintet kapnak és a
+  lélekkő-drop felszorzódik (`BloodMoonManager`, broadcast-tel).
+- ✅ **Szezonális liga (KÉSZ, alap):** a frakciók pontot gyűjtenek raid- és boss-győzelmekből
+  (`SeasonManager`); a szezon végén a bajnok kasszája jutalmat kap, a pontok resetelnek.
+  Hátra van: szezonális kozmetikai relikvia-jutalom.
 
 ## 7.5 WoW-stílusú pet/idéző rendszer továbbfejlesztése
 
@@ -112,4 +113,4 @@ már él — a World of Warcraft class/profession irányt ezek mélyítenék el:
   display entity-k Folián is jól működnek).
 - A 4 elytra relikvia a meglévő relic framework triggereivel (RelicTrigger bővítés:
   GLIDE_START, TAKE_DAMAGE) implementálható.
-- Boss-évényekhez a MobScalingManager szint-API-ja (getLevel) már ad alapot.
+- ✅ Világesemények (vérhold, világboss, szezon, intro) — KÉSZ (7. szekció).

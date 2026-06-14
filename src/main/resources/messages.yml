@@ -396,6 +396,18 @@ messages:
 
   economy-event-started: "<gold>📈 Kereslet-sokk! A(z) <white>{currency}</white> valuta értéke <white>x{multiplier}</white>-re ugrott <white>{hours}</white> órára — itt az alkalom a kereskedésre!</gold>"
   economy-event-ended: "<gold>📉 A kereslet-sokk lecsengett: a(z) <white>{currency}</white> valuta értéke normalizálódott.</gold>"
+  blood-moon-started: "<dark_red>🌕 VÉRHOLD! Ma éjjel a szörnyek erősebbek (+{bonus} szint), de a lelkük is értékesebb...</dark_red>"
+  blood-moon-ended: "<gray>🌙 A vérhold lenyugodott — a világ fellélegzik.</gray>"
+  world-boss-spawned: "<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>"
+  world-boss-despawned: "<gray>👹 A világboss elvonult — senki sem merte legyőzni.</gray>"
+  world-boss-slain: "<gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>"
+  season-ended: "<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>"
+  season-ended-no-champion: "<gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>"
+  events-season-header: "&6Szezon-állás:"
+  events-season-line: "&e%s&7: &f%s pont"
+  events-bloodmoon-active: "&cVérhold tombol!"
+  events-bloodmoon-inactive: "&7Jelenleg nincs vérhold."
+  events-intro-replayed: "&aIntro lejátszva: &f%s"
 
   currency-rates-static: "&eA dinamikus árfolyam ki van kapcsolva; fix árfolyam érvényes."
   currency-rates-header: "&6Aktuális árfolyamok (kínálat alapú):"

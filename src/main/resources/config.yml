@@ -747,6 +747,44 @@ territory:
     # (bypass: icesmp.admin.territory.bypass jogosultság).
     enabled: false
 
+# ===== Világesemények (7. szekció) =====
+# Egy közös időzítő (check-interval-seconds) hajtja a vérholdat, a világbosst
+# és a szezon-lejáratot; mindegyik a saját enabled kapcsolójával vezérelhető.
+world-events:
+  check-interval-seconds: 60
+  # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
+  blood-moon:
+    enabled: true
+    chance-percent: 15
+    bonus-mob-levels: 2
+    soul-drop-multiplier: 2.0
+  # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
+  world-boss:
+    enabled: true
+    check-interval-minutes: 90
+    chance-percent: 35
+    lifetime-minutes: 20
+    entity-type: "RAVAGER"
+    display-name: "&4&l☠ A Gyűrűk Őre &c[Világboss]"
+    health: 300.0
+    damage-multiplier: 2.0
+    treasury-reward: 300.0
+    season-points: 10
+    buff-minutes: 10
+  # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
+  season:
+    enabled: true
+    length-days: 60
+    treasury-reward: 1000.0
+  # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
+  intro:
+    enabled: true
+    stagger-seconds: 4
+    lines:
+      - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
+      - "&6Válassz frakciót||&7Piros, Kék, Semleges vagy Sötét"
+      - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
+
 # ===== Kaszt/szakma-alapú craftolási korlátozások =====
 # required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
 # required-profession: szakma azonosító (pl. "armorer") + required-profession-level.

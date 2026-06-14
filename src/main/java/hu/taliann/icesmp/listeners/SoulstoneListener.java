@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
@@ -21,12 +22,14 @@ public final class SoulstoneListener implements Listener {
 
     private final CurrencyManager currencyManager;
     private final MobScalingManager mobScalingManager;
+    private final BloodMoonManager bloodMoonManager;
     private final ConfigManager configManager;
 
     public SoulstoneListener(final CurrencyManager currencyManager, final MobScalingManager mobScalingManager,
-                             final ConfigManager configManager) {
+                             final BloodMoonManager bloodMoonManager, final ConfigManager configManager) {
         this.currencyManager = currencyManager;
         this.mobScalingManager = mobScalingManager;
+        this.bloodMoonManager = bloodMoonManager;
         this.configManager = configManager;
     }
 
@@ -48,8 +51,10 @@ public final class SoulstoneListener implements Listener {
             return;
         }
 
+        // Blood moon nights multiply the soulstone drop chance.
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("currency.soul-drop.chance-percent", 25.0D)));
+                configManager.getDouble("currency.soul-drop.chance-percent", 25.0D)
+                        * bloodMoonManager.getSoulDropMultiplier()));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }

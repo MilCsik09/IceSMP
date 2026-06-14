@@ -28,6 +28,7 @@ public final class RaidManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final FactionTreasuryManager treasuryManager;
+    private final SeasonManager seasonManager;
     private final MessageManager messageManager;
     private final Map<FactionType, Integer> kills = new ConcurrentHashMap<>();
 
@@ -35,10 +36,12 @@ public final class RaidManager {
     private ScheduledTask endTask;
 
     public RaidManager(final JavaPlugin plugin, final ConfigManager configManager,
-                       final FactionTreasuryManager treasuryManager, final MessageManager messageManager) {
+                       final FactionTreasuryManager treasuryManager, final SeasonManager seasonManager,
+                       final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.treasuryManager = treasuryManager;
+        this.seasonManager = seasonManager;
         this.messageManager = messageManager;
     }
 
@@ -175,6 +178,9 @@ public final class RaidManager {
         if (spoils > 0.0D && treasuryManager.withdraw(loser, spoils)) {
             treasuryManager.deposit(winner, spoils);
         }
+
+        // Raid victory feeds the seasonal league standings.
+        seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)));
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-ended",

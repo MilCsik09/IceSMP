@@ -75,7 +75,11 @@ IceSMPCore.disable()
 | `FactionTreasuryManager` | Frakciókasszák (adomány + időszakos állampolgári adó, money sink); a tax a global region scheduleren fut | treasury.yml |
 | `KingManager` | Királyválasztás (szavazás, min-votes, ciklus-reset) és uralkodói jogok (kassza-kivét, raid) | kings.yml |
 | `QuestManager` | Config-vezérelt küldetések: 6 objective-típus, lánc/kaszt/frakció/szint feltételek, jutalmak (class-xp, valuta, spell, cleanse-sins) | játékos PDC |
-| `RaidManager` | Raid életciklus: hirdetés (nevezési díj), bűn-mentes hadi PvP, kill-számolás, hadizsákmány | memória |
+| `RaidManager` | Raid életciklus: hirdetés (nevezési díj), bűn-mentes hadi PvP, kill-számolás, hadizsákmány, szezon-pont | memória |
+| `BloodMoonManager` | Vérhold: +mob-szint és lélekkő-szorzó éjjel; global tick | memória |
+| `WorldBossManager` | Időszakos világboss spawn (régiószálon), kill-jutalom (kassza+szezon+buff) | memória + entitás PDC (`world_boss`) |
+| `SeasonManager` | Szezonális liga pontok frakciónként, szezon-zárás bajnok-jutalommal | season.yml |
+| `IntroManager` | Első belépéses cím-szekvencia (player scheduler), `intro_seen` PDC | játékos PDC |
 | `JobManager` | Kasztok (elsődleges/másodlagos), XP és szint (progresszív görbe: az n. szintlépés ára `base-xp + (n-1)*increment`, max 50), spell unlock lista, szint-alapú auto-unlock (`classes.<id>.spell-unlocks`), frakció-követelmény ellenőrzés, XP-change hook | játékos PDC |
 | `SpecializationManager` | Kaszt- és szakma-specializációk: feltétel-ellenőrzés (szint, frakció, sinner), kiválasztás, spec spell unlock (`specializations.<id>.spell-unlocks`) | játékos PDC |
 | `TalentManager` | Két talentpont-tár (kaszt/szakma), pontköltés, WoW-szerű talent-kötések (`requires-job`/`requires-spec`/`requires-profession`), respec utáni pont-visszatérítés, attribútum módosítók idempotens alkalmazása, XP-bónusz effektek lekérdezése | játékos PDC |
@@ -139,6 +143,7 @@ inventoryból és felszabadul.
 | `/sinner` | — | `<játékos> set\|clear\|add\|status` | `icesmp.admin` |
 | `/quest` | `quests`, `kuldetes` | `list`, `info`, `accept`, `abandon`, `complete` | `complete`: `icesmp.admin.quest` |
 | `/market` | `piac`, `ah` | `(browse)`, `sell <ár> [valuta]`, `cancel` | — |
+| `/events` | `event`, `esemeny` | `season`, `blood-moon`, `intro [játékos]` | `intro`: `icesmp.admin.events` |
 | `/relic` | `relics` | `list`, `give` | `give`: `icesmp.relic.admin` |
 | `/territory` | `terulet` | `setcapital`, `claim`, `remove`, `list`, `info` | `icesmp.admin.territory` |
 
@@ -258,6 +263,7 @@ elhasználódjon (FLINT/RABBIT_HIDE vanilla receptekben szerepel!).
 | `currency.soul-drop` | Lélekkő-drop: `enabled`, `min-mob-level`, `chance-percent`, `max-amount` |
 | `currency.economy-event` | Kereslet-sokk: `enabled`, `check-interval-minutes`, `chance-percent`, `duration-hours`, `min/max-multiplier` |
 | `market` | `max-listings-per-player`, `fee-percent` (eladási díj = money sink) |
+| `world-events` | `check-interval-seconds` + `blood-moon.*`, `world-boss.*`, `season.*`, `intro.*` |
 | `currency.dynamic-exchange` | `enabled`, `reference-supply`, `elasticity`, `min/max-multiplier`, `base-values.<VALUTA>` — a kínálat-alapú árfolyam paraméterei |
 | `messages` | (örökölt, nem használt — a futásidejű üzenetforrás a `messages.yml`) |
 | `factions` | Frakció nevek + `passives.*` + `tax.*` + `sins.*` + `kings.*` (min-votes, term-days, excluded) + `raid.*` (duration-minutes, entry-cost, spoils-percent, protected) |
@@ -296,6 +302,7 @@ frissülnek garantáltan.
 | `kings.yml` | `kings.<FAKCIÓ>`: king UUID, election-start, votes | KingManager |
 | `market.yml` | `listings.<uuid>`: seller, price, currency, item (szerializált), created-at | MarketManager |
 | `economy-event.yml` | aktív kereslet-sokk (currency, multiplier, ends-at) | EconomyEventManager |
+| `season.yml` | szezon kezdete + frakció-pontok | SeasonManager |
 
 ### PDC kulcsok (namespace: a plugin, `icesmp`)
 
