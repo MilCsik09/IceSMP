@@ -4,7 +4,10 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ public final class RaidManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final FactionManager factionManager;
     private final FactionTreasuryManager treasuryManager;
     private final SeasonManager seasonManager;
     private final MessageManager messageManager;
@@ -36,10 +40,11 @@ public final class RaidManager {
     private ScheduledTask endTask;
 
     public RaidManager(final JavaPlugin plugin, final ConfigManager configManager,
-                       final FactionTreasuryManager treasuryManager, final SeasonManager seasonManager,
-                       final MessageManager messageManager) {
+                       final FactionManager factionManager, final FactionTreasuryManager treasuryManager,
+                       final SeasonManager seasonManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.factionManager = factionManager;
         this.treasuryManager = treasuryManager;
         this.seasonManager = seasonManager;
         this.messageManager = messageManager;
@@ -182,6 +187,9 @@ public final class RaidManager {
         // Raid victory feeds the seasonal league standings.
         seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)));
 
+        // Victor's spoils buff: a temporary boon for the winning faction's online members.
+        applyWinnerBuff(winner);
+
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-ended",
                 "<gold>⚔ A raid véget ért! Győztes: <white>{winner}</white> ({attackerKills} - {defenderKills}). Hadizsákmány: <white>{spoils}</white> a(z) {loser} kasszájából.</gold>",
@@ -193,6 +201,30 @@ public final class RaidManager {
                         "spoils", String.valueOf(spoils)
                 )
         ));
+    }
+
+    private void applyWinnerBuff(final FactionType winner) {
+        final int buffMinutes = Math.max(0, configManager.getInt("factions.raid.winner-buff-minutes", 30));
+        if (buffMinutes <= 0) {
+            return;
+        }
+
+        final int durationTicks = buffMinutes * 60 * 20;
+        final int strengthLevel = Math.max(0, configManager.getInt("factions.raid.winner-buff-strength", 0));
+        final int regenLevel = Math.max(0, configManager.getInt("factions.raid.winner-buff-regen", 0));
+        for (final Player online : Bukkit.getOnlinePlayers()) {
+            if (factionManager.getFaction(online.getUniqueId()) != winner) {
+                continue;
+            }
+
+            online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, strengthLevel, false, true, true));
+            online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, regenLevel, false, true, true));
+            online.sendMessage(messageManager.getMessage(
+                    "faction-raid-winner-buff",
+                    "<gold>⚔ A győzelem mámora átjár — harci áldás szállt rád {minutes} percre!</gold>",
+                    Map.of("minutes", String.valueOf(buffMinutes))
+            ));
+        }
     }
 
     /** Cancels the pending end-timer on plugin disable. */

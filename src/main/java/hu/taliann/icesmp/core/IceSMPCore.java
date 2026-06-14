@@ -169,7 +169,7 @@ public final class IceSMPCore {
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager);
-        this.raidManager = new RaidManager(plugin, configManager, factionTreasuryManager, seasonManager, messageManager);
+        this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, messageManager);
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
         this.introManager = new IntroManager(plugin, configManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager, bloodMoonManager);

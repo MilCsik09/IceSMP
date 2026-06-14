@@ -210,6 +210,8 @@ factions:
     enabled: true
     interval-minutes: 60
     rate-percent: 2.0
+    # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
+    max-rate-percent: 10.0
     exempt:
       - "NEUTRAL"
   # ===== Bűn-számláló és száműzetés =====
@@ -233,6 +235,11 @@ factions:
     duration-minutes: 15
     entry-cost: 200
     spoils-percent: 20
+    season-points: 5
+    # Győztes-buff a győztes frakció online tagjainak (0 perc = kikapcsolva).
+    winner-buff-minutes: 30
+    winner-buff-strength: 0
+    winner-buff-regen: 0
     protected:
       - "NEUTRAL"
 

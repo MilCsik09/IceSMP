@@ -42,7 +42,7 @@ public final class FactionCommand implements BasicCommand {
         register(new FactionSetSubcommand(factionManager, metelytepoManager, messageManager));
         register(new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager));
         register(new FactionDonateSubcommand(treasuryManager, factionManager, currencyManager, messageManager));
-        register(new FactionKingSubcommand(kingManager, factionManager, messageManager));
+        register(new FactionKingSubcommand(kingManager, factionManager, treasuryManager, messageManager));
         register(new FactionRaidSubcommand(raidManager, kingManager, factionManager, messageManager));
     }
 
