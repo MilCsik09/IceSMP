@@ -5,6 +5,8 @@ fantasy "királyságos" SMP szerver teljes játékmenet-rendszerét adja: frakci
 specializációk, talentek, szakmák, katalizátor-alapú képességek, legendás relikviák,
 dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
+> 🎮 **Játékos tájékoztató:** [PLAYER_GUIDE.md](PLAYER_GUIDE.md) — mit hogyan használj a játékban
+> (frakciók, kasztok, spellek, talentek, szakmák, gazdaság, világesemények) + mi a WIP.
 > 📘 **Technikai dokumentáció:** [TECHNICAL.md](TECHNICAL.md) — architektúra, parancs- és
 > jogosultság-referencia, config leírás, adattárolás, fejlesztői útmutató.
 > ✅ **Pontos készültségi állapot:** [STATUS.md](STATUS.md) — mi van kész, ismert korlátok, mi hiányzik.
