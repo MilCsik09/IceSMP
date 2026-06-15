@@ -28,8 +28,10 @@ mob szintezés) épül.
 - ✅ **Bűn- és száműzetés-rendszer (KÉSZ, részben):** sin_count számláló, gyilkosság = +1 bűn,
   a küszöbnél (alapból 4) automatikus száműzetés a Sötét frakcióba örök paktummal.
   Hátra van: lopás/árulás detektálás, és a "vezeklés" quest-lánc (quest-keretrendszer kell).
-- **Frakció-reputáció:** NPC kereskedők árai a frakciók közti viszonytól függnek;
-  háborúban álló frakció boltjában drágább minden.
+- ✅ **Frakció-reputáció (KÉSZ):** configból állítható ALLY/NEUTRAL/ENEMY viszony-mátrix
+  (`factions.relations`), raid alatt a hadviselők automatikusan ENEMY-k. A viszony a
+  piaci árat módosítja (`FactionRelationManager`): ellenségtől drágább (a felár elég =
+  money sink), szövetségestől olcsóbb. A `/market` GUI a tényleges, módosított árat fizetteti.
 
 ## 3. Raid és háború
 
@@ -37,8 +39,10 @@ mob szintezés) épül.
   hadviselők közti ölés nem bűn, hanem pont. Hátra van: 10v10 limit, aréna/terület-kötés.
 - ✅ **Hadizsákmány (KÉSZ, alap):** a győztes a vesztes kasszájának configolható %-át kapja.
   Hátra van: győztes-buff (pl. +10% szakma XP 2 napig).
-- **Ostromgépek:** craftolható, drága "ostrom-itemek" (pl. robbantó ágyú), amelyek csak
-  raid közben használhatók — money sink és kovács-tartalom egyben.
+- ✅ **Ostromgépek (KÉSZ):** craftolható "Ostromágyú" (TNT_MINECART recept: vasblokk-keret +
+  TNT + tűzpor), ami CSAK aktív raid alatt sül el (`SiegeWeaponFactory` + `SiegeWeaponListener`).
+  Jobb katt = terep-barát robbanás a célzott pontra (sebzi az entitásokat, kíméli a terepet);
+  raiden kívül csak figyelmeztet. Money sink és kovács-tartalom egyben.
 
 ## 4. Relikviák és legendás tárgyak
 
@@ -46,9 +50,10 @@ mob szintezés) épül.
   Csontszárny — frakcióhoz és tulajdonoshoz kötött effektekkel (ElytraRelicListener).
 - ✅ **Fegyver-relikviák PvP gazdacseréje (KÉSZ):** a droppolt fegyver-relikviák
   (relics.weapon-relics) a gyilkosé lesznek; a passzívak védettek.
-- **Rituálé-oltárok:** a relikviák nem craftolhatók, hanem több játékos közös
-  rituáléjával idézhetők meg (idő + áldozati anyagok + adott helyszín, pl. a romváros
-  oltára). A meglévő ritual timer erre építhető.
+- ✅ **Rituálé-oltárok (KÉSZ):** a relikviák megidézhetők egy configolt oltár-blokk
+  SHIFT+jobb kattjával, áldozati tárgyak feláldozásával (`RitualManager` + `RitualListener`,
+  `rituals.<relicId>` config: altar-block + sacrifice lista). A relikvia-egyediség szabálya
+  érvényes (élő tulajdonossal nem idézhető újra). Alapból a 4 elytra-relikvia oltára él.
 
 ## 5. Kasztok és progresszió
 
@@ -69,8 +74,10 @@ mob szintezés) épül.
   ezek nélkül a kínálat csak nő, és minden valuta elinflálódik.
 - ✅ **Piaci tábla / aukciósház (KÉSZ, alap):** /market sell + GUI-vásárlás banki
   egyenlegből, eladási díjjal (money sink). Hátra van: lapozás, keresés, fizikai piactábla.
-- **Árfolyam-kijelző tábla:** a fővárosokban hologram/tábla, ami a /currency rates
-  adatait mutatja élőben; "tőzsdei" hangulat.
+- ✅ **Árfolyam-kijelző tábla (KÉSZ):** `/exchangeboard place` paranccsal lerakható
+  TextDisplay hologram-tábla, ami a valuták élő, kínálat-alapú értékét mutatja és a
+  világesemény-tick frissíti (`ExchangeBoardManager`, Folia-biztos region-scheduling,
+  restart-túléléssel). "Tőzsdei" hangulat a fővárosokban.
 - ✅ **Heti gazdasági esemény (KÉSZ):** véletlen kereslet-sokk (configolható szorzó és
   időtartam), broadcast-tel és restart-túléléssel.
 - ✅ **Sötét valuta = lélekkő (KÉSZ):** magas szintű skálázott mobok eséllyel DARK tokent
@@ -98,8 +105,10 @@ már él — a World of Warcraft class/profession irányt ezek mélyítenék el:
   (Támadás / Passzív / Maradj), action bar visszajelzéssel.
 - ⏳ **Megnevezett, fejlődő pet:** a Vadmester állandó, szintet lépő társa (még nincs;
   perzisztens companion entitás kell hozzá).
-- **Nekromanta lélek-erőforrás**: a minionok halálakor "lélekszilánk" gyűlik, amiből
-  erősebb idézések (pl. Wither Skeleton bajnok) fizethetők.
+- ✅ **Nekromanta lélek-erőforrás (KÉSZ):** a Nekromanta-spec játékosok ellenség-ölésenként
+  lélekszilánkot kapnak (`SoulShardManager` + `SoulShardListener`, PDC-ben tárolva), amiből
+  a `/souls champion` paranccsal megerősített Wither-csontváz bajnok idézhető (configolható
+  ár/élet/élettartam, az idézés-limitet tisztelve). `/souls` mutatja az egyenleget.
 - ✅ **Idézés-limitek (KÉSZ):** max N aktív minion / játékos (`pets.max-active`), a túl-idézés
   blokkolva, a pakk a szabad helyekre korlátozódik.
 - ✅ **Specializáció-szinergiák (KÉSZ, alap):** a gazda kaszt "max-health" talentjei +HP-t

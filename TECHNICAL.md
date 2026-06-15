@@ -26,14 +26,20 @@ IceSMP.onEnable()
             ├─ craftingRestrictionManager.load() — craft szabályok cache
             ├─ territoryManager.load()     — territories.yml
             ├─ factionTreasuryManager.load() — treasury.yml
+            ├─ kingManager / economyEventManager / marketManager / seasonManager .load()
+            ├─ exchangeBoardManager.load() — exchange-boards.yml
+            ├─ siegeWeaponFactory.registerRecipe() — ostromágyú recept
             ├─ registerListeners()
             ├─ registerCommands()          — Paper BasicCommand API (kódból, nem paper-plugin.yml-ből)
-            └─ scheduleTaxCollection()     — global region scheduler (Paper + Folia)
+            ├─ scheduleTaxCollection()     — global region scheduler (Paper + Folia)
+            ├─ scheduleEconomyEvents()     — kereslet-sokk tick
+            └─ scheduleWorldEvents()       — vérhold/világboss/szezon/árfolyamtábla tick
 
 IceSMPCore.disable()
   ├─ minden online játékos session-állapotának takarítása (PlayerSessionCleanupListener)
   ├─ ProfileGUI.closeAll()
-  └─ currency/faction/relic/territory/treasury save() + adó-task leállítása
+  └─ currency/faction/relic/territory/treasury/kings/economy/market/season/exchange-board
+     save() + adó-, kereslet-sokk- és világesemény-taskok leállítása
 ```
 
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` (fő osztály), `IceSMPBootstrap`, `IceSMPLoader`.
@@ -69,13 +75,17 @@ IceSMPCore.disable()
 | `MessageManager` | Lokalizált üzenetek (`messages.*` kulcsok, legacy `&` és MiniMessage formátum) | messages.yml |
 | `CurrencyManager` | Többvalutás egyenlegek, befizetés/kivét/utalás/váltás, item tokenek, `getTotalSupply()` | currency-balances.yml |
 | `EconomyEventManager` | Heti kereslet-sokk: véletlen valuta base-value szorzó időkorláttal; global scheduler tick | economy-event.yml |
-| `MarketManager` | Piactér: listázás kézből, vásárlás banki egyenlegből, eladási díj (money sink) | market.yml |
+| `MarketManager` | Piactér: listázás kézből, vásárlás banki egyenlegből, eladási díj (money sink), reputáció-módosított vételár (`getEffectivePrice`) | market.yml |
 | `ExchangeRateService` | Kínálat-alapú dinamikus árfolyam: `érték = base × clamp((ref/supply)^elaszticitás, min, max)`; `getRate(from,to) = value(from)/value(to)` | — (configból számol) |
+| `ExchangeBoardManager` | Árfolyam-hologram táblák: `/exchangeboard` lerak/töröl egy TextDisplay-t, a világesemény-tick frissíti a valuta-értékeket (Folia: region scheduler) | exchange-boards.yml |
+| `FactionRelationManager` | Frakció-viszony mátrix (ALLY/NEUTRAL/ENEMY; raid = ENEMY) + piaci ár-szorzó (ellenség-felár / szövetséges-kedvezmény) | — (configból + RaidManager) |
 | `FactionManager` | Játékos → frakció hozzárendelés | factions.yml |
 | `FactionTreasuryManager` | Frakciókasszák (adomány + időszakos állampolgári adó, money sink); a tax a global region scheduleren fut | treasury.yml |
 | `KingManager` | Királyválasztás (szavazás, min-votes, ciklus-reset) és uralkodói jogok (kassza-kivét, raid) | kings.yml |
 | `QuestManager` | Config-vezérelt küldetések: 6 objective-típus, lánc/kaszt/frakció/szint feltételek, jutalmak (class-xp, valuta, spell, cleanse-sins) | játékos PDC |
-| `RaidManager` | Raid életciklus: hirdetés (nevezési díj), bűn-mentes hadi PvP, kill-számolás, hadizsákmány, szezon-pont | memória |
+| `RaidManager` | Raid életciklus: hirdetés (nevezési díj), bűn-mentes hadi PvP, kill-számolás, hadizsákmány, szezon-pont, győztes-buff, `isAtWar` reputációhoz | memória |
+| `SoulShardManager` | Nekromanta lélekszilánk: ölésenkénti gyűjtés (PDC), `/souls champion` = megerősített Wither-csontváz bajnok az idézés-limiten belül | játékos PDC |
+| `RitualManager` | Rituálé-oltárok: configolt oltár-blokkon (`rituals.<relicId>`) áldozati tárgyak feláldozása → relikvia-idézés (singleton-szabály) | — (configból + RelicManager) |
 | `BloodMoonManager` | Vérhold: +mob-szint és lélekkő-szorzó éjjel; global tick | memória |
 | `WorldBossManager` | Időszakos világboss spawn (régiószálon), kill-jutalom (kassza+szezon+buff) | memória + entitás PDC (`world_boss`) |
 | `SeasonManager` | Szezonális liga pontok frakciónként, szezon-zárás bajnok-jutalommal | season.yml |
@@ -134,7 +144,7 @@ inventoryból és felszabadul.
 | `/icesmp` | `ismp` | `reload` | `icesmp.admin.reload` |
 | `/currency` | `money`, `eco` | `balance`, `pay`, `set`, `exchange`, `rates` | `set`: `icesmp.currency.admin` |
 | `/bank` | `wallet`, `vault` | `balance`, `deposit`, `withdraw <valuta> <összeg>` | — |
-| `/faction` | `f` | `join`, `leave`, `set`, `treasury [withdraw <összeg>]`, `donate <összeg>`, `king [vote/set/clear]`, `raid <frakció>` | `set`/king `set|clear`: `icesmp.faction.admin`; `treasury withdraw`: admin VAGY király; `raid`: csak király |
+| `/faction` | `f` | `join`, `leave`, `set`, `treasury [withdraw <összeg>]`, `donate <összeg>`, `king [vote/set/clear/tax <%>]`, `raid <frakció>` | `set`/king `set|clear`: `icesmp.faction.admin`; `treasury withdraw`/king `tax`: admin VAGY király; `raid`: csak király |
 | `/job` | `class` | `addxp`, `setxp`, `status`, `unlockspell`, `givecatalyst`, `listspells`, `admin` | `icesmp.job.admin` (az `admin` ág: `icesmp.admin`) |
 | `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `clear`, `addxp` | admin ágak: `icesmp.admin.profession` |
 | `/spec` | `specialization` | `list`, `choose`, `info`, `respec <class\|profession>`, `reset` | `reset`: `icesmp.admin.spec` |
@@ -144,6 +154,8 @@ inventoryból és felszabadul.
 | `/quest` | `quests`, `kuldetes` | `list`, `info`, `accept`, `abandon`, `complete` | `complete`: `icesmp.admin.quest` |
 | `/market` | `piac`, `ah` | `(browse)`, `sell <ár> [valuta]`, `cancel` | — |
 | `/events` | `event`, `esemeny` | `season`, `blood-moon`, `intro [játékos]` | `intro`: `icesmp.admin.events` |
+| `/souls` | `soul`, `lelek` | `(balance)`, `champion` | — (csak Nekromanta-spec kap szilánkot) |
+| `/exchangeboard` | `ratesboard`, `arfolyamtabla` | `place`, `remove` | `icesmp.admin.exchangeboard` |
 | `/relic` | `relics` | `list`, `give` | `give`: `icesmp.relic.admin` |
 | `/territory` | `terulet` | `setcapital`, `claim`, `remove`, `list`, `info` | `icesmp.admin.territory` |
 
@@ -178,6 +190,9 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `ElytraRelicListener` | `EntityToggleGlideEvent`, `EntityDamageEvent` | A 4 frakció-elytra relikvia effektjei (tulajdonos + frakció ellenőrzéssel) |
 | `RelicPvpTransferListener` | `PlayerDeathEvent` | Fegyver-relikviák gazdacseréje PvP-ben |
 | `SoulstoneListener` | `EntityDeathEvent` | Lélekkő-drop: magas szintű skálázott mobok DARK tokent dobhatnak |
+| `SoulShardListener` | `EntityDeathEvent` | Nekromanta-spec ölés = +lélekszilánk (PDC) |
+| `SiegeWeaponListener` | `PlayerInteractEvent` | Ostromágyú: jobb katt aktív raid alatt = terep-barát robbanás a célzott pontra |
+| `RitualListener` | `PlayerInteractEvent` | Oltár-blokk SHIFT+jobb katt = rituálé-relikvia idézés áldozati tárgyakból |
 | `QuestProgressListener` | `EntityDeathEvent`, `BlockBreakEvent`, `CraftItemEvent`, `PlayerFishEvent` | Quest-haladás (a VISIT_TERRITORY a TerritoryListenerből, a REACH_LEVEL a JobManager hookból érkezik) |
 | `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
 | `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |

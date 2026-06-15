@@ -112,6 +112,9 @@ bűnösöket és ítéletet hajt végre rajtuk). Szabályaik:
 
 - Egy relikviából **csak egy létezhet** a szerveren.
 - **14 nap inaktivitás** után a relikvia füstként elenyészik, és újra megszerezhetővé válik.
+- A négy **frakció-elytra** (Főnix-/Zúzmara-/Vándor-/Csontszárny) nem craftolható, hanem
+  **rituálé-oltáron** idézhető meg: a megfelelő blokkon lopakodás + jobb katt az áldozati
+  tárgyakkal.
 
 ### 💰 Gazdaság — dinamikus árfolyammal
 
@@ -122,7 +125,10 @@ itemként és banki egyenlegként is léteznek:
 - `/currency pay` — utalás játékosok közt; `/currency exchange` — valutaváltás
 - **Az árfolyam élő:** egy valuta értékét a szerveren lévő összmennyisége határozza meg.
   Ha egy frakció elárasztja a gazdaságot a pénzével, az inflálódik és kevesebbet ér.
-  Az aktuális árfolyamokat a `/currency rates` mutatja.
+  Az aktuális árfolyamokat a `/currency rates`, illetve a fővárosokba lerakható **árfolyam-
+  hologramok** (`/exchangeboard`) mutatják.
+- **Piactér** (`/market`): játékosok közti adásvétel banki egyenlegből, eladási díjjal. A
+  vételárat a **frakció-reputáció** is módosítja (ellenségtől felár, szövetségestől kedvezmény).
 
 ### 🧟 Távolság-alapú nehézség
 
@@ -149,6 +155,11 @@ bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehe
 | `/profession join/info/list` | `prof`, `szakma` | Szakma választás és állapot |
 | `/bank balance/deposit/withdraw` | `wallet`, `vault` | Banki műveletek |
 | `/currency balance/pay/exchange/rates` | `money`, `eco` | Valutaműveletek és árfolyamok |
+| `/market`, `/market sell/cancel` | `piac`, `ah` | Piactér (reputáció-árazással) |
+| `/faction king vote/tax/raid` | `f` | Királyválasztás, adókulcs, raid (király) |
+| `/souls`, `/souls champion` | `soul`, `lelek` | Nekromanta lélekszilánk + bajnok |
+| `/quest …` / `/events …` | — | Küldetések / világesemények |
+| `/exchangeboard place/remove` | `arfolyamtabla` | Árfolyamtábla (admin) |
 | `/job …` | `class` | Kaszt adminisztráció (admin) |
 | `/relic list/give` | `relics` | Relikvia adminisztráció (admin) |
 | `/sinner <játékos> set/clear` | — | Bűnös státusz kezelése (admin) |
