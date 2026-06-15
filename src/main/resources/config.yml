@@ -210,6 +210,8 @@ factions:
     enabled: true
     interval-minutes: 60
     rate-percent: 2.0
+    # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
+    max-rate-percent: 10.0
     exempt:
       - "NEUTRAL"
   # ===== Bűn-számláló és száműzetés =====
@@ -233,8 +235,32 @@ factions:
     duration-minutes: 15
     entry-cost: 200
     spoils-percent: 20
+    season-points: 5
+    # Győztes-buff a győztes frakció online tagjainak (0 perc = kikapcsolva).
+    winner-buff-minutes: 30
+    winner-buff-strength: 0
+    winner-buff-regen: 0
     protected:
       - "NEUTRAL"
+    # Ostromgép (craftolható TNT_MINECART): csak raid alatt sül el, terep-barát robbanás.
+    siege:
+      range: 40.0
+      power: 4.0
+  # ===== Frakció-reputáció =====
+  # Statikus viszonyok (a raid alatt a hadviselők automatikusan ENEMY-k).
+  # A viszony a piaci árat módosítja: ellenségtől drágább, szövetségestől olcsóbb.
+  relations:
+    enemy-market-surcharge-percent: 25.0
+    ally-market-discount-percent: 10.0
+    red:
+      enemies:
+        - "BLUE"
+    blue:
+      enemies:
+        - "RED"
+    dark:
+      enemies: []
+      allies: []
 
 relics:
   enabled: true
@@ -293,6 +319,52 @@ relics:
         - "&7szőtt szárnya. Éjjel a viselője"
         - "&7maga is árnyékká válik."
 
+# ===== Rituálé-oltárok =====
+# A relikvia nem craftolható, hanem a megadott oltár-blokk SHIFT+jobb kattal való
+# aktiválásakor idézhető meg, áldozati tárgyak feláldozásával. A relikvia-egyediség
+# szabálya érvényes: ha már van élő tulajdonosa, nem idézhető újra.
+# Kulcs = relic-definíció azonosító. sacrifice formátum: "MATERIAL:darab".
+rituals:
+  phoenix_wing:
+    altar-block: "MAGMA_BLOCK"
+    sacrifice:
+      - "BLAZE_ROD:8"
+      - "FIRE_CHARGE:16"
+      - "GOLD_BLOCK:1"
+  frost_wing:
+    altar-block: "BLUE_ICE"
+    sacrifice:
+      - "PACKED_ICE:16"
+      - "PRISMARINE_CRYSTALS:8"
+      - "DIAMOND_BLOCK:1"
+  wander_wind:
+    altar-block: "AMETHYST_BLOCK"
+    sacrifice:
+      - "FEATHER:32"
+      - "PHANTOM_MEMBRANE:8"
+      - "EMERALD_BLOCK:1"
+  bone_wing:
+    altar-block: "SOUL_SOIL"
+    sacrifice:
+      - "BONE_BLOCK:8"
+      - "WITHER_SKELETON_SKULL:1"
+      - "NETHERITE_SCRAP:2"
+
+# ===== Nekromanta lélek-erőforrás =====
+# A Nekromanta-spec játékosok ölésenként lélekszilánkot kapnak, amiből
+# megerősített Wither-csontváz bajnokot idézhetnek (/souls champion).
+souls:
+  shards-per-kill: 1
+  champion-cost: 10
+  champion-health: 60.0
+  champion-lifespan-seconds: 60
+
+# ===== Árfolyam-hologramok =====
+# A /exchangeboard place paranccsal lerakott TextDisplay táblák a valuták
+# élő, kínálat-alapú értékét mutatják, és a világesemény-tick frissíti őket.
+exchange-board:
+  enabled: true
+
 # ===== Távolság-alapú mob szintezés =====
 # A spawn ponttól távolodva a mobok erősödnek: szint = távolság / blocks-per-level.
 mob-scaling:
@@ -310,7 +382,11 @@ mob-scaling:
     - "COMMAND"
   name:
     enabled: true
-    visible: true
+    # A nevtabla mindig latszik-e? A vanilla "mindig lathato" nevtablak
+    # FALAKON AT es nagyon TAVOLROL is renderelodnek (zavaro lehet). Ha false,
+    # a szint-nevtabla csak akkor jelenik meg, amikor a jatekos RANEZ a mobra
+    # (kozelrol, takaras nelkul) - ez a vanilla "hover" viselkedes.
+    visible: false
     prefix: "&7[Lvl %level%] "
     color: "WHITE"
 
@@ -500,113 +576,147 @@ specializations:
 talents:
   class:
     points-per-levels: 5
+    # Talent-FA: a 'tier' adja a sort (1 = felső sor), a 'requires-talent' a
+    # szülő-talentet, amibe előbb pontot kell tenni (rang > 0), hogy a gyerek
+    # feloldódjon. Így a fa felülről lefelé épül, ágakra bontva.
     definitions:
-      # --- Általános kaszt-talentek ---
+      # --- 1. szint: általános kaszt-talentek (mindenki, nincs feltétel) ---
       vitality:
         display-name: "Életerő"
+        tier: 1
         effect: "max-health"
         per-rank: 2.0
         max-rank: 5
       swiftness:
         display-name: "Fürgeség"
+        tier: 1
         effect: "movement-speed"
         per-rank: 0.005
         max-rank: 5
       power:
         display-name: "Erő"
+        tier: 1
         effect: "attack-damage"
         per-rank: 0.5
         max-rank: 5
       scholar:
         display-name: "Tudásszomj"
+        tier: 1
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 4
-      # --- Kaszt-kötött talentek ---
+      # --- 2. szint: kaszt-kötött talentek (szülő-talentet igényelnek) ---
       weapon_mastery:
         display-name: "Fegyvermesteri Fokozat"
+        tier: 2
         requires-job: "warrior"
+        requires-talent: "power"
         effect: "attack-damage"
         per-rank: 0.5
         max-rank: 3
       fleet_hunter:
         display-name: "Fürge Vadász"
+        tier: 2
         requires-job: "archer"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.005
         max-rank: 3
-      # --- Specializáció-kötött talentek (1 / spec) ---
+      # --- 3. szint: specializáció-kötött talentek (1 / spec, szülő + spec kell) ---
       elemental_attunement:
         display-name: "Elemi Ráhangolódás"
+        tier: 3
         requires-spec: "elementalist"
+        requires-talent: "power"
         effect: "attack-damage"
         per-rank: 0.5
         max-rank: 4
       soul_pact:
         display-name: "Lélekpaktum"
+        tier: 3
         requires-spec: "necromancer"
+        requires-talent: "vitality"
         effect: "max-health"
         per-rank: 2.0
         max-rank: 4
       brutality:
         display-name: "Brutalitás"
+        tier: 3
         requires-spec: "berserker"
+        requires-talent: "power"
         effect: "attack-damage"
         per-rank: 1.0
         max-rank: 3
       stalwart:
         display-name: "Rendíthetetlen"
+        tier: 3
         requires-spec: "guardian"
+        requires-talent: "vitality"
         effect: "max-health"
         per-rank: 3.0
         max-rank: 3
       fleetfoot:
         display-name: "Szélvész Léptek"
+        tier: 3
         requires-spec: "sharpshooter"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
       pack_leader:
         display-name: "Falkavezér"
+        tier: 3
         requires-spec: "beast_master"
+        requires-talent: "vitality"
         effect: "max-health"
         per-rank: 2.0
         max-rank: 4
       viper_reflexes:
         display-name: "Vipera Reflexek"
+        tier: 3
         requires-spec: "poisoner"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.006
         max-rank: 4
       ghostwalk:
         display-name: "Kísértetjárás"
+        tier: 3
         requires-spec: "phantom"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
   profession:
     points-per-levels: 10
     definitions:
+      # --- 1. szint: általános szakma-talentek ---
       diligence:
         display-name: "Szorgalom"
+        tier: 1
         effect: "profession-xp-bonus"
         per-rank: 10.0
         max-rank: 5
       vigor:
         display-name: "Kitartás"
+        tier: 1
         effect: "max-health"
         per-rank: 1.0
         max-rank: 3
-      # --- Szakma-kötött talentek ---
+      # --- 2. szint: szakma-kötött talentek (szülő + szakma kell) ---
       miners_endurance:
         display-name: "Bányász Állóképesség"
+        tier: 2
         requires-profession: "miner"
+        requires-talent: "vigor"
         effect: "max-health"
         per-rank: 1.0
         max-rank: 2
       arcane_insight:
         display-name: "Arkán Belátás"
+        tier: 2
         requires-profession: "enchanter"
+        requires-talent: "diligence"
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 2

@@ -25,7 +25,8 @@ public final class CurrencyItemRefreshListener implements Listener {
             return;
         }
 
-        plugin.getServer().getScheduler().runTask(plugin, () -> currencyManager.refreshPlayerCurrencyItems(player));
+        // Folia: refresh on the player's own region scheduler next tick.
+        player.getScheduler().run(plugin, task -> currencyManager.refreshPlayerCurrencyItems(player), null);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -34,7 +35,8 @@ public final class CurrencyItemRefreshListener implements Listener {
             return;
         }
 
-        plugin.getServer().getScheduler().runTask(plugin, () -> currencyManager.refreshPlayerCurrencyItems(player));
+        // Folia: refresh on the player's own region scheduler next tick.
+        player.getScheduler().run(plugin, task -> currencyManager.refreshPlayerCurrencyItems(player), null);
     }
 }
 

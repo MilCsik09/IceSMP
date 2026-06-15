@@ -102,8 +102,10 @@ public final class BloodMoonManager {
                 java.util.Map.of("bonus", String.valueOf(Math.max(0,
                         configManager.getInt("world-events.blood-moon.bonus-mob-levels", 2))))
         ));
+        // Folia: startBloodMoon runs on the global region scheduler, so play each
+        // player's sound on their own region thread (getLocation must be region-local).
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            player.playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.7F, 0.5F);
+            player.getScheduler().run(plugin, task -> player.playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.7F, 0.5F), null);
         }
     }
 }

@@ -17,7 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.EnumSet;
 import java.util.Map;
@@ -315,23 +314,21 @@ public final class MetelytepoManager {
         }
         target.setAI(false);
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!target.isValid()) {
-                    return;
-                }
+        // Folia: unfreeze on the target's own entity scheduler instead of a BukkitRunnable.
+        target.getScheduler().runDelayed(plugin, task -> {
+            if (!target.isValid()) {
+                return;
+            }
 
-                target.setAI(true);
-                final Double original = frozenSpeed.remove(target.getUniqueId());
-                if (original != null) {
-                    final AttributeInstance speed = target.getAttribute(Attribute.MOVEMENT_SPEED);
-                    if (speed != null) {
-                        speed.setBaseValue(original);
-                    }
+            target.setAI(true);
+            final Double original = frozenSpeed.remove(target.getUniqueId());
+            if (original != null) {
+                final AttributeInstance speed = target.getAttribute(Attribute.MOVEMENT_SPEED);
+                if (speed != null) {
+                    speed.setBaseValue(original);
                 }
             }
-        }.runTaskLater(plugin, ticks);
+        }, null, Math.max(1L, ticks));
     }
 
     public void markAbilityDamageBypass(final LivingEntity target, final long millis) {
