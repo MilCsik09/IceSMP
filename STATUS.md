@@ -214,6 +214,8 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   (configolható), max 10
 - Szintenként +2 max élet, +1 sebzés (attribútum-alapú), `[Lvl X] <mobnév>` névcímke
   (kliens-oldalon lokalizált mobnévvel), `mob_level` PDC a továbbfelhasználáshoz
+- A névcímke alapból csak ránézéskor látszik (`mob-scaling.name.visible: false`), így
+  nem renderelődik falakon át / nagy távolságból (a vanilla "mindig látható" zavaró volt)
 - Csak ellenséges mobok; spawner/parancs/plugin spawnok kihagyva (farm-védelem)
 
 ### 11. Frakcióterületek
@@ -223,10 +225,21 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - Opcionális **építésvédelem** (`territory.protection.enabled`, alapból ki): idegen frakció
   területén break/place tiltás, bypass joggal
 
-### 12. Profil és GUI-k
-- `/profile` — profil könyv (név, frakció, mind a 4 valuta-egyenleg, bank gombok) + GUI
-- Job GUI — kasztválasztás állapotjelzéssel (kiválasztott, szint, zárolt másodlagos) +
+### 12. Profil és GUI-k — karakter-hub
+- `/profile` — **Karakterlap hub**: a fej élő összegzést mutat (frakció, elsődleges/másodlagos
+  kaszt + szint, kaszt-spec, gyűjtő/készítő szakma + szint, szakma-spec, állapot, talentpontok,
+  egyenlegek), és gombokról minden karakter-menü elérhető
+- **Kaszt GUI** — kasztválasztás állapotjelzéssel (kiválasztott, szint, zárolt másodlagos) +
   **katalizátor-igénylő gomb** (tematikus item, duplikáció-védelemmel)
+- **Specializáció GUI** (`SpecGUI`) — kaszt- és szakma-specializáció kiválasztása
+  elérhetőség-jelzéssel és követelmény-tippekkel; respec gombok (frakcióvalutáért, talent-visszatérítéssel)
+- **Szakma GUI** (`ProfessionGUI`) — gyűjtögető + készítő főszakma tanulása, szintek/XP, a
+  másodlagos szakmák megjelenítése
+- **Talent GUI** (`TalentGUI`) — kaszt- és szakma-talentpontok elköltése a config-definíciókból,
+  rang/hatás kijelzéssel (csak a feltételeknek megfelelő talentek látszanak)
+- **Képesség-fa GUI** — a kaszt + spec spelljei feloldási szint szerint
+- Közös navigáció: minden almenüben „Vissza" gomb a hubhoz; a menük a `CharacterMenuContext`
+  köré szervezve, egyetlen `CharacterGUIListener`-rel
 
 ### 13. Infrastruktúra
 - Folia-kompatibilis (`folia-supported: true`, szinkron taskok, `teleportAsync`)
@@ -244,7 +257,6 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 | `/icesmp reload` | Csak a `config.yml` + `messages.yml` töltődik újra; a betöltéskor cache-elő managerek (mob scaling, craft szabályok, relic definíciók, territory) értékeihez teljes újraindítás kell. |
 | Relic ability registry | A `RelicAbilityRegistry` üres — config `ability-id`-ra hivatkozó trigger warninggal no-opol. A Mételytépő képességei saját listeneren át működnek (ez szándékos), de új relic ability-khez regisztráció kell. |
 | `config.yml` `messages:` szekció | Örökölt duplikátum, a kód **nem használja** (a forrás a `messages.yml`) — törölhető lenne. |
-| Specializáció GUI | A specializációk csak paranccsal (`/spec`) érhetők el, a Job GUI nem mutatja őket. |
 | Hide + Semleges passzív | A NEUTRAL lopakodás-láthatatlanság és a Hide spell ugyanazt a potion effektet használja — lopakodás abbahagyása lebonthatja a Hide láthatatlanságát. |
 | Szakma XP anti-abuse | A játékos által lerakott érc/rönk újrabányászása is ad XP-t (nincs blokk-eredet követés). Az Alkimista XP a főzőállvány eredmény-slotjának kattintásához kötött heurisztika — ki-be pakolással duplán is jóváírható. |
 | Területvédelem hatóköre | Csak blokk törés/lerakás ellen véd; láda-hozzáférést, robbantást, vödröt, pisztont nem kezel. |

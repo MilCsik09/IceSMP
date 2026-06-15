@@ -14,8 +14,10 @@ talentek, a gazdaság és a világesemények. A végén külön listában megtal
 ## 1. Az első lépések
 
 1. **Válassz frakciót** (`/faction join <frakció>`) — ez dönti el a valutádat és a passzív bónuszodat.
-2. **Nyisd meg a profilod** (`/profile`) — itt látod a frakciódat, az egyenlegeidet, és innen
-   éred el a **kasztválasztót**.
+2. **Nyisd meg a profilod** (`/profile`) — ez a **Karakterlap hub**: a fejen élő összegzés
+   (frakció, kasztok + szintek, specializációk, szakmák + szintek, állapot, talentpontok,
+   egyenlegek), és innen **gombokkal eléred az összes karakter-menüt**: Kaszt, Specializáció,
+   Szakma, Talentek, Képesség-fa.
 3. **Válassz kasztot** a Kaszt menüből, majd **igényeld a Képesség Katalizátorodat** (ugyanitt egy gomb).
 4. **Ölj szörnyeket** a kaszt XP-ért, **bányássz/arass/horgássz** a szakma XP-ért.
 5. Vedd fel a kaszt-próba **küldetésedet** (`/quest list`).
@@ -135,8 +137,10 @@ szintet mutatják.
 
 ## 5. Specializációk ✅
 
-A **25. szinttől** az elsődleges kasztod **specializálódhat** (`/spec list`, `/spec choose <id>`).
-Kasztonként **2 irány** van, és a legerősebb képességek (Lvl 25–45) csak így érhetők el.
+A **25. szinttől** az elsődleges kasztod **specializálódhat** — a legegyszerűbben a
+`/profile` → **Specializáció** menüből (vagy paranccsal: `/spec list`, `/spec choose <id>`).
+A menü mutatja, melyik elérhető és mi a feltétele. Kasztonként **2 irány** van, és a
+legerősebb képességek (Lvl 25–45) csak így érhetők el.
 
 | Kaszt | Specializációk |
 |---|---|
@@ -147,8 +151,9 @@ Kasztonként **2 irány** van, és a legerősebb képességek (Lvl 25–45) csak
 
 - A **Nekromanta** különleges: csak **Sötét frakcióval + bűnös állapottal**, ÉS a **Sötét
   Beavatás** küldetés teljesítése után választható.
-- **Respec:** meggondolhatod magad — `/spec respec <class|profession>` a frakcióvalutádért
-  (alapból 100) visszaváltja a speced; a spec-hez kötött talentpontjaid automatikusan visszatérülnek.
+- **Respec:** meggondolhatod magad — a Specializáció menü **Respec** gombjával (vagy
+  `/spec respec <class|profession>`) a frakcióvalutádért (alapból 100) visszaváltod a speced;
+  a spec-hez kötött talentpontjaid automatikusan visszatérülnek.
 - `/spec info` — aktuális specjeid.
 
 ---
@@ -222,8 +227,9 @@ Tőrhajítás, Adrenalin (sebesség + sietség), Árnyéklépés (a célpont mö
 
 ## 7. Talentek ✅
 
-A szintjeid **talentpontokat** termelnek, amiket passzív erősítésekre költhetsz (`/talent`,
-`/talent spend <class|profession> <talent>`).
+A szintjeid **talentpontokat** termelnek, amiket passzív erősítésekre költhetsz a
+`/profile` → **Talentek** menüből (kattints a fejlesztendő talentre), vagy paranccsal
+(`/talent`, `/talent spend <class|profession> <talent>`).
 
 - **Kaszt ponttár:** minden **5 kasztszint** = 1 pont (az elsődleges + másodlagos szintek összegéből).
 - **Szakma ponttár:** az **összes szakmád** szintjeiből, minden **10 szint** = 1 pont.
@@ -256,8 +262,8 @@ hosszú távon térülnek meg: minél korábban beléjük fektetsz, annál gyors
 ## 8. Szakmák ✅
 
 WoW-mintára **két fő szakmád** lehet — **egy gyűjtögető és egy készítő** — a másodlagos szakmák
-pedig mindenkinek automatikusan fejlődnek. Parancsok: `/profession join <szakma>`,
-`/profession info`, `/profession list`.
+pedig mindenkinek automatikusan fejlődnek. A legkönnyebben a `/profile` → **Szakma** menüből
+tanulsz és nézed a szintjeidet (vagy paranccsal: `/profession join <szakma>`, `/profession info`).
 
 | Kategória | Szakmák | XP-forrás |
 |---|---|---|
@@ -315,7 +321,9 @@ Ha a relikviának már van **élő tulajdonosa**, nem idézhető meg újra (egy-
 A spawntól távolodva a szörnyek **erősödnek**: minden **1000 blokk = +1 mob-szint**
 (`[Lvl X]` névvel, több élettel és sebzéssel). Cserébe a magasabb szintű mobok **több kaszt
 XP-t** és nagyobb eséllyel **lélekkövet** adnak. (A spawner-/parancs-spawnolt mobok nem
-skálázódnak — a farmok biztonságosak.)
+skálázódnak — a farmok biztonságosak.) A szint-névtábla alapból **csak akkor jelenik meg,
+amikor ránézel a mobra** (közelről, takarás nélkül), így nem zsúfolja tele a képernyőt
+falakon át vagy nagy távolságból.
 
 ### Vérhold-éjszaka 🌕
 Ritkán egy éjszaka **vérholddá** változik (broadcast jelzi). Ilyenkor minden szörny **+2

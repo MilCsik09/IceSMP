@@ -62,7 +62,7 @@ IceSMPCore.disable()
 | `spells` | `Spell` interfész, `BaseSpell` ősosztály, 124 spell (kézzel írt osztályok + `SpellCatalog` deklaratív definíciók a `ConfiguredSpell`/`ProjectileBurstSpell`/`BlinkSpell` építőelemekből), `SpellTargetingUtil` |
 | `relics` | Relic framework: definíciók, triggerek, ability registry, ownership rekord |
 | `items` | Item factory-k PDC tagekkel: `CurrencyItemFactory`, `RelicItemFactory`, `CatalystItemFactory` |
-| `gui` | `ProfileGUI`, `JobGUI` + holderek, `ProfileBookFactory` |
+| `gui` | Karakter-hub és almenük: `ProfileGUI`, `JobGUI`, `SpecGUI`, `ProfessionGUI`, `TalentGUI`, `SkillTreeGUI`, `MarketGUI` + holderek; `CharacterMenuContext` (manager-bundle), `GuiUtil` |
 | `utils` | `MessageManager`, `TextUtil`, `ExperienceUtil` |
 
 ---
@@ -149,7 +149,7 @@ inventoryból és felszabadul.
 | `/profession` | `prof`, `szakma` | `join`, `info`, `list`, `set`, `clear`, `addxp` | admin ágak: `icesmp.admin.profession` |
 | `/spec` | `specialization` | `list`, `choose`, `info`, `respec <class\|profession>`, `reset` | `reset`: `icesmp.admin.spec` |
 | `/talent` | `talents` | `list`, `spend <class\|profession> <talent>` | — |
-| `/profile` | `status`, `info` | — | — |
+| `/profile` | `status`, `info` | — (karakter-hub GUI: kaszt, spec, szakma, talent, képesség-fa) | — |
 | `/sinner` | — | `<játékos> set\|clear\|add\|status` | `icesmp.admin` |
 | `/quest` | `quests`, `kuldetes` | `list`, `info`, `accept`, `abandon`, `complete` | `complete`: `icesmp.admin.quest` |
 | `/market` | `piac`, `ah` | `(browse)`, `sell <ár> [valuta]`, `cancel` | — |
@@ -194,7 +194,8 @@ A parancsok a Paper Brigadier `BasicCommand` API-val, **kódból** regisztráló
 | `SiegeWeaponListener` | `PlayerInteractEvent` | Ostromágyú: jobb katt aktív raid alatt = terep-barát robbanás a célzott pontra |
 | `RitualListener` | `PlayerInteractEvent` | Oltár-blokk SHIFT+jobb katt = rituálé-relikvia idézés áldozati tárgyakból |
 | `QuestProgressListener` | `EntityDeathEvent`, `BlockBreakEvent`, `CraftItemEvent`, `PlayerFishEvent` | Quest-haladás (a VISIT_TERRITORY a TerritoryListenerből, a REACH_LEVEL a JobManager hookból érkezik) |
-| `ProfileGUIListener`, `JobGUIListener` | inventory események | GUI kattintáskezelés |
+| `CharacterGUIListener` | inventory események | A karakter-hub és almenük (profil, spec, szakma, talent) kattintás-routingja, akció után újrarajzolás |
+| `JobGUIListener`, `SkillTreeGUIListener`, `MarketGUIListener` | inventory események | Kaszt-, képesség-fa- és piac-GUI kattintáskezelés |
 | `PlayerSessionCleanupListener` | `PlayerQuitEvent`, `PlayerKickEvent` | Központi session-állapot takarítás (minden manager `clearPlayerState`) |
 
 ---
