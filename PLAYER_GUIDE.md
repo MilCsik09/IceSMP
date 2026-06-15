@@ -5,10 +5,27 @@ elérhető a szerveren: hogyan működnek a frakciók, a kasztok, a szakmák, a 
 talentek, a gazdaság és a világesemények. A végén külön listában megtalálod, mi az, ami még
 **fejlesztés alatt (WIP)** áll.
 
-> Külön, könnyen olvasható rendszerleírások: [docs/player-guide/README.md](docs/player-guide/README.md)
-> Ha egy konkrét rendszert keresel, itt külön fájlban találod: frakciók, valuta, kasztok,
-> képességek, specializációk, talentek, szakmák, relikviák, világesemények, raid, küldetések,
-> területek és parancsok.
+> ## 📂 Részletes, oldalankénti kézikönyv
+> Ez az oldal az **áttekintés**. A **teljes, mindenre kiterjedő** leírást (pl. **minden spell**
+> mit tud és mennyibe kerül, **minden szakma** mitől és mennyi XP-t kap) a külön, könnyen
+> olvasható oldalakon találod — még egy nagyon fiatal játékos is megérti:
+>
+> - 🚀 [Kezdő lépések](docs/player-guide/01-kezdes.md)
+> - ⚔️ [Frakciók](docs/player-guide/02-frakciok.md)
+> - 💰 [Valuta és gazdaság](docs/player-guide/03-valuta-gazdasag.md)
+> - 🧙 [Kasztok](docs/player-guide/04-kasztok.md)
+> - ✨ [Képességek — minden spell költséggel](docs/player-guide/05-kepessegek.md)
+> - 🌟 [Specializációk](docs/player-guide/06-specializaciok.md)
+> - 🌳 [Talentek (talent-fa)](docs/player-guide/07-talentek.md)
+> - ⛏ [Szakmák — minden XP-forrással](docs/player-guide/08-szakmak.md)
+> - 🗡 [Relikviák és rituálék](docs/player-guide/09-relikviak.md)
+> - 🌕 [Világesemények](docs/player-guide/10-vilagesemenyek.md)
+> - 👑 [Királyság, raid és háború](docs/player-guide/11-raid-haboru.md)
+> - 📜 [Küldetések](docs/player-guide/12-kuldetesek.md)
+> - 🏰 [Frakcióterületek](docs/player-guide/13-teruletek.md)
+> - ⌨️ [Parancsok listája](docs/player-guide/14-parancsok.md)
+>
+> Kezdőlap: [docs/player-guide/README.md](docs/player-guide/README.md)
 
 > Jelölések: ✅ = kész és kipróbálható • 🚧 = részben kész • ⏳ = még nincs kész
 > A számértékek (szintek, %-ok, idők) a szerver beállításaitól függően változhatnak — az
