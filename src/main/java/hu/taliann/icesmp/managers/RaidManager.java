@@ -217,13 +217,17 @@ public final class RaidManager {
                 continue;
             }
 
-            online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, strengthLevel, false, true, true));
-            online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, regenLevel, false, true, true));
-            online.sendMessage(messageManager.getMessage(
-                    "faction-raid-winner-buff",
-                    "<gold>⚔ A győzelem mámora átjár — harci áldás szállt rád {minutes} percre!</gold>",
-                    Map.of("minutes", String.valueOf(buffMinutes))
-            ));
+            // Folia: endRaid() runs on the global region scheduler, so each player's
+            // potion effects must be applied on that player's own region thread.
+            online.getScheduler().run(plugin, task -> {
+                online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, strengthLevel, false, true, true));
+                online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, regenLevel, false, true, true));
+                online.sendMessage(messageManager.getMessage(
+                        "faction-raid-winner-buff",
+                        "<gold>⚔ A győzelem mámora átjár — harci áldás szállt rád {minutes} percre!</gold>",
+                        Map.of("minutes", String.valueOf(buffMinutes))
+                ));
+            }, null);
         }
     }
 

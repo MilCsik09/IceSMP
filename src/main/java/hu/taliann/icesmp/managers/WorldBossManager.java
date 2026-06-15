@@ -186,8 +186,12 @@ public final class WorldBossManager {
         seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)));
 
         final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
-        killer.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, buffMinutes * 60 * 20, 0, false, true, true));
-        killer.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, buffMinutes * 60 * 20, 0, false, true, true));
+        // Folia: the death event runs on the boss's region; buff the killer on their own region thread.
+        final int buffTicks = buffMinutes * 60 * 20;
+        killer.getScheduler().run(plugin, task -> {
+            killer.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, buffTicks, 0, false, true, true));
+            killer.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, buffTicks, 0, false, true, true));
+        }, null);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "world-boss-slain",
