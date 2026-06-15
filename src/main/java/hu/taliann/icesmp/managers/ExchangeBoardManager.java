@@ -19,7 +19,6 @@ import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -165,7 +164,7 @@ public final class ExchangeBoardManager {
      * are pruned lazily.
      */
     public void tick() {
-        if (boards.isEmpty()) {
+        if (boards.isEmpty() || !configManager.getBoolean("exchange-board.enabled", true)) {
             return;
         }
 
