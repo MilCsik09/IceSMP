@@ -17,7 +17,7 @@ import java.util.UUID;
  */
 public final class CommandMenuHolder implements InventoryHolder {
 
-    public enum Menu { MAIN, FACTION, BANK, QUEST, EVENTS, RELIC, SOULS, ADMIN }
+    public enum Menu { MAIN, FACTION, BANK, QUEST, EVENTS, RELIC, SOULS, LEADERBOARD, ADMIN }
 
     private final Menu menu;
     private final UUID ownerUuid;

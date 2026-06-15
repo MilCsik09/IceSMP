@@ -5,6 +5,7 @@ import hu.taliann.icesmp.commands.CurrencyCommand;
 import hu.taliann.icesmp.commands.FactionCommand;
 import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
+import hu.taliann.icesmp.commands.LeaderboardCommand;
 import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.commands.ExchangeBoardCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
@@ -87,6 +88,7 @@ import hu.taliann.icesmp.managers.SeasonManager;
 import hu.taliann.icesmp.managers.SoulShardManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
+import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
@@ -167,6 +169,7 @@ public final class IceSMPCore {
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
     private final HudManager hudManager;
+    private final StatsManager statsManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
@@ -217,9 +220,11 @@ public final class IceSMPCore {
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, metelytepoManager,
                 catalystItemFactory, spellRegistry, configManager);
+        this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
-                seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager, configManager);
+                seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager,
+                statsManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager);
         jobManager.setXpChangeHook(player -> {
@@ -281,6 +286,7 @@ public final class IceSMPCore {
         marketManager.load();
         seasonManager.load();
         exchangeBoardManager.load();
+        statsManager.load();
         siegeWeaponFactory.registerRecipe();
         registerListeners();
         registerCommands();
@@ -331,6 +337,7 @@ public final class IceSMPCore {
         marketManager.save();
         seasonManager.save();
         exchangeBoardManager.save();
+        statsManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
     }
 
@@ -348,6 +355,7 @@ public final class IceSMPCore {
                     worldBossManager.tick();
                     seasonManager.tick();
                     exchangeBoardManager.tick();
+                    statsManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -418,6 +426,7 @@ public final class IceSMPCore {
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, kingManager, raidManager, messageManager));
         plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
+        plugin.registerCommand("leaderboard", "Ranglisták (szint, vagyon, raid-kill)", List.of("lb", "top", "rangsor"), new LeaderboardCommand(commandMenuContext, messageManager));
         plugin.registerCommand("profile", "Karakterlap — kaszt, spec, szakma, talent menük", List.of("karakter", "char", "status"), new ProfileCommand(characterMenuContext, messageManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(relicManager, messageManager));
@@ -427,7 +436,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("exchangeboard", "Árfolyamtábla admin", List.of("ratesboard", "arfolyamtabla"), new ExchangeBoardCommand(exchangeBoardManager, messageManager));
     }
@@ -460,7 +469,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
-        pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);

@@ -43,8 +43,15 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 - ⬜ **Frakció-bolt NPC-k** (fix árú alap-tárgyak, money sink).
 - ⬜ **Kereskedő-karaván esemény** (mozgó, kifosztható/kereskedhető).
 
-## 7. fázis — Ranglisták ⬜
-- ⬜ **Leaderboardok GUI-val:** leggazdagabb, legmagasabb szint, legtöbb raid-kill (és pl. boss-kill).
+## 7. fázis — Ranglisták ✅
+- ✅ **Leaderboardok GUI-val:** leggazdagabb, legmagasabb szint, legtöbb raid-kill
+  (`StatsManager` + `leaderboard.yml`; `/leaderboard` parancs és a `/menu` Ranglisták gomb;
+  kategória-váltó gombokkal). A szint/vagyon pillanatkép a világesemény-tickkel frissül,
+  a raid-kill a kill-eseménykor nő.
+
+> **Admin extra (kérés):** `/events bloodmoon start|stop` és `/events worldboss` — a vérhold és a
+> világboss **kézi triggerelése** (a `/menu` Admin paneljén is gombbal). `BloodMoonManager.forceStart/
+> forceEnd`, `WorldBossManager.forceSpawn`.
 
 ## 8. fázis — Napi/heti küldetések + elérések ⬜
 - ⬜ **Napi/heti küldetések** (rotáló, automatikus visszaállás).

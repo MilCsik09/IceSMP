@@ -880,6 +880,8 @@ world-events:
     chance-percent: 15
     bonus-mob-levels: 2
     soul-drop-multiplier: 2.0
+    # Admin /events bloodmoon start esetén ennyi percig tart (a napciklustól függetlenül).
+    force-duration-minutes: 10
   # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
   world-boss:
     enabled: true

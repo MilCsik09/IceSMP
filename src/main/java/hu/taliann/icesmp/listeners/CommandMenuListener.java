@@ -65,6 +65,16 @@ public final class CommandMenuListener implements Listener {
             return;
         }
 
+        if (action.startsWith("LB:")) {
+            final hu.taliann.icesmp.managers.StatsManager.Category category = switch (action.substring(3)) {
+                case "wealth" -> hu.taliann.icesmp.managers.StatsManager.Category.WEALTH;
+                case "raidkills" -> hu.taliann.icesmp.managers.StatsManager.Category.RAID_KILLS;
+                default -> hu.taliann.icesmp.managers.StatsManager.Category.LEVEL;
+            };
+            CommandMenus.openLeaderboard(player, ctx, category);
+            return;
+        }
+
         if (action.startsWith("OPEN:")) {
             // Command opens its own GUI — close this one first, then dispatch.
             player.closeInventory();

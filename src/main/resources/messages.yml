@@ -412,6 +412,13 @@ messages:
   events-season-line: "&e%s&7: &f%s pont"
   events-bloodmoon-active: "&cVérhold tombol!"
   events-bloodmoon-inactive: "&7Jelenleg nincs vérhold."
+  events-bloodmoon-forced: "&cVérhold elindítva!"
+  events-bloodmoon-already: "&7Már tombol a vérhold."
+  events-bloodmoon-stopped: "&aVérhold leállítva."
+  events-bloodmoon-not-active: "&7Most nincs vérhold."
+  events-bloodmoon-usage: "&cHasználat: /events bloodmoon [start|stop]"
+  events-worldboss-spawned: "&cVilágboss megidézve!"
+  events-worldboss-failed: "&7Nem sikerült (már aktív boss, vagy nincs online játékos)."
   events-intro-replayed: "&aIntro lejátszva: &f%s"
   pet-stance: "<gray>Társ parancs: <gold>{stance}</gold></gray>"
 

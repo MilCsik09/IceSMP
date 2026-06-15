@@ -2,6 +2,7 @@ package hu.taliann.icesmp.gui;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
 import hu.taliann.icesmp.relics.RelicOwnership;
 import net.kyori.adventure.text.Component;
@@ -40,6 +41,7 @@ public final class CommandMenus {
             case EVENTS -> openEvents(player, ctx);
             case RELIC -> openRelic(player, ctx);
             case SOULS -> openSouls(player, ctx);
+            case LEADERBOARD -> openLeaderboard(player, ctx, StatsManager.Category.LEVEL);
             case ADMIN -> openAdmin(player, ctx);
         }
     }
@@ -65,8 +67,10 @@ public final class CommandMenus {
                 List.of(grey("Szezon, vérhold, világboss."), click())), "MENU:EVENTS");
         put(inv, holder, 16, GuiUtil.icon(Material.TOTEM_OF_UNDYING, title("Relikviák"),
                 List.of(grey("Legendás tárgyak és tulajdonosaik."), click())), "MENU:RELIC");
-        put(inv, holder, 21, GuiUtil.icon(Material.SOUL_LANTERN, title("Lélekszilánk"),
+        put(inv, holder, 20, GuiUtil.icon(Material.SOUL_LANTERN, title("Lélekszilánk"),
                 List.of(grey("Nekromanta erőforrás és bajnok-idézés."), click())), "MENU:SOULS");
+        put(inv, holder, 22, GuiUtil.icon(Material.GOLDEN_HELMET, title("Ranglisták"),
+                List.of(grey("Leggazdagabb, legmagasabb szint, raid-kill."), click())), "MENU:LEADERBOARD");
         if (player.hasPermission(ADMIN_PERMISSION)) {
             put(inv, holder, 23, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
@@ -280,10 +284,63 @@ public final class CommandMenus {
                     List.of(grey("/exchangeboard remove"), click())), "RUN:exchangeboard remove");
             put(inv, holder, 16, GuiUtil.icon(Material.ENDER_EYE, title("Intro újrajátszása"),
                     List.of(grey("/events intro"), click())), "RUN:events intro");
+            put(inv, holder, 19, GuiUtil.icon(Material.RED_DYE, title("Vérhold: indítás"),
+                    List.of(grey("/events bloodmoon start"), click())), "RUN:events bloodmoon start");
+            put(inv, holder, 20, GuiUtil.icon(Material.GRAY_DYE, title("Vérhold: leállítás"),
+                    List.of(grey("/events bloodmoon stop"), click())), "RUN:events bloodmoon stop");
+            put(inv, holder, 22, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, title("Világboss idézése"),
+                    List.of(grey("/events worldboss"), click())), "RUN:events worldboss");
         }
 
-        put(inv, holder, 22, backButton(), "MENU:MAIN");
+        put(inv, holder, 25, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    // ===== LEADERBOARD =====
+    public static void openLeaderboard(final Player player, final CommandMenuContext ctx, final StatsManager.Category category) {
+        final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.LEADERBOARD, player.getUniqueId());
+        final Inventory inv = create(holder, 54, "<dark_aqua>» Ranglisták «</dark_aqua>", ctx);
+
+        put(inv, holder, 4, GuiUtil.icon(Material.GOLDEN_HELMET, accent("Ranglista: " + categoryName(category)),
+                List.of(grey("Válts kategóriát a felső gombokkal."))), null);
+        put(inv, holder, 0, categoryButton("Szint", category == StatsManager.Category.LEVEL), "LB:level");
+        put(inv, holder, 1, categoryButton("Vagyon", category == StatsManager.Category.WEALTH), "LB:wealth");
+        put(inv, holder, 2, categoryButton("Raid-kill", category == StatsManager.Category.RAID_KILLS), "LB:raidkills");
+
+        final List<StatsManager.Entry> rows = ctx.statsManager().top(category, 10);
+        int slot = 9;
+        int rank = 1;
+        for (final StatsManager.Entry row : rows) {
+            final Component value = switch (category) {
+                case LEVEL -> Component.text("Szint " + row.level(), NamedTextColor.WHITE);
+                case WEALTH -> Component.text(ctx.currencyManager().formatBalance(row.wealth()), NamedTextColor.GOLD);
+                case RAID_KILLS -> Component.text(row.raidKills() + " raid-kill", NamedTextColor.RED);
+            };
+            put(inv, holder, slot++, GuiUtil.icon(Material.PLAYER_HEAD,
+                    Component.text("#" + rank + " " + row.name(), rank == 1 ? NamedTextColor.GOLD : NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
+                    List.of(value)), null);
+            rank++;
+        }
+        if (rows.isEmpty()) {
+            put(inv, holder, 22, GuiUtil.icon(Material.BARRIER, Component.text("Még nincs adat", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false), List.of()), null);
+        }
+
+        put(inv, holder, 49, backButton(), "MENU:MAIN");
+        player.openInventory(inv);
+    }
+
+    private static ItemStack categoryButton(final String name, final boolean selected) {
+        return GuiUtil.icon(selected ? Material.NETHER_STAR : Material.PAPER,
+                Component.text(name, selected ? NamedTextColor.AQUA : NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                List.of(grey(selected ? "Kiválasztva" : "Kattints a váltáshoz")), selected);
+    }
+
+    private static String categoryName(final StatsManager.Category category) {
+        return switch (category) {
+            case LEVEL -> "Legmagasabb szint";
+            case WEALTH -> "Leggazdagabb";
+            case RAID_KILLS -> "Legtöbb raid-kill";
+        };
     }
 
     // ===== helpers =====

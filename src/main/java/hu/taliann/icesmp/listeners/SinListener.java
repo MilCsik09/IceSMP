@@ -5,6 +5,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.RaidManager;
+import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,15 +25,17 @@ public final class SinListener implements Listener {
     private final MetelytepoManager metelytepoManager;
     private final RaidManager raidManager;
     private final FactionManager factionManager;
+    private final StatsManager statsManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
     public SinListener(final MetelytepoManager metelytepoManager, final RaidManager raidManager,
-                       final FactionManager factionManager, final ConfigManager configManager,
-                       final MessageManager messageManager) {
+                       final FactionManager factionManager, final StatsManager statsManager,
+                       final ConfigManager configManager, final MessageManager messageManager) {
         this.metelytepoManager = metelytepoManager;
         this.raidManager = raidManager;
         this.factionManager = factionManager;
+        this.statsManager = statsManager;
         this.configManager = configManager;
         this.messageManager = messageManager;
     }
@@ -50,6 +53,7 @@ public final class SinListener implements Listener {
         final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
         if (raidManager.isAtWar(killerFaction, victimFaction)) {
             raidManager.recordKill(killerFaction);
+            statsManager.recordRaidKill(killer);
             killer.sendMessage(messageManager.getMessage(
                     "faction-raid-kill",
                     "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>",

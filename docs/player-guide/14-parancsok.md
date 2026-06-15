@@ -15,6 +15,7 @@ jelenti, hogy **elhagyható**.
 | Parancs | Aliasok | Mit csinál |
 |---|---|---|
 | `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
+| `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |
 | `/faction join <frakció>` | `/f` | Belépés egy frakcióba (`red`/`blue`/`neutral`) |
 | `/faction leave` | `/f` | Kilépés a frakcióból |
@@ -58,6 +59,8 @@ jelenti, hogy **elhagyható**.
 | `/relic give` | Relikvia adása |
 | `/territory setcapital\|claim\|remove` | Területek kezelése |
 | `/exchangeboard place\|remove` | Árfolyamtábla lerakása/törlése |
+| `/events bloodmoon start\|stop` | Vérhold kézi indítása / leállítása |
+| `/events worldboss` | Világboss azonnali megidézése |
 | `/events intro [játékos]` | Bemutató újrajátszása |
 
 ---
