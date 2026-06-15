@@ -13,7 +13,6 @@ import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
-import hu.taliann.icesmp.utils.TextUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
@@ -96,7 +95,7 @@ public final class JobCommand implements BasicCommand {
         for (final JobSubcommand subcommand : subcommands.values()) {
             sender.sendMessage(messageManager.get(
                     "messages.job-help-" + subcommand.name(),
-                    TextUtil.color("&e" + subcommand.usage() + " &7- " + subcommand.description())
+                    "&e" + subcommand.usage() + " &7- " + subcommand.description()
             ));
         }
     }

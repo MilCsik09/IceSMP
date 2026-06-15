@@ -27,6 +27,7 @@ Első belépéskor egy rövid **bemutató cím-szekvencia** is lejátszódik —
 
 | Amit szeretnél | Hová menj |
 |---|---|
+| **Mindent egy helyen, kattintással** | **`/menu`** |
 | Megnézni az adataimat | `/profile` |
 | Képességet használni | tartsd kézben a Katalizátort → jobb katt |
 | Pénzt nézni / utalni | `/bank balance`, `/currency pay` |

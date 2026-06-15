@@ -10,7 +10,6 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.utils.MessageManager;
-import hu.taliann.icesmp.utils.TextUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
@@ -90,7 +89,7 @@ public final class CurrencyCommand implements BasicCommand {
         for (final CurrencySubcommand subcommand : subcommands.values()) {
             sender.sendMessage(messageManager.get(
                     "messages.currency-help-" + subcommand.name(),
-                    TextUtil.color("&e" + subcommand.usage() + " &7- " + subcommand.description())
+                    "&e" + subcommand.usage() + " &7- " + subcommand.description()
             ));
         }
     }

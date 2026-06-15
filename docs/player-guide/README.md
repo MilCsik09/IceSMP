@@ -13,6 +13,9 @@ külön oldala van, hogy könnyen megtaláld, amit keresel.
 > - **Mob:** szörny vagy állat (zombi, csontváz, tehén...).
 > - **Blokk:** egy kocka a világban (1 blokk ≈ 1 méter).
 
+> 🖱️ **Tipp:** írd be a **`/menu`** parancsot, és egy kattintós főmenü nyílik meg, ahonnan
+> minden rendszer egy gombnyomásra elérhető — nem kell parancsokat gépelned!
+
 > **Jelölések:** ✅ = kész és kipróbálható • 🚧 = részben kész • ⏳ = még nincs kész.
 > A számok (szintek, %-ok, idők) a szerver beállításától függhetnek — itt az alapértékek vannak.
 

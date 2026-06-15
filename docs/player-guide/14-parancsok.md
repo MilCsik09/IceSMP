@@ -3,13 +3,18 @@
 Itt minden parancsot megtalálsz egy helyen. A `< >` közé **te írsz be** valamit; a `[ ]` azt
 jelenti, hogy **elhagyható**.
 
-> A legtöbb dolgot a `/profile` menüből kattintgatva is megcsinálhatod — a parancsok a gyorsabb
-> útnak vannak.
+> ## 🖱️ A legegyszerűbb út: `/menu`
+> Nem kell parancsokat gépelned! Írd be: **`/menu`** (vagy `/hub`), és egy **kattintós
+> főmenü** nyílik meg, ahonnan minden rendszer egy gombnyomásra elérhető: Karakterlap,
+> Frakció, Bank & Pénz, Piac, Küldetések, Események, Relikviák, Lélekszilánk (és adminoknak
+> egy admin panel). Minden almenüben gombokkal intézhetsz mindent — a háttérben ugyanazokat a
+> parancsokat futtatja, amiket lent látsz.
 
 ## Mindennapi parancsok (mindenkinek)
 
 | Parancs | Aliasok | Mit csinál |
 |---|---|---|
+| `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |
 | `/faction join <frakció>` | `/f` | Belépés egy frakcióba (`red`/`blue`/`neutral`) |
 | `/faction leave` | `/f` | Kilépés a frakcióból |

@@ -15,7 +15,6 @@ import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.utils.MessageManager;
-import hu.taliann.icesmp.utils.TextUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
@@ -99,7 +98,7 @@ public final class FactionCommand implements BasicCommand {
         for (final FactionSubcommand subcommand : subcommands.values()) {
             sender.sendMessage(messageManager.get(
                     "messages.faction-help-" + subcommand.name(),
-                    TextUtil.color("&e" + subcommand.usage() + " &7- " + subcommand.description())
+                    "&e" + subcommand.usage() + " &7- " + subcommand.description()
             ));
         }
     }
