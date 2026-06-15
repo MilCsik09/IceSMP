@@ -1,0 +1,71 @@
+# IceSMP — Fejlesztési ütemterv (ROADMAP)
+
+Az `ideas.md` alaptervei elkészültek. Ez a dokumentum a **következő körös** fejlesztéseket
+rögzíti, fázisokra bontva. A fázisokat egyenként, külön commit(ek)ben valósítjuk meg, hogy
+build + szerverteszt után haladhassunk a következőre.
+
+Jelölés: ✅ kész • 🔨 folyamatban • ⬜ tervezett
+
+---
+
+## 1. fázis — QoL / élmény-HUD 🔨
+Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudListener`, `hud.*` config.)
+- ✅ **Oldalsáv (sidebar) scoreboard:** frakció, saját valuta-egyenleg, kaszt + szint, aktív esemény.
+- ✅ **Boss-bar:** a raid / világboss / vérhold állapotának kijelzése (raidnél hátralévő idővel).
+- ✅ **Tab-lista:** frakció-színek és prefixek a játékosnevek előtt.
+- ⬜ **Folyamatos cooldown-kijelző** action barban — a 3. fázisba (spellek) tolva, mert a
+  spell-állapothoz kapcsolódik (az action bart a spell-rendszer is használja).
+
+## 2. fázis — Talent-fa mélyítése ⬜
+- ⬜ **Aktív talentek:** ne csak passzív stat, hanem elsüthető hatás is lehessen.
+- ⬜ **Egymást kizáró ágak:** egy tier-ben csak az egyik ág választható.
+- ⬜ **Csúcs-talent (capstone):** az ág végén erős, egyszeri talent magas befektetésért.
+
+## 3. fázis — Spellek mélyítése ⬜
+- ⬜ **Spell-rangok:** a képességek fejleszthető erőssége (pont/erőforrás).
+- ⬜ **Kombók:** egymásra épülő képesség-láncok bónusszal.
+- ⬜ **Jobb célzás:** célzás-segéd, ráhatás-jelzés.
+- ⬜ **Gazdagabb vizuál:** több részecske/hang, becsapódás-effektek.
+
+## 4. fázis — Raid mélyítése ⬜
+- ⬜ **10v10 létszámkorlát** és jelentkezés.
+- ⬜ **Aréna-/területkötés:** a raid egy adott területhez kötve.
+- ⬜ **Objektív-alapú raid:** zászlófoglalás / pont-tartás, nem csak ölésszám.
+- ⬜ **Terület átvétele győzelemmel:** a győztes claimet szerez/veszít a vesztes.
+
+## 5. fázis — Frakció-diplomácia ⬜
+- ⬜ **Szövetség / békekötés** parancsok a királyoknak.
+- ⬜ **Frakció-szintek és -perkek:** a frakció fejlődik (kassza/aktivitás alapján), perkeket old fel.
+
+## 6. fázis — Gazdaság ⬜
+- ⬜ **Valódi aukciósház:** licit, lejárat, túllicit-visszafizetés.
+- ⬜ **Bank-kamat / kölcsön.**
+- ⬜ **Frakció-bolt NPC-k** (fix árú alap-tárgyak, money sink).
+- ⬜ **Kereskedő-karaván esemény** (mozgó, kifosztható/kereskedhető).
+
+## 7. fázis — Ranglisták ⬜
+- ⬜ **Leaderboardok GUI-val:** leggazdagabb, legmagasabb szint, legtöbb raid-kill (és pl. boss-kill).
+
+## 8. fázis — Napi/heti küldetések + elérések ⬜
+- ⬜ **Napi/heti küldetések** (rotáló, automatikus visszaállás).
+- ⬜ **Achievement (elérés) rendszer** GUI-val és jutalmakkal.
+
+## 9. fázis — Dungeon / invázió ⬜
+- ⬜ **Dungeon / instance** (mini-kazamata loot-asztallal) **vagy invázió-esemény** a világboss mellé.
+
+## 10. fázis — Szakma-receptek ⬜
+- ⬜ **Egyedi, frakció-specifikus craftolható tárgyak**, hogy a szakmák kézzelfoghatóak legyenek
+  (szakma-/szint-/frakció-kötött receptek).
+
+## 11. fázis — Cosmetics ⬜
+- ⬜ **Címek, részecske-effektek, kalapok** (a tervezett szezon-jutalom kiterjesztése), GUI-ból kezelve.
+
+## 12. fázis — Korábbról halasztott tételek ⬜
+- ⬜ **Megnevezett, szintet lépő állandó pet** (Vadmester perzisztens társa).
+- ⬜ **NPC-s / parkour kaszt-próbapályák.**
+- ⬜ **Piac lapozás / keresés / kategóriák.**
+- ⬜ **Intro kamera-utaztatás / spectator-útvonal.**
+
+---
+
+> Minden fázis végén: `gradlew build` + gyors szerverteszt, majd a következő fázis.

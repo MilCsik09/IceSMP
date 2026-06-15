@@ -27,6 +27,7 @@ import hu.taliann.icesmp.listeners.CatalystCraftSafetyListener;
 import hu.taliann.icesmp.listeners.CharacterGUIListener;
 import hu.taliann.icesmp.listeners.CommandMenuListener;
 import hu.taliann.icesmp.listeners.ClassXpListener;
+import hu.taliann.icesmp.listeners.HudListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
@@ -70,6 +71,7 @@ import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionRelationManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
+import hu.taliann.icesmp.managers.HudManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.managers.MarketManager;
@@ -164,9 +166,11 @@ public final class IceSMPCore {
     private final ExchangeBoardManager exchangeBoardManager;
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
+    private final HudManager hudManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -216,6 +220,8 @@ public final class IceSMPCore {
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager, configManager);
+        this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
+                raidManager, bloodMoonManager, worldBossManager);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -281,6 +287,7 @@ public final class IceSMPCore {
         scheduleTaxCollection();
         scheduleEconomyEvents();
         scheduleWorldEvents();
+        scheduleHud();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
@@ -303,8 +310,13 @@ public final class IceSMPCore {
             worldEventsTask.cancel();
             worldEventsTask = null;
         }
+        if (hudTask != null) {
+            hudTask.cancel();
+            hudTask = null;
+        }
 
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            hudManager.cleanup(onlinePlayer);
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
         }
 
@@ -340,6 +352,20 @@ public final class IceSMPCore {
                 intervalTicks,
                 intervalTicks
         );
+    }
+
+    /**
+     * Schedules the live HUD refresh (sidebar, tab-list, boss-bars) on the global
+     * region scheduler; the manager hops to each player's region thread.
+     */
+    private void scheduleHud() {
+        if (!configManager.getBoolean("hud.enabled", true)) {
+            return;
+        }
+
+        final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
+        hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
     }
 
 
@@ -415,6 +441,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
         pluginManager.registerEvents(new CharacterGUIListener(characterMenuContext), plugin);
         pluginManager.registerEvents(new CommandMenuListener(commandMenuContext), plugin);
+        pluginManager.registerEvents(new HudListener(hudManager), plugin);
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(marketManager, currencyManager, messageManager), plugin);

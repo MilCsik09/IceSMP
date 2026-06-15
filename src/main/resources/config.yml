@@ -6,6 +6,10 @@ settings:
   debug: true
 
 hud:
+  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, esemény),
+  # frakció-színes tab-lista, és boss-bar a raid / vérhold / világboss alatt.
+  enabled: true
+  refresh-ticks: 20
   profile:
     enabled: true
     update-interval-ticks: 5

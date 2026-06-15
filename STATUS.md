@@ -240,6 +240,12 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - **Képesség-fa GUI** — a kaszt + spec spelljei feloldási szint szerint
 - Közös navigáció: minden almenüben „Vissza" gomb a hubhoz; a menük a `CharacterMenuContext`
   köré szervezve, egyetlen `CharacterGUIListener`-rel
+- **`/menu` parancs-hub** (`CommandMenus` + `CommandMenuListener`): kattintós főmenü, és minden
+  rendszerhez almenü (Frakció, Bank, Küldetés, Esemény, Relikvia, Souls, Admin); a műveletek a
+  bevált parancsokat futtatják (`player.performCommand`), az adatok a managerekből olvasva
+- **Élő HUD** (`HudManager`, ROADMAP 1. fázis): oldalsáv scoreboard (frakció, valuta, kaszt+szint,
+  esemény), frakció-színes tab-lista, és boss-bar a raid/vérhold/világboss alatt; ~1s tick, Folia-
+  helyes per-játékos régió-ütemezéssel (`hud.*` config)
 
 ### 13. Infrastruktúra
 - Folia-kompatibilis (`folia-supported: true`, szinkron taskok, `teleportAsync`)

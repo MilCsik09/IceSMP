@@ -63,6 +63,11 @@ public final class WorldBossManager {
                 && entity.getPersistentDataContainer().getOrDefault(worldBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
 
+    /** Whether a world boss is currently alive (for HUD / boss-bar display). */
+    public boolean isBossActive() {
+        return activeBossUntil > System.currentTimeMillis();
+    }
+
     /** Periodic spawn attempt on the global world-events tick. */
     public void tick() {
         if (!configManager.getBoolean("world-events.world-boss.enabled", true)) {
