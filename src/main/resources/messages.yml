@@ -367,7 +367,7 @@ messages:
   profession-gui-title: "<dark_aqua>» Szakmák «</dark_aqua>"
   profession-gui-learned: "&aSzakma megtanulva:"
   profession-gui-cannot: "&cEzt a szakmát most nem tanulhatod (a kategória helyed foglalt)."
-  talent-gui-title: "<dark_aqua>» Talentek «</dark_aqua>"
+  talent-gui-title: "<dark_aqua>» Talent-fa «</dark_aqua>"
   skilltree-title: "&5» Képesség-fa «"
   skilltree-no-class: "&cElőbb válassz kasztot!"
   skilltree-node-unlocked: "&a%s"

@@ -35,14 +35,15 @@ public final class AngryChickenSpell extends BaseSpell {
         chicken.addScoreboardTag(CHICKEN_TAG);
         chicken.addScoreboardTag("icesmp_owner_" + player.getUniqueId());
 
-        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+        // Folia: drive the projectile on the chicken's own entity scheduler.
+        chicken.getScheduler().runAtFixedRate(plugin, task -> {
             if (!chicken.isValid() || chicken.isDead()) {
                 task.cancel();
                 return;
             }
 
             final Vector step = direction.clone().multiply(0.4D); // ~8 blocks/second at 20 TPS
-            chicken.teleport(chicken.getLocation().add(step));
+            chicken.teleportAsync(chicken.getLocation().add(step));
 
             final Player shooter = Bukkit.getPlayer(shooterId);
 
@@ -56,13 +57,13 @@ public final class AngryChickenSpell extends BaseSpell {
                 task.cancel();
                 return;
             }
-        }, 0L, 1L);
+        }, null, 1L, 1L);
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        chicken.getScheduler().runDelayed(plugin, task -> {
             if (chicken.isValid()) {
                 chicken.remove();
             }
-        }, 40L);
+        }, null, 40L);
 
         player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_HURT, 1.0F, 0.8F);
     }

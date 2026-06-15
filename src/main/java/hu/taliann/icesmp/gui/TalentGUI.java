@@ -11,20 +11,32 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * Talent menu: spend class and profession talent points on the config-driven
- * talent definitions. Only talents whose WoW-style requirements are met show up
- * (mirrors {@code /talent} list gating).
+ * Talent TREE menu. Talents are laid out top-to-bottom by their {@code tier}
+ * (row = tier), and a child talent stays locked until its {@code requires-talent}
+ * parent has at least one rank — so the panel reads as a branching tree rather
+ * than a flat list. The class tree fills the upper rows, the profession tree the
+ * lower rows.
  */
 public final class TalentGUI {
 
     private static final int SIZE = 54;
     private static final int HEADER_SLOT = 4;
-    private static final int BACK_SLOT = 49;
-    private static final int[] CLASS_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
-    private static final int[] PROF_SLOTS = {28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+    private static final int CLASS_LABEL_SLOT = 0;
+    private static final int PROF_LABEL_SLOT = 45;
+    private static final int BACK_SLOT = 53;
+    private static final int[] CLASS_ROWS = {1, 2, 3};
+    private static final int[] PROF_ROWS = {4, 5};
+    private static final int COLUMNS = 7;
+
+    /** A placed talent node: which pool it belongs to and its id. */
+    public record Node(boolean classPool, String id) {
+    }
 
     private TalentGUI() {
     }
@@ -40,26 +52,27 @@ public final class TalentGUI {
 
         final TalentHolder holder = new TalentHolder(viewer.getUniqueId());
         final Inventory inventory = Bukkit.createInventory(holder, SIZE,
-                ctx.messageManager().getMessage("talent-gui-title", "<dark_aqua>» Talentek «</dark_aqua>"));
+                ctx.messageManager().getMessage("talent-gui-title", "<dark_aqua>» Talent-fa «</dark_aqua>"));
         holder.setInventory(inventory);
 
         GuiUtil.fill(inventory);
-        inventory.setItem(HEADER_SLOT, GuiUtil.icon(Material.EXPERIENCE_BOTTLE, accent("Talentpontok"),
+        inventory.setItem(HEADER_SLOT, GuiUtil.icon(Material.EXPERIENCE_BOTTLE, accent("Talent-fa"),
                 List.of(
-                        label("Kaszt-pont", Component.text(String.valueOf(ctx.talentManager().getAvailablePoints(viewer, true)), NamedTextColor.WHITE)),
-                        label("Szakma-pont", Component.text(String.valueOf(ctx.talentManager().getAvailablePoints(viewer, false)), NamedTextColor.WHITE)),
+                        grey("Felül a kaszt-, alul a szakma-fa."),
+                        grey("A fa felülről lefelé épül: egy talent csak akkor"),
+                        grey("oldódik fel, ha a fölötte lévő szülőjébe már tettél pontot."),
                         Component.empty(),
-                        grey("Felül a kaszt-, alul a szakma-talentek."),
                         grey("Pontot szintlépéskor kapsz.")
                 )));
+        inventory.setItem(CLASS_LABEL_SLOT, GuiUtil.icon(Material.IRON_SWORD,
+                accent("Kaszt-talentek"),
+                List.of(label("Pont", Component.text(String.valueOf(ctx.talentManager().getAvailablePoints(viewer, true)), NamedTextColor.WHITE)))));
+        inventory.setItem(PROF_LABEL_SLOT, GuiUtil.icon(Material.IRON_PICKAXE,
+                accent("Szakma-talentek"),
+                List.of(label("Pont", Component.text(String.valueOf(ctx.talentManager().getAvailablePoints(viewer, false)), NamedTextColor.WHITE)))));
 
-        final List<String> classTalents = availableTalentIds(viewer, ctx, true);
-        for (int i = 0; i < classTalents.size() && i < CLASS_SLOTS.length; i++) {
-            inventory.setItem(CLASS_SLOTS[i], createTalentItem(viewer, ctx, true, classTalents.get(i)));
-        }
-        final List<String> profTalents = availableTalentIds(viewer, ctx, false);
-        for (int i = 0; i < profTalents.size() && i < PROF_SLOTS.length; i++) {
-            inventory.setItem(PROF_SLOTS[i], createTalentItem(viewer, ctx, false, profTalents.get(i)));
+        for (final Map.Entry<Integer, Node> entry : layout(viewer, ctx).entrySet()) {
+            inventory.setItem(entry.getKey(), createTalentItem(viewer, ctx, entry.getValue()));
         }
 
         inventory.setItem(BACK_SLOT, GuiUtil.icon(Material.ARROW,
@@ -68,76 +81,108 @@ public final class TalentGUI {
         viewer.openInventory(inventory);
     }
 
-    public static List<String> availableTalentIds(final Player player, final CharacterMenuContext ctx, final boolean classPool) {
-        final List<String> ids = new ArrayList<>();
+    public static Node resolveTalent(final Player player, final CharacterMenuContext ctx, final int rawSlot) {
+        return layout(player, ctx).get(rawSlot);
+    }
+
+    /** Deterministic slot→talent layout shared by render and click handling. */
+    private static Map<Integer, Node> layout(final Player player, final CharacterMenuContext ctx) {
+        final Map<Integer, Node> map = new LinkedHashMap<>();
+        placePool(map, player, ctx, true, CLASS_ROWS);
+        placePool(map, player, ctx, false, PROF_ROWS);
+        return map;
+    }
+
+    private static void placePool(final Map<Integer, Node> map, final Player player, final CharacterMenuContext ctx,
+                                  final boolean classPool, final int[] rows) {
         final ConfigurationSection definitions = ctx.talentManager().getDefinitions(classPool);
         if (definitions == null) {
-            return ids;
+            return;
         }
-        for (final String talentId : definitions.getKeys(false)) {
-            if (ctx.talentManager().isAvailable(player, classPool, talentId)) {
-                ids.add(talentId);
+
+        // Group the visible talents by tier (ascending), preserving config order within a tier.
+        final TreeMap<Integer, List<String>> byTier = new TreeMap<>();
+        for (final String id : definitions.getKeys(false)) {
+            if (!ctx.talentManager().isAvailable(player, classPool, id)) {
+                continue;
             }
+            final ConfigurationSection section = definitions.getConfigurationSection(id);
+            final int tier = section == null ? 1 : Math.max(1, section.getInt("tier", 1));
+            byTier.computeIfAbsent(tier, key -> new ArrayList<>()).add(id);
         }
-        return ids;
-    }
 
-    public static String resolveTalent(final Player player, final CharacterMenuContext ctx, final boolean classPool, final int rawSlot) {
-        final int[] slots = classPool ? CLASS_SLOTS : PROF_SLOTS;
-        final int index = indexOf(slots, rawSlot);
-        if (index < 0) {
-            return null;
+        int rowIndex = 0;
+        for (final List<String> tierTalents : byTier.values()) {
+            if (rowIndex >= rows.length) {
+                break;
+            }
+            placeRow(map, tierTalents, rows[rowIndex++], classPool);
         }
-        final List<String> ids = availableTalentIds(player, ctx, classPool);
-        return index < ids.size() ? ids.get(index) : null;
     }
 
-    public static boolean isClassSlot(final int rawSlot) {
-        return indexOf(CLASS_SLOTS, rawSlot) >= 0;
+    private static void placeRow(final Map<Integer, Node> map, final List<String> ids, final int row, final boolean classPool) {
+        final int count = Math.min(ids.size(), COLUMNS);
+        final int base = row * 9;
+        final int start = 1 + (COLUMNS - count) / 2;
+        for (int i = 0; i < count; i++) {
+            map.put(base + start + i, new Node(classPool, ids.get(i)));
+        }
     }
 
-    public static boolean isProfSlot(final int rawSlot) {
-        return indexOf(PROF_SLOTS, rawSlot) >= 0;
-    }
-
-    private static ItemStack createTalentItem(final Player player, final CharacterMenuContext ctx, final boolean classPool, final String talentId) {
-        final ConfigurationSection definitions = ctx.talentManager().getDefinitions(classPool);
-        final ConfigurationSection talent = definitions == null ? null : definitions.getConfigurationSection(talentId);
+    private static ItemStack createTalentItem(final Player player, final CharacterMenuContext ctx, final Node node) {
+        final ConfigurationSection definitions = ctx.talentManager().getDefinitions(node.classPool());
+        final ConfigurationSection talent = definitions == null ? null : definitions.getConfigurationSection(node.id());
         if (talent == null) {
             return GuiUtil.filler();
         }
 
-        final int rank = ctx.talentManager().getRank(player, classPool, talentId);
-        final int maxRank = talent.getInt("max-rank", 1);
-        final int points = ctx.talentManager().getAvailablePoints(player, classPool);
+        final int rank = ctx.talentManager().getRank(player, node.classPool(), node.id());
+        final int maxRank = Math.max(1, talent.getInt("max-rank", 1));
+        final int points = ctx.talentManager().getAvailablePoints(player, node.classPool());
+        final boolean unlocked = ctx.talentManager().isUnlocked(player, node.classPool(), node.id());
         final boolean maxed = rank >= maxRank;
 
         final List<Component> lore = new ArrayList<>();
+        lore.add(label("Szint (tier)", Component.text(String.valueOf(Math.max(1, talent.getInt("tier", 1))), NamedTextColor.WHITE)));
         lore.add(label("Rang", Component.text(rank + "/" + maxRank, NamedTextColor.WHITE)));
-        lore.add(label("Hatás", Component.text(talent.getString("effect", "?")
+        lore.add(label("Hatás", Component.text(effectLabel(talent.getString("effect", "?"))
                 + " +" + talent.getDouble("per-rank", 0.0D) + "/rang", NamedTextColor.WHITE)));
         lore.add(Component.empty());
-        if (maxed) {
+
+        final Material material;
+        if (!unlocked) {
+            material = Material.GRAY_DYE;
+            lore.add(Component.text("🔒 Zárolva", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+            final String parentId = talent.getString("requires-talent");
+            if (parentId != null && !parentId.isBlank() && definitions.getConfigurationSection(parentId) != null) {
+                lore.add(grey("Előbb fejleszd: " + definitions.getConfigurationSection(parentId).getString("display-name", parentId)));
+            }
+        } else if (maxed) {
+            material = Material.GLOWSTONE_DUST;
             lore.add(Component.text("✔ Maximális rang", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         } else if (points <= 0) {
+            material = Material.EXPERIENCE_BOTTLE;
             lore.add(Component.text("Nincs elkölthető talentpontod", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         } else {
+            material = Material.EXPERIENCE_BOTTLE;
             lore.add(click("Kattints a fejlesztéshez"));
         }
 
-        final Material material = maxed ? Material.GLOWSTONE_DUST : Material.EXPERIENCE_BOTTLE;
+        final NamedTextColor nameColor = unlocked ? NamedTextColor.YELLOW : NamedTextColor.DARK_GRAY;
         return GuiUtil.icon(material,
-                Component.text(talent.getString("display-name", talentId), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
+                Component.text(talent.getString("display-name", node.id()), nameColor).decoration(TextDecoration.ITALIC, false),
                 lore, rank > 0);
     }
 
-    private static int indexOf(final int[] slots, final int slot) {
-        for (int i = 0; i < slots.length; i++) {
-            if (slots[i] == slot) {
-                return i;
-            }
-        }
-        return -1;
+    private static String effectLabel(final String effect) {
+        return switch (effect) {
+            case "max-health" -> "Max élet";
+            case "movement-speed" -> "Sebesség";
+            case "attack-damage" -> "Sebzés";
+            case "class-xp-bonus" -> "Kaszt XP";
+            case "profession-xp-bonus" -> "Szakma XP";
+            default -> effect;
+        };
     }
 
     private static Component label(final String key, final Component value) {

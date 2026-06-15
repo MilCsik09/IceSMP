@@ -576,113 +576,147 @@ specializations:
 talents:
   class:
     points-per-levels: 5
+    # Talent-FA: a 'tier' adja a sort (1 = felső sor), a 'requires-talent' a
+    # szülő-talentet, amibe előbb pontot kell tenni (rang > 0), hogy a gyerek
+    # feloldódjon. Így a fa felülről lefelé épül, ágakra bontva.
     definitions:
-      # --- Általános kaszt-talentek ---
+      # --- 1. szint: általános kaszt-talentek (mindenki, nincs feltétel) ---
       vitality:
         display-name: "Életerő"
+        tier: 1
         effect: "max-health"
         per-rank: 2.0
         max-rank: 5
       swiftness:
         display-name: "Fürgeség"
+        tier: 1
         effect: "movement-speed"
         per-rank: 0.005
         max-rank: 5
       power:
         display-name: "Erő"
+        tier: 1
         effect: "attack-damage"
         per-rank: 0.5
         max-rank: 5
       scholar:
         display-name: "Tudásszomj"
+        tier: 1
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 4
-      # --- Kaszt-kötött talentek ---
+      # --- 2. szint: kaszt-kötött talentek (szülő-talentet igényelnek) ---
       weapon_mastery:
         display-name: "Fegyvermesteri Fokozat"
+        tier: 2
         requires-job: "warrior"
+        requires-talent: "power"
         effect: "attack-damage"
         per-rank: 0.5
         max-rank: 3
       fleet_hunter:
         display-name: "Fürge Vadász"
+        tier: 2
         requires-job: "archer"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.005
         max-rank: 3
-      # --- Specializáció-kötött talentek (1 / spec) ---
+      # --- 3. szint: specializáció-kötött talentek (1 / spec, szülő + spec kell) ---
       elemental_attunement:
         display-name: "Elemi Ráhangolódás"
+        tier: 3
         requires-spec: "elementalist"
+        requires-talent: "power"
         effect: "attack-damage"
         per-rank: 0.5
         max-rank: 4
       soul_pact:
         display-name: "Lélekpaktum"
+        tier: 3
         requires-spec: "necromancer"
+        requires-talent: "vitality"
         effect: "max-health"
         per-rank: 2.0
         max-rank: 4
       brutality:
         display-name: "Brutalitás"
+        tier: 3
         requires-spec: "berserker"
+        requires-talent: "power"
         effect: "attack-damage"
         per-rank: 1.0
         max-rank: 3
       stalwart:
         display-name: "Rendíthetetlen"
+        tier: 3
         requires-spec: "guardian"
+        requires-talent: "vitality"
         effect: "max-health"
         per-rank: 3.0
         max-rank: 3
       fleetfoot:
         display-name: "Szélvész Léptek"
+        tier: 3
         requires-spec: "sharpshooter"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
       pack_leader:
         display-name: "Falkavezér"
+        tier: 3
         requires-spec: "beast_master"
+        requires-talent: "vitality"
         effect: "max-health"
         per-rank: 2.0
         max-rank: 4
       viper_reflexes:
         display-name: "Vipera Reflexek"
+        tier: 3
         requires-spec: "poisoner"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.006
         max-rank: 4
       ghostwalk:
         display-name: "Kísértetjárás"
+        tier: 3
         requires-spec: "phantom"
+        requires-talent: "swiftness"
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
   profession:
     points-per-levels: 10
     definitions:
+      # --- 1. szint: általános szakma-talentek ---
       diligence:
         display-name: "Szorgalom"
+        tier: 1
         effect: "profession-xp-bonus"
         per-rank: 10.0
         max-rank: 5
       vigor:
         display-name: "Kitartás"
+        tier: 1
         effect: "max-health"
         per-rank: 1.0
         max-rank: 3
-      # --- Szakma-kötött talentek ---
+      # --- 2. szint: szakma-kötött talentek (szülő + szakma kell) ---
       miners_endurance:
         display-name: "Bányász Állóképesség"
+        tier: 2
         requires-profession: "miner"
+        requires-talent: "vigor"
         effect: "max-health"
         per-rank: 1.0
         max-rank: 2
       arcane_insight:
         display-name: "Arkán Belátás"
+        tier: 2
         requires-profession: "enchanter"
+        requires-talent: "diligence"
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 2

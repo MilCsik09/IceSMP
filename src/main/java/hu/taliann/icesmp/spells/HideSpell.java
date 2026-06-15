@@ -33,7 +33,7 @@ public final class HideSpell extends BaseSpell {
         final Location origin = player.getLocation();
         final Location destination = randomNearbySafeLocation(origin, 10);
         if (destination != null) {
-            player.teleport(destination);
+            player.teleportAsync(destination);
         }
 
         HIDDEN_ARMOR.put(player.getUniqueId(), player.getInventory().getArmorContents().clone());
@@ -44,7 +44,8 @@ public final class HideSpell extends BaseSpell {
         player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation(), 40, 0.5D, 0.5D, 0.5D, 0.01D);
 
         final UUID playerId = player.getUniqueId();
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> clearHide(playerId), HIDE_DURATION_TICKS);
+        // Folia: schedule on the player's own region scheduler, not the (unsupported) global Bukkit scheduler.
+        player.getScheduler().runDelayed(plugin, task -> clearHide(playerId), null, HIDE_DURATION_TICKS);
     }
 
     private Location randomNearbySafeLocation(final Location origin, final int radius) {

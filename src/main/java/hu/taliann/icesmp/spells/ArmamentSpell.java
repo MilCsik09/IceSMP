@@ -68,13 +68,14 @@ public final class ArmamentSpell extends BaseSpell {
         final UUID playerId = player.getUniqueId();
         ACTIVE_UNTIL.put(playerId, System.currentTimeMillis() + (DURATION_TICKS * 50L));
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        // Folia: per-player region scheduler instead of the unsupported Bukkit scheduler.
+        player.getScheduler().runDelayed(plugin, task -> {
             final Player onlinePlayer = Bukkit.getPlayer(playerId);
             if (onlinePlayer != null) {
                 removeTaggedItems(onlinePlayer);
             }
             ACTIVE_UNTIL.remove(playerId);
-        }, DURATION_TICKS);
+        }, () -> ACTIVE_UNTIL.remove(playerId), DURATION_TICKS);
     }
 
     private ItemStack createLockedItem(final Material material) {

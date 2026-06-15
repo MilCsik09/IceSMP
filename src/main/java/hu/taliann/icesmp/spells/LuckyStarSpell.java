@@ -2,10 +2,10 @@ package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.ExperienceUtil;
 import hu.taliann.icesmp.utils.MessageManager;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
 import java.util.UUID;
@@ -16,7 +16,7 @@ public final class LuckyStarSpell extends BaseSpell {
 
     private static final int XP_DRAIN_PER_SECOND = 20;
     private static final Map<UUID, Long> ACTIVE_PLAYERS = new ConcurrentHashMap<>();
-    private static final Map<UUID, BukkitTask> DRAIN_TASKS = new ConcurrentHashMap<>();
+    private static final Map<UUID, ScheduledTask> DRAIN_TASKS = new ConcurrentHashMap<>();
     private final JavaPlugin plugin;
 
     public LuckyStarSpell(final JavaPlugin plugin, final MessageManager messageManager) {
@@ -38,31 +38,36 @@ public final class LuckyStarSpell extends BaseSpell {
 
         ACTIVE_PLAYERS.put(player.getUniqueId(), System.currentTimeMillis());
         player.sendMessage(resolveMessage("spell.lucky_star.on", "<gold>Lucky Star aktiv.</gold>"));
-        startDrainTask(player.getUniqueId());
+        startDrainTask(player);
     }
 
-    private void startDrainTask(final UUID playerId) {
-        final BukkitTask existing = DRAIN_TASKS.remove(playerId);
+    private void startDrainTask(final Player player) {
+        final UUID playerId = player.getUniqueId();
+        final ScheduledTask existing = DRAIN_TASKS.remove(playerId);
         if (existing != null) {
             existing.cancel();
         }
 
-        final BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            final Player player = Bukkit.getPlayer(playerId);
-            if (player == null || !isActive(player)) {
+        // Folia: per-player region scheduler with a fixed 1s rate instead of the unsupported Bukkit scheduler.
+        final ScheduledTask task = player.getScheduler().runAtFixedRate(plugin, scheduled -> {
+            final Player online = Bukkit.getPlayer(playerId);
+            if (online == null || !isActive(online)) {
+                scheduled.cancel();
                 DRAIN_TASKS.remove(playerId);
                 return;
             }
 
-            if (ExperienceUtil.getTotalExperience(player) < XP_DRAIN_PER_SECOND) {
-                deactivate(player, false);
+            if (ExperienceUtil.getTotalExperience(online) < XP_DRAIN_PER_SECOND) {
+                deactivate(online, false);
                 return;
             }
 
-            ExperienceUtil.setTotalExperience(player, ExperienceUtil.getTotalExperience(player) - XP_DRAIN_PER_SECOND);
-            startDrainTask(playerId);
-        }, 20L);
-        DRAIN_TASKS.put(playerId, task);
+            ExperienceUtil.setTotalExperience(online, ExperienceUtil.getTotalExperience(online) - XP_DRAIN_PER_SECOND);
+        }, () -> cleanup(playerId), 20L, 20L);
+        // EntityScheduler returns null if the player is already gone; ConcurrentHashMap rejects nulls.
+        if (task != null) {
+            DRAIN_TASKS.put(playerId, task);
+        }
     }
 
     public static boolean shouldDodge(final Player player) {
@@ -79,7 +84,7 @@ public final class LuckyStarSpell extends BaseSpell {
         }
 
         ACTIVE_PLAYERS.remove(playerId);
-        final BukkitTask task = DRAIN_TASKS.remove(playerId);
+        final ScheduledTask task = DRAIN_TASKS.remove(playerId);
         if (task != null) {
             task.cancel();
         }

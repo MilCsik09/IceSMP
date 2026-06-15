@@ -177,35 +177,24 @@ public final class CharacterGUIListener implements Listener {
             return;
         }
 
-        final boolean classPool;
-        final String talentId;
-        if (TalentGUI.isClassSlot(slot)) {
-            classPool = true;
-            talentId = TalentGUI.resolveTalent(player, ctx, true, slot);
-        } else if (TalentGUI.isProfSlot(slot)) {
-            classPool = false;
-            talentId = TalentGUI.resolveTalent(player, ctx, false, slot);
-        } else {
+        final TalentGUI.Node node = TalentGUI.resolveTalent(player, ctx, slot);
+        if (node == null) {
             return;
         }
 
-        if (talentId == null) {
-            return;
-        }
-
-        if (ctx.talentManager().spendPoint(player, classPool, talentId)) {
+        if (ctx.talentManager().spendPoint(player, node.classPool(), node.id())) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
             player.sendMessage(ctx.messageManager().getMessage(
                     "talent-spend-success",
                     "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
                     Map.of(
-                            "talent", talentId,
-                            "rank", String.valueOf(ctx.talentManager().getRank(player, classPool, talentId)),
-                            "points", String.valueOf(ctx.talentManager().getAvailablePoints(player, classPool))
+                            "talent", node.id(),
+                            "rank", String.valueOf(ctx.talentManager().getRank(player, node.classPool(), node.id())),
+                            "points", String.valueOf(ctx.talentManager().getAvailablePoints(player, node.classPool()))
                     )));
         } else {
             fail(player, ctx.messageManager().getComponent("talent-spend-failed",
-                    "&cNem sikerült a pont elköltése (nincs pont, ismeretlen talent vagy max szint)."));
+                    "&cNem sikerült a pont elköltése (zárolt talent, nincs pont, vagy max rang)."));
         }
         TalentGUI.open(player, ctx);
     }

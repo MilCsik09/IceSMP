@@ -152,6 +152,41 @@ public final class TalentManager {
         return talentSection != null && meetsRequirements(player, talentSection);
     }
 
+    /**
+     * Whether the talent is not only visible (job/spec/profession requirements
+     * met) but also UNLOCKED in the tree: its prerequisite talent
+     * ('requires-talent') already has at least one rank. Used by the talent-tree
+     * GUI to distinguish locked nodes from spendable ones.
+     *
+     * @param player the player
+     * @param classPool true for the class pool, false for the profession pool
+     * @param talentId the talent id
+     * @return true if visible and the parent prerequisite is satisfied
+     */
+    public boolean isUnlocked(final Player player, final boolean classPool, final String talentId) {
+        final ConfigurationSection definitions = getDefinitions(classPool);
+        if (definitions == null || talentId == null) {
+            return false;
+        }
+
+        final ConfigurationSection talentSection = definitions.getConfigurationSection(talentId.toLowerCase(Locale.ROOT));
+        return talentSection != null
+                && meetsRequirements(player, talentSection)
+                && prerequisiteMet(player, classPool, talentSection);
+    }
+
+    /**
+     * Checks the talent-tree prerequisite: the parent talent named by
+     * 'requires-talent' (if any) must already have at least one rank.
+     */
+    private boolean prerequisiteMet(final Player player, final boolean classPool, final ConfigurationSection talentSection) {
+        final String parentId = talentSection.getString("requires-talent");
+        if (parentId == null || parentId.isBlank()) {
+            return true;
+        }
+        return getRank(player, classPool, parentId) > 0;
+    }
+
     private boolean meetsRequirements(final Player player, final ConfigurationSection talentSection) {
         final String requiredJobId = talentSection.getString("requires-job");
         if (requiredJobId != null && !requiredJobId.isBlank()) {
@@ -242,6 +277,11 @@ public final class TalentManager {
         final String normalizedId = talentId.toLowerCase(Locale.ROOT);
         final ConfigurationSection talentSection = definitions.getConfigurationSection(normalizedId);
         if (talentSection == null || !meetsRequirements(player, talentSection)) {
+            return false;
+        }
+
+        // Talent-tree gating: the parent talent must be ranked first.
+        if (!prerequisiteMet(player, classPool, talentSection)) {
             return false;
         }
 
