@@ -382,7 +382,11 @@ mob-scaling:
     - "COMMAND"
   name:
     enabled: true
-    visible: true
+    # A nevtabla mindig latszik-e? A vanilla "mindig lathato" nevtablak
+    # FALAKON AT es nagyon TAVOLROL is renderelodnek (zavaro lehet). Ha false,
+    # a szint-nevtabla csak akkor jelenik meg, amikor a jatekos RANEZ a mobra
+    # (kozelrol, takaras nelkul) - ez a vanilla "hover" viselkedes.
+    visible: false
     prefix: "&7[Lvl %level%] "
     color: "WHITE"
 

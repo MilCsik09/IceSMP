@@ -1,7 +1,7 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.gui.CharacterMenuContext;
 import hu.taliann.icesmp.gui.ProfileGUI;
-import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -15,12 +15,12 @@ import java.util.List;
 @NullMarked
 public final class ProfileCommand implements BasicCommand {
 
+    private final CharacterMenuContext menuContext;
     private final MessageManager messageManager;
-    private final MetelytepoManager metelytepoManager;
 
-    public ProfileCommand(final MessageManager messageManager, final MetelytepoManager metelytepoManager) {
+    public ProfileCommand(final CharacterMenuContext menuContext, final MessageManager messageManager) {
+        this.menuContext = menuContext;
         this.messageManager = messageManager;
-        this.metelytepoManager = metelytepoManager;
     }
 
     @Override
@@ -31,7 +31,7 @@ public final class ProfileCommand implements BasicCommand {
             return;
         }
 
-        ProfileGUI.openProfile(player, player, metelytepoManager, messageManager);
+        ProfileGUI.open(player, menuContext);
     }
 
     @Override

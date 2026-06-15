@@ -363,6 +363,11 @@ messages:
 
   job-gui-skilltree: "&5Képesség-fa"
   job-gui-skilltree-lore: "&7A kasztod képességei és feloldási szintjei."
+  spec-gui-title: "<dark_aqua>» Specializációk «</dark_aqua>"
+  profession-gui-title: "<dark_aqua>» Szakmák «</dark_aqua>"
+  profession-gui-learned: "&aSzakma megtanulva:"
+  profession-gui-cannot: "&cEzt a szakmát most nem tanulhatod (a kategória helyed foglalt)."
+  talent-gui-title: "<dark_aqua>» Talentek «</dark_aqua>"
   skilltree-title: "&5» Képesség-fa «"
   skilltree-no-class: "&cElőbb válassz kasztot!"
   skilltree-node-unlocked: "&a%s"
@@ -568,7 +573,7 @@ messages:
       xp: "XP"
     profile:
       gui:
-        title: "<dark_gray>» Karakterlap «</dark_gray>"
+        title: "<dark_aqua>» Karakterlap «</dark_aqua>"
         status:
           sinner: "<red>Állapot: Bűnös</red>"
           clean: "<green>Állapot: Tiszta</green>"

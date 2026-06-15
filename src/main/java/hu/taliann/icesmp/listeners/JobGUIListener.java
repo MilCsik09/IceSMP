@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.gui.CharacterMenuContext;
 import hu.taliann.icesmp.gui.JobGUI;
 import hu.taliann.icesmp.gui.JobGUIHolder;
 import hu.taliann.icesmp.gui.ProfileGUI;
@@ -8,7 +9,6 @@ import hu.taliann.icesmp.gui.SkillTreeGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
-import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -27,24 +27,24 @@ import java.util.Map;
 public final class JobGUIListener implements Listener {
 
     private final JobManager jobManager;
-    private final MetelytepoManager metelytepoManager;
     private final CatalystItemFactory catalystItemFactory;
     private final SpecializationManager specializationManager;
     private final SpellRegistry spellRegistry;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final CharacterMenuContext menuContext;
 
-    public JobGUIListener(final JobManager jobManager, final MetelytepoManager metelytepoManager,
-                          final CatalystItemFactory catalystItemFactory, final SpecializationManager specializationManager,
-                          final SpellRegistry spellRegistry, final ConfigManager configManager,
-                          final MessageManager messageManager) {
+    public JobGUIListener(final JobManager jobManager, final CatalystItemFactory catalystItemFactory,
+                          final SpecializationManager specializationManager, final SpellRegistry spellRegistry,
+                          final ConfigManager configManager, final MessageManager messageManager,
+                          final CharacterMenuContext menuContext) {
         this.jobManager = jobManager;
-        this.metelytepoManager = metelytepoManager;
         this.catalystItemFactory = catalystItemFactory;
         this.specializationManager = specializationManager;
         this.spellRegistry = spellRegistry;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.menuContext = menuContext;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -70,7 +70,7 @@ public final class JobGUIListener implements Listener {
 
         if (event.getRawSlot() == JobGUI.getBackSlot()) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
-            ProfileGUI.openProfile(player, player, metelytepoManager, messageManager);
+            ProfileGUI.open(player, menuContext);
             return;
         }
 

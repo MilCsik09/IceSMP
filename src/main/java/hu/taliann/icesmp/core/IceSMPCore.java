@@ -17,10 +17,12 @@ import hu.taliann.icesmp.commands.SoulCommand;
 import hu.taliann.icesmp.commands.SpecCommand;
 import hu.taliann.icesmp.commands.TalentCommand;
 import hu.taliann.icesmp.commands.TerritoryCommand;
+import hu.taliann.icesmp.gui.CharacterMenuContext;
 import hu.taliann.icesmp.gui.ProfileGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.items.SiegeWeaponFactory;
 import hu.taliann.icesmp.listeners.CatalystCraftSafetyListener;
+import hu.taliann.icesmp.listeners.CharacterGUIListener;
 import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
@@ -36,7 +38,6 @@ import hu.taliann.icesmp.listeners.PetCommandListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
 import hu.taliann.icesmp.listeners.ProfessionXpListener;
-import hu.taliann.icesmp.listeners.ProfileGUIListener;
 import hu.taliann.icesmp.listeners.QuestProgressListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
@@ -158,6 +159,7 @@ public final class IceSMPCore {
     private final SoulShardManager soulShardManager;
     private final RitualManager ritualManager;
     private final ExchangeBoardManager exchangeBoardManager;
+    private final CharacterMenuContext characterMenuContext;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
@@ -204,6 +206,9 @@ public final class IceSMPCore {
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
         this.ritualManager = new RitualManager(configManager, relicManager, messageManager);
         this.exchangeBoardManager = new ExchangeBoardManager(plugin, configManager, exchangeRateService);
+        this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
+                professionManager, talentManager, factionManager, currencyManager, metelytepoManager,
+                catalystItemFactory, spellRegistry, configManager);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -379,7 +384,7 @@ public final class IceSMPCore {
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, kingManager, raidManager, messageManager));
         plugin.registerCommand("job", "Kaszt admin parancsok", List.of("class"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
-        plugin.registerCommand("profile", "Játékos profil", List.of("status", "info"), new ProfileCommand(messageManager, metelytepoManager));
+        plugin.registerCommand("profile", "Játékos profil", List.of("status", "info"), new ProfileCommand(characterMenuContext, messageManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia framework parancsok", List.of("relics"), new RelicCommand(relicManager, messageManager));
         plugin.registerCommand("profession", "Szakma parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
@@ -400,8 +405,8 @@ public final class IceSMPCore {
         final PluginManager pluginManager = plugin.getServer().getPluginManager();
         pluginManager.registerEvents(new CurrencyCraftListener(currencyManager), plugin);
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
-        pluginManager.registerEvents(new ProfileGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new JobGUIListener(jobManager, metelytepoManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new CharacterGUIListener(characterMenuContext), plugin);
+        pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
