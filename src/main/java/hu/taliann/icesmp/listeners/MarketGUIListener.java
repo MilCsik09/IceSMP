@@ -49,6 +49,7 @@ public final class MarketGUIListener implements Listener {
         }
 
         final MarketManager.Listing listing = marketManager.getListing(listingId);
+        final double paid = listing == null ? 0.0D : marketManager.getEffectivePrice(player, listing);
         final String errorKey = marketManager.buy(player, listingId);
         if (errorKey != null) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
@@ -62,7 +63,7 @@ public final class MarketGUIListener implements Listener {
                 "market-buy-success",
                 "&aMegvetted: &f{price} {currency} &7(a bankodból).",
                 Map.of(
-                        "price", currencyManager.formatBalance(listing.price()),
+                        "price", currencyManager.formatBalance(paid),
                         "currency", listing.currency().getDisplayName()
                 )
         ));

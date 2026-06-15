@@ -33,16 +33,36 @@ public final class MarketManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
+    private final FactionManager factionManager;
+    private final FactionRelationManager relationManager;
     private final File storageFile;
     private final Map<UUID, Listing> listings = new ConcurrentHashMap<>();
 
     public MarketManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final CurrencyManager currencyManager) {
+                         final CurrencyManager currencyManager, final FactionManager factionManager,
+                         final FactionRelationManager relationManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
+        this.factionManager = factionManager;
+        this.relationManager = relationManager;
         this.storageFile = new File(plugin.getDataFolder(), "market.yml");
         plugin.getDataFolder().mkdirs();
+    }
+
+    /**
+     * Gets the effective price a buyer pays for a listing, after applying the
+     * faction reputation modifier (enemy surcharge / ally discount).
+     *
+     * @param buyer the prospective buyer
+     * @param listing the listing
+     * @return the reputation-adjusted price
+     */
+    public double getEffectivePrice(final org.bukkit.entity.Player buyer, final Listing listing) {
+        final double multiplier = relationManager.getMarketPriceMultiplier(
+                factionManager.getFaction(buyer.getUniqueId()),
+                factionManager.getFaction(listing.seller()));
+        return listing.price() * multiplier;
     }
 
     public void load() {
@@ -176,7 +196,9 @@ public final class MarketManager {
             return "market-own-listing";
         }
 
-        if (!currencyManager.deductFromBalance(buyer.getUniqueId(), listing.currency(), listing.price())) {
+        // Faction reputation adjusts what the buyer pays; the seller still earns from the base price.
+        final double buyerCost = getEffectivePrice(buyer, listing);
+        if (!currencyManager.deductFromBalance(buyer.getUniqueId(), listing.currency(), buyerCost)) {
             return "market-insufficient-balance";
         }
 

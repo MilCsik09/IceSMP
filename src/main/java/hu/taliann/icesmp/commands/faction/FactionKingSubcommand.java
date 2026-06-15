@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands.faction;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.FactionTreasuryManager;
 import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -23,13 +24,40 @@ public final class FactionKingSubcommand implements FactionSubcommand {
 
     private final KingManager kingManager;
     private final FactionManager factionManager;
+    private final FactionTreasuryManager treasuryManager;
     private final MessageManager messageManager;
 
     public FactionKingSubcommand(final KingManager kingManager, final FactionManager factionManager,
-                                 final MessageManager messageManager) {
+                                 final FactionTreasuryManager treasuryManager, final MessageManager messageManager) {
         this.kingManager = kingManager;
         this.factionManager = factionManager;
+        this.treasuryManager = treasuryManager;
         this.messageManager = messageManager;
+    }
+
+    private boolean handleTax(final CommandSender sender, final String rawPercent) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+            return true;
+        }
+
+        if (!kingManager.isKing(player)) {
+            sender.sendMessage(messageManager.get("messages.faction-king-tax-not-king", "&cAdókulcsot csak a frakciód királya állíthat."));
+            return true;
+        }
+
+        final double requested;
+        try {
+            requested = Double.parseDouble(rawPercent);
+        } catch (final NumberFormatException exception) {
+            sender.sendMessage(messageManager.get("messages.invalid-amount", "&cÉrvénytelen összeg."));
+            return true;
+        }
+
+        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final double applied = treasuryManager.setTaxRate(faction, requested);
+        sender.sendMessage(messageManager.get("messages.faction-king-tax-set", "&aA(z) %s frakció adókulcsa beállítva: &f%s%%", faction.getDisplayName(), applied));
+        return true;
     }
 
     @Override
@@ -59,6 +87,10 @@ public final class FactionKingSubcommand implements FactionSubcommand {
 
         if (args.length >= 2 && "clear".equalsIgnoreCase(args[0])) {
             return handleClear(sender, args[1]);
+        }
+
+        if (args.length >= 2 && "tax".equalsIgnoreCase(args[0])) {
+            return handleTax(sender, args[1]);
         }
 
         return handleInfo(sender);
@@ -167,8 +199,8 @@ public final class FactionKingSubcommand implements FactionSubcommand {
         if (args.length == 1) {
             final String prefix = args[0].toLowerCase(Locale.ROOT);
             final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                    ? List.of("vote", "set", "clear")
-                    : List.of("vote");
+                    ? List.of("vote", "tax", "set", "clear")
+                    : List.of("vote", "tax");
             return options.stream().filter(option -> option.startsWith(prefix)).toList();
         }
 

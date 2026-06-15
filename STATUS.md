@@ -40,7 +40,15 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   nevezési díj a kasszából (money sink); a raid ideje alatt a hadviselő frakciók közti
   ölés **nem bűn**, hanem pontot ér; a végén a több ölést szerző fél a vesztes
   kasszájának 20%-át zsákmányolja (configolható; NEUTRAL védett); a lezáró időzítő a
-  global region scheduleren fut
+  global region scheduleren fut. **Király-állítható adókulcs** (`/faction king tax <%>`),
+  **győztes-buff** a győztes frakció online tagjainak (Erő + Regeneráció)
+- **Frakció-reputáció** (`FactionRelationManager`): configolható ALLY/NEUTRAL/ENEMY
+  viszony-mátrix (`factions.relations`); raid alatt a hadviselők automatikusan ENEMY-k.
+  A viszony módosítja a piaci árat — ellenségtől felárral (a felár elég = money sink),
+  szövetségestől kedvezménnyel
+- **Ostromgépek** (`SiegeWeaponFactory` + `SiegeWeaponListener`): craftolható "Ostromágyú"
+  (TNT_MINECART), ami CSAK aktív raid alatt sül el — jobb katt = terep-barát robbanás a
+  célzott pontra (sebzi az entitásokat, kíméli a terepet); raiden kívül csak figyelmeztet
 
 ### 2. Kaszt (class) rendszer
 - 4 alap kaszt: **Varázsló, Harcos, Íjász, Orgyilkos** (`JobType`), PDC-ben tárolva
@@ -116,6 +124,10 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   állásmód-váltás (Támadás / Passzív / Maradj); **idézés-limit** játékosonként
   (`pets.max-active`); a gazda kaszt max-health talentjei +HP-t adnak a minionoknak
   (`pets.talent-health-share`)
+- **Nekromanta lélek-erőforrás** (`SoulShardManager` + `SoulShardListener`): a Nekromanta-spec
+  játékosok ellenség-ölésenként lélekszilánkot kapnak (PDC), amiből a `/souls champion`
+  paranccsal megerősített Wither-csontváz bajnokot idézhetnek (configolható ár/élet/élettartam,
+  az idézés-limitet tisztelve); `/souls` mutatja az egyenleget
 - **Kaszt-tematikus Képesség Katalizátor** (`CatalystItemFactory`, `is_ability_catalyst` PDC):
   Mágikus Kódex (varázsló), Harci Kürt (harcos), Vadásztarsoly (íjász), Árnyékamulett (orgyilkos)
 - Interakciók (`AbilityCatalystListener`): jobb katt = cast; sneak + ütés = spellváltás
@@ -140,7 +152,8 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 ### 7.6 Piactér, gazdasági események, skill-fa
 - **Piactér** (`MarketManager`, `market.yml`): `/market sell <ár> [valuta]` listázza a kézben
   tartott tárgyat; `/market` GUI-ból vásárlás banki egyenlegből; `/market cancel` visszavonás;
-  eladási díj (alapból 10%) elég = money sink; tétel-limit játékosonként
+  eladási díj (alapból 10%) elég = money sink; tétel-limit játékosonként. A vásárló a
+  **frakció-reputációval módosított árat** fizeti (ellenségtől felár, szövetségestől kedvezmény)
 - **Heti gazdasági esemény** (`EconomyEventManager`, ideas.md "kereslet-sokk"): időnként egy
   véletlen valuta base-value-ja átmenetileg megugrik (broadcast indul/lecseng), a dinamikus
   árfolyamba az `ExchangeRateService` számítja be; restart-túlélő (`economy-event.yml`)
@@ -188,12 +201,21 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
   `érték = alapérték × clamp((referencia-kínálat / kínálat)^rugalmasság, min, max)` —
   a túltermelt valuta leértékelődik; váltási díj configból; `/currency rates` élő kijelzés;
   fix árfolyam fallback, ha a dinamikus ki van kapcsolva
+- **Árfolyam-hologramok** (`ExchangeBoardManager`): `/exchangeboard place` lerak egy
+  TextDisplay táblát, ami a valuták élő, kínálat-alapú értékét mutatja és a világesemény-tick
+  frissíti (Folia-biztos region-scheduling, `exchange-boards.yml` restart-túléléssel);
+  `/exchangeboard remove` törli a legközelebbit
+- **Rituálé-oltárok** (`RitualManager` + `RitualListener`): a relikviák megidézhetők egy
+  configolt oltár-blokk (`rituals.<relicId>`) SHIFT+jobb kattjával, áldozati tárgyak
+  feláldozásával; a relikvia-egyediség szabálya érvényes (élő tulajdonossal nem idézhető)
 
 ### 10. Távolság-alapú mob skálázás
 - `CreatureSpawnEvent`-re: szint = vízszintes távolság a world spawntól / 1000 blokk
   (configolható), max 10
 - Szintenként +2 max élet, +1 sebzés (attribútum-alapú), `[Lvl X] <mobnév>` névcímke
   (kliens-oldalon lokalizált mobnévvel), `mob_level` PDC a továbbfelhasználáshoz
+- A névcímke alapból csak ránézéskor látszik (`mob-scaling.name.visible: false`), így
+  nem renderelődik falakon át / nagy távolságból (a vanilla "mindig látható" zavaró volt)
 - Csak ellenséges mobok; spawner/parancs/plugin spawnok kihagyva (farm-védelem)
 
 ### 11. Frakcióterületek
@@ -203,10 +225,21 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 - Opcionális **építésvédelem** (`territory.protection.enabled`, alapból ki): idegen frakció
   területén break/place tiltás, bypass joggal
 
-### 12. Profil és GUI-k
-- `/profile` — profil könyv (név, frakció, mind a 4 valuta-egyenleg, bank gombok) + GUI
-- Job GUI — kasztválasztás állapotjelzéssel (kiválasztott, szint, zárolt másodlagos) +
+### 12. Profil és GUI-k — karakter-hub
+- `/profile` — **Karakterlap hub**: a fej élő összegzést mutat (frakció, elsődleges/másodlagos
+  kaszt + szint, kaszt-spec, gyűjtő/készítő szakma + szint, szakma-spec, állapot, talentpontok,
+  egyenlegek), és gombokról minden karakter-menü elérhető
+- **Kaszt GUI** — kasztválasztás állapotjelzéssel (kiválasztott, szint, zárolt másodlagos) +
   **katalizátor-igénylő gomb** (tematikus item, duplikáció-védelemmel)
+- **Specializáció GUI** (`SpecGUI`) — kaszt- és szakma-specializáció kiválasztása
+  elérhetőség-jelzéssel és követelmény-tippekkel; respec gombok (frakcióvalutáért, talent-visszatérítéssel)
+- **Szakma GUI** (`ProfessionGUI`) — gyűjtögető + készítő főszakma tanulása, szintek/XP, a
+  másodlagos szakmák megjelenítése
+- **Talent GUI** (`TalentGUI`) — kaszt- és szakma-talentpontok elköltése a config-definíciókból,
+  rang/hatás kijelzéssel (csak a feltételeknek megfelelő talentek látszanak)
+- **Képesség-fa GUI** — a kaszt + spec spelljei feloldási szint szerint
+- Közös navigáció: minden almenüben „Vissza" gomb a hubhoz; a menük a `CharacterMenuContext`
+  köré szervezve, egyetlen `CharacterGUIListener`-rel
 
 ### 13. Infrastruktúra
 - Folia-kompatibilis (`folia-supported: true`, szinkron taskok, `teleportAsync`)
@@ -224,29 +257,29 @@ Kapcsolódó dokumentumok: [README.md](README.md) (áttekintés) •
 | `/icesmp reload` | Csak a `config.yml` + `messages.yml` töltődik újra; a betöltéskor cache-elő managerek (mob scaling, craft szabályok, relic definíciók, territory) értékeihez teljes újraindítás kell. |
 | Relic ability registry | A `RelicAbilityRegistry` üres — config `ability-id`-ra hivatkozó trigger warninggal no-opol. A Mételytépő képességei saját listeneren át működnek (ez szándékos), de új relic ability-khez regisztráció kell. |
 | `config.yml` `messages:` szekció | Örökölt duplikátum, a kód **nem használja** (a forrás a `messages.yml`) — törölhető lenne. |
-| Specializáció GUI | A specializációk csak paranccsal (`/spec`) érhetők el, a Job GUI nem mutatja őket. |
 | Hide + Semleges passzív | A NEUTRAL lopakodás-láthatatlanság és a Hide spell ugyanazt a potion effektet használja — lopakodás abbahagyása lebonthatja a Hide láthatatlanságát. |
 | Szakma XP anti-abuse | A játékos által lerakott érc/rönk újrabányászása is ad XP-t (nincs blokk-eredet követés). Az Alkimista XP a főzőállvány eredmény-slotjának kattintásához kötött heurisztika — ki-be pakolással duplán is jóváírható. |
 | Területvédelem hatóköre | Csak blokk törés/lerakás ellen véd; láda-hozzáférést, robbantást, vödröt, pisztont nem kezel. |
 | Dinamikus árfolyam kínálata | Csak a **banki** egyenlegeket számolja; a játékosoknál lévő fizikai tokenek nincsenek a kínálatban. |
 | Dark pact offline célpontra | Admin `/faction set <offline játékos> dark` esetén a paktum csak a játékos következő online állapotában pecsételhető (PDC-hez online játékos kell) — jelenleg ilyenkor nem pecsételődik automatikusan. |
-| Sinner = bináris flag | Nincs bűn-számláló (a todo.md "4–5 bűn után automatikus száműzetés" ötlete nincs implementálva). |
+| Bűn-rendszer hatóköre | A `sin_count` számláló és a küszöb-alapú automatikus száműzetés (Sötét frakcióba, örök paktummal) **kész**; még hiányzik a lopás/árulás-detektálás és a "vezeklés" quest-lánc. |
 | Audit jelzések | Az `ICE_SMP_AUDIT_REPORT.md`-ben jelzett örökölt problémák részben nyitottak: `RainDance`/`SunDance` nagy szinkron blokk-iteráció, `HideSpell` páncél-backup csak memóriában, `ArmamentSpell` tele inventory esete, `MetelytepoManager` kisebb entitás-állapot szivárgás. |
 
 ---
 
-## ❌ MÉG NINCS implementálva (tervek — ideas.md / todo.md)
+## ❌ MÉG NINCS implementálva (megmaradt finomítások — ideas.md / todo.md)
 
-- **Raid eventek** (10v10, király hirdeti, sinner tag felfüggesztés raid alatt)
-- **Király-választás** és frakció-vezetési mechanika
-- **Frakció-kassza, adórendszer, money sinkek**
-- **4 frakció-elytra relikvia** (speciális képességekkel)
-- **Fegyver-relikvia gazdacsere PvP-ben** (a passzív relikviák védettsége mellett)
-- **Quest-keretrendszer** (kaszt-questek, nekromanta beavatás-quest, vezeklés-quest)
-- **Ultimate képességek** és skill-fa GUI
-- **Első belépéses intro** (title-szekvencia / kamera-út)
-- **Világesemények** (világ-bossok, vérhold, szezonális liga)
-- **Piactér / aukciósház**, árfolyam-kijelző táblák a fővárosokban
-- **Bank kamat**
+Az ideas.md 2–7.5 szekciói **megvalósultak**. A még nyitott, jellemzően "nice-to-have"
+tételek:
+
+- **Megnevezett, fejlődő pet:** a Vadmester állandó, szintet lépő, perzisztens társa
+  (a jelenlegi idézések időzítettek és névtelenek)
+- **NPC-s / parkour kaszt-próbapályák:** a kaszt-questek jelenleg objective-alapúak,
+  nincs egyedi pálya
+- **Piactér lapozás / keresés:** a `/market` GUI egy lapos, szűrő nélküli lista
+- **Intro kamera-utaztatás / spectator-útvonal:** az intro jelenleg csak title-szekvencia
+- **Szezonális kozmetikai relikvia-jutalom:** a szezon-bajnok jelenleg kasszát kap, nincs
+  külön kozmetikai jutalom
+- **Bank kamat** (todo.md ötlet)
 - Fővárosok közti távolság / világépítés — *nem plugin feladat* (a kijelölő eszköz, a
   `/territory`, kész)

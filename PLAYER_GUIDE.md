@@ -19,8 +19,10 @@ talentek, a gazdaság és a világesemények. A végén külön listában megtal
 ## 1. Az első lépések
 
 1. **Válassz frakciót** (`/faction join <frakció>`) — ez dönti el a valutádat és a passzív bónuszodat.
-2. **Nyisd meg a profilod** (`/profile`) — itt látod a frakciódat, az egyenlegeidet, és innen
-   éred el a **kasztválasztót**.
+2. **Nyisd meg a profilod** (`/profile`) — ez a **Karakterlap hub**: a fejen élő összegzés
+   (frakció, kasztok + szintek, specializációk, szakmák + szintek, állapot, talentpontok,
+   egyenlegek), és innen **gombokkal eléred az összes karakter-menüt**: Kaszt, Specializáció,
+   Szakma, Talentek, Képesség-fa.
 3. **Válassz kasztot** a Kaszt menüből, majd **igényeld a Képesség Katalizátorodat** (ugyanitt egy gomb).
 4. **Ölj szörnyeket** a kaszt XP-ért, **bányássz/arass/horgássz** a szakma XP-ért.
 5. Vedd fel a kaszt-próba **küldetésedet** (`/quest list`).
@@ -76,6 +78,13 @@ Játékos–játékos kereskedés:
 - `/market` — böngésző felület; kattints egy tételre a **megvásárláshoz** (a banki egyenlegedből fizet).
 - `/market cancel` — visszavonod a saját tételeidet (visszakapod az itemeket).
 - **Eladási díj:** minden eladásból ~10% „elég" (eltűnik a gazdaságból) — ez fékezi az inflációt.
+- **Frakció-reputáció:** a vételár attól is függ, milyen viszonyban van a frakciód az
+  eladóéval. **Ellenséges** (vagy épp raidben álló) frakciótól drágább (+25% felár, ami elég),
+  **szövetségestől** olcsóbb (−10%). Semleges viszonynál nincs változás.
+
+### Árfolyamtáblák 📊
+A fővárosokban admin által lerakott **hologram-táblák** mutatják a valuták élő, kínálat-alapú
+értékét — „tőzsdei" kijelző, ami magától frissül. Ugyanezt mindig lekérheted `/currency rates`-szel is.
 
 ### Money sinkek és események
 - **Állampolgári adó:** óránként a frakciótagok a saját valuta-egyenlegük **2%-át** befizetik
@@ -133,8 +142,10 @@ szintet mutatják.
 
 ## 5. Specializációk ✅
 
-A **25. szinttől** az elsődleges kasztod **specializálódhat** (`/spec list`, `/spec choose <id>`).
-Kasztonként **2 irány** van, és a legerősebb képességek (Lvl 25–45) csak így érhetők el.
+A **25. szinttől** az elsődleges kasztod **specializálódhat** — a legegyszerűbben a
+`/profile` → **Specializáció** menüből (vagy paranccsal: `/spec list`, `/spec choose <id>`).
+A menü mutatja, melyik elérhető és mi a feltétele. Kasztonként **2 irány** van, és a
+legerősebb képességek (Lvl 25–45) csak így érhetők el.
 
 | Kaszt | Specializációk |
 |---|---|
@@ -145,8 +156,9 @@ Kasztonként **2 irány** van, és a legerősebb képességek (Lvl 25–45) csak
 
 - A **Nekromanta** különleges: csak **Sötét frakcióval + bűnös állapottal**, ÉS a **Sötét
   Beavatás** küldetés teljesítése után választható.
-- **Respec:** meggondolhatod magad — `/spec respec <class|profession>` a frakcióvalutádért
-  (alapból 100) visszaváltja a speced; a spec-hez kötött talentpontjaid automatikusan visszatérülnek.
+- **Respec:** meggondolhatod magad — a Specializáció menü **Respec** gombjával (vagy
+  `/spec respec <class|profession>`) a frakcióvalutádért (alapból 100) visszaváltod a speced;
+  a spec-hez kötött talentpontjaid automatikusan visszatérülnek.
 - `/spec info` — aktuális specjeid.
 
 ---
@@ -211,12 +223,18 @@ Tőrhajítás, Adrenalin (sebesség + sietség), Árnyéklépés (a célpont mö
 > (**Támadás** → **Passzív**, nem támad → **Maradj**, helyben fagy). Egyszerre korlátozott
 > számú társad lehet, és a **kaszt Életerő-talentjeid a társaidat is erősítik** (+HP).
 
+> **Nekromanta lélekszilánkok:** ha **Nekromanta-specet** játszol, minden megölt ellenség
+> után **lélekszilánkot** kapsz. `/souls` — megnézed az egyenleged; `/souls champion` —
+> a szilánkokból egy **megerősített Wither-csontváz bajnokot** idézel, ami a szokásos
+> időzített idézéseknél erősebb (az idézés-limited rá is vonatkozik).
+
 ---
 
 ## 7. Talentek ✅
 
-A szintjeid **talentpontokat** termelnek, amiket passzív erősítésekre költhetsz (`/talent`,
-`/talent spend <class|profession> <talent>`).
+A szintjeid **talentpontokat** termelnek, amiket passzív erősítésekre költhetsz a
+`/profile` → **Talentek** menüből (kattints a fejlesztendő talentre), vagy paranccsal
+(`/talent`, `/talent spend <class|profession> <talent>`).
 
 - **Kaszt ponttár:** minden **5 kasztszint** = 1 pont (az elsődleges + másodlagos szintek összegéből).
 - **Szakma ponttár:** az **összes szakmád** szintjeiből, minden **10 szint** = 1 pont.
@@ -249,8 +267,8 @@ hosszú távon térülnek meg: minél korábban beléjük fektetsz, annál gyors
 ## 8. Szakmák ✅
 
 WoW-mintára **két fő szakmád** lehet — **egy gyűjtögető és egy készítő** — a másodlagos szakmák
-pedig mindenkinek automatikusan fejlődnek. Parancsok: `/profession join <szakma>`,
-`/profession info`, `/profession list`.
+pedig mindenkinek automatikusan fejlődnek. A legkönnyebben a `/profile` → **Szakma** menüből
+tanulsz és nézed a szintjeidet (vagy paranccsal: `/profession join <szakma>`, `/profession info`).
 
 | Kategória | Szakmák | XP-forrás |
 |---|---|---|
@@ -286,6 +304,20 @@ Egyedi, legendás tárgyak. Szabályok: **egy relikviából csak egy létezhet**
   - ⚫ **Csontszárny:** wither-immunitás; éjszakai repüléskor árnyformába vált (láthatatlanság + sebesség).
 - A **passzív relikviák (a szárnyak) PvP-ben védettek** — nem cserélnek gazdát.
 
+### Rituálé-oltárok 🔮
+A négy elytra-relikvia nem craftolható — **oltáron kell megidézni** őket. Keress (vagy építs)
+egy adott **oltár-blokkot**, gyűjtsd össze a hozzá tartozó **áldozati tárgyakat**, majd
+**lopakodás (SHIFT) + jobb katt** az oltáron:
+
+| Relikvia | Oltár-blokk | Áldozat (alap) |
+|---|---|---|
+| 🔴 Főnix-szárny | Magmatömb | 8 lángrúd, 16 tűzcsóva, 1 aranytömb |
+| 🔵 Zúzmara-szárny | Kék jég | 16 tömör jég, 8 prizmarin-kristály, 1 gyémánttömb |
+| ⚪ Vándorszél | Ametiszttömb | 32 toll, 8 fantommembrán, 1 smaragdtömb |
+| ⚫ Csontszárny | Lélektalaj | 8 csonttömb, 1 wither-csontvázkoponya, 2 netherit-törmelék |
+
+Ha a relikviának már van **élő tulajdonosa**, nem idézhető meg újra (egy-példány szabály).
+
 ---
 
 ## 10. A világ veszélyei ✅
@@ -294,7 +326,9 @@ Egyedi, legendás tárgyak. Szabályok: **egy relikviából csak egy létezhet**
 A spawntól távolodva a szörnyek **erősödnek**: minden **1000 blokk = +1 mob-szint**
 (`[Lvl X]` névvel, több élettel és sebzéssel). Cserébe a magasabb szintű mobok **több kaszt
 XP-t** és nagyobb eséllyel **lélekkövet** adnak. (A spawner-/parancs-spawnolt mobok nem
-skálázódnak — a farmok biztonságosak.)
+skálázódnak — a farmok biztonságosak.) A szint-névtábla alapból **csak akkor jelenik meg,
+amikor ránézel a mobra** (közelről, takarás nélkül), így nem zsúfolja tele a képernyőt
+falakon át vagy nagy távolságból.
 
 ### Vérhold-éjszaka 🌕
 Ritkán egy éjszaka **vérholddá** változik (broadcast jelzi). Ilyenkor minden szörny **+2
@@ -318,8 +352,9 @@ Minden harcos frakció (Piros / Kék / Sötét — a Semleges kivételével) **k
 - Aki eléri a **minimum szavazatszámot** és vezeti a listát, azt **megkoronázzák** (broadcast).
 - A választási ciklus időnként újraindul. `/faction king` — aktuális király + szavazatok.
 
-**A király jogai:** kivehet a **frakciókasszából** (`/faction treasury withdraw`), és **raidet
-hirdethet**.
+**A király jogai:** kivehet a **frakciókasszából** (`/faction treasury withdraw`), **raidet
+hirdethet**, és **beállíthatja a frakció adókulcsát** (`/faction king tax <százalék>`, a config
+maximumáig).
 
 ### Frakciókassza
 - `/faction treasury` — a kassza egyenlege • `/faction donate <összeg>` — adomány a saját valutádból.
@@ -330,7 +365,11 @@ hirdethet**.
 - A raid alatt (alapból 15 perc) a **két hadviselő frakció közti ölés nem bűn**, hanem **pontot
   ér**.
 - A végén a **több ölést szerző** oldal **hadizsákmányként** elviszi a vesztes kasszájának egy
-  részét (és **liga-pontot** kap a szezonba).
+  részét (és **liga-pontot** kap a szezonba). A győztes frakció online tagjai **győzelmi buffot**
+  kapnak (Erő + Regeneráció egy ideig).
+- **Ostromágyú:** craftolható ostromfegyver (vasblokk-keret + TNT + tűzpor), ami **csak aktív
+  raid alatt** sül el. Jobb katt = **pusztító, de terep-barát robbanás** a célzott pontra (sebzi
+  az ellenfeleket, de nem rombolja a világot). Raiden kívül nem működik.
 
 ### Szezonális liga 🏆
 A frakciók **raid- és világboss-győzelmekből pontot** gyűjtenek. A szezon végén (alapból 60 nap)
@@ -366,9 +405,12 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 | `/bank balance/deposit/withdraw` | Bank |
 | `/currency balance/pay/exchange/rates` | Valuta + árfolyam |
 | `/market`, `/market sell/cancel` | Piactér |
+| `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
 | `/quest list/info/accept/abandon` | Küldetések |
 | `/events season/blood-moon` | Világesemények |
+| `/faction king tax <%>` | Király: adókulcs beállítása |
 | `/job givecatalyst` (admin) | Katalizátor pótlása |
+| `/exchangeboard place/remove` (admin) | Árfolyamtábla kezelése |
 
 ---
 
@@ -376,19 +418,17 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 
 Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rájuk a játékban:
 
-- 🚧 **Bűn-rendszer:** jelenleg csak a **gyilkosság** számít bűnnek (lopás/árulás detektálás még nincs).
-- 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés; a győztes-buff (pl. +XP) is hátravan.
+- 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a küszöbnél az automatikus száműzetés **kész**;
+  a lopás/árulás detektálás még nincs.
+- 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az
+  ostromágyú már **kész**).
 - 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s / parkour pályák tervben.
-- 🚧 **Piactér:** nincs még lapozás/keresés, és fizikai piactábla a fővárosokban.
+- 🚧 **Piactér:** nincs még lapozás/keresés, és fizikai piactábla a fővárosokban (a reputáció-árazás már **kész**).
 - 🚧 **Intro:** csak cím-szekvencia van; a látványos kamera-utaztatás még hiányzik.
 - 🚧 **Szezonális liga:** működik a pontgyűjtés, de a győztes **kozmetikai relikvia-jutalma** még nincs.
-- ⏳ **Király adókulcs-állítása**, **frakció-reputáció** (NPC-árak a viszonytól), **ostromgépek**.
-- ⏳ **Rituálé-oltárok:** a relikviák közös rituáléval való megidézése.
 - ⏳ **Ultimate képességek** külön rendszerként (jelenleg a spec-ultik töltik be ezt a szerepet).
-- ⏳ **Árfolyam-kijelző hologramok** a fővárosokban.
-- ⏳ **WoW-stílusú pet-fejlesztések:** a pet-parancsok, az idézés-limit és a talent→pet
-  szinergia már **kész**; hátra van a **megnevezett, szintet lépő állandó társ** és a
-  **Nekromanta lélekszilánk-erőforrás**.
+- ⏳ **Megnevezett, szintet lépő állandó társ** (a Vadmester perzisztens companionja) — a többi
+  pet-fejlesztés (parancsok, idézés-limit, talent→pet szinergia, Nekromanta lélekszilánk) **kész**.
 - ⏳ **Világépítés:** a fővárosok, a Sötét romváros és a távolság-gyűrűk loot-asztalai a szerver
   csapatának feladata (a plugin a `/territory` paranccsal adja hozzá az eszközt a kijelölésükhöz).
 

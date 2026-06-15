@@ -49,7 +49,8 @@ public final class WisplightSpell extends BaseSpell {
                 block.getLocation().add(0.5D, 0.5D, 0.5D),
                 25, 0.2D, 0.2D, 0.2D, 0.01D);
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        // Folia: block edits must run on the region that owns the location.
+        plugin.getServer().getRegionScheduler().runDelayed(plugin, location, task -> {
             if (block.getType() == Material.LIGHT) {
                 block.setType(Material.AIR, false);
             }

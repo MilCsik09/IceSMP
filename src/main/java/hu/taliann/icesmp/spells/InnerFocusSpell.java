@@ -41,9 +41,9 @@ public final class InnerFocusSpell extends BaseSpell {
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 5, 5, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 5, 1, false, true, true));
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            restorePlayer(playerId, originalWalkSpeed);
-        }, 20L * 5L);
+        // Folia: per-player region scheduler instead of the unsupported Bukkit scheduler.
+        player.getScheduler().runDelayed(plugin, task -> restorePlayer(playerId, originalWalkSpeed),
+                () -> restorePlayer(playerId, originalWalkSpeed), 20L * 5L);
     }
 
     public static void clearPlayerState(final UUID playerId) {

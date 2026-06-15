@@ -33,6 +33,7 @@ public final class FactionTreasuryManager {
     private final MessageManager messageManager;
     private final File storageFile;
     private final Map<FactionType, Double> balances = new ConcurrentHashMap<>();
+    private final Map<FactionType, Double> taxRates = new ConcurrentHashMap<>();
 
     public FactionTreasuryManager(final JavaPlugin plugin, final ConfigManager configManager,
                                   final CurrencyManager currencyManager, final FactionManager factionManager,
@@ -70,6 +71,16 @@ public final class FactionTreasuryManager {
                 balances.put(faction, Math.max(0.0D, section.getDouble(factionKey, 0.0D)));
             }
 
+            final ConfigurationSection rateSection = yaml.getConfigurationSection("tax-rates");
+            if (rateSection != null) {
+                for (final String factionKey : rateSection.getKeys(false)) {
+                    final FactionType faction = FactionType.fromInput(factionKey);
+                    if (faction != null) {
+                        taxRates.put(faction, Math.max(0.0D, rateSection.getDouble(factionKey, 0.0D)));
+                    }
+                }
+            }
+
             plugin.getLogger().info("Loaded faction treasury balances.");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load faction treasury: " + exception.getMessage());
@@ -82,6 +93,9 @@ public final class FactionTreasuryManager {
             for (final Map.Entry<FactionType, Double> entry : balances.entrySet()) {
                 yaml.set("treasury." + entry.getKey().name(), entry.getValue());
             }
+            for (final Map.Entry<FactionType, Double> entry : taxRates.entrySet()) {
+                yaml.set("tax-rates." + entry.getKey().name(), entry.getValue());
+            }
 
             yaml.save(storageFile);
         } catch (final IOException exception) {
@@ -91,6 +105,36 @@ public final class FactionTreasuryManager {
 
     public double getBalance(final FactionType faction) {
         return faction == null ? 0.0D : balances.getOrDefault(faction, 0.0D);
+    }
+
+    /**
+     * Gets a faction's effective citizen-tax rate: the king's override if set,
+     * otherwise the server default from config.
+     *
+     * @param faction the faction
+     * @return the tax rate in percent
+     */
+    public double getTaxRate(final FactionType faction) {
+        final double configDefault = Math.max(0.0D, configManager.getDouble("factions.tax.rate-percent", 2.0D));
+        return faction == null ? configDefault : taxRates.getOrDefault(faction, configDefault);
+    }
+
+    /**
+     * Sets a faction's citizen-tax rate (the king's prerogative), clamped to a
+     * configured maximum to prevent abuse.
+     *
+     * @param faction the faction
+     * @param ratePercent the new rate in percent
+     * @return the applied (possibly clamped) rate
+     */
+    public double setTaxRate(final FactionType faction, final double ratePercent) {
+        final double max = Math.max(0.0D, configManager.getDouble("factions.tax.max-rate-percent", 10.0D));
+        final double applied = Math.max(0.0D, Math.min(max, ratePercent));
+        if (faction != null) {
+            taxRates.put(faction, applied);
+            save();
+        }
+        return applied;
     }
 
     public void deposit(final FactionType faction, final double amount) {
@@ -131,11 +175,6 @@ public final class FactionTreasuryManager {
             return;
         }
 
-        final double ratePercent = Math.max(0.0D, configManager.getDouble("factions.tax.rate-percent", 2.0D));
-        if (ratePercent <= 0.0D) {
-            return;
-        }
-
         final List<String> exempt = configManager.getStringList("factions.tax.exempt").stream()
                 .map(name -> name.toUpperCase(Locale.ROOT))
                 .toList();
@@ -144,6 +183,11 @@ public final class FactionTreasuryManager {
         for (final Map.Entry<UUID, FactionType> entry : factionManager.getFactionAssignments().entrySet()) {
             final FactionType faction = entry.getValue();
             if (faction == null || exempt.contains(faction.name())) {
+                continue;
+            }
+
+            final double ratePercent = getTaxRate(faction);
+            if (ratePercent <= 0.0D) {
                 continue;
             }
 
