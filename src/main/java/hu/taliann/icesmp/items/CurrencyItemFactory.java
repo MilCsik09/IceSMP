@@ -99,6 +99,7 @@ public final class CurrencyItemFactory {
             case RED -> TextUtil.color("&cPiros Token");
             case BLUE -> TextUtil.color("&9Kék Token");
             case NEUTRAL -> TextUtil.color("&7Semleges Token");
+            case DARK -> TextUtil.color("&8Sötét Token");
         };
     }
 }

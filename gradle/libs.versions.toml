@@ -1,7 +1,6 @@
 [versions]
 minecraft = "1.21.11"
 folia-api = "1.21.11-R0.1-SNAPSHOT"
-run-paper = "2.3.1"
 
 run-task = "3.0.2"
 
@@ -9,5 +8,4 @@ run-task = "3.0.2"
 folia-api = { module = "dev.folia:folia-api", version.ref = "folia-api" }
 
 [plugins]
-run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
 run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-task" }

@@ -5,6 +5,11 @@ elérhető a szerveren: hogyan működnek a frakciók, a kasztok, a szakmák, a 
 talentek, a gazdaság és a világesemények. A végén külön listában megtalálod, mi az, ami még
 **fejlesztés alatt (WIP)** áll.
 
+> Külön, könnyen olvasható rendszerleírások: [docs/player-guide/README.md](docs/player-guide/README.md)
+> Ha egy konkrét rendszert keresel, itt külön fájlban találod: frakciók, valuta, kasztok,
+> képességek, specializációk, talentek, szakmák, relikviák, világesemények, raid, küldetések,
+> területek és parancsok.
+
 > Jelölések: ✅ = kész és kipróbálható • 🚧 = részben kész • ⏳ = még nincs kész
 > A számértékek (szintek, %-ok, idők) a szerver beállításaitól függően változhatnak — az
 > alábbiak az alapértelmezések.
