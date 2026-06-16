@@ -63,25 +63,32 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 > világboss **kézi triggerelése** (a `/menu` Admin paneljén is gombbal). `BloodMoonManager.forceStart/
 > forceEnd`, `WorldBossManager.forceSpawn`.
 
-## 8. fázis — Napi/heti küldetések + elérések ⬜
-- ⬜ **Napi/heti küldetések** (rotáló, automatikus visszaállás).
-- ⬜ **Achievement (elérés) rendszer** GUI-val és jutalmakkal.
+## 8. fázis — Napi/heti küldetések + elérések 🔨
+- ✅ **Achievement (elérés) rendszer** GUI-val és jutalmakkal (`AchievementManager`,
+  `/achievements` + `/menu` Elérések gomb): mérföldkövek (raid-kill, kaszt-szint, vagyon,
+  össz-szakmaszint), a stats-tickkel kiértékelve, valuta-jutalommal.
+- ⬜ **Napi/heti küldetések** (rotáló, automatikus visszaállás) — későbbi körre.
 
-## 9. fázis — Dungeon / invázió ⬜
-- ⬜ **Dungeon / instance** (mini-kazamata loot-asztallal) **vagy invázió-esemény** a világboss mellé.
+## 9. fázis — Dungeon / invázió ✅
+- ✅ **Invázió-esemény** (`InvasionManager`, `/events invasion`): skálázott szörnyhorda spawnol
+  egy játékos köré (XP + lélekkő-eséllyel), időnként vagy admin-paranccsal. (A teljes
+  dungeon/instance — saját világgenerálás — nagyobb, külön projekt.)
 
-## 10. fázis — Szakma-receptek ⬜
-- ⬜ **Egyedi, frakció-specifikus craftolható tárgyak**, hogy a szakmák kézzelfoghatóak legyenek
-  (szakma-/szint-/frakció-kötött receptek).
+## 10. fázis — Szakma-receptek ✅
+- ✅ **Szakma-/szint-kötött mestermű receptek** (`ProfessionRecipeManager`): Tárnász Csákány,
+  Favágó Fejsze, Bástya Pajzs, Bölcs Könyve — csak a megfelelő szakma + szint craftolhatja.
+  (A frakció-specifikus gating ugyanezzel a mechanizmussal bővíthető.)
 
 ## 11. fázis — Cosmetics ⬜
 - ⬜ **Címek, részecske-effektek, kalapok** (a tervezett szezon-jutalom kiterjesztése), GUI-ból kezelve.
 
-## 12. fázis — Korábbról halasztott tételek ⬜
-- ⬜ **Megnevezett, szintet lépő állandó pet** (Vadmester perzisztens társa).
-- ⬜ **NPC-s / parkour kaszt-próbapályák.**
-- ⬜ **Piac lapozás / keresés / kategóriák.**
-- ⬜ **Intro kamera-utaztatás / spectator-útvonal.**
+## 12. fázis — Korábbról halasztott tételek 🔨
+- ✅ **Piac lapozás** (`MarketGUI` oldalazás: alsó sor előző/következő gomb + oldal-jelző).
+- ⬜ **Piac keresés / kategóriák** — szöveges bevitelt igényel, későbbi körre.
+- ⬜ **Megnevezett, szintet lépő állandó pet** (Vadmester perzisztens társa) — perzisztens
+  companion-entitás + leveling + Folia-helyes követő-AI; nagyobb, kockázatos, halasztva.
+- ⬜ **NPC-s / parkour kaszt-próbapályák** — világtartalom/NPC, nem tisztán plugin-feladat.
+- ⬜ **Intro kamera-utaztatás / spectator-útvonal** — Folia-n kockázatos kamera-vezérlés, halasztva.
 
 ---
 

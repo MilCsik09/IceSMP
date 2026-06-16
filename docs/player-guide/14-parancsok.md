@@ -16,6 +16,7 @@ jelenti, hogy **elhagyható**.
 |---|---|---|
 | `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
+| `/achievements` | `ach` | Elérések (mérföldkövek + jutalmak) |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |
 | `/faction join <frakció>` | `/f` | Belépés egy frakcióba (`red`/`blue`/`neutral`) |
 | `/faction leave` | `/f` | Kilépés a frakcióból |
@@ -62,6 +63,7 @@ jelenti, hogy **elhagyható**.
 | `/exchangeboard place\|remove` | Árfolyamtábla lerakása/törlése |
 | `/events bloodmoon start\|stop` | Vérhold kézi indítása / leállítása |
 | `/events worldboss` | Világboss azonnali megidézése |
+| `/events invasion` | Szörny-invázió azonnali indítása |
 | `/events intro [játékos]` | Bemutató újrajátszása |
 
 ---

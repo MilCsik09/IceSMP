@@ -4,9 +4,13 @@ import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.MarketManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -15,32 +19,68 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Market browser: shows the newest listings (one page, capped at 45 items)
- * with price/seller lore; clicking buys from the player's bank balance.
+ * Market browser with pagination (ROADMAP phase 12): listings fill the top rows,
+ * the bottom row holds page navigation. Clicking a listing buys it from the
+ * player's bank balance.
  */
 public final class MarketGUI {
 
     private static final int SIZE = 54;
-    private static final int MAX_LISTINGS = 45;
+    private static final int PER_PAGE = 45;
+    public static final int PREV_SLOT = 45;
+    public static final int PAGE_INFO_SLOT = 49;
+    public static final int NEXT_SLOT = 53;
 
     private MarketGUI() {
     }
 
     public static void open(final Player viewer, final MarketManager marketManager,
                             final CurrencyManager currencyManager, final MessageManager messageManager) {
+        open(viewer, marketManager, currencyManager, messageManager, 0);
+    }
+
+    public static void open(final Player viewer, final MarketManager marketManager,
+                            final CurrencyManager currencyManager, final MessageManager messageManager, final int page) {
+        final List<MarketManager.Listing> listings = marketManager.getListingsSorted();
+        final int totalPages = Math.max(1, (int) Math.ceil(listings.size() / (double) PER_PAGE));
+        final int safePage = Math.max(0, Math.min(page, totalPages - 1));
+
         final Component title = messageManager.getComponent("messages.market-title", "&6» Piactér «");
         final MarketHolder holder = new MarketHolder(viewer.getUniqueId());
+        holder.setPage(safePage);
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
 
-        final List<MarketManager.Listing> listings = marketManager.getListingsSorted();
-        for (int slot = 0; slot < Math.min(listings.size(), MAX_LISTINGS); slot++) {
-            final MarketManager.Listing listing = listings.get(slot);
-            inventory.setItem(slot, createDisplayItem(listing, currencyManager, messageManager));
-            holder.mapSlot(slot, listing.id());
+        final int start = safePage * PER_PAGE;
+        for (int i = 0; i < PER_PAGE && start + i < listings.size(); i++) {
+            final MarketManager.Listing listing = listings.get(start + i);
+            inventory.setItem(i, createDisplayItem(listing, currencyManager, messageManager));
+            holder.mapSlot(i, listing.id());
         }
 
+        // Bottom navigation row.
+        for (int slot = PER_PAGE; slot < SIZE; slot++) {
+            inventory.setItem(slot, GuiUtil.filler());
+        }
+        if (safePage > 0) {
+            inventory.setItem(PREV_SLOT, nav(Material.ARROW, "« Előző oldal"));
+        }
+        if (safePage < totalPages - 1) {
+            inventory.setItem(NEXT_SLOT, nav(Material.ARROW, "Következő oldal »"));
+        }
+        inventory.setItem(PAGE_INFO_SLOT, nav(Material.PAPER,
+                "Oldal " + (safePage + 1) + "/" + totalPages + " — " + listings.size() + " tétel"));
+
         viewer.openInventory(inventory);
+    }
+
+    private static ItemStack nav(final Material material, final String label) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text(label, NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+        item.setItemMeta(meta);
+        return item;
     }
 
     private static ItemStack createDisplayItem(final MarketManager.Listing listing,
