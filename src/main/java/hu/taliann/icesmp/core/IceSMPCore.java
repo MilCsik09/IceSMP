@@ -13,6 +13,7 @@ import hu.taliann.icesmp.commands.ExchangeBoardCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
 import hu.taliann.icesmp.commands.MenuCommand;
 import hu.taliann.icesmp.commands.PetCommand;
+import hu.taliann.icesmp.commands.ParkourCommand;
 import hu.taliann.icesmp.commands.ProfessionCommand;
 import hu.taliann.icesmp.commands.ProfileCommand;
 import hu.taliann.icesmp.commands.QuestCommand;
@@ -49,6 +50,7 @@ import hu.taliann.icesmp.listeners.PetXpListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
 import hu.taliann.icesmp.listeners.PlayerSessionCleanupListener;
 import hu.taliann.icesmp.listeners.ProfessionRecipeListener;
+import hu.taliann.icesmp.listeners.ParkourListener;
 import hu.taliann.icesmp.listeners.ProfessionXpListener;
 import hu.taliann.icesmp.listeners.QuestProgressListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
@@ -89,6 +91,7 @@ import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.PetManager;
+import hu.taliann.icesmp.managers.ParkourManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeManager;
 import hu.taliann.icesmp.managers.QuestManager;
@@ -162,6 +165,7 @@ public final class IceSMPCore {
     private final InvasionManager invasionManager;
     private final PetManager petManager;
     private final DailyQuestManager dailyQuestManager;
+    private final ParkourManager parkourManager;
     private final ProfessionManager professionManager;
     private final ProfessionRecipeManager professionRecipeManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
@@ -236,6 +240,7 @@ public final class IceSMPCore {
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.parkourManager = new ParkourManager(plugin, currencyManager, factionManager, messageManager);
         this.territoryManager = new TerritoryManager(plugin);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
@@ -313,6 +318,7 @@ public final class IceSMPCore {
         seasonManager.load();
         exchangeBoardManager.load();
         statsManager.load();
+        parkourManager.load();
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
@@ -365,6 +371,7 @@ public final class IceSMPCore {
         seasonManager.save();
         exchangeBoardManager.save();
         statsManager.save();
+        parkourManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
     }
 
@@ -460,6 +467,7 @@ public final class IceSMPCore {
         plugin.registerCommand("profile", "Karakterlap — kaszt, spec, szakma, talent menük", List.of("karakter", "char", "status"), new ProfileCommand(characterMenuContext, messageManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(relicManager, messageManager));
+        plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
         plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
         plugin.registerCommand("pet", "Vadmester társ (idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, messageManager));
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
@@ -505,6 +513,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(petManager, configManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(dailyQuestManager), plugin);
+        pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
