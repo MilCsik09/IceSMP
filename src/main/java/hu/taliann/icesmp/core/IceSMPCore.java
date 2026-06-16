@@ -6,6 +6,7 @@ import hu.taliann.icesmp.commands.FactionCommand;
 import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
 import hu.taliann.icesmp.commands.LeaderboardCommand;
+import hu.taliann.icesmp.commands.AchievementsCommand;
 import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.commands.ExchangeBoardCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
@@ -94,6 +95,7 @@ import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.managers.StatsManager;
+import hu.taliann.icesmp.managers.AchievementManager;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
@@ -178,6 +180,7 @@ public final class IceSMPCore {
     private final CommandMenuContext commandMenuContext;
     private final HudManager hudManager;
     private final StatsManager statsManager;
+    private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
@@ -232,10 +235,12 @@ public final class IceSMPCore {
                 professionManager, talentManager, factionManager, currencyManager, metelytepoManager,
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
+        this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
+                professionManager, factionManager, statsManager, messageManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager,
-                statsManager, configManager);
+                statsManager, achievementManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager);
         jobManager.setXpChangeHook(player -> {
@@ -369,6 +374,7 @@ public final class IceSMPCore {
                     seasonManager.tick();
                     exchangeBoardManager.tick();
                     statsManager.tick();
+                    achievementManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -439,6 +445,7 @@ public final class IceSMPCore {
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, kingManager, raidManager, messageManager));
         plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
+        plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
         plugin.registerCommand("leaderboard", "Ranglisták (szint, vagyon, raid-kill)", List.of("lb", "top", "rangsor"), new LeaderboardCommand(commandMenuContext, messageManager));
         plugin.registerCommand("profile", "Karakterlap — kaszt, spec, szakma, talent menük", List.of("karakter", "char", "status"), new ProfileCommand(characterMenuContext, messageManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(metelytepoManager, messageManager));

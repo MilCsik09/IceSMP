@@ -42,6 +42,7 @@ public final class CommandMenus {
             case RELIC -> openRelic(player, ctx);
             case SOULS -> openSouls(player, ctx);
             case LEADERBOARD -> openLeaderboard(player, ctx, StatsManager.Category.LEVEL);
+            case ACHIEVEMENTS -> openAchievements(player, ctx);
             case ADMIN -> openAdmin(player, ctx);
         }
     }
@@ -71,8 +72,10 @@ public final class CommandMenus {
                 List.of(grey("Nekromanta erőforrás és bajnok-idézés."), click())), "MENU:SOULS");
         put(inv, holder, 22, GuiUtil.icon(Material.GOLDEN_HELMET, title("Ranglisták"),
                 List.of(grey("Leggazdagabb, legmagasabb szint, raid-kill."), click())), "MENU:LEADERBOARD");
+        put(inv, holder, 23, GuiUtil.icon(Material.NETHER_STAR, title("Elérések"),
+                List.of(grey("Mérföldkövek és jutalmaik."), click())), "MENU:ACHIEVEMENTS");
         if (player.hasPermission(ADMIN_PERMISSION)) {
-            put(inv, holder, 23, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
+            put(inv, holder, 24, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
         }
         put(inv, holder, 31, closeButton(), "CLOSE");
@@ -325,6 +328,38 @@ public final class CommandMenus {
         }
         if (rows.isEmpty()) {
             put(inv, holder, 22, GuiUtil.icon(Material.BARRIER, Component.text("Még nincs adat", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false), List.of()), null);
+        }
+
+        put(inv, holder, 49, backButton(), "MENU:MAIN");
+        player.openInventory(inv);
+    }
+
+    // ===== ACHIEVEMENTS =====
+    public static void openAchievements(final Player player, final CommandMenuContext ctx) {
+        final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.ACHIEVEMENTS, player.getUniqueId());
+        final Inventory inv = create(holder, 54, "<dark_aqua>» Elérések «</dark_aqua>", ctx);
+        put(inv, holder, 4, GuiUtil.icon(Material.NETHER_STAR, accent("Elérések"),
+                List.of(grey("Mérföldkövek — automatikusan teljesülnek, jutalommal."))), null);
+
+        int slot = 9;
+        for (final hu.taliann.icesmp.managers.AchievementManager.Achievement achievement : ctx.achievementManager().getAchievements()) {
+            if (slot > 44) {
+                break;
+            }
+            final boolean earned = ctx.achievementManager().isEarned(player, achievement.id());
+            final double value = ctx.achievementManager().metricValue(player, achievement.metric());
+            final List<Component> lore = new ArrayList<>();
+            lore.add(grey(achievement.description()));
+            lore.add(label("Haladás", Component.text(
+                    Math.min((long) value, (long) achievement.threshold()) + "/" + (long) achievement.threshold(),
+                    earned ? NamedTextColor.GREEN : NamedTextColor.WHITE)));
+            lore.add(label("Jutalom", Component.text(achievement.reward() + " valuta", NamedTextColor.GOLD)));
+            lore.add(earned
+                    ? Component.text("✔ Teljesítve", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
+                    : Component.text("Folyamatban…", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            put(inv, holder, slot++, GuiUtil.icon(earned ? Material.LIME_DYE : Material.GRAY_DYE,
+                    Component.text(achievement.name(), earned ? NamedTextColor.GREEN : NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
+                    lore, earned), null);
         }
 
         put(inv, holder, 49, backButton(), "MENU:MAIN");

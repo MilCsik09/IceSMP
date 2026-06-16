@@ -606,6 +606,10 @@ spells:
         first: "toxin_dart"
         second: "contagion"
 
+# ===== Elérések (ROADMAP 8.) =====
+achievements:
+  enabled: true
+
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
 # Respec után a spec-talentek pontjai automatikusan visszatérülnek.

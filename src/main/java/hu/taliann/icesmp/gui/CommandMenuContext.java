@@ -11,6 +11,7 @@ import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.managers.SeasonManager;
+import hu.taliann.icesmp.managers.AchievementManager;
 import hu.taliann.icesmp.managers.SoulShardManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.StatsManager;
@@ -36,5 +37,6 @@ public record CommandMenuContext(
         SpecializationManager specializationManager,
         RelicManager relicManager,
         StatsManager statsManager,
+        AchievementManager achievementManager,
         ConfigManager configManager) {
 }

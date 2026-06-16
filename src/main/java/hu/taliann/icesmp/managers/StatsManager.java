@@ -103,6 +103,12 @@ public final class StatsManager {
         stat.wealth = currencyManager.getBalance(player);
     }
 
+    /** The player's recorded raid-kill count (0 if none). */
+    public int getRaidKills(final UUID playerId) {
+        final Stat stat = stats.get(playerId);
+        return stat == null ? 0 : stat.raidKills;
+    }
+
     /** Increments the player's raid-kill counter. */
     public void recordRaidKill(final Player player) {
         if (player == null) {
