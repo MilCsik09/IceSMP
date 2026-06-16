@@ -290,6 +290,8 @@ public final class CommandMenus {
                     List.of(grey("/events bloodmoon stop"), click())), "RUN:events bloodmoon stop");
             put(inv, holder, 22, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, title("Világboss idézése"),
                     List.of(grey("/events worldboss"), click())), "RUN:events worldboss");
+            put(inv, holder, 24, GuiUtil.icon(Material.ZOMBIE_HEAD, title("Invázió indítása"),
+                    List.of(grey("/events invasion"), click())), "RUN:events invasion");
         }
 
         put(inv, holder, 25, backButton(), "MENU:MAIN");

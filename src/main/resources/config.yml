@@ -953,6 +953,16 @@ world-events:
     treasury-reward: 300.0
     season-points: 10
     buff-minutes: 10
+  # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).
+  # A szörnyek skálázottak (XP + lélekkő-eséllyel), admin: /events invasion.
+  invasion:
+    enabled: true
+    check-interval-minutes: 75
+    chance-percent: 30
+    mob-count: 8
+    mob-level: 4
+    radius: 8.0
+    entity-type: "ZOMBIE"
   # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
   season:
     enabled: true

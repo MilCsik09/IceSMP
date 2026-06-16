@@ -68,6 +68,7 @@ import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.EconomyEventManager;
 import hu.taliann.icesmp.managers.IntroManager;
+import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.ExchangeBoardManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
@@ -148,6 +149,7 @@ public final class IceSMPCore {
     private final MetelytepoManager metelytepoManager;
     private final MinionManager minionManager;
     private final MobScalingManager mobScalingManager;
+    private final InvasionManager invasionManager;
     private final ProfessionManager professionManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
@@ -205,6 +207,7 @@ public final class IceSMPCore {
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
         this.introManager = new IntroManager(plugin, configManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager, bloodMoonManager);
+        this.invasionManager = new InvasionManager(plugin, configManager, mobScalingManager, messageManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
@@ -357,6 +360,7 @@ public final class IceSMPCore {
                 task -> {
                     bloodMoonManager.tick();
                     worldBossManager.tick();
+                    invasionManager.tick();
                     seasonManager.tick();
                     exchangeBoardManager.tick();
                     statsManager.tick();
@@ -440,7 +444,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown-csökkentés valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("exchangeboard", "Árfolyamtábla admin", List.of("ratesboard", "arfolyamtabla"), new ExchangeBoardCommand(exchangeBoardManager, messageManager));
