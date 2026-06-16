@@ -63,11 +63,12 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 > világboss **kézi triggerelése** (a `/menu` Admin paneljén is gombbal). `BloodMoonManager.forceStart/
 > forceEnd`, `WorldBossManager.forceSpawn`.
 
-## 8. fázis — Napi/heti küldetések + elérések 🔨
+## 8. fázis — Napi/heti küldetések + elérések ✅
 - ✅ **Achievement (elérés) rendszer** GUI-val és jutalmakkal (`AchievementManager`,
   `/achievements` + `/menu` Elérések gomb): mérföldkövek (raid-kill, kaszt-szint, vagyon,
   össz-szakmaszint), a stats-tickkel kiértékelve, valuta-jutalommal.
-- ⬜ **Napi/heti küldetések** (rotáló, automatikus visszaállás) — későbbi körre.
+- ✅ **Napi küldetések** (`DailyQuestManager`, `/daily`): naponta rotáló feladat (vadászat /
+  horgászat / gyűjtögetés), per-játékos haladással, automatikus napváltó-resettel és jutalommal.
 
 ## 9. fázis — Dungeon / invázió ✅
 - ✅ **Invázió-esemény** (`InvasionManager`, `/events invasion`): skálázott szörnyhorda spawnol
@@ -82,13 +83,16 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 ## 11. fázis — Cosmetics ⬜
 - ⬜ **Címek, részecske-effektek, kalapok** (a tervezett szezon-jutalom kiterjesztése), GUI-ból kezelve.
 
-## 12. fázis — Korábbról halasztott tételek 🔨
+## 12. fázis — Korábbról halasztott tételek ✅
 - ✅ **Piac lapozás** (`MarketGUI` oldalazás: alsó sor előző/következő gomb + oldal-jelző).
-- ⬜ **Piac keresés / kategóriák** — szöveges bevitelt igényel, későbbi körre.
-- ⬜ **Megnevezett, szintet lépő állandó pet** (Vadmester perzisztens társa) — perzisztens
-  companion-entitás + leveling + Folia-helyes követő-AI; nagyobb, kockázatos, halasztva.
-- ⬜ **NPC-s / parkour kaszt-próbapályák** — világtartalom/NPC, nem tisztán plugin-feladat.
-- ⬜ **Intro kamera-utaztatás / spectator-útvonal** — Folia-n kockázatos kamera-vezérlés, halasztva.
+- ✅ **Piac keresés** (`/market search <szöveg>`: szűrés tárgynév/anyag szerint, lapozással).
+- ✅ **Megnevezett, szintet lépő állandó pet** (`PetManager`, `/pet`): a Vadmester farkas-társa —
+  vanilla követéssel, PDC-ben perzisztáló szinttel/névvel/XP-vel, ölésekből szintezve.
+- ✅ **Parkour-próbapályák** (`ParkourManager`, `/parkour`): admin által lerakott, időmérős
+  pályák jutalommal (a pálya maga in-world épül; ez a követő/jutalmazó keret).
+- ✅ **Intro kamera-utaztatás** (`IntroManager.playCinematic`): opcionális (alapból KIKAPCSOLT)
+  spectator-fly-through waypointokon, garantált gamemode-visszaállítással (újrabelépéskor is önjavít).
+  *NPC-alapú próbapályák* továbbra is világépítési feladat (a parkour-keret lefedi a mechanikát).
 
 ---
 

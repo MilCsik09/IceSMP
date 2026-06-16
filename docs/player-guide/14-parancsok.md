@@ -17,6 +17,10 @@ jelenti, hogy **elhagyható**.
 | `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
 | `/achievements` | `ach` | Elérések (mérföldkövek + jutalmak) |
+| `/daily` | `napi` | A napi küldetés és haladásod |
+| `/pet summon\|dismiss\|name` | `tars` | Vadmester állandó, szintet lépő társa |
+| `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |
+| `/market search <szöveg>` | `piac`, `ah` | Keresés a piacon (a /market mellett) |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |
 | `/faction join <frakció>` | `/f` | Belépés egy frakcióba (`red`/`blue`/`neutral`) |
 | `/faction leave` | `/f` | Kilépés a frakcióból |
@@ -65,6 +69,7 @@ jelenti, hogy **elhagyható**.
 | `/events worldboss` | Világboss azonnali megidézése |
 | `/events invasion` | Szörny-invázió azonnali indítása |
 | `/events intro [játékos]` | Bemutató újrajátszása |
+| `/parkour setstart\|setfinish\|remove <id>` | Parkour-pálya beállítása |
 
 ---
 
