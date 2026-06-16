@@ -226,4 +226,15 @@ Ezek **csak akkor** oldódnak fel, ha az adott specializációt választottad (l
 
 ---
 
+## ★ Talent-képességek (aktív talentekből)
+
+Ezek **nem a szintedből**, hanem az **aktív talentekből** oldódnak fel (lásd
+[Talentek](07-talentek.md)), és **bármelyik kaszttal** használhatók a Katalizátorral:
+
+| Képesség | Mit csinál | Költség | Várakozás | Honnan |
+|---|---|---|---|---|
+| **Talentum Lendület** | Erős önbuff: **Erő + Védelem + Regeneráció + extra szív** ~12 mp-re | 100 XP | 5 perc | „Felemelkedés" capstone talent |
+
+---
+
 ➡️ Tovább: [Specializációk](06-specializaciok.md) • [Vissza a tartalomhoz](README.md)

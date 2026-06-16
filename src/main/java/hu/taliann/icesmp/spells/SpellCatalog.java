@@ -44,6 +44,22 @@ public final class SpellCatalog {
         registerBeastMaster(registry, mm);
         registerPoisoner(registry, mm);
         registerPhantom(registry, mm);
+        registerTalentSpells(registry, mm);
+    }
+
+    /**
+     * Spells granted by ACTIVE talents (ROADMAP phase 2), not by class level — so
+     * they are only obtainable through the talent tree (e.g. the 'ascendant'
+     * capstone). Available to any class once the talent is taken.
+     */
+    private static void registerTalentSpells(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "talent_surge", "Talentum Lendület", 300, SpellCostType.XP, 100)
+                .selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1)
+                .selfEffect(PotionEffectType.RESISTANCE, 12 * 20, 0)
+                .selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
+                .selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 1)
+                .particle(Particle.TOTEM_OF_UNDYING, 40).sound(Sound.ITEM_TOTEM_USE, 0.7F, 1.2F)
+                .build());
     }
 
     /**

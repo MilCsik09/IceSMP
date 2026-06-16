@@ -172,19 +172,31 @@ public final class TalentManager {
         final ConfigurationSection talentSection = definitions.getConfigurationSection(talentId.toLowerCase(Locale.ROOT));
         return talentSection != null
                 && meetsRequirements(player, talentSection)
-                && prerequisiteMet(player, classPool, talentSection);
+                && treeGatesMet(player, classPool, talentSection);
     }
 
     /**
-     * Checks the talent-tree prerequisite: the parent talent named by
-     * 'requires-talent' (if any) must already have at least one rank.
+     * The talent-tree gates beyond the job/spec/profession requirements:
+     * <ul>
+     *   <li><b>requires-talent</b>: the parent talent must already have a rank;</li>
+     *   <li><b>excludes</b>: no mutually-exclusive sibling may be ranked (branch choice);</li>
+     *   <li><b>requires-spent</b>: a capstone needs N points already spent in the pool.</li>
+     * </ul>
      */
-    private boolean prerequisiteMet(final Player player, final boolean classPool, final ConfigurationSection talentSection) {
+    private boolean treeGatesMet(final Player player, final boolean classPool, final ConfigurationSection talentSection) {
         final String parentId = talentSection.getString("requires-talent");
-        if (parentId == null || parentId.isBlank()) {
-            return true;
+        if (parentId != null && !parentId.isBlank() && getRank(player, classPool, parentId) <= 0) {
+            return false;
         }
-        return getRank(player, classPool, parentId) > 0;
+
+        for (final String excluded : talentSection.getStringList("excludes")) {
+            if (getRank(player, classPool, excluded) > 0) {
+                return false;
+            }
+        }
+
+        final int requiresSpent = Math.max(0, talentSection.getInt("requires-spent", 0));
+        return requiresSpent <= 0 || getSpentPoints(player, classPool) >= requiresSpent;
     }
 
     private boolean meetsRequirements(final Player player, final ConfigurationSection talentSection) {
@@ -228,6 +240,7 @@ public final class TalentManager {
      */
     public int refundUnavailableTalents(final Player player, final boolean classPool) {
         final Map<String, Integer> ranks = getRanks(player, classPool);
+        final ConfigurationSection definitions = getDefinitions(classPool);
         int refunded = 0;
 
         final var iterator = ranks.entrySet().iterator();
@@ -235,6 +248,12 @@ public final class TalentManager {
             final Map.Entry<String, Integer> entry = iterator.next();
             if (!isAvailable(player, classPool, entry.getKey())) {
                 refunded += entry.getValue();
+                // Active talent: revoke the granted spell when the talent lapses.
+                final ConfigurationSection section = definitions == null ? null : definitions.getConfigurationSection(entry.getKey());
+                final String grantsSpell = section == null ? null : section.getString("grants-spell");
+                if (grantsSpell != null && !grantsSpell.isBlank()) {
+                    revokeGrantedSpell(player, grantsSpell);
+                }
                 iterator.remove();
             }
         }
@@ -280,8 +299,8 @@ public final class TalentManager {
             return false;
         }
 
-        // Talent-tree gating: the parent talent must be ranked first.
-        if (!prerequisiteMet(player, classPool, talentSection)) {
+        // Talent-tree gating: prerequisite, mutual exclusion and capstone point-gate.
+        if (!treeGatesMet(player, classPool, talentSection)) {
             return false;
         }
 
@@ -299,6 +318,14 @@ public final class TalentManager {
         ranks.put(normalizedId, currentRank + 1);
         saveRanks(player, classPool, ranks);
         applyAttributeTalents(player);
+
+        // Active talent: the first rank unlocks the granted spell in the catalyst.
+        if (currentRank == 0) {
+            final String grantsSpell = talentSection.getString("grants-spell");
+            if (grantsSpell != null && !grantsSpell.isBlank()) {
+                jobManager.unlockSpell(player, grantsSpell);
+            }
+        }
         return true;
     }
 
@@ -367,6 +394,13 @@ public final class TalentManager {
         }
 
         return total;
+    }
+
+    private void revokeGrantedSpell(final Player player, final String spellId) {
+        final java.util.List<String> unlocked = new java.util.ArrayList<>(jobManager.getUnlockedSpellIds(player));
+        if (unlocked.removeIf(id -> id.equalsIgnoreCase(spellId))) {
+            jobManager.setUnlockedSpellIds(player, unlocked);
+        }
     }
 
     private void saveRanks(final Player player, final boolean classPool, final Map<String, Integer> ranks) {

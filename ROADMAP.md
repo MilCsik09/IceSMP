@@ -16,10 +16,12 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 - ⬜ **Folyamatos cooldown-kijelző** action barban — a 3. fázisba (spellek) tolva, mert a
   spell-állapothoz kapcsolódik (az action bart a spell-rendszer is használja).
 
-## 2. fázis — Talent-fa mélyítése ⬜
-- ⬜ **Aktív talentek:** ne csak passzív stat, hanem elsüthető hatás is lehessen.
-- ⬜ **Egymást kizáró ágak:** egy tier-ben csak az egyik ág választható.
-- ⬜ **Csúcs-talent (capstone):** az ág végén erős, egyszeri talent magas befektetésért.
+## 2. fázis — Talent-fa mélyítése ✅
+- ✅ **Aktív talentek:** a `grants-spell` mezővel a talent **képességet old fel** a Katalizátorban
+  (pl. a `Felemelkedés` capstone a `Talentum Lendület` ultit adja); respec/lejárat visszavonja.
+- ✅ **Egymást kizáró ágak:** az `excludes` mezővel egy ág kizárja a testvérét (pl. `Behemót` vs `Hadúr`).
+- ✅ **Csúcs-talent (capstone):** a `requires-spent: N` mezővel a talent csak N elköltött pont után
+  nyílik (pl. `Felemelkedés`). A GUI minden zár-okot kiír (szülő / kizárt ág / szükséges pont).
 
 ## 3. fázis — Spellek mélyítése ⬜
 - ⬜ **Spell-rangok:** a képességek fejleszthető erőssége (pont/erőforrás).

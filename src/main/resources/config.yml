@@ -691,6 +691,32 @@ talents:
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
+      # --- 2. szint: EGYMÁST KIZÁRÓ ágválasztás (csak az egyik vehető fel) ---
+      juggernaut:
+        display-name: "Behemót"
+        tier: 2
+        requires-talent: "vitality"
+        excludes: ["warlord"]
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      warlord:
+        display-name: "Hadúr"
+        tier: 2
+        requires-talent: "power"
+        excludes: ["juggernaut"]
+        effect: "attack-damage"
+        per-rank: 1.0
+        max-rank: 3
+      # --- CSÚCS-TALENT (capstone): N elköltött pont után, AKTÍV képességet ad ---
+      ascendant:
+        display-name: "Felemelkedés"
+        tier: 3
+        requires-spent: 10
+        grants-spell: "talent_surge"
+        effect: "max-health"
+        per-rank: 6.0
+        max-rank: 1
   profession:
     points-per-levels: 10
     definitions:
