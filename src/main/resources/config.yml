@@ -1013,6 +1013,14 @@ world-events:
       - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
       - "&6Válassz frakciót||&7Piros, Kék, Semleges vagy Sötét"
       - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
+    # Opcionális filmszerű kameraút (ALAPBÓL KIKAPCSOLVA). Bekapcsoláskor a játékost
+    # rövid időre spectator módba teszi, és végigviszi a waypointokon, majd visszaállítja
+    # a gamemode-ját (újrabelépéskor is önjavít, ha megszakadna). Waypoint formátum:
+    # "x,y,z" vagy "x,y,z,yaw,pitch" vagy "világ,x,y,z,yaw,pitch".
+    cinematic:
+      enabled: false
+      point-seconds: 3
+      waypoints: []
 
 # ===== Kaszt/szakma-alapú craftolási korlátozások =====
 # required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
