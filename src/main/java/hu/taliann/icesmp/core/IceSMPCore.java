@@ -2,6 +2,7 @@ package hu.taliann.icesmp.core;
 
 import hu.taliann.icesmp.commands.BankCommand;
 import hu.taliann.icesmp.commands.CurrencyCommand;
+import hu.taliann.icesmp.commands.DailyCommand;
 import hu.taliann.icesmp.commands.FactionCommand;
 import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
@@ -34,6 +35,7 @@ import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.HudListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
+import hu.taliann.icesmp.listeners.DailyQuestListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.IntroListener;
@@ -70,6 +72,7 @@ import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.EconomyEventManager;
 import hu.taliann.icesmp.managers.IntroManager;
 import hu.taliann.icesmp.managers.InvasionManager;
@@ -158,6 +161,7 @@ public final class IceSMPCore {
     private final MobScalingManager mobScalingManager;
     private final InvasionManager invasionManager;
     private final PetManager petManager;
+    private final DailyQuestManager dailyQuestManager;
     private final ProfessionManager professionManager;
     private final ProfessionRecipeManager professionRecipeManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
@@ -231,6 +235,7 @@ public final class IceSMPCore {
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
+        this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.territoryManager = new TerritoryManager(plugin);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
@@ -455,6 +460,7 @@ public final class IceSMPCore {
         plugin.registerCommand("profile", "Karakterlap — kaszt, spec, szakma, talent menük", List.of("karakter", "char", "status"), new ProfileCommand(characterMenuContext, messageManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(relicManager, messageManager));
+        plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
         plugin.registerCommand("pet", "Vadmester társ (idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, messageManager));
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
@@ -498,6 +504,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(petManager, configManager), plugin);
+        pluginManager.registerEvents(new DailyQuestListener(dailyQuestManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

@@ -606,6 +606,19 @@ spells:
         first: "toxin_dart"
         second: "contagion"
 
+# ===== Napi küldetések (ROADMAP 8.) =====
+daily-quests:
+  enabled: true
+  daily_hunt:
+    amount: 20
+    reward: 60
+  daily_fish:
+    amount: 10
+    reward: 50
+  daily_gather:
+    amount: 64
+    reward: 40
+
 # ===== Elérések (ROADMAP 8.) =====
 achievements:
   enabled: true
