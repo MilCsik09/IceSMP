@@ -187,7 +187,7 @@ public final class SpellCatalog {
                 .dash(-1.2D, 0.6D)
                 .particle(Particle.CLOUD, 12).sound(Sound.ENTITY_RABBIT_JUMP, 1.0F, 0.8F)
                 .build());
-        registry.register(new ProjectileBurstSpell(mm, "piercing_bolt", "Átütő Lövedék", 35, SpellCostType.HUNGER, 4,
+        registry.register(new ProjectileBurstSpell(mm, "piercing_bolt", "Átütő Lövedék", 35, SpellCostType.XP, 25,
                 ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.2D,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 0.7F));
         registry.register(ConfiguredSpell.builder(mm, "snare", "Csapdázás", 45, SpellCostType.HUNGER, 4)
@@ -199,7 +199,7 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.INVISIBILITY, 8 * 20, 0)
                 .particle(Particle.COMPOSTER, 20).sound(Sound.BLOCK_GRASS_BREAK, 0.8F, 0.8F)
                 .build());
-        registry.register(new ProjectileBurstSpell(mm, "arrow_storm", "Nyílzápor", 90, SpellCostType.HUNGER, 8,
+        registry.register(new ProjectileBurstSpell(mm, "arrow_storm", "Nyílzápor", 90, SpellCostType.XP, 60,
                 ProjectileBurstSpell.ProjectileKind.ARROW, 7, 6.0D, 2.0D,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 1.2F));
         registry.register(ConfiguredSpell.builder(mm, "swift_steps", "Szélléptek", 90, SpellCostType.HUNGER, 5)
@@ -234,7 +234,7 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.SPEED, 5 * 20, 1)
                 .particle(Particle.SMOKE, 20).sound(Sound.ENTITY_BREEZE_SLIDE, 1.0F, 1.2F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "garrote", "Fojtás", 90, SpellCostType.HUNGER, 6)
+        registry.register(ConfiguredSpell.builder(mm, "garrote", "Fojtás", 90, SpellCostType.HEALTH, 3)
                 .target(3.5D).damage(5.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 4)
                 .particle(Particle.SMOKE, 15).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 0.8F, 0.6F)
                 .build());
@@ -243,7 +243,7 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.INVISIBILITY, 2 * 20, 0)
                 .particle(Particle.LARGE_SMOKE, 25).sound(Sound.ENTITY_BREEZE_SLIDE, 1.0F, 0.8F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "death_mark", "Haláljegy", 120, SpellCostType.HUNGER, 7)
+        registry.register(ConfiguredSpell.builder(mm, "death_mark", "Haláljegy", 120, SpellCostType.HEALTH, 3)
                 .target(15.0D).targetEffect(PotionEffectType.GLOWING, 12 * 20, 0)
                 .targetEffect(PotionEffectType.WEAKNESS, 12 * 20, 1)
                 .particle(Particle.SOUL, 25).sound(Sound.ENTITY_VEX_CHARGE, 1.0F, 0.7F)
@@ -287,7 +287,7 @@ public final class SpellCatalog {
 
     // ===== NEKROMANTA (wizard spec) =====
     private static void registerNecromancer(final SpellRegistry registry, final MessageManager mm) {
-        registry.register(ConfiguredSpell.builder(mm, "grave_grasp", "Sírkéz", 45, SpellCostType.XP, 30)
+        registry.register(ConfiguredSpell.builder(mm, "grave_grasp", "Sírkéz", 45, SpellCostType.HEALTH, 2)
                 .target(10.0D).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 3)
                 .targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
                 .particle(Particle.SOUL, 25).sound(Sound.BLOCK_SOUL_SAND_BREAK, 1.0F, 0.6F)
@@ -296,7 +296,7 @@ public final class SpellCatalog {
                 .aoe(5.0D).damage(2.0D).healSelf(4.0D)
                 .particle(Particle.SCULK_SOUL, 40).sound(Sound.PARTICLE_SOUL_ESCAPE, 1.0F, 0.7F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "dread_aura", "Rettegésaura", 120, SpellCostType.XP, 60)
+        registry.register(ConfiguredSpell.builder(mm, "dread_aura", "Rettegésaura", 120, SpellCostType.HEALTH, 4)
                 .aoe(6.0D).targetEffect(PotionEffectType.WITHER, 5 * 20, 0)
                 .targetEffect(PotionEffectType.WEAKNESS, 8 * 20, 0)
                 .particle(Particle.SQUID_INK, 50).sound(Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.8F)
@@ -304,7 +304,7 @@ public final class SpellCatalog {
         registry.register(new ProjectileBurstSpell(mm, "bone_spear", "Csontdárda", 30, SpellCostType.XP, 30,
                 ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.0D,
                 Sound.ENTITY_SKELETON_SHOOT, 1.0F, 0.7F));
-        registry.register(ConfiguredSpell.builder(mm, "plague_touch", "Dögvészérintés", 75, SpellCostType.XP, 45)
+        registry.register(ConfiguredSpell.builder(mm, "plague_touch", "Dögvészérintés", 75, SpellCostType.HEALTH, 3)
                 .target(6.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
                 .targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
                 .targetEffect(PotionEffectType.HUNGER, 10 * 20, 1)
@@ -316,7 +316,7 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 1)
                 .particle(Particle.SOUL_FIRE_FLAME, 40).sound(Sound.ENTITY_WITHER_SPAWN, 0.4F, 1.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "wraith_form", "Kísértetforma", 180, SpellCostType.XP, 70)
+        registry.register(ConfiguredSpell.builder(mm, "wraith_form", "Kísértetforma", 180, SpellCostType.HEALTH, 4)
                 .selfEffect(PotionEffectType.INVISIBILITY, 10 * 20, 0)
                 .selfEffect(PotionEffectType.SPEED, 10 * 20, 1)
                 .selfEffect(PotionEffectType.WEAKNESS, 10 * 20, 0)
@@ -330,7 +330,7 @@ public final class SpellCatalog {
 
     // ===== BERSERKER (warrior spec) =====
     private static void registerBerserker(final SpellRegistry registry, final MessageManager mm) {
-        registry.register(ConfiguredSpell.builder(mm, "rage", "Düh", 90, SpellCostType.HUNGER, 6)
+        registry.register(ConfiguredSpell.builder(mm, "rage", "Düh", 90, SpellCostType.HEALTH, 4)
                 .selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1)
                 .selfEffect(PotionEffectType.SPEED, 12 * 20, 0)
                 .particle(Particle.ANGRY_VILLAGER, 12).sound(Sound.ENTITY_RAVAGER_ROAR, 0.8F, 1.1F)
@@ -354,7 +354,7 @@ public final class SpellCatalog {
                 .targetEffect(PotionEffectType.WEAKNESS, 6 * 20, 0)
                 .particle(Particle.CLOUD, 30).sound(Sound.ENTITY_WARDEN_ROAR, 0.7F, 1.2F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "unstoppable", "Megállíthatatlan", 150, SpellCostType.HUNGER, 8)
+        registry.register(ConfiguredSpell.builder(mm, "unstoppable", "Megállíthatatlan", 150, SpellCostType.HEALTH, 4)
                 .selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 1)
                 .selfEffect(PotionEffectType.SPEED, 12 * 20, 1)
                 .particle(Particle.TOTEM_OF_UNDYING, 30).sound(Sound.ITEM_TOTEM_USE, 0.5F, 1.5F)
@@ -363,7 +363,7 @@ public final class SpellCatalog {
                 .dash(1.8D, 0.9D)
                 .particle(Particle.CLOUD, 20).sound(Sound.ENTITY_RAVAGER_STEP, 1.0F, 0.8F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "bloodbath", "Vérfürdő", 150, SpellCostType.HUNGER, 8)
+        registry.register(ConfiguredSpell.builder(mm, "bloodbath", "Vérfürdő", 150, SpellCostType.HEALTH, 4)
                 .aoe(5.0D).damage(5.0D).healSelf(4.0D)
                 .particle(Particle.DAMAGE_INDICATOR, 40).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.5F)
                 .build());
@@ -431,7 +431,7 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.NIGHT_VISION, 15 * 20, 0)
                 .particle(Particle.GLOW, 30).sound(Sound.ENTITY_ENDER_EYE_LAUNCH, 1.0F, 1.2F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "headshot", "Fejlövés", 60, SpellCostType.HUNGER, 6)
+        registry.register(ConfiguredSpell.builder(mm, "headshot", "Fejlövés", 60, SpellCostType.XP, 40)
                 .target(15.0D).damage(7.0D)
                 .particle(Particle.CRIT, 25).sound(Sound.ENTITY_ARROW_HIT_PLAYER, 1.0F, 0.6F)
                 .build());
@@ -458,10 +458,10 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.SPEED, 15 * 20, 0)
                 .particle(Particle.ENCHANT, 30).sound(Sound.BLOCK_NOTE_BLOCK_CHIME, 1.0F, 1.6F)
                 .build());
-        registry.register(new ProjectileBurstSpell(mm, "spectral_volley", "Szellemsortűz", 90, SpellCostType.HUNGER, 8,
+        registry.register(new ProjectileBurstSpell(mm, "spectral_volley", "Szellemsortűz", 90, SpellCostType.XP, 60,
                 ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 5, 5.0D, 2.4D,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 0.9F));
-        registry.register(ConfiguredSpell.builder(mm, "masterful_shot", "Mesterlövés", 300, SpellCostType.HUNGER, 10)
+        registry.register(ConfiguredSpell.builder(mm, "masterful_shot", "Mesterlövés", 300, SpellCostType.XP, 80)
                 .target(20.0D).damage(12.0D)
                 .particle(Particle.FLASH, 3).sound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.7F, 1.6F)
                 .build());
@@ -531,12 +531,12 @@ public final class SpellCatalog {
                 .targetEffect(PotionEffectType.NAUSEA, 8 * 20, 0)
                 .particle(Particle.SNEEZE, 80).sound(Sound.ENTITY_PUFFER_FISH_BLOW_OUT, 1.0F, 0.7F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "debilitating_poison", "Sorvasztó Méreg", 90, SpellCostType.HUNGER, 7)
+        registry.register(ConfiguredSpell.builder(mm, "debilitating_poison", "Sorvasztó Méreg", 90, SpellCostType.XP, 50)
                 .target(8.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 1)
                 .targetEffect(PotionEffectType.HUNGER, 12 * 20, 2)
                 .particle(Particle.ITEM_SLIME, 25).sound(Sound.ENTITY_SPIDER_AMBIENT, 1.0F, 0.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "deathcap", "Gyilkos Galóca", 240, SpellCostType.HUNGER, 9)
+        registry.register(ConfiguredSpell.builder(mm, "deathcap", "Gyilkos Galóca", 240, SpellCostType.XP, 70)
                 .target(8.0D).damage(4.0D).targetEffect(PotionEffectType.POISON, 8 * 20, 2)
                 .targetEffect(PotionEffectType.WEAKNESS, 8 * 20, 1)
                 .particle(Particle.SPORE_BLOSSOM_AIR, 40).sound(Sound.BLOCK_FUNGUS_BREAK, 1.0F, 0.5F)
@@ -573,17 +573,17 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.WEAKNESS, 8 * 20, 0)
                 .particle(Particle.END_ROD, 30).sound(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 0.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "phantom_grip", "Fantomszorítás", 75, SpellCostType.HUNGER, 6)
+        registry.register(ConfiguredSpell.builder(mm, "phantom_grip", "Fantomszorítás", 75, SpellCostType.HEALTH, 3)
                 .target(10.0D).damage(2.0D).targetEffect(PotionEffectType.LEVITATION, 2 * 20, 0)
                 .particle(Particle.SOUL, 20).sound(Sound.ENTITY_PHANTOM_FLAP, 1.0F, 0.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "dread_whisper", "Rémsuttogás", 90, SpellCostType.HUNGER, 6)
+        registry.register(ConfiguredSpell.builder(mm, "dread_whisper", "Rémsuttogás", 90, SpellCostType.HEALTH, 3)
                 .target(12.0D).targetEffect(PotionEffectType.WEAKNESS, 8 * 20, 1)
                 .targetEffect(PotionEffectType.NAUSEA, 8 * 20, 0)
                 .targetEffect(PotionEffectType.DARKNESS, 5 * 20, 0)
                 .particle(Particle.SCULK_SOUL, 20).sound(Sound.ENTITY_WARDEN_LISTENING, 1.0F, 0.7F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "spectre", "Kísértet", 300, SpellCostType.HUNGER, 10)
+        registry.register(ConfiguredSpell.builder(mm, "spectre", "Kísértet", 300, SpellCostType.HEALTH, 4)
                 .selfEffect(PotionEffectType.INVISIBILITY, 15 * 20, 0)
                 .selfEffect(PotionEffectType.SPEED, 15 * 20, 1)
                 .selfEffect(PotionEffectType.JUMP_BOOST, 15 * 20, 1)

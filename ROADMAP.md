@@ -23,7 +23,11 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 - ✅ **Csúcs-talent (capstone):** a `requires-spent: N` mezővel a talent csak N elköltött pont után
   nyílik (pl. `Felemelkedés`). A GUI minden zár-okot kiír (szülő / kizárt ág / szükséges pont).
 
-## 3. fázis — Spellek mélyítése ⬜
+## 3. fázis — Spellek mélyítése 🔨
+- ✅ **Költség-egyensúly + új költségtípus:** bevezetve a **HEALTH (élet / „vérmágia")** költség
+  a HUNGER és XP mellé. Tematikus átbalanszozás: agresszív/sötét spellek életbe (berserker,
+  nekromanta, fantom, finisherek ~12 db), pontos/alkímiai spellek XP-be; az élet-költésű spell
+  nem süthető el, ha megölne. (Kérés szerint: ez egy első kör, később finomítandó.)
 - ⬜ **Spell-rangok:** a képességek fejleszthető erőssége (pont/erőforrás).
 - ⬜ **Kombók:** egymásra épülő képesség-láncok bónusszal.
 - ⬜ **Jobb célzás:** célzás-segéd, ráhatás-jelzés.

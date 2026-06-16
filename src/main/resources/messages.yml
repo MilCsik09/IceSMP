@@ -578,6 +578,7 @@ messages:
     resources:
       hunger: "éhség"
       xp: "XP"
+      health: "élet"
     profile:
       gui:
         title: "<dark_aqua>» Karakterlap «</dark_aqua>"

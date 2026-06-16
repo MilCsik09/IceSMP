@@ -27,6 +27,8 @@ public interface Spell {
         return switch (getCostType()) {
             case HUNGER -> player.getFoodLevel() >= getCostAmount();
             case XP -> ExperienceUtil.getTotalExperience(player) >= getCostAmount();
+            // Must survive the cast: keep the player strictly above the cost.
+            case HEALTH -> player.getHealth() > getCostAmount();
         };
     }
 
@@ -38,6 +40,8 @@ public interface Spell {
                 final int newXP = Math.max(0, currentXP - Math.max(0, getCostAmount()));
                 ExperienceUtil.setTotalExperience(player, newXP);
             }
+            // hasRequiredCost guarantees health > cost, so the result stays positive.
+            case HEALTH -> player.setHealth(Math.max(0.5D, player.getHealth() - getCostAmount()));
         }
     }
 

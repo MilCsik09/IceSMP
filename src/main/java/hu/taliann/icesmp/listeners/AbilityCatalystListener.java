@@ -191,6 +191,7 @@ public final class AbilityCatalystListener implements Listener {
         return switch (spell.getCostType()) {
             case HUNGER -> messageManager.get("system.resources.hunger", "éhség");
             case XP -> messageManager.get("system.resources.xp", "XP");
+            case HEALTH -> messageManager.get("system.resources.health", "élet");
         };
     }
 
