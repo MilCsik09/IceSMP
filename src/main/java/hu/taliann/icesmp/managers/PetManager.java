@@ -24,6 +24,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Companion pets for the Beast Master and Necromancer (ROADMAP phase 12 + capture
@@ -47,6 +48,10 @@ public final class PetManager {
     private final NamespacedKey entityKey;
     private final NamespacedKey healthModKey;
     private final NamespacedKey damageModKey;
+    /** owner UUID → current combat target UUID (assist / defend). */
+    private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();
+    /** pet UUID → epoch ms when the pet may attack again. */
+    private final Map<UUID, Long> attackReady = new ConcurrentHashMap<>();
 
     public PetManager(final JavaPlugin plugin, final ConfigManager configManager, final MinionManager minionManager,
                       final SpecializationManager specializationManager, final MessageManager messageManager) {
@@ -198,36 +203,157 @@ public final class PetManager {
     }
 
     /**
-     * Keeps non-tameable companions near their owner: any pet that has drifted too
-     * far (or to another world) is teleported back to its owner. Run periodically.
+     * Records a combat target for the owner's active pet (assist when the owner
+     * strikes a mob, or defend when the owner is struck). Ignored if the target is
+     * the owner or one of the owner's own minions, so a pet never turns on its allies.
      */
-    public void followTick() {
+    public void setCombatTarget(final Player owner, final LivingEntity target) {
+        if (owner == null || target == null || target.isDead() || !target.isValid()) {
+            return;
+        }
+        if (target.getUniqueId().equals(owner.getUniqueId()) || minionManager.isOwnedBy(target, owner.getUniqueId())) {
+            return;
+        }
+        if (activePet(owner) == null) {
+            return;
+        }
+        combatTargets.put(owner.getUniqueId(), target.getUniqueId());
+    }
+
+    /**
+     * Drives every active companion each scheduler pass. The pet's behaviour is
+     * controlled entirely by the plugin (not the mob's own AI): in ACTIVE stance it
+     * chases its target via the pathfinder and lands plugin-applied hits, so even a
+     * peaceful animal fights like a real pet; with no target it follows the owner.
+     * STAY holds position, PASSIVE only follows.
+     */
+    public void tick() {
         final double followSq = Math.pow(Math.max(4.0D, configManager.getDouble("pets.companion.follow-distance", 16.0D)), 2);
+        final double reach = Math.max(1.5D, configManager.getDouble("pets.companion.attack-reach", 2.6D));
+        final double aggro = Math.max(0.0D, configManager.getDouble("pets.companion.aggro-range", 10.0D));
+        final double leash = Math.max(8.0D, configManager.getDouble("pets.companion.leash-range", 24.0D));
+        final double chaseSpeed = Math.max(0.1D, configManager.getDouble("pets.companion.chase-speed", 1.3D));
+        final long cooldownMs = Math.max(200L, configManager.getInt("pets.companion.attack-cooldown-ticks", 16) * 50L);
+
         for (final Player owner : Bukkit.getOnlinePlayers()) {
             final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
             if (raw == null) {
                 continue;
             }
-            final Entity pet;
+            final Entity entity;
             try {
-                pet = Bukkit.getEntity(UUID.fromString(raw));
+                entity = Bukkit.getEntity(UUID.fromString(raw));
             } catch (final IllegalArgumentException exception) {
                 continue;
             }
-            if (pet == null || !pet.isValid()) {
+            if (!(entity instanceof Mob pet) || !pet.isValid()) {
                 continue;
             }
             final UUID ownerId = owner.getUniqueId();
-            pet.getScheduler().run(plugin, task -> {
-                final Player live = Bukkit.getPlayer(ownerId);
-                if (live == null || !live.isOnline()) {
-                    return;
-                }
-                if (!live.getWorld().equals(pet.getWorld()) || pet.getLocation().distanceSquared(live.getLocation()) > followSq) {
-                    pet.teleportAsync(live.getLocation());
-                }
-            }, null);
+            final int level = getLevel(owner);
+            pet.getScheduler().run(plugin, task ->
+                    runPetTick(pet, ownerId, level, followSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
         }
+    }
+
+    private void runPetTick(final Mob pet, final UUID ownerId, final int level, final double followSq,
+                            final double reach, final double aggro, final double leash, final double chaseSpeed,
+                            final long cooldownMs) {
+        final Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null || !owner.isOnline()) {
+            return;
+        }
+
+        final MinionManager.Stance stance = minionManager.getStance(pet);
+        if (stance == MinionManager.Stance.STAY) {
+            combatTargets.remove(ownerId);
+            return; // hold position — no follow, no combat
+        }
+
+        LivingEntity target = null;
+        if (stance == MinionManager.Stance.ACTIVE) {
+            target = resolveTarget(owner, leash);
+            if (target == null) {
+                target = acquireNearbyThreat(pet, owner, aggro);
+                if (target != null) {
+                    combatTargets.put(ownerId, target.getUniqueId());
+                }
+            }
+        } else {
+            combatTargets.remove(ownerId); // PASSIVE never fights
+        }
+
+        if (target != null) {
+            attack(pet, target, level, reach, chaseSpeed, cooldownMs);
+            return;
+        }
+
+        // No target → stay near the owner.
+        if (!owner.getWorld().equals(pet.getWorld()) || pet.getLocation().distanceSquared(owner.getLocation()) > followSq) {
+            pet.teleportAsync(owner.getLocation());
+        }
+    }
+
+    /** Validates the stored combat target (alive, same world, within the owner's leash). */
+    private LivingEntity resolveTarget(final Player owner, final double leash) {
+        final UUID id = combatTargets.get(owner.getUniqueId());
+        if (id == null) {
+            return null;
+        }
+        final Entity entity = Bukkit.getEntity(id);
+        if (!(entity instanceof LivingEntity living) || living.isDead() || !living.isValid()
+                || living.getUniqueId().equals(owner.getUniqueId())
+                || !living.getWorld().equals(owner.getWorld())
+                || living.getLocation().distanceSquared(owner.getLocation()) > leash * leash) {
+            combatTargets.remove(owner.getUniqueId());
+            return null;
+        }
+        return living;
+    }
+
+    /** Picks the nearest hostile mob around the pet to defend against (excludes allies). */
+    private LivingEntity acquireNearbyThreat(final Mob pet, final Player owner, final double aggro) {
+        if (aggro <= 0.0D) {
+            return null;
+        }
+        LivingEntity best = null;
+        double bestSq = aggro * aggro;
+        for (final Entity nearby : pet.getNearbyEntities(aggro, aggro, aggro)) {
+            if (!(nearby instanceof Monster monster) || monster.isDead() || !monster.isValid()
+                    || minionManager.isOwnedBy(monster, owner.getUniqueId())) {
+                continue;
+            }
+            final double sq = monster.getLocation().distanceSquared(pet.getLocation());
+            if (sq < bestSq) {
+                bestSq = sq;
+                best = monster;
+            }
+        }
+        return best;
+    }
+
+    /** Chases the target via the pathfinder and lands a plugin-applied hit on cooldown. */
+    private void attack(final Mob pet, final LivingEntity target, final int level, final double reach,
+                        final double chaseSpeed, final long cooldownMs) {
+        pet.setTarget(target); // reinforce mobs that do have attack AI
+        if (pet.getLocation().distanceSquared(target.getLocation()) > reach * reach) {
+            pet.getPathfinder().moveTo(target, chaseSpeed); // AI-independent chase
+            return;
+        }
+        final long now = System.currentTimeMillis();
+        final Long ready = attackReady.get(pet.getUniqueId());
+        if (ready != null && now < ready) {
+            return;
+        }
+        attackReady.put(pet.getUniqueId(), now + cooldownMs);
+        pet.swingMainHand();
+        target.damage(petDamage(level), pet); // the plugin lands the hit, whatever the mob is
+    }
+
+    private double petDamage(final int level) {
+        final double base = Math.max(0.5D, configManager.getDouble("pets.companion.attack-damage-base", 3.0D));
+        final double perLevel = Math.max(0.0D, configManager.getDouble("pets.companion.damage-per-level", 0.5D));
+        return base + (level * perLevel);
     }
 
     private EntityType resolveType(final Player player) {
@@ -315,12 +441,15 @@ public final class PetManager {
     }
 
     private boolean removeActive(final Player player) {
+        combatTargets.remove(player.getUniqueId());
         final String raw = player.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
         if (raw == null) {
             return false;
         }
         try {
-            final Entity entity = Bukkit.getEntity(UUID.fromString(raw));
+            final UUID petId = UUID.fromString(raw);
+            attackReady.remove(petId);
+            final Entity entity = Bukkit.getEntity(petId);
             if (entity != null) {
                 entity.getScheduler().run(plugin, task -> entity.remove(), null);
                 return true;

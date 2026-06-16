@@ -90,8 +90,12 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
   `PetCaptureListener`, `/pet`): a Vadmester befogó póráza (**Szelídítő Póráz**) bármely nem ellenséges
   állatot, a Nekromanta lélekkötője (**Lélekkötő Tekercs**) bármely ellenséges / élőholt mobot társsá
   fogad jobb kattal (`/pet item` adja a befogó eszközt, ami befogáskor elhasználódik). A társ típusa/szintje/
-  neve/XP-je PDC-ben perzisztál; ölésekből szintezik, szelídíthető társak vanilla módon követnek, a többit
-  teleport-követés tartja a gazda mellett.
+  neve/XP-je PDC-ben perzisztál; ölésekből szintezik, és teleport-követés tartja a gazda mellett.
+  **Plugin-vezérelt harc** (`PetCombatListener` + `PetManager.tick`): a társ a mob saját AI-jától
+  **függetlenül** harcol — a plugin pathfinderrel viszi a célpontra és maga osztja a sebzést, így
+  bármilyen lény (akár egy tehén) rendes harci pet. Segít a gazda célpontján, megvédi a gazdát, és
+  automatikusan rátámad a közeli ellenséges mobokra; a `PetCommandListener` stance-vezérlése
+  (Támadás/Passzív/Maradj) ezt szabályozza.
 - ✅ **Parkour-próbapályák** (`ParkourManager`, `/parkour`): admin által lerakott, időmérős
   pályák jutalommal (a pálya maga in-world épül; ez a követő/jutalmazó keret).
 - ✅ **Intro kamera-utaztatás** (`IntroManager.playCinematic`): opcionális (alapból KIKAPCSOLT)

@@ -47,6 +47,7 @@ import hu.taliann.icesmp.listeners.MarketGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.MinionProtectionListener;
 import hu.taliann.icesmp.listeners.PetCaptureListener;
+import hu.taliann.icesmp.listeners.PetCombatListener;
 import hu.taliann.icesmp.listeners.PetCommandListener;
 import hu.taliann.icesmp.listeners.PetXpListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
@@ -200,6 +201,7 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask petTask;
 
     /**
      * Constructs a new IceSMPCore and initializes all managers.
@@ -331,6 +333,7 @@ public final class IceSMPCore {
         scheduleEconomyEvents();
         scheduleWorldEvents();
         scheduleHud();
+        schedulePetCombat();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
@@ -356,6 +359,10 @@ public final class IceSMPCore {
         if (hudTask != null) {
             hudTask.cancel();
             hudTask = null;
+        }
+        if (petTask != null) {
+            petTask.cancel();
+            petTask = null;
         }
 
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -413,7 +420,18 @@ public final class IceSMPCore {
 
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin, task -> { hudManager.tick(); petManager.followTick(); }, intervalTicks, intervalTicks);
+                plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
+    }
+
+    /**
+     * Schedules the companion drive loop (follow + plugin-driven combat) on the
+     * global region scheduler; the manager hops to each pet's region thread. Runs
+     * faster than the HUD so chasing and attacks feel responsive.
+     */
+    private void schedulePetCombat() {
+        final long interval = Math.max(2L, configManager.getLong("pets.companion.tick-ticks", 5L));
+        petTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> petManager.tick(), interval, interval);
     }
 
 
@@ -517,6 +535,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(petManager, configManager), plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new PetCombatListener(petManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
