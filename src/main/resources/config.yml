@@ -925,6 +925,14 @@ quests:
 pets:
   max-active: 8
   talent-health-share: 0.5
+  # Vadmester állandó társa (ROADMAP 12.): megnevezett, szintet lépő farkas-companion.
+  companion:
+    max-level: 30
+    base-xp: 10
+    increment-per-level: 5
+    xp-per-kill: 2
+    health-per-level: 2.0
+    damage-per-level: 0.5
 
 # ===== Piactér =====
 # Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);
