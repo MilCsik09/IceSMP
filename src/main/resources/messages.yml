@@ -420,6 +420,13 @@ messages:
   events-worldboss-spawned: "&cVilágboss megidézve!"
   events-worldboss-failed: "&7Nem sikerült (már aktív boss, vagy nincs online játékos)."
   events-intro-replayed: "&aIntro lejátszva: &f%s"
+  spell-mastery-header: "&6Spell-mesterség &7(magasabb rang = rövidebb cooldown):"
+  spell-mastery-none: "&7Nincs feloldott képességed."
+  spell-mastery-line: "&e%s &7[★%s/%s] &8| &7köv. rang: &f%s &8(&7/spell upgrade %s&8)"
+  spell-mastery-not-unlocked: "&cEzt a képességet nem oldottad fel."
+  spell-mastery-upgraded: "&aMesterség fejlesztve: &e{spell} &7(rang &f{rank}&7, ár: &f{cost}&7)"
+  spell-mastery-max: "&7Ez a képesség már maximális mesterségű."
+  spell-mastery-poor: "&cNincs elég frakcióvalutád (&f%s&c kellene)."
   pet-stance: "<gray>Társ parancs: <gold>{stance}</gold></gray>"
 
   currency-rates-static: "&eA dinamikus árfolyam ki van kapcsolva; fix árfolyam érvényes."

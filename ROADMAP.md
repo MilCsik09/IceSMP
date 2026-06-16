@@ -23,15 +23,19 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 - ✅ **Csúcs-talent (capstone):** a `requires-spent: N` mezővel a talent csak N elköltött pont után
   nyílik (pl. `Felemelkedés`). A GUI minden zár-okot kiír (szülő / kizárt ág / szükséges pont).
 
-## 3. fázis — Spellek mélyítése 🔨
+## 3. fázis — Spellek mélyítése ✅
 - ✅ **Költség-egyensúly + új költségtípus:** bevezetve a **HEALTH (élet / „vérmágia")** költség
-  a HUNGER és XP mellé. Tematikus átbalanszozás: agresszív/sötét spellek életbe (berserker,
-  nekromanta, fantom, finisherek ~12 db), pontos/alkímiai spellek XP-be; az élet-költésű spell
-  nem süthető el, ha megölne. (Kérés szerint: ez egy első kör, később finomítandó.)
-- ⬜ **Spell-rangok:** a képességek fejleszthető erőssége (pont/erőforrás).
-- ⬜ **Kombók:** egymásra épülő képesség-láncok bónusszal.
-- ⬜ **Jobb célzás:** célzás-segéd, ráhatás-jelzés.
-- ⬜ **Gazdagabb vizuál:** több részecske/hang, becsapódás-effektek.
+  a HUNGER és XP mellé. Tematikus átbalanszozás: agresszív/sötét spellek életbe (~12 db),
+  pontos/alkímiai spellek XP-be; az élet-költésű spell nem süthető el, ha megölne.
+- ✅ **Spell-rangok (mesterség):** `SpellMasteryManager` + `/spell` — frakcióvalutáért
+  fejleszthető rang (max 5), ami **csökkenti a cooldownt** (rangonként -8%, max -50%).
+  Az action bar mutatja a rangot (★N).
+- ✅ **Kombók:** config-vezérelt párok (`spells.combos.pairs`) — ha az időablakon belül a `first`
+  után a `second` spellt sütöd el, a második **gyorsabban épül fel** (cooldown-visszatérítés) + látvány.
+- ✅ **Gazdagabb vizuál / célzás-visszajelzés:** minden castnál általános „flourish" (részecske +
+  hang), kombónál erősebb effekt; a kombó-jelzés és a hiányzó-cél visszajelzés az action barban.
+- 🔮 *Jövőbeli finomítás:* a rang **sebzés/hatás** skálázása (most cooldown-ra hat) — invazívabb,
+  külön körben.
 
 ## 4. fázis — Raid mélyítése ⬜
 - ⬜ **10v10 létszámkorlát** és jelentkezés.

@@ -37,6 +37,7 @@ jelenti, hogy **elhagyható**.
 | `/class givecatalyst` | `kaszt`, `job` | Elveszett Képesség Katalizátor pótlása |
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
 | `/souls` / `/souls champion` | `soul`, `lelek` | Lélekszilánk (csak Nekromanta) |
+| `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: cooldown-csökkentés valutáért |
 | `/events season` / `/events blood-moon` | `event`, `esemeny` | Világesemények állása |
 
 ## Király-parancsok (csak a frakció királyának)
