@@ -14,6 +14,15 @@ public final class MarketHolder implements InventoryHolder {
     private final Map<Integer, UUID> slotListings = new HashMap<>();
     private Inventory inventory;
     private int page;
+    private String filter;
+
+    public String getFilter() {
+        return filter;
+    }
+
+    public void setFilter(final String filter) {
+        this.filter = filter;
+    }
 
     public MarketHolder(final UUID ownerUuid) {
         this.ownerUuid = ownerUuid;

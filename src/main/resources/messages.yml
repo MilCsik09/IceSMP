@@ -384,6 +384,8 @@ messages:
   market-help-browse: "&e/market &7- Piactér böngészése."
   market-help-sell: "&e/market sell <ár> [valuta] &7- A kezedben lévő tárgy listázása."
   market-help-cancel: "&e/market cancel &7- Saját tételeid visszavonása."
+  market-help-search: "&e/market search <szöveg> &7- Keresés a piacon."
+  market-search-usage: "&cHasználat: /market search <szöveg>"
   market-sell-usage: "&cHasználat: /market sell <ár> [valuta]"
   market-no-item: "&cNincs tárgy a kezedben."
   market-too-many-listings: "&cElérted a maximális tétel-számot a piacon."

@@ -6,6 +6,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -36,18 +37,30 @@ public final class MarketGUI {
 
     public static void open(final Player viewer, final MarketManager marketManager,
                             final CurrencyManager currencyManager, final MessageManager messageManager) {
-        open(viewer, marketManager, currencyManager, messageManager, 0);
+        open(viewer, marketManager, currencyManager, messageManager, 0, null);
     }
 
     public static void open(final Player viewer, final MarketManager marketManager,
                             final CurrencyManager currencyManager, final MessageManager messageManager, final int page) {
-        final List<MarketManager.Listing> listings = marketManager.getListingsSorted();
+        open(viewer, marketManager, currencyManager, messageManager, page, null);
+    }
+
+    public static void open(final Player viewer, final MarketManager marketManager,
+                            final CurrencyManager currencyManager, final MessageManager messageManager,
+                            final int page, final String filter) {
+        final List<MarketManager.Listing> listings = new ArrayList<>();
+        for (final MarketManager.Listing listing : marketManager.getListingsSorted()) {
+            if (matchesFilter(listing, filter)) {
+                listings.add(listing);
+            }
+        }
         final int totalPages = Math.max(1, (int) Math.ceil(listings.size() / (double) PER_PAGE));
         final int safePage = Math.max(0, Math.min(page, totalPages - 1));
 
         final Component title = messageManager.getComponent("messages.market-title", "&6» Piactér «");
         final MarketHolder holder = new MarketHolder(viewer.getUniqueId());
         holder.setPage(safePage);
+        holder.setFilter(filter);
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
 
@@ -72,6 +85,23 @@ public final class MarketGUI {
                 "Oldal " + (safePage + 1) + "/" + totalPages + " — " + listings.size() + " tétel"));
 
         viewer.openInventory(inventory);
+    }
+
+    private static boolean matchesFilter(final MarketManager.Listing listing, final String filter) {
+        if (filter == null || filter.isBlank()) {
+            return true;
+        }
+        final String needle = filter.toLowerCase(java.util.Locale.ROOT);
+        final ItemStack item = listing.item();
+        if (item.getType().name().toLowerCase(java.util.Locale.ROOT).contains(needle)) {
+            return true;
+        }
+        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            final String name = PlainTextComponentSerializer.plainText().serialize(item.getItemMeta().displayName())
+                    .toLowerCase(java.util.Locale.ROOT);
+            return name.contains(needle);
+        }
+        return false;
     }
 
     private static ItemStack nav(final Material material, final String label) {
