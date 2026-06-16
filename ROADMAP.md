@@ -86,8 +86,12 @@ Gyors, nagy hatású, jól elszigetelt felület-elemek. (`HudManager` + `HudList
 ## 12. fázis — Korábbról halasztott tételek ✅
 - ✅ **Piac lapozás** (`MarketGUI` oldalazás: alsó sor előző/következő gomb + oldal-jelző).
 - ✅ **Piac keresés** (`/market search <szöveg>`: szűrés tárgynév/anyag szerint, lapozással).
-- ✅ **Megnevezett, szintet lépő állandó pet** (`PetManager`, `/pet`): a Vadmester farkas-társa —
-  vanilla követéssel, PDC-ben perzisztáló szinttel/névvel/XP-vel, ölésekből szintezve.
+- ✅ **Megnevezett, szintet lépő társ — bármilyen mob befogással** (`PetManager`, `CaptureItemFactory`,
+  `PetCaptureListener`, `/pet`): a Vadmester befogó póráza (**Szelídítő Póráz**) bármely nem ellenséges
+  állatot, a Nekromanta lélekkötője (**Lélekkötő Tekercs**) bármely ellenséges / élőholt mobot társsá
+  fogad jobb kattal (`/pet item` adja a befogó eszközt, ami befogáskor elhasználódik). A társ típusa/szintje/
+  neve/XP-je PDC-ben perzisztál; ölésekből szintezik, szelídíthető társak vanilla módon követnek, a többit
+  teleport-követés tartja a gazda mellett.
 - ✅ **Parkour-próbapályák** (`ParkourManager`, `/parkour`): admin által lerakott, időmérős
   pályák jutalommal (a pálya maga in-world épül; ez a követő/jutalmazó keret).
 - ✅ **Intro kamera-utaztatás** (`IntroManager.playCinematic`): opcionális (alapból KIKAPCSOLT)

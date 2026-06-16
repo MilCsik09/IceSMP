@@ -1,11 +1,13 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.items.CaptureItemFactory;
 import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
@@ -14,15 +16,20 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * /pet — the Beast Master companion: summon / dismiss / name / info.
+ * /pet — companion control for the Beast Master and Necromancer: get the capture
+ * item, summon / dismiss / name / info. Capture itself is by right-clicking a mob
+ * with the capture item.
  */
 public final class PetCommand implements BasicCommand {
 
     private final PetManager petManager;
+    private final CaptureItemFactory captureItemFactory;
     private final MessageManager messageManager;
 
-    public PetCommand(final PetManager petManager, final MessageManager messageManager) {
+    public PetCommand(final PetManager petManager, final CaptureItemFactory captureItemFactory,
+                      final MessageManager messageManager) {
         this.petManager = petManager;
+        this.captureItemFactory = captureItemFactory;
         this.messageManager = messageManager;
     }
 
@@ -36,10 +43,22 @@ public final class PetCommand implements BasicCommand {
 
         final String sub = args.length == 0 ? "info" : args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
+            case "item" -> {
+                if (!petManager.canOwnPet(player)) {
+                    player.sendMessage(messageManager.get("pet-not-allowed", "&cCsak Vadmester vagy Nekromanta tarthat társat."));
+                    return;
+                }
+                final ItemStack item = petManager.isNecromancer(player)
+                        ? captureItemFactory.createNecroItem(1)
+                        : captureItemFactory.createBeastItem(1);
+                player.getInventory().addItem(item).values()
+                        .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
+                player.sendMessage(messageManager.get("pet-item-given", "&aMegkaptad a befogó eszközt — jobb katt egy lényen!"));
+            }
             case "summon" -> {
                 final String error = petManager.summon(player);
                 if (error != null) {
-                    player.sendMessage(messageManager.get(error, "&cCsak Vadmesterként idézhetsz társat."));
+                    player.sendMessage(messageManager.get(error, "&cMost nem tudsz társat idézni."));
                 } else {
                     player.sendMessage(messageManager.get("pet-summoned", "&aA társad megjelent melletted."));
                 }
@@ -71,7 +90,7 @@ public final class PetCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("summon", "dismiss", "name", "info").stream().filter(o -> o.startsWith(prefix)).toList();
+            return List.of("item", "summon", "dismiss", "name", "info").stream().filter(o -> o.startsWith(prefix)).toList();
         }
         return List.of();
     }

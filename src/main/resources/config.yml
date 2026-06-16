@@ -938,7 +938,9 @@ quests:
 pets:
   max-active: 8
   talent-health-share: 0.5
-  # Vadmester állandó társa (ROADMAP 12.): megnevezett, szintet lépő farkas-companion.
+  # Vadmester / Nekromanta társa (ROADMAP 12. + befogás): bármilyen mob lehet a társ,
+  # befogó itemmel (Vadmester = nem ellenséges állat, Nekromanta = ellenséges / élőholt mob).
+  # Megnevezett, szintet lépő companion; a nem szelídíthető társakat teleport-követés tartja a gazda mellett.
   companion:
     max-level: 30
     base-xp: 10
@@ -946,6 +948,8 @@ pets:
     xp-per-kill: 2
     health-per-level: 2.0
     damage-per-level: 0.5
+    # Ennél messzebb (blokk) a nem szelídíthető társ visszateleportál a gazdához.
+    follow-distance: 16.0
 
 # ===== Piactér =====
 # Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);

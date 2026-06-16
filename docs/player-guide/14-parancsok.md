@@ -18,7 +18,7 @@ jelenti, hogy **elhagyható**.
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
 | `/achievements` | `ach` | Elérések (mérföldkövek + jutalmak) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
-| `/pet summon\|dismiss\|name` | `tars` | Vadmester állandó, szintet lépő társa |
+| `/pet item\|summon\|dismiss\|name` | `tars` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
 | `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |
 | `/market search <szöveg>` | `piac`, `ah` | Keresés a piacon (a /market mellett) |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |

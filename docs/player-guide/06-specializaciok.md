@@ -31,6 +31,22 @@ hogy újra elköltsd őket. Utána új irányt választhatsz.
 > A szakmáknak **is** vannak specializációi, ugyanígy működnek (lásd a [Szakmák](08-szakmak.md)
 > oldalt). Egyszerre egy kaszt-spec **és** egy szakma-spec lehet aktív.
 
+## 🐾 Társ befogása (Vadmester és Nekromanta)
+
+A **Vadmester** és a **Nekromanta** szintet lépő **társat** tarthat — és ez **bármilyen
+mob** lehet, nem csak farkas vagy zombi!
+
+1. Írd be: `/pet item` — kapsz egy **befogó eszközt**:
+   - 🐺 **Vadmester → Szelídítő Póráz**: bármely **nem ellenséges** állatra/lényre jobb katt
+     (pl. tehén, róka, ló, papagáj, delfin…).
+   - 💀 **Nekromanta → Lélekkötő Tekercs**: bármely **ellenséges / élőholt** mobra jobb katt
+     (pl. zombi, csontváz, pók, creeper…).
+2. **Jobb katt** a kiszemelt lényen a befogó eszközzel — társaddá fogadod, az eszköz elhasználódik.
+3. `/pet name <név>` — adj nevet neki; `/pet summon` újra előhívja, `/pet dismiss` elküldi.
+
+A társ **típusa, szintje, neve és XP-je** megmarad (a gazdád ölései szintezik). A szelídíthető
+társak maguktól követnek, a többit a játék **automatikusan melléd teleportálja**, ha túl messze kerül.
+
 ## Melyik képességet mikor kapom meg?
 
 Minden specializációnak 9–12 saját képessége van, amelyek a **25. és 45. szint** között

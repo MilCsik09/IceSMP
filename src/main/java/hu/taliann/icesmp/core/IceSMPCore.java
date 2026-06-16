@@ -27,6 +27,7 @@ import hu.taliann.icesmp.commands.TerritoryCommand;
 import hu.taliann.icesmp.gui.CharacterMenuContext;
 import hu.taliann.icesmp.gui.CommandMenuContext;
 import hu.taliann.icesmp.gui.ProfileGUI;
+import hu.taliann.icesmp.items.CaptureItemFactory;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.items.SiegeWeaponFactory;
 import hu.taliann.icesmp.listeners.CatalystCraftSafetyListener;
@@ -45,6 +46,7 @@ import hu.taliann.icesmp.listeners.JobGUIListener;
 import hu.taliann.icesmp.listeners.MarketGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.MinionProtectionListener;
+import hu.taliann.icesmp.listeners.PetCaptureListener;
 import hu.taliann.icesmp.listeners.PetCommandListener;
 import hu.taliann.icesmp.listeners.PetXpListener;
 import hu.taliann.icesmp.listeners.MobScalingListener;
@@ -163,6 +165,7 @@ public final class IceSMPCore {
     private final MinionManager minionManager;
     private final MobScalingManager mobScalingManager;
     private final InvasionManager invasionManager;
+    private final CaptureItemFactory captureItemFactory;
     private final PetManager petManager;
     private final DailyQuestManager dailyQuestManager;
     private final ParkourManager parkourManager;
@@ -212,6 +215,7 @@ public final class IceSMPCore {
         this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
         this.catalystItemFactory = new CatalystItemFactory(plugin);
+        this.captureItemFactory = new CaptureItemFactory(plugin);
         this.spellMasteryManager = new SpellMasteryManager(plugin, configManager, currencyManager, factionManager);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry, catalystItemFactory, configManager, spellMasteryManager, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
@@ -409,7 +413,7 @@ public final class IceSMPCore {
 
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
+                plugin, task -> { hudManager.tick(); petManager.followTick(); }, intervalTicks, intervalTicks);
     }
 
 
@@ -469,7 +473,7 @@ public final class IceSMPCore {
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(relicManager, messageManager));
         plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
         plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
-        plugin.registerCommand("pet", "Vadmester társ (idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, messageManager));
+        plugin.registerCommand("pet", "Társ (befogó item, idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, captureItemFactory, messageManager));
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
@@ -512,6 +516,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(petManager, configManager), plugin);
+        pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
