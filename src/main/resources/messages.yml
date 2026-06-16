@@ -422,6 +422,7 @@ messages:
   events-invasion-started: "&cInvázió elindítva!"
   events-invasion-failed: "&7Nem sikerült (nincs online játékos)."
   invasion-started: "<dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>"
+  profession-recipe-locked: "<red>Ehhez {profession} {level}. szint kell.</red>"
   events-intro-replayed: "&aIntro lejátszva: &f%s"
   spell-mastery-header: "&6Spell-mesterség &7(magasabb rang = rövidebb cooldown):"
   spell-mastery-none: "&7Nincs feloldott képességed."
