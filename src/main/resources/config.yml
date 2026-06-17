@@ -6,6 +6,10 @@ settings:
   debug: true
 
 hud:
+  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, esemény),
+  # frakció-színes tab-lista, és boss-bar a raid / vérhold / világboss alatt.
+  enabled: true
+  refresh-ticks: 20
   profile:
     enabled: true
     update-interval-ticks: 5
@@ -570,6 +574,55 @@ specializations:
 # szintjéből termel pontot (points-per-levels szintenként 1 pont).
 # Effektek: max-health, movement-speed, attack-damage (attribútum módosítók),
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
+# ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
+spells:
+  # Mesterség: frakcióvalutáért fejleszthető rang, ami csökkenti a cooldownt.
+  mastery:
+    enabled: true
+    max-rank: 5
+    cooldown-reduction-per-rank: 0.08   # rangonként -8% cooldown
+    min-cooldown-multiplier: 0.5        # max 50% csökkenés
+    upgrade-base-cost: 50               # a köv. rang ára = base * (jelenlegi rang + 1)
+  # Kombók: ha az adott időablakon belül a 'first' után a 'second' spellt sütöd el,
+  # a második gyorsabban épül fel (cooldown-visszatérítés) + látvány.
+  combos:
+    enabled: true
+    window-seconds: 4
+    bonus-cooldown-refund-percent: 40
+    pairs:
+      frost-nova:
+        first: "frost_touch"
+        second: "arcane_nova"
+      slow-finish:
+        first: "hamstring"
+        second: "garrote"
+      trap-volley:
+        first: "snare"
+        second: "arrow_storm"
+      shout-spin:
+        first: "battle_shout"
+        second: "whirlwind"
+      plague-spread:
+        first: "toxin_dart"
+        second: "contagion"
+
+# ===== Napi küldetések (ROADMAP 8.) =====
+daily-quests:
+  enabled: true
+  daily_hunt:
+    amount: 20
+    reward: 60
+  daily_fish:
+    amount: 10
+    reward: 50
+  daily_gather:
+    amount: 64
+    reward: 40
+
+# ===== Elérések (ROADMAP 8.) =====
+achievements:
+  enabled: true
+
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
 # Respec után a spec-talentek pontjai automatikusan visszatérülnek.
@@ -687,6 +740,32 @@ talents:
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
+      # --- 2. szint: EGYMÁST KIZÁRÓ ágválasztás (csak az egyik vehető fel) ---
+      juggernaut:
+        display-name: "Behemót"
+        tier: 2
+        requires-talent: "vitality"
+        excludes: ["warlord"]
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      warlord:
+        display-name: "Hadúr"
+        tier: 2
+        requires-talent: "power"
+        excludes: ["juggernaut"]
+        effect: "attack-damage"
+        per-rank: 1.0
+        max-rank: 3
+      # --- CSÚCS-TALENT (capstone): N elköltött pont után, AKTÍV képességet ad ---
+      ascendant:
+        display-name: "Felemelkedés"
+        tier: 3
+        requires-spent: 10
+        grants-spell: "talent_surge"
+        effect: "max-health"
+        per-rank: 6.0
+        max-rank: 1
   profession:
     points-per-levels: 10
     definitions:
@@ -729,6 +808,18 @@ professions:
   leveling:
     base-xp: 100
     increment-per-level: 15
+  # Szakma-receptek (ROADMAP 10.): mestermű tárgyak, amiket csak a megfelelő szakma +
+  # szint birtokában lehet craftolni. A required-level felülírható receptenként.
+  recipes:
+    enabled: true
+    tarnasz_csakany:
+      required-level: 15
+    favago_fejsze:
+      required-level: 15
+    bastya_pajzs:
+      required-level: 15
+    bolcs_konyve:
+      required-level: 15
   xp:
     mining-ore: 5
     herbalism-harvest: 3
@@ -847,6 +938,27 @@ quests:
 pets:
   max-active: 8
   talent-health-share: 0.5
+  # Vadmester / Nekromanta társa (ROADMAP 12. + befogás): bármilyen mob lehet a társ,
+  # befogó itemmel (Vadmester = nem ellenséges állat, Nekromanta = ellenséges / élőholt mob).
+  # Megnevezett, szintet lépő companion; a nem szelídíthető társakat teleport-követés tartja a gazda mellett.
+  companion:
+    max-level: 30
+    base-xp: 10
+    increment-per-level: 5
+    xp-per-kill: 2
+    health-per-level: 2.0
+    damage-per-level: 0.5
+    # Ennél messzebb (blokk) a nem szelídíthető társ visszateleportál a gazdához.
+    follow-distance: 16.0
+    # Plugin-vezérelt harc (a mob saját AI-jától függetlenül): a társ a célpont felé
+    # pathfinderrel megy, és a plugin osztja a sebzést — így bármilyen mob "rendes pet".
+    tick-ticks: 5             # milyen sűrűn fusson a társ-vezérlő (tick)
+    attack-damage-base: 3.0   # alap sebzés (+ szintenkénti damage-per-level)
+    attack-reach: 2.6         # ekkora távolságból üt (blokk)
+    attack-cooldown-ticks: 16 # két ütés közti idő (tick)
+    chase-speed: 1.3          # üldözési sebesség-szorzó
+    aggro-range: 10.0         # ennyiről véd meg automatikusan ellenséges mobtól (blokk)
+    leash-range: 24.0         # ennél messzebb levő célpontot elenged (blokk)
 
 # ===== Piactér =====
 # Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);
@@ -876,6 +988,8 @@ world-events:
     chance-percent: 15
     bonus-mob-levels: 2
     soul-drop-multiplier: 2.0
+    # Admin /events bloodmoon start esetén ennyi percig tart (a napciklustól függetlenül).
+    force-duration-minutes: 10
   # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
   world-boss:
     enabled: true
@@ -889,6 +1003,16 @@ world-events:
     treasury-reward: 300.0
     season-points: 10
     buff-minutes: 10
+  # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).
+  # A szörnyek skálázottak (XP + lélekkő-eséllyel), admin: /events invasion.
+  invasion:
+    enabled: true
+    check-interval-minutes: 75
+    chance-percent: 30
+    mob-count: 8
+    mob-level: 4
+    radius: 8.0
+    entity-type: "ZOMBIE"
   # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
   season:
     enabled: true
@@ -902,6 +1026,14 @@ world-events:
       - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
       - "&6Válassz frakciót||&7Piros, Kék, Semleges vagy Sötét"
       - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
+    # Opcionális filmszerű kameraút (ALAPBÓL KIKAPCSOLVA). Bekapcsoláskor a játékost
+    # rövid időre spectator módba teszi, és végigviszi a waypointokon, majd visszaállítja
+    # a gamemode-ját (újrabelépéskor is önjavít, ha megszakadna). Waypoint formátum:
+    # "x,y,z" vagy "x,y,z,yaw,pitch" vagy "világ,x,y,z,yaw,pitch".
+    cinematic:
+      enabled: false
+      point-seconds: 3
+      waypoints: []
 
 # ===== Kaszt/szakma-alapú craftolási korlátozások =====
 # required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.

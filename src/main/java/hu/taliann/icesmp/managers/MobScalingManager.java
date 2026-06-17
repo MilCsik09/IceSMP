@@ -112,6 +112,25 @@ public final class MobScalingManager {
             return;
         }
 
+        applyLevel(entity, level);
+    }
+
+    /**
+     * Applies a specific level to an entity (attributes + name tag + PDC marker),
+     * bypassing the distance/spawn-reason checks. Used by event spawners (e.g.
+     * invasions) so their mobs grant scaled XP and soulstone drops.
+     *
+     * @param entity the living entity
+     * @param level the level to apply (≥ 1)
+     */
+    public void forceLevel(final LivingEntity entity, final int level) {
+        if (entity == null || level < 1 || entity.getPersistentDataContainer().has(mobLevelKey, PersistentDataType.INTEGER)) {
+            return;
+        }
+        applyLevel(entity, level);
+    }
+
+    private void applyLevel(final LivingEntity entity, final int level) {
         entity.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
 
         final AttributeInstance maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);

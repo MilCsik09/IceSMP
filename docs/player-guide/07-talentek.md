@@ -22,7 +22,19 @@ A két pontfajta külön: kaszt-pontot csak a kaszt-fába, szakma-pontot csak a 
   szakmádhoz tartoznak).
 - Egy talentnek több **rangja** lehet — minden pont +1 rang, egy határig (max rang).
 
-> Ha **respec-elsz** egy specializációt, a hozzá kötött talentpontok **visszajárnak**.
+### Különleges talent-típusok
+- ⚔️ **Egymást kizáró ágak:** néhány talent **kizárja a testvérét** — ha az egyikbe pontot
+  teszel, a másik zárolódik. Választanod kell! Pl. **Behemót** (+élet) **vagy** **Hadúr**
+  (+sebzés) — nem lehet mindkettő.
+- 👑 **Csúcs-talent (capstone):** erős talent a fa „csúcsán", ami csak akkor nyílik, ha már
+  **elég pontot elköltöttél** abban a fában (pl. a **Felemelkedés** 10 elköltött pont után).
+- ★ **Aktív talent:** nem csak passzív bónusz — **képességet old fel** a Katalizátorodban!
+  Pl. a **Felemelkedés** feloldja a **Talentum Lendület** ultit (rövid, erős önbuff). Ezek a
+  talentek `★` jellel látszanak.
+
+> Ha **respec-elsz** egy specializációt, a hozzá kötött talentpontok **visszajárnak** (és az
+> aktív talent által adott képesség is lekerül). A zárolt talentek mindig kiírják, **miért**
+> zártak (szülő kell / kizárt ág / kevés elköltött pont).
 
 ---
 

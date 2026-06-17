@@ -53,6 +53,7 @@ public final class MarketCommand implements BasicCommand {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "sell" -> handleSell(player, args);
             case "cancel" -> handleCancel(player);
+            case "search" -> handleSearch(player, args);
             default -> sendHelp(player);
         }
     }
@@ -68,6 +69,11 @@ public final class MarketCommand implements BasicCommand {
             price = Double.parseDouble(args[1]);
         } catch (final NumberFormatException exception) {
             player.sendMessage(messageManager.get("invalid-amount", "&cÉrvénytelen összeg."));
+            return;
+        }
+
+        if (!Double.isFinite(price) || price <= 0.0D) {
+            player.sendMessage(messageManager.get("amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
             return;
         }
 
@@ -113,18 +119,28 @@ public final class MarketCommand implements BasicCommand {
         };
     }
 
+    private void handleSearch(final Player player, final String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(messageManager.get("market-search-usage", "&cHasználat: /market search <szöveg>"));
+            return;
+        }
+        final String query = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+        MarketGUI.open(player, marketManager, currencyManager, messageManager, 0, query);
+    }
+
     private void sendHelp(final Player player) {
         player.sendMessage(messageManager.get("market-help-header", "&6/market &7- Elérhető parancsok:"));
         player.sendMessage(messageManager.get("market-help-browse", "&e/market &7- Piactér böngészése."));
         player.sendMessage(messageManager.get("market-help-sell", "&e/market sell <ár> [valuta] &7- A kezedben lévő tárgy listázása."));
         player.sendMessage(messageManager.get("market-help-cancel", "&e/market cancel &7- Saját tételeid visszavonása."));
+        player.sendMessage(messageManager.get("market-help-search", "&e/market search <szöveg> &7- Keresés a piacon."));
     }
 
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("browse", "sell", "cancel").stream().filter(option -> option.startsWith(prefix)).toList();
+            return List.of("browse", "sell", "cancel", "search").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
         if (args.length == 3 && "sell".equalsIgnoreCase(args[0])) {

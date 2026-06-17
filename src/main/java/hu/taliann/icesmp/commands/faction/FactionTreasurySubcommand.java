@@ -101,7 +101,7 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
             return true;
         }
 
-        if (amount <= 0.0D) {
+        if (!Double.isFinite(amount) || amount <= 0.0D) {
             player.sendMessage(messageManager.get("messages.amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
             return true;
         }

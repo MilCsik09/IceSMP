@@ -18,6 +18,8 @@ public final class IntroListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(final PlayerJoinEvent event) {
+        // Self-heal: if a cinematic was interrupted (e.g. disconnect), restore the gamemode first.
+        introManager.restoreCinematicIfNeeded(event.getPlayer());
         introManager.playOnFirstJoin(event.getPlayer());
     }
 }

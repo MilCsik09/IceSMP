@@ -72,6 +72,21 @@ Amikor egy szakmád eléri a **25. szintet**, **specializálódhat** — ezt a `
 > Egyszerre **egy** szakma-specializációd lehet. Ha váltanál, a Specializáció menü **Respec**
 > gombjával tudod visszacsinálni (a frakcióvalutádba kerül).
 
+## Mestermű receptek 🛠️
+
+Magas szinten a szakmák **különleges tárgyakat** craftolhatnak, amiket **csak az adott szakma +
+szint** birtokában lehet elkészíteni (a recept látszik, de a végeredmény üres, amíg nincs meg a
+feltétel). Néhány mestermű (alapból **15. szinttől**):
+
+| Tárgy | Szakma | Mit ad |
+|---|---|---|
+| ⛏ **Tárnász Csákány** | Bányász | Hatékonyság IV + Törhetetlenség III csákány |
+| 🪓 **Favágó Fejsze** | Favágó | Hatékonyság IV + Törhetetlenség II fejsze |
+| 🛡 **Bástya Pajzs** | Kovács | Törhetetlenség V pajzs |
+| 📖 **Bölcs Könyve** | Bűvölő | Javítás (Mending) varázskönyv |
+
+> A receptek smaragd-alapanyaggal készülnek (hogy ne ütközzenek a vanilla receptekkel).
+
 ## Talentpontok a szakmákból
 
 Az **összes szakmád szintje** együtt **talentpontot** termel a szakma-talentfádhoz: **minden

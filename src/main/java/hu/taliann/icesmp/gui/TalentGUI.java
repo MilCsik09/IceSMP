@@ -147,6 +147,14 @@ public final class TalentGUI {
         lore.add(label("Rang", Component.text(rank + "/" + maxRank, NamedTextColor.WHITE)));
         lore.add(label("Hatás", Component.text(effectLabel(talent.getString("effect", "?"))
                 + " +" + talent.getDouble("per-rank", 0.0D) + "/rang", NamedTextColor.WHITE)));
+        final boolean active = talent.getString("grants-spell") != null && !talent.getString("grants-spell").isBlank();
+        if (active) {
+            lore.add(Component.text("★ Aktív talent — képességet old fel", NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false));
+        }
+        final List<String> excludes = talent.getStringList("excludes");
+        if (!excludes.isEmpty()) {
+            lore.add(grey("Kizárja: " + excludeNames(definitions, excludes)));
+        }
         lore.add(Component.empty());
 
         final Material material;
@@ -156,6 +164,16 @@ public final class TalentGUI {
             final String parentId = talent.getString("requires-talent");
             if (parentId != null && !parentId.isBlank() && definitions.getConfigurationSection(parentId) != null) {
                 lore.add(grey("Előbb fejleszd: " + definitions.getConfigurationSection(parentId).getString("display-name", parentId)));
+            }
+            for (final String excluded : excludes) {
+                if (ctx.talentManager().getRank(player, node.classPool(), excluded) > 0) {
+                    lore.add(grey("A választott ággal kizárt: " + nameOf(definitions, excluded)));
+                }
+            }
+            final int requiresSpent = Math.max(0, talent.getInt("requires-spent", 0));
+            if (requiresSpent > 0) {
+                lore.add(grey("Szükséges elköltött pont: " + requiresSpent
+                        + " (jelenleg " + ctx.talentManager().getSpentPoints(player, node.classPool()) + ")"));
             }
         } else if (maxed) {
             material = Material.GLOWSTONE_DUST;
@@ -183,6 +201,22 @@ public final class TalentGUI {
             case "profession-xp-bonus" -> "Szakma XP";
             default -> effect;
         };
+    }
+
+    private static String excludeNames(final ConfigurationSection definitions, final List<String> ids) {
+        final StringBuilder builder = new StringBuilder();
+        for (final String id : ids) {
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+            builder.append(nameOf(definitions, id));
+        }
+        return builder.toString();
+    }
+
+    private static String nameOf(final ConfigurationSection definitions, final String id) {
+        final ConfigurationSection section = definitions == null ? null : definitions.getConfigurationSection(id);
+        return section == null ? id : section.getString("display-name", id);
     }
 
     private static Component label(final String key, final Component value) {

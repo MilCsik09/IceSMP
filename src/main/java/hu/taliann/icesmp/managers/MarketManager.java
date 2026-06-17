@@ -10,6 +10,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -109,20 +111,28 @@ public final class MarketManager {
         }
     }
 
-    public void save() {
-        try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-            for (final Listing listing : listings.values()) {
-                final String basePath = "listings." + listing.id();
-                yaml.set(basePath + ".seller", listing.seller().toString());
-                yaml.set(basePath + ".seller-name", listing.sellerName());
-                yaml.set(basePath + ".price", listing.price());
-                yaml.set(basePath + ".currency", listing.currency().name());
-                yaml.set(basePath + ".item", listing.item());
-                yaml.set(basePath + ".created-at", listing.createdAt());
-            }
+    public synchronized void save() {
+        final YamlConfiguration yaml = new YamlConfiguration();
+        for (final Listing listing : listings.values()) {
+            final String basePath = "listings." + listing.id();
+            yaml.set(basePath + ".seller", listing.seller().toString());
+            yaml.set(basePath + ".seller-name", listing.sellerName());
+            yaml.set(basePath + ".price", listing.price());
+            yaml.set(basePath + ".currency", listing.currency().name());
+            yaml.set(basePath + ".item", listing.item());
+            yaml.set(basePath + ".created-at", listing.createdAt());
+        }
 
-            yaml.save(storageFile);
+        // Atomic write (temp + rename) so a crash mid-write can't truncate market.yml.
+        final File tempFile = new File(storageFile.getParentFile(), storageFile.getName() + ".tmp");
+        try {
+            yaml.save(tempFile);
+            try {
+                Files.move(tempFile.toPath(), storageFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (final IOException atomicFailure) {
+                Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save market.yml: " + exception.getMessage());
         }
@@ -155,13 +165,13 @@ public final class MarketManager {
      * @param currency the currency the price is denominated in
      * @return null on success, otherwise an error message key
      */
-    public String createListing(final Player seller, final double price, final CurrencyType currency) {
+    public synchronized String createListing(final Player seller, final double price, final CurrencyType currency) {
         final ItemStack held = seller.getInventory().getItemInMainHand();
         if (held.getType().isAir()) {
             return "market-no-item";
         }
 
-        if (price <= 0.0D) {
+        if (!Double.isFinite(price) || price <= 0.0D) {
             return "amount-must-be-positive";
         }
 
@@ -196,19 +206,26 @@ public final class MarketManager {
             return "market-own-listing";
         }
 
-        // Faction reputation adjusts what the buyer pays; the seller still earns from the base price.
+        // Faction reputation adjusts what the buyer pays; both fee and seller share are
+        // derived from that same amount so the trade conserves currency (no minting/burning
+        // beyond the configured fee sink).
         final double buyerCost = getEffectivePrice(buyer, listing);
         if (!currencyManager.deductFromBalance(buyer.getUniqueId(), listing.currency(), buyerCost)) {
             return "market-insufficient-balance";
         }
 
+        // Claim the listing atomically; if it vanished (concurrent buy/cancel), refund the buyer.
+        if (listings.remove(listingId) == null) {
+            currencyManager.addToBalance(buyer.getUniqueId(), listing.currency(), buyerCost);
+            return "market-listing-gone";
+        }
+
         final double feePercent = Math.max(0.0D, Math.min(100.0D, configManager.getDouble("market.fee-percent", 10.0D)));
-        final double sellerShare = listing.price() * (1.0D - (feePercent / 100.0D));
+        final double sellerShare = buyerCost * (1.0D - (feePercent / 100.0D));
         if (sellerShare > 0.0D) {
             currencyManager.addToBalance(listing.seller(), listing.currency(), sellerShare);
         }
 
-        listings.remove(listingId);
         save();
 
         final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(listing.item());
@@ -222,7 +239,7 @@ public final class MarketManager {
      * @param player the seller
      * @return the number of cancelled listings
      */
-    public int cancelListings(final Player player) {
+    public synchronized int cancelListings(final Player player) {
         int cancelled = 0;
         for (final Listing listing : List.copyOf(listings.values())) {
             if (!listing.seller().equals(player.getUniqueId())) {

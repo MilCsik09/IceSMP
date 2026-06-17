@@ -63,6 +63,11 @@ public final class WorldBossManager {
                 && entity.getPersistentDataContainer().getOrDefault(worldBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
     }
 
+    /** Whether a world boss is currently alive (for HUD / boss-bar display). */
+    public boolean isBossActive() {
+        return activeBossUntil > System.currentTimeMillis();
+    }
+
     /** Periodic spawn attempt on the global world-events tick. */
     public void tick() {
         if (!configManager.getBoolean("world-events.world-boss.enabled", true)) {
@@ -88,14 +93,43 @@ public final class WorldBossManager {
             return;
         }
 
-        final Player anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
+        triggerSpawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
+    }
+
+    /**
+     * Admin override: spawns a world boss immediately near the given anchor
+     * (or a random online player if {@code anchor} is null). Safe to call from a
+     * command; pass the issuing admin as anchor so the location read is region-local.
+     *
+     * @param anchor preferred anchor player (may be null)
+     * @return true if a boss spawn was scheduled (false if one is already active or nobody is online)
+     */
+    public boolean forceSpawn(final Player anchor) {
+        if (isBossActive()) {
+            return false;
+        }
+
+        Player target = anchor;
+        if (target == null) {
+            final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
+            if (online.isEmpty()) {
+                return false;
+            }
+            target = online.get(ThreadLocalRandom.current().nextInt(online.size()));
+        }
+
+        triggerSpawnNear(target);
+        return true;
+    }
+
+    private void triggerSpawnNear(final Player anchor) {
         final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
         final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
         final Location approx = anchor.getLocation().clone().add(
                 Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
 
         final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-        activeBossUntil = now + (lifetimeMinutes * 60_000L);
+        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
 
         // Entity spawning must happen on the owning region's thread (Folia).
         plugin.getServer().getRegionScheduler().run(plugin, approx, task -> spawnBoss(approx, lifetimeMinutes));

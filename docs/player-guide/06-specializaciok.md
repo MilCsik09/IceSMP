@@ -31,6 +31,36 @@ hogy újra elköltsd őket. Utána új irányt választhatsz.
 > A szakmáknak **is** vannak specializációi, ugyanígy működnek (lásd a [Szakmák](08-szakmak.md)
 > oldalt). Egyszerre egy kaszt-spec **és** egy szakma-spec lehet aktív.
 
+## 🐾 Társ befogása (Vadmester és Nekromanta)
+
+A **Vadmester** és a **Nekromanta** szintet lépő **társat** tarthat — és ez **bármilyen
+mob** lehet, nem csak farkas vagy zombi!
+
+1. Írd be: `/pet item` — kapsz egy **befogó eszközt**:
+   - 🐺 **Vadmester → Szelídítő Póráz**: bármely **nem ellenséges** állatra/lényre jobb katt
+     (pl. tehén, róka, ló, papagáj, delfin…).
+   - 💀 **Nekromanta → Lélekkötő Tekercs**: bármely **ellenséges / élőholt** mobra jobb katt
+     (pl. zombi, csontváz, pók, creeper…).
+2. **Jobb katt** a kiszemelt lényen a befogó eszközzel — társaddá fogadod, az eszköz elhasználódik.
+3. `/pet name <név>` — adj nevet neki; `/pet summon` újra előhívja, `/pet dismiss` elküldi.
+
+A társ **típusa, szintje, neve és XP-je** megmarad (a gazdád ölései szintezik), és **követ** téged.
+
+### A társ harcol is — bármilyen lény legyen az
+
+A társad **rendes harci pet**, függetlenül attól, milyen mob: nem a mob saját esze irányítja,
+hanem a játék **maga viszi a célpontra és üti meg** — így egy befogott tehén vagy róka is verekszik!
+
+- **Segít támadni:** ha megütsz egy lényt, a társad ráveti magát.
+- **Megvéd:** ha téged támadnak, a társad a támadóra fordul.
+- **Magától véd:** a közeli ellenséges mobokra magától rátámad.
+- **Parancsok:** **sunyíts (Shift) + jobb katt** a társadon, hogy váltogasd az állását:
+  **Támadás → Passzív → Maradj**. (Passzívan nem harcol, „Maradj" állásban egy helyben vár.)
+- Soha nem támad **téged** vagy a **saját társaidat**.
+
+A társ sebzése és életereje a **szintjével nő**. A nem szelídíthető társakat a játék
+**automatikusan melléd teleportálja**, ha túl messze kerülnek.
+
 ## Melyik képességet mikor kapom meg?
 
 Minden specializációnak 9–12 saját képessége van, amelyek a **25. és 45. szint** között

@@ -13,6 +13,16 @@ public final class MarketHolder implements InventoryHolder {
     private final UUID ownerUuid;
     private final Map<Integer, UUID> slotListings = new HashMap<>();
     private Inventory inventory;
+    private int page;
+    private String filter;
+
+    public String getFilter() {
+        return filter;
+    }
+
+    public void setFilter(final String filter) {
+        this.filter = filter;
+    }
 
     public MarketHolder(final UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
@@ -20,6 +30,14 @@ public final class MarketHolder implements InventoryHolder {
 
     public UUID getOwnerUuid() {
         return ownerUuid;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(final int page) {
+        this.page = page;
     }
 
     public void mapSlot(final int slot, final UUID listingId) {

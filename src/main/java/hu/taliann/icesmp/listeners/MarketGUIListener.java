@@ -43,7 +43,19 @@ public final class MarketGUIListener implements Listener {
             return;
         }
 
-        final UUID listingId = holder.getListingAt(event.getRawSlot());
+        final int slot = event.getRawSlot();
+        if (slot == MarketGUI.PREV_SLOT && holder.getPage() > 0) {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
+            MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage() - 1, holder.getFilter());
+            return;
+        }
+        if (slot == MarketGUI.NEXT_SLOT) {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
+            MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage() + 1, holder.getFilter());
+            return;
+        }
+
+        final UUID listingId = holder.getListingAt(slot);
         if (listingId == null) {
             return;
         }
@@ -54,7 +66,7 @@ public final class MarketGUIListener implements Listener {
         if (errorKey != null) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
             player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey)));
-            MarketGUI.open(player, marketManager, currencyManager, messageManager);
+            MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
             return;
         }
 
@@ -77,7 +89,7 @@ public final class MarketGUIListener implements Listener {
             ));
         }
 
-        MarketGUI.open(player, marketManager, currencyManager, messageManager);
+        MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
     }
 
     private String defaultErrorFor(final String errorKey) {

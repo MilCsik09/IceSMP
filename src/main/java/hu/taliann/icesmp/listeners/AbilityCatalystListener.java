@@ -1,11 +1,16 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -37,19 +42,27 @@ public final class AbilityCatalystListener implements Listener {
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final CatalystItemFactory catalystItemFactory;
+    private final ConfigManager configManager;
+    private final SpellMasteryManager masteryManager;
     private final MessageManager messageManager;
     private final NamespacedKey selectedSpellIndexKey;
     private final Map<String, NamespacedKey> longCooldownKeys = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, Long> cycleDebounce = new ConcurrentHashMap<>();
     private final Map<UUID, Long> castDebounce = new ConcurrentHashMap<>();
+    // Combo tracking: the last spell each player cast and when.
+    private final Map<UUID, String> lastCastSpell = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastCastTime = new ConcurrentHashMap<>();
 
     public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
+                                   final ConfigManager configManager, final SpellMasteryManager masteryManager,
                                    final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
         this.catalystItemFactory = catalystItemFactory;
+        this.configManager = configManager;
+        this.masteryManager = masteryManager;
         this.messageManager = messageManager;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
     }
@@ -128,11 +141,14 @@ public final class AbilityCatalystListener implements Listener {
             return;
         }
 
+        final int rank = masteryManager.getRank(player, selected.getId());
+        final String mastery = rank > 0 ? " <aqua>★" + rank + "</aqua>" : "";
         player.sendActionBar(messageManager.getMessage(
                 "catalyst.current-spell",
-                "<gray>Aktuális képesség: <gold>{spell}</gold> <dark_gray>({cost} {resource})</dark_gray></gray>",
+                "<gray>Aktuális képesség: <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray></gray>",
                 Map.of(
                         "spell", selected.getName(),
+                        "mastery", mastery,
                         "cost", String.valueOf(selected.getCostAmount()),
                         "resource", resolveResourceName(selected)
                 )
@@ -184,13 +200,66 @@ public final class AbilityCatalystListener implements Listener {
 
         selected.consumeCost(player);
         selected.execute(player);
-        putCooldown(player, selected, now);
+
+        // Combo: a matching pair within the window flows faster (cooldown refund) + flair.
+        final boolean combo = isComboMatch(player, selected.getId(), now);
+        putCooldown(player, selected, combo ? now - comboRefundMillis(selected) : now);
+        playCastFlourish(player, combo);
+        if (combo) {
+            player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
+        }
+
+        lastCastSpell.put(player.getUniqueId(), selected.getId());
+        lastCastTime.put(player.getUniqueId(), now);
+    }
+
+    /** Whether the player's previous cast forms a configured combo with this one. */
+    private boolean isComboMatch(final Player player, final String currentSpellId, final long now) {
+        if (!configManager.getBoolean("spells.combos.enabled", true)) {
+            return false;
+        }
+        final String previous = lastCastSpell.get(player.getUniqueId());
+        if (previous == null) {
+            return false;
+        }
+        final long windowMs = Math.max(1L, configManager.getLong("spells.combos.window-seconds", 4L)) * 1000L;
+        if (now - lastCastTime.getOrDefault(player.getUniqueId(), 0L) > windowMs) {
+            return false;
+        }
+
+        final ConfigurationSection combos = configManager.getConfiguration() == null
+                ? null : configManager.getConfiguration().getConfigurationSection("spells.combos.pairs");
+        if (combos == null) {
+            return false;
+        }
+        for (final String key : combos.getKeys(false)) {
+            final ConfigurationSection pair = combos.getConfigurationSection(key);
+            if (pair != null
+                    && previous.equalsIgnoreCase(pair.getString("first"))
+                    && currentSpellId.equalsIgnoreCase(pair.getString("second"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private long comboRefundMillis(final Spell spell) {
+        final double percent = Math.max(0.0D, Math.min(100.0D,
+                configManager.getDouble("spells.combos.bonus-cooldown-refund-percent", 40.0D)));
+        return (long) (Math.max(0, spell.getCooldown()) * 1000L * (percent / 100.0D));
+    }
+
+    private void playCastFlourish(final Player player, final boolean combo) {
+        player.getWorld().spawnParticle(combo ? Particle.TOTEM_OF_UNDYING : Particle.ENCHANT,
+                player.getLocation().add(0.0D, 1.1D, 0.0D), combo ? 24 : 12, 0.4D, 0.5D, 0.4D, combo ? 0.4D : 0.2D);
+        player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, combo ? 1.6F : 1.2F);
     }
 
     private String resolveResourceName(final Spell spell) {
         return switch (spell.getCostType()) {
             case HUNGER -> messageManager.get("system.resources.hunger", "éhség");
             case XP -> messageManager.get("system.resources.xp", "XP");
+            case HEALTH -> messageManager.get("system.resources.health", "élet");
         };
     }
 
@@ -211,7 +280,9 @@ public final class AbilityCatalystListener implements Listener {
             return 0L;
         }
 
-        final long cooldownMs = Math.max(0, spell.getCooldown()) * 1000L;
+        // Spell mastery lowers the effective cooldown.
+        final long cooldownMs = (long) (Math.max(0, spell.getCooldown()) * 1000L
+                * masteryManager.getCooldownMultiplier(player, spell.getId()));
         final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
         return Math.max(0L, (lastCast + delayMs + cooldownMs) - now);
     }
@@ -239,6 +310,8 @@ public final class AbilityCatalystListener implements Listener {
         spellCooldowns.remove(playerId);
         cycleDebounce.remove(playerId);
         castDebounce.remove(playerId);
+        lastCastSpell.remove(playerId);
+        lastCastTime.remove(playerId);
     }
 
     public void clearPlayerState(final UUID playerId) {

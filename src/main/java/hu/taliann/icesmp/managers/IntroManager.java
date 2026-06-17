@@ -4,8 +4,12 @@ import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -26,11 +30,15 @@ public final class IntroManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final NamespacedKey introSeenKey;
+    private final NamespacedKey cinematicKey;
+    private final NamespacedKey prevGamemodeKey;
 
     public IntroManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.introSeenKey = new NamespacedKey(plugin, "intro_seen");
+        this.cinematicKey = new NamespacedKey(plugin, "intro_cinematic");
+        this.prevGamemodeKey = new NamespacedKey(plugin, "intro_prev_gamemode");
     }
 
     public boolean hasSeenIntro(final Player player) {
@@ -70,6 +78,89 @@ public final class IntroManager {
             final long delay = Math.max(1L, staggerTicks * index);
             player.getScheduler().runDelayed(plugin, task -> showCard(player, rawLine), null, delay);
         }
+
+        playCinematic(player);
+    }
+
+    /**
+     * Opt-in cinematic camera path: briefly puts the player in spectator and
+     * flies them through configured waypoints, then restores their gamemode.
+     * Disabled by default. Robust against interruption — the original gamemode is
+     * stored in PDC and restored at the end AND on the next join (self-heal), so a
+     * crash/disconnect can never strand a player in spectator.
+     *
+     * @param player the viewer
+     */
+    public void playCinematic(final Player player) {
+        if (!configManager.getBoolean("world-events.intro.cinematic.enabled", false)) {
+            return;
+        }
+        final List<String> waypoints = configManager.getStringList("world-events.intro.cinematic.waypoints");
+        if (waypoints.isEmpty() || player.getPersistentDataContainer().has(cinematicKey, PersistentDataType.BYTE)) {
+            return;
+        }
+
+        player.getPersistentDataContainer().set(prevGamemodeKey, PersistentDataType.STRING, player.getGameMode().name());
+        player.getPersistentDataContainer().set(cinematicKey, PersistentDataType.BYTE, (byte) 1);
+        player.setGameMode(GameMode.SPECTATOR);
+
+        final long perTicks = Math.max(1L, configManager.getLong("world-events.intro.cinematic.point-seconds", 3L)) * 20L;
+        for (int index = 0; index < waypoints.size(); index++) {
+            final Location target = parseWaypoint(waypoints.get(index), player.getWorld());
+            if (target == null) {
+                continue;
+            }
+            player.getScheduler().runDelayed(plugin, task -> player.teleportAsync(target), null, Math.max(1L, perTicks * index));
+        }
+
+        // Restore at the end. If the player logs off first, the next-join guard restores instead.
+        player.getScheduler().runDelayed(plugin, task -> restoreCinematicIfNeeded(player), null,
+                Math.max(2L, perTicks * waypoints.size()));
+    }
+
+    /** Restores the gamemode after a cinematic (end of sequence, or on join self-heal). */
+    public void restoreCinematicIfNeeded(final Player player) {
+        if (!player.getPersistentDataContainer().has(cinematicKey, PersistentDataType.BYTE)) {
+            return;
+        }
+        final String previous = player.getPersistentDataContainer().get(prevGamemodeKey, PersistentDataType.STRING);
+        player.getPersistentDataContainer().remove(cinematicKey);
+        player.getPersistentDataContainer().remove(prevGamemodeKey);
+
+        GameMode mode = GameMode.SURVIVAL;
+        if (previous != null) {
+            try {
+                mode = GameMode.valueOf(previous);
+            } catch (final IllegalArgumentException ignored) {
+                mode = GameMode.SURVIVAL;
+            }
+        }
+        if (player.getGameMode() == GameMode.SPECTATOR) {
+            player.setGameMode(mode);
+        }
+    }
+
+    private Location parseWaypoint(final String raw, final World defaultWorld) {
+        final String[] parts = raw.split(",");
+        try {
+            if (parts.length >= 6) {
+                final World world = Bukkit.getWorld(parts[0].trim());
+                final World resolved = world == null ? defaultWorld : world;
+                return new Location(resolved, Double.parseDouble(parts[1].trim()), Double.parseDouble(parts[2].trim()),
+                        Double.parseDouble(parts[3].trim()), Float.parseFloat(parts[4].trim()), Float.parseFloat(parts[5].trim()));
+            }
+            if (parts.length == 5) {
+                return new Location(defaultWorld, Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim()),
+                        Double.parseDouble(parts[2].trim()), Float.parseFloat(parts[3].trim()), Float.parseFloat(parts[4].trim()));
+            }
+            if (parts.length >= 3) {
+                return new Location(defaultWorld, Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim()),
+                        Double.parseDouble(parts[2].trim()));
+            }
+        } catch (final NumberFormatException exception) {
+            return null;
+        }
+        return null;
     }
 
     private void showCard(final Player player, final String rawLine) {

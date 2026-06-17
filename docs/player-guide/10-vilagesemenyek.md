@@ -28,6 +28,11 @@ hogy könnyű észrevenni):
 - Aki **leüti**, annak a **frakciója kasszát + liga-pontot** kap.
 - A **legyőző játékos** egy időleges **harci buffot** (Erő + Védelem) kap.
 
+## Invázió ⚔️
+Időnként egy **szörnyhorda** tör be egy játékos köré — ragyogó, **megerősített (skálázott)**
+szörnyek hulláma. Veszélyes, de a legyőzésük **több kaszt-XP-t** és nagyobb **lélekkő-esélyt**
+ad, mint a hétköznapi szörnyek. (Admin: `/events invasion`.)
+
 ## Szezonális liga 🏆
 
 A frakciók **pontot gyűjtenek** a **raid-** és **világboss-győzelmekből**. A szezon végén

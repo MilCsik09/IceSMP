@@ -27,6 +27,8 @@ public final class BloodMoonManager {
 
     private volatile boolean active;
     private volatile long lastRolledDay = -1L;
+    // > 0 while an admin-forced blood moon is running; it ends on a timer rather than at dawn.
+    private volatile long forcedEndAtMillis = 0L;
 
     public BloodMoonManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager) {
@@ -69,16 +71,14 @@ public final class BloodMoonManager {
         }
 
         final long time = world.getTime();
-        if (active && time < DAWN_TICK) {
-            active = false;
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "blood-moon-ended",
-                    "<gray>🌙 A vérhold lenyugodott — a világ fellélegzik.</gray>"
-            ));
-            return;
-        }
-
         if (active) {
+            // Forced blood moons run on a timer; natural ones end at dawn.
+            final boolean expired = forcedEndAtMillis > 0L
+                    ? System.currentTimeMillis() >= forcedEndAtMillis
+                    : time < DAWN_TICK;
+            if (expired) {
+                endBloodMoon();
+            }
             return;
         }
 
@@ -94,6 +94,40 @@ public final class BloodMoonManager {
             return;
         }
 
+        forcedEndAtMillis = 0L;
+        startBloodMoon();
+    }
+
+    /**
+     * Admin override: starts a blood moon immediately for a configured duration
+     * (independent of the day-night cycle). Safe to call from any thread.
+     *
+     * @return true if a blood moon was started (false if one is already running)
+     */
+    public boolean forceStart() {
+        if (active) {
+            return false;
+        }
+        final long minutes = Math.max(1L, configManager.getLong("world-events.blood-moon.force-duration-minutes", 10L));
+        forcedEndAtMillis = System.currentTimeMillis() + (minutes * 60_000L);
+        startBloodMoon();
+        return true;
+    }
+
+    /**
+     * Admin override: ends the current blood moon immediately.
+     *
+     * @return true if a blood moon was active and is now ended
+     */
+    public boolean forceEnd() {
+        if (!active) {
+            return false;
+        }
+        endBloodMoon();
+        return true;
+    }
+
+    private void startBloodMoon() {
         active = true;
         plugin.getLogger().info("Blood moon night started.");
         Bukkit.getServer().broadcast(messageManager.getMessage(
@@ -102,10 +136,18 @@ public final class BloodMoonManager {
                 java.util.Map.of("bonus", String.valueOf(Math.max(0,
                         configManager.getInt("world-events.blood-moon.bonus-mob-levels", 2))))
         ));
-        // Folia: startBloodMoon runs on the global region scheduler, so play each
-        // player's sound on their own region thread (getLocation must be region-local).
+        // Folia: play each player's sound on their own region thread (getLocation must be region-local).
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> player.playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.7F, 0.5F), null);
         }
+    }
+
+    private void endBloodMoon() {
+        active = false;
+        forcedEndAtMillis = 0L;
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                "blood-moon-ended",
+                "<gray>🌙 A vérhold lenyugodott — a világ fellélegzik.</gray>"
+        ));
     }
 }
