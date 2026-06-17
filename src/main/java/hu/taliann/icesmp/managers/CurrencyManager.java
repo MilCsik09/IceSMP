@@ -14,6 +14,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.EnumMap;
@@ -22,6 +24,8 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unused")
 public final class CurrencyManager {
@@ -31,6 +35,10 @@ public final class CurrencyManager {
     private final CurrencyItemFactory itemFactory;
     private final File storageFile;
     private final Map<UUID, EnumMap<CurrencyType, Double>> balances = new ConcurrentHashMap<>();
+    /** Serializes disk writes so the global tax task and region-thread commands never write concurrently. */
+    private final Object saveLock = new Object();
+    /** Debounce flag: at most one pending async flush is scheduled at a time. */
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     private CurrencyType defaultCurrencyType = CurrencyType.NEUTRAL;
 
     public CurrencyManager(final JavaPlugin plugin, final ConfigManager configManager) {
@@ -75,19 +83,52 @@ public final class CurrencyManager {
         }
     }
 
+    /**
+     * Synchronously flushes balances to disk. Used on shutdown; gameplay paths
+     * should call {@link #requestSave()} to debounce the write off the region thread.
+     */
     public void save() {
-        final YamlConfiguration configuration = new YamlConfiguration();
-        for (final Map.Entry<UUID, EnumMap<CurrencyType, Double>> entry : balances.entrySet()) {
-            final String basePath = "players." + entry.getKey();
-            for (final CurrencyType currencyType : CurrencyType.values()) {
-                configuration.set(basePath + "." + currencyType.name(), entry.getValue().getOrDefault(currencyType, 0.0D));
-            }
-        }
+        flushToDisk();
+    }
 
-        try {
-            configuration.save(storageFile);
-        } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save currency balances: " + exception.getMessage());
+    /**
+     * Schedules a debounced asynchronous flush. Many balance edits in a short
+     * window coalesce into a single atomic write, avoiding an I/O storm on the
+     * region threads while still persisting promptly.
+     */
+    public void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                flushToDisk();
+            }, 2L, TimeUnit.SECONDS);
+        }
+    }
+
+    private void flushToDisk() {
+        synchronized (saveLock) {
+            final YamlConfiguration configuration = new YamlConfiguration();
+            for (final Map.Entry<UUID, EnumMap<CurrencyType, Double>> entry : balances.entrySet()) {
+                final String basePath = "players." + entry.getKey();
+                final EnumMap<CurrencyType, Double> playerBalances = entry.getValue();
+                for (final CurrencyType currencyType : CurrencyType.values()) {
+                    configuration.set(basePath + "." + currencyType.name(), playerBalances.getOrDefault(currencyType, 0.0D));
+                }
+            }
+
+            final File tempFile = new File(storageFile.getParentFile(), storageFile.getName() + ".tmp");
+            try {
+                configuration.save(tempFile);
+                try {
+                    Files.move(tempFile.toPath(), storageFile.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                } catch (final IOException atomicFailure) {
+                    // Filesystem may not support atomic moves; fall back to a plain replace.
+                    Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (final IOException exception) {
+                plugin.getLogger().severe("Failed to save currency balances: " + exception.getMessage());
+            }
         }
     }
 
@@ -193,12 +234,10 @@ public final class CurrencyManager {
             return false;
         }
 
-        if (getStoredBalance(playerId, currencyType) < amount) {
+        if (!tryDeduct(playerId, currencyType, amount)) {
             return false;
         }
-
-        adjustBalance(playerId, currencyType, -amount);
-        save();
+        requestSave();
         return true;
     }
 
@@ -215,7 +254,7 @@ public final class CurrencyManager {
         }
 
         adjustBalance(playerId, currencyType, amount);
-        save();
+        requestSave();
     }
 
     /**
@@ -251,8 +290,13 @@ public final class CurrencyManager {
 
     public void setBalance(final Player player, final CurrencyType currencyType, final double amount) {
         final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType : currencyType;
-        balanceMap(player.getUniqueId()).put(resolvedType, Math.max(0.0D, amount));
-        save();
+        final double clamped = Math.max(0.0D, amount);
+        balances.compute(player.getUniqueId(), (key, existing) -> {
+            final EnumMap<CurrencyType, Double> map = existing != null ? existing : createEmptyBalanceMap();
+            map.put(resolvedType, clamped);
+            return map;
+        });
+        requestSave();
     }
 
     public double deposit(final Player player) {
@@ -282,8 +326,8 @@ public final class CurrencyManager {
             for (final Map.Entry<CurrencyType, Double> entry : pendingDeposits.entrySet()) {
                 adjustBalance(player.getUniqueId(), entry.getKey(), entry.getValue());
             }
-            save();
             inventory.setContents(contents);
+            requestSave();
         }
 
         return deposited;
@@ -324,14 +368,12 @@ public final class CurrencyManager {
         }
 
         final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType : currencyType;
-        final double currentBalance = getBalance(player, resolvedType);
-        if (currentBalance < amount) {
+        if (!tryDeduct(player.getUniqueId(), resolvedType, amount)) {
             return false;
         }
 
-        adjustBalance(player.getUniqueId(), resolvedType, -amount);
         giveCurrency(player, resolvedType, amount);
-        save();
+        requestSave();
         return true;
     }
 
@@ -345,13 +387,12 @@ public final class CurrencyManager {
         }
 
         final CurrencyType resolvedType = currencyType == null ? defaultCurrencyType : CurrencyType.fromFactionType(currencyType);
-        if (getBalance(from, resolvedType) < amount) {
+        if (!tryDeduct(from.getUniqueId(), resolvedType, amount)) {
             return false;
         }
 
-        adjustBalance(from.getUniqueId(), resolvedType, -amount);
         adjustBalance(to.getUniqueId(), resolvedType, amount);
-        save();
+        requestSave();
         return true;
     }
 
@@ -366,21 +407,20 @@ public final class CurrencyManager {
             return -1L;
         }
 
-        if (getBalance(player, fromType) < amount) {
-            return -1L;
-        }
-
         final double grossTargetAmount = Math.max(0.0D, amount * rate);
         final double fee = Math.max(0.0D, grossTargetAmount * feePercent / 100.0D);
-        final double netTargetAmount = grossTargetAmount - fee;
-        if (netTargetAmount <= 0.0D) {
+        // Credit a whole unit so the stored balance matches what the player is told (no hidden fractional dust).
+        final long netTargetAmount = Math.round(grossTargetAmount - fee);
+        if (netTargetAmount <= 0L) {
             return -1L;
         }
 
-        adjustBalance(player.getUniqueId(), fromType, -amount);
+        if (!tryDeduct(player.getUniqueId(), fromType, amount)) {
+            return -1L;
+        }
         adjustBalance(player.getUniqueId(), toType, netTargetAmount);
-        save();
-        return Math.round(netTargetAmount);
+        requestSave();
+        return netTargetAmount;
     }
 
     private void giveCurrency(final Player player, final CurrencyType currencyType, final long amount) {
@@ -396,10 +436,42 @@ public final class CurrencyManager {
         }
     }
 
+    /**
+     * Atomically applies a delta to a player's balance. The whole read-modify-write
+     * runs inside {@link ConcurrentHashMap#compute}, so concurrent edits from
+     * different region threads are serialized per player and never lose an update.
+     */
     private void adjustBalance(final UUID uuid, final CurrencyType currencyType, final double delta) {
-        final EnumMap<CurrencyType, Double> currentBalances = balanceMap(uuid);
-        final double current = currentBalances.getOrDefault(currencyType, 0.0D);
-        currentBalances.put(currencyType, Math.max(0.0D, current + delta));
+        balances.compute(uuid, (key, existing) -> {
+            final EnumMap<CurrencyType, Double> map = existing != null ? existing : createEmptyBalanceMap();
+            final double current = map.getOrDefault(currencyType, 0.0D);
+            map.put(currencyType, Math.max(0.0D, current + delta));
+            return map;
+        });
+    }
+
+    /**
+     * Atomically deducts {@code amount} only if the player's balance covers it,
+     * eliminating the check-then-act race that let concurrent withdrawals/transfers
+     * double-spend.
+     *
+     * @return true if the amount was fully deducted
+     */
+    private boolean tryDeduct(final UUID uuid, final CurrencyType currencyType, final double amount) {
+        if (amount <= 0.0D) {
+            return false;
+        }
+        final boolean[] deducted = {false};
+        balances.compute(uuid, (key, existing) -> {
+            final EnumMap<CurrencyType, Double> map = existing != null ? existing : createEmptyBalanceMap();
+            final double current = map.getOrDefault(currencyType, 0.0D);
+            if (current >= amount) {
+                map.put(currencyType, current - amount);
+                deducted[0] = true;
+            }
+            return map;
+        });
+        return deducted[0];
     }
 
     private double getStoredBalance(final UUID uuid, final CurrencyType currencyType) {
@@ -409,10 +481,6 @@ public final class CurrencyManager {
         }
 
         return currentBalances.getOrDefault(currencyType, 0.0D);
-    }
-
-    private EnumMap<CurrencyType, Double> balanceMap(final UUID uuid) {
-        return balances.computeIfAbsent(uuid, key -> createEmptyBalanceMap());
     }
 
     private EnumMap<CurrencyType, Double> createEmptyBalanceMap() {

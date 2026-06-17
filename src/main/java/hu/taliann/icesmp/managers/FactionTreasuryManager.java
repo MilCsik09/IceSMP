@@ -11,6 +11,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -87,17 +89,26 @@ public final class FactionTreasuryManager {
         }
     }
 
-    public void save() {
-        try {
-            final YamlConfiguration yaml = new YamlConfiguration();
-            for (final Map.Entry<FactionType, Double> entry : balances.entrySet()) {
-                yaml.set("treasury." + entry.getKey().name(), entry.getValue());
-            }
-            for (final Map.Entry<FactionType, Double> entry : taxRates.entrySet()) {
-                yaml.set("tax-rates." + entry.getKey().name(), entry.getValue());
-            }
+    public synchronized void save() {
+        final YamlConfiguration yaml = new YamlConfiguration();
+        for (final Map.Entry<FactionType, Double> entry : balances.entrySet()) {
+            yaml.set("treasury." + entry.getKey().name(), entry.getValue());
+        }
+        for (final Map.Entry<FactionType, Double> entry : taxRates.entrySet()) {
+            yaml.set("tax-rates." + entry.getKey().name(), entry.getValue());
+        }
 
-            yaml.save(storageFile);
+        // Atomic write (temp + rename): the global tax task and region-thread commands
+        // both persist here, so a plain in-place save could be truncated by a concurrent write.
+        final File tempFile = new File(storageFile.getParentFile(), storageFile.getName() + ".tmp");
+        try {
+            yaml.save(tempFile);
+            try {
+                Files.move(tempFile.toPath(), storageFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (final IOException atomicFailure) {
+                Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save faction treasury: " + exception.getMessage());
         }
@@ -129,7 +140,8 @@ public final class FactionTreasuryManager {
      */
     public double setTaxRate(final FactionType faction, final double ratePercent) {
         final double max = Math.max(0.0D, configManager.getDouble("factions.tax.max-rate-percent", 10.0D));
-        final double applied = Math.max(0.0D, Math.min(max, ratePercent));
+        final double safeRate = Double.isFinite(ratePercent) ? ratePercent : 0.0D;
+        final double applied = Math.max(0.0D, Math.min(max, safeRate));
         if (faction != null) {
             taxRates.put(faction, applied);
             save();
@@ -138,7 +150,7 @@ public final class FactionTreasuryManager {
     }
 
     public void deposit(final FactionType faction, final double amount) {
-        if (faction == null || amount <= 0.0D) {
+        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) {
             return;
         }
 
@@ -154,11 +166,23 @@ public final class FactionTreasuryManager {
      * @return true if the withdrawal succeeded
      */
     public boolean withdraw(final FactionType faction, final double amount) {
-        if (faction == null || amount <= 0.0D || getBalance(faction) < amount) {
+        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) {
             return false;
         }
 
-        balances.merge(faction, -amount, Double::sum);
+        // Atomic check-and-deduct so concurrent withdrawals can't overdraw the treasury.
+        final boolean[] withdrawn = {false};
+        balances.compute(faction, (key, current) -> {
+            final double balance = current == null ? 0.0D : current;
+            if (balance >= amount) {
+                withdrawn[0] = true;
+                return balance - amount;
+            }
+            return balance;
+        });
+        if (!withdrawn[0]) {
+            return false;
+        }
         save();
         return true;
     }

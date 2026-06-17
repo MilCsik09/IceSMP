@@ -72,6 +72,11 @@ public final class MarketCommand implements BasicCommand {
             return;
         }
 
+        if (!Double.isFinite(price) || price <= 0.0D) {
+            player.sendMessage(messageManager.get("amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
+            return;
+        }
+
         CurrencyType currency = args.length >= 3 ? CurrencyType.fromInput(args[2]) : null;
         if (args.length >= 3 && currency == null) {
             player.sendMessage(messageManager.get("bank-unknown-currency", "&cIsmeretlen valuta típus."));

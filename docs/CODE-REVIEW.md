@@ -2,6 +2,12 @@
 
 > **Állapot:** nyitott találatok gyűjteménye • **Utolsó frissítés:** 2026-06-17
 > **Ág:** `claude/gracious-rubin-0hxvbd`
+>
+> **Javítási napló:**
+> - **1. csomag — gazdaság-stop ✅** (`ECON-1`, `ECON-2`, `ECON-3`, `ECON-4`/`CORE-1`/`CORE-2`,
+>   `ECON-6`, `CMD-1`, `CMD-2`, `CMD-3`, `CMD-8`): atomikus balansz (`compute`/`tryDeduct`),
+>   piaci pénz-konzerválás + atomikus claim, debounce-olt atomikus (temp+rename) mentés,
+>   `Double.isFinite` guardok. Fordítás/teszt helyben szükséges.
 
 Ez a dokumentum az IceSMP teljes kódbázisának (214 Java fájl, ~24 700 sor) átfogó
 review-ját **és** a session-ben hozzáadott funkciók (`06dcb17…HEAD`, 69 fájl, ~5 400 sor)
@@ -61,7 +67,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 ## CRITICAL
 
 ### `ECON-1` — A valuta-tár konkurens, de nem atomikus
-- [ ] **Fájl:** `managers/CurrencyManager.java:33`, `adjustBalance` (~399)
+- [x] ✅ **Javítva (1. csomag).** **Fájl:** `managers/CurrencyManager.java:33`, `adjustBalance` (~399)
 - **Súlyosság:** 🔴 CRITICAL
 - **Leírás:** `balances = ConcurrentHashMap<UUID, EnumMap<CurrencyType,Double>>`. A map szálbiztos,
   de az `EnumMap` érték **nem**, és a balansz-módosítás read-modify-write (`getOrDefault` →
@@ -73,7 +79,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   atomikus művelettel; vagy per-UUID zár.
 
 ### `ECON-2` — A piac pénzt teremt/éget (reputációs ár vs. listaár)
-- [ ] **Fájl:** `managers/MarketManager.java:200-208`, `buy()`
+- [x] ✅ **Javítva (1. csomag).** **Fájl:** `managers/MarketManager.java:200-208`, `buy()`
 - **Súlyosság:** 🔴 CRITICAL
 - **Leírás:** a vevő a reputáció-módosított árat fizeti (`getEffectivePrice`), de az eladó a
   **listaárból** kap (`listing.price()*(1-fee)`). A két oldal nincs ugyanabból az összegből származtatva.
@@ -107,7 +113,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 ## HIGH
 
 ### `ECON-3` — A piaci vétel nem atomikus a lemondással szemben
-- [ ] **Fájl:** `managers/MarketManager.java:189-216`, `buy()` / `cancelListings()`
+- [x] ✅ **Javítva (1. csomag).** **Fájl:** `managers/MarketManager.java:189-216`, `buy()` / `cancelListings()`
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** `buy()` `synchronized`, de `cancelListings()`/`createListing()` **nem**, és ugyanazt a
   `listings` map-et módosítják. A `buy()` előbb von, utána távolít.
@@ -116,7 +122,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   „claim", csak siker esetén vonj és szállíts; hiba esetén visszatérítés.
 
 ### `ECON-4` / `CORE-1` / `CORE-2` — `save()` szinkronizálatlan, nem atomikus, minden mutációnál
-- [ ] **Fájl:** `managers/CurrencyManager.java:78` (és minta B szerint RelicManager, MarketManager, KingManager, ParkourManager)
+- [x] ✅ **Javítva (1. csomag)** — CurrencyManager/MarketManager/FactionTreasuryManager (a többi manager még hátravan, lásd 4. csomag). **Fájl:** `managers/CurrencyManager.java:78` (és minta B szerint RelicManager, MarketManager, KingManager, ParkourManager)
 - **Súlyosság:** 🟠 HIGH (a konkurens írás kritikus felé hajlik)
 - **Leírás:** minden deposit/withdraw/transfer/market-buy a teljes YAML-t kiírja a hívó szálon, zár és
   temp-fájl nélkül. A global tax-task és a régió-szálú parancsok egyidejűleg írhatják a fájlt.
@@ -214,7 +220,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** az eladó-értesítést az eladó schedulerén / globálison futtasd.
 
 ### `CMD-1` — `/faction donate NaN` megmérgezi a frakció-kasszát
-- [ ] **Fájl:** `commands/faction/FactionDonateSubcommand.java:62`
+- [x] ✅ **Javítva (1. csomag).** **Fájl:** `commands/faction/FactionDonateSubcommand.java:62`
 - **Súlyosság:** 🟠 HIGH (minta A)
 - **Leírás:** `Double.parseDouble("NaN")` sikerül; `amount <= 0` hamis NaN-ra → a donate folytatódik,
   `deposit(faction, NaN)`. Ez **unprivilegizált** parancs.
@@ -222,7 +228,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `if (!Double.isFinite(amount) || amount <= 0) { elutasít }`.
 
 ### `CMD-2` — `/faction treasury withdraw Infinity` pénzt teremthet
-- [ ] **Fájl:** `commands/faction/FactionTreasurySubcommand.java:98`
+- [x] ✅ **Javítva (1. csomag)** — parancs-oldali `isFinite` + atomikus treasury withdraw. **Fájl:** `commands/faction/FactionTreasurySubcommand.java:98`
 - **Súlyosság:** 🟠 HIGH (minta A)
 - **Leírás:** azonos NaN/Infinity-bypass a király/admin withdraw-ban; ha a `withdraw` nem véd, a játékos
   bankja végtelen/NaN lesz.
@@ -297,7 +303,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** a `canUse()`/trigger a központi `ownerships` rekordot is konzultálja; lejárt fizikai példányok érvénytelenítése.
 
 ### `ECON-6` — Tört valuta a `exchange` kerekítésében
-- [ ] **Fájl:** `managers/CurrencyManager.java:373-381`
+- [x] ✅ **Javítva (1. csomag).** **Fájl:** `managers/CurrencyManager.java:373-381`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `exchange()` a nyers `double` `netTargetAmount`-ot írja jóvá, de `Math.round`-ot ad vissza a
   UI-nak; a tárolt balansz tört, a `withdraw` (int) az egész részt húzza, a tört megmarad.
@@ -326,7 +332,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   killeket determinisztikusan utasítsa el.
 
 ### `CMD-3` — `/market sell NaN` ár
-- [ ] **Fájl:** `commands/MarketCommand.java:69`
+- [x] ✅ **Javítva (1. csomag).** **Fájl:** `commands/MarketCommand.java:69`
 - **Súlyosság:** 🟡 MEDIUM (minta A)
 - **Leírás:** a parancs nem ellenőriz finitséget/pozitivitást, a NaN/Infinity árat a managerre bízza.
 - **Fix:** `if (!Double.isFinite(price) || price <= 0) return;` a parancsban.
@@ -483,7 +489,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** prefix-szűrés / az `args.length==0` ág elhagyása.
 
 ### `CMD-8` — `/currency exchange <Long.MAX_VALUE>` túlcsordulás
-- [ ] **Fájl:** `commands/currency/CurrencyExchangeSubcommand.java:60`
+- [x] ✅ **Javítva (1. csomag)** — az atomikus `tryDeduct` + a from-egyenleg kapu megszünteti az overflow-mintet. **Fájl:** `commands/currency/CurrencyExchangeSubcommand.java:60`
 - **Súlyosság:** 🟢 LOW (minta A)
 - **Leírás:** `value*rate` túlcsordulhat a managerben; a wrap-elt pozitív érték hibás jóváírást adhat.
 - **Fix:** input-cap (balansz/config max) + `Math.multiplyExact`/`BigDecimal` a `exchange`-ben.
