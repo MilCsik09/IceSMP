@@ -14,14 +14,27 @@ alacsony kockázatú első lépés.
   kizárólag a `messages.yml`-ből olvas.
 
 ## Config — hátralévő (alacsony kockázat)
-- **`messages.yml` tagolása.** ~700 kulcs gyakorlatilag egyetlen tagolatlan blokkban (3 komment az
-  egészben). Szekció-bannerekkel csoportosítani (currency / faction / spell / market / quest / pet /
-  world-event …). *Kockázat:* alacsony, de kulcs-elejtés ellen YAML-validáció kell minden lépés után.
-- **Nagy data-blokkok kiszervezése (opcionális, nagyobb).** A `config.yml` legnagyobb részei: talents
-  (~173 sor), specializations spell-unlocks (~111), classes spell-unlocks, achievements/quests (~94).
-  Külön fájlokba (`talents.yml`, `spells.yml`) tölthetők, de ehhez a `ConfigManager`-nek több fájlt
-  kell betöltenie/merge-elnie (jelenleg egyetlen `plugin.getConfig()`). Csak ha a `config.yml` mérete
-  tényleg zavaró marad.
+- **Alrendszerenkénti config-fájlok (kérés).** Az egyetlen `config.yml` helyett minden alrendszernek
+  saját fájl egy `config/` mappában: `config/classes.yml`, `config/specializations.yml`,
+  `config/talents.yml`, `config/professions.yml`, `config/quests.yml`, `config/world-events.yml`,
+  `config/economy.yml`, `config/factions.yml`, `config/pets.yml`, `config/market.yml` stb. (A legnagyobb
+  blokkok: talents ~173 sor, specializations spell-unlocks ~111, classes, achievements/quests ~94.)
+  *Megvalósítás:* a `ConfigManager`-t több-fájlossá tenni — egy fő `config.yml` (általános `settings`)
+  + a `config/` mappa minden `*.yml`-jét betölti és egy logikai névtérbe (vagy egy egyesített
+  `MemoryConfiguration`-be) merge-eli, hogy a meglévő `getX("alrendszer.kulcs")` hívások változatlanul
+  működjenek. Alapfájlokat a jarból `saveResource`-szal kell kicsomagolni első indításkor.
+  *Kockázat:* közepes (a betöltő átírása); a kulcs-útvonalak megtarthatók, így a hívó kód nem változik.
+- **Alrendszerenkénti messages-fájlok (kérés).** Ugyanígy a `messages.yml` helyett `messages/` mappa:
+  `messages/currency.yml`, `messages/faction.yml`, `messages/spell.yml`, `messages/market.yml`,
+  `messages/quest.yml`, `messages/pet.yml`, `messages/world-event.yml`, `messages/system.yml` …
+  A `MessageManager`-t több-fájlossá tenni (a `messages.<root>` névteret a fájlnévhez kötve, vagy minden
+  fájlt egy egyesített konfigba olvasva). Átmenetként a jelenlegi egy `messages.yml` is maradhat, csak
+  szekció-bannerekkel tagolva.
+- **Üzenet-formátum egységesítése.** Jelenleg vegyes: ~128 MiniMessage (`<tag>`) + ~290 legacy (`&`).
+  ✅ A *rendering* már javítva (a `MessageManager` minden útvonala — `get`/`getMessage`/`getComponent` —
+  formátum-tudatos: MiniMessage VAGY legacy, a vegyeset nem rontja el). **Hátralévő (kozmetikai):** a
+  `messages.yml` tartalmát egységes formátumra hozni — javasolt mindent **MiniMessage**-re, mert az
+  gazdagabb (gradiens/hover/click) és a kód már mindenhol kezeli.
 
 ## Kód-architektúra
 
@@ -101,6 +114,29 @@ alacsony kockázatú első lépés.
   átadva) — a „listener" név alulbecsli a szerepét.
 - **Context-objektum burjánzás:** `CommandMenuContext` (16 függőség), `CharacterMenuContext` (11) kézi
   „god-bag"-ek; ha az 5. pontból service-locator lesz, onnan olvashatnának.
+
+## Tartalmi bővítés ("variety") — szintén a refaktor után
+
+Néhány alrendszer jelenleg „mutatóban" van (működő keret, kevés tartalom). Ezek bővítése külön
+lista (nem hibajavítás, nem refaktor — tartalom). Az alrendszerenkénti config-fájlok (lásd fent)
+pont ezt a bővítést teszik kényelmessé.
+
+- **Világboss** — jelenleg **1 típus** (`RAVAGER`), egy statikus boss. → több boss-archetípus (saját
+  képességek, fázisok, loot-tábla), véletlenszerű/rotációs választás, egyedi nevek.
+- **Invázió** — jelenleg **1 mob-típus** (`ZOMBIE`) hullámonként. → többféle horda-összetétel, mini-boss
+  hullám, skálázódó nehézség, frakció-specifikus jutalom.
+- **Rituálék** — **~4** oltár-recept. → több rituálé (buff/summon/teleport/időjárás), ritka összetevők.
+- **Relikviák** — **~7** képesség. → több relikvia-archetípus, set-bónuszok, ritkasági szintek.
+- **Napi küldetések** — kis pool, kevés objective-típus. → bővebb pool, heti küldetés, streak-jutalom.
+- **Elérések** — kevés mérföldkő. → több kategória (gazdaság, harc, szakma, felfedezés), fokozatok.
+- **Parkour-próbák** — csak keret, a pályák kézzel épülnek. → előre definiált pálya-séták, ranglista,
+  napi futam.
+- **Szakma-receptek (masterwork)** — kevés recept. → szakmánként több szintű, ritka recept-fa.
+- **Kozmetikumok (ROADMAP 11.)** — még nincs. → titulusok, partikli-effektek, kalapok/skinek.
+- **Raid/frakció-diplomácia (ROADMAP 4–5.)** — alap. → szövetség/béke, frakció-szintek/perkek,
+  objektíva-alapú (zászló) raidek, terület-elfoglalás.
+- **Spell-variety** — sok spell van, de specenként a magas szintű (40+) kínálat vékonyodik. → capstone-
+  spellek, spec-identitást erősítő egyedi mechanikák.
 
 ## Prioritás (a hibajavítások UTÁN)
 

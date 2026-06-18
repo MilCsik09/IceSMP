@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Manager for localized and configurable messages throughout the plugin.
@@ -18,6 +19,8 @@ public final class MessageManager {
 
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+    /** Detects legacy colour codes (&a, §c, …); if present, the message is treated as legacy, not MiniMessage. */
+    private static final Pattern LEGACY_CODE = Pattern.compile("[&§][0-9a-fk-orA-FK-OR]");
 
     private final JavaPlugin plugin;
     private final File messagesFile;
@@ -143,7 +146,7 @@ public final class MessageManager {
      * @return the message with fallback
      */
     public String get(final String key, final String defaultValue) {
-        return TextUtil.color(resolveMessage(key, defaultValue));
+        return colorize(resolveMessage(key, defaultValue));
     }
 
     /**
@@ -157,10 +160,10 @@ public final class MessageManager {
     public String get(final String key, final String defaultValue, final Object... args) {
         final String template = resolveMessage(key, defaultValue);
         try {
-            return TextUtil.color(String.format(template, args));
+            return colorize(String.format(template, args));
         } catch (final Exception e) {
             plugin.getLogger().warning("Message format error for key: " + key);
-            return TextUtil.color(defaultValue);
+            return colorize(defaultValue);
         }
     }
 
@@ -169,7 +172,7 @@ public final class MessageManager {
         for (final Map.Entry<String, String> entry : placeholders.entrySet()) {
             message = message.replace("{" + entry.getKey() + "}", entry.getValue() == null ? "" : entry.getValue());
         }
-        return TextUtil.color(message);
+        return colorize(message);
     }
 
     public Component getMessage(final String key) {
@@ -185,24 +188,53 @@ public final class MessageManager {
         for (final Map.Entry<String, String> entry : placeholders.entrySet()) {
             message = message.replace("{" + entry.getKey() + "}", entry.getValue() == null ? "" : entry.getValue());
         }
+        return renderComponent(message);
+    }
 
-        if (message.contains("<") && message.contains(">")) {
+    public Component getComponent(final String key, final String defaultValue) {
+        return renderComponent(resolveMessage(key, defaultValue));
+    }
+
+    public Component getComponent(final String key, final String defaultValue, final Object... args) {
+        final String template = resolveMessage(key, defaultValue);
+        try {
+            return renderComponent(String.format(template, args));
+        } catch (final Exception e) {
+            plugin.getLogger().warning("Message format error for key: " + key);
+            return renderComponent(defaultValue);
+        }
+    }
+
+    /**
+     * Whether a message should be parsed as MiniMessage: it has {@code <...>} tags and
+     * carries no legacy {@code &}/{@code §} colour codes (those mark a legacy message).
+     */
+    private boolean isMiniMessage(final String message) {
+        return message.indexOf('<') >= 0 && message.indexOf('>') >= 0 && !LEGACY_CODE.matcher(message).find();
+    }
+
+    /** Renders a raw message to a legacy (§) string, parsing MiniMessage when applicable. */
+    private String colorize(final String message) {
+        if (isMiniMessage(message)) {
+            try {
+                return SECTION_SERIALIZER.serialize(MINI_MESSAGE.deserialize(message));
+            } catch (final Exception ignored) {
+                // Not valid MiniMessage — fall through to legacy colouring.
+            }
+        }
+        return TextUtil.color(message);
+    }
+
+    /** Renders a raw message to a Component, parsing MiniMessage when applicable, else legacy. */
+    private Component renderComponent(final String message) {
+        if (isMiniMessage(message)) {
             try {
                 return MINI_MESSAGE.deserialize(message);
             } catch (final Exception ignored) {
                 // Fall back to legacy parsing if MiniMessage tags are invalid.
             }
         }
-
         return SECTION_SERIALIZER.deserialize(TextUtil.color(message));
-    }
-
-    public Component getComponent(final String key, final String defaultValue) {
-        return SECTION_SERIALIZER.deserialize(get(key, defaultValue));
-    }
-
-    public Component getComponent(final String key, final String defaultValue, final Object... args) {
-        return SECTION_SERIALIZER.deserialize(get(key, defaultValue, args));
     }
 
     private String resolveMessage(final String key, final String defaultValue) {
