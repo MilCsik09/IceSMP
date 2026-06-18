@@ -948,8 +948,10 @@ pets:
     xp-per-kill: 2
     health-per-level: 2.0
     damage-per-level: 0.5
-    # Ennél messzebb (blokk) a nem szelídíthető társ visszateleportál a gazdához.
+    # Ennél messzebb (blokk) a társ visszateleportál a gazdához (lemaradás esetén).
     follow-distance: 16.0
+    # Ennél messzebb (blokk) a társ gyalog elindul a gazda után (alap követés minden petnek).
+    follow-start-distance: 5.0
     # Plugin-vezérelt harc (a mob saját AI-jától függetlenül): a társ a célpont felé
     # pathfinderrel megy, és a plugin osztja a sebzést — így bármilyen mob "rendes pet".
     tick-ticks: 5             # milyen sűrűn fusson a társ-vezérlő (tick)

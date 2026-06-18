@@ -229,6 +229,7 @@ public final class PetManager {
      */
     public void tick() {
         final double followSq = Math.pow(Math.max(4.0D, configManager.getDouble("pets.companion.follow-distance", 16.0D)), 2);
+        final double followStartSq = Math.pow(Math.max(2.0D, configManager.getDouble("pets.companion.follow-start-distance", 5.0D)), 2);
         final double reach = Math.max(1.5D, configManager.getDouble("pets.companion.attack-reach", 2.6D));
         final double aggro = Math.max(0.0D, configManager.getDouble("pets.companion.aggro-range", 10.0D));
         final double leash = Math.max(8.0D, configManager.getDouble("pets.companion.leash-range", 24.0D));
@@ -252,13 +253,13 @@ public final class PetManager {
             final UUID ownerId = owner.getUniqueId();
             final int level = getLevel(owner);
             pet.getScheduler().run(plugin, task ->
-                    runPetTick(pet, ownerId, level, followSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+                    runPetTick(pet, ownerId, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
         }
     }
 
     private void runPetTick(final Mob pet, final UUID ownerId, final int level, final double followSq,
-                            final double reach, final double aggro, final double leash, final double chaseSpeed,
-                            final long cooldownMs) {
+                            final double followStartSq, final double reach, final double aggro, final double leash,
+                            final double chaseSpeed, final long cooldownMs) {
         final Player owner = Bukkit.getPlayer(ownerId);
         if (owner == null || !owner.isOnline()) {
             return;
@@ -288,9 +289,24 @@ public final class PetManager {
             return;
         }
 
-        // No target → stay near the owner.
-        if (!owner.getWorld().equals(pet.getWorld()) || pet.getLocation().distanceSquared(owner.getLocation()) > followSq) {
+        // No target → follow the owner. Every pet trails its owner by default: it walks toward
+        // them once it lags past the follow-start radius, and teleports to catch up only when it
+        // falls too far behind or ends up in another world.
+        followOwner(pet, owner, followSq, followStartSq, chaseSpeed);
+    }
+
+    /** Keeps an idle pet near its owner: walk to trail, teleport to catch up when far. */
+    private void followOwner(final Mob pet, final Player owner, final double followSq,
+                             final double followStartSq, final double chaseSpeed) {
+        if (!owner.getWorld().equals(pet.getWorld())) {
             pet.teleportAsync(owner.getLocation());
+            return;
+        }
+        final double distSq = pet.getLocation().distanceSquared(owner.getLocation());
+        if (distSq > followSq) {
+            pet.teleportAsync(owner.getLocation());
+        } else if (distSq > followStartSq) {
+            pet.getPathfinder().moveTo(owner.getLocation(), chaseSpeed);
         }
     }
 
