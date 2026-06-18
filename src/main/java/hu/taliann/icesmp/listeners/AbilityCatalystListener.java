@@ -199,11 +199,16 @@ public final class AbilityCatalystListener implements Listener {
         }
 
         selected.consumeCost(player);
-        selected.execute(player);
+        if (!selected.executeSpell(player)) {
+            // No effect fired (no target, no companions, …) — refund the cost and skip the
+            // cooldown so a missed cast costs the player nothing.
+            selected.refundCost(player);
+            return;
+        }
 
         // Combo: a matching pair within the window flows faster (cooldown refund) + flair.
         final boolean combo = isComboMatch(player, selected.getId(), now);
-        putCooldown(player, selected, combo ? now - comboRefundMillis(selected) : now);
+        putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
         playCastFlourish(player, combo);
         if (combo) {
             player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
@@ -243,10 +248,19 @@ public final class AbilityCatalystListener implements Listener {
         return false;
     }
 
-    private long comboRefundMillis(final Spell spell) {
-        final double percent = Math.max(0.0D, Math.min(100.0D,
+    private long comboRefundMillis(final Player player, final Spell spell) {
+        // Cap the configured refund at 80% so a combo can never fully erase a cooldown.
+        final double percent = Math.max(0.0D, Math.min(80.0D,
                 configManager.getDouble("spells.combos.bonus-cooldown-refund-percent", 40.0D)));
-        return (long) (Math.max(0, spell.getCooldown()) * 1000L * (percent / 100.0D));
+        final long baseCooldownMs = Math.max(0L, spell.getCooldown()) * 1000L;
+        final long refund = (long) (baseCooldownMs * (percent / 100.0D));
+
+        // Hard floor: even stacked with spell-mastery cooldown reduction, the combo must leave
+        // a minimum residual cooldown (the larger of 1s or 15% of the base cooldown).
+        final long effectiveCooldownMs = (long) (baseCooldownMs * masteryManager.getCooldownMultiplier(player, spell.getId()));
+        final long floorMs = Math.max(1000L, (long) (baseCooldownMs * 0.15D));
+        final long maxRefund = Math.max(0L, effectiveCooldownMs - floorMs);
+        return Math.min(refund, maxRefund);
     }
 
     private void playCastFlourish(final Player player, final boolean combo) {

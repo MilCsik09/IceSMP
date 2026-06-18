@@ -45,7 +45,10 @@ public final class HideSpell extends BaseSpell {
 
         final UUID playerId = player.getUniqueId();
         // Folia: schedule on the player's own region scheduler, not the (unsupported) global Bukkit scheduler.
-        player.getScheduler().runDelayed(plugin, task -> clearHide(playerId), null, HIDE_DURATION_TICKS);
+        // The retired-callback ensures the armor is restored even if the task is retired before firing
+        // (e.g. the entity is removed); clearHide is idempotent. Normal logout is also covered by the
+        // PlayerQuit cleanup, which restores the armor while the player is still online.
+        player.getScheduler().runDelayed(plugin, task -> clearHide(playerId), () -> clearHide(playerId), HIDE_DURATION_TICKS);
     }
 
     private Location randomNearbySafeLocation(final Location origin, final int radius) {

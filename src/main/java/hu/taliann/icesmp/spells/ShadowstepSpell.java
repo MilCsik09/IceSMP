@@ -22,10 +22,15 @@ public final class ShadowstepSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
-            return;
+            return false;
         }
 
         final Location origin = player.getLocation();
@@ -53,5 +58,6 @@ public final class ShadowstepSpell extends BaseSpell {
             player.getWorld().spawnParticle(Particle.PORTAL, destination.clone().add(0.0D, 1.0D, 0.0D), 30, 0.3D, 0.5D, 0.3D, 0.05D);
             player.playSound(destination, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.2F);
         });
+        return true;
     }
 }

@@ -24,7 +24,9 @@ public final class RootSpell extends BaseSpell {
                 continue;
             }
             living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 80, 10, false, true, true));
-            living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 250, false, true, true));
+            // JUMP_BOOST 128 is the vanilla "no jump" level — it pins the target in place.
+            // (A high positive amplifier such as 250 would instead launch it skyward to its death.)
+            living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 128, false, true, true));
         }
     }
 

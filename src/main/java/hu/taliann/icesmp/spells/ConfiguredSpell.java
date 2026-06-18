@@ -88,11 +88,22 @@ public final class ConfiguredSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        switch (targeting) {
-            case SELF -> executeSelf(player);
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
+        return switch (targeting) {
+            case SELF -> {
+                executeSelf(player);
+                yield true;
+            }
             case TARGET -> executeTarget(player);
-            case AOE -> executeAoe(player);
-        }
+            case AOE -> {
+                executeAoe(player);
+                yield true;
+            }
+        };
     }
 
     private void executeSelf(final Player player) {
@@ -100,16 +111,17 @@ public final class ConfiguredSpell extends BaseSpell {
         playFeedback(player, player.getLocation());
     }
 
-    private void executeTarget(final Player player) {
+    private boolean executeTarget(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, range);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
-            return;
+            return false;
         }
 
         affect(player, target);
         applySelf(player);
         playFeedback(player, target.getLocation());
+        return true;
     }
 
     private void executeAoe(final Player player) {

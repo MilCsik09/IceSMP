@@ -25,6 +25,11 @@ public final class PrimalBondSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         int empowered = 0;
 
         for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), RADIUS, RADIUS, RADIUS)) {
@@ -44,10 +49,11 @@ public final class PrimalBondSpell extends BaseSpell {
 
         if (empowered == 0) {
             player.sendMessage(resolveMessage("spell.primal_bond.no-companions", "<gray>Nincs a közeledben megszelídített társad.</gray>"));
-            return;
+            return false;
         }
 
         player.playSound(player.getLocation(), Sound.ENTITY_WOLF_GROWL, 0.8F, 1.2F);
         player.sendMessage(resolveMessage("spell.primal_bond.activated", "<dark_green>Az ősi kötelék megerősíti a társaidat.</dark_green>"));
+        return true;
     }
 }

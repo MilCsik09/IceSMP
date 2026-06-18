@@ -45,6 +45,40 @@ public interface Spell {
         }
     }
 
+    /**
+     * Refunds a previously consumed cost. Called only when {@link #executeSpell}
+     * reports a no-op (no effect was applied), restoring the caster's resource —
+     * the inverse of {@link #consumeCost(Player)} for the standard cost types.
+     */
+    default void refundCost(final Player player) {
+        switch (getCostType()) {
+            case HUNGER -> player.setFoodLevel(Math.min(20, player.getFoodLevel() + Math.max(0, getCostAmount())));
+            case XP -> {
+                final int currentXP = ExperienceUtil.getTotalExperience(player);
+                ExperienceUtil.setTotalExperience(player, currentXP + Math.max(0, getCostAmount()));
+            }
+            case HEALTH -> {
+                final org.bukkit.attribute.AttributeInstance maxHealth =
+                        player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                final double cap = maxHealth != null ? maxHealth.getValue() : 20.0D;
+                player.setHealth(Math.min(cap, player.getHealth() + Math.max(0, getCostAmount())));
+            }
+        }
+    }
+
     void execute(Player player);
+
+    /**
+     * Executes the spell and reports whether the effect actually fired. Spells that
+     * can no-op (no target in range, no companions, …) override this and return false
+     * so the caster is not charged the cost or put on cooldown for a wasted cast.
+     * The default simply runs {@link #execute(Player)} and reports success.
+     *
+     * @return true if the spell's effect was applied
+     */
+    default boolean executeSpell(final Player player) {
+        execute(player);
+        return true;
+    }
 }
 

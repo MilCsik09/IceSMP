@@ -8,6 +8,11 @@
 >   `ECON-6`, `CMD-1`, `CMD-2`, `CMD-3`, `CMD-8`): atomikus balansz (`compute`/`tryDeduct`),
 >   piaci pénz-konzerválás + atomikus claim, debounce-olt atomikus (temp+rename) mentés,
 >   `Double.isFinite` guardok. Fordítás/teszt helyben szükséges.
+> - **2. csomag — spell-helyesség ✅** (`SPELL-2`, `SPELL-3`, `SPELL-4`, `SPELL-5`): Root
+>   `JUMP_BOOST` 128 (immobilizál, nem katapultál); `Spell.executeSpell()` boolean visszatérés +
+>   `refundCost()` → bukott/no-op kaszt nem von költséget és nem indít cooldownt (ConfiguredSpell,
+>   LifeDrain, PrimalBond, BeeSwarm, **VenomStrike, Shadowstep** is); combo-refund 80%-ra vágva +
+>   effektív cooldown-padló (mastery+combo sem nullázhatja); HideSpell retired-callback.
 
 Ez a dokumentum az IceSMP teljes kódbázisának (214 Java fájl, ~24 700 sor) átfogó
 review-ját **és** a session-ben hozzáadott funkciók (`06dcb17…HEAD`, 69 fájl, ~5 400 sor)
@@ -149,7 +154,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** a sebzést a célpont saját schedulerén: `living.getScheduler().run(… living.damage(8, shooter))`.
 
 ### `SPELL-2` — `RootSpell` az égbe katapultál (`JUMP_BOOST` 250)
-- [ ] **Fájl:** `spells/RootSpell.java:27`
+- [x] ✅ **Javítva (2. csomag).** **Fájl:** `spells/RootSpell.java:27`
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** a „gyökerezés" minden közeli lényre `JUMP_BOOST` **amplifier 250**-et rak (SLOWNESS 10 mellett).
   A 250-es szint az égbe lövi a lényt.
@@ -257,7 +262,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 ## MEDIUM
 
 ### `SPELL-3` — Bukott/no-op kasztra is levonódik a költség és a cooldown
-- [ ] **Fájl:** `listeners/AbilityCatalystListener.java:201-206`
+- [x] ✅ **Javítva (2. csomag)** — `executeSpell()` boolean + `refundCost()`; a célpont-igényes spellek (Configured TARGET, LifeDrain, BeeSwarm, PrimalBond, VenomStrike, Shadowstep) no-op esetén `false`-t adnak. **Fájl:** `listeners/AbilityCatalystListener.java:201-206`
 - **Súlyosság:** 🟡 MEDIUM (minta F)
 - **Leírás:** `consumeCost(player)` → `execute(player)` → feltétlen `putCooldown`. Sok `execute` no-op-ol
   (nincs célpont/companion: `ConfiguredSpell`, `LifeDrainSpell`, `PrimalBondSpell`, `BeeSwarmSpell`).
@@ -265,14 +270,14 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `Spell.execute` adjon vissza `boolean`-t; csak siker esetén `consumeCost`+`putCooldown`.
 
 ### `SPELL-4` — A kombó-cooldown-refund elérheti a 100%-ot (teljes bypass)
-- [ ] **Fájl:** `listeners/AbilityCatalystListener.java:247-249`, `206`
+- [x] ✅ **Javítva (2. csomag)** — refund 80%-ra vágva + effektív cooldown-padló (max(1s, 15% base)), így mastery+combo sem nullázhatja. **Fájl:** `listeners/AbilityCatalystListener.java:247-249`, `206`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** kombónál `putCooldown(now - comboRefundMillis)`; a refund-százalék 0..100-ra van vágva, 100%-nál
   a maradék cooldown 0. A mastery-csökkentés erre rakódik.
 - **Fix:** effektív refund ≤80%-ra vágni és/vagy minimum-cooldown padló a `getRemainingCooldown`-ban.
 
 ### `SPELL-5` — `HideSpell` páncél nem áll vissza kilépéskor (null retired-callback)
-- [ ] **Fájl:** `spells/HideSpell.java:48`
+- [x] ✅ **Javítva (2. csomag)** — retired-callback (`clearHide`, idempotens); normál kilépést a PlayerQuit-cleanup már online állapotban visszaállítja. **Fájl:** `spells/HideSpell.java:48`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** a páncélt `HIDDEN_ARMOR`-ba menti és a slotokat üríti, majd `runDelayed(..., null, …)` — a
   retired-callback **null**. Folián kilépéskor a függő task retire-ölődik a callback futása nélkül, így a
