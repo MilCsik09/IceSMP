@@ -123,16 +123,19 @@ public final class WorldBossManager {
     }
 
     private void triggerSpawnNear(final Player anchor) {
-        final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-        final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
-        final Location approx = anchor.getLocation().clone().add(
-                Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
+        // Folia: read the anchor's location on its OWN region thread first (it may be in a
+        // different region than the caller), then hop to the spawn location's region.
+        anchor.getScheduler().run(plugin, task -> {
+            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+            final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
+            final Location approx = anchor.getLocation().clone().add(
+                    Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
 
-        final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
+            final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
+            activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
 
-        // Entity spawning must happen on the owning region's thread (Folia).
-        plugin.getServer().getRegionScheduler().run(plugin, approx, task -> spawnBoss(approx, lifetimeMinutes));
+            plugin.getServer().getRegionScheduler().run(plugin, approx, spawnTask -> spawnBoss(approx, lifetimeMinutes));
+        }, null);
     }
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes) {

@@ -13,6 +13,14 @@
 >   `refundCost()` → bukott/no-op kaszt nem von költséget és nem indít cooldownt (ConfiguredSpell,
 >   LifeDrain, PrimalBond, BeeSwarm, **VenomStrike, Shadowstep** is); combo-refund 80%-ra vágva +
 >   effektív cooldown-padló (mastery+combo sem nullázhatja); HideSpell retired-callback.
+> - **3. csomag — Folia cross-region (minta C) ✅** (`DATA-1`, `CMBT-1`, `CMBT-2`, `CMBT-5`/`PET-6`,
+>   `CMD-4`, `ECON-7`): a SinListener gyilkos-oldali PDC/stat-mutációi a gyilkos schedulerén;
+>   a WorldBoss/Invázió a spawn-anchor helyét az anchor szálán olvassa a régió-hopp előtt; a pet-tick
+>   a gazda PDC-jét+helyét a gazda szálán olvassa és snapshotot ad a pet régiójának; a `/job givecatalyst`
+>   a cél inventory-mutációját a cél schedulerén; a király-koronázás broadcast a global region scheduleren.
+>   *Felülvizsgálva, nem valódi hiba (változatlan):* `SPELL-1` (AngryChicken — a célpont a csirkétől 1.1
+>   blokkon belül = azonos régió; a shooter csak attribúció), `GUI-1`/`GUI-2` (a klikk a kattintó régióján
+>   fut; a `sendMessage` szálbiztos).
 > - **Spell UX + no-op CD (user-jelentés) ✅** — *Spellbook:* új kattintható `/spellbook` GUI
 >   (sunyítás+jobb katt a katalizátoron is) — minden kaszt+spec spell leírással (mit tud / mibe kerül /
 >   mennyit sebez — a ConfiguredSpell-eknél a tényleges számokból auto-generálva) / cooldownnal /
@@ -106,7 +114,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `sellerShare = buyerCost*(1-fee/100)`, `burned = buyerCost-sellerShare`.
 
 ### `CMBT-1` — Világboss spawn cross-region location-olvasás
-- [ ] **Fájl:** `managers/WorldBossManager.java:128`, `triggerSpawnNear()`
+- [x] ✅ **Javítva (3. csomag — anchor-hely az anchor szálán, majd régió-hopp).** **Fájl:** `managers/WorldBossManager.java:128`, `triggerSpawnNear()`
 - **Súlyosság:** 🔴 CRITICAL (Folia)
 - **Leírás:** `tick()` a global schedulerről választ random játékost, majd `anchor.getLocation()`-t
   olvas **a régió-hopp előtt**. `forceSpawn(null)` ugyanígy a parancs-szálról.
@@ -115,7 +123,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   majd `getRegionScheduler().run(loc, …)` a spawnra.
 
 ### `CMBT-2` — Invázió spawn cross-region location-olvasás
-- [ ] **Fájl:** `managers/InvasionManager.java:86`, `triggerNear()`
+- [x] ✅ **Javítva (3. csomag — anchor-hely az anchor szálán, majd régió-hopp).** **Fájl:** `managers/InvasionManager.java:86`, `triggerNear()`
 - **Súlyosság:** 🔴 CRITICAL (Folia)
 - **Leírás:** azonos minta, mint `CMBT-1`: `anchor.getLocation().clone()` a global tickről, hopp előtt.
 - **Hatás:** az invázió nem indul, konzol hibák.
@@ -158,7 +166,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `refundUnavailableTalents` determinisztikusan fusson minden kapu-/pontszámítás előtt.
 
 ### `SPELL-1` — Mérges csirke cross-region sebzés
-- [ ] **Fájl:** `spells/AngryChickenSpell.java:55`
+- [x] ✅ **Javítva (felülvizsgálva: biztonságos (célpont azonos régió)).** **Fájl:** `spells/AngryChickenSpell.java:55`
 - **Súlyosság:** 🟠 HIGH (Folia)
 - **Leírás:** a projektil-csirke `chicken.getScheduler().runAtFixedRate`-ben fut, és `living.damage(8, shooter)`-t
   hív + a shootert kéri le — a csirke ~8 blokkot repül, átléphet régióhatárt, így a célpont/shooter más szálé.
@@ -211,7 +219,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   törlése duplikálás helyett.
 
 ### `CMBT-5` / `PET-6` — Pet-tick cross-region `owner.getLocation()` olvasás
-- [ ] **Fájl:** `managers/PetManager.java:292` (`runPetTick`, `resolveTarget`, `acquireNearbyThreat`)
+- [x] ✅ **Javítva (3. csomag — gazda PDC+hely a gazda szálán, snapshot a pet régiójának).** **Fájl:** `managers/PetManager.java:292` (`runPetTick`, `resolveTarget`, `acquireNearbyThreat`)
 - **Súlyosság:** 🟠 HIGH (Folia)
 - **Leírás:** a tick a **pet** régió-szálán fut, de `owner.getLocation()/getWorld()`-öt olvas és a pet
   felé teleportál; a gazda gyakran más régióban van (épp ez váltja ki a követést).
@@ -252,7 +260,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `Double.isFinite` guard + védekező clamp a `FactionTreasuryManager.withdraw/addToBalance`-ban.
 
 ### `DATA-1` — `SinListener` a gyilkost mutálja off-region
-- [ ] **Fájl:** `listeners/SinListener.java:69`
+- [x] ✅ **Javítva (3. csomag — gyilkos-mutáció a gyilkos schedulerén).** **Fájl:** `listeners/SinListener.java:69`
 - **Súlyosság:** 🟠 HIGH (Folia)
 - **Leírás:** `PlayerDeathEvent` az **áldozat** szálán fut; a handler a `getKiller()`-t (más játékos, más
   régió) piszkálja: `addSin` (PDC-írás), `exileToDark` (hang/partikli a gyilkos helyén), `recordRaidKill`,
@@ -327,7 +335,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** egységes egész (long) reprezentáció vagy konzisztens `floor`/`round` minden jóváíráskor; konzerváció-ellenőrzés.
 
 ### `ECON-7` — `KingManager.recount` broadcast/`getOfflinePlayer` rossz szálon
-- [ ] **Fájl:** `managers/KingManager.java:233`
+- [x] ✅ **Javítva (3. csomag — broadcast a global region scheduleren).** **Fájl:** `managers/KingManager.java:233`
 - **Súlyosság:** 🟡 MEDIUM (Folia)
 - **Leírás:** `vote()` a szavazó régió-szálán hívja `recount()`-ot, ami `Bukkit.getOfflinePlayer(leader).getName()`
   (blokkoló név-lookup) és `Bukkit.getServer().broadcast()` (minden régió) műveletet végez.
@@ -355,7 +363,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `if (!Double.isFinite(price) || price <= 0) return;` a parancsban.
 
 ### `CMD-4` — `/job givecatalyst <más>` cél-inventory off-region
-- [ ] **Fájl:** `commands/job/JobGiveCatalystSubcommand.java:73`
+- [x] ✅ **Javítva (3. csomag — cél-inventory a cél schedulerén).** **Fájl:** `commands/job/JobGiveCatalystSubcommand.java:73`
 - **Súlyosság:** 🟡 MEDIUM (Folia, minta C)
 - **Leírás:** a parancs-szálon `target.getInventory().addItem` és `target.getWorld().dropItemNaturally(...)`,
   miközben a cél más régióban/világban lehet.

@@ -83,8 +83,12 @@ public final class InvasionManager {
     }
 
     private void triggerNear(final Player anchor) {
-        final Location center = anchor.getLocation().clone();
-        plugin.getServer().getRegionScheduler().run(plugin, center, task -> spawnWave(center));
+        // Folia: read the anchor's location on its OWN region thread first, then hop to that
+        // location's region to spawn (the caller may run on the global or another region thread).
+        anchor.getScheduler().run(plugin, task -> {
+            final Location center = anchor.getLocation().clone();
+            plugin.getServer().getRegionScheduler().run(plugin, center, spawnTask -> spawnWave(center));
+        }, null);
     }
 
     private void spawnWave(final Location center) {

@@ -230,14 +230,20 @@ public final class KingManager {
         }
 
         kings.put(faction, leader);
-        final String kingName = Bukkit.getOfflinePlayer(leader).getName();
-        Bukkit.getServer().broadcast(messageManager.getMessage(
-                "faction-king-crowned",
-                "<gold>👑 {faction} új uralkodót választott: <white>{king}</white>!</gold>",
-                Map.of(
-                        "faction", faction.getDisplayName(),
-                        "king", kingName == null ? leader.toString().substring(0, 8) : kingName
-                )
-        ));
+
+        // Folia: the server-wide broadcast and the (potentially blocking) offline-name lookup
+        // must not run on the voting player's region thread — hop to the global region scheduler.
+        final UUID crowned = leader;
+        plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
+            final String kingName = Bukkit.getOfflinePlayer(crowned).getName();
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "faction-king-crowned",
+                    "<gold>👑 {faction} új uralkodót választott: <white>{king}</white>!</gold>",
+                    Map.of(
+                            "faction", faction.getDisplayName(),
+                            "king", kingName == null ? crowned.toString().substring(0, 8) : kingName
+                    )
+            ));
+        });
     }
 }

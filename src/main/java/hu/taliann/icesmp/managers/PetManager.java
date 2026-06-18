@@ -5,7 +5,9 @@ import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -236,32 +238,41 @@ public final class PetManager {
         final double chaseSpeed = Math.max(0.1D, configManager.getDouble("pets.companion.chase-speed", 1.3D));
         final long cooldownMs = Math.max(200L, configManager.getInt("pets.companion.attack-cooldown-ticks", 16) * 50L);
 
+        // Folia: read each owner's PDC + location on the OWNER's region thread, snapshot it,
+        // then hop to the PET's region thread for all pet mutations (the pet may be elsewhere).
         for (final Player owner : Bukkit.getOnlinePlayers()) {
-            final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
-            if (raw == null) {
-                continue;
-            }
-            final Entity entity;
-            try {
-                entity = Bukkit.getEntity(UUID.fromString(raw));
-            } catch (final IllegalArgumentException exception) {
-                continue;
-            }
-            if (!(entity instanceof Mob pet) || !pet.isValid()) {
-                continue;
-            }
-            final UUID ownerId = owner.getUniqueId();
-            final int level = getLevel(owner);
-            pet.getScheduler().run(plugin, task ->
-                    runPetTick(pet, ownerId, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+            owner.getScheduler().run(plugin, ownerTask ->
+                    tickOwner(owner, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
         }
     }
 
-    private void runPetTick(final Mob pet, final UUID ownerId, final int level, final double followSq,
-                            final double followStartSq, final double reach, final double aggro, final double leash,
-                            final double chaseSpeed, final long cooldownMs) {
-        final Player owner = Bukkit.getPlayer(ownerId);
-        if (owner == null || !owner.isOnline()) {
+    private void tickOwner(final Player owner, final double followSq, final double followStartSq, final double reach,
+                           final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
+        final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
+        if (raw == null) {
+            return;
+        }
+        final Entity entity;
+        try {
+            entity = Bukkit.getEntity(UUID.fromString(raw));
+        } catch (final IllegalArgumentException exception) {
+            return;
+        }
+        if (!(entity instanceof Mob pet)) {
+            return;
+        }
+        final UUID ownerId = owner.getUniqueId();
+        final int level = getLevel(owner);
+        final Location ownerLoc = owner.getLocation();
+        final World ownerWorld = owner.getWorld();
+        pet.getScheduler().run(plugin, petTask ->
+                runPetTick(pet, ownerId, ownerLoc, ownerWorld, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+    }
+
+    private void runPetTick(final Mob pet, final UUID ownerId, final Location ownerLoc, final World ownerWorld,
+                            final int level, final double followSq, final double followStartSq, final double reach,
+                            final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
+        if (!pet.isValid()) {
             return;
         }
 
@@ -273,9 +284,9 @@ public final class PetManager {
 
         LivingEntity target = null;
         if (stance == MinionManager.Stance.ACTIVE) {
-            target = resolveTarget(owner, leash);
+            target = resolveTarget(ownerId, ownerWorld, ownerLoc, leash);
             if (target == null) {
-                target = acquireNearbyThreat(pet, owner, aggro);
+                target = acquireNearbyThreat(pet, ownerId, aggro);
                 if (target != null) {
                     combatTargets.put(ownerId, target.getUniqueId());
                 }
@@ -292,43 +303,43 @@ public final class PetManager {
         // No target → follow the owner. Every pet trails its owner by default: it walks toward
         // them once it lags past the follow-start radius, and teleports to catch up only when it
         // falls too far behind or ends up in another world.
-        followOwner(pet, owner, followSq, followStartSq, chaseSpeed);
+        followOwner(pet, ownerLoc, ownerWorld, followSq, followStartSq, chaseSpeed);
     }
 
-    /** Keeps an idle pet near its owner: walk to trail, teleport to catch up when far. */
-    private void followOwner(final Mob pet, final Player owner, final double followSq,
+    /** Keeps an idle pet near its owner (snapshot location): walk to trail, teleport to catch up. */
+    private void followOwner(final Mob pet, final Location ownerLoc, final World ownerWorld, final double followSq,
                              final double followStartSq, final double chaseSpeed) {
-        if (!owner.getWorld().equals(pet.getWorld())) {
-            pet.teleportAsync(owner.getLocation());
+        if (!ownerWorld.equals(pet.getWorld())) {
+            pet.teleportAsync(ownerLoc);
             return;
         }
-        final double distSq = pet.getLocation().distanceSquared(owner.getLocation());
+        final double distSq = pet.getLocation().distanceSquared(ownerLoc);
         if (distSq > followSq) {
-            pet.teleportAsync(owner.getLocation());
+            pet.teleportAsync(ownerLoc);
         } else if (distSq > followStartSq) {
-            pet.getPathfinder().moveTo(owner.getLocation(), chaseSpeed);
+            pet.getPathfinder().moveTo(ownerLoc, chaseSpeed);
         }
     }
 
     /** Validates the stored combat target (alive, same world, within the owner's leash). */
-    private LivingEntity resolveTarget(final Player owner, final double leash) {
-        final UUID id = combatTargets.get(owner.getUniqueId());
+    private LivingEntity resolveTarget(final UUID ownerId, final World ownerWorld, final Location ownerLoc, final double leash) {
+        final UUID id = combatTargets.get(ownerId);
         if (id == null) {
             return null;
         }
         final Entity entity = Bukkit.getEntity(id);
         if (!(entity instanceof LivingEntity living) || living.isDead() || !living.isValid()
-                || living.getUniqueId().equals(owner.getUniqueId())
-                || !living.getWorld().equals(owner.getWorld())
-                || living.getLocation().distanceSquared(owner.getLocation()) > leash * leash) {
-            combatTargets.remove(owner.getUniqueId());
+                || living.getUniqueId().equals(ownerId)
+                || !living.getWorld().equals(ownerWorld)
+                || living.getLocation().distanceSquared(ownerLoc) > leash * leash) {
+            combatTargets.remove(ownerId);
             return null;
         }
         return living;
     }
 
     /** Picks the nearest hostile mob around the pet to defend against (excludes allies). */
-    private LivingEntity acquireNearbyThreat(final Mob pet, final Player owner, final double aggro) {
+    private LivingEntity acquireNearbyThreat(final Mob pet, final UUID ownerId, final double aggro) {
         if (aggro <= 0.0D) {
             return null;
         }
@@ -336,7 +347,7 @@ public final class PetManager {
         double bestSq = aggro * aggro;
         for (final Entity nearby : pet.getNearbyEntities(aggro, aggro, aggro)) {
             if (!(nearby instanceof Monster monster) || monster.isDead() || !monster.isValid()
-                    || minionManager.isOwnedBy(monster, owner.getUniqueId())) {
+                    || minionManager.isOwnedBy(monster, ownerId)) {
                 continue;
             }
             final double sq = monster.getLocation().distanceSquared(pet.getLocation());

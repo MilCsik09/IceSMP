@@ -29,15 +29,15 @@ public final class JobCommand implements BasicCommand {
     private final Map<String, JobSubcommand> subcommands = new LinkedHashMap<>();
     private final MessageManager messageManager;
 
-    public JobCommand(final JobManager jobManager, final SpellRegistry spellRegistry,
-                      final CatalystItemFactory catalystItemFactory, final AbilityCatalystListener abilityCatalystListener,
-                      final MessageManager messageManager) {
+    public JobCommand(final org.bukkit.plugin.java.JavaPlugin plugin, final JobManager jobManager,
+                      final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
+                      final AbilityCatalystListener abilityCatalystListener, final MessageManager messageManager) {
         this.messageManager = messageManager;
         register(new JobAddXpSubcommand(jobManager, messageManager));
         register(new JobSetXpSubcommand(jobManager, messageManager));
         register(new JobStatusSubcommand(jobManager, messageManager));
         register(new JobUnlockSpellSubcommand(jobManager, spellRegistry, messageManager));
-        register(new JobGiveCatalystSubcommand(jobManager, catalystItemFactory, messageManager));
+        register(new JobGiveCatalystSubcommand(plugin, jobManager, catalystItemFactory, messageManager));
         register(new JobListSpellsSubcommand(spellRegistry, messageManager));
         register(new JobAdminSubcommand(jobManager, spellRegistry, abilityCatalystListener, messageManager));
     }
