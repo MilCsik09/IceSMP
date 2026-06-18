@@ -141,6 +141,70 @@ public final class ConfiguredSpell extends BaseSpell {
         playFeedback(player, player.getLocation());
     }
 
+    @Override
+    public List<String> describe() {
+        final List<String> lines = new ArrayList<>();
+        lines.add(switch (targeting) {
+            case SELF -> "Cél: önmagad";
+            case TARGET -> "Cél: célzott lény (hatótáv " + trim(range) + ")";
+            case AOE -> "Cél: körzet (sugár " + trim(radius) + ")" + (friendlyAoe ? ", csak szövetségesek" : "");
+        });
+        if (damage > 0.0D) {
+            lines.add("Sebzés: " + trim(damage));
+        }
+        if (selfDamage > 0.0D) {
+            lines.add("Önsebzés: " + trim(selfDamage));
+        }
+        if (healSelf > 0.0D) {
+            lines.add("Gyógyítás: " + trim(healSelf));
+        }
+        if (feedSelf > 0) {
+            lines.add("Jóllakottság: +" + feedSelf);
+        }
+        if (igniteTicks > 0) {
+            lines.add("Gyújtás: " + secondsOf(igniteTicks) + " mp");
+        }
+        if (freezeTicks > 0) {
+            lines.add("Fagyasztás: " + secondsOf(FREEZE_BASE_TICKS + freezeTicks) + " mp");
+        }
+        if (lightning) {
+            lines.add("Villámcsapás");
+        }
+        if (knockback > 0.0D) {
+            lines.add("Hátralökés");
+        }
+        if (launchUp > 0.0D) {
+            lines.add("Fellökés a levegőbe");
+        }
+        if (pullStrength > 0.0D) {
+            lines.add("Behúzás magadhoz");
+        }
+        if (dashForward != 0.0D || dashUp != 0.0D) {
+            lines.add("Kitörés / lendület");
+        }
+        for (final PotionEffect effect : targetEffects) {
+            lines.add("Célra: " + effectName(effect));
+        }
+        for (final PotionEffect effect : selfEffects) {
+            lines.add("Magadra: " + effectName(effect));
+        }
+        return lines;
+    }
+
+    private static String trim(final double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.valueOf(value);
+    }
+
+    private static int secondsOf(final int ticks) {
+        return Math.max(1, ticks / 20);
+    }
+
+    private static String effectName(final PotionEffect effect) {
+        final String type = effect.getType().getKey().getKey().replace('_', ' ');
+        final int level = effect.getAmplifier() + 1;
+        return type + " " + level + " (" + secondsOf(effect.getDuration()) + " mp)";
+    }
+
     private void affect(final Player caster, final LivingEntity target) {
         if (lightning) {
             target.getWorld().strikeLightningEffect(target.getLocation());

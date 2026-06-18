@@ -21,6 +21,7 @@ import hu.taliann.icesmp.commands.RelicCommand;
 import hu.taliann.icesmp.commands.SinnerCommand;
 import hu.taliann.icesmp.commands.SoulCommand;
 import hu.taliann.icesmp.commands.SpellCommand;
+import hu.taliann.icesmp.commands.SpellbookCommand;
 import hu.taliann.icesmp.commands.SpecCommand;
 import hu.taliann.icesmp.commands.TalentCommand;
 import hu.taliann.icesmp.commands.TerritoryCommand;
@@ -69,6 +70,7 @@ import hu.taliann.icesmp.listeners.SoulstoneListener;
 import hu.taliann.icesmp.listeners.WorldBossListener;
 import hu.taliann.icesmp.listeners.SinListener;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
+import hu.taliann.icesmp.listeners.SpellbookListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.listeners.TalentAttributeListener;
@@ -219,7 +221,6 @@ public final class IceSMPCore {
         this.catalystItemFactory = new CatalystItemFactory(plugin);
         this.captureItemFactory = new CaptureItemFactory(plugin);
         this.spellMasteryManager = new SpellMasteryManager(plugin, configManager, currencyManager, factionManager);
-        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry, catalystItemFactory, configManager, spellMasteryManager, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, configManager, messageManager, factionManager);
         this.minionManager = new MinionManager(plugin);
@@ -243,6 +244,8 @@ public final class IceSMPCore {
                 currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
+        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
+                catalystItemFactory, configManager, spellMasteryManager, specializationManager, messageManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
@@ -501,6 +504,7 @@ public final class IceSMPCore {
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown-csökkentés valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
+        plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
         plugin.registerCommand("exchangeboard", "Árfolyamtábla admin", List.of("ratesboard", "arfolyamtabla"), new ExchangeBoardCommand(exchangeBoardManager, messageManager));
     }
 
@@ -518,6 +522,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
+        pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);

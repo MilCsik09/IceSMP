@@ -13,6 +13,12 @@
 >   `refundCost()` → bukott/no-op kaszt nem von költséget és nem indít cooldownt (ConfiguredSpell,
 >   LifeDrain, PrimalBond, BeeSwarm, **VenomStrike, Shadowstep** is); combo-refund 80%-ra vágva +
 >   effektív cooldown-padló (mastery+combo sem nullázhatja); HideSpell retired-callback.
+> - **Spell UX + no-op CD (user-jelentés) ✅** — *Spellbook:* új kattintható `/spellbook` GUI
+>   (sunyítás+jobb katt a katalizátoron is) — minden kaszt+spec spell leírással (mit tud / mibe kerül /
+>   mennyit sebez — a ConfiguredSpell-eknél a tényleges számokból auto-generálva) / cooldownnal /
+>   mesterség-ranggal; a kiválasztott kiemelve, a feloldatlanok a szükséges szinttel; kattintásra kiválaszt;
+>   a gyors-lapozás action bar most pozíciót is mutat. *No-op → nincs CD:* a `FriendshipSpell` is `false`-t
+>   ad célpont nélkül, így minden célpont-igényes / precondition no-op költség és cooldown nélkül zárul.
 > - **Egyéb (user-jelentés) ✅** — *Skill-feloldás / „irreálisan magas szint":* nincs hiányzó skill a
 >   katalógusban (mind a 4 kaszt + 8 spec térképe teljes, az auto-unlock primary+secondary slotra is fut);
 >   a tünet az XP-görbéből eredt. **XP-rebalansz:** `base-xp` 100→60, `increment` 20→10, `per-kill` 5→10,

@@ -80,5 +80,14 @@ public interface Spell {
         execute(player);
         return true;
     }
+
+    /**
+     * Human-facing effect description lines (damage, range, effects, …) shown in the
+     * spellbook. Configured spells auto-generate precise numbers from their stats; the
+     * default is empty so callers can fall back to a messages.yml description.
+     */
+    default java.util.List<String> describe() {
+        return java.util.List.of();
+    }
 }
 

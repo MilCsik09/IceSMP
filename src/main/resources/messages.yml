@@ -379,6 +379,7 @@ messages:
   skilltree-node-state-locked: "&c✖ Zárolva"
   skilltree-back: "&cVissza a kasztokhoz"
 
+  spellbook-title: "&5» Varázskönyv «"
   market-title: "&6» Piactér «"
   market-help-header: "&6/market &7- Elérhető parancsok:"
   market-help-browse: "&e/market &7- Piactér böngészése."
@@ -707,7 +708,7 @@ messages:
   honor-eye-subtitle: "&fA bűnösök nem rejtőzhetnek el"
   catalyst.no-spells: "<red>Nincs elérhető képesség.</red>"
   catalyst.no-unlocked: "<red>Még nem oldottál fel egyetlen képességet sem.</red>"
-  catalyst.current-spell: "<gray>Aktuális képesség: <gold>{spell}</gold> <dark_gray>({cost} {resource})</dark_gray></gray>"
+  catalyst.current-spell: "<gray>[{position}] <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray> <dark_gray>— /spellbook</dark_gray></gray>"
   catalyst.current-spell-unknown: "<gray>Aktuális képesség: Ismeretlen</gray>"
   catalyst.invalid-selection: "<red>A kiválasztott képesség jelenleg nem elérhető.</red>"
   catalyst.cooldown: "<red>Várj még {seconds} másodpercet a használatig!</red>"
