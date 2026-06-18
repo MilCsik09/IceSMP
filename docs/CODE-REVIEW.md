@@ -13,6 +13,12 @@
 >   `refundCost()` → bukott/no-op kaszt nem von költséget és nem indít cooldownt (ConfiguredSpell,
 >   LifeDrain, PrimalBond, BeeSwarm, **VenomStrike, Shadowstep** is); combo-refund 80%-ra vágva +
 >   effektív cooldown-padló (mastery+combo sem nullázhatja); HideSpell retired-callback.
+> - **Egyéb (user-jelentés) ✅** — *Skill-feloldás / „irreálisan magas szint":* nincs hiányzó skill a
+>   katalógusban (mind a 4 kaszt + 8 spec térképe teljes, az auto-unlock primary+secondary slotra is fut);
+>   a tünet az XP-görbéből eredt. **XP-rebalansz:** `base-xp` 100→60, `increment` 20→10, `per-kill` 5→10,
+>   `per-mob-level` 2→3 → a 25. (spec-választás) és 45. (utolsó spec-spell) szint kb. **3×** gyorsabban
+>   elérhető. A spec-spellek továbbra is `/spec choose`-hoz kötöttek (a Nekromanta a quest+sinner kapuhoz) —
+>   ez szándékos. *Pet:* minden társ alapból gyalog követi a gazdát (`follow-start-distance`).
 
 Ez a dokumentum az IceSMP teljes kódbázisának (214 Java fájl, ~24 700 sor) átfogó
 review-ját **és** a session-ben hozzáadott funkciók (`06dcb17…HEAD`, 69 fájl, ~5 400 sor)

@@ -400,13 +400,16 @@ mob-scaling:
 classes:
   xp:
     hostile-only: true
-    per-kill: 5
-    per-mob-level: 2
+    # Rebalansz: a spec-spellek a 25-45. szinten oldódnak fel, ezért a leveling
+    # elérhető tempójú legyen. ~10-15 XP/ölés (skálázott mobokra több).
+    per-kill: 10
+    per-mob-level: 3
     secondary-share-percent: 50
   # WoW-szerű progresszív szintgörbe: az n. szintlépés ára base-xp + (n-1) * increment.
+  # Laposabb görbe, hogy a 25. (spec) és a 45. (utolsó spec-spell) szint reális grindel elérhető legyen.
   leveling:
-    base-xp: 100
-    increment-per-level: 20
+    base-xp: 60
+    increment-per-level: 10
   specialization:
     # Az elsődleges kaszt ezen a szinten specializálódhat (/spec choose).
     required-level: 25
