@@ -66,6 +66,16 @@ public final class ProfessionRecipeListener implements Listener {
                 )));
     }
 
+    @EventHandler
+    public void onPlayerQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
+        hintThrottle.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onPlayerKick(final org.bukkit.event.player.PlayerKickEvent event) {
+        hintThrottle.remove(event.getPlayer().getUniqueId());
+    }
+
     private String plainName(final ProfessionRecipeManager.Recipe recipe) {
         return recipe.profession().name().toLowerCase(java.util.Locale.ROOT);
     }

@@ -315,20 +315,23 @@ public final class MetelytepoManager {
         target.setAI(false);
 
         // Folia: unfreeze on the target's own entity scheduler instead of a BukkitRunnable.
+        // The map entry is removed in EVERY path (run, invalid, and the retired-callback that
+        // fires when the mob dies/unloads before the delay) so frozen-mob UUIDs never leak.
+        final UUID targetId = target.getUniqueId();
         target.getScheduler().runDelayed(plugin, task -> {
+            final Double original = frozenSpeed.remove(targetId);
             if (!target.isValid()) {
                 return;
             }
 
             target.setAI(true);
-            final Double original = frozenSpeed.remove(target.getUniqueId());
             if (original != null) {
                 final AttributeInstance speed = target.getAttribute(Attribute.MOVEMENT_SPEED);
                 if (speed != null) {
                     speed.setBaseValue(original);
                 }
             }
-        }, null, Math.max(1L, ticks));
+        }, () -> frozenSpeed.remove(targetId), Math.max(1L, ticks));
     }
 
     public void markAbilityDamageBypass(final LivingEntity target, final long millis) {

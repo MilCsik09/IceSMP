@@ -106,6 +106,12 @@ public final class TerritoryListener implements Listener {
         lastTerritoryIds.remove(event.getPlayer().getUniqueId());
     }
 
+    @EventHandler
+    public void onPlayerKick(final org.bukkit.event.player.PlayerKickEvent event) {
+        // PlayerKickEvent does not reliably chain to PlayerQuitEvent — clear here too.
+        lastTerritoryIds.remove(event.getPlayer().getUniqueId());
+    }
+
     private boolean isBuildBlocked(final Player player, final Location location) {
         if (!configManager.getBoolean("territory.protection.enabled", false)
                 || player.hasPermission(BYPASS_PERMISSION)) {

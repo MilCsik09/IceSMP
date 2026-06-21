@@ -21,6 +21,14 @@
 >   *Felülvizsgálva, nem valódi hiba (változatlan):* `SPELL-1` (AngryChicken — a célpont a csirkétől 1.1
 >   blokkon belül = azonos régió; a shooter csak attribúció), `GUI-1`/`GUI-2` (a klikk a kattintó régióján
 >   fut; a `sendMessage` szálbiztos).
+> - **4. csomag — lifecycle/persistence ✅** (`CORE-3`, `CMBT-3`, `CMBT-4`, `DATA-3`, `DATA-4`, `RELIC-3`):
+>   a `disable()` mostantól előbb MENT, utána takarít (adatvesztés ellen); `WorldBossManager.shutdown()`
+>   és `InvasionManager.shutdown()` eltávolítja a perzisztens boss-t / invázió-hullámot disable-kor
+>   (CMBT-3 dupla-skálázás nem áll fenn: a `CUSTOM` spawn-ok már ignoráltak); a freeze-feloldó minden
+>   ágon (run/invalid/retired) törli a `frozenSpeed` bejegyzést → nincs mob-UUID leak; a
+>   `ProfessionRecipeListener`/`SiegeWeaponListener`/`TerritoryListener` quit ÉS kick eseményre is takarít.
+>   *CMBT-4 megjegyzés:* a petet szándékosan NEM despawnoljuk disable-kor (perzisztens, újraindításkor
+>   visszakerül); a halál/újrafogás miatti árvulást a `PET-2` (5. csomag) kezeli.
 > - **Spell UX + no-op CD (user-jelentés) ✅** — *Spellbook:* új kattintható `/spellbook` GUI
 >   (sunyítás+jobb katt a katalizátoron is) — minden kaszt+spec spell leírással (mit tud / mibe kerül /
 >   mennyit sebez — a ConfiguredSpell-eknél a tényleges számokból auto-generálva) / cooldownnal /
@@ -200,7 +208,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `relic_created_at` authoritatív érték-ellenőrzés a klónozott PDC ellen.
 
 ### `CMBT-3` — Világboss entitás-leak `disable()`-kor + kettős skálázás
-- [ ] **Fájl:** `managers/WorldBossManager.java:157`
+- [x] ✅ **Javítva (4. csomag — shutdown() despawnolja a bosst disable-kor (dupla-skálázás: CUSTOM már ignorált)).** **Fájl:** `managers/WorldBossManager.java:157`
 - **Súlyosság:** 🟠 HIGH (minta D)
 - **Leírás:** a boss `setPersistent(true)`+`setRemoveWhenFarAway(false)`, de `disable()` csak a taskot
   állítja le, a bosst nem despawnolja. Mivel RAVAGER `Monster`, a `MobScalingManager` is ráfut → a boss-attribútumokra
@@ -305,7 +313,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `runDelayed(plugin, t -> clearHide(id), () -> clearHide(id), TICKS)`; a `clearHide` idempotens.
 
 ### `RELIC-3` — `MetelytepoManager` freeze/bypass map-ek mob-UUID-kra szivárognak
-- [ ] **Fájl:** `managers/MetelytepoManager.java:334` (és `listeners/MetelytepoRelicListener.java:334`)
+- [x] ✅ **Javítva (4. csomag — freeze-feloldó minden ágon törli a frozenSpeed-et (nincs mob-UUID leak)).** **Fájl:** `managers/MetelytepoManager.java:334` (és `listeners/MetelytepoRelicListener.java:334`)
 - **Súlyosság:** 🟡 MEDIUM (minta E)
 - **Leírás:** `frozenSpeed`/`abilityDamageBypass` tetszőleges `LivingEntity` (mob) UUID-kra, de a `cleanup`
   csak játékos-UUID-t töröl. Ha a mob meghal/kicsekkol az unfreeze-delay előtt, az `isValid()` guard kilép a
@@ -377,7 +385,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** előbb `getPlayerExact`; offline-nál csak ismert/cache-elt + `hasPlayedBefore()`/`getName()!=null`.
 
 ### `CORE-3` — `disable()`: cleanup a `save()` előtt + load/save aszimmetria
-- [ ] **Fájl:** `core/IceSMPCore.java:345` (cleanup ~368-371, save ~374-385)
+- [x] ✅ **Javítva (4. csomag — disable() előbb ment, utána takarít; + worldBoss/invasion shutdown()).** **Fájl:** `core/IceSMPCore.java:345` (cleanup ~368-371, save ~374-385)
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** a player-state cleanup a `save()`-ek **előtt** fut; ha bármelyik cleanup-út in-memory state-et
   töröl, a save a takarított állapotot menti (adatvesztés). `mobScalingManager`/`craftingRestrictionManager`
@@ -392,14 +400,14 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** periodikus pruning inaktivitás-küszöb felett (RelicManager már tárol last-seen-t); vagy per-player fájl/DB.
 
 ### `DATA-3` — Listener-map-ek nincsenek takarítva quitkor
-- [ ] **Fájl:** `listeners/ProfessionRecipeListener.java` (`hintThrottle`), `listeners/SiegeWeaponListener.java` (`debounce`)
+- [x] ✅ **Javítva (4. csomag — quit+kick takarítás).** **Fájl:** `listeners/ProfessionRecipeListener.java` (`hintThrottle`), `listeners/SiegeWeaponListener.java` (`debounce`)
 - **Súlyosság:** 🟡 MEDIUM (minta E)
 - **Leírás:** nincs `PlayerQuitEvent`-takarítás és a `cleanupPlayerState` sem hívja őket → minden interakciózó
   játékos örök entryt hagy.
 - **Fix:** quit-handler / `PlayerSessionCleanupListener` bevonás.
 
 ### `DATA-4` — `TerritoryListener` nem takarít kick-re
-- [ ] **Fájl:** `listeners/TerritoryListener.java:105`
+- [x] ✅ **Javítva (4. csomag — kick-takarítás hozzáadva).** **Fájl:** `listeners/TerritoryListener.java:105`
 - **Súlyosság:** 🟡 MEDIUM (minta E)
 - **Leírás:** `lastTerritoryIds` csak `PlayerQuitEvent`-re ürül; kickre stale entry marad.
 - **Fix:** explicit kick-handler vagy `PlayerSessionCleanupListener` bevonás.

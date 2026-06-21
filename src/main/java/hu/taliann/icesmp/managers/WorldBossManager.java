@@ -45,6 +45,7 @@ public final class WorldBossManager {
 
     private volatile long activeBossUntil;
     private volatile long nextAttemptAt;
+    private volatile java.util.UUID activeBossId;
 
     public WorldBossManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager, final FactionManager factionManager,
@@ -66,6 +67,29 @@ public final class WorldBossManager {
     /** Whether a world boss is currently alive (for HUD / boss-bar display). */
     public boolean isBossActive() {
         return activeBossUntil > System.currentTimeMillis();
+    }
+
+    /**
+     * Despawns the active world boss on plugin disable so the persistent, buffed
+     * boss does not survive a reload as an unmanaged orphan (and a fresh boss can
+     * spawn cleanly next start). Best-effort direct removal.
+     */
+    public void shutdown() {
+        activeBossUntil = 0L;
+        nextAttemptAt = 0L;
+        final java.util.UUID id = activeBossId;
+        activeBossId = null;
+        if (id == null) {
+            return;
+        }
+        final Entity boss = Bukkit.getEntity(id);
+        if (boss != null && boss.isValid()) {
+            try {
+                boss.remove();
+            } catch (final Exception ignored) {
+                // Region/thread unavailable during shutdown — leave it; it is at worst a stray mob.
+            }
+        }
     }
 
     /** Periodic spawn attempt on the global world-events tick. */
@@ -158,6 +182,7 @@ public final class WorldBossManager {
         }
 
         final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
+        activeBossId = boss.getUniqueId();
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
         boss.setPersistent(true);
         boss.setRemoveWhenFarAway(false);

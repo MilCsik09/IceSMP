@@ -367,12 +367,11 @@ public final class IceSMPCore {
             petTask.cancel();
             petTask = null;
         }
+        worldBossManager.shutdown();
+        invasionManager.shutdown();
 
-        for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            hudManager.cleanup(onlinePlayer);
-            playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
-        }
-
+        // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
+        // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
         ProfileGUI.closeAll();
         currencyManager.save();
         factionManager.save();
@@ -386,6 +385,13 @@ public final class IceSMPCore {
         exchangeBoardManager.save();
         statsManager.save();
         parkourManager.save();
+
+        // Then clean up live player session state (HUD teams, restored armor, caches).
+        for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            hudManager.cleanup(onlinePlayer);
+            playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
+        }
+
         plugin.getLogger().info("IceSMP core disabled.");
     }
 

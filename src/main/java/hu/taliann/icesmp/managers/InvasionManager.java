@@ -12,6 +12,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -28,6 +31,8 @@ public final class InvasionManager {
     private final MessageManager messageManager;
 
     private volatile long nextAttemptAt;
+    /** UUIDs of currently-spawned invasion mobs, pruned each wave; despawned on shutdown. */
+    private final Set<UUID> activeMobs = ConcurrentHashMap.newKeySet();
 
     public InvasionManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final MessageManager messageManager) {
@@ -91,10 +96,39 @@ public final class InvasionManager {
         }, null);
     }
 
+    /**
+     * Despawns any still-living invasion mobs on plugin disable so a wave does not
+     * survive a reload as orphaned, glowing, leveled mobs. Best-effort direct removal.
+     */
+    public void shutdown() {
+        nextAttemptAt = 0L;
+        for (final UUID id : activeMobs) {
+            final Entity entity = Bukkit.getEntity(id);
+            if (entity != null && entity.isValid()) {
+                try {
+                    entity.remove();
+                } catch (final Exception ignored) {
+                    // Region/thread unavailable during shutdown — leave it.
+                }
+            }
+        }
+        activeMobs.clear();
+    }
+
     private void spawnWave(final Location center) {
         if (center.getWorld() == null) {
             return;
         }
+
+        // Keep the tracked set bounded: drop UUIDs whose mobs are already dead/gone.
+        activeMobs.removeIf(id -> {
+            try {
+                final Entity existing = Bukkit.getEntity(id);
+                return existing == null || !existing.isValid();
+            } catch (final Exception exception) {
+                return false;
+            }
+        });
 
         final EntityType type = resolveType();
         final Class<? extends Entity> entityClass = type.getEntityClass();
@@ -119,6 +153,7 @@ public final class InvasionManager {
             mob.setGlowing(true);
             mob.setRemoveWhenFarAway(false);
             mobScalingManager.forceLevel(mob, level);
+            activeMobs.add(mob.getUniqueId());
             spawned++;
         }
 

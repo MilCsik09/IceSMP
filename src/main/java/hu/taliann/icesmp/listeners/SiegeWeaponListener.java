@@ -90,4 +90,14 @@ public final class SiegeWeaponListener implements Listener {
 
         hand.setAmount(hand.getAmount() - 1);
     }
+
+    @EventHandler
+    public void onPlayerQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
+        debounce.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onPlayerKick(final org.bukkit.event.player.PlayerKickEvent event) {
+        debounce.remove(event.getPlayer().getUniqueId());
+    }
 }
