@@ -23,7 +23,6 @@ public final class DailyQuestManager {
     /** A daily objective: {@code type} is one of KILL_MOBS / CATCH_FISH / BREAK_BLOCKS. */
     public record Daily(String id, String name, String type, int amount, long reward) { }
 
-    private static final long DAY_MS = 86_400_000L;
 
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
@@ -62,7 +61,10 @@ public final class DailyQuestManager {
     }
 
     private long today() {
-        return System.currentTimeMillis() / DAY_MS;
+        // Bucket by the server's LOCAL date (epoch-day), so the daily rotates at local midnight
+        // for everyone — not at UTC midnight, which falls mid-day for non-UTC servers and would
+        // wipe in-progress dailies.
+        return java.time.LocalDate.now(java.time.ZoneId.systemDefault()).toEpochDay();
     }
 
     /** The active daily for everyone today. */

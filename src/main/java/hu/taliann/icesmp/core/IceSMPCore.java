@@ -539,7 +539,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
-        pluginManager.registerEvents(new TalentAttributeListener(talentManager), plugin);
+        pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);

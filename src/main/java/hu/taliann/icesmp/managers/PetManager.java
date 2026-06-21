@@ -243,6 +243,11 @@ public final class PetManager {
         if (owner == null || target == null || target.isDead() || !target.isValid()) {
             return;
         }
+        // Cheap early-out: this fires on every PvE/PvP damage event, but only the two pet-owning
+        // specs can have a companion — skip the PDC/entity lookup for everyone else.
+        if (!canOwnPet(owner)) {
+            return;
+        }
         if (target.getUniqueId().equals(owner.getUniqueId()) || minionManager.isOwnedBy(target, owner.getUniqueId())) {
             return;
         }

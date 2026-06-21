@@ -92,14 +92,11 @@ public final class SinnerCommand implements BasicCommand {
 
     @Override
     public Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
-        if (args.length == 0) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        }
-
-        if (args.length == 1) {
+        if (args.length <= 1) {
+            final String prefix = args.length == 0 ? "" : args[0].toLowerCase();
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[0].toLowerCase()))
+                    .filter(name -> name.toLowerCase().startsWith(prefix))
                     .toList();
         }
 

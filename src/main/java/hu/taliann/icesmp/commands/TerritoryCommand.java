@@ -204,11 +204,18 @@ public final class TerritoryCommand implements BasicCommand {
         ));
     }
 
+    private static final int MAX_RADIUS = 512;
+
     private Integer parseRadius(final CommandSender sender, final String rawRadius) {
         try {
             final int radius = Integer.parseInt(rawRadius);
             if (radius <= 0) {
                 sender.sendMessage(messageManager.get("amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
+                return null;
+            }
+            if (radius > MAX_RADIUS) {
+                sender.sendMessage(messageManager.get("territory-radius-too-large",
+                        "&cTúl nagy sugár (max " + MAX_RADIUS + ")."));
                 return null;
             }
             return radius;

@@ -38,6 +38,14 @@
 >   nincs dupla példány); join-kor a duplikált relikvia-példányok eltávolításra kerülnek; a Justice/Honor
 >   Eye atomikus fire-gate-en megy át (`tryConsume*Cooldown`) → nincs dupla-elsülés a check-then-act /
 >   dupla interact-útvonal miatt.
+> - **6. csomag — maradék MEDIUM + LOW (részleges) ✅** (`PET-4`, `PET-5`, `GUI-3`, `CMBT-6`, `CMBT-7`,
+>   `DATA-5`, `CMD-6`, `CMD-7`): napi küldetés szerver-helyi dátumra vált (nem UTC-éjfél); `setCombatTarget`
+>   korai `canOwnPet` kapu (perf minden damage-eventnél); a piac GUI a néző effektív árát mutatja
+>   (= amit fizet); a `activeBossUntil` csak a spawn megerősítése után áll be; a `recordKill` synchronized
+>   az `endRaid`-del (nincs elveszett/kései kill); talent-attribútumok respawnkor újraalkalmazva;
+>   territory-sugár felső korlát (max 512); SinnerCommand suggest prefix-szűrés.
+>   *Hátralévő LOW/perf (kozmetikai, a refaktor-fázisba sorolva):* `PET-7` (HUD dirty-check), `CORE-5`
+>   (map-pruning), `GUI-4..8`, `RELIC-6/7`, `CORE-6/7/8`, `DATA-6`, `SPELL-6/7`, `PET-8/9` (reuse).
 > - **Spell UX + no-op CD (user-jelentés) ✅** — *Spellbook:* új kattintható `/spellbook` GUI
 >   (sunyítás+jobb katt a katalizátoron is) — minden kaszt+spec spell leírással (mit tud / mibe kerül /
 >   mennyit sebez — a ConfiguredSpell-eknél a tényleges számokból auto-generálva) / cooldownnal /
@@ -359,14 +367,14 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** a broadcast/név-feloldás a global region scheduleren; nevet előre, aszinkron.
 
 ### `CMBT-6` — `activeBossUntil` a spawn megerősítése előtt áll be
-- [ ] **Fájl:** `managers/WorldBossManager.java:132`
+- [x] ✅ **Javítva (6. csomag — activeBossUntil csak spawn után).** **Fájl:** `managers/WorldBossManager.java:132`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `triggerSpawnNear` előbb állítja `activeBossUntil`-t és `true`-t ad vissza, majd a `spawnBoss`
   nem-mob típusnál 0-ra állítja. Az admin „spawnolt"-at lát, miközben nincs boss.
 - **Fix:** előzetes mob-típus-validáció; `activeBossUntil` csak sikeres spawn után, a `spawnBoss`-on belül.
 
 ### `CMBT-7` — `RaidManager` recordKill/endRaid pontozási verseny
-- [ ] **Fájl:** `managers/RaidManager.java:134`
+- [x] ✅ **Javítva (6. csomag — recordKill synchronized az endRaid-del).** **Fájl:** `managers/RaidManager.java:134`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `endRaid` (global) nullázza az `activeRaid`-et és snapshotol, miközben `recordKill` (más régió)
   épp beolvasta a nem-null `activeRaid`-et → a kill elveszhet vagy a vég után számolódik.
@@ -429,14 +437,14 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** szintlépéskor csak a max-HP-t növeld; teljes gyógyítás csak summonkor.
 
 ### `PET-4` — Napi küldetés UTC-éjfélkor, feladat közben reset
-- [ ] **Fájl:** `managers/DailyQuestManager.java`, `today()`/`ensureFresh`
+- [x] ✅ **Javítva (6. csomag — szerver-helyi dátum (nem UTC)).** **Fájl:** `managers/DailyQuestManager.java`, `today()`/`ensureFresh`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `today() = currentTimeMillis()/86_400_000L` UTC-nap szerint vödröz; nem-UTC játékosnál az UTC-éjfél
   a nap közepén tör → a haladás némán nullázódik és az aktív cél lecserélődik.
 - **Fix:** szerver-helyi dátum vagy konfigurálható reset-óra.
 
 ### `PET-5` — `setCombatTarget` entity-lookup minden damage-eventnél
-- [ ] **Fájl:** `managers/PetManager.java`, `setCombatTarget`
+- [x] ✅ **Javítva (6. csomag — korai canOwnPet kapu).** **Fájl:** `managers/PetManager.java`, `setCombatTarget`
 - **Súlyosság:** 🟡 MEDIUM (perf)
 - **Leírás:** `PetCombatListener`-ből minden `EntityDamageByEntityEvent`-re fut, és azonnal PDC-olvasást +
   `Bukkit.getEntity(UUID)`-t végez, pedig csak Vadmester/Nekromanta tarthat petet.
@@ -482,7 +490,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** szingleton-relikviából legfeljebb egy átvitele, a többi eldobása; egyszeri rekord-írás; identitás-ellenőrzés.
 
 ### `GUI-3` — A piac GUI a listaárat mutatja, de az effektív árat vonja
-- [ ] **Fájl:** `gui/MarketGUI.java:131`
+- [x] ✅ **Javítva (6. csomag — a néző effektív árát mutatja).** **Fájl:** `gui/MarketGUI.java:131`
 - **Súlyosság:** 🟢 LOW (de UX/bizalom)
 - **Leírás:** a lore `listing.price()`-t ír, a vétel `getEffectivePrice()`-t von → a vevő mást fizet, mint amit lát.
 - **Fix:** a néző-specifikus effektív árat rendereld (vagy mutasd mindkettőt).
@@ -519,13 +527,13 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** tükrözd a PREV guardot (csak ha van következő lap).
 
 ### `CMD-6` — `/territory claim ... <radius>` felső korlát nélkül
-- [ ] **Fájl:** `commands/TerritoryCommand.java:207`
+- [x] ✅ **Javítva (6. csomag — sugár felső korlát (max 512)).** **Fájl:** `commands/TerritoryCommand.java:207`
 - **Súlyosság:** 🟢 LOW
 - **Leírás:** `parseRadius` csak `<=0`-t utasít el; közel `Integer.MAX_VALUE` radius lefagyaszthatja/OOM-olhatja a szervert (admin-only).
 - **Fix:** ésszerű max-clamp; ugyanígy a ParkourCommand radius/reward.
 
 ### `CMD-7` — `SinnerCommand.suggest()` teljes roster prefix-szűrés nélkül
-- [ ] **Fájl:** `commands/SinnerCommand.java:95`
+- [x] ✅ **Javítva (6. csomag — suggest prefix-szűrés).** **Fájl:** `commands/SinnerCommand.java:95`
 - **Súlyosság:** 🟢 LOW
 - **Leírás:** `args.length==0`-nál minden online név vissza, szűrés nélkül (a többi ág szűr); konzisztencia-nit.
 - **Fix:** prefix-szűrés / az `args.length==0` ág elhagyása.
@@ -557,7 +565,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** minden config-függő init az `enable()`-be (load után); side-effect-mentes konstruktorok; try/catch az enable-ön.
 
 ### `DATA-5` — `TalentAttributeListener` nincs respawn-hook
-- [ ] **Fájl:** `listeners/TalentAttributeListener.java:17`
+- [x] ✅ **Javítva (6. csomag — respawn-hook (idempotens)).** **Fájl:** `listeners/TalentAttributeListener.java:17`
 - **Súlyosság:** 🟢 LOW
 - **Leírás:** a talent-attribútumok csak joinkor (idempotensen) kerülnek fel; nincs `PlayerRespawnEvent` — ma
   biztonságos (a vanilla megtartja respawnnál), de törékeny, ha más rendszer törli őket.

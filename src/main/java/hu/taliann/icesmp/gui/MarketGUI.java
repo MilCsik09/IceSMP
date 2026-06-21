@@ -67,7 +67,7 @@ public final class MarketGUI {
         final int start = safePage * PER_PAGE;
         for (int i = 0; i < PER_PAGE && start + i < listings.size(); i++) {
             final MarketManager.Listing listing = listings.get(start + i);
-            inventory.setItem(i, createDisplayItem(listing, currencyManager, messageManager));
+            inventory.setItem(i, createDisplayItem(viewer, marketManager, listing, currencyManager, messageManager));
             holder.mapSlot(i, listing.id());
         }
 
@@ -113,7 +113,8 @@ public final class MarketGUI {
         return item;
     }
 
-    private static ItemStack createDisplayItem(final MarketManager.Listing listing,
+    private static ItemStack createDisplayItem(final Player viewer, final MarketManager marketManager,
+                                               final MarketManager.Listing listing,
                                                final CurrencyManager currencyManager,
                                                final MessageManager messageManager) {
         final ItemStack display = listing.item().clone();
@@ -122,13 +123,17 @@ public final class MarketGUI {
             return display;
         }
 
+        // Show the price the VIEWER will actually pay (faction reputation adjusts it), not the base
+        // list price — otherwise the lore and the charged amount disagree.
+        final double effectivePrice = marketManager.getEffectivePrice(viewer, listing);
+
         final List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
         lore.add(Component.empty());
         lore.add(messageManager.getMessage(
                 "market-lore-price",
                 "&6Ár: &f{price} {currency}",
                 Map.of(
-                        "price", currencyManager.formatBalance(listing.price()),
+                        "price", currencyManager.formatBalance(effectivePrice),
                         "currency", listing.currency().getDisplayName()
                 )
         ));

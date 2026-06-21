@@ -156,8 +156,8 @@ public final class WorldBossManager {
                     Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
 
             final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-            activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
-
+            // activeBossUntil is set inside spawnBoss only AFTER the spawn is confirmed, so a bad
+            // entity-type config never leaves the manager reporting a phantom active boss.
             plugin.getServer().getRegionScheduler().run(plugin, approx, spawnTask -> spawnBoss(approx, lifetimeMinutes));
         }, null);
     }
@@ -177,12 +177,12 @@ public final class WorldBossManager {
         final Class<? extends Entity> entityClass = bossType.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             plugin.getLogger().warning("Configured world boss entity-type is not a mob; skipping spawn.");
-            activeBossUntil = 0L;
             return;
         }
 
         final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
         activeBossId = boss.getUniqueId();
+        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
         boss.setPersistent(true);
         boss.setRemoveWhenFarAway(false);
