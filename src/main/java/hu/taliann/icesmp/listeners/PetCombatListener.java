@@ -8,6 +8,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.projectiles.ProjectileSource;
 
 /**
@@ -22,6 +23,12 @@ public final class PetCombatListener implements Listener {
 
     public PetCombatListener(final PetManager petManager) {
         this.petManager = petManager;
+    }
+
+    @EventHandler
+    public void onEntityDeath(final EntityDeathEvent event) {
+        // If a companion dies, clear its combat state and notify its owner.
+        petManager.handlePetDeath(event.getEntity());
     }
 
     @EventHandler(ignoreCancelled = true)

@@ -450,6 +450,7 @@ messages:
   pet-name-invalid: "&cÉrvénytelen név (max 24 karakter)."
   pet-info: "<dark_green>🐺 Társ: <white>{name}</white> &7| Szint: <white>{level}</white> &7| XP: <white>{xp}</white> &8(/pet summon|dismiss|name)</dark_green>"
   pet-level-up: "<dark_green>🐺 A társad szintet lépett: <white>{level}</white></dark_green>"
+  pet-died: "<gray>A társad elesett a harcban. <dark_gray>(/pet summon az új idézéshez)</dark_gray></gray>"
   events-intro-replayed: "&aIntro lejátszva: &f%s"
   spell-mastery-header: "&6Spell-mesterség &7(magasabb rang = rövidebb cooldown):"
   spell-mastery-none: "&7Nincs feloldott képességed."

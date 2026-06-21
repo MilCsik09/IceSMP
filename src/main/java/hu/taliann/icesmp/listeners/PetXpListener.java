@@ -27,7 +27,8 @@ public final class PetXpListener implements Listener {
             return;
         }
         final Player killer = event.getEntity().getKiller();
-        if (killer == null || !petManager.isBeastMaster(killer)) {
+        // Both pet-owning specs (Beast Master AND Necromancer) earn companion XP from kills.
+        if (killer == null || !petManager.canOwnPet(killer)) {
             return;
         }
         petManager.addXp(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2)));

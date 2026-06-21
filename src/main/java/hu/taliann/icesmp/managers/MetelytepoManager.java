@@ -173,6 +173,15 @@ public final class MetelytepoManager {
     }
 
     /**
+     * Atomically starts the Justice cooldown only if it is currently free, returning
+     * whether it was acquired. Used as the single fire-gate so two near-simultaneous
+     * events (e.g. interact + interact-entity) can't both fire within one cooldown.
+     */
+    public boolean tryConsumeJusticeCooldown(final Player player) {
+        return tryStartCooldown(player, ABILITY_JUSTICE, JUSTICE_COOLDOWN_MILLIS);
+    }
+
+    /**
      * Checks if a player is on the Honor Eye ability cooldown.
      *
      * @param player the player to check
@@ -199,6 +208,11 @@ public final class MetelytepoManager {
      */
     public void triggerHonorEyeCooldown(final Player player) {
         startCooldown(player, ABILITY_HONOR_EYE, HONOR_EYE_COOLDOWN_MILLIS);
+    }
+
+    /** Atomic fire-gate for Honor Eye — see {@link #tryConsumeJusticeCooldown(Player)}. */
+    public boolean tryConsumeHonorEyeCooldown(final Player player) {
+        return tryStartCooldown(player, ABILITY_HONOR_EYE, HONOR_EYE_COOLDOWN_MILLIS);
     }
 
     public boolean isProtectedEntityType(final EntityType type) {
@@ -370,6 +384,28 @@ public final class MetelytepoManager {
     private void startCooldown(final Player player, final String ability, final long cooldownMillis) {
         cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())
                 .put(ability, System.currentTimeMillis() + cooldownMillis);
+    }
+
+    /**
+     * Atomically acquires a cooldown if it is free. The whole check-and-set runs inside
+     * {@link ConcurrentHashMap#compute}, so concurrent callers are serialized and only one
+     * can acquire it within a window.
+     *
+     * @return true if the cooldown was free and is now started
+     */
+    private boolean tryStartCooldown(final Player player, final String ability, final long cooldownMillis) {
+        final long now = System.currentTimeMillis();
+        final Map<String, Long> playerCooldowns =
+                cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>());
+        final boolean[] acquired = {false};
+        playerCooldowns.compute(ability, (key, existing) -> {
+            if (existing != null && existing > now) {
+                return existing; // still on cooldown — leave it
+            }
+            acquired[0] = true;
+            return now + cooldownMillis;
+        });
+        return acquired[0];
     }
 
     private long remainingMillis(final Long expiresAt) {

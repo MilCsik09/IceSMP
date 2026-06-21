@@ -156,6 +156,36 @@ public final class PetManager {
         return removed;
     }
 
+    /**
+     * Handles a pet's death: clears the combat state for that pet, and if it was the
+     * owner's active companion, clears the stored reference and notifies them. The
+     * owner-side PDC/message runs on the owner's region thread (Folia-safe); call this
+     * from an EntityDeathEvent for minion-tagged mobs.
+     */
+    public void handlePetDeath(final LivingEntity dead) {
+        final UUID ownerId = minionManager.getOwner(dead);
+        if (ownerId == null) {
+            return;
+        }
+        final UUID deadId = dead.getUniqueId();
+        combatTargets.remove(ownerId);
+        attackReady.remove(deadId);
+
+        final Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null) {
+            return; // offline: the stale entityKey resolves to a dead UUID harmlessly on next summon
+        }
+        owner.getScheduler().run(plugin, task -> {
+            final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
+            if (deadId.toString().equals(raw)) {
+                owner.getPersistentDataContainer().remove(entityKey);
+                owner.sendMessage(messageManager.getMessage(
+                        "pet-died",
+                        "<gray>A társad elesett a harcban. <dark_gray>(/pet summon az új idézéshez)</dark_gray></gray>"));
+            }
+        }, null);
+    }
+
     public boolean setName(final Player player, final String name) {
         if (name == null || name.isBlank() || name.length() > 24) {
             return false;
@@ -194,7 +224,7 @@ public final class PetManager {
             player.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
             final Mob pet = activePet(player);
             if (pet != null) {
-                applyBuffs(pet, level);
+                applyBuffs(pet, level, false);
                 updateName(pet, player);
             }
             player.sendMessage(messageManager.getMessage(
@@ -408,7 +438,7 @@ public final class PetManager {
         if (mob instanceof AbstractSkeleton skeleton) {
             skeleton.setShouldBurnInDay(false);
         }
-        applyBuffs(mob, getLevel(player));
+        applyBuffs(mob, getLevel(player), true);
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
         player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
@@ -420,7 +450,13 @@ public final class PetManager {
         return base + ((level - 1) * increment);
     }
 
-    private void applyBuffs(final LivingEntity pet, final int level) {
+    /**
+     * (Re)applies the level-based attribute buffs. {@code heal} fully restores the
+     * pet to its new max health — only wanted on summon/adopt. On level-up the cap
+     * grows but current health is NOT topped up, so a kill mid-fight can't instantly
+     * heal a near-dead pet to full.
+     */
+    private void applyBuffs(final LivingEntity pet, final int level, final boolean heal) {
         final double healthPerLevel = Math.max(0.0D, configManager.getDouble("pets.companion.health-per-level", 2.0D));
         final double damagePerLevel = Math.max(0.0D, configManager.getDouble("pets.companion.damage-per-level", 0.5D));
 
@@ -428,9 +464,11 @@ public final class PetManager {
         applyModifier(pet, Attribute.MAX_HEALTH, healthModKey, level * healthPerLevel);
         applyModifier(pet, Attribute.ATTACK_DAMAGE, damageModKey, level * damagePerLevel);
 
-        final AttributeInstance maxHealth = pet.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            pet.setHealth(maxHealth.getValue());
+        if (heal) {
+            final AttributeInstance maxHealth = pet.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) {
+                pet.setHealth(maxHealth.getValue());
+            }
         }
     }
 

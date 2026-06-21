@@ -29,6 +29,15 @@
 >   `ProfessionRecipeListener`/`SiegeWeaponListener`/`TerritoryListener` quit ÉS kick eseményre is takarít.
 >   *CMBT-4 megjegyzés:* a petet szándékosan NEM despawnoljuk disable-kor (perzisztens, újraindításkor
 >   visszakerül); a halál/újrafogás miatti árvulást a `PET-2` (5. csomag) kezeli.
+> - **5. csomag — pet / talent / relikvia-dupe ✅** (`PET-1`, `PET-2`, `PET-3`, `ECON-5`, `RELIC-2`,
+>   `RELIC-4`, `RELIC-5`): a `PetXpListener` mostantól `canOwnPet`-re szűr (a Nekromanta petje is szintez);
+>   pet-halál kezelve (`handlePetDeath`: combat-state törlés + gazda-értesítés a gazda szálán); a
+>   szintlépés már NEM gyógyítja teljesen a petet (csak summonkor). `TalentManager.getSpentPoints` csak az
+>   elérhető talenteket számolja → a capstone-kapu és az elérhető pontok determinisztikusak. A relikvia
+>   `canUse` a központi ownership-rekordot is ellenőrzi (átruházott/lejárt példány nem használható →
+>   nincs dupla példány); join-kor a duplikált relikvia-példányok eltávolításra kerülnek; a Justice/Honor
+>   Eye atomikus fire-gate-en megy át (`tryConsume*Cooldown`) → nincs dupla-elsülés a check-then-act /
+>   dupla interact-útvonal miatt.
 > - **Spell UX + no-op CD (user-jelentés) ✅** — *Spellbook:* új kattintható `/spellbook` GUI
 >   (sunyítás+jobb katt a katalizátoron is) — minden kaszt+spec spell leírással (mit tud / mibe kerül /
 >   mennyit sebez — a ConfiguredSpell-eknél a tényleges számokból auto-generálva) / cooldownnal /
@@ -164,7 +173,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `Files.move(…, ATOMIC_MOVE, REPLACE_EXISTING)`; zárral védett snapshot.
 
 ### `ECON-5` — Talentpont-könyvelés duplán számol lejárt talenteket
-- [ ] **Fájl:** `managers/TalentManager.java:269` (`getSpentPoints`), `198` (`treeGatesMet`), `241` (`refundUnavailableTalents`)
+- [x] ✅ **Javítva (5. csomag — getSpentPoints csak elérhető talenteket számol (determinisztikus capstone)).** **Fájl:** `managers/TalentManager.java:269` (`getSpentPoints`), `198` (`treeGatesMet`), `241` (`refundUnavailableTalents`)
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** `getSpentPoints` minden rangot összead (a követelményt vesztett talenteket is), de azok
   refundolhatók és nem fejtenek ki hatást; a capstone-kapu („N pont elköltve") beleszámítja a „halott"
@@ -198,7 +207,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** minta B (async, atomikus, zárolt írás); sose `yaml.save()` közvetlenül event-handlerből.
 
 ### `RELIC-2` — Join-kori újra-claim szingleton-ellenőrzés nélkül → relikvia-dupe
-- [ ] **Fájl:** `managers/RelicManager.java:333`, `handlePlayerJoin`
+- [x] ✅ **Javítva (5. csomag — join-kori dedup + canUse a központi ownership-et ellenőrzi).** **Fájl:** `managers/RelicManager.java:333`, `handlePlayerJoin`
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** belépéskor minden hordott relikviára felírja a tulajdont, ha az item-tulaj null vagy maga a
   belépő — szingleton-kényszer nélkül. A `giveRelic()` csak adáskor kényszerít szingletont, birtokláskor soha.
@@ -321,7 +330,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** az unfreeze-callbackben `!isValid()` esetén is töröld az entryt; `EntityDeathEvent`-re takaríts.
 
 ### `RELIC-4` — Nem-atomikus cooldown + dupla interact-útvonal
-- [ ] **Fájl:** `listeners/MetelytepoRelicListener.java:148-180`
+- [x] ✅ **Javítva (5. csomag — atomikus tryConsume fire-gate (nincs dupla-elsülés)).** **Fájl:** `listeners/MetelytepoRelicListener.java:148-180`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `isOnCooldown()` → később `triggerCooldown()` (külön olvasás/írás, nincs CAS); a sneak+jobb-katt
   entitáson az `onInteractEntity` is meghívja a `handleHonorEye`-t.
@@ -329,7 +338,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** atomikus cooldown-foglalás (`putIfAbsent`/`computeIfAbsent`) az effekt **előtt**; az interact-utak deduplikálása.
 
 ### `RELIC-5` — Lejárt-szingleton edge: két aktív példány
-- [ ] **Fájl:** `managers/RelicManager.java:396`, `giveRelic`
+- [x] ✅ **Javítva (5. csomag — canUse központi ownership-ellenőrzés (lejárt példány nem használható)).** **Fájl:** `managers/RelicManager.java:396`, `giveRelic`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** ha az aktuális tulajdon lejárt, B megkapja az új relikviát, de A még létező itemje (a sweep csak
   A belépésekor fut) továbbra is működik (a `canUse()` az item saját tagjét nézi, nem a központi rekordot).
@@ -413,7 +422,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** explicit kick-handler vagy `PlayerSessionCleanupListener` bevonás.
 
 ### `PET-3` — Pet teljes gyógyulás minden szintlépéskor
-- [ ] **Fájl:** `managers/PetManager.java`, `applyBuffs` (`pet.setHealth(maxHealth.getValue())`)
+- [x] ✅ **Javítva (5. csomag — szintlépéskor nincs full-heal (csak summonkor)).** **Fájl:** `managers/PetManager.java`, `applyBuffs` (`pet.setHealth(maxHealth.getValue())`)
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** az `applyBuffs` szintlépéskor (és summonkor) is fut; az 1 HP-n harcoló pet azonnal teljes életre
   gyógyul, amint a gazda ölésével szintet lép → gyakorlatilag megölhetetlen grindelésnél.
@@ -562,7 +571,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** dokumentálni a kettős figyelést; a CROPS-halmazt szinkronban tartani az `Ageable`-feltevéssel.
 
 ### `PET-1` — Nekromanta petek sosem szintlépnek (lásd combat-review)
-- [ ] **Fájl:** `listeners/PetXpListener.java:30`
+- [x] ✅ **Javítva (5. csomag — canOwnPet (necro pet is szintez); kill-alapú).** **Fájl:** `listeners/PetXpListener.java:30`
 - **Súlyosság:** 🟠 HIGH (itt listázva a diff-review folytonosságáért)
 - **Leírás:** `if (killer == null || !petManager.isBeastMaster(killer)) return;` — az `addXp`/`canOwnPet`
   mindkét specet támogatja, de az egyetlen XP-forrás `isBeastMaster`-re szűr → a Nekromanta petje örökre 1. szint.
@@ -571,7 +580,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** a kapu `canOwnPet` legyen; az XP a gazda közeli öléseiből (ne csak közvetlen `getKiller`).
 
 ### `PET-2` — Pet-halál/despawn nincs kezelve (lásd `CMBT-4`)
-- [ ] **Fájl:** `managers/PetManager.java` (`entityKey` életciklus)
+- [x] ✅ **Javítva (5. csomag — handlePetDeath: combat-state törlés + gazda-értesítés).** **Fájl:** `managers/PetManager.java` (`entityKey` életciklus)
 - **Súlyosság:** 🟠 HIGH (itt listázva a diff-review folytonosságáért)
 - **Leírás:** a pet-UUID csak `dismiss()`-ben törlődik; nincs `EntityDeathEvent`/remove-handler. Halál után az
   `entityKey` halott UUID-ra mutat, a `/pet summon` ingyen újraspawnol a tárolt típusból (nincs büntetés/értesítés),

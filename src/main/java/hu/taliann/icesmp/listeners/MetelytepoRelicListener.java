@@ -250,6 +250,12 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
+        // Atomic fire-gate: acquire the cooldown here (not after the effect) so a duplicate
+        // interact/interact-entity event in the same tick can't fire Justice twice.
+        if (!metelytepoManager.tryConsumeJusticeCooldown(player)) {
+            return;
+        }
+
         metelytepoManager.markAbilityDamageBypass(target, 1200L);
         target.damage(JUSTICE_DAMAGE, player);
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, JUSTICE_EFFECT_DURATION_TICKS, JUSTICE_EFFECT_LEVEL, true, true, true));
@@ -260,7 +266,6 @@ public final class MetelytepoRelicListener implements Listener {
         target.getWorld().spawnParticle(Particle.SQUID_INK, target.getLocation().add(0.0D, 0.15D, 0.0D), 24, 0.2D, 0.15D, 0.2D, 0.01D);
         target.getWorld().spawnParticle(Particle.SCULK_SOUL, target.getLocation().add(0.0D, 0.8D, 0.0D), 10, 0.35D, 0.2D, 0.35D, 0.03D);
         player.getWorld().playSound(target.getLocation(), Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.85F);
-        metelytepoManager.triggerJusticeCooldown(player);
         player.sendActionBar(LEGACY.deserialize(messageManager.getJusticeActivated()));
 
         player.showTitle(Title.title(
@@ -309,6 +314,11 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
+        // Atomic fire-gate (see handleJustice): prevents a duplicate interact event firing twice.
+        if (!metelytepoManager.tryConsumeHonorEyeCooldown(player)) {
+            return;
+        }
+
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.45F, 1.2F);
 
         for (final Entity entity : player.getNearbyEntities(HONOR_EYE_RANGE, HONOR_EYE_RANGE, HONOR_EYE_RANGE)) {
@@ -334,7 +344,6 @@ public final class MetelytepoRelicListener implements Listener {
             metelytepoManager.freezeUndead(living, 20L * 60L);
         }
 
-        metelytepoManager.triggerHonorEyeCooldown(player);
         // FLASH throws on this runtime because it expects extra particle data; use a no-data burst combo.
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0, 1.0, 0.0), 80, 1.4, 1.0, 1.4, 0.05);
         player.getWorld().spawnParticle(Particle.ENCHANT, player.getLocation().add(0.0, 1.0, 0.0), 120, 1.6, 1.1, 1.6, 0.01);

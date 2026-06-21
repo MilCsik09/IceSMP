@@ -266,10 +266,19 @@ public final class TalentManager {
         return refunded;
     }
 
+    /**
+     * Points spent on talents the player CURRENTLY qualifies for. Talents whose
+     * requirements have lapsed (e.g. after a respec, before they are physically
+     * refunded) are excluded, so they neither inflate the spent count nor satisfy a
+     * capstone's {@code requires-spent} gate with "ghost" points — making both the
+     * available-point math and the gate deterministic regardless of refund timing.
+     */
     public int getSpentPoints(final Player player, final boolean classPool) {
         int spent = 0;
-        for (final int rank : getRanks(player, classPool).values()) {
-            spent += rank;
+        for (final Map.Entry<String, Integer> entry : getRanks(player, classPool).entrySet()) {
+            if (isAvailable(player, classPool, entry.getKey())) {
+                spent += entry.getValue();
+            }
         }
         return spent;
     }
