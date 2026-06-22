@@ -281,6 +281,15 @@ public final class IceSMPCore {
                 craftingRestrictionManager
         );
 
+        registerSpells();
+    }
+
+    /**
+     * Registers every bespoke spell plus the declaratively-configured expansion and
+     * summon spell pools. Extracted from the constructor to keep the wiring readable;
+     * uses only already-constructed fields (spellRegistry, minionManager, talentManager…).
+     */
+    private void registerSpells() {
         spellRegistry.register(new DoubleJumpSpell(messageManager));
         spellRegistry.register(new FriendshipSpell(messageManager));
         spellRegistry.register(new FeatherfootSpell(messageManager));

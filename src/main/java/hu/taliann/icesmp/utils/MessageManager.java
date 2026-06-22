@@ -51,28 +51,6 @@ public final class MessageManager {
         load();
     }
 
-    // ===== CURRENCY MESSAGES =====
-
-    /**
-     * Gets the currency help header message.
-     *
-     * @return formatted help header
-     */
-    public String getCurrencyHelpHeader() {
-        return get("messages.currency-help-header", "&6/currency &7- elérhető parancsok:");
-    }
-
-    /**
-     * Gets the balance message for a player.
-     *
-     * @param currencyName the currency name
-     * @param balance the balance amount
-     * @return formatted balance message
-     */
-    public String getBalance(final String currencyName, final double balance) {
-        return get("messages.balance", "&eAktuális egyenleg - " + currencyName + ": &6" + balance);
-    }
-
     // ===== FACTION MESSAGES =====
 
     /**

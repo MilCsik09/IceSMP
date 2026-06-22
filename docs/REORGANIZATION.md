@@ -141,10 +141,10 @@ pont ezt a bővítést teszik kényelmessé.
 ## Prioritás (a hibajavítások UTÁN)
 
 **Gyors, biztonságos (órák, ~0 kockázat):**
-1. 2 halott `MessageManager` getter törlése.
+1. ✅ **Kész** — 2 halott `MessageManager` getter törlése (`getCurrencyHelpHeader`, `getBalance`).
 2. `label/accent/grey/click` a `GuiUtil`-ba, másolatok törlése.
-3. `registerSpells()` kiemelése a `IceSMPCore` konstruktorból + sorrend-komment.
-4. Halott `RootSpell.clearPlayerState` hívás + import törlése.
+3. ✅ **Kész** — `registerSpells()` kiemelése a `IceSMPCore` konstruktorból.
+4. ✅ **Kész** — halott `RootSpell.clearPlayerState` hívás + import + no-op metódus törlése.
 5. A 3 azonos `*Subcommand` interfész egyesítése.
 6. `messages.yml` szekció-bannerek.
 

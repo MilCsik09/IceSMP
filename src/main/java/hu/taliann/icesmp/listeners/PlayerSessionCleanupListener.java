@@ -13,7 +13,6 @@ import hu.taliann.icesmp.spells.DoubleJumpSpell;
 import hu.taliann.icesmp.spells.HideSpell;
 import hu.taliann.icesmp.spells.InnerFocusSpell;
 import hu.taliann.icesmp.spells.LuckyStarSpell;
-import hu.taliann.icesmp.spells.RootSpell;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -74,7 +73,6 @@ public final class PlayerSessionCleanupListener implements Listener {
         LuckyStarSpell.clearPlayerState(playerId);
         ArmamentSpell.clearPlayerState(playerId);
         InnerFocusSpell.clearPlayerState(playerId);
-        RootSpell.clearPlayerState(playerId);
         DoubleJumpSpell.clearPlayerState(playerId);
 
         if (player != null && (player.getOpenInventory().getTopInventory().getHolder() instanceof JobGUIHolder

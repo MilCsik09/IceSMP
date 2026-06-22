@@ -8,8 +8,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.UUID;
-
 public final class RootSpell extends BaseSpell {
 
     public RootSpell(final MessageManager messageManager) {
@@ -28,10 +26,6 @@ public final class RootSpell extends BaseSpell {
             // (A high positive amplifier such as 250 would instead launch it skyward to its death.)
             living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 128, false, true, true));
         }
-    }
-
-    public static void clearPlayerState(final UUID playerId) {
-        // Root no longer stores persistent per-player movement state.
     }
 }
 
