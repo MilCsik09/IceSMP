@@ -158,7 +158,10 @@ pont ezt a bővítést teszik kényelmessé.
    implementálja, a `PlayerSessionCleanupListener` egy regisztrált `List<PlayerStateCleanup>`-ot iterál
    (a konstruktor-szignatúra változatlan). Hátra: az 5 statikus spell-cleanup instance-szintűvé tétele,
    hogy azok is a listába kerüljenek (a static→instance migráció build-checkpointot igényel).
-10. `AbstractDispatchCommand` bázis; inline parancsok migrálása egyenként.
+10. 🔶 **Részben kész** — `commands/AbstractDispatchCommand` bázis létrehozva (map + diszpécs + help +
+    tab-complete egy helyen); a 3 registry-parancs (Currency/Job/Faction) rátért, mindegyik a
+    konstruktorára zsugorodott (~210 sor duplikáció megszűnt). A message-kulcsok pontosan megőrzöttek,
+    az IceSMPCore-hívások változatlanok. Hátra: a ~15 inline-switch parancs migrálása a bázisra.
 
 **Nagyobb (megfontolandó):**
 11. 🔶 **Részben kész** — `storage/YamlStore.saveAtomic` egységes, konkurens-biztos (egyedi temp + atomikus
