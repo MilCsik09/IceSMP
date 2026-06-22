@@ -145,7 +145,9 @@ pont ezt a bővítést teszik kényelmessé.
 2. `label/accent/grey/click` a `GuiUtil`-ba, másolatok törlése.
 3. ✅ **Kész** — `registerSpells()` kiemelése a `IceSMPCore` konstruktorból.
 4. ✅ **Kész** — halott `RootSpell.clearPlayerState` hívás + import + no-op metódus törlése.
-5. A 3 azonos `*Subcommand` interfész egyesítése.
+5. ✅ **Kész (biztonságos variáns)** — közös `commands/Subcommand` ős létrehozva; a 3 azonos
+   `*Subcommand` interfész üres `extends Subcommand` markerré vált (a metódus-szerződés egy helyen).
+   A 19 implementáció és a 3 command-map ÉRINTETLEN — nulla törés-kockázat.
 6. `messages.yml` szekció-bannerek.
 
 **Közepes (napok, alacsony-közepes kockázat):**

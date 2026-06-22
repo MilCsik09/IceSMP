@@ -1,21 +1,7 @@
 package hu.taliann.icesmp.commands.job;
 
-import org.bukkit.command.CommandSender;
+import hu.taliann.icesmp.commands.Subcommand;
 
-import java.util.List;
-
-public interface JobSubcommand {
-
-    String name();
-
-    String description();
-
-    String usage();
-
-    boolean execute(CommandSender sender, String[] args);
-
-    default List<String> tabComplete(final CommandSender sender, final String[] args) {
-        return List.of();
-    }
+/** Job subcommand marker; the contract lives in {@link Subcommand}. */
+public interface JobSubcommand extends Subcommand {
 }
-
