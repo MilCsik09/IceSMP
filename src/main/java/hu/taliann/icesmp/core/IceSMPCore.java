@@ -197,6 +197,7 @@ public final class IceSMPCore {
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
     private final HudManager hudManager;
+    private final List<hu.taliann.icesmp.storage.PersistentStore> persistentStores;
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
@@ -267,6 +268,11 @@ public final class IceSMPCore {
                 statsManager, achievementManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager);
+        // One registered list of YAML-persistent managers: the core loads them all on enable and
+        // saves them all on disable (replacing two hand-maintained call lists).
+        this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
+                factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
+                exchangeBoardManager, statsManager, parkourManager);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -323,20 +329,10 @@ public final class IceSMPCore {
     public void enable() {
         configManager.load();
         messageManager.reload();
-        currencyManager.load();
-        factionManager.load();
-        relicManager.load();
+        // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();
         craftingRestrictionManager.load();
-        territoryManager.load();
-        factionTreasuryManager.load();
-        kingManager.load();
-        economyEventManager.load();
-        marketManager.load();
-        seasonManager.load();
-        exchangeBoardManager.load();
-        statsManager.load();
-        parkourManager.load();
+        persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::load);
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
@@ -382,18 +378,7 @@ public final class IceSMPCore {
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
         ProfileGUI.closeAll();
-        currencyManager.save();
-        factionManager.save();
-        relicManager.save();
-        territoryManager.save();
-        factionTreasuryManager.save();
-        kingManager.save();
-        economyEventManager.save();
-        marketManager.save();
-        seasonManager.save();
-        exchangeBoardManager.save();
-        statsManager.save();
-        parkourManager.save();
+        persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::save);
 
         // Then clean up live player session state (HUD teams, restored armor, caches).
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {

@@ -62,8 +62,10 @@ alacsony kockázatú első lépés.
   (b) 12 YAML-manager. ✅ **Mind a 12 mostantól a közös `storage/YamlStore.saveAtomic`-on át ír**
   (egyedi temp + atomikus rename, konkurens-biztos) — a duplikált atomikus blokkok megszűntek, és a 9
   korábban nem-atomikus író is biztonságos lett. **Hátralévő:** (1) debounce-mentés — jelenleg csak a
-  `CurrencyManager` debounce-ol (`requestSave`), a többi 11 szinkron (atomikusan) ment a régió-szálon;
-  (2) a `IceSMPCore` kézi load/save listáinak összeolvasztása egyetlen iterációvá.
+  `CurrencyManager` debounce-ol (`requestSave`), a többi 11 szinkron (atomikusan) ment a régió-szálon.
+  ✅ **(2) KÉSZ:** új `storage/PersistentStore { load(); save(); }` interfész — mind a 12 YAML-manager
+  implementálja, és az `IceSMPCore` egy regisztrált `List<PersistentStore>`-t iterál load-ra (enable) és
+  save-re (disable), a 2 kézi lista helyett.
 - **Cél (hátralévő):** a managerek mentés-hívásai debounce-on át (a CurrencyManager mintája), és egy
   regisztrált store-lista, amit a core `load()`/`save()` végigiterál (a 2 kézi lista helyett).
 - **Részletek:** lásd a Prioritás-lista 11. pontját (ott a részleges-kész státusz).

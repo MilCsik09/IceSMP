@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.data.FactionType;
@@ -26,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * expires, starting a fresh election. The king commands the faction treasury
  * (withdraw) and may declare raids.
  */
-public final class KingManager {
+public final class KingManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

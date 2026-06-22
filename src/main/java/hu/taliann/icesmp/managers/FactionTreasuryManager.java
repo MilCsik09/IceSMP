@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.storage.YamlStore;
@@ -25,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * — the tax doubles as the economy's money sink, feeding the dynamic exchange
  * rate model by draining circulating supply.
  */
-public final class FactionTreasuryManager {
+public final class FactionTreasuryManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

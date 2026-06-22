@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 
 import hu.taliann.icesmp.data.CurrencyType;
@@ -29,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unused")
-public final class CurrencyManager implements PlayerStateCleanup {
+public final class CurrencyManager implements PlayerStateCleanup, PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

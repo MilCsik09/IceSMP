@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 
 import hu.taliann.icesmp.storage.YamlStore;
@@ -18,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manager for player faction assignments.
  * Tracks which faction each player belongs to with YAML-based persistent storage.
  */
-public final class FactionManager implements PlayerStateCleanup {
+public final class FactionManager implements PlayerStateCleanup, PersistentStore {
 
     private final JavaPlugin plugin;
     private final File storageFile;

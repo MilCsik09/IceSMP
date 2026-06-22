@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.data.FactionType;
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Territories are circular regions persisted to territories.yml; admins define
  * them with the /territory command. A faction has at most one capital claim.
  */
-public final class TerritoryManager {
+public final class TerritoryManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final File storageFile;

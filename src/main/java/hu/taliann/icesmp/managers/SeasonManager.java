@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.data.FactionType;
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * season reward; points reset and a new season begins. State persists to
  * season.yml; expiry is checked on the global world-events tick.
  */
-public final class SeasonManager {
+public final class SeasonManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

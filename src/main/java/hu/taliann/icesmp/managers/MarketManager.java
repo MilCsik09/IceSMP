@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.Material;
@@ -24,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * (money sink), and player-to-player trade moves currency supply — feeding
  * the dynamic exchange rates. Listings persist to market.yml.
  */
-public final class MarketManager {
+public final class MarketManager implements PersistentStore {
 
     /** A single market listing. */
     public record Listing(UUID id, UUID seller, String sellerName, double price,

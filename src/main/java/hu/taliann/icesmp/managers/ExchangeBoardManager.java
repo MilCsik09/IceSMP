@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.data.CurrencyType;
@@ -36,7 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>Folia note: the world-events tick runs on the global region scheduler, so
  * every entity access hops onto the board's own region thread first.
  */
-public final class ExchangeBoardManager {
+public final class ExchangeBoardManager implements PersistentStore {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
