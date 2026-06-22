@@ -142,7 +142,10 @@ pont ezt a bővítést teszik kényelmessé.
 
 **Gyors, biztonságos (órák, ~0 kockázat):**
 1. ✅ **Kész** — 2 halott `MessageManager` getter törlése (`getCurrencyHelpHeader`, `getBalance`).
-2. `label/accent/grey/click` a `GuiUtil`-ba, másolatok törlése.
+2. 🔶 **Részben kész** — `label()` a `GuiUtil`-ba kiemelve, az 5 GUI lokális másolata törölve
+   (static importtal, hívások változatlanok); a `HudManager` saját `label`-je (scoreboard, decoration
+   nélkül) szándékosan érintetlen. Hátra: `accent/grey` (azonos törzs, ugyanígy kiemelhető) és `click`
+   (a CommandMenusban `click()` no-arg, máshol `click(String)` — eltér, óvatosan).
 3. ✅ **Kész** — `registerSpells()` kiemelése a `IceSMPCore` konstruktorból.
 4. ✅ **Kész** — halott `RootSpell.clearPlayerState` hívás + import + no-op metódus törlése.
 5. ✅ **Kész (biztonságos variáns)** — közös `commands/Subcommand` ős létrehozva; a 3 azonos

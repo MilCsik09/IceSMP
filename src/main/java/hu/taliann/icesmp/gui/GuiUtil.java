@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.gui;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
@@ -33,6 +35,14 @@ public final class GuiUtil {
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         itemStack.setItemMeta(meta);
         return itemStack;
+    }
+
+    /**
+     * A "key: value" lore line: grey, non-italic key label followed by the value component.
+     * Shared by the character-menu GUIs (Profile/Spec/Profession/Talent) and CommandMenus.
+     */
+    public static Component label(final String key, final Component value) {
+        return Component.text(key + ": ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false).append(value);
     }
 
     public static ItemStack icon(final Material material, final Component name, final List<Component> lore) {
