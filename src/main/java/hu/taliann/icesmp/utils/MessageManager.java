@@ -51,69 +51,6 @@ public final class MessageManager {
         load();
     }
 
-    // ===== FACTION MESSAGES =====
-
-    /**
-     * Gets the sinner marking message.
-     *
-     * @return sinner notification message
-     */
-    public String getSinnerMarked() {
-        return get("messages.sinner-marked",
-                "&5A Metelytepo igazsagot latott: &cbunos lettel.");
-    }
-
-    /**
-     * Gets the ability cooldown message.
-     *
-     * @param remainingSeconds seconds remaining
-     * @return cooldown message
-     */
-    public String getAbilityCooldown(final long remainingSeconds) {
-        return get("messages.ability-cooldown",
-                "&cKepesseg toltodik: &f%s &cmp", remainingSeconds);
-    }
-
-    /**
-     * Gets the no target message.
-     *
-     * @return no target message
-     */
-    public String getNoTarget() {
-        return get("messages.no-target",
-                "&7Nincs celpont a latoterben.");
-    }
-
-    /**
-     * Gets the target not sinner message.
-     *
-     * @return not sinner message
-     */
-    public String getTargetNotSinner() {
-        return get("messages.target-not-sinner",
-                "&7A celpont nem bunos.");
-    }
-
-    /**
-     * Gets the justice activated message.
-     *
-     * @return justice message
-     */
-    public String getJusticeActivated() {
-        return get("messages.justice-activated",
-                "&dJustice aktivodott");
-    }
-
-    /**
-     * Gets the honor eye message.
-     *
-     * @return honor eye message
-     */
-    public String getHonorEyeActivated() {
-        return get("messages.honor-eye-activated",
-                "&dHonor Eye: &bbunosok &dfelfedve");
-    }
-
     // ===== GENERIC HELPER METHODS =====
 
     /**

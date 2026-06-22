@@ -214,14 +214,16 @@ public final class MetelytepoRelicListener implements Listener {
 
         if (!metelytepoManager.isSinner(killer)) {
             metelytepoManager.markAsSinner(killer);
-            killer.sendMessage(messageManager.getSinnerMarked());
+            killer.sendMessage(messageManager.getComponent("messages.sinner-marked",
+                    "&5A Metelytepo igazsagot latott: &cbunos lettel."));
         }
     }
 
     private void handleJustice(final Player player) {
         if (metelytepoManager.isOnJusticeCooldown(player)) {
             final long remaining = Math.max(1L, (metelytepoManager.getJusticeRemainingMillis(player) + 999L) / 1000L);
-            player.sendActionBar(LEGACY.deserialize(messageManager.getAbilityCooldown(remaining)));
+            player.sendActionBar(messageManager.getComponent("messages.ability-cooldown",
+                    "&cKepesseg toltodik: &f%s &cmp", remaining));
             return;
         }
 
@@ -229,7 +231,8 @@ public final class MetelytepoRelicListener implements Listener {
 
         final Entity targetEntity = player.getTargetEntity(5, false);
         if (!(targetEntity instanceof LivingEntity target)) {
-            player.sendActionBar(LEGACY.deserialize(messageManager.getNoTarget()));
+            player.sendActionBar(messageManager.getComponent("messages.no-target",
+                    "&7Nincs celpont a latoterben."));
             return;
         }
 
@@ -239,14 +242,16 @@ public final class MetelytepoRelicListener implements Listener {
     private void handleJustice(final Player player, final LivingEntity target) {
         if (metelytepoManager.isOnJusticeCooldown(player)) {
             final long remaining = Math.max(1L, (metelytepoManager.getJusticeRemainingMillis(player) + 999L) / 1000L);
-            player.sendActionBar(LEGACY.deserialize(messageManager.getAbilityCooldown(remaining)));
+            player.sendActionBar(messageManager.getComponent("messages.ability-cooldown",
+                    "&cKepesseg toltodik: &f%s &cmp", remaining));
             return;
         }
 
         final boolean sinner = metelytepoManager.isSinner(target);
         if (!sinner) {
             playRejectedTargetSound(target.getLocation());
-            player.sendActionBar(LEGACY.deserialize(messageManager.getTargetNotSinner()));
+            player.sendActionBar(messageManager.getComponent("messages.target-not-sinner",
+                    "&7A celpont nem bunos."));
             return;
         }
 
@@ -266,7 +271,8 @@ public final class MetelytepoRelicListener implements Listener {
         target.getWorld().spawnParticle(Particle.SQUID_INK, target.getLocation().add(0.0D, 0.15D, 0.0D), 24, 0.2D, 0.15D, 0.2D, 0.01D);
         target.getWorld().spawnParticle(Particle.SCULK_SOUL, target.getLocation().add(0.0D, 0.8D, 0.0D), 10, 0.35D, 0.2D, 0.35D, 0.03D);
         player.getWorld().playSound(target.getLocation(), Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.85F);
-        player.sendActionBar(LEGACY.deserialize(messageManager.getJusticeActivated()));
+        player.sendActionBar(messageManager.getComponent("messages.justice-activated",
+                "&dJustice aktivodott"));
 
         player.showTitle(Title.title(
                 LEGACY.deserialize(messageManager.get("messages.justice-title", "&5Justice")),
@@ -310,7 +316,8 @@ public final class MetelytepoRelicListener implements Listener {
     private void handleHonorEye(final Player player) {
         if (metelytepoManager.isOnHonorEyeCooldown(player)) {
             final long remaining = Math.max(1L, (metelytepoManager.getHonorEyeRemainingMillis(player) + 999L) / 1000L);
-            player.sendActionBar(LEGACY.deserialize(messageManager.getAbilityCooldown(remaining)));
+            player.sendActionBar(messageManager.getComponent("messages.ability-cooldown",
+                    "&cKepesseg toltodik: &f%s &cmp", remaining));
             return;
         }
 
@@ -348,7 +355,8 @@ public final class MetelytepoRelicListener implements Listener {
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0, 1.0, 0.0), 80, 1.4, 1.0, 1.4, 0.05);
         player.getWorld().spawnParticle(Particle.ENCHANT, player.getLocation().add(0.0, 1.0, 0.0), 120, 1.6, 1.1, 1.6, 0.01);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 1.0F);
-        player.sendActionBar(LEGACY.deserialize(messageManager.getHonorEyeActivated()));
+        player.sendActionBar(messageManager.getComponent("messages.honor-eye-activated",
+                "&dHonor Eye: &bbunosok &dfelfedve"));
 
         player.showTitle(Title.title(
                 LEGACY.deserialize(messageManager.get("messages.honor-eye-title", "&6&lBECSULETSZEM AKTIVALVA")),

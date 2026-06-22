@@ -149,7 +149,8 @@ pont ezt a bővítést teszik kényelmessé.
 6. `messages.yml` szekció-bannerek.
 
 **Közepes (napok, alacsony-közepes kockázat):**
-7. A 6 élő `MessageManager` getter migrálása a generikus API-ra, majd törlés.
+7. ✅ **Kész** — a 6 élő `MessageManager` getter migrálva a generikus `getComponent`-re (egyetlen
+   fogyasztó: `MetelytepoRelicListener`), majd törölve. A legacy bespoke API megszűnt.
 8. JobGUI/SkillTreeGUI a `GuiUtil`-ra; `PaginatedGui` bázis Market/Spellbook-hoz.
 9. `PlayerStateCleanup` interfész + lista-iteráció.
 10. `AbstractDispatchCommand` bázis; inline parancsok migrálása egyenként.
