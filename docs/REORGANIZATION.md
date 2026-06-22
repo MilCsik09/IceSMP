@@ -164,7 +164,13 @@ pont ezt a bővítést teszik kényelmessé.
 **Közepes (napok, alacsony-közepes kockázat):**
 7. ✅ **Kész** — a 6 élő `MessageManager` getter migrálva a generikus `getComponent`-re (egyetlen
    fogyasztó: `MetelytepoRelicListener`), majd törölve. A legacy bespoke API megszűnt.
-8. JobGUI/SkillTreeGUI a `GuiUtil`-ra; `PaginatedGui` bázis Market/Spellbook-hoz.
+8. 🔶 **Részben kész** — a `JobGUI.createJobItem` és a `SkillTreeGUI.createSpellNode` átállt a
+   `GuiUtil.icon(material, name, lore, glow)`-ra (pontosan render-azonos: ugyanaz a flag-készlet
+   `HIDE_ADDITIONAL_TOOLTIP, HIDE_ATTRIBUTES, HIDE_ENCHANTS` + `UNBREAKING` glow); a felesleges
+   `Enchantment` import is törölve. **Szándékosan érintetlen (NEM render-azonos, ezért nem migrált):**
+   a `JobGUI` saját `createFiller`-e `BLACK_STAINED_GLASS_PANE`-t használ (a `GuiUtil.filler` szürkét) —
+   eltérő szín, nem cserélhető; a back/katalizátor/no-class gombok flag-készlete eltér (nincs
+   `HIDE_ENCHANTS`), ezért bespoke maradnak. **Hátra:** `PaginatedGui` bázis Market/Spellbook-hoz.
 9. 🔶 **Részben kész** — `session/PlayerStateCleanup` interfész létrehozva; a 7 állapotos manager/listener
    implementálja, a `PlayerSessionCleanupListener` egy regisztrált `List<PlayerStateCleanup>`-ot iterál
    (a konstruktor-szignatúra változatlan). Hátra: az 5 statikus spell-cleanup instance-szintűvé tétele,

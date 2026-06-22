@@ -8,7 +8,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -123,20 +122,17 @@ public final class JobGUI {
 
     private static ItemStack createJobItem(final JobType jobType, final Player viewer, final JobManager jobManager,
                                            final MessageManager messageManager) {
-        final ItemStack itemStack = new ItemStack(Material.ENCHANTED_BOOK);
-        final ItemMeta meta = itemStack.getItemMeta();
         final JobType primary = jobManager.getPrimaryJob(viewer);
         final JobType secondary = jobManager.getSecondaryJob(viewer);
         final boolean selected = primary == jobType || secondary == jobType;
 
-        meta.displayName(jobType.getDisplayName());
-        meta.lore(resolveJobLore(jobType, primary, secondary, jobManager.getPrimaryLevel(viewer), jobManager.isPrimaryJobAtMaxLevel(viewer), messageManager));
-        if (selected) {
-            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-        }
-        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-        itemStack.setItemMeta(meta);
-        return itemStack;
+        // Selected jobs glow; the flag set matches GuiUtil.icon exactly, so it is a render-equivalent build.
+        return GuiUtil.icon(
+                Material.ENCHANTED_BOOK,
+                jobType.getDisplayName(),
+                resolveJobLore(jobType, primary, secondary, jobManager.getPrimaryLevel(viewer),
+                        jobManager.isPrimaryJobAtMaxLevel(viewer), messageManager),
+                selected);
     }
 
     private static List<Component> resolveJobLore(final JobType jobType, final JobType primary, final JobType secondary,

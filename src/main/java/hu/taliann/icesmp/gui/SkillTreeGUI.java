@@ -12,7 +12,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -122,13 +121,11 @@ public final class SkillTreeGUI {
         final Spell spell = spellRegistry.getById(spellId);
         final String spellName = spell == null ? spellId : spell.getName();
 
-        final ItemStack node = new ItemStack(unlocked ? Material.ENCHANTED_BOOK : Material.BOOK);
-        final ItemMeta meta = node.getItemMeta();
-        meta.displayName(messageManager.getComponent(
+        final Component name = messageManager.getComponent(
                 unlocked ? "messages.skilltree-node-unlocked" : "messages.skilltree-node-locked",
                 unlocked ? "&a%s" : "&7%s",
                 spellName
-        ));
+        );
 
         final List<Component> lore = new ArrayList<>();
         lore.add(messageManager.getComponent("messages.skilltree-node-level", "&7Szükséges szint: &f%s", requiredLevel));
@@ -140,14 +137,9 @@ public final class SkillTreeGUI {
                 : playerLevel >= requiredLevel
                         ? messageManager.getComponent("messages.skilltree-node-state-pending", "&e◌ Hamarosan feloldódik")
                         : messageManager.getComponent("messages.skilltree-node-state-locked", "&c✖ Zárolva"));
-        meta.lore(lore);
 
-        if (unlocked) {
-            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-        }
-        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-        node.setItemMeta(meta);
-        return node;
+        // Unlocked nodes glow; the flag set matches GuiUtil.icon exactly, so it is a render-equivalent build.
+        return GuiUtil.icon(unlocked ? Material.ENCHANTED_BOOK : Material.BOOK, name, lore, unlocked);
     }
 
     private static ItemStack createBackButton(final MessageManager messageManager) {
