@@ -21,6 +21,11 @@ public final class MessageManager {
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     /** Detects legacy colour codes (&a, §c, …); if present, the message is treated as legacy, not MiniMessage. */
     private static final Pattern LEGACY_CODE = Pattern.compile("[&§][0-9a-fk-orA-FK-OR]");
+    /** Bundled per-subsystem message files under messages/ (extracted on first run). */
+    private static final String[] MESSAGE_GROUPS = {
+            "currency", "faction", "job", "market", "pet", "profession",
+            "quest", "relic", "spec", "spell", "system", "world"
+    };
 
     private final JavaPlugin plugin;
     private final File messagesFile;
@@ -38,13 +43,48 @@ public final class MessageManager {
         load();
     }
 
+    /**
+     * Loads messages from the per-subsystem files in {@code messages/} plus the optional
+     * {@code messages.yml} override file, merging them into one keyspace. The per-subsystem files
+     * are the defaults; {@code messages.yml} is loaded LAST so an admin can override any key there.
+     */
     public void load() {
         plugin.getDataFolder().mkdirs();
+        final YamlConfiguration merged = new YamlConfiguration();
+
+        // Per-subsystem defaults: messages/<subsystem>.yml. Extract the bundled set on first run,
+        // then merge every .yml present (so a newly added group file is picked up automatically).
+        final File dir = new File(plugin.getDataFolder(), "messages");
+        dir.mkdirs();
+        for (final String group : MESSAGE_GROUPS) {
+            if (!new File(dir, group + ".yml").exists()) {
+                plugin.saveResource("messages/" + group + ".yml", false);
+            }
+        }
+        final File[] files = dir.listFiles((directory, name) -> name.endsWith(".yml"));
+        if (files != null) {
+            java.util.Arrays.sort(files); // deterministic merge order
+            for (final File file : files) {
+                mergeInto(merged, YamlConfiguration.loadConfiguration(file));
+            }
+        }
+
+        // Optional override file (loaded last so its keys win).
         if (!messagesFile.exists()) {
             plugin.saveResource("messages.yml", false);
         }
+        mergeInto(merged, YamlConfiguration.loadConfiguration(messagesFile));
 
-        messagesConfiguration = YamlConfiguration.loadConfiguration(messagesFile);
+        messagesConfiguration = merged;
+    }
+
+    /** Copies every leaf (non-section) key from {@code source} into {@code target}. */
+    private void mergeInto(final YamlConfiguration target, final YamlConfiguration source) {
+        for (final String key : source.getKeys(true)) {
+            if (!source.isConfigurationSection(key)) {
+                target.set(key, source.get(key));
+            }
+        }
     }
 
     public void reload() {

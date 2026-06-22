@@ -24,7 +24,11 @@ alacsony kockázatú első lépés.
   `MemoryConfiguration`-be) merge-eli, hogy a meglévő `getX("alrendszer.kulcs")` hívások változatlanul
   működjenek. Alapfájlokat a jarból `saveResource`-szal kell kicsomagolni első indításkor.
   *Kockázat:* közepes (a betöltő átírása); a kulcs-útvonalak megtarthatók, így a hívó kód nem változik.
-- **Alrendszerenkénti messages-fájlok (kérés).** Ugyanígy a `messages.yml` helyett `messages/` mappa:
+- ✅ **Alrendszerenkénti messages-fájlok — KÉSZ.** A 339 kulcs 12 `messages/<alrendszer>.yml` fájlba
+  szétbontva (currency/faction/job/market/pet/profession/quest/relic/spec/spell/system/world); a
+  `MessageManager` a `messages/` összes fájlját ÉS a `messages.yml` override-ot egyesíti (utóbbi nyer).
+  Python-ellenőrzött: a merge bájtra a teljes eredeti kulcskészletet adja. *(Eredeti terv lent.)*
+- **Eredeti terv — Alrendszerenkénti messages-fájlok.** A `messages.yml` helyett `messages/` mappa:
   `messages/currency.yml`, `messages/faction.yml`, `messages/spell.yml`, `messages/market.yml`,
   `messages/quest.yml`, `messages/pet.yml`, `messages/world-event.yml`, `messages/system.yml` …
   A `MessageManager`-t több-fájlossá tenni (a `messages.<root>` névteret a fájlnévhez kötve, vagy minden
