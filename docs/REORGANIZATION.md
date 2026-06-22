@@ -174,10 +174,22 @@ pont ezt a bővítést teszik kényelmessé.
    tette (a belső állapot statikus marad, ami singletonként korrekt — a `SpellStateListener` által
    használt statikus API-k, pl. `isHidden`/`shouldDodge`, érintetlenek). A listener mostantól a
    `SpellRegistry`-t iterálja, így új állapotos spell automatikusan takarítódik — nincs hardkódolt lista.
-10. 🔶 **Részben kész** — `commands/AbstractDispatchCommand` bázis létrehozva (map + diszpécs + help +
-    tab-complete egy helyen); a 3 registry-parancs (Currency/Job/Faction) rátért, mindegyik a
-    konstruktorára zsugorodott (~210 sor duplikáció megszűnt). A message-kulcsok pontosan megőrzöttek,
-    az IceSMPCore-hívások változatlanok. Hátra: a ~15 inline-switch parancs migrálása a bázisra.
+10. 🔶 **Részben kész** — `commands/AbstractDispatchCommand` bázis (map + diszpécs + help + tab-complete
+    egy helyen); a 3 registry-parancs (Currency/Job/Faction) + mostantól a **BankCommand** (4. migrált,
+    `commands/bank/` 3 subcommand + marker) rátért. A BankCommand bizonyíthatóan **bájt-azonos**: az
+    üres→help, az unknown default (`&cIsmeretlen alparancs: &f%s`) és a help-sorok a `usage()+description()`
+    rekonstrukciójával pontosan a régi inline defaultot adják; a tab-complete leképezett.
+    **A maradék ~14 inline parancs szándékosan NEM migrált — egyik sem bájt-azonos illeszkedés:**
+    - *Implicit default-akció* (üres argra nem help, hanem művelet): Market (browse), Pet (info),
+      Soul (balance), ExchangeBoard (place), Parkour (list), Spell (info), Events (season).
+    - *Admin-szűrt help* (admin-alparancsok csak adminnak látszanak a helpben — a bázis nem modellezi):
+      Profession, Quest, Spec.
+    - *Eltérő default-nyelv / elő-guard*: Relic (angol default szövegek a bázis magyar defaultja helyett,
+      a kulcsok hiányoznak a messages-ből; + `isEnabled()` elő-ellenőrzés).
+    - *Nem args[0]-diszpécs*: Sinner (player-first parse), Talent (2 alparancs if-else).
+    Ezeket a bázisba erőltetni user-facing szöveget/viselkedést változtatna (build nélkül nem
+    igazolható), vagy rosszabb kódot adna. Tiszta migrációjukhoz a bázis additív bővítése kellene
+    (opcionális default-subcommand + per-sub láthatósági predikátum), ami önálló, build-checkpointos lépés.
 
 **Nagyobb (megfontolandó):**
 11. 🔶 **Részben kész** — `storage/YamlStore.saveAtomic` egységes, konkurens-biztos (egyedi temp + atomikus
