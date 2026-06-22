@@ -126,6 +126,24 @@ Szabályok:
 - A `runDelayed` *retired-callbackjét* add meg, ha az állapotot vissza kell állítani akkor is, ha a
   task lejár, mielőtt lefutna (lásd `HideSpell` páncél-visszaállítás).
 
+### 4.1 Audit-állapot (baseline — ŐRIZD MEG)
+A teljes kódbázist átnéztük Folia-kompatibilitásra; **nulla sértés**. A bevált minták, amelyeket
+új kódnál is tartani kell:
+- **Nincs** legacy `Bukkit.getScheduler()` / `BukkitRunnable` / `runTask*` / nyers `Thread`/`Timer`/`Executor`.
+- **Nincs** szinkron `teleport(...)` — mindenhol `teleportAsync(...)`.
+- **Globális ismétlődő tickek** (`IceSMPCore`: world-events, HUD, pet, adó, gazdaság-esemény) csak
+  kockát dobnak / memóriabeli állapotot olvasnak; minden játékos-/entitás-munkára **hoppolnak**:
+  `player.getScheduler().run(...)` (HUD, vér-hold), `pet.getScheduler().run(...)` (pet-mutáció),
+  `anchor.getScheduler()` → `getRegionScheduler(location)` (world-boss / invázió mob-spawn).
+- **Spellek** a kasztoló játékos régió-szálán futnak, és lokálisan idéznek (`player.getWorld().spawn`),
+  az idézett entitás további léptetése annak saját ütemezőjén (`minion.getScheduler()`, `chicken.getScheduler()`).
+- **`getAsyncScheduler`** kizárólag IO-ra (debounce-olt mentés a `CurrencyManager`-ben) — **soha** entitásra.
+- **Kivétel — `disable()`:** leállításkor a player-cleanup *közvetlenül* fut (nem ütemezve), mert a
+  Folia ütemező a shutdown alatt már nem fogad új taskot; ez a szándékos best-effort minta.
+
+**Ökölszabály új kódhoz:** ha entitást/játékost/világot érintesz egy esemény-kezelőn KÍVÜLi
+kontextusból (tick, callback, másik entitás), előbb hopp az adott entitás/régió ütemezőjére.
+
 ---
 
 ## 5. Bővítési receptek
