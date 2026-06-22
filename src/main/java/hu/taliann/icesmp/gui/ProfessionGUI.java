@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.gui;
 
+import static hu.taliann.icesmp.gui.GuiUtil.accent;
+import static hu.taliann.icesmp.gui.GuiUtil.grey;
 import static hu.taliann.icesmp.gui.GuiUtil.label;
 
 import hu.taliann.icesmp.data.ProfessionCategory;
@@ -137,14 +139,6 @@ public final class ProfessionGUI {
 
     private static Component name(final Component display) {
         return display.decoration(TextDecoration.ITALIC, false);
-    }
-
-    private static Component accent(final String text) {
-        return Component.text(text, NamedTextColor.AQUA).decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false);
-    }
-
-    private static Component grey(final String text) {
-        return Component.text(text, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
     }
 
     private static Component click(final String text) {

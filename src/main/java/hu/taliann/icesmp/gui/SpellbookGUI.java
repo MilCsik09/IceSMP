@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.gui;
 
+import static hu.taliann.icesmp.gui.GuiUtil.grey;
+
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
@@ -179,10 +181,6 @@ public final class SpellbookGUI {
 
         final Material material = unlocked ? Material.ENCHANTED_BOOK : Material.BOOK;
         return GuiUtil.icon(material, name, lore, selected);
-    }
-
-    private static Component grey(final String text) {
-        return Component.text(text, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
     }
 
     private static Component stat(final String label, final String value) {

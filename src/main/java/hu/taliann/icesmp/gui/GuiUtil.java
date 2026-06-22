@@ -45,6 +45,16 @@ public final class GuiUtil {
         return Component.text(key + ": ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false).append(value);
     }
 
+    /** Bold aqua, non-italic accent text (section headers / highlights in the menus). */
+    public static Component accent(final String text) {
+        return Component.text(text, NamedTextColor.AQUA).decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false);
+    }
+
+    /** Plain grey, non-italic body text (lore detail lines in the menus). */
+    public static Component grey(final String text) {
+        return Component.text(text, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
+    }
+
     public static ItemStack icon(final Material material, final Component name, final List<Component> lore) {
         return icon(material, name, lore, false);
     }

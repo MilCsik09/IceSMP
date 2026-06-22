@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.gui;
 
+import static hu.taliann.icesmp.gui.GuiUtil.accent;
+import static hu.taliann.icesmp.gui.GuiUtil.grey;
 import static hu.taliann.icesmp.gui.GuiUtil.label;
 
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
@@ -215,14 +217,6 @@ public final class SpecGUI {
 
     private static Component none() {
         return Component.text("nincs", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
-    }
-
-    private static Component accent(final String text) {
-        return Component.text(text, NamedTextColor.AQUA).decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false);
-    }
-
-    private static Component grey(final String text) {
-        return Component.text(text, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
     }
 
     private static Component click(final String text) {
