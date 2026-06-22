@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -17,7 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-public final class JobManager {
+public final class JobManager implements PlayerStateCleanup {
 
     public static final int MAX_JOB_LEVEL = 50;
 

@@ -5,6 +5,7 @@ import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
@@ -39,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * class-specific sound. Owns the cast pipeline (cost check, cooldowns with PDC
  * persistence for cooldowns >= 60s) and the per-session spell state cleanup.
  */
-public final class AbilityCatalystListener implements Listener {
+public final class AbilityCatalystListener implements Listener, PlayerStateCleanup {
 
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;

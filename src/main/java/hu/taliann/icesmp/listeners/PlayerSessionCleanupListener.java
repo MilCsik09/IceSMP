@@ -11,6 +11,7 @@ import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.spells.ArmamentSpell;
 import hu.taliann.icesmp.spells.DoubleJumpSpell;
 import hu.taliann.icesmp.spells.HideSpell;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.spells.InnerFocusSpell;
 import hu.taliann.icesmp.spells.LuckyStarSpell;
 import org.bukkit.Bukkit;
@@ -20,17 +21,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.List;
 import java.util.UUID;
 
 public final class PlayerSessionCleanupListener implements Listener {
 
-    private final AbilityCatalystListener abilityCatalystListener;
-    private final JobManager jobManager;
-    private final CurrencyManager currencyManager;
-    private final FactionManager factionManager;
-    private final MetelytepoManager metelytepoManager;
-    private final RelicManager relicManager;
-    private final CraftingRestrictionManager craftingRestrictionManager;
+    /** Every component holding per-player session state — cleaned in one uniform pass. */
+    private final List<PlayerStateCleanup> stateOwners;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -39,13 +36,9 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final MetelytepoManager metelytepoManager,
                                         final RelicManager relicManager,
                                         final CraftingRestrictionManager craftingRestrictionManager) {
-        this.abilityCatalystListener = abilityCatalystListener;
-        this.jobManager = jobManager;
-        this.currencyManager = currencyManager;
-        this.factionManager = factionManager;
-        this.metelytepoManager = metelytepoManager;
-        this.relicManager = relicManager;
-        this.craftingRestrictionManager = craftingRestrictionManager;
+        // Register every stateful component here; adding a new one needs only this line + the interface.
+        this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
+                metelytepoManager, relicManager, craftingRestrictionManager);
     }
 
     @EventHandler
@@ -61,14 +54,11 @@ public final class PlayerSessionCleanupListener implements Listener {
     public void cleanupPlayerState(final UUID playerId) {
         final Player player = Bukkit.getPlayer(playerId);
 
-        abilityCatalystListener.clearPlayerState(playerId);
-        jobManager.clearPlayerState(playerId);
-        currencyManager.clearPlayerState(playerId);
-        factionManager.clearPlayerState(playerId);
-        metelytepoManager.clearPlayerState(playerId);
-        relicManager.clearPlayerState(playerId);
-        craftingRestrictionManager.clearPlayerState(playerId);
+        for (final PlayerStateCleanup owner : stateOwners) {
+            owner.clearPlayerState(playerId);
+        }
 
+        // Spells still hold static per-player state (no registered instance yet — see REORGANIZATION #6).
         HideSpell.clearPlayerState(playerId);
         LuckyStarSpell.clearPlayerState(playerId);
         ArmamentSpell.clearPlayerState(playerId);

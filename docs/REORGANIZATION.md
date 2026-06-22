@@ -154,7 +154,10 @@ pont ezt a bővítést teszik kényelmessé.
 7. ✅ **Kész** — a 6 élő `MessageManager` getter migrálva a generikus `getComponent`-re (egyetlen
    fogyasztó: `MetelytepoRelicListener`), majd törölve. A legacy bespoke API megszűnt.
 8. JobGUI/SkillTreeGUI a `GuiUtil`-ra; `PaginatedGui` bázis Market/Spellbook-hoz.
-9. `PlayerStateCleanup` interfész + lista-iteráció.
+9. 🔶 **Részben kész** — `session/PlayerStateCleanup` interfész létrehozva; a 7 állapotos manager/listener
+   implementálja, a `PlayerSessionCleanupListener` egy regisztrált `List<PlayerStateCleanup>`-ot iterál
+   (a konstruktor-szignatúra változatlan). Hátra: az 5 statikus spell-cleanup instance-szintűvé tétele,
+   hogy azok is a listába kerüljenek (a static→instance migráció build-checkpointot igényel).
 10. `AbstractDispatchCommand` bázis; inline parancsok migrálása egyenként.
 
 **Nagyobb (megfontolandó):**

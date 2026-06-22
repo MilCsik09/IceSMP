@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+
 import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.items.RelicItemFactory;
@@ -36,7 +38,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public final class RelicManager {
+public final class RelicManager implements PlayerStateCleanup {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

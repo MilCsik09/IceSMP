@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+
 import hu.taliann.icesmp.data.CraftingRule;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionType;
@@ -23,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * against crafting and smithing results. Every requirement present on a rule
  * (class and/or profession) must be satisfied.
  */
-public final class CraftingRestrictionManager {
+public final class CraftingRestrictionManager implements PlayerStateCleanup {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

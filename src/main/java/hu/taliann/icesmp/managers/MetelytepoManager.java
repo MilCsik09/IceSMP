@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -24,7 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class MetelytepoManager {
+public final class MetelytepoManager implements PlayerStateCleanup {
 
     private static final String RELIC_ID = "metelytepo";
     public static final String ABILITY_JUSTICE = "justice";
