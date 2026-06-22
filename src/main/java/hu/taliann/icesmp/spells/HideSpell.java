@@ -92,7 +92,8 @@ public final class HideSpell extends BaseSpell {
         clearHide(playerId);
     }
 
-    public static void clearPlayerState(final UUID playerId) {
+    @Override
+    public void clearPlayerState(final UUID playerId) {
         clearHide(playerId);
     }
 }

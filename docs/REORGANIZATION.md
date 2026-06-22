@@ -101,18 +101,14 @@ alacsony kockázatú első lépés.
   load/save lista `stores.forEach(...)`-cá egyszerűsödik.
 - **Első lépés:** `registerSpells()` kiemelése a konstruktorból + sorrend-indok komment (nulla kockázat).
 
-### 6. Player-state cleanup
-- **Jelen (frissítve):** `PlayerSessionCleanupListener` kézi listán hív `clearPlayerState`-et 7 manageren +
-  **5 statikus** spell-cleanupon (HideSpell, LuckyStarSpell, ArmamentSpell, InnerFocusSpell, DoubleJumpSpell).
-  *(A `RootSpell` no-op cleanupja már törölve — lásd #4.)* A cleanup 4 listener közt szórt
-  (PlayerSessionCleanupListener, HudListener, TerritoryListener, ParkourListener).
-- **Kockázat:** új állapotos spell/manager hozzáadásakor könnyű elfelejteni → csendes leak (jelenleg
-  nem szivárog semmi, az 5 wired spell pont az 5 állapotos — strukturális/jövőbeli rizikó).
-- **Cél:** `PlayerStateCleanup` interfész; minden állapotos egység implementálja + egy listába regisztrál,
-  amit a listener iterál. A spellek állapota legyen instance-szintű (a `SpellRegistry`-ben már singletonok),
-  így `spellRegistry.getAll().forEach(s -> s.clearPlayerState(id))`.
-- **Első lépés:** `PlayerStateCleanup` interfész a 7 már bekötött managernek; a listener egy regisztrált
-  listát iterál.
+### 6. Player-state cleanup ✅ KÉSZ
+- **Eredmény:** a `PlayerSessionCleanupListener` mostantól (a) egy regisztrált `List<PlayerStateCleanup>`-ot
+  iterál a 7 állapotos manageren, és (b) a `SpellRegistry.getAll()`-t iterálva minden spell saját
+  `clearPlayerState(UUID)`-jét hívja (a `Spell` interfész default no-opja az állapotmentes többségnek).
+  Az 5 állapotos spell `@Override`-dal takarít. **Nincs többé hardkódolt cleanup-lista** — új állapotos
+  manager (1 sor + interfész) vagy spell (1 `@Override`) automatikusan bekerül.
+- **Megjegyzés:** a spellek belső állapot-mapjei egyelőre statikusak (a `SpellStateListener` statikus
+  API-i miatt), de a registry singletonjaiként ez korrekt; a teljes instance-állapot a #7/#13 alatt opcionális.
 
 ### 7. Egyéb
 - **Statikus-állapotú spellek vs. instance-managerek** (a 6. pont gyökéroka) — a 6 legacy spell migrálása
@@ -171,10 +167,13 @@ pont ezt a bővítést teszik kényelmessé.
    a `JobGUI` saját `createFiller`-e `BLACK_STAINED_GLASS_PANE`-t használ (a `GuiUtil.filler` szürkét) —
    eltérő szín, nem cserélhető; a back/katalizátor/no-class gombok flag-készlete eltér (nincs
    `HIDE_ENCHANTS`), ezért bespoke maradnak. **Hátra:** `PaginatedGui` bázis Market/Spellbook-hoz.
-9. 🔶 **Részben kész** — `session/PlayerStateCleanup` interfész létrehozva; a 7 állapotos manager/listener
-   implementálja, a `PlayerSessionCleanupListener` egy regisztrált `List<PlayerStateCleanup>`-ot iterál
-   (a konstruktor-szignatúra változatlan). Hátra: az 5 statikus spell-cleanup instance-szintűvé tétele,
-   hogy azok is a listába kerüljenek (a static→instance migráció build-checkpointot igényel).
+9. ✅ **Kész** — `session/PlayerStateCleanup` interfész; a 7 állapotos manager/listener implementálja, a
+   `PlayerSessionCleanupListener` egy regisztrált `List<PlayerStateCleanup>`-ot iterál. **Az 5 statikus
+   spell-cleanup is megszűnt:** a `Spell` interfész kapott egy `clearPlayerState(UUID)` default no-opot,
+   az 5 állapotos spell (Hide/LuckyStar/Armament/InnerFocus/DoubleJump) `@Override` instance-metódussá
+   tette (a belső állapot statikus marad, ami singletonként korrekt — a `SpellStateListener` által
+   használt statikus API-k, pl. `isHidden`/`shouldDodge`, érintetlenek). A listener mostantól a
+   `SpellRegistry`-t iterálja, így új állapotos spell automatikusan takarítódik — nincs hardkódolt lista.
 10. 🔶 **Részben kész** — `commands/AbstractDispatchCommand` bázis létrehozva (map + diszpécs + help +
     tab-complete egy helyen); a 3 registry-parancs (Currency/Job/Faction) rátért, mindegyik a
     konstruktorára zsugorodott (~210 sor duplikáció megszűnt). A message-kulcsok pontosan megőrzöttek,

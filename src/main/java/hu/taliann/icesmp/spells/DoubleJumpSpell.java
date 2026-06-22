@@ -45,7 +45,8 @@ public final class DoubleJumpSpell extends BaseSpell {
         usedDoubleJump.remove(playerId);
     }
 
-    public static void clearPlayerState(final UUID playerId) {
+    @Override
+    public void clearPlayerState(final UUID playerId) {
         clearDoubleJump(playerId);
     }
 }

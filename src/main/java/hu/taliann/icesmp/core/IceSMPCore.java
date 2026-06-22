@@ -284,7 +284,8 @@ public final class IceSMPCore {
                 factionManager,
                 metelytepoManager,
                 relicManager,
-                craftingRestrictionManager
+                craftingRestrictionManager,
+                spellRegistry
         );
 
         registerSpells();

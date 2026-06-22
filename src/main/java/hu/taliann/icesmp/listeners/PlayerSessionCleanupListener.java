@@ -8,12 +8,9 @@ import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.RelicManager;
-import hu.taliann.icesmp.spells.ArmamentSpell;
-import hu.taliann.icesmp.spells.DoubleJumpSpell;
-import hu.taliann.icesmp.spells.HideSpell;
+import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
-import hu.taliann.icesmp.spells.InnerFocusSpell;
-import hu.taliann.icesmp.spells.LuckyStarSpell;
+import hu.taliann.icesmp.spells.Spell;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -28,6 +25,8 @@ public final class PlayerSessionCleanupListener implements Listener {
 
     /** Every component holding per-player session state — cleaned in one uniform pass. */
     private final List<PlayerStateCleanup> stateOwners;
+    /** Spells are cleaned via the registry, so a new stateful spell needs no change here. */
+    private final SpellRegistry spellRegistry;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -35,10 +34,12 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final FactionManager factionManager,
                                         final MetelytepoManager metelytepoManager,
                                         final RelicManager relicManager,
-                                        final CraftingRestrictionManager craftingRestrictionManager) {
+                                        final CraftingRestrictionManager craftingRestrictionManager,
+                                        final SpellRegistry spellRegistry) {
         // Register every stateful component here; adding a new one needs only this line + the interface.
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 metelytepoManager, relicManager, craftingRestrictionManager);
+        this.spellRegistry = spellRegistry;
     }
 
     @EventHandler
@@ -58,12 +59,11 @@ public final class PlayerSessionCleanupListener implements Listener {
             owner.clearPlayerState(playerId);
         }
 
-        // Spells still hold static per-player state (no registered instance yet — see REORGANIZATION #6).
-        HideSpell.clearPlayerState(playerId);
-        LuckyStarSpell.clearPlayerState(playerId);
-        ArmamentSpell.clearPlayerState(playerId);
-        InnerFocusSpell.clearPlayerState(playerId);
-        DoubleJumpSpell.clearPlayerState(playerId);
+        // Every registered spell clears its own per-player state (no-op for the stateless majority),
+        // so a new stateful spell is cleaned up automatically — no edit needed here.
+        for (final Spell spell : spellRegistry.getAll()) {
+            spell.clearPlayerState(playerId);
+        }
 
         if (player != null && (player.getOpenInventory().getTopInventory().getHolder() instanceof JobGUIHolder
                 || player.getOpenInventory().getTopInventory().getHolder() instanceof ProfileHolder)) {

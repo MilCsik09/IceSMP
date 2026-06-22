@@ -3,6 +3,8 @@ package hu.taliann.icesmp.spells;
 import hu.taliann.icesmp.utils.ExperienceUtil;
 import org.bukkit.entity.Player;
 
+import java.util.UUID;
+
 public interface Spell {
 
     String getId();
@@ -88,6 +90,17 @@ public interface Spell {
      */
     default java.util.List<String> describe() {
         return java.util.List.of();
+    }
+
+    /**
+     * Clears any per-player session state this spell holds (effects, restore-snapshots,
+     * cooldown flags). Called for every registered spell on logout/kick, so the session
+     * cleanup no longer hardcodes the stateful spells — a new stateful spell only needs
+     * to override this. The default is a no-op for the (majority) stateless spells.
+     *
+     * @param playerId the player whose state to clear
+     */
+    default void clearPlayerState(final UUID playerId) {
     }
 }
 

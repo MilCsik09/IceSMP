@@ -131,7 +131,8 @@ public final class ArmamentSpell extends BaseSpell {
         ACTIVE_UNTIL.remove(playerId);
     }
 
-    public static void clearPlayerState(final UUID playerId) {
+    @Override
+    public void clearPlayerState(final UUID playerId) {
         final Player player = Bukkit.getPlayer(playerId);
         if (player != null) {
             cleanup(player);
