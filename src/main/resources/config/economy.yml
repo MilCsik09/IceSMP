@@ -1,0 +1,68 @@
+# IceSMP konfiguráció — economy (a ConfigManager az összes config/*.yml-t betölti)
+currency:
+  default-type: "NEUTRAL"
+  symbol: "⛃"
+  default-balance: 0
+  # Fix árfolyam, csak akkor érvényes, ha a dynamic-exchange ki van kapcsolva.
+  exchange-rate: 1.0
+  exchange-fee-percent: 0.0
+  # ===== Dinamikus, kínálat-alapú árfolyam =====
+  # Egy valuta értéke: base-value * clamp((reference-supply / kínálat)^elasticity, min, max).
+  # Minél több van egy valutából a szerveren, annál kevesebbet ér a többihez képest.
+  # ===== Lélekkő-drop: Sötét valuta magas szintű skálázott mobokból =====
+  soul-drop:
+    enabled: true
+    min-mob-level: 3
+    chance-percent: 25
+    max-amount: 5
+  # ===== Heti gazdasági esemény: véletlen kereslet-sokk =====
+  # Időnként egy véletlen valuta base-value-ja átmenetileg megugrik —
+  # kereskedési lehetőség a figyelmes játékosoknak.
+  economy-event:
+    enabled: true
+    check-interval-minutes: 60
+    chance-percent: 25
+    duration-hours: 48
+    min-multiplier: 1.2
+    max-multiplier: 1.6
+  dynamic-exchange:
+    enabled: true
+    reference-supply: 10000
+    elasticity: 0.5
+    min-multiplier: 0.25
+    max-multiplier: 4.0
+    base-values:
+      RED: 1.0
+      BLUE: 1.0
+      NEUTRAL: 1.0
+      DARK: 1.5
+  item:
+    material: "PAPER"
+    default-model-data: 1000
+    display-name: "&6%currency% Token"
+    types:
+      RED:
+        model-data: 1001
+        display-name: "&cPiros Token"
+      BLUE:
+        model-data: 1002
+        display-name: "&9Kék Token"
+      NEUTRAL:
+        model-data: 1003
+        display-name: "&5Semleges Token"
+      DARK:
+        model-data: 1004
+        display-name: "&8Sötét Token"
+
+# ===== Árfolyam-hologramok =====
+# A /exchangeboard place paranccsal lerakott TextDisplay táblák a valuták
+# élő, kínálat-alapú értékét mutatják, és a világesemény-tick frissíti őket.
+exchange-board:
+  enabled: true
+
+# ===== Piactér =====
+# Eladás: /market sell <ár> [valuta] (a kézben tartott tárgy);
+# vásárlás a /market GUI-ból banki egyenlegből. A fee-percent elég (money sink).
+market:
+  max-listings-per-player: 5
+  fee-percent: 10

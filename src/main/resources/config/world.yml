@@ -1,0 +1,83 @@
+# IceSMP konfiguráció — world (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Távolság-alapú mob szintezés =====
+# A spawn ponttól távolodva a mobok erősödnek: szint = távolság / blocks-per-level.
+mob-scaling:
+  enabled: true
+  blocks-per-level: 1000
+  max-level: 10
+  health-per-level: 2.0
+  damage-per-level: 1.0
+  # Csak ellenséges (Monster) mobok skálázódjanak.
+  hostile-only: true
+  # Ezekkel az okokkal spawnoló mobok nem skálázódnak (pl. spawner farmok).
+  ignored-spawn-reasons:
+    - "SPAWNER"
+    - "CUSTOM"
+    - "COMMAND"
+  name:
+    enabled: true
+    # A nevtabla mindig latszik-e? A vanilla "mindig lathato" nevtablak
+    # FALAKON AT es nagyon TAVOLROL is renderelodnek (zavaro lehet). Ha false,
+    # a szint-nevtabla csak akkor jelenik meg, amikor a jatekos RANEZ a mobra
+    # (kozelrol, takaras nelkul) - ez a vanilla "hover" viselkedes.
+    visible: false
+    prefix: "&7[Lvl %level%] "
+    color: "WHITE"
+
+# ===== Világesemények (7. szekció) =====
+# Egy közös időzítő (check-interval-seconds) hajtja a vérholdat, a világbosst
+# és a szezon-lejáratot; mindegyik a saját enabled kapcsolójával vezérelhető.
+world-events:
+  check-interval-seconds: 60
+  # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
+  blood-moon:
+    enabled: true
+    chance-percent: 15
+    bonus-mob-levels: 2
+    soul-drop-multiplier: 2.0
+    # Admin /events bloodmoon start esetén ennyi percig tart (a napciklustól függetlenül).
+    force-duration-minutes: 10
+  # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
+  world-boss:
+    enabled: true
+    check-interval-minutes: 90
+    chance-percent: 35
+    lifetime-minutes: 20
+    entity-type: "RAVAGER"
+    display-name: "&4&l☠ A Gyűrűk Őre &c[Világboss]"
+    health: 300.0
+    damage-multiplier: 2.0
+    treasury-reward: 300.0
+    season-points: 10
+    buff-minutes: 10
+  # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).
+  # A szörnyek skálázottak (XP + lélekkő-eséllyel), admin: /events invasion.
+  invasion:
+    enabled: true
+    check-interval-minutes: 75
+    chance-percent: 30
+    mob-count: 8
+    mob-level: 4
+    radius: 8.0
+    entity-type: "ZOMBIE"
+  # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
+  season:
+    enabled: true
+    length-days: 60
+    treasury-reward: 1000.0
+  # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
+  intro:
+    enabled: true
+    stagger-seconds: 4
+    lines:
+      - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
+      - "&6Válassz frakciót||&7Piros, Kék, Semleges vagy Sötét"
+      - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
+    # Opcionális filmszerű kameraút (ALAPBÓL KIKAPCSOLVA). Bekapcsoláskor a játékost
+    # rövid időre spectator módba teszi, és végigviszi a waypointokon, majd visszaállítja
+    # a gamemode-ját (újrabelépéskor is önjavít, ha megszakadna). Waypoint formátum:
+    # "x,y,z" vagy "x,y,z,yaw,pitch" vagy "világ,x,y,z,yaw,pitch".
+    cinematic:
+      enabled: false
+      point-seconds: 3
+      waypoints: []

@@ -1,8 +1,11 @@
 package hu.taliann.icesmp.managers;
 
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -10,6 +13,12 @@ import java.util.List;
  * Provides centralized access to configuration with fallback defaults.
  */
 public final class ConfigManager {
+
+    /** Bundled per-subsystem config files under config/ (extracted on first run). */
+    private static final String[] CONFIG_FILES = {
+            "general", "economy", "factions", "classes", "spells",
+            "professions", "quests", "world", "relics", "pets", "crafting"
+    };
 
     private final JavaPlugin plugin;
     private FileConfiguration configuration;
@@ -24,13 +33,45 @@ public final class ConfigManager {
     }
 
     /**
-     * Loads the configuration from disk.
+     * Loads configuration from the per-subsystem files in {@code config/} plus the optional
+     * {@code config.yml} override, merging them into one keyspace so the existing
+     * {@code getX("subsystem.key")} paths keep working unchanged. The per-subsystem files are the
+     * defaults; {@code config.yml} is loaded LAST so an admin can override any key there.
      */
     public void load() {
+        final YamlConfiguration merged = new YamlConfiguration();
+
+        // Per-subsystem defaults: config/<subsystem>.yml. Extract the bundled set on first run,
+        // then merge every .yml present (deterministic order).
+        final File dir = new File(plugin.getDataFolder(), "config");
+        dir.mkdirs();
+        for (final String name : CONFIG_FILES) {
+            if (!new File(dir, name + ".yml").exists()) {
+                plugin.saveResource("config/" + name + ".yml", false);
+            }
+        }
+        final File[] files = dir.listFiles((directory, fileName) -> fileName.endsWith(".yml"));
+        if (files != null) {
+            java.util.Arrays.sort(files);
+            for (final File file : files) {
+                mergeInto(merged, YamlConfiguration.loadConfiguration(file));
+            }
+        }
+
+        // Optional main config.yml override (loaded last so its keys win).
         plugin.reloadConfig();
-        configuration = plugin.getConfig();
-        configuration.options().copyDefaults(true);
-        plugin.saveConfig();
+        mergeInto(merged, plugin.getConfig());
+
+        this.configuration = merged;
+    }
+
+    /** Copies every leaf (non-section) key from {@code source} into {@code target}. */
+    private void mergeInto(final YamlConfiguration target, final ConfigurationSection source) {
+        for (final String key : source.getKeys(true)) {
+            if (!source.isConfigurationSection(key)) {
+                target.set(key, source.get(key));
+            }
+        }
     }
 
     public void reload() {

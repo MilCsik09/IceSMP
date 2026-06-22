@@ -1,0 +1,85 @@
+# IceSMP konfiguráció — factions (a ConfigManager az összes config/*.yml-t betölti)
+factions:
+  red:
+    display-name: "Piros"
+  blue:
+    display-name: "Kék"
+  neutral:
+    display-name: "Semleges"
+  dark:
+    display-name: "Sötét"
+  # Passzív frakció bónuszok:
+  # RED: tűz-immunitás | BLUE: fagy-immunitás + lassabb éhség
+  # NEUTRAL: lopakodás közben láthatatlanság, nem-ellenséges mobok békések
+  # DARK: wither-immunitás, élőhalottak nem támadják
+  passives:
+    enabled: true
+    blue-hunger-slow-chance: 0.5
+  # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
+  # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
+  # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  tax:
+    enabled: true
+    interval-minutes: 60
+    rate-percent: 2.0
+    # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
+    max-rate-percent: 10.0
+    exempt:
+      - "NEUTRAL"
+  # ===== Bűn-számláló és száműzetés =====
+  # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
+  # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
+  sins:
+    murder-counts: true
+    exile-threshold: 4
+  # ===== Királyok és választás =====
+  # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
+  # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.
+  kings:
+    min-votes: 2
+    term-days: 7
+    excluded:
+      - "NEUTRAL"
+  # ===== Raid =====
+  # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
+  # A győztes (több ölés) a vesztes kasszájának spoils-percent %-át zsákmányolja.
+  raid:
+    duration-minutes: 15
+    entry-cost: 200
+    spoils-percent: 20
+    season-points: 5
+    # Győztes-buff a győztes frakció online tagjainak (0 perc = kikapcsolva).
+    winner-buff-minutes: 30
+    winner-buff-strength: 0
+    winner-buff-regen: 0
+    protected:
+      - "NEUTRAL"
+    # Ostromgép (craftolható TNT_MINECART): csak raid alatt sül el, terep-barát robbanás.
+    siege:
+      range: 40.0
+      power: 4.0
+  # ===== Frakció-reputáció =====
+  # Statikus viszonyok (a raid alatt a hadviselők automatikusan ENEMY-k).
+  # A viszony a piaci árat módosítja: ellenségtől drágább, szövetségestől olcsóbb.
+  relations:
+    enemy-market-surcharge-percent: 25.0
+    ally-market-discount-percent: 10.0
+    red:
+      enemies:
+        - "BLUE"
+    blue:
+      enemies:
+        - "RED"
+    dark:
+      enemies: []
+      allies: []
+
+# ===== Frakció területek =====
+territory:
+  notify:
+    # Action bar üzenet területhatár átlépésekor.
+    enabled: true
+  protection:
+    # Ha true, idegen frakció területén nem lehet építeni/bontani
+    # (bypass: icesmp.admin.territory.bypass jogosultság).
+    enabled: false

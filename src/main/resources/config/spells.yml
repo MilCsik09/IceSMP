@@ -1,0 +1,37 @@
+# IceSMP konfiguráció — spells (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Talentek =====
+# Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár az összes szakma
+# szintjéből termel pontot (points-per-levels szintenként 1 pont).
+# Effektek: max-health, movement-speed, attack-damage (attribútum módosítók),
+# class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
+# ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
+spells:
+  # Mesterség: frakcióvalutáért fejleszthető rang, ami csökkenti a cooldownt.
+  mastery:
+    enabled: true
+    max-rank: 5
+    cooldown-reduction-per-rank: 0.08   # rangonként -8% cooldown
+    min-cooldown-multiplier: 0.5        # max 50% csökkenés
+    upgrade-base-cost: 50               # a köv. rang ára = base * (jelenlegi rang + 1)
+  # Kombók: ha az adott időablakon belül a 'first' után a 'second' spellt sütöd el,
+  # a második gyorsabban épül fel (cooldown-visszatérítés) + látvány.
+  combos:
+    enabled: true
+    window-seconds: 4
+    bonus-cooldown-refund-percent: 40
+    pairs:
+      frost-nova:
+        first: "frost_touch"
+        second: "arcane_nova"
+      slow-finish:
+        first: "hamstring"
+        second: "garrote"
+      trap-volley:
+        first: "snare"
+        second: "arrow_storm"
+      shout-spin:
+        first: "battle_shout"
+        second: "whirlwind"
+      plague-spread:
+        first: "toxin_dart"
+        second: "contagion"

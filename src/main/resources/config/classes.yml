@@ -1,0 +1,355 @@
+# IceSMP konfiguráció — classes (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Kasztok: progresszió és szint-alapú skill feloldás =====
+# Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.
+# A spell-unlocks térkép szerint a kaszt adott szintjén a varázslat automatikusan feloldódik.
+classes:
+  xp:
+    hostile-only: true
+    # Rebalansz: a spec-spellek a 25-45. szinten oldódnak fel, ezért a leveling
+    # elérhető tempójú legyen. ~10-15 XP/ölés (skálázott mobokra több).
+    per-kill: 10
+    per-mob-level: 3
+    secondary-share-percent: 50
+  # WoW-szerű progresszív szintgörbe: az n. szintlépés ára base-xp + (n-1) * increment.
+  # Laposabb görbe, hogy a 25. (spec) és a 45. (utolsó spec-spell) szint reális grindel elérhető legyen.
+  leveling:
+    base-xp: 60
+    increment-per-level: 10
+  specialization:
+    # Az elsődleges kaszt ezen a szinten specializálódhat (/spec choose).
+    required-level: 25
+  wizard:
+    spell-unlocks:
+      wisplight: 2
+      mana_dart: 3
+      root: 5
+      frost_touch: 7
+      arcane_shield: 9
+      confusion: 10
+      blink: 12
+      rain_dance: 15
+      arcane_nova: 18
+      gravity_well: 21
+  warrior:
+    spell-unlocks:
+      battle_shout: 3
+      armament: 5
+      heroic_leap: 7
+      pommel_strike: 9
+      inner_focus: 10
+      second_wind: 12
+      gust: 15
+      whirlwind: 18
+      iron_skin: 20
+      intimidate: 22
+  archer:
+    spell-unlocks:
+      hunters_mark: 2
+      eagle_eye: 3
+      disengage: 5
+      multishot: 8
+      piercing_bolt: 10
+      snare: 12
+      double_jump: 15
+      camouflage: 17
+      arrow_storm: 20
+      swift_steps: 22
+  assassin:
+    spell-unlocks:
+      dagger_throw: 2
+      adrenaline: 4
+      shadowstep: 5
+      hamstring: 8
+      blackout: 10
+      smoke_bomb: 12
+      evasion: 15
+      garrote: 18
+      shadow_dash: 20
+      death_mark: 24
+
+# ===== Specializációk =====
+# A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
+# örök bűnös (dark pact) jelöléssel választható. A spec-spellek a kaszt
+# szintjéhez kötve oldódnak fel.
+specializations:
+  # A /spec respec ára a játékos saját frakcióvalutájában (banki egyenlegből).
+  respec-cost: 100
+  elementalist:
+    spell-unlocks:
+      sun_dance: 25
+      fireball: 26
+      frost_nova: 28
+      thunder_strike: 30
+      lucky_star: 30
+      ember_storm: 33
+      riptide_pull: 36
+      stone_skin: 39
+      gale_burst: 42
+      elemental_overload: 45
+  necromancer:
+    # A Nekromanta beavatása quest-hez kötött (sötét rituálé a romvárosban).
+    required-quest: "necromancer_initiation"
+    spell-unlocks:
+      life_drain: 25
+      grave_grasp: 26
+      soul_siphon: 28
+      bone_chill: 30
+      dread_aura: 32
+      bone_spear: 34
+      plague_touch: 36
+      raise_horde: 38
+      death_pact: 39
+      wraith_form: 42
+      bone_archers: 44
+      soul_harvest: 45
+  berserker:
+    spell-unlocks:
+      feast: 25
+      rage: 26
+      reckless_swing: 27
+      blood_frenzy: 29
+      ground_slam: 32
+      roar: 34
+      unstoppable: 37
+      savage_leap: 39
+      bloodbath: 42
+      berserk: 45
+  guardian:
+    spell-unlocks:
+      bulwark: 25
+      taunt: 26
+      fortify: 27
+      shield_wall: 29
+      healing_word: 32
+      iron_bastion: 34
+      shield_charge: 37
+      aegis: 39
+      retribution: 42
+      last_stand: 45
+  sharpshooter:
+    spell-unlocks:
+      featherfoot: 25
+      deadeye: 26
+      headshot: 27
+      double_tap: 29
+      flare: 32
+      kneecap: 34
+      high_perch: 37
+      perfect_focus: 39
+      spectral_volley: 42
+      masterful_shot: 45
+  beast_master:
+    spell-unlocks:
+      friendship: 25
+      wolf_call: 26
+      bee_swarm: 28
+      angry_chicken: 30
+      primal_bond: 32
+      thick_hide: 34
+      panda_guard: 35
+      predator_senses: 37
+      stampede: 39
+      falcon_strike: 42
+      wild_pack: 43
+      king_of_beasts: 45
+  poisoner:
+    spell-unlocks:
+      venom_strike: 25
+      toxin_dart: 26
+      acid_splash: 27
+      numbing_agent: 29
+      antidote: 32
+      contagion: 34
+      paralytic_strike: 37
+      toxic_cloud: 39
+      debilitating_poison: 42
+      deathcap: 45
+  phantom:
+    spell-unlocks:
+      hide: 25
+      ghost_step: 26
+      phase_blink: 27
+      haunt: 29
+      terror: 32
+      cold_spot: 34
+      ethereal_form: 37
+      phantom_grip: 39
+      dread_whisper: 42
+      spectre: 45
+
+# WoW-szerű kötések: requires-job / requires-spec / requires-profession —
+# csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
+# Respec után a spec-talentek pontjai automatikusan visszatérülnek.
+talents:
+  class:
+    points-per-levels: 5
+    # Talent-FA: a 'tier' adja a sort (1 = felső sor), a 'requires-talent' a
+    # szülő-talentet, amibe előbb pontot kell tenni (rang > 0), hogy a gyerek
+    # feloldódjon. Így a fa felülről lefelé épül, ágakra bontva.
+    definitions:
+      # --- 1. szint: általános kaszt-talentek (mindenki, nincs feltétel) ---
+      vitality:
+        display-name: "Életerő"
+        tier: 1
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 5
+      swiftness:
+        display-name: "Fürgeség"
+        tier: 1
+        effect: "movement-speed"
+        per-rank: 0.005
+        max-rank: 5
+      power:
+        display-name: "Erő"
+        tier: 1
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 5
+      scholar:
+        display-name: "Tudásszomj"
+        tier: 1
+        effect: "class-xp-bonus"
+        per-rank: 5.0
+        max-rank: 4
+      # --- 2. szint: kaszt-kötött talentek (szülő-talentet igényelnek) ---
+      weapon_mastery:
+        display-name: "Fegyvermesteri Fokozat"
+        tier: 2
+        requires-job: "warrior"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      fleet_hunter:
+        display-name: "Fürge Vadász"
+        tier: 2
+        requires-job: "archer"
+        requires-talent: "swiftness"
+        effect: "movement-speed"
+        per-rank: 0.005
+        max-rank: 3
+      # --- 3. szint: specializáció-kötött talentek (1 / spec, szülő + spec kell) ---
+      elemental_attunement:
+        display-name: "Elemi Ráhangolódás"
+        tier: 3
+        requires-spec: "elementalist"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      soul_pact:
+        display-name: "Lélekpaktum"
+        tier: 3
+        requires-spec: "necromancer"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      brutality:
+        display-name: "Brutalitás"
+        tier: 3
+        requires-spec: "berserker"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 1.0
+        max-rank: 3
+      stalwart:
+        display-name: "Rendíthetetlen"
+        tier: 3
+        requires-spec: "guardian"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      fleetfoot:
+        display-name: "Szélvész Léptek"
+        tier: 3
+        requires-spec: "sharpshooter"
+        requires-talent: "swiftness"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
+      pack_leader:
+        display-name: "Falkavezér"
+        tier: 3
+        requires-spec: "beast_master"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      viper_reflexes:
+        display-name: "Vipera Reflexek"
+        tier: 3
+        requires-spec: "poisoner"
+        requires-talent: "swiftness"
+        effect: "movement-speed"
+        per-rank: 0.006
+        max-rank: 4
+      ghostwalk:
+        display-name: "Kísértetjárás"
+        tier: 3
+        requires-spec: "phantom"
+        requires-talent: "swiftness"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
+      # --- 2. szint: EGYMÁST KIZÁRÓ ágválasztás (csak az egyik vehető fel) ---
+      juggernaut:
+        display-name: "Behemót"
+        tier: 2
+        requires-talent: "vitality"
+        excludes: ["warlord"]
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      warlord:
+        display-name: "Hadúr"
+        tier: 2
+        requires-talent: "power"
+        excludes: ["juggernaut"]
+        effect: "attack-damage"
+        per-rank: 1.0
+        max-rank: 3
+      # --- CSÚCS-TALENT (capstone): N elköltött pont után, AKTÍV képességet ad ---
+      ascendant:
+        display-name: "Felemelkedés"
+        tier: 3
+        requires-spent: 10
+        grants-spell: "talent_surge"
+        effect: "max-health"
+        per-rank: 6.0
+        max-rank: 1
+  profession:
+    points-per-levels: 10
+    definitions:
+      # --- 1. szint: általános szakma-talentek ---
+      diligence:
+        display-name: "Szorgalom"
+        tier: 1
+        effect: "profession-xp-bonus"
+        per-rank: 10.0
+        max-rank: 5
+      vigor:
+        display-name: "Kitartás"
+        tier: 1
+        effect: "max-health"
+        per-rank: 1.0
+        max-rank: 3
+      # --- 2. szint: szakma-kötött talentek (szülő + szakma kell) ---
+      miners_endurance:
+        display-name: "Bányász Állóképesség"
+        tier: 2
+        requires-profession: "miner"
+        requires-talent: "vigor"
+        effect: "max-health"
+        per-rank: 1.0
+        max-rank: 2
+      arcane_insight:
+        display-name: "Arkán Belátás"
+        tier: 2
+        requires-profession: "enchanter"
+        requires-talent: "diligence"
+        effect: "class-xp-bonus"
+        per-rank: 5.0
+        max-rank: 2

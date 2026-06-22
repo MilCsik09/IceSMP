@@ -14,7 +14,12 @@ alacsony kockázatú első lépés.
   kizárólag a `messages.yml`-ből olvas.
 
 ## Config — hátralévő (alacsony kockázat)
-- **Alrendszerenkénti config-fájlok (kérés).** Az egyetlen `config.yml` helyett minden alrendszernek
+- ✅ **Alrendszerenkénti config-fájlok — KÉSZ.** A 22 szekció 11 `config/<alrendszer>.yml` fájlba
+  szétbontva (general/economy/factions/classes/spells/professions/quests/world/relics/pets/crafting),
+  a kommentek megőrizve (szöveg-alapú split). A `ConfigManager` a `config/` összes fájlját ÉS a
+  `config.yml` override-ot egyesíti (utóbbi nyer). Mély-egyenlőséggel Python-ellenőrzött: a merge a
+  teljes eredeti configot adja vissza. *(Eredeti terv lent.)*
+- **Eredeti terv — Alrendszerenkénti config-fájlok.** Az egyetlen `config.yml` helyett minden alrendszernek
   saját fájl egy `config/` mappában: `config/classes.yml`, `config/specializations.yml`,
   `config/talents.yml`, `config/professions.yml`, `config/quests.yml`, `config/world-events.yml`,
   `config/economy.yml`, `config/factions.yml`, `config/pets.yml`, `config/market.yml` stb. (A legnagyobb
