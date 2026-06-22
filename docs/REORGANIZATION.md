@@ -161,8 +161,9 @@ pont ezt a bővítést teszik kényelmessé.
 10. `AbstractDispatchCommand` bázis; inline parancsok migrálása egyenként.
 
 **Nagyobb (megfontolandó):**
-11. `YamlStore` bázis kiemelése a CurrencyManagerből; mind a 12 YAML-manager rátér (mindenhol atomikus +
-    debounce mentés; a core load/save listái összeolvadnak).
+11. 🔶 **Részben kész** — `storage/YamlStore.saveAtomic` egységes, konkurens-biztos (egyedi temp + atomikus
+    rename) ÍRÁS; mind a 12 YAML-manager erre tért át (a 9 eddig nem-atomikus író is). Hátra: debounce
+    minden managernél (jelenleg csak a CurrencyManager debounce-ol) + a core load/save listák összeolvasztása.
 12. Az `IceSMPCore` konstruktor felbontása domén-factory-metódusokra; load/save/cleanup regisztrált listákból.
 13. A statikus-gomb GUI-k (Job/Profile/Spec/Profession/Talent) átköltöztetése az adat-vezérelt CommandMenu
     rendszerbe; a legacy spell-állapot instance-szintűvé tétele.

@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -86,7 +88,7 @@ public final class StatsManager {
                 yaml.set(base + ".wealth", stat.wealth);
                 yaml.set(base + ".raid-kills", stat.raidKills);
             }
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save leaderboard.yml: " + exception.getMessage());
         }

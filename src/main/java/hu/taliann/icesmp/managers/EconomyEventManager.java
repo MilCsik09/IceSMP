@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -67,7 +69,7 @@ public final class EconomyEventManager {
                 yaml.set("event.ends-at", eventEndsAt);
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save economy-event.yml: " + exception.getMessage());
         }

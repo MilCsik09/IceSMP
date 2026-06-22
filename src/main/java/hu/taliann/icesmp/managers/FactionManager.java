@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.FactionType;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -72,7 +74,7 @@ public final class FactionManager {
                 yaml.set(entry.getKey().toString(), entry.getValue().name());
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
             plugin.getLogger().info("Saved " + playerFactions.size() + " faction assignments.");
         } catch (final IOException e) {
             plugin.getLogger().severe("Failed to save factions: " + e.getMessage());

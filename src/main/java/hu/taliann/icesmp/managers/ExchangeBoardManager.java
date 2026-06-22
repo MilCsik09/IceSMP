@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -93,7 +95,7 @@ public final class ExchangeBoardManager {
             for (final Board board : boards) {
                 yaml.set("boards." + board.entityId() + ".location", board.location());
             }
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save exchange-boards.yml: " + exception.getMessage());
         }

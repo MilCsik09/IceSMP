@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -74,7 +76,7 @@ public final class SeasonManager {
                 yaml.set("season.points." + entry.getKey().name(), entry.getValue());
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season.yml: " + exception.getMessage());
         }

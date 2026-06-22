@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -86,7 +88,7 @@ public final class ParkourManager {
                 yaml.set(base + ".radius", course.radius);
                 yaml.set(base + ".reward", course.reward);
             }
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save parkour.yml: " + exception.getMessage());
         }

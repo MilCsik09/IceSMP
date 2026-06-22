@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.items.RelicItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
@@ -199,7 +201,7 @@ public final class RelicManager {
                 yaml.set(basePath + ".last-seen", entry.getValue().lastSeenMillis());
             }
 
-            yaml.save(ownershipFile);
+            YamlStore.saveAtomic(ownershipFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save relic ownerships: " + exception.getMessage());
         }

@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import org.bukkit.Location;
@@ -90,7 +92,7 @@ public final class TerritoryManager {
                 yaml.set(basePath + ".capital", territory.capital());
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save territories: " + exception.getMessage());
         }

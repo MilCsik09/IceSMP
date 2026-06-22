@@ -5,6 +5,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Wallet;
 import hu.taliann.icesmp.items.CurrencyItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -14,8 +15,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.EnumMap;
@@ -116,16 +115,8 @@ public final class CurrencyManager {
                 }
             }
 
-            final File tempFile = new File(storageFile.getParentFile(), storageFile.getName() + ".tmp");
             try {
-                configuration.save(tempFile);
-                try {
-                    Files.move(tempFile.toPath(), storageFile.toPath(),
-                            StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (final IOException atomicFailure) {
-                    // Filesystem may not support atomic moves; fall back to a plain replace.
-                    Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                }
+                YamlStore.saveAtomic(storageFile, configuration);
             } catch (final IOException exception) {
                 plugin.getLogger().severe("Failed to save currency balances: " + exception.getMessage());
             }
