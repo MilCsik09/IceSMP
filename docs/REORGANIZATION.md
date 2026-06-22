@@ -39,7 +39,8 @@ alacsony kockázatú első lépés.
 ## Kód-architektúra
 
 ### 1. Parancs-architektúra
-- **Jelen:** mind a 26 parancs `BasicCommand`. Két diszpécser-stílus: **registry** (új, 3: Currency/Job/Faction
+- **Jelen:** mind a 25 parancs `BasicCommand` (a `commands/Subcommand.java` a közös SPI, nem parancs).
+  Két diszpécser-stílus: **registry** (új, 3: Currency/Job/Faction
   + `commands/{currency,faction,job}/` al-parancsok) és **inline switch** (régi, ~15: Profession, Relic,
   Quest, Territory, Spec, Events, Market, Bank, Parkour, Pet, Sinner, Talent, Spell, Soul, ExchangeBoard).
   A 3 `*Subcommand` interfész bájtra azonos.
@@ -48,39 +49,35 @@ alacsony kockázatú első lépés.
   `MarketCommand`) migrálása referenciának.
 
 ### 2. Perzisztencia
-- **Jelen:** 3 stílus. (a) PDC-alapú (`DailyQuestManager`, `ProfessionManager`) — nincs fájl-IO.
-  (b) 12 YAML-manager saját `load()/save()`-vel. Ezek közül: **atomikus + debounce async** csak
-  `CurrencyManager`; **atomikus, de szinkron inline save** `MarketManager`, `FactionTreasuryManager`;
-  **sima blokkoló `yaml.save()`** 9 manager (FactionManager, KingManager, SeasonManager, StatsManager,
-  TerritoryManager, ParkourManager, RelicManager, EconomyEventManager, ExchangeBoardManager).
-- **Költség:** ~25–40 sor azonos váz managerenként; az atomikus temp+rename blokk 3 helyen szó szerint
-  másolva; 9 manager blokkoló disk-IO-t végez a régió-szálon (lásd CODE-REVIEW minta B / `CORE-2`).
-- **Cél:** absztrakt `YamlStore` bázis (`read(yaml)`/`write(yaml)` + közös `load/save/requestSave`
-  atomikus+debounce). Mind a 12 manager rátér; a core load/save listái egy `List<YamlStore>` iterációvá
-  egyszerűsödnek.
-- **Első lépés:** `YamlStore` kiemelése a `CurrencyManager` (kész minta) logikájából; egy sima manager
-  (pl. `KingManager`) átállítása az API validálására, majd a többi.
+- **Jelen (frissítve):** 3 stílus. (a) PDC-alapú (`DailyQuestManager`, `ProfessionManager`) — nincs fájl-IO.
+  (b) 12 YAML-manager. ✅ **Mind a 12 mostantól a közös `storage/YamlStore.saveAtomic`-on át ír**
+  (egyedi temp + atomikus rename, konkurens-biztos) — a duplikált atomikus blokkok megszűntek, és a 9
+  korábban nem-atomikus író is biztonságos lett. **Hátralévő:** (1) debounce-mentés — jelenleg csak a
+  `CurrencyManager` debounce-ol (`requestSave`), a többi 11 szinkron (atomikusan) ment a régió-szálon;
+  (2) a `IceSMPCore` kézi load/save listáinak összeolvasztása egyetlen iterációvá.
+- **Cél (hátralévő):** a managerek mentés-hívásai debounce-on át (a CurrencyManager mintája), és egy
+  regisztrált store-lista, amit a core `load()`/`save()` végigiterál (a 2 kézi lista helyett).
+- **Részletek:** lásd a Prioritás-lista 11. pontját (ott a részleges-kész státusz).
 
-### 3. MessageManager
-- **Jelen:** generikus `get/getMessage/getComponent` API + 8 bespoke getter. **Halott (2):**
-  `getCurrencyHelpHeader`, `getBalance` (0 hívó). **Élő (6):** mind a `MetelytepoRelicListener`-ből
-  (`getSinnerMarked`, `getAbilityCooldown`, `getNoTarget`, `getTargetNotSinner`, `getJusticeActivated`,
-  `getHonorEyeActivated`).
-- **Cél:** a 2 halott törlése; a 6 élő migrálása `getComponent("messages.<key>", default)`-ra, majd törlés.
-- **Első lépés:** a 2 halott getter törlése (fordító-igazolt). *(Ezt egyszer megkezdtem, majd a
-  „refaktor a hibák után" döntés miatt visszavontam — itt a helye, később.)*
+### 3. MessageManager ✅ KÉSZ
+- **Eredmény:** mind a 8 bespoke getter törölve; a `MessageManager` már csak a generikus
+  `get/getMessage/getComponent` API-t adja (mindegyik formátum-tudatos: MiniMessage VAGY legacy).
+  A 6 élő hívó (`MetelytepoRelicListener`) átállt `getComponent("messages.<key>", default[, args])`-ra.
+  (Lásd a Prioritás-lista 1. és 7. pontját.)
 
 ### 4. GUI-architektúra
 - **Jelen:** két minta. **A (adat-vezérelt):** CommandMenus (~10 menü) + CommandMenuHolder + CommandMenuListener.
   **B (bespoke):** MarketGUI, SpellbookGUI, ProfileGUI/SpecGUI/ProfessionGUI/TalentGUI (közös CharacterGUIListener),
   SkillTreeGUI, JobGUI.
-- **Duplikáció:** `label()` 6 fájlban (HudManager, CommandMenus, ProfileGUI, TalentGUI, SpecGUI, ProfessionGUI);
-  `accent/grey/click` 4+ fájlban; nav-nyíl builder MarketGUI vs SpellbookGUI; lapozás-logika közel szó
-  szerint MarketGUI és SpellbookGUI közt; JobGUI/SkillTreeGUI megkerüli a `GuiUtil`-t (saját `createFiller`).
-- **Cél:** `accent/grey/click/label/nav/back/close` a `GuiUtil`-ba; JobGUI/SkillTreeGUI átállítása `GuiUtil`-ra;
-  `PaginatedGui` bázis Market/Spellbook-hoz; hosszabb távon a statikus gombmenük (Job/Profile/Spec/Profession/
-  Talent) átköltöztetése a CommandMenu A-mintába.
-- **Első lépés:** `label/accent/grey/click` a `GuiUtil`-ba, a másolatok törlése (tiszta konszolidáció).
+- **Duplikáció (frissítve):** ✅ `label/accent/grey` már a `GuiUtil`-ban (a GUI-k static importtal hívják);
+  a `label` privát változata már csak 2 helyen van: `GuiUtil` (a közös) és `HudManager` (scoreboard,
+  szándékosan eltérő — nincs italic-decoration). **Hátralévő duplikáció:** a `click` (CommandMenusban
+  no-arg `click()`, máshol `click(String)` — eltérő, ezért kihagyva); nav-nyíl builder MarketGUI vs
+  SpellbookGUI; lapozás-logika MarketGUI vs SpellbookGUI; JobGUI saját `createFiller`; SkillTreeGUI
+  megkerüli a `GuiUtil.icon`-t (inline item-építés).
+- **Cél (hátralévő):** `nav/back/close` + lapozás a `GuiUtil`-ba / egy `PaginatedGui` bázisba
+  (Market/Spellbook); JobGUI/SkillTreeGUI átállítása `GuiUtil`-ra; hosszabb távon a statikus gombmenük
+  (Job/Profile/Spec/Profession/Talent) átköltöztetése a CommandMenu A-mintába.
 
 ### 5. IceSMPCore „god-object"
 - **Jelen:** ~563 sor; a konstruktor ~40 managert épít szigorú kézi sorrendben (egy átrendezés már
@@ -94,17 +91,17 @@ alacsony kockázatú első lépés.
 - **Első lépés:** `registerSpells()` kiemelése a konstruktorból + sorrend-indok komment (nulla kockázat).
 
 ### 6. Player-state cleanup
-- **Jelen:** `PlayerSessionCleanupListener` kézi listán hív `clearPlayerState`-et 7 manageren + 6
-  **statikus** spell-cleanupon (HideSpell, LuckyStarSpell, ArmamentSpell, InnerFocusSpell, RootSpell,
-  DoubleJumpSpell). A `RootSpell.clearPlayerState` már no-op (drift). A cleanup 4 listener közt szórt
+- **Jelen (frissítve):** `PlayerSessionCleanupListener` kézi listán hív `clearPlayerState`-et 7 manageren +
+  **5 statikus** spell-cleanupon (HideSpell, LuckyStarSpell, ArmamentSpell, InnerFocusSpell, DoubleJumpSpell).
+  *(A `RootSpell` no-op cleanupja már törölve — lásd #4.)* A cleanup 4 listener közt szórt
   (PlayerSessionCleanupListener, HudListener, TerritoryListener, ParkourListener).
 - **Kockázat:** új állapotos spell/manager hozzáadásakor könnyű elfelejteni → csendes leak (jelenleg
-  nem szivárog semmi, a 6 wired spell pont a 6 állapotos — strukturális/jövőbeli rizikó).
+  nem szivárog semmi, az 5 wired spell pont az 5 állapotos — strukturális/jövőbeli rizikó).
 - **Cél:** `PlayerStateCleanup` interfész; minden állapotos egység implementálja + egy listába regisztrál,
   amit a listener iterál. A spellek állapota legyen instance-szintű (a `SpellRegistry`-ben már singletonok),
   így `spellRegistry.getAll().forEach(s -> s.clearPlayerState(id))`.
-- **Első lépés:** `PlayerStateCleanup` interfész a 7 már bekötött managernek; a halott `RootSpell` hívás +
-  import törlése.
+- **Első lépés:** `PlayerStateCleanup` interfész a 7 már bekötött managernek; a listener egy regisztrált
+  listát iterál.
 
 ### 7. Egyéb
 - **Statikus-állapotú spellek vs. instance-managerek** (a 6. pont gyökéroka) — a 6 legacy spell migrálása
