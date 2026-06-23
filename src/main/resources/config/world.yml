@@ -38,16 +38,19 @@ world-events:
     # Admin /events bloodmoon start esetén ennyi percig tart (a napciklustól függetlenül).
     force-duration-minutes: 10
   # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
+  # Spawnkor VÉLETLEN archetípus kerül kiválasztásra (A Gyűrűk Őre / Lávakohó Behemót /
+  # Fagyott Trón Királya / Csontkirály / Mélységi Rém) — saját entitással, névvel, stat-
+  # szorzókkal, szignatúra-aurával és jutalom-szorzóval. A health/damage a KÖZÖS alap,
+  # amit az archetípus szorzói módosítanak. 50% HP alatt a boss feldühödik (2. fázis).
   world-boss:
     enabled: true
     check-interval-minutes: 90
     chance-percent: 35
     lifetime-minutes: 20
-    entity-type: "RAVAGER"
-    display-name: "&4&l☠ A Gyűrűk Őre &c[Világboss]"
     health: 300.0
     damage-multiplier: 2.0
-    treasury-reward: 300.0
+    aura-radius: 12.0          # ennyi blokkon belül kapja a túlélő a boss szignatúra-debuffját
+    treasury-reward: 300.0     # az archetípus reward-szorzója módosítja (pl. Mélységi Rém ×1.5)
     season-points: 10
     buff-minutes: 10
   # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).

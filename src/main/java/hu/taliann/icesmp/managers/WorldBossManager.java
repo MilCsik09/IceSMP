@@ -5,6 +5,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -24,6 +25,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * World bosses (ideas.md "Világ-bossok"): periodically a boss-grade guardian
@@ -42,6 +44,53 @@ public final class WorldBossManager {
     private final FactionTreasuryManager treasuryManager;
     private final SeasonManager seasonManager;
     private final NamespacedKey worldBossKey;
+    private final NamespacedKey bossArchetypeKey;
+
+    /**
+     * The boss roster. Each archetype is a distinct mob with its own theme, stat
+     * multipliers (layered on the configured base health/damage), a self-buff applied
+     * at spawn, a signature aura debuff periodically applied to nearby players, and a
+     * reward multiplier. One is chosen at random on every spawn (rotation/variety).
+     */
+    private enum BossArchetype {
+        RING_WARDEN(EntityType.RAVAGER, "&4&l☠ A Gyűrűk Őre &c[Világboss]", 1.0D, 1.0D, 1.0D,
+                PotionEffectType.SLOWNESS, 1, null, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT),
+        MAGMA_BEHEMOTH(EntityType.BLAZE, "&6&l🔥 Lávakohó Behemót &c[Világboss]", 1.0D, 1.1D, 1.1D,
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.FIRE_RESISTANCE, Sound.ENTITY_GENERIC_EXPLODE, Particle.FLAME),
+        FROST_KING(EntityType.STRAY, "&b&l❄ Fagyott Trón Királya &c[Világboss]", 1.1D, 1.0D, 1.0D,
+                PotionEffectType.SLOWNESS, 2, null, Sound.BLOCK_GLASS_BREAK, Particle.SNOWFLAKE),
+        BONE_KING(EntityType.WITHER_SKELETON, "&8&l☠ Csontkirály &c[Világboss]", 1.0D, 1.2D, 1.1D,
+                PotionEffectType.WITHER, 0, PotionEffectType.STRENGTH, Sound.ENTITY_WITHER_AMBIENT, Particle.SOUL),
+        DEEP_HORROR(EntityType.WARDEN, "&3&l👁 Mélységi Rém &c[Világboss]", 1.0D, 1.0D, 1.5D,
+                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL);
+
+        private final EntityType entityType;
+        private final String displayName;
+        private final double healthMult;
+        private final double damageMult;
+        private final double rewardMult;
+        private final PotionEffectType aura;
+        private final int auraAmplifier;
+        private final PotionEffectType selfBuff;
+        private final Sound sound;
+        private final Particle particle;
+
+        BossArchetype(final EntityType entityType, final String displayName, final double healthMult,
+                      final double damageMult, final double rewardMult, final PotionEffectType aura,
+                      final int auraAmplifier, final PotionEffectType selfBuff, final Sound sound,
+                      final Particle particle) {
+            this.entityType = entityType;
+            this.displayName = displayName;
+            this.healthMult = healthMult;
+            this.damageMult = damageMult;
+            this.rewardMult = rewardMult;
+            this.aura = aura;
+            this.auraAmplifier = auraAmplifier;
+            this.selfBuff = selfBuff;
+            this.sound = sound;
+            this.particle = particle;
+        }
+    }
 
     private volatile long activeBossUntil;
     private volatile long nextAttemptAt;
@@ -57,6 +106,7 @@ public final class WorldBossManager {
         this.treasuryManager = treasuryManager;
         this.seasonManager = seasonManager;
         this.worldBossKey = new NamespacedKey(plugin, "world_boss");
+        this.bossArchetypeKey = new NamespacedKey(plugin, "world_boss_archetype");
     }
 
     public boolean isWorldBoss(final Entity entity) {
@@ -167,16 +217,12 @@ public final class WorldBossManager {
         final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
                 highestY + 1.0D, approx.getBlockZ() + 0.5D);
 
-        EntityType bossType;
-        try {
-            bossType = EntityType.valueOf(configManager.getString("world-events.world-boss.entity-type", "RAVAGER").toUpperCase(java.util.Locale.ROOT));
-        } catch (final IllegalArgumentException exception) {
-            bossType = EntityType.RAVAGER;
-        }
+        // Pick a random archetype from the roster (variety/rotation).
+        final BossArchetype archetype = BossArchetype.values()[ThreadLocalRandom.current().nextInt(BossArchetype.values().length)];
 
-        final Class<? extends Entity> entityClass = bossType.getEntityClass();
+        final Class<? extends Entity> entityClass = archetype.entityType.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-            plugin.getLogger().warning("Configured world boss entity-type is not a mob; skipping spawn.");
+            plugin.getLogger().warning("World boss archetype entity-type is not a mob; skipping spawn.");
             return;
         }
 
@@ -184,28 +230,35 @@ public final class WorldBossManager {
         activeBossId = boss.getUniqueId();
         activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
+        boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
         boss.setPersistent(true);
         boss.setRemoveWhenFarAway(false);
         boss.setGlowing(true);
-        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(
-                configManager.getString("world-events.world-boss.display-name", "&4&l☠ A Gyűrűk Őre &c[Világboss]"))));
+        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(archetype.displayName)));
         boss.setCustomNameVisible(true);
 
-        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D));
+        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D)) * archetype.healthMult;
         final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(health);
             boss.setHealth(health);
         }
 
-        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D));
+        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D)) * archetype.damageMult;
         final AttributeInstance attackDamage = boss.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attackDamage != null) {
             attackDamage.setBaseValue(attackDamage.getBaseValue() * damageMultiplier);
         }
 
+        // Archetype self-buff (e.g. fire immunity for the magma boss), for the boss's lifetime.
+        if (archetype.selfBuff != null) {
+            boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
+        }
+
         spawnLocation.getWorld().spawnParticle(Particle.FLASH, spawnLocation, 3);
-        spawnLocation.getWorld().playSound(spawnLocation, Sound.ENTITY_RAVAGER_ROAR, 2.0F, 0.6F);
+        spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
+
+        startPhaseTick(boss, archetype);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "world-boss-spawned",
@@ -230,8 +283,47 @@ public final class WorldBossManager {
     }
 
     /**
-     * Pays out the boss kill: treasury reward + league points for the killer's
-     * faction and a temporary buff for the slayer. Called by WorldBossListener.
+     * Drives the boss's phases on its OWN region scheduler (Folia-correct): once below
+     * half health it enrages (permanent strength + speed), and every tick it applies its
+     * signature aura debuff to nearby survivors and emits themed particles. The task
+     * auto-retires when the boss is removed; it also self-cancels if the boss is invalid.
+     */
+    private void startPhaseTick(final Mob boss, final BossArchetype archetype) {
+        final AtomicBoolean enraged = new AtomicBoolean(false);
+        final double radius = Math.max(4.0D, configManager.getDouble("world-events.world-boss.aura-radius", 12.0D));
+        boss.getScheduler().runAtFixedRate(plugin, task -> {
+            if (!boss.isValid()) {
+                task.cancel();
+                return;
+            }
+
+            final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
+            final double maxHp = maxHealth != null ? maxHealth.getValue() : boss.getHealth();
+            if (!enraged.get() && boss.getHealth() < maxHp * 0.5D) {
+                enraged.set(true);
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
+                boss.getWorld().spawnParticle(Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 3);
+                boss.getWorld().playSound(boss.getLocation(), archetype.sound, 2.0F, 0.5F);
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "world-boss-enraged",
+                        "<dark_red>👹 A világboss feldühödött — második fázis!</dark_red>"));
+            }
+
+            // Signature aura: debuff nearby survivors (region-local, so Folia-safe on the boss thread).
+            for (final Entity nearby : boss.getNearbyEntities(radius, radius, radius)) {
+                if (nearby instanceof Player player
+                        && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
+                    player.addPotionEffect(new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true));
+                }
+            }
+            boss.getWorld().spawnParticle(archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
+        }, null, 40L, 40L);
+    }
+
+    /**
+     * Pays out the boss kill: treasury reward (scaled by the archetype) + league points for
+     * the killer's faction and a temporary buff for the slayer. Called by WorldBossListener.
      *
      * @param boss the slain boss
      * @param killer the slayer
@@ -239,8 +331,18 @@ public final class WorldBossManager {
     public void handleBossDeath(final LivingEntity boss, final Player killer) {
         activeBossUntil = 0L;
 
+        double rewardMult = 1.0D;
+        final String archetypeName = boss.getPersistentDataContainer().get(bossArchetypeKey, PersistentDataType.STRING);
+        if (archetypeName != null) {
+            try {
+                rewardMult = BossArchetype.valueOf(archetypeName).rewardMult;
+            } catch (final IllegalArgumentException ignored) {
+                // Unknown/old archetype tag — fall back to the base reward.
+            }
+        }
+
         final FactionType faction = factionManager.getFaction(killer.getUniqueId());
-        final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D));
+        final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D)) * rewardMult;
         if (reward > 0.0D) {
             treasuryManager.deposit(faction, reward);
         }

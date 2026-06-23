@@ -148,7 +148,18 @@ mintán deklaratívak (**ALACSONY** kockázat); a set-bónuszok és új triggere
 
 ---
 
-## 3. terület — Világboss-archetípusok
+## 3. terület — Világboss-archetípusok ✅ KÉSZ
+
+**Megvalósítva:** a `WorldBossManager` mostantól **5 archetípus** közül választ véletlenül spawnkor —
+*A Gyűrűk Őre* (Ravager), *Lávakohó Behemót* (Blaze, tűz-immunis), *Fagyott Trón Királya* (Stray,
+erős lassító aura), *Csontkirály* (Wither Skeleton, wither-aura + erő), *Mélységi Rém* (Warden,
+sötétség-aura, ×1.5 jutalom). Mindegyik saját entitás, név, HP-/sebzés-/jutalom-szorzó, spawnkori
+self-buff, és **szignatúra-aura** (a `aura-radius`-on belüli túlélőkre periodikusan rárakott debuff).
+**Fázis-mechanika:** 50% HP alatt a boss feldühödik (állandó erő+sebesség, broadcast). A fázis-tick a
+boss saját régió-ütemezőjén fut (Folia-helyes), auto-retire a boss halálakor. Az archetípus a boss
+PDC-jében tárolódik, így a kill-jutalom a megfelelő szorzót kapja. *(Eredeti terv lent.)*
+
+### Eredeti terv
 
 **Jelenlegi:** 1 config-vezérelt boss (Ravager — „A Gyűrűk Őre"). **Vízió:** több archetípus saját
 témával, **fázisokkal** (HP-küszöbök → új képességek), egyedi **loot-táblával** és **rotációval/véletlennel**.
