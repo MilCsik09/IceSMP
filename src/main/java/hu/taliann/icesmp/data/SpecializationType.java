@@ -24,7 +24,9 @@ public enum SpecializationType {
     BLOOD("blood", "<dark_red>Vérlovag</dark_red>", JobType.DEATH_KNIGHT, null, false),
     FROST("frost", "<aqua>Fagylovag</aqua>", JobType.DEATH_KNIGHT, null, false),
     ELEMENTAL("elemental", "<blue>Elemi</blue>", JobType.SHAMAN, null, false),
-    ENHANCEMENT("enhancement", "<gold>Erősítő</gold>", JobType.SHAMAN, null, false);
+    ENHANCEMENT("enhancement", "<gold>Erősítő</gold>", JobType.SHAMAN, null, false),
+    WINDWALKER("windwalker", "<aqua>Szélfutó</aqua>", JobType.MONK, null, false),
+    BREWMASTER("brewmaster", "<gold>Sörfőző</gold>", JobType.MONK, null, false);
 
     private final String id;
     private final Component displayName;

@@ -124,6 +124,20 @@ classes:
       wind_rush: 17
       healing_stream_totem: 19
       ancestral_spirit: 21
+  # Szerzetes (Monk): harcművész — gyors kombók, mozgékonyság, csi-gyógyítás.
+  # A Szélfutó kombó-sebzést oszt, a Sörfőző sör-buffokkal tankol.
+  monk:
+    spell-unlocks:
+      tiger_palm: 2
+      roll: 4
+      blackout_kick: 6
+      vivify: 8
+      spinning_crane_kick: 11
+      chi_wave: 13
+      provoke: 15
+      flying_serpent_kick: 17
+      expel_harm: 19
+      leg_sweep: 21
 
 # ===== Specializációk =====
 # A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
@@ -323,6 +337,27 @@ specializations:
       sundering: 39
       earthen_weapon: 42
       doom_winds: 45
+  # Szélfutó (Windwalker): a Szerzetes kombó-alapú közelharci sebző specje.
+  windwalker:
+    spell-unlocks:
+      rising_sun_kick: 25
+      flying_kick: 27
+      fists_of_fury: 30
+      whirling_dragon_punch: 33
+      storm_earth_fire: 36
+      touch_of_death: 39
+      serenity: 45
+  # Sörfőző (Brewmaster): a Szerzetes sör-alapú tank specje.
+  brewmaster:
+    spell-unlocks:
+      keg_smash: 25
+      breath_of_fire: 27
+      purifying_brew: 30
+      ironskin_brew: 33
+      clash: 36
+      fortifying_brew: 39
+      celestial_brew: 42
+      invoke_niuzao: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.

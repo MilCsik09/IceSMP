@@ -69,8 +69,15 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
 - 50 új spell, mind egyedi és regisztrált (globálisan ellenőrzött). A `JobGUI` slot-elrendezése
   6→8-ra bővült (két sor négyesével), hogy mind a 8 kaszt megjelenjen.
 
-> **Még lehetséges kaszt:** *Szerzetes* (Monk — kombó-pontos közelharc). A **perzisztens Sámán-totemek**
-> (lerakott, periodikusan pulzáló entitások) önálló mechanika-bővítésként jöhetnek.
+### ✅ Szerzetes kaszt (megvalósítva)
+- **Szerzetes (`MONK`)** — harcművész, katalizátor „Jáde Bot" (bambusz). Alap: gyors kombók,
+  mozgékonyság (roll/flying_serpent_kick), csi-gyógyítás (vivify/chi_wave). Specek: **Szélfutó
+  (Windwalker)** kombó-sebző (rising_sun_kick, fists_of_fury, touch_of_death, capstone serenity);
+  **Sörfőző (Brewmaster)** sör-buffos tank (keg_smash, breath_of_fire, capstone invoke_niuzao).
+- 25 új spell, globálisan ellenőrzött. A `JobGUI` slot-elrendezése 8→9-re bővült (3×3 rács).
+
+> **A 9 kaszt teljes:** Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag, Halállovag, Sámán, Szerzetes.
+> **Hátralévő mechanika-bővítés:** perzisztens Sámán-totemek (lerakott, pulzáló entitások, scheduler-rel).
 
 ---
 

@@ -22,9 +22,9 @@ public final class JobGUI {
     private static final int BACK_SLOT = 31;
     private static final int CATALYST_SLOT = 33;
     private static final int SKILL_TREE_SLOT = 29;
-    // Up to 8 classes: two centered rows of four (rows 1–2). resolveJobType/placeJobItems
-    // both index this array, so the layout and click-mapping stay in sync automatically.
-    private static final int[] JOB_SLOTS = {10, 12, 14, 16, 19, 21, 23, 25};
+    // Up to 9 classes: a centered 3×3 grid (rows 0–2), clear of the row-3 buttons (29/31/33).
+    // resolveJobType/placeJobItems both index this array, so layout and click-mapping stay in sync.
+    private static final int[] JOB_SLOTS = {2, 4, 6, 11, 13, 15, 20, 22, 24};
 
     private JobGUI() {
     }

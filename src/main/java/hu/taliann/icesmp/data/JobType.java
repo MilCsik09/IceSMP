@@ -11,7 +11,8 @@ public enum JobType {
     DRUID("druid", "<dark_green>Druida</dark_green>", null),
     PALADIN("paladin", "<gold>Paplovag</gold>", null),
     DEATH_KNIGHT("death_knight", "<dark_red>Halállovag</dark_red>", null),
-    SHAMAN("shaman", "<aqua>Sámán</aqua>", null);
+    SHAMAN("shaman", "<aqua>Sámán</aqua>", null),
+    MONK("monk", "<green>Szerzetes</green>", null);
 
     private final String id;
     private final Component displayName;

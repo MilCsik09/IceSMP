@@ -56,6 +56,9 @@ public final class SpellCatalog {
         registerShaman(registry, mm);
         registerElemental(registry, mm);
         registerEnhancement(registry, mm);
+        registerMonk(registry, mm);
+        registerWindwalker(registry, mm);
+        registerBrewmaster(registry, mm);
         registerTalentSpells(registry, mm);
     }
 
@@ -1029,6 +1032,119 @@ public final class SpellCatalog {
                 .aoe(6.0D).damage(8.0D).lightning()
                 .selfEffect(PotionEffectType.SPEED, 12 * 20, 1).selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1)
                 .particle(Particle.ELECTRIC_SPARK, 50).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.8F, 0.9F)
+                .build());
+    }
+
+    // ===== SZERZETES (base class) — harcművészet, mozgékonyság, csi =====
+    private static void registerMonk(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "tiger_palm", "Tigristenyér", 15, SpellCostType.HUNGER, 2)
+                .target(4.5D).damage(5.0D)
+                .particle(Particle.CRIT, 12).sound(Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0F, 1.1F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "roll", "Gördülés", 20, SpellCostType.HUNGER, 2)
+                .dash(1.8D, 0.2D).selfEffect(PotionEffectType.SPEED, 3 * 20, 0)
+                .particle(Particle.CLOUD, 12).sound(Sound.ENTITY_PHANTOM_FLAP, 1.0F, 1.3F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "blackout_kick", "Sötét Rúgás", 20, SpellCostType.HUNGER, 3)
+                .target(4.0D).damage(6.0D).knockback(0.5D)
+                .particle(Particle.SWEEP_ATTACK, 10).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.9F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "provoke", "Provokálás", 45, SpellCostType.HUNGER, 3)
+                .aoe(6.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 1).selfEffect(PotionEffectType.RESISTANCE, 5 * 20, 0)
+                .particle(Particle.ANGRY_VILLAGER, 12).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "vivify", "Élénkítés", 30, SpellCostType.XP, 40)
+                .healSelf(5.0D).particle(Particle.HEART, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "spinning_crane_kick", "Pörgő Darurúgás", 30, SpellCostType.HUNGER, 4)
+                .aoe(4.0D).damage(4.0D)
+                .particle(Particle.SWEEP_ATTACK, 18).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 1.1F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "flying_serpent_kick", "Repülő Kígyórúgás", 35, SpellCostType.HUNGER, 3)
+                .dash(2.0D, 0.4D).selfEffect(PotionEffectType.SPEED, 3 * 20, 0)
+                .particle(Particle.CLOUD, 15).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "expel_harm", "Ártalom Kiűzése", 45, SpellCostType.XP, 45)
+                .aoe(4.0D).damage(2.0D).healSelf(4.0D)
+                .particle(Particle.HEART, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "leg_sweep", "Lábseprés", 60, SpellCostType.HUNGER, 4)
+                .aoe(5.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 3).knockback(0.4D)
+                .particle(Particle.SWEEP_ATTACK, 15).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "chi_wave", "Csi Hullám", 30, SpellCostType.XP, 35)
+                .target(12.0D).damage(3.0D).healSelf(3.0D)
+                .particle(Particle.END_ROD, 20).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.4F)
+                .build());
+    }
+
+    // ===== SZÉLFUTÓ (monk spec) — gyors, kombó-alapú közelharci sebzés =====
+    private static void registerWindwalker(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "rising_sun_kick", "Felkelő Nap Rúgás", 20, SpellCostType.HUNGER, 3)
+                .target(5.0D).damage(7.0D)
+                .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "fists_of_fury", "Düh Ökle", 45, SpellCostType.HUNGER, 5)
+                .aoe(5.0D).damage(6.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 2)
+                .particle(Particle.SWEEP_ATTACK, 25).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "whirling_dragon_punch", "Örvénylő Sárkányütés", 60, SpellCostType.HUNGER, 5)
+                .aoe(5.0D).damage(6.0D).knockback(0.6D)
+                .particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 1.1F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "touch_of_death", "Halál Érintése", 90, SpellCostType.XP, 60)
+                .target(5.0D).damage(9.0D)
+                .particle(Particle.SOUL, 20).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "storm_earth_fire", "Vihar, Föld, Tűz", 90, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1).selfEffect(PotionEffectType.SPEED, 12 * 20, 0)
+                .particle(Particle.FLAME, 25).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "flying_kick", "Repülő Rúgás", 35, SpellCostType.HUNGER, 3)
+                .dash(2.0D, 0.4D).selfEffect(PotionEffectType.SPEED, 4 * 20, 0)
+                .particle(Particle.CLOUD, 15).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.1F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "serenity", "Derű", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(9.0D)
+                .selfEffect(PotionEffectType.SPEED, 12 * 20, 1).selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1)
+                .particle(Particle.END_ROD, 50).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.0F)
+                .build());
+    }
+
+    // ===== SÖRFŐZŐ (monk spec) — sör-alapú tankolás és területi kontroll =====
+    private static void registerBrewmaster(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "keg_smash", "Hordócsapás", 25, SpellCostType.HUNGER, 4)
+                .aoe(5.0D).damage(4.0D).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 1)
+                .particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "breath_of_fire", "Tűz Lehelete", 45, SpellCostType.XP, 45)
+                .aoe(5.0D).damage(3.0D).ignite(3 * 20)
+                .particle(Particle.FLAME, 30).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "purifying_brew", "Tisztító Sör", 45, SpellCostType.XP, 40)
+                .healSelf(5.0D).selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 1)
+                .particle(Particle.HEART, 15).sound(Sound.BLOCK_BREWING_STAND_BREW, 1.0F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "celestial_brew", "Égi Sör", 120, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 2).selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 0)
+                .particle(Particle.END_ROD, 25).sound(Sound.BLOCK_BREWING_STAND_BREW, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "fortifying_brew", "Erősítő Sör", 120, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 2).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
+                .particle(Particle.HEART, 20).sound(Sound.BLOCK_BREWING_STAND_BREW, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "clash", "Összecsapás", 75, SpellCostType.HUNGER, 5)
+                .aoe(6.0D).knockback(0.8D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 2)
+                .particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "ironskin_brew", "Vasbőr Sör", 90, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 1).selfEffect(PotionEffectType.ABSORPTION, 10 * 20, 0)
+                .particle(Particle.ASH, 20).sound(Sound.BLOCK_BREWING_STAND_BREW, 1.0F, 1.1F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "invoke_niuzao", "Niuzao Megidézése", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(7.0D)
+                .selfEffect(PotionEffectType.RESISTANCE, 12 * 20, 2).selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 2)
+                .particle(Particle.CRIT, 50).sound(Sound.ENTITY_RAVAGER_ROAR, 0.8F, 0.7F)
                 .build());
     }
 }

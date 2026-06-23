@@ -70,7 +70,10 @@ public final class CatalystItemFactory {
                     5207, Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.8F),
             JobType.SHAMAN, new CatalystTheme(
                     Material.TOTEM_OF_UNDYING, "<aqua><bold>Ősök Totemje</bold></aqua>",
-                    5208, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.1F)
+                    5208, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.1F),
+            JobType.MONK, new CatalystTheme(
+                    Material.BAMBOO, "<green><bold>Jáde Bot</bold></green>",
+                    5209, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.9F, 1.2F)
     ));
 
     private final NamespacedKey isCatalystKey;
