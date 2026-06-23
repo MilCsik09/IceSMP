@@ -320,6 +320,7 @@ specializations:
   elemental:
     spell-unlocks:
       lava_burst: 25
+      earthbind_totem: 27
       chain_lightning: 28
       earthquake: 30
       elemental_blast: 33
@@ -331,6 +332,7 @@ specializations:
     spell-unlocks:
       stormstrike: 25
       lava_lash: 27
+      windfury_totem: 28
       windfury: 30
       crash_lightning: 33
       feral_spirit: 36

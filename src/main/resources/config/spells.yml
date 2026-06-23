@@ -6,6 +6,12 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
+  # Sámán-totemek: lerakott, rövid életű entitások, amik periodikusan pulzálnak a közeli
+  # entitásokra (gyógyítás/buff a szövetségeseknek, sebzés/debuff az ellenségeknek).
+  totem:
+    lifetime-seconds: 12   # ennyi ideig áll a totem, mielőtt eltűnik
+    radius: 6.0            # ekkora körben hat a pulzálás
+    pulse-ticks: 30        # ennyi tickenként pulzál (20 tick = 1 mp)
   # Mesterség: frakcióvalutáért fejleszthető rang, ami csökkenti a cooldownt.
   mastery:
     enabled: true

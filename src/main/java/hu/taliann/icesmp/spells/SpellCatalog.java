@@ -944,14 +944,8 @@ public final class SpellCatalog {
                 .target(12.0D).damage(4.0D).freeze(60).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 2)
                 .particle(Particle.SNOWFLAKE, 20).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.8F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "healing_stream_totem", "Gyógyár-totem", 90, SpellCostType.HUNGER, 5)
-                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 8 * 20, 0).healSelf(2.0D)
-                .particle(Particle.HEART, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.3F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "searing_totem", "Perzselő Totem", 75, SpellCostType.XP, 50)
-                .aoe(6.0D).damage(3.0D).ignite(3 * 20)
-                .particle(Particle.FLAME, 30).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 0.9F)
-                .build());
+        // healing_stream_totem and searing_totem are now PERSISTENT totems (ShamanTotemSpell,
+        // registered in IceSMPCore.registerSpells with the TotemManager) — not instant auras.
         registry.register(ConfiguredSpell.builder(mm, "lightning_shield", "Villámpajzs", 90, SpellCostType.HUNGER, 5)
                 .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 0)
                 .particle(Particle.ELECTRIC_SPARK, 20).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5F, 1.6F)

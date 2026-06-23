@@ -77,7 +77,14 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
 - 25 új spell, globálisan ellenőrzött. A `JobGUI` slot-elrendezése 8→9-re bővült (3×3 rács).
 
 > **A 9 kaszt teljes:** Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag, Halállovag, Sámán, Szerzetes.
-> **Hátralévő mechanika-bővítés:** perzisztens Sámán-totemek (lerakott, pulzáló entitások, scheduler-rel).
+
+### ✅ Perzisztens Sámán-totemek (megvalósítva)
+Új `TotemManager` + `ShamanTotemSpell`: a totemek mostantól **lerakott, rövid életű ArmorStand-entitások**,
+amik a SAJÁT régió-ütemezőjükön pulzálnak (Folia-helyes) a közeli entitásokra. 4 típus: **Gyógyár**
+(szövetségesek regenerációja), **Perzselő** (ellenségek sebzése + gyújtás), **Szélharag** (szövetségesek
+sebessége), **Földbéklyó** (ellenségek lassítása). Konfig: `spells.totem.{lifetime-seconds,radius,pulse-ticks}`.
+A `healing_stream_totem`/`searing_totem` instant-aura verziói leváltva a perzisztensre; + 2 új totem
+(`windfury_totem`, `earthbind_totem`) az Erősítő/Elemi specekben. A totemek a disable-kor takarítódnak (nincs orphan).
 
 ---
 

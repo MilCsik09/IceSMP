@@ -166,6 +166,7 @@ public final class IceSMPCore {
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
     private final MinionManager minionManager;
+    private final hu.taliann.icesmp.managers.TotemManager totemManager;
     private final MobScalingManager mobScalingManager;
     private final InvasionManager invasionManager;
     private final CaptureItemFactory captureItemFactory;
@@ -225,6 +226,7 @@ public final class IceSMPCore {
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, configManager, messageManager, factionManager);
         this.minionManager = new MinionManager(plugin);
+        this.totemManager = new hu.taliann.icesmp.managers.TotemManager(plugin, configManager);
         this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
@@ -322,6 +324,17 @@ public final class IceSMPCore {
         spellRegistry.register(new VenomStrikeSpell(messageManager));
         SpellCatalog.registerExpansionSpells(spellRegistry, messageManager);
         SpellCatalog.registerSummonSpells(spellRegistry, messageManager, plugin, minionManager, configManager, talentManager);
+
+        // Persistent Shaman totems (bespoke — need the TotemManager). Registered after the catalog so
+        // they own their ids (the data-driven instant-aura versions were removed from SpellCatalog).
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.HEALING_STREAM, 90, hu.taliann.icesmp.spells.SpellCostType.HUNGER, 5));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.SEARING, 75, hu.taliann.icesmp.spells.SpellCostType.XP, 50));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.WINDFURY, 90, hu.taliann.icesmp.spells.SpellCostType.HUNGER, 5));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.EARTHBIND, 75, hu.taliann.icesmp.spells.SpellCostType.HUNGER, 5));
     }
 
     /**
@@ -375,6 +388,7 @@ public final class IceSMPCore {
         }
         worldBossManager.shutdown();
         invasionManager.shutdown();
+        totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
