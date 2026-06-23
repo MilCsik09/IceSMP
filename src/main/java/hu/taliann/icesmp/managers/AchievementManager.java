@@ -55,14 +55,26 @@ public final class AchievementManager {
         this.messageManager = messageManager;
         this.earnedKey = new NamespacedKey(plugin, "achievements");
         this.achievements = List.of(
+                // Raid-killek
                 new Achievement("first_blood", "Első Vér", "Szerezz 1 raid-killt.", Metric.RAID_KILLS, 1, 50),
+                new Achievement("skirmisher", "Csatadöntő", "Szerezz 10 raid-killt.", Metric.RAID_KILLS, 10, 200),
                 new Achievement("warlord", "Hadúr", "Szerezz 25 raid-killt.", Metric.RAID_KILLS, 25, 500),
+                new Achievement("war_hero", "Háborús Hős", "Szerezz 100 raid-killt.", Metric.RAID_KILLS, 100, 2000),
+                // Kaszt-szint
+                new Achievement("apprentice", "Tanonc", "Érd el a 10. kaszt-szintet.", Metric.CLASS_LEVEL, 10, 75),
                 new Achievement("veteran", "Veterán", "Érd el a 25. kaszt-szintet.", Metric.CLASS_LEVEL, 25, 200),
+                new Achievement("champion", "Bajnok", "Érd el a 40. kaszt-szintet.", Metric.CLASS_LEVEL, 40, 600),
                 new Achievement("legend", "Legenda", "Érd el az 50. (max) kaszt-szintet.", Metric.CLASS_LEVEL, 50, 1000),
+                // Vagyon
+                new Achievement("saver", "Megtakarító", "Gyűjts össze 250 valutát.", Metric.WEALTH, 250, 50),
                 new Achievement("well_off", "Tehetős", "Gyűjts össze 1000 valutát.", Metric.WEALTH, 1000, 100),
                 new Achievement("magnate", "Mágnás", "Gyűjts össze 10000 valutát.", Metric.WEALTH, 10000, 750),
+                new Achievement("croesus", "Krőzus", "Gyűjts össze 50000 valutát.", Metric.WEALTH, 50000, 2500),
+                // Szakma
                 new Achievement("tradesman", "Szakmunkás", "Érj el 25 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 25, 150),
-                new Achievement("artisan", "Mesterember", "Érj el 100 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 100, 800)
+                new Achievement("craftsman", "Iparos", "Érj el 50 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 50, 350),
+                new Achievement("artisan", "Mesterember", "Érj el 100 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 100, 800),
+                new Achievement("grandmaster", "Nagymester", "Érj el 200 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 200, 2000)
         );
     }
 
