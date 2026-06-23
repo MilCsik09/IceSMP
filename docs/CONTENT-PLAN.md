@@ -184,7 +184,13 @@ saját `getScheduler()`-jén (a meglévő world-boss minta már így spawnol). *
 - **Skálázódás:** hullámonként +mob-count és +mob-level; frakció-specifikus jutalom a túlélőknek.
 
 ### Napi/heti küldetések
-**Jelenlegi:** 3 objective (KILL_MOBS, CATCH_FISH, BREAK_BLOCKS), kis pool. **Vízió:**
+**✅ Részben kész:** a pool 3→**8** napi küldetésre bővült, az objective-típusok 3→**6**-ra
+(KILL_MOBS, CATCH_FISH, BREAK_BLOCKS + új: **MINE_ORE**, **HARVEST_CROPS**, **KILL_ANIMALS**), a
+`DailyQuestListener`-ben a megfelelő hookokkal (érc = `_ORE` anyagnév + ancient_debris; aratás =
+kifejlett `Ageable`; állat = `Animals`). Plusz **streak-rendszer**: egymást követő napok bónusza
+(konfigurálható `streak-bonus-per-day` / `streak-bonus-cap-days`). **Hátra:** külön heti küldetés.
+
+**Eredeti vízió (a maradékhoz):**
 - **Bővebb objective-pool:** `MINE_ORE`, `TRADE_MARKET` (piaci eladás/vétel), `WIN_RAID`,
   `DAMAGE_WORLD_BOSS`, `COMPLETE_PARKOUR`, `CRAFT_MASTERWORK`, `KILL_PLAYERS`.
 - **Heti küldetés:** nagyobb cél + nagyobb jutalom (külön PDC-kulcs, heti rotáció).

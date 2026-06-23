@@ -20,7 +20,11 @@ import java.util.Map;
  */
 public final class DailyQuestManager {
 
-    /** A daily objective: {@code type} is one of KILL_MOBS / CATCH_FISH / BREAK_BLOCKS. */
+    /**
+     * A daily objective. {@code type} is one of the action keys fed by
+     * {@code DailyQuestListener}: KILL_MOBS / CATCH_FISH / BREAK_BLOCKS /
+     * MINE_ORE / HARVEST_CROPS / KILL_ANIMALS.
+     */
     public record Daily(String id, String name, String type, int amount, long reward) { }
 
 
@@ -31,6 +35,8 @@ public final class DailyQuestManager {
     private final NamespacedKey dayKey;
     private final NamespacedKey progressKey;
     private final NamespacedKey doneKey;
+    private final NamespacedKey streakKey;
+    private final NamespacedKey lastDoneKey;
     private final List<Daily> pool;
 
     public DailyQuestManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -43,10 +49,17 @@ public final class DailyQuestManager {
         this.dayKey = new NamespacedKey(plugin, "daily_day");
         this.progressKey = new NamespacedKey(plugin, "daily_progress");
         this.doneKey = new NamespacedKey(plugin, "daily_done");
+        this.streakKey = new NamespacedKey(plugin, "daily_streak");
+        this.lastDoneKey = new NamespacedKey(plugin, "daily_last_done");
         this.pool = List.of(
                 daily("daily_hunt", "Napi vadászat", "KILL_MOBS", 20, 60),
                 daily("daily_fish", "Napi horgászat", "CATCH_FISH", 10, 50),
-                daily("daily_gather", "Napi gyűjtögetés", "BREAK_BLOCKS", 64, 40)
+                daily("daily_gather", "Napi gyűjtögetés", "BREAK_BLOCKS", 64, 40),
+                daily("daily_mine", "Napi bányászat", "MINE_ORE", 16, 70),
+                daily("daily_harvest", "Napi aratás", "HARVEST_CROPS", 32, 55),
+                daily("daily_beasts", "Napi vadbefogás", "KILL_ANIMALS", 15, 45),
+                daily("daily_slay", "Napi nagy hadjárat", "KILL_MOBS", 40, 110),
+                daily("daily_excavate", "Napi nagy ásatás", "BREAK_BLOCKS", 128, 75)
         );
     }
 
@@ -100,15 +113,36 @@ public final class DailyQuestManager {
         }
 
         player.getPersistentDataContainer().set(doneKey, PersistentDataType.BYTE, (byte) 1);
+
+        // Streak: consecutive days completed. Finishing on the day right after the last
+        // completion extends the streak; any gap resets it to 1. The bonus scales with the
+        // streak length up to a configurable cap.
+        final long today = today();
+        final long lastDone = player.getPersistentDataContainer().getOrDefault(lastDoneKey, PersistentDataType.LONG, -1L);
+        final int previousStreak = player.getPersistentDataContainer().getOrDefault(streakKey, PersistentDataType.INTEGER, 0);
+        final int streak = (lastDone == today - 1) ? previousStreak + 1 : 1;
+        player.getPersistentDataContainer().set(streakKey, PersistentDataType.INTEGER, streak);
+        player.getPersistentDataContainer().set(lastDoneKey, PersistentDataType.LONG, today);
+
+        final int bonusPerDay = Math.max(0, configManager.getInt("daily-quests.streak-bonus-per-day", 5));
+        final int bonusCapDays = Math.max(0, configManager.getInt("daily-quests.streak-bonus-cap-days", 7));
+        final long streakBonus = (long) Math.min(streak, bonusCapDays) * bonusPerDay;
+        final long totalReward = daily.reward() + streakBonus;
+
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        if (daily.reward() > 0) {
-            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), daily.reward());
+        if (totalReward > 0) {
+            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), totalReward);
         }
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.2F);
         player.sendMessage(messageManager.getMessage(
                 "daily-completed",
-                "<gold>📅 Napi küldetés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>",
-                Map.of("name", daily.name(), "reward", String.valueOf(daily.reward()))));
+                "<gold>📅 Napi küldetés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta, sorozat: {streak} nap)</gray></gold>",
+                Map.of("name", daily.name(), "reward", String.valueOf(totalReward), "streak", String.valueOf(streak))));
+    }
+
+    /** The player's current daily-completion streak (consecutive days). */
+    public int getStreak(final Player player) {
+        return player.getPersistentDataContainer().getOrDefault(streakKey, PersistentDataType.INTEGER, 0);
     }
 
     private void ensureFresh(final Player player) {
