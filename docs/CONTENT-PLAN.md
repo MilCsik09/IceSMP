@@ -186,8 +186,13 @@ saját `getScheduler()`-jén (a meglévő world-boss minta már így spawnol). *
 
 ## 4. terület — Invázió + napi/heti küldetések
 
-### Invázió-változatosság
-**Jelenlegi:** 1 zombie-hullám (8 mob, lvl 4). **Vízió:** témázott horda-összetételek + mini-boss + skálázódás.
+### Invázió-változatosság ✅ KÉSZ
+**Megvalósítva:** a hullám VÉLETLEN horda-összetételt kap (4 archetípus: Élőhalott Áradat
+[zombi+husk], Csontlégió [skeleton+stray], Pókfészek [spider+cave_spider], Káosz-horda
+[vegyes+pillager]), és minden hullámot egy skálázott, **megnevezett mini-boss** (a horda bajnoka,
+`mini-boss-level-bonus`-szal magasabb szint) vezet. A broadcast a horda nevét mutatja. *(Eredeti lent.)*
+
+**Eredeti vízió:** témázott horda-összetételek + mini-boss + skálázódás.
 - **Horda-típusok** (véletlen választás hullámonként): *Élőhalott Áradat* (zombi+husk), *Csontlégió*
   (skeleton+stray íjászok), *Pókfészek* (spider+cave_spider), *Káosz-horda* (vegyes + 1 vindicator).
 - **Több hullám + mini-boss:** 3 hullám növekvő mérettel; az utolsó hullám egy **skálázott mini-boss**

@@ -54,7 +54,9 @@ world-events:
     season-points: 10
     buff-minutes: 10
   # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).
-  # A szörnyek skálázottak (XP + lélekkő-eséllyel), admin: /events invasion.
+  # A horda-összetétel VÉLETLEN: Élőhalott Áradat / Csontlégió / Pókfészek / Káosz-horda —
+  # kevert mob-típusokkal, és minden hullámot egy skálázott, megnevezett mini-boss (bajnok)
+  # vezet. A szörnyek skálázottak (XP + lélekkő-eséllyel), admin: /events invasion.
   invasion:
     enabled: true
     check-interval-minutes: 75
@@ -62,7 +64,7 @@ world-events:
     mob-count: 8
     mob-level: 4
     radius: 8.0
-    entity-type: "ZOMBIE"
+    mini-boss-level-bonus: 6   # a horda bajnoka ennyivel magasabb szintű a hullámnál
   # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
   season:
     enabled: true

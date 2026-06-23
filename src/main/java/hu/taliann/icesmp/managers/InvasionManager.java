@@ -11,7 +11,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +24,36 @@ import java.util.concurrent.ThreadLocalRandom;
  * the target region's thread (Folia-safe).
  */
 public final class InvasionManager {
+
+    /**
+     * Horde compositions. Each wave picks one at random; its regular mobs are drawn from the
+     * {@code pool}, and a single scaled {@code miniBoss} (a tougher, named champion) leads it.
+     */
+    private enum Horde {
+        UNDEAD_TIDE("Élőhalott Áradat",
+                new EntityType[]{EntityType.ZOMBIE, EntityType.HUSK}, EntityType.WITHER_SKELETON),
+        BONE_LEGION("Csontlégió",
+                new EntityType[]{EntityType.SKELETON, EntityType.STRAY}, EntityType.WITHER_SKELETON),
+        SPIDER_NEST("Pókfészek",
+                new EntityType[]{EntityType.SPIDER, EntityType.CAVE_SPIDER}, EntityType.SPIDER),
+        CHAOS_HORDE("Káosz-horda",
+                new EntityType[]{EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SPIDER, EntityType.PILLAGER},
+                EntityType.RAVAGER);
+
+        private final String displayName;
+        private final EntityType[] pool;
+        private final EntityType miniBoss;
+
+        Horde(final String displayName, final EntityType[] pool, final EntityType miniBoss) {
+            this.displayName = displayName;
+            this.pool = pool;
+            this.miniBoss = miniBoss;
+        }
+
+        EntityType randomMob() {
+            return pool[ThreadLocalRandom.current().nextInt(pool.length)];
+        }
+    }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -130,13 +160,8 @@ public final class InvasionManager {
             }
         });
 
-        final EntityType type = resolveType();
-        final Class<? extends Entity> entityClass = type.getEntityClass();
-        if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-            plugin.getLogger().warning("Configured invasion entity-type is not a mob; skipping.");
-            return;
-        }
-
+        // Pick a random horde composition for this wave (variety).
+        final Horde horde = Horde.values()[ThreadLocalRandom.current().nextInt(Horde.values().length)];
         final int count = Math.max(1, configManager.getInt("world-events.invasion.mob-count", 8));
         final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4));
         final double radius = Math.max(2.0D, configManager.getDouble("world-events.invasion.radius", 8.0D));
@@ -146,31 +171,48 @@ public final class InvasionManager {
             final double angle = (Math.PI * 2.0D / count) * i;
             final int x = center.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
             final int z = center.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
-            final int y = center.getWorld().getHighestBlockYAt(x, z) + 1;
-            final Location spot = new Location(center.getWorld(), x + 0.5D, y, z + 0.5D);
-
-            final Mob mob = (Mob) center.getWorld().spawn(spot, entityClass.asSubclass(Mob.class));
-            mob.setGlowing(true);
-            mob.setRemoveWhenFarAway(false);
-            mobScalingManager.forceLevel(mob, level);
-            activeMobs.add(mob.getUniqueId());
-            spawned++;
+            if (spawnAt(topOf(center.getWorld(), x, z), horde.randomMob(), level) != null) {
+                spawned++;
+            }
         }
 
-        if (spawned > 0) {
+        // The horde's champion: a tougher, named mini-boss at the centre (final-wave feel).
+        final int bossBonus = Math.max(0, configManager.getInt("world-events.invasion.mini-boss-level-bonus", 6));
+        final Mob champion = spawnAt(topOf(center.getWorld(), center.getBlockX(), center.getBlockZ()),
+                horde.miniBoss, level + bossBonus);
+        if (champion != null) {
+            champion.customName(net.kyori.adventure.text.Component.text(
+                    "☠ " + horde.displayName + " Bajnoka",
+                    net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
+            champion.setCustomNameVisible(true);
+        }
+
+        if (spawned > 0 || champion != null) {
             Bukkit.getServer().broadcast(messageManager.getMessage(
                     "invasion-started",
-                    "<dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>"
+                    "<dark_red>⚔ INVÁZIÓ — {horde}! Egy szörnyhorda tört be a vidékre, élükön egy bajnokkal — vigyázz!</dark_red>",
+                    Map.of("horde", horde.displayName)
             ));
         }
     }
 
-    private EntityType resolveType() {
-        try {
-            return EntityType.valueOf(configManager.getString("world-events.invasion.entity-type", "ZOMBIE")
-                    .toUpperCase(Locale.ROOT));
-        } catch (final IllegalArgumentException exception) {
-            return EntityType.ZOMBIE;
+    /** Highest safe spawn spot above the given column. */
+    private Location topOf(final org.bukkit.World world, final int x, final int z) {
+        final int y = world.getHighestBlockYAt(x, z) + 1;
+        return new Location(world, x + 0.5D, y, z + 0.5D);
+    }
+
+    /** Spawns a glowing, level-scaled invasion mob; returns null if the type is not a mob. */
+    private Mob spawnAt(final Location spot, final EntityType type, final int level) {
+        final Class<? extends Entity> entityClass = type.getEntityClass();
+        if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
+            return null;
         }
+        final Mob mob = (Mob) spot.getWorld().spawn(spot, entityClass.asSubclass(Mob.class));
+        mob.setGlowing(true);
+        mob.setRemoveWhenFarAway(false);
+        mobScalingManager.forceLevel(mob, level);
+        activeMobs.add(mob.getUniqueId());
+        return mob;
     }
 }
