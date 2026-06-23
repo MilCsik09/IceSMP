@@ -44,6 +44,9 @@ public final class SpellCatalog {
         registerBeastMaster(registry, mm);
         registerPoisoner(registry, mm);
         registerPhantom(registry, mm);
+        registerDruid(registry, mm);
+        registerFeral(registry, mm);
+        registerLunar(registry, mm);
         registerTalentSpells(registry, mm);
     }
 
@@ -588,6 +591,97 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.SPEED, 15 * 20, 1)
                 .selfEffect(PotionEffectType.JUMP_BOOST, 15 * 20, 1)
                 .particle(Particle.SOUL, 50).sound(Sound.ENTITY_PHANTOM_AMBIENT, 1.0F, 0.5F)
+                .build());
+    }
+
+    // ===== DRUIDA (base class) — természet-mágia + shapeshift formák =====
+    private static void registerDruid(final SpellRegistry registry, final MessageManager mm) {
+        // A négy stance (egymást kizáró statisztika-profilok) — lásd DruidFormSpell.
+        registry.register(new DruidFormSpell(mm, DruidFormSpell.Form.BEAR));
+        registry.register(new DruidFormSpell(mm, DruidFormSpell.Form.CAT));
+        registry.register(new DruidFormSpell(mm, DruidFormSpell.Form.MOONKIN));
+        registry.register(new DruidFormSpell(mm, DruidFormSpell.Form.TRAVEL));
+        registry.register(ConfiguredSpell.builder(mm, "regrowth", "Sarjadás", 30, SpellCostType.XP, 40)
+                .healSelf(6.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 0)
+                .particle(Particle.HEART, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "barkskin", "Kéregbőr", 60, SpellCostType.HUNGER, 4)
+                .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 1)
+                .particle(Particle.ASH, 25).sound(Sound.ITEM_SHIELD_BLOCK, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "entangling_roots", "Gyökérfonat", 45, SpellCostType.HUNGER, 4)
+                .target(8.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 4)
+                .particle(Particle.SNEEZE, 30).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "thornlash", "Töviscsapás", 25, SpellCostType.HUNGER, 3)
+                .target(5.0D).damage(4.0D).targetEffect(PotionEffectType.POISON, 4 * 20, 0)
+                .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.8F)
+                .build());
+    }
+
+    // ===== VADŐR (druid spec) — közelharci formák (medve/párduc) =====
+    private static void registerFeral(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "savage_claw", "Vad Karom", 20, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(6.0D)
+                .particle(Particle.CRIT, 20).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "feral_charge", "Vad Roham", 35, SpellCostType.HUNGER, 4)
+                .dash(1.6D, 0.3D).selfEffect(PotionEffectType.RESISTANCE, 3 * 20, 1)
+                .particle(Particle.CLOUD, 15).sound(Sound.ENTITY_RAVAGER_ROAR, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "maul", "Marás", 30, SpellCostType.HUNGER, 4)
+                .target(4.0D).damage(7.0D).knockback(0.8D)
+                .particle(Particle.SWEEP_ATTACK, 8).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "rampage", "Tombolás", 90, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.STRENGTH, 10 * 20, 1).selfEffect(PotionEffectType.SPEED, 10 * 20, 0)
+                .particle(Particle.ANGRY_VILLAGER, 15).sound(Sound.ENTITY_RAVAGER_ROAR, 0.9F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "primal_roar", "Ősi Üvöltés", 75, SpellCostType.HUNGER, 5)
+                .aoe(6.0D).targetEffect(PotionEffectType.WEAKNESS, 8 * 20, 0)
+                .targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 1)
+                .particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_RAVAGER_ROAR, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "rejuvenate", "Felfrissülés", 60, SpellCostType.XP, 50)
+                .healSelf(4.0D).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
+                .particle(Particle.HEART, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "the_wild_hunt", "Vad Hajsza", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(8.0D).knockback(1.0D)
+                .selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1).selfEffect(PotionEffectType.SPEED, 12 * 20, 1)
+                .particle(Particle.CRIT, 50).sound(Sound.ENTITY_RAVAGER_ROAR, 1.0F, 0.8F)
+                .build());
+    }
+
+    // ===== HOLDJÓS (druid spec) — távolsági hold-/természet-mágia =====
+    private static void registerLunar(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "moonfire", "Holdtűz", 20, SpellCostType.XP, 30)
+                .target(16.0D).damage(5.0D).ignite(3 * 20)
+                .particle(Particle.END_ROD, 25).sound(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "starsurge", "Csillagár", 35, SpellCostType.XP, 45)
+                .target(18.0D).damage(7.0D)
+                .particle(Particle.END_ROD, 30).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "solar_beam", "Napsugár", 60, SpellCostType.XP, 55)
+                .target(14.0D).damage(6.0D).ignite(4 * 20).targetEffect(PotionEffectType.BLINDNESS, 3 * 20, 0)
+                .particle(Particle.FLAME, 30).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "hurricane", "Hurrikán", 90, SpellCostType.XP, 60)
+                .aoe(6.0D).damage(3.0D).knockback(0.6D).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 1)
+                .particle(Particle.CLOUD, 50).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "starfall", "Csillaghullás", 120, SpellCostType.XP, 80)
+                .aoe(6.0D).damage(6.0D)
+                .particle(Particle.END_ROD, 60).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.6F, 1.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "lunar_blessing", "Hold Áldása", 120, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 8 * 20, 0).healSelf(2.0D)
+                .particle(Particle.HEART, 30).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "celestial_alignment", "Égi Együttállás", 300, SpellCostType.XP, 150)
+                .aoe(7.0D).damage(8.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1)
+                .particle(Particle.FLASH, 5).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.7F, 1.4F)
                 .build());
     }
 }

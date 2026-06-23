@@ -58,7 +58,10 @@ public final class CatalystItemFactory {
                     5203, Sound.ITEM_CROSSBOW_LOADING_START, 0.8F, 1.3F),
             JobType.ASSASSIN, new CatalystTheme(
                     Material.FLINT, "<gray><bold>Árnyékamulett</bold></gray>",
-                    5204, Sound.BLOCK_CANDLE_EXTINGUISH, 0.9F, 0.8F)
+                    5204, Sound.BLOCK_CANDLE_EXTINGUISH, 0.9F, 0.8F),
+            JobType.DRUID, new CatalystTheme(
+                    Material.OAK_SAPLING, "<dark_green><bold>Vadon Talizmánja</bold></dark_green>",
+                    5205, Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F)
     ));
 
     private final NamespacedKey isCatalystKey;

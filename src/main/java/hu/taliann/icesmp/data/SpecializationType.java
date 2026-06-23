@@ -16,7 +16,9 @@ public enum SpecializationType {
     SHARPSHOOTER("sharpshooter", "<yellow>Mesterlövész</yellow>", JobType.ARCHER, null, false),
     BEAST_MASTER("beast_master", "<dark_green>Vadmester</dark_green>", JobType.ARCHER, null, false),
     POISONER("poisoner", "<green>Méregkeverő</green>", JobType.ASSASSIN, null, false),
-    PHANTOM("phantom", "<dark_aqua>Fantom</dark_aqua>", JobType.ASSASSIN, null, false);
+    PHANTOM("phantom", "<dark_aqua>Fantom</dark_aqua>", JobType.ASSASSIN, null, false),
+    FERAL("feral", "<dark_green>Vadőr</dark_green>", JobType.DRUID, null, false),
+    LUNAR("lunar", "<blue>Holdjós</blue>", JobType.DRUID, null, false);
 
     private final String id;
     private final Component displayName;

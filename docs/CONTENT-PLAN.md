@@ -13,7 +13,42 @@
 
 ---
 
-## 1. terület — Spell-variety: capstone-ok és a 40+ sáv
+## 0. Korrekció + irányváltás (megvalósítás közben)
+
+**Felfedezés:** a meglévő spell-tartalom **nem vékony** — a 8 spec mindegyike már most **10–12 spellt**
+kap, 25→45 között jól elosztva, mindegyiknek van 42-es és 45-ös (300 cd) capstone-ja
+(`elemental_overload`, `soul_harvest`, `berserk`, `last_stand`, `masterful_shot`, `king_of_beasts`…).
+Az alap-kasztok ~22-ig adnak spellt, onnan a spec veszi át. **Tehát az 1. terület eredeti premisszája
+(„adj capstone-okat") téves volt — az csak duplikáció lenne.**
+
+**Új irány (a felhasználó kérésére): új kasztok/specek.** Az első megvalósított: a **Druida** (lásd lent).
+A `JobType`/`SpecializationType` bővíthető — nincs kimerítő `switch`, minden config-stringből oldódik fel,
+a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint szűr. Egy 5. kaszt wiring-biztos.
+
+### ✅ Druida kaszt (megvalósítva)
+- **Kaszt:** `DRUID` — a természet kasztja, a meglévő természet-spelleket (`rain_dance`, `feast`,
+  `wisplight`) újrahasználja + saját gyógyító/gyökér/tövis spellek (`regrowth`, `barkskin`,
+  `entangling_roots`, `thornlash`).
+- **Shapeshift — Forma-rendszer (`DruidFormSpell`):** *igazi vizuális* shapeshift kliens-oldali
+  packet-disguise-t igényelne (kívül esik a build-mentes körön); helyette **stance-rendszer** ad
+  WoW-érzetet — 4 egymást kizáró forma külön statisztika-profillal: **Medve** (tank: resistance+absorption+
+  strength), **Párduc** (fürge dps: speed+strength), **Hold** (caster: regen+fireres), **Utazó** (speed II).
+  A formák hosszú, csendes buff-profilok (nincs scheduler → Folia-biztos), újra elsütve visszaváltozol;
+  kilépéskor a registry-iterált cleanup törli őket.
+- **Specek:** **Vadőr (Feral)** — közelharci formák (savage_claw, maul, rampage, the_wild_hunt + wolf_call/
+  panda_guard); **Holdjós (Balance)** — távolsági hold-/nap-mágia (moonfire, starsurge, starfall,
+  celestial_alignment + sun_dance).
+- **Bekötés:** `JobType.DRUID`, `SpecializationType.FERAL/LUNAR`, katalizátor-téma (Vadon Talizmánja —
+  tölgycsemete), `config/classes.yml` unlock-ok (alap 2–21, specek 25–45), `SpellCatalog.registerDruid/
+  Feral/Lunar`. Minden spell-ID egyedi és regisztrált (ellenőrzött).
+
+> **Lehetséges következő kasztok (ötletek):** *Paplovag* (Paladin — szent aura/gyógyítás/ítélet),
+> *Sámán* (totemek + elemi lánc), *Lovag/Halállovag* (Dark spec — runikus erő, holtidézés),
+> *Szerzetes* (Monk — kombó-pontos közelharc). Ugyanezzel a mintával bővíthető.
+
+---
+
+## 1. terület — Spell-variety: ~~capstone-ok és a 40+ sáv~~ (lásd 0. korrekció — már gazdag)
 
 **Vízió:** minden specnek legyen egy **capstone** (40–50 szint) spellje, ami a spec identitását
 csúcsra járatja, plusz 1–2 kitöltő spell a 25–40 sávba. Mind a `ConfiguredSpell.builder`-rel épül

@@ -66,6 +66,22 @@ classes:
       garrote: 18
       shadow_dash: 20
       death_mark: 24
+  # Druida: a természet kasztja. Újrahasznosítja a meglévő természet-spelleket
+  # (rain_dance/feast/wisplight) + saját gyógyító/gyökér spellek, és mind a 4
+  # shapeshift-forma (medve/párduc/hold/utazó) már alap-szinten elérhető.
+  druid:
+    spell-unlocks:
+      regrowth: 2
+      wisplight: 3
+      thornlash: 5
+      druid_cat_form: 7
+      entangling_roots: 9
+      barkskin: 11
+      druid_bear_form: 13
+      rain_dance: 15
+      druid_travel_form: 17
+      feast: 19
+      druid_moonkin_form: 21
 
 # ===== Specializációk =====
 # A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
@@ -176,6 +192,31 @@ specializations:
       phantom_grip: 39
       dread_whisper: 42
       spectre: 45
+  # Vadőr (Feral): a Druida közelharci specje — medve/párduc formák ereje,
+  # karmok és vad rohamok. Néhány meglévő vad-spellt (wolf_call/panda_guard) is használ.
+  feral:
+    spell-unlocks:
+      savage_claw: 25
+      feral_charge: 27
+      maul: 30
+      wolf_call: 32
+      rejuvenate: 34
+      primal_roar: 37
+      panda_guard: 39
+      rampage: 42
+      the_wild_hunt: 45
+  # Holdjós (Balance): a Druida távolsági specje — hold- és nap-mágia,
+  # csillaghullás és gyógyító áldás. A sun_dance-t is használja.
+  lunar:
+    spell-unlocks:
+      moonfire: 25
+      starsurge: 28
+      sun_dance: 30
+      hurricane: 33
+      solar_beam: 36
+      starfall: 40
+      lunar_blessing: 42
+      celestial_alignment: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
