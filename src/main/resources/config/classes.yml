@@ -478,6 +478,87 @@ talents:
         effect: "movement-speed"
         per-rank: 0.007
         max-rank: 3
+      # --- 3. szint: az új kasztok spec-talentjei (Druida/Paplovag/Halállovag/Sámán/Szerzetes) ---
+      wild_instincts:
+        display-name: "Vad Ösztönök"
+        tier: 3
+        requires-spec: "feral"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
+        max-rank: 3
+      celestial_harmony:
+        display-name: "Égi Összhang"
+        tier: 3
+        requires-spec: "lunar"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      holy_bond:
+        display-name: "Szent Kötelék"
+        tier: 3
+        requires-spec: "holy"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      zeal_of_retribution:
+        display-name: "Megtorlás Heve"
+        tier: 3
+        requires-spec: "retribution"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
+        max-rank: 3
+      blood_armor:
+        display-name: "Vérpáncél"
+        tier: 3
+        requires-spec: "blood"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      frost_edge:
+        display-name: "Fagyél"
+        tier: 3
+        requires-spec: "frost"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
+        max-rank: 3
+      elemental_harmony:
+        display-name: "Elemi Összhang"
+        tier: 3
+        requires-spec: "elemental"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      windfury_mastery:
+        display-name: "Szélharag Mester"
+        tier: 3
+        requires-spec: "enhancement"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.6
+        max-rank: 3
+      steps_of_wind:
+        display-name: "Szél Léptei"
+        tier: 3
+        requires-spec: "windwalker"
+        requires-talent: "swiftness"
+        effect: "movement-speed"
+        per-rank: 0.007
+        max-rank: 3
+      iron_belly:
+        display-name: "Acél Sörhas"
+        tier: 3
+        requires-spec: "brewmaster"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
       # --- 2. szint: EGYMÁST KIZÁRÓ ágválasztás (csak az egyik vehető fel) ---
       juggernaut:
         display-name: "Behemót"
