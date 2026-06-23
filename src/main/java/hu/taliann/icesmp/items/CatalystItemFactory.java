@@ -64,7 +64,13 @@ public final class CatalystItemFactory {
                     5205, Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F),
             JobType.PALADIN, new CatalystTheme(
                     Material.BELL, "<gold><bold>Szent Harang</bold></gold>",
-                    5206, Sound.BLOCK_BEACON_ACTIVATE, 0.7F, 1.3F)
+                    5206, Sound.BLOCK_BEACON_ACTIVATE, 0.7F, 1.3F),
+            JobType.DEATH_KNIGHT, new CatalystTheme(
+                    Material.WITHER_SKELETON_SKULL, "<dark_red><bold>Rúnakovácsolt Koponya</bold></dark_red>",
+                    5207, Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.8F),
+            JobType.SHAMAN, new CatalystTheme(
+                    Material.TOTEM_OF_UNDYING, "<aqua><bold>Ősök Totemje</bold></aqua>",
+                    5208, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.1F)
     ));
 
     private final NamespacedKey isCatalystKey;

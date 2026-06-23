@@ -56,9 +56,21 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
   **Megtorló (Retribution)** — szent sebzés (crusader_strike, judgment, divine_storm, holy_fire,
   capstone final_verdict). 26 új spell, mind egyedi ID, ellenőrzött.
 
-> **Lehetséges következő kasztok (ötletek):** *Sámán* (totemek + elemi lánc — totem = új mechanika),
-> *Halállovag* (Dark spec — runikus erő, holtidézés), *Szerzetes* (Monk — kombó-pontos közelharc).
-> Ugyanezzel a mintával bővíthető.
+### ✅ Halállovag + Sámán kasztok (megvalósítva)
+- **Halállovag (`DEATH_KNIGHT`)** — rúnikus harcos, katalizátor „Rúnakovácsolt Koponya". Alap: fagy +
+  vér (death_strike életszívással, chains_of_ice, bone_shield…). Specek: **Vérlovag (Blood)** tank
+  önfenntartással (vampiric_blood, capstone dancing_rune_weapon); **Fagylovag (Frost)** sebző
+  (obliterate, howling_blast, capstone breath_of_sindragosa).
+- **Sámán (`SHAMAN`)** — elemi mágus, katalizátor „Ősök Totemje". Alap: villám/láva/jég + totem-aurák
+  (a totemek jelenleg *instant aura-spellek*, nem lerakott entitások — a perzisztens totem-entitás egy
+  jövőbeli, scheduler-es bővítés). Specek: **Elemi (Elemental)** távolsági (lava_burst, chain_lightning,
+  capstone ascendance_flame); **Erősítő (Enhancement)** közelharci (stormstrike, crash_lightning,
+  capstone doom_winds).
+- 50 új spell, mind egyedi és regisztrált (globálisan ellenőrzött). A `JobGUI` slot-elrendezése
+  6→8-ra bővült (két sor négyesével), hogy mind a 8 kaszt megjelenjen.
+
+> **Még lehetséges kaszt:** *Szerzetes* (Monk — kombó-pontos közelharc). A **perzisztens Sámán-totemek**
+> (lerakott, periodikusan pulzáló entitások) önálló mechanika-bővítésként jöhetnek.
 
 ---
 

@@ -96,6 +96,34 @@ classes:
       divine_protection: 17
       radiance: 19
       lay_on_hands: 21
+  # Halállovag (Death Knight): rúnikus harcos — fagy és vér. A Vérlovag tankol
+  # életszívással, a Fagylovag fagyos közelharci sebzést oszt.
+  death_knight:
+    spell-unlocks:
+      death_strike: 2
+      rune_strike: 4
+      death_coil: 6
+      chains_of_ice: 8
+      icy_touch: 11
+      bone_shield: 13
+      blood_boil: 15
+      anti_magic_shell: 17
+      dark_command: 19
+      frost_fever: 21
+  # Sámán (Shaman): elemi mágus — villám/láva/jég + totem-aurák. Az Elemi távolról
+  # tüzérkedik, az Erősítő elemekkel feltöltött közelharcot vív.
+  shaman:
+    spell-unlocks:
+      lightning_bolt: 2
+      healing_surge: 4
+      earth_shock: 6
+      flame_shock: 8
+      frost_shock: 11
+      lightning_shield: 13
+      searing_totem: 15
+      wind_rush: 17
+      healing_stream_totem: 19
+      ancestral_spirit: 21
 
 # ===== Specializációk =====
 # A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
@@ -253,6 +281,48 @@ specializations:
       divine_storm: 39
       wake_of_ashes: 42
       final_verdict: 45
+  # Vérlovag (Blood): a Halállovag tank specje — életszívás és felszívás.
+  blood:
+    spell-unlocks:
+      heart_strike: 25
+      marrowrend: 27
+      rune_tap: 30
+      blood_mirror: 33
+      vampiric_blood: 36
+      bonestorm: 39
+      dancing_rune_weapon: 45
+  # Fagylovag (Frost): a Halállovag fagyos sebző specje.
+  frost:
+    spell-unlocks:
+      obliterate: 25
+      frost_strike: 27
+      frostscythe: 30
+      howling_blast: 33
+      remorseless_winter: 36
+      chill_streak: 39
+      pillar_of_frost: 42
+      breath_of_sindragosa: 45
+  # Elemi (Elemental): a Sámán távolsági elemi specje.
+  elemental:
+    spell-unlocks:
+      lava_burst: 25
+      chain_lightning: 28
+      earthquake: 30
+      elemental_blast: 33
+      thunderstorm: 36
+      stormkeeper: 39
+      ascendance_flame: 45
+  # Erősítő (Enhancement): a Sámán elemekkel feltöltött közelharci specje.
+  enhancement:
+    spell-unlocks:
+      stormstrike: 25
+      lava_lash: 27
+      windfury: 30
+      crash_lightning: 33
+      feral_spirit: 36
+      sundering: 39
+      earthen_weapon: 42
+      doom_winds: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.

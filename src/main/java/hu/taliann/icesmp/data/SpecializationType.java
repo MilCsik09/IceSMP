@@ -20,7 +20,11 @@ public enum SpecializationType {
     FERAL("feral", "<dark_green>Vadőr</dark_green>", JobType.DRUID, null, false),
     LUNAR("lunar", "<blue>Holdjós</blue>", JobType.DRUID, null, false),
     HOLY("holy", "<yellow>Szentlélek</yellow>", JobType.PALADIN, null, false),
-    RETRIBUTION("retribution", "<gold>Megtorló</gold>", JobType.PALADIN, null, false);
+    RETRIBUTION("retribution", "<gold>Megtorló</gold>", JobType.PALADIN, null, false),
+    BLOOD("blood", "<dark_red>Vérlovag</dark_red>", JobType.DEATH_KNIGHT, null, false),
+    FROST("frost", "<aqua>Fagylovag</aqua>", JobType.DEATH_KNIGHT, null, false),
+    ELEMENTAL("elemental", "<blue>Elemi</blue>", JobType.SHAMAN, null, false),
+    ENHANCEMENT("enhancement", "<gold>Erősítő</gold>", JobType.SHAMAN, null, false);
 
     private final String id;
     private final Component displayName;
