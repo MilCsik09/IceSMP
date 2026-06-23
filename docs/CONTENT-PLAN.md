@@ -47,9 +47,18 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
   tölgycsemete), `config/classes.yml` unlock-ok (alap 2–21, specek 25–45), `SpellCatalog.registerDruid/
   Feral/Lunar`. Minden spell-ID egyedi és regisztrált (ellenőrzött).
 
-> **Lehetséges következő kasztok (ötletek):** *Paplovag* (Paladin — szent aura/gyógyítás/ítélet),
-> *Sámán* (totemek + elemi lánc), *Lovag/Halállovag* (Dark spec — runikus erő, holtidézés),
-> *Szerzetes* (Monk — kombó-pontos közelharc). Ugyanezzel a mintával bővíthető.
+### ✅ Paplovag kaszt (megvalósítva)
+- **Kaszt:** `PALADIN` — szent harci/hibrid kaszt, katalizátora a „Szent Harang" (Bell). 10 alap-spell
+  (smite, flash_heal, consecration, lay_on_hands, holy_wrath, divine_protection…), tisztán
+  `ConfiguredSpell` (nincs új mechanika).
+- **Specek:** **Szentlélek (Holy)** — gyógyítás/csapat-áldás (holy_light, beacon_of_light,
+  blessing_of_kings, divine_shield, capstone avenging_wrath + a guardian healing_word újrahasználatával);
+  **Megtorló (Retribution)** — szent sebzés (crusader_strike, judgment, divine_storm, holy_fire,
+  capstone final_verdict). 26 új spell, mind egyedi ID, ellenőrzött.
+
+> **Lehetséges következő kasztok (ötletek):** *Sámán* (totemek + elemi lánc — totem = új mechanika),
+> *Halállovag* (Dark spec — runikus erő, holtidézés), *Szerzetes* (Monk — kombó-pontos közelharc).
+> Ugyanezzel a mintával bővíthető.
 
 ---
 

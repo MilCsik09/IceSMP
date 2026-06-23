@@ -61,7 +61,10 @@ public final class CatalystItemFactory {
                     5204, Sound.BLOCK_CANDLE_EXTINGUISH, 0.9F, 0.8F),
             JobType.DRUID, new CatalystTheme(
                     Material.OAK_SAPLING, "<dark_green><bold>Vadon Talizmánja</bold></dark_green>",
-                    5205, Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F)
+                    5205, Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F),
+            JobType.PALADIN, new CatalystTheme(
+                    Material.BELL, "<gold><bold>Szent Harang</bold></gold>",
+                    5206, Sound.BLOCK_BEACON_ACTIVATE, 0.7F, 1.3F)
     ));
 
     private final NamespacedKey isCatalystKey;

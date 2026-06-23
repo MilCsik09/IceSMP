@@ -8,7 +8,8 @@ public enum JobType {
     WARRIOR("warrior", "<red>Harcos</red>", null),
     ARCHER("archer", "<green>Íjász</green>", null),
     ASSASSIN("assassin", "<gray>Orgyilkos</gray>", null),
-    DRUID("druid", "<dark_green>Druida</dark_green>", null);
+    DRUID("druid", "<dark_green>Druida</dark_green>", null),
+    PALADIN("paladin", "<gold>Paplovag</gold>", null);
 
     private final String id;
     private final Component displayName;

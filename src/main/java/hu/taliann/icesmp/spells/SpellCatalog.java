@@ -47,6 +47,9 @@ public final class SpellCatalog {
         registerDruid(registry, mm);
         registerFeral(registry, mm);
         registerLunar(registry, mm);
+        registerPaladin(registry, mm);
+        registerHoly(registry, mm);
+        registerRetribution(registry, mm);
         registerTalentSpells(registry, mm);
     }
 
@@ -682,6 +685,119 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "celestial_alignment", "Égi Együttállás", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).damage(8.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1)
                 .particle(Particle.FLASH, 5).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.7F, 1.4F)
+                .build());
+    }
+
+    // ===== PAPLOVAG (base class) — szent harci mágia: sújtás, gyógyítás, aurák =====
+    private static void registerPaladin(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "smite", "Sújtás", 20, SpellCostType.XP, 30)
+                .target(14.0D).damage(5.0D)
+                .particle(Particle.END_ROD, 20).sound(Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 1.3F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "flash_heal", "Villámgyógyítás", 30, SpellCostType.XP, 40)
+                .healSelf(5.0D).particle(Particle.HEART, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "devotion_aura", "Áhítat Aurája", 60, SpellCostType.HUNGER, 4)
+                .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 0)
+                .particle(Particle.END_ROD, 15).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "hammer_of_justice", "Igazság Pörölye", 45, SpellCostType.HUNGER, 4)
+                .target(8.0D).damage(3.0D).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 3)
+                .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "consecration", "Megszentelés", 60, SpellCostType.HUNGER, 5)
+                .aoe(5.0D).damage(2.0D).ignite(2 * 20)
+                .particle(Particle.FLAME, 30).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "lay_on_hands", "Kézrátétel", 150, SpellCostType.XP, 70)
+                .healSelf(10.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 1)
+                .particle(Particle.HEART, 30).sound(Sound.ITEM_TOTEM_USE, 0.6F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "blessing_of_might", "Erő Áldása", 120, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.STRENGTH, 15 * 20, 0)
+                .particle(Particle.END_ROD, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "holy_wrath", "Szent Harag", 90, SpellCostType.XP, 60)
+                .aoe(6.0D).damage(4.0D).knockback(0.8D)
+                .particle(Particle.FLASH, 4).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.7F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "divine_protection", "Isteni Védelem", 120, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 2).selfEffect(PotionEffectType.FIRE_RESISTANCE, 8 * 20, 0)
+                .particle(Particle.END_ROD, 25).sound(Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "radiance", "Sugárzás", 120, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 6 * 20, 0).healSelf(3.0D)
+                .particle(Particle.HEART, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.4F)
+                .build());
+    }
+
+    // ===== SZENTLÉLEK (paladin spec) — gyógyítás és csapat-áldások =====
+    private static void registerHoly(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "holy_light", "Szent Fény", 30, SpellCostType.XP, 45)
+                .healSelf(8.0D).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
+                .particle(Particle.HEART, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "beacon_of_light", "Fény Jelzőtüze", 90, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 10 * 20, 1).healSelf(4.0D)
+                .particle(Particle.END_ROD, 30).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "blessing_of_kings", "Királyok Áldása", 120, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly()
+                .targetEffect(PotionEffectType.STRENGTH, 15 * 20, 0).targetEffect(PotionEffectType.RESISTANCE, 15 * 20, 0)
+                .particle(Particle.END_ROD, 30).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.3F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "divine_shield", "Isteni Pajzs", 180, SpellCostType.HUNGER, 8)
+                .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 3).selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 2)
+                .particle(Particle.TOTEM_OF_UNDYING, 30).sound(Sound.ITEM_TOTEM_USE, 0.7F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "aura_mastery", "Aura-mesterség", 120, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.RESISTANCE, 10 * 20, 1)
+                .particle(Particle.END_ROD, 40).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "guardian_angel", "Őrangyal", 150, SpellCostType.XP, 70)
+                .healSelf(6.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1).selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 1)
+                .particle(Particle.HEART, 30).sound(Sound.ITEM_TOTEM_USE, 0.6F, 1.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "avenging_wrath", "Megtorló Harag", 300, SpellCostType.XP, 150)
+                .aoe(7.0D).friendly()
+                .targetEffect(PotionEffectType.REGENERATION, 12 * 20, 1).targetEffect(PotionEffectType.STRENGTH, 12 * 20, 1).healSelf(8.0D)
+                .particle(Particle.TOTEM_OF_UNDYING, 60).sound(Sound.ITEM_TOTEM_USE, 0.8F, 1.0F)
+                .build());
+    }
+
+    // ===== MEGTORLÓ (paladin spec) — szent közelharci/sújtó sebzés =====
+    private static void registerRetribution(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "crusader_strike", "Keresztes Csapás", 20, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(6.0D)
+                .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "judgment", "Ítélet", 30, SpellCostType.XP, 40)
+                .target(16.0D).damage(6.0D)
+                .particle(Particle.END_ROD, 25).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.6F, 1.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "blade_of_justice", "Igazság Pengéje", 35, SpellCostType.HUNGER, 4)
+                .target(6.0D).damage(7.0D).knockback(0.6D)
+                .particle(Particle.CRIT, 20).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.9F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "divine_storm", "Isteni Vihar", 60, SpellCostType.HUNGER, 5)
+                .aoe(5.0D).damage(5.0D).knockback(0.5D)
+                .particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 1.0F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "holy_fire", "Szent Tűz", 45, SpellCostType.XP, 50)
+                .target(14.0D).damage(5.0D).ignite(3 * 20)
+                .particle(Particle.FLAME, 25).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.1F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "wake_of_ashes", "Hamuébresztés", 90, SpellCostType.XP, 60)
+                .aoe(5.0D).damage(4.0D).ignite(4 * 20)
+                .particle(Particle.FLAME, 40).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "zeal", "Buzgalom", 75, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.SPEED, 10 * 20, 0).selfEffect(PotionEffectType.STRENGTH, 10 * 20, 1)
+                .particle(Particle.END_ROD, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.3F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "final_verdict", "Végső Ítélet", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(9.0D).knockback(1.0D)
+                .particle(Particle.FLASH, 5).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.7F, 1.5F)
                 .build());
     }
 }

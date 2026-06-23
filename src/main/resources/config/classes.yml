@@ -82,6 +82,20 @@ classes:
       druid_travel_form: 17
       feast: 19
       druid_moonkin_form: 21
+  # Paplovag (Paladin): a szent harci kaszt — sújtás, gyógyítás, áldás-aurák.
+  # Támogató/hibrid identitás: a Szentlélek gyógyít, a Megtorló szent sebzést oszt.
+  paladin:
+    spell-unlocks:
+      smite: 2
+      flash_heal: 4
+      devotion_aura: 6
+      hammer_of_justice: 8
+      consecration: 11
+      blessing_of_might: 13
+      holy_wrath: 15
+      divine_protection: 17
+      radiance: 19
+      lay_on_hands: 21
 
 # ===== Specializációk =====
 # A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
@@ -217,6 +231,28 @@ specializations:
       starfall: 40
       lunar_blessing: 42
       celestial_alignment: 45
+  # Szentlélek (Holy): a Paplovag gyógyító/támogató specje. A guardian healing_word-öt is használja.
+  holy:
+    spell-unlocks:
+      holy_light: 25
+      beacon_of_light: 27
+      healing_word: 30
+      blessing_of_kings: 33
+      aura_mastery: 36
+      divine_shield: 39
+      guardian_angel: 42
+      avenging_wrath: 45
+  # Megtorló (Retribution): a Paplovag szent sebző specje — keresztes csapások és ítéletek.
+  retribution:
+    spell-unlocks:
+      crusader_strike: 25
+      judgment: 27
+      blade_of_justice: 30
+      holy_fire: 33
+      zeal: 36
+      divine_storm: 39
+      wake_of_ashes: 42
+      final_verdict: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
