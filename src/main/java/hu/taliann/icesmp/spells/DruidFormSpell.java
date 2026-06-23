@@ -41,39 +41,41 @@ public final class DruidFormSpell extends BaseSpell {
     /** The four Druid stances and their stat profiles (only verified effect types used). */
     public enum Form {
         BEAR("druid_bear_form", "Medveforma", "Tank-alak: ellenállás, felszívás és erő, kissé lassabban.",
-                Particle.CRIT, Sound.ENTITY_RAVAGER_ROAR, new FormEffect[]{
+                "POLAR_BEAR", Particle.CRIT, Sound.ENTITY_RAVAGER_ROAR, new FormEffect[]{
                 new FormEffect(PotionEffectType.RESISTANCE, 1),
                 new FormEffect(PotionEffectType.ABSORPTION, 1),
                 new FormEffect(PotionEffectType.STRENGTH, 0),
                 new FormEffect(PotionEffectType.SLOWNESS, 0)
         }),
         CAT("druid_cat_form", "Párducforma", "Fürge harci alak: sebesség és erő a gyors lecsapásokhoz.",
-                Particle.SMOKE, Sound.ENTITY_PHANTOM_AMBIENT, new FormEffect[]{
+                "CAT", Particle.SMOKE, Sound.ENTITY_PHANTOM_AMBIENT, new FormEffect[]{
                 new FormEffect(PotionEffectType.SPEED, 1),
                 new FormEffect(PotionEffectType.STRENGTH, 0)
         }),
         MOONKIN("druid_moonkin_form", "Holdforma", "Varázsló-alak: regeneráció és tűzállóság a hold-mágiához.",
-                Particle.END_ROD, Sound.BLOCK_BEACON_ACTIVATE, new FormEffect[]{
+                "PARROT", Particle.END_ROD, Sound.BLOCK_BEACON_ACTIVATE, new FormEffect[]{
                 new FormEffect(PotionEffectType.REGENERATION, 0),
                 new FormEffect(PotionEffectType.FIRE_RESISTANCE, 0)
         }),
         TRAVEL("druid_travel_form", "Utazóforma", "Utazó-alak: jelentős sebesség a gyors helyváltáshoz.",
-                Particle.CLOUD, Sound.ENTITY_BREEZE_SHOOT, new FormEffect[]{
+                "HORSE", Particle.CLOUD, Sound.ENTITY_BREEZE_SHOOT, new FormEffect[]{
                 new FormEffect(PotionEffectType.SPEED, 2)
         });
 
         private final String id;
         private final String defaultName;
         private final String description;
+        private final String disguiseType;
         private final Particle particle;
         private final Sound sound;
         private final FormEffect[] effects;
 
-        Form(final String id, final String defaultName, final String description, final Particle particle,
-             final Sound sound, final FormEffect[] effects) {
+        Form(final String id, final String defaultName, final String description, final String disguiseType,
+             final Particle particle, final Sound sound, final FormEffect[] effects) {
             this.id = id;
             this.defaultName = defaultName;
             this.description = description;
+            this.disguiseType = disguiseType;
             this.particle = particle;
             this.sound = sound;
             this.effects = effects;
@@ -96,6 +98,7 @@ public final class DruidFormSpell extends BaseSpell {
         // Recasting the current form drops back to the formless stance.
         if (previous == form) {
             ACTIVE_FORM.remove(playerId);
+            hu.taliann.icesmp.integration.DruidDisguise.clear(player);
             player.sendMessage(resolveMessage("spell." + form.id + ".off", "<gray>Visszaváltozol emberi alakodba.</gray>"));
             return;
         }
@@ -104,6 +107,8 @@ public final class DruidFormSpell extends BaseSpell {
             player.addPotionEffect(new PotionEffect(effect.type(), FORM_DURATION_TICKS, effect.amplifier(), true, false, true));
         }
         ACTIVE_FORM.put(playerId, form);
+        // Optional visual layer: disguise as the matching mob when LibsDisguises is installed (else no-op).
+        hu.taliann.icesmp.integration.DruidDisguise.apply(player, form.disguiseType);
         player.getWorld().spawnParticle(form.particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.6D, 0.4D, 0.02D);
         player.getWorld().playSound(player.getLocation(), form.sound, 1.0F, 1.0F);
         player.sendMessage(resolveMessage("spell." + form.id + ".on", "<green>Felveszed a(z) " + form.defaultName + "t.</green>"));
@@ -132,6 +137,7 @@ public final class DruidFormSpell extends BaseSpell {
         final Player player = Bukkit.getPlayer(playerId);
         if (player != null) {
             removeFormEffects(player, current);
+            hu.taliann.icesmp.integration.DruidDisguise.clear(player);
         }
     }
 }

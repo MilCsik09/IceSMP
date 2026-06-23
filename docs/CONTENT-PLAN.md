@@ -29,12 +29,17 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
 - **Kaszt:** `DRUID` — a természet kasztja, a meglévő természet-spelleket (`rain_dance`, `feast`,
   `wisplight`) újrahasználja + saját gyógyító/gyökér/tövis spellek (`regrowth`, `barkskin`,
   `entangling_roots`, `thornlash`).
-- **Shapeshift — Forma-rendszer (`DruidFormSpell`):** *igazi vizuális* shapeshift kliens-oldali
-  packet-disguise-t igényelne (kívül esik a build-mentes körön); helyette **stance-rendszer** ad
-  WoW-érzetet — 4 egymást kizáró forma külön statisztika-profillal: **Medve** (tank: resistance+absorption+
+- **Shapeshift — Forma-rendszer (`DruidFormSpell`):** **stance-rendszer** + **opcionális vizuális
+  disguise**. 4 egymást kizáró forma külön statisztika-profillal: **Medve** (tank: resistance+absorption+
   strength), **Párduc** (fürge dps: speed+strength), **Hold** (caster: regen+fireres), **Utazó** (speed II).
   A formák hosszú, csendes buff-profilok (nincs scheduler → Folia-biztos), újra elsütve visszaváltozol;
   kilépéskor a registry-iterált cleanup törli őket.
+- **Vizuális átalakulás (`integration/DruidDisguise`):** opcionális **LibsDisguises** híd — *tiszta
+  reflexió*, nincs fordítási/kemény futásidejű függőség. Ha a szerveren fut a LibsDisguises (a
+  `paper-plugin.yml` soft-dependje, `join-classpath`), a forma vizuálisan is mobbá alakít (Medve→POLAR_BEAR,
+  Párduc→CAT, Hold→PARROT, Utazó→HORSE, ön-nézettel); nélküle a forma csak statisztikát vált. Bármilyen
+  API-eltérés/hiányzó lib csendes no-op — soha nem töri el a cast-ot. A hívások a játékos régió-szálán
+  futnak (Folia-helyes packet-küldés).
 - **Specek:** **Vadőr (Feral)** — közelharci formák (savage_claw, maul, rampage, the_wild_hunt + wolf_call/
   panda_guard); **Holdjós (Balance)** — távolsági hold-/nap-mágia (moonfire, starsurge, starfall,
   celestial_alignment + sun_dance).
