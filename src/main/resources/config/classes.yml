@@ -756,6 +756,242 @@ talents:
         effect: "max-health"
         per-rank: 2.0
         max-rank: 4
+      # --- 2. szint: KASZT-SPECIFIKUS build-döntés (offenzív XOR defenzív, requires-job) ---
+      # Minden kaszt választhat egy támadó VAGY egy védekező ágat — valódi build-irány.
+      aether_surge:
+        display-name: "Éter Lökés"
+        tier: 2
+        requires-job: "wizard"
+        requires-talent: "power"
+        excludes: ["mana_shield"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      mana_shield:
+        display-name: "Mana Pajzs"
+        tier: 2
+        requires-job: "wizard"
+        requires-talent: "vitality"
+        excludes: ["aether_surge"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      berserker_might:
+        display-name: "Berserk Erő"
+        tier: 2
+        requires-job: "warrior"
+        requires-talent: "power"
+        excludes: ["unbreakable"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      unbreakable:
+        display-name: "Törhetetlen"
+        tier: 2
+        requires-job: "warrior"
+        requires-talent: "vitality"
+        excludes: ["berserker_might"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      deadly_aim:
+        display-name: "Halálos Célzás"
+        tier: 2
+        requires-job: "archer"
+        requires-talent: "power"
+        excludes: ["evasion_training"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      evasion_training:
+        display-name: "Kitérő Edzés"
+        tier: 2
+        requires-job: "archer"
+        requires-talent: "vitality"
+        excludes: ["deadly_aim"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      lethality:
+        display-name: "Halálosság"
+        tier: 2
+        requires-job: "assassin"
+        requires-talent: "power"
+        excludes: ["shadow_guard"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      shadow_guard:
+        display-name: "Árny Őrzet"
+        tier: 2
+        requires-job: "assassin"
+        requires-talent: "vitality"
+        excludes: ["lethality"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      wild_fury:
+        display-name: "Vad Düh"
+        tier: 2
+        requires-job: "druid"
+        requires-talent: "power"
+        excludes: ["thick_fur"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      thick_fur:
+        display-name: "Vastag Bunda"
+        tier: 2
+        requires-job: "druid"
+        requires-talent: "vitality"
+        excludes: ["wild_fury"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      righteous_might:
+        display-name: "Igaz Erő"
+        tier: 2
+        requires-job: "paladin"
+        requires-talent: "power"
+        excludes: ["holy_aegis"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      holy_aegis:
+        display-name: "Szent Égisz"
+        tier: 2
+        requires-job: "paladin"
+        requires-talent: "vitality"
+        excludes: ["righteous_might"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      unholy_might:
+        display-name: "Szentségtelen Erő"
+        tier: 2
+        requires-job: "death_knight"
+        requires-talent: "power"
+        excludes: ["frost_armor"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      frost_armor:
+        display-name: "Fagypáncél"
+        tier: 2
+        requires-job: "death_knight"
+        requires-talent: "vitality"
+        excludes: ["unholy_might"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      elemental_focus:
+        display-name: "Elemi Fókusz"
+        tier: 2
+        requires-job: "shaman"
+        requires-talent: "power"
+        excludes: ["stoneskin"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      stoneskin:
+        display-name: "Kőbőr"
+        tier: 2
+        requires-job: "shaman"
+        requires-talent: "vitality"
+        excludes: ["elemental_focus"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      inner_strength:
+        display-name: "Belső Erő"
+        tier: 2
+        requires-job: "monk"
+        requires-talent: "power"
+        excludes: ["iron_body"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      iron_body:
+        display-name: "Vastest"
+        tier: 2
+        requires-job: "monk"
+        requires-talent: "vitality"
+        excludes: ["inner_strength"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      divine_fury:
+        display-name: "Isteni Düh"
+        tier: 2
+        requires-job: "priest"
+        requires-talent: "power"
+        excludes: ["spirit_shell"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      spirit_shell:
+        display-name: "Szellempáncél"
+        tier: 2
+        requires-job: "priest"
+        requires-talent: "vitality"
+        excludes: ["divine_fury"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      dark_empowerment:
+        display-name: "Sötét Felruházás"
+        tier: 2
+        requires-job: "warlock"
+        requires-talent: "power"
+        excludes: ["soul_link"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      soul_link:
+        display-name: "Lélekkötés"
+        tier: 2
+        requires-job: "warlock"
+        requires-talent: "vitality"
+        excludes: ["dark_empowerment"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      fel_power:
+        display-name: "Fel Hatalom"
+        tier: 2
+        requires-job: "demon_hunter"
+        requires-talent: "power"
+        excludes: ["demonic_hide"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      demonic_hide:
+        display-name: "Démonbőr"
+        tier: 2
+        requires-job: "demon_hunter"
+        requires-talent: "vitality"
+        excludes: ["fel_power"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      draconic_power:
+        display-name: "Sárkány Hatalom"
+        tier: 2
+        requires-job: "evoker"
+        requires-talent: "power"
+        excludes: ["scaled_hide"]
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 3
+      scaled_hide:
+        display-name: "Pikkelyes Bőr"
+        tier: 2
+        requires-job: "evoker"
+        requires-talent: "vitality"
+        excludes: ["draconic_power"]
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
       # --- 2. szint: EGYMÁST KIZÁRÓ ágválasztás (csak az egyik vehető fel) ---
       juggernaut:
         display-name: "Behemót"
