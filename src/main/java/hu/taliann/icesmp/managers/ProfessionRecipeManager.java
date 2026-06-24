@@ -75,6 +75,26 @@ public final class ProfessionRecipeManager {
                 storedBook("<dark_aqua>Bölcs Könyve</dark_aqua>", "<gray>Örök javítás a tárgyaidnak.</gray>", Enchantment.MENDING),
                 new String[]{"GLG", "LBL", "GLG"}, java.util.Map.of('G', Material.EMERALD, 'L', Material.LAPIS_LAZULI, 'B', Material.BOOK));
 
+        // 2. szintű mestermunkák (30. szint) — netherit-alapú, erősebb változatok.
+        define("osveny_csakany", ProfessionType.MINER, 30,
+                tool(Material.NETHERITE_PICKAXE, "<aqua>Ősvény Csákány</aqua>", "<gray>A mélységek mesterszerszáma.</gray>",
+                        new Enchantment[]{Enchantment.EFFICIENCY, Enchantment.UNBREAKING}, new int[]{5, 5}),
+                new String[]{"NEN", "NSN", " S "}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'E', Material.EMERALD_BLOCK, 'S', Material.STICK));
+
+        define("rengeteg_fejsze", ProfessionType.LUMBERJACK, 30,
+                tool(Material.NETHERITE_AXE, "<dark_green>Rengeteg Fejsze</dark_green>", "<gray>Egész ligeteket dönt ki.</gray>",
+                        new Enchantment[]{Enchantment.EFFICIENCY, Enchantment.UNBREAKING}, new int[]{5, 4}),
+                new String[]{"NE ", "NS ", " S "}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'E', Material.EMERALD_BLOCK, 'S', Material.STICK));
+
+        define("sarkany_vert", ProfessionType.ARMORER, 30,
+                tool(Material.NETHERITE_CHESTPLATE, "<gold>Sárkányvért</gold>", "<gray>A kovácsmesterek hadi remeke.</gray>",
+                        new Enchantment[]{Enchantment.UNBREAKING}, new int[]{8}),
+                new String[]{"N N", "NEN", "NNN"}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'E', Material.EMERALD_BLOCK));
+
+        define("mester_tomusz", ProfessionType.ENCHANTER, 30,
+                storedBook("<dark_aqua>Mester Tomusz</dark_aqua>", "<gray>A megszállottság hatékonysága.</gray>", Enchantment.EFFICIENCY, 5),
+                new String[]{"NLN", "LBL", "NLN"}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'L', Material.LAPIS_LAZULI, 'B', Material.BOOK));
+
         for (final Recipe recipe : recipes) {
             try {
                 final ShapedRecipe shaped = new ShapedRecipe(new NamespacedKey(plugin, "prof_" + recipe.id()), recipe.result());
@@ -133,12 +153,16 @@ public final class ProfessionRecipeManager {
     }
 
     private ItemStack storedBook(final String name, final String lore, final Enchantment enchant) {
+        return storedBook(name, lore, enchant, 1);
+    }
+
+    private ItemStack storedBook(final String name, final String lore, final Enchantment enchant, final int level) {
         final ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
         final ItemMeta meta = item.getItemMeta();
         meta.displayName(MINI.deserialize(name).decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(MINI.deserialize(lore).decoration(TextDecoration.ITALIC, false)));
         if (meta instanceof EnchantmentStorageMeta storage) {
-            storage.addStoredEnchant(enchant, 1, true);
+            storage.addStoredEnchant(enchant, Math.max(1, level), true);
         }
         item.setItemMeta(meta);
         return item;
