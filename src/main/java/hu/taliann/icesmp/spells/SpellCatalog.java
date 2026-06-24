@@ -629,6 +629,18 @@ public final class SpellCatalog {
                 .target(5.0D).damage(4.0D).targetEffect(PotionEffectType.POISON, 4 * 20, 0)
                 .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.8F)
                 .build());
+        registry.register(ConfiguredSpell.builder(mm, "sunfire", "Napperzselés", 25, SpellCostType.XP, 35)
+                .target(12.0D).damage(4.0D).ignite(3 * 20)
+                .particle(Particle.FLAME, 20).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.2F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "wild_mushroom", "Vadgomba", 45, SpellCostType.XP, 40)
+                .healSelf(5.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 0)
+                .particle(Particle.HEART, 18).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "cyclone", "Ciklon", 50, SpellCostType.HUNGER, 4)
+                .target(10.0D).launchUp(0.8D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 1)
+                .particle(Particle.CLOUD, 25).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.1F)
+                .build());
     }
 
     // ===== VADŐR (druid spec) — közelharci formák (medve/párduc) =====
@@ -653,6 +665,14 @@ public final class SpellCatalog {
                 .aoe(6.0D).targetEffect(PotionEffectType.WEAKNESS, 8 * 20, 0)
                 .targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 1)
                 .particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_RAVAGER_ROAR, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "swipe", "Mancscsapás", 25, SpellCostType.HUNGER, 3)
+                .aoe(4.0D).damage(5.0D)
+                .particle(Particle.SWEEP_ATTACK, 15).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "survival_instincts", "Túlélő Ösztön", 90, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 1).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 1)
+                .particle(Particle.CRIT, 20).sound(Sound.ENTITY_RAVAGER_ROAR, 0.8F, 1.2F)
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "rejuvenate", "Felfrissülés", 60, SpellCostType.XP, 50)
                 .healSelf(4.0D).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
@@ -690,6 +710,10 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "lunar_blessing", "Hold Áldása", 120, SpellCostType.HUNGER, 6)
                 .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 8 * 20, 0).healSelf(2.0D)
                 .particle(Particle.HEART, 30).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "stellar_flare", "Csillagláng", 30, SpellCostType.XP, 40)
+                .target(14.0D).damage(5.0D).ignite(2 * 20)
+                .particle(Particle.END_ROD, 22).sound(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.0F)
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "celestial_alignment", "Égi Együttállás", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).damage(8.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1)
@@ -766,6 +790,10 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "guardian_angel", "Őrangyal", 150, SpellCostType.XP, 70)
                 .healSelf(6.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1).selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 1)
                 .particle(Particle.HEART, 30).sound(Sound.ITEM_TOTEM_USE, 0.6F, 1.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "word_of_glory", "Dicsőség Szava", 30, SpellCostType.XP, 45)
+                .aoe(6.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 6 * 20, 0).healSelf(5.0D)
+                .particle(Particle.HEART, 22).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F)
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "avenging_wrath", "Megtorló Harag", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).friendly()

@@ -72,15 +72,15 @@ classes:
   druid:
     spell-unlocks:
       regrowth: 2
-      wisplight: 3
+      sunfire: 3
       thornlash: 5
       druid_cat_form: 7
       entangling_roots: 9
       barkskin: 11
       druid_bear_form: 13
-      rain_dance: 15
+      wild_mushroom: 15
       druid_travel_form: 17
-      feast: 19
+      cyclone: 19
       druid_moonkin_form: 21
   # Paplovag (Paladin): a szent harci kaszt — sújtás, gyógyítás, áldás-aurák.
   # Támogató/hibrid identitás: a Szentlélek gyógyít, a Megtorló szent sebzést oszt.
@@ -255,10 +255,10 @@ specializations:
       savage_claw: 25
       feral_charge: 27
       maul: 30
-      wolf_call: 32
+      swipe: 32
       rejuvenate: 34
       primal_roar: 37
-      panda_guard: 39
+      survival_instincts: 39
       rampage: 42
       the_wild_hunt: 45
   # Holdjós (Balance): a Druida távolsági specje — hold- és nap-mágia,
@@ -267,7 +267,7 @@ specializations:
     spell-unlocks:
       moonfire: 25
       starsurge: 28
-      sun_dance: 30
+      stellar_flare: 30
       hurricane: 33
       solar_beam: 36
       starfall: 40
@@ -278,7 +278,7 @@ specializations:
     spell-unlocks:
       holy_light: 25
       beacon_of_light: 27
-      healing_word: 30
+      word_of_glory: 30
       blessing_of_kings: 33
       aura_mastery: 36
       divine_shield: 39
