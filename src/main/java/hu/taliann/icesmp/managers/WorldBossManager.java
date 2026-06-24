@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * World bosses (ideas.md "Világ-bossok"): periodically a boss-grade guardian
@@ -54,21 +55,24 @@ public final class WorldBossManager {
      */
     private enum BossArchetype {
         RING_WARDEN(EntityType.RAVAGER, "&4&l☠ A Gyűrűk Őre &c[Világboss]", 1.0D, 1.0D, 1.0D,
-                PotionEffectType.SLOWNESS, 1, null, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT),
+                PotionEffectType.SLOWNESS, 1, null, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT, Special.SLAM),
         MAGMA_BEHEMOTH(EntityType.BLAZE, "&6&l🔥 Lávakohó Behemót &c[Világboss]", 1.0D, 1.1D, 1.1D,
-                PotionEffectType.WEAKNESS, 0, PotionEffectType.FIRE_RESISTANCE, Sound.ENTITY_GENERIC_EXPLODE, Particle.FLAME),
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.FIRE_RESISTANCE, Sound.ENTITY_GENERIC_EXPLODE, Particle.FLAME, Special.ZONE),
         FROST_KING(EntityType.STRAY, "&b&l❄ Fagyott Trón Királya &c[Világboss]", 1.1D, 1.0D, 1.0D,
-                PotionEffectType.SLOWNESS, 2, null, Sound.BLOCK_GLASS_BREAK, Particle.SNOWFLAKE),
+                PotionEffectType.SLOWNESS, 2, null, Sound.BLOCK_GLASS_BREAK, Particle.SNOWFLAKE, Special.ZONE),
         BONE_KING(EntityType.WITHER_SKELETON, "&8&l☠ Csontkirály &c[Világboss]", 1.0D, 1.2D, 1.1D,
-                PotionEffectType.WITHER, 0, PotionEffectType.STRENGTH, Sound.ENTITY_WITHER_AMBIENT, Particle.SOUL),
+                PotionEffectType.WITHER, 0, PotionEffectType.STRENGTH, Sound.ENTITY_WITHER_AMBIENT, Particle.SOUL, Special.SUMMON),
         DEEP_HORROR(EntityType.WARDEN, "&3&l👁 Mélységi Rém &c[Világboss]", 1.0D, 1.0D, 1.5D,
-                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL),
+                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL, Special.SLAM),
         VENOM_BROODMOTHER(EntityType.CAVE_SPIDER, "&2&l🕷 Méreg Anyakirálynő &c[Világboss]", 1.0D, 1.0D, 1.1D,
-                PotionEffectType.POISON, 1, PotionEffectType.SPEED, Sound.ENTITY_PHANTOM_AMBIENT, Particle.SNEEZE),
+                PotionEffectType.POISON, 1, PotionEffectType.SPEED, Sound.ENTITY_PHANTOM_AMBIENT, Particle.SNEEZE, Special.ZONE),
         STORM_HERALD(EntityType.VINDICATOR, "&e&l⚡ Vihar Hírnöke &c[Világboss]", 1.0D, 1.2D, 1.2D,
-                PotionEffectType.WEAKNESS, 0, PotionEffectType.SPEED, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, Particle.ELECTRIC_SPARK),
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.SPEED, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, Particle.ELECTRIC_SPARK, Special.ZONE),
         PLAGUE_TITAN(EntityType.HUSK, "&8&l☣ Dögvész Titán &c[Világboss]", 1.2D, 1.0D, 1.2D,
-                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK);
+                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK, Special.SLAM);
+
+        /** Signature special: an around-boss telegraphed slam, a targeted ground zone, or summoning adds. */
+        private enum Special { SLAM, ZONE, SUMMON }
 
         private final EntityType entityType;
         private final String displayName;
@@ -80,11 +84,12 @@ public final class WorldBossManager {
         private final PotionEffectType selfBuff;
         private final Sound sound;
         private final Particle particle;
+        private final Special special;
 
         BossArchetype(final EntityType entityType, final String displayName, final double healthMult,
                       final double damageMult, final double rewardMult, final PotionEffectType aura,
                       final int auraAmplifier, final PotionEffectType selfBuff, final Sound sound,
-                      final Particle particle) {
+                      final Particle particle, final Special special) {
             this.entityType = entityType;
             this.displayName = displayName;
             this.healthMult = healthMult;
@@ -95,6 +100,7 @@ public final class WorldBossManager {
             this.selfBuff = selfBuff;
             this.sound = sound;
             this.particle = particle;
+            this.special = special;
         }
     }
 
@@ -296,6 +302,7 @@ public final class WorldBossManager {
      */
     private void startPhaseTick(final Mob boss, final BossArchetype archetype) {
         final AtomicBoolean enraged = new AtomicBoolean(false);
+        final AtomicInteger ticks = new AtomicInteger();
         final double radius = Math.max(4.0D, configManager.getDouble("world-events.world-boss.aura-radius", 12.0D));
         boss.getScheduler().runAtFixedRate(plugin, task -> {
             if (!boss.isValid()) {
@@ -324,7 +331,93 @@ public final class WorldBossManager {
                 }
             }
             boss.getWorld().spawnParticle(archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
+
+            // Every ~8s (every 4th tick) the boss uses its signature special — a telegraphed mechanic
+            // players must react to, so it is more than a stat-buffed mob.
+            if (ticks.incrementAndGet() % 4 == 0) {
+                fireSpecial(boss, archetype, enraged.get());
+            }
         }, null, 40L, 40L);
+    }
+
+    /** A survivor (survival/adventure) — never debuff/hit creative or spectator players. */
+    private static boolean isSurvivor(final Player player) {
+        return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+    }
+
+    /**
+     * Fires the archetype's signature special on the boss's own region thread (Folia-safe; all touched
+     * entities are region-local nearby). SLAM = telegraphed ring around the boss; ZONE = a telegraphed
+     * spot on a random nearby survivor; SUMMON = a few buffed adds. Telegraph (particles + sound) lands
+     * first, then the effect after a short delay, so players can react.
+     */
+    private void fireSpecial(final Mob boss, final BossArchetype archetype, final boolean enraged) {
+        final org.bukkit.World world = boss.getWorld();
+        final double damage = Math.max(1.0D, configManager.getDouble("world-events.world-boss.special-damage", 6.0D))
+                * (enraged ? 1.5D : 1.0D);
+
+        switch (archetype.special) {
+            case SLAM -> {
+                final Location center = boss.getLocation().clone();
+                world.spawnParticle(archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
+                world.playSound(center, archetype.sound, 1.6F, 0.6F);
+                boss.getScheduler().runDelayed(plugin, t -> {
+                    if (!boss.isValid()) {
+                        return;
+                    }
+                    world.spawnParticle(Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
+                    for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
+                        if (nearby instanceof Player player && isSurvivor(player)) {
+                            player.damage(damage, boss);
+                            final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+                            if (kb.lengthSquared() > 0.0D) {
+                                player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
+                            }
+                        }
+                    }
+                }, null, 30L);
+            }
+            case ZONE -> {
+                final java.util.List<Player> survivors = new java.util.ArrayList<>();
+                for (final Entity nearby : boss.getNearbyEntities(20.0D, 20.0D, 20.0D)) {
+                    if (nearby instanceof Player player && isSurvivor(player)) {
+                        survivors.add(player);
+                    }
+                }
+                if (survivors.isEmpty()) {
+                    return;
+                }
+                final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
+                world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
+                world.playSound(spot, archetype.sound, 1.2F, 0.8F);
+                boss.getScheduler().runDelayed(plugin, t -> {
+                    if (!boss.isValid()) {
+                        return;
+                    }
+                    world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
+                    for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {
+                        if (nearby instanceof Player player && isSurvivor(player)
+                                && player.getWorld().equals(spot.getWorld())
+                                && player.getLocation().distanceSquared(spot) <= 9.0D) {
+                            player.damage(damage, boss);
+                            player.addPotionEffect(new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true));
+                        }
+                    }
+                }, null, 30L);
+            }
+            case SUMMON -> {
+                final Location at = boss.getLocation();
+                final int count = 2 + (enraged ? 1 : 0);
+                for (int i = 0; i < count; i++) {
+                    final Location spot = at.clone().add(
+                            ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
+                    final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
+                    add.setGlowing(true);
+                    add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 0, false, false, false));
+                }
+                world.playSound(at, archetype.sound, 1.5F, 0.8F);
+            }
+        }
     }
 
     /**

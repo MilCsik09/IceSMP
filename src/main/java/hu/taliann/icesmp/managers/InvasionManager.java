@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -189,6 +190,7 @@ public final class InvasionManager {
                     "☠ " + horde.displayName + " Bajnoka",
                     net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
             champion.setCustomNameVisible(true);
+            startChampionTick(champion);
         }
 
         if (spawned > 0 || champion != null) {
@@ -218,5 +220,40 @@ public final class InvasionManager {
         mobScalingManager.forceLevel(mob, level);
         activeMobs.add(mob.getUniqueId());
         return mob;
+    }
+
+    /**
+     * Gives the horde champion a telegraphed ground-slam every ~6s so it plays like a mini-boss, not
+     * just a tanky mob. Runs on the champion's own region scheduler (Folia-safe; touched players are
+     * region-local nearby), and auto-cancels when the champion dies.
+     */
+    private void startChampionTick(final Mob champion) {
+        final double damage = Math.max(1.0D, configManager.getDouble("world-events.invasion.champion-slam-damage", 5.0D));
+        champion.getScheduler().runAtFixedRate(plugin, task -> {
+            if (!champion.isValid()) {
+                task.cancel();
+                return;
+            }
+            final Location center = champion.getLocation().clone();
+            final org.bukkit.World world = champion.getWorld();
+            world.spawnParticle(org.bukkit.Particle.ANGRY_VILLAGER, center.clone().add(0.0D, 1.0D, 0.0D), 24, 3.0D, 0.3D, 3.0D, 0.02D);
+            world.playSound(center, org.bukkit.Sound.ENTITY_RAVAGER_ROAR, 1.2F, 0.8F);
+            champion.getScheduler().runDelayed(plugin, t -> {
+                if (!champion.isValid()) {
+                    return;
+                }
+                world.spawnParticle(org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 2);
+                for (final Entity nearby : champion.getNearbyEntities(4.0D, 4.0D, 4.0D)) {
+                    if (nearby instanceof Player player
+                            && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
+                        player.damage(damage, champion);
+                        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+                        if (kb.lengthSquared() > 0.0D) {
+                            player.setVelocity(kb.normalize().setY(0.5D).multiply(0.7D));
+                        }
+                    }
+                }
+            }, null, 25L);
+        }, null, 120L, 120L);
     }
 }
