@@ -39,11 +39,25 @@ public final class DailyCommand implements BasicCommand {
                 : dailyQuestManager.getProgress(player) + "/" + daily.amount();
         player.sendMessage(messageManager.getMessage(
                 "daily-info",
-                "<gold>📅 Napi küldetés: <yellow>{name}</yellow> &7| Állás: <white>{state}</white> &7| Jutalom: <white>{reward}</white></gold>",
+                "<gold>📅 Napi küldetés: <yellow>{name}</yellow> &7| Állás: <white>{state}</white> &7| Jutalom: <white>{reward}</white> &7| Sorozat: <white>{streak} nap</white></gold>",
                 Map.of(
                         "name", daily.name(),
                         "state", state,
-                        "reward", String.valueOf(daily.reward())
+                        "reward", String.valueOf(daily.reward()),
+                        "streak", String.valueOf(dailyQuestManager.getStreak(player))
+                )));
+
+        final DailyQuestManager.Daily weekly = dailyQuestManager.getActiveWeekly();
+        final String weeklyState = dailyQuestManager.isWeeklyDone(player)
+                ? messageManager.get("daily-state-done", "&ateljesítve")
+                : dailyQuestManager.getWeeklyProgress(player) + "/" + weekly.amount();
+        player.sendMessage(messageManager.getMessage(
+                "weekly-info",
+                "<gold>🗓 Heti küldetés: <yellow>{name}</yellow> &7| Állás: <white>{state}</white> &7| Jutalom: <white>{reward}</white></gold>",
+                Map.of(
+                        "name", weekly.name(),
+                        "state", weeklyState,
+                        "reward", String.valueOf(weekly.reward())
                 )));
     }
 

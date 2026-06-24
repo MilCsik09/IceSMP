@@ -213,7 +213,9 @@ saját `getScheduler()`-jén (a meglévő world-boss minta már így spawnol). *
 (KILL_MOBS, CATCH_FISH, BREAK_BLOCKS + új: **MINE_ORE**, **HARVEST_CROPS**, **KILL_ANIMALS**), a
 `DailyQuestListener`-ben a megfelelő hookokkal (érc = `_ORE` anyagnév + ancient_debris; aratás =
 kifejlett `Ageable`; állat = `Animals`). Plusz **streak-rendszer**: egymást követő napok bónusza
-(konfigurálható `streak-bonus-per-day` / `streak-bonus-cap-days`). **Hátra:** külön heti küldetés.
+(konfigurálható `streak-bonus-per-day` / `streak-bonus-cap-days`). ✅ **Heti küldetés is kész:** külön
+5-elemű heti pool (nagyobb célok, nagyobb jutalom), heti rotáció (epoch-day/7), saját PDC-bucket; a
+`handle()` egyszerre táplálja a napit és a hetit; a `/daily` mindkettőt + a streaket mutatja.
 
 **Eredeti vízió (a maradékhoz):**
 - **Bővebb objective-pool:** `MINE_ORE`, `TRADE_MARKET` (piaci eladás/vétel), `WIN_RAID`,
