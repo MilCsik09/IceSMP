@@ -62,7 +62,13 @@ public final class WorldBossManager {
         BONE_KING(EntityType.WITHER_SKELETON, "&8&l☠ Csontkirály &c[Világboss]", 1.0D, 1.2D, 1.1D,
                 PotionEffectType.WITHER, 0, PotionEffectType.STRENGTH, Sound.ENTITY_WITHER_AMBIENT, Particle.SOUL),
         DEEP_HORROR(EntityType.WARDEN, "&3&l👁 Mélységi Rém &c[Világboss]", 1.0D, 1.0D, 1.5D,
-                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL);
+                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL),
+        VENOM_BROODMOTHER(EntityType.CAVE_SPIDER, "&2&l🕷 Méreg Anyakirálynő &c[Világboss]", 1.0D, 1.0D, 1.1D,
+                PotionEffectType.POISON, 1, PotionEffectType.SPEED, Sound.ENTITY_PHANTOM_AMBIENT, Particle.SNEEZE),
+        STORM_HERALD(EntityType.VINDICATOR, "&e&l⚡ Vihar Hírnöke &c[Világboss]", 1.0D, 1.2D, 1.2D,
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.SPEED, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, Particle.ELECTRIC_SPARK),
+        PLAGUE_TITAN(EntityType.HUSK, "&8&l☣ Dögvész Titán &c[Világboss]", 1.2D, 1.0D, 1.2D,
+                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK);
 
         private final EntityType entityType;
         private final String displayName;

@@ -38,7 +38,11 @@ public final class InvasionManager {
                 new EntityType[]{EntityType.SPIDER, EntityType.CAVE_SPIDER}, EntityType.SPIDER),
         CHAOS_HORDE("Káosz-horda",
                 new EntityType[]{EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SPIDER, EntityType.PILLAGER},
-                EntityType.RAVAGER);
+                EntityType.RAVAGER),
+        NETHER_RAID("Alvilági Roham",
+                new EntityType[]{EntityType.PIGLIN, EntityType.ZOMBIFIED_PIGLIN}, EntityType.PIGLIN_BRUTE),
+        ILLAGER_WARBAND("Zsivány Hadtest",
+                new EntityType[]{EntityType.PILLAGER, EntityType.VINDICATOR}, EntityType.RAVAGER);
 
         private final String displayName;
         private final EntityType[] pool;

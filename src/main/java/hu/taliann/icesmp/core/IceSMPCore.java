@@ -263,7 +263,7 @@ public final class IceSMPCore {
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
-                professionManager, factionManager, statsManager, messageManager);
+                professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager,
