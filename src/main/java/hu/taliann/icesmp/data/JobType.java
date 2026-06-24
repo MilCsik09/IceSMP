@@ -12,7 +12,11 @@ public enum JobType {
     PALADIN("paladin", "<gold>Paplovag</gold>", null),
     DEATH_KNIGHT("death_knight", "<dark_red>Halállovag</dark_red>", null),
     SHAMAN("shaman", "<aqua>Sámán</aqua>", null),
-    MONK("monk", "<green>Szerzetes</green>", null);
+    MONK("monk", "<green>Szerzetes</green>", null),
+    PRIEST("priest", "<white>Pap</white>", null),
+    WARLOCK("warlock", "<dark_purple>Boszorkánymester</dark_purple>", null),
+    DEMON_HUNTER("demon_hunter", "<light_purple>Démonvadász</light_purple>", null),
+    EVOKER("evoker", "<dark_aqua>Sárkányidéző</dark_aqua>", null);
 
     private final String id;
     private final Component displayName;

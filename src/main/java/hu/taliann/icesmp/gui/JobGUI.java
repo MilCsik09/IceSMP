@@ -18,13 +18,13 @@ import java.util.List;
 @SuppressWarnings("deprecation")
 public final class JobGUI {
 
-    private static final int SIZE = 36;
-    private static final int BACK_SLOT = 31;
-    private static final int CATALYST_SLOT = 33;
-    private static final int SKILL_TREE_SLOT = 29;
-    // Up to 9 classes: a centered 3×3 grid (rows 0–2), clear of the row-3 buttons (29/31/33).
+    private static final int SIZE = 54;
+    private static final int BACK_SLOT = 49;
+    private static final int CATALYST_SLOT = 51;
+    private static final int SKILL_TREE_SLOT = 47;
+    // Up to 16 classes: a 4×4 grid (rows 1–4, columns 1/3/5/7), clear of the row-5 buttons (47/49/51).
     // resolveJobType/placeJobItems both index this array, so layout and click-mapping stay in sync.
-    private static final int[] JOB_SLOTS = {2, 4, 6, 11, 13, 15, 20, 22, 24};
+    private static final int[] JOB_SLOTS = {10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34, 37, 39, 41, 43};
 
     private JobGUI() {
     }

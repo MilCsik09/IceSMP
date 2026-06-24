@@ -45,35 +45,48 @@ public final class CatalystItemFactory {
     ) {
     }
 
-    private static final Map<JobType, CatalystTheme> THEMES = new EnumMap<>(Map.of(
-            JobType.WIZARD, new CatalystTheme(
+    // Map.ofEntries (not Map.of) so the roster can grow past 10 classes.
+    private static final Map<JobType, CatalystTheme> THEMES = new EnumMap<>(Map.ofEntries(
+            Map.entry(JobType.WIZARD, new CatalystTheme(
                     Material.ENCHANTED_BOOK, "<light_purple><bold>Mágikus Kódex</bold></light_purple>",
-                    5201, Sound.ITEM_BOOK_PAGE_TURN, 0.8F, 1.1F),
+                    5201, Sound.ITEM_BOOK_PAGE_TURN, 0.8F, 1.1F)),
             // Goat horn "call" sound at high pitch so the feedback stays short and non-intrusive.
-            JobType.WARRIOR, new CatalystTheme(
+            Map.entry(JobType.WARRIOR, new CatalystTheme(
                     Material.GOAT_HORN, "<red><bold>Harci Kürt</bold></red>",
-                    5202, Sound.ITEM_GOAT_HORN_SOUND_1, 0.35F, 2.0F),
-            JobType.ARCHER, new CatalystTheme(
+                    5202, Sound.ITEM_GOAT_HORN_SOUND_1, 0.35F, 2.0F)),
+            Map.entry(JobType.ARCHER, new CatalystTheme(
                     Material.RABBIT_HIDE, "<green><bold>Vadásztarsoly</bold></green>",
-                    5203, Sound.ITEM_CROSSBOW_LOADING_START, 0.8F, 1.3F),
-            JobType.ASSASSIN, new CatalystTheme(
+                    5203, Sound.ITEM_CROSSBOW_LOADING_START, 0.8F, 1.3F)),
+            Map.entry(JobType.ASSASSIN, new CatalystTheme(
                     Material.FLINT, "<gray><bold>Árnyékamulett</bold></gray>",
-                    5204, Sound.BLOCK_CANDLE_EXTINGUISH, 0.9F, 0.8F),
-            JobType.DRUID, new CatalystTheme(
+                    5204, Sound.BLOCK_CANDLE_EXTINGUISH, 0.9F, 0.8F)),
+            Map.entry(JobType.DRUID, new CatalystTheme(
                     Material.OAK_SAPLING, "<dark_green><bold>Vadon Talizmánja</bold></dark_green>",
-                    5205, Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F),
-            JobType.PALADIN, new CatalystTheme(
+                    5205, Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F)),
+            Map.entry(JobType.PALADIN, new CatalystTheme(
                     Material.BELL, "<gold><bold>Szent Harang</bold></gold>",
-                    5206, Sound.BLOCK_BEACON_ACTIVATE, 0.7F, 1.3F),
-            JobType.DEATH_KNIGHT, new CatalystTheme(
+                    5206, Sound.BLOCK_BEACON_ACTIVATE, 0.7F, 1.3F)),
+            Map.entry(JobType.DEATH_KNIGHT, new CatalystTheme(
                     Material.WITHER_SKELETON_SKULL, "<dark_red><bold>Rúnakovácsolt Koponya</bold></dark_red>",
-                    5207, Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.8F),
-            JobType.SHAMAN, new CatalystTheme(
+                    5207, Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.8F)),
+            Map.entry(JobType.SHAMAN, new CatalystTheme(
                     Material.TOTEM_OF_UNDYING, "<aqua><bold>Ősök Totemje</bold></aqua>",
-                    5208, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.1F),
-            JobType.MONK, new CatalystTheme(
+                    5208, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.1F)),
+            Map.entry(JobType.MONK, new CatalystTheme(
                     Material.BAMBOO, "<green><bold>Jáde Bot</bold></green>",
-                    5209, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.9F, 1.2F)
+                    5209, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.9F, 1.2F)),
+            Map.entry(JobType.PRIEST, new CatalystTheme(
+                    Material.WHITE_CANDLE, "<white><bold>Szent Gyertya</bold></white>",
+                    5210, Sound.BLOCK_BELL_RESONATE, 0.8F, 1.6F)),
+            Map.entry(JobType.WARLOCK, new CatalystTheme(
+                    Material.SOUL_LANTERN, "<dark_purple><bold>Lélek Lámpás</bold></dark_purple>",
+                    5211, Sound.ENTITY_WITHER_AMBIENT, 0.7F, 1.0F)),
+            Map.entry(JobType.DEMON_HUNTER, new CatalystTheme(
+                    Material.ENDER_EYE, "<light_purple><bold>Démonszem</bold></light_purple>",
+                    5212, Sound.ENTITY_PHANTOM_AMBIENT, 0.8F, 0.9F)),
+            Map.entry(JobType.EVOKER, new CatalystTheme(
+                    Material.DRAGON_BREATH, "<dark_aqua><bold>Sárkány Esszencia</bold></dark_aqua>",
+                    5213, Sound.ENTITY_BREEZE_SHOOT, 0.8F, 1.0F))
     ));
 
     private final NamespacedKey isCatalystKey;

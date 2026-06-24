@@ -26,7 +26,15 @@ public enum SpecializationType {
     ELEMENTAL("elemental", "<blue>Elemi</blue>", JobType.SHAMAN, null, false),
     ENHANCEMENT("enhancement", "<gold>Erősítő</gold>", JobType.SHAMAN, null, false),
     WINDWALKER("windwalker", "<aqua>Szélfutó</aqua>", JobType.MONK, null, false),
-    BREWMASTER("brewmaster", "<gold>Sörfőző</gold>", JobType.MONK, null, false);
+    BREWMASTER("brewmaster", "<gold>Sörfőző</gold>", JobType.MONK, null, false),
+    DISCIPLINE("discipline", "<white>Fegyelem</white>", JobType.PRIEST, null, false),
+    SHADOW("shadow", "<dark_purple>Árnyék</dark_purple>", JobType.PRIEST, null, false),
+    AFFLICTION("affliction", "<dark_green>Átok</dark_green>", JobType.WARLOCK, null, false),
+    DESTRUCTION("destruction", "<red>Pusztítás</red>", JobType.WARLOCK, null, false),
+    HAVOC("havoc", "<light_purple>Tombolás</light_purple>", JobType.DEMON_HUNTER, null, false),
+    VENGEANCE("vengeance", "<dark_red>Bosszú</dark_red>", JobType.DEMON_HUNTER, null, false),
+    DEVASTATION("devastation", "<gold>Perzselés</gold>", JobType.EVOKER, null, false),
+    PRESERVATION("preservation", "<aqua>Megőrzés</aqua>", JobType.EVOKER, null, false);
 
     private final String id;
     private final Component displayName;

@@ -138,6 +138,58 @@ classes:
       flying_serpent_kick: 17
       expel_harm: 19
       leg_sweep: 21
+  # Pap (Priest): szent és árny mágia, gyógyítás. Fegyelem = pajzs/heal, Árnyék = árny-sebzés.
+  priest:
+    spell-unlocks:
+      holy_smite: 2
+      heal: 4
+      renew: 6
+      power_word_shield: 8
+      shadow_word_pain: 11
+      mind_blast: 13
+      dispel: 15
+      holy_nova: 17
+      fade: 19
+      levitate: 21
+  # Boszorkánymester (Warlock): átkok, démon-tűz, életszívás. Átok = dot, Pusztítás = tűz.
+  warlock:
+    spell-unlocks:
+      shadow_bolt: 2
+      corruption: 4
+      drain_life: 6
+      curse_of_weakness: 8
+      immolate: 11
+      shadowburn: 13
+      fear: 15
+      curse_of_agony: 17
+      demon_armor: 19
+      demonic_circle: 21
+  # Démonvadász (Demon Hunter): fel-mágia, mozgékony közelharc. Tombolás = dps, Bosszú = tank.
+  demon_hunter:
+    spell-unlocks:
+      demons_bite: 2
+      fel_rush: 4
+      shear: 6
+      throw_glaive: 8
+      immolation_aura: 11
+      chaos_strike: 13
+      consume_magic: 15
+      torment: 17
+      glide: 19
+      spectral_sight: 21
+  # Sárkányidéző (Evoker): sárkány-mágia (tűz/szél/smaragd). Perzselés = dps, Megőrzés = heal.
+  evoker:
+    spell-unlocks:
+      living_flame: 2
+      azure_strike: 4
+      emerald_blossom: 6
+      wing_buffet: 8
+      fire_breath: 11
+      tail_swipe: 13
+      hover: 15
+      obsidian_scales: 17
+      deep_breath: 19
+      verdant_embrace: 21
 
 # ===== Specializációk =====
 # A nekromanta a varázsló sötét specializációja: csak Sötét frakcióval és
@@ -360,6 +412,86 @@ specializations:
       fortifying_brew: 39
       celestial_brew: 42
       invoke_niuzao: 45
+  # Fegyelem (Discipline): a Pap pajzs/gyógyító specje.
+  discipline:
+    spell-unlocks:
+      power_word_radiance: 25
+      penance: 28
+      atonement: 30
+      pain_suppression: 33
+      rapture: 36
+      barrier: 39
+      evangelism: 45
+  # Árnyék (Shadow): a Pap árny-sebző specje.
+  shadow:
+    spell-unlocks:
+      mind_flay: 25
+      vampiric_touch: 28
+      shadow_word_death: 30
+      mind_sear: 33
+      dispersion: 36
+      void_eruption: 39
+      void_torrent: 45
+  # Átok (Affliction): a Boszorkánymester tartós-sebző specje.
+  affliction:
+    spell-unlocks:
+      unstable_affliction: 25
+      agony: 28
+      malefic_grasp: 30
+      siphon_life: 33
+      seed_of_corruption: 36
+      soul_rot: 39
+      darkglare: 45
+  # Pusztítás (Destruction): a Boszorkánymester tűz-robbantó specje.
+  destruction:
+    spell-unlocks:
+      chaos_bolt: 25
+      incinerate: 28
+      conflagrate: 30
+      rain_of_fire: 33
+      shadowfury: 36
+      cataclysm: 39
+      summon_infernal: 45
+  # Tombolás (Havoc): a Démonvadász sebző specje.
+  havoc:
+    spell-unlocks:
+      blade_dance: 25
+      eye_beam: 28
+      fel_barrage: 30
+      vengeful_retreat: 33
+      essence_break: 36
+      metamorphosis_havoc: 39
+      the_hunt: 45
+  # Bosszú (Vengeance): a Démonvadász tank specje.
+  vengeance:
+    spell-unlocks:
+      soul_cleave: 25
+      demon_spikes: 28
+      fiery_brand: 30
+      sigil_of_flame: 33
+      fel_devastation: 36
+      metamorphosis_veng: 39
+      fel_blade: 45
+  # Perzselés (Devastation): a Sárkányidéző tűz-/azúr-sebző specje.
+  devastation:
+    spell-unlocks:
+      pyre: 25
+      disintegrate: 28
+      eternity_surge: 30
+      shattering_star: 33
+      firestorm: 36
+      dragonrage: 39
+      eternity_breath: 45
+  # Megőrzés (Preservation): a Sárkányidéző gyógyító specje.
+  preservation:
+    spell-unlocks:
+      dream_breath: 25
+      spiritbloom: 28
+      reversion: 30
+      echo: 33
+      temporal_anomaly: 36
+      stasis: 39
+      rewind: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
@@ -559,6 +691,71 @@ talents:
         effect: "max-health"
         per-rank: 3.0
         max-rank: 3
+      # --- 3. szint: a Pap/Boszorkánymester/Démonvadász/Sárkányidéző spec-talentjei ---
+      faith_shield:
+        display-name: "Hit Pajzsa"
+        tier: 3
+        requires-spec: "discipline"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      shadow_mastery:
+        display-name: "Árny Hatalma"
+        tier: 3
+        requires-spec: "shadow"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      withering_curse:
+        display-name: "Sorvasztó Átok"
+        tier: 3
+        requires-spec: "affliction"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.5
+        max-rank: 4
+      infernal_wrath:
+        display-name: "Pokoli Harag"
+        tier: 3
+        requires-spec: "destruction"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.6
+        max-rank: 3
+      fel_fury:
+        display-name: "Fel Düh"
+        tier: 3
+        requires-spec: "havoc"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
+        max-rank: 3
+      demon_skin:
+        display-name: "Démonbőr"
+        tier: 3
+        requires-spec: "vengeance"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      dragon_flame:
+        display-name: "Sárkánytűz"
+        tier: 3
+        requires-spec: "devastation"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.6
+        max-rank: 3
+      emerald_dream:
+        display-name: "Smaragd Álom"
+        tier: 3
+        requires-spec: "preservation"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
       # --- 2. szint: EGYMÁST KIZÁRÓ ágválasztás (csak az egyik vehető fel) ---
       juggernaut:
         display-name: "Behemót"

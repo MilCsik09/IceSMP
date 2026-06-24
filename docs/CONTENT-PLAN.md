@@ -76,7 +76,9 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
   **Sörfőző (Brewmaster)** sör-buffos tank (keg_smash, breath_of_fire, capstone invoke_niuzao).
 - 25 új spell, globálisan ellenőrzött. A `JobGUI` slot-elrendezése 8→9-re bővült (3×3 rács).
 
-> **A 9 kaszt teljes:** Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag, Halállovag, Sámán, Szerzetes.
+> **A 13 kaszt teljes (WoW-roster):** Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag, Halállovag,
+> Sámán, Szerzetes, **Pap, Boszorkánymester, Démonvadász, Sárkányidéző**. Minden spell class-specifikus
+> (egy spell = egy kaszt), a `JobGUI` 4×4 ráccsal (54 menü) jeleníti meg mind a 13-at. 26 spec, 35 talent.
 
 ### ✅ Perzisztens Sámán-totemek (megvalósítva)
 Új `TotemManager` + `ShamanTotemSpell`: a totemek mostantól **lerakott, rövid életű ArmorStand-entitások**,
