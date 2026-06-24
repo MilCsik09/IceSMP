@@ -41,3 +41,19 @@ spells:
       plague-spread:
         first: "toxin_dart"
         second: "contagion"
+      # Az új kasztok kombói (Holdjós / Paplovag / Halállovag / Sámán / Szerzetes)
+      lunar-eclipse:
+        first: "moonfire"
+        second: "starsurge"
+      holy-verdict:
+        first: "hammer_of_justice"
+        second: "judgment"
+      frozen-strike:
+        first: "chains_of_ice"
+        second: "frost_strike"
+      lava-flare:
+        first: "flame_shock"
+        second: "lava_burst"
+      flurry-fists:
+        first: "rising_sun_kick"
+        second: "fists_of_fury"
