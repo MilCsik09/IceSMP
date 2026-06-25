@@ -60,14 +60,62 @@ public final class ResourceManager implements PlayerStateCleanup {
         }
     }
 
+    /**
+     * Discharges into a CLASS-FLAVOURED empowerment (the depth comes from <i>what</i> the burst does
+     * per role, not from any spell-switching rotation — so it fits Minecraft's catalyst-cycle casting):
+     * dps classes burst (strength/speed), tanky classes shield (resistance/absorption), and support
+     * classes (Pap/Druida/Paplovag/Sárkányidéző) also pulse-heal nearby allies.
+     */
     private void discharge(final Player player) {
         final int duration = 6 * 20;
-        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 1, false, false, true));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 0, false, false, true));
+        final JobType job = jobManager.getPrimaryJob(player);
+        for (final PotionEffect effect : empowermentEffects(job, duration)) {
+            player.addPotionEffect(effect);
+        }
+        if (isSupport(job)) {
+            healNearbyAllies(player);
+        }
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D),
                 30, 0.4D, 0.6D, 0.4D, 0.1D);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 1.4F);
-        player.sendActionBar(Component.text("⚡ Feltöltődve — erőd kirobban!", NamedTextColor.GOLD));
+        player.sendActionBar(Component.text("⚡ " + nameFor(player) + " kirobban!", NamedTextColor.GOLD));
+    }
+
+    private java.util.List<PotionEffect> empowermentEffects(final JobType job, final int duration) {
+        final PotionEffect strength1 = new PotionEffect(PotionEffectType.STRENGTH, duration, 0, false, false, true);
+        final PotionEffect strength2 = new PotionEffect(PotionEffectType.STRENGTH, duration, 1, false, false, true);
+        final PotionEffect speed1 = new PotionEffect(PotionEffectType.SPEED, duration, 0, false, false, true);
+        final PotionEffect speed2 = new PotionEffect(PotionEffectType.SPEED, duration, 1, false, false, true);
+        final PotionEffect resistance = new PotionEffect(PotionEffectType.RESISTANCE, duration, 0, false, false, true);
+        final PotionEffect absorption = new PotionEffect(PotionEffectType.ABSORPTION, duration, 1, false, false, true);
+        final PotionEffect regen = new PotionEffect(PotionEffectType.REGENERATION, duration, 1, false, false, true);
+        if (job == null) {
+            return java.util.List.of(strength1, speed1);
+        }
+        return switch (job) {
+            case WARRIOR -> java.util.List.of(strength2, resistance);            // bruiser
+            case ASSASSIN, MONK, DEMON_HUNTER -> java.util.List.of(strength1, speed2); // agile dps
+            case ARCHER -> java.util.List.of(speed2, strength1);                 // kiting dps
+            case DEATH_KNIGHT -> java.util.List.of(strength1, absorption);       // unholy bruiser
+            case WIZARD, SHAMAN, WARLOCK -> java.util.List.of(speed1, regen);    // casters: kite + sustain
+            case PALADIN, DRUID, PRIEST, EVOKER -> java.util.List.of(regen, absorption); // support (+ AoE heal)
+            default -> java.util.List.of(strength1, speed1);
+        };
+    }
+
+    private boolean isSupport(final JobType job) {
+        return job == JobType.PALADIN || job == JobType.DRUID || job == JobType.PRIEST || job == JobType.EVOKER;
+    }
+
+    /** Support discharge: pulse-heal (regen) the caster and nearby allies — region-local, Folia-safe. */
+    private void healNearbyAllies(final Player player) {
+        final PotionEffect heal = new PotionEffect(PotionEffectType.REGENERATION, 5 * 20, 1, false, false, true);
+        player.addPotionEffect(heal);
+        for (final org.bukkit.entity.Entity nearby : player.getNearbyEntities(8.0D, 8.0D, 8.0D)) {
+            if (nearby instanceof Player ally) {
+                ally.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 5 * 20, 1, false, false, true));
+            }
+        }
     }
 
     /**
