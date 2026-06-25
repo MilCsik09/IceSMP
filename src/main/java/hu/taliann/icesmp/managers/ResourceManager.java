@@ -82,9 +82,23 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (role == Role.HEALER) {
             healNearbyAllies(player);
         }
-        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D),
-                30, 0.4D, 0.6D, 0.4D, 0.1D);
-        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 1.4F);
+        // Role-flavoured feedback so a tank/healer/dps discharge also FEELS different.
+        final Particle particle = switch (role) {
+            case HEALER -> Particle.HEART;
+            case CASTER -> Particle.END_ROD;
+            case TANK -> Particle.CRIT;
+            case RANGED_DPS -> Particle.ELECTRIC_SPARK;
+            case MELEE_DPS -> Particle.CRIT;
+        };
+        final Sound sound = switch (role) {
+            case HEALER -> Sound.BLOCK_BELL_RESONATE;
+            case CASTER -> Sound.BLOCK_BEACON_ACTIVATE;
+            case TANK -> Sound.ITEM_SHIELD_BLOCK;
+            case RANGED_DPS -> Sound.ENTITY_BREEZE_SHOOT;
+            case MELEE_DPS -> Sound.ENTITY_PLAYER_ATTACK_STRONG;
+        };
+        player.getWorld().spawnParticle(particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.6D, 0.4D, 0.1D);
+        player.getWorld().playSound(player.getLocation(), sound, 1.0F, 1.4F);
         player.sendActionBar(Component.text("⚡ " + nameFor(player) + " kirobban!", NamedTextColor.GOLD));
     }
 
