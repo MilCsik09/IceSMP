@@ -43,7 +43,11 @@ public final class InvasionManager {
         NETHER_RAID("Alvilági Roham",
                 new EntityType[]{EntityType.PIGLIN, EntityType.ZOMBIFIED_PIGLIN}, EntityType.PIGLIN_BRUTE),
         ILLAGER_WARBAND("Zsivány Hadtest",
-                new EntityType[]{EntityType.PILLAGER, EntityType.VINDICATOR}, EntityType.RAVAGER);
+                new EntityType[]{EntityType.PILLAGER, EntityType.VINDICATOR}, EntityType.RAVAGER),
+        WITCH_COVEN("Boszorkány Gyülekezet",
+                new EntityType[]{EntityType.WITCH, EntityType.VEX}, EntityType.EVOKER),
+        BLAZING_HOST("Lángoló Sereg",
+                new EntityType[]{EntityType.BLAZE, EntityType.MAGMA_CUBE}, EntityType.PIGLIN_BRUTE);
 
         private final String displayName;
         private final EntityType[] pool;

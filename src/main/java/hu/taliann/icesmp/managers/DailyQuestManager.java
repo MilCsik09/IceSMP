@@ -65,7 +65,8 @@ public final class DailyQuestManager {
                 weekly("weekly_harvest", "Heti betakarítás", "HARVEST_CROPS", 200, 450),
                 weekly("weekly_beasts", "Heti vadbefogás", "KILL_ANIMALS", 80, 400),
                 weekly("weekly_excavate", "Heti nagy ásatás", "BREAK_BLOCKS", 384, 500),
-                weekly("weekly_slay", "Heti nagy mészárlás", "KILL_MOBS", 300, 800)
+                weekly("weekly_slay", "Heti nagy mészárlás", "KILL_MOBS", 300, 800),
+                weekly("weekly_prospect", "Heti nagy bányászat", "MINE_ORE", 256, 700)
         );
         this.pool = List.of(
                 daily("daily_hunt", "Napi vadászat", "KILL_MOBS", 20, 60),
@@ -78,7 +79,9 @@ public final class DailyQuestManager {
                 daily("daily_excavate", "Napi nagy ásatás", "BREAK_BLOCKS", 128, 75),
                 daily("daily_angler", "Napi pecás", "CATCH_FISH", 20, 70),
                 daily("daily_butcher", "Napi mészáros", "KILL_ANIMALS", 30, 70),
-                daily("daily_prospector", "Napi kutató", "MINE_ORE", 32, 110)
+                daily("daily_prospector", "Napi kutató", "MINE_ORE", 32, 110),
+                daily("daily_forager", "Napi gyűjtő", "HARVEST_CROPS", 48, 65),
+                daily("daily_ranger", "Napi vadőr", "KILL_ANIMALS", 25, 60)
         );
     }
 

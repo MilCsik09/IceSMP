@@ -69,7 +69,11 @@ public final class WorldBossManager {
         STORM_HERALD(EntityType.VINDICATOR, "&e&l⚡ Vihar Hírnöke &c[Világboss]", 1.0D, 1.2D, 1.2D,
                 PotionEffectType.WEAKNESS, 0, PotionEffectType.SPEED, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, Particle.ELECTRIC_SPARK, Special.ZONE),
         PLAGUE_TITAN(EntityType.HUSK, "&8&l☣ Dögvész Titán &c[Világboss]", 1.2D, 1.0D, 1.2D,
-                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK, Special.SLAM);
+                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK, Special.SLAM),
+        GOLEM_SENTINEL(EntityType.IRON_GOLEM, "&7&l⚙ Vas Őrszem &c[Világboss]", 1.3D, 1.0D, 1.1D,
+                PotionEffectType.SLOWNESS, 1, PotionEffectType.RESISTANCE, Sound.ITEM_SHIELD_BLOCK, Particle.CRIT, Special.SLAM),
+        PIGLIN_WARLORD(EntityType.PIGLIN_BRUTE, "&6&l⚔ Pokoli Hadúr &c[Világboss]", 1.0D, 1.2D, 1.1D,
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.STRENGTH, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT, Special.SUMMON);
 
         /** Signature special: an around-boss telegraphed slam, a targeted ground zone, or summoning adds. */
         private enum Special { SLAM, ZONE, SUMMON }

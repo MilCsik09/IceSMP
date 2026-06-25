@@ -64,3 +64,12 @@ spells:
       flurry-fists:
         first: "rising_sun_kick"
         second: "fists_of_fury"
+      shadow-detonate:
+        first: "corruption"
+        second: "unstable_affliction"
+      fire-chain:
+        first: "immolate"
+        second: "conflagrate"
+      holy-mind:
+        first: "holy_smite"
+        second: "mind_blast"
