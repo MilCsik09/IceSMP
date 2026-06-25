@@ -6,6 +6,13 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
+  # Kaszt-erőforrás: a képernyő tetején egy boss-bar (kasztonként névvel/színnel: Mana/Düh/Csi…).
+  # A spell-cast tölti; teli állapotban kirobban egy rövid erősítésbe (erő+sebesség) és nulláz.
+  # Additív jutalom-réteg a meglévő spell-költségek FÖLÖTT — nem váltja le őket.
+  resource:
+    enabled: true
+    max: 100              # a sáv maximuma
+    gain-per-cast: 25     # ennyit tölt egy sikeres cast (4 cast → kirobbanás)
   # Sámán-totemek: lerakott, rövid életű entitások, amik periodikusan pulzálnak a közeli
   # entitásokra (gyógyítás/buff a szövetségeseknek, sebzés/debuff az ellenségeknek).
   totem:

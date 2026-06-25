@@ -160,6 +160,7 @@ public final class IceSMPCore {
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final CatalystItemFactory catalystItemFactory;
+    private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
     private final AbilityCatalystListener abilityCatalystListener;
     private final SpellMasteryManager spellMasteryManager;
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
@@ -247,8 +248,9 @@ public final class IceSMPCore {
                 currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
+        this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
-                catalystItemFactory, configManager, spellMasteryManager, specializationManager, messageManager);
+                catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager, messageManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
@@ -287,6 +289,7 @@ public final class IceSMPCore {
                 metelytepoManager,
                 relicManager,
                 craftingRestrictionManager,
+                resourceManager,
                 spellRegistry
         );
 

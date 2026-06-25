@@ -48,6 +48,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final ConfigManager configManager;
     private final SpellMasteryManager masteryManager;
     private final SpecializationManager specializationManager;
+    private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
     private final MessageManager messageManager;
     private final NamespacedKey selectedSpellIndexKey;
     private final Map<String, NamespacedKey> longCooldownKeys = new ConcurrentHashMap<>();
@@ -62,6 +63,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
                                    final ConfigManager configManager, final SpellMasteryManager masteryManager,
                                    final SpecializationManager specializationManager,
+                                   final hu.taliann.icesmp.managers.ResourceManager resourceManager,
                                    final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
@@ -69,6 +71,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         this.configManager = configManager;
         this.masteryManager = masteryManager;
         this.specializationManager = specializationManager;
+        this.resourceManager = resourceManager;
         this.messageManager = messageManager;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
     }
@@ -226,6 +229,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (combo) {
             player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
         }
+        // Build the per-class power resource (additive reward layer; runs on the caster's region thread).
+        resourceManager.onSpellCast(player);
 
         lastCastSpell.put(player.getUniqueId(), selected.getId());
         lastCastTime.put(player.getUniqueId(), now);
