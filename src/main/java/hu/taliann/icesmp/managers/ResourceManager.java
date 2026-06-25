@@ -79,27 +79,76 @@ public final class ResourceManager implements PlayerStateCleanup {
         for (final PotionEffect effect : empowermentEffects(role, duration)) {
             player.addPotionEffect(effect);
         }
-        if (role == Role.HEALER) {
-            healNearbyAllies(player);
-        }
-        // Role-flavoured feedback so a tank/healer/dps discharge also FEELS different.
-        final Particle particle = switch (role) {
-            case HEALER -> Particle.HEART;
-            case CASTER -> Particle.END_ROD;
-            case TANK -> Particle.CRIT;
-            case RANGED_DPS -> Particle.ELECTRIC_SPARK;
-            case MELEE_DPS -> Particle.CRIT;
-        };
-        final Sound sound = switch (role) {
-            case HEALER -> Sound.BLOCK_BELL_RESONATE;
-            case CASTER -> Sound.BLOCK_BEACON_ACTIVATE;
-            case TANK -> Sound.ITEM_SHIELD_BLOCK;
-            case RANGED_DPS -> Sound.ENTITY_BREEZE_SHOOT;
-            case MELEE_DPS -> Sound.ENTITY_PLAYER_ATTACK_STRONG;
-        };
-        player.getWorld().spawnParticle(particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.6D, 0.4D, 0.1D);
-        player.getWorld().playSound(player.getLocation(), sound, 1.0F, 1.4F);
+        // SPEC-specific signature: a thematic effect on nearby entities + spec particle/sound, so each
+        // of the 26 specs' discharge plays differently (fire specs ignite, frost freeze, healers AoE-heal…).
+        final Signature signature = signatureFor(specializationManager.getClassSpecialization(player), role);
+        applyNearby(player, signature.nearby());
+        player.getWorld().spawnParticle(signature.particle(), player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.6D, 0.4D, 0.1D);
+        player.getWorld().playSound(player.getLocation(), signature.sound(), 1.0F, 1.4F);
         player.sendActionBar(Component.text("⚡ " + nameFor(player) + " kirobban!", NamedTextColor.GOLD));
+    }
+
+    /** What a discharge does to nearby entities (the spec's signature). */
+    private enum Nearby { NONE, HEAL_ALLIES, IGNITE_ENEMIES, FREEZE_ENEMIES, WITHER_ENEMIES, KNOCKBACK }
+
+    private record Signature(Nearby nearby, Particle particle, Sound sound) {
+    }
+
+    private Signature signatureFor(final SpecializationType spec, final Role role) {
+        if (spec == null) {
+            return switch (role) {
+                case HEALER -> new Signature(Nearby.HEAL_ALLIES, Particle.HEART, Sound.BLOCK_BELL_RESONATE);
+                case CASTER -> new Signature(Nearby.NONE, Particle.END_ROD, Sound.BLOCK_BEACON_ACTIVATE);
+                case TANK -> new Signature(Nearby.NONE, Particle.CRIT, Sound.ITEM_SHIELD_BLOCK);
+                case RANGED_DPS -> new Signature(Nearby.NONE, Particle.ELECTRIC_SPARK, Sound.ENTITY_BREEZE_SHOOT);
+                case MELEE_DPS -> new Signature(Nearby.NONE, Particle.CRIT, Sound.ENTITY_PLAYER_ATTACK_STRONG);
+            };
+        }
+        return switch (spec) {
+            case ELEMENTALIST, DESTRUCTION, DEVASTATION ->
+                    new Signature(Nearby.IGNITE_ENEMIES, Particle.FLAME, Sound.ITEM_FIRECHARGE_USE);
+            case RETRIBUTION -> new Signature(Nearby.IGNITE_ENEMIES, Particle.END_ROD, Sound.BLOCK_BEACON_ACTIVATE);
+            case LUNAR -> new Signature(Nearby.IGNITE_ENEMIES, Particle.END_ROD, Sound.BLOCK_AMETHYST_BLOCK_CHIME);
+            case ELEMENTAL -> new Signature(Nearby.IGNITE_ENEMIES, Particle.ELECTRIC_SPARK, Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
+            case FROST -> new Signature(Nearby.FREEZE_ENEMIES, Particle.SNOWFLAKE, Sound.BLOCK_GLASS_BREAK);
+            case NECROMANCER, AFFLICTION, SHADOW, POISONER, PHANTOM ->
+                    new Signature(Nearby.WITHER_ENEMIES, Particle.SCULK_SOUL, Sound.ENTITY_WITHER_AMBIENT);
+            case BERSERKER, FERAL, ENHANCEMENT, HAVOC, WINDWALKER ->
+                    new Signature(Nearby.KNOCKBACK, Particle.CRIT, Sound.ENTITY_RAVAGER_ROAR);
+            case HOLY, DISCIPLINE, PRESERVATION -> new Signature(Nearby.HEAL_ALLIES, Particle.HEART, Sound.BLOCK_BELL_RESONATE);
+            case GUARDIAN, BLOOD, BREWMASTER, VENGEANCE -> new Signature(Nearby.NONE, Particle.CRIT, Sound.ITEM_SHIELD_BLOCK);
+            case SHARPSHOOTER, BEAST_MASTER -> new Signature(Nearby.NONE, Particle.ELECTRIC_SPARK, Sound.ENTITY_BREEZE_SHOOT);
+            default -> new Signature(Nearby.NONE, Particle.CRIT, Sound.ENTITY_PLAYER_ATTACK_STRONG);
+        };
+    }
+
+    /** Applies the signature to nearby entities — region-local on the caster's thread, so Folia-safe. */
+    private void applyNearby(final Player player, final Nearby nearby) {
+        if (nearby == Nearby.NONE) {
+            return;
+        }
+        if (nearby == Nearby.HEAL_ALLIES) {
+            healNearbyAllies(player);
+            return;
+        }
+        for (final org.bukkit.entity.Entity entity : player.getNearbyEntities(6.0D, 6.0D, 6.0D)) {
+            if (!(entity instanceof org.bukkit.entity.Monster monster)) {
+                continue;
+            }
+            switch (nearby) {
+                case IGNITE_ENEMIES -> monster.setFireTicks(Math.max(monster.getFireTicks(), 80));
+                case FREEZE_ENEMIES -> monster.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5 * 20, 2, false, false, true));
+                case WITHER_ENEMIES -> monster.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 5 * 20, 0, false, false, true));
+                case KNOCKBACK -> {
+                    final org.bukkit.util.Vector kb = monster.getLocation().toVector().subtract(player.getLocation().toVector());
+                    if (kb.lengthSquared() > 0.0D) {
+                        monster.setVelocity(kb.normalize().setY(0.4D).multiply(0.8D));
+                    }
+                }
+                default -> {
+                }
+            }
+        }
     }
 
     /**
