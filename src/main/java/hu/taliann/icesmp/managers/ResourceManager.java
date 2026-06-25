@@ -35,6 +35,8 @@ public final class ResourceManager implements PlayerStateCleanup {
     private final JobManager jobManager;
     private final SpecializationManager specializationManager;
     private final Map<UUID, Integer> resource = new ConcurrentHashMap<>();
+    /** When the player's post-discharge "empowered" window (faster casting) ends, in epoch millis. */
+    private final Map<UUID, Long> empoweredUntil = new ConcurrentHashMap<>();
 
     public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
                            final SpecializationManager specializationManager) {
@@ -73,8 +75,14 @@ public final class ResourceManager implements PlayerStateCleanup {
      * dps classes burst (strength/speed), tanky classes shield (resistance/absorption), and support
      * classes (Pap/Druida/Paplovag/Sárkányidéző) also pulse-heal nearby allies.
      */
+    /** True during the ~6s after a discharge — the cast pipeline grants a cooldown refund (faster casting). */
+    public boolean isEmpowered(final Player player) {
+        return empoweredUntil.getOrDefault(player.getUniqueId(), 0L) > System.currentTimeMillis();
+    }
+
     private void discharge(final Player player) {
         final int duration = 6 * 20;
+        empoweredUntil.put(player.getUniqueId(), System.currentTimeMillis() + (duration * 50L));
         final Role role = roleFor(player);
         for (final PotionEffect effect : empowermentEffects(role, duration)) {
             player.addPotionEffect(effect);
@@ -269,5 +277,6 @@ public final class ResourceManager implements PlayerStateCleanup {
     @Override
     public void clearPlayerState(final UUID playerId) {
         resource.remove(playerId);
+        empoweredUntil.remove(playerId);
     }
 }

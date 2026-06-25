@@ -222,9 +222,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
 
-        // Combo: a matching pair within the window flows faster (cooldown refund) + flair.
+        // Combo OR the post-discharge "empowered" window flows faster (cooldown refund) + flair.
         final boolean combo = isComboMatch(player, selected.getId(), now);
-        putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
+        final boolean empowered = resourceManager.isEmpowered(player);
+        putCooldown(player, selected, (combo || empowered) ? now - comboRefundMillis(player, selected) : now);
         playCastFlourish(player, combo);
         if (combo) {
             player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
