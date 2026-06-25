@@ -248,7 +248,7 @@ public final class IceSMPCore {
                 currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
-        this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
+        this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
                 catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager, messageManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);

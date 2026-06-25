@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -27,13 +28,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ResourceManager implements PlayerStateCleanup {
 
+    /** Combat role — drives the empowerment. Determined by SPEC (falls back to class before specialising). */
+    private enum Role { MELEE_DPS, RANGED_DPS, CASTER, TANK, HEALER }
+
     private final ConfigManager configManager;
     private final JobManager jobManager;
+    private final SpecializationManager specializationManager;
     private final Map<UUID, Integer> resource = new ConcurrentHashMap<>();
 
-    public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager) {
+    public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
+                           final SpecializationManager specializationManager) {
         this.configManager = configManager;
         this.jobManager = jobManager;
+        this.specializationManager = specializationManager;
     }
 
     private boolean enabled() {
@@ -68,11 +75,11 @@ public final class ResourceManager implements PlayerStateCleanup {
      */
     private void discharge(final Player player) {
         final int duration = 6 * 20;
-        final JobType job = jobManager.getPrimaryJob(player);
-        for (final PotionEffect effect : empowermentEffects(job, duration)) {
+        final Role role = roleFor(player);
+        for (final PotionEffect effect : empowermentEffects(role, duration)) {
             player.addPotionEffect(effect);
         }
-        if (isSupport(job)) {
+        if (role == Role.HEALER) {
             healNearbyAllies(player);
         }
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D),
@@ -81,30 +88,50 @@ public final class ResourceManager implements PlayerStateCleanup {
         player.sendActionBar(Component.text("⚡ " + nameFor(player) + " kirobban!", NamedTextColor.GOLD));
     }
 
-    private java.util.List<PotionEffect> empowermentEffects(final JobType job, final int duration) {
+    /**
+     * The player's combat role — from the chosen specialization (so a Retribution paladin bursts but a
+     * Holy paladin heals, a Blood DK shields but a Frost DK bursts…). Before specialising, falls back to
+     * a sensible class default.
+     */
+    private Role roleFor(final Player player) {
+        final SpecializationType spec = specializationManager.getClassSpecialization(player);
+        if (spec != null) {
+            return switch (spec) {
+                case GUARDIAN, BLOOD, BREWMASTER, VENGEANCE -> Role.TANK;
+                case HOLY, DISCIPLINE, PRESERVATION -> Role.HEALER;
+                case ELEMENTALIST, NECROMANCER, LUNAR, ELEMENTAL, SHADOW, AFFLICTION, DESTRUCTION, DEVASTATION -> Role.CASTER;
+                case SHARPSHOOTER, BEAST_MASTER -> Role.RANGED_DPS;
+                // berserker, poisoner, phantom, feral, retribution, frost, enhancement, windwalker, havoc
+                default -> Role.MELEE_DPS;
+            };
+        }
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (job == null) {
+            return Role.MELEE_DPS;
+        }
+        return switch (job) {
+            case WIZARD, WARLOCK -> Role.CASTER;
+            case ARCHER -> Role.RANGED_DPS;
+            case PRIEST -> Role.HEALER;
+            default -> Role.MELEE_DPS;
+        };
+    }
+
+    private java.util.List<PotionEffect> empowermentEffects(final Role role, final int duration) {
         final PotionEffect strength1 = new PotionEffect(PotionEffectType.STRENGTH, duration, 0, false, false, true);
         final PotionEffect strength2 = new PotionEffect(PotionEffectType.STRENGTH, duration, 1, false, false, true);
         final PotionEffect speed1 = new PotionEffect(PotionEffectType.SPEED, duration, 0, false, false, true);
         final PotionEffect speed2 = new PotionEffect(PotionEffectType.SPEED, duration, 1, false, false, true);
-        final PotionEffect resistance = new PotionEffect(PotionEffectType.RESISTANCE, duration, 0, false, false, true);
+        final PotionEffect resistance = new PotionEffect(PotionEffectType.RESISTANCE, duration, 1, false, false, true);
         final PotionEffect absorption = new PotionEffect(PotionEffectType.ABSORPTION, duration, 1, false, false, true);
         final PotionEffect regen = new PotionEffect(PotionEffectType.REGENERATION, duration, 1, false, false, true);
-        if (job == null) {
-            return java.util.List.of(strength1, speed1);
-        }
-        return switch (job) {
-            case WARRIOR -> java.util.List.of(strength2, resistance);            // bruiser
-            case ASSASSIN, MONK, DEMON_HUNTER -> java.util.List.of(strength1, speed2); // agile dps
-            case ARCHER -> java.util.List.of(speed2, strength1);                 // kiting dps
-            case DEATH_KNIGHT -> java.util.List.of(strength1, absorption);       // unholy bruiser
-            case WIZARD, SHAMAN, WARLOCK -> java.util.List.of(speed1, regen);    // casters: kite + sustain
-            case PALADIN, DRUID, PRIEST, EVOKER -> java.util.List.of(regen, absorption); // support (+ AoE heal)
-            default -> java.util.List.of(strength1, speed1);
+        return switch (role) {
+            case TANK -> java.util.List.of(resistance, absorption);          // shield
+            case HEALER -> java.util.List.of(regen, absorption);             // sustain (+ AoE heal)
+            case CASTER -> java.util.List.of(speed1, regen);                 // kite + sustain
+            case RANGED_DPS -> java.util.List.of(speed2, strength1);         // kiting burst
+            default -> java.util.List.of(strength2, speed1);                 // MELEE_DPS burst
         };
-    }
-
-    private boolean isSupport(final JobType job) {
-        return job == JobType.PALADIN || job == JobType.DRUID || job == JobType.PRIEST || job == JobType.EVOKER;
     }
 
     /** Support discharge: pulse-heal (regen) the caster and nearby allies — region-local, Folia-safe. */
