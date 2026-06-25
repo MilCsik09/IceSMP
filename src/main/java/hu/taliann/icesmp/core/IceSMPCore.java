@@ -271,7 +271,7 @@ public final class IceSMPCore {
                 seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager,
                 statsManager, achievementManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
-                raidManager, bloodMoonManager, worldBossManager);
+                raidManager, bloodMoonManager, worldBossManager, resourceManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,

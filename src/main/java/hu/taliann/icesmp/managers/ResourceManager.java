@@ -2,10 +2,8 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -18,24 +16,20 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-class "power" resource: a 0–max meter shown as an Adventure boss bar (the screen-top bar),
- * named and coloured per class (Mana / Düh / Energia / Runikus Erő / Csi …). Casting a spell BUILDS
- * the resource; once full it DISCHARGES into a short empowerment (strength + speed) and resets to 0.
+ * Per-class "power" resource shown as a coloured bar <b>in the HUD sidebar</b> (a scoreboard line —
+ * deliberately NOT a separate boss bar, so it never stacks with the world-boss bar). A 0–max meter,
+ * named and coloured per class (Mana / Düh / Energia / Runikus Erő / Csi …): casting a spell BUILDS
+ * it, and once full it DISCHARGES into a short empowerment (strength + speed) and resets to 0.
  *
- * <p>This is an <b>additive reward layer</b> on top of the existing spell costs — it does not replace
- * the cost/cooldown pipeline, so it can never block or break a cast. It gives every class a visible,
- * build-to-payoff rotation feel and a clear resource HUD (the original missing class-identity layer).
- *
- * <p>Folia: every bar/effect call runs on the owning player's region thread — {@link #onSpellCast}
- * is invoked from the cast event (player thread), and cleanup from the quit event (player thread),
- * mirroring {@code HudManager}'s boss-bar handling.
+ * <p>This is an <b>additive reward layer</b> on top of the existing spell costs — it never blocks or
+ * breaks a cast. {@link #onSpellCast} runs on the caster's region thread (cast event); the HUD reads
+ * {@link #hudLine} on its own scoreboard tick (≤1s lag, and the discharge also flashes the action bar).
  */
 public final class ResourceManager implements PlayerStateCleanup {
 
     private final ConfigManager configManager;
     private final JobManager jobManager;
     private final Map<UUID, Integer> resource = new ConcurrentHashMap<>();
-    private final Map<UUID, BossBar> bars = new ConcurrentHashMap<>();
 
     public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager) {
         this.configManager = configManager;
@@ -59,14 +53,11 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!enabled()) {
             return;
         }
-        final int maxValue = max();
-        int value = resource.merge(player.getUniqueId(), gain(), Integer::sum);
-        if (value >= maxValue) {
-            value = 0;
+        final int value = resource.merge(player.getUniqueId(), gain(), Integer::sum);
+        if (value >= max()) {
             resource.put(player.getUniqueId(), 0);
             discharge(player);
         }
-        updateBar(player, value, maxValue);
     }
 
     private void discharge(final Player player) {
@@ -79,17 +70,26 @@ public final class ResourceManager implements PlayerStateCleanup {
         player.sendActionBar(Component.text("⚡ Feltöltődve — erőd kirobban!", NamedTextColor.GOLD));
     }
 
-    private void updateBar(final Player player, final int value, final int maxValue) {
-        final BossBar bar = bars.computeIfAbsent(player.getUniqueId(),
-                id -> BossBar.bossBar(Component.empty(), 0.0F, colorFor(player), BossBar.Overlay.NOTCHED_10));
-        bar.color(colorFor(player));
-        bar.name(Component.text(nameFor(player) + ": " + value + "/" + maxValue, NamedTextColor.AQUA));
-        bar.progress(Math.max(0.0F, Math.min(1.0F, value / (float) maxValue)));
-        if (value > 0) {
-            player.showBossBar(bar);
-        } else {
-            player.hideBossBar(bar);
+    /**
+     * The HUD sidebar line for this player's resource: a coloured 10-segment bar plus the value, or
+     * {@code null} when the system is disabled. Read by {@code HudManager} on its scoreboard tick.
+     *
+     * @param player the viewer
+     * @return the rendered line, or null
+     */
+    public Component hudLine(final Player player) {
+        if (!enabled()) {
+            return null;
         }
+        final int maxValue = max();
+        final int value = Math.max(0, Math.min(maxValue, resource.getOrDefault(player.getUniqueId(), 0)));
+        final int filled = Math.round(value / (float) maxValue * 10.0F);
+        final NamedTextColor color = colorFor(player);
+        Component bar = Component.text(nameFor(player) + " ", NamedTextColor.GRAY);
+        for (int i = 0; i < 10; i++) {
+            bar = bar.append(Component.text("▰", i < filled ? color : NamedTextColor.DARK_GRAY));
+        }
+        return bar.append(Component.text(" " + value, NamedTextColor.WHITE));
     }
 
     private String nameFor(final Player player) {
@@ -112,28 +112,22 @@ public final class ResourceManager implements PlayerStateCleanup {
         };
     }
 
-    private BossBar.Color colorFor(final Player player) {
+    private NamedTextColor colorFor(final Player player) {
         final JobType job = jobManager.getPrimaryJob(player);
         if (job == null) {
-            return BossBar.Color.PURPLE;
+            return NamedTextColor.LIGHT_PURPLE;
         }
         return switch (job) {
-            case WARRIOR, DEATH_KNIGHT -> BossBar.Color.RED;
-            case ARCHER, DRUID -> BossBar.Color.GREEN;
-            case ASSASSIN, MONK, PALADIN -> BossBar.Color.YELLOW;
-            case WARLOCK, DEMON_HUNTER -> BossBar.Color.PURPLE;
-            case EVOKER -> BossBar.Color.PINK;
-            default -> BossBar.Color.BLUE; // Varázsló, Sámán, Pap
+            case WARRIOR, DEATH_KNIGHT -> NamedTextColor.RED;
+            case ARCHER, DRUID -> NamedTextColor.GREEN;
+            case ASSASSIN, MONK, PALADIN -> NamedTextColor.YELLOW;
+            case WARLOCK, DEMON_HUNTER, EVOKER -> NamedTextColor.LIGHT_PURPLE;
+            default -> NamedTextColor.AQUA; // Varázsló, Sámán, Pap
         };
     }
 
     @Override
     public void clearPlayerState(final UUID playerId) {
         resource.remove(playerId);
-        final BossBar bar = bars.remove(playerId);
-        final Player player = Bukkit.getPlayer(playerId);
-        if (bar != null && player != null) {
-            player.hideBossBar(bar);
-        }
     }
 }
