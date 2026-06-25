@@ -34,7 +34,13 @@ public enum SpecializationType {
     HAVOC("havoc", "<light_purple>Tombolás</light_purple>", JobType.DEMON_HUNTER, null, false),
     VENGEANCE("vengeance", "<dark_red>Bosszú</dark_red>", JobType.DEMON_HUNTER, null, false),
     DEVASTATION("devastation", "<gold>Perzselés</gold>", JobType.EVOKER, null, false),
-    PRESERVATION("preservation", "<aqua>Megőrzés</aqua>", JobType.EVOKER, null, false);
+    PRESERVATION("preservation", "<aqua>Megőrzés</aqua>", JobType.EVOKER, null, false),
+    // Hiányzó-szerep specek (a fantáziából hiányzó szerep): tank/heal néhány kasztnak.
+    IRONBARK("ironbark", "<dark_green>Védelmező</dark_green>", JobType.DRUID, null, false),
+    RESTORATION("restoration", "<green>Helyreállító</green>", JobType.DRUID, null, false),
+    TIDAL("tidal", "<aqua>Hullámhívó</aqua>", JobType.SHAMAN, null, false),
+    MISTWEAVER("mistweaver", "<aqua>Ködszövő</aqua>", JobType.MONK, null, false),
+    PROTECTION("protection", "<gold>Védő</gold>", JobType.PALADIN, null, false);
 
     private final String id;
     private final Component displayName;

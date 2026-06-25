@@ -492,6 +492,61 @@ specializations:
       temporal_anomaly: 36
       stasis: 39
       rewind: 45
+  # Védelmező (Guardian): a Druida medve-tank specje.
+  ironbark:
+    spell-unlocks:
+      mangle: 25
+      thornguard: 27
+      iron_bark: 30
+      guardian_swipe: 33
+      bristling_fur: 36
+      frenzied_regen: 39
+      survival_instinct: 42
+      incarnation_bear: 45
+  # Helyreállító (Restoration): a Druida természet-gyógyító specje.
+  restoration:
+    spell-unlocks:
+      rejuvenation: 25
+      healing_touch: 27
+      swiftmend: 30
+      lifebloom: 33
+      natures_cure: 36
+      wild_bloom: 39
+      tranquility: 42
+      flourish: 45
+  # Hullámhívó (Restoration): a Sámán víz-/szellem-gyógyító specje.
+  tidal:
+    spell-unlocks:
+      healing_wave: 25
+      riptide: 27
+      chain_heal: 30
+      earth_shield: 33
+      healing_rain: 36
+      spirit_link: 39
+      ancestral_guidance: 42
+      spirit_tide: 45
+  # Ködszövő (Mistweaver): a Szerzetes köd-gyógyító specje.
+  mistweaver:
+    spell-unlocks:
+      soothing_mist: 25
+      renewing_mist: 27
+      enveloping_mist: 30
+      sheilun_blessing: 33
+      thunder_focus_tea: 36
+      essence_font: 39
+      life_cocoon: 42
+      revival: 45
+  # Védő (Protection): a Paplovag szent tank specje.
+  protection:
+    spell-unlocks:
+      avengers_shield: 25
+      shield_of_the_righteous: 27
+      hammer_of_the_righteous: 30
+      blessed_hammer: 33
+      consecrated_ground: 36
+      ardent_defender: 39
+      guardian_of_kings: 42
+      final_stand: 45
 
 # WoW-szerű kötések: requires-job / requires-spec / requires-profession —
 # csak a feltételt teljesítő játékos látja, költhet rá, és élvezi a hatását.
@@ -756,6 +811,47 @@ talents:
         effect: "max-health"
         per-rank: 2.0
         max-rank: 4
+      # --- 3. szint: a hiányzó-szerep specek talentjei ---
+      bark_mastery:
+        display-name: "Kéreg Mesteri"
+        tier: 3
+        requires-spec: "ironbark"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
+      life_spring:
+        display-name: "Élet Forrása"
+        tier: 3
+        requires-spec: "restoration"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      tide_mastery:
+        display-name: "Apály Mestere"
+        tier: 3
+        requires-spec: "tidal"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      mist_mastery:
+        display-name: "Köd Mestere"
+        tier: 3
+        requires-spec: "mistweaver"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 4
+      holy_bulwark:
+        display-name: "Szent Bástya"
+        tier: 3
+        requires-spec: "protection"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 3.0
+        max-rank: 3
       # --- 2. szint: KASZT-SPECIFIKUS build-döntés (offenzív XOR defenzív, requires-job) ---
       # Minden kaszt választhat egy támadó VAGY egy védekező ágat — valódi build-irány.
       aether_surge:

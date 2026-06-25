@@ -71,6 +71,11 @@ public final class SpellCatalog {
         registerEvoker(registry, mm);
         registerDevastation(registry, mm);
         registerPreservation(registry, mm);
+        registerIronbark(registry, mm);
+        registerRestoration(registry, mm);
+        registerTidal(registry, mm);
+        registerMistweaver(registry, mm);
+        registerProtection(registry, mm);
         registerTalentSpells(registry, mm);
     }
 
@@ -1420,5 +1425,105 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 2).particle(Particle.END_ROD, 25).sound(Sound.ITEM_TOTEM_USE, 0.7F, 1.3F).build());
         registry.register(ConfiguredSpell.builder(mm, "rewind", "Visszatekerés", 300, SpellCostType.XP, 150)
                 .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 12 * 20, 1).targetEffect(PotionEffectType.ABSORPTION, 12 * 20, 1).healSelf(8.0D).particle(Particle.TOTEM_OF_UNDYING, 60).sound(Sound.ITEM_TOTEM_USE, 0.8F, 1.1F).build());
+    }
+
+    // ===== VÉDELMEZŐ (druid spec) — medve-tank =====
+    private static void registerIronbark(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "iron_bark", "Vaskéreg", 60, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 1).particle(Particle.ASH, 20).sound(Sound.ITEM_SHIELD_BLOCK, 1.0F, 0.7F).build());
+        registry.register(ConfiguredSpell.builder(mm, "thornguard", "Tövispajzs", 45, SpellCostType.HUNGER, 4)
+                .selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 1).particle(Particle.CRIT, 18).sound(Sound.ITEM_SHIELD_BLOCK, 1.0F, 0.9F).build());
+        registry.register(ConfiguredSpell.builder(mm, "mangle", "Roncsolás", 20, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(6.0D).particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.7F).build());
+        registry.register(ConfiguredSpell.builder(mm, "bristling_fur", "Borzas Bunda", 75, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 0).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1).particle(Particle.ASH, 20).sound(Sound.ENTITY_RAVAGER_ROAR, 0.8F, 0.8F).build());
+        registry.register(ConfiguredSpell.builder(mm, "frenzied_regen", "Eszeveszett Regen", 90, SpellCostType.XP, 60)
+                .healSelf(6.0D).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1).particle(Particle.HEART, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "guardian_swipe", "Védő Csapás", 30, SpellCostType.HUNGER, 4)
+                .aoe(4.0D).damage(4.0D).knockback(0.6D).particle(Particle.SWEEP_ATTACK, 18).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.7F).build());
+        registry.register(ConfiguredSpell.builder(mm, "survival_instinct", "Túlélő Ösztön", 150, SpellCostType.HUNGER, 7)
+                .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 2).particle(Particle.ASH, 30).sound(Sound.ITEM_SHIELD_BLOCK, 1.0F, 0.6F).build());
+        registry.register(ConfiguredSpell.builder(mm, "incarnation_bear", "Megtestesülés: Medve", 300, SpellCostType.XP, 150)
+                .selfEffect(PotionEffectType.RESISTANCE, 12 * 20, 1).selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 2).selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1).particle(Particle.CRIT, 50).sound(Sound.ENTITY_RAVAGER_ROAR, 1.0F, 0.6F).build());
+    }
+
+    // ===== HELYREÁLLÍTÓ (druid spec) — természet-gyógyítás =====
+    private static void registerRestoration(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "rejuvenation", "Megfiatalítás", 20, SpellCostType.XP, 35)
+                .selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1).particle(Particle.HEART, 12).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F).build());
+        registry.register(ConfiguredSpell.builder(mm, "healing_touch", "Gyógyító Érintés", 30, SpellCostType.XP, 45)
+                .healSelf(8.0D).particle(Particle.HEART, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F).build());
+        registry.register(ConfiguredSpell.builder(mm, "swiftmend", "Gyorsgyógyír", 30, SpellCostType.XP, 45)
+                .healSelf(5.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 1).particle(Particle.HEART, 18).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.6F).build());
+        registry.register(ConfiguredSpell.builder(mm, "lifebloom", "Életvirágzás", 45, SpellCostType.HUNGER, 5)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 8 * 20, 1).healSelf(3.0D).particle(Particle.HEART, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.3F).build());
+        registry.register(ConfiguredSpell.builder(mm, "wild_bloom", "Vad Virágzás", 90, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 10 * 20, 1).particle(Particle.HEART, 30).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "natures_cure", "Természet Gyógyíre", 60, SpellCostType.XP, 50)
+                .healSelf(6.0D).selfEffect(PotionEffectType.RESISTANCE, 5 * 20, 0).particle(Particle.HEART, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F).build());
+        registry.register(ConfiguredSpell.builder(mm, "tranquility", "Nyugalom", 180, SpellCostType.HUNGER, 8)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 12 * 20, 1).targetEffect(PotionEffectType.ABSORPTION, 10 * 20, 0).healSelf(5.0D).particle(Particle.HEART, 40).sound(Sound.BLOCK_BELL_RESONATE, 0.9F, 1.4F).build());
+        registry.register(ConfiguredSpell.builder(mm, "flourish", "Virágzás", 300, SpellCostType.XP, 150)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 12 * 20, 2).healSelf(8.0D).particle(Particle.HEART, 60).sound(Sound.BLOCK_BELL_RESONATE, 1.0F, 1.5F).build());
+    }
+
+    // ===== HULLÁMHÍVÓ (shaman spec) — víz-/szellem-gyógyítás =====
+    private static void registerTidal(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "healing_wave", "Gyógyhullám", 25, SpellCostType.XP, 40)
+                .healSelf(7.0D).particle(Particle.HEART, 18).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F).build());
+        registry.register(ConfiguredSpell.builder(mm, "riptide", "Örvénylés", 20, SpellCostType.XP, 35)
+                .healSelf(4.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 1).particle(Particle.SPLASH, 15).sound(Sound.ENTITY_DROWNED_SHOOT, 1.0F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "chain_heal", "Lánc-gyógyítás", 45, SpellCostType.HUNGER, 5)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 8 * 20, 1).healSelf(3.0D).particle(Particle.HEART, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.3F).build());
+        registry.register(ConfiguredSpell.builder(mm, "healing_rain", "Gyógyeső", 90, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 10 * 20, 1).particle(Particle.SPLASH, 40).sound(Sound.ENTITY_DROWNED_SHOOT, 0.8F, 1.0F).build());
+        registry.register(ConfiguredSpell.builder(mm, "earth_shield", "Földpajzs", 75, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 1).selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 0).particle(Particle.ASH, 20).sound(Sound.BLOCK_STONE_PLACE, 1.0F, 0.8F).build());
+        registry.register(ConfiguredSpell.builder(mm, "spirit_link", "Szellemkötés", 90, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.RESISTANCE, 8 * 20, 0).particle(Particle.ELECTRIC_SPARK, 25).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "ancestral_guidance", "Ősi Vezetés", 120, SpellCostType.XP, 70)
+                .healSelf(6.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1).particle(Particle.END_ROD, 25).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.7F, 1.3F).build());
+        registry.register(ConfiguredSpell.builder(mm, "spirit_tide", "Szellemár", 300, SpellCostType.XP, 150)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 12 * 20, 2).healSelf(8.0D).particle(Particle.SPLASH, 60).sound(Sound.BLOCK_BELL_RESONATE, 1.0F, 1.4F).build());
+    }
+
+    // ===== KÖDSZÖVŐ (monk spec) — köd-gyógyítás =====
+    private static void registerMistweaver(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "soothing_mist", "Csillapító Köd", 20, SpellCostType.XP, 35)
+                .healSelf(5.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 1).particle(Particle.CLOUD, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F).build());
+        registry.register(ConfiguredSpell.builder(mm, "enveloping_mist", "Beborító Köd", 30, SpellCostType.HUNGER, 4)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 8 * 20, 1).healSelf(3.0D).particle(Particle.CLOUD, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.3F).build());
+        registry.register(ConfiguredSpell.builder(mm, "renewing_mist", "Megújító Köd", 25, SpellCostType.XP, 35)
+                .selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1).particle(Particle.CLOUD, 12).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.5F).build());
+        registry.register(ConfiguredSpell.builder(mm, "life_cocoon", "Életgubó", 120, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 2).particle(Particle.CLOUD, 30).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.4F).build());
+        registry.register(ConfiguredSpell.builder(mm, "thunder_focus_tea", "Mennydörgő Tea", 75, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.SPEED, 8 * 20, 0).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1).particle(Particle.ELECTRIC_SPARK, 18).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5F, 1.6F).build());
+        registry.register(ConfiguredSpell.builder(mm, "essence_font", "Esszencia-forrás", 90, SpellCostType.HUNGER, 6)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 10 * 20, 1).particle(Particle.HEART, 30).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "sheilun_blessing", "Sheilun Áldása", 120, SpellCostType.XP, 70)
+                .healSelf(8.0D).selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1).particle(Particle.CLOUD, 25).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F).build());
+        registry.register(ConfiguredSpell.builder(mm, "revival", "Feltámasztás", 300, SpellCostType.XP, 150)
+                .aoe(8.0D).friendly().targetEffect(PotionEffectType.REGENERATION, 12 * 20, 2).healSelf(8.0D).particle(Particle.CLOUD, 60).sound(Sound.BLOCK_BELL_RESONATE, 1.0F, 1.5F).build());
+    }
+
+    // ===== VÉDŐ (paladin spec) — szent tank =====
+    private static void registerProtection(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "avengers_shield", "Bosszúálló Pajzs", 30, SpellCostType.HUNGER, 4)
+                .target(14.0D).damage(5.0D).knockback(0.6D).particle(Particle.END_ROD, 20).sound(Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "shield_of_the_righteous", "Igazak Pajzsa", 25, SpellCostType.HUNGER, 4)
+                .selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 1).selfEffect(PotionEffectType.ABSORPTION, 8 * 20, 0).particle(Particle.END_ROD, 18).sound(Sound.ITEM_SHIELD_BLOCK, 1.0F, 1.0F).build());
+        registry.register(ConfiguredSpell.builder(mm, "consecrated_ground", "Megszentelt Föld", 45, SpellCostType.HUNGER, 5)
+                .aoe(5.0D).damage(3.0D).selfEffect(PotionEffectType.RESISTANCE, 5 * 20, 0).particle(Particle.FLAME, 25).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.2F).build());
+        registry.register(ConfiguredSpell.builder(mm, "ardent_defender", "Buzgó Védő", 90, SpellCostType.HUNGER, 6)
+                .selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 1).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 1).particle(Particle.END_ROD, 25).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.0F).build());
+        registry.register(ConfiguredSpell.builder(mm, "hammer_of_the_righteous", "Igazak Pörölye", 25, SpellCostType.HUNGER, 4)
+                .aoe(4.0D).damage(4.0D).particle(Particle.SWEEP_ATTACK, 15).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.8F).build());
+        registry.register(ConfiguredSpell.builder(mm, "blessed_hammer", "Áldott Pöröly", 30, SpellCostType.XP, 40)
+                .target(8.0D).damage(4.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 1).particle(Particle.END_ROD, 18).sound(Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 1.1F).build());
+        registry.register(ConfiguredSpell.builder(mm, "guardian_of_kings", "Ősi Királyok Őre", 150, SpellCostType.HUNGER, 7)
+                .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 2).particle(Particle.END_ROD, 30).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.9F, 0.9F).build());
+        registry.register(ConfiguredSpell.builder(mm, "final_stand", "Végső Kiállás", 300, SpellCostType.XP, 150)
+                .selfEffect(PotionEffectType.RESISTANCE, 12 * 20, 2).selfEffect(PotionEffectType.ABSORPTION, 15 * 20, 2).particle(Particle.TOTEM_OF_UNDYING, 50).sound(Sound.ITEM_TOTEM_USE, 0.8F, 1.0F).build());
     }
 }

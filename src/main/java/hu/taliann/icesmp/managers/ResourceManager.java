@@ -115,8 +115,10 @@ public final class ResourceManager implements PlayerStateCleanup {
                     new Signature(Nearby.WITHER_ENEMIES, Particle.SCULK_SOUL, Sound.ENTITY_WITHER_AMBIENT);
             case BERSERKER, FERAL, ENHANCEMENT, HAVOC, WINDWALKER ->
                     new Signature(Nearby.KNOCKBACK, Particle.CRIT, Sound.ENTITY_RAVAGER_ROAR);
-            case HOLY, DISCIPLINE, PRESERVATION -> new Signature(Nearby.HEAL_ALLIES, Particle.HEART, Sound.BLOCK_BELL_RESONATE);
-            case GUARDIAN, BLOOD, BREWMASTER, VENGEANCE -> new Signature(Nearby.NONE, Particle.CRIT, Sound.ITEM_SHIELD_BLOCK);
+            case HOLY, DISCIPLINE, PRESERVATION, RESTORATION, TIDAL, MISTWEAVER ->
+                    new Signature(Nearby.HEAL_ALLIES, Particle.HEART, Sound.BLOCK_BELL_RESONATE);
+            case GUARDIAN, BLOOD, BREWMASTER, VENGEANCE, IRONBARK, PROTECTION ->
+                    new Signature(Nearby.NONE, Particle.CRIT, Sound.ITEM_SHIELD_BLOCK);
             case SHARPSHOOTER, BEAST_MASTER -> new Signature(Nearby.NONE, Particle.ELECTRIC_SPARK, Sound.ENTITY_BREEZE_SHOOT);
             default -> new Signature(Nearby.NONE, Particle.CRIT, Sound.ENTITY_PLAYER_ATTACK_STRONG);
         };
@@ -160,8 +162,8 @@ public final class ResourceManager implements PlayerStateCleanup {
         final SpecializationType spec = specializationManager.getClassSpecialization(player);
         if (spec != null) {
             return switch (spec) {
-                case GUARDIAN, BLOOD, BREWMASTER, VENGEANCE -> Role.TANK;
-                case HOLY, DISCIPLINE, PRESERVATION -> Role.HEALER;
+                case GUARDIAN, BLOOD, BREWMASTER, VENGEANCE, IRONBARK, PROTECTION -> Role.TANK;
+                case HOLY, DISCIPLINE, PRESERVATION, RESTORATION, TIDAL, MISTWEAVER -> Role.HEALER;
                 case ELEMENTALIST, NECROMANCER, LUNAR, ELEMENTAL, SHADOW, AFFLICTION, DESTRUCTION, DEVASTATION -> Role.CASTER;
                 case SHARPSHOOTER, BEAST_MASTER -> Role.RANGED_DPS;
                 // berserker, poisoner, phantom, feral, retribution, frost, enhancement, windwalker, havoc
