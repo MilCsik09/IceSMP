@@ -32,16 +32,19 @@ public final class SunDanceSpell extends BaseSpell {
 
         populateRecipeCache();
 
+        // Folia: keep the furnace scan small and region-local — a 25-radius cube was ~132K block
+        // reads + tile-entity access on the region thread AND crossed region boundaries (illegal).
+        // 8 wide / 5 tall stays inside the caster's region.
         final Location center = player.getLocation();
-        final int radius = 25;
+        final int radius = 8;
+        final int vertical = 5;
         int furnaceCount = 0;
         int totalItems = 0;
 
         for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    if ((x * x) + (y * y) + (z * z) > (radius * radius)) continue;
-
+            for (int z = -radius; z <= radius; z++) {
+                if ((x * x) + (z * z) > (radius * radius)) continue;
+                for (int y = -vertical; y <= vertical; y++) {
                     final Block block = center.getBlock().getRelative(x, y, z);
                     final Material type = block.getType();
 

@@ -18,20 +18,22 @@ public final class RainDanceSpell extends BaseSpell {
         world.setStorm(true);
         world.setThundering(false);
 
+        // Folia: keep the crop-growth scan small and region-local — a 50-radius cube was ~1M block
+        // reads on the region thread AND crossed region boundaries (illegal). 6 wide / 3 tall stays
+        // inside the caster's region and is cheap; crops only grow on the surface, so the Y band is small.
         final Location center = player.getLocation();
-        final int radius = 50;
+        final int radius = 6;
+        final int vertical = 3;
         for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    if ((x * x) + (y * y) + (z * z) > (radius * radius)) {
-                        continue;
-                    }
-
+            for (int z = -radius; z <= radius; z++) {
+                if ((x * x) + (z * z) > (radius * radius)) {
+                    continue;
+                }
+                for (int y = -vertical; y <= vertical; y++) {
                     final Block block = center.getBlock().getRelative(x, y, z);
                     if (!(block.getBlockData() instanceof Ageable ageable)) {
                         continue;
                     }
-
                     ageable.setAge(ageable.getMaximumAge());
                     block.setBlockData(ageable, true);
                 }

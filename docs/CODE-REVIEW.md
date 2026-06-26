@@ -625,3 +625,46 @@ A leghatékonyabb a **mintánkénti** javítás (egy minta-fix sok találatot z�
 
 > **Emlékeztető:** a javítások után **`./gradlew build`** és szerver-teszt szükséges — a session sok nem-fordított
 > kódot adott hozzá, és a Folia-súlyosságok futtatás nélkül nem igazolhatók teljesen.
+
+---
+
+# Teljes plugin code review (session-végi, 6 párhuzamos ágens, statikus)
+
+A teljes kódbázis (~230 fájl) átnézve. Súlyosság szerint:
+
+## ✅ Javítva ebben a körben
+- **FORDÍTÁSI HIBA — `ExchangeBoardManager.java`:** `List<Board>`-ot használt `import java.util.List;`
+  nélkül → a projekt NEM fordult. Import hozzáadva. *(Build nélkül lappangott.)*
+- **Folia + perf BUG — `RainDanceSpell` / `SunDanceSpell`:** 50- ill. 25-radius **teljes kocka** blokk-
+  szken (~1M / ~132K iteráció a régió-szálon) + **cross-region** blokk-/tile-entity hozzáférés (illegális).
+  Region-lokális méretre csökkentve (RainDance 6×3, SunDance 8×5, vízszintes kör + kis függőleges sáv).
+
+## ⚠️ Rendszerszintű, hátralévő — Folia cross-entity (build-checkpoint mögé)
+**Gyökérok:** több `EntityDeathEvent`/`PlayerDeathEvent`/admin-parancs a *gyilkost* vagy a *cél játékost*
+(más entitás, mint az esemény entitása) a rossz régió-szálon módosítja. Távolsági/cross-region esetben
+Folián `IllegalStateException`. **Melee/azonos-régió esetben működik** (ezért lappangó). A javítás-minta a
+kódbázisban már létezik (`SinListener`, `JobGiveCatalystSubcommand`, `WorldBossManager.handleBossDeath`):
+a cél-mutációt `target.getScheduler().run(plugin, task -> {...}, null)`-ba kell zárni (a legtöbb érintett
+osztályba `plugin`-injektálás is kell → ~12 fájl, build-ellenőrzés ajánlott).
+
+Érintett: `ClassXpListener`, `PetXpListener`, `SoulShardListener`, `QuestProgressListener`,
+`DailyQuestListener` (kill-ágak), `MetelytepoRelicListener` (onEntityDeath + a 100-blokkos honor-eye szken),
+`RelicPvpTransferListener`, `SpellProjectileListener` (hit-entity), `SiegeWeaponListener` (távoli robbanás),
+`MarketGUIListener` (seller-üzenet), és a `JobAdmin/JobUnlockSpell/JobAddXp/JobSetXp` admin-subcommandok.
+
+## MINOR / NIT (nem blokkoló)
+- `ConfiguredSpell` AOE/SELF `executeSpell` mindig `true` → cél-nélküli friendly-AOE/SELF cast is felszámol
+  költséget/cooldownt (a TARGET-ág helyesen refundál). Tervezési döntés / opcionális.
+- `MessageManager` — null default-érték `isMiniMessage(null)` NPE (lappangó; jelenleg egy hívó sem ad null-t).
+- `PetManager` — `adopt` persistent petje szerver-újraindítás után árválkodhat (a registry memóriabeli).
+- `MetelytepoManager.abilityDamageBypass` — entitás-UUID-kulcsú lassú szivárgás (csak consume-kor törlődik).
+- `ProfessionRecipeManager.tool()` — párhuzamos `enchants[i]/levels[i]` index, hossz-ellenőrzés nélkül (lappangó).
+- `MobScalingManager.applyLevel` — nem-idempotens base-attribútum mutáció (a PDC once-guard védi).
+- Több GUI raw item-builder nem null-ellenőrzi a `getItemMeta()`-t (gyakorlatban sosem null).
+
+## Tiszta (megerősítve)
+CurrencyManager (atomikus balansz, nincs dupe/loss), ExchangeRateService, Faction/King/Season/Raid/Economy
+managerek, Job/Spec/Profession/Talent/Quest/Daily/Achievement/Stats/Parkour/Soul/BloodMoon/Mob/Crafting/
+Intro/Minion/Config/SpellRegistry/Hud, a legtöbb listener és spell, az IceSMPCore manager-építési sorrendje,
+a persistentStores teljessége, a disable() save-before-cleanup, a YamlStore atomikus írás, az ExperienceUtil
+XP-matek, és a Folia-scheduler-fegyelem (sehol nincs `Bukkit.getScheduler()`).
