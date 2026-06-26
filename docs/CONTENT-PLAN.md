@@ -78,7 +78,11 @@ a `JobGUI` 6 slotot bír (4 volt használt), a `SpecGUI` szülő-kaszt szerint s
 
 > **A 13 kaszt teljes (WoW-roster):** Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag, Halállovag,
 > Sámán, Szerzetes, **Pap, Boszorkánymester, Démonvadász, Sárkányidéző**. Minden spell class-specifikus
-> (egy spell = egy kaszt), a `JobGUI` 4×4 ráccsal (54 menü) jeleníti meg mind a 13-at. 26 spec, 35 talent.
+> (egy spell = egy kaszt), a `JobGUI` 4×4 ráccsal (54 menü) jeleníti meg mind a 13-at. **31 spec** (a 26
+> mellé 5 hiányzó-szerep spec: Druida tank+heal, Sámán heal, Szerzetes heal, Paplovag tank), 66 talent.
+>
+> **Mélység-rétegek (lásd `DEPTH-ROADMAP.md`):** per-kaszt erőforrás (HUD-sáv) spec-szintű kirobbanással
+> + empowered ablakkal; boss/invázió telegrafált mechanikákkal; kaszt-specifikus talent build-döntés.
 
 ### ✅ Perzisztens Sámán-totemek (megvalósítva)
 Új `TotemManager` + `ShamanTotemSpell`: a totemek mostantól **lerakott, rövid életű ArmorStand-entitások**,

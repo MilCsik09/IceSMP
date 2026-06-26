@@ -106,6 +106,14 @@ A `PlayerSessionCleanupListener` kilépéskor/kickkor: (a) végigmegy a regisztr
 `clearPlayerState(uuid)`-jét hívva. **Nincs hardkódolt lista** — új állapotos egység automatikusan
 bekerül (lásd 5.7 recept).
 
+### 3.8 Kaszt-erőforrás (`ResourceManager`)
+Per-kaszt „erő" 0–max meter, a HUD-oldalsávban megjelenítve (`HudManager.buildLines` hív egy
+`hudLine`-t — **nem** külön boss-bar, hogy ne ütközzön a világboss-sávval). A cast tölti
+(`AbilityCatalystListener` egy `onSpellCast` hívással), teli állapotban **spec-szintű kirobbanás**
+(`SpecializationManager`-ből vett szerep + spec-szignatúra a közeli entitásokra), majd egy rövid
+**empowered** ablak (cooldown-visszatérítés a cast-pipeline-ban). Additív réteg — a spell-költségeket
+nem váltja le. `PlayerStateCleanup`-ot implementál.
+
 ---
 
 ## 4. Folia szálkezelés (KRITIKUS)

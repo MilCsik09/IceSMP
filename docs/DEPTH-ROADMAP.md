@@ -9,6 +9,27 @@
 
 ---
 
+## ✅ Ebből már megvalósítva (build nélkül, biztonságosan)
+
+- **Boss/invázió-mechanikák (#3):** mind a 10 világboss-archetípus + az invázió-bajnokok **telegrafált
+  speciálokat** kapnak a per-entitás fázis-ticken (SLAM = gyűrű, ZONE = célzott folt, SUMMON = add-idézés;
+  a bajnok földcsapása). Nem statszörnyek többé.
+- **Talent build-döntés (#2 adat-rész):** mind a 13 kaszt kap egy tier-2 **offenzív XOR defenzív**
+  választás-ágat (`requires-job` + `excludes`) — valódi, class-specifikus build-irány.
+- **Per-kaszt erőforrás (#6.1):** 0–100 „erő" a HUD-oldalsávban (kasztonkénti név/szín, nincs dupla
+  boss-bar). A cast tölti; teli állapotban **spec-szintű kirobbanás** (szerep-buff + spec-szignatúra a
+  közeli entitásokra: tűz gyújt / fagy fagyaszt / healer AoE-gyógyít / melee lök …).
+- **„Empowered" ablak (#1-szerű spend, Minecraft-barát):** kirobbanás után ~6 mp-ig a spellek
+  cooldown-visszatérítést kapnak (gyorsabb castolás, váltás nélkül, minden specnek).
+- **Hiányzó-szerep specek:** Druida tank+heal, Sámán heal, Szerzetes heal, Paplovag tank → **13 kaszt / 31 spec**.
+
+**Hátralévő (továbbra is build-checkpoint mögött):** spell-módosító talent-csomópontok (a node *megváltoztat*
+egy spellt), zóna-spellek általánosítása, loot/ritkaság-rendszer, és a folytonos spell-skálázódás.
+
+---
+
+---
+
 ## Hol tart most a rendszer (kiindulás)
 - **Spellek:** `ConfiguredSpell` builder (damage/heal/effect/knockback/dash/aoe/ignite/freeze…) + néhány
   bespoke (`ProjectileBurstSpell`, `BlinkSpell`, `DruidFormSpell`, `ShamanTotemSpell`). Költség: HUNGER/XP/HEALTH.
