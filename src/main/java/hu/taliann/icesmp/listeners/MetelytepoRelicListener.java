@@ -24,6 +24,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -46,16 +47,20 @@ public final class MetelytepoRelicListener implements Listener {
     private static final double HONOR_EYE_RANGE = 100.0D;
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
+    private final JavaPlugin plugin;
     private final MetelytepoManager metelytepoManager;
     private final MessageManager messageManager;
 
     /**
      * Constructs a new MetelytepoRelicListener.
      *
+     * @param plugin the owning plugin (for Folia cross-entity scheduling)
      * @param metelytepoManager the manager for Metelytepo-specific mechanics
      * @param messageManager the manager for player-facing messages
      */
-    public MetelytepoRelicListener(final MetelytepoManager metelytepoManager, final MessageManager messageManager) {
+    public MetelytepoRelicListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager,
+                                   final MessageManager messageManager) {
+        this.plugin = plugin;
         this.metelytepoManager = metelytepoManager;
         this.messageManager = messageManager;
     }
@@ -212,11 +217,16 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        if (!metelytepoManager.isSinner(killer)) {
-            metelytepoManager.markAsSinner(killer);
-            killer.sendMessage(messageManager.getComponent("messages.sinner-marked",
-                    "&5A Metelytepo igazsagot latott: &cbunos lettel."));
-        }
+        // Folia: the death event runs on the victim's region thread, but the sinner mark reads and
+        // writes the killer's PDC and messages the killer (a different entity). Hop onto the killer's
+        // own scheduler so the whole check-and-mark happens on the killer's region thread.
+        killer.getScheduler().run(plugin, task -> {
+            if (!metelytepoManager.isSinner(killer)) {
+                metelytepoManager.markAsSinner(killer);
+                killer.sendMessage(messageManager.getComponent("messages.sinner-marked",
+                        "&5A Metelytepo igazsagot latott: &cbunos lettel."));
+            }
+        }, null);
     }
 
     private void handleJustice(final Player player) {

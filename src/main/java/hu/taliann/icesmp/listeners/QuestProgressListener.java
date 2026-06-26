@@ -9,6 +9,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Routes gameplay events into the quest framework's progress tracking.
@@ -17,10 +18,13 @@ import org.bukkit.event.player.PlayerFishEvent;
  */
 public final class QuestProgressListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final QuestManager questManager;
     private final MobScalingManager mobScalingManager;
 
-    public QuestProgressListener(final QuestManager questManager, final MobScalingManager mobScalingManager) {
+    public QuestProgressListener(final JavaPlugin plugin, final QuestManager questManager,
+                                 final MobScalingManager mobScalingManager) {
+        this.plugin = plugin;
         this.questManager = questManager;
         this.mobScalingManager = mobScalingManager;
     }
@@ -32,7 +36,11 @@ public final class QuestProgressListener implements Listener {
             return;
         }
 
-        questManager.handleKill(killer, event.getEntityType(), mobScalingManager.getLevel(event.getEntity()));
+        // Read the event entity's data on its own region thread, then hop onto the killer's
+        // scheduler — handleKill mutates the killer (quest progress, messages). Folia-safe.
+        final var entityType = event.getEntityType();
+        final int level = mobScalingManager.getLevel(event.getEntity());
+        killer.getScheduler().run(plugin, task -> questManager.handleKill(killer, entityType, level), null);
     }
 
     @EventHandler(ignoreCancelled = true)

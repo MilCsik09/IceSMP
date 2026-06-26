@@ -9,7 +9,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,12 +22,15 @@ import java.util.Map;
  */
 public final class RelicPvpTransferListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final RelicManager relicManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public RelicPvpTransferListener(final RelicManager relicManager, final ConfigManager configManager,
+    public RelicPvpTransferListener(final JavaPlugin plugin, final RelicManager relicManager,
+                                    final ConfigManager configManager,
                                     final MessageManager messageManager) {
+        this.plugin = plugin;
         this.relicManager = relicManager;
         this.configManager = configManager;
         this.messageManager = messageManager;
@@ -42,6 +48,11 @@ public final class RelicPvpTransferListener implements Listener {
             return;
         }
 
+        // The drops list and the victim are the death event's own entity (this runs on the victim's
+        // region thread), so transferring ownership (only reads killer.getUniqueId()) and messaging
+        // the victim are safe here. The killer is a different entity, so collect the claimed names and
+        // deliver the killer's messages on the killer's own scheduler (Folia cross-entity rule).
+        final List<String> claimedNames = new ArrayList<>();
         for (final ItemStack drop : event.getDrops()) {
             final RelicDefinition definition = relicManager.identify(drop);
             if (definition == null || !relicManager.isWeaponRelic(definition.id())) {
@@ -49,16 +60,25 @@ public final class RelicPvpTransferListener implements Listener {
             }
 
             relicManager.transferOwnership(definition.id(), drop, killer);
-            killer.sendMessage(messageManager.getMessage(
-                    "relic.pvp-claimed",
-                    "<gold>⚔ A(z) <white>{relic}</white> új gazdát választott: mostantól téged szolgál!</gold>",
-                    Map.of("relic", definition.displayName())
-            ));
+            claimedNames.add(definition.displayName());
             victim.sendMessage(messageManager.getMessage(
                     "relic.pvp-lost",
                     "<red>A(z) <white>{relic}</white> elhagyott — legyőződ kezébe került.</red>",
                     Map.of("relic", definition.displayName())
             ));
         }
+
+        if (claimedNames.isEmpty()) {
+            return;
+        }
+        killer.getScheduler().run(plugin, task -> {
+            for (final String relicName : claimedNames) {
+                killer.sendMessage(messageManager.getMessage(
+                        "relic.pvp-claimed",
+                        "<gold>⚔ A(z) <white>{relic}</white> új gazdát választott: mostantól téged szolgál!</gold>",
+                        Map.of("relic", relicName)
+                ));
+            }
+        }, null);
     }
 }

@@ -5,6 +5,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 
@@ -12,10 +13,12 @@ public final class JobSetXpSubcommand implements JobSubcommand {
 
     private static final String PERMISSION = "icesmp.job.admin";
 
+    private final JavaPlugin plugin;
     private final JobManager jobManager;
     private final MessageManager messageManager;
 
-    public JobSetXpSubcommand(final JobManager jobManager, final MessageManager messageManager) {
+    public JobSetXpSubcommand(final JavaPlugin plugin, final JobManager jobManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.jobManager = jobManager;
         this.messageManager = messageManager;
     }
@@ -72,21 +75,25 @@ public final class JobSetXpSubcommand implements JobSubcommand {
             return true;
         }
 
-        if (!jobManager.setXp(target, primarySlot, amount)) {
-            sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA valasztott kaszt slot nincs beallitva."));
-            return true;
-        }
+        // Folia: setXp writes the target's PDC, so it must run on the target's own region thread (the
+        // target may be in a different region than the admin). sender.sendMessage is safe from there.
+        target.getScheduler().run(plugin, task -> {
+            if (!jobManager.setXp(target, primarySlot, amount)) {
+                sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA valasztott kaszt slot nincs beallitva."));
+                return;
+            }
 
-        final int currentXp = jobManager.getXp(target, primarySlot);
-        final int currentLevel = jobManager.getLevel(target, primarySlot);
-        sender.sendMessage(messageManager.get(
-                "messages.job-setxp-success",
-                "&aXP beallitva: &f%s &7| Slot: &f%s &7| XP: &f%s &7| Szint: &f%s",
-                target.getName(),
-                primarySlot ? "primary" : "secondary",
-                currentXp,
-                currentLevel
-        ));
+            final int currentXp = jobManager.getXp(target, primarySlot);
+            final int currentLevel = jobManager.getLevel(target, primarySlot);
+            sender.sendMessage(messageManager.get(
+                    "messages.job-setxp-success",
+                    "&aXP beallitva: &f%s &7| Slot: &f%s &7| XP: &f%s &7| Szint: &f%s",
+                    target.getName(),
+                    primarySlot ? "primary" : "secondary",
+                    currentXp,
+                    currentLevel
+            ));
+        }, null);
         return true;
     }
 

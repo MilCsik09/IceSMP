@@ -7,6 +7,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 
@@ -14,12 +15,15 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
 
     private static final String PERMISSION = "icesmp.job.admin";
 
+    private final JavaPlugin plugin;
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final MessageManager messageManager;
 
-    public JobUnlockSpellSubcommand(final JobManager jobManager, final SpellRegistry spellRegistry,
+    public JobUnlockSpellSubcommand(final JavaPlugin plugin, final JobManager jobManager,
+                                    final SpellRegistry spellRegistry,
                                     final MessageManager messageManager) {
+        this.plugin = plugin;
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
         this.messageManager = messageManager;
@@ -64,17 +68,22 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
             return true;
         }
 
-        if (!jobManager.unlockSpell(target, spell.getId())) {
-            sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked", "&eEz a varazslat mar fel van oldva."));
-            return true;
-        }
+        // Folia: unlockSpell writes the target's PDC, so it must run on the target's own region
+        // thread (the target may be in a different region than the admin). sender.sendMessage is safe
+        // from there.
+        target.getScheduler().run(plugin, task -> {
+            if (!jobManager.unlockSpell(target, spell.getId())) {
+                sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked", "&eEz a varazslat mar fel van oldva."));
+                return;
+            }
 
-        sender.sendMessage(messageManager.get(
-                "messages.job-unlockspell-success",
-                "&aVarazslat feloldva: &f%s &7-> &e%s",
-                target.getName(),
-                spell.getId()
-        ));
+            sender.sendMessage(messageManager.get(
+                    "messages.job-unlockspell-success",
+                    "&aVarazslat feloldva: &f%s &7-> &e%s",
+                    target.getName(),
+                    spell.getId()
+            ));
+        }, null);
         return true;
     }
 

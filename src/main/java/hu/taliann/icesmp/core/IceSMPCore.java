@@ -538,7 +538,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new HudListener(hudManager), plugin);
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new MarketGUIListener(marketManager, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
@@ -547,35 +547,35 @@ public final class IceSMPCore {
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
-        pluginManager.registerEvents(new ClassXpListener(jobManager, mobScalingManager, configManager, talentManager), plugin);
+        pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
-        pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
+        pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
-        pluginManager.registerEvents(new PetXpListener(petManager, configManager), plugin);
+        pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new PetCombatListener(petManager), plugin);
-        pluginManager.registerEvents(new DailyQuestListener(dailyQuestManager), plugin);
+        pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(plugin, metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
-        pluginManager.registerEvents(new SiegeWeaponListener(siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new SoulShardListener(soulShardManager, specializationManager, configManager), plugin);
+        pluginManager.registerEvents(new SiegeWeaponListener(plugin, siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
         pluginManager.registerEvents(new RitualListener(ritualManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicItemRefreshListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicTriggerListener(relicManager), plugin);
-            pluginManager.registerEvents(new MetelytepoRelicListener(metelytepoManager, messageManager), plugin);
+            pluginManager.registerEvents(new MetelytepoRelicListener(plugin, metelytepoManager, messageManager), plugin);
             pluginManager.registerEvents(new ElytraRelicListener(relicManager, factionManager, messageManager), plugin);
-            pluginManager.registerEvents(new RelicPvpTransferListener(relicManager, configManager, messageManager), plugin);
+            pluginManager.registerEvents(new RelicPvpTransferListener(plugin, relicManager, configManager, messageManager), plugin);
         }
     }
 }

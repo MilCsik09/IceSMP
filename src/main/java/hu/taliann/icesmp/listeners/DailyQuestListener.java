@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Feeds the daily quest objectives: hostile kills, animal kills, fish catches,
@@ -17,9 +18,11 @@ import org.bukkit.event.player.PlayerFishEvent;
  */
 public final class DailyQuestListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final DailyQuestManager dailyQuestManager;
 
-    public DailyQuestListener(final DailyQuestManager dailyQuestManager) {
+    public DailyQuestListener(final JavaPlugin plugin, final DailyQuestManager dailyQuestManager) {
+        this.plugin = plugin;
         this.dailyQuestManager = dailyQuestManager;
     }
 
@@ -29,11 +32,17 @@ public final class DailyQuestListener implements Listener {
         if (killer == null) {
             return;
         }
+        // Folia: the death event runs on the mob's region thread; handle mutates the killer
+        // (daily-quest progress, messages). Hop onto the killer's own scheduler first.
+        final String objective;
         if (event.getEntity() instanceof Monster) {
-            dailyQuestManager.handle(killer, "KILL_MOBS");
+            objective = "KILL_MOBS";
         } else if (event.getEntity() instanceof Animals) {
-            dailyQuestManager.handle(killer, "KILL_ANIMALS");
+            objective = "KILL_ANIMALS";
+        } else {
+            return;
         }
+        killer.getScheduler().run(plugin, task -> dailyQuestManager.handle(killer, objective), null);
     }
 
     @EventHandler(ignoreCancelled = true)

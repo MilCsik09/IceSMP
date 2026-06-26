@@ -8,6 +8,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Locale;
 import java.util.List;
@@ -16,13 +17,15 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
     private static final String PERMISSION = "icesmp.admin";
 
+    private final JavaPlugin plugin;
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final AbilityCatalystListener abilityCatalystListener;
     private final MessageManager messageManager;
 
-    public JobAdminSubcommand(final JobManager jobManager, final SpellRegistry spellRegistry,
+    public JobAdminSubcommand(final JavaPlugin plugin, final JobManager jobManager, final SpellRegistry spellRegistry,
                               final AbilityCatalystListener abilityCatalystListener, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
         this.abilityCatalystListener = abilityCatalystListener;
@@ -68,37 +71,42 @@ public final class JobAdminSubcommand implements JobSubcommand {
             return true;
         }
 
-        if ("resetcd".equals(action)) {
-            abilityCatalystListener.resetCooldowns(target);
+        // Folia: the target may be in a different region than the admin, so every target read/mutation
+        // (cooldown reset, spell-state PDC writes) runs on the target's own region thread.
+        // sender.sendMessage is safe from there.
+        target.getScheduler().run(plugin, task -> {
+            if ("resetcd".equals(action)) {
+                abilityCatalystListener.resetCooldowns(target);
+                sender.sendMessage(messageManager.get(
+                        "admin.job.reset-cooldowns.success",
+                        "&aVarazslat cooldownok torolve: &f%s",
+                        target.getName()
+                ));
+                target.sendMessage(messageManager.get("admin.job.reset-cooldowns.notify", "&eEgy admin torolte a spell cooldownjaidat."));
+                return;
+            }
+
+            if ("unlockallskills".equals(action)) {
+                final List<String> allSpellIds = spellRegistry.getAll().stream().map(Spell::getId).toList();
+                jobManager.setUnlockedSpellIds(target, allSpellIds);
+                sender.sendMessage(messageManager.get(
+                        "admin.job.unlock-all.success",
+                        "&aAz osszes varazslat feloldva: &f%s",
+                        target.getName()
+                ));
+                target.sendMessage(messageManager.get("admin.job.unlock-all.notify", "&eEgy admin feloldotta neked az osszes varazslatot."));
+                return;
+            }
+
+            jobManager.setUnlockedSpellIds(target, List.of());
+            abilityCatalystListener.resetAllSpellState(target);
             sender.sendMessage(messageManager.get(
-                    "admin.job.reset-cooldowns.success",
-                    "&aVarazslat cooldownok torolve: &f%s",
+                    "admin.job.reset-skills.success",
+                    "&aMinden varazslat allapot alaphelyzetbe allitva: &f%s",
                     target.getName()
             ));
-            target.sendMessage(messageManager.get("admin.job.reset-cooldowns.notify", "&eEgy admin torolte a spell cooldownjaidat."));
-            return true;
-        }
-
-        if ("unlockallskills".equals(action)) {
-            final List<String> allSpellIds = spellRegistry.getAll().stream().map(Spell::getId).toList();
-            jobManager.setUnlockedSpellIds(target, allSpellIds);
-            sender.sendMessage(messageManager.get(
-                    "admin.job.unlock-all.success",
-                    "&aAz osszes varazslat feloldva: &f%s",
-                    target.getName()
-            ));
-            target.sendMessage(messageManager.get("admin.job.unlock-all.notify", "&eEgy admin feloldotta neked az osszes varazslatot."));
-            return true;
-        }
-
-        jobManager.setUnlockedSpellIds(target, List.of());
-        abilityCatalystListener.resetAllSpellState(target);
-        sender.sendMessage(messageManager.get(
-                "admin.job.reset-skills.success",
-                "&aMinden varazslat allapot alaphelyzetbe allitva: &f%s",
-                target.getName()
-        ));
-        target.sendMessage(messageManager.get("admin.job.reset-skills.notify", "&eEgy admin alaphelyzetbe allitotta a varazslataidat."));
+            target.sendMessage(messageManager.get("admin.job.reset-skills.notify", "&eEgy admin alaphelyzetbe allitotta a varazslataidat."));
+        }, null);
         return true;
     }
 

@@ -20,12 +20,12 @@ public final class JobCommand extends AbstractDispatchCommand {
                       final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
                       final AbilityCatalystListener abilityCatalystListener, final MessageManager messageManager) {
         super(messageManager, "job", "&6/job &7- elerheto parancsok:");
-        register(new JobAddXpSubcommand(jobManager, messageManager));
-        register(new JobSetXpSubcommand(jobManager, messageManager));
+        register(new JobAddXpSubcommand(plugin, jobManager, messageManager));
+        register(new JobSetXpSubcommand(plugin, jobManager, messageManager));
         register(new JobStatusSubcommand(jobManager, messageManager));
-        register(new JobUnlockSpellSubcommand(jobManager, spellRegistry, messageManager));
+        register(new JobUnlockSpellSubcommand(plugin, jobManager, spellRegistry, messageManager));
         register(new JobGiveCatalystSubcommand(plugin, jobManager, catalystItemFactory, messageManager));
         register(new JobListSpellsSubcommand(spellRegistry, messageManager));
-        register(new JobAdminSubcommand(jobManager, spellRegistry, abilityCatalystListener, messageManager));
+        register(new JobAdminSubcommand(plugin, jobManager, spellRegistry, abilityCatalystListener, messageManager));
     }
 }
