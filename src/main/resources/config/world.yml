@@ -51,6 +51,7 @@ world-events:
     damage-multiplier: 2.0
     aura-radius: 12.0          # ennyi blokkon belül kapja a túlélő a boss szignatúra-debuffját
     special-damage: 6.0        # a ~8 mp-enkénti telegrafált képesség (slam/zóna) sebzése (enrage: ×1.5)
+    add-lifespan-seconds: 25   # a SUMMON-special által idézett add-ok élettartama (utána eltűnnek)
     treasury-reward: 300.0     # az archetípus reward-szorzója módosítja (pl. Mélységi Rém ×1.5)
     season-points: 10
     buff-minutes: 10

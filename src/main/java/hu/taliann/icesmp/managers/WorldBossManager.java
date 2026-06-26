@@ -229,6 +229,9 @@ public final class WorldBossManager {
     }
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes) {
+        if (approx.getWorld() == null) {
+            return;
+        }
         final int highestY = approx.getWorld().getHighestBlockYAt(approx.getBlockX(), approx.getBlockZ());
         final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
                 highestY + 1.0D, approx.getBlockZ() + 0.5D);
@@ -412,12 +415,19 @@ public final class WorldBossManager {
             case SUMMON -> {
                 final Location at = boss.getLocation();
                 final int count = 2 + (enraged ? 1 : 0);
+                final long addLifespanTicks = Math.max(10L, configManager.getLong("world-events.world-boss.add-lifespan-seconds", 25L)) * 20L;
                 for (int i = 0; i < count; i++) {
                     final Location spot = at.clone().add(
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
                     final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
                     add.setGlowing(true);
-                    add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 0, false, false, false));
+                    add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
+                    // Bounded lifespan so summoned adds never accumulate / outlive the fight (on the add's own scheduler).
+                    add.getScheduler().runDelayed(plugin, task -> {
+                        if (add.isValid()) {
+                            add.remove();
+                        }
+                    }, null, addLifespanTicks);
                 }
                 world.playSound(at, archetype.sound, 1.5F, 0.8F);
             }
@@ -433,6 +443,7 @@ public final class WorldBossManager {
      */
     public void handleBossDeath(final LivingEntity boss, final Player killer) {
         activeBossUntil = 0L;
+        activeBossId = null;
 
         double rewardMult = 1.0D;
         final String archetypeName = boss.getPersistentDataContainer().get(bossArchetypeKey, PersistentDataType.STRING);

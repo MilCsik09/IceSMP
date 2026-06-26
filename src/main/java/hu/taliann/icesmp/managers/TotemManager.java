@@ -169,6 +169,8 @@ public final class TotemManager {
         final int durationTicks = period + 20;
         totem.getScheduler().runAtFixedRate(plugin, task -> {
             if (!totem.isValid()) {
+                // Removed externally before the lifetime timer — prune the tracking set so it can't leak.
+                activeTotems.remove(totem.getUniqueId());
                 task.cancel();
                 return;
             }
