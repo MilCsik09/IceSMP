@@ -8,12 +8,25 @@ Hogyan? `/profile` → **Specializáció** menü → kattints a választott irá
 `/spec list`, `/spec choose <azonosító>`.) A menü mindig csak **a te kasztod** irányait mutatja,
 és kiírja, ha valamihez még nem teljesíted a feltételt.
 
-| Kaszt | Specializációk |
+Összesen **31 specializáció** van. A **spec dönti el a szerepedet** (🗡️ közelharci DPS,
+🏹 távolsági DPS, ✨ caster, 🛡️ tank, ➕ gyógyító) — és ez szabja meg azt is, mit csinál az
+Erő-csík kirobbanása:
+
+| Kaszt | Specializációk (szerep) |
 |---|---|
-| 🧙 Varázsló | 🌊 **Elementalista** (tűz/jég/villám) • 💀 **Nekromanta** (holtak/lélek) |
-| ⚔️ Harcos | 🩸 **Berserker** (támadás/vér) • 🛡️ **Védelmező** (pajzs/gyógyítás) |
-| 🏹 Íjász | 🎯 **Mesterlövész** (pontos lövések) • 🐺 **Vadmester** (állat-társak) |
-| 🗡️ Orgyilkos | ☠️ **Méregkeverő** (mérgek) • 👻 **Fantom** (árnyék/félelem) |
+| 🧙 Varázsló | 🌊 **Elementalista** — tűz/jég/villám (caster) • 💀 **Nekromanta** — holtak/lélek (caster) |
+| ⚔️ Harcos | 🩸 **Berserker** — támadás/vér (DPS) • 🛡️ **Védelmező** — pajzs/buff (tank) |
+| 🏹 Íjász | 🎯 **Mesterlövész** — pontos lövések (táv. DPS) • 🐺 **Vadmester** — állat-társak (táv. DPS) |
+| 🗡️ Orgyilkos | ☠️ **Méregkeverő** — mérgek (DPS) • 👻 **Fantom** — árnyék/félelem (DPS) |
+| 🐻 Druida | 🐾 **Vadőr** (DPS) • 🌙 **Holdjós** (caster) • 🌳 **Védelmező** — kéreg (tank) • 💚 **Helyreállító** (gyógyító) |
+| 🔆 Paplovag | ☀️ **Szentlélek** (gyógyító) • ⚖️ **Megtorló** (DPS) • 🛡️ **Védő** (tank) |
+| 💀 Halállovag | 🩸 **Vérlovag** (tank) • ❄️ **Fagylovag** (DPS) |
+| 🌊 Sámán | ⚡ **Elemi** (caster) • 🔨 **Erősítő** (DPS) • 🌊 **Hullámhívó** (gyógyító) |
+| ☯️ Szerzetes | 💨 **Szélfutó** (DPS) • 🍺 **Sörfőző** (tank) • 🌫️ **Ködszövő** (gyógyító) |
+| ✝️ Pap | 🙏 **Fegyelem** (gyógyító) • 🌑 **Árnyék** (caster) |
+| 😈 Boszorkánymester | 🍂 **Átok** (caster) • 🔥 **Pusztítás** (caster) |
+| 👁️ Démonvadász | 💥 **Tombolás** (DPS) • 🛡️ **Bosszú** (tank) |
+| 🐉 Sárkányidéző | 🔥 **Perzselés** (caster) • 💧 **Megőrzés** (gyógyító) |
 
 ## Feltételek
 

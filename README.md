@@ -31,21 +31,35 @@ bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később e
 
 ### 🧙 Kasztok és specializációk
 
-Négy alap kaszt választható a profil GUI-ból (max. 2 kaszt / játékos; a másodlagos csak az
+**13 kaszt** választható a profil GUI-ból (max. 2 kaszt / játékos; a másodlagos csak az
 elsődleges max szintje után nyílik meg, és nem specializálódhat):
 
-- **Varázsló** — támogató és elemi mágia
+- **Varázsló** — elemi és kontroll mágia
 - **Harcos** — közelharci erő és kitartás
 - **Íjász** — távolsági harc és mozgékonyság
 - **Orgyilkos** — lopakodás és meglepetés
+- **Druida** — alakváltó természet-mágia (harc / kontroll / tank / gyógyítás)
+- **Paplovag** — szent harc, védelem és gyógyítás
+- **Halállovag** — rúna-mágia, vér és fagy
+- **Sámán** — elemek, totemek, gyógyítás
+- **Szerzetes** — gyors csi-közelharc és gyógyítás
+- **Pap** — szent és árny mágia
+- **Boszorkánymester** — átkok, démonok, pusztító tűz
+- **Démonvadász** — mozgékony démoni harc
+- **Sárkányidéző** — sárkány-eszencia: perzselés és gyógyítás
+
+Minden kasztnak saját **erőforrása** (Erő-csík a HUD-on) van: a varázslás tölti, teli állapotban
+kirobban egy rövid megerősített ablakba (a szerep szerint burst / pajzs / AOE-gyógyítás).
 
 A kasztok **mob ölésből** kapnak XP-t (minél messzebb merészkedsz a spawntól, annál erősebb
 mobok jönnek — és annál több XP-t adnak). A szintek WoW-mintára **egyre több XP-be
 kerülnek**, a képességek (spellek) pedig a szintekkel **automatikusan feloldódnak**.
 
 A 25. szinttől **specializálódhatsz** (`/spec choose <id>`), és a legerősebb képességek
-csak így érhetők el. A döntés nem örök: a `/spec respec` paranccsal **frakcióvalutáért
-visszaválthatod** a speced (a spec-talentjeid pontjai ilyenkor visszatérülnek):
+csak így érhetők el. Összesen **31 specializáció** van — a spec dönti el a szerepedet (DPS /
+caster / tank / gyógyító), így minden szerep lefedett. A döntés nem örök: a `/spec respec`
+paranccsal **frakcióvalutáért visszaválthatod** a speced (a spec-talentjeid pontjai ilyenkor
+visszatérülnek):
 
 | Kaszt | Specializációk |
 |---|---|
@@ -53,6 +67,15 @@ visszaválthatod** a speced (a spec-talentjeid pontjai ilyenkor visszatérülnek
 | Harcos | 🩸 Berserker • 🛡 Védelmező |
 | Íjász | 🎯 Mesterlövész • 🐺 Vadmester |
 | Orgyilkos | ☠ Méregkeverő • 👻 Fantom |
+| Druida | 🐾 Vadőr • 🌙 Holdjós • 🌳 Védelmező • 💚 Helyreállító |
+| Paplovag | ☀️ Szentlélek • ⚖️ Megtorló • 🛡 Védő |
+| Halállovag | 🩸 Vérlovag • ❄️ Fagylovag |
+| Sámán | ⚡ Elemi • 🔨 Erősítő • 🌊 Hullámhívó |
+| Szerzetes | 💨 Szélfutó • 🍺 Sörfőző • 🌫️ Ködszövő |
+| Pap | 🙏 Fegyelem • 🌑 Árnyék |
+| Boszorkánymester | 🍂 Átok • 🔥 Pusztítás |
+| Démonvadász | 💥 Tombolás • 🛡 Bosszú |
+| Sárkányidéző | 🔥 Perzselés • 💧 Megőrzés |
 
 ### ✨ Képesség Katalizátor
 
@@ -61,17 +84,26 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
 
 | Kaszt | Katalizátor |
 |---|---|
-| Varázsló (és Nekromanta) | 📖 **Mágikus Kódex** (bűvölt könyv) |
+| Varázsló | 📖 **Mágikus Kódex** (bűvölt könyv) |
 | Harcos | 📯 **Harci Kürt** (kecskekürt) |
 | Íjász | 🎒 **Vadásztarsoly** (nyúlbőr) |
 | Orgyilkos | 🪨 **Árnyékamulett** (kovakő) |
+| Druida | 🌱 **Vadon Talizmánja** (tölgycsemete) |
+| Paplovag | 🔔 **Szent Harang** (harang) |
+| Halállovag | 💀 **Rúnakovácsolt Koponya** (wither-koponya) |
+| Sámán | 🪬 **Ősök Totemje** (mentő totem) |
+| Szerzetes | 🎍 **Jáde Bot** (bambusz) |
+| Pap | 🕯️ **Szent Gyertya** (fehér gyertya) |
+| Boszorkánymester | 🏮 **Lélek Lámpás** (lélek-lámpás) |
+| Démonvadász | 👁️ **Démonszem** (ender-szem) |
+| Sárkányidéző | 🐲 **Sárkány Esszencia** (sárkánylehelet) |
 
 - **Jobb katt** — kiválasztott képesség elsütése
 - **Lopakodás + ütés (bal katt)** — váltás a feloldott képességek között, kaszt-specifikus
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
 
-Minden képességnek költsége (éhség vagy XP) és visszatöltési ideje van. 124 képesség van a
+Minden képességnek költsége (éhség vagy XP) és visszatöltési ideje van. Több mint 350 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
 átfedés a kasztok között.
 

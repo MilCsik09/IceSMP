@@ -1,20 +1,33 @@
 # 4. Kasztok ✅
 
-A **kaszt** a hős-típusod: ez dönti el, milyen képességeid (varázslataid) lehetnek. Négy kaszt
-közül választhatsz a `/profile` → **Kaszt** menüből.
+A **kaszt** a hős-típusod: ez dönti el, milyen képességeid (varázslataid) lehetnek. **13 kaszt**
+közül választhatsz a `/profile` → **Kaszt** menüből. Minden kasztnak saját katalizátor-tárgya
+(a „varázskönyved") és saját **erőforrása** (Erő-csík) van.
 
-| Kaszt | Stílus | Katalizátor tárgy |
-|---|---|---|
-| 🧙 **Varázsló** | Elemi és támogató mágia, távolsági ráolvasások | 📖 Mágikus Kódex |
-| ⚔️ **Harcos** | Közelharci erő, kitartás, buffok | 📯 Harci Kürt |
-| 🏹 **Íjász** | Távolsági harc, mozgékonyság, csapdák | 🎒 Vadásztarsoly |
-| 🗡️ **Orgyilkos** | Lopakodás, gyors kitörések, gyengítés | 🪨 Árnyékamulett |
+| Kaszt | Stílus | Katalizátor | Erőforrás |
+|---|---|---|---|
+| 🧙 **Varázsló** | Elemi és kontroll mágia, távolsági ráolvasások | 📖 Mágikus Kódex | Mana |
+| ⚔️ **Harcos** | Közelharci erő, kitartás, buffok | 📯 Harci Kürt | Düh |
+| 🏹 **Íjász** | Távolsági harc, mozgékonyság, csapdák | 🎒 Vadásztarsoly | Fókusz |
+| 🗡️ **Orgyilkos** | Lopakodás, gyors kitörések, gyengítés | 🪨 Árnyékamulett | Energia |
+| 🐻 **Druida** | Alakváltó természet-mágia (harc / kontroll / tank / gyógyítás) | 🌱 Vadon Talizmánja | Természeti Erő |
+| 🔆 **Paplovag** | Szent harc, védelem és gyógyítás | 🔔 Szent Harang | Szent Erő |
+| 💀 **Halállovag** | Rúna-mágia, vér és fagy, közelharci tank/DPS | 💀 Rúnakovácsolt Koponya | Runikus Erő |
+| 🌊 **Sámán** | Elemek, totemek, gyógyítás és erősítés | 🪬 Ősök Totemje | Mana |
+| ☯️ **Szerzetes** | Gyors közelharc, csi-energia, gyógyítás | 🎍 Jáde Bot | Csi |
+| ✝️ **Pap** | Szent és árny mágia, gyógyítás | 🕯️ Szent Gyertya | Mana |
+| 😈 **Boszorkánymester** | Átkok, démonok és pusztító tűz | 🏮 Lélek Lámpás | Lélekerő |
+| 👁️ **Démonvadász** | Mozgékony démoni harc és bosszú | 👁️ Démonszem | Fúria |
+| 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkány Esszencia | Eszencia |
+
+> Az **Erő-csík** a HUD oldalsávban tölődik minden varázslásnál; teli állapotban kirobban egy
+> rövid megerősített ablakba. Részletek a [fő tájékoztatóban](../../PLAYER_GUIDE.md).
 
 ## Elsődleges és másodlagos kaszt
 
 - **Elsődleges kaszt:** ezt választod először, bármikor. Ez a „fő" hősöd.
 - **Másodlagos kaszt:** csak akkor nyílik meg, ha az **elsődleges eléri a 50. (max) szintet**.
-  Ekkor egy második kasztot is felvehetsz. **A másodlagos kaszt nem specializálódhat.**
+  Ekkor egy második kasztot is felvehetsz (a 13 közül). **A másodlagos kaszt nem specializálódhat.**
 
 ## Szintezés — hogyan erősödsz?
 
