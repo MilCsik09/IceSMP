@@ -55,10 +55,13 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 
 | Frakció | Passzív bónusz |
 |---|---|
-| 🔴 **Piros** | Immunis a tűz / láva / forró blokk sebzésére |
-| 🔵 **Kék** | Immunis a fagyásra; **50% eséllyel** nem veszít éhséget |
-| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a nem-ellenséges mobok nem támadják |
-| ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** |
+| 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |
+| 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget (víz-mesterség — végtelen búvárkodás) |
+| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
+| ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
+
+> A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
+> helyzetben (Piros a tűznél, Kék a víz alatt, Semleges lopakodva, Sötét a szörnyek közt).
 
 **Fontos a Sötét frakcióról:**
 - Csak az léphet be, akit **bűnössé (sinner)** bélyegeztek.

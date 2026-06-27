@@ -1,17 +1,34 @@
 # 5. Képességek (varázslatok) ✅
 
-Itt **minden egyes képességet** megtalálsz: mit csinál, mennyibe kerül, mennyit kell utána
-várni, és hányadik szinten oldódik fel. Ne aggódj, ha sok — a sajátjaidat a játékban a
-**Képesség-fa** menüben is megnézheted (`/profile` → Képesség-fa).
+Több mint **350 képesség** van — **minden a 13 kaszt és a 31 specializáció** saját, egyedi
+készletet kap. Ez az oldal **a négy alapkaszt és specjeik** képességeit listázza részletesen
+(reprezentatív példaként: mit csinál, mennyibe kerül, mennyit kell várni, hányadik szinten
+oldódik fel). A **többi kaszt/spec** képességeinek pontos adatait mindig a játékban,
+a **Képesség-fa** menüben nézheted meg (`/profile` → Képesség-fa), ami a saját kasztodra
+mindig naprakész.
 
 ## Hogyan működnek a képességek?
 
 A kasztod képességeit egy **Katalizátor** nevű tárggyal használod (a kasztodhoz illő tárgy, pl.
-a Varázslónak egy könyv). Tartsd a kezedben, és:
+a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
+
+### ⚡ Az Erő-csík (osztály-erőforrás)
+Minden kasztnak van egy **erőforrása** (Mana, Düh, Energia, Fókusz, Csi…), amit a HUD oldalsávban
+egy színes csík mutat:
+
+- **Minden elsütött képesség feltölti** (+25).
+- Amikor **megtelik (100)**, automatikusan **kirobban**: kapsz egy ~6 mp-es **megerősített
+  állapotot**, amiben a képességeid **gyorsabban töltődnek** (sorozat-varázslás).
+- A kirobbanás bónusza a **szereped (specializációd)** szerint változik (DPS = burst,
+  tank = pajzs, gyógyító = AOE-gyógyítás), és minden spec saját szignatúra-hatással süt ki
+  (tűz-specek gyújtanak, fagy-specek lassítanak, stb.). Részletek a
+  [fő tájékoztatóban](../../PLAYER_GUIDE.md).
+
+Az Erő-csík **jutalom-réteg**, sosem akadályozza a varázslást — csak időnként extra lökést ad.
 
 ### A táblázatok oszlopai
 - **Mit csinál:** egyszerűen, mit tesz a képesség.
@@ -236,6 +253,20 @@ Ezek **csak akkor** oldódnak fel, ha az adott specializációt választottad (l
 | **Fantomszorítás** | A célpontot **a levegőbe emeli** + 2 sebzés | 3 ❤ | 75 mp | 39 |
 | **Rémsuttogás** | Gyengeség + hányinger + sötétség a célpontra | 3 ❤ | 90 mp | 42 |
 | **Kísértet** | A végső: **hosszú láthatatlanság + gyorsaság + ugrás** | 4 ❤ | 5 perc | 45 |
+
+---
+
+## A többi kaszt és spec képességei
+
+A fenti négy alapkaszton túl **9 további kasztnak** (Druida, Paplovag, Halállovag, Sámán,
+Szerzetes, Pap, Boszorkánymester, Démonvadász, Sárkányidéző) és **összesen 31 specializációnak**
+is teljes, egyedi képesség-készlete van — ugyanezzel a felépítéssel (alap-spellek a kaszt
+szintjeiből, spec-spellek a 25–45. szint között).
+
+Mivel ez több mint 350 képesség, a **pontos, naprakész listát** (mit tud, mennyibe kerül,
+hányadik szinten oldódik fel) a **saját kasztodra** mindig a játékban nézheted meg:
+`/profile` → **Képesség-fa**. A jellegükről a [Kasztok](04-kasztok.md) és a
+[Specializációk](06-specializaciok.md) oldal ad áttekintést.
 
 ---
 

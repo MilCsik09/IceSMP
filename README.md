@@ -21,8 +21,8 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 | Frakció | Belépés | Passzív bónusz |
 |---|---|---|
 | 🔴 **Piros** | `/faction join red` | Immunis a tűz, láva és forró blokkok sebzésére |
-| 🔵 **Kék** | `/faction join blue` | Immunis a fagyásra, lassabban éhezik |
-| ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | Lopakodás közben láthatatlan; a nem-ellenséges mobok békén hagyják |
+| 🔵 **Kék** | `/faction join blue` | Immunis a fagyásra **és a fulladásra**, lassabban éhezik |
+| ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | Lopakodás közben láthatatlan; a nem-ellenséges mobok **és endermanök** békén hagyják; adómentes |
 | ⚫ **Sötét** | `/faction join dark` — **csak bűnösként!** | Immunis a wither-sebzésre; az élőhalottak nem támadják |
 
 **A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
