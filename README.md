@@ -48,8 +48,8 @@ elsődleges max szintje után nyílik meg, és nem specializálódhat):
 - **Démonvadász** — mozgékony démoni harc
 - **Sárkányidéző** — sárkány-eszencia: perzselés és gyógyítás
 
-Minden kasztnak saját **erőforrása** (Erő-csík a HUD-on) van: a varázslás tölti, teli állapotban
-kirobban egy rövid megerősített ablakba (a szerep szerint burst / pajzs / AOE-gyógyítás).
+Minden kasztnak saját **erőforrása** (Erő-csík a HUD-on) van: WoW-szerűen **ez a varázslás
+költsége** — minden képesség fogyasztja, és idővel visszatöltődik; üres csíknál a spell nem sül el.
 
 A kasztok **mob ölésből** kapnak XP-t (minél messzebb merészkedsz a spawntól, annál erősebb
 mobok jönnek — és annál több XP-t adnak). A szintek WoW-mintára **egyre több XP-be
@@ -103,7 +103,7 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
 
-Minden képességnek költsége (éhség vagy XP) és visszatöltési ideje van. Több mint 350 képesség van a
+Minden képességnek költsége (az osztály-erőforrás: Mana/Düh/Energia…) és visszatöltési ideje van. Több mint 350 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
 átfedés a kasztok között.
 

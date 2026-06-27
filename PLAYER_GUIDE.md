@@ -168,33 +168,22 @@ szintet mutatják.
 ### Osztály-erőforrás — az Erő-csík ⚡ ✅
 Minden kasztnak van egy **erőforrása** (Mana, Düh, Energia, Fókusz, Csi, Runikus Erő…), amit a
 **HUD oldalsávban** (a képernyő jobb szélén, a scoreboardon) egy **színes, 10 szegmenses csík**
-mutat — szándékosan **nem** külön bossbar, hogy ne ütközzön a világboss sávjával.
+mutat. **Ez a képességeid „üzemanyaga" — WoW-szerűen ez a varázslás költsége.**
 
 **Hogyan működik?**
-1. **Minden elsütött képesség feltölti** az Erő-csíkot (+25 / cast).
-2. Amikor **megtelik (100)**, automatikusan **kirobban (discharge)**: lenullázódik, és kapsz egy
-   rövid, **~6 másodperces megerősített állapotot (empowerment)**.
-3. A megerősített ablakban a **képességeid gyorsabban töltődnek** (cooldown-visszatérítés), így
-   sorozatban tudsz varázsolni.
+1. **Minden elsütött képesség ennyit fogyaszt** az Erő-csíkból. A költség a képesség erejétől
+   függ: a gyors, pörgős alapképességek **olcsók** (~15–20), a nagy ultik **drágák** (~50).
+2. A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+3. Ha **nincs elég** erőforrásod egy képességhez, az **nem sül el** — az action bar jelzi
+   (pl. „Nincs elég Mana!").
 
-**A kirobbanás hatása a szereped (a specializációd) szerint változik** — nem kell hozzá
-spell-váltogatás, magától illeszkedik a kaszt stílusához:
+Így a varázslásnak **ritmusa** van: pár képesség után meg kell várnod, míg a csík újratöltődik —
+nem tudsz vég nélkül spammelni. A leghatékonyabb, ha a drága ultikat a megfelelő pillanatra
+tartogatod, és közben az olcsó képességekkel „pörögsz".
 
-| Szerep | A kirobbanás bónusza |
-|---|---|
-| 🗡️ Közelharci DPS | Erő II + Sebesség (lerohanó burst) |
-| 🏹 Távolsági DPS | Sebesség II + Erő (kitérő burst) |
-| ✨ Varázsló (caster) | Sebesség + Regeneráció (kitérés + fenntartás) |
-| 🛡️ Tank | Ellenállás + Felszívás (pajzs) |
-| ➕ Gyógyító | Regeneráció + Felszívás, **és a közeli szövetségeseket is gyógyítja** |
-
-Ráadásul **minden spec saját „szignatúrája"** is van: a kirobbanáskor a közeli ellenfelekre egy
-témába illő hatás csap le — a **tűz-specek felgyújtanak**, a **fagy-specek lelassítanak**, a
-**halál/árny-specek wither-t raknak**, a vad/dühös specek **ellöknek**, a gyógyítók **AOE-gyógyítanak**.
-Minden spec discharge-e más részecskével és hanggal játszódik le.
-
-> Tipp: az Erő-csík **jutalom-réteg**, nem korlát — sosem akadályozza meg a varázslást, csak
-> időnként extra lökést ad. A `spells.resource.*` config kapcsolókkal a szerver finomhangolhatja.
+> **Fontos:** a spellek **már nem éhséget / XP-t / életet** fogyasztanak — kizárólag az
+> osztály-erőforrásodat. (A `spells.resource.*` configgal a szerver hangolhatja a maximumot és a
+> visszatöltés sebességét, vagy `enabled: false`-szal visszakapcsolhatja a régi éhség/XP/HP modellt.)
 
 ---
 
@@ -205,9 +194,8 @@ A **25. szinttől** az elsődleges kasztod **specializálódhat** — a legegysz
 A menü mutatja, melyik elérhető és mi a feltétele. Összesen **31 specializáció** van, és a
 legerősebb képességek (Lvl 25–45) csak így érhetők el.
 
-A **spec határozza meg a szerepedet** — ez dönti el, mit csinál az Erő-csík kirobbanása (lásd
-fent), és milyen stílusban a leghatékonyabb. A szerepek: 🗡️ közelharci DPS, 🏹 távolsági DPS,
-✨ caster, 🛡️ **tank**, ➕ **gyógyító**.
+A **spec határozza meg a szerepedet** — milyen stílusban a leghatékonyabb a kaszt. A szerepek:
+🗡️ közelharci DPS, 🏹 távolsági DPS, ✨ caster, 🛡️ **tank**, ➕ **gyógyító**.
 
 | Kaszt | Specializációk (szerep) |
 |---|---|
@@ -245,13 +233,13 @@ mutatjuk be — a **teljes lista** (minden spell pontos hatásával, költségé
 szintjével) a [Képességek oldalon](docs/player-guide/05-kepessegek.md) található.
 
 ### Hogyan működik egy képesség?
-- **Költség:** minden képesség vagy **éhségpontot**, vagy **tapasztalatpontot (XP)** fogyaszt.
-  Ha nincs elég, nem sül el (az action bar jelzi).
-- **Visszatöltés (cooldown):** minden képességnek van egy újrahasználati ideje. A **60 mp-nél
-  hosszabb** cooldownok kilépés után is megmaradnak.
+- **Költség:** minden képesség az **osztály-erőforrásodat** (Erő-csík: Mana / Düh / Energia…)
+  fogyasztja — a gyors képességek olcsók, az ultik drágák. Ha nincs elég a csíkban, a képesség
+  **nem sül el** (az action bar jelzi). Az Erő-csík magától visszatöltődik (lásd a 4. szakaszt).
+- **Visszatöltés (cooldown):** minden képességnek van egy újrahasználati ideje is. A **60 mp-nél
+  hosszabb** cooldownok kilépés után is megmaradnak. (Tehát két kapu van: az erőforrás-költség és
+  a cooldown — a pörgős képességeket inkább az erőforrás, a nagy ultikat a cooldown fékezi.)
 - **Célzás:** van önmagadra ható (self), célzott (a célkereszted alá), és terület (AOE) képesség.
-- **Erő-csík:** minden elsütött képesség tölti az osztály-erőforrásodat (lásd a 4. szakaszt); a
-  teli csík kirobban egy megerősített ablakba, amiben gyorsabban varázsolhatsz.
 
 ### Varázsló — elemi és kontroll
 Mana Nyíl (gyors sebzés), Fagyérintés (fagyaszt + lassít), Wisplight (fény), Gyökerezés (AOE

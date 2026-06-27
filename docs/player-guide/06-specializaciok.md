@@ -9,8 +9,7 @@ Hogyan? `/profile` → **Specializáció** menü → kattints a választott irá
 és kiírja, ha valamihez még nem teljesíted a feltételt.
 
 Összesen **31 specializáció** van. A **spec dönti el a szerepedet** (🗡️ közelharci DPS,
-🏹 távolsági DPS, ✨ caster, 🛡️ tank, ➕ gyógyító) — és ez szabja meg azt is, mit csinál az
-Erő-csík kirobbanása:
+🏹 távolsági DPS, ✨ caster, 🛡️ tank, ➕ gyógyító) — vagyis milyen stílusban a leghatékonyabb:
 
 | Kaszt | Specializációk (szerep) |
 |---|---|

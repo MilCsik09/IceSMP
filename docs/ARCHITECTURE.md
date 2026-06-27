@@ -106,13 +106,19 @@ A `PlayerSessionCleanupListener` kilépéskor/kickkor: (a) végigmegy a regisztr
 `clearPlayerState(uuid)`-jét hívva. **Nincs hardkódolt lista** — új állapotos egység automatikusan
 bekerül (lásd 5.7 recept).
 
-### 3.8 Kaszt-erőforrás (`ResourceManager`)
+### 3.8 Kaszt-erőforrás (`ResourceManager`) — WoW-szerű költség
 Per-kaszt „erő" 0–max meter, a HUD-oldalsávban megjelenítve (`HudManager.buildLines` hív egy
-`hudLine`-t — **nem** külön boss-bar, hogy ne ütközzön a világboss-sávval). A cast tölti
-(`AbilityCatalystListener` egy `onSpellCast` hívással), teli állapotban **spec-szintű kirobbanás**
-(`SpecializationManager`-ből vett szerep + spec-szignatúra a közeli entitásokra), majd egy rövid
-**empowered** ablak (cooldown-visszatérítés a cast-pipeline-ban). Additív réteg — a spell-költségeket
-nem váltja le. `PlayerStateCleanup`-ot implementál.
+`hudLine`-t — **nem** külön boss-bar, hogy ne ütközzön a világboss-sávval). **Ez a spell-cast
+költsége:** a cast `consume`-ol belőle (`AbilityCatalystListener`), a csík pedig **lazy módon
+regenerálódik** (minden hozzáférés krediteli az eltelt időt — nincs scheduler). Üres csíknál a
+cast `canAfford`-ja false → a spell nem sül el; no-op castnál `refund`. A spell erőforrás-költsége a
+`Spell.getResourceCost()` defaultból (cooldown-szint alapján) jön. Ha `spells.resource.enabled=false`,
+a cast a régi `hasRequiredCost`/`consumeCost` (éhség/XP/HP) útra esik vissza. UUID-kulcsos concurrent
+map (Folia-safe, nem nyúl entitáshoz a saját szálán kívül). `PlayerStateCleanup`-ot implementál.
+
+> A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** (a
+> felhasználói döntés szerint a csík a költség, nem jutalom-réteg) — a build→discharge kölcsönösen
+> kizárta volna ugyanazon a sávon a spend-modellt.
 
 ---
 

@@ -6,13 +6,15 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
-  # Kaszt-erőforrás: a képernyő tetején egy boss-bar (kasztonként névvel/színnel: Mana/Düh/Csi…).
-  # A spell-cast tölti; teli állapotban kirobban egy rövid erősítésbe (erő+sebesség) és nulláz.
-  # Additív jutalom-réteg a meglévő spell-költségek FÖLÖTT — nem váltja le őket.
+  # Kaszt-erőforrás (WoW-szerű): a HUD oldalsávban egy színes sáv (kasztonként névvel/színnel:
+  # Mana/Düh/Energia/Fókusz/Csi…). A spell-cast EZT FOGYASZTJA (a költség a sáv), és idővel
+  # regenerálódik; üres sávnál a spell nem sül el. A spell erőforrás-költsége a cooldown-szintjéből
+  # adódik (rövid CD ~15-20, ulti ~50). Ha enabled=false, a spellek a régi éhség/XP/HP költségre
+  # esnek vissza.
   resource:
     enabled: true
-    max: 100              # a sáv maximuma
-    gain-per-cast: 25     # ennyit tölt egy sikeres cast (4 cast → kirobbanás)
+    max: 100                 # a sáv maximuma
+    regen-per-second: 8.0    # ennyi erőforrás töltődik vissza másodpercenként (0 = nincs regen)
   # Sámán-totemek: lerakott, rövid életű entitások, amik periodikusan pulzálnak a közeli
   # entitásokra (gyógyítás/buff a szövetségeseknek, sebzés/debuff az ellenségeknek).
   totem:

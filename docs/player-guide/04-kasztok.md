@@ -20,8 +20,9 @@ közül választhatsz a `/profile` → **Kaszt** menüből. Minden kasztnak saj�
 | 👁️ **Démonvadász** | Mozgékony démoni harc és bosszú | 👁️ Démonszem | Fúria |
 | 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkány Esszencia | Eszencia |
 
-> Az **Erő-csík** a HUD oldalsávban tölődik minden varázslásnál; teli állapotban kirobban egy
-> rövid megerősített ablakba. Részletek a [fő tájékoztatóban](../../PLAYER_GUIDE.md).
+> Az **Erő-csík** a HUD oldalsávban van; WoW-szerűen **ez a varázslás költsége** — minden képesség
+> fogyasztja, és idővel visszatöltődik (üres csíknál a spell nem sül el). Részletek a
+> [fő tájékoztatóban](../../PLAYER_GUIDE.md).
 
 ## Elsődleges és másodlagos kaszt
 

@@ -16,25 +16,22 @@ a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
 
-### ⚡ Az Erő-csík (osztály-erőforrás)
+### ⚡ Az Erő-csík (osztály-erőforrás) — a varázslás költsége
 Minden kasztnak van egy **erőforrása** (Mana, Düh, Energia, Fókusz, Csi…), amit a HUD oldalsávban
-egy színes csík mutat:
+egy színes csík mutat. **WoW-szerűen ez a varázslás költsége:**
 
-- **Minden elsütött képesség feltölti** (+25).
-- Amikor **megtelik (100)**, automatikusan **kirobban**: kapsz egy ~6 mp-es **megerősített
-  állapotot**, amiben a képességeid **gyorsabban töltődnek** (sorozat-varázslás).
-- A kirobbanás bónusza a **szereped (specializációd)** szerint változik (DPS = burst,
-  tank = pajzs, gyógyító = AOE-gyógyítás), és minden spec saját szignatúra-hatással süt ki
-  (tűz-specek gyújtanak, fagy-specek lassítanak, stb.). Részletek a
-  [fő tájékoztatóban](../../PLAYER_GUIDE.md).
+- **Minden elsütött képesség ennyit FOGYASZT** a csíkból (a gyors képességek olcsók ~15–20, az
+  ultik drágák ~50).
+- A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+- Ha **nincs elég** erőforrásod, a képesség **nem sül el** (az action bar jelzi).
 
-Az Erő-csík **jutalom-réteg**, sosem akadályozza a varázslást — csak időnként extra lökést ad.
+A spellek **már nem éhséget/XP-t/életet** fogyasztanak — kizárólag az osztály-erőforrásodat.
 
 ### A táblázatok oszlopai
 - **Mit csinál:** egyszerűen, mit tesz a képesség.
-- **Költség:** mennyit „fizetsz" érte. **🍗 = éhség** (a sonkacomb-csík), **XP = tapasztalat**
-  (a zöld csík / a szinted), **❤ = élet** (a szíveidből — „vérmágia"; 2 pont = 1 szív).
-  Ha nincs elég, nem tudod elsütni. (Életbe kerülő spellt nem tudsz elsütni, ha az megölne.)
+- **Költség:** mennyit „fizetsz" érte az **Erő-csíkból** (osztály-erőforrás). *(Az alábbi
+  táblázatok „Költség" oszlopában szereplő 🍗/XP/❤ értékek a **régi** modellt írják le, amely már
+  csak akkor él, ha a szerver a configban kikapcsolja az erőforrás-rendszert.)*
 - **Várakozás:** ennyi ideig kell várni, mire újra használható (cooldown).
 - **Szint:** a kasztod hányadik szintjén oldódik fel automatikusan.
 

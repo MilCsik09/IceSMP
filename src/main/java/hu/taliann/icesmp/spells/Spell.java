@@ -17,6 +17,33 @@ public interface Spell {
 
     int getCostAmount();
 
+    /**
+     * The class-resource (power) cost of casting this spell — the WoW-style model where the spell
+     * spends the class pool (Mana / Düh / Energia …) shown on the HUD, which regenerates over time.
+     * Derived from the cooldown tier so spammable (low-cooldown) spells are gated mainly by the
+     * resource, while big-cooldown spells are gated mainly by their cooldown. A spell may override
+     * this for a custom cost. The legacy {@link #getCostType()}/{@link #getCostAmount()} are only
+     * used when the resource system is disabled in config.
+     *
+     * @return the resource cost (0–max)
+     */
+    default int getResourceCost() {
+        final int cooldown = getCooldown();
+        if (cooldown <= 0) {
+            return 15;
+        }
+        if (cooldown <= 30) {
+            return 20;
+        }
+        if (cooldown <= 90) {
+            return 30;
+        }
+        if (cooldown <= 180) {
+            return 40;
+        }
+        return 50;
+    }
+
     default int getCooldownDelay() {
         return 0;
     }

@@ -15,9 +15,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -27,9 +24,12 @@ import java.util.concurrent.ThreadLocalRandom;
  * Passive faction bonuses, balanced so each faction's perk is roughly one tier of usefulness:
  * RED masters heat (immune to fire/lava/hot-floor — its Nether domain), BLUE masters cold & water
  * (immune to freezing AND drowning, plus slower hunger — its ocean/snow domain), NEUTRAL is the
- * unseen wanderer (invisible while sneaking, and ignored by non-hostile mobs and endermen), and
- * DARK is the cursed one (immune to wither and ignored by the undead — intentionally the strongest
- * PvE perk, offset by the permanent sinner mark its members carry).
+ * sure-footed wanderer (no fall damage, and ignored by non-hostile mobs and endermen), and DARK is
+ * the cursed one (immune to wither and ignored by the undead — intentionally the strongest PvE perk,
+ * offset by the permanent sinner mark its members carry).
+ *
+ * <p>The Neutral sneak-invisibility was removed for balance (it was too strong in PvP) and replaced
+ * with fall-damage immunity, a milder, non-combat utility.
  */
 public final class FactionPassiveListener implements Listener {
 
@@ -77,6 +77,12 @@ public final class FactionPassiveListener implements Listener {
                     event.setCancelled(true);
                 }
             }
+            case NEUTRAL -> {
+                // Sure-footed wanderer: no fall damage (replaces the old sneak-invisibility).
+                if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+                    event.setCancelled(true);
+                }
+            }
             default -> {
             }
         }
@@ -100,25 +106,6 @@ public final class FactionPassiveListener implements Listener {
                 configManager.getDouble("factions.passives.blue-hunger-slow-chance", 0.5D)));
         if (ThreadLocalRandom.current().nextDouble() < slowChance) {
             event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onPlayerToggleSneak(final PlayerToggleSneakEvent event) {
-        if (!isEnabled()) {
-            return;
-        }
-
-        final Player player = event.getPlayer();
-        if (factionManager.getFaction(player.getUniqueId()) != FactionType.NEUTRAL) {
-            return;
-        }
-
-        if (event.isSneaking()) {
-            player.addPotionEffect(new PotionEffect(
-                    PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
-        } else {
-            player.removePotionEffect(PotionEffectType.INVISIBILITY);
         }
     }
 

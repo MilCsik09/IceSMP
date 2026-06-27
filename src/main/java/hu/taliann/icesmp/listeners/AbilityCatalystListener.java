@@ -164,8 +164,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 Map.of(
                         "spell", selected.getName(),
                         "mastery", mastery,
-                        "cost", String.valueOf(selected.getCostAmount()),
-                        "resource", resolveResourceName(selected),
+                        "cost", String.valueOf(displayedCost(selected)),
+                        "resource", resolveResourceName(player, selected),
                         "position", (nextIndex + 1) + "/" + unlocked.size()
                 )
         ));
@@ -202,36 +202,43 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
 
-        if (!selected.hasRequiredCost(player)) {
+        final boolean useResource = resourceManager.isEnabled();
+        final boolean canAfford = useResource ? resourceManager.canAfford(player, selected) : selected.hasRequiredCost(player);
+        if (!canAfford) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.no-cost",
                     "<red>Nincs elég {resource}! Szükséges: {amount}</red>",
                     Map.of(
-                            "resource", resolveResourceName(selected),
-                            "amount", String.valueOf(selected.getCostAmount())
+                            "resource", resolveResourceName(player, selected),
+                            "amount", String.valueOf(displayedCost(selected))
                     )
             ));
             return;
         }
 
-        selected.consumeCost(player);
+        if (useResource) {
+            resourceManager.consume(player, selected);
+        } else {
+            selected.consumeCost(player);
+        }
         if (!selected.executeSpell(player)) {
             // No effect fired (no target, no companions, …) — refund the cost and skip the
             // cooldown so a missed cast costs the player nothing.
-            selected.refundCost(player);
+            if (useResource) {
+                resourceManager.refund(player, selected);
+            } else {
+                selected.refundCost(player);
+            }
             return;
         }
 
-        // Combo OR the post-discharge "empowered" window flows faster (cooldown refund) + flair.
+        // A combo (configured spell pair cast in quick succession) flows faster (cooldown refund) + flair.
         final boolean combo = isComboMatch(player, selected.getId(), now);
-        final boolean empowered = resourceManager.isEmpowered(player);
-        putCooldown(player, selected, (combo || empowered) ? now - comboRefundMillis(player, selected) : now);
+        putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
         playCastFlourish(player, combo);
         if (combo) {
             player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
         }
-        // Build the per-class power resource (additive reward layer; runs on the caster's region thread).
-        resourceManager.onSpellCast(player);
 
         lastCastSpell.put(player.getUniqueId(), selected.getId());
         lastCastTime.put(player.getUniqueId(), now);
@@ -288,7 +295,16 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, combo ? 1.6F : 1.2F);
     }
 
-    private String resolveResourceName(final Spell spell) {
+    /** The cost shown to the player: the class-resource cost when the system is on, else the legacy cost. */
+    private int displayedCost(final Spell spell) {
+        return resourceManager.isEnabled() ? spell.getResourceCost() : spell.getCostAmount();
+    }
+
+    /** The resource name shown to the player: the class pool (Mana/Düh…) when on, else the legacy type. */
+    private String resolveResourceName(final Player player, final Spell spell) {
+        if (resourceManager.isEnabled()) {
+            return resourceManager.resourceName(player);
+        }
         return switch (spell.getCostType()) {
             case HUNGER -> messageManager.get("system.resources.hunger", "éhség");
             case XP -> messageManager.get("system.resources.xp", "XP");
@@ -343,7 +359,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     /** Opens the spellbook GUI at the given page. */
     public void openSpellbook(final Player player, final int page) {
         SpellbookGUI.open(player, this, jobManager, specializationManager, spellRegistry,
-                masteryManager, configManager, messageManager, page);
+                masteryManager, configManager, messageManager, resourceManager, page);
     }
 
     /** The player's currently unlocked, castable spell ids, in selection order. */

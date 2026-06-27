@@ -7,6 +7,7 @@ import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
@@ -51,7 +52,8 @@ public final class SpellbookGUI {
     public static void open(final Player viewer, final AbilityCatalystListener catalyst,
                             final JobManager jobManager, final SpecializationManager specializationManager,
                             final SpellRegistry spellRegistry, final SpellMasteryManager masteryManager,
-                            final ConfigManager configManager, final MessageManager messageManager, final int page) {
+                            final ConfigManager configManager, final MessageManager messageManager,
+                            final ResourceManager resourceManager, final int page) {
         final List<Entry> entries = collectEntries(viewer, jobManager, specializationManager, spellRegistry, configManager);
         final String selectedId = catalyst.getSelectedSpellId(viewer);
 
@@ -68,7 +70,7 @@ public final class SpellbookGUI {
         for (int i = 0; i < PER_PAGE && start + i < entries.size(); i++) {
             final Entry entry = entries.get(start + i);
             final boolean selected = entry.unlocked() && entry.spell().getId().equalsIgnoreCase(selectedId);
-            inventory.setItem(i, icon(viewer, entry, selected, masteryManager, messageManager));
+            inventory.setItem(i, icon(viewer, entry, selected, masteryManager, messageManager, resourceManager));
             if (entry.unlocked()) {
                 holder.mapSlot(i, entry.spell().getId());
             }
@@ -135,7 +137,8 @@ public final class SpellbookGUI {
     }
 
     private static ItemStack icon(final Player viewer, final Entry entry, final boolean selected,
-                                  final SpellMasteryManager masteryManager, final MessageManager messageManager) {
+                                  final SpellMasteryManager masteryManager, final MessageManager messageManager,
+                                  final ResourceManager resourceManager) {
         final Spell spell = entry.spell();
         final boolean unlocked = entry.unlocked();
         final int rank = masteryManager.getRank(viewer, spell.getId());
@@ -161,7 +164,10 @@ public final class SpellbookGUI {
         }
 
         lore.add(Component.empty());
-        if (spell.getCostAmount() > 0) {
+        if (resourceManager != null && resourceManager.isEnabled()) {
+            // WoW-style: the cost is the class resource (Mana/Düh/Energia…), which regenerates over time.
+            lore.add(stat("Költség", spell.getResourceCost() + " " + resourceManager.resourceName(viewer)));
+        } else if (spell.getCostAmount() > 0) {
             lore.add(stat("Költség", spell.getCostAmount() + " " + resourceName(spell.getCostType())));
         }
         lore.add(stat("Cooldown", spell.getCooldown() <= 0 ? "azonnali" : spell.getCooldown() + " mp"));
