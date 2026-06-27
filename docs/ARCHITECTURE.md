@@ -106,19 +106,26 @@ A `PlayerSessionCleanupListener` kilépéskor/kickkor: (a) végigmegy a regisztr
 `clearPlayerState(uuid)`-jét hívva. **Nincs hardkódolt lista** — új állapotos egység automatikusan
 bekerül (lásd 5.7 recept).
 
-### 3.8 Kaszt-erőforrás (`ResourceManager`) — WoW-szerű költség
+### 3.8 Kaszt-erőforrás (`ResourceManager`) — hibrid költség
 Per-kaszt „erő" 0–max meter, a HUD-oldalsávban megjelenítve (`HudManager.buildLines` hív egy
-`hudLine`-t — **nem** külön boss-bar, hogy ne ütközzön a világboss-sávval). **Ez a spell-cast
-költsége:** a cast `consume`-ol belőle (`AbilityCatalystListener`), a csík pedig **lazy módon
-regenerálódik** (minden hozzáférés krediteli az eltelt időt — nincs scheduler). Üres csíknál a
-cast `canAfford`-ja false → a spell nem sül el; no-op castnál `refund`. A spell erőforrás-költsége a
-`Spell.getResourceCost()` defaultból (cooldown-szint alapján) jön. Ha `spells.resource.enabled=false`,
-a cast a régi `hasRequiredCost`/`consumeCost` (éhség/XP/HP) útra esik vissza. UUID-kulcsos concurrent
-map (Folia-safe, nem nyúl entitáshoz a saját szálán kívül). `PlayerStateCleanup`-ot implementál.
+`hudLine`-t — **nem** külön boss-bar, hogy ne ütközzön a világboss-sávval). A csík **lazy módon
+regenerálódik** (minden hozzáférés krediteli az eltelt időt — nincs scheduler), UUID-kulcsos
+concurrent map (Folia-safe, nem nyúl entitáshoz a saját szálán kívül). `PlayerStateCleanup`-ot
+implementál.
 
-> A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** (a
-> felhasználói döntés szerint a csík a költség, nem jutalom-réteg) — a build→discharge kölcsönösen
-> kizárta volna ugyanazon a sávon a spend-modellt.
+**Hibrid költségmodell** — `ResourceManager.usesResource(spell)` dönti el spellenként, mi a költség:
+- `HEALTH` → marad HP (vér-mágia);
+- `XP ≥ xp-ritual-threshold` (alap 80) → marad XP (nagy rituálé/idézés/időjárás/ulti);
+- `HUNGER ≥ hunger-heavy-threshold` (alap 8) → marad éhség (nehéz fizikai);
+- minden más → a kaszt-erőforrás.
+
+A cast-pipeline (`AbilityCatalystListener`) ez alapján ágazik: `usesResource` spellnél
+`canAfford`/`consume`/`refund` a `ResourceManageren` (a költség `Spell.getResourceCost()`,
+cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeCost`/`refundCost`
+(éhség/XP/HP) útja. Ha `spells.resource.enabled=false`, MINDEN spell a régi éhség/XP/HP útra esik.
+
+> A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
+> most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
 
 ---
 

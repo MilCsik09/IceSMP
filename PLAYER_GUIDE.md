@@ -168,22 +168,27 @@ szintet mutatják.
 ### Osztály-erőforrás — az Erő-csík ⚡ ✅
 Minden kasztnak van egy **erőforrása** (Mana, Düh, Energia, Fókusz, Csi, Runikus Erő…), amit a
 **HUD oldalsávban** (a képernyő jobb szélén, a scoreboardon) egy **színes, 10 szegmenses csík**
-mutat. **Ez a képességeid „üzemanyaga" — WoW-szerűen ez a varázslás költsége.**
+mutat. **Ez a képességeid fő „üzemanyaga" — a legtöbb spell ezt fogyasztja.**
 
 **Hogyan működik?**
-1. **Minden elsütött képesség ennyit fogyaszt** az Erő-csíkból. A költség a képesség erejétől
-   függ: a gyors, pörgős alapképességek **olcsók** (~15–20), a nagy ultik **drágák** (~50).
+1. **A legtöbb képesség ennyit fogyaszt** az Erő-csíkból. A költség a képesség erejétől függ:
+   a gyors, pörgős alapképességek **olcsók** (~15–20), a nagy ultik **drágák** (~50).
 2. A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
 3. Ha **nincs elég** erőforrásod egy képességhez, az **nem sül el** — az action bar jelzi
    (pl. „Nincs elég Mana!").
 
 Így a varázslásnak **ritmusa** van: pár képesség után meg kell várnod, míg a csík újratöltődik —
-nem tudsz vég nélkül spammelni. A leghatékonyabb, ha a drága ultikat a megfelelő pillanatra
-tartogatod, és közben az olcsó képességekkel „pörögsz".
+nem tudsz vég nélkül spammelni.
 
-> **Fontos:** a spellek **már nem éhséget / XP-t / életet** fogyasztanak — kizárólag az
-> osztály-erőforrásodat. (A `spells.resource.*` configgal a szerver hangolhatja a maximumot és a
-> visszatöltés sebességét, vagy `enabled: false`-szal visszakapcsolhatja a régi éhség/XP/HP modellt.)
+> **Hibrid költség — minden spell a hozzá illő „valutát" fizeti:**
+> - 🩸 **Vér-mágia** (ön-áldozó képességek, pl. Berserker/Nekromanta) → **életet (❤)** kerül.
+> - ✨ **Nagy rituálé / idézés / időjárás / szignatúra-ulti** → **tapasztalatot (XP)** kerül.
+> - 🍗 **Nehéz fizikai** (állások, második lélegzet, totem/állat-idézés) → **éhséget** kerül.
+> - ⚡ **Minden más** (a hétköznapi mágia és stamina) → az **osztály-erőforrást** (a fenti sáv).
+>
+> A spellkönyv és az action bar mindig kiírja, melyik képesség mit kér. (A `spells.resource.*`
+> configgal a küszöbök és a visszatöltés hangolható, vagy `enabled: false`-szal mindenki a régi
+> éhség/XP/HP modellre vált.)
 
 ---
 
@@ -233,12 +238,14 @@ mutatjuk be — a **teljes lista** (minden spell pontos hatásával, költségé
 szintjével) a [Képességek oldalon](docs/player-guide/05-kepessegek.md) található.
 
 ### Hogyan működik egy képesség?
-- **Költség:** minden képesség az **osztály-erőforrásodat** (Erő-csík: Mana / Düh / Energia…)
-  fogyasztja — a gyors képességek olcsók, az ultik drágák. Ha nincs elég a csíkban, a képesség
-  **nem sül el** (az action bar jelzi). Az Erő-csík magától visszatöltődik (lásd a 4. szakaszt).
+- **Költség (hibrid):** minden képesség a hozzá illő „valutát" fizeti — a legtöbb az
+  **osztály-erőforrásodat** (Erő-csík: Mana/Düh/Energia…), a vér-mágia **életet (❤)**, a nagy
+  rituálék/ultik **XP-t**, a nehéz fizikai képességek **éhséget**. Ha nincs elég, a képesség
+  **nem sül el** (az action bar és a spellkönyv kiírja, mibe kerül). Az Erő-csík magától
+  visszatöltődik (lásd a 4. szakaszt).
 - **Visszatöltés (cooldown):** minden képességnek van egy újrahasználati ideje is. A **60 mp-nél
-  hosszabb** cooldownok kilépés után is megmaradnak. (Tehát két kapu van: az erőforrás-költség és
-  a cooldown — a pörgős képességeket inkább az erőforrás, a nagy ultikat a cooldown fékezi.)
+  hosszabb** cooldownok kilépés után is megmaradnak. (Tehát két kapu van: a költség és a cooldown —
+  a pörgős képességeket inkább a költség, a nagy ultikat a cooldown fékezi.)
 - **Célzás:** van önmagadra ható (self), célzott (a célkereszted alá), és terület (AOE) képesség.
 
 ### Varázsló — elemi és kontroll

@@ -164,10 +164,11 @@ public final class SpellbookGUI {
         }
 
         lore.add(Component.empty());
-        if (resourceManager != null && resourceManager.isEnabled()) {
-            // WoW-style: the cost is the class resource (Mana/Düh/Energia…), which regenerates over time.
+        if (resourceManager != null && resourceManager.usesResource(spell)) {
+            // Hybrid: this spell is paid from the class resource (Mana/Düh/Energia…), which regenerates.
             lore.add(stat("Költség", spell.getResourceCost() + " " + resourceManager.resourceName(viewer)));
         } else if (spell.getCostAmount() > 0) {
+            // Thematic cost kept: blood magic (HP), great rituals (XP), or heavy physical effort (hunger).
             lore.add(stat("Költség", spell.getCostAmount() + " " + resourceName(spell.getCostType())));
         }
         lore.add(stat("Cooldown", spell.getCooldown() <= 0 ? "azonnali" : spell.getCooldown() + " mp"));

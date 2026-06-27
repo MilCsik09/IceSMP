@@ -45,6 +45,34 @@ public final class ResourceManager implements PlayerStateCleanup {
         return configManager.getBoolean("spells.resource.enabled", true);
     }
 
+    /**
+     * Whether this spell is paid for with the class resource (hybrid model). Each spell keeps its
+     * thematic cost where one fits, and uses the class pool otherwise:
+     * <ul>
+     *   <li><b>HEALTH</b> (blood magic / self-sacrifice) — always kept on HP.</li>
+     *   <li><b>XP</b> ≥ {@code xp-ritual-threshold} (great arcane rituals, summons, weather, signature
+     *       ultis) — kept on XP.</li>
+     *   <li><b>HUNGER</b> ≥ {@code hunger-heavy-threshold} (heavy physical effort: stances, second-wind,
+     *       big totem/beast summons) — kept on hunger.</li>
+     *   <li>everything else (light arcane / light stamina) — the class resource, so every class's bar is
+     *       used by its bread-and-butter spells.</li>
+     * </ul>
+     * Always false when the system is disabled (then every spell uses its declared hunger/XP/HP cost).
+     *
+     * @param spell the spell being cast
+     * @return true if it should be paid from the class resource pool
+     */
+    public boolean usesResource(final Spell spell) {
+        if (!isEnabled()) {
+            return false;
+        }
+        return switch (spell.getCostType()) {
+            case HEALTH -> false;
+            case XP -> spell.getCostAmount() < configManager.getInt("spells.resource.xp-ritual-threshold", 80);
+            case HUNGER -> spell.getCostAmount() < configManager.getInt("spells.resource.hunger-heavy-threshold", 8);
+        };
+    }
+
     private double max() {
         return Math.max(10.0D, configManager.getDouble("spells.resource.max", 100.0D));
     }

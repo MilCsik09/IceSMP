@@ -202,7 +202,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
 
-        final boolean useResource = resourceManager.isEnabled();
+        final boolean useResource = resourceManager.usesResource(selected);
         final boolean canAfford = useResource ? resourceManager.canAfford(player, selected) : selected.hasRequiredCost(player);
         if (!canAfford) {
             player.sendActionBar(messageManager.getMessage(
@@ -295,14 +295,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, combo ? 1.6F : 1.2F);
     }
 
-    /** The cost shown to the player: the class-resource cost when the system is on, else the legacy cost. */
+    /** The cost shown to the player: the class-resource cost for resource spells, else the thematic cost. */
     private int displayedCost(final Spell spell) {
-        return resourceManager.isEnabled() ? spell.getResourceCost() : spell.getCostAmount();
+        return resourceManager.usesResource(spell) ? spell.getResourceCost() : spell.getCostAmount();
     }
 
-    /** The resource name shown to the player: the class pool (Mana/Düh…) when on, else the legacy type. */
+    /** The resource name shown to the player: the class pool (Mana/Düh…) for resource spells, else the type. */
     private String resolveResourceName(final Player player, final Spell spell) {
-        if (resourceManager.isEnabled()) {
+        if (resourceManager.usesResource(spell)) {
             return resourceManager.resourceName(player);
         }
         return switch (spell.getCostType()) {

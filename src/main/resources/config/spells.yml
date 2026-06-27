@@ -6,15 +6,23 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
-  # Kaszt-erőforrás (WoW-szerű): a HUD oldalsávban egy színes sáv (kasztonként névvel/színnel:
-  # Mana/Düh/Energia/Fókusz/Csi…). A spell-cast EZT FOGYASZTJA (a költség a sáv), és idővel
-  # regenerálódik; üres sávnál a spell nem sül el. A spell erőforrás-költsége a cooldown-szintjéből
-  # adódik (rövid CD ~15-20, ulti ~50). Ha enabled=false, a spellek a régi éhség/XP/HP költségre
-  # esnek vissza.
+  # Kaszt-erőforrás (HIBRID, WoW-szerű): a HUD oldalsávban egy színes sáv (kasztonként névvel/színnel:
+  # Mana/Düh/Energia/Fókusz/Csi…). A legtöbb spell EZT FOGYASZTJA (a költség a sáv), és idővel
+  # regenerálódik; üres sávnál a spell nem sül el. Az erőforrás-költség a cooldown-szintjéből adódik
+  # (rövid CD ~15-20, ulti ~50).
+  #
+  # HIBRID: minden spell a hozzá illő költséget használja!
+  #   - vér-mágia (HP-költségű spellek)               -> marad HP (ön-áldozat)
+  #   - nagy rituálé/idézés/időjárás (XP >= küszöb)    -> marad XP
+  #   - nehéz fizikai (éhség >= küszöb: állások, totem)-> marad éhség
+  #   - minden más (könnyű mágia/stamina)             -> a kaszt-erőforrás (a sáv)
+  # Ha enabled=false, MINDEN spell a régi éhség/XP/HP költségre esik vissza.
   resource:
     enabled: true
-    max: 100                 # a sáv maximuma
-    regen-per-second: 8.0    # ennyi erőforrás töltődik vissza másodpercenként (0 = nincs regen)
+    max: 100                      # a sáv maximuma
+    regen-per-second: 8.0         # ennyi erőforrás töltődik vissza másodpercenként (0 = nincs regen)
+    xp-ritual-threshold: 80       # ennyi VAGY több XP-költségű spell marad XP (nagy rituálé); alatta erőforrás
+    hunger-heavy-threshold: 8     # ennyi VAGY több éhség-költségű spell marad éhség (nehéz fizikai); alatta erőforrás
   # Sámán-totemek: lerakott, rövid életű entitások, amik periodikusan pulzálnak a közeli
   # entitásokra (gyógyítás/buff a szövetségeseknek, sebzés/debuff az ellenségeknek).
   totem:
