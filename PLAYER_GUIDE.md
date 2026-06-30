@@ -55,10 +55,13 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 
 | Frakció | Passzív bónusz |
 |---|---|
-| 🔴 **Piros** | Immunis a tűz / láva / forró blokk sebzésére |
-| 🔵 **Kék** | Immunis a fagyásra; **50% eséllyel** nem veszít éhséget |
-| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a nem-ellenséges mobok nem támadják |
-| ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** |
+| 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |
+| 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget (víz-mesterség — végtelen búvárkodás) |
+| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
+| ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
+
+> A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
+> helyzetben (Piros a tűznél, Kék a víz alatt, Semleges lopakodva, Sötét a szörnyek közt).
 
 **Fontos a Sötét frakcióról:**
 - Csak az léphet be, akit **bűnössé (sinner)** bélyegeztek.
@@ -115,17 +118,29 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
 
 ## 4. Kasztok ✅
 
-Négy alap kaszt választható a `/profile` → Kaszt menüből. **Max. 2 kasztod lehet:**
+**13 kaszt** közül választhatsz a `/profile` → Kaszt menüből. **Max. 2 kasztod lehet:**
 - **Elsődleges kaszt** — bármikor választható.
 - **Másodlagos kaszt** — csak akkor nyílik meg, ha az elsődleges eléri a **max szintet (50)**.
   (A másodlagos nem specializálódhat.)
 
-| Kaszt | Stílus |
-|---|---|
-| 🧙 **Varázsló** | Elemi és támogató mágia, távolsági ráolvasások |
-| ⚔️ **Harcos** | Közelharci erő, kitartás, buffok |
-| 🏹 **Íjász** | Távolsági harc, mozgékonyság, csapdák |
-| 🗡️ **Orgyilkos** | Lopakodás, gyors kitörések, gyengítés |
+Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spellbook") és saját
+**erőforrása** (az Erő-csík, lásd lentebb) van:
+
+| Kaszt | Stílus | Katalizátor | Erőforrás |
+|---|---|---|---|
+| 🧙 **Varázsló** | Elemi és kontroll mágia, távolsági ráolvasások | 📖 Mágikus Kódex | Mana |
+| ⚔️ **Harcos** | Közelharci erő, kitartás, buffok | 📯 Harci Kürt | Düh |
+| 🏹 **Íjász** | Távolsági harc, mozgékonyság, csapdák | 🎒 Vadásztarsoly | Fókusz |
+| 🗡️ **Orgyilkos** | Lopakodás, gyors kitörések, gyengítés | 🪨 Árnyékamulett | Energia |
+| 🐻 **Druida** | Alakváltó természet-mágia (harc, kontroll, tank, gyógyítás) | 🌱 Vadon Talizmánja | Természeti Erő |
+| 🔆 **Paplovag** | Szent harc, védelem és gyógyítás | 🔔 Szent Harang | Szent Erő |
+| 💀 **Halállovag** | Rúna-mágia, vér és fagy, közelharci tank/DPS | 💀 Rúnakovácsolt Koponya | Runikus Erő |
+| 🌊 **Sámán** | Elemek, totemek, gyógyítás és erősítés | 🪬 Ősök Totemje | Mana |
+| ☯️ **Szerzetes** | Gyors közelharc, csi-energia, gyógyítás | 🎍 Jáde Bot | Csi |
+| ✝️ **Pap** | Szent és árny mágia, gyógyítás | 🕯️ Szent Gyertya | Mana |
+| 😈 **Boszorkánymester** | Átkok, démonok és pusztító tűz | 🏮 Lélek Lámpás | Lélekerő |
+| 👁️ **Démonvadász** | Mozgékony démoni harc és bosszú | 👁️ Démonszem | Fúria |
+| 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkány Esszencia | Eszencia |
 
 ### Szintezés
 - A kaszt **mob ölésből** kap XP-t: alap **5 XP / ölés**, plusz a szörny szintjéért **+2 XP /
@@ -135,14 +150,9 @@ Négy alap kaszt választható a `/profile` → Kaszt menüből. **Max. 2 kaszto
   vagy, annál többet kell ölnöd a következő szintért. Max szint: **50**.
 
 ### Képesség Katalizátor (a „spellbook")
-A kaszt képességeit egy **kaszt-tematikus tárggyal** használod:
-
-| Kaszt | Katalizátor tárgy |
-|---|---|
-| Varázsló (és Nekromanta) | 📖 Mágikus Kódex |
-| Harcos | 📯 Harci Kürt |
-| Íjász | 🎒 Vadásztarsoly |
-| Orgyilkos | 🪨 Árnyékamulett |
+A kaszt képességeit egy **kaszt-tematikus tárggyal** használod (a fenti táblázat *Katalizátor*
+oszlopa mutatja, melyik kaszté melyik). A specializációd ugyanazt a katalizátort használja, mint
+az alapkasztod.
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás + bal katt (ütés)** = váltás a feloldott képességek között (kaszt-specifikus
@@ -155,21 +165,61 @@ A Kaszt menü **„Képesség-fa"** gombja megmutatja a kasztod (és a választo
 összes képességét **feloldási szint szerint**: a feloldottak ragyognak, a zároltak a szükséges
 szintet mutatják.
 
+### Osztály-erőforrás — az Erő-csík ⚡ ✅
+Minden kasztnak van egy **erőforrása** (Mana, Düh, Energia, Fókusz, Csi, Runikus Erő…), amit a
+**HUD oldalsávban** (a képernyő jobb szélén, a scoreboardon) egy **színes, 10 szegmenses csík**
+mutat. **Ez a képességeid fő „üzemanyaga" — a legtöbb spell ezt fogyasztja.**
+
+**Hogyan működik?**
+1. **A legtöbb képesség ennyit fogyaszt** az Erő-csíkból. A költség a képesség erejétől függ:
+   a gyors, pörgős alapképességek **olcsók** (~15–20), a nagy ultik **drágák** (~50).
+2. A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+3. Ha **nincs elég** erőforrásod egy képességhez, az **nem sül el** — az action bar jelzi
+   (pl. „Nincs elég Mana!").
+
+Így a varázslásnak **ritmusa** van: pár képesség után meg kell várnod, míg a csík újratöltődik —
+nem tudsz vég nélkül spammelni.
+
+> **Hibrid költség — minden spell a hozzá illő „valutát" fizeti:**
+> - 🩸 **Vér-mágia** (ön-áldozó képességek, pl. Berserker/Nekromanta) → **életet (❤)** kerül.
+> - ✨ **Nagy rituálé / idézés / időjárás / szignatúra-ulti** → **tapasztalatot (XP)** kerül.
+> - 🍗 **Nehéz fizikai** (állások, második lélegzet, totem/állat-idézés) → **éhséget** kerül.
+> - ⚡ **Minden más** (a hétköznapi mágia és stamina) → az **osztály-erőforrást** (a fenti sáv).
+>
+> A spellkönyv és az action bar mindig kiírja, melyik képesség mit kér. (A `spells.resource.*`
+> configgal a küszöbök és a visszatöltés hangolható, vagy `enabled: false`-szal mindenki a régi
+> éhség/XP/HP modellre vált.)
+
 ---
 
 ## 5. Specializációk ✅
 
 A **25. szinttől** az elsődleges kasztod **specializálódhat** — a legegyszerűbben a
 `/profile` → **Specializáció** menüből (vagy paranccsal: `/spec list`, `/spec choose <id>`).
-A menü mutatja, melyik elérhető és mi a feltétele. Kasztonként **2 irány** van, és a
+A menü mutatja, melyik elérhető és mi a feltétele. Összesen **31 specializáció** van, és a
 legerősebb képességek (Lvl 25–45) csak így érhetők el.
 
-| Kaszt | Specializációk |
+A **spec határozza meg a szerepedet** — milyen stílusban a leghatékonyabb a kaszt. A szerepek:
+🗡️ közelharci DPS, 🏹 távolsági DPS, ✨ caster, 🛡️ **tank**, ➕ **gyógyító**.
+
+| Kaszt | Specializációk (szerep) |
 |---|---|
-| Varázsló | 🌊 **Elementalista** • 💀 **Nekromanta** |
-| Harcos | 🩸 **Berserker** • 🛡️ **Védelmező** |
-| Íjász | 🎯 **Mesterlövész** • 🐺 **Vadmester** |
-| Orgyilkos | ☠️ **Méregkeverő** • 👻 **Fantom** |
+| 🧙 Varázsló | 🌊 **Elementalista** (caster) • 💀 **Nekromanta** (caster) |
+| ⚔️ Harcos | 🩸 **Berserker** (DPS) • 🛡️ **Védelmező** (tank) |
+| 🏹 Íjász | 🎯 **Mesterlövész** (táv. DPS) • 🐺 **Vadmester** (táv. DPS) |
+| 🗡️ Orgyilkos | ☠️ **Méregkeverő** (DPS) • 👻 **Fantom** (DPS) |
+| 🐻 Druida | 🐾 **Vadőr** (DPS) • 🌙 **Holdjós** (caster) • 🌳 **Védelmező/Ironbark** (tank) • 💚 **Helyreállító** (gyógyító) |
+| 🔆 Paplovag | ☀️ **Szentlélek** (gyógyító) • ⚖️ **Megtorló** (DPS) • 🛡️ **Védő** (tank) |
+| 💀 Halállovag | 🩸 **Vérlovag** (tank) • ❄️ **Fagylovag** (DPS) |
+| 🌊 Sámán | ⚡ **Elemi** (caster) • 🔨 **Erősítő** (DPS) • 🌊 **Hullámhívó** (gyógyító) |
+| ☯️ Szerzetes | 💨 **Szélfutó** (DPS) • 🍺 **Sörfőző** (tank) • 🌫️ **Ködszövő** (gyógyító) |
+| ✝️ Pap | 🙏 **Fegyelem** (gyógyító) • 🌑 **Árnyék** (caster) |
+| 😈 Boszorkánymester | 🍂 **Átok** (caster) • 🔥 **Pusztítás** (caster) |
+| 👁️ Démonvadász | 💥 **Tombolás** (DPS) • 🛡️ **Bosszú** (tank) |
+| 🐉 Sárkányidéző | 🔥 **Perzselés** (caster) • 💧 **Megőrzés** (gyógyító) |
+
+Így **minden szerep lefedett**: van tank, gyógyító, caster, közel- és távharci DPS bőven, és sok
+kaszt több szerepre is alkalmas a specválasztással (pl. egy Paplovag lehet gyógyító, DPS vagy tank).
 
 - A **Nekromanta** különleges: csak **Sötét frakcióval + bűnös állapottal**, ÉS a **Sötét
   Beavatás** küldetés teljesítése után választható.
@@ -182,14 +232,20 @@ legerősebb képességek (Lvl 25–45) csak így érhetők el.
 
 ## 6. Képességek (spellek) ✅
 
-Összesen **124 képesség** van; **minden kaszt és specializáció saját, egyedi készletet** tanul
-(nincs átfedés). A szintekkel **automatikusan feloldódnak**.
+Több mint **350 képesség** van; **minden kaszt és specializáció saját, egyedi készletet** tanul
+(nincs átfedés). A szintekkel **automatikusan feloldódnak**. Alább kasztonként a *jellegüket*
+mutatjuk be — a **teljes lista** (minden spell pontos hatásával, költségével és feloldási
+szintjével) a [Képességek oldalon](docs/player-guide/05-kepessegek.md) található.
 
 ### Hogyan működik egy képesség?
-- **Költség:** minden képesség vagy **éhségpontot**, vagy **tapasztalatpontot (XP)** fogyaszt.
-  Ha nincs elég, nem sül el (az action bar jelzi).
-- **Visszatöltés (cooldown):** minden képességnek van egy újrahasználati ideje. A **60 mp-nél
-  hosszabb** cooldownok kilépés után is megmaradnak.
+- **Költség (hibrid):** minden képesség a hozzá illő „valutát" fizeti — a legtöbb az
+  **osztály-erőforrásodat** (Erő-csík: Mana/Düh/Energia…), a vér-mágia **életet (❤)**, a nagy
+  rituálék/ultik **XP-t**, a nehéz fizikai képességek **éhséget**. Ha nincs elég, a képesség
+  **nem sül el** (az action bar és a spellkönyv kiírja, mibe kerül). Az Erő-csík magától
+  visszatöltődik (lásd a 4. szakaszt).
+- **Visszatöltés (cooldown):** minden képességnek van egy újrahasználati ideje is. A **60 mp-nél
+  hosszabb** cooldownok kilépés után is megmaradnak. (Tehát két kapu van: a költség és a cooldown —
+  a pörgős képességeket inkább a költség, a nagy ultikat a cooldown fékezi.)
 - **Célzás:** van önmagadra ható (self), célzott (a célkereszted alá), és terület (AOE) képesség.
 
 ### Varázsló — elemi és kontroll
@@ -212,7 +268,36 @@ Tőrhajítás, Adrenalin (sebesség + sietség), Árnyéklépés (a célpont mö
 (lassítás), Elsötétítés (vakítás), Füstbomba, Kitérés (hátraugrás + láthatatlanság), Fojtás
 (erős lassítás), Árnyéksuhanás (gyors kitörés), Haláljegy (megjelöl + gyengít).
 
+### A többi kaszt — jelleg
+A 9 további kasztnak is **teljes, egyedi alap-készlete** van (a pontos spelleket lásd a
+[Képességek oldalon](docs/player-guide/05-kepessegek.md)):
+
+- 🐻 **Druida** — alakváltó természet-mágia: karom- és tüske-sebzés, gyökerező kontroll,
+  napsugár/holdfény ráolvasások, és a specekkel **tank** (kéreg-páncél) vagy **gyógyító**
+  (életfakasztó regeneráció) szerep is.
+- 🔆 **Paplovag** — szent harc és védelem: pörölycsapások, megszentelt föld, pajzsok és
+  szövetséges-gyógyító/buffoló aurák; lehet **gyógyító**, **DPS** vagy **tank**.
+- 💀 **Halállovag** — rúna-mágia: vér- és fagy-csapások, élet-elszívás, fagyasztó kontroll,
+  közelharci **tank** (vér) vagy **DPS** (fagy).
+- 🌊 **Sámán** — elemek és **totemek**: villám- és láva-mágia, lerakható totemek, amelyek
+  pulzálva gyógyítják a szövetségeseket vagy sebzik az ellenfeleket; **caster**, **DPS** vagy
+  **gyógyító**.
+- ☯️ **Szerzetes** — gyors csi-alapú közelharc: kombó-ütések, rúgások, sörfőző **tank**-fortélyok,
+  és köd-alapú **gyógyítás**.
+- ✝️ **Pap** — szent és árny-mágia: gyógyítás, pajzsok, fény-sebzés, illetve árny-oldalon
+  elme- és wither-mágia (**caster**).
+- 😈 **Boszorkánymester** — átkok, démon-idézés és pusztító tűz: méreg/wither DoT-ok, lélek-mágia,
+  felperzselő robbanások (**caster**).
+- 👁️ **Démonvadász** — mozgékony démoni harc: kitörések, szárnyalás, perzselő csapások és
+  bosszúálló **tank**-forma.
+- 🐉 **Sárkányidéző** — sárkány-eszencia: perzselő tűz- és kék-mágia távolról, illetve
+  smaragd-eszenciás **gyógyítás**.
+
 ### Specializációs készletek (Lvl 25–45)
+Az alábbi 8 (eredeti) spec részletes felsorolása mellett a **többi 23 spec** is teljes,
+Lvl 25–45 közt feloldódó ulti-készlettel rendelkezik — a teljes listát a
+[Specializációk](docs/player-guide/06-specializaciok.md) és a
+[Képességek](docs/player-guide/05-kepessegek.md) oldal tartalmazza.
 - **Elementalista:** Naptánc, Tűzgolyó, Fagyrobbanás (AOE fagy), **Mennykőcsapás** (valódi
   villám), Lucky Star, Parázsvihar (AOE gyújtás), Örvényrántás (odahúz), Kőbőr, Viharlöket,
   **Elemi Túltöltés** (tűz + fagy + robbanás ulti).
@@ -353,8 +438,18 @@ szinttel** erősebb, és a **lélekkő-drop esélye megduplázódik** — kocká
 
 ### Világbosszok 👹
 Időnként egy **boss-erejű szörny** jelenik meg egy véletlen játékos közelében (broadcast +
-koordináta). Aki legyőzi: a **frakciója kasszát és liga-pontot** kap, a győztes pedig
-**ideiglenes buffot** (erő + ellenállás).
+koordináta). Spawnkor **véletlen archetípus** kerül kiválasztásra — saját névvel, stat-szorzókkal,
+**szignatúra-aurával** (a túlélők a boss közelében témába illő debuffot kapnak) és jutalom-szorzóval
+(pl. A Gyűrűk Őre, Lávakohó Behemót, Fagyott Trón Királya, Csontkirály, Mélységi Rém…). A boss
+**~8 másodpercenként telegrafált különleges képességet** süt el (becsapódás / mérgező zóna /
+add-idézés), és **50% HP alatt feldühödik** (2. fázis, erősebb csapásokkal). Aki legyőzi: a
+**frakciója kasszát és liga-pontot** kap, a győztes pedig **ideiglenes buffot** (erő + ellenállás).
+
+### Inváziók 🧟
+Időnként egy **szörnyhorda** spawnol egy véletlen játékos köré (broadcast jelzi). A horda-összetétel
+**véletlen** (pl. Élőhalott Áradat, Csontlégió, Pókfészek, Káosz-horda), és minden hullámot egy
+**skálázott, megnevezett bajnok (mini-boss)** vezet, amely szintén telegrafált földcsapással támad.
+A horda mobjai skálázottak — extra **XP-vel és lélekkő-eséllyel** jutalmaznak.
 
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota.

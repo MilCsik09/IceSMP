@@ -1,0 +1,26 @@
+# IceSMP üzenetek — currency alrendszer (a MessageManager az összes messages/*.yml-t betölti)
+messages:
+  balance: '&eAktuális egyenleg - %s: &6%s'
+  currency-help-header: '&6/currency &7- Elérhető parancsok:'
+  currency-help-rates: '&e/currency rates &7- Aktuális árfolyamok megtekintése.'
+  currency-rates-header: '&6Aktuális árfolyamok (kínálat alapú):'
+  currency-rates-line: '&e%s &7| Kínálat: &f%s &7| Érték: &f%s &7| 1 egység = &f%s %s'
+  currency-rates-static: '&eA dinamikus árfolyam ki van kapcsolva; fix árfolyam érvényes.'
+  economy:
+    balance: '&eAktuális egyenleged - %s: &6%s'
+    currency-help-header: '&6/currency &7- Elérhető parancsok:'
+    exchange-fee: '&cTranzakciós díj: %s'
+    exchange-rate-info: '&e1 %s = %s %s'
+    exchange-success: '&aSikeres pénzváltás!'
+    insufficient-balance: '&cNincs elég pénzed a művelethez!'
+    transfer-failed: '&cAz átutalás meghiúsult!'
+    transfer-success: '&a%s sikeresen átutalva.'
+  economy-event-ended: '<gold>📉 A kereslet-sokk lecsengett: a(z) <white>{currency}</white> valuta értéke normalizálódott.</gold>'
+  economy-event-started: <gold>📈 Kereslet-sokk! A(z) <white>{currency}</white> valuta értéke <white>x{multiplier}</white>-re ugrott <white>{hours}</white> órára — itt az alkalom a kereskedésre!</gold>
+  exchange-fee: '&cTranzakciós díj: %s'
+  exchange-rate-info: '&e1 %s = %s %s'
+  exchange-success: '&aSikeres pénzváltás!'
+  exchangeboard-none-nearby: <red>Nincs árfolyamtábla a közelben.</red>
+  exchangeboard-placed: <green>Árfolyamtábla elhelyezve.</green>
+  exchangeboard-removed: <yellow>A legközelebbi árfolyamtábla eltávolítva.</yellow>
+  insufficient-balance: '&cNincs elég pénzed a művelethez!'

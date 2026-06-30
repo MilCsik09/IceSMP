@@ -88,11 +88,22 @@ public final class ConfiguredSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        switch (targeting) {
-            case SELF -> executeSelf(player);
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
+        return switch (targeting) {
+            case SELF -> {
+                executeSelf(player);
+                yield true;
+            }
             case TARGET -> executeTarget(player);
-            case AOE -> executeAoe(player);
-        }
+            case AOE -> {
+                executeAoe(player);
+                yield true;
+            }
+        };
     }
 
     private void executeSelf(final Player player) {
@@ -100,16 +111,17 @@ public final class ConfiguredSpell extends BaseSpell {
         playFeedback(player, player.getLocation());
     }
 
-    private void executeTarget(final Player player) {
+    private boolean executeTarget(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, range);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
-            return;
+            return false;
         }
 
         affect(player, target);
         applySelf(player);
         playFeedback(player, target.getLocation());
+        return true;
     }
 
     private void executeAoe(final Player player) {
@@ -127,6 +139,70 @@ public final class ConfiguredSpell extends BaseSpell {
 
         applySelf(player);
         playFeedback(player, player.getLocation());
+    }
+
+    @Override
+    public List<String> describe() {
+        final List<String> lines = new ArrayList<>();
+        lines.add(switch (targeting) {
+            case SELF -> "Cél: önmagad";
+            case TARGET -> "Cél: célzott lény (hatótáv " + trim(range) + ")";
+            case AOE -> "Cél: körzet (sugár " + trim(radius) + ")" + (friendlyAoe ? ", csak szövetségesek" : "");
+        });
+        if (damage > 0.0D) {
+            lines.add("Sebzés: " + trim(damage));
+        }
+        if (selfDamage > 0.0D) {
+            lines.add("Önsebzés: " + trim(selfDamage));
+        }
+        if (healSelf > 0.0D) {
+            lines.add("Gyógyítás: " + trim(healSelf));
+        }
+        if (feedSelf > 0) {
+            lines.add("Jóllakottság: +" + feedSelf);
+        }
+        if (igniteTicks > 0) {
+            lines.add("Gyújtás: " + secondsOf(igniteTicks) + " mp");
+        }
+        if (freezeTicks > 0) {
+            lines.add("Fagyasztás: " + secondsOf(FREEZE_BASE_TICKS + freezeTicks) + " mp");
+        }
+        if (lightning) {
+            lines.add("Villámcsapás");
+        }
+        if (knockback > 0.0D) {
+            lines.add("Hátralökés");
+        }
+        if (launchUp > 0.0D) {
+            lines.add("Fellökés a levegőbe");
+        }
+        if (pullStrength > 0.0D) {
+            lines.add("Behúzás magadhoz");
+        }
+        if (dashForward != 0.0D || dashUp != 0.0D) {
+            lines.add("Kitörés / lendület");
+        }
+        for (final PotionEffect effect : targetEffects) {
+            lines.add("Célra: " + effectName(effect));
+        }
+        for (final PotionEffect effect : selfEffects) {
+            lines.add("Magadra: " + effectName(effect));
+        }
+        return lines;
+    }
+
+    private static String trim(final double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.valueOf(value);
+    }
+
+    private static int secondsOf(final int ticks) {
+        return Math.max(1, ticks / 20);
+    }
+
+    private static String effectName(final PotionEffect effect) {
+        final String type = effect.getType().getKey().getKey().replace('_', ' ');
+        final int level = effect.getAmplifier() + 1;
+        return type + " " + level + " (" + secondsOf(effect.getDuration()) + " mp)";
     }
 
     private void affect(final Player caster, final LivingEntity target) {

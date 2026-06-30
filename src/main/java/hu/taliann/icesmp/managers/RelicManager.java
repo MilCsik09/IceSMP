@@ -1,5 +1,11 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.items.RelicItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
@@ -34,7 +40,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public final class RelicManager {
+public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -199,7 +205,7 @@ public final class RelicManager {
                 yaml.set(basePath + ".last-seen", entry.getValue().lastSeenMillis());
             }
 
-            yaml.save(ownershipFile);
+            YamlStore.saveAtomic(ownershipFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save relic ownerships: " + exception.getMessage());
         }
@@ -309,6 +315,7 @@ public final class RelicManager {
         final ItemStack[] contents = inventory.getContents();
         boolean inventoryChanged = false;
         boolean ownershipChanged = false;
+        final java.util.Set<String> seenRelics = new java.util.HashSet<>();
 
         for (int slot = 0; slot < contents.length; slot++) {
             final ItemStack itemStack = contents[slot];
@@ -327,6 +334,21 @@ public final class RelicManager {
                 ownershipChanged = true;
                 playExpiryEffect(player);
                 sendExpiryMessage(player, definition);
+                continue;
+            }
+
+            // Singleton: a player may hold at most one copy of a relic. The first copy is clamped
+            // to a single item; any further copies (duped/stacked) are removed.
+            if (seenRelics.add(relicId)) {
+                if (itemStack.getAmount() > 1) {
+                    final ItemStack single = itemStack.clone();
+                    single.setAmount(1);
+                    contents[slot] = single;
+                    inventoryChanged = true;
+                }
+            } else {
+                contents[slot] = null;
+                inventoryChanged = true;
                 continue;
             }
 
@@ -433,7 +455,21 @@ public final class RelicManager {
 
     public boolean canUse(final Player player, final ItemStack itemStack) {
         final UUID owner = itemFactory.getOwner(itemStack);
-        return owner == null || owner.equals(player.getUniqueId());
+        if (owner != null && !owner.equals(player.getUniqueId())) {
+            return false;
+        }
+
+        // Singleton enforcement: the CENTRAL ownership record is authoritative. A stale copy
+        // (transferred/expired-then-reclaimed by someone else) keeps its item PDC owner but is no
+        // longer the active owner — so it must not work, preventing two usable copies of one relic.
+        final RelicDefinition definition = identify(itemStack);
+        if (definition != null) {
+            final RelicOwnership ownership = ownerships.get(definition.id().toLowerCase(Locale.ROOT));
+            if (ownership != null && !ownership.owner().equals(player.getUniqueId()) && !isExpired(ownership)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

@@ -5,6 +5,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -24,6 +25,8 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * World bosses (ideas.md "Világ-bossok"): periodically a boss-grade guardian
@@ -42,9 +45,72 @@ public final class WorldBossManager {
     private final FactionTreasuryManager treasuryManager;
     private final SeasonManager seasonManager;
     private final NamespacedKey worldBossKey;
+    private final NamespacedKey bossArchetypeKey;
+
+    /**
+     * The boss roster. Each archetype is a distinct mob with its own theme, stat
+     * multipliers (layered on the configured base health/damage), a self-buff applied
+     * at spawn, a signature aura debuff periodically applied to nearby players, and a
+     * reward multiplier. One is chosen at random on every spawn (rotation/variety).
+     */
+    private enum BossArchetype {
+        RING_WARDEN(EntityType.RAVAGER, "&4&l☠ A Gyűrűk Őre &c[Világboss]", 1.0D, 1.0D, 1.0D,
+                PotionEffectType.SLOWNESS, 1, null, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT, Special.SLAM),
+        MAGMA_BEHEMOTH(EntityType.BLAZE, "&6&l🔥 Lávakohó Behemót &c[Világboss]", 1.0D, 1.1D, 1.1D,
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.FIRE_RESISTANCE, Sound.ENTITY_GENERIC_EXPLODE, Particle.FLAME, Special.ZONE),
+        FROST_KING(EntityType.STRAY, "&b&l❄ Fagyott Trón Királya &c[Világboss]", 1.1D, 1.0D, 1.0D,
+                PotionEffectType.SLOWNESS, 2, null, Sound.BLOCK_GLASS_BREAK, Particle.SNOWFLAKE, Special.ZONE),
+        BONE_KING(EntityType.WITHER_SKELETON, "&8&l☠ Csontkirály &c[Világboss]", 1.0D, 1.2D, 1.1D,
+                PotionEffectType.WITHER, 0, PotionEffectType.STRENGTH, Sound.ENTITY_WITHER_AMBIENT, Particle.SOUL, Special.SUMMON),
+        DEEP_HORROR(EntityType.WARDEN, "&3&l👁 Mélységi Rém &c[Világboss]", 1.0D, 1.0D, 1.5D,
+                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL, Special.SLAM),
+        VENOM_BROODMOTHER(EntityType.CAVE_SPIDER, "&2&l🕷 Méreg Anyakirálynő &c[Világboss]", 1.0D, 1.0D, 1.1D,
+                PotionEffectType.POISON, 1, PotionEffectType.SPEED, Sound.ENTITY_PHANTOM_AMBIENT, Particle.SNEEZE, Special.ZONE),
+        STORM_HERALD(EntityType.VINDICATOR, "&e&l⚡ Vihar Hírnöke &c[Világboss]", 1.0D, 1.2D, 1.2D,
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.SPEED, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, Particle.ELECTRIC_SPARK, Special.ZONE),
+        PLAGUE_TITAN(EntityType.HUSK, "&8&l☣ Dögvész Titán &c[Világboss]", 1.2D, 1.0D, 1.2D,
+                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK, Special.SLAM),
+        GOLEM_SENTINEL(EntityType.IRON_GOLEM, "&7&l⚙ Vas Őrszem &c[Világboss]", 1.3D, 1.0D, 1.1D,
+                PotionEffectType.SLOWNESS, 1, PotionEffectType.RESISTANCE, Sound.ITEM_SHIELD_BLOCK, Particle.CRIT, Special.SLAM),
+        PIGLIN_WARLORD(EntityType.PIGLIN_BRUTE, "&6&l⚔ Pokoli Hadúr &c[Világboss]", 1.0D, 1.2D, 1.1D,
+                PotionEffectType.WEAKNESS, 0, PotionEffectType.STRENGTH, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT, Special.SUMMON);
+
+        /** Signature special: an around-boss telegraphed slam, a targeted ground zone, or summoning adds. */
+        private enum Special { SLAM, ZONE, SUMMON }
+
+        private final EntityType entityType;
+        private final String displayName;
+        private final double healthMult;
+        private final double damageMult;
+        private final double rewardMult;
+        private final PotionEffectType aura;
+        private final int auraAmplifier;
+        private final PotionEffectType selfBuff;
+        private final Sound sound;
+        private final Particle particle;
+        private final Special special;
+
+        BossArchetype(final EntityType entityType, final String displayName, final double healthMult,
+                      final double damageMult, final double rewardMult, final PotionEffectType aura,
+                      final int auraAmplifier, final PotionEffectType selfBuff, final Sound sound,
+                      final Particle particle, final Special special) {
+            this.entityType = entityType;
+            this.displayName = displayName;
+            this.healthMult = healthMult;
+            this.damageMult = damageMult;
+            this.rewardMult = rewardMult;
+            this.aura = aura;
+            this.auraAmplifier = auraAmplifier;
+            this.selfBuff = selfBuff;
+            this.sound = sound;
+            this.particle = particle;
+            this.special = special;
+        }
+    }
 
     private volatile long activeBossUntil;
     private volatile long nextAttemptAt;
+    private volatile java.util.UUID activeBossId;
 
     public WorldBossManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager, final FactionManager factionManager,
@@ -56,6 +122,7 @@ public final class WorldBossManager {
         this.treasuryManager = treasuryManager;
         this.seasonManager = seasonManager;
         this.worldBossKey = new NamespacedKey(plugin, "world_boss");
+        this.bossArchetypeKey = new NamespacedKey(plugin, "world_boss_archetype");
     }
 
     public boolean isWorldBoss(final Entity entity) {
@@ -66,6 +133,29 @@ public final class WorldBossManager {
     /** Whether a world boss is currently alive (for HUD / boss-bar display). */
     public boolean isBossActive() {
         return activeBossUntil > System.currentTimeMillis();
+    }
+
+    /**
+     * Despawns the active world boss on plugin disable so the persistent, buffed
+     * boss does not survive a reload as an unmanaged orphan (and a fresh boss can
+     * spawn cleanly next start). Best-effort direct removal.
+     */
+    public void shutdown() {
+        activeBossUntil = 0L;
+        nextAttemptAt = 0L;
+        final java.util.UUID id = activeBossId;
+        activeBossId = null;
+        if (id == null) {
+            return;
+        }
+        final Entity boss = Bukkit.getEntity(id);
+        if (boss != null && boss.isValid()) {
+            try {
+                boss.remove();
+            } catch (final Exception ignored) {
+                // Region/thread unavailable during shutdown — leave it; it is at worst a stray mob.
+            }
+        }
     }
 
     /** Periodic spawn attempt on the global world-events tick. */
@@ -123,61 +213,71 @@ public final class WorldBossManager {
     }
 
     private void triggerSpawnNear(final Player anchor) {
-        final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-        final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
-        final Location approx = anchor.getLocation().clone().add(
-                Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
+        // Folia: read the anchor's location on its OWN region thread first (it may be in a
+        // different region than the caller), then hop to the spawn location's region.
+        anchor.getScheduler().run(plugin, task -> {
+            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+            final double distance = 24.0D + ThreadLocalRandom.current().nextDouble(16.0D);
+            final Location approx = anchor.getLocation().clone().add(
+                    Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
 
-        final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
-        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
-
-        // Entity spawning must happen on the owning region's thread (Folia).
-        plugin.getServer().getRegionScheduler().run(plugin, approx, task -> spawnBoss(approx, lifetimeMinutes));
+            final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
+            // activeBossUntil is set inside spawnBoss only AFTER the spawn is confirmed, so a bad
+            // entity-type config never leaves the manager reporting a phantom active boss.
+            plugin.getServer().getRegionScheduler().run(plugin, approx, spawnTask -> spawnBoss(approx, lifetimeMinutes));
+        }, null);
     }
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes) {
+        if (approx.getWorld() == null) {
+            return;
+        }
         final int highestY = approx.getWorld().getHighestBlockYAt(approx.getBlockX(), approx.getBlockZ());
         final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
                 highestY + 1.0D, approx.getBlockZ() + 0.5D);
 
-        EntityType bossType;
-        try {
-            bossType = EntityType.valueOf(configManager.getString("world-events.world-boss.entity-type", "RAVAGER").toUpperCase(java.util.Locale.ROOT));
-        } catch (final IllegalArgumentException exception) {
-            bossType = EntityType.RAVAGER;
-        }
+        // Pick a random archetype from the roster (variety/rotation).
+        final BossArchetype archetype = BossArchetype.values()[ThreadLocalRandom.current().nextInt(BossArchetype.values().length)];
 
-        final Class<? extends Entity> entityClass = bossType.getEntityClass();
+        final Class<? extends Entity> entityClass = archetype.entityType.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-            plugin.getLogger().warning("Configured world boss entity-type is not a mob; skipping spawn.");
-            activeBossUntil = 0L;
+            plugin.getLogger().warning("World boss archetype entity-type is not a mob; skipping spawn.");
             return;
         }
 
         final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
+        activeBossId = boss.getUniqueId();
+        activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
+        boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
         boss.setPersistent(true);
         boss.setRemoveWhenFarAway(false);
         boss.setGlowing(true);
-        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(
-                configManager.getString("world-events.world-boss.display-name", "&4&l☠ A Gyűrűk Őre &c[Világboss]"))));
+        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(archetype.displayName)));
         boss.setCustomNameVisible(true);
 
-        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D));
+        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D)) * archetype.healthMult;
         final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(health);
             boss.setHealth(health);
         }
 
-        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D));
+        final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D)) * archetype.damageMult;
         final AttributeInstance attackDamage = boss.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attackDamage != null) {
             attackDamage.setBaseValue(attackDamage.getBaseValue() * damageMultiplier);
         }
 
+        // Archetype self-buff (e.g. fire immunity for the magma boss), for the boss's lifetime.
+        if (archetype.selfBuff != null) {
+            boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
+        }
+
         spawnLocation.getWorld().spawnParticle(Particle.FLASH, spawnLocation, 3);
-        spawnLocation.getWorld().playSound(spawnLocation, Sound.ENTITY_RAVAGER_ROAR, 2.0F, 0.6F);
+        spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
+
+        startPhaseTick(boss, archetype);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "world-boss-spawned",
@@ -202,17 +302,161 @@ public final class WorldBossManager {
     }
 
     /**
-     * Pays out the boss kill: treasury reward + league points for the killer's
-     * faction and a temporary buff for the slayer. Called by WorldBossListener.
+     * Drives the boss's phases on its OWN region scheduler (Folia-correct): once below
+     * half health it enrages (permanent strength + speed), and every tick it applies its
+     * signature aura debuff to nearby survivors and emits themed particles. The task
+     * auto-retires when the boss is removed; it also self-cancels if the boss is invalid.
+     */
+    private void startPhaseTick(final Mob boss, final BossArchetype archetype) {
+        final AtomicBoolean enraged = new AtomicBoolean(false);
+        final AtomicInteger ticks = new AtomicInteger();
+        final double radius = Math.max(4.0D, configManager.getDouble("world-events.world-boss.aura-radius", 12.0D));
+        boss.getScheduler().runAtFixedRate(plugin, task -> {
+            if (!boss.isValid()) {
+                task.cancel();
+                return;
+            }
+
+            final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
+            final double maxHp = maxHealth != null ? maxHealth.getValue() : boss.getHealth();
+            if (!enraged.get() && boss.getHealth() < maxHp * 0.5D) {
+                enraged.set(true);
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
+                boss.getWorld().spawnParticle(Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 3);
+                boss.getWorld().playSound(boss.getLocation(), archetype.sound, 2.0F, 0.5F);
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "world-boss-enraged",
+                        "<dark_red>👹 A világboss feldühödött — második fázis!</dark_red>"));
+            }
+
+            // Signature aura: debuff nearby survivors (region-local, so Folia-safe on the boss thread).
+            for (final Entity nearby : boss.getNearbyEntities(radius, radius, radius)) {
+                if (nearby instanceof Player player
+                        && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
+                    player.addPotionEffect(new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true));
+                }
+            }
+            boss.getWorld().spawnParticle(archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
+
+            // Every ~8s (every 4th tick) the boss uses its signature special — a telegraphed mechanic
+            // players must react to, so it is more than a stat-buffed mob.
+            if (ticks.incrementAndGet() % 4 == 0) {
+                fireSpecial(boss, archetype, enraged.get());
+            }
+        }, null, 40L, 40L);
+    }
+
+    /** A survivor (survival/adventure) — never debuff/hit creative or spectator players. */
+    private static boolean isSurvivor(final Player player) {
+        return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+    }
+
+    /**
+     * Fires the archetype's signature special on the boss's own region thread (Folia-safe; all touched
+     * entities are region-local nearby). SLAM = telegraphed ring around the boss; ZONE = a telegraphed
+     * spot on a random nearby survivor; SUMMON = a few buffed adds. Telegraph (particles + sound) lands
+     * first, then the effect after a short delay, so players can react.
+     */
+    private void fireSpecial(final Mob boss, final BossArchetype archetype, final boolean enraged) {
+        final org.bukkit.World world = boss.getWorld();
+        final double damage = Math.max(1.0D, configManager.getDouble("world-events.world-boss.special-damage", 6.0D))
+                * (enraged ? 1.5D : 1.0D);
+
+        switch (archetype.special) {
+            case SLAM -> {
+                final Location center = boss.getLocation().clone();
+                world.spawnParticle(archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
+                world.playSound(center, archetype.sound, 1.6F, 0.6F);
+                boss.getScheduler().runDelayed(plugin, t -> {
+                    if (!boss.isValid()) {
+                        return;
+                    }
+                    world.spawnParticle(Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
+                    for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
+                        if (nearby instanceof Player player && isSurvivor(player)) {
+                            player.damage(damage, boss);
+                            final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+                            if (kb.lengthSquared() > 0.0D) {
+                                player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
+                            }
+                        }
+                    }
+                }, null, 30L);
+            }
+            case ZONE -> {
+                final java.util.List<Player> survivors = new java.util.ArrayList<>();
+                for (final Entity nearby : boss.getNearbyEntities(20.0D, 20.0D, 20.0D)) {
+                    if (nearby instanceof Player player && isSurvivor(player)) {
+                        survivors.add(player);
+                    }
+                }
+                if (survivors.isEmpty()) {
+                    return;
+                }
+                final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
+                world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
+                world.playSound(spot, archetype.sound, 1.2F, 0.8F);
+                boss.getScheduler().runDelayed(plugin, t -> {
+                    if (!boss.isValid()) {
+                        return;
+                    }
+                    world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
+                    for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {
+                        if (nearby instanceof Player player && isSurvivor(player)
+                                && player.getWorld().equals(spot.getWorld())
+                                && player.getLocation().distanceSquared(spot) <= 9.0D) {
+                            player.damage(damage, boss);
+                            player.addPotionEffect(new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true));
+                        }
+                    }
+                }, null, 30L);
+            }
+            case SUMMON -> {
+                final Location at = boss.getLocation();
+                final int count = 2 + (enraged ? 1 : 0);
+                final long addLifespanTicks = Math.max(10L, configManager.getLong("world-events.world-boss.add-lifespan-seconds", 25L)) * 20L;
+                for (int i = 0; i < count; i++) {
+                    final Location spot = at.clone().add(
+                            ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
+                    final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
+                    add.setGlowing(true);
+                    add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
+                    // Bounded lifespan so summoned adds never accumulate / outlive the fight (on the add's own scheduler).
+                    add.getScheduler().runDelayed(plugin, task -> {
+                        if (add.isValid()) {
+                            add.remove();
+                        }
+                    }, null, addLifespanTicks);
+                }
+                world.playSound(at, archetype.sound, 1.5F, 0.8F);
+            }
+        }
+    }
+
+    /**
+     * Pays out the boss kill: treasury reward (scaled by the archetype) + league points for
+     * the killer's faction and a temporary buff for the slayer. Called by WorldBossListener.
      *
      * @param boss the slain boss
      * @param killer the slayer
      */
     public void handleBossDeath(final LivingEntity boss, final Player killer) {
         activeBossUntil = 0L;
+        activeBossId = null;
+
+        double rewardMult = 1.0D;
+        final String archetypeName = boss.getPersistentDataContainer().get(bossArchetypeKey, PersistentDataType.STRING);
+        if (archetypeName != null) {
+            try {
+                rewardMult = BossArchetype.valueOf(archetypeName).rewardMult;
+            } catch (final IllegalArgumentException ignored) {
+                // Unknown/old archetype tag — fall back to the base reward.
+            }
+        }
 
         final FactionType faction = factionManager.getFaction(killer.getUniqueId());
-        final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D));
+        final double reward = Math.max(0.0D, configManager.getDouble("world-events.world-boss.treasury-reward", 300.0D)) * rewardMult;
         if (reward > 0.0D) {
             treasuryManager.deposit(faction, reward);
         }

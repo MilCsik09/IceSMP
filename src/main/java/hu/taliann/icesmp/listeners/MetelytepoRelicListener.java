@@ -24,6 +24,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -46,16 +47,20 @@ public final class MetelytepoRelicListener implements Listener {
     private static final double HONOR_EYE_RANGE = 100.0D;
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
+    private final JavaPlugin plugin;
     private final MetelytepoManager metelytepoManager;
     private final MessageManager messageManager;
 
     /**
      * Constructs a new MetelytepoRelicListener.
      *
+     * @param plugin the owning plugin (for Folia cross-entity scheduling)
      * @param metelytepoManager the manager for Metelytepo-specific mechanics
      * @param messageManager the manager for player-facing messages
      */
-    public MetelytepoRelicListener(final MetelytepoManager metelytepoManager, final MessageManager messageManager) {
+    public MetelytepoRelicListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager,
+                                   final MessageManager messageManager) {
+        this.plugin = plugin;
         this.metelytepoManager = metelytepoManager;
         this.messageManager = messageManager;
     }
@@ -212,16 +217,23 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        if (!metelytepoManager.isSinner(killer)) {
-            metelytepoManager.markAsSinner(killer);
-            killer.sendMessage(messageManager.getSinnerMarked());
-        }
+        // Folia: the death event runs on the victim's region thread, but the sinner mark reads and
+        // writes the killer's PDC and messages the killer (a different entity). Hop onto the killer's
+        // own scheduler so the whole check-and-mark happens on the killer's region thread.
+        killer.getScheduler().run(plugin, task -> {
+            if (!metelytepoManager.isSinner(killer)) {
+                metelytepoManager.markAsSinner(killer);
+                killer.sendMessage(messageManager.getComponent("messages.sinner-marked",
+                        "&5A Metelytepo igazsagot latott: &cbunos lettel."));
+            }
+        }, null);
     }
 
     private void handleJustice(final Player player) {
         if (metelytepoManager.isOnJusticeCooldown(player)) {
             final long remaining = Math.max(1L, (metelytepoManager.getJusticeRemainingMillis(player) + 999L) / 1000L);
-            player.sendActionBar(LEGACY.deserialize(messageManager.getAbilityCooldown(remaining)));
+            player.sendActionBar(messageManager.getComponent("messages.ability-cooldown",
+                    "&cKepesseg toltodik: &f%s &cmp", remaining));
             return;
         }
 
@@ -229,7 +241,8 @@ public final class MetelytepoRelicListener implements Listener {
 
         final Entity targetEntity = player.getTargetEntity(5, false);
         if (!(targetEntity instanceof LivingEntity target)) {
-            player.sendActionBar(LEGACY.deserialize(messageManager.getNoTarget()));
+            player.sendActionBar(messageManager.getComponent("messages.no-target",
+                    "&7Nincs celpont a latoterben."));
             return;
         }
 
@@ -239,14 +252,22 @@ public final class MetelytepoRelicListener implements Listener {
     private void handleJustice(final Player player, final LivingEntity target) {
         if (metelytepoManager.isOnJusticeCooldown(player)) {
             final long remaining = Math.max(1L, (metelytepoManager.getJusticeRemainingMillis(player) + 999L) / 1000L);
-            player.sendActionBar(LEGACY.deserialize(messageManager.getAbilityCooldown(remaining)));
+            player.sendActionBar(messageManager.getComponent("messages.ability-cooldown",
+                    "&cKepesseg toltodik: &f%s &cmp", remaining));
             return;
         }
 
         final boolean sinner = metelytepoManager.isSinner(target);
         if (!sinner) {
             playRejectedTargetSound(target.getLocation());
-            player.sendActionBar(LEGACY.deserialize(messageManager.getTargetNotSinner()));
+            player.sendActionBar(messageManager.getComponent("messages.target-not-sinner",
+                    "&7A celpont nem bunos."));
+            return;
+        }
+
+        // Atomic fire-gate: acquire the cooldown here (not after the effect) so a duplicate
+        // interact/interact-entity event in the same tick can't fire Justice twice.
+        if (!metelytepoManager.tryConsumeJusticeCooldown(player)) {
             return;
         }
 
@@ -260,8 +281,8 @@ public final class MetelytepoRelicListener implements Listener {
         target.getWorld().spawnParticle(Particle.SQUID_INK, target.getLocation().add(0.0D, 0.15D, 0.0D), 24, 0.2D, 0.15D, 0.2D, 0.01D);
         target.getWorld().spawnParticle(Particle.SCULK_SOUL, target.getLocation().add(0.0D, 0.8D, 0.0D), 10, 0.35D, 0.2D, 0.35D, 0.03D);
         player.getWorld().playSound(target.getLocation(), Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.85F);
-        metelytepoManager.triggerJusticeCooldown(player);
-        player.sendActionBar(LEGACY.deserialize(messageManager.getJusticeActivated()));
+        player.sendActionBar(messageManager.getComponent("messages.justice-activated",
+                "&dJustice aktivodott"));
 
         player.showTitle(Title.title(
                 LEGACY.deserialize(messageManager.get("messages.justice-title", "&5Justice")),
@@ -305,7 +326,13 @@ public final class MetelytepoRelicListener implements Listener {
     private void handleHonorEye(final Player player) {
         if (metelytepoManager.isOnHonorEyeCooldown(player)) {
             final long remaining = Math.max(1L, (metelytepoManager.getHonorEyeRemainingMillis(player) + 999L) / 1000L);
-            player.sendActionBar(LEGACY.deserialize(messageManager.getAbilityCooldown(remaining)));
+            player.sendActionBar(messageManager.getComponent("messages.ability-cooldown",
+                    "&cKepesseg toltodik: &f%s &cmp", remaining));
+            return;
+        }
+
+        // Atomic fire-gate (see handleJustice): prevents a duplicate interact event firing twice.
+        if (!metelytepoManager.tryConsumeHonorEyeCooldown(player)) {
             return;
         }
 
@@ -334,12 +361,12 @@ public final class MetelytepoRelicListener implements Listener {
             metelytepoManager.freezeUndead(living, 20L * 60L);
         }
 
-        metelytepoManager.triggerHonorEyeCooldown(player);
         // FLASH throws on this runtime because it expects extra particle data; use a no-data burst combo.
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0, 1.0, 0.0), 80, 1.4, 1.0, 1.4, 0.05);
         player.getWorld().spawnParticle(Particle.ENCHANT, player.getLocation().add(0.0, 1.0, 0.0), 120, 1.6, 1.1, 1.6, 0.01);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 1.0F);
-        player.sendActionBar(LEGACY.deserialize(messageManager.getHonorEyeActivated()));
+        player.sendActionBar(messageManager.getComponent("messages.honor-eye-activated",
+                "&dHonor Eye: &bbunosok &dfelfedve"));
 
         player.showTitle(Title.title(
                 LEGACY.deserialize(messageManager.get("messages.honor-eye-title", "&6&lBECSULETSZEM AKTIVALVA")),

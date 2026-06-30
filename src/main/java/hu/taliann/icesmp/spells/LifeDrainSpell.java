@@ -19,10 +19,15 @@ public final class LifeDrainSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
-            return;
+            return false;
         }
 
         target.damage(DRAIN_AMOUNT, player);
@@ -35,5 +40,6 @@ public final class LifeDrainSpell extends BaseSpell {
         player.getWorld().spawnParticle(Particle.SOUL, target.getLocation().add(0.0D, 1.0D, 0.0D), 20, 0.3D, 0.5D, 0.3D, 0.05D);
         player.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0.0D, 2.0D, 0.0D), 3, 0.2D, 0.2D, 0.2D);
         player.playSound(player.getLocation(), Sound.PARTICLE_SOUL_ESCAPE, 1.0F, 0.8F);
+        return true;
     }
 }

@@ -25,7 +25,7 @@ import java.util.Set;
  */
 public final class AchievementManager {
 
-    public enum Metric { CLASS_LEVEL, WEALTH, RAID_KILLS, PROFESSION_LEVEL }
+    public enum Metric { CLASS_LEVEL, WEALTH, RAID_KILLS, PROFESSION_LEVEL, DAILY_STREAK }
 
     /** A single milestone. */
     public record Achievement(String id, String name, String description, Metric metric, double threshold, long reward) { }
@@ -37,6 +37,7 @@ public final class AchievementManager {
     private final ProfessionManager professionManager;
     private final FactionManager factionManager;
     private final StatsManager statsManager;
+    private final DailyQuestManager dailyQuestManager;
     private final MessageManager messageManager;
     private final NamespacedKey earnedKey;
     private final List<Achievement> achievements;
@@ -44,7 +45,7 @@ public final class AchievementManager {
     public AchievementManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
                               final CurrencyManager currencyManager, final ProfessionManager professionManager,
                               final FactionManager factionManager, final StatsManager statsManager,
-                              final MessageManager messageManager) {
+                              final DailyQuestManager dailyQuestManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.jobManager = jobManager;
@@ -52,17 +53,37 @@ public final class AchievementManager {
         this.professionManager = professionManager;
         this.factionManager = factionManager;
         this.statsManager = statsManager;
+        this.dailyQuestManager = dailyQuestManager;
         this.messageManager = messageManager;
         this.earnedKey = new NamespacedKey(plugin, "achievements");
         this.achievements = List.of(
+                // Raid-killek
                 new Achievement("first_blood", "Első Vér", "Szerezz 1 raid-killt.", Metric.RAID_KILLS, 1, 50),
+                new Achievement("skirmisher", "Csatadöntő", "Szerezz 10 raid-killt.", Metric.RAID_KILLS, 10, 200),
                 new Achievement("warlord", "Hadúr", "Szerezz 25 raid-killt.", Metric.RAID_KILLS, 25, 500),
+                new Achievement("war_hero", "Háborús Hős", "Szerezz 100 raid-killt.", Metric.RAID_KILLS, 100, 2000),
+                // Kaszt-szint
+                new Achievement("apprentice", "Tanonc", "Érd el a 10. kaszt-szintet.", Metric.CLASS_LEVEL, 10, 75),
                 new Achievement("veteran", "Veterán", "Érd el a 25. kaszt-szintet.", Metric.CLASS_LEVEL, 25, 200),
+                new Achievement("champion", "Bajnok", "Érd el a 40. kaszt-szintet.", Metric.CLASS_LEVEL, 40, 600),
                 new Achievement("legend", "Legenda", "Érd el az 50. (max) kaszt-szintet.", Metric.CLASS_LEVEL, 50, 1000),
+                // Vagyon
+                new Achievement("saver", "Megtakarító", "Gyűjts össze 250 valutát.", Metric.WEALTH, 250, 50),
                 new Achievement("well_off", "Tehetős", "Gyűjts össze 1000 valutát.", Metric.WEALTH, 1000, 100),
                 new Achievement("magnate", "Mágnás", "Gyűjts össze 10000 valutát.", Metric.WEALTH, 10000, 750),
+                new Achievement("croesus", "Krőzus", "Gyűjts össze 50000 valutát.", Metric.WEALTH, 50000, 2500),
+                // Szakma
                 new Achievement("tradesman", "Szakmunkás", "Érj el 25 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 25, 150),
-                new Achievement("artisan", "Mesterember", "Érj el 100 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 100, 800)
+                new Achievement("craftsman", "Iparos", "Érj el 50 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 50, 350),
+                new Achievement("artisan", "Mesterember", "Érj el 100 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 100, 800),
+                new Achievement("grandmaster", "Nagymester", "Érj el 200 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 200, 2000),
+                // Magasabb fokozatok
+                new Achievement("warmaster", "Hadvezér", "Szerezz 50 raid-killt.", Metric.RAID_KILLS, 50, 1000),
+                new Achievement("gold_mountain", "Aranyhegy", "Gyűjts össze 100000 valutát.", Metric.WEALTH, 100000, 5000),
+                // Napi sorozat (streak)
+                new Achievement("persistent", "Kitartó", "Érj el 3 napos napi-sorozatot.", Metric.DAILY_STREAK, 3, 100),
+                new Achievement("dedicated", "Elszánt", "Érj el 7 napos napi-sorozatot.", Metric.DAILY_STREAK, 7, 300),
+                new Achievement("obsessed", "Megszállott", "Érj el 30 napos napi-sorozatot.", Metric.DAILY_STREAK, 30, 1500)
         );
     }
 
@@ -116,6 +137,7 @@ public final class AchievementManager {
             case WEALTH -> currencyManager.getBalance(player);
             case RAID_KILLS -> statsManager.getRaidKills(player.getUniqueId());
             case PROFESSION_LEVEL -> totalProfessionLevel(player);
+            case DAILY_STREAK -> dailyQuestManager.getStreak(player);
         };
     }
 

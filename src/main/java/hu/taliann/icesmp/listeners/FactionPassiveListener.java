@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import org.bukkit.entity.AbstractSkeleton;
+import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
@@ -14,19 +15,21 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Passive faction bonuses:
- * RED is immune to fire-based damage, BLUE is immune to freezing and gets slower hunger,
- * NEUTRAL turns invisible while sneaking and is ignored by non-hostile mobs,
- * DARK is immune to wither damage and is ignored by the undead.
+ * Passive faction bonuses, balanced so each faction's perk is roughly one tier of usefulness:
+ * RED masters heat (immune to fire/lava/hot-floor — its Nether domain), BLUE masters cold & water
+ * (immune to freezing AND drowning, plus slower hunger — its ocean/snow domain), NEUTRAL is the
+ * sure-footed wanderer (no fall damage, and ignored by non-hostile mobs and endermen), and DARK is
+ * the cursed one (immune to wither and ignored by the undead — intentionally the strongest PvE perk,
+ * offset by the permanent sinner mark its members carry).
+ *
+ * <p>The Neutral sneak-invisibility was removed for balance (it was too strong in PvP) and replaced
+ * with fall-damage immunity, a milder, non-combat utility.
  */
 public final class FactionPassiveListener implements Listener {
 
@@ -35,6 +38,12 @@ public final class FactionPassiveListener implements Listener {
             EntityDamageEvent.DamageCause.FIRE_TICK,
             EntityDamageEvent.DamageCause.LAVA,
             EntityDamageEvent.DamageCause.HOT_FLOOR
+    );
+
+    // Blue's "frozen waters" domain: immune to both the cold (freeze) and the deep (drowning).
+    private static final Set<EntityDamageEvent.DamageCause> COLD_WATER_CAUSES = EnumSet.of(
+            EntityDamageEvent.DamageCause.FREEZE,
+            EntityDamageEvent.DamageCause.DROWNING
     );
 
     private final FactionManager factionManager;
@@ -59,12 +68,18 @@ public final class FactionPassiveListener implements Listener {
                 }
             }
             case BLUE -> {
-                if (event.getCause() == EntityDamageEvent.DamageCause.FREEZE) {
+                if (COLD_WATER_CAUSES.contains(event.getCause())) {
                     event.setCancelled(true);
                 }
             }
             case DARK -> {
                 if (event.getCause() == EntityDamageEvent.DamageCause.WITHER) {
+                    event.setCancelled(true);
+                }
+            }
+            case NEUTRAL -> {
+                // Sure-footed wanderer: no fall damage (replaces the old sneak-invisibility).
+                if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
                     event.setCancelled(true);
                 }
             }
@@ -95,32 +110,16 @@ public final class FactionPassiveListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPlayerToggleSneak(final PlayerToggleSneakEvent event) {
-        if (!isEnabled()) {
-            return;
-        }
-
-        final Player player = event.getPlayer();
-        if (factionManager.getFaction(player.getUniqueId()) != FactionType.NEUTRAL) {
-            return;
-        }
-
-        if (event.isSneaking()) {
-            player.addPotionEffect(new PotionEffect(
-                    PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
-        } else {
-            player.removePotionEffect(PotionEffectType.INVISIBILITY);
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
     public void onEntityTarget(final EntityTargetLivingEntityEvent event) {
         if (!isEnabled() || !(event.getTarget() instanceof Player player)) {
             return;
         }
 
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        if (faction == FactionType.NEUTRAL && !(event.getEntity() instanceof Monster)) {
+        // Neutral wanderer: non-hostile mobs ignore it, and endermen never aggro from a look
+        // (endermen are Monsters, so they're called out explicitly).
+        if (faction == FactionType.NEUTRAL
+                && (!(event.getEntity() instanceof Monster) || event.getEntity() instanceof Enderman)) {
             event.setCancelled(true);
             return;
         }

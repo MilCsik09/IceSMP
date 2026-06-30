@@ -1,0 +1,296 @@
+# IceSMP — Playtest Kézikönyv 🧪
+
+Ez a dokumentum a **teszterek** támpontja: mit kell tesztelni, hogyan, és mi van/mi nincs a
+pluginban. Végig lehet menni rajta pontról pontra. A jelölőnégyzeteket ( `[ ]` → `[x]` ) ki lehet
+pipálni egy másolt példányban.
+
+> **Jelölések:** ✅ = kész, tesztelendő • 🚧 = részben kész • ⏳ = nincs benne (ne teszteld) •
+> ⚠️ = Folia-kritikus pont (külön figyelni a konzol-hibákra)
+
+---
+
+## 0. Környezet és build
+
+- **Szerver:** Folia **1.21.11** (NEM sima Paper — a plugin Folia-szálkezelést használ).
+- **Java:** 21.
+- **Build:** `./gradlew build` → a jar a `build/libs/` alatt. (A plugin forrása fordul: a teljes
+  kódbázis lefordul `javac 21`-gyel a Paper 1.21.11 API ellen.)
+- **Opcionális függőség:** **LibsDisguises** (soft-depend). Ha telepítve van, a **Druida formák**
+  vizuálisan is átalakítják a játékost; nélküle a forma csak stat-szinten vált. Érdemes mindkét
+  állapotot tesztelni (telepítve / nélküle).
+- **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
+  szerkeszthető és `/icesmp reload`-dal (vagy újraindítással) frissíthető. Néhány érték a manager
+  indulásakor töltődik be — ha egy config-változás nem üt át reload-ra, **indítsd újra** a szervert.
+
+### Permissionök tesztelőknek
+A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb jogosultság kell:
+
+| Node | Mire |
+|---|---|
+| `icesmp.admin` | általános admin (sinner, reload) |
+| `icesmp.admin.events` | világesemény-triggerek |
+| `icesmp.job.admin` | kaszt XP / katalizátor / spell-unlock |
+| `icesmp.currency.admin` | valuta-egyenleg beállítás |
+| `icesmp.faction.admin` | frakció-kényszerítés |
+| `icesmp.admin.quest` | küldetés force-complete |
+| `icesmp.relic.admin` | relikvia adása |
+| `icesmp.admin.territory` / `.parkour` / `.exchangeboard` / `.profession` / `.spec` | terület / parkour / tábla / szakma / spec admin |
+
+---
+
+## 1. Gyors tesztelő-setup (időkapuk megkerülése)
+
+Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
+
+```
+/faction set <j> RED                 # frakció kényszerítése (RED/BLUE/NEUTRAL/DARK)
+/currency set <j> 5000 RED           # valuta a bankhoz/teszthez
+/class addxp <j> primary 100000      # gyors szintezés (max szint 50)
+/class givecatalyst <j>              # a kaszt katalizátora (spellbook-tárgy)
+/class unlockspell <j> <spell_id>    # konkrét spell azonnali feloldása
+/spec choose <id>                    # spec választása (25. szint kell hozzá)
+```
+
+### Időzített események azonnali kiváltása ⚠️ (a legfontosabb teszt-parancsok)
+```
+/events blood-moon start   # vérhold most (stop: /events blood-moon stop)
+/events worldboss          # világboss spawn a közeledbe
+/events invasion           # invázió-horda indítása köréd
+/events intro [j]          # bevezető cím-szekvencia újrajátszása
+/events season             # szezon-pontállás
+```
+
+### Egyéb teszt-triggerek
+```
+/quest complete <j> <quest_id>   # küldetés azonnali teljesítése
+/relic give <j> <relic_id>       # relikvia adása (loot-teszt)  — id-k: /relic list
+/sinner set <j>                  # bűnössé tétel (Sötét-paktum teszt); clear/add/status is van
+```
+
+### Config-gyorsítás teszthez (`config/world.yml`)
+A valós spawn-időközök hosszúak; teszthez érdemes csökkenteni, majd `/icesmp reload` vagy restart:
+```yaml
+world-events:
+  check-interval-seconds: 10          # alap 60
+  world-boss: { check-interval-minutes: 2, chance-percent: 100 }
+  invasion:   { check-interval-minutes: 2, chance-percent: 100 }
+  blood-moon: { chance-percent: 100 }
+mob-scaling:
+  blocks-per-level: 100               # alap 1000 — így közelebb is erős mobok jönnek
+```
+(De a force-parancsok — `/events …` — gyorsabbak, mint a config-hangolás.)
+
+---
+
+## 2. Mi VAN a pluginban (rendszer-leltár) ✅
+
+A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami tesztelhető:
+
+- **Frakciók** (4): Piros/Kék/Semleges/Sötét, passzív bónuszokkal és valutával.
+- **Kasztok** (13) + **specializációk** (31), max 2 kaszt/játékos, 50-es max szint.
+- **Képességek** (350+): katalizátor-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
+  cooldown, kombók, spell-mesterség.
+- **Erő-csík** (osztály-erőforrás): HUD-sáv, regenerálódó költség-pool.
+- **Talentek**: kaszt- és szakma-ponttár, általános + kötött talentek.
+- **Szakmák** (gyűjtögető/készítő/másodlagos) + szakma-specializációk + craft-korlátok.
+- **Gazdaság**: bank, valuta, dinamikus árfolyam, valutaváltás, piactér, állampolgári adó,
+  kereslet-sokk, árfolyam-hologramok, lélekkő-drop.
+- **Relikviák**: Mételytépő (fegyver, PvP-transzfer) + 4 frakció-elytra; rituálé-oltárok.
+- **Pet/minion**: Vadmester & Nekromanta társak (befogás, szint, parancsok), lélekszilánk-bajnok.
+- **Küldetések**: kaszt-próbák, Sötét Beavatás, vezeklés-lánc, napi küldetések.
+- **Bűn-rendszer**: gyilkosság → bűn → 4-nél száműzetés a Sötétbe (örök paktum).
+- **Királyság/raid/szezon**: királyválasztás, kassza, adó, raid, hadizsákmány, liga-pontok.
+- **Világesemények**: távolság-alapú mob-szintezés, vérhold, világbossok (10 archetípus, 2 fázis),
+  inváziók (horda + bajnok), szezonális liga.
+- **Sámán-totemek**, **Druida-formák**, **parkour-pályák**, **GUI-k** (profil, menü, spellkönyv,
+  piac, ranglista, elérések), **HUD** (oldalsáv + bossbar).
+
+---
+
+## 3. Mi NINCS / részleges (NE teszteld hibaként) ⏳🚧
+
+- 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a száműzetés kész; **lopás/árulás detektálás nincs**.
+- 🚧 **Raid:** nincs 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az ostromágyú kész).
+- 🚧 **Kaszt-questek:** egyszerű „ölj X-et" típus; NPC/parkour pályák tervben.
+- 🚧 **Piactér:** lapozás/keresés és fizikai piactábla még nincs (a reputáció-árazás kész).
+- 🚧 **Intro:** csak cím-szekvencia; a filmszerű kamera-utaztatás alapból ki van kapcsolva.
+- 🚧 **Szezonliga:** pontgyűjtés kész, a győztes **kozmetikai jutalma** még nincs.
+- ⏳ **Külön „ultimate" / burst-rendszer** (a korábbi kirobbanás-mechanika kivéve).
+- ⏳ **Megnevezett, perzisztens társ** a Vadmesternek (a többi pet-funkció kész).
+- ⏳ **Világépítés** (fővárosok, Sötét romváros, loot-asztalok) — szerver-csapat feladata; a plugin
+  csak az eszközt adja (`/territory`).
+
+---
+
+## 4. Tesztelési checklista rendszerenként
+
+### 4.1 Frakciók és passzívok ✅
+- [ ] `/faction join <red|blue|neutral|dark>` és `/faction leave` működik; a Sötétbe csak bűnös léphet.
+- [ ] **Piros:** állj tűzbe / lávába / magma-blokkra → **nincs sebzés**.
+- [ ] **Kék:** powder snow-ban / fagyos bistromban → **nincs fagy-sebzés**; merülj víz alá hosszan →
+      **nem fulladsz** (fulladás-immunitás); éhség kb. fele olyan gyorsan fogy.
+- [ ] **Semleges:** ess le magasról → **nincs zuhanás-sebzés**; a semleges mobok és **endermanök**
+      nem támadnak (ránézésre sem aggrózik az enderman); **nem fizet állampolgári adót**.
+- [ ] **Sötét:** wither-rózsa/wither-effekt → **nincs sebzés**; zombi/csontváz/phantom/zoglin
+      **nem támad** rád. (A láthatatlanság SZÁNDÉKOSAN megszűnt — ne teszteld hibaként.)
+- [ ] `factions.passives.enabled: false` → minden passzív kikapcsol.
+
+### 4.2 Kasztok, katalizátor, szintezés ✅
+- [ ] `/profile` → Kaszt menüből mind a **13 kaszt** választható; max 2 (a másodlagos csak 50. szinten nyílik).
+- [ ] A katalizátor a kaszthoz illő tárgy (pl. Varázsló = bűvölt könyv); **jobb katt** = cast,
+      **lopakodás + ütés** = váltás a feloldott spellek közt (action bar mutatja a kiválasztottat + költséget).
+- [ ] A katalizátor craftnál/kemencében **nem használódik el** (védett).
+- [ ] Mob-öléssel nő a kaszt-XP; magasabb mob-szint több XP; másodlagos kaszt 50%-ot kap.
+- [ ] ⚠️ **Folia:** ölj mobot egy **régióhatáron / messziről** → az XP/üzenet hibamentesen érkezik
+      (figyeld a konzolt „region"/IllegalStateException-re).
+
+### 4.3 Erő-csík + hibrid költség ✅ (FRISS — kiemelt teszt)
+- [ ] A HUD oldalsávban látszik az **Erő-csík** (kasztonként más név/szín: Mana/Düh/Energia/Fókusz/Csi…).
+- [ ] Egy hétköznapi spell elsütése **csökkenti** a csíkot; idővel **visszatöltődik** (~8/mp).
+- [ ] **Üres csíknál** a spell **nem sül el** → action bar: „Nincs elég <erőforrás>!".
+- [ ] **Hibrid költségek** (a spellkönyv `/spellbook` minden spellnél kiírja a költség típusát):
+  - [ ] **vér-mágia** (pl. Berserker Vérszomj, Nekromanta vér-spelljei) → **életbe (❤)** kerül.
+  - [ ] **nagy rituálé/idézés/időjárás/ulti** (XP ≥ 80) → **XP-be** kerül (pl. Esőtánc, Holtak Hada).
+  - [ ] **nehéz fizikai** (éhség ≥ 8: állások, Második Lélegzet, Pandaőrség) → **éhségbe** kerül.
+  - [ ] minden más → az **Erő-csíkba**.
+- [ ] No-op cast (nincs célpont/társ) → a költség **visszatérül**, és nincs cooldown.
+- [ ] `spells.resource.enabled: false` → minden spell a régi éhség/XP/HP költségre vált.
+- [ ] *(Ismert finomhangolandó: néhány határeset-spell — pl. Gyökerezés 8 éhségen — a küszöb miatt
+      éhséget kér, pedig a Mana is illene rá. Jelezd, ha furcsát látsz.)*
+
+### 4.4 Specializációk ✅
+- [ ] 25. szinten `/spec choose <id>` (vagy a Specializáció menü) elérhető; a menü mutatja a feltételt.
+- [ ] **Nekromanta** csak Sötét frakcióval + bűnösként + a Sötét Beavatás után választható.
+- [ ] A spec feloldja a 25–45. szintű spelleket; a szerep illik (tank/heal/dps/caster/ranged).
+- [ ] `/spec respec` visszavált valutáért; a spec-kötött talentpontok visszatérülnek.
+- [ ] Hibrid kasztok: pl. Holy paplovag gyógyít, Retribution sebez (eltérő spell-pool).
+
+### 4.5 Spellek, kombó, mesterség ✅
+- [ ] Több reprezentatív spell elsül és a leírt hatást teszi (sebzés/effekt/teleport/idézés).
+- [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
+- [ ] **Kombó:** egy konfigurált spell-pár (pl. Fagyérintés → Arkán Lökés) rövid időn belül →
+      „⚡ Kombó!" + gyorsabb felépülés.
+- [ ] `/spell upgrade <id>` valutáért növeli a mesterség-rangot (cooldown-csökkentés, max 5 rang).
+- [ ] Idézett társak (Nekromanta/Vadmester) **nem fordulnak ellened**, a célpontodra támadnak, idővel eltűnnek.
+
+### 4.6 Talentek ✅
+- [ ] `/profile` → Talentek: kaszt-ponttár (5 szintenként 1) és szakma-ponttár (10 szintenként 1).
+- [ ] Általános talent (Életerő/Erő/Fürgeség/…) azonnal hat; kötött talent csak a feltételt teljesítőnél jelenik meg.
+- [ ] Respec után a pontok visszatérülnek.
+
+### 4.7 Szakmák ✅
+- [ ] `/profession join` 1 gyűjtögető + 1 készítő; Halász/Szakács alapból megvan.
+- [ ] A megfelelő tevékenység ad XP-t (bányászat/aratás/horgászat/sütés/craft).
+- [ ] 25. szinten szakma-spec választható.
+- [ ] **Craft-korlát:** netherite felszerelést csak 25+ Kovács craftol (különben nem jön létre + üzenet).
+
+### 4.8 Gazdaság ✅
+- [ ] `/bank deposit|withdraw|balance`, `/currency balance|pay|exchange|rates`, `/currency set` (admin).
+- [ ] **Dinamikus árfolyam:** több valuta a szerveren → kevesebbet ér (`/currency rates`).
+- [ ] **Piac:** `/market sell <ár>` a kézben tartott tárgyra (max 5 tétel); `/market` vétel a bankból;
+      `/market cancel` visszavon. Eladásnál ~10% „elég" (money sink).
+- [ ] **Reputáció-árazás:** ellenséges/raidelő frakciótól drágább (+25%), szövetségestől olcsóbb (−10%).
+- [ ] **Adó:** óránként a frakciótagok a valuta-egyenlegük 2%-át a kasszába fizetik (Semleges mentes).
+- [ ] ⚠️ **Folia:** vásárolj olyan eladótól, aki **másik régióban/máshol van** → az eladó értesítése
+      hibamentes (cross-entity).
+- [ ] **Árfolyamtábla:** `/exchangeboard place` hologram lerak; magától frissül; `/exchangeboard remove`.
+
+### 4.9 Relikviák + rituálé-oltárok ✅
+- [ ] `/relic give <j> <id>` → a relikvia megjelenik; `/relic list` az id-khez.
+- [ ] **Mételytépő** megjelöli/bünteti a bűnösöket; **PvP-ben** ölésnél az új gazdája a gyilkos lehet.
+- [ ] **4 frakció-elytra** csak a tulajdonos + a megfelelő frakció tagja használja; a passzív szárnyak
+      PvP-ben **nem** cserélnek gazdát.
+- [ ] **Rituálé-oltár:** a megfelelő oltár-blokk + áldozati tárgyak + **SHIFT+jobb katt** → megidézi a szárnyat.
+- [ ] **Egy-példány szabály:** ha él a tulajdonos, nem idézhető/adható újra.
+- [ ] ⚠️ **Folia:** a Mételytépő ölés-büntetése a gyilkost **másik régióból** is hibamentesen jelöli.
+
+### 4.10 Pet / minion ✅
+- [ ] Vadmester/Nekromanta: `/pet item` befogó eszköz → jobb katt a célon → társ; `/pet name|summon|dismiss|info`.
+- [ ] A társ szintet lép a gazda öléseiből; sunyítás+jobb katt rajta → állásváltás (Támadás/Passzív/Maradj).
+- [ ] Nekromanta: minden ölés után lélekszilánk (`/souls`); `/souls champion` bajnokot idéz.
+
+### 4.11 Küldetések + bűn-rendszer + Sötét ✅
+- [ ] `/quest list|accept|info|abandon`; a haladás az action barban; teljesítéskor jutalom.
+- [ ] `/quest complete <j> <id>` (admin) azonnal teljesít.
+- [ ] **Bűn:** ölj meg egy másik játékost → +1 bűn; **4 bűnnél** automatikus száműzetés a Sötétbe (örök paktum).
+      (Raid alatt a hadakozók közti ölés **nem** bűn.)
+- [ ] **Sötét Beavatás** küldetés feloldja a Nekromantát.
+- [ ] **Vezeklés-lánc** (3 rész) az EGYETLEN mód a paktum megtörésére.
+- [ ] ⚠️ **Folia:** a bűn-jelölés a gyilkost másik régióból is hibamentesen jelöli.
+
+### 4.12 Király, raid, kassza, szezon ✅
+- [ ] `/faction king` (szavazás/koronázás); a király kivehet a kasszából, adót állít, raidet hirdet.
+- [ ] `/faction treasury`, `/faction donate`; az adó és adományok töltik.
+- [ ] `/faction raid <cél>` (csak király); a raid alatt az ölés pontot ér; a végén hadizsákmány + győztes-buff.
+- [ ] **Ostromágyú** (craftolható) csak aktív raid alatt sül el; terep-barát robbanás.
+      ⚠️ **Folia:** célozz **távoli** pontra (másik régió) → a robbanás ott történik, konzol-hiba nélkül.
+- [ ] `/events season` mutatja a liga-pontokat; a szezon végén jutalom + reset.
+
+### 4.13 Világesemények ✅
+- [ ] **Mob-szintezés:** a spawntól távolodva erősebb, `[Lvl X]` nevű mobok; a névtábla csak ránézésre
+      jelenik meg; spawner/parancs-mob nem skálázódik.
+- [ ] **Vérhold** (`/events blood-moon start`): erősebb mobok + dupla lélekkő-esély; broadcast.
+- [ ] **Világboss** (`/events worldboss`): véletlen archetípus, név, aura-debuff a közelben; ~8 mp-enként
+      telegrafált képesség; **50% HP alatt feldühödik**; legyőzve kassza+pont+buff.
+      ⚠️ A SUMMON-special által idézett add-ok egy idő után **eltűnnek** (nem maradnak ott örökre).
+- [ ] **Invázió** (`/events invasion`): horda + megnevezett bajnok (telegrafált földcsapás); extra XP/lélekkő.
+
+### 4.14 GUI-k és HUD ✅
+- [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
+      a gombok működnek, a kattintások nem visznek ki tárgyat a menüből.
+- [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
+- [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
+
+### 4.15 Druida formák + parkour ✅
+- [ ] Druida forma-spellek: LibsDisguises-szel vizuális átalakulás; nélküle stat-váltás (mindkettő teszt).
+- [ ] `/parkour start <id>` futás; admin: `/parkour setstart|setfinish|remove`.
+
+---
+
+## 5. ⚠️ Folia-specifikus tesztpontok (kiemelt)
+
+A plugin Folia-régió-szálkezelést használ. A leggyakoribb hiba a **cross-region/cross-entity**
+hozzáférés — ezt a konzol `IllegalStateException` / „Thread ... cannot access region ..." üzenettel
+jelzi. Célzottan próbáld ki ezeket (a hibajavítások ezeket fedik):
+
+- [ ] **Kill-jutalmak régióhatáron:** ölj mobot úgy, hogy te és a mob épp más-más régió közelében
+      vagytok → kaszt-XP, pet-XP, lélekszilánk, quest- és napi-haladás mind hibamentes.
+- [ ] **Piac más régióban lévő eladóval:** vásárolj, miközben az eladó messze/másik régióban van.
+- [ ] **Ostromágyú távoli célra:** lőj egy messzi pontra (másik régió) raid alatt.
+- [ ] **Admin parancs távoli célpontra:** `/class addxp`, `/currency set`, `/faction set`,
+      `/quest complete` egy **másik régióban tartózkodó** játékosra.
+- [ ] **Mételytépő PvP-ölés** másik régióban lévő áldozatra/gyilkosra.
+- [ ] **Totem/idézés/forma** régióhatár közelében.
+- [ ] **Általános:** futtass egy hosszabb session-t több játékossal a világ különböző pontjain, és
+      figyeld a konzolt bármilyen `region`/`scheduler`/`IllegalStateException` stacktrace-re.
+
+> Ha bármelyiknél stacktrace jön a konzolon, az **bug** — jegyezd fel a teljes stacket.
+
+---
+
+## 6. Hibabejelentő sablon
+
+```
+Cím: <rövid leírás>
+Rendszer: <pl. Erő-csík / Frakció passzív / Világboss / Folia-cross-region>
+Lépések:
+  1. ...
+  2. ...
+Elvárt eredmény: ...
+Tényleges eredmény: ...
+Konzol-log (ha van): <teljes stacktrace>
+Folia-gyanú? (régióhatár/cross-entity volt?): igen / nem
+Reprodukálható?: mindig / néha / egyszer
+Build/verzió: <jar verzió>
+```
+
+---
+
+## 7. Prioritási javaslat a teszteléshez
+
+1. **Erő-csík + hibrid költség** (4.3) — ez a legfrissebb rendszer, itt a legvalószínűbb a finomhangolás.
+2. **Folia cross-region pontok** (5.) — a stabilitás kulcsa; ezek frissen javítva, célzott teszt kell.
+3. **Frakció-passzívok** (4.1) — szintén frissen módosítva (Kék fulladás, Semleges zuhanás, invis kivéve).
+4. Utána a többi rendszer (kasztok, specek, gazdaság, események) végig a 4. szekció szerint.
+
+Jó tesztelést! ❄️

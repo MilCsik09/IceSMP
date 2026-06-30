@@ -8,6 +8,56 @@
 >   `ECON-6`, `CMD-1`, `CMD-2`, `CMD-3`, `CMD-8`): atomikus balansz (`compute`/`tryDeduct`),
 >   piaci pénz-konzerválás + atomikus claim, debounce-olt atomikus (temp+rename) mentés,
 >   `Double.isFinite` guardok. Fordítás/teszt helyben szükséges.
+> - **2. csomag — spell-helyesség ✅** (`SPELL-2`, `SPELL-3`, `SPELL-4`, `SPELL-5`): Root
+>   `JUMP_BOOST` 128 (immobilizál, nem katapultál); `Spell.executeSpell()` boolean visszatérés +
+>   `refundCost()` → bukott/no-op kaszt nem von költséget és nem indít cooldownt (ConfiguredSpell,
+>   LifeDrain, PrimalBond, BeeSwarm, **VenomStrike, Shadowstep** is); combo-refund 80%-ra vágva +
+>   effektív cooldown-padló (mastery+combo sem nullázhatja); HideSpell retired-callback.
+> - **3. csomag — Folia cross-region (minta C) ✅** (`DATA-1`, `CMBT-1`, `CMBT-2`, `CMBT-5`/`PET-6`,
+>   `CMD-4`, `ECON-7`): a SinListener gyilkos-oldali PDC/stat-mutációi a gyilkos schedulerén;
+>   a WorldBoss/Invázió a spawn-anchor helyét az anchor szálán olvassa a régió-hopp előtt; a pet-tick
+>   a gazda PDC-jét+helyét a gazda szálán olvassa és snapshotot ad a pet régiójának; a `/job givecatalyst`
+>   a cél inventory-mutációját a cél schedulerén; a király-koronázás broadcast a global region scheduleren.
+>   *Felülvizsgálva, nem valódi hiba (változatlan):* `SPELL-1` (AngryChicken — a célpont a csirkétől 1.1
+>   blokkon belül = azonos régió; a shooter csak attribúció), `GUI-1`/`GUI-2` (a klikk a kattintó régióján
+>   fut; a `sendMessage` szálbiztos).
+> - **4. csomag — lifecycle/persistence ✅** (`CORE-3`, `CMBT-3`, `CMBT-4`, `DATA-3`, `DATA-4`, `RELIC-3`):
+>   a `disable()` mostantól előbb MENT, utána takarít (adatvesztés ellen); `WorldBossManager.shutdown()`
+>   és `InvasionManager.shutdown()` eltávolítja a perzisztens boss-t / invázió-hullámot disable-kor
+>   (CMBT-3 dupla-skálázás nem áll fenn: a `CUSTOM` spawn-ok már ignoráltak); a freeze-feloldó minden
+>   ágon (run/invalid/retired) törli a `frozenSpeed` bejegyzést → nincs mob-UUID leak; a
+>   `ProfessionRecipeListener`/`SiegeWeaponListener`/`TerritoryListener` quit ÉS kick eseményre is takarít.
+>   *CMBT-4 megjegyzés:* a petet szándékosan NEM despawnoljuk disable-kor (perzisztens, újraindításkor
+>   visszakerül); a halál/újrafogás miatti árvulást a `PET-2` (5. csomag) kezeli.
+> - **5. csomag — pet / talent / relikvia-dupe ✅** (`PET-1`, `PET-2`, `PET-3`, `ECON-5`, `RELIC-2`,
+>   `RELIC-4`, `RELIC-5`): a `PetXpListener` mostantól `canOwnPet`-re szűr (a Nekromanta petje is szintez);
+>   pet-halál kezelve (`handlePetDeath`: combat-state törlés + gazda-értesítés a gazda szálán); a
+>   szintlépés már NEM gyógyítja teljesen a petet (csak summonkor). `TalentManager.getSpentPoints` csak az
+>   elérhető talenteket számolja → a capstone-kapu és az elérhető pontok determinisztikusak. A relikvia
+>   `canUse` a központi ownership-rekordot is ellenőrzi (átruházott/lejárt példány nem használható →
+>   nincs dupla példány); join-kor a duplikált relikvia-példányok eltávolításra kerülnek; a Justice/Honor
+>   Eye atomikus fire-gate-en megy át (`tryConsume*Cooldown`) → nincs dupla-elsülés a check-then-act /
+>   dupla interact-útvonal miatt.
+> - **6. csomag — maradék MEDIUM + LOW (részleges) ✅** (`PET-4`, `PET-5`, `GUI-3`, `CMBT-6`, `CMBT-7`,
+>   `DATA-5`, `CMD-6`, `CMD-7`): napi küldetés szerver-helyi dátumra vált (nem UTC-éjfél); `setCombatTarget`
+>   korai `canOwnPet` kapu (perf minden damage-eventnél); a piac GUI a néző effektív árát mutatja
+>   (= amit fizet); a `activeBossUntil` csak a spawn megerősítése után áll be; a `recordKill` synchronized
+>   az `endRaid`-del (nincs elveszett/kései kill); talent-attribútumok respawnkor újraalkalmazva;
+>   territory-sugár felső korlát (max 512); SinnerCommand suggest prefix-szűrés.
+>   *Hátralévő LOW/perf (kozmetikai, a refaktor-fázisba sorolva):* `PET-7` (HUD dirty-check), `CORE-5`
+>   (map-pruning), `GUI-4..8`, `RELIC-6/7`, `CORE-6/7/8`, `DATA-6`, `SPELL-6/7`, `PET-8/9` (reuse).
+> - **Spell UX + no-op CD (user-jelentés) ✅** — *Spellbook:* új kattintható `/spellbook` GUI
+>   (sunyítás+jobb katt a katalizátoron is) — minden kaszt+spec spell leírással (mit tud / mibe kerül /
+>   mennyit sebez — a ConfiguredSpell-eknél a tényleges számokból auto-generálva) / cooldownnal /
+>   mesterség-ranggal; a kiválasztott kiemelve, a feloldatlanok a szükséges szinttel; kattintásra kiválaszt;
+>   a gyors-lapozás action bar most pozíciót is mutat. *No-op → nincs CD:* a `FriendshipSpell` is `false`-t
+>   ad célpont nélkül, így minden célpont-igényes / precondition no-op költség és cooldown nélkül zárul.
+> - **Egyéb (user-jelentés) ✅** — *Skill-feloldás / „irreálisan magas szint":* nincs hiányzó skill a
+>   katalógusban (mind a 4 kaszt + 8 spec térképe teljes, az auto-unlock primary+secondary slotra is fut);
+>   a tünet az XP-görbéből eredt. **XP-rebalansz:** `base-xp` 100→60, `increment` 20→10, `per-kill` 5→10,
+>   `per-mob-level` 2→3 → a 25. (spec-választás) és 45. (utolsó spec-spell) szint kb. **3×** gyorsabban
+>   elérhető. A spec-spellek továbbra is `/spec choose`-hoz kötöttek (a Nekromanta a quest+sinner kapuhoz) —
+>   ez szándékos. *Pet:* minden társ alapból gyalog követi a gazdát (`follow-start-distance`).
 
 Ez a dokumentum az IceSMP teljes kódbázisának (214 Java fájl, ~24 700 sor) átfogó
 review-ját **és** a session-ben hozzáadott funkciók (`06dcb17…HEAD`, 69 fájl, ~5 400 sor)
@@ -89,7 +139,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `sellerShare = buyerCost*(1-fee/100)`, `burned = buyerCost-sellerShare`.
 
 ### `CMBT-1` — Világboss spawn cross-region location-olvasás
-- [ ] **Fájl:** `managers/WorldBossManager.java:128`, `triggerSpawnNear()`
+- [x] ✅ **Javítva (3. csomag — anchor-hely az anchor szálán, majd régió-hopp).** **Fájl:** `managers/WorldBossManager.java:128`, `triggerSpawnNear()`
 - **Súlyosság:** 🔴 CRITICAL (Folia)
 - **Leírás:** `tick()` a global schedulerről választ random játékost, majd `anchor.getLocation()`-t
   olvas **a régió-hopp előtt**. `forceSpawn(null)` ugyanígy a parancs-szálról.
@@ -98,7 +148,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   majd `getRegionScheduler().run(loc, …)` a spawnra.
 
 ### `CMBT-2` — Invázió spawn cross-region location-olvasás
-- [ ] **Fájl:** `managers/InvasionManager.java:86`, `triggerNear()`
+- [x] ✅ **Javítva (3. csomag — anchor-hely az anchor szálán, majd régió-hopp).** **Fájl:** `managers/InvasionManager.java:86`, `triggerNear()`
 - **Súlyosság:** 🔴 CRITICAL (Folia)
 - **Leírás:** azonos minta, mint `CMBT-1`: `anchor.getLocation().clone()` a global tickről, hopp előtt.
 - **Hatás:** az invázió nem indul, konzol hibák.
@@ -131,7 +181,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `Files.move(…, ATOMIC_MOVE, REPLACE_EXISTING)`; zárral védett snapshot.
 
 ### `ECON-5` — Talentpont-könyvelés duplán számol lejárt talenteket
-- [ ] **Fájl:** `managers/TalentManager.java:269` (`getSpentPoints`), `198` (`treeGatesMet`), `241` (`refundUnavailableTalents`)
+- [x] ✅ **Javítva (5. csomag — getSpentPoints csak elérhető talenteket számol (determinisztikus capstone)).** **Fájl:** `managers/TalentManager.java:269` (`getSpentPoints`), `198` (`treeGatesMet`), `241` (`refundUnavailableTalents`)
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** `getSpentPoints` minden rangot összead (a követelményt vesztett talenteket is), de azok
   refundolhatók és nem fejtenek ki hatást; a capstone-kapu („N pont elköltve") beleszámítja a „halott"
@@ -141,7 +191,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `refundUnavailableTalents` determinisztikusan fusson minden kapu-/pontszámítás előtt.
 
 ### `SPELL-1` — Mérges csirke cross-region sebzés
-- [ ] **Fájl:** `spells/AngryChickenSpell.java:55`
+- [x] ✅ **Javítva (felülvizsgálva: biztonságos (célpont azonos régió)).** **Fájl:** `spells/AngryChickenSpell.java:55`
 - **Súlyosság:** 🟠 HIGH (Folia)
 - **Leírás:** a projektil-csirke `chicken.getScheduler().runAtFixedRate`-ben fut, és `living.damage(8, shooter)`-t
   hív + a shootert kéri le — a csirke ~8 blokkot repül, átléphet régióhatárt, így a célpont/shooter más szálé.
@@ -149,7 +199,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** a sebzést a célpont saját schedulerén: `living.getScheduler().run(… living.damage(8, shooter))`.
 
 ### `SPELL-2` — `RootSpell` az égbe katapultál (`JUMP_BOOST` 250)
-- [ ] **Fájl:** `spells/RootSpell.java:27`
+- [x] ✅ **Javítva (2. csomag).** **Fájl:** `spells/RootSpell.java:27`
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** a „gyökerezés" minden közeli lényre `JUMP_BOOST` **amplifier 250**-et rak (SLOWNESS 10 mellett).
   A 250-es szint az égbe lövi a lényt.
@@ -165,7 +215,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** minta B (async, atomikus, zárolt írás); sose `yaml.save()` közvetlenül event-handlerből.
 
 ### `RELIC-2` — Join-kori újra-claim szingleton-ellenőrzés nélkül → relikvia-dupe
-- [ ] **Fájl:** `managers/RelicManager.java:333`, `handlePlayerJoin`
+- [x] ✅ **Javítva (5. csomag — join-kori dedup + canUse a központi ownership-et ellenőrzi).** **Fájl:** `managers/RelicManager.java:333`, `handlePlayerJoin`
 - **Súlyosság:** 🟠 HIGH
 - **Leírás:** belépéskor minden hordott relikviára felírja a tulajdont, ha az item-tulaj null vagy maga a
   belépő — szingleton-kényszer nélkül. A `giveRelic()` csak adáskor kényszerít szingletont, birtokláskor soha.
@@ -175,7 +225,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   `relic_created_at` authoritatív érték-ellenőrzés a klónozott PDC ellen.
 
 ### `CMBT-3` — Világboss entitás-leak `disable()`-kor + kettős skálázás
-- [ ] **Fájl:** `managers/WorldBossManager.java:157`
+- [x] ✅ **Javítva (4. csomag — shutdown() despawnolja a bosst disable-kor (dupla-skálázás: CUSTOM már ignorált)).** **Fájl:** `managers/WorldBossManager.java:157`
 - **Súlyosság:** 🟠 HIGH (minta D)
 - **Leírás:** a boss `setPersistent(true)`+`setRemoveWhenFarAway(false)`, de `disable()` csak a taskot
   állítja le, a bosst nem despawnolja. Mivel RAVAGER `Monster`, a `MobScalingManager` is ráfut → a boss-attribútumokra
@@ -194,7 +244,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
   törlése duplikálás helyett.
 
 ### `CMBT-5` / `PET-6` — Pet-tick cross-region `owner.getLocation()` olvasás
-- [ ] **Fájl:** `managers/PetManager.java:292` (`runPetTick`, `resolveTarget`, `acquireNearbyThreat`)
+- [x] ✅ **Javítva (3. csomag — gazda PDC+hely a gazda szálán, snapshot a pet régiójának).** **Fájl:** `managers/PetManager.java:292` (`runPetTick`, `resolveTarget`, `acquireNearbyThreat`)
 - **Súlyosság:** 🟠 HIGH (Folia)
 - **Leírás:** a tick a **pet** régió-szálán fut, de `owner.getLocation()/getWorld()`-öt olvas és a pet
   felé teleportál; a gazda gyakran más régióban van (épp ez váltja ki a követést).
@@ -235,7 +285,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `Double.isFinite` guard + védekező clamp a `FactionTreasuryManager.withdraw/addToBalance`-ban.
 
 ### `DATA-1` — `SinListener` a gyilkost mutálja off-region
-- [ ] **Fájl:** `listeners/SinListener.java:69`
+- [x] ✅ **Javítva (3. csomag — gyilkos-mutáció a gyilkos schedulerén).** **Fájl:** `listeners/SinListener.java:69`
 - **Súlyosság:** 🟠 HIGH (Folia)
 - **Leírás:** `PlayerDeathEvent` az **áldozat** szálán fut; a handler a `getKiller()`-t (más játékos, más
   régió) piszkálja: `addSin` (PDC-írás), `exileToDark` (hang/partikli a gyilkos helyén), `recordRaidKill`,
@@ -257,7 +307,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 ## MEDIUM
 
 ### `SPELL-3` — Bukott/no-op kasztra is levonódik a költség és a cooldown
-- [ ] **Fájl:** `listeners/AbilityCatalystListener.java:201-206`
+- [x] ✅ **Javítva (2. csomag)** — `executeSpell()` boolean + `refundCost()`; a célpont-igényes spellek (Configured TARGET, LifeDrain, BeeSwarm, PrimalBond, VenomStrike, Shadowstep) no-op esetén `false`-t adnak. **Fájl:** `listeners/AbilityCatalystListener.java:201-206`
 - **Súlyosság:** 🟡 MEDIUM (minta F)
 - **Leírás:** `consumeCost(player)` → `execute(player)` → feltétlen `putCooldown`. Sok `execute` no-op-ol
   (nincs célpont/companion: `ConfiguredSpell`, `LifeDrainSpell`, `PrimalBondSpell`, `BeeSwarmSpell`).
@@ -265,14 +315,14 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `Spell.execute` adjon vissza `boolean`-t; csak siker esetén `consumeCost`+`putCooldown`.
 
 ### `SPELL-4` — A kombó-cooldown-refund elérheti a 100%-ot (teljes bypass)
-- [ ] **Fájl:** `listeners/AbilityCatalystListener.java:247-249`, `206`
+- [x] ✅ **Javítva (2. csomag)** — refund 80%-ra vágva + effektív cooldown-padló (max(1s, 15% base)), így mastery+combo sem nullázhatja. **Fájl:** `listeners/AbilityCatalystListener.java:247-249`, `206`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** kombónál `putCooldown(now - comboRefundMillis)`; a refund-százalék 0..100-ra van vágva, 100%-nál
   a maradék cooldown 0. A mastery-csökkentés erre rakódik.
 - **Fix:** effektív refund ≤80%-ra vágni és/vagy minimum-cooldown padló a `getRemainingCooldown`-ban.
 
 ### `SPELL-5` — `HideSpell` páncél nem áll vissza kilépéskor (null retired-callback)
-- [ ] **Fájl:** `spells/HideSpell.java:48`
+- [x] ✅ **Javítva (2. csomag)** — retired-callback (`clearHide`, idempotens); normál kilépést a PlayerQuit-cleanup már online állapotban visszaállítja. **Fájl:** `spells/HideSpell.java:48`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** a páncélt `HIDDEN_ARMOR`-ba menti és a slotokat üríti, majd `runDelayed(..., null, …)` — a
   retired-callback **null**. Folián kilépéskor a függő task retire-ölődik a callback futása nélkül, így a
@@ -280,7 +330,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `runDelayed(plugin, t -> clearHide(id), () -> clearHide(id), TICKS)`; a `clearHide` idempotens.
 
 ### `RELIC-3` — `MetelytepoManager` freeze/bypass map-ek mob-UUID-kra szivárognak
-- [ ] **Fájl:** `managers/MetelytepoManager.java:334` (és `listeners/MetelytepoRelicListener.java:334`)
+- [x] ✅ **Javítva (4. csomag — freeze-feloldó minden ágon törli a frozenSpeed-et (nincs mob-UUID leak)).** **Fájl:** `managers/MetelytepoManager.java:334` (és `listeners/MetelytepoRelicListener.java:334`)
 - **Súlyosság:** 🟡 MEDIUM (minta E)
 - **Leírás:** `frozenSpeed`/`abilityDamageBypass` tetszőleges `LivingEntity` (mob) UUID-kra, de a `cleanup`
   csak játékos-UUID-t töröl. Ha a mob meghal/kicsekkol az unfreeze-delay előtt, az `isValid()` guard kilép a
@@ -288,7 +338,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** az unfreeze-callbackben `!isValid()` esetén is töröld az entryt; `EntityDeathEvent`-re takaríts.
 
 ### `RELIC-4` — Nem-atomikus cooldown + dupla interact-útvonal
-- [ ] **Fájl:** `listeners/MetelytepoRelicListener.java:148-180`
+- [x] ✅ **Javítva (5. csomag — atomikus tryConsume fire-gate (nincs dupla-elsülés)).** **Fájl:** `listeners/MetelytepoRelicListener.java:148-180`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `isOnCooldown()` → később `triggerCooldown()` (külön olvasás/írás, nincs CAS); a sneak+jobb-katt
   entitáson az `onInteractEntity` is meghívja a `handleHonorEye`-t.
@@ -296,7 +346,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** atomikus cooldown-foglalás (`putIfAbsent`/`computeIfAbsent`) az effekt **előtt**; az interact-utak deduplikálása.
 
 ### `RELIC-5` — Lejárt-szingleton edge: két aktív példány
-- [ ] **Fájl:** `managers/RelicManager.java:396`, `giveRelic`
+- [x] ✅ **Javítva (5. csomag — canUse központi ownership-ellenőrzés (lejárt példány nem használható)).** **Fájl:** `managers/RelicManager.java:396`, `giveRelic`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** ha az aktuális tulajdon lejárt, B megkapja az új relikviát, de A még létező itemje (a sweep csak
   A belépésekor fut) továbbra is működik (a `canUse()` az item saját tagjét nézi, nem a központi rekordot).
@@ -310,21 +360,21 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** egységes egész (long) reprezentáció vagy konzisztens `floor`/`round` minden jóváíráskor; konzerváció-ellenőrzés.
 
 ### `ECON-7` — `KingManager.recount` broadcast/`getOfflinePlayer` rossz szálon
-- [ ] **Fájl:** `managers/KingManager.java:233`
+- [x] ✅ **Javítva (3. csomag — broadcast a global region scheduleren).** **Fájl:** `managers/KingManager.java:233`
 - **Súlyosság:** 🟡 MEDIUM (Folia)
 - **Leírás:** `vote()` a szavazó régió-szálán hívja `recount()`-ot, ami `Bukkit.getOfflinePlayer(leader).getName()`
   (blokkoló név-lookup) és `Bukkit.getServer().broadcast()` (minden régió) műveletet végez.
 - **Fix:** a broadcast/név-feloldás a global region scheduleren; nevet előre, aszinkron.
 
 ### `CMBT-6` — `activeBossUntil` a spawn megerősítése előtt áll be
-- [ ] **Fájl:** `managers/WorldBossManager.java:132`
+- [x] ✅ **Javítva (6. csomag — activeBossUntil csak spawn után).** **Fájl:** `managers/WorldBossManager.java:132`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `triggerSpawnNear` előbb állítja `activeBossUntil`-t és `true`-t ad vissza, majd a `spawnBoss`
   nem-mob típusnál 0-ra állítja. Az admin „spawnolt"-at lát, miközben nincs boss.
 - **Fix:** előzetes mob-típus-validáció; `activeBossUntil` csak sikeres spawn után, a `spawnBoss`-on belül.
 
 ### `CMBT-7` — `RaidManager` recordKill/endRaid pontozási verseny
-- [ ] **Fájl:** `managers/RaidManager.java:134`
+- [x] ✅ **Javítva (6. csomag — recordKill synchronized az endRaid-del).** **Fájl:** `managers/RaidManager.java:134`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `endRaid` (global) nullázza az `activeRaid`-et és snapshotol, miközben `recordKill` (más régió)
   épp beolvasta a nem-null `activeRaid`-et → a kill elveszhet vagy a vég után számolódik.
@@ -338,7 +388,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** `if (!Double.isFinite(price) || price <= 0) return;` a parancsban.
 
 ### `CMD-4` — `/job givecatalyst <más>` cél-inventory off-region
-- [ ] **Fájl:** `commands/job/JobGiveCatalystSubcommand.java:73`
+- [x] ✅ **Javítva (3. csomag — cél-inventory a cél schedulerén).** **Fájl:** `commands/job/JobGiveCatalystSubcommand.java:73`
 - **Súlyosság:** 🟡 MEDIUM (Folia, minta C)
 - **Leírás:** a parancs-szálon `target.getInventory().addItem` és `target.getWorld().dropItemNaturally(...)`,
   miközben a cél más régióban/világban lehet.
@@ -352,7 +402,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** előbb `getPlayerExact`; offline-nál csak ismert/cache-elt + `hasPlayedBefore()`/`getName()!=null`.
 
 ### `CORE-3` — `disable()`: cleanup a `save()` előtt + load/save aszimmetria
-- [ ] **Fájl:** `core/IceSMPCore.java:345` (cleanup ~368-371, save ~374-385)
+- [x] ✅ **Javítva (4. csomag — disable() előbb ment, utána takarít; + worldBoss/invasion shutdown()).** **Fájl:** `core/IceSMPCore.java:345` (cleanup ~368-371, save ~374-385)
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** a player-state cleanup a `save()`-ek **előtt** fut; ha bármelyik cleanup-út in-memory state-et
   töröl, a save a takarított állapotot menti (adatvesztés). `mobScalingManager`/`craftingRestrictionManager`
@@ -367,34 +417,34 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** periodikus pruning inaktivitás-küszöb felett (RelicManager már tárol last-seen-t); vagy per-player fájl/DB.
 
 ### `DATA-3` — Listener-map-ek nincsenek takarítva quitkor
-- [ ] **Fájl:** `listeners/ProfessionRecipeListener.java` (`hintThrottle`), `listeners/SiegeWeaponListener.java` (`debounce`)
+- [x] ✅ **Javítva (4. csomag — quit+kick takarítás).** **Fájl:** `listeners/ProfessionRecipeListener.java` (`hintThrottle`), `listeners/SiegeWeaponListener.java` (`debounce`)
 - **Súlyosság:** 🟡 MEDIUM (minta E)
 - **Leírás:** nincs `PlayerQuitEvent`-takarítás és a `cleanupPlayerState` sem hívja őket → minden interakciózó
   játékos örök entryt hagy.
 - **Fix:** quit-handler / `PlayerSessionCleanupListener` bevonás.
 
 ### `DATA-4` — `TerritoryListener` nem takarít kick-re
-- [ ] **Fájl:** `listeners/TerritoryListener.java:105`
+- [x] ✅ **Javítva (4. csomag — kick-takarítás hozzáadva).** **Fájl:** `listeners/TerritoryListener.java:105`
 - **Súlyosság:** 🟡 MEDIUM (minta E)
 - **Leírás:** `lastTerritoryIds` csak `PlayerQuitEvent`-re ürül; kickre stale entry marad.
 - **Fix:** explicit kick-handler vagy `PlayerSessionCleanupListener` bevonás.
 
 ### `PET-3` — Pet teljes gyógyulás minden szintlépéskor
-- [ ] **Fájl:** `managers/PetManager.java`, `applyBuffs` (`pet.setHealth(maxHealth.getValue())`)
+- [x] ✅ **Javítva (5. csomag — szintlépéskor nincs full-heal (csak summonkor)).** **Fájl:** `managers/PetManager.java`, `applyBuffs` (`pet.setHealth(maxHealth.getValue())`)
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** az `applyBuffs` szintlépéskor (és summonkor) is fut; az 1 HP-n harcoló pet azonnal teljes életre
   gyógyul, amint a gazda ölésével szintet lép → gyakorlatilag megölhetetlen grindelésnél.
 - **Fix:** szintlépéskor csak a max-HP-t növeld; teljes gyógyítás csak summonkor.
 
 ### `PET-4` — Napi küldetés UTC-éjfélkor, feladat közben reset
-- [ ] **Fájl:** `managers/DailyQuestManager.java`, `today()`/`ensureFresh`
+- [x] ✅ **Javítva (6. csomag — szerver-helyi dátum (nem UTC)).** **Fájl:** `managers/DailyQuestManager.java`, `today()`/`ensureFresh`
 - **Súlyosság:** 🟡 MEDIUM
 - **Leírás:** `today() = currentTimeMillis()/86_400_000L` UTC-nap szerint vödröz; nem-UTC játékosnál az UTC-éjfél
   a nap közepén tör → a haladás némán nullázódik és az aktív cél lecserélődik.
 - **Fix:** szerver-helyi dátum vagy konfigurálható reset-óra.
 
 ### `PET-5` — `setCombatTarget` entity-lookup minden damage-eventnél
-- [ ] **Fájl:** `managers/PetManager.java`, `setCombatTarget`
+- [x] ✅ **Javítva (6. csomag — korai canOwnPet kapu).** **Fájl:** `managers/PetManager.java`, `setCombatTarget`
 - **Súlyosság:** 🟡 MEDIUM (perf)
 - **Leírás:** `PetCombatListener`-ből minden `EntityDamageByEntityEvent`-re fut, és azonnal PDC-olvasást +
   `Bukkit.getEntity(UUID)`-t végez, pedig csak Vadmester/Nekromanta tarthat petet.
@@ -440,7 +490,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** szingleton-relikviából legfeljebb egy átvitele, a többi eldobása; egyszeri rekord-írás; identitás-ellenőrzés.
 
 ### `GUI-3` — A piac GUI a listaárat mutatja, de az effektív árat vonja
-- [ ] **Fájl:** `gui/MarketGUI.java:131`
+- [x] ✅ **Javítva (6. csomag — a néző effektív árát mutatja).** **Fájl:** `gui/MarketGUI.java:131`
 - **Súlyosság:** 🟢 LOW (de UX/bizalom)
 - **Leírás:** a lore `listing.price()`-t ír, a vétel `getEffectivePrice()`-t von → a vevő mást fizet, mint amit lát.
 - **Fix:** a néző-specifikus effektív árat rendereld (vagy mutasd mindkettőt).
@@ -477,13 +527,13 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** tükrözd a PREV guardot (csak ha van következő lap).
 
 ### `CMD-6` — `/territory claim ... <radius>` felső korlát nélkül
-- [ ] **Fájl:** `commands/TerritoryCommand.java:207`
+- [x] ✅ **Javítva (6. csomag — sugár felső korlát (max 512)).** **Fájl:** `commands/TerritoryCommand.java:207`
 - **Súlyosság:** 🟢 LOW
 - **Leírás:** `parseRadius` csak `<=0`-t utasít el; közel `Integer.MAX_VALUE` radius lefagyaszthatja/OOM-olhatja a szervert (admin-only).
 - **Fix:** ésszerű max-clamp; ugyanígy a ParkourCommand radius/reward.
 
 ### `CMD-7` — `SinnerCommand.suggest()` teljes roster prefix-szűrés nélkül
-- [ ] **Fájl:** `commands/SinnerCommand.java:95`
+- [x] ✅ **Javítva (6. csomag — suggest prefix-szűrés).** **Fájl:** `commands/SinnerCommand.java:95`
 - **Súlyosság:** 🟢 LOW
 - **Leírás:** `args.length==0`-nál minden online név vissza, szűrés nélkül (a többi ág szűr); konzisztencia-nit.
 - **Fix:** prefix-szűrés / az `args.length==0` ág elhagyása.
@@ -515,7 +565,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** minden config-függő init az `enable()`-be (load után); side-effect-mentes konstruktorok; try/catch az enable-ön.
 
 ### `DATA-5` — `TalentAttributeListener` nincs respawn-hook
-- [ ] **Fájl:** `listeners/TalentAttributeListener.java:17`
+- [x] ✅ **Javítva (6. csomag — respawn-hook (idempotens)).** **Fájl:** `listeners/TalentAttributeListener.java:17`
 - **Súlyosság:** 🟢 LOW
 - **Leírás:** a talent-attribútumok csak joinkor (idempotensen) kerülnek fel; nincs `PlayerRespawnEvent` — ma
   biztonságos (a vanilla megtartja respawnnál), de törékeny, ha más rendszer törli őket.
@@ -529,7 +579,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** dokumentálni a kettős figyelést; a CROPS-halmazt szinkronban tartani az `Ageable`-feltevéssel.
 
 ### `PET-1` — Nekromanta petek sosem szintlépnek (lásd combat-review)
-- [ ] **Fájl:** `listeners/PetXpListener.java:30`
+- [x] ✅ **Javítva (5. csomag — canOwnPet (necro pet is szintez); kill-alapú).** **Fájl:** `listeners/PetXpListener.java:30`
 - **Súlyosság:** 🟠 HIGH (itt listázva a diff-review folytonosságáért)
 - **Leírás:** `if (killer == null || !petManager.isBeastMaster(killer)) return;` — az `addXp`/`canOwnPet`
   mindkét specet támogatja, de az egyetlen XP-forrás `isBeastMaster`-re szűr → a Nekromanta petje örökre 1. szint.
@@ -538,7 +588,7 @@ Ezek a visszatérő hibaosztályok; rendszerszintű javításuk egyszerre sok eg
 - **Fix:** a kapu `canOwnPet` legyen; az XP a gazda közeli öléseiből (ne csak közvetlen `getKiller`).
 
 ### `PET-2` — Pet-halál/despawn nincs kezelve (lásd `CMBT-4`)
-- [ ] **Fájl:** `managers/PetManager.java` (`entityKey` életciklus)
+- [x] ✅ **Javítva (5. csomag — handlePetDeath: combat-state törlés + gazda-értesítés).** **Fájl:** `managers/PetManager.java` (`entityKey` életciklus)
 - **Súlyosság:** 🟠 HIGH (itt listázva a diff-review folytonosságáért)
 - **Leírás:** a pet-UUID csak `dismiss()`-ben törlődik; nincs `EntityDeathEvent`/remove-handler. Halál után az
   `entityKey` halott UUID-ra mutat, a `/pet summon` ingyen újraspawnol a tárolt típusból (nincs büntetés/értesítés),
@@ -575,3 +625,46 @@ A leghatékonyabb a **mintánkénti** javítás (egy minta-fix sok találatot z�
 
 > **Emlékeztető:** a javítások után **`./gradlew build`** és szerver-teszt szükséges — a session sok nem-fordított
 > kódot adott hozzá, és a Folia-súlyosságok futtatás nélkül nem igazolhatók teljesen.
+
+---
+
+# Teljes plugin code review (session-végi, 6 párhuzamos ágens, statikus)
+
+A teljes kódbázis (~230 fájl) átnézve. Súlyosság szerint:
+
+## ✅ Javítva ebben a körben
+- **FORDÍTÁSI HIBA — `ExchangeBoardManager.java`:** `List<Board>`-ot használt `import java.util.List;`
+  nélkül → a projekt NEM fordult. Import hozzáadva. *(Build nélkül lappangott.)*
+- **Folia + perf BUG — `RainDanceSpell` / `SunDanceSpell`:** 50- ill. 25-radius **teljes kocka** blokk-
+  szken (~1M / ~132K iteráció a régió-szálon) + **cross-region** blokk-/tile-entity hozzáférés (illegális).
+  Region-lokális méretre csökkentve (RainDance 6×3, SunDance 8×5, vízszintes kör + kis függőleges sáv).
+
+## ⚠️ Rendszerszintű, hátralévő — Folia cross-entity (build-checkpoint mögé)
+**Gyökérok:** több `EntityDeathEvent`/`PlayerDeathEvent`/admin-parancs a *gyilkost* vagy a *cél játékost*
+(más entitás, mint az esemény entitása) a rossz régió-szálon módosítja. Távolsági/cross-region esetben
+Folián `IllegalStateException`. **Melee/azonos-régió esetben működik** (ezért lappangó). A javítás-minta a
+kódbázisban már létezik (`SinListener`, `JobGiveCatalystSubcommand`, `WorldBossManager.handleBossDeath`):
+a cél-mutációt `target.getScheduler().run(plugin, task -> {...}, null)`-ba kell zárni (a legtöbb érintett
+osztályba `plugin`-injektálás is kell → ~12 fájl, build-ellenőrzés ajánlott).
+
+Érintett: `ClassXpListener`, `PetXpListener`, `SoulShardListener`, `QuestProgressListener`,
+`DailyQuestListener` (kill-ágak), `MetelytepoRelicListener` (onEntityDeath + a 100-blokkos honor-eye szken),
+`RelicPvpTransferListener`, `SpellProjectileListener` (hit-entity), `SiegeWeaponListener` (távoli robbanás),
+`MarketGUIListener` (seller-üzenet), és a `JobAdmin/JobUnlockSpell/JobAddXp/JobSetXp` admin-subcommandok.
+
+## MINOR / NIT (nem blokkoló)
+- `ConfiguredSpell` AOE/SELF `executeSpell` mindig `true` → cél-nélküli friendly-AOE/SELF cast is felszámol
+  költséget/cooldownt (a TARGET-ág helyesen refundál). Tervezési döntés / opcionális.
+- `MessageManager` — null default-érték `isMiniMessage(null)` NPE (lappangó; jelenleg egy hívó sem ad null-t).
+- `PetManager` — `adopt` persistent petje szerver-újraindítás után árválkodhat (a registry memóriabeli).
+- `MetelytepoManager.abilityDamageBypass` — entitás-UUID-kulcsú lassú szivárgás (csak consume-kor törlődik).
+- `ProfessionRecipeManager.tool()` — párhuzamos `enchants[i]/levels[i]` index, hossz-ellenőrzés nélkül (lappangó).
+- `MobScalingManager.applyLevel` — nem-idempotens base-attribútum mutáció (a PDC once-guard védi).
+- Több GUI raw item-builder nem null-ellenőrzi a `getItemMeta()`-t (gyakorlatban sosem null).
+
+## Tiszta (megerősítve)
+CurrencyManager (atomikus balansz, nincs dupe/loss), ExchangeRateService, Faction/King/Season/Raid/Economy
+managerek, Job/Spec/Profession/Talent/Quest/Daily/Achievement/Stats/Parkour/Soul/BloodMoon/Mob/Crafting/
+Intro/Minion/Config/SpellRegistry/Hud, a legtöbb listener és spell, az IceSMPCore manager-építési sorrendje,
+a persistentStores teljessége, a disable() save-before-cleanup, a YamlStore atomikus írás, az ExperienceUtil
+XP-matek, és a Folia-scheduler-fegyelem (sehol nincs `Bukkit.getScheduler()`).

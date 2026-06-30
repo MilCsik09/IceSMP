@@ -11,8 +11,12 @@ Most léptél be először? Semmi gond — kövesd ezt a pár lépést, és már
 2. **Nyisd meg a karakterlapod:** `/profile`. Ez a **központi menü**. A fejen látod a fontos
    adataidat, és gombokról eléred az összes almenüt: **Kaszt, Specializáció, Szakma, Talentek,
    Képesség-fa**.
-3. **Válassz kasztot** a Kaszt menüből (Varázsló / Harcos / Íjász / Orgyilkos), majd **igényeld
-   a Képesség Katalizátorodat** (egy gomb ugyanott). Ezzel használod a varázslataidat.
+3. **Válassz kasztot** a Kaszt menüből — **13 kaszt** közül (Varázsló, Harcos, Íjász, Orgyilkos,
+   Druida, Paplovag, Halállovag, Sámán, Szerzetes, Pap, Boszorkánymester, Démonvadász,
+   Sárkányidéző), majd **igényeld a Képesség Katalizátorodat** (egy gomb ugyanott). Ezzel
+   használod a varázslataidat. (Minden kasztnak saját **Erő-csíkja** is van a HUD-on — a legtöbb
+   spell ezt fogyasztja, és idővel visszatöltődik; a vér/rituálé/fizikai spellek HP/XP/éhséget
+   kérnek. Lásd [Kasztok](04-kasztok.md).)
 4. **Tanulj szakmát** a Szakma menüből: **1 gyűjtögetőt** (pl. Bányász) és **1 készítőt**
    (pl. Kovács). A Halász és Szakács alapból a tiéd.
 5. **Kezdj el játszani!**

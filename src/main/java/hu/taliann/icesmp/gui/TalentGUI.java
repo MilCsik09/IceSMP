@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.gui;
 
+import static hu.taliann.icesmp.gui.GuiUtil.accent;
+import static hu.taliann.icesmp.gui.GuiUtil.grey;
+import static hu.taliann.icesmp.gui.GuiUtil.label;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -217,18 +221,6 @@ public final class TalentGUI {
     private static String nameOf(final ConfigurationSection definitions, final String id) {
         final ConfigurationSection section = definitions == null ? null : definitions.getConfigurationSection(id);
         return section == null ? id : section.getString("display-name", id);
-    }
-
-    private static Component label(final String key, final Component value) {
-        return Component.text(key + ": ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false).append(value);
-    }
-
-    private static Component accent(final String text) {
-        return Component.text(text, NamedTextColor.AQUA).decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false);
-    }
-
-    private static Component grey(final String text) {
-        return Component.text(text, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
     }
 
     private static Component click(final String text) {

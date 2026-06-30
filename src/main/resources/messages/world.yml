@@ -1,0 +1,24 @@
+# IceSMP üzenetek — world alrendszer (a MessageManager az összes messages/*.yml-t betölti)
+messages:
+  blood-moon-ended: <gray>🌙 A vérhold lenyugodott — a világ fellélegzik.</gray>
+  blood-moon-started: <dark_red>🌕 VÉRHOLD! Ma éjjel a szörnyek erősebbek (+{bonus} szint), de a lelkük is értékesebb...</dark_red>
+  events-bloodmoon-active: '&cVérhold tombol!'
+  events-bloodmoon-already: '&7Már tombol a vérhold.'
+  events-bloodmoon-forced: '&cVérhold elindítva!'
+  events-bloodmoon-inactive: '&7Jelenleg nincs vérhold.'
+  events-bloodmoon-not-active: '&7Most nincs vérhold.'
+  events-bloodmoon-stopped: '&aVérhold leállítva.'
+  events-bloodmoon-usage: '&cHasználat: /events bloodmoon [start|stop]'
+  events-intro-replayed: '&aIntro lejátszva: &f%s'
+  events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
+  events-invasion-started: '&cInvázió elindítva!'
+  events-season-header: '&6Szezon-állás:'
+  events-season-line: '&e%s&7: &f%s pont'
+  events-worldboss-failed: '&7Nem sikerült (már aktív boss, vagy nincs online játékos).'
+  events-worldboss-spawned: '&cVilágboss megidézve!'
+  invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
+  season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
+  season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>
+  world-boss-despawned: <gray>👹 A világboss elvonult — senki sem merte legyőzni.</gray>
+  world-boss-slain: <gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>
+  world-boss-spawned: '<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>'

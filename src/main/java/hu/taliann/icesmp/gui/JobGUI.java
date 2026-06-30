@@ -8,7 +8,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -19,11 +18,13 @@ import java.util.List;
 @SuppressWarnings("deprecation")
 public final class JobGUI {
 
-    private static final int SIZE = 36;
-    private static final int BACK_SLOT = 31;
-    private static final int CATALYST_SLOT = 33;
-    private static final int SKILL_TREE_SLOT = 29;
-    private static final int[] JOB_SLOTS = {11, 13, 15, 20, 22, 24};
+    private static final int SIZE = 54;
+    private static final int BACK_SLOT = 49;
+    private static final int CATALYST_SLOT = 51;
+    private static final int SKILL_TREE_SLOT = 47;
+    // Up to 16 classes: a 4×4 grid (rows 1–4, columns 1/3/5/7), clear of the row-5 buttons (47/49/51).
+    // resolveJobType/placeJobItems both index this array, so layout and click-mapping stay in sync.
+    private static final int[] JOB_SLOTS = {10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34, 37, 39, 41, 43};
 
     private JobGUI() {
     }
@@ -123,20 +124,17 @@ public final class JobGUI {
 
     private static ItemStack createJobItem(final JobType jobType, final Player viewer, final JobManager jobManager,
                                            final MessageManager messageManager) {
-        final ItemStack itemStack = new ItemStack(Material.ENCHANTED_BOOK);
-        final ItemMeta meta = itemStack.getItemMeta();
         final JobType primary = jobManager.getPrimaryJob(viewer);
         final JobType secondary = jobManager.getSecondaryJob(viewer);
         final boolean selected = primary == jobType || secondary == jobType;
 
-        meta.displayName(jobType.getDisplayName());
-        meta.lore(resolveJobLore(jobType, primary, secondary, jobManager.getPrimaryLevel(viewer), jobManager.isPrimaryJobAtMaxLevel(viewer), messageManager));
-        if (selected) {
-            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-        }
-        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-        itemStack.setItemMeta(meta);
-        return itemStack;
+        // Selected jobs glow; the flag set matches GuiUtil.icon exactly, so it is a render-equivalent build.
+        return GuiUtil.icon(
+                Material.ENCHANTED_BOOK,
+                jobType.getDisplayName(),
+                resolveJobLore(jobType, primary, secondary, jobManager.getPrimaryLevel(viewer),
+                        jobManager.isPrimaryJobAtMaxLevel(viewer), messageManager),
+                selected);
     }
 
     private static List<Component> resolveJobLore(final JobType jobType, final JobType primary, final JobType secondary,

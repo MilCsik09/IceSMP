@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -20,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * a periodic tick (Folia-safe, on each player's region thread); raid kills are
  * incremented from the kill event. Stored in leaderboard.yml.
  */
-public final class StatsManager {
+public final class StatsManager implements PersistentStore {
 
     /** A read-only leaderboard row. */
     public record Entry(String name, int level, double wealth, int raidKills) { }
@@ -86,7 +90,7 @@ public final class StatsManager {
                 yaml.set(base + ".wealth", stat.wealth);
                 yaml.set(base + ".raid-kills", stat.raidKills);
             }
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save leaderboard.yml: " + exception.getMessage());
         }

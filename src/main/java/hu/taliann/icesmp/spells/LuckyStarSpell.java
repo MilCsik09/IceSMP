@@ -90,7 +90,8 @@ public final class LuckyStarSpell extends BaseSpell {
         }
     }
 
-    public static void clearPlayerState(final UUID playerId) {
+    @Override
+    public void clearPlayerState(final UUID playerId) {
         cleanup(playerId);
     }
 

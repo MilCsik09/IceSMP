@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 
@@ -22,6 +23,7 @@ import java.util.Map;
  */
 public final class SinListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final MetelytepoManager metelytepoManager;
     private final RaidManager raidManager;
     private final FactionManager factionManager;
@@ -29,9 +31,10 @@ public final class SinListener implements Listener {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public SinListener(final MetelytepoManager metelytepoManager, final RaidManager raidManager,
+    public SinListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager, final RaidManager raidManager,
                        final FactionManager factionManager, final StatsManager statsManager,
                        final ConfigManager configManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.metelytepoManager = metelytepoManager;
         this.raidManager = raidManager;
         this.factionManager = factionManager;
@@ -49,16 +52,21 @@ public final class SinListener implements Listener {
         }
 
         // Raid rule (ideas.md): sanctioned war kills carry no sin — they score for the raid.
+        // Faction lookups and raid scoring are in-memory data (safe here); the killer-side
+        // mutations (PDC sin/stats, messages) are hopped onto the killer's own region thread,
+        // because PlayerDeathEvent runs on the VICTIM's region and the killer may be elsewhere.
         final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
         final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
         if (raidManager.isAtWar(killerFaction, victimFaction)) {
             raidManager.recordKill(killerFaction);
-            statsManager.recordRaidKill(killer);
-            killer.sendMessage(messageManager.getMessage(
-                    "faction-raid-kill",
-                    "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>",
-                    Map.of("faction", killerFaction.getDisplayName())
-            ));
+            killer.getScheduler().run(plugin, task -> {
+                statsManager.recordRaidKill(killer);
+                killer.sendMessage(messageManager.getMessage(
+                        "faction-raid-kill",
+                        "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>",
+                        Map.of("faction", killerFaction.getDisplayName())
+                ));
+            }, null);
             return;
         }
 
@@ -66,12 +74,14 @@ public final class SinListener implements Listener {
             return;
         }
 
-        final int sinCount = metelytepoManager.addSin(killer, 1);
         final int threshold = Math.max(0, configManager.getInt("factions.sins.exile-threshold", 4));
-        killer.sendMessage(messageManager.getMessage(
-                "sinner.sin-recorded",
-                "<dark_purple>Bűnt követtél el: gyilkosság. <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>",
-                Map.of("count", String.valueOf(sinCount), "threshold", String.valueOf(threshold))
-        ));
+        killer.getScheduler().run(plugin, task -> {
+            final int sinCount = metelytepoManager.addSin(killer, 1);
+            killer.sendMessage(messageManager.getMessage(
+                    "sinner.sin-recorded",
+                    "<dark_purple>Bűnt követtél el: gyilkosság. <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>",
+                    Map.of("count", String.valueOf(sinCount), "threshold", String.valueOf(threshold))
+            ));
+        }, null);
     }
 }

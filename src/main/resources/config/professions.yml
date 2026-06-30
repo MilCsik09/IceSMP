@@ -1,0 +1,34 @@
+# IceSMP konfiguráció — professions (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Szakmák (WoW-szerű: 1 gyűjtögető + 1 készítő főszakma + másodlagosak) =====
+# Gyűjtögető: miner (Bányász), herbalist (Gyógynövényész), lumberjack (Favágó)
+# Készítő: armorer (Kovács), alchemist (Alkimista), enchanter (Bűvölő)
+# Másodlagos (mindenkié, automatikusan): fisherman (Halász), cook (Szakács)
+professions:
+  leveling:
+    base-xp: 100
+    increment-per-level: 15
+  # Szakma-receptek (ROADMAP 10.): mestermű tárgyak, amiket csak a megfelelő szakma +
+  # szint birtokában lehet craftolni. A required-level felülírható receptenként.
+  recipes:
+    enabled: true
+    tarnasz_csakany:
+      required-level: 15
+    favago_fejsze:
+      required-level: 15
+    bastya_pajzs:
+      required-level: 15
+    bolcs_konyve:
+      required-level: 15
+  xp:
+    mining-ore: 5
+    herbalism-harvest: 3
+    logging: 2
+    crafting-gear: 8
+    smithing: 15
+    enchanting: 10
+    brewing: 12
+    fishing: 4
+    cooking: 3
+  specialization:
+    # A szakma ezen a szinten specializálódhat (/spec choose).
+    required-level: 25

@@ -20,14 +20,20 @@ public final class FriendshipSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         final Tameable tameable = resolveTarget(player);
         if (tameable == null) {
-            return;
+            return false;
         }
 
         tameable.setOwner(player);
         tameable.setTamed(true);
         player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 1.0F, 1.1F);
+        return true;
     }
 
     private Tameable resolveTarget(final Player player) {

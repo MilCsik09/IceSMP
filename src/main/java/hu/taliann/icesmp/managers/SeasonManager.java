@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -19,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * season reward; points reset and a new season begins. State persists to
  * season.yml; expiry is checked on the global world-events tick.
  */
-public final class SeasonManager {
+public final class SeasonManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -74,7 +78,7 @@ public final class SeasonManager {
                 yaml.set("season.points." + entry.getKey().name(), entry.getValue());
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season.yml: " + exception.getMessage());
         }

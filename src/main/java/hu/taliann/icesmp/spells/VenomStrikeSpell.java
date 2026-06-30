@@ -23,15 +23,21 @@ public final class VenomStrikeSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
-            return;
+            return false;
         }
 
         target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, POISON_TICKS, 1, false, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, WEAKNESS_TICKS, 0, false, true, true));
         player.getWorld().spawnParticle(Particle.ITEM_SLIME, target.getLocation().add(0.0D, 1.0D, 0.0D), 25, 0.3D, 0.5D, 0.3D, 0.05D);
         player.playSound(target.getLocation(), Sound.ENTITY_SPIDER_HURT, 0.8F, 1.4F);
+        return true;
     }
 }

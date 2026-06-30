@@ -1,0 +1,22 @@
+# IceSMP konfiguráció — crafting (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Kaszt/szakma-alapú craftolási korlátozások =====
+# required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
+# required-profession: szakma azonosító (pl. "armorer") + required-profession-level.
+# Ha mindkettő meg van adva, mindkét feltételnek teljesülnie kell.
+crafting-restrictions:
+  enabled: true
+  notify-cooldown-seconds: 3
+  rules:
+    netherite-gear:
+      required-profession: "armorer"
+      required-profession-level: 25
+      materials:
+        - "NETHERITE_SWORD"
+        - "NETHERITE_PICKAXE"
+        - "NETHERITE_AXE"
+        - "NETHERITE_SHOVEL"
+        - "NETHERITE_HOE"
+        - "NETHERITE_HELMET"
+        - "NETHERITE_CHESTPLATE"
+        - "NETHERITE_LEGGINGS"
+        - "NETHERITE_BOOTS"

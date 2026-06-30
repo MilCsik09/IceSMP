@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -22,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * reward. Courses persist in parkour.yml. (The obstacles themselves are built
  * in-world — this is the tracking/reward framework.)
  */
-public final class ParkourManager {
+public final class ParkourManager implements PersistentStore {
 
     /** A mutable course definition (start may be set before finish). */
     public static final class Course {
@@ -86,7 +90,7 @@ public final class ParkourManager {
                 yaml.set(base + ".radius", course.radius);
                 yaml.set(base + ".reward", course.reward);
             }
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save parkour.yml: " + exception.getMessage());
         }

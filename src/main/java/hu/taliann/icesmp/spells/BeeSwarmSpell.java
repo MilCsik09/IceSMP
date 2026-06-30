@@ -23,10 +23,15 @@ public final class BeeSwarmSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
-            return;
+            return false;
         }
 
         for (int index = 0; index < BEE_COUNT; index++) {
@@ -38,5 +43,6 @@ public final class BeeSwarmSpell extends BaseSpell {
 
         player.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0.0D, 1.0D, 0.0D), 15, 0.4D, 0.5D, 0.4D, 0.05D);
         player.playSound(player.getLocation(), Sound.ENTITY_BEE_LOOP_AGGRESSIVE, 1.0F, 1.0F);
+        return true;
     }
 }

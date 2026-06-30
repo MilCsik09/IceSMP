@@ -131,7 +131,9 @@ public final class RaidManager {
      *
      * @param killerFaction the faction scoring the kill
      */
-    public void recordKill(final FactionType killerFaction) {
+    public synchronized void recordKill(final FactionType killerFaction) {
+        // synchronized with endRaid(): a kill is either fully counted before the raid closes
+        // or ignored after, never merged into 'kills' after the payout snapshot was taken.
         final ActiveRaid raid = activeRaid;
         if (raid == null || killerFaction == null) {
             return;

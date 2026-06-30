@@ -5,7 +5,9 @@ import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -154,6 +156,36 @@ public final class PetManager {
         return removed;
     }
 
+    /**
+     * Handles a pet's death: clears the combat state for that pet, and if it was the
+     * owner's active companion, clears the stored reference and notifies them. The
+     * owner-side PDC/message runs on the owner's region thread (Folia-safe); call this
+     * from an EntityDeathEvent for minion-tagged mobs.
+     */
+    public void handlePetDeath(final LivingEntity dead) {
+        final UUID ownerId = minionManager.getOwner(dead);
+        if (ownerId == null) {
+            return;
+        }
+        final UUID deadId = dead.getUniqueId();
+        combatTargets.remove(ownerId);
+        attackReady.remove(deadId);
+
+        final Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null) {
+            return; // offline: the stale entityKey resolves to a dead UUID harmlessly on next summon
+        }
+        owner.getScheduler().run(plugin, task -> {
+            final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
+            if (deadId.toString().equals(raw)) {
+                owner.getPersistentDataContainer().remove(entityKey);
+                owner.sendMessage(messageManager.getMessage(
+                        "pet-died",
+                        "<gray>A társad elesett a harcban. <dark_gray>(/pet summon az új idézéshez)</dark_gray></gray>"));
+            }
+        }, null);
+    }
+
     public boolean setName(final Player player, final String name) {
         if (name == null || name.isBlank() || name.length() > 24) {
             return false;
@@ -192,7 +224,7 @@ public final class PetManager {
             player.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
             final Mob pet = activePet(player);
             if (pet != null) {
-                applyBuffs(pet, level);
+                applyBuffs(pet, level, false);
                 updateName(pet, player);
             }
             player.sendMessage(messageManager.getMessage(
@@ -209,6 +241,11 @@ public final class PetManager {
      */
     public void setCombatTarget(final Player owner, final LivingEntity target) {
         if (owner == null || target == null || target.isDead() || !target.isValid()) {
+            return;
+        }
+        // Cheap early-out: this fires on every PvE/PvP damage event, but only the two pet-owning
+        // specs can have a companion — skip the PDC/entity lookup for everyone else.
+        if (!canOwnPet(owner)) {
             return;
         }
         if (target.getUniqueId().equals(owner.getUniqueId()) || minionManager.isOwnedBy(target, owner.getUniqueId())) {
@@ -229,38 +266,48 @@ public final class PetManager {
      */
     public void tick() {
         final double followSq = Math.pow(Math.max(4.0D, configManager.getDouble("pets.companion.follow-distance", 16.0D)), 2);
+        final double followStartSq = Math.pow(Math.max(2.0D, configManager.getDouble("pets.companion.follow-start-distance", 5.0D)), 2);
         final double reach = Math.max(1.5D, configManager.getDouble("pets.companion.attack-reach", 2.6D));
         final double aggro = Math.max(0.0D, configManager.getDouble("pets.companion.aggro-range", 10.0D));
         final double leash = Math.max(8.0D, configManager.getDouble("pets.companion.leash-range", 24.0D));
         final double chaseSpeed = Math.max(0.1D, configManager.getDouble("pets.companion.chase-speed", 1.3D));
         final long cooldownMs = Math.max(200L, configManager.getInt("pets.companion.attack-cooldown-ticks", 16) * 50L);
 
+        // Folia: read each owner's PDC + location on the OWNER's region thread, snapshot it,
+        // then hop to the PET's region thread for all pet mutations (the pet may be elsewhere).
         for (final Player owner : Bukkit.getOnlinePlayers()) {
-            final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
-            if (raw == null) {
-                continue;
-            }
-            final Entity entity;
-            try {
-                entity = Bukkit.getEntity(UUID.fromString(raw));
-            } catch (final IllegalArgumentException exception) {
-                continue;
-            }
-            if (!(entity instanceof Mob pet) || !pet.isValid()) {
-                continue;
-            }
-            final UUID ownerId = owner.getUniqueId();
-            final int level = getLevel(owner);
-            pet.getScheduler().run(plugin, task ->
-                    runPetTick(pet, ownerId, level, followSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+            owner.getScheduler().run(plugin, ownerTask ->
+                    tickOwner(owner, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
         }
     }
 
-    private void runPetTick(final Mob pet, final UUID ownerId, final int level, final double followSq,
-                            final double reach, final double aggro, final double leash, final double chaseSpeed,
-                            final long cooldownMs) {
-        final Player owner = Bukkit.getPlayer(ownerId);
-        if (owner == null || !owner.isOnline()) {
+    private void tickOwner(final Player owner, final double followSq, final double followStartSq, final double reach,
+                           final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
+        final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
+        if (raw == null) {
+            return;
+        }
+        final Entity entity;
+        try {
+            entity = Bukkit.getEntity(UUID.fromString(raw));
+        } catch (final IllegalArgumentException exception) {
+            return;
+        }
+        if (!(entity instanceof Mob pet)) {
+            return;
+        }
+        final UUID ownerId = owner.getUniqueId();
+        final int level = getLevel(owner);
+        final Location ownerLoc = owner.getLocation();
+        final World ownerWorld = owner.getWorld();
+        pet.getScheduler().run(plugin, petTask ->
+                runPetTick(pet, ownerId, ownerLoc, ownerWorld, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+    }
+
+    private void runPetTick(final Mob pet, final UUID ownerId, final Location ownerLoc, final World ownerWorld,
+                            final int level, final double followSq, final double followStartSq, final double reach,
+                            final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
+        if (!pet.isValid()) {
             return;
         }
 
@@ -272,9 +319,9 @@ public final class PetManager {
 
         LivingEntity target = null;
         if (stance == MinionManager.Stance.ACTIVE) {
-            target = resolveTarget(owner, leash);
+            target = resolveTarget(ownerId, ownerWorld, ownerLoc, leash);
             if (target == null) {
-                target = acquireNearbyThreat(pet, owner, aggro);
+                target = acquireNearbyThreat(pet, ownerId, aggro);
                 if (target != null) {
                     combatTargets.put(ownerId, target.getUniqueId());
                 }
@@ -288,31 +335,46 @@ public final class PetManager {
             return;
         }
 
-        // No target → stay near the owner.
-        if (!owner.getWorld().equals(pet.getWorld()) || pet.getLocation().distanceSquared(owner.getLocation()) > followSq) {
-            pet.teleportAsync(owner.getLocation());
+        // No target → follow the owner. Every pet trails its owner by default: it walks toward
+        // them once it lags past the follow-start radius, and teleports to catch up only when it
+        // falls too far behind or ends up in another world.
+        followOwner(pet, ownerLoc, ownerWorld, followSq, followStartSq, chaseSpeed);
+    }
+
+    /** Keeps an idle pet near its owner (snapshot location): walk to trail, teleport to catch up. */
+    private void followOwner(final Mob pet, final Location ownerLoc, final World ownerWorld, final double followSq,
+                             final double followStartSq, final double chaseSpeed) {
+        if (!ownerWorld.equals(pet.getWorld())) {
+            pet.teleportAsync(ownerLoc);
+            return;
+        }
+        final double distSq = pet.getLocation().distanceSquared(ownerLoc);
+        if (distSq > followSq) {
+            pet.teleportAsync(ownerLoc);
+        } else if (distSq > followStartSq) {
+            pet.getPathfinder().moveTo(ownerLoc, chaseSpeed);
         }
     }
 
     /** Validates the stored combat target (alive, same world, within the owner's leash). */
-    private LivingEntity resolveTarget(final Player owner, final double leash) {
-        final UUID id = combatTargets.get(owner.getUniqueId());
+    private LivingEntity resolveTarget(final UUID ownerId, final World ownerWorld, final Location ownerLoc, final double leash) {
+        final UUID id = combatTargets.get(ownerId);
         if (id == null) {
             return null;
         }
         final Entity entity = Bukkit.getEntity(id);
         if (!(entity instanceof LivingEntity living) || living.isDead() || !living.isValid()
-                || living.getUniqueId().equals(owner.getUniqueId())
-                || !living.getWorld().equals(owner.getWorld())
-                || living.getLocation().distanceSquared(owner.getLocation()) > leash * leash) {
-            combatTargets.remove(owner.getUniqueId());
+                || living.getUniqueId().equals(ownerId)
+                || !living.getWorld().equals(ownerWorld)
+                || living.getLocation().distanceSquared(ownerLoc) > leash * leash) {
+            combatTargets.remove(ownerId);
             return null;
         }
         return living;
     }
 
     /** Picks the nearest hostile mob around the pet to defend against (excludes allies). */
-    private LivingEntity acquireNearbyThreat(final Mob pet, final Player owner, final double aggro) {
+    private LivingEntity acquireNearbyThreat(final Mob pet, final UUID ownerId, final double aggro) {
         if (aggro <= 0.0D) {
             return null;
         }
@@ -320,7 +382,7 @@ public final class PetManager {
         double bestSq = aggro * aggro;
         for (final Entity nearby : pet.getNearbyEntities(aggro, aggro, aggro)) {
             if (!(nearby instanceof Monster monster) || monster.isDead() || !monster.isValid()
-                    || minionManager.isOwnedBy(monster, owner.getUniqueId())) {
+                    || minionManager.isOwnedBy(monster, ownerId)) {
                 continue;
             }
             final double sq = monster.getLocation().distanceSquared(pet.getLocation());
@@ -381,7 +443,7 @@ public final class PetManager {
         if (mob instanceof AbstractSkeleton skeleton) {
             skeleton.setShouldBurnInDay(false);
         }
-        applyBuffs(mob, getLevel(player));
+        applyBuffs(mob, getLevel(player), true);
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
         player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
@@ -393,7 +455,13 @@ public final class PetManager {
         return base + ((level - 1) * increment);
     }
 
-    private void applyBuffs(final LivingEntity pet, final int level) {
+    /**
+     * (Re)applies the level-based attribute buffs. {@code heal} fully restores the
+     * pet to its new max health — only wanted on summon/adopt. On level-up the cap
+     * grows but current health is NOT topped up, so a kill mid-fight can't instantly
+     * heal a near-dead pet to full.
+     */
+    private void applyBuffs(final LivingEntity pet, final int level, final boolean heal) {
         final double healthPerLevel = Math.max(0.0D, configManager.getDouble("pets.companion.health-per-level", 2.0D));
         final double damagePerLevel = Math.max(0.0D, configManager.getDouble("pets.companion.damage-per-level", 0.5D));
 
@@ -401,9 +469,11 @@ public final class PetManager {
         applyModifier(pet, Attribute.MAX_HEALTH, healthModKey, level * healthPerLevel);
         applyModifier(pet, Attribute.ATTACK_DAMAGE, damageModKey, level * damagePerLevel);
 
-        final AttributeInstance maxHealth = pet.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            pet.setHealth(maxHealth.getValue());
+        if (heal) {
+            final AttributeInstance maxHealth = pet.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) {
+                pet.setHealth(maxHealth.getValue());
+            }
         }
     }
 

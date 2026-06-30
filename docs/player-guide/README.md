@@ -26,7 +26,7 @@ külön oldala van, hogy könnyen megtaláld, amit keresel.
 1. [Kezdő lépések](01-kezdes.md) — mit csinálj az első 10 percben
 2. [Frakciók](02-frakciok.md) — a négy oldal és a bónuszaik
 3. [Valuta és gazdaság](03-valuta-gazdasag.md) — pénz, bank, piac, árfolyam
-4. [Kasztok](04-kasztok.md) — a négy hős-típus, szintezés, Katalizátor
+4. [Kasztok](04-kasztok.md) — a 13 hős-típus, szintezés, Katalizátor, Erő-csík
 5. [Képességek (varázslatok)](05-kepessegek.md) — **minden** spell: mit tud, mennyibe kerül
 6. [Specializációk](06-specializaciok.md) — a kaszt „kiteljesedése" 25. szinttől
 7. [Talentek (talent-fa)](07-talentek.md) — passzív erősítések pontokból

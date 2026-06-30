@@ -16,7 +16,31 @@ public enum SpecializationType {
     SHARPSHOOTER("sharpshooter", "<yellow>Mesterlövész</yellow>", JobType.ARCHER, null, false),
     BEAST_MASTER("beast_master", "<dark_green>Vadmester</dark_green>", JobType.ARCHER, null, false),
     POISONER("poisoner", "<green>Méregkeverő</green>", JobType.ASSASSIN, null, false),
-    PHANTOM("phantom", "<dark_aqua>Fantom</dark_aqua>", JobType.ASSASSIN, null, false);
+    PHANTOM("phantom", "<dark_aqua>Fantom</dark_aqua>", JobType.ASSASSIN, null, false),
+    FERAL("feral", "<dark_green>Vadőr</dark_green>", JobType.DRUID, null, false),
+    LUNAR("lunar", "<blue>Holdjós</blue>", JobType.DRUID, null, false),
+    HOLY("holy", "<yellow>Szentlélek</yellow>", JobType.PALADIN, null, false),
+    RETRIBUTION("retribution", "<gold>Megtorló</gold>", JobType.PALADIN, null, false),
+    BLOOD("blood", "<dark_red>Vérlovag</dark_red>", JobType.DEATH_KNIGHT, null, false),
+    FROST("frost", "<aqua>Fagylovag</aqua>", JobType.DEATH_KNIGHT, null, false),
+    ELEMENTAL("elemental", "<blue>Elemi</blue>", JobType.SHAMAN, null, false),
+    ENHANCEMENT("enhancement", "<gold>Erősítő</gold>", JobType.SHAMAN, null, false),
+    WINDWALKER("windwalker", "<aqua>Szélfutó</aqua>", JobType.MONK, null, false),
+    BREWMASTER("brewmaster", "<gold>Sörfőző</gold>", JobType.MONK, null, false),
+    DISCIPLINE("discipline", "<white>Fegyelem</white>", JobType.PRIEST, null, false),
+    SHADOW("shadow", "<dark_purple>Árnyék</dark_purple>", JobType.PRIEST, null, false),
+    AFFLICTION("affliction", "<dark_green>Átok</dark_green>", JobType.WARLOCK, null, false),
+    DESTRUCTION("destruction", "<red>Pusztítás</red>", JobType.WARLOCK, null, false),
+    HAVOC("havoc", "<light_purple>Tombolás</light_purple>", JobType.DEMON_HUNTER, null, false),
+    VENGEANCE("vengeance", "<dark_red>Bosszú</dark_red>", JobType.DEMON_HUNTER, null, false),
+    DEVASTATION("devastation", "<gold>Perzselés</gold>", JobType.EVOKER, null, false),
+    PRESERVATION("preservation", "<aqua>Megőrzés</aqua>", JobType.EVOKER, null, false),
+    // Hiányzó-szerep specek (a fantáziából hiányzó szerep): tank/heal néhány kasztnak.
+    IRONBARK("ironbark", "<dark_green>Védelmező</dark_green>", JobType.DRUID, null, false),
+    RESTORATION("restoration", "<green>Helyreállító</green>", JobType.DRUID, null, false),
+    TIDAL("tidal", "<aqua>Hullámhívó</aqua>", JobType.SHAMAN, null, false),
+    MISTWEAVER("mistweaver", "<aqua>Ködszövő</aqua>", JobType.MONK, null, false),
+    PROTECTION("protection", "<gold>Védő</gold>", JobType.PALADIN, null, false);
 
     private final String id;
     private final Component displayName;

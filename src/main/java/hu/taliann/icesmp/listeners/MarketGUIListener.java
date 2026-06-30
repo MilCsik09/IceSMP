@@ -13,18 +13,22 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 import java.util.UUID;
 
 public final class MarketGUIListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final MarketManager marketManager;
     private final CurrencyManager currencyManager;
     private final MessageManager messageManager;
 
-    public MarketGUIListener(final MarketManager marketManager, final CurrencyManager currencyManager,
+    public MarketGUIListener(final JavaPlugin plugin, final MarketManager marketManager,
+                             final CurrencyManager currencyManager,
                              final MessageManager messageManager) {
+        this.plugin = plugin;
         this.marketManager = marketManager;
         this.currencyManager = currencyManager;
         this.messageManager = messageManager;
@@ -82,11 +86,14 @@ public final class MarketGUIListener implements Listener {
 
         final Player seller = Bukkit.getPlayer(listing.seller());
         if (seller != null) {
-            seller.sendMessage(messageManager.getMessage(
+            // Folia: the seller is a different player (possibly in another region) than the buyer
+            // whose click thread we are on — deliver the notice on the seller's own scheduler.
+            final String buyerName = player.getName();
+            seller.getScheduler().run(plugin, task -> seller.sendMessage(messageManager.getMessage(
                     "market-sold-notice",
                     "&aEladtad egy tárgyadat a piacon &f{buyer}&a részére — a bevétel a bankodba került.",
-                    Map.of("buyer", player.getName())
-            ));
+                    Map.of("buyer", buyerName)
+            )), null);
         }
 
         MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());

@@ -1,6 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -10,8 +13,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * (money sink), and player-to-player trade moves currency supply — feeding
  * the dynamic exchange rates. Listings persist to market.yml.
  */
-public final class MarketManager {
+public final class MarketManager implements PersistentStore {
 
     /** A single market listing. */
     public record Listing(UUID id, UUID seller, String sellerName, double price,
@@ -123,16 +124,8 @@ public final class MarketManager {
             yaml.set(basePath + ".created-at", listing.createdAt());
         }
 
-        // Atomic write (temp + rename) so a crash mid-write can't truncate market.yml.
-        final File tempFile = new File(storageFile.getParentFile(), storageFile.getName() + ".tmp");
         try {
-            yaml.save(tempFile);
-            try {
-                Files.move(tempFile.toPath(), storageFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (final IOException atomicFailure) {
-                Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save market.yml: " + exception.getMessage());
         }

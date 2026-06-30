@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.session.PlayerStateCleanup;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -24,7 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class MetelytepoManager {
+public final class MetelytepoManager implements PlayerStateCleanup {
 
     private static final String RELIC_ID = "metelytepo";
     public static final String ABILITY_JUSTICE = "justice";
@@ -173,6 +175,15 @@ public final class MetelytepoManager {
     }
 
     /**
+     * Atomically starts the Justice cooldown only if it is currently free, returning
+     * whether it was acquired. Used as the single fire-gate so two near-simultaneous
+     * events (e.g. interact + interact-entity) can't both fire within one cooldown.
+     */
+    public boolean tryConsumeJusticeCooldown(final Player player) {
+        return tryStartCooldown(player, ABILITY_JUSTICE, JUSTICE_COOLDOWN_MILLIS);
+    }
+
+    /**
      * Checks if a player is on the Honor Eye ability cooldown.
      *
      * @param player the player to check
@@ -199,6 +210,11 @@ public final class MetelytepoManager {
      */
     public void triggerHonorEyeCooldown(final Player player) {
         startCooldown(player, ABILITY_HONOR_EYE, HONOR_EYE_COOLDOWN_MILLIS);
+    }
+
+    /** Atomic fire-gate for Honor Eye — see {@link #tryConsumeJusticeCooldown(Player)}. */
+    public boolean tryConsumeHonorEyeCooldown(final Player player) {
+        return tryStartCooldown(player, ABILITY_HONOR_EYE, HONOR_EYE_COOLDOWN_MILLIS);
     }
 
     public boolean isProtectedEntityType(final EntityType type) {
@@ -315,20 +331,23 @@ public final class MetelytepoManager {
         target.setAI(false);
 
         // Folia: unfreeze on the target's own entity scheduler instead of a BukkitRunnable.
+        // The map entry is removed in EVERY path (run, invalid, and the retired-callback that
+        // fires when the mob dies/unloads before the delay) so frozen-mob UUIDs never leak.
+        final UUID targetId = target.getUniqueId();
         target.getScheduler().runDelayed(plugin, task -> {
+            final Double original = frozenSpeed.remove(targetId);
             if (!target.isValid()) {
                 return;
             }
 
             target.setAI(true);
-            final Double original = frozenSpeed.remove(target.getUniqueId());
             if (original != null) {
                 final AttributeInstance speed = target.getAttribute(Attribute.MOVEMENT_SPEED);
                 if (speed != null) {
                     speed.setBaseValue(original);
                 }
             }
-        }, null, Math.max(1L, ticks));
+        }, () -> frozenSpeed.remove(targetId), Math.max(1L, ticks));
     }
 
     public void markAbilityDamageBypass(final LivingEntity target, final long millis) {
@@ -367,6 +386,28 @@ public final class MetelytepoManager {
     private void startCooldown(final Player player, final String ability, final long cooldownMillis) {
         cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())
                 .put(ability, System.currentTimeMillis() + cooldownMillis);
+    }
+
+    /**
+     * Atomically acquires a cooldown if it is free. The whole check-and-set runs inside
+     * {@link ConcurrentHashMap#compute}, so concurrent callers are serialized and only one
+     * can acquire it within a window.
+     *
+     * @return true if the cooldown was free and is now started
+     */
+    private boolean tryStartCooldown(final Player player, final String ability, final long cooldownMillis) {
+        final long now = System.currentTimeMillis();
+        final Map<String, Long> playerCooldowns =
+                cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>());
+        final boolean[] acquired = {false};
+        playerCooldowns.compute(ability, (key, existing) -> {
+            if (existing != null && existing > now) {
+                return existing; // still on cooldown — leave it
+            }
+            acquired[0] = true;
+            return now + cooldownMillis;
+        });
+        return acquired[0];
     }
 
     private long remainingMillis(final Long expiresAt) {

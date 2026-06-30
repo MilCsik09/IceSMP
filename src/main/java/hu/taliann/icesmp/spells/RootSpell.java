@@ -8,8 +8,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.UUID;
-
 public final class RootSpell extends BaseSpell {
 
     public RootSpell(final MessageManager messageManager) {
@@ -24,12 +22,10 @@ public final class RootSpell extends BaseSpell {
                 continue;
             }
             living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 80, 10, false, true, true));
-            living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 250, false, true, true));
+            // JUMP_BOOST 128 is the vanilla "no jump" level — it pins the target in place.
+            // (A high positive amplifier such as 250 would instead launch it skyward to its death.)
+            living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 128, false, true, true));
         }
-    }
-
-    public static void clearPlayerState(final UUID playerId) {
-        // Root no longer stores persistent per-player movement state.
     }
 }
 

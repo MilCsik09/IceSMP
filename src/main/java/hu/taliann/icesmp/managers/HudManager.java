@@ -16,6 +16,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HudManager {
 
-    private static final int LINES = 6;
+    private static final int LINES = 7;
     private static final String OBJECTIVE = "icesmp_hud";
 
     private final JavaPlugin plugin;
@@ -41,6 +42,7 @@ public final class HudManager {
     private final RaidManager raidManager;
     private final BloodMoonManager bloodMoonManager;
     private final WorldBossManager worldBossManager;
+    private final ResourceManager resourceManager;
 
     private final BossBar raidBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
     private final BossBar bloodMoonBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
@@ -50,7 +52,8 @@ public final class HudManager {
 
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
-                      final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager) {
+                      final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
+                      final ResourceManager resourceManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.factionManager = factionManager;
@@ -59,6 +62,7 @@ public final class HudManager {
         this.raidManager = raidManager;
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
+        this.resourceManager = resourceManager;
     }
 
     public boolean isEnabled() {
@@ -168,18 +172,25 @@ public final class HudManager {
         final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
         final JobType job = jobManager.getPrimaryJob(player);
 
-        return List.of(
-                label("Frakció", faction == null
-                        ? Component.text("nincs", NamedTextColor.GRAY)
-                        : Component.text(faction.getDisplayName(), factionColor(faction))),
-                label("Valuta", Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD)),
-                label("Kaszt", job == null
-                        ? Component.text("nincs", NamedTextColor.GRAY)
-                        : job.getDisplayName().append(Component.text(" Lvl " + jobManager.getPrimaryLevel(player), NamedTextColor.WHITE))),
-                Component.text(" ", NamedTextColor.DARK_GRAY),
-                label("Esemény", eventLabel()),
-                Component.text("play.icesmp", NamedTextColor.DARK_GRAY)
-        );
+        final List<Component> lines = new ArrayList<>();
+        lines.add(label("Frakció", faction == null
+                ? Component.text("nincs", NamedTextColor.GRAY)
+                : Component.text(faction.getDisplayName(), factionColor(faction))));
+        lines.add(label("Valuta", Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD)));
+        lines.add(label("Kaszt", job == null
+                ? Component.text("nincs", NamedTextColor.GRAY)
+                : job.getDisplayName().append(Component.text(" Lvl " + jobManager.getPrimaryLevel(player), NamedTextColor.WHITE))));
+        // Per-class power resource bar (only with a class; never a separate boss bar).
+        if (job != null) {
+            final Component resourceLine = resourceManager.hudLine(player);
+            if (resourceLine != null) {
+                lines.add(resourceLine);
+            }
+        }
+        lines.add(Component.text(" ", NamedTextColor.DARK_GRAY));
+        lines.add(label("Esemény", eventLabel()));
+        lines.add(Component.text("play.icesmp", NamedTextColor.DARK_GRAY));
+        return lines;
     }
 
     private Component eventLabel() {

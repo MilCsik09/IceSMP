@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.Map;
@@ -16,12 +17,15 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
 
     private static final String PERMISSION = "icesmp.job.admin";
 
+    private final JavaPlugin plugin;
     private final JobManager jobManager;
     private final CatalystItemFactory catalystItemFactory;
     private final MessageManager messageManager;
 
-    public JobGiveCatalystSubcommand(final JobManager jobManager, final CatalystItemFactory catalystItemFactory,
+    public JobGiveCatalystSubcommand(final JavaPlugin plugin, final JobManager jobManager,
+                                     final CatalystItemFactory catalystItemFactory,
                                      final MessageManager messageManager) {
+        this.plugin = plugin;
         this.jobManager = jobManager;
         this.catalystItemFactory = catalystItemFactory;
         this.messageManager = messageManager;
@@ -60,29 +64,34 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
             return true;
         }
 
-        final JobType primaryJob = jobManager.getPrimaryJob(target);
-        if (primaryJob == null) {
-            sender.sendMessage(messageManager.get(
-                    "messages.job-givecatalyst-no-class",
-                    "&cA célpontnak nincs elsődleges kasztja, így nincs katalizátora sem."
+        // Folia: the target may be in a different region than the admin running the command,
+        // so all target reads/mutations (PDC job lookup, inventory, world drop) run on the
+        // target's own region thread. sender.sendMessage is safe from there.
+        target.getScheduler().run(plugin, task -> {
+            final JobType primaryJob = jobManager.getPrimaryJob(target);
+            if (primaryJob == null) {
+                sender.sendMessage(messageManager.get(
+                        "messages.job-givecatalyst-no-class",
+                        "&cA célpontnak nincs elsődleges kasztja, így nincs katalizátora sem."
+                ));
+                return;
+            }
+
+            final ItemStack catalyst = catalystItemFactory.createCatalyst(primaryJob);
+            final Map<Integer, ItemStack> leftover = target.getInventory().addItem(catalyst);
+            if (!leftover.isEmpty()) {
+                leftover.values().forEach(item -> target.getWorld().dropItemNaturally(target.getLocation(), item));
+            }
+
+            sender.sendMessage(messageManager.getMessage(
+                    "job-givecatalyst-success",
+                    "&aKatalizátor átadva: &e{catalyst} &7-> &f{player}",
+                    Map.of(
+                            "catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob),
+                            "player", target.getName()
+                    )
             ));
-            return true;
-        }
-
-        final ItemStack catalyst = catalystItemFactory.createCatalyst(primaryJob);
-        final Map<Integer, ItemStack> leftover = target.getInventory().addItem(catalyst);
-        if (!leftover.isEmpty()) {
-            leftover.values().forEach(item -> target.getWorld().dropItemNaturally(target.getLocation(), item));
-        }
-
-        sender.sendMessage(messageManager.getMessage(
-                "job-givecatalyst-success",
-                "&aKatalizátor átadva: &e{catalyst} &7-> &f{player}",
-                Map.of(
-                        "catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob),
-                        "player", target.getName()
-                )
-        ));
+        }, null);
         return true;
     }
 

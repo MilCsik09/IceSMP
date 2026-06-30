@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -19,6 +23,7 @@ import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -34,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>Folia note: the world-events tick runs on the global region scheduler, so
  * every entity access hops onto the board's own region thread first.
  */
-public final class ExchangeBoardManager {
+public final class ExchangeBoardManager implements PersistentStore {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
@@ -93,7 +98,7 @@ public final class ExchangeBoardManager {
             for (final Board board : boards) {
                 yaml.set("boards." + board.entityId() + ".location", board.location());
             }
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save exchange-boards.yml: " + exception.getMessage());
         }

@@ -1,7 +1,10 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -11,8 +14,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * — the tax doubles as the economy's money sink, feeding the dynamic exchange
  * rate model by draining circulating supply.
  */
-public final class FactionTreasuryManager {
+public final class FactionTreasuryManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -98,17 +99,8 @@ public final class FactionTreasuryManager {
             yaml.set("tax-rates." + entry.getKey().name(), entry.getValue());
         }
 
-        // Atomic write (temp + rename): the global tax task and region-thread commands
-        // both persist here, so a plain in-place save could be truncated by a concurrent write.
-        final File tempFile = new File(storageFile.getParentFile(), storageFile.getName() + ".tmp");
         try {
-            yaml.save(tempFile);
-            try {
-                Files.move(tempFile.toPath(), storageFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (final IOException atomicFailure) {
-                Files.move(tempFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save faction treasury: " + exception.getMessage());
         }

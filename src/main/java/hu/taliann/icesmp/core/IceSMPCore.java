@@ -21,6 +21,7 @@ import hu.taliann.icesmp.commands.RelicCommand;
 import hu.taliann.icesmp.commands.SinnerCommand;
 import hu.taliann.icesmp.commands.SoulCommand;
 import hu.taliann.icesmp.commands.SpellCommand;
+import hu.taliann.icesmp.commands.SpellbookCommand;
 import hu.taliann.icesmp.commands.SpecCommand;
 import hu.taliann.icesmp.commands.TalentCommand;
 import hu.taliann.icesmp.commands.TerritoryCommand;
@@ -69,6 +70,7 @@ import hu.taliann.icesmp.listeners.SoulstoneListener;
 import hu.taliann.icesmp.listeners.WorldBossListener;
 import hu.taliann.icesmp.listeners.SinListener;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
+import hu.taliann.icesmp.listeners.SpellbookListener;
 import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.listeners.TalentAttributeListener;
@@ -158,12 +160,14 @@ public final class IceSMPCore {
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final CatalystItemFactory catalystItemFactory;
+    private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
     private final AbilityCatalystListener abilityCatalystListener;
     private final SpellMasteryManager spellMasteryManager;
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
     private final RelicManager relicManager;
     private final MetelytepoManager metelytepoManager;
     private final MinionManager minionManager;
+    private final hu.taliann.icesmp.managers.TotemManager totemManager;
     private final MobScalingManager mobScalingManager;
     private final InvasionManager invasionManager;
     private final CaptureItemFactory captureItemFactory;
@@ -195,6 +199,7 @@ public final class IceSMPCore {
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
     private final HudManager hudManager;
+    private final List<hu.taliann.icesmp.storage.PersistentStore> persistentStores;
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
@@ -219,10 +224,10 @@ public final class IceSMPCore {
         this.catalystItemFactory = new CatalystItemFactory(plugin);
         this.captureItemFactory = new CaptureItemFactory(plugin);
         this.spellMasteryManager = new SpellMasteryManager(plugin, configManager, currencyManager, factionManager);
-        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry, catalystItemFactory, configManager, spellMasteryManager, messageManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.metelytepoManager = new MetelytepoManager(plugin, configManager, messageManager, factionManager);
         this.minionManager = new MinionManager(plugin);
+        this.totemManager = new hu.taliann.icesmp.managers.TotemManager(plugin, configManager);
         this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
@@ -243,6 +248,9 @@ public final class IceSMPCore {
                 currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
+        this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
+        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
+                catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager, messageManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
@@ -257,13 +265,18 @@ public final class IceSMPCore {
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
-                professionManager, factionManager, statsManager, messageManager);
+                professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager,
                 statsManager, achievementManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
-                raidManager, bloodMoonManager, worldBossManager);
+                raidManager, bloodMoonManager, worldBossManager, resourceManager);
+        // One registered list of YAML-persistent managers: the core loads them all on enable and
+        // saves them all on disable (replacing two hand-maintained call lists).
+        this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
+                factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
+                exchangeBoardManager, statsManager, parkourManager);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -275,9 +288,20 @@ public final class IceSMPCore {
                 factionManager,
                 metelytepoManager,
                 relicManager,
-                craftingRestrictionManager
+                craftingRestrictionManager,
+                resourceManager,
+                spellRegistry
         );
 
+        registerSpells();
+    }
+
+    /**
+     * Registers every bespoke spell plus the declaratively-configured expansion and
+     * summon spell pools. Extracted from the constructor to keep the wiring readable;
+     * uses only already-constructed fields (spellRegistry, minionManager, talentManager…).
+     */
+    private void registerSpells() {
         spellRegistry.register(new DoubleJumpSpell(messageManager));
         spellRegistry.register(new FriendshipSpell(messageManager));
         spellRegistry.register(new FeatherfootSpell(messageManager));
@@ -303,6 +327,17 @@ public final class IceSMPCore {
         spellRegistry.register(new VenomStrikeSpell(messageManager));
         SpellCatalog.registerExpansionSpells(spellRegistry, messageManager);
         SpellCatalog.registerSummonSpells(spellRegistry, messageManager, plugin, minionManager, configManager, talentManager);
+
+        // Persistent Shaman totems (bespoke — need the TotemManager). Registered after the catalog so
+        // they own their ids (the data-driven instant-aura versions were removed from SpellCatalog).
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.HEALING_STREAM, 90, hu.taliann.icesmp.spells.SpellCostType.HUNGER, 5));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.SEARING, 75, hu.taliann.icesmp.spells.SpellCostType.XP, 50));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.WINDFURY, 90, hu.taliann.icesmp.spells.SpellCostType.HUNGER, 5));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,
+                hu.taliann.icesmp.managers.TotemManager.TotemType.EARTHBIND, 75, hu.taliann.icesmp.spells.SpellCostType.HUNGER, 5));
     }
 
     /**
@@ -311,20 +346,10 @@ public final class IceSMPCore {
     public void enable() {
         configManager.load();
         messageManager.reload();
-        currencyManager.load();
-        factionManager.load();
-        relicManager.load();
+        // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();
         craftingRestrictionManager.load();
-        territoryManager.load();
-        factionTreasuryManager.load();
-        kingManager.load();
-        economyEventManager.load();
-        marketManager.load();
-        seasonManager.load();
-        exchangeBoardManager.load();
-        statsManager.load();
-        parkourManager.load();
+        persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::load);
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
@@ -364,25 +389,21 @@ public final class IceSMPCore {
             petTask.cancel();
             petTask = null;
         }
+        worldBossManager.shutdown();
+        invasionManager.shutdown();
+        totemManager.shutdown();
 
+        // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
+        // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
+        ProfileGUI.closeAll();
+        persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::save);
+
+        // Then clean up live player session state (HUD teams, restored armor, caches).
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             hudManager.cleanup(onlinePlayer);
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
         }
 
-        ProfileGUI.closeAll();
-        currencyManager.save();
-        factionManager.save();
-        relicManager.save();
-        territoryManager.save();
-        factionTreasuryManager.save();
-        kingManager.save();
-        economyEventManager.save();
-        marketManager.save();
-        seasonManager.save();
-        exchangeBoardManager.save();
-        statsManager.save();
-        parkourManager.save();
         plugin.getLogger().info("IceSMP core disabled.");
     }
 
@@ -482,7 +503,7 @@ public final class IceSMPCore {
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, kingManager, raidManager, messageManager));
-        plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
+        plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
         plugin.registerCommand("leaderboard", "Ranglisták (szint, vagyon, raid-kill)", List.of("lb", "top", "rangsor"), new LeaderboardCommand(commandMenuContext, messageManager));
@@ -501,6 +522,7 @@ public final class IceSMPCore {
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown-csökkentés valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
+        plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
         plugin.registerCommand("exchangeboard", "Árfolyamtábla admin", List.of("ratesboard", "arfolyamtabla"), new ExchangeBoardCommand(exchangeBoardManager, messageManager));
     }
 
@@ -516,43 +538,44 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new HudListener(hudManager), plugin);
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new MarketGUIListener(marketManager, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
+        pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
-        pluginManager.registerEvents(new ClassXpListener(jobManager, mobScalingManager, configManager, talentManager), plugin);
+        pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
-        pluginManager.registerEvents(new TalentAttributeListener(talentManager), plugin);
+        pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
-        pluginManager.registerEvents(new QuestProgressListener(questManager, mobScalingManager), plugin);
+        pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
-        pluginManager.registerEvents(new PetXpListener(petManager, configManager), plugin);
+        pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new PetCombatListener(petManager), plugin);
-        pluginManager.registerEvents(new DailyQuestListener(dailyQuestManager), plugin);
+        pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
-        pluginManager.registerEvents(new SinListener(metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SinListener(plugin, metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
-        pluginManager.registerEvents(new SiegeWeaponListener(siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new SoulShardListener(soulShardManager, specializationManager, configManager), plugin);
+        pluginManager.registerEvents(new SiegeWeaponListener(plugin, siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
         pluginManager.registerEvents(new RitualListener(ritualManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicItemRefreshListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicTriggerListener(relicManager), plugin);
-            pluginManager.registerEvents(new MetelytepoRelicListener(metelytepoManager, messageManager), plugin);
+            pluginManager.registerEvents(new MetelytepoRelicListener(plugin, metelytepoManager, messageManager), plugin);
             pluginManager.registerEvents(new ElytraRelicListener(relicManager, factionManager, messageManager), plugin);
-            pluginManager.registerEvents(new RelicPvpTransferListener(relicManager, configManager, messageManager), plugin);
+            pluginManager.registerEvents(new RelicPvpTransferListener(plugin, relicManager, configManager, messageManager), plugin);
         }
     }
 }

@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -18,7 +22,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * State survives restarts via economy-event.yml; the tick runs on the global
  * region scheduler.
  */
-public final class EconomyEventManager {
+public final class EconomyEventManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -67,7 +71,7 @@ public final class EconomyEventManager {
                 yaml.set("event.ends-at", eventEndsAt);
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save economy-event.yml: " + exception.getMessage());
         }

@@ -12,3 +12,14 @@ folia-supported: true
 
 authors: [ Taliann ]
 
+# Optional integration: ha telepítve van a LibsDisguises, a Druida formák vizuálisan
+# is átalakítják a játékost (mob-disguise). Soft-depend (required: false): nélküle is
+# fut, a forma-rendszer ilyenkor csak statisztikát vált. join-classpath: a reflexiós
+# híd (DruidDisguise) így éri el a LibsDisguises osztályait futásidőben.
+dependencies:
+  server:
+    LibsDisguises:
+      load: BEFORE
+      required: false
+      join-classpath: true
+

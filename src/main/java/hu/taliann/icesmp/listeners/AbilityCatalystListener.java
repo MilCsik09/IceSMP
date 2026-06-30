@@ -1,8 +1,11 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.items.CatalystItemFactory;
+import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
@@ -37,13 +40,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * class-specific sound. Owns the cast pipeline (cost check, cooldowns with PDC
  * persistence for cooldowns >= 60s) and the per-session spell state cleanup.
  */
-public final class AbilityCatalystListener implements Listener {
+public final class AbilityCatalystListener implements Listener, PlayerStateCleanup {
 
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final CatalystItemFactory catalystItemFactory;
     private final ConfigManager configManager;
     private final SpellMasteryManager masteryManager;
+    private final SpecializationManager specializationManager;
+    private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
     private final MessageManager messageManager;
     private final NamespacedKey selectedSpellIndexKey;
     private final Map<String, NamespacedKey> longCooldownKeys = new ConcurrentHashMap<>();
@@ -57,12 +62,16 @@ public final class AbilityCatalystListener implements Listener {
     public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
                                    final ConfigManager configManager, final SpellMasteryManager masteryManager,
+                                   final SpecializationManager specializationManager,
+                                   final hu.taliann.icesmp.managers.ResourceManager resourceManager,
                                    final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
         this.catalystItemFactory = catalystItemFactory;
         this.configManager = configManager;
         this.masteryManager = masteryManager;
+        this.specializationManager = specializationManager;
+        this.resourceManager = resourceManager;
         this.messageManager = messageManager;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
     }
@@ -87,6 +96,12 @@ public final class AbilityCatalystListener implements Listener {
         // Block vanilla item/block behavior (e.g. the goat horn blast) but keep event flow for reliable cast handling.
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
+
+        // Sneak + right-click opens the spellbook (browse / pick a spell) instead of casting.
+        if (player.isSneaking()) {
+            openSpellbook(player);
+            return;
+        }
 
         final long now = System.currentTimeMillis();
         final long lastCastInteract = castDebounce.getOrDefault(player.getUniqueId(), 0L);
@@ -145,12 +160,13 @@ public final class AbilityCatalystListener implements Listener {
         final String mastery = rank > 0 ? " <aqua>★" + rank + "</aqua>" : "";
         player.sendActionBar(messageManager.getMessage(
                 "catalyst.current-spell",
-                "<gray>Aktuális képesség: <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray></gray>",
+                "<gray>[{position}] <gold>{spell}</gold>{mastery} <dark_gray>({cost} {resource})</dark_gray> <dark_gray>— /spellbook</dark_gray></gray>",
                 Map.of(
                         "spell", selected.getName(),
                         "mastery", mastery,
-                        "cost", String.valueOf(selected.getCostAmount()),
-                        "resource", resolveResourceName(selected)
+                        "cost", String.valueOf(displayedCost(selected)),
+                        "resource", resolveResourceName(player, selected),
+                        "position", (nextIndex + 1) + "/" + unlocked.size()
                 )
         ));
         catalystItemFactory.playCycleSound(player, jobManager.getPrimaryJob(player));
@@ -186,24 +202,39 @@ public final class AbilityCatalystListener implements Listener {
             return;
         }
 
-        if (!selected.hasRequiredCost(player)) {
+        final boolean useResource = resourceManager.usesResource(selected);
+        final boolean canAfford = useResource ? resourceManager.canAfford(player, selected) : selected.hasRequiredCost(player);
+        if (!canAfford) {
             player.sendActionBar(messageManager.getMessage(
                     "catalyst.no-cost",
                     "<red>Nincs elég {resource}! Szükséges: {amount}</red>",
                     Map.of(
-                            "resource", resolveResourceName(selected),
-                            "amount", String.valueOf(selected.getCostAmount())
+                            "resource", resolveResourceName(player, selected),
+                            "amount", String.valueOf(displayedCost(selected))
                     )
             ));
             return;
         }
 
-        selected.consumeCost(player);
-        selected.execute(player);
+        if (useResource) {
+            resourceManager.consume(player, selected);
+        } else {
+            selected.consumeCost(player);
+        }
+        if (!selected.executeSpell(player)) {
+            // No effect fired (no target, no companions, …) — refund the cost and skip the
+            // cooldown so a missed cast costs the player nothing.
+            if (useResource) {
+                resourceManager.refund(player, selected);
+            } else {
+                selected.refundCost(player);
+            }
+            return;
+        }
 
-        // Combo: a matching pair within the window flows faster (cooldown refund) + flair.
+        // A combo (configured spell pair cast in quick succession) flows faster (cooldown refund) + flair.
         final boolean combo = isComboMatch(player, selected.getId(), now);
-        putCooldown(player, selected, combo ? now - comboRefundMillis(selected) : now);
+        putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
         playCastFlourish(player, combo);
         if (combo) {
             player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
@@ -243,10 +274,19 @@ public final class AbilityCatalystListener implements Listener {
         return false;
     }
 
-    private long comboRefundMillis(final Spell spell) {
-        final double percent = Math.max(0.0D, Math.min(100.0D,
+    private long comboRefundMillis(final Player player, final Spell spell) {
+        // Cap the configured refund at 80% so a combo can never fully erase a cooldown.
+        final double percent = Math.max(0.0D, Math.min(80.0D,
                 configManager.getDouble("spells.combos.bonus-cooldown-refund-percent", 40.0D)));
-        return (long) (Math.max(0, spell.getCooldown()) * 1000L * (percent / 100.0D));
+        final long baseCooldownMs = Math.max(0L, spell.getCooldown()) * 1000L;
+        final long refund = (long) (baseCooldownMs * (percent / 100.0D));
+
+        // Hard floor: even stacked with spell-mastery cooldown reduction, the combo must leave
+        // a minimum residual cooldown (the larger of 1s or 15% of the base cooldown).
+        final long effectiveCooldownMs = (long) (baseCooldownMs * masteryManager.getCooldownMultiplier(player, spell.getId()));
+        final long floorMs = Math.max(1000L, (long) (baseCooldownMs * 0.15D));
+        final long maxRefund = Math.max(0L, effectiveCooldownMs - floorMs);
+        return Math.min(refund, maxRefund);
     }
 
     private void playCastFlourish(final Player player, final boolean combo) {
@@ -255,7 +295,16 @@ public final class AbilityCatalystListener implements Listener {
         player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, combo ? 1.6F : 1.2F);
     }
 
-    private String resolveResourceName(final Spell spell) {
+    /** The cost shown to the player: the class-resource cost for resource spells, else the thematic cost. */
+    private int displayedCost(final Spell spell) {
+        return resourceManager.usesResource(spell) ? spell.getResourceCost() : spell.getCostAmount();
+    }
+
+    /** The resource name shown to the player: the class pool (Mana/Düh…) for resource spells, else the type. */
+    private String resolveResourceName(final Player player, final Spell spell) {
+        if (resourceManager.usesResource(spell)) {
+            return resourceManager.resourceName(player);
+        }
         return switch (spell.getCostType()) {
             case HUNGER -> messageManager.get("system.resources.hunger", "éhség");
             case XP -> messageManager.get("system.resources.xp", "XP");
@@ -300,6 +349,63 @@ public final class AbilityCatalystListener implements Listener {
         return jobManager.getUnlockedSpellIds(player).stream()
                 .filter(spellId -> spellRegistry.getById(spellId) != null)
                 .toList();
+    }
+
+    /** Opens the spellbook GUI so the player can browse and pick a spell. */
+    public void openSpellbook(final Player player) {
+        openSpellbook(player, 0);
+    }
+
+    /** Opens the spellbook GUI at the given page. */
+    public void openSpellbook(final Player player, final int page) {
+        SpellbookGUI.open(player, this, jobManager, specializationManager, spellRegistry,
+                masteryManager, configManager, messageManager, resourceManager, page);
+    }
+
+    /** The player's currently unlocked, castable spell ids, in selection order. */
+    public List<String> getUnlockedSpellIds(final Player player) {
+        return resolveUnlockedSpellIds(player);
+    }
+
+    /** The id of the spell currently selected on the catalyst, or null if none. */
+    public String getSelectedSpellId(final Player player) {
+        final List<String> unlocked = resolveUnlockedSpellIds(player);
+        if (unlocked.isEmpty()) {
+            return null;
+        }
+        int index = player.getPersistentDataContainer().getOrDefault(selectedSpellIndexKey, PersistentDataType.INTEGER, 0);
+        if (index < 0 || index >= unlocked.size()) {
+            index = 0;
+        }
+        return unlocked.get(index);
+    }
+
+    /**
+     * Selects the given spell on the catalyst (by setting the stored index to its
+     * position in the unlocked list).
+     *
+     * @return true if the spell is unlocked and was selected
+     */
+    public boolean selectSpell(final Player player, final String spellId) {
+        if (spellId == null) {
+            return false;
+        }
+        final int index = resolveUnlockedSpellIds(player).indexOf(spellId.toLowerCase(Locale.ROOT));
+        if (index < 0) {
+            return false;
+        }
+        player.getPersistentDataContainer().set(selectedSpellIndexKey, PersistentDataType.INTEGER, index);
+        return true;
+    }
+
+    /** Remaining cooldown in ms for the spell (0 if ready). */
+    public long getRemainingCooldownMs(final Player player, final Spell spell) {
+        return getRemainingCooldown(player, spell, System.currentTimeMillis());
+    }
+
+    /** Mastery rank the player has in the given spell. */
+    public int getMasteryRank(final Player player, final String spellId) {
+        return masteryManager.getRank(player, spellId);
     }
 
     public void cleanup(final UUID playerId) {

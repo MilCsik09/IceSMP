@@ -1,0 +1,82 @@
+# IceSMP üzenetek — faction alrendszer (a MessageManager az összes messages/*.yml-t betölti)
+messages:
+  faction-already-member: '&cMár tagja vagy ennek a frakciónak!'
+  faction-change-success: '&aFrakcióváltás sikeres!'
+  faction-dark-pact-sealed: '&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad.'
+  faction-dark-sinners-only: '&5A Sötét frakcióba csak bűnösök léphetnek be.'
+  faction-donate-success: '&aAdomány elküldve: &f%s %s &7-> a(z) &f%s &7frakció kasszája (új egyenleg: &f%s&7).'
+  faction-donate-usage: '&cHasználat: /faction donate <összeg>'
+  faction-help-donate: '&e/faction donate <összeg> &7- Adomány a frakciókasszába.'
+  faction-help-king: '&e/faction king [vote <játékos>] &7- Uralkodó és királyválasztás.'
+  faction-help-raid: '&e/faction raid <célfrakció> &7- Raid meghirdetése (csak király).'
+  faction-help-treasury: '&e/faction treasury &7- Frakciókassza megtekintése.'
+  faction-joined: '&aCsatlakoztál a következő frakcióhoz: &6%s'
+  faction-king-clear-success: '&aA(z) %s trónja megüresedett.'
+  faction-king-crowned: '<gold>👑 {faction} új uralkodót választott: <white>{king}</white>!</gold>'
+  faction-king-excluded: '&7A(z) %s frakciónak nincs uralkodója.'
+  faction-king-info: '&6%s uralkodója: &f%s'
+  faction-king-none: 'nincs (szavazz: /faction king vote <játékos>)'
+  faction-king-set-success: '&aUralkodó beállítva: &f%s &7-> &e%s'
+  faction-king-set-usage: '&cHasználat: /faction king set <frakció> <játékos>'
+  faction-king-tally-line: '&7 - %s: &f%s szavazat'
+  faction-king-tax-not-king: '&cAdókulcsot csak a frakciód királya állíthat.'
+  faction-king-tax-set: '&aA(z) %s frakció adókulcsa beállítva: &f%s%%'
+  faction-king-vote-failed: '&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója).'
+  faction-king-vote-success: '&aSzavazat leadva: &f%s'
+  faction-left: '&6Kiléptél a frakcióból.'
+  faction-raid-already-active: '&cMár zajlik egy raid.'
+  faction-raid-ended: '<gold>⚔ A raid véget ért! Győztes: <white>{winner}</white> ({attackerKills} - {defenderKills}). Hadizsákmány: <white>{spoils}</white> a(z) {loser} kasszájából.</gold>'
+  faction-raid-invalid-target: '&cÉrvénytelen célpont.'
+  faction-raid-kill: <gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>
+  faction-raid-no-funds: '&cNincs elég pénz a frakciókasszában a nevezési díjhoz.'
+  faction-raid-not-king: '&cRaidet csak a frakciód királya hirdethet.'
+  faction-raid-protected-target: '&cEz a frakció védett, nem raidelhető.'
+  faction-raid-started: <red>⚔ RAID! <white>{attacker}</white> hadat üzent <white>{defender}</white> ellen — <white>{minutes}</white> percig a két frakció közti PvP nem számít bűnnek!</red>
+  faction-raid-tie: <gold>⚔ A raid döntetlennel zárult ({attacker} {attackerKills} - {defenderKills} {defender}) — nincs hadizsákmány.</gold>
+  faction-raid-usage: '&cHasználat: /faction raid <célfrakció>'
+  faction-raid-winner-buff: <gold>⚔ A győzelem mámora átjár — harci áldás szállt rád {minutes} percre!</gold>
+  faction-tax-notice: '&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).'
+  faction-treasury-header: '&6Frakciókasszák:'
+  faction-treasury-insufficient: '&cNincs ennyi a frakciókasszában.'
+  faction-treasury-king-only: '&cA kasszából csak a frakció királya (vagy admin) vehet ki.'
+  faction-treasury-line: '&e%s&7: &f%s'
+  faction-treasury-own: '&6A(z) &f%s &6frakció kasszája: &f%s'
+  faction-treasury-withdraw-success: '&aKivét a kasszából: &f%s %s &7(a bankodba került).'
+  siege-not-raid: <red>Az ostromágyú csak raid alatt működik.</red>
+  sinner-marked: '&5A Mételytépő igazságot látott: &cBűnös lettél!'
+  sinner.add-success: '<green>Bűn rögzítve: <white>{player}</white> <gray>(bűnök: <white>{count}</white>)</gray></green>'
+  sinner.cleansed: <green><i>Megtisztultál bűneid súlyától...</i></green>
+  sinner.clear-blocked-dark-pact: '<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>'
+  sinner.clear-success: '<green>A játékos megtisztult a bűneitől: <white>{player}</white></green>'
+  sinner.exile-broadcast: <dark_purple>{player} bűnei elérték a tűréshatárt — a Sötét frakcióba száműzték!</dark_purple>
+  sinner.exiled: '<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: száműztek a Sötét frakcióba. A paktum örök.</dark_purple>'
+  sinner.invalid-action: <red>Érvénytelen művelet! Használd a 'set' vagy 'clear' parancsot.</red>
+  sinner.pact-broken: '<gold>A vezeklésed teljes: a sötét paktum megtört, bűneid feloldozást nyertek.</gold>'
+  sinner.set-success: '<green>A játékos bűnössé vált: <white>{player}</white></green>'
+  sinner.sin-recorded: '<dark_purple>Bűnt követtél el: gyilkosság. <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
+  sinner.status: '<gray>{player}: bűnös: <white>{sinner}</white> | bűnök: <white>{count}</white> | sötét paktum: <white>{pact}</white></gray>'
+  sinner.target-offline: <red>A célpont nem elérhető (offline).</red>
+  sinner.usage: '<yellow>Használat: /sinner <játékos> <set|clear></yellow>'
+  territory-build-denied: <red>Ez a(z) {faction} frakció területe — itt nem építhetsz.</red>
+  territory-claim-success: '&aTerület kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)'
+  territory-claim-usage: '&cHasználat: /territory claim <frakció> <azonosító> <sugár> [név...]'
+  territory-enter: <yellow>{name}</yellow> <gray>({faction} terület)</gray>
+  territory-enter-capital: <gold>✦ {name} ✦</gold> <gray>({faction} főváros)</gray>
+  territory-enter-wilderness: <gray>Vadon</gray>
+  territory-help-claim: '&e/territory claim <frakció> <azonosító> <sugár> [név...] &7- Terület kijelölése.'
+  territory-help-header: '&6/territory &7- Elérhető parancsok (Admin):'
+  territory-help-info: '&e/territory info &7- Az aktuális pozíció területe.'
+  territory-help-list: '&e/territory list &7- Területek listája.'
+  territory-help-remove: '&e/territory remove <azonosító> &7- Terület törlése.'
+  territory-help-setcapital: '&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros kijelölése a pozíciódnál.'
+  territory-info-line: '&6Terület: &f%s &7| Frakció: &f%s &7| Azonosító: &f%s%s'
+  territory-info-wilderness: '&7Itt nincs kijelölt terület (vadon).'
+  territory-list-empty: '&eNincsenek kijelölt területek.'
+  territory-list-header: '&6Kijelölt területek:'
+  territory-list-line: '&e%s &7(%s) | %s | sugár: %s | középpont: %s, %s (%s)%s'
+  territory-remove-success: '&aTerület törölve: &f%s'
+  territory-remove-usage: '&cHasználat: /territory remove <azonosító>'
+  territory-setcapital-success: '&aFőváros kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)'
+  territory-setcapital-usage: '&cHasználat: /territory setcapital <frakció> <sugár> [név...]'
+  territory-unknown: '&cIsmeretlen terület: &f%s'
+  territory-unknown-subcommand: '&cIsmeretlen alparancs: &f%s'

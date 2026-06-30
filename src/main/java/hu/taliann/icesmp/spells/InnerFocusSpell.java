@@ -46,7 +46,8 @@ public final class InnerFocusSpell extends BaseSpell {
                 () -> restorePlayer(playerId, originalWalkSpeed), 20L * 5L);
     }
 
-    public static void clearPlayerState(final UUID playerId) {
+    @Override
+    public void clearPlayerState(final UUID playerId) {
         final Float originalSpeed = FROZEN_PLAYERS.remove(playerId);
         final Player player = Bukkit.getPlayer(playerId);
         if (player == null) {

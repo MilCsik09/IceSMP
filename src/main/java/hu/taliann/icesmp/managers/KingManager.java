@@ -1,5 +1,9 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+
+import hu.taliann.icesmp.storage.YamlStore;
+
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -24,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * expires, starting a fresh election. The king commands the faction treasury
  * (withdraw) and may declare raids.
  */
-public final class KingManager {
+public final class KingManager implements PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -113,7 +117,7 @@ public final class KingManager {
                 }
             }
 
-            yaml.save(storageFile);
+            YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save kings.yml: " + exception.getMessage());
         }
@@ -230,14 +234,20 @@ public final class KingManager {
         }
 
         kings.put(faction, leader);
-        final String kingName = Bukkit.getOfflinePlayer(leader).getName();
-        Bukkit.getServer().broadcast(messageManager.getMessage(
-                "faction-king-crowned",
-                "<gold>👑 {faction} új uralkodót választott: <white>{king}</white>!</gold>",
-                Map.of(
-                        "faction", faction.getDisplayName(),
-                        "king", kingName == null ? leader.toString().substring(0, 8) : kingName
-                )
-        ));
+
+        // Folia: the server-wide broadcast and the (potentially blocking) offline-name lookup
+        // must not run on the voting player's region thread — hop to the global region scheduler.
+        final UUID crowned = leader;
+        plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
+            final String kingName = Bukkit.getOfflinePlayer(crowned).getName();
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "faction-king-crowned",
+                    "<gold>👑 {faction} új uralkodót választott: <white>{king}</white>!</gold>",
+                    Map.of(
+                            "faction", faction.getDisplayName(),
+                            "king", kingName == null ? crowned.toString().substring(0, 8) : kingName
+                    )
+            ));
+        });
     }
 }
