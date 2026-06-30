@@ -35,17 +35,17 @@ közül választhatsz a `/profile` → **Kaszt** menüből. Minden kasztnak saj�
 
 A kaszt **szörnyek (mobok) megölésével** kap **XP-t** (tapasztalatot):
 
-- **Alap: 5 XP** minden ellenséges mob megöléséért.
-- **+2 XP minden „mob-szintért".** A spawntól messzebb a szörnyek erősebbek és magasabb
+- **Alap: 10 XP** minden ellenséges mob megöléséért.
+- **+3 XP minden „mob-szintért".** A spawntól messzebb a szörnyek erősebbek és magasabb
   szintűek (lásd a [Világesemények / Mob-szintezés] részt) — egy 3-as szintű szörny tehát
-  `5 + 3×2 = 11` XP-t ad.
+  `10 + 3×3 = 19` XP-t ad.
 - Csak **ellenséges** mobok adnak XP-t (tehén, csirke nem).
 - Ha van **másodlagos kasztod**, az minden ölésből **a felét (50%)** is megkapja.
 
-**Mennyi kell egy szinthez?** A következő szint ára `100 + (előző szintek száma × 20)` XP:
-- 1 → 2 szint: **100 XP** (kb. 20 alap-mob)
-- 2 → 3 szint: **120 XP**
-- 3 → 4 szint: **140 XP** … és így tovább. **Max szint: 50.**
+**Mennyi kell egy szinthez?** A következő szint ára `60 + (előző szintek száma × 10)` XP:
+- 1 → 2 szint: **60 XP** (kb. 6 alap-mob)
+- 2 → 3 szint: **70 XP**
+- 3 → 4 szint: **80 XP** … és így tovább. **Max szint: 50.**
 
 Minél magasabb a szinted, annál több ölés kell a következőhöz — de a magas szintű szörnyek
 egyenként több XP-t is adnak, szóval érdemes a veszélyesebb, távolabbi vidékekre menni.

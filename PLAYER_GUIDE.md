@@ -57,7 +57,7 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 |---|---|
 | 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |
 | 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget (víz-mesterség — végtelen búvárkodás) |
-| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
+| ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
 | ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
 
 > A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
@@ -143,10 +143,10 @@ Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spell
 | 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkány Esszencia | Eszencia |
 
 ### Szintezés
-- A kaszt **mob ölésből** kap XP-t: alap **5 XP / ölés**, plusz a szörny szintjéért **+2 XP /
+- A kaszt **mob ölésből** kap XP-t: alap **10 XP / ölés**, plusz a szörny szintjéért **+3 XP /
   mob-szint** (lásd Mob-szintezés). Csak ellenséges mobok adnak XP-t.
 - Ha van másodlagos kasztod, az minden ölésből az **50%-ot** is megkapja.
-- **Progresszív szintgörbe:** az n. szintlépés ára `100 + (n-1)×20` XP — vagyis minél magasabb
+- **Progresszív szintgörbe:** az n. szintlépés ára `60 + (n-1)×10` XP — vagyis minél magasabb
   vagy, annál többet kell ölnöd a következő szintért. Max szint: **50**.
 
 ### Képesség Katalizátor (a „spellbook")

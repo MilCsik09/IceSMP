@@ -18,6 +18,13 @@ pipálni egy másolt példányban.
 - **Opcionális függőség:** **LibsDisguises** (soft-depend). Ha telepítve van, a **Druida formák**
   vizuálisan is átalakítják a játékost; nélküle a forma csak stat-szinten vált. Érdemes mindkét
   állapotot tesztelni (telepítve / nélküle).
+- **Scoreboard / TAB-koegzisztencia:** ha a szerveren **TAB** (vagy más scoreboard-plugin) fut,
+  állítsd `config/general.yml`-ben `hud.sidebar-enabled: false` és `hud.tablist-enabled: false`,
+  hogy az IceSMP ne ütközzön vele (a boss-barok maradnak). Az IceSMP adatait — köztük az
+  **Erő-csíkot** — a TAB **PlaceholderAPI**-n át jelenítheti meg ezekkel: `%icesmp_faction%`,
+  `%icesmp_class%`, `%icesmp_class_level%`, `%icesmp_balance%`, `%icesmp_resource%`,
+  `%icesmp_resource_max%`, `%icesmp_resource_percent%`, `%icesmp_resource_name%`,
+  `%icesmp_resource_bar%`. (A PlaceholderAPI-integráció magától bekapcsol, ha a PAPI fent van.)
 - **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
   szerkeszthető és `/icesmp reload`-dal (vagy újraindítással) frissíthető. Néhány érték a manager
   indulásakor töltődik be — ha egy config-változás nem üt át reload-ra, **indítsd újra** a szervert.
