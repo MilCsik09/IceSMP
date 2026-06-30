@@ -10,6 +10,7 @@ import hu.taliann.icesmp.commands.job.JobUnlockSpellSubcommand;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -18,7 +19,8 @@ public final class JobCommand extends AbstractDispatchCommand {
 
     public JobCommand(final JavaPlugin plugin, final JobManager jobManager,
                       final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
-                      final AbilityCatalystListener abilityCatalystListener, final MessageManager messageManager) {
+                      final AbilityCatalystListener abilityCatalystListener,
+                      final SpecializationManager specializationManager, final MessageManager messageManager) {
         super(messageManager, "job", "&6/job &7- elerheto parancsok:");
         register(new JobAddXpSubcommand(plugin, jobManager, messageManager));
         register(new JobSetXpSubcommand(plugin, jobManager, messageManager));
@@ -26,6 +28,7 @@ public final class JobCommand extends AbstractDispatchCommand {
         register(new JobUnlockSpellSubcommand(plugin, jobManager, spellRegistry, messageManager));
         register(new JobGiveCatalystSubcommand(plugin, jobManager, catalystItemFactory, messageManager));
         register(new JobListSpellsSubcommand(spellRegistry, messageManager));
-        register(new JobAdminSubcommand(plugin, jobManager, spellRegistry, abilityCatalystListener, messageManager));
+        register(new JobAdminSubcommand(plugin, jobManager, spellRegistry, abilityCatalystListener,
+                specializationManager, messageManager));
     }
 }

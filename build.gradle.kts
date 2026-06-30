@@ -7,10 +7,16 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.folia.dev/repository/maven-public/")
+    // Soft-dependenciák repói:
+    maven("https://repo.extendedclip.com/releases/")        // PlaceholderAPI
+    maven("https://repo.md-5.net/content/groups/public/")   // LibsDisguises
 }
 
 dependencies {
     compileOnly(libs.folia.api)
+    // Opcionális integrációk — futásidőben soft-depend (a kód ellenőrzi a jelenlétüket):
+    compileOnly(libs.placeholderapi)   // %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot)
+    compileOnly(libs.libsdisguises)    // a DruidDisguise reflexiós híd ehhez tartozik (Druida-formák vizuálja)
 }
 
 java {

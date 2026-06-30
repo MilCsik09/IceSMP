@@ -289,6 +289,23 @@ public final class JobManager implements PlayerStateCleanup {
         return true;
     }
 
+    /**
+     * Admin reset: wipes the player's class choice entirely — both job slots, their XP/levels and all
+     * unlocked spells — putting them back to the "no class chosen" state so a fresh class can be picked.
+     * (The class specialization is stored separately; the caller should also reset it.) Writes the
+     * player's PDC, so it must run on the player's own region thread (Folia).
+     *
+     * @param player the player whose class to reset
+     */
+    public void resetClass(final Player player) {
+        final PersistentDataContainer pdc = player.getPersistentDataContainer();
+        pdc.remove(jobPrimaryKey);
+        pdc.remove(jobPrimaryXpKey);
+        pdc.remove(jobSecondaryKey);
+        pdc.remove(jobSecondaryXpKey);
+        pdc.remove(unlockedSpellsKey);
+    }
+
     public void cleanup(final java.util.UUID playerId) {
         // Intentionally empty: Job data is persisted in PDC and must survive reconnects.
     }
