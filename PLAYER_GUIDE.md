@@ -532,13 +532,14 @@ Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rá
   a lopás/árulás detektálás még nincs.
 - 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az
   ostromágyú már **kész**).
-- 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s / parkour pályák tervben.
-- 🚧 **Piactér:** nincs még lapozás/keresés, és fizikai piactábla a fővárosokban (a reputáció-árazás már **kész**).
-- 🚧 **Intro:** csak cím-szekvencia van; a látványos kamera-utaztatás még hiányzik.
+- 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
+  (a parkour-keret már **kész**: `/parkour`).
+- 🚧 **Piactér:** fizikai piactábla a fővárosokban még nincs (a lapozás, a `/market search`
+  keresés és a reputáció-árazás már **kész**).
+- 🚧 **Intro:** a cím-szekvencia és a kamera-utaztatás **kész**, de a kameraút alapból ki van
+  kapcsolva, amíg a szerver-csapat ki nem jelöli a waypointokat.
 - 🚧 **Szezonális liga:** működik a pontgyűjtés, de a győztes **kozmetikai relikvia-jutalma** még nincs.
 - ⏳ **Ultimate képességek** külön rendszerként (jelenleg a spec-ultik töltik be ezt a szerepet).
-- ⏳ **Megnevezett, szintet lépő állandó társ** (a Vadmester perzisztens companionja) — a többi
-  pet-fejlesztés (parancsok, idézés-limit, talent→pet szinergia, Nekromanta lélekszilánk) **kész**.
 - ⏳ **Világépítés:** a fővárosok, a Sötét romváros és a távolság-gyűrűk loot-asztalai a szerver
   csapatának feladata (a plugin a `/territory` paranccsal adja hozzá az eszközt a kijelölésükhöz).
 

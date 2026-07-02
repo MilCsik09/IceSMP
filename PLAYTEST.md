@@ -94,7 +94,7 @@ mob-scaling:
 A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami tesztelhető:
 
 - **Frakciók** (4): Piros/Kék/Semleges/Sötét, passzív bónuszokkal és valutával.
-- **Kasztok** (13) + **specializációk** (31), max 2 kaszt/játékos, 50-es max szint.
+- **Kasztok** (13) + **specializációk** (31), egy kaszt/játékos (végleges, admin-reset van), 50-es max szint.
 - **Képességek** (350+): katalizátor-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
   cooldown, kombók, spell-mesterség.
 - **Erő-csík** (osztály-erőforrás): HUD-sáv, regenerálódó költség-pool.
@@ -119,13 +119,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a száműzetés kész; **lopás/árulás detektálás nincs**.
 - 🚧 **Raid:** nincs 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az ostromágyú kész).
 - 🚧 **Kaszt-questek:** egyszerű „ölj X-et" típus; NPC/parkour pályák tervben.
-- 🚧 **Piactér:** lapozás/keresés és fizikai piactábla még nincs (a reputáció-árazás kész).
-- 🚧 **Intro:** csak cím-szekvencia; a filmszerű kamera-utaztatás alapból ki van kapcsolva.
+- 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search` és a
+  reputáció-árazás kész — ezeket teszteld!).
+- 🚧 **Intro:** a kamera-utaztatás kész, de alapból kikapcsolt (waypoint-kijelölésig).
 - 🚧 **Szezonliga:** pontgyűjtés kész, a győztes **kozmetikai jutalma** még nincs.
 - ⏳ **Külön „ultimate" / burst-rendszer** (a korábbi kirobbanás-mechanika kivéve).
-- ⏳ **Megnevezett, perzisztens társ** a Vadmesternek (a többi pet-funkció kész).
 - ⏳ **Világépítés** (fővárosok, Sötét romváros, loot-asztalok) — szerver-csapat feladata; a plugin
   csak az eszközt adja (`/territory`).
+- ❌ **Másodlagos kaszt: NINCS** — a rendszer tudatosan törölve lett (egy kaszt / játékos, a
+  választás végleges; admin-reset: `/class admin resetclass`). Ne jelentsd hibaként, hogy nem
+  vehető fel második kaszt!
 
 ---
 
@@ -143,11 +146,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] `factions.passives.enabled: false` → minden passzív kikapcsol.
 
 ### 4.2 Kasztok, katalizátor, szintezés ✅
-- [ ] `/profile` → Kaszt menüből mind a **13 kaszt** választható; max 2 (a másodlagos csak 50. szinten nyílik).
+- [ ] `/profile` → Kaszt menüből mind a **13 kaszt** választható; **egy kaszt** vehető fel, utána a
+      menü „Már van kasztod" jelzést ad; `/class admin resetclass` után újra választható.
 - [ ] A katalizátor a kaszthoz illő tárgy (pl. Varázsló = bűvölt könyv); **jobb katt** = cast,
       **lopakodás + ütés** = váltás a feloldott spellek közt (action bar mutatja a kiválasztottat + költséget).
 - [ ] A katalizátor craftnál/kemencében **nem használódik el** (védett).
-- [ ] Mob-öléssel nő a kaszt-XP; magasabb mob-szint több XP; másodlagos kaszt 50%-ot kap.
+- [ ] Mob-öléssel nő a kaszt-XP; magasabb mob-szintű mob több XP-t ad (alap 10 + 3/mob-szint).
 - [ ] ⚠️ **Folia:** ölj mobot egy **régióhatáron / messziről** → az XP/üzenet hibamentesen érkezik
       (figyeld a konzolt „region"/IllegalStateException-re).
 

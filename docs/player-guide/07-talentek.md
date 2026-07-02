@@ -6,8 +6,7 @@ szintezéssel pontokat gyűjtesz, és egy **fán** (felülről lefelé) költöd
 
 ## Honnan jön a talentpont?
 
-- **Kaszt-pont:** minden **5 kaszt-szint** után **1 pont** (az elsődleges + másodlagos kaszt
-  szintjei összeadódnak).
+- **Kaszt-pont:** minden **5 kaszt-szint** után **1 pont** (a kasztod szintjéből).
 - **Szakma-pont:** minden **10 szakma-szint** után **1 pont** (az **összes** szakmád szintje
   összeadódik — a másodlagosak is!).
 
