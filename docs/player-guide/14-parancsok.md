@@ -59,7 +59,7 @@ jelenti, hogy **elhagyható**.
 | Parancs | Mit csinál |
 |---|---|
 | `/icesmp reload` | Konfiguráció újratöltése |
-| `/class addxp\|setxp <játékos> <primary\|secondary> <mennyiség>` | Kaszt-XP adása/beállítása |
+| `/class addxp\|setxp <játékos> <mennyiség>` | Kaszt-XP adása/beállítása |
 | `/class givecatalyst\|unlockspell <játékos> [spell]` | Katalizátor adása / spell feloldása |
 | `/class admin <resetcd\|unlockallskills\|resetskills\|resetclass> <játékos>` | Cooldown-/spell-/**teljes kaszt-reset** egy játékosnak |
 | `/profession set\|clear\|addxp` | Szakma-adatok kezelése |

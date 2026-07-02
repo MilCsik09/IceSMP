@@ -118,10 +118,9 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
 
 ## 4. Kasztok ✅
 
-**13 kaszt** közül választhatsz a `/profile` → Kaszt menüből. **Max. 2 kasztod lehet:**
-- **Elsődleges kaszt** — bármikor választható.
-- **Másodlagos kaszt** — csak akkor nyílik meg, ha az elsődleges eléri a **max szintet (50)**.
-  (A másodlagos nem specializálódhat.)
+**13 kaszt** közül választhatsz a `/profile` → Kaszt menüből. **Egy kasztod lehet** — ezt
+választod ki, és ez határozza meg a képességeidet és a specializációdat. (A kaszt választása
+végleges; ha új kasztot szeretnél, egy adminnak kell resetelnie: `/class admin resetclass`.)
 
 Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spellbook") és saját
 **erőforrása** (az Erő-csík, lásd lentebb) van:
@@ -145,7 +144,6 @@ Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spell
 ### Szintezés
 - A kaszt **mob ölésből** kap XP-t: alap **10 XP / ölés**, plusz a szörny szintjéért **+3 XP /
   mob-szint** (lásd Mob-szintezés). Csak ellenséges mobok adnak XP-t.
-- Ha van másodlagos kasztod, az minden ölésből az **50%-ot** is megkapja.
 - **Progresszív szintgörbe:** az n. szintlépés ára `60 + (n-1)×10` XP — vagyis minél magasabb
   vagy, annál többet kell ölnöd a következő szintért. Max szint: **50**.
 
@@ -338,7 +336,7 @@ A szintjeid **talentpontokat** termelnek, amiket passzív erősítésekre költh
 `/profile` → **Talentek** menüből (kattints a fejlesztendő talentre), vagy paranccsal
 (`/talent`, `/talent spend <class|profession> <talent>`).
 
-- **Kaszt ponttár:** minden **5 kasztszint** = 1 pont (az elsődleges + másodlagos szintek összegéből).
+- **Kaszt ponttár:** minden **5 kasztszint** = 1 pont (a kasztod szintjéből).
 - **Szakma ponttár:** az **összes szakmád** szintjeiből, minden **10 szint** = 1 pont.
 
 ### Általános talentek (mindenkinek)

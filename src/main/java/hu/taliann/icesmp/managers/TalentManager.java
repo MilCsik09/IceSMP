@@ -115,9 +115,6 @@ public final class TalentManager {
             if (jobManager.hasPrimaryJob(player)) {
                 totalLevels += jobManager.getPrimaryLevel(player);
             }
-            if (jobManager.hasSecondaryJob(player)) {
-                totalLevels += jobManager.getSecondaryLevel(player);
-            }
             return totalLevels / perLevels;
         }
 
@@ -203,8 +200,7 @@ public final class TalentManager {
         final String requiredJobId = talentSection.getString("requires-job");
         if (requiredJobId != null && !requiredJobId.isBlank()) {
             final JobType requiredJob = JobType.fromId(requiredJobId);
-            final boolean hasJob = requiredJob != null
-                    && (jobManager.getPrimaryJob(player) == requiredJob || jobManager.getSecondaryJob(player) == requiredJob);
+            final boolean hasJob = requiredJob != null && jobManager.getPrimaryJob(player) == requiredJob;
             if (!hasJob) {
                 return false;
             }

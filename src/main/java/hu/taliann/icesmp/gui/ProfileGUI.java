@@ -130,12 +130,6 @@ public final class ProfileGUI {
             lore.add(label("Kaszt", primary.getDisplayName()
                     .append(Component.text(" (Lvl " + ctx.jobManager().getPrimaryLevel(target) + "/" + JobManager.MAX_JOB_LEVEL + ")", NamedTextColor.WHITE))));
         }
-        final JobType secondary = ctx.jobManager().getSecondaryJob(target);
-        if (secondary != null) {
-            lore.add(label("Másodlagos kaszt", secondary.getDisplayName()
-                    .append(Component.text(" (Lvl " + ctx.jobManager().getSecondaryLevel(target) + "/" + JobManager.MAX_JOB_LEVEL + ")", NamedTextColor.WHITE))));
-        }
-
         final SpecializationType classSpec = ctx.specializationManager().getClassSpecialization(target);
         lore.add(label("Kaszt-spec", classSpec == null ? Component.text("nincs", NamedTextColor.GRAY) : classSpec.getDisplayName()));
 

@@ -29,8 +29,6 @@ public final class JobManager implements PlayerStateCleanup {
     private java.util.function.Consumer<Player> xpChangeHook;
     private final NamespacedKey jobPrimaryKey;
     private final NamespacedKey jobPrimaryXpKey;
-    private final NamespacedKey jobSecondaryKey;
-    private final NamespacedKey jobSecondaryXpKey;
     private final NamespacedKey unlockedSpellsKey;
 
     public JobManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -40,8 +38,6 @@ public final class JobManager implements PlayerStateCleanup {
         this.factionManager = factionManager;
         this.jobPrimaryKey = new NamespacedKey(plugin, "job_primary");
         this.jobPrimaryXpKey = new NamespacedKey(plugin, "job_primary_xp");
-        this.jobSecondaryKey = new NamespacedKey(plugin, "job_secondary");
-        this.jobSecondaryXpKey = new NamespacedKey(plugin, "job_secondary_xp");
         this.unlockedSpellsKey = new NamespacedKey(plugin, "unlocked_spells");
     }
 
@@ -49,13 +45,8 @@ public final class JobManager implements PlayerStateCleanup {
         return player.getPersistentDataContainer().has(jobPrimaryKey, PersistentDataType.STRING);
     }
 
-    public boolean hasSecondaryJob(final Player player) {
-        return player.getPersistentDataContainer().has(jobSecondaryKey, PersistentDataType.STRING);
-    }
-
-    public boolean isPrimaryJobAtMaxLevel(final Player player) {
-        final int primaryXp = player.getPersistentDataContainer().getOrDefault(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
-        return getLevel(primaryXp) >= MAX_JOB_LEVEL;
+    public boolean hasJob(final Player player) {
+        return hasPrimaryJob(player);
     }
 
     public JobType getPrimaryJob(final Player player) {
@@ -63,49 +54,16 @@ public final class JobManager implements PlayerStateCleanup {
         return JobType.fromId(rawPrimary);
     }
 
-    public JobType getSecondaryJob(final Player player) {
-        final String rawSecondary = player.getPersistentDataContainer().get(jobSecondaryKey, PersistentDataType.STRING);
-        return JobType.fromId(rawSecondary);
-    }
-
-    public boolean hasJob(final Player player, final boolean primary) {
-        return primary ? hasPrimaryJob(player) : hasSecondaryJob(player);
-    }
-
-    public int getXp(final Player player, final boolean primary) {
-        final NamespacedKey xpKey = primary ? jobPrimaryXpKey : jobSecondaryXpKey;
-        return player.getPersistentDataContainer().getOrDefault(xpKey, PersistentDataType.INTEGER, 0);
+    public int getXp(final Player player) {
+        return player.getPersistentDataContainer().getOrDefault(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
     }
 
     public int getPrimaryLevel(final Player player) {
-        return getLevel(getXp(player, true));
-    }
-
-    public int getSecondaryLevel(final Player player) {
-        return getLevel(getXp(player, false));
-    }
-
-    public int getLevel(final Player player, final boolean primary) {
-        return getLevel(getXp(player, primary));
+        return getLevel(getXp(player));
     }
 
     public boolean canSelectPrimary(final Player player, final JobType job) {
-        if (job == null || hasPrimaryJob(player) || !meetsFactionRequirement(player, job)) {
-            return false;
-        }
-
-        final JobType secondary = getSecondaryJob(player);
-        return secondary == null || secondary != job;
-    }
-
-    public boolean canSelectSecondary(final Player player, final JobType job) {
-        if (job == null || !hasPrimaryJob(player) || hasSecondaryJob(player) || !isPrimaryJobAtMaxLevel(player)
-                || !meetsFactionRequirement(player, job)) {
-            return false;
-        }
-
-        final JobType primary = getPrimaryJob(player);
-        return primary == null || primary != job;
+        return job != null && !hasPrimaryJob(player) && meetsFactionRequirement(player, job);
     }
 
     /**
@@ -133,32 +91,30 @@ public final class JobManager implements PlayerStateCleanup {
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.set(jobPrimaryKey, PersistentDataType.STRING, job.getId());
         pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
-        applyAutoUnlocks(player, true);
+        applyAutoUnlocks(player);
         return true;
     }
 
-    public void addXp(final Player player, final boolean toPrimary, final int amount) {
-        addXpToJob(player, toPrimary, amount);
+    public void addXp(final Player player, final int amount) {
+        addXpToJob(player, amount);
     }
 
-    public boolean addXpToJob(final Player player, final boolean toPrimary, final int amount) {
-        if (amount <= 0 || !hasJob(player, toPrimary)) {
+    public boolean addXpToJob(final Player player, final int amount) {
+        if (amount <= 0 || !hasPrimaryJob(player)) {
             return false;
         }
 
-        final int nextXp = Math.max(0, getXp(player, toPrimary) + amount);
-        return setXp(player, toPrimary, nextXp);
+        return setXp(player, Math.max(0, getXp(player) + amount));
     }
 
-    public boolean setXp(final Player player, final boolean toPrimary, final int xp) {
-        if (!hasJob(player, toPrimary)) {
+    public boolean setXp(final Player player, final int xp) {
+        if (!hasPrimaryJob(player)) {
             return false;
         }
 
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
-        final NamespacedKey xpKey = toPrimary ? jobPrimaryXpKey : jobSecondaryXpKey;
-        pdc.set(xpKey, PersistentDataType.INTEGER, Math.max(0, xp));
-        applyAutoUnlocks(player, toPrimary);
+        pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, Math.max(0, xp));
+        applyAutoUnlocks(player);
         if (xpChangeHook != null) {
             xpChangeHook.accept(player);
         }
@@ -177,14 +133,13 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     /**
-     * Unlocks every config-mapped spell of the given job slot whose required level
+     * Unlocks every config-mapped spell of the (primary) class whose required level
      * has been reached. Mapping lives under 'classes.&lt;jobId&gt;.spell-unlocks' in config.yml.
      *
      * @param player the player to check
-     * @param primary true for the primary slot, false for the secondary
      */
-    public void applyAutoUnlocks(final Player player, final boolean primary) {
-        final JobType job = primary ? getPrimaryJob(player) : getSecondaryJob(player);
+    public void applyAutoUnlocks(final Player player) {
+        final JobType job = getPrimaryJob(player);
         if (job == null || configManager.getConfiguration() == null) {
             return;
         }
@@ -195,7 +150,7 @@ public final class JobManager implements PlayerStateCleanup {
             return;
         }
 
-        final int level = getLevel(player, primary);
+        final int level = getPrimaryLevel(player);
         for (final String spellId : unlockSection.getKeys(false)) {
             final int requiredLevel = unlockSection.getInt(spellId, Integer.MAX_VALUE);
             if (level < requiredLevel || hasUnlockedSpell(player, spellId)) {
@@ -212,18 +167,6 @@ public final class JobManager implements PlayerStateCleanup {
         }
     }
 
-    public boolean setSecondaryJob(final Player player, final JobType job) {
-        if (!canSelectSecondary(player, job)) {
-            return false;
-        }
-
-        final PersistentDataContainer pdc = player.getPersistentDataContainer();
-
-        pdc.set(jobSecondaryKey, PersistentDataType.STRING, job.getId());
-        pdc.set(jobSecondaryXpKey, PersistentDataType.INTEGER, 0);
-        applyAutoUnlocks(player, false);
-        return true;
-    }
 
     public List<String> getUnlockedSpellIds(final Player player) {
         final String raw = player.getPersistentDataContainer().get(unlockedSpellsKey, PersistentDataType.STRING);
@@ -290,7 +233,7 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     /**
-     * Admin reset: wipes the player's class choice entirely — both job slots, their XP/levels and all
+     * Admin reset: wipes the player's class choice entirely — the class, its XP/level and all
      * unlocked spells — putting them back to the "no class chosen" state so a fresh class can be picked.
      * (The class specialization is stored separately; the caller should also reset it.) Writes the
      * player's PDC, so it must run on the player's own region thread (Folia).
@@ -301,8 +244,6 @@ public final class JobManager implements PlayerStateCleanup {
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.remove(jobPrimaryKey);
         pdc.remove(jobPrimaryXpKey);
-        pdc.remove(jobSecondaryKey);
-        pdc.remove(jobSecondaryXpKey);
         pdc.remove(unlockedSpellsKey);
     }
 

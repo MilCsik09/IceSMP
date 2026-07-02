@@ -31,8 +31,8 @@ bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később e
 
 ### 🧙 Kasztok és specializációk
 
-**13 kaszt** választható a profil GUI-ból (max. 2 kaszt / játékos; a másodlagos csak az
-elsődleges max szintje után nyílik meg, és nem specializálódhat):
+**13 kaszt** választható a profil GUI-ból (egy kaszt / játékos; a választás végleges, adminnal
+reseteltethető: `/class admin resetclass`):
 
 - **Varázsló** — elemi és kontroll mágia
 - **Harcos** — közelharci erő és kitartás
