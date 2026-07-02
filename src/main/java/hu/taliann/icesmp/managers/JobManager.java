@@ -30,6 +30,10 @@ public final class JobManager implements PlayerStateCleanup {
     private final NamespacedKey jobPrimaryKey;
     private final NamespacedKey jobPrimaryXpKey;
     private final NamespacedKey unlockedSpellsKey;
+    // A megszűnt másodlagos-kaszt rendszer PDC-kulcsai: már semmi sem olvassa őket, de a
+    // resetClass letakarítja a régi játékosokról maradt bejegyzéseket.
+    private final NamespacedKey legacySecondaryKey;
+    private final NamespacedKey legacySecondaryXpKey;
 
     public JobManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final MessageManager messageManager, final FactionManager factionManager) {
@@ -39,14 +43,12 @@ public final class JobManager implements PlayerStateCleanup {
         this.jobPrimaryKey = new NamespacedKey(plugin, "job_primary");
         this.jobPrimaryXpKey = new NamespacedKey(plugin, "job_primary_xp");
         this.unlockedSpellsKey = new NamespacedKey(plugin, "unlocked_spells");
+        this.legacySecondaryKey = new NamespacedKey(plugin, "job_secondary");
+        this.legacySecondaryXpKey = new NamespacedKey(plugin, "job_secondary_xp");
     }
 
     public boolean hasPrimaryJob(final Player player) {
         return player.getPersistentDataContainer().has(jobPrimaryKey, PersistentDataType.STRING);
-    }
-
-    public boolean hasJob(final Player player) {
-        return hasPrimaryJob(player);
     }
 
     public JobType getPrimaryJob(final Player player) {
@@ -93,10 +95,6 @@ public final class JobManager implements PlayerStateCleanup {
         pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
         applyAutoUnlocks(player);
         return true;
-    }
-
-    public void addXp(final Player player, final int amount) {
-        addXpToJob(player, amount);
     }
 
     public boolean addXpToJob(final Player player, final int amount) {
@@ -245,6 +243,9 @@ public final class JobManager implements PlayerStateCleanup {
         pdc.remove(jobPrimaryKey);
         pdc.remove(jobPrimaryXpKey);
         pdc.remove(unlockedSpellsKey);
+        // Legacy tisztítás: a megszűnt másodlagos-kaszt bejegyzések eltávolítása régi játékosokról.
+        pdc.remove(legacySecondaryKey);
+        pdc.remove(legacySecondaryXpKey);
     }
 
     public void cleanup(final java.util.UUID playerId) {

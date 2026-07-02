@@ -16,7 +16,10 @@ dependencies {
     compileOnly(libs.folia.api)
     // Opcionális integrációk — futásidőben soft-depend (a kód ellenőrzi a jelenlétüket):
     compileOnly(libs.placeholderapi)   // %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot)
-    compileOnly(libs.libsdisguises)    // a DruidDisguise reflexiós híd ehhez tartozik (Druida-formák vizuálja)
+    // A DruidDisguise reflexiós híd ehhez tartozik (Druida-formák vizuálja). isTransitive=false:
+    // csak maga az API kell fordításhoz — a transitívjai (ProtocolLib/Spigot) nélkül is fordul,
+    // így a build nem törik el, ha azok repói nem érhetők el.
+    compileOnly(libs.libsdisguises) { isTransitive = false }
 }
 
 java {

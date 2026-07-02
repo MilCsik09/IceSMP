@@ -8,6 +8,7 @@ import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Wither;
 import org.bukkit.entity.Zoglin;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
@@ -133,7 +134,8 @@ public final class FactionPassiveListener implements Listener {
         return entity instanceof Zombie
                 || entity instanceof AbstractSkeleton
                 || entity instanceof Phantom
-                || entity instanceof Zoglin;
+                || entity instanceof Zoglin
+                || entity instanceof Wither;
     }
 
     private boolean isEnabled() {

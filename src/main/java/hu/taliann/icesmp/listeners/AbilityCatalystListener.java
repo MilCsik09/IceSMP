@@ -216,6 +216,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
 
+        // HEALTH costs clamp to a 0.5 floor on consume, so a naive full refund could end up ABOVE
+        // the pre-cast health. Snapshot it so a no-op cast restores exactly the pre-cast value.
+        final double preCastHealth = player.getHealth();
         if (useResource) {
             resourceManager.consume(player, selected);
         } else {
@@ -226,6 +229,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             // cooldown so a missed cast costs the player nothing.
             if (useResource) {
                 resourceManager.refund(player, selected);
+            } else if (selected.getCostType() == hu.taliann.icesmp.spells.SpellCostType.HEALTH) {
+                player.setHealth(preCastHealth);
             } else {
                 selected.refundCost(player);
             }

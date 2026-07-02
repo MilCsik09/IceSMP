@@ -147,6 +147,13 @@ public final class HudManager {
                     teams[i].prefix(i < lines.size() ? lines.get(i) : Component.empty());
                 }
             }
+        } else if (playerTeams.remove(player.getUniqueId()) != null) {
+            // The sidebar was disabled at runtime (e.g. handing the scoreboard over to TAB):
+            // restore the main scoreboard so the stale IceSMP board doesn't linger frozen.
+            final ScoreboardManager manager = Bukkit.getScoreboardManager();
+            if (manager != null) {
+                player.setScoreboard(manager.getMainScoreboard());
+            }
         }
         if (tablistEnabled()) {
             player.playerListName(tabName(player));
@@ -182,6 +189,10 @@ public final class HudManager {
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final JobType job = jobManager.getPrimaryJob(player);
         final boolean hasClass = job != null;
+        // The snapshot's hasClass flag is solely the resource-display gate in the PlaceholderAPI
+        // bridge, so it also folds in the resource system's enabled state — with the system off,
+        // %icesmp_resource...% goes blank instead of showing a phantom full bar.
+        final boolean showResource = hasClass && resourceManager.isEnabled();
         final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
         return new HudSnapshot(
                 faction == null ? "nincs" : faction.getDisplayName(),
@@ -189,12 +200,12 @@ public final class HudManager {
                 hasClass ? PlainTextComponentSerializer.plainText().serialize(job.getDisplayName()) : "nincs",
                 hasClass ? jobManager.getPrimaryLevel(player) : 0,
                 currencyManager.formatBalance(balance),
-                hasClass,
-                hasClass ? resourceManager.resourceValue(player) : 0,
+                showResource,
+                showResource ? resourceManager.resourceValue(player) : 0,
                 resourceManager.resourceMax(),
-                hasClass ? resourceManager.resourcePercent(player) : 0,
+                showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
-                resourceManager.resourceBarPlain(player));
+                showResource ? resourceManager.resourceBarPlain(player) : "");
     }
 
     public void cleanup(final Player player) {
