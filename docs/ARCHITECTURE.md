@@ -4,8 +4,8 @@
 > a tényleges kódra épül: leírja, hogyan áll össze a plugin, milyen mintákat követünk, és
 > lépésről lépésre **hogyan adj hozzá új tartalmat** anélkül, hogy bármit eltörnél.
 >
-> Kapcsolódó dokumentumok: `docs/CODE-REVIEW.md` (ismert hibák/állapot), `docs/REORGANIZATION.md`
-> (refaktor-terv és -napló).
+> Kapcsolódó dokumentumok: `README.md` (áttekintés), `PLAYER_GUIDE.md` (játékos-kézikönyv),
+> `PLAYTEST.md` (tesztelési útmutató), `ROADMAP.md` (nyitott fejlesztések).
 
 ---
 
@@ -80,7 +80,7 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   `messages.<név>-unknown-subcommand`, `messages.<név>-help-header`, `messages.<név>-help-<alparancs>`.
 - **Egyrészes / implicit-default:** néhány parancs (Market, Pet, Soul, Spell, Events…) üres argra
   műveletet végez (nem helpet ad), vagy nem `args[0]`-ra diszpécsel. Ezek szándékosan külön
-  `BasicCommand`-ok — a dispatch-bázis nem modellezi ezt a szemantikát (lásd `REORGANIZATION.md` #10).
+  `BasicCommand`-ok — a dispatch-bázis nem modellezi ezt a szemantikát.
 
 ### 3.5 Spellek — registry + builder + katalógus
 - **`SpellRegistry`**: id → `Spell` map (`register`, `getById`, `getAll`).
@@ -241,6 +241,5 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
   inline parancsok migrálásához a dispatch-bázis additív bővítése (default-subcommand + láthatósági
   predikátum); az `IceSMPCore` manager-építés factory-szétbontása (a `final` mezők miatt); a mentések
-  debounce-olása (async IO + flush-on-disable). Részletek: `docs/REORGANIZATION.md`.
-- **Tartalmi bővítési lista** (több world-boss, relikvia, rituálé, stb.): `docs/REORGANIZATION.md`
-  „Tartalmi bővítés" szakasz.
+  debounce-olása (async IO + flush-on-disable).
+- **Nyitott fejlesztések:** `ROADMAP.md`.

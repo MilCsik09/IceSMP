@@ -7,10 +7,11 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
 > 🎮 **Játékos tájékoztató:** [PLAYER_GUIDE.md](PLAYER_GUIDE.md) — mit hogyan használj a játékban
 > (frakciók, kasztok, spellek, talentek, szakmák, gazdaság, világesemények) + mi a WIP.
-> 📘 **Technikai dokumentáció:** [TECHNICAL.md](TECHNICAL.md) — architektúra, parancs- és
-> jogosultság-referencia, config leírás, adattárolás, fejlesztői útmutató.
-> ✅ **Pontos készültségi állapot:** [STATUS.md](STATUS.md) — mi van kész, ismert korlátok, mi hiányzik.
-> 💡 **Ötlettár / tervek:** [ideas.md](ideas.md)
+> A részletes, oldalankénti kézikönyv (minden spell-lel): [docs/player-guide/](docs/player-guide/README.md)
+> 🏗️ **Architektúra / fejlesztői referencia:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) —
+> modulok, minták, Folia-szálkezelési szabályok, perzisztencia.
+> 🧪 **Playtest kézikönyv:** [PLAYTEST.md](PLAYTEST.md) — mit és hogyan teszteljenek a teszterek.
+> 🗺️ **Tervek:** [ROADMAP.md](ROADMAP.md)
 
 ---
 
@@ -22,7 +23,7 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 |---|---|---|
 | 🔴 **Piros** | `/faction join red` | Immunis a tűz, láva és forró blokkok sebzésére |
 | 🔵 **Kék** | `/faction join blue` | Immunis a fagyásra **és a fulladásra**, lassabban éhezik |
-| ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | Lopakodás közben láthatatlan; a nem-ellenséges mobok **és endermanök** békén hagyják; adómentes |
+| ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | **Nincs zuhanás-sebzés**; a nem-ellenséges mobok **és endermanök** békén hagyják; adómentes |
 | ⚫ **Sötét** | `/faction join dark` — **csak bűnösként!** | Immunis a wither-sebzésre; az élőhalottak nem támadják |
 
 **A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
@@ -31,8 +32,8 @@ bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később e
 
 ### 🧙 Kasztok és specializációk
 
-**13 kaszt** választható a profil GUI-ból (max. 2 kaszt / játékos; a másodlagos csak az
-elsődleges max szintje után nyílik meg, és nem specializálódhat):
+**13 kaszt** választható a profil GUI-ból (egy kaszt / játékos; a választás végleges, adminnal
+reseteltethető: `/class admin resetclass`):
 
 - **Varázsló** — elemi és kontroll mágia
 - **Harcos** — közelharci erő és kitartás
@@ -199,7 +200,8 @@ bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehe
 | `/territory …` | `terulet` | Területek kijelölése (admin) |
 | `/icesmp reload` | `ismp` | Konfiguráció újratöltése (admin) |
 
-A teljes parancs- és jogosultság-referencia a [TECHNICAL.md](TECHNICAL.md)-ben található.
+A teljes parancs-referencia: [docs/player-guide/14-parancsok.md](docs/player-guide/14-parancsok.md);
+a jogosultság-node-ok listája a [PLAYTEST.md](PLAYTEST.md)-ben.
 
 ---
 
@@ -218,8 +220,10 @@ adatmappájában — minden játékmeneti érték és üzenet ott testreszabhat�
 ## Projekt állapota
 
 - **API:** Folia 1.21.11 (Paper API kompatibilis) • **Nyelv:** Java 21 • **Build:** Gradle
-- **Folia-kompatibilis:** `folia-supported: true`, minden ütemezett feladat szinkron
-- Minden tervezett fázis (1–7) elkészült: alapok, frakciók, valuták és váltó, relikviák,
-  mob skálázás, szakmák és craft-korlátozások, kasztok/specializációk/talentek, területek.
-- A következő irányok az [ideas.md](ideas.md)-ben: raid eventek, frakció-kassza és adó,
-  quest-keretrendszer, relikvia-elytrák, világesemények.
+- **Folia-kompatibilis:** `folia-supported: true`; minden feladat régió-/entitás-ütemezőn fut
+- **Soft-dependenciák:** PlaceholderAPI (`%icesmp_...%` placeholderek, pl. TAB-hoz),
+  LibsDisguises (Druida-formák vizuálja) — mindkettő nélkül is teljes értékűen fut
+- Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 31 spec / 390+ spell,
+  hibrid erőforrás-költség, talentek, szakmák, gazdaság + piac, relikviák + rituálék,
+  világesemények (vérhold / világbossok / inváziók), király/raid/szezon, küldetések, pet-rendszer.
+- A hátralévő irányok: [ROADMAP.md](ROADMAP.md)

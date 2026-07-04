@@ -6,6 +6,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -50,6 +51,18 @@ public final class HudManager {
 
     private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();
 
+    /**
+     * A thread-safe snapshot of a player's HUD data, refreshed on the player's region thread each
+     * tick. Read by the PlaceholderAPI bridge from arbitrary threads (e.g. TAB's async refresh), so it
+     * must NOT touch the live player/PDC off-thread — only this immutable record.
+     */
+    public record HudSnapshot(String faction, String factionId, String className, int classLevel,
+                              String balance, boolean hasClass, int resource, int resourceMax,
+                              int resourcePercent, String resourceName, String resourceBar) {
+    }
+
+    private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
+
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
                       final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
@@ -69,12 +82,32 @@ public final class HudManager {
         return configManager.getBoolean("hud.enabled", true);
     }
 
-    /** Builds the player's sidebar (called on join, on that player's region thread). */
+    /**
+     * Whether IceSMP draws its own scoreboard sidebar. Set false when another plugin (e.g. TAB) owns
+     * the scoreboard — IceSMP then won't fight it (use the %icesmp_...% PlaceholderAPI placeholders).
+     */
+    private boolean sidebarEnabled() {
+        return configManager.getBoolean("hud.sidebar-enabled", true);
+    }
+
+    /** Whether IceSMP sets faction-coloured tab-list names. Set false when TAB owns the tab list. */
+    private boolean tablistEnabled() {
+        return configManager.getBoolean("hud.tablist-enabled", true);
+    }
+
+    /** Builds the player's HUD (called on join, on that player's region thread). */
     public void init(final Player player) {
         if (!isEnabled()) {
             return;
         }
+        if (sidebarEnabled()) {
+            buildSidebar(player);
+        }
+        update(player);
+    }
 
+    /** Registers the IceSMP scoreboard sidebar for the player (only when sidebar-enabled). */
+    private void buildSidebar(final Player player) {
         final ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager == null) {
             return;
@@ -95,22 +128,36 @@ public final class HudManager {
         }
         playerTeams.put(player.getUniqueId(), teams);
         player.setScoreboard(board);
-        update(player);
     }
 
-    /** Refreshes the sidebar text and tab-list name (on the player's region thread). */
+    /** Refreshes the sidebar text and/or tab-list name (on the player's region thread). */
     public void update(final Player player) {
-        final Team[] teams = playerTeams.get(player.getUniqueId());
-        if (teams == null) {
-            init(player);
+        if (!isEnabled()) {
             return;
         }
-
-        final List<Component> lines = buildLines(player);
-        for (int i = 0; i < LINES; i++) {
-            teams[i].prefix(i < lines.size() ? lines.get(i) : Component.empty());
+        if (sidebarEnabled()) {
+            Team[] teams = playerTeams.get(player.getUniqueId());
+            if (teams == null) {
+                buildSidebar(player);
+                teams = playerTeams.get(player.getUniqueId());
+            }
+            if (teams != null) {
+                final List<Component> lines = buildLines(player);
+                for (int i = 0; i < LINES; i++) {
+                    teams[i].prefix(i < lines.size() ? lines.get(i) : Component.empty());
+                }
+            }
+        } else if (playerTeams.remove(player.getUniqueId()) != null) {
+            // The sidebar was disabled at runtime (e.g. handing the scoreboard over to TAB):
+            // restore the main scoreboard so the stale IceSMP board doesn't linger frozen.
+            final ScoreboardManager manager = Bukkit.getScoreboardManager();
+            if (manager != null) {
+                player.setScoreboard(manager.getMainScoreboard());
+            }
         }
-        player.playerListName(tabName(player));
+        if (tablistEnabled()) {
+            player.playerListName(tabName(player));
+        }
     }
 
     /**
@@ -127,8 +174,38 @@ public final class HudManager {
             player.getScheduler().run(plugin, task -> {
                 update(player);
                 applyBossBars(player);
+                // Refresh the thread-safe snapshot on the player's own region thread (for PlaceholderAPI).
+                snapshots.put(player.getUniqueId(), buildSnapshot(player));
             }, null);
         }
+    }
+
+    /** The latest thread-safe HUD snapshot for a player (null until the first tick). Used by PlaceholderAPI. */
+    public HudSnapshot snapshot(final UUID playerId) {
+        return snapshots.get(playerId);
+    }
+
+    private HudSnapshot buildSnapshot(final Player player) {
+        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final JobType job = jobManager.getPrimaryJob(player);
+        final boolean hasClass = job != null;
+        // The snapshot's hasClass flag is solely the resource-display gate in the PlaceholderAPI
+        // bridge, so it also folds in the resource system's enabled state — with the system off,
+        // %icesmp_resource...% goes blank instead of showing a phantom full bar.
+        final boolean showResource = hasClass && resourceManager.isEnabled();
+        final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
+        return new HudSnapshot(
+                faction == null ? "nincs" : faction.getDisplayName(),
+                faction == null ? "" : faction.name(),
+                hasClass ? PlainTextComponentSerializer.plainText().serialize(job.getDisplayName()) : "nincs",
+                hasClass ? jobManager.getPrimaryLevel(player) : 0,
+                currencyManager.formatBalance(balance),
+                showResource,
+                showResource ? resourceManager.resourceValue(player) : 0,
+                resourceManager.resourceMax(),
+                showResource ? resourceManager.resourcePercent(player) : 0,
+                resourceManager.resourceName(player),
+                showResource ? resourceManager.resourceBarPlain(player) : "");
     }
 
     public void cleanup(final Player player) {
@@ -136,6 +213,7 @@ public final class HudManager {
             return;
         }
         playerTeams.remove(player.getUniqueId());
+        snapshots.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
         player.hideBossBar(bloodMoonBar);
         player.hideBossBar(worldBossBar);

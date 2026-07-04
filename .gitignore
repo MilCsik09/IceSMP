@@ -1,4 +1,15 @@
-# Project exclude paths
-/.gradle/
+# Build kimenetek
 /build/
-/build/classes/java/main/
+/.gradle/
+
+# Helyi tesztszerver futásidejű állapota (runServer) — sosem forrás
+/run/
+
+# IDE
+/.idea/
+*.iml
+/.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

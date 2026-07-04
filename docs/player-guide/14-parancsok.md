@@ -59,11 +59,16 @@ jelenti, hogy **elhagyható**.
 | Parancs | Mit csinál |
 |---|---|
 | `/icesmp reload` | Konfiguráció újratöltése |
-| `/class addxp\|setxp\|...` | Kaszt-adatok kezelése |
+| `/class addxp\|setxp <játékos> <mennyiség>` | Kaszt-XP adása/beállítása |
+| `/class givecatalyst\|unlockspell <játékos> [spell]` | Katalizátor adása / spell feloldása |
+| `/class admin <resetcd\|unlockallskills\|resetskills\|resetclass> <játékos>` | Cooldown-/spell-/**teljes kaszt-reset** egy játékosnak |
 | `/profession set\|clear\|addxp` | Szakma-adatok kezelése |
 | `/spec reset <játékos>` | Specializációk törlése |
 | `/sinner <játékos> set\|clear\|add` | Bűnös állapot kezelése |
-| `/relic give` | Relikvia adása |
+| `/quest complete <id> <játékos>` | Küldetés azonnali teljesítése |
+| `/currency set <játékos> <összeg> [valuta]` | Valuta-egyenleg beállítása |
+| `/faction set <játékos> <frakció>` | Játékos frakcióba sorolása |
+| `/relic give <játékos> <relic_id>` | Relikvia adása |
 | `/territory setcapital\|claim\|remove` | Területek kezelése |
 | `/exchangeboard place\|remove` | Árfolyamtábla lerakása/törlése |
 | `/events bloodmoon start\|stop` | Vérhold kézi indítása / leállítása |

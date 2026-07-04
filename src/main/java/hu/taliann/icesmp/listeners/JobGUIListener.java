@@ -97,13 +97,6 @@ public final class JobGUIListener implements Listener {
             return;
         }
 
-        if (jobManager.setSecondaryJob(player, selectedJob)) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
-            player.sendMessage(messageManager.getComponent("messages.job-select-secondary-success", "&aMasodlagos kaszt kivalasztva:").append(Component.space()).append(selectedJob.getDisplayName()));
-            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
-            return;
-        }
-
         player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
         player.sendMessage(messageManager.getComponent("messages.job-select-failed", "&cJelenleg nem valaszthatsz uj kasztot!"));
     }

@@ -30,12 +30,12 @@ public final class JobSetXpSubcommand implements JobSubcommand {
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-setxp", "Admin XP beallitasa kasztokhoz.");
+        return messageManager.get("messages.job-desc-setxp", "Admin XP beallitasa a kaszthoz.");
     }
 
     @Override
     public String usage() {
-        return messageManager.get("messages.job-usage-setxp", "/job setxp <player> <primary|secondary> <amount>");
+        return messageManager.get("messages.job-usage-setxp", "/job setxp <player> <amount>");
     }
 
     @Override
@@ -45,7 +45,7 @@ public final class JobSetXpSubcommand implements JobSubcommand {
             return true;
         }
 
-        if (args.length < 3) {
+        if (args.length < 2) {
             sender.sendMessage(messageManager.get("messages.job-setxp-usage", "&cHasznalat: %s", usage()));
             return true;
         }
@@ -56,15 +56,9 @@ public final class JobSetXpSubcommand implements JobSubcommand {
             return true;
         }
 
-        final Boolean primarySlot = parseSlot(args[1]);
-        if (primarySlot == null) {
-            sender.sendMessage(messageManager.get("messages.job-invalid-slot", "&cA slot csak primary vagy secondary lehet."));
-            return true;
-        }
-
         final int amount;
         try {
-            amount = Integer.parseInt(args[2]);
+            amount = Integer.parseInt(args[1]);
         } catch (final NumberFormatException exception) {
             sender.sendMessage(messageManager.get("messages.invalid-amount", "&cErvenytelen osszeg."));
             return true;
@@ -78,18 +72,17 @@ public final class JobSetXpSubcommand implements JobSubcommand {
         // Folia: setXp writes the target's PDC, so it must run on the target's own region thread (the
         // target may be in a different region than the admin). sender.sendMessage is safe from there.
         target.getScheduler().run(plugin, task -> {
-            if (!jobManager.setXp(target, primarySlot, amount)) {
-                sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA valasztott kaszt slot nincs beallitva."));
+            if (!jobManager.setXp(target, amount)) {
+                sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA celpontnak nincs kasztja."));
                 return;
             }
 
-            final int currentXp = jobManager.getXp(target, primarySlot);
-            final int currentLevel = jobManager.getLevel(target, primarySlot);
+            final int currentXp = jobManager.getXp(target);
+            final int currentLevel = jobManager.getPrimaryLevel(target);
             sender.sendMessage(messageManager.get(
                     "messages.job-setxp-success",
-                    "&aXP beallitva: &f%s &7| Slot: &f%s &7| XP: &f%s &7| Szint: &f%s",
+                    "&aXP beallitva: &f%s &7| XP: &f%s &7| Szint: &f%s",
                     target.getName(),
-                    primarySlot ? "primary" : "secondary",
                     currentXp,
                     currentLevel
             ));
@@ -106,25 +99,6 @@ public final class JobSetXpSubcommand implements JobSubcommand {
                     .toList();
         }
 
-        if (args.length == 2) {
-            return List.of("primary", "secondary").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase()))
-                    .toList();
-        }
-
         return List.of();
     }
-
-    private Boolean parseSlot(final String input) {
-        if ("primary".equalsIgnoreCase(input) || "p".equalsIgnoreCase(input)) {
-            return true;
-        }
-
-        if ("secondary".equalsIgnoreCase(input) || "s".equalsIgnoreCase(input)) {
-            return false;
-        }
-
-        return null;
-    }
 }
-

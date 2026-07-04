@@ -125,21 +125,18 @@ public final class JobGUI {
     private static ItemStack createJobItem(final JobType jobType, final Player viewer, final JobManager jobManager,
                                            final MessageManager messageManager) {
         final JobType primary = jobManager.getPrimaryJob(viewer);
-        final JobType secondary = jobManager.getSecondaryJob(viewer);
-        final boolean selected = primary == jobType || secondary == jobType;
+        final boolean selected = primary == jobType;
 
         // Selected jobs glow; the flag set matches GuiUtil.icon exactly, so it is a render-equivalent build.
         return GuiUtil.icon(
                 Material.ENCHANTED_BOOK,
                 jobType.getDisplayName(),
-                resolveJobLore(jobType, primary, secondary, jobManager.getPrimaryLevel(viewer),
-                        jobManager.isPrimaryJobAtMaxLevel(viewer), messageManager),
+                resolveJobLore(jobType, primary, jobManager.getPrimaryLevel(viewer), messageManager),
                 selected);
     }
 
-    private static List<Component> resolveJobLore(final JobType jobType, final JobType primary, final JobType secondary,
-                                                  final int primaryLevel, final boolean primaryMaxed,
-                                                  final MessageManager messageManager) {
+    private static List<Component> resolveJobLore(final JobType jobType, final JobType primary,
+                                                  final int primaryLevel, final MessageManager messageManager) {
         if (primary == jobType) {
             return List.of(
                     messageManager.getComponent("messages.job-gui-lore-primary", "&aElsodleges kasztod"),
@@ -152,37 +149,15 @@ public final class JobGUI {
             );
         }
 
-        if (secondary == jobType) {
-            return List.of(
-                    messageManager.getComponent("messages.job-gui-lore-secondary", "&bMasodlagos kasztod"),
-                    messageManager.getComponent("messages.job-gui-lore-selected", "&7Mar kivalasztva.")
-            );
-        }
-
         if (primary == null) {
             return List.of(messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kivalasztashoz!"));
         }
 
-        if (secondary != null) {
-            return List.of(
-                    messageManager.getComponent("messages.job-gui-lore-both-filled", "&cMindket kaszt hely foglalt."),
-                    messageManager.getComponent("messages.job-gui-lore-no-change", "&7Jelenleg nem modosithato.")
-            );
-        }
-
-        if (!primaryMaxed) {
-            return List.of(
-                    messageManager.getComponent("messages.job-gui-lore-secondary-locked", "&cMasodlagos kaszthoz elobb max szint kell."),
-                    messageManager.getComponent(
-                            "messages.job-gui-lore-level-line",
-                            "&7Szint: &f%s&7/&f%s",
-                            primaryLevel,
-                            JobManager.MAX_JOB_LEVEL
-                    )
-            );
-        }
-
-        return List.of(messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kivalasztashoz!"));
+        // A class is already chosen (and it isn't this one) — the player can't change it anymore.
+        return List.of(
+                messageManager.getComponent("messages.job-gui-lore-already-have", "&cMar van kasztod."),
+                messageManager.getComponent("messages.job-gui-lore-no-change", "&7Jelenleg nem modosithato.")
+        );
     }
 
     private static ItemStack createBackButton(final MessageManager messageManager) {

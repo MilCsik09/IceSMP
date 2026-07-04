@@ -7,9 +7,15 @@ settings:
   debug: true
 
 hud:
-  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, esemény),
+  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény),
   # frakció-színes tab-lista, és boss-bar a raid / vérhold / világboss alatt.
   enabled: true
+  # FONTOS: ha másik plugin (pl. TAB) kezeli a scoreboardot/tab-listát, kapcsold KI
+  # ezeket, hogy ne ütközzenek/villogjanak. A boss-barokat az 'enabled' vezérli (azokat
+  # a TAB nem kezeli, így maradhatnak). Az IceSMP adatait — köztük az Erő-csíkot —
+  # PlaceholderAPI-n át a TAB is meg tudja jeleníteni (%icesmp_...% placeholderek).
+  sidebar-enabled: true     # IceSMP saját scoreboard-oldalsáv (TAB mellett ajánlott: false)
+  tablist-enabled: true     # IceSMP frakció-színes tab-nevek (TAB mellett ajánlott: false)
   refresh-ticks: 20
   profile:
     enabled: true

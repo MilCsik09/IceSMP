@@ -151,6 +151,34 @@ public final class ResourceManager implements PlayerStateCleanup {
         return nameFor(player);
     }
 
+    /** Current resource value (rounded), for HUD/PlaceholderAPI display. */
+    public int resourceValue(final Player player) {
+        return (int) Math.round(current(player.getUniqueId()));
+    }
+
+    /** The resource maximum, for HUD/PlaceholderAPI display. */
+    public int resourceMax() {
+        return (int) Math.round(max());
+    }
+
+    /** Current resource as a 0–100 percentage, for HUD/PlaceholderAPI display. */
+    public int resourcePercent(final Player player) {
+        final double maxValue = max();
+        return maxValue <= 0.0D ? 0 : (int) Math.round(current(player.getUniqueId()) / maxValue * 100.0D);
+    }
+
+    /** A plain (uncoloured) 10-segment bar string of the resource, for PlaceholderAPI (e.g. TAB colours it). */
+    public String resourceBarPlain(final Player player) {
+        final int maxValue = (int) Math.round(max());
+        final int value = Math.max(0, Math.min(maxValue, (int) Math.round(current(player.getUniqueId()))));
+        final int filled = maxValue <= 0 ? 0 : Math.round(value / (float) maxValue * 10.0F);
+        final StringBuilder bar = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            bar.append(i < filled ? '▰' : '▱');
+        }
+        return bar.toString();
+    }
+
     private String nameFor(final Player player) {
         final JobType job = jobManager.getPrimaryJob(player);
         if (job == null) {

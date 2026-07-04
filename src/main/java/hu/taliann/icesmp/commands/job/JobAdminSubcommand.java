@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands.job;
 
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -21,14 +22,17 @@ public final class JobAdminSubcommand implements JobSubcommand {
     private final JobManager jobManager;
     private final SpellRegistry spellRegistry;
     private final AbilityCatalystListener abilityCatalystListener;
+    private final SpecializationManager specializationManager;
     private final MessageManager messageManager;
 
     public JobAdminSubcommand(final JavaPlugin plugin, final JobManager jobManager, final SpellRegistry spellRegistry,
-                              final AbilityCatalystListener abilityCatalystListener, final MessageManager messageManager) {
+                              final AbilityCatalystListener abilityCatalystListener,
+                              final SpecializationManager specializationManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
         this.abilityCatalystListener = abilityCatalystListener;
+        this.specializationManager = specializationManager;
         this.messageManager = messageManager;
     }
 
@@ -44,7 +48,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
     @Override
     public String usage() {
-        return messageManager.get("admin.job.usage", "/job admin <resetcd|unlockallskills|resetskills> <player>");
+        return messageManager.get("admin.job.usage", "/job admin <resetcd|unlockallskills|resetskills|resetclass> <player>");
     }
 
     @Override
@@ -60,7 +64,8 @@ public final class JobAdminSubcommand implements JobSubcommand {
         }
 
         final String action = args[0].toLowerCase(Locale.ROOT);
-        if (!"resetcd".equals(action) && !"unlockallskills".equals(action) && !"resetskills".equals(action)) {
+        if (!"resetcd".equals(action) && !"unlockallskills".equals(action)
+                && !"resetskills".equals(action) && !"resetclass".equals(action)) {
             sender.sendMessage(messageManager.get("admin.job.invalid-usage", "&cHasznalat: %s", usage()));
             return true;
         }
@@ -98,14 +103,30 @@ public final class JobAdminSubcommand implements JobSubcommand {
                 return;
             }
 
-            jobManager.setUnlockedSpellIds(target, List.of());
+            if ("resetskills".equals(action)) {
+                jobManager.setUnlockedSpellIds(target, List.of());
+                abilityCatalystListener.resetAllSpellState(target);
+                sender.sendMessage(messageManager.get(
+                        "admin.job.reset-skills.success",
+                        "&aMinden varazslat allapot alaphelyzetbe allitva: &f%s",
+                        target.getName()
+                ));
+                target.sendMessage(messageManager.get("admin.job.reset-skills.notify", "&eEgy admin alaphelyzetbe allitotta a varazslataidat."));
+                return;
+            }
+
+            // resetclass: full class wipe — both job slots + XP/levels, the class specialization,
+            // and all unlocked spells + spell state. The player can then pick a fresh class.
+            jobManager.resetClass(target);
+            specializationManager.resetClassSpecialization(target);
             abilityCatalystListener.resetAllSpellState(target);
             sender.sendMessage(messageManager.get(
-                    "admin.job.reset-skills.success",
-                    "&aMinden varazslat allapot alaphelyzetbe allitva: &f%s",
+                    "admin.job.reset-class.success",
+                    "&aKaszt teljesen alaphelyzetbe allitva (kaszt + spec + spellek): &f%s",
                     target.getName()
             ));
-            target.sendMessage(messageManager.get("admin.job.reset-skills.notify", "&eEgy admin alaphelyzetbe allitotta a varazslataidat."));
+            target.sendMessage(messageManager.get("admin.job.reset-class.notify",
+                    "&eEgy admin alaphelyzetbe allitotta a kasztodat — valassz ujat a /profile menubol."));
         }, null);
         return true;
     }
@@ -113,7 +134,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
         if (args.length == 1) {
-            return java.util.stream.Stream.of("resetcd", "unlockallskills", "resetskills")
+            return java.util.stream.Stream.of("resetcd", "unlockallskills", "resetskills", "resetclass")
                     .filter(value -> value.startsWith(args[0].toLowerCase()))
                     .toList();
         }

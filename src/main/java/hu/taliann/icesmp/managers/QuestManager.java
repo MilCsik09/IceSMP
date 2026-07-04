@@ -141,8 +141,7 @@ public final class QuestManager {
         final String requiredJobId = quest.getString("requires-job");
         if (requiredJobId != null && !requiredJobId.isBlank()) {
             final JobType requiredJob = JobType.fromId(requiredJobId);
-            if (requiredJob == null
-                    || (jobManager.getPrimaryJob(player) != requiredJob && jobManager.getSecondaryJob(player) != requiredJob)) {
+            if (requiredJob == null || jobManager.getPrimaryJob(player) != requiredJob) {
                 return "quest-requires-job";
             }
         }
@@ -323,7 +322,7 @@ public final class QuestManager {
     private void applyRewards(final Player player, final ConfigurationSection quest) {
         final int classXp = quest.getInt("rewards.class-xp", 0);
         if (classXp > 0 && jobManager.hasPrimaryJob(player)) {
-            jobManager.addXpToJob(player, true, classXp);
+            jobManager.addXpToJob(player, classXp);
         }
 
         final ConfigurationSection currencyReward = quest.getConfigurationSection("rewards.currency");

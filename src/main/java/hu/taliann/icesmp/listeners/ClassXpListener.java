@@ -59,15 +59,7 @@ public final class ClassXpListener implements Listener {
                 return;
             }
 
-            jobManager.addXpToJob(killer, true, totalXp);
-
-            if (jobManager.hasSecondaryJob(killer)) {
-                final int sharePercent = Math.max(0, Math.min(100, configManager.getInt("classes.xp.secondary-share-percent", 50)));
-                final int secondaryXp = totalXp * sharePercent / 100;
-                if (secondaryXp > 0) {
-                    jobManager.addXpToJob(killer, false, secondaryXp);
-                }
-            }
+            jobManager.addXpToJob(killer, totalXp);
         }, null);
     }
 }

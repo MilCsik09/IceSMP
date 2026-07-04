@@ -57,7 +57,7 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 |---|---|
 | 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |
 | 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget (víz-mesterség — végtelen búvárkodás) |
-| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
+| ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
 | ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
 
 > A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
@@ -118,10 +118,9 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
 
 ## 4. Kasztok ✅
 
-**13 kaszt** közül választhatsz a `/profile` → Kaszt menüből. **Max. 2 kasztod lehet:**
-- **Elsődleges kaszt** — bármikor választható.
-- **Másodlagos kaszt** — csak akkor nyílik meg, ha az elsődleges eléri a **max szintet (50)**.
-  (A másodlagos nem specializálódhat.)
+**13 kaszt** közül választhatsz a `/profile` → Kaszt menüből. **Egy kasztod lehet** — ezt
+választod ki, és ez határozza meg a képességeidet és a specializációdat. (A kaszt választása
+végleges; ha új kasztot szeretnél, egy adminnak kell resetelnie: `/class admin resetclass`.)
 
 Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spellbook") és saját
 **erőforrása** (az Erő-csík, lásd lentebb) van:
@@ -143,10 +142,9 @@ Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spell
 | 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkány Esszencia | Eszencia |
 
 ### Szintezés
-- A kaszt **mob ölésből** kap XP-t: alap **5 XP / ölés**, plusz a szörny szintjéért **+2 XP /
+- A kaszt **mob ölésből** kap XP-t: alap **10 XP / ölés**, plusz a szörny szintjéért **+3 XP /
   mob-szint** (lásd Mob-szintezés). Csak ellenséges mobok adnak XP-t.
-- Ha van másodlagos kasztod, az minden ölésből az **50%-ot** is megkapja.
-- **Progresszív szintgörbe:** az n. szintlépés ára `100 + (n-1)×20` XP — vagyis minél magasabb
+- **Progresszív szintgörbe:** az n. szintlépés ára `60 + (n-1)×10` XP — vagyis minél magasabb
   vagy, annál többet kell ölnöd a következő szintért. Max szint: **50**.
 
 ### Képesség Katalizátor (a „spellbook")
@@ -338,7 +336,7 @@ A szintjeid **talentpontokat** termelnek, amiket passzív erősítésekre költh
 `/profile` → **Talentek** menüből (kattints a fejlesztendő talentre), vagy paranccsal
 (`/talent`, `/talent spend <class|profession> <talent>`).
 
-- **Kaszt ponttár:** minden **5 kasztszint** = 1 pont (az elsődleges + másodlagos szintek összegéből).
+- **Kaszt ponttár:** minden **5 kasztszint** = 1 pont (a kasztod szintjéből).
 - **Szakma ponttár:** az **összes szakmád** szintjeiből, minden **10 szint** = 1 pont.
 
 ### Általános talentek (mindenkinek)
@@ -534,13 +532,14 @@ Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rá
   a lopás/árulás detektálás még nincs.
 - 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az
   ostromágyú már **kész**).
-- 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s / parkour pályák tervben.
-- 🚧 **Piactér:** nincs még lapozás/keresés, és fizikai piactábla a fővárosokban (a reputáció-árazás már **kész**).
-- 🚧 **Intro:** csak cím-szekvencia van; a látványos kamera-utaztatás még hiányzik.
+- 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
+  (a parkour-keret már **kész**: `/parkour`).
+- 🚧 **Piactér:** fizikai piactábla a fővárosokban még nincs (a lapozás, a `/market search`
+  keresés és a reputáció-árazás már **kész**).
+- 🚧 **Intro:** a cím-szekvencia és a kamera-utaztatás **kész**, de a kameraút alapból ki van
+  kapcsolva, amíg a szerver-csapat ki nem jelöli a waypointokat.
 - 🚧 **Szezonális liga:** működik a pontgyűjtés, de a győztes **kozmetikai relikvia-jutalma** még nincs.
 - ⏳ **Ultimate képességek** külön rendszerként (jelenleg a spec-ultik töltik be ezt a szerepet).
-- ⏳ **Megnevezett, szintet lépő állandó társ** (a Vadmester perzisztens companionja) — a többi
-  pet-fejlesztés (parancsok, idézés-limit, talent→pet szinergia, Nekromanta lélekszilánk) **kész**.
 - ⏳ **Világépítés:** a fővárosok, a Sötét romváros és a távolság-gyűrűk loot-asztalai a szerver
   csapatának feladata (a plugin a `/territory` paranccsal adja hozzá az eszközt a kijelölésükhöz).
 

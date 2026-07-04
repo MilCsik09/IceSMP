@@ -12,7 +12,7 @@ helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyi
 |---|---|---|
 | 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére | Hő-mesterség: a Nether és a láva veszélytelen |
 | 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget | Víz-mesterség: végtelen búvárkodás, hideg biómok, víz alatti építés/aknázás |
-| ⚪ **Semleges** | Lopakodás közben **láthatatlan**; a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Lopakodás, menekülés, nyugodt utazás (endermanre is ránézhetsz) — és nincs állampolgári adó |
+| ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
 | ⚫ **Sötét** | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
 
 ## A Sötét frakció — fontos tudnivalók ⚫

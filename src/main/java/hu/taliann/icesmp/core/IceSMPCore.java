@@ -359,9 +359,31 @@ public final class IceSMPCore {
         scheduleWorldEvents();
         scheduleHud();
         schedulePetCombat();
+        registerPlaceholders();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
+    }
+
+    /**
+     * Registers the PlaceholderAPI bridge if PlaceholderAPI is installed. Done reflectively so the core
+     * has no compile-time dependency on PlaceholderAPI (and on the {@code IceSMPPlaceholders} class,
+     * which only compiles when the PlaceholderAPI API is on the build classpath). If PlaceholderAPI is
+     * absent — or the integration class was not bundled — this is a no-op.
+     */
+    private void registerPlaceholders() {
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            return;
+        }
+        try {
+            Class.forName("hu.taliann.icesmp.integration.IceSMPPlaceholders")
+                    .getMethod("register", JavaPlugin.class, HudManager.class)
+                    .invoke(null, plugin, hudManager);
+            plugin.getLogger().info("PlaceholderAPI integráció bekapcsolva (%icesmp_...% placeholderek).");
+        } catch (final Throwable throwable) {
+            plugin.getLogger().warning("PlaceholderAPI jelen van, de a placeholder-integráció nem indult: "
+                    + throwable.getMessage());
+        }
     }
 
     /**
@@ -503,7 +525,7 @@ public final class IceSMPCore {
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(factionManager, metelytepoManager, factionTreasuryManager, currencyManager, kingManager, raidManager, messageManager));
-        plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, messageManager));
+        plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, specializationManager, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
         plugin.registerCommand("leaderboard", "Ranglisták (szint, vagyon, raid-kill)", List.of("lb", "top", "rangsor"), new LeaderboardCommand(commandMenuContext, messageManager));

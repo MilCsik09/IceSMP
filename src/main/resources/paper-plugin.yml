@@ -12,14 +12,18 @@ folia-supported: true
 
 authors: [ Taliann ]
 
-# Optional integration: ha telepítve van a LibsDisguises, a Druida formák vizuálisan
-# is átalakítják a játékost (mob-disguise). Soft-depend (required: false): nélküle is
-# fut, a forma-rendszer ilyenkor csak statisztikát vált. join-classpath: a reflexiós
-# híd (DruidDisguise) így éri el a LibsDisguises osztályait futásidőben.
+# Opcionális integrációk (mind soft-depend, required: false — nélkülük is fut):
+#  - LibsDisguises: a Druida formák vizuális átalakulása (mob-disguise). A reflexiós híd
+#    (DruidDisguise) join-classpath-tal éri el az osztályait futásidőben.
+#  - PlaceholderAPI: a %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot,
+#    frakciót, kasztot). load: BEFORE, hogy a regisztrációkor már elérhető legyen.
 dependencies:
   server:
     LibsDisguises:
       load: BEFORE
       required: false
       join-classpath: true
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
 

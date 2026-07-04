@@ -25,27 +25,27 @@ közül választhatsz a `/profile` → **Kaszt** menüből. Minden kasztnak saj�
 > rituálék XP-t, a nehéz fizikai képességek éhséget kérnek. Részletek a
 > [fő tájékoztatóban](../../PLAYER_GUIDE.md).
 
-## Elsődleges és másodlagos kaszt
+## Egy kaszt, végleges választás
 
-- **Elsődleges kaszt:** ezt választod először, bármikor. Ez a „fő" hősöd.
-- **Másodlagos kaszt:** csak akkor nyílik meg, ha az **elsődleges eléri a 50. (max) szintet**.
-  Ekkor egy második kasztot is felvehetsz (a 13 közül). **A másodlagos kaszt nem specializálódhat.**
+- **Egy kasztod lehet** — ezt választod ki a menüből, és ez a hősöd. Ez adja a képességeidet
+  és (25. szinttől) a specializációdat.
+- **A választás végleges:** ha új kasztot szeretnél, egy adminnak kell reszetelnie
+  (`/class admin resetclass <játékos>` — ez törli a kasztot, a specet és a feloldott spelleket).
 
 ## Szintezés — hogyan erősödsz?
 
 A kaszt **szörnyek (mobok) megölésével** kap **XP-t** (tapasztalatot):
 
-- **Alap: 5 XP** minden ellenséges mob megöléséért.
-- **+2 XP minden „mob-szintért".** A spawntól messzebb a szörnyek erősebbek és magasabb
+- **Alap: 10 XP** minden ellenséges mob megöléséért.
+- **+3 XP minden „mob-szintért".** A spawntól messzebb a szörnyek erősebbek és magasabb
   szintűek (lásd a [Világesemények / Mob-szintezés] részt) — egy 3-as szintű szörny tehát
-  `5 + 3×2 = 11` XP-t ad.
+  `10 + 3×3 = 19` XP-t ad.
 - Csak **ellenséges** mobok adnak XP-t (tehén, csirke nem).
-- Ha van **másodlagos kasztod**, az minden ölésből **a felét (50%)** is megkapja.
 
-**Mennyi kell egy szinthez?** A következő szint ára `100 + (előző szintek száma × 20)` XP:
-- 1 → 2 szint: **100 XP** (kb. 20 alap-mob)
-- 2 → 3 szint: **120 XP**
-- 3 → 4 szint: **140 XP** … és így tovább. **Max szint: 50.**
+**Mennyi kell egy szinthez?** A következő szint ára `60 + (előző szintek száma × 10)` XP:
+- 1 → 2 szint: **60 XP** (kb. 6 alap-mob)
+- 2 → 3 szint: **70 XP**
+- 3 → 4 szint: **80 XP** … és így tovább. **Max szint: 50.**
 
 Minél magasabb a szinted, annál több ölés kell a következőhöz — de a magas szintű szörnyek
 egyenként több XP-t is adnak, szóval érdemes a veszélyesebb, távolabbi vidékekre menni.

@@ -55,26 +55,19 @@ public final class JobStatusSubcommand implements JobSubcommand {
         }
 
         final JobType primaryJob = jobManager.getPrimaryJob(target);
-        final JobType secondaryJob = jobManager.getSecondaryJob(target);
 
         final String noneText = messageManager.get("messages.job-status-none", "nincs");
         final String primaryName = primaryJob == null ? noneText : primaryJob.getId();
-        final String secondaryName = secondaryJob == null ? noneText : secondaryJob.getId();
-        final int primaryXp = jobManager.getXp(target, true);
-        final int secondaryXp = jobManager.getXp(target, false);
-        final int primaryLevel = jobManager.getLevel(target, true);
-        final int secondaryLevel = jobManager.getLevel(target, false);
+        final int primaryXp = jobManager.getXp(target);
+        final int primaryLevel = jobManager.getPrimaryLevel(target);
 
         sender.sendMessage(messageManager.get(
                 "messages.job-status-result",
-                "&6%s &7| Primary: &f%s &7(Lv. &f%s&7, XP: &f%s&7) &8| &7Secondary: &f%s &7(Lv. &f%s&7, XP: &f%s&7)",
+                "&6%s &7| Kaszt: &f%s &7(Lv. &f%s&7, XP: &f%s&7)",
                 target.getName(),
                 primaryName,
                 primaryLevel,
-                primaryXp,
-                secondaryName,
-                secondaryLevel,
-                secondaryXp
+                primaryXp
         ));
 
         return true;

@@ -178,18 +178,12 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
     private boolean meetsJobRequirement(final Player player, final CraftingRule rule) {
         final JobType requiredJob = rule.requiredJob();
         if (requiredJob == null) {
-            return hasJobAtLevel(player, true, rule.requiredJobLevel()) || hasJobAtLevel(player, false, rule.requiredJobLevel());
+            return hasJobAtLevel(player, rule.requiredJobLevel());
         }
 
-        if (jobManager.hasPrimaryJob(player)
+        return jobManager.hasPrimaryJob(player)
                 && jobManager.getPrimaryJob(player) == requiredJob
-                && jobManager.getPrimaryLevel(player) >= rule.requiredJobLevel()) {
-            return true;
-        }
-
-        return jobManager.hasSecondaryJob(player)
-                && jobManager.getSecondaryJob(player) == requiredJob
-                && jobManager.getSecondaryLevel(player) >= rule.requiredJobLevel();
+                && jobManager.getPrimaryLevel(player) >= rule.requiredJobLevel();
     }
 
     private boolean meetsProfessionRequirement(final Player player, final CraftingRule rule) {
@@ -197,8 +191,8 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
                 && professionManager.getLevel(player, rule.requiredProfession()) >= rule.requiredProfessionLevel();
     }
 
-    private boolean hasJobAtLevel(final Player player, final boolean primary, final int requiredLevel) {
-        return jobManager.hasJob(player, primary) && jobManager.getLevel(player, primary) >= requiredLevel;
+    private boolean hasJobAtLevel(final Player player, final int requiredLevel) {
+        return jobManager.hasPrimaryJob(player) && jobManager.getPrimaryLevel(player) >= requiredLevel;
     }
 
     /**
