@@ -33,8 +33,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   (Címek/rangok NEM — ütközne a szerver rang-pluginjaival.)
 
 ### Gazdaság
-- ⬜ **Valódi aukciósház:** licit, lejárat, túllicit-visszafizetés (a fix-áras piac + keresés + lapozás kész).
 - 💡 **Bank-kamat / kölcsön**, **frakció-bolt NPC-k** (money sink), **kereskedő-karaván esemény**.
+- 💡 **Aukció-finomítás:** kézi licit-összeg megadása (most a GUI mindig a minimum következő
+  licitet teszi), buy-out ár. (A licit + lejárat + túllicit-visszafizetés alap **kész**.)
 
 ### Balansz (élő playtest visszajelzés alapján)
 - 🔨 **Hibrid spell-költség finomhangolás:** határeset-spellek „valutájának" pontosítása

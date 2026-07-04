@@ -121,8 +121,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a száműzetés kész; **lopás/árulás detektálás nincs**.
 - 🚧 **Raid:** nincs 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az ostromágyú kész).
 - 🚧 **Kaszt-questek:** jelenleg 4 kezdő próba van; a többi kaszt saját NPC/parkour pályái tervben.
-- 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search` és a
-  reputáció-árazás kész — ezeket teszteld!).
+- 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search`, a
+  reputáció-árazás és a **licitálós aukciósház** kész — ezeket teszteld!).
 - 🚧 **Intro:** a kamera-utaztatás kész, de alapból kikapcsolt (waypoint-kijelölésig).
 - 🚧 **Szezonliga:** pontgyűjtés kész, a győztes **kozmetikai jutalma** még nincs.
 - ⏳ **Külön „ultimate" / burst-rendszer** (a korábbi kirobbanás-mechanika kivéve).
@@ -202,6 +202,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Dinamikus árfolyam:** több valuta a szerveren → kevesebbet ér (`/currency rates`).
 - [ ] **Piac:** `/market sell <ár>` a kézben tartott tárgyra (max 5 tétel); `/market` vétel a bankból;
       `/market cancel` visszavon. Eladásnál ~10% „elég" (money sink).
+- [ ] **Aukció:** `/market auction <ár> [óra]` indít; a GUI-ban kattintás licitál (bankból zárol);
+      másik játékos túllicitál → az első **visszakapja** a zárolt licitet + üzenetet kap.
+- [ ] **Aukció-lejárat:** rövid (pl. 0.05 óra = 3 perc) aukció lejár → nyertesnél a tárgy, eladónál
+      a licit (−10% díj); licit nélkül a tárgy visszajár. Offline nyertes **belépéskor** vagy
+      `/market claim`-mel kapja meg.
+- [ ] **Aukció-védelem:** saját aukcióra nem licitálhatsz; élő licites aukció `/market cancel`-lel
+      nem vonható vissza; legmagasabb licitálóként nem licitálhatsz rá még egyszer.
 - [ ] **Reputáció-árazás:** ellenséges/raidelő frakciótól drágább (+25%), szövetségestől olcsóbb (−10%).
 - [ ] **Adó:** óránként a frakciótagok a valuta-egyenlegük 2%-át a kasszába fizetik (Semleges mentes).
 - [ ] ⚠️ **Folia:** vásárolj olyan eladótól, aki **másik régióban/máshol van** → az eladó értesítése

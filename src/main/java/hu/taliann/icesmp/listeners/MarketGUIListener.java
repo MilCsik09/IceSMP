@@ -65,6 +65,11 @@ public final class MarketGUIListener implements Listener {
         }
 
         final MarketManager.Listing listing = marketManager.getListing(listingId);
+        if (listing != null && listing.auction()) {
+            handleBid(player, holder, listingId, listing);
+            return;
+        }
+
         final double paid = listing == null ? 0.0D : marketManager.getEffectivePrice(player, listing);
         final String errorKey = marketManager.buy(player, listingId);
         if (errorKey != null) {
@@ -99,11 +104,51 @@ public final class MarketGUIListener implements Listener {
         MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
     }
 
+    /** Places the minimum next bid on the clicked auction and refreshes the GUI. */
+    private void handleBid(final Player player, final MarketHolder holder,
+                           final UUID listingId, final MarketManager.Listing listing) {
+        final MarketManager.BidOutcome outcome = marketManager.bid(player, listingId);
+        if (outcome.errorKey() != null) {
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
+            player.sendMessage(messageManager.get(outcome.errorKey(), defaultErrorFor(outcome.errorKey())));
+            MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
+            return;
+        }
+
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 1.4F);
+        player.sendMessage(messageManager.getMessage(
+                "market-bid-success",
+                "&aLicitáltál: &f{bid} {currency} &7(a bankodból zárolva; túllicitálásnál visszajár).",
+                Map.of(
+                        "bid", currencyManager.formatBalance(outcome.amount()),
+                        "currency", listing.currency().getDisplayName()
+                )
+        ));
+
+        // Folia: the outbid player may be in another region — hop to their scheduler.
+        if (outcome.previousBidder() != null) {
+            final Player outbid = Bukkit.getPlayer(outcome.previousBidder());
+            if (outbid != null) {
+                final String itemName = listing.item().getType().name();
+                outbid.getScheduler().run(plugin, task -> outbid.sendMessage(messageManager.getMessage(
+                        "market-outbid-notice",
+                        "&cTúllicitáltak (&f{item}&c) — a zárolt licited visszakerült a bankodba.",
+                        Map.of("item", itemName)
+                )), null);
+            }
+        }
+
+        MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
+    }
+
     private String defaultErrorFor(final String errorKey) {
         return switch (errorKey) {
             case "market-listing-gone" -> "&cEz a tétel már elkelt.";
             case "market-own-listing" -> "&cA saját tételedet nem veheted meg (visszavonás: /market cancel).";
             case "market-insufficient-balance" -> "&cNincs elég fedezet a bankodban ehhez a vásárláshoz.";
+            case "market-auction-ended" -> "&cEz az aukció már lezárult.";
+            case "market-already-highest" -> "&cMár te vagy a legmagasabb licitáló.";
+            case "market-auction-use-bid" -> "&cEz aukciós tétel — licitálni lehet rá.";
             default -> "&cA vásárlás nem sikerült.";
         };
     }

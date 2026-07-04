@@ -32,9 +32,11 @@ jelenti, hogy **elhagyható**.
 | `/currency pay <játékos> <összeg> [valuta]` | | Pénz utalása |
 | `/currency exchange <összeg> <honnan> <hová>` | | Valutaváltás |
 | `/currency rates` | | Aktuális árfolyamok |
-| `/market` | `piac`, `ah` | Piactér böngésző (vásárlás) |
+| `/market` | `piac`, `ah` | Piactér böngésző (vásárlás / licitálás) |
 | `/market sell <ár> [valuta]` | | A kézben tartott tárgy eladása |
-| `/market cancel` | | Saját eladásaid visszavonása |
+| `/market auction <kikiáltási ár> [óra] [valuta]` | | Aukció indítása a kézben tartott tárgyra |
+| `/market claim` | | Megnyert / visszajáró aukciós tárgyak átvétele |
+| `/market cancel` | | Saját eladásaid visszavonása (élő licites aukció nem) |
 | `/spec list` / `/spec choose <id>` | `specialization`, `specializacio` | Specializációk |
 | `/spec respec <class\|profession>` | | Specializáció visszaváltása |
 | `/talent` / `/talent spend <class\|profession> <talent>` | `talents`, `talentfa` | Talentek |

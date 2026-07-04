@@ -66,3 +66,11 @@ exchange-board:
 market:
   max-listings-per-player: 5
   fee-percent: 10
+  # Aukciók: /market auction <kikiáltási ár> [óra] [valuta]. A licit a bankból
+  # zárolódik; túllicitálásnál automatikusan visszajár. Lejáratkor a nyertes
+  # licit (fee-percent levonása után) az eladóé, a tárgy a nyertesé — offline
+  # nyertes belépéskor vagy /market claim-mel kapja meg.
+  auction:
+    default-duration-hours: 24
+    max-duration-hours: 72
+    min-increment-percent: 10

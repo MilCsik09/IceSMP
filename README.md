@@ -163,6 +163,9 @@ itemként és banki egyenlegként is léteznek:
   hologramok** (`/exchangeboard`) mutatják.
 - **Piactér** (`/market`): játékosok közti adásvétel banki egyenlegből, eladási díjjal. A
   vételárat a **frakció-reputáció** is módosítja (ellenségtől felár, szövetségestől kedvezmény).
+- **Aukciósház** (`/market auction`): licitálós eladás lejárattal — a licit a bankból zárolódik,
+  túllicitálásnál automatikusan visszajár; a lejárt aukció nyertese offline is megkapja a
+  tárgyat (belépéskor vagy `/market claim`).
 
 ### 🧟 Távolság-alapú nehézség
 
@@ -190,7 +193,7 @@ alap konfigurációban az értesítés aktív, az építésvédelem viszont ki v
 | `/profession join/info/list` | `prof`, `szakma` | Szakma választás és állapot |
 | `/bank balance/deposit/withdraw` | `wallet`, `vault` | Banki műveletek |
 | `/currency balance/pay/exchange/rates` | `money`, `eco` | Valutaműveletek és árfolyamok |
-| `/market`, `/market sell/cancel/search` | `piac`, `ah` | Piactér (reputáció-árazással) |
+| `/market`, `/market sell/auction/claim/cancel/search` | `piac`, `ah` | Piactér + aukciósház (reputáció-árazással) |
 | `/faction king vote/tax/raid` | `f` | Királyválasztás, adókulcs, raid (király) |
 | `/souls`, `/souls champion` | `soul`, `lelek` | Nekromanta lélekszilánk + bajnok |
 | `/quest …` | `quests`, `kuldetes` | Küldetések |

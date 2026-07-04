@@ -44,6 +44,7 @@ import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.IntroListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
+import hu.taliann.icesmp.listeners.MarketDeliveryListener;
 import hu.taliann.icesmp.listeners.MarketGUIListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.MinionProtectionListener;
@@ -243,7 +244,7 @@ public final class IceSMPCore {
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
         this.factionRelationManager = new FactionRelationManager(configManager, raidManager);
-        this.marketManager = new MarketManager(plugin, configManager, currencyManager, factionManager, factionRelationManager);
+        this.marketManager = new MarketManager(plugin, configManager, currencyManager, factionManager, factionRelationManager, messageManager);
         this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
                 currencyManager, factionManager, metelytepoManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
@@ -446,6 +447,7 @@ public final class IceSMPCore {
                     exchangeBoardManager.tick();
                     statsManager.tick();
                     achievementManager.tick();
+                    marketManager.tickAuctions();
                 },
                 intervalTicks,
                 intervalTicks
@@ -561,6 +563,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new MarketDeliveryListener(marketManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);

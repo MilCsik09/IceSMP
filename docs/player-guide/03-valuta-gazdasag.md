@@ -43,6 +43,16 @@ A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktu
   egyenlegedből fizet).
 - `/market cancel` — visszaveszed a saját tételeidet (visszakapod a tárgyat).
 
+**Aukció (licitálás):** ⚖️
+- `/market auction <kikiáltási ár> [óra] [valuta]` — a kezedben tartott tárgyra **aukciót**
+  indítasz (alapból 24 órás, legfeljebb 72). A böngészőben kattintással licitálsz — mindig a
+  minimum következő licitet ajánlod (az aktuális +10%).
+- A licited a **bankodból azonnal zárolódik**; ha valaki túllicitál, **automatikusan visszakapod**.
+- Lejáratkor a nyertes viszi a tárgyat, az eladó a legmagasabb licitet (díj levonásával). Ha a
+  nyertes (vagy licit nélküli aukciónál az eladó) épp nincs fenn, **belépéskor** vagy
+  `/market claim`-mel veszi át a tárgyat.
+- Élő licites aukció **nem vonható vissza**; licit nélkülit a `/market cancel` visszaad.
+
 **Eladási díj:** minden eladásból kb. **10% eltűnik** a gazdaságból — ez tartja kordában az
 inflációt (a pénz „elértéktelenedését").
 

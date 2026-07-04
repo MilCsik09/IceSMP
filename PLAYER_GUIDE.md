@@ -98,6 +98,12 @@ Játékos–játékos kereskedés:
 - `/market` — böngésző felület; kattints egy tételre a **megvásárláshoz** (a banki egyenlegedből fizet).
 - `/market cancel` — visszavonod a saját tételeidet (visszakapod az itemeket).
 - **Eladási díj:** minden eladásból ~10% „elég" (eltűnik a gazdaságból) — ez fékezi az inflációt.
+- **Aukció:** `/market auction <kikiáltási ár> [óra] [valuta]` — a kezedben tartott tárgyra
+  **licitálós** aukciót indítasz (alapból 24 óra, max. 72). A GUI-ban kattintással licitálsz:
+  a licit a **bankodból zárolódik**, túllicitálásnál **automatikusan visszajár**. Lejáratkor a
+  legmagasabb licit (díj levonása után) az eladóé, a tárgy a nyertesé — ha épp nem vagy fenn,
+  belépéskor vagy `/market claim`-mel kapod meg. Élő licites aukció **nem vonható vissza**.
+  (Aukciónál a licit fix összeg — a reputáció-felár csak a fix-áras tételekre vonatkozik.)
 - **Frakció-reputáció:** a vételár attól is függ, milyen viszonyban van a frakciód az
   eladóéval. **Ellenséges** (vagy épp raidben álló) frakciótól drágább (+25% felár, ami elég),
   **szövetségestől** olcsóbb (−10%). Semleges viszonynál nincs változás.
@@ -515,7 +521,7 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 | `/profession join/info/list` | Szakmák |
 | `/bank balance/deposit/withdraw` | Bank |
 | `/currency balance/pay/exchange/rates` | Valuta + árfolyam |
-| `/market`, `/market sell/cancel` | Piactér |
+| `/market`, `/market sell/auction/claim/cancel` | Piactér + aukciósház |
 | `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
 | `/quest list/info/accept/abandon` | Küldetések |
 | `/events season/blood-moon` | Világesemények |
@@ -536,7 +542,7 @@ Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rá
 - 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
   (a parkour-keret már **kész**: `/parkour`).
 - 🚧 **Piactér:** fizikai piactábla a fővárosokban még nincs (a lapozás, a `/market search`
-  keresés és a reputáció-árazás már **kész**).
+  keresés, a reputáció-árazás és a **licitálós aukciósház** már **kész**).
 - 🚧 **Intro:** a cím-szekvencia és a kamera-utaztatás **kész**, de a kameraút alapból ki van
   kapcsolva, amíg a szerver-csapat ki nem jelöli a waypointokat.
 - 🚧 **Szezonális liga:** működik a pontgyűjtés, de a győztes **kozmetikai relikvia-jutalma** még nincs.
