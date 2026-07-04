@@ -26,10 +26,15 @@ A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.
 
 ## Hogyan leszek bűnös (sinner)?
 
-- Ha **megölsz egy másik játékost**, **+1 bűnt** kapsz.
+- **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz.
+- **Árulás:** ha a **saját frakciótársadat** ölöd meg, az súlyosabb — **+2 bűn**. (A Semlegesek
+  laza közösség: köztük az ölés sima gyilkosságnak számít.)
+- **Lopás:** ha egy **másik frakció területén** álló konténerből (láda, hordó, kemence,
+  hopper…) tárgyat veszel ki, **+1 bűnt** kapsz. Egy fosztogatás-sorozat területenként
+  egyszer számít (nem minden kattintás külön bűn).
 - **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök paktummal).
-- **Kivétel:** **raid** (frakcióháború) alatt a hadviselő frakciók közti ölés **nem számít
-  bűnnek** — lásd [Raid és háború](11-raid-haboru.md).
+- **Kivétel:** **raid** (frakcióháború) alatt a hadviselő frakciók közti **ölés és
+  zsákmányolás nem számít bűnnek** — lásd [Raid és háború](11-raid-haboru.md).
 
 > A bűnösöket egy különleges relikvia, a **Mételytépő** is megjelölheti és megbüntetheti —
 > erről a [Relikviák](09-relikviak.md) oldalon olvashatsz.

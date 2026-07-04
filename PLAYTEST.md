@@ -107,7 +107,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - **Relikviák**: Mételytépő (fegyver, PvP-transzfer) + 4 frakció-elytra; rituálé-oltárok.
 - **Pet/minion**: Vadmester & Nekromanta társak (befogás, szint, parancsok), lélekszilánk-bajnok.
 - **Küldetések**: 4 kezdő kaszt-próba, Sötét Beavatás, vezeklés-lánc, napi küldetések.
-- **Bűn-rendszer**: gyilkosság → bűn → 4-nél száműzetés a Sötétbe (örök paktum).
+- **Bűn-rendszer**: gyilkosság/árulás/lopás → bűn → 4-nél száműzetés a Sötétbe (örök paktum).
 - **Királyság/raid/szezon**: királyválasztás, kassza, adó, raid, hadizsákmány, liga-pontok.
 - **Világesemények**: távolság-alapú mob-szintezés, vérhold, világbossok (10 archetípus, 2 fázis),
   inváziók (horda + bajnok), szezonális liga.
@@ -118,7 +118,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 ## 3. Mi NINCS / részleges (NE teszteld hibaként) ⏳🚧
 
-- 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a száműzetés kész; **lopás/árulás detektálás nincs**.
+- ✅ **Bűn-rendszer teljes:** gyilkosság (+1), **árulás** (frakciótárs ölése, +2) és **lopás**
+  (idegen territóriumban konténer-fosztás, +1) is bűn — teszteld mindhármat!
 - 🚧 **Raid:** nincs 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az ostromágyú kész).
 - 🚧 **Kaszt-questek:** jelenleg 4 kezdő próba van; a többi kaszt saját NPC/parkour pályái tervben.
 - 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search`, a
@@ -241,6 +242,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] `/quest complete <j> <id>` (admin) azonnal teljesít.
 - [ ] **Bűn:** ölj meg egy másik játékost → +1 bűn; **4 bűnnél** automatikus száműzetés a Sötétbe (örök paktum).
       (Raid alatt a hadakozók közti ölés **nem** bűn.)
+- [ ] **Árulás:** öld meg a SAJÁT frakciótársadat → **+2 bűn** külön üzenettel. (Semleges–Semleges
+      ölés sima gyilkosság, +1.)
+- [ ] **Lopás:** végy ki tárgyat egy **másik frakció territóriumában** álló ládából → +1 bűn üzenettel;
+      ugyanabban a területen 1 percen belül több kivét **nem** ad újabb bűnt. Saját területen és
+      claimeletlen vadonban nincs bűn; virtuális GUI-k (piac, menük) nem érintettek.
+- [ ] **Lopás-kivételek:** raid-háború alatt a hadviselő fél területén a zsákmányolás nem bűn;
+      a `icesmp.admin.territory.bypass` joggal szintén nem.
 - [ ] **Sötét Beavatás** küldetés feloldja a Nekromantát.
 - [ ] **Vezeklés-lánc** (3 rész) az EGYETLEN mód a paktum megtörésére.
 - [ ] ⚠️ **Folia:** a bűn-jelölés a gyilkost másik régióból is hibamentesen jelöli.

@@ -34,6 +34,17 @@ factions:
   sins:
     murder-counts: true
     exile-threshold: 4
+    # Árulás: a SAJÁT frakciótársad megölése súlyosabban esik latba (a Semlegesek
+    # laza közösség — köztük az ölés sima gyilkosság marad).
+    betrayal-counts: true
+    betrayal-weight: 2
+    # Lopás: másik frakció területén (territory-claim) konténerből tárgyat kivenni
+    # bűn. Hadban álló frakciók közt (raid) a zsákmányolás szentesített — nem bűn.
+    # A cooldown egy fosztogatás-sorozatot egyetlen bűnként számol területenként.
+    theft:
+      enabled: true
+      weight: 1
+      cooldown-seconds: 60
   # ===== Királyok és választás =====
   # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
   # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.

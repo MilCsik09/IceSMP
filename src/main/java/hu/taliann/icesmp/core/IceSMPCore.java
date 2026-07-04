@@ -76,6 +76,7 @@ import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.listeners.TalentAttributeListener;
 import hu.taliann.icesmp.listeners.TerritoryListener;
+import hu.taliann.icesmp.listeners.TheftListener;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
@@ -587,6 +588,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(plugin, metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new TheftListener(metelytepoManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);

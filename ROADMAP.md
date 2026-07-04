@@ -22,7 +22,8 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - ⬜ **Raid-mélyítés:** 10v10 létszámkorlát és jelentkezés; aréna-/területkötés;
   objektív-alapú raid (zászlófoglalás, pont-tartás); terület átvétele győzelemmel.
   (A győztes-buff és az ostromágyú kész.)
-- ⬜ **Bűn-rendszer bővítés:** lopás/árulás detektálás (most csak a gyilkosság számít bűnnek).
+- 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
+  konténer-fosztás +1, frakciótárs ölése +2); további ötlet: bűn-alapú fejvadász-jutalom.
 - ⬜ **Kaszt-questek felturbózása:** NPC-s próbák az „ölj X-et" helyett (FancyNpcs a szerveren
   elérhető; a parkour-keret kész).
 - ⬜ **Szezonliga jutalom:** a győztes frakció kozmetikai/relikvia-jutalma a szezon végén.

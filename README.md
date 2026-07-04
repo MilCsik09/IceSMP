@@ -29,6 +29,9 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 **A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
 **bűnössé (sinner)** bélyegzett. Belépéskor megköttetik a **sötét paktum** — onnantól a
 bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később elhagyod a frakciót.
+Bűn a **gyilkosság** (+1), az **árulás** (saját frakciótárs megölése, +2) és a **lopás**
+(másik frakció területén konténer-fosztás, +1); 4 bűnnél automatikus a száműzetés. Raid
+alatt a hadviselők közti ölés és zsákmányolás nem bűn.
 
 ### 🧙 Kasztok és specializációk
 

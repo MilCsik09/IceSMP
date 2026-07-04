@@ -69,9 +69,15 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
   levenni** (még frakcióelhagyás után sem). Az egyetlen visszaút a **vezeklés-küldetéslánc**
   (lásd a Küldetéseknél).
 
-**Hogyan leszel bűnös?** Ha **megölsz egy másik játékost**, +1 bűnt kapsz. **4 bűnnél**
-automatikusan **száműznek a Sötét frakcióba** (örök paktummal). Kivétel: raid alatt a
-hadviselő frakciók közti ölés **nem számít bűnnek**.
+**Hogyan leszel bűnös?** **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök
+paktummal). Bűnt háromféleképp követhetsz el:
+- **Gyilkosság:** megölsz egy másik játékost → **+1 bűn**.
+- **Árulás:** a **saját frakciótársadat** ölöd meg → **+2 bűn** (a Semlegesek laza közössége
+  kivétel — köztük az ölés sima gyilkosság).
+- **Lopás:** egy **másik frakció területén** konténerből (láda, hordó, kemence…) tárgyat
+  veszel ki → **+1 bűn** (egy fosztogatás-sorozat területenként egyszer számít).
+
+Kivétel: **raid alatt** a hadviselő frakciók közti **ölés és zsákmányolás nem számít bűnnek**.
 
 ---
 
@@ -535,8 +541,6 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 
 Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rájuk a játékban:
 
-- 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a küszöbnél az automatikus száműzetés **kész**;
-  a lopás/árulás detektálás még nincs.
 - 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az
   ostromágyú már **kész**).
 - 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
