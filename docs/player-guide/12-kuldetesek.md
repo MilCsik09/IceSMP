@@ -14,7 +14,8 @@ jutalom **automatikusan** jár.
 
 ## Kaszt-próbák (a kezdő küldetések)
 
-Mindegyik kaszthoz tartozik egy bevezető próba. Jutalom: **200 kaszt-XP**.
+Jelenleg négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**. A többi
+kaszt saját, NPC-s próbája tervezett tartalom.
 
 | Küldetés | Kaszt | Feladat |
 |---|---|---|

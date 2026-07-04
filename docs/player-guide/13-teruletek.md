@@ -10,7 +10,9 @@ A világban vannak **frakcióterületek** és **fővárosok** — ezeket az admi
 
 ## Építésvédelem (ha be van kapcsolva)
 
-A szerver bekapcsolhatja az **építésvédelmet**. Ilyenkor:
+A szerver bekapcsolhatja az **építésvédelmet** (`territory.protection.enabled`). Az alap
+konfigurációban ez **ki van kapcsolva**, tehát alapból csak a határátlépés-értesítés fut.
+Ha az adminok bekapcsolják:
 - **Idegen frakció területén nem tudsz építeni vagy bontani.**
 - A saját frakciód területén és a vadonban szabadon építkezhetsz.
 - (Adminoknak van „bypass" joguk, nekik mindenhol szabad.)

@@ -11,7 +11,7 @@ factions:
   # Passzív frakció bónuszok (kiegyensúlyozva — minden frakció kb. egy szinten hasznos):
   # RED: tűz/láva/forró blokk-immunitás (hő-mesterség, Nether)
   # BLUE: fagy- ÉS fulladás-immunitás + lassabb éhség (hideg/víz-mesterség, óceán)
-  # NEUTRAL: lopakodás közben láthatatlanság; a nem-ellenséges mobok ÉS endermanök békések; adómentes
+  # NEUTRAL: zuhanás-sebzés immunitás; a nem-ellenséges mobok ÉS endermanök békések; adómentes
   # DARK: wither-immunitás, élőhalottak nem támadják (tudatosan a legerősebb PvE-passzív,
   #       amit az örök bűnös-jelölés ellensúlyoz)
   passives:

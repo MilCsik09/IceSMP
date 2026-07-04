@@ -6,10 +6,12 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://repo.folia.dev/repository/maven-public/")
     // Soft-dependenciák repói:
     maven("https://repo.extendedclip.com/releases/")        // PlaceholderAPI
-    maven("https://repo.md-5.net/content/groups/public/")   // LibsDisguises
+    maven("https://repo.md-5.net/content/repositories/releases/") {
+        content { includeGroup("LibsDisguises") }
+        metadataSources { artifact() } // LibsDisguises 10.0.44 has a broken parent POM.
+    }
 }
 
 dependencies {
@@ -19,7 +21,7 @@ dependencies {
     // A DruidDisguise reflexiós híd ehhez tartozik (Druida-formák vizuálja). isTransitive=false:
     // csak maga az API kell fordításhoz — a transitívjai (ProtocolLib/Spigot) nélkül is fordul,
     // így a build nem törik el, ha azok repói nem érhetők el.
-    compileOnly(libs.libsdisguises) { isTransitive = false }
+    compileOnly("LibsDisguises:LibsDisguises:${libs.versions.libsdisguises.get()}@jar") { isTransitive = false }
 }
 
 java {

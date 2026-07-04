@@ -16,9 +16,9 @@ jelenti, hogy **elhagyható**.
 |---|---|---|
 | `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
-| `/achievements` | `ach` | Elérések (mérföldkövek + jutalmak) |
+| `/achievements` | `ach`, `eleresek` | Elérések (mérföldkövek + jutalmak) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
-| `/pet item\|summon\|dismiss\|name` | `tars` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
+| `/pet item\|summon\|dismiss\|name` | `tars`, `companion` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
 | `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |
 | `/market search <szöveg>` | `piac`, `ah` | Keresés a piacon (a /market mellett) |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |
@@ -35,9 +35,9 @@ jelenti, hogy **elhagyható**.
 | `/market` | `piac`, `ah` | Piactér böngésző (vásárlás) |
 | `/market sell <ár> [valuta]` | | A kézben tartott tárgy eladása |
 | `/market cancel` | | Saját eladásaid visszavonása |
-| `/spec list` / `/spec choose <id>` | `specializacio` | Specializációk |
+| `/spec list` / `/spec choose <id>` | `specialization`, `specializacio` | Specializációk |
 | `/spec respec <class\|profession>` | | Specializáció visszaváltása |
-| `/talent` / `/talent spend <class\|profession> <talent>` | `talentfa` | Talentek |
+| `/talent` / `/talent spend <class\|profession> <talent>` | `talents`, `talentfa` | Talentek |
 | `/profession join <szakma>` / `/profession info` | `prof`, `szakma` | Szakmák |
 | `/class givecatalyst` | `kaszt`, `job` | Elveszett Képesség Katalizátor pótlása |
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
@@ -65,13 +65,13 @@ jelenti, hogy **elhagyható**.
 | `/profession set\|clear\|addxp` | Szakma-adatok kezelése |
 | `/spec reset <játékos>` | Specializációk törlése |
 | `/sinner <játékos> set\|clear\|add` | Bűnös állapot kezelése |
-| `/quest complete <id> <játékos>` | Küldetés azonnali teljesítése |
+| `/quest complete <játékos> <id>` | Küldetés azonnali teljesítése |
 | `/currency set <játékos> <összeg> [valuta]` | Valuta-egyenleg beállítása |
 | `/faction set <játékos> <frakció>` | Játékos frakcióba sorolása |
 | `/relic give <játékos> <relic_id>` | Relikvia adása |
 | `/territory setcapital\|claim\|remove` | Területek kezelése |
 | `/exchangeboard place\|remove` | Árfolyamtábla lerakása/törlése |
-| `/events bloodmoon start\|stop` | Vérhold kézi indítása / leállítása |
+| `/events blood-moon start\|stop` | Vérhold kézi indítása / leállítása |
 | `/events worldboss` | Világboss azonnali megidézése |
 | `/events invasion` | Szörny-invázió azonnali indítása |
 | `/events intro [játékos]` | Bemutató újrajátszása |

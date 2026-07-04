@@ -24,7 +24,7 @@ public final class JobCommand extends AbstractDispatchCommand {
         super(messageManager, "job", "&6/job &7- elerheto parancsok:");
         register(new JobAddXpSubcommand(plugin, jobManager, messageManager));
         register(new JobSetXpSubcommand(plugin, jobManager, messageManager));
-        register(new JobStatusSubcommand(jobManager, messageManager));
+        register(new JobStatusSubcommand(plugin, jobManager, messageManager));
         register(new JobUnlockSpellSubcommand(plugin, jobManager, spellRegistry, messageManager));
         register(new JobGiveCatalystSubcommand(plugin, jobManager, catalystItemFactory, messageManager));
         register(new JobListSpellsSubcommand(spellRegistry, messageManager));

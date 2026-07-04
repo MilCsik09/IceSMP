@@ -34,14 +34,16 @@ A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb
 
 | Node | Mire |
 |---|---|
-| `icesmp.admin` | általános admin (sinner, reload) |
+| `icesmp.admin` | általános admin (sinner) |
+| `icesmp.admin.reload` | `/icesmp reload` |
 | `icesmp.admin.events` | világesemény-triggerek |
 | `icesmp.job.admin` | kaszt XP / katalizátor / spell-unlock |
 | `icesmp.currency.admin` | valuta-egyenleg beállítás |
-| `icesmp.faction.admin` | frakció-kényszerítés |
+| `icesmp.faction.admin` | frakció-kényszerítés, király/kassza admin-műveletek |
 | `icesmp.admin.quest` | küldetés force-complete |
 | `icesmp.relic.admin` | relikvia adása |
-| `icesmp.admin.territory` / `.parkour` / `.exchangeboard` / `.profession` / `.spec` | terület / parkour / tábla / szakma / spec admin |
+| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / építésvédelem megkerülése |
+| `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
 
 ---
 
@@ -95,7 +97,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 - **Frakciók** (4): Piros/Kék/Semleges/Sötét, passzív bónuszokkal és valutával.
 - **Kasztok** (13) + **specializációk** (31), egy kaszt/játékos (végleges, admin-reset van), 50-es max szint.
-- **Képességek** (350+): katalizátor-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
+- **Képességek** (390+): katalizátor-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
   cooldown, kombók, spell-mesterség.
 - **Erő-csík** (osztály-erőforrás): HUD-sáv, regenerálódó költség-pool.
 - **Talentek**: kaszt- és szakma-ponttár, általános + kötött talentek.
@@ -104,7 +106,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   kereslet-sokk, árfolyam-hologramok, lélekkő-drop.
 - **Relikviák**: Mételytépő (fegyver, PvP-transzfer) + 4 frakció-elytra; rituálé-oltárok.
 - **Pet/minion**: Vadmester & Nekromanta társak (befogás, szint, parancsok), lélekszilánk-bajnok.
-- **Küldetések**: kaszt-próbák, Sötét Beavatás, vezeklés-lánc, napi küldetések.
+- **Küldetések**: 4 kezdő kaszt-próba, Sötét Beavatás, vezeklés-lánc, napi küldetések.
 - **Bűn-rendszer**: gyilkosság → bűn → 4-nél száműzetés a Sötétbe (örök paktum).
 - **Királyság/raid/szezon**: királyválasztás, kassza, adó, raid, hadizsákmány, liga-pontok.
 - **Világesemények**: távolság-alapú mob-szintezés, vérhold, világbossok (10 archetípus, 2 fázis),
@@ -118,7 +120,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 - 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a száműzetés kész; **lopás/árulás detektálás nincs**.
 - 🚧 **Raid:** nincs 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az ostromágyú kész).
-- 🚧 **Kaszt-questek:** egyszerű „ölj X-et" típus; NPC/parkour pályák tervben.
+- 🚧 **Kaszt-questek:** jelenleg 4 kezdő próba van; a többi kaszt saját NPC/parkour pályái tervben.
 - 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search` és a
   reputáció-árazás kész — ezeket teszteld!).
 - 🚧 **Intro:** a kamera-utaztatás kész, de alapból kikapcsolt (waypoint-kijelölésig).
@@ -205,6 +207,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] ⚠️ **Folia:** vásárolj olyan eladótól, aki **másik régióban/máshol van** → az eladó értesítése
       hibamentes (cross-entity).
 - [ ] **Árfolyamtábla:** `/exchangeboard place` hologram lerak; magától frissül; `/exchangeboard remove`.
+
+### 4.8.1 Frakcióterületek ✅
+- [ ] `/territory setcapital|claim|list|info|remove` admin parancsok működnek.
+- [ ] Területhatár átlépésekor action bar üzenet jön.
+- [ ] Alap config mellett (`territory.protection.enabled: false`) az építés/bontás nincs blokkolva.
+- [ ] Ha tesztre bekapcsolod az építésvédelmet, idegen frakció területén a build/break tiltott,
+      `icesmp.admin.territory.bypass` joggal pedig engedett.
 
 ### 4.9 Relikviák + rituálé-oltárok ✅
 - [ ] `/relic give <j> <id>` → a relikvia megjelenik; `/relic list` az id-khez.

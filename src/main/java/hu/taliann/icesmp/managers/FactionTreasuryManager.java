@@ -183,7 +183,8 @@ public final class FactionTreasuryManager implements PersistentStore {
      * Collects the periodic citizen tax: every member of a non-exempt faction
      * pays rate-percent of their own-faction bank balance into the faction
      * treasury. Offline citizens are taxed too (balances live in memory for
-     * every stored wallet); online citizens get a chat notice.
+     * every stored wallet); online citizens get a chat notice on their own
+     * entity scheduler.
      * Scheduled by IceSMPCore on the global region scheduler (Folia-safe).
      */
     public void collectTaxes() {
@@ -218,11 +219,11 @@ public final class FactionTreasuryManager implements PersistentStore {
 
             final Player citizen = Bukkit.getPlayer(entry.getKey());
             if (citizen != null) {
-                citizen.sendMessage(messageManager.getMessage(
+                citizen.getScheduler().run(plugin, task -> citizen.sendMessage(messageManager.getMessage(
                         "faction-tax-notice",
                         "&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).",
                         Map.of("amount", currencyManager.formatBalance(tax), "currency", currency.getDisplayName())
-                ));
+                )), null);
             }
         }
 

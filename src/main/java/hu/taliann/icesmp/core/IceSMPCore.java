@@ -417,8 +417,8 @@ public final class IceSMPCore {
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
-        ProfileGUI.closeAll();
         persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::save);
+        ProfileGUI.closeAll();
 
         // Then clean up live player session state (HUD teams, restored armor, caches).
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -480,8 +480,8 @@ public final class IceSMPCore {
 
     /**
      * Schedules the periodic faction tax on the global region scheduler,
-     * which runs on both Paper and Folia (the tax touches no entities, only
-     * in-memory balances).
+     * which runs on both Paper and Folia. Tax math touches only in-memory
+     * balances; player notices hop to each player's scheduler.
      */
     private void scheduleTaxCollection() {
         if (!configManager.getBoolean("factions.tax.enabled", true)) {
@@ -530,16 +530,16 @@ public final class IceSMPCore {
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
         plugin.registerCommand("leaderboard", "Ranglisták (szint, vagyon, raid-kill)", List.of("lb", "top", "rangsor"), new LeaderboardCommand(commandMenuContext, messageManager));
         plugin.registerCommand("profile", "Karakterlap — kaszt, spec, szakma, talent menük", List.of("karakter", "char", "status"), new ProfileCommand(characterMenuContext, messageManager));
-        plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(metelytepoManager, messageManager));
+        plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(plugin, metelytepoManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(relicManager, messageManager));
         plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
         plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
         plugin.registerCommand("pet", "Társ (befogó item, idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, captureItemFactory, messageManager));
-        plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(professionManager, messageManager));
+        plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(plugin, professionManager, messageManager));
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
-        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(questManager, messageManager));
+        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));

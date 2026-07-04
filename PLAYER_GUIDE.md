@@ -61,7 +61,7 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 | ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
 
 > A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
-> helyzetben (Piros a tűznél, Kék a víz alatt, Semleges lopakodva, Sötét a szörnyek közt).
+> helyzetben (Piros a tűznél, Kék a víz alatt, Semleges esésnél és vándorlásnál, Sötét a szörnyek közt).
 
 **Fontos a Sötét frakcióról:**
 - Csak az léphet be, akit **bűnössé (sinner)** bélyegeztek.
@@ -230,7 +230,7 @@ kaszt több szerepre is alkalmas a specválasztással (pl. egy Paplovag lehet gy
 
 ## 6. Képességek (spellek) ✅
 
-Több mint **350 képesség** van; **minden kaszt és specializáció saját, egyedi készletet** tanul
+Több mint **390 képesség** van; **minden kaszt és specializáció saját, egyedi készletet** tanul
 (nincs átfedés). A szintekkel **automatikusan feloldódnak**. Alább kasztonként a *jellegüket*
 mutatjuk be — a **teljes lista** (minden spell pontos hatásával, költségével és feloldási
 szintjével) a [Képességek oldalon](docs/player-guide/05-kepessegek.md) található.
@@ -493,8 +493,9 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 `/quest abandon <id>`. A haladásod az action barban követhető, teljesítéskor jutalmat kapsz
 (kaszt XP, valuta, képesség-feloldás, vagy különleges hatás).
 
-- **Kaszt-próbák:** minden alap kaszthoz egy bevezető küldetés (pl. „A Harcos Próbája" — ejts el
-  15 szörnyet), kaszt XP jutalommal.
+- **Kaszt-próbák:** jelenleg a négy kezdő próba érhető el (`warrior_trial`, `archer_trial`,
+  `wizard_trial`, `assassin_trial`), kaszt XP jutalommal. A többi kaszt saját NPC-s próbája
+  még tervezett tartalom.
 - **Sötét Beavatás:** a Nekromanta specializáció **kapuja** — zarándoklat a Sötét romvárosba
   (DARK frakció szükséges).
 - **Vezeklés-lánc** (3 rész): elit szörnyek pusztítása → alázat-tanulás horgászattal → 50 elit

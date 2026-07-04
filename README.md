@@ -105,7 +105,7 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
 
-Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. Több mint 350 képesség van a
+Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. Több mint 390 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
 átfedés a kasztok között.
 
@@ -174,7 +174,8 @@ skálázódnak, így a farmok nem törhetik el a rendszert.
 
 Adminok fővárosokat és területeket jelölhetnek ki (`/territory setcapital`, `/territory claim`).
 A határátlépést a játékosok action bar üzenetben látják ("✦ Piros főváros ✦"), és opcionálisan
-bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehet építeni/bontani.
+bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehet építeni/bontani. Az
+alap konfigurációban az értesítés aktív, az építésvédelem viszont ki van kapcsolva.
 
 ---
 
@@ -182,21 +183,22 @@ bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehe
 
 | Parancs | Aliasok | Mire való |
 |---|---|---|
-| `/profile` | `status`, `info` | Profil megnyitása (frakció, egyenlegek, kasztválasztás) |
+| `/profile` | `karakter`, `char`, `status` | Profil megnyitása (frakció, egyenlegek, kasztválasztás) |
 | `/faction join/leave` | `f` | Frakcióba lépés / kilépés |
-| `/spec list/choose/info` | `specialization` | Specializációk |
-| `/talent`, `/talent spend` | `talents` | Talentek megtekintése és fejlesztése |
+| `/spec list/choose/info` | `specialization`, `specializacio` | Specializációk |
+| `/talent`, `/talent spend` | `talents`, `talentfa` | Talentek megtekintése és fejlesztése |
 | `/profession join/info/list` | `prof`, `szakma` | Szakma választás és állapot |
 | `/bank balance/deposit/withdraw` | `wallet`, `vault` | Banki műveletek |
 | `/currency balance/pay/exchange/rates` | `money`, `eco` | Valutaműveletek és árfolyamok |
-| `/market`, `/market sell/cancel` | `piac`, `ah` | Piactér (reputáció-árazással) |
+| `/market`, `/market sell/cancel/search` | `piac`, `ah` | Piactér (reputáció-árazással) |
 | `/faction king vote/tax/raid` | `f` | Királyválasztás, adókulcs, raid (király) |
 | `/souls`, `/souls champion` | `soul`, `lelek` | Nekromanta lélekszilánk + bajnok |
-| `/quest …` / `/events …` | — | Küldetések / világesemények |
-| `/exchangeboard place/remove` | `arfolyamtabla` | Árfolyamtábla (admin) |
-| `/job …` | `class` | Kaszt adminisztráció (admin) |
-| `/relic list/give` | `relics` | Relikvia adminisztráció (admin) |
-| `/sinner <játékos> set/clear` | — | Bűnös státusz kezelése (admin) |
+| `/quest …` | `quests`, `kuldetes` | Küldetések |
+| `/events …` | `event`, `esemeny` | Világesemények |
+| `/exchangeboard place/remove` | `ratesboard`, `arfolyamtabla` | Árfolyamtábla (admin) |
+| `/class …` | `kaszt`, `job` | Kaszt adminisztráció (admin) |
+| `/relic list/give` | `relics`, `relikvia` | Relikvia adminisztráció (admin) |
+| `/sinner <játékos> set/clear/add/status` | — | Bűnös státusz kezelése (admin) |
 | `/territory …` | `terulet` | Területek kijelölése (admin) |
 | `/icesmp reload` | `ismp` | Konfiguráció újratöltése (admin) |
 

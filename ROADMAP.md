@@ -12,6 +12,12 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 
 ## Nyitott fejlesztések
 
+### Ismert hibák / technikai kockázatok
+- Jelenleg nincs nyitott, reprodukált technikai blocker. A legutóbbi auditban talált Folia
+  célpont-scheduler hibák, az Angry Chicken cross-region damager kockázata és az orb Java 21
+  build-környezete javítva lett; playtesten továbbra is figyeljétek a konzolt
+  `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
+
 ### Játékmenet
 - ⬜ **Raid-mélyítés:** 10v10 létszámkorlát és jelentkezés; aréna-/területkötés;
   objektív-alapú raid (zászlófoglalás, pont-tartás); terület átvétele győzelemmel.

@@ -1,8 +1,8 @@
 package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
-import org.bukkit.Sound;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -45,14 +45,19 @@ public final class AngryChickenSpell extends BaseSpell {
             final Vector step = direction.clone().multiply(0.4D); // ~8 blocks/second at 20 TPS
             chicken.teleportAsync(chicken.getLocation().add(step));
 
-            final Player shooter = Bukkit.getPlayer(shooterId);
+            final Player shooter = plugin.getServer().getPlayer(shooterId);
+            final boolean shooterInCurrentRegion = shooter != null && Bukkit.isOwnedByCurrentRegion(shooter);
 
             for (final Entity nearby : chicken.getNearbyEntities(1.1D, 1.1D, 1.1D)) {
-                if (!(nearby instanceof LivingEntity living) || living == chicken || (shooter != null && living == shooter)) {
+                if (!(nearby instanceof LivingEntity living) || living == chicken || living.getUniqueId().equals(shooterId)) {
                     continue;
                 }
 
-                living.damage(8.0D, shooter);
+                if (shooterInCurrentRegion) {
+                    living.damage(8.0D, shooter);
+                } else {
+                    living.damage(8.0D);
+                }
                 chicken.remove();
                 task.cancel();
                 return;
@@ -68,4 +73,3 @@ public final class AngryChickenSpell extends BaseSpell {
         player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_HURT, 1.0F, 0.8F);
     }
 }
-

@@ -10,6 +10,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -27,10 +28,12 @@ public final class ProfessionCommand implements BasicCommand {
 
     private static final String ADMIN_PERMISSION = "icesmp.admin.profession";
 
+    private final JavaPlugin plugin;
     private final ProfessionManager professionManager;
     private final MessageManager messageManager;
 
-    public ProfessionCommand(final ProfessionManager professionManager, final MessageManager messageManager) {
+    public ProfessionCommand(final JavaPlugin plugin, final ProfessionManager professionManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.professionManager = professionManager;
         this.messageManager = messageManager;
     }
@@ -186,8 +189,10 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        professionManager.setProfession(target, profession);
-        sender.sendMessage(messageManager.get("profession-set-success", "&aSzakma beállítva: &f%s &7-> &e%s", target.getName(), profession.getId()));
+        target.getScheduler().run(plugin, task -> {
+            professionManager.setProfession(target, profession);
+            sender.sendMessage(messageManager.get("profession-set-success", "&aSzakma beállítva: &f%s &7-> &e%s", target.getName(), profession.getId()));
+        }, null);
     }
 
     private void handleClear(final CommandSender sender, final String[] args) {
@@ -220,8 +225,10 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        professionManager.clearProfession(target, category);
-        sender.sendMessage(messageManager.get("profession-clear-success", "&aSzakma slot törölve: &f%s &7(%s)", target.getName(), category.getDisplayName()));
+        target.getScheduler().run(plugin, task -> {
+            professionManager.clearProfession(target, category);
+            sender.sendMessage(messageManager.get("profession-clear-success", "&aSzakma slot törölve: &f%s &7(%s)", target.getName(), category.getDisplayName()));
+        }, null);
     }
 
     private void handleAddXp(final CommandSender sender, final String[] args) {
@@ -255,19 +262,26 @@ public final class ProfessionCommand implements BasicCommand {
             return;
         }
 
-        if (amount <= 0 || !professionManager.addXp(target, profession, amount)) {
+        if (amount <= 0) {
             sender.sendMessage(messageManager.get("profession-addxp-failed", "&cNem sikerült XP-t adni (hibás összeg)."));
             return;
         }
 
-        sender.sendMessage(messageManager.get(
-                "profession-addxp-success",
-                "&aXP hozzáadva: &f%s &7| %s +&f%s XP &7| Szint: &f%s",
-                target.getName(),
-                profession.getId(),
-                amount,
-                professionManager.getLevel(target, profession)
-        ));
+        target.getScheduler().run(plugin, task -> {
+            if (!professionManager.addXp(target, profession, amount)) {
+                sender.sendMessage(messageManager.get("profession-addxp-failed", "&cNem sikerült XP-t adni (hibás összeg)."));
+                return;
+            }
+
+            sender.sendMessage(messageManager.get(
+                    "profession-addxp-success",
+                    "&aXP hozzáadva: &f%s &7| %s +&f%s XP &7| Szint: &f%s",
+                    target.getName(),
+                    profession.getId(),
+                    amount,
+                    professionManager.getLevel(target, profession)
+            ));
+        }, null);
     }
 
     private void sendHelp(final CommandSender sender) {

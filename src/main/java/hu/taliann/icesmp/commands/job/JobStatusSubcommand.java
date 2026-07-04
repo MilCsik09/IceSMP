@@ -6,6 +6,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 
@@ -13,10 +14,12 @@ public final class JobStatusSubcommand implements JobSubcommand {
 
     private static final String PERMISSION = "icesmp.job.admin";
 
+    private final JavaPlugin plugin;
     private final JobManager jobManager;
     private final MessageManager messageManager;
 
-    public JobStatusSubcommand(final JobManager jobManager, final MessageManager messageManager) {
+    public JobStatusSubcommand(final JavaPlugin plugin, final JobManager jobManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.jobManager = jobManager;
         this.messageManager = messageManager;
     }
@@ -54,21 +57,23 @@ public final class JobStatusSubcommand implements JobSubcommand {
             return true;
         }
 
-        final JobType primaryJob = jobManager.getPrimaryJob(target);
+        target.getScheduler().run(plugin, task -> {
+            final JobType primaryJob = jobManager.getPrimaryJob(target);
 
-        final String noneText = messageManager.get("messages.job-status-none", "nincs");
-        final String primaryName = primaryJob == null ? noneText : primaryJob.getId();
-        final int primaryXp = jobManager.getXp(target);
-        final int primaryLevel = jobManager.getPrimaryLevel(target);
+            final String noneText = messageManager.get("messages.job-status-none", "nincs");
+            final String primaryName = primaryJob == null ? noneText : primaryJob.getId();
+            final int primaryXp = jobManager.getXp(target);
+            final int primaryLevel = jobManager.getPrimaryLevel(target);
 
-        sender.sendMessage(messageManager.get(
-                "messages.job-status-result",
-                "&6%s &7| Kaszt: &f%s &7(Lv. &f%s&7, XP: &f%s&7)",
-                target.getName(),
-                primaryName,
-                primaryLevel,
-                primaryXp
-        ));
+            sender.sendMessage(messageManager.get(
+                    "messages.job-status-result",
+                    "&6%s &7| Kaszt: &f%s &7(Lv. &f%s&7, XP: &f%s&7)",
+                    target.getName(),
+                    primaryName,
+                    primaryLevel,
+                    primaryXp
+            ));
+        }, null);
 
         return true;
     }
@@ -85,4 +90,3 @@ public final class JobStatusSubcommand implements JobSubcommand {
         return List.of();
     }
 }
-

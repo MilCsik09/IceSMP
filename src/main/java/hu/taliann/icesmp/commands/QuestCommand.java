@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
@@ -22,10 +23,12 @@ public final class QuestCommand implements BasicCommand {
 
     private static final String ADMIN_PERMISSION = "icesmp.admin.quest";
 
+    private final JavaPlugin plugin;
     private final QuestManager questManager;
     private final MessageManager messageManager;
 
-    public QuestCommand(final QuestManager questManager, final MessageManager messageManager) {
+    public QuestCommand(final JavaPlugin plugin, final QuestManager questManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.questManager = questManager;
         this.messageManager = messageManager;
     }
@@ -167,8 +170,11 @@ public final class QuestCommand implements BasicCommand {
             return;
         }
 
-        questManager.complete(target, args[2]);
-        sender.sendMessage(messageManager.get("quest-complete-success", "&aKüldetés lezárva: &f%s &7-> &e%s", target.getName(), args[2]));
+        final String questId = args[2];
+        target.getScheduler().run(plugin, task -> {
+            questManager.complete(target, questId);
+            sender.sendMessage(messageManager.get("quest-complete-success", "&aKüldetés lezárva: &f%s &7-> &e%s", target.getName(), questId));
+        }, null);
     }
 
     private String defaultBlockerMessage(final String blocker) {
