@@ -60,17 +60,20 @@ public final class QuestManager implements PersistentStore {
             "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
             "VISIT_TERRITORY", "REACH_LEVEL", "TALK_TO_NPC", "PARKOUR_TRIAL",
             "PLACE_BLOCKS", "COLLECT_ITEMS", "KILL_PLAYERS", "DELIVER_ITEMS",
-            "BREED_ANIMALS", "ENCHANT_ITEMS", "CONSUME_ITEMS");
+            "BREED_ANIMALS", "ENCHANT_ITEMS", "CONSUME_ITEMS",
+            "SMELT_ITEMS", "TAME_ANIMALS", "TRADE_WITH_VILLAGER",
+            "EXPLORE_BIOME", "WIN_RAID", "KILL_WORLDBOSS");
 
     /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
             "display-name", "description", "giver-npc",
+            "repeatable", "cooldown-hours", "auto-start-territory",
             "requires-job", "requires-faction", "requires-level", "requires-quest",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
-            "objective.level", "objective.npc", "objective.course",
+            "objective.level", "objective.npc", "objective.course", "objective.biome",
             "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
-            "rewards.unlock-spell", "rewards.cleanse-sins",
+            "rewards.items", "rewards.unlock-spell", "rewards.cleanse-sins",
             "dialogue.speaker", "dialogue.give", "dialogue.complete");
 
     private final JavaPlugin plugin;
@@ -220,7 +223,32 @@ public final class QuestManager implements PersistentStore {
                     return "quest-admin-bad-value";
                 }
             }
-            case "rewards.cleanse-sins" -> parsed = Boolean.parseBoolean(rawValue.trim());
+            case "rewards.cleanse-sins", "repeatable" -> parsed = Boolean.parseBoolean(rawValue.trim());
+            case "cooldown-hours" -> {
+                try {
+                    parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));
+                } catch (final NumberFormatException exception) {
+                    return "quest-admin-bad-value";
+                }
+            }
+            // Item-jutalmak: MATERIAL:DARAB bejegyzések vesszővel elválasztva.
+            case "rewards.items" -> {
+                final List<String> items = new ArrayList<>();
+                for (final String token : rawValue.split(",")) {
+                    if (token.isBlank()) {
+                        continue;
+                    }
+                    final String[] parts = token.trim().split(":");
+                    if (Material.matchMaterial(parts[0].trim()) == null) {
+                        return "quest-admin-bad-value";
+                    }
+                    items.add(token.trim().toUpperCase(Locale.ROOT));
+                }
+                if (items.isEmpty()) {
+                    return "quest-admin-bad-value";
+                }
+                parsed = items;
+            }
             case "objective.materials" -> {
                 final List<String> materials = new ArrayList<>();
                 for (final String token : rawValue.split(",")) {
@@ -366,8 +394,17 @@ public final class QuestManager implements PersistentStore {
             return "quest-already-active";
         }
 
+        // Repeatable quests come back after their cooldown; others complete once, forever.
         if (hasCompleted(player, questId)) {
-            return "quest-already-completed";
+            if (!quest.getBoolean("repeatable", false)) {
+                return "quest-already-completed";
+            }
+
+            final long cooldownMillis = (long) (Math.max(0.0D, quest.getDouble("cooldown-hours", 0.0D)) * 3_600_000.0D);
+            if (cooldownMillis > 0L
+                    && System.currentTimeMillis() - getLastCompletedAt(player, questId) < cooldownMillis) {
+                return "quest-on-cooldown";
+            }
         }
 
         final String requiredJobId = quest.getString("requires-job");
@@ -490,9 +527,76 @@ public final class QuestManager implements PersistentStore {
                         .anyMatch(name -> name.equalsIgnoreCase(material.name())));
     }
 
+    /** Furnace extraction progresses by the extracted amount. */
+    public void handleSmelt(final Player player, final Material material, final int amount) {
+        forEachActive(player, "SMELT_ITEMS", Math.max(1, amount), (questId, quest) ->
+                quest.getStringList("objective.materials").stream()
+                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+    }
+
+    public void handleTame(final Player player, final EntityType entityType) {
+        forEachActive(player, "TAME_ANIMALS", (questId, quest) -> {
+            final String requiredEntity = quest.getString("objective.entity-type");
+            return requiredEntity == null || requiredEntity.isBlank()
+                    || requiredEntity.equalsIgnoreCase(entityType.name());
+        });
+    }
+
+    public void handleVillagerTrade(final Player player) {
+        forEachActive(player, "TRADE_WITH_VILLAGER", (questId, quest) -> true);
+    }
+
+    /** Biome keys arrive as "minecraft:plains" style; the objective may use either form. */
+    public void handleBiomeVisit(final Player player, final String biomeKey) {
+        forEachActive(player, "EXPLORE_BIOME", (questId, quest) -> {
+            final String required = quest.getString("objective.biome", "");
+            if (required.isBlank() || biomeKey == null) {
+                return false;
+            }
+            final String shortKey = biomeKey.contains(":")
+                    ? biomeKey.substring(biomeKey.indexOf(':') + 1)
+                    : biomeKey;
+            return required.equalsIgnoreCase(biomeKey) || required.equalsIgnoreCase(shortKey);
+        });
+    }
+
+    public void handleRaidWin(final Player fighter) {
+        forEachActive(fighter, "WIN_RAID", (questId, quest) -> true);
+    }
+
+    public void handleBossKill(final Player killer) {
+        forEachActive(killer, "KILL_WORLDBOSS", (questId, quest) -> true);
+    }
+
     public void handleTerritoryEnter(final Player player, final String territoryId) {
         forEachActive(player, "VISIT_TERRITORY", (questId, quest) ->
                 territoryId != null && territoryId.equalsIgnoreCase(quest.getString("objective.territory", "")));
+
+        // Auto-start quests: crossing into the configured territory hands the quest over
+        // by itself (if every accept requirement is met) — discovery-driven storytelling.
+        if (territoryId == null) {
+            return;
+        }
+        for (final String questId : getQuestIds()) {
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest == null
+                    || !territoryId.equalsIgnoreCase(quest.getString("auto-start-territory", ""))
+                    || getAcceptBlocker(player, questId) != null
+                    || !accept(player, questId)) {
+                continue;
+            }
+
+            player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.2F);
+            player.sendMessage(messageManager.getMessage(
+                    "quest.auto-started",
+                    "<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                    Map.of(
+                            "quest", getDisplayName(questId),
+                            "description", quest.getString("description", "")
+                    )
+            ));
+            sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
+        }
     }
 
     /**
@@ -822,6 +926,8 @@ public final class QuestManager implements PersistentStore {
         }
         writeCsv(player, completedQuestsKey, completed);
         player.getPersistentDataContainer().remove(progressKey(questId));
+        // Repeatable-cooldown anchor: when was this quest last turned in.
+        player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
 
         applyRewards(player, quest);
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
@@ -851,6 +957,26 @@ public final class QuestManager implements PersistentStore {
             }
         }
 
+        // Item rewards: "MATERIAL:AMOUNT" entries (amount defaults to 1).
+        for (final String entry : quest.getStringList("rewards.items")) {
+            final String[] parts = entry.split(":");
+            final Material material = Material.matchMaterial(parts[0].trim());
+            if (material == null || material.isAir()) {
+                continue;
+            }
+            int amount = 1;
+            if (parts.length >= 2) {
+                try {
+                    amount = Math.max(1, Integer.parseInt(parts[1].trim()));
+                } catch (final NumberFormatException ignored) {
+                    // Malformed amount: give one.
+                }
+            }
+            final Map<Integer, org.bukkit.inventory.ItemStack> leftovers =
+                    player.getInventory().addItem(new org.bukkit.inventory.ItemStack(material, amount));
+            leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+        }
+
         final String unlockSpell = quest.getString("rewards.unlock-spell");
         if (unlockSpell != null && !unlockSpell.isBlank()) {
             jobManager.unlockSpell(player, unlockSpell);
@@ -869,6 +995,17 @@ public final class QuestManager implements PersistentStore {
     }
 
     // ===== PDC segédek =====
+
+    public long getLastCompletedAt(final Player player, final String questId) {
+        return player.getPersistentDataContainer().getOrDefault(doneAtKey(questId), PersistentDataType.LONG, 0L);
+    }
+
+    private NamespacedKey doneAtKey(final String questId) {
+        final String sanitized = questId == null
+                ? "unknown"
+                : questId.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
+        return new NamespacedKey(plugin, "quest_done_at_" + sanitized);
+    }
 
     private NamespacedKey progressKey(final String questId) {
         final String sanitized = questId == null

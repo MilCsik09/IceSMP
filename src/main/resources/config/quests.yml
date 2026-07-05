@@ -27,10 +27,18 @@ achievements:
 #   DELIVER_ITEMS (npc + materials + count: vidd el a tárgyakat az NPC-nek,
 #     aki ÁTVESZI őket — gyűjtő-beszállító questek)
 #   PARKOUR_TRIAL (course: a /parkour pálya azonosítója)
+#   SMELT_ITEMS (materials + count: kohóból kivét) • TAME_ANIMALS (count,
+#     opcionális entity-type) • TRADE_WITH_VILLAGER (count)
+#   EXPLORE_BIOME (biome: pl. "cherry_grove" vagy "minecraft:cherry_grove")
+#   WIN_RAID (count: nyert raidek JELENTKEZETT harcosként) • KILL_WORLDBOSS (count)
 # Feltételek: requires-job, requires-faction, requires-level, requires-quest (lánc).
-# Jutalmak: class-xp, currency {type, amount}, unlock-spell, cleanse-sins.
+# Ismétlődés: repeatable: true + cooldown-hours (pl. 24 = napi quest; 0 = azonnal).
+# Auto-indulás: auto-start-territory: <territory-id> — a területre lépve a quest
+# magától felkerül (ha a feltételek teljesülnek).
+# Jutalmak: class-xp, currency {type, amount}, items, unlock-spell, cleanse-sins.
 #   A currency.type lehet konkrét valuta (RED/BLUE/NEUTRAL/DARK) vagy "OWN" —
 #   utóbbi a játékos SAJÁT frakciójának valutáját adja.
+#   items: tárgy-jutalmak "MATERIAL:DARAB" formában, pl. ["IRON_SWORD:1", "BREAD:16"].
 # giver-npc: a questet ez a FancyNpcs NPC ADJA — rákattintva automatikusan
 # felveszed, ha a feltételek teljesülnek (a /quest accept továbbra is működik).
 # dialogue: az NPC "mondja" a story-t — speaker (megjelenő név), give (sorok a

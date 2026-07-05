@@ -59,6 +59,12 @@ public final class RaidManager {
     private ScheduledTask combatStartTask;
     private ScheduledTask captureTask;
     private ScheduledTask endTask;
+    private java.util.function.Consumer<Player> winHook;
+
+    /** Sets the callback fired for every ONLINE winning-side fighter when a raid is won (quest bridge). */
+    public void setWinHook(final java.util.function.Consumer<Player> hook) {
+        this.winHook = hook;
+    }
 
     public RaidManager(final JavaPlugin plugin, final ConfigManager configManager,
                        final FactionManager factionManager, final FactionTreasuryManager treasuryManager,
@@ -404,6 +410,7 @@ public final class RaidManager {
 
         final int attackerPoints = points.getOrDefault(raid.attacker(), 0);
         final int defenderPoints = points.getOrDefault(raid.defender(), 0);
+        final Map<UUID, FactionType> fighters = Map.copyOf(participants);
         participants.clear();
 
         if (attackerPoints == defenderPoints) {
@@ -434,6 +441,20 @@ public final class RaidManager {
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
         applyWinnerBuff(winner);
+
+        // Quest bridge (WIN_RAID objectives): only registered fighters on the winning
+        // side count, each on their own region thread.
+        if (winHook != null) {
+            for (final Map.Entry<UUID, FactionType> fighter : fighters.entrySet()) {
+                if (fighter.getValue() != winner) {
+                    continue;
+                }
+                final Player online = Bukkit.getPlayer(fighter.getKey());
+                if (online != null) {
+                    online.getScheduler().run(plugin, task -> winHook.accept(online), null);
+                }
+            }
+        }
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-ended",

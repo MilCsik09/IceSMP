@@ -2,6 +2,9 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.QuestManager;
+import hu.taliann.icesmp.managers.WorldBossManager;
+import io.papermc.paper.event.player.PlayerTradeEvent;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -10,11 +13,14 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityBreedEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -28,12 +34,15 @@ public final class QuestProgressListener implements Listener {
     private final JavaPlugin plugin;
     private final QuestManager questManager;
     private final MobScalingManager mobScalingManager;
+    private final WorldBossManager worldBossManager;
 
     public QuestProgressListener(final JavaPlugin plugin, final QuestManager questManager,
-                                 final MobScalingManager mobScalingManager) {
+                                 final MobScalingManager mobScalingManager,
+                                 final WorldBossManager worldBossManager) {
         this.plugin = plugin;
         this.questManager = questManager;
         this.mobScalingManager = mobScalingManager;
+        this.worldBossManager = worldBossManager;
     }
 
     @EventHandler
@@ -47,7 +56,13 @@ public final class QuestProgressListener implements Listener {
         // scheduler — handleKill mutates the killer (quest progress, messages). Folia-safe.
         final var entityType = event.getEntityType();
         final int level = mobScalingManager.getLevel(event.getEntity());
-        killer.getScheduler().run(plugin, task -> questManager.handleKill(killer, entityType, level), null);
+        final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
+        killer.getScheduler().run(plugin, task -> {
+            questManager.handleKill(killer, entityType, level);
+            if (worldBoss) {
+                questManager.handleBossKill(killer);
+            }
+        }, null);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -113,5 +128,40 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onConsume(final PlayerItemConsumeEvent event) {
         questManager.handleConsume(event.getPlayer(), event.getItem().getType());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onSmelt(final FurnaceExtractEvent event) {
+        questManager.handleSmelt(event.getPlayer(), event.getItemType(), event.getItemAmount());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onTame(final EntityTameEvent event) {
+        if (!(event.getOwner() instanceof Player tamer)) {
+            return;
+        }
+
+        // The event fires on the animal's region; the tamer stands beside it, but the
+        // quest progress mutates the player's PDC — hop to their scheduler.
+        final var entityType = event.getEntityType();
+        tamer.getScheduler().run(plugin, task -> questManager.handleTame(tamer, entityType), null);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onVillagerTrade(final PlayerTradeEvent event) {
+        questManager.handleVillagerTrade(event.getPlayer());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onMove(final PlayerMoveEvent event) {
+        // Only re-check on block-level movement (same hot-path guard as the TerritoryListener).
+        final Location from = event.getFrom();
+        final Location to = event.getTo();
+        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+            return;
+        }
+
+        questManager.handleBiomeVisit(event.getPlayer(),
+                to.getBlock().getBiome().getKey().toString());
     }
 }

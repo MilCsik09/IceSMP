@@ -282,6 +282,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
+        raidManager.setWinHook(questManager::handleRaidWin);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -621,7 +622,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
-        pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager), plugin);
+        pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);

@@ -6,6 +6,7 @@ messages:
   daily-state-done: '&ateljesítve'
   quest:
     accepted-from-npc: '<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>'
+    auto-started: '<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>'
     completed: '<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>'
     deliver-progress: '<gray>{quest}: <gold>{carried}</gold>/<gold>{target}</gold> nálad — hozd el mindet!</gray>'
     dialogue-line: '<gold>{speaker}:</gold> <white>{line}</white>'
@@ -53,6 +54,7 @@ messages:
   quest-info-header: '&6Aktív küldetéseid (%s):'
   quest-info-line: '&e%s &7- haladás: &f%s&7/&f%s'
   quest-list-empty: '&7Jelenleg nincs felvehető küldetésed.'
+  quest-on-cooldown: '&cEz a küldetés még pihen — nézz vissza később.'
   quest-list-header: '&6Elérhető küldetések:'
   quest-list-line: '&e%s &7(%s) - %s'
   quest-requires-faction: '&cEhhez a küldetéshez másik frakció tagjának kell lenned.'
