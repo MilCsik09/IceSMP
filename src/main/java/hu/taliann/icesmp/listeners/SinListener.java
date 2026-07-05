@@ -54,19 +54,22 @@ public final class SinListener implements Listener {
             return;
         }
 
-        // Raid rule (ideas.md): sanctioned war kills carry no sin — they score for the raid.
-        // Faction lookups and raid scoring are in-memory data (safe here); the killer-side
-        // mutations (PDC sin/stats, messages) are hopped onto the killer's own region thread,
-        // because PlayerDeathEvent runs on the VICTIM's region and the killer may be elsewhere.
+        // Raid rule (ROADMAP "Raid-mélyítés"): only kills between REGISTERED fighters on
+        // opposite sides are sanctioned (no sin). On a territory-bound raid points are only
+        // scored when the victim falls inside the raid zone — the death location is read
+        // here on the victim's own region thread. Killer-side mutations (PDC sin/stats,
+        // messages) hop onto the killer's own region thread, because PlayerDeathEvent runs
+        // on the VICTIM's region and the killer may be elsewhere.
         final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
         final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
-        if (raidManager.isAtWar(killerFaction, victimFaction)) {
-            raidManager.recordKill(killerFaction);
+        if (raidManager.isSanctionedKill(killer.getUniqueId(), victim.getUniqueId())) {
+            final boolean scored = raidManager.recordKill(killerFaction, victim.getLocation());
             killer.getScheduler().run(plugin, task -> {
                 statsManager.recordRaidKill(killer);
                 killer.sendMessage(messageManager.getMessage(
-                        "faction-raid-kill",
-                        "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>",
+                        scored ? "faction-raid-kill" : "faction-raid-kill-outside-zone",
+                        scored ? "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>"
+                                : "<gray>⚔ Szentesített raid-ölés, de a raid-zónán kívül — nem ér pontot.</gray>",
                         Map.of("faction", killerFaction.getDisplayName())
                 ));
             }, null);

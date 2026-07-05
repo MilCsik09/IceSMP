@@ -13,6 +13,7 @@ import hu.taliann.icesmp.managers.FactionTreasuryManager;
 import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.RaidManager;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
 
 public final class FactionCommand extends AbstractDispatchCommand {
@@ -20,7 +21,7 @@ public final class FactionCommand extends AbstractDispatchCommand {
     public FactionCommand(final FactionManager factionManager, final MetelytepoManager metelytepoManager,
                           final FactionTreasuryManager treasuryManager, final CurrencyManager currencyManager,
                           final KingManager kingManager, final RaidManager raidManager,
-                          final MessageManager messageManager) {
+                          final TerritoryManager territoryManager, final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
         register(new FactionJoinSubcommand(factionManager, metelytepoManager, messageManager));
         register(new FactionLeaveSubcommand(factionManager, messageManager));
@@ -28,6 +29,6 @@ public final class FactionCommand extends AbstractDispatchCommand {
         register(new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager));
         register(new FactionDonateSubcommand(treasuryManager, factionManager, currencyManager, messageManager));
         register(new FactionKingSubcommand(kingManager, factionManager, treasuryManager, messageManager));
-        register(new FactionRaidSubcommand(raidManager, kingManager, factionManager, messageManager));
+        register(new FactionRaidSubcommand(raidManager, kingManager, factionManager, territoryManager, messageManager));
     }
 }

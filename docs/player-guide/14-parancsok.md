@@ -54,7 +54,14 @@ jelenti, hogy **elhagyható**.
 |---|---|
 | `/faction treasury withdraw <összeg>` | Kivétel a frakciókasszából |
 | `/faction king tax <százalék>` | Frakció adókulcs beállítása |
-| `/faction raid <célfrakció>` | Háború (raid) hirdetése |
+| `/faction raid <célfrakció> [terület]` | Háború (raid) hirdetése — alapból a védő fővárosáért |
+
+A raidhez **mindenki** (nem csak a király) így kapcsolódik:
+
+| Parancs | Mit csinál |
+|---|---|
+| `/faction raid join` | Jelentkezés harcosnak a felkészülés alatt (max 10/oldal) |
+| `/faction raid status` | Raid-állás: fázis, pontok, létszám |
 
 ## Admin parancsok (csak adminoknak)
 

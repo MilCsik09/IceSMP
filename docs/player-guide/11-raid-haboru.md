@@ -25,12 +25,26 @@ Minden harcos frakció (Piros / Kék / Sötét — a Semleges kivételével) **k
 
 ## Raid (frakcióháború) ⚔️
 
-- `/faction raid <célfrakció>` — **csak a király** hirdethet. A **nevezési díj** a kasszából megy.
-- A raid alatt (alapból **15 perc**) a **két hadviselő frakció közti ölés NEM bűn**, hanem
-  **pontot ér**.
-- A végén a **több ölést szerző** oldal **hadizsákmányként** elviszi a vesztes kasszájának egy
+- `/faction raid <célfrakció> [terület]` — **csak a király** hirdethet. A **nevezési díj** a
+  kasszából megy. A raid alapból a védő **fővárosáért** folyik (vagy a megadott területért);
+  ha a védőnek nincs területe, kötetlen, csak-ölés raid lesz.
+- **Felkészülés (alapból 2 perc):** mindkét oldal harcosai jelentkeznek — `/faction raid join`
+  (alapból **max 10 fő/oldal**; a hirdető király automatikusan bekerül). `/faction raid status`
+  mutatja az állást.
+- **Harci szakasz (alapból 15 perc):** csak a **jelentkezett harcosok közti ölés** szentesített
+  (nem bűn) és **pontozó** (alapból 5 pont) — területhez kötött raidnél csak akkor ér pontot,
+  ha az áldozat a **raid-zónán belül** esik el. Aki nem jelentkezett, arra a békeidős
+  bűn-szabályok élnek raid alatt is!
+- **Pont-tartás:** a raid-terület **középpontja** elfoglalható objektíva — minden bent álló
+  harcos **pontot termel** az oldalának (alapból 5 mp-enként +1). A bossbar élőben mutatja
+  a pontállást.
+- A végén a **több pontot szerző** oldal **hadizsákmányként** elviszi a vesztes kasszájának egy
   részét, és **liga-pontot** kap a szezonba.
+- **Terület-átvétel:** ha a **támadó** nyeri a területhez kötött raidet, a terület **átkerül
+  hozzá** (a fővárosi státusz elvész — a hódítmány nem lesz új főváros).
 - A **győztes frakció online tagjai** kapnak egy **győzelmi buffot** (Erő + Regeneráció).
+- Raid alatt a jelentkezett harcosok az ellenség földjén **bűntelenül zsákmányolhatnak**
+  a konténerekből is.
 
 ### Ostromágyú 💥
 

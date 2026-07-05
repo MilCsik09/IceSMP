@@ -77,7 +77,9 @@ paktummal). Bűnt háromféleképp követhetsz el:
 - **Lopás:** egy **másik frakció területén** konténerből (láda, hordó, kemence…) tárgyat
   veszel ki → **+1 bűn** (egy fosztogatás-sorozat területenként egyszer számít).
 
-Kivétel: **raid alatt** a hadviselő frakciók közti **ölés és zsákmányolás nem számít bűnnek**.
+Kivétel: **raid alatt** a **jelentkezett harcosok** (`/faction raid join`) közti **ölés és az
+ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett, arra raid alatt
+is a békeidős szabályok élnek.
 
 ---
 
@@ -483,12 +485,16 @@ maximumáig).
 - A kasszát az **adó** és az **adományok** töltik; a király és a raid-zsákmány költi.
 
 ### Raid ⚔️
-- `/faction raid <célfrakció>` — **csak a király** hirdethet; a nevezési díj a kasszából megy.
-- A raid alatt (alapból 15 perc) a **két hadviselő frakció közti ölés nem bűn**, hanem **pontot
-  ér**.
-- A végén a **több ölést szerző** oldal **hadizsákmányként** elviszi a vesztes kasszájának egy
-  részét (és **liga-pontot** kap a szezonba). A győztes frakció online tagjai **győzelmi buffot**
-  kapnak (Erő + Regeneráció egy ideig).
+- `/faction raid <célfrakció> [terület]` — **csak a király** hirdethet; a nevezési díj a
+  kasszából megy. A raid alapból a védő **fővárosáért** folyik.
+- **Felkészülés** (2 perc): harcosok jelentkezése `/faction raid join`-nal (**max 10/oldal**);
+  állás: `/faction raid status`.
+- A harci szakaszban **csak a jelentkezett harcosok közti ölés** szentesített és pontozó
+  (területkötött raidnél csak a zónán belül); a terület **középpontjának tartása** is pontot
+  termel. Ha a **támadó nyer**, a **területet is elfoglalja**.
+- A végén (a harc alapból 15 perc) a **több pontot szerző** oldal **hadizsákmányként** elviszi a
+  vesztes kasszájának egy részét (és **liga-pontot** kap a szezonba). A győztes frakció online
+  tagjai **győzelmi buffot** kapnak (Erő + Regeneráció egy ideig).
 - **Ostromágyú:** craftolható ostromfegyver (vasblokk-keret + TNT + tűzpor), ami **csak aktív
   raid alatt** sül el. Jobb katt = **pusztító, de terep-barát robbanás** a célzott pontra (sebzi
   az ellenfeleket, de nem rombolja a világot). Raiden kívül nem működik.
@@ -541,8 +547,6 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 
 Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rájuk a játékban:
 
-- 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az
-  ostromágyú már **kész**).
 - 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
   (a parkour-keret már **kész**: `/parkour`).
 - 🚧 **Piactér:** fizikai piactábla a fővárosokban még nincs (a lapozás, a `/market search`

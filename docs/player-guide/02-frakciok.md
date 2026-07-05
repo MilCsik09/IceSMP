@@ -33,8 +33,10 @@ A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.
   hopper…) tárgyat veszel ki, **+1 bűnt** kapsz. Egy fosztogatás-sorozat területenként
   egyszer számít (nem minden kattintás külön bűn).
 - **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök paktummal).
-- **Kivétel:** **raid** (frakcióháború) alatt a hadviselő frakciók közti **ölés és
-  zsákmányolás nem számít bűnnek** — lásd [Raid és háború](11-raid-haboru.md).
+- **Kivétel:** **raid** (frakcióháború) alatt a **jelentkezett harcosok** közti **ölés és az
+  ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett
+  (`/faction raid join`), arra raid alatt is a békeidős szabályok élnek. Lásd
+  [Raid és háború](11-raid-haboru.md).
 
 > A bűnösöket egy különleges relikvia, a **Mételytépő** is megjelölheti és megbüntetheti —
 > erről a [Relikviák](09-relikviak.md) oldalon olvashatsz.

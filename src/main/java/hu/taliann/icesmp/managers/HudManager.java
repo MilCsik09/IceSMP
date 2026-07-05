@@ -224,7 +224,12 @@ public final class HudManager {
         if (raid != null) {
             final long totalMs = Math.max(1L, configManager.getInt("factions.raid.duration-minutes", 15) * 60L * 1000L);
             final long remaining = Math.max(0L, raid.endsAtMillis() - System.currentTimeMillis());
-            raidBar.name(Component.text("⚔ RAID: " + raid.attacker().getDisplayName() + " ⚔ " + raid.defender().getDisplayName(), NamedTextColor.RED));
+            final String label = raid.inWarmup()
+                    ? "⚔ RAID (felkészülés — /faction raid join): "
+                            + raid.attacker().getDisplayName() + " ⚔ " + raid.defender().getDisplayName()
+                    : "⚔ RAID: " + raid.attacker().getDisplayName() + " " + raidManager.getPoints(raid.attacker())
+                            + " ⚔ " + raidManager.getPoints(raid.defender()) + " " + raid.defender().getDisplayName();
+            raidBar.name(Component.text(label, NamedTextColor.RED));
             raidBar.progress(clamp((float) remaining / (float) totalMs));
         }
         bloodMoonBar.name(Component.text("🌕 VÉRHOLD — a szörnyek erősebbek", NamedTextColor.DARK_RED));

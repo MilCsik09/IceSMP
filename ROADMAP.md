@@ -19,15 +19,17 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 
 ### Játékmenet
-- ⬜ **Raid-mélyítés:** 10v10 létszámkorlát és jelentkezés; aréna-/területkötés;
-  objektív-alapú raid (zászlófoglalás, pont-tartás); terület átvétele győzelemmel.
-  (A győztes-buff és az ostromágyú kész.)
+- 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
+  pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
+  több egyidejű raid, védő-oldali erődítés-mechanika.
 - 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
   konténer-fosztás +1, frakciótárs ölése +2); további ötlet: bűn-alapú fejvadász-jutalom.
 - ⬜ **Kaszt-questek felturbózása:** NPC-s próbák az „ölj X-et" helyett (FancyNpcs a szerveren
   elérhető; a parkour-keret kész).
 - ⬜ **Szezonliga jutalom:** a győztes frakció kozmetikai/relikvia-jutalma a szezon végén.
-- ⬜ **Frakció-diplomácia:** szövetség/békekötés parancsok a királyoknak; frakció-szintek és perkek.
+- 💡 **Frakció-diplomácia:** szövetség/békekötés parancsok a királyoknak — 3 királysággal a
+  szövetség-tér minimális (egyetlen 2v1 kapcsoló), ezért csak akkor éri meg, ha valaha
+  több frakció / al-klán rendszer lesz. (A statikus viszonyok + raid-ellenségesség kész.)
 - 💡 **Külön ulti-töltő sáv:** a kivett „kirobbanás" helyett egy második, lassan töltődő ulti-mérő,
   hogy az erőforrás-költség MELLETT látványos burst-jutalom is legyen.
 - 💡 **Cosmetics:** részecske-effektek, kalapok (a szezon-jutalom kiterjesztése), GUI-ból.

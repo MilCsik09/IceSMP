@@ -120,7 +120,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 - ✅ **Bűn-rendszer teljes:** gyilkosság (+1), **árulás** (frakciótárs ölése, +2) és **lopás**
   (idegen territóriumban konténer-fosztás, +1) is bűn — teszteld mindhármat!
-- 🚧 **Raid:** nincs 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az ostromágyú kész).
+- ✅ **Raid teljes:** jelentkezés + létszámkorlát (10v10), területkötés, pont-tartás objektíva,
+  terület-átvétel — teszteld a 4.12 szerint!
 - 🚧 **Kaszt-questek:** jelenleg 4 kezdő próba van; a többi kaszt saját NPC/parkour pályái tervben.
 - 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search`, a
   reputáció-árazás és a **licitálós aukciósház** kész — ezeket teszteld!).
@@ -256,7 +257,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.12 Király, raid, kassza, szezon ✅
 - [ ] `/faction king` (szavazás/koronázás); a király kivehet a kasszából, adót állít, raidet hirdet.
 - [ ] `/faction treasury`, `/faction donate`; az adó és adományok töltik.
-- [ ] `/faction raid <cél>` (csak király); a raid alatt az ölés pontot ér; a végén hadizsákmány + győztes-buff.
+- [ ] `/faction raid <cél> [terület]` (csak király); alapból a védő fővárosáért folyik; a hirdető
+      király automatikusan harcos. `/faction raid status` mutatja a fázist/pontokat/létszámot.
+- [ ] **Jelentkezés:** a felkészülés alatt `/faction raid join` (max 10/oldal — a 11. jelentkezőt
+      elutasítja); a bossbar a felkészülés alatt erre hív, harc alatt a pontállást mutatja.
+- [ ] **Résztvevő-szabály:** csak a JELENTKEZETT harcosok közti ölés szentesített és pontozó;
+      nem-jelentkezett hadviselő-frakciós ölése raid alatt is bűn (gyilkosság/árulás).
+- [ ] **Zóna-szabály:** területkötött raidnél a zónán KÍVÜLI ölés szentesített, de nem ér pontot
+      (külön üzenet); a zóna középpontján állva ~5 mp-enként pont jár (action bar jelzi).
+- [ ] **Terület-átvétel:** ha a támadó nyer, a terület átkerül hozzá (broadcast; fővárosi státusz
+      elvész); védő győzelemnél / döntetlennél marad. A végén hadizsákmány + győztes-buff.
 - [ ] **Ostromágyú** (craftolható) csak aktív raid alatt sül el; terep-barát robbanás.
       ⚠️ **Folia:** célozz **távoli** pontra (másik régió) → a robbanás ott történik, konzol-hiba nélkül.
 - [ ] `/events season` mutatja a liga-pontokat; a szezon végén jutalom + reset.

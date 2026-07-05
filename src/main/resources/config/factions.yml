@@ -55,9 +55,25 @@ factions:
       - "NEUTRAL"
   # ===== Raid =====
   # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
-  # A győztes (több ölés) a vesztes kasszájának spoils-percent %-át zsákmányolja.
+  # A raid felkészüléssel indul (warmup): mindkét oldal harcosai a
+  # /faction raid join paranccsal jelentkeznek (max-participants-per-side fő).
+  # Csak a JELENTKEZETT harcosok közti ölés szentesített (bűntelen) és pontozó.
+  # A raid alapból a védő fővárosáért folyik (vagy a megadott territóriumért):
+  # ott az ölés (kill-points) mellett a középpont tartása is pontot ér
+  # (capture-points / harcos, capture-interval-seconds-enként, capture-radius
+  # blokkon belül). A győztes (több pont) a vesztes kasszájának spoils-percent
+  # %-át zsákmányolja; ha a TÁMADÓ nyer, a territórium is átkerül hozzá
+  # (territory-takeover) — a fővárosi státusz elvész. Territórium nélküli
+  # célpontnál a raid kötetlen, csak ölés-pontokkal.
   raid:
     duration-minutes: 15
+    warmup-minutes: 2
+    max-participants-per-side: 10
+    kill-points: 5
+    capture-interval-seconds: 5
+    capture-radius: 8
+    capture-points: 1
+    territory-takeover: true
     entry-cost: 200
     spoils-percent: 20
     season-points: 5

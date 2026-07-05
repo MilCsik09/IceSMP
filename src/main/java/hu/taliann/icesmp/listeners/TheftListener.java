@@ -125,8 +125,9 @@ public final class TheftListener implements Listener {
             return;
         }
 
-        // Wartime looting between the warring factions is sanctioned, like raid kills.
-        if (raidManager.isAtWar(playerFaction, territory.faction())) {
+        // Wartime plunder is sanctioned for REGISTERED raid fighters on enemy land,
+        // mirroring the participant-based raid-kill rule.
+        if (raidManager.isSanctionedLooting(player.getUniqueId(), territory.faction())) {
             return;
         }
 
