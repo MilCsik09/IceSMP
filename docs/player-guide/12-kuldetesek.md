@@ -1,7 +1,16 @@
 # 12. Küldetések ✅
 
-A **küldetések** kis feladatok, amikért **jutalmat** kapsz (általában kaszt-XP-t, néha pénzt
-vagy különleges hatást). 
+A **küldetések** kis feladatok, amikért **jutalmat** kapsz (kaszt-XP-t, pénzt — akár a
+**saját frakciód valutájában** — vagy különleges hatást).
+
+**Miféle feladatok lehetnek?** Szörny- és játékos-vadászat, blokk-bányászás és -lerakás,
+craftolás, tárgygyűjtés, evés-ivás, horgászat, varázslás (enchant), állat-tenyésztés,
+terület-felkeresés, szint-elérés, NPC-felkeresés, **tárgy-beszállítás NPC-nek** (odaadod
+neki, ő átveszi) és parkour-próba.
+
+**Story:** a quest-NPC-k **beszélnek is** — a küldetés átvételekor és leadásakor a
+történetükhöz illő sorokat mondanak (a képernyőn, a nevükkel).
+
 
 Parancsok:
 - `/quest list` — a felvehető és aktív küldetéseid.

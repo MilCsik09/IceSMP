@@ -34,10 +34,14 @@ import java.util.Set;
  * chain, whose final reward may cleanse all sins).
  *
  * Objective types: KILL_MOBS (count, optional entity-type + min-mob-level),
- * BREAK_BLOCKS (materials + count), CRAFT_ITEMS (materials + count),
- * CATCH_FISH (count), VISIT_TERRITORY (territory id), REACH_LEVEL (class level),
- * TALK_TO_NPC (npc name, via the FancyNpcs bridge), PARKOUR_TRIAL (course id,
- * via the ParkourManager finish hook).
+ * BREAK_BLOCKS / PLACE_BLOCKS / CRAFT_ITEMS / COLLECT_ITEMS / CONSUME_ITEMS
+ * (materials + count), CATCH_FISH / ENCHANT_ITEMS / KILL_PLAYERS (count),
+ * BREED_ANIMALS (count, optional entity-type), VISIT_TERRITORY (territory id),
+ * REACH_LEVEL (class level), TALK_TO_NPC (npc name, via the FancyNpcs bridge),
+ * DELIVER_ITEMS (npc + materials + count — the NPC takes the goods),
+ * PARKOUR_TRIAL (course id, via the ParkourManager finish hook).
+ * Optional dialogue block: dialogue.speaker + dialogue.give / dialogue.complete
+ * lines are spoken by the giver / target NPC.
  *
  * Accept requirements: requires-job, requires-faction, requires-level,
  * requires-quest (chains). Rewards: class-xp, currency (type + amount),
@@ -54,7 +58,9 @@ public final class QuestManager implements PersistentStore {
     /** Objective types the framework understands (admin create validates against this). */
     public static final Set<String> OBJECTIVE_TYPES = Set.of(
             "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
-            "VISIT_TERRITORY", "REACH_LEVEL", "TALK_TO_NPC", "PARKOUR_TRIAL");
+            "VISIT_TERRITORY", "REACH_LEVEL", "TALK_TO_NPC", "PARKOUR_TRIAL",
+            "PLACE_BLOCKS", "COLLECT_ITEMS", "KILL_PLAYERS", "DELIVER_ITEMS",
+            "BREED_ANIMALS", "ENCHANT_ITEMS", "CONSUME_ITEMS");
 
     /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
@@ -64,7 +70,8 @@ public final class QuestManager implements PersistentStore {
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course",
             "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
-            "rewards.unlock-spell", "rewards.cleanse-sins");
+            "rewards.unlock-spell", "rewards.cleanse-sins",
+            "dialogue.speaker", "dialogue.give", "dialogue.complete");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -225,6 +232,26 @@ public final class QuestManager implements PersistentStore {
                     return "quest-admin-bad-value";
                 }
                 parsed = materials;
+            }
+            // Párbeszéd-sorok: | jellel elválasztva több sor adható meg.
+            case "dialogue.give", "dialogue.complete" -> {
+                final List<String> lines = new ArrayList<>();
+                for (final String token : rawValue.split("\\|")) {
+                    if (!token.isBlank()) {
+                        lines.add(token.trim());
+                    }
+                }
+                if (lines.isEmpty()) {
+                    return "quest-admin-bad-value";
+                }
+                parsed = lines;
+            }
+            case "rewards.currency.type" -> {
+                final String type = rawValue.trim();
+                if (!isOwnFactionCurrency(type) && CurrencyType.fromInput(type) == null) {
+                    return "quest-admin-bad-value";
+                }
+                parsed = isOwnFactionCurrency(type) ? "OWN" : type.toUpperCase(Locale.ROOT);
             }
             case "objective.type" -> {
                 final String type = rawValue.trim().toUpperCase(Locale.ROOT);
@@ -428,21 +455,163 @@ public final class QuestManager implements PersistentStore {
         forEachActive(player, "CATCH_FISH", (questId, quest) -> true);
     }
 
+    public void handlePlaceBlock(final Player player, final Material material) {
+        forEachActive(player, "PLACE_BLOCKS", (questId, quest) ->
+                quest.getStringList("objective.materials").stream()
+                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+    }
+
+    /** Item pickups progress by the picked-up stack size, not one per event. */
+    public void handleCollect(final Player player, final Material material, final int amount) {
+        forEachActive(player, "COLLECT_ITEMS", Math.max(1, amount), (questId, quest) ->
+                quest.getStringList("objective.materials").stream()
+                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+    }
+
+    public void handlePlayerKill(final Player killer) {
+        forEachActive(killer, "KILL_PLAYERS", (questId, quest) -> true);
+    }
+
+    public void handleBreed(final Player breeder, final EntityType entityType) {
+        forEachActive(breeder, "BREED_ANIMALS", (questId, quest) -> {
+            final String requiredEntity = quest.getString("objective.entity-type");
+            return requiredEntity == null || requiredEntity.isBlank()
+                    || requiredEntity.equalsIgnoreCase(entityType.name());
+        });
+    }
+
+    public void handleEnchant(final Player player) {
+        forEachActive(player, "ENCHANT_ITEMS", (questId, quest) -> true);
+    }
+
+    public void handleConsume(final Player player, final Material material) {
+        forEachActive(player, "CONSUME_ITEMS", (questId, quest) ->
+                quest.getStringList("objective.materials").stream()
+                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+    }
+
     public void handleTerritoryEnter(final Player player, final String territoryId) {
         forEachActive(player, "VISIT_TERRITORY", (questId, quest) ->
                 territoryId != null && territoryId.equalsIgnoreCase(quest.getString("objective.territory", "")));
     }
 
     /**
-     * Progresses TALK_TO_NPC quests when the player interacts with a named NPC.
-     * Fired by the reflective FancyNpcs bridge on the player's own region thread.
+     * Handles an NPC interaction for quest purposes: completes TALK_TO_NPC
+     * objectives targeting the NPC (a talk resolves in one click, playing the
+     * quest's completion dialogue first), and settles DELIVER_ITEMS objectives
+     * when the player carries enough of the requested goods. Fired by the
+     * reflective FancyNpcs bridge on the player's own region thread.
      *
      * @param player the interacting player
      * @param npcName the NPC's internal (FancyNpcs) name
      */
     public void handleNpcInteract(final Player player, final String npcName) {
-        forEachActive(player, "TALK_TO_NPC", (questId, quest) ->
-                npcName != null && npcName.equalsIgnoreCase(quest.getString("objective.npc", "")));
+        if (npcName == null) {
+            return;
+        }
+
+        for (final String questId : List.copyOf(getActiveQuests(player))) {
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest == null || !npcName.equalsIgnoreCase(quest.getString("objective.npc", ""))) {
+                continue;
+            }
+
+            final String type = quest.getString("objective.type", "");
+            if ("TALK_TO_NPC".equalsIgnoreCase(type)) {
+                complete(player, questId);
+            } else if ("DELIVER_ITEMS".equalsIgnoreCase(type)) {
+                tryDeliver(player, questId, quest);
+            }
+        }
+    }
+
+    /** Settles a DELIVER_ITEMS objective: takes the goods from the inventory if enough is carried. */
+    private void tryDeliver(final Player player, final String questId, final ConfigurationSection quest) {
+        final List<String> materials = quest.getStringList("objective.materials");
+        if (materials.isEmpty()) {
+            return;
+        }
+
+        final int target = Math.max(1, quest.getInt("objective.count", 1));
+        int carried = 0;
+        for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+            if (item != null && materials.stream().anyMatch(name -> name.equalsIgnoreCase(item.getType().name()))) {
+                carried += item.getAmount();
+            }
+        }
+
+        if (carried < target) {
+            player.sendActionBar(messageManager.getMessage(
+                    "quest.deliver-progress",
+                    "<gray>{quest}: <gold>{carried}</gold>/<gold>{target}</gold> nálad — hozd el mindet!</gray>",
+                    Map.of(
+                            "quest", getDisplayName(questId),
+                            "carried", String.valueOf(carried),
+                            "target", String.valueOf(target)
+                    )
+            ));
+            return;
+        }
+
+        int remaining = target;
+        for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+            if (remaining <= 0) {
+                break;
+            }
+            if (item == null || materials.stream().noneMatch(name -> name.equalsIgnoreCase(item.getType().name()))) {
+                continue;
+            }
+            final int take = Math.min(remaining, item.getAmount());
+            item.setAmount(item.getAmount() - take);
+            remaining -= take;
+        }
+
+        complete(player, questId);
+    }
+
+    /** The best NPC name to speak as when dialogue.speaker is not set. */
+    private static String dialogueSpeakerFallback(final ConfigurationSection quest) {
+        final String objectiveNpc = quest.getString("objective.npc", "");
+        if (!objectiveNpc.isBlank()) {
+            return objectiveNpc;
+        }
+        final String giver = quest.getString("giver-npc", "");
+        return giver.isBlank() ? "???" : giver;
+    }
+
+    /**
+     * Plays a quest's configured dialogue lines ({@code dialogue.give} /
+     * {@code dialogue.complete}) as NPC speech, one line per ~1.5 seconds on
+     * the player's own scheduler. The speaker name defaults to the NPC's
+     * internal name; {@code dialogue.speaker} overrides it.
+     */
+    private void sendDialogue(final Player player, final String questId, final String phase,
+                              final String fallbackSpeaker) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest == null) {
+            return;
+        }
+
+        final List<String> lines = quest.getStringList("dialogue." + phase);
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        final String speaker = quest.getString("dialogue.speaker",
+                fallbackSpeaker == null ? "???" : fallbackSpeaker);
+        for (int index = 0; index < lines.size(); index++) {
+            final String line = lines.get(index);
+            final Runnable send = () -> player.sendMessage(messageManager.getMessage(
+                    "quest.dialogue-line",
+                    "<gold>{speaker}:</gold> <white>{line}</white>",
+                    Map.of("speaker", speaker, "line", line)
+            ));
+            if (index == 0) {
+                send.run();
+            } else {
+                player.getScheduler().runDelayed(plugin, task -> send.run(), null, 30L * index);
+            }
+        }
     }
 
     // ===== NPC quest-adók (giver-npc) =====
@@ -545,6 +714,7 @@ public final class QuestManager implements PersistentStore {
                             "description", getQuestSection(questId).getString("description", "")
                     )
             ));
+            sendDialogue(player, questId, "give", npcName);
             return questId;
         }
         return null;
@@ -587,6 +757,11 @@ public final class QuestManager implements PersistentStore {
     }
 
     private void forEachActive(final Player player, final String objectiveType, final ObjectiveMatcher matcher) {
+        forEachActive(player, objectiveType, 1, matcher);
+    }
+
+    private void forEachActive(final Player player, final String objectiveType, final int amount,
+                               final ObjectiveMatcher matcher) {
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
             if (quest == null || !objectiveType.equalsIgnoreCase(quest.getString("objective.type", ""))) {
@@ -597,7 +772,7 @@ public final class QuestManager implements PersistentStore {
                 continue;
             }
 
-            final int progress = getProgress(player, questId) + 1;
+            final int progress = getProgress(player, questId) + amount;
             final int target = Math.max(1, quest.getInt("objective.count", 1));
             if (progress >= target) {
                 complete(player, questId);
@@ -632,6 +807,10 @@ public final class QuestManager implements PersistentStore {
             return;
         }
 
+        // Story first: the quest's completion dialogue plays on every completion
+        // path (NPC talk, delivery, parkour finish, admin force-complete alike).
+        sendDialogue(player, questId, "complete", dialogueSpeakerFallback(quest));
+
         final String normalizedId = questId.toLowerCase(Locale.ROOT);
         final List<String> active = new ArrayList<>(getActiveQuests(player));
         active.remove(normalizedId);
@@ -661,7 +840,11 @@ public final class QuestManager implements PersistentStore {
 
         final ConfigurationSection currencyReward = quest.getConfigurationSection("rewards.currency");
         if (currencyReward != null) {
-            final CurrencyType currencyType = CurrencyType.fromInput(currencyReward.getString("type", ""));
+            // "OWN" (vagy FACTION/SAJAT) = a játékos SAJÁT frakciójának valutája.
+            final String typeRaw = currencyReward.getString("type", "");
+            final CurrencyType currencyType = isOwnFactionCurrency(typeRaw)
+                    ? CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId()))
+                    : CurrencyType.fromInput(typeRaw);
             final double amount = currencyReward.getDouble("amount", 0.0D);
             if (currencyType != null && amount > 0.0D) {
                 currencyManager.addToBalance(player.getUniqueId(), currencyType, amount);
@@ -677,6 +860,12 @@ public final class QuestManager implements PersistentStore {
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
             metelytepoManager.breakDarkPact(player);
         }
+    }
+
+    /** Whether the configured reward-currency type means "the player's own faction currency". */
+    private static boolean isOwnFactionCurrency(final String typeRaw) {
+        return "OWN".equalsIgnoreCase(typeRaw) || "FACTION".equalsIgnoreCase(typeRaw)
+                || "SAJAT".equalsIgnoreCase(typeRaw) || "SAJÁT".equalsIgnoreCase(typeRaw);
     }
 
     // ===== PDC segédek =====

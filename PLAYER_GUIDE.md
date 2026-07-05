@@ -518,6 +518,9 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 - **NPC-jelzés csak neked:** a quest-NPC-k felett **részecske-aura** világít, kizárólag annak
   a játékosnak, akit érint — **arany** = questet tud adni neked, **zöld** = aktív küldetésed
   hozzá szól.
+- **Story és beszállítás:** a quest-NPC-k **párbeszédet mondanak** a küldetés átadásakor és
+  leadásakor; a **beszállító questeknél** (DELIVER_ITEMS) a kért tárgyakat az NPC kattintásra
+  **átveszi tőled**. A jutalom-valuta lehet mindig a **saját frakciód pénze** is.
 - **Kaszt-próbák:** jelenleg a négy kezdő próba érhető el (`warrior_trial`, `archer_trial`,
   `wizard_trial`, `assassin_trial`), kaszt XP jutalommal. A többi kaszt saját NPC-s próbája
   még tervezett tartalom.

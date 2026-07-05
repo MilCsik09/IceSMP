@@ -266,6 +266,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       5 mob után teljesül. `set`-tel giver-npc is adható (NPC adja + arany aura); `delete` törli;
       a configbeli questek NEM szerkeszthetők/törölhetők innen. Restart után is megmarad
       (custom-quests.yml).
+- [ ] **Új objektívák:** próbálj ki párat — PLACE_BLOCKS (blokk-lerakás), COLLECT_ITEMS
+      (felvett tárgyak, stack-nyi haladás), KILL_PLAYERS (PvP), BREED_ANIMALS, ENCHANT_ITEMS,
+      CONSUME_ITEMS (evés); DELIVER_ITEMS: vidd a tárgyakat a megadott NPC-hez → kattintásra
+      ÁTVESZI őket (kevesebbnél action bar mutatja, mennyi van nálad).
+- [ ] **Saját-frakció valuta jutalom:** `/quest admin set proba_quest rewards.currency.type OWN`
+      + amount → teljesítéskor a játékos a SAJÁT frakciója valutáját kapja (Piros → piros token).
+- [ ] **NPC-párbeszéd:** `/quest admin set proba_quest dialogue.speaker Aldric mester`,
+      `... dialogue.give Üdv vándor!|Van egy feladatom.` → quest-átvételkor az NPC „mondja" a
+      sorokat ~1,5 mp-enként; `dialogue.complete` a teljesítéskor szól (parkour-célnál is).
+      A mester-láncok gyárilag kaptak példa-dialógust.
 - [ ] **Vezeklés-lánc** (3 rész) az EGYETLEN mód a paktum megtörésére.
 - [ ] ⚠️ **Folia:** a bűn-jelölés a gyilkost másik régióból is hibamentesen jelöli.
 

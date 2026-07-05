@@ -7,6 +7,8 @@ messages:
   quest:
     accepted-from-npc: '<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>'
     completed: '<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>'
+    deliver-progress: '<gray>{quest}: <gold>{carried}</gold>/<gold>{target}</gold> nálad — hozd el mindet!</gray>'
+    dialogue-line: '<gold>{speaker}:</gold> <white>{line}</white>'
     progress: '<gray>{quest}: <gold>{progress}</gold>/<gold>{target}</gold></gray>'
   quest-abandon-failed: '&cNincs ilyen aktív küldetésed.'
   quest-admin-bad-count: '&cA darabszámnak pozitív egész számnak kell lennie.'
