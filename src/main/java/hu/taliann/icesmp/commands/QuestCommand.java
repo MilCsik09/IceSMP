@@ -45,6 +45,7 @@ public final class QuestCommand implements BasicCommand {
         }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
+            case "log", "gui", "naplo", "napló" -> handleLog(sender);
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender);
             case "accept" -> handleAccept(sender, args);
@@ -239,6 +240,14 @@ public final class QuestCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("quest-admin-help-list", "&e/quest admin list &7- Admin-készítette küldetések."));
     }
 
+    private void handleLog(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        hu.taliann.icesmp.gui.QuestLogGUI.open(player, questManager, messageManager);
+    }
+
     private void handleList(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
@@ -376,6 +385,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void sendHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("quest-help-header", "&6/quest &7- Elérhető parancsok:"));
+        sender.sendMessage(messageManager.get("quest-help-log", "&e/quest log &7- Küldetésnapló (grafikus felület)."));
         sender.sendMessage(messageManager.get("quest-help-list", "&e/quest list &7- Felvehető küldetések."));
         sender.sendMessage(messageManager.get("quest-help-info", "&e/quest info &7- Aktív küldetéseid és haladásod."));
         sender.sendMessage(messageManager.get("quest-help-accept", "&e/quest accept <küldetés> &7- Küldetés felvétele."));
@@ -390,8 +400,8 @@ public final class QuestCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("list", "info", "accept", "abandon", "complete", "admin")
-                : List.of("list", "info", "accept", "abandon");
+                ? List.of("log", "list", "info", "accept", "abandon", "complete", "admin")
+                : List.of("log", "list", "info", "accept", "abandon");
 
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
