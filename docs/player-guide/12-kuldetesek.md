@@ -4,9 +4,11 @@ A **küldetések** kis feladatok, amikért **jutalmat** kapsz (kaszt-XP-t, pénz
 **saját frakciód valutájában** — vagy különleges hatást).
 
 **Miféle feladatok lehetnek?** Szörny- és játékos-vadászat, blokk-bányászás és -lerakás,
-craftolás, tárgygyűjtés, evés-ivás, horgászat, varázslás (enchant), állat-tenyésztés,
-terület-felkeresés, szint-elérés, NPC-felkeresés, **tárgy-beszállítás NPC-nek** (odaadod
-neki, ő átveszi) és parkour-próba.
+craftolás, tárgygyűjtés (bányászva vagy a földről **felvéve**), evés-ivás, horgászat,
+varázslás (enchant), állat-tenyésztés, **állat-szelídítés** (taming), **olvasztás** (kohó),
+**falusi kereskedés**, terület-felkeresés, **bióm-felfedezés**, szint-elérés,
+NPC-felkeresés, **tárgy-beszállítás NPC-nek** (odaadod neki, ő átveszi), **raid-győzelem**,
+**világboss-ölés** és parkour-próba.
 
 **Story:** a quest-NPC-k **beszélnek is** — a küldetés átvételekor és leadásakor a
 történetükhöz illő sorokat mondanak (a képernyőn, a nevükkel).
@@ -17,9 +19,62 @@ Parancsok:
 - `/quest accept <id>` — felveszel egy küldetést.
 - `/quest info` — megnézed az aktív küldetéseid állását.
 - `/quest abandon <id>` — feladsz egy küldetést.
+- `/quest log` (`gui`, `naplo`) — a grafikus **küldetésnapló** (lásd lentebb).
 
 A haladásodat a képernyő alján (action bar) is követheted. Amikor teljesíted a feladatot, a
 jutalom **automatikusan** jár.
+
+## Több feladat egy questben 🎯
+
+Egy küldetés ma már **több feladatot** (objektívát) is tartalmazhat egyszerre — pl.
+„ölj meg **10 szörnyet** ÉS gyűjts **16 kenyeret**”. Kétféle mód van:
+
+- **ALL (párhuzamos):** bármely sorrendben, mindegyik feladatot teljesítened kell.
+- **SEQUENCE (sorban):** mindig csak az **aktuális** lépés halad, a következő csak utána
+  nyílik — ez a story-láncokhoz való.
+
+A haladás **feladatonként külön** követhető: a HUD és a `/quest info` felsorolja az összeset,
+pl. `Szörnyek 4/10 • Kenyér 8/16`.
+
+## Küldetésnapló GUI 📓
+
+A `/quest log` (aliasok: `gui`, `naplo`) egy **grafikus küldetésnaplót** nyit, **három füllel**:
+
+- **Aktív** — a folyamatban lévő küldetéseid a haladásukkal; **shift-kattintással feladhatod** őket.
+- **Felvehető** — a most elérhető küldetések; **kattintással felveszed**.
+- **Teljesített** — a már befejezett küldetéseid.
+
+A napló **lapozható**, ha sok küldetésed van.
+
+## Választós párbeszéd (elágazó story) 💬
+
+Egyes quest-NPC-k párbeszéde után **kattintható válaszopciók** jelennek meg a chatben. Amelyiket
+választod, az **más-más következő küldetést** indít — így a történet elágazik aszerint, hogyan
+felelsz.
+
+## Napi NPC-kínálat (rotáció) 🔄
+
+Néhány NPC egy nagyobb **quest-poolból** naponta csak **pár** küldetést kínál, és a kínálat
+**naponta frissül**. Ezért érdemes **visszatérni** hozzájuk — máskor más feladatokat adnak.
+
+## Ismétlődő és szezonális küldetések ♻️
+
+- **Ismétlődő (repeatable):** teljesítés után egy **cooldown** (pl. naponta, 24 óránként)
+  letelte után **újra felveheted** ugyanazt a küldetést.
+- **Szezonális:** szezononként **egyszer** teljesíthető; **új szezonban újra** elérhetővé válik.
+
+## Jutalmak 🎁
+
+A jutalom lehet **kaszt-XP**, **pénz** és **tárgy** is (nem csak XP vagy pénz). A pénz-jutalom
+lehet mindig a **saját frakciód valutája** — így pl. a Piros frakció tagja piros tokent kap.
+
+## Frakció-közösségi célok 🤝
+
+A küldetések mellett vannak **szerver-szintű, közösségi célok** is: egy **megosztott számláló**,
+amibe egy frakció (vagy az egész szerver) **minden tagja** beleszámít — pl. „a Piros frakció
+együtt gyűjtsön **1000 vasat**”. Ezt **nem** kell külön felvenned: **automatikusan gyűlik**,
+ahogy a normál játék közben teljesíted a hozzá tartozó tevékenységet. Amikor a cél elkészül,
+az **egész frakció jutalmat kap a kasszába** + egy rövid **buffot**, majd a cél **újraindul**.
 
 ## Kaszt-próbák (a kezdő küldetések)
 

@@ -269,7 +269,27 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Új objektívák:** próbálj ki párat — PLACE_BLOCKS (blokk-lerakás), COLLECT_ITEMS
       (felvett tárgyak, stack-nyi haladás), KILL_PLAYERS (PvP), BREED_ANIMALS, ENCHANT_ITEMS,
       CONSUME_ITEMS (evés); DELIVER_ITEMS: vidd a tárgyakat a megadott NPC-hez → kattintásra
-      ÁTVESZI őket (kevesebbnél action bar mutatja, mennyi van nálad).
+      ÁTVESZI őket (kevesebbnél action bar mutatja, mennyi van nálad). Bővebb készlet:
+      olvasztás (kohó), állat-szelídítés (taming), falusi kereskedés, bióm-felfedezés,
+      raid-győzelem, világboss-ölés.
+- [ ] **Több-objektívás quest (ALL):** `/quest admin create multi KILL_MOBS 5 Több Feladat` →
+      `/quest admin addobjective multi COLLECT_ITEMS 16 Kenyér` → `/quest admin set multi objectives-mode ALL`
+      → felvéve a `/quest info`/HUD MINDKÉT feladatot külön mutatja (pl. Szörnyek 0/5 • Kenyér 0/16),
+      bármely sorrendben halad, csak MINDKETTŐ kész után teljesül.
+- [ ] **Több-objektívás quest (SEQUENCE):** ugyanez `objectives-mode SEQUENCE`-szel → csak az
+      AKTUÁLIS lépés halad, a következő csak az előző után nyílik (story-lánc).
+- [ ] **Küldetésnapló GUI:** `/quest log` (`gui`, `naplo`) → három fül: **Aktív** (haladással;
+      shift-katt = feladás), **Felvehető** (katt = felvétel), **Teljesített**; sok questnél lapozható.
+- [ ] **Ismétlődő (repeatable) quest:** teljesítés után NEM vehető fel újra azonnal; a config-beli
+      cooldown (pl. 24 óra) letelte után ismét felvehető.
+- [ ] **Szezonális quest:** szezononként CSAK EGYSZER teljesíthető; új szezon indulása után újra elérhető.
+- [ ] **Választós párbeszéd:** olyan quest-NPC-nél (`dialogue.choices`), ahol a párbeszéd után
+      kattintható válaszopciók jelennek meg a chatben → különböző opció KÜLÖNBÖZŐ következő questet indít.
+- [ ] **NPC napi rotáció:** `rotation-group`-os NPC egy poolból naponta csak a beállított számú questet
+      kínálja; a kínálat naponta (nap váltásakor) frissül — más questek jelennek meg.
+- [ ] **Frakció-közösségi cél:** a `community-goals`-hoz tartozó tevékenységet többen végezve a MEGOSZTOTT
+      számláló nő (minden frakciótag beleszámít, nem egyéni felvétel); a cél elérésekor az egész frakció
+      **kassza-jutalmat + rövid buffot** kap, majd a számláló újraindul.
 - [ ] **Saját-frakció valuta jutalom:** `/quest admin set proba_quest rewards.currency.type OWN`
       + amount → teljesítéskor a játékos a SAJÁT frakciója valutáját kapja (Piros → piros token).
 - [ ] **NPC-párbeszéd:** `/quest admin set proba_quest dialogue.speaker Aldric mester`,

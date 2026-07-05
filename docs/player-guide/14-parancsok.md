@@ -43,6 +43,7 @@ jelenti, hogy **elhagyható**.
 | `/profession join <szakma>` / `/profession info` | `prof`, `szakma` | Szakmák |
 | `/class givecatalyst` | `kaszt`, `job` | Elveszett Képesség Katalizátor pótlása |
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
+| `/quest log` | `gui`, `naplo` | **Küldetésnapló GUI** — Aktív / Felvehető / Teljesített fülek, lapozható |
 | `/souls` / `/souls champion` | `soul`, `lelek` | Lélekszilánk (csak Nekromanta) |
 | `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: cooldown-csökkentés valutáért |
 | `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a katalizátoron* is megnyitja. |
@@ -75,8 +76,10 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/spec reset <játékos>` | Specializációk törlése |
 | `/sinner <játékos> set\|clear\|add` | Bűnös állapot kezelése |
 | `/quest complete <játékos> <id>` | Küldetés azonnali teljesítése |
-| `/quest admin create <id> <objektíva> <darab> <név...>` | Új küldetés készítése játékon belül |
-| `/quest admin set <id> <mező> <érték...>` | Küldetés-mező beállítása (feltétel, jutalom, giver-npc...) |
+| `/quest admin create <id> <objektíva> <darab> <név...>` | Új küldetés készítése játékon belül (több-objektívás is lehet) |
+| `/quest admin addobjective <id> <objektíva> <darab> [leírás]` | További feladat hozzáadása egy questhez |
+| `/quest admin set <id> objectives-mode ALL\|SEQUENCE` | Több-objektívás mód: párhuzamos vagy sorban |
+| `/quest admin set <id> <mező> <érték...>` | Küldetés-mező beállítása (feltétel, jutalom, giver-npc, dialogue.choices, rotation-group, seasonal...) |
 | `/quest admin delete/info/list` | Admin-küldetés törlése / megtekintése / listája |
 | `/currency set <játékos> <összeg> [valuta]` | Valuta-egyenleg beállítása |
 | `/faction set <játékos> <frakció>` | Játékos frakcióba sorolása |

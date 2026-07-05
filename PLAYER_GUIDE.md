@@ -508,9 +508,22 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 ## 12. Küldetések ✅
 
 `/quest list` (felvehető), `/quest info` (aktív + haladás), `/quest accept <id>`,
-`/quest abandon <id>`. A haladásod az action barban követhető, teljesítéskor jutalmat kapsz
-(kaszt XP, valuta, képesség-feloldás, vagy különleges hatás).
+`/quest abandon <id>`, `/quest log` (grafikus **küldetésnapló**: Aktív / Felvehető /
+Teljesített fülek, shift-katt = feladás). A haladásod az action barban követhető,
+teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód pénze** —,
+**tárgy**, képesség-feloldás vagy különleges hatás).
 
+- **Több feladat egy questben:** egy küldetés több objektívát is tartalmazhat egyszerre
+  (pl. „ölj 10 szörnyet ÉS gyűjts 16 kenyeret”); mód: **ALL** (párhuzamos) vagy **SEQUENCE**
+  (sorban, story-lánchoz). A HUD/`/quest info` feladatonként mutatja a haladást.
+- **Ismétlődő és szezonális:** vannak **repeatable** questek (cooldown, pl. napi 24 óra után
+  újra felvehető) és **szezonális** questek (szezononként egyszer, új szezonban újra).
+  Egyes NPC-k **naponta frissülő** kínálatból (rotáció) adnak questeket, és a párbeszédük
+  után **választós opciók** indíthatnak eltérő folytatást.
+- **Frakció-közösségi célok:** szerver-szintű, **megosztott számláló**, amibe egy frakció
+  (vagy az egész szerver) minden tagja beleszámít (pl. „a Piros frakció gyűjtsön 1000 vasat”).
+  Nem egyéni quest — a normál játék közben gyűlik; teljesítéskor a frakció **kassza-jutalmat +
+  rövid buffot** kap, majd a cél újraindul.
 - **Mester-próbák (NPC-s láncok):** a kezdő próba után a kasztod **mester-NPC-jénél**
   jelentkezhetsz (beszélj vele — FancyNpcs NPC a fővárosban); a **mester-próbát már maga
   az NPC adja**, és teljesítened kell a **próbapályáját** (időmérős parkour).
@@ -545,7 +558,7 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 | `/currency balance/pay/exchange/rates` | Valuta + árfolyam |
 | `/market`, `/market sell/auction/claim/cancel` | Piactér + aukciósház |
 | `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
-| `/quest list/info/accept/abandon` | Küldetések |
+| `/quest list/info/accept/abandon`, `/quest log` | Küldetések + grafikus küldetésnapló |
 | `/events season/blood-moon` | Világesemények |
 | `/faction king tax <%>` | Király: adókulcs beállítása |
 | `/job givecatalyst` (admin) | Katalizátor pótlása |
