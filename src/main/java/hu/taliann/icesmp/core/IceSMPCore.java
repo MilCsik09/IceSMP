@@ -280,7 +280,7 @@ public final class IceSMPCore {
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
-                exchangeBoardManager, statsManager, parkourManager);
+                exchangeBoardManager, statsManager, parkourManager, questManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);

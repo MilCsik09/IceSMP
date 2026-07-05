@@ -40,7 +40,7 @@ A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb
 | `icesmp.job.admin` | kaszt XP / katalizátor / spell-unlock |
 | `icesmp.currency.admin` | valuta-egyenleg beállítás |
 | `icesmp.faction.admin` | frakció-kényszerítés, király/kassza admin-műveletek |
-| `icesmp.admin.quest` | küldetés force-complete |
+| `icesmp.admin.quest` | küldetés force-complete + a `/quest admin` szerkesztő |
 | `icesmp.relic.admin` | relikvia adása |
 | `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / építésvédelem megkerülése |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
@@ -72,6 +72,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 ### Egyéb teszt-triggerek
 ```
 /quest complete <j> <quest_id>   # küldetés azonnali teljesítése
+/quest admin create|set|delete   # küldetés-szerkesztő: quest készítése JÁTÉKON BELÜL, kód nélkül
 /relic give <j> <relic_id>       # relikvia adása (loot-teszt)  — id-k: /relic list
 /sinner set <j>                  # bűnössé tétel (Sötét-paktum teszt); clear/add/status is van
 ```
@@ -260,6 +261,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       felett; akinek aktív TALK_TO_NPC questje szól hozzá → ZÖLD aura; egy harmadik játékos
       (feltétel nélkül) SEMMIT nem lát. A marker ~2 mp-enként pulzál, ~48 blokkos körzetben.
 - [ ] **Sötét Beavatás** küldetés feloldja a Nekromantát.
+- [ ] **Admin quest-szerkesztő:** `/quest admin create proba_quest KILL_MOBS 5 Próba Quest` →
+      `/quest admin set proba_quest rewards.class-xp 100` → játékosként `/quest accept proba_quest`,
+      5 mob után teljesül. `set`-tel giver-npc is adható (NPC adja + arany aura); `delete` törli;
+      a configbeli questek NEM szerkeszthetők/törölhetők innen. Restart után is megmarad
+      (custom-quests.yml).
 - [ ] **Vezeklés-lánc** (3 rész) az EGYETLEN mód a paktum megtörésére.
 - [ ] ⚠️ **Folia:** a bűn-jelölés a gyilkost másik régióból is hibamentesen jelöli.
 

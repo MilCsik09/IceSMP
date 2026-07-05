@@ -26,6 +26,9 @@ achievements:
 # Jutalmak: class-xp, currency {type, amount}, unlock-spell, cleanse-sins.
 # giver-npc: a questet ez a FancyNpcs NPC ADJA — rákattintva automatikusan
 # felveszed, ha a feltételek teljesülnek (a /quest accept továbbra is működik).
+# Adminok JÁTÉKON BELÜL is készíthetnek questeket (/quest admin create|set|delete)
+# — azok a plugin-mappa custom-quests.yml fájljába kerülnek, ugyanezzel a sémával,
+# és a lentiekkel együtt töltődnek be (azonos id-nél a configbeli nyer).
 quests:
   # --- Kaszt-próbák (bevezető questek) ---
   warrior_trial:

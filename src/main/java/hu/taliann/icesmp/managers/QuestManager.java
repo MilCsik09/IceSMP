@@ -3,17 +3,22 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.storage.PersistentStore;
+import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,8 +42,29 @@ import java.util.Set;
  * Accept requirements: requires-job, requires-faction, requires-level,
  * requires-quest (chains). Rewards: class-xp, currency (type + amount),
  * unlock-spell, cleanse-sins.
+ *
+ * <p>Besides the config-shipped quests, admins can build quests in-game
+ * without touching code or files (<code>/quest admin create|set|delete</code>);
+ * those live in custom-quests.yml under the plugin data folder (same schema)
+ * and are merged into every lookup. On an id collision the config quest wins,
+ * so shipped content can't be shadowed.</p>
  */
-public final class QuestManager {
+public final class QuestManager implements PersistentStore {
+
+    /** Objective types the framework understands (admin create validates against this). */
+    public static final Set<String> OBJECTIVE_TYPES = Set.of(
+            "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
+            "VISIT_TERRITORY", "REACH_LEVEL", "TALK_TO_NPC", "PARKOUR_TRIAL");
+
+    /** Fields the admin editor may set, in tab-complete order. */
+    public static final List<String> EDITABLE_FIELDS = List.of(
+            "display-name", "description", "giver-npc",
+            "requires-job", "requires-faction", "requires-level", "requires-quest",
+            "objective.type", "objective.count", "objective.entity-type",
+            "objective.min-mob-level", "objective.materials", "objective.territory",
+            "objective.level", "objective.npc", "objective.course",
+            "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
+            "rewards.unlock-spell", "rewards.cleanse-sins");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -49,6 +75,8 @@ public final class QuestManager {
     private final MetelytepoManager metelytepoManager;
     private final NamespacedKey activeQuestsKey;
     private final NamespacedKey completedQuestsKey;
+    private final File customQuestsFile;
+    private volatile YamlConfiguration customQuests = new YamlConfiguration();
 
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
@@ -63,25 +91,200 @@ public final class QuestManager {
         this.metelytepoManager = metelytepoManager;
         this.activeQuestsKey = new NamespacedKey(plugin, "quests_active");
         this.completedQuestsKey = new NamespacedKey(plugin, "quests_completed");
+        this.customQuestsFile = new File(plugin.getDataFolder(), "custom-quests.yml");
+        plugin.getDataFolder().mkdirs();
+    }
+
+    // ===== Admin-készítette questek (custom-quests.yml) =====
+
+    @Override
+    public void load() {
+        if (!customQuestsFile.exists()) {
+            customQuests = new YamlConfiguration();
+            return;
+        }
+
+        try {
+            customQuests = YamlConfiguration.loadConfiguration(customQuestsFile);
+            plugin.getLogger().info("Loaded " + getCustomQuestIds().size() + " admin-created quest(s).");
+        } catch (final Exception exception) {
+            plugin.getLogger().severe("Failed to load custom-quests.yml: " + exception.getMessage());
+        }
+    }
+
+    @Override
+    public synchronized void save() {
+        try {
+            YamlStore.saveAtomic(customQuestsFile, customQuests);
+        } catch (final IOException exception) {
+            plugin.getLogger().severe("Failed to save custom-quests.yml: " + exception.getMessage());
+        }
+    }
+
+    public Set<String> getCustomQuestIds() {
+        final ConfigurationSection section = customQuests.getConfigurationSection("quests");
+        return section == null ? Set.of() : section.getKeys(false);
+    }
+
+    public boolean isCustomQuest(final String questId) {
+        return questId != null && customQuests.isConfigurationSection("quests." + questId.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean isConfigQuest(final String questId) {
+        return configManager.getConfiguration() != null
+                && configManager.getConfiguration().isConfigurationSection("quests." + questId.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * Creates an admin-authored quest skeleton (id + objective + count +
+     * display name); details are filled in with the set editor.
+     *
+     * @param id the quest id (lowercase letters, digits, underscore)
+     * @param objectiveType one of {@link #OBJECTIVE_TYPES}
+     * @param count the objective count
+     * @param displayName the player-facing name
+     * @return null on success, otherwise an error message key
+     */
+    public synchronized String createCustomQuest(final String id, final String objectiveType,
+                                                 final int count, final String displayName) {
+        if (id == null || id.isBlank() || !id.toLowerCase(Locale.ROOT).matches("[a-z0-9_]+")) {
+            return "quest-admin-bad-id";
+        }
+
+        final String normalizedId = id.toLowerCase(Locale.ROOT);
+        if (isConfigQuest(normalizedId) || isCustomQuest(normalizedId)) {
+            return "quest-admin-exists";
+        }
+
+        if (objectiveType == null || !OBJECTIVE_TYPES.contains(objectiveType.toUpperCase(Locale.ROOT))) {
+            return "quest-admin-bad-objective";
+        }
+
+        if (count < 1) {
+            return "quest-admin-bad-count";
+        }
+
+        final String base = "quests." + normalizedId;
+        customQuests.set(base + ".display-name", displayName == null || displayName.isBlank() ? normalizedId : displayName);
+        customQuests.set(base + ".objective.type", objectiveType.toUpperCase(Locale.ROOT));
+        customQuests.set(base + ".objective.count", count);
+        save();
+        return null;
+    }
+
+    /**
+     * Sets one field of an admin-authored quest. Values are parsed by field:
+     * numbers for counts/levels/XP, true/false for flags, comma-separated
+     * lists for materials, plain text otherwise.
+     *
+     * @param questId the custom quest id
+     * @param field one of {@link #EDITABLE_FIELDS}
+     * @param rawValue the value as typed (already joined)
+     * @return null on success, otherwise an error message key
+     */
+    public synchronized String setCustomQuestField(final String questId, final String field, final String rawValue) {
+        if (!isCustomQuest(questId)) {
+            return "quest-admin-not-custom";
+        }
+
+        final String normalizedField = field == null ? "" : field.toLowerCase(Locale.ROOT);
+        if (!EDITABLE_FIELDS.contains(normalizedField)) {
+            return "quest-admin-bad-field";
+        }
+
+        if (rawValue == null || rawValue.isBlank()) {
+            return "quest-admin-bad-value";
+        }
+
+        final Object parsed;
+        switch (normalizedField) {
+            case "requires-level", "objective.count", "objective.min-mob-level",
+                 "objective.level", "rewards.class-xp" -> {
+                try {
+                    parsed = Math.max(0, Integer.parseInt(rawValue.trim()));
+                } catch (final NumberFormatException exception) {
+                    return "quest-admin-bad-value";
+                }
+            }
+            case "rewards.currency.amount" -> {
+                try {
+                    parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));
+                } catch (final NumberFormatException exception) {
+                    return "quest-admin-bad-value";
+                }
+            }
+            case "rewards.cleanse-sins" -> parsed = Boolean.parseBoolean(rawValue.trim());
+            case "objective.materials" -> {
+                final List<String> materials = new ArrayList<>();
+                for (final String token : rawValue.split(",")) {
+                    if (!token.isBlank()) {
+                        materials.add(token.trim().toUpperCase(Locale.ROOT));
+                    }
+                }
+                if (materials.isEmpty()) {
+                    return "quest-admin-bad-value";
+                }
+                parsed = materials;
+            }
+            case "objective.type" -> {
+                final String type = rawValue.trim().toUpperCase(Locale.ROOT);
+                if (!OBJECTIVE_TYPES.contains(type)) {
+                    return "quest-admin-bad-objective";
+                }
+                parsed = type;
+            }
+            default -> parsed = rawValue.trim();
+        }
+
+        customQuests.set("quests." + questId.toLowerCase(Locale.ROOT) + "." + normalizedField, parsed);
+        save();
+        return null;
+    }
+
+    /**
+     * Deletes an admin-authored quest definition. Config-shipped quests cannot
+     * be deleted from in-game.
+     *
+     * @param questId the custom quest id
+     * @return true if it existed and was removed
+     */
+    public synchronized boolean deleteCustomQuest(final String questId) {
+        if (!isCustomQuest(questId)) {
+            return false;
+        }
+
+        customQuests.set("quests." + questId.toLowerCase(Locale.ROOT), null);
+        save();
+        return true;
     }
 
     // ===== Definíciók =====
 
     public Set<String> getQuestIds() {
-        if (configManager.getConfiguration() == null) {
-            return Set.of();
+        final Set<String> ids = new LinkedHashSet<>();
+        if (configManager.getConfiguration() != null) {
+            final ConfigurationSection questsSection = configManager.getConfiguration().getConfigurationSection("quests");
+            if (questsSection != null) {
+                ids.addAll(questsSection.getKeys(false));
+            }
         }
-
-        final ConfigurationSection questsSection = configManager.getConfiguration().getConfigurationSection("quests");
-        return questsSection == null ? Set.of() : questsSection.getKeys(false);
+        ids.addAll(getCustomQuestIds());
+        return ids;
     }
 
     public ConfigurationSection getQuestSection(final String questId) {
-        if (questId == null || configManager.getConfiguration() == null) {
+        if (questId == null) {
             return null;
         }
 
-        return configManager.getConfiguration().getConfigurationSection("quests." + questId.toLowerCase(Locale.ROOT));
+        final String path = "quests." + questId.toLowerCase(Locale.ROOT);
+        if (configManager.getConfiguration() != null) {
+            final ConfigurationSection fromConfig = configManager.getConfiguration().getConfigurationSection(path);
+            if (fromConfig != null) {
+                return fromConfig;
+            }
+        }
+        return customQuests.getConfigurationSection(path);
     }
 
     public String getDisplayName(final String questId) {

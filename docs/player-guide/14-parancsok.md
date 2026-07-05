@@ -75,6 +75,9 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/spec reset <játékos>` | Specializációk törlése |
 | `/sinner <játékos> set\|clear\|add` | Bűnös állapot kezelése |
 | `/quest complete <játékos> <id>` | Küldetés azonnali teljesítése |
+| `/quest admin create <id> <objektíva> <darab> <név...>` | Új küldetés készítése játékon belül |
+| `/quest admin set <id> <mező> <érték...>` | Küldetés-mező beállítása (feltétel, jutalom, giver-npc...) |
+| `/quest admin delete/info/list` | Admin-küldetés törlése / megtekintése / listája |
 | `/currency set <játékos> <összeg> [valuta]` | Valuta-egyenleg beállítása |
 | `/faction set <játékos> <frakció>` | Játékos frakcióba sorolása |
 | `/relic give <játékos> <relic_id>` | Relikvia adása |
