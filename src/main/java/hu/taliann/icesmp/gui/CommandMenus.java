@@ -186,8 +186,8 @@ public final class CommandMenus {
                 put(inv, holder, activeSlot++, GuiUtil.icon(Material.WRITABLE_BOOK,
                         Component.text(name, NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
                         List.of(
-                                label("Haladás", Component.text(ctx.questManager().getProgress(player, questId)
-                                        + "/" + ctx.questManager().getObjectiveCount(questId), NamedTextColor.WHITE)),
+                                label("Haladás", Component.text(ctx.questManager().describeProgress(player, questId),
+                                        NamedTextColor.WHITE)),
                                 Component.empty(),
                                 Component.text("» Kattints a feladáshoz", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false)
                         ), true), "RUN:quest abandon " + questId);
@@ -195,7 +195,7 @@ public final class CommandMenus {
                     && ctx.questManager().getAcceptBlocker(player, questId) == null && availableSlot < 45) {
                 put(inv, holder, availableSlot++, GuiUtil.icon(Material.BOOK,
                         Component.text(name, NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false),
-                        List.of(grey("Feladatok: " + ctx.questManager().getObjectiveCount(questId)), click())),
+                        List.of(grey("Feladatok: " + ctx.questManager().getObjectiveTotal(questId)), click())),
                         "RUN:quest accept " + questId);
             }
         }

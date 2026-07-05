@@ -35,6 +35,13 @@ achievements:
 # Ismétlődés: repeatable: true + cooldown-hours (pl. 24 = napi quest; 0 = azonnal).
 # Auto-indulás: auto-start-territory: <territory-id> — a területre lépve a quest
 # magától felkerül (ha a feltételek teljesülnek).
+# TÖBB OBJEKTÍVA egy questben: a sima "objective:" helyett "objectives:" alá
+# számozott feladatok (1, 2, ...), mindegyik saját type/count/materials/stb.
+# mezőkkel (opcionális "description" a HUD-címkéhez). Az "objectives-mode":
+#   ALL      = párhuzamos (mindet teljesíteni kell, tetszőleges sorrendben) — pl.
+#              "ölj 10 mobot ÉS hozz 16 kenyeret";
+#   SEQUENCE = sorban (mindig csak az aktuális lépés halad) — story-lánc.
+# Egyetlen questben KEVERHETŐK a típusok. Példa: lásd alább a "hero_trial"-t.
 # Jutalmak: class-xp, currency {type, amount}, items, unlock-spell, cleanse-sins.
 #   A currency.type lehet konkrét valuta (RED/BLUE/NEUTRAL/DARK) vagy "OWN" —
 #   utóbbi a játékos SAJÁT frakciójának valutáját adja.
@@ -229,6 +236,31 @@ quests:
       course: "orgyilkos_proba"
     rewards:
       class-xp: 400
+  # --- Példa: több-objektívás quest (párhuzamos ALL mód) ---
+  # "Ölj 10 mobot ÉS hozz 16 kenyeret" — a két feladat egymástól függetlenül
+  # halad, a quest akkor zárul, ha mindkettő kész. Repeatable, napi cooldownnal.
+  hero_trial:
+    display-name: "A Hős Napi Próbája"
+    description: "Tisztítsd meg a vidéket és lásd el a falut."
+    repeatable: true
+    cooldown-hours: 24
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "KILL_MOBS"
+        count: 10
+        description: "Szörnyek"
+      2:
+        type: "COLLECT_ITEMS"
+        count: 16
+        materials:
+          - "BREAD"
+        description: "Kenyér"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 40
   # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
   necromancer_initiation:
     display-name: "Sötét Beavatás"

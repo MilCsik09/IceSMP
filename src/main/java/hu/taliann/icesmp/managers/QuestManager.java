@@ -20,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -67,7 +68,7 @@ public final class QuestManager implements PersistentStore {
     /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
             "display-name", "description", "giver-npc",
-            "repeatable", "cooldown-hours", "auto-start-territory",
+            "repeatable", "cooldown-hours", "auto-start-territory", "objectives-mode",
             "requires-job", "requires-faction", "requires-level", "requires-quest",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
@@ -192,13 +193,30 @@ public final class QuestManager implements PersistentStore {
      * @param rawValue the value as typed (already joined)
      * @return null on success, otherwise an error message key
      */
+    /** Objective sub-fields the admin editor may set under objective / objectives.N. */
+    private static final Set<String> OBJECTIVE_SUBFIELDS = Set.of(
+            "type", "count", "entity-type", "min-mob-level", "materials",
+            "territory", "level", "npc", "course", "biome", "description");
+
     public synchronized String setCustomQuestField(final String questId, final String field, final String rawValue) {
         if (!isCustomQuest(questId)) {
             return "quest-admin-not-custom";
         }
 
         final String normalizedField = field == null ? "" : field.toLowerCase(Locale.ROOT);
-        if (!EDITABLE_FIELDS.contains(normalizedField)) {
+
+        // Accept whitelisted fields, the objectives-mode switch, and any objectives.<N>.<subfield>
+        // path (multi-objective). For parsing we canonicalize objectives.N.X to objective.X so the
+        // existing type-aware cases apply.
+        String parseKey = normalizedField;
+        final java.util.regex.Matcher indexed =
+                java.util.regex.Pattern.compile("objectives\\.(\\d+)\\.([a-z-]+)").matcher(normalizedField);
+        if (indexed.matches()) {
+            if (!OBJECTIVE_SUBFIELDS.contains(indexed.group(2))) {
+                return "quest-admin-bad-field";
+            }
+            parseKey = "objective." + indexed.group(2);
+        } else if (!EDITABLE_FIELDS.contains(normalizedField) && !"objectives-mode".equals(normalizedField)) {
             return "quest-admin-bad-field";
         }
 
@@ -207,7 +225,14 @@ public final class QuestManager implements PersistentStore {
         }
 
         final Object parsed;
-        switch (normalizedField) {
+        switch (parseKey) {
+            case "objectives-mode" -> {
+                final String mode = rawValue.trim().toUpperCase(Locale.ROOT);
+                if (!"ALL".equals(mode) && !"SEQUENCE".equals(mode)) {
+                    return "quest-admin-bad-value";
+                }
+                parsed = mode;
+            }
             case "requires-level", "objective.count", "objective.min-mob-level",
                  "objective.level", "rewards.class-xp" -> {
                 try {
@@ -297,6 +322,68 @@ public final class QuestManager implements PersistentStore {
     }
 
     /**
+     * Appends an objective to an admin-authored quest, turning it multi-objective.
+     * The first call migrates the quest's single {@code objective:} block into
+     * {@code objectives.1}, so "kill X mobs AND fetch Y items" is built by
+     * creating the quest, then adding a second objective. Returns the new
+     * objective's 1-based index in {@code [index]}, or an error message key.
+     *
+     * @param questId the custom quest id
+     * @param objectiveType one of {@link #OBJECTIVE_TYPES}
+     * @param count the objective count
+     * @param description an optional short label for the step
+     * @param index a one-element holder receiving the new objective index on success
+     * @return null on success, otherwise an error message key
+     */
+    public synchronized String addObjective(final String questId, final String objectiveType, final int count,
+                                            final String description, final int[] index) {
+        if (!isCustomQuest(questId)) {
+            return "quest-admin-not-custom";
+        }
+        if (objectiveType == null || !OBJECTIVE_TYPES.contains(objectiveType.toUpperCase(Locale.ROOT))) {
+            return "quest-admin-bad-objective";
+        }
+        if (count < 1) {
+            return "quest-admin-bad-count";
+        }
+
+        final String base = "quests." + questId.toLowerCase(Locale.ROOT);
+        final ConfigurationSection quest = customQuests.getConfigurationSection(base);
+        if (quest == null) {
+            return "quest-admin-not-custom";
+        }
+
+        // Migrate a legacy single objective into objectives.1 on the first add.
+        ConfigurationSection multi = quest.getConfigurationSection("objectives");
+        if (multi == null) {
+            multi = quest.createSection("objectives");
+            final ConfigurationSection single = quest.getConfigurationSection("objective");
+            if (single != null) {
+                final ConfigurationSection first = multi.createSection("1");
+                for (final String key : single.getKeys(false)) {
+                    first.set(key, single.get(key));
+                }
+                quest.set("objective", null);
+            }
+        }
+
+        int next = 1;
+        while (multi.contains(String.valueOf(next))) {
+            next++;
+        }
+        multi.set(next + ".type", objectiveType.toUpperCase(Locale.ROOT));
+        multi.set(next + ".count", count);
+        if (description != null && !description.isBlank()) {
+            multi.set(next + ".description", description.trim());
+        }
+        save();
+        if (index != null && index.length > 0) {
+            index[0] = next;
+        }
+        return null;
+    }
+
+    /**
      * Deletes an admin-authored quest definition. Config-shipped quests cannot
      * be deleted from in-game.
      *
@@ -347,9 +434,10 @@ public final class QuestManager implements PersistentStore {
         return quest == null ? questId : quest.getString("display-name", questId);
     }
 
+    /** The first objective's target count (kept for the compact single-objective displays). */
     public int getObjectiveCount(final String questId) {
-        final ConfigurationSection quest = getQuestSection(questId);
-        return quest == null ? 1 : Math.max(1, quest.getInt("objective.count", 1));
+        final List<ConfigurationSection> objectives = getObjectiveSections(getQuestSection(questId));
+        return objectives.isEmpty() ? 1 : Math.max(1, objectives.get(0).getInt("count", 1));
     }
 
     // ===== Állapot (PDC) =====
@@ -442,9 +530,10 @@ public final class QuestManager implements PersistentStore {
         final List<String> active = new ArrayList<>(getActiveQuests(player));
         active.add(questId.toLowerCase(Locale.ROOT));
         writeCsv(player, activeQuestsKey, active);
-        player.getPersistentDataContainer().set(progressKey(questId), PersistentDataType.INTEGER, 0);
+        // Clear any stale counters (e.g. from a previous run of a repeatable quest).
+        clearAllProgress(player, questId);
 
-        // REACH_LEVEL quests may already be satisfied at acceptance.
+        // REACH_LEVEL objectives may already be satisfied at acceptance.
         handleLevelChange(player);
         return true;
     }
@@ -457,99 +546,81 @@ public final class QuestManager implements PersistentStore {
         final List<String> active = new ArrayList<>(getActiveQuests(player));
         active.remove(questId.toLowerCase(Locale.ROOT));
         writeCsv(player, activeQuestsKey, active);
-        player.getPersistentDataContainer().remove(progressKey(questId));
+        clearAllProgress(player, questId);
         return true;
     }
 
     // ===== Haladás-útvonalak (a listenerek hívják) =====
 
     public void handleKill(final Player player, final EntityType entityType, final int mobLevel) {
-        forEachActive(player, "KILL_MOBS", (questId, quest) -> {
-            final String requiredEntity = quest.getString("objective.entity-type");
+        forEachActive(player, "KILL_MOBS", (questId, objective) -> {
+            final String requiredEntity = objective.getString("entity-type");
             if (requiredEntity != null && !requiredEntity.isBlank()
                     && !requiredEntity.equalsIgnoreCase(entityType.name())) {
                 return false;
             }
 
-            final int minMobLevel = quest.getInt("objective.min-mob-level", 0);
+            final int minMobLevel = objective.getInt("min-mob-level", 0);
             return mobLevel >= minMobLevel;
         });
     }
 
     public void handleBlockBreak(final Player player, final Material material) {
-        forEachActive(player, "BREAK_BLOCKS", (questId, quest) ->
-                quest.getStringList("objective.materials").stream()
-                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+        forEachActive(player, "BREAK_BLOCKS", (questId, objective) -> materialMatches(objective, material));
     }
 
     public void handleCraft(final Player player, final Material material) {
-        forEachActive(player, "CRAFT_ITEMS", (questId, quest) ->
-                quest.getStringList("objective.materials").stream()
-                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+        forEachActive(player, "CRAFT_ITEMS", (questId, objective) -> materialMatches(objective, material));
     }
 
     public void handleFish(final Player player) {
-        forEachActive(player, "CATCH_FISH", (questId, quest) -> true);
+        forEachActive(player, "CATCH_FISH", (questId, objective) -> true);
     }
 
     public void handlePlaceBlock(final Player player, final Material material) {
-        forEachActive(player, "PLACE_BLOCKS", (questId, quest) ->
-                quest.getStringList("objective.materials").stream()
-                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+        forEachActive(player, "PLACE_BLOCKS", (questId, objective) -> materialMatches(objective, material));
     }
 
     /** Item pickups progress by the picked-up stack size, not one per event. */
     public void handleCollect(final Player player, final Material material, final int amount) {
-        forEachActive(player, "COLLECT_ITEMS", Math.max(1, amount), (questId, quest) ->
-                quest.getStringList("objective.materials").stream()
-                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+        forEachActive(player, "COLLECT_ITEMS", Math.max(1, amount),
+                (questId, objective) -> materialMatches(objective, material));
     }
 
     public void handlePlayerKill(final Player killer) {
-        forEachActive(killer, "KILL_PLAYERS", (questId, quest) -> true);
+        forEachActive(killer, "KILL_PLAYERS", (questId, objective) -> true);
     }
 
     public void handleBreed(final Player breeder, final EntityType entityType) {
-        forEachActive(breeder, "BREED_ANIMALS", (questId, quest) -> {
-            final String requiredEntity = quest.getString("objective.entity-type");
-            return requiredEntity == null || requiredEntity.isBlank()
-                    || requiredEntity.equalsIgnoreCase(entityType.name());
-        });
+        forEachActive(breeder, "BREED_ANIMALS", (questId, objective) -> entityMatches(objective, entityType));
     }
 
     public void handleEnchant(final Player player) {
-        forEachActive(player, "ENCHANT_ITEMS", (questId, quest) -> true);
+        forEachActive(player, "ENCHANT_ITEMS", (questId, objective) -> true);
     }
 
     public void handleConsume(final Player player, final Material material) {
-        forEachActive(player, "CONSUME_ITEMS", (questId, quest) ->
-                quest.getStringList("objective.materials").stream()
-                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+        forEachActive(player, "CONSUME_ITEMS", (questId, objective) -> materialMatches(objective, material));
     }
 
     /** Furnace extraction progresses by the extracted amount. */
     public void handleSmelt(final Player player, final Material material, final int amount) {
-        forEachActive(player, "SMELT_ITEMS", Math.max(1, amount), (questId, quest) ->
-                quest.getStringList("objective.materials").stream()
-                        .anyMatch(name -> name.equalsIgnoreCase(material.name())));
+        forEachActive(player, "SMELT_ITEMS", Math.max(1, amount),
+                (questId, objective) -> materialMatches(objective, material));
     }
 
     public void handleTame(final Player player, final EntityType entityType) {
-        forEachActive(player, "TAME_ANIMALS", (questId, quest) -> {
-            final String requiredEntity = quest.getString("objective.entity-type");
-            return requiredEntity == null || requiredEntity.isBlank()
-                    || requiredEntity.equalsIgnoreCase(entityType.name());
-        });
+        forEachActive(player, "TAME_ANIMALS", (questId, objective) -> entityMatches(objective, entityType));
     }
 
     public void handleVillagerTrade(final Player player) {
-        forEachActive(player, "TRADE_WITH_VILLAGER", (questId, quest) -> true);
+        forEachActive(player, "TRADE_WITH_VILLAGER", (questId, objective) -> true);
     }
 
     /** Biome keys arrive as "minecraft:plains" style; the objective may use either form. */
     public void handleBiomeVisit(final Player player, final String biomeKey) {
-        forEachActive(player, "EXPLORE_BIOME", (questId, quest) -> {
-            final String required = quest.getString("objective.biome", "");
+        forEachActive(player, "EXPLORE_BIOME", (questId, objective) -> {
+            final String required = objective.getString("biome", "");
             if (required.isBlank() || biomeKey == null) {
                 return false;
             }
@@ -561,16 +632,27 @@ public final class QuestManager implements PersistentStore {
     }
 
     public void handleRaidWin(final Player fighter) {
-        forEachActive(fighter, "WIN_RAID", (questId, quest) -> true);
+        forEachActive(fighter, "WIN_RAID", (questId, objective) -> true);
     }
 
     public void handleBossKill(final Player killer) {
-        forEachActive(killer, "KILL_WORLDBOSS", (questId, quest) -> true);
+        forEachActive(killer, "KILL_WORLDBOSS", (questId, objective) -> true);
+    }
+
+    /** Whether an objective's material list contains this material (empty list = matches nothing). */
+    private static boolean materialMatches(final ConfigurationSection objective, final Material material) {
+        return objective.getStringList("materials").stream().anyMatch(name -> name.equalsIgnoreCase(material.name()));
+    }
+
+    /** Whether an objective's optional entity-type filter matches (blank filter = any). */
+    private static boolean entityMatches(final ConfigurationSection objective, final EntityType entityType) {
+        final String required = objective.getString("entity-type");
+        return required == null || required.isBlank() || required.equalsIgnoreCase(entityType.name());
     }
 
     public void handleTerritoryEnter(final Player player, final String territoryId) {
-        forEachActive(player, "VISIT_TERRITORY", (questId, quest) ->
-                territoryId != null && territoryId.equalsIgnoreCase(quest.getString("objective.territory", "")));
+        forEachActive(player, "VISIT_TERRITORY", (questId, objective) ->
+                territoryId != null && territoryId.equalsIgnoreCase(objective.getString("territory", "")));
 
         // Auto-start quests: crossing into the configured territory hands the quest over
         // by itself (if every accept requirement is met) — discovery-driven storytelling.
@@ -616,27 +698,54 @@ public final class QuestManager implements PersistentStore {
 
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !npcName.equalsIgnoreCase(quest.getString("objective.npc", ""))) {
+            if (quest == null) {
                 continue;
             }
 
-            final String type = quest.getString("objective.type", "");
-            if ("TALK_TO_NPC".equalsIgnoreCase(type)) {
+            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+            final boolean sequence = isSequenceMode(quest);
+            boolean changed = false;
+
+            for (int index = 0; index < objectives.size(); index++) {
+                final ConfigurationSection objective = objectives.get(index);
+                if (isObjectiveComplete(player, questId, index, objective)
+                        || !npcName.equalsIgnoreCase(objective.getString("npc", ""))) {
+                    continue;
+                }
+                if (sequence && !isCurrentStep(player, questId, objectives, index)) {
+                    continue;
+                }
+
+                final String type = objective.getString("type", "");
+                if ("TALK_TO_NPC".equalsIgnoreCase(type)) {
+                    setObjectiveProgress(player, questId, index, Math.max(1, objective.getInt("count", 1)));
+                    changed = true;
+                } else if ("DELIVER_ITEMS".equalsIgnoreCase(type)
+                        && tryDeliver(player, questId, objective, index)) {
+                    changed = true;
+                }
+            }
+
+            if (changed && allObjectivesComplete(player, questId, objectives)) {
                 complete(player, questId);
-            } else if ("DELIVER_ITEMS".equalsIgnoreCase(type)) {
-                tryDeliver(player, questId, quest);
             }
         }
     }
 
-    /** Settles a DELIVER_ITEMS objective: takes the goods from the inventory if enough is carried. */
-    private void tryDeliver(final Player player, final String questId, final ConfigurationSection quest) {
-        final List<String> materials = quest.getStringList("objective.materials");
+    /**
+     * Settles a DELIVER_ITEMS objective: takes the goods from the inventory if
+     * enough is carried and marks the objective complete.
+     *
+     * @return true if the delivery succeeded (objective now complete)
+     */
+    private boolean tryDeliver(final Player player, final String questId,
+                               final ConfigurationSection objective, final int index) {
+        final List<String> materials = objective.getStringList("materials");
         if (materials.isEmpty()) {
-            return;
+            return false;
         }
 
-        final int target = Math.max(1, quest.getInt("objective.count", 1));
+        final int target = Math.max(1, objective.getInt("count", 1));
         int carried = 0;
         for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
             if (item != null && materials.stream().anyMatch(name -> name.equalsIgnoreCase(item.getType().name()))) {
@@ -654,7 +763,7 @@ public final class QuestManager implements PersistentStore {
                             "target", String.valueOf(target)
                     )
             ));
-            return;
+            return false;
         }
 
         int remaining = target;
@@ -670,14 +779,17 @@ public final class QuestManager implements PersistentStore {
             remaining -= take;
         }
 
-        complete(player, questId);
+        setObjectiveProgress(player, questId, index, target);
+        return true;
     }
 
     /** The best NPC name to speak as when dialogue.speaker is not set. */
-    private static String dialogueSpeakerFallback(final ConfigurationSection quest) {
-        final String objectiveNpc = quest.getString("objective.npc", "");
-        if (!objectiveNpc.isBlank()) {
-            return objectiveNpc;
+    private String dialogueSpeakerFallback(final ConfigurationSection quest) {
+        for (final ConfigurationSection objective : getObjectiveSections(quest)) {
+            final String npc = objective.getString("npc", "");
+            if (!npc.isBlank()) {
+                return npc;
+            }
         }
         final String giver = quest.getString("giver-npc", "");
         return giver.isBlank() ? "???" : giver;
@@ -745,10 +857,12 @@ public final class QuestManager implements PersistentStore {
                 names.add(giver);
             }
 
-            final String talkTarget = quest.getString("objective.npc");
-            if ("TALK_TO_NPC".equalsIgnoreCase(quest.getString("objective.type", ""))
-                    && talkTarget != null && !talkTarget.isBlank()) {
-                names.add(talkTarget);
+            // Any TALK_TO_NPC or DELIVER_ITEMS objective (across all steps) has a target NPC.
+            for (final ConfigurationSection objective : getObjectiveSections(quest)) {
+                final String talkTarget = objective.getString("npc");
+                if (talkTarget != null && !talkTarget.isBlank()) {
+                    names.add(talkTarget);
+                }
             }
         }
         return names;
@@ -768,7 +882,7 @@ public final class QuestManager implements PersistentStore {
         return false;
     }
 
-    /** Whether the player has an active TALK_TO_NPC quest targeting this NPC. */
+    /** Whether the player has an active, still-open objective (talk/deliver) at this NPC. */
     public boolean hasTalkObjectiveAt(final Player player, final String npcName) {
         if (npcName == null) {
             return false;
@@ -776,9 +890,21 @@ public final class QuestManager implements PersistentStore {
 
         for (final String questId : getActiveQuests(player)) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest != null && "TALK_TO_NPC".equalsIgnoreCase(quest.getString("objective.type", ""))
-                    && npcName.equalsIgnoreCase(quest.getString("objective.npc", ""))) {
-                return true;
+            if (quest == null) {
+                continue;
+            }
+            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+            final boolean sequence = isSequenceMode(quest);
+            for (int index = 0; index < objectives.size(); index++) {
+                final ConfigurationSection objective = objectives.get(index);
+                if (!npcName.equalsIgnoreCase(objective.getString("npc", ""))
+                        || isObjectiveComplete(player, questId, index, objective)) {
+                    continue;
+                }
+                // In a sequence, an NPC step only "glows" once it becomes the current step.
+                if (!sequence || isCurrentStep(player, questId, objectives, index)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -832,58 +958,119 @@ public final class QuestManager implements PersistentStore {
      * @param courseId the completed course id
      */
     public void handleParkourFinish(final Player player, final String courseId) {
-        forEachActive(player, "PARKOUR_TRIAL", (questId, quest) ->
-                courseId != null && courseId.equalsIgnoreCase(quest.getString("objective.course", "")));
+        forEachActive(player, "PARKOUR_TRIAL", (questId, objective) ->
+                courseId != null && courseId.equalsIgnoreCase(objective.getString("course", "")));
     }
 
     /**
-     * Re-checks every active REACH_LEVEL quest against the player's primary
-     * class level. Wired into the JobManager XP-change hook.
-     *
-     * @param player the player whose level changed
+     * Re-checks every active REACH_LEVEL objective against the player's primary
+     * class level (level objectives are satisfied by state, not by an event, so
+     * they can't just increment). Wired into the JobManager XP-change hook and
+     * fired on accept. Marks satisfied level-objectives complete and closes the
+     * quest once all objectives are done.
      */
     public void handleLevelChange(final Player player) {
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !"REACH_LEVEL".equalsIgnoreCase(quest.getString("objective.type", ""))) {
+            if (quest == null) {
                 continue;
             }
 
-            final int targetLevel = Math.max(1, quest.getInt("objective.level", 1));
-            if (jobManager.getPrimaryLevel(player) >= targetLevel) {
+            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+            final boolean sequence = isSequenceMode(quest);
+            boolean changed = false;
+
+            for (int index = 0; index < objectives.size(); index++) {
+                final ConfigurationSection objective = objectives.get(index);
+                if (!"REACH_LEVEL".equalsIgnoreCase(objective.getString("type", ""))
+                        || isObjectiveComplete(player, questId, index, objective)) {
+                    continue;
+                }
+                if (sequence && !isCurrentStep(player, questId, objectives, index)) {
+                    continue;
+                }
+                if (jobManager.getPrimaryLevel(player) >= Math.max(1, objective.getInt("level", 1))) {
+                    setObjectiveProgress(player, questId, index, Math.max(1, objective.getInt("count", 1)));
+                    changed = true;
+                }
+            }
+
+            if (changed && allObjectivesComplete(player, questId, objectives)) {
                 complete(player, questId);
             }
         }
     }
 
+    /** A matcher receives the single OBJECTIVE section (not the whole quest). */
     private interface ObjectiveMatcher {
-        boolean matches(String questId, ConfigurationSection quest);
+        boolean matches(String questId, ConfigurationSection objective);
     }
 
     private void forEachActive(final Player player, final String objectiveType, final ObjectiveMatcher matcher) {
         forEachActive(player, objectiveType, 1, matcher);
     }
 
+    /**
+     * The multi-objective progress engine. A quest may declare a single
+     * {@code objective:} (legacy) or a numbered {@code objectives.1..N} list;
+     * this walks every objective of the given type that is still open, adds
+     * {@code amount} to its own counter, and completes the quest once ALL of
+     * its objectives are done. In {@code objectives-mode: SEQUENCE} only the
+     * current step (the first unfinished objective) accepts progress; the
+     * default {@code ALL} mode advances every matching objective in parallel
+     * (so "kill X mobs AND fetch Y items" both tick from their own events).
+     */
     private void forEachActive(final Player player, final String objectiveType, final int amount,
                                final ObjectiveMatcher matcher) {
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
-            if (quest == null || !objectiveType.equalsIgnoreCase(quest.getString("objective.type", ""))) {
+            if (quest == null) {
                 continue;
             }
 
-            if (!matcher.matches(questId, quest)) {
-                continue;
+            final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+            final boolean sequence = isSequenceMode(quest);
+            boolean changed = false;
+
+            for (int index = 0; index < objectives.size(); index++) {
+                final ConfigurationSection objective = objectives.get(index);
+                if (!objectiveType.equalsIgnoreCase(objective.getString("type", ""))
+                        || isObjectiveComplete(player, questId, index, objective)) {
+                    continue;
+                }
+                if (sequence && !isCurrentStep(player, questId, objectives, index)) {
+                    continue;
+                }
+                if (!matcher.matches(questId, objective)) {
+                    continue;
+                }
+
+                final int target = Math.max(1, objective.getInt("count", 1));
+                final int newProgress = Math.min(target, getObjectiveProgress(player, questId, index) + amount);
+                setObjectiveProgress(player, questId, index, newProgress);
+                changed = true;
+                announceObjective(player, questId, quest, objectives, index, objective, newProgress, target);
+
+                if (sequence) {
+                    break; // only the current step advances per event in a sequence
+                }
             }
 
-            final int progress = getProgress(player, questId) + amount;
-            final int target = Math.max(1, quest.getInt("objective.count", 1));
-            if (progress >= target) {
+            if (changed && allObjectivesComplete(player, questId, objectives)) {
                 complete(player, questId);
-                continue;
             }
+        }
+    }
 
-            player.getPersistentDataContainer().set(progressKey(questId), PersistentDataType.INTEGER, progress);
+    /** Sends the per-objective progress action bar (compact for single-objective quests). */
+    private void announceObjective(final Player player, final String questId, final ConfigurationSection quest,
+                                   final List<ConfigurationSection> objectives, final int index,
+                                   final ConfigurationSection objective, final int progress, final int target) {
+        if (progress >= target && allObjectivesComplete(player, questId, objectives)) {
+            return; // the completion message will fire from forEachActive
+        }
+
+        if (objectives.size() == 1) {
             player.sendActionBar(messageManager.getMessage(
                     "quest.progress",
                     "<gray>{quest}: <gold>{progress}</gold>/<gold>{target}</gold></gray>",
@@ -893,7 +1080,166 @@ public final class QuestManager implements PersistentStore {
                             "target", String.valueOf(target)
                     )
             ));
+            return;
         }
+
+        player.sendActionBar(messageManager.getMessage(
+                "quest.progress-multi",
+                "<gray>{quest} — {objective}: <gold>{progress}</gold>/<gold>{target}</gold> <dark_gray>[{step}/{steps}]</dark_gray></gray>",
+                Map.of(
+                        "quest", getDisplayName(questId),
+                        "objective", objectiveLabel(objective),
+                        "progress", String.valueOf(progress),
+                        "target", String.valueOf(target),
+                        "step", String.valueOf(index + 1),
+                        "steps", String.valueOf(objectives.size())
+                )
+        ));
+    }
+
+    // ===== Objektíva-absztrakció (több-objektívás támogatás) =====
+
+    /**
+     * Returns a quest's objectives in order. Supports both the legacy single
+     * {@code objective:} section and the numbered {@code objectives.1..N} form;
+     * an empty list means the quest has no runnable objective.
+     */
+    private List<ConfigurationSection> getObjectiveSections(final ConfigurationSection quest) {
+        if (quest == null) {
+            return List.of();
+        }
+
+        final ConfigurationSection multi = quest.getConfigurationSection("objectives");
+        if (multi != null) {
+            final List<ConfigurationSection> sections = multi.getKeys(false).stream()
+                    .sorted(Comparator.comparingInt(QuestManager::objectiveOrder))
+                    .map(multi::getConfigurationSection)
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+            if (!sections.isEmpty()) {
+                return sections;
+            }
+        }
+
+        final ConfigurationSection single = quest.getConfigurationSection("objective");
+        return single == null ? List.of() : List.of(single);
+    }
+
+    private static int objectiveOrder(final String key) {
+        try {
+            return Integer.parseInt(key.trim());
+        } catch (final NumberFormatException exception) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    /** How many objectives a quest declares (at least 1 for a well-formed quest). */
+    public int getObjectiveTotal(final String questId) {
+        return getObjectiveSections(getQuestSection(questId)).size();
+    }
+
+    private boolean isSequenceMode(final ConfigurationSection quest) {
+        return "SEQUENCE".equalsIgnoreCase(quest.getString("objectives-mode", "ALL"));
+    }
+
+    /** Whether index is the current step in a SEQUENCE quest (all earlier objectives done). */
+    private boolean isCurrentStep(final Player player, final String questId,
+                                  final List<ConfigurationSection> objectives, final int index) {
+        for (int earlier = 0; earlier < index; earlier++) {
+            if (!isObjectiveComplete(player, questId, earlier, objectives.get(earlier))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean allObjectivesComplete(final Player player, final String questId,
+                                          final List<ConfigurationSection> objectives) {
+        for (int index = 0; index < objectives.size(); index++) {
+            if (!isObjectiveComplete(player, questId, index, objectives.get(index))) {
+                return false;
+            }
+        }
+        return !objectives.isEmpty();
+    }
+
+    private boolean isObjectiveComplete(final Player player, final String questId, final int index,
+                                        final ConfigurationSection objective) {
+        return getObjectiveProgress(player, questId, index) >= Math.max(1, objective.getInt("count", 1));
+    }
+
+    public int getObjectiveProgress(final Player player, final String questId, final int index) {
+        return player.getPersistentDataContainer()
+                .getOrDefault(objectiveProgressKey(questId, index), PersistentDataType.INTEGER, 0);
+    }
+
+    private void setObjectiveProgress(final Player player, final String questId, final int index, final int value) {
+        player.getPersistentDataContainer().set(objectiveProgressKey(questId, index), PersistentDataType.INTEGER, value);
+    }
+
+    /** Objective 0 keeps the legacy key so in-flight single-objective quests survive the upgrade. */
+    private NamespacedKey objectiveProgressKey(final String questId, final int index) {
+        return index == 0 ? progressKey(questId)
+                : new NamespacedKey(plugin, "quest_progress_" + sanitizeId(questId) + "_" + index);
+    }
+
+    /** A short human label for an objective, from its description or a type default. */
+    private String objectiveLabel(final ConfigurationSection objective) {
+        final String described = objective.getString("description", "");
+        if (!described.isBlank()) {
+            return described;
+        }
+        return switch (objective.getString("type", "").toUpperCase(Locale.ROOT)) {
+            case "KILL_MOBS" -> "Szörnyek";
+            case "KILL_PLAYERS" -> "Játékosok";
+            case "KILL_WORLDBOSS" -> "Világboss";
+            case "BREAK_BLOCKS" -> "Bányászás";
+            case "PLACE_BLOCKS" -> "Építés";
+            case "CRAFT_ITEMS" -> "Craftolás";
+            case "COLLECT_ITEMS" -> "Gyűjtés";
+            case "DELIVER_ITEMS" -> "Beszállítás";
+            case "CONSUME_ITEMS" -> "Fogyasztás";
+            case "SMELT_ITEMS" -> "Olvasztás";
+            case "CATCH_FISH" -> "Horgászat";
+            case "ENCHANT_ITEMS" -> "Bűbáj";
+            case "BREED_ANIMALS" -> "Tenyésztés";
+            case "TAME_ANIMALS" -> "Szelídítés";
+            case "TRADE_WITH_VILLAGER" -> "Kereskedés";
+            case "EXPLORE_BIOME" -> "Felfedezés";
+            case "VISIT_TERRITORY" -> "Utazás";
+            case "REACH_LEVEL" -> "Szint";
+            case "TALK_TO_NPC" -> "Beszélgetés";
+            case "PARKOUR_TRIAL" -> "Parkour";
+            case "WIN_RAID" -> "Raid";
+            default -> "Feladat";
+        };
+    }
+
+    /**
+     * A compact multi-objective progress summary for the /quest info line and
+     * the quest menu (e.g. "Szörnyek 4/10 • Gyűjtés 2/5").
+     */
+    public String describeProgress(final Player player, final String questId) {
+        final List<ConfigurationSection> objectives = getObjectiveSections(getQuestSection(questId));
+        if (objectives.isEmpty()) {
+            return getProgress(player, questId) + "/" + getObjectiveCount(questId);
+        }
+        if (objectives.size() == 1) {
+            final ConfigurationSection objective = objectives.get(0);
+            return getObjectiveProgress(player, questId, 0) + "/" + Math.max(1, objective.getInt("count", 1));
+        }
+
+        final StringBuilder summary = new StringBuilder();
+        for (int index = 0; index < objectives.size(); index++) {
+            final ConfigurationSection objective = objectives.get(index);
+            if (index > 0) {
+                summary.append(" • ");
+            }
+            summary.append(objectiveLabel(objective)).append(' ')
+                    .append(Math.min(getObjectiveProgress(player, questId, index), Math.max(1, objective.getInt("count", 1))))
+                    .append('/').append(Math.max(1, objective.getInt("count", 1)));
+        }
+        return summary.toString();
     }
 
     // ===== Teljesítés és jutalmak =====
@@ -925,7 +1271,7 @@ public final class QuestManager implements PersistentStore {
             completed.add(normalizedId);
         }
         writeCsv(player, completedQuestsKey, completed);
-        player.getPersistentDataContainer().remove(progressKey(questId));
+        clearAllProgress(player, questId);
         // Repeatable-cooldown anchor: when was this quest last turned in.
         player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
 
@@ -1000,18 +1346,24 @@ public final class QuestManager implements PersistentStore {
         return player.getPersistentDataContainer().getOrDefault(doneAtKey(questId), PersistentDataType.LONG, 0L);
     }
 
+    private static String sanitizeId(final String questId) {
+        return questId == null ? "unknown" : questId.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
+    }
+
     private NamespacedKey doneAtKey(final String questId) {
-        final String sanitized = questId == null
-                ? "unknown"
-                : questId.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
-        return new NamespacedKey(plugin, "quest_done_at_" + sanitized);
+        return new NamespacedKey(plugin, "quest_done_at_" + sanitizeId(questId));
     }
 
     private NamespacedKey progressKey(final String questId) {
-        final String sanitized = questId == null
-                ? "unknown"
-                : questId.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
-        return new NamespacedKey(plugin, "quest_progress_" + sanitized);
+        return new NamespacedKey(plugin, "quest_progress_" + sanitizeId(questId));
+    }
+
+    /** Wipes every objective's progress counter for a quest (all indices). */
+    private void clearAllProgress(final Player player, final String questId) {
+        final int total = Math.max(1, getObjectiveSections(getQuestSection(questId)).size());
+        for (int index = 0; index < total; index++) {
+            player.getPersistentDataContainer().remove(objectiveProgressKey(questId, index));
+        }
     }
 
     private List<String> readCsv(final Player player, final NamespacedKey key) {

@@ -73,6 +73,7 @@ public final class QuestCommand implements BasicCommand {
 
         switch (args[1].toLowerCase(Locale.ROOT)) {
             case "create" -> handleAdminCreate(sender, args);
+            case "addobjective" -> handleAdminAddObjective(sender, args);
             case "set" -> handleAdminSet(sender, args);
             case "delete" -> handleAdminDelete(sender, args);
             case "info" -> handleAdminInfo(sender, args);
@@ -107,6 +108,36 @@ public final class QuestCommand implements BasicCommand {
                 "quest-admin-create-success",
                 "&aKüldetés létrehozva: &e%s &7(%s x%s). Mezők beállítása: &f/quest admin set %s <mező> <érték>",
                 args[2].toLowerCase(Locale.ROOT), args[3].toUpperCase(Locale.ROOT), count, args[2].toLowerCase(Locale.ROOT)
+        ));
+    }
+
+    private void handleAdminAddObjective(final CommandSender sender, final String[] args) {
+        if (args.length < 5) {
+            sender.sendMessage(messageManager.get("quest-admin-addobjective-usage",
+                    "&cHasználat: /quest admin addobjective <id> <objektíva-típus> <darab> [leírás...]"));
+            return;
+        }
+
+        final int count;
+        try {
+            count = Integer.parseInt(args[4]);
+        } catch (final NumberFormatException exception) {
+            sender.sendMessage(messageManager.get("quest-admin-bad-count", "&cA darabszámnak pozitív egész számnak kell lennie."));
+            return;
+        }
+
+        final String description = args.length > 5 ? String.join(" ", java.util.Arrays.copyOfRange(args, 5, args.length)) : "";
+        final int[] index = new int[1];
+        final String errorKey = questManager.addObjective(args[2], args[3], count, description, index);
+        if (errorKey != null) {
+            sender.sendMessage(messageManager.get(errorKey, defaultAdminErrorFor(errorKey)));
+            return;
+        }
+
+        sender.sendMessage(messageManager.get(
+                "quest-admin-addobjective-success",
+                "&aObjektíva hozzáadva a(z) &e%s &aküldetéshez: &f#%s %s x%s&7. Több feladat = objectives-mode ALL (párhuzamos) vagy SEQUENCE (sorban).",
+                args[2].toLowerCase(Locale.ROOT), index[0], args[3].toUpperCase(Locale.ROOT), count
         ));
     }
 
@@ -199,8 +230,10 @@ public final class QuestCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("quest-admin-help-header", "&6/quest admin &7- Küldetés-szerkesztő (Admin):"));
         sender.sendMessage(messageManager.get("quest-admin-help-create",
                 "&e/quest admin create <id> <objektíva> <darab> <név...> &7- Új küldetés."));
+        sender.sendMessage(messageManager.get("quest-admin-help-addobjective",
+                "&e/quest admin addobjective <id> <objektíva> <darab> [leírás...] &7- További feladat (több-objektívás quest)."));
         sender.sendMessage(messageManager.get("quest-admin-help-set",
-                "&e/quest admin set <id> <mező> <érték...> &7- Mező beállítása (feltételek, jutalmak, NPC...)."));
+                "&e/quest admin set <id> <mező> <érték...> &7- Mező beállítása (feltételek, jutalmak, NPC, objectives-mode...)."));
         sender.sendMessage(messageManager.get("quest-admin-help-delete", "&e/quest admin delete <id> &7- Küldetés törlése."));
         sender.sendMessage(messageManager.get("quest-admin-help-info", "&e/quest admin info <id> &7- Definíció megtekintése."));
         sender.sendMessage(messageManager.get("quest-admin-help-list", "&e/quest admin list &7- Admin-készítette küldetések."));
@@ -246,10 +279,9 @@ public final class QuestCommand implements BasicCommand {
         for (final String questId : active) {
             sender.sendMessage(messageManager.get(
                     "quest-info-line",
-                    "&e%s &7- haladás: &f%s&7/&f%s",
+                    "&e%s &7- haladás: &f%s",
                     questManager.getDisplayName(questId),
-                    questManager.getProgress(player, questId),
-                    questManager.getObjectiveCount(questId)
+                    questManager.describeProgress(player, questId)
             ));
         }
 
@@ -400,12 +432,12 @@ public final class QuestCommand implements BasicCommand {
 
         if (args.length == 2) {
             final String prefix = args[1].toLowerCase(Locale.ROOT);
-            return List.of("create", "set", "delete", "info", "list").stream()
+            return List.of("create", "addobjective", "set", "delete", "info", "list").stream()
                     .filter(option -> option.startsWith(prefix)).toList();
         }
 
         final String action = args[1].toLowerCase(Locale.ROOT);
-        if (args.length == 3 && ("set".equals(action) || "delete".equals(action))) {
+        if (args.length == 3 && ("set".equals(action) || "delete".equals(action) || "addobjective".equals(action))) {
             final String prefix = args[2].toLowerCase(Locale.ROOT);
             return questManager.getCustomQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
@@ -415,7 +447,7 @@ public final class QuestCommand implements BasicCommand {
             return questManager.getQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
 
-        if (args.length == 4 && "create".equals(action)) {
+        if (args.length == 4 && ("create".equals(action) || "addobjective".equals(action))) {
             final String prefix = args[3].toUpperCase(Locale.ROOT);
             return new ArrayList<>(QuestManager.OBJECTIVE_TYPES).stream()
                     .filter(type -> type.startsWith(prefix)).toList();
