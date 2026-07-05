@@ -20,11 +20,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -69,6 +71,7 @@ public final class QuestManager implements PersistentStore {
     public static final List<String> EDITABLE_FIELDS = List.of(
             "display-name", "description", "giver-npc",
             "repeatable", "cooldown-hours", "auto-start-territory", "objectives-mode",
+            "rotation-group", "rotation-daily-count",
             "requires-job", "requires-faction", "requires-level", "requires-quest",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
@@ -234,7 +237,7 @@ public final class QuestManager implements PersistentStore {
                 parsed = mode;
             }
             case "requires-level", "objective.count", "objective.min-mob-level",
-                 "objective.level", "rewards.class-xp" -> {
+                 "objective.level", "rewards.class-xp", "rotation-daily-count" -> {
                 try {
                     parsed = Math.max(0, Integer.parseInt(rawValue.trim()));
                 } catch (final NumberFormatException exception) {
@@ -480,6 +483,11 @@ public final class QuestManager implements PersistentStore {
 
         if (isActive(player, questId)) {
             return "quest-already-active";
+        }
+
+        // Rotation: a grouped quest is only acceptable on the days it is on offer.
+        if (!isOfferedToday(questId)) {
+            return "quest-not-offered-today";
         }
 
         // Repeatable quests come back after their cooldown; others complete once, forever.
@@ -828,6 +836,37 @@ public final class QuestManager implements PersistentStore {
                 player.getScheduler().runDelayed(plugin, task -> send.run(), null, 30L * index);
             }
         }
+
+        // Branching choices appear after the give dialogue: clickable options that
+        // accept the follow-up quest they point to (dialogue.choices.<N>.quest).
+        if ("give".equalsIgnoreCase(phase)) {
+            final ConfigurationSection choices = quest.getConfigurationSection("dialogue.choices");
+            if (choices != null && !choices.getKeys(false).isEmpty()) {
+                player.getScheduler().runDelayed(plugin, task -> sendChoices(player, choices), null,
+                        30L * Math.max(1, lines.size()));
+            }
+        }
+    }
+
+    /** Renders clickable dialogue choices; each runs /quest accept for its target quest. */
+    private void sendChoices(final Player player, final ConfigurationSection choices) {
+        player.sendMessage(messageManager.getMessage("quest.choose-prompt", "<gray>Válassz:</gray>"));
+        for (final String key : choices.getKeys(false).stream().sorted(Comparator.comparingInt(QuestManager::objectiveOrder)).toList()) {
+            final ConfigurationSection choice = choices.getConfigurationSection(key);
+            if (choice == null) {
+                continue;
+            }
+            final String text = choice.getString("text", "...");
+            final String target = choice.getString("quest", "");
+            if (target.isBlank()) {
+                continue;
+            }
+            player.sendMessage(net.kyori.adventure.text.Component.text("  ▸ " + text, net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/quest accept " + target))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            net.kyori.adventure.text.Component.text("Kattints a választáshoz", net.kyori.adventure.text.format.NamedTextColor.GRAY))));
+        }
     }
 
     // ===== NPC quest-adók (giver-npc) =====
@@ -837,6 +876,44 @@ public final class QuestManager implements PersistentStore {
         final ConfigurationSection quest = getQuestSection(questId);
         final String npc = quest == null ? null : quest.getString("giver-npc");
         return npc == null || npc.isBlank() ? null : npc;
+    }
+
+    // ===== NPC napi rotáció =====
+
+    /**
+     * Whether a quest is on offer today. Quests without a {@code rotation-group}
+     * are always offered; grouped quests rotate — each day a deterministic
+     * subset of the group (sized by {@code rotation-daily-count}) is on offer,
+     * so a single NPC can present a fresh handful of its pool every day.
+     */
+    public boolean isOfferedToday(final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest == null) {
+            return false;
+        }
+        final String group = quest.getString("rotation-group", "");
+        return group.isBlank() || todaysRotation(group).contains(questId.toLowerCase(Locale.ROOT));
+    }
+
+    /** The deterministic set of quest ids from a rotation group offered on the current day. */
+    private List<String> todaysRotation(final String group) {
+        final List<String> pool = new ArrayList<>();
+        int dailyCount = 2;
+        for (final String questId : getQuestIds()) {
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest != null && group.equalsIgnoreCase(quest.getString("rotation-group", ""))) {
+                pool.add(questId.toLowerCase(Locale.ROOT));
+                dailyCount = Math.max(1, quest.getInt("rotation-daily-count", dailyCount));
+            }
+        }
+        if (pool.size() <= dailyCount) {
+            return pool;
+        }
+
+        pool.sort(Comparator.naturalOrder());
+        final long daySeed = System.currentTimeMillis() / 86_400_000L;
+        Collections.shuffle(pool, new Random(daySeed * 31L + group.toLowerCase(Locale.ROOT).hashCode()));
+        return new ArrayList<>(pool.subList(0, dailyCount));
     }
 
     /**

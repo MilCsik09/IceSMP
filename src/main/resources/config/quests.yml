@@ -58,6 +58,16 @@ achievements:
 #       - "Hozz nekem 10 vasat a bányából — megfizetem."
 #     complete:
 #       - "Kiváló munka! Fogd a jussod."
+# Választós párbeszéd: a dialogue.give sorok után kattintható opciók
+# jeleníthetők meg, amelyek egy másik questet vetetnek fel — elágazó story.
+#   dialogue:
+#     give: ["Két út áll előtted..."]
+#     choices:
+#       1: { text: "Segítek a földeken", quest: "farm_help" }
+#       2: { text: "Inkább harcolok", quest: "monster_hunt" }
+# NPC napi rotáció: a rotation-group: <név> csoportba tett questekből naponta
+# csak rotation-daily-count darab elérhető (nap-determinisztikus választás),
+# így egy NPC minden nap friss felhozatalt kínál a pooljából.
 # Adminok JÁTÉKON BELÜL is készíthetnek questeket (/quest admin create|set|delete)
 # — azok a plugin-mappa custom-quests.yml fájljába kerülnek, ugyanezzel a sémával,
 # és a lentiekkel együtt töltődnek be (azonos id-nél a configbeli nyer). A
