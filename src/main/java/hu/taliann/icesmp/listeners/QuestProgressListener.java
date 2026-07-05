@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
@@ -35,14 +36,17 @@ public final class QuestProgressListener implements Listener {
     private final QuestManager questManager;
     private final MobScalingManager mobScalingManager;
     private final WorldBossManager worldBossManager;
+    private final CommunityGoalManager communityGoalManager;
 
     public QuestProgressListener(final JavaPlugin plugin, final QuestManager questManager,
                                  final MobScalingManager mobScalingManager,
-                                 final WorldBossManager worldBossManager) {
+                                 final WorldBossManager worldBossManager,
+                                 final CommunityGoalManager communityGoalManager) {
         this.plugin = plugin;
         this.questManager = questManager;
         this.mobScalingManager = mobScalingManager;
         this.worldBossManager = worldBossManager;
+        this.communityGoalManager = communityGoalManager;
     }
 
     @EventHandler
@@ -59,8 +63,10 @@ public final class QuestProgressListener implements Listener {
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
         killer.getScheduler().run(plugin, task -> {
             questManager.handleKill(killer, entityType, level);
+            communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1);
             if (worldBoss) {
                 questManager.handleBossKill(killer);
+                communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1);
             }
         }, null);
     }
@@ -68,6 +74,7 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
+        communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS", event.getBlock().getType().name(), 1);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -92,8 +99,10 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onItemPickup(final EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player) {
-            questManager.handleCollect(player, event.getItem().getItemStack().getType(),
-                    event.getItem().getItemStack().getAmount());
+            final var type = event.getItem().getItemStack().getType();
+            final int amount = event.getItem().getItemStack().getAmount();
+            questManager.handleCollect(player, type, amount);
+            communityGoalManager.contribute(player, "COLLECT_ITEMS", type.name(), amount);
         }
     }
 
@@ -105,7 +114,10 @@ public final class QuestProgressListener implements Listener {
         }
 
         // PlayerDeathEvent runs on the VICTIM's region; quest progress mutates the killer.
-        killer.getScheduler().run(plugin, task -> questManager.handlePlayerKill(killer), null);
+        killer.getScheduler().run(plugin, task -> {
+            questManager.handlePlayerKill(killer);
+            communityGoalManager.contribute(killer, "KILL_PLAYERS", null, 1);
+        }, null);
     }
 
     @EventHandler(ignoreCancelled = true)

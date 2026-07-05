@@ -70,7 +70,7 @@ public final class QuestManager implements PersistentStore {
     /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
             "display-name", "description", "giver-npc",
-            "repeatable", "cooldown-hours", "auto-start-territory", "objectives-mode",
+            "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
             "requires-job", "requires-faction", "requires-level", "requires-quest",
             "objective.type", "objective.count", "objective.entity-type",
@@ -87,6 +87,7 @@ public final class QuestManager implements PersistentStore {
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
     private final MetelytepoManager metelytepoManager;
+    private final SeasonManager seasonManager;
     private final NamespacedKey activeQuestsKey;
     private final NamespacedKey completedQuestsKey;
     private final File customQuestsFile;
@@ -95,7 +96,7 @@ public final class QuestManager implements PersistentStore {
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
                         final CurrencyManager currencyManager, final FactionManager factionManager,
-                        final MetelytepoManager metelytepoManager) {
+                        final MetelytepoManager metelytepoManager, final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
@@ -103,6 +104,7 @@ public final class QuestManager implements PersistentStore {
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.metelytepoManager = metelytepoManager;
+        this.seasonManager = seasonManager;
         this.activeQuestsKey = new NamespacedKey(plugin, "quests_active");
         this.completedQuestsKey = new NamespacedKey(plugin, "quests_completed");
         this.customQuestsFile = new File(plugin.getDataFolder(), "custom-quests.yml");
@@ -251,7 +253,7 @@ public final class QuestManager implements PersistentStore {
                     return "quest-admin-bad-value";
                 }
             }
-            case "rewards.cleanse-sins", "repeatable" -> parsed = Boolean.parseBoolean(rawValue.trim());
+            case "rewards.cleanse-sins", "repeatable", "seasonal" -> parsed = Boolean.parseBoolean(rawValue.trim());
             case "cooldown-hours" -> {
                 try {
                     parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));
@@ -490,16 +492,25 @@ public final class QuestManager implements PersistentStore {
             return "quest-not-offered-today";
         }
 
-        // Repeatable quests come back after their cooldown; others complete once, forever.
+        // Repeatable quests come back after their cooldown; seasonal quests come back
+        // once each new season; others complete once, forever.
         if (hasCompleted(player, questId)) {
-            if (!quest.getBoolean("repeatable", false)) {
+            final boolean repeatable = quest.getBoolean("repeatable", false);
+            final boolean seasonal = quest.getBoolean("seasonal", false);
+            if (!repeatable && !seasonal) {
                 return "quest-already-completed";
             }
 
-            final long cooldownMillis = (long) (Math.max(0.0D, quest.getDouble("cooldown-hours", 0.0D)) * 3_600_000.0D);
-            if (cooldownMillis > 0L
-                    && System.currentTimeMillis() - getLastCompletedAt(player, questId) < cooldownMillis) {
-                return "quest-on-cooldown";
+            if (seasonal && getCompletedSeason(player, questId) == currentSeasonId()) {
+                return "quest-season-locked";
+            }
+
+            if (repeatable) {
+                final long cooldownMillis = (long) (Math.max(0.0D, quest.getDouble("cooldown-hours", 0.0D)) * 3_600_000.0D);
+                if (cooldownMillis > 0L
+                        && System.currentTimeMillis() - getLastCompletedAt(player, questId) < cooldownMillis) {
+                    return "quest-on-cooldown";
+                }
             }
         }
 
@@ -1349,8 +1360,9 @@ public final class QuestManager implements PersistentStore {
         }
         writeCsv(player, completedQuestsKey, completed);
         clearAllProgress(player, questId);
-        // Repeatable-cooldown anchor: when was this quest last turned in.
+        // Repeatable-cooldown anchor + seasonal anchor: when / in which season was it turned in.
         player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
+        player.getPersistentDataContainer().set(seasonKey(questId), PersistentDataType.LONG, currentSeasonId());
 
         applyRewards(player, quest);
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
@@ -1421,6 +1433,19 @@ public final class QuestManager implements PersistentStore {
 
     public long getLastCompletedAt(final Player player, final String questId) {
         return player.getPersistentDataContainer().getOrDefault(doneAtKey(questId), PersistentDataType.LONG, 0L);
+    }
+
+    /** The current season's identity (its end timestamp changes when a new season starts). */
+    private long currentSeasonId() {
+        return seasonManager == null ? 0L : seasonManager.getSeasonEndMillis();
+    }
+
+    private long getCompletedSeason(final Player player, final String questId) {
+        return player.getPersistentDataContainer().getOrDefault(seasonKey(questId), PersistentDataType.LONG, -1L);
+    }
+
+    private NamespacedKey seasonKey(final String questId) {
+        return new NamespacedKey(plugin, "quest_season_" + sanitizeId(questId));
     }
 
     private static String sanitizeId(final String questId) {

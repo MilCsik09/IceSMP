@@ -16,6 +16,34 @@ daily-quests:
 achievements:
   enabled: true
 
+# ===== Közösségi célok (frakció-szintű, közös számláló) =====
+# Egy megosztott számláló, amibe egy frakció (vagy az egész szerver) minden
+# tagja beleszámít — pl. "a Piros frakció együtt gyűjtsön 1000 vasat".
+# Teljesítéskor: broadcast + a frakciókasszába jutalom + rövid buff a tagoknak,
+# majd a számláló nullázódik (újra hajszolható). A faction: "ALL" = szerver-szintű
+# (mind a négy kassza kap + mindenki buffot). Támogatott objective.type-ok:
+# KILL_MOBS, COLLECT_ITEMS, BREAK_BLOCKS, KILL_PLAYERS, KILL_WORLDBOSS, WIN_RAID.
+community-goals:
+  enabled: true
+  red_iron_drive:
+    faction: "RED"
+    display-name: "Vas-gyűjtő Hadjárat"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials:
+        - "IRON_INGOT"
+      count: 1000
+    reward-treasury: 500
+    reward-buff-minutes: 15
+  server_hunt:
+    faction: "ALL"
+    display-name: "A Nagy Vadászat"
+    objective:
+      type: "KILL_MOBS"
+      count: 5000
+    reward-treasury: 250
+    reward-buff-minutes: 10
+
 # ===== Küldetések (quest-keretrendszer) =====
 # Objective típusok:
 #   KILL_MOBS (count, opcionális entity-type + min-mob-level) • KILL_PLAYERS (count)

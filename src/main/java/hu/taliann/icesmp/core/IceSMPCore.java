@@ -78,6 +78,7 @@ import hu.taliann.icesmp.listeners.TalentAttributeListener;
 import hu.taliann.icesmp.listeners.TerritoryListener;
 import hu.taliann.icesmp.listeners.TheftListener;
 import hu.taliann.icesmp.managers.BloodMoonManager;
+import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
@@ -184,6 +185,7 @@ public final class IceSMPCore {
     private final FactionRelationManager factionRelationManager;
     private final MarketManager marketManager;
     private final QuestManager questManager;
+    private final CommunityGoalManager communityGoalManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -250,7 +252,9 @@ public final class IceSMPCore {
         this.factionRelationManager = new FactionRelationManager(configManager, raidManager);
         this.marketManager = new MarketManager(plugin, configManager, currencyManager, factionManager, factionRelationManager, messageManager);
         this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
-                currencyManager, factionManager, metelytepoManager);
+                currencyManager, factionManager, metelytepoManager, seasonManager);
+        this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
+                factionTreasuryManager, messageManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
@@ -280,9 +284,12 @@ public final class IceSMPCore {
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
-                exchangeBoardManager, statsManager, parkourManager, questManager);
+                exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
-        raidManager.setWinHook(questManager::handleRaidWin);
+        raidManager.setWinHook(fighter -> {
+            questManager.handleRaidWin(fighter);
+            communityGoalManager.contribute(fighter, "WIN_RAID", null, 1);
+        });
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -622,7 +629,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
-        pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager), plugin);
+        pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);

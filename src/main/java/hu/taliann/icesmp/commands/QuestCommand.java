@@ -380,6 +380,7 @@ public final class QuestCommand implements BasicCommand {
             case "quest-requires-quest" -> "&cElőbb az előfeltétel-küldetést kell teljesítened.";
             case "quest-on-cooldown" -> "&cEz a küldetés még pihen — nézz vissza később.";
             case "quest-not-offered-today" -> "&cEz a küldetés ma nem elérhető — nézz vissza egy másik napon.";
+            case "quest-season-locked" -> "&cEzt a szezont már teljesítetted — az új szezonban újra elérhető lesz.";
             default -> "&cA küldetés nem vehető fel.";
         };
     }

@@ -1,6 +1,7 @@
 # IceSMP üzenetek — quest alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
   achievement-earned: '<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>'
+  community-goal-completed: '<gold>🏛 Közösségi cél teljesítve: <white>{goal}</white>! {who}</gold>'
   daily-completed: '<gold>📅 Napi küldetés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>'
   daily-info: '<gold>📅 Napi küldetés: <yellow>{name}</yellow> &7| Állás: <white>{state}</white> &7| Jutalom: <white>{reward}</white></gold>'
   daily-state-done: '&ateljesítve'
@@ -63,6 +64,7 @@ messages:
   quest-list-empty: '&7Jelenleg nincs felvehető küldetésed.'
   quest-not-offered-today: '&cEz a küldetés ma nem elérhető — nézz vissza egy másik napon.'
   quest-on-cooldown: '&cEz a küldetés még pihen — nézz vissza később.'
+  quest-season-locked: '&cEzt a szezont már teljesítetted — az új szezonban újra elérhető lesz.'
   quest-list-header: '&6Elérhető küldetések:'
   quest-list-line: '&e%s &7(%s) - %s'
   quest-requires-faction: '&cEhhez a küldetéshez másik frakció tagjának kell lenned.'
