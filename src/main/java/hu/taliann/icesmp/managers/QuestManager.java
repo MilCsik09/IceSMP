@@ -30,7 +30,9 @@ import java.util.Set;
  *
  * Objective types: KILL_MOBS (count, optional entity-type + min-mob-level),
  * BREAK_BLOCKS (materials + count), CRAFT_ITEMS (materials + count),
- * CATCH_FISH (count), VISIT_TERRITORY (territory id), REACH_LEVEL (class level).
+ * CATCH_FISH (count), VISIT_TERRITORY (territory id), REACH_LEVEL (class level),
+ * TALK_TO_NPC (npc name, via the FancyNpcs bridge), PARKOUR_TRIAL (course id,
+ * via the ParkourManager finish hook).
  *
  * Accept requirements: requires-job, requires-faction, requires-level,
  * requires-quest (chains). Rewards: class-xp, currency (type + amount),
@@ -226,6 +228,30 @@ public final class QuestManager {
     public void handleTerritoryEnter(final Player player, final String territoryId) {
         forEachActive(player, "VISIT_TERRITORY", (questId, quest) ->
                 territoryId != null && territoryId.equalsIgnoreCase(quest.getString("objective.territory", "")));
+    }
+
+    /**
+     * Progresses TALK_TO_NPC quests when the player interacts with a named NPC.
+     * Fired by the reflective FancyNpcs bridge on the player's own region thread.
+     *
+     * @param player the interacting player
+     * @param npcName the NPC's internal (FancyNpcs) name
+     */
+    public void handleNpcInteract(final Player player, final String npcName) {
+        forEachActive(player, "TALK_TO_NPC", (questId, quest) ->
+                npcName != null && npcName.equalsIgnoreCase(quest.getString("objective.npc", "")));
+    }
+
+    /**
+     * Progresses PARKOUR_TRIAL quests when the player finishes a timed parkour
+     * course. Wired into the ParkourManager finish hook.
+     *
+     * @param player the finishing player
+     * @param courseId the completed course id
+     */
+    public void handleParkourFinish(final Player player, final String courseId) {
+        forEachActive(player, "PARKOUR_TRIAL", (questId, quest) ->
+                courseId != null && courseId.equalsIgnoreCase(quest.getString("objective.course", "")));
     }
 
     /**

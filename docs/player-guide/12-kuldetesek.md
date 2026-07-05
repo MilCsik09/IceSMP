@@ -14,8 +14,7 @@ jutalom **automatikusan** jár.
 
 ## Kaszt-próbák (a kezdő küldetések)
 
-Jelenleg négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**. A többi
-kaszt saját, NPC-s próbája tervezett tartalom.
+Négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**.
 
 | Küldetés | Kaszt | Feladat |
 |---|---|---|
@@ -23,6 +22,25 @@ kaszt saját, NPC-s próbája tervezett tartalom.
 | **Az Íjász Próbája** | Íjász | Vadássz le **12 szörnyet** |
 | **A Varázsló Próbája** | Varázsló | Szedj **10 virágot** |
 | **Az Orgyilkos Próbája** | Orgyilkos | Ölj meg **10 szörnyet** |
+
+## Mester-próbák (NPC-s láncok) 🧭
+
+A kezdő próba után minden kezdő kaszt **kétlépcsős mester-lánccal** folytathatja:
+
+1. **Mentor-küldetés:** keresd fel a kasztod **mester-NPC-jét** (a fővárosokban áll) és
+   **beszélj vele** — ez veszi fel a próbát. Jutalom: **100 kaszt-XP**.
+2. **Mester-próba:** teljesítsd a mester **próbapályáját** (időmérős parkour, pl.
+   `/parkour start harcos_proba`). Jutalom: **400 kaszt-XP**.
+
+| Lánc | Kaszt | NPC | Pálya |
+|---|---|---|---|
+| A Harcos Mestere → Mester-próbája | Harcos | harcos mester | `harcos_proba` |
+| Az Íjász Mestere → Mester-próbája | Íjász | íjász mester | `ijasz_proba` |
+| A Varázsló Mestere → Mester-próbája | Varázsló | varázsló mester | `varazslo_proba` |
+| Az Orgyilkos Mestere → Mester-próbája | Orgyilkos | orgyilkos mester | `orgyilkos_proba` |
+
+> Az NPC-k és a pályák **kihelyezése a szerver-csapat feladata** — ha még nem állnak,
+> a lánc egyszerűen nem halad (a küldetés nem törik el).
 
 ## Sötét Beavatás (a Nekromanta kapuja)
 

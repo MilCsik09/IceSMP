@@ -19,7 +19,9 @@ achievements:
 # ===== Küldetések (quest-keretrendszer) =====
 # Objective típusok: KILL_MOBS (count, opcionális entity-type + min-mob-level),
 # BREAK_BLOCKS / CRAFT_ITEMS (materials + count), CATCH_FISH (count),
-# VISIT_TERRITORY (territory), REACH_LEVEL (level).
+# VISIT_TERRITORY (territory), REACH_LEVEL (level),
+# TALK_TO_NPC (npc: a FancyNpcs NPC belső neve — a szerver-csapat rakja ki:
+#   /npc create <név>), PARKOUR_TRIAL (course: a /parkour pálya azonosítója).
 # Feltételek: requires-job, requires-faction, requires-level, requires-quest (lánc).
 # Jutalmak: class-xp, currency {type, amount}, unlock-spell, cleanse-sins.
 quests:
@@ -68,6 +70,87 @@ quests:
       count: 10
     rewards:
       class-xp: 200
+  # --- Kaszt-mester próbák (NPC-s láncok a kezdő próbák után) ---
+  # A mester-NPC-ket a szerver-csapat helyezi ki FancyNpcs-szel a fenti belső
+  # nevekkel (pl. /npc create harcos_mester), a próbapályákat a /parkour
+  # paranccsal (pl. /parkour setstart harcos_proba ...). Amíg nincsenek kint,
+  # a láncok egyszerűen nem haladnak — semmi nem törik.
+  warrior_mentor:
+    display-name: "A Harcos Mestere"
+    description: "Keresd fel a harcos mestert a fővárosban, és jelentkezz a mester-próbára."
+    requires-job: "warrior"
+    requires-quest: "warrior_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "harcos_mester"
+    rewards:
+      class-xp: 100
+  warrior_master_trial:
+    display-name: "A Harcos Mester-próbája"
+    description: "Teljesítsd a mester erőpróba-pályáját (/parkour start harcos_proba)."
+    requires-quest: "warrior_mentor"
+    objective:
+      type: "PARKOUR_TRIAL"
+      course: "harcos_proba"
+    rewards:
+      class-xp: 400
+  archer_mentor:
+    display-name: "Az Íjász Mestere"
+    description: "Keresd fel az íjász mestert a fővárosban, és jelentkezz a mester-próbára."
+    requires-job: "archer"
+    requires-quest: "archer_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "ijasz_mester"
+    rewards:
+      class-xp: 100
+  archer_master_trial:
+    display-name: "Az Íjász Mester-próbája"
+    description: "Teljesítsd a mester ügyességi pályáját (/parkour start ijasz_proba)."
+    requires-quest: "archer_mentor"
+    objective:
+      type: "PARKOUR_TRIAL"
+      course: "ijasz_proba"
+    rewards:
+      class-xp: 400
+  wizard_mentor:
+    display-name: "A Varázsló Mestere"
+    description: "Keresd fel a varázsló mestert a fővárosban, és jelentkezz a mester-próbára."
+    requires-job: "wizard"
+    requires-quest: "wizard_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "varazslo_mester"
+    rewards:
+      class-xp: 100
+  wizard_master_trial:
+    display-name: "A Varázsló Mester-próbája"
+    description: "Teljesítsd a mester tornypróbáját (/parkour start varazslo_proba)."
+    requires-quest: "wizard_mentor"
+    objective:
+      type: "PARKOUR_TRIAL"
+      course: "varazslo_proba"
+    rewards:
+      class-xp: 400
+  assassin_mentor:
+    display-name: "Az Orgyilkos Mestere"
+    description: "Keresd fel az orgyilkos mestert az árnyak közt, és jelentkezz a mester-próbára."
+    requires-job: "assassin"
+    requires-quest: "assassin_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "orgyilkos_mester"
+    rewards:
+      class-xp: 100
+  assassin_master_trial:
+    display-name: "Az Orgyilkos Mester-próbája"
+    description: "Teljesítsd a mester árnypályáját (/parkour start orgyilkos_proba)."
+    requires-quest: "assassin_mentor"
+    objective:
+      type: "PARKOUR_TRIAL"
+      course: "orgyilkos_proba"
+    rewards:
+      class-xp: 400
   # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
   necromancer_initiation:
     display-name: "Sötét Beavatás"

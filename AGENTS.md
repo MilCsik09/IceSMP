@@ -4,7 +4,7 @@
 - Folia-based plugin for Minecraft `1.21.11`, Java `21`, Gradle wrapper build (`build.gradle.kts`, `gradle/libs.versions.toml`).
 - **Folia-compatible:** `folia-supported: true` in `paper-plugin.yml`; every task runs on region/entity schedulers (never `Bukkit.getScheduler()`, never async entity access).
 - Entry points: `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader` (declared in `paper-plugin.yml`); runtime orchestration in `core/IceSMPCore.java` (manager construction → `load()` → listeners → commands → schedulers; `save()`/cleanup in `disable()`).
-- Soft dependencies (`compileOnly`, runtime-optional): **PlaceholderAPI** (`integration/IceSMPPlaceholders`, registered reflectively from `IceSMPCore.registerPlaceholders()`; exposes `%icesmp_...%`) and **LibsDisguises** (`integration/DruidDisguise` reflective bridge for Druid form visuals; `isTransitive = false`).
+- Soft dependencies (`compileOnly`, runtime-optional): **PlaceholderAPI** (`integration/IceSMPPlaceholders`, registered reflectively from `IceSMPCore.registerPlaceholders()`; exposes `%icesmp_...%`), **LibsDisguises** (`integration/DruidDisguise` reflective bridge for Druid form visuals; `isTransitive = false`) and **FancyNpcs** (`integration/FancyNpcsQuestBridge`, pure-reflection listener — no build dependency at all — feeding TALK_TO_NPC quest objectives).
 - Docs: `README.md` (overview) • `PLAYER_GUIDE.md` + `docs/player-guide/` (player manual, includes full spell tables) • `PLAYTEST.md` (tester handbook incl. permission nodes and admin triggers) • `docs/ARCHITECTURE.md` (technical reference, **Folia rules in section 4**) • `ROADMAP.md` (open work). Prefer source files for exact current behavior.
 
 ## Domain snapshot (current, verified against code)

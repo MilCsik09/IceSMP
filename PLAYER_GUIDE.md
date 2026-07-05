@@ -511,6 +511,9 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 `/quest abandon <id>`. A haladásod az action barban követhető, teljesítéskor jutalmat kapsz
 (kaszt XP, valuta, képesség-feloldás, vagy különleges hatás).
 
+- **Mester-próbák (NPC-s láncok):** a kezdő próba után a kasztod **mester-NPC-jénél**
+  jelentkezhetsz (beszélj vele — FancyNpcs NPC a fővárosban), majd teljesítened kell a
+  **mester próbapályáját** (időmérős parkour). Jutalom: 100 + 400 kaszt-XP.
 - **Kaszt-próbák:** jelenleg a négy kezdő próba érhető el (`warrior_trial`, `archer_trial`,
   `wizard_trial`, `assassin_trial`), kaszt XP jutalommal. A többi kaszt saját NPC-s próbája
   még tervezett tartalom.
@@ -547,8 +550,9 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 
 Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rájuk a játékban:
 
-- 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
-  (a parkour-keret már **kész**: `/parkour`).
+- 🚧 **Kaszt-questek:** az NPC-s mester-próba láncok (mentor-NPC + próbapálya) **készek a
+  pluginban**, de a mester-NPC-k és a pályák kihelyezése a szerver-csapatra vár — addig a
+  láncok nem haladnak.
 - 🚧 **Piactér:** fizikai piactábla a fővárosokban még nincs (a lapozás, a `/market search`
   keresés, a reputáció-árazás és a **licitálós aukciósház** már **kész**).
 - 🚧 **Intro:** a cím-szekvencia és a kamera-utaztatás **kész**, de a kameraút alapból ki van

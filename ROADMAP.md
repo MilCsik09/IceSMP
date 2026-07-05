@@ -24,8 +24,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   több egyidejű raid, védő-oldali erődítés-mechanika.
 - 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
   konténer-fosztás +1, frakciótárs ölése +2); további ötlet: bűn-alapú fejvadász-jutalom.
-- ⬜ **Kaszt-questek felturbózása:** NPC-s próbák az „ölj X-et" helyett (FancyNpcs a szerveren
-  elérhető; a parkour-keret kész).
+- 🔨 **Kaszt-questek felturbózása:** a plugin-oldal **kész** (TALK_TO_NPC + PARKOUR_TRIAL
+  objektívák, FancyNpcs-bridge, 4 kaszt mester-lánca configban) — a mester-NPC-k és
+  próbapályák kihelyezése a szerver-csapatra vár; utána jöhet a többi 9 kaszt lánca (config).
 - ⬜ **Szezonliga jutalom:** a győztes frakció kozmetikai/relikvia-jutalma a szezon végén.
 - 💡 **Frakció-diplomácia:** szövetség/békekötés parancsok a királyoknak — 3 királysággal a
   szövetség-tér minimális (egyetlen 2v1 kapcsoló), ezért csak akkor éri meg, ha valaha
@@ -49,6 +50,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 ### Világépítés (szerver-csapat, nem plugin-kód)
 - ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések.
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
+- ⬜ Kaszt-mester NPC-k (FancyNpcs: `harcos_mester`, `ijasz_mester`, `varazslo_mester`,
+  `orgyilkos_mester`) és a mester-próbapályák (`harcos_proba`, `ijasz_proba`,
+  `varazslo_proba`, `orgyilkos_proba`) kihelyezése a fővárosokban.
 
 ---
 

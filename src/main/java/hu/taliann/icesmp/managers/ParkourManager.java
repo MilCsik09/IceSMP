@@ -46,6 +46,7 @@ public final class ParkourManager implements PersistentStore {
     private final File storageFile;
     private final Map<String, Course> courses = new ConcurrentHashMap<>();
     private final Map<UUID, Run> activeRuns = new ConcurrentHashMap<>();
+    private java.util.function.BiConsumer<Player, String> finishHook;
 
     public ParkourManager(final JavaPlugin plugin, final CurrencyManager currencyManager,
                           final FactionManager factionManager, final MessageManager messageManager) {
@@ -148,6 +149,11 @@ public final class ParkourManager implements PersistentStore {
         return null;
     }
 
+    /** Sets the callback fired when a player finishes a course (player, course id). */
+    public void setFinishHook(final java.util.function.BiConsumer<Player, String> hook) {
+        this.finishHook = hook;
+    }
+
     /** Checks whether the player has reached their active course's finish; rewards if so. */
     public void checkFinish(final Player player) {
         final Run run = activeRuns.get(player.getUniqueId());
@@ -168,6 +174,10 @@ public final class ParkourManager implements PersistentStore {
         if (course.reward > 0) {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());
             currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), course.reward);
+        }
+        // Quest bridge (PARKOUR_TRIAL objectives) — runs on the player's own thread.
+        if (finishHook != null) {
+            finishHook.accept(player, run.courseId());
         }
         player.sendMessage(messageManager.getMessage(
                 "parkour-finished",

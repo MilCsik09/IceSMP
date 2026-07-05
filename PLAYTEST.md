@@ -122,7 +122,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   (idegen territóriumban konténer-fosztás, +1) is bűn — teszteld mindhármat!
 - ✅ **Raid teljes:** jelentkezés + létszámkorlát (10v10), területkötés, pont-tartás objektíva,
   terület-átvétel — teszteld a 4.12 szerint!
-- 🚧 **Kaszt-questek:** jelenleg 4 kezdő próba van; a többi kaszt saját NPC/parkour pályái tervben.
+- 🚧 **Kaszt-questek:** a 4 kezdő próba + az NPC-s mester-láncok (mentor-NPC → próbapálya)
+  **készek a pluginban** — de a mester-NPC-k (FancyNpcs) és a próbapályák kihelyezéséig a
+  láncok nem haladnak. Teszthez rakj ki egy NPC-t (`/npc create harcos_mester`) és egy pályát.
 - 🚧 **Piactér:** fizikai piactábla még nincs (a lapozás, a `/market search`, a
   reputáció-árazás és a **licitálós aukciósház** kész — ezeket teszteld!).
 - 🚧 **Intro:** a kamera-utaztatás kész, de alapból kikapcsolt (waypoint-kijelölésig).
@@ -250,6 +252,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       claimeletlen vadonban nincs bűn; virtuális GUI-k (piac, menük) nem érintettek.
 - [ ] **Lopás-kivételek:** raid-háború alatt a hadviselő fél területén a zsákmányolás nem bűn;
       a `icesmp.admin.territory.bypass` joggal szintén nem.
+- [ ] **Mester-lánc (NPC):** rakj ki egy FancyNpcs NPC-t `harcos_mester` néven; a `warrior_trial`
+      után vedd fel a `warrior_mentor` questet, katt az NPC-re → teljesül; a `warrior_master_trial`
+      a `harcos_proba` pálya lefutásával teljesül (a /parkour jutalom mellett quest-jutalom is jár).
 - [ ] **Sötét Beavatás** küldetés feloldja a Nekromantát.
 - [ ] **Vezeklés-lánc** (3 rész) az EGYETLEN mód a paktum megtörésére.
 - [ ] ⚠️ **Folia:** a bűn-jelölés a gyilkost másik régióból is hibamentesen jelöli.

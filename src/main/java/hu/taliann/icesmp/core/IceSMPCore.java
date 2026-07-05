@@ -279,6 +279,7 @@ public final class IceSMPCore {
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager);
+        parkourManager.setFinishHook(questManager::handleParkourFinish);
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
@@ -362,6 +363,7 @@ public final class IceSMPCore {
         scheduleHud();
         schedulePetCombat();
         registerPlaceholders();
+        registerNpcQuestBridge();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
@@ -384,6 +386,24 @@ public final class IceSMPCore {
             plugin.getLogger().info("PlaceholderAPI integráció bekapcsolva (%icesmp_...% placeholderek).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("PlaceholderAPI jelen van, de a placeholder-integráció nem indult: "
+                    + throwable.getMessage());
+        }
+    }
+
+    /**
+     * Registers the FancyNpcs quest bridge (TALK_TO_NPC objectives) if FancyNpcs is
+     * installed. The bridge is fully reflective, so the core has no compile-time
+     * dependency on the FancyNpcs API; without the plugin this is a no-op.
+     */
+    private void registerNpcQuestBridge() {
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("FancyNpcs")) {
+            return;
+        }
+        try {
+            hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(plugin, questManager);
+            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák).");
+        } catch (final Throwable throwable) {
+            plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
                     + throwable.getMessage());
         }
     }

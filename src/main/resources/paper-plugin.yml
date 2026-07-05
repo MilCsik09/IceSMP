@@ -17,6 +17,8 @@ authors: [ Taliann ]
 #    (DruidDisguise) join-classpath-tal éri el az osztályait futásidőben.
 #  - PlaceholderAPI: a %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot,
 #    frakciót, kasztot). load: BEFORE, hogy a regisztrációkor már elérhető legyen.
+#  - FancyNpcs: a TALK_TO_NPC quest-objektívák (kaszt-mester próbák). A reflexiós híd
+#    (FancyNpcsQuestBridge) join-classpath-tal éri el az API-ját futásidőben.
 dependencies:
   server:
     LibsDisguises:
@@ -26,4 +28,8 @@ dependencies:
     PlaceholderAPI:
       load: BEFORE
       required: false
+    FancyNpcs:
+      load: BEFORE
+      required: false
+      join-classpath: true
 
