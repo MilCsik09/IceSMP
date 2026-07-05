@@ -5,6 +5,7 @@ messages:
   daily-info: '<gold>📅 Napi küldetés: <yellow>{name}</yellow> &7| Állás: <white>{state}</white> &7| Jutalom: <white>{reward}</white></gold>'
   daily-state-done: '&ateljesítve'
   quest:
+    accepted-from-npc: '<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>'
     completed: '<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>'
     progress: '<gray>{quest}: <gold>{progress}</gold>/<gold>{target}</gold></gray>'
   quest-abandon-failed: '&cNincs ilyen aktív küldetésed.'

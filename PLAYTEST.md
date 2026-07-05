@@ -253,8 +253,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Lopás-kivételek:** raid-háború alatt a hadviselő fél területén a zsákmányolás nem bűn;
       a `icesmp.admin.territory.bypass` joggal szintén nem.
 - [ ] **Mester-lánc (NPC):** rakj ki egy FancyNpcs NPC-t `harcos_mester` néven; a `warrior_trial`
-      után vedd fel a `warrior_mentor` questet, katt az NPC-re → teljesül; a `warrior_master_trial`
-      a `harcos_proba` pálya lefutásával teljesül (a /parkour jutalom mellett quest-jutalom is jár).
+      után vedd fel a `warrior_mentor` questet, katt az NPC-re → a mentor-quest teljesül ÉS az NPC
+      azonnal ADJA a `warrior_master_trial`-t (❕ üzenet); az a `harcos_proba` pálya lefutásával
+      teljesül (a /parkour jutalom mellett quest-jutalom is jár).
+- [ ] **NPC-marker (per-player):** akinek felvehető questje van az NPC-nél → ARANY aura az NPC
+      felett; akinek aktív TALK_TO_NPC questje szól hozzá → ZÖLD aura; egy harmadik játékos
+      (feltétel nélkül) SEMMIT nem lát. A marker ~2 mp-enként pulzál, ~48 blokkos körzetben.
 - [ ] **Sötét Beavatás** küldetés feloldja a Nekromantát.
 - [ ] **Vezeklés-lánc** (3 rész) az EGYETLEN mód a paktum megtörésére.
 - [ ] ⚠️ **Folia:** a bűn-jelölés a gyilkost másik régióból is hibamentesen jelöli.

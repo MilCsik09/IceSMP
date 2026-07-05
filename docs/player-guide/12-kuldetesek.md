@@ -27,10 +27,19 @@ Négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**.
 
 A kezdő próba után minden kezdő kaszt **kétlépcsős mester-lánccal** folytathatja:
 
-1. **Mentor-küldetés:** keresd fel a kasztod **mester-NPC-jét** (a fővárosokban áll) és
-   **beszélj vele** — ez veszi fel a próbát. Jutalom: **100 kaszt-XP**.
-2. **Mester-próba:** teljesítsd a mester **próbapályáját** (időmérős parkour, pl.
-   `/parkour start harcos_proba`). Jutalom: **400 kaszt-XP**.
+1. **Mentor-küldetés:** vedd fel (`/quest accept <kaszt>_mentor`), keresd fel a kasztod
+   **mester-NPC-jét** (a fővárosokban áll) és **beszélj vele**. Jutalom: **100 kaszt-XP**.
+2. **Mester-próba:** ezt már **maga a mester adja** — ugyanaz a kattintás, amivel a
+   mentor-küldetést teljesíted, azonnal kezedbe adja a próbát. Teljesítsd a
+   **próbapályáját** (időmérős parkour, pl. `/parkour start harcos_proba`).
+   Jutalom: **400 kaszt-XP**.
+
+**Hogyan találod meg?** A quest-NPC-k felett **részecske-aura** világít — de **csak neked**,
+ha éppen dolgod van velük:
+- **Arany aura** ❕ — az NPC **questet tud adni neked** (minden feltételed megvan hozzá).
+- **Zöld aura** — egy **aktív küldetésed** hozzá szól (beszélned kell vele).
+
+Más játékos nem látja a te jelzéseidet, te sem az övéit.
 
 | Lánc | Kaszt | NPC | Pálya |
 |---|---|---|---|

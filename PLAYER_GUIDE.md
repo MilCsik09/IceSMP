@@ -512,8 +512,12 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 (kaszt XP, valuta, képesség-feloldás, vagy különleges hatás).
 
 - **Mester-próbák (NPC-s láncok):** a kezdő próba után a kasztod **mester-NPC-jénél**
-  jelentkezhetsz (beszélj vele — FancyNpcs NPC a fővárosban), majd teljesítened kell a
-  **mester próbapályáját** (időmérős parkour). Jutalom: 100 + 400 kaszt-XP.
+  jelentkezhetsz (beszélj vele — FancyNpcs NPC a fővárosban); a **mester-próbát már maga
+  az NPC adja**, és teljesítened kell a **próbapályáját** (időmérős parkour).
+  Jutalom: 100 + 400 kaszt-XP.
+- **NPC-jelzés csak neked:** a quest-NPC-k felett **részecske-aura** világít, kizárólag annak
+  a játékosnak, akit érint — **arany** = questet tud adni neked, **zöld** = aktív küldetésed
+  hozzá szól.
 - **Kaszt-próbák:** jelenleg a négy kezdő próba érhető el (`warrior_trial`, `archer_trial`,
   `wizard_trial`, `assassin_trial`), kaszt XP jutalommal. A többi kaszt saját NPC-s próbája
   még tervezett tartalom.

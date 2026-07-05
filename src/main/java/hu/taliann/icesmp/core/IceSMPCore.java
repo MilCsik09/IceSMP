@@ -205,6 +205,8 @@ public final class IceSMPCore {
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcMarkerTask;
+    private hu.taliann.icesmp.integration.FancyNpcsQuestBridge npcQuestBridge;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
@@ -400,12 +402,28 @@ public final class IceSMPCore {
             return;
         }
         try {
-            hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(plugin, questManager);
-            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák).");
+            npcQuestBridge = hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(plugin, configManager, questManager);
+            scheduleQuestNpcMarkers();
+            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
                     + throwable.getMessage());
         }
+    }
+
+    /**
+     * Schedules the per-player quest-NPC marker tick (gold/green aura above
+     * quest-giver NPCs, visible only to eligible players) on the global region
+     * scheduler; the bridge hops to each player's own thread.
+     */
+    private void scheduleQuestNpcMarkers() {
+        if (!configManager.getBoolean("quest-npc-markers.enabled", true)) {
+            return;
+        }
+
+        final long intervalTicks = Math.max(10L, configManager.getLong("quest-npc-markers.interval-ticks", 40L));
+        questNpcMarkerTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> npcQuestBridge.tickMarkers(), intervalTicks, intervalTicks);
     }
 
     /**
@@ -415,6 +433,10 @@ public final class IceSMPCore {
         if (taxTask != null) {
             taxTask.cancel();
             taxTask = null;
+        }
+        if (questNpcMarkerTask != null) {
+            questNpcMarkerTask.cancel();
+            questNpcMarkerTask = null;
         }
         raidManager.shutdown();
         if (economyEventTask != null) {

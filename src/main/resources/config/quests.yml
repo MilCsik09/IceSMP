@@ -24,6 +24,8 @@ achievements:
 #   /npc create <név>), PARKOUR_TRIAL (course: a /parkour pálya azonosítója).
 # Feltételek: requires-job, requires-faction, requires-level, requires-quest (lánc).
 # Jutalmak: class-xp, currency {type, amount}, unlock-spell, cleanse-sins.
+# giver-npc: a questet ez a FancyNpcs NPC ADJA — rákattintva automatikusan
+# felveszed, ha a feltételek teljesülnek (a /quest accept továbbra is működik).
 quests:
   # --- Kaszt-próbák (bevezető questek) ---
   warrior_trial:
@@ -71,10 +73,13 @@ quests:
     rewards:
       class-xp: 200
   # --- Kaszt-mester próbák (NPC-s láncok a kezdő próbák után) ---
-  # A mester-NPC-ket a szerver-csapat helyezi ki FancyNpcs-szel a fenti belső
+  # A mester-NPC-ket a szerver-csapat helyezi ki FancyNpcs-szel a lenti belső
   # nevekkel (pl. /npc create harcos_mester), a próbapályákat a /parkour
   # paranccsal (pl. /parkour setstart harcos_proba ...). Amíg nincsenek kint,
   # a láncok egyszerűen nem haladnak — semmi nem törik.
+  # A mentor-questet a játékos veszi fel (/quest accept vagy a quest GUI), a
+  # mester-próbát viszont maga a mester-NPC ADJA (giver-npc): a mentor-quest
+  # az NPC-nél teljesül, és ugyanazzal a kattintással megkapod a próbát.
   warrior_mentor:
     display-name: "A Harcos Mestere"
     description: "Keresd fel a harcos mestert a fővárosban, és jelentkezz a mester-próbára."
@@ -86,6 +91,7 @@ quests:
     rewards:
       class-xp: 100
   warrior_master_trial:
+    giver-npc: "harcos_mester"
     display-name: "A Harcos Mester-próbája"
     description: "Teljesítsd a mester erőpróba-pályáját (/parkour start harcos_proba)."
     requires-quest: "warrior_mentor"
@@ -105,6 +111,7 @@ quests:
     rewards:
       class-xp: 100
   archer_master_trial:
+    giver-npc: "ijasz_mester"
     display-name: "Az Íjász Mester-próbája"
     description: "Teljesítsd a mester ügyességi pályáját (/parkour start ijasz_proba)."
     requires-quest: "archer_mentor"
@@ -124,6 +131,7 @@ quests:
     rewards:
       class-xp: 100
   wizard_master_trial:
+    giver-npc: "varazslo_mester"
     display-name: "A Varázsló Mester-próbája"
     description: "Teljesítsd a mester tornypróbáját (/parkour start varazslo_proba)."
     requires-quest: "wizard_mentor"
@@ -143,6 +151,7 @@ quests:
     rewards:
       class-xp: 100
   assassin_master_trial:
+    giver-npc: "orgyilkos_mester"
     display-name: "Az Orgyilkos Mester-próbája"
     description: "Teljesítsd a mester árnypályáját (/parkour start orgyilkos_proba)."
     requires-quest: "assassin_mentor"
@@ -195,3 +204,12 @@ quests:
         type: "NEUTRAL"
         amount: 100
       cleanse-sins: true
+
+# ===== Quest-NPC markerek =====
+# A quest-adó / quest-célpont NPC-k felett részecske-aura jelzi a teendőt —
+# KIZÁRÓLAG annak a játékosnak, akit érint (kliens-oldali részecske):
+# arany = ez az NPC questet tud adni NEKED; zöld = aktív quested hozzá szól.
+quest-npc-markers:
+  enabled: true
+  range: 48
+  interval-ticks: 40

@@ -242,6 +242,111 @@ public final class QuestManager {
                 npcName != null && npcName.equalsIgnoreCase(quest.getString("objective.npc", "")));
     }
 
+    // ===== NPC quest-adók (giver-npc) =====
+
+    /** The NPC name configured to hand out this quest, or null. */
+    public String getGiverNpc(final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        final String npc = quest == null ? null : quest.getString("giver-npc");
+        return npc == null || npc.isBlank() ? null : npc;
+    }
+
+    /**
+     * Every NPC name the quest system cares about: quest-giver NPCs plus
+     * TALK_TO_NPC objective targets. Used by the marker tick to know which
+     * NPCs may need a per-player particle marker.
+     */
+    public Set<String> getQuestNpcNames() {
+        final Set<String> names = new LinkedHashSet<>();
+        for (final String questId : getQuestIds()) {
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest == null) {
+                continue;
+            }
+
+            final String giver = quest.getString("giver-npc");
+            if (giver != null && !giver.isBlank()) {
+                names.add(giver);
+            }
+
+            final String talkTarget = quest.getString("objective.npc");
+            if ("TALK_TO_NPC".equalsIgnoreCase(quest.getString("objective.type", ""))
+                    && talkTarget != null && !talkTarget.isBlank()) {
+                names.add(talkTarget);
+            }
+        }
+        return names;
+    }
+
+    /** Whether this NPC has at least one quest the player could accept right now. */
+    public boolean hasAcceptableQuestFrom(final Player player, final String npcName) {
+        if (npcName == null) {
+            return false;
+        }
+
+        for (final String questId : getQuestIds()) {
+            if (npcName.equalsIgnoreCase(getGiverNpc(questId)) && getAcceptBlocker(player, questId) == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether the player has an active TALK_TO_NPC quest targeting this NPC. */
+    public boolean hasTalkObjectiveAt(final Player player, final String npcName) {
+        if (npcName == null) {
+            return false;
+        }
+
+        for (final String questId : getActiveQuests(player)) {
+            final ConfigurationSection quest = getQuestSection(questId);
+            if (quest != null && "TALK_TO_NPC".equalsIgnoreCase(quest.getString("objective.type", ""))
+                    && npcName.equalsIgnoreCase(quest.getString("objective.npc", ""))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Hands out the first acceptable quest this NPC gives (config order, so
+     * chains progress naturally). Fired by the FancyNpcs bridge on the
+     * player's own region thread, right after TALK_TO_NPC objectives ran —
+     * so a master NPC can complete the "talk to me" step and immediately
+     * hand the follow-up trial over.
+     *
+     * @param player the interacting player
+     * @param npcName the NPC's internal name
+     * @return the accepted quest id, or null if this NPC had nothing to give
+     */
+    public String acceptFromNpc(final Player player, final String npcName) {
+        if (npcName == null) {
+            return null;
+        }
+
+        for (final String questId : getQuestIds()) {
+            if (!npcName.equalsIgnoreCase(getGiverNpc(questId)) || getAcceptBlocker(player, questId) != null) {
+                continue;
+            }
+
+            if (!accept(player, questId)) {
+                continue;
+            }
+
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
+            player.sendMessage(messageManager.getMessage(
+                    "quest.accepted-from-npc",
+                    "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                    Map.of(
+                            "quest", getDisplayName(questId),
+                            "description", getQuestSection(questId).getString("description", "")
+                    )
+            ));
+            return questId;
+        }
+        return null;
+    }
+
     /**
      * Progresses PARKOUR_TRIAL quests when the player finishes a timed parkour
      * course. Wired into the ParkourManager finish hook.
