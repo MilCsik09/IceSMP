@@ -178,3 +178,17 @@ wild-hunt:
     - "EXPERIENCE_BOTTLE:12:24"
     - "GOLD_BLOCK:1:3"
     - "DIAMOND_BLOCK:1"
+
+# ===== Bőség-idő (a vérhold pozitív ellenpárja) =====
+# Nyugodt, építő/farm-barát időablak: a termés gyorsabban nő, az állatok néha ikret
+# ellenek, a természetes szörny-spawnok egy része elmarad, és gyengéd regeneráció leng
+# az online játékosokon. Terephez NEM nyúl (csak a már növekvő termést lépteti előrébb).
+abundance:
+  enabled: true
+  interval-minutes: 80             # két Bőség-idő közti idő
+  duration-minutes: 15             # egy ablak hossza
+  chance-percent: 45               # esély, hogy az intervallum végén tényleg megnyílik
+  crop-boost-chance-percent: 40    # esély, hogy egy növekvő termés +1 fázist ugrik
+  twin-chance-percent: 25          # esély iker-utódra sikeres szaporodáskor
+  calm-spawn-chance-percent: 35    # ennyi eséllyel marad el egy természetes szörny-spawn
+  regen-seconds: 8                 # a gyengéd regeneráció-pulzus hossza

@@ -70,6 +70,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events gathering          # véletlen gyűjtögető buff-ablak megnyitása
 /events treasure           # elrejtett kincs a közeledbe
 /events wild-hunt          # kóborló elit fenevad (Vad Hajsza) idézése
+/events abundance          # Bőség-idő (a vérhold pozitív ellenpárja)
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```
@@ -358,6 +359,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       feltáratlanul eltűnik. A vanilla láda-GUI **nem** nyílik meg.
 - [ ] **Vad Hajsza** (`/events wild-hunt`): megnevezett, glowing elit fenevad; leölve ritka loot hullik
       + broadcast a vadászról; ha `expire-minutes`-en belül nem ölik meg, elszökik (broadcast).
+- [ ] **Bőség-idő** (`/events abundance`): broadcast; a termés gyorsabban nő, szaporodáskor néha iker,
+      kevesebb természetes szörny-spawn, gyengéd regeneráció; a végén záró broadcast. Terephez nem nyúl.
 
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,

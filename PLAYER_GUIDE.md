@@ -505,11 +505,15 @@ Pokoli Behemót) kóborol be egy játékos közelébe — kóborló mini-fenyege
 világbossok között. Aki **leteríti**, **ritka loot-ot** kap (nyersanyag, nem pénz); ha időben senki
 nem öli meg, eltűnik a vadonban.
 
+### Bőség-idő 🌱
+A vérhold **pozitív ellenpárja**: egy nyugodt időablak, amikor a **termés gyorsabban nő**, az
+**állatok néha ikret ellenek**, **kevesebb szörny** spawnol, és **gyengéd regeneráció** leng
+mindenkin. Építeni, farmolni, feltöltődni való — a béke szigete a háború közepén.
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
-kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` — hangulat-
-esemény • `/events gathering` — gyűjtögető buff-ablak • `/events treasure` — kincs elrejtése •
-`/events wild-hunt` — Vad Hajsza indítása.)
+kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
+gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` — Bőség-idő.)
 
 ---
 

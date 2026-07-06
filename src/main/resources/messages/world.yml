@@ -24,6 +24,8 @@ messages:
   events-treasure-failed: '&7Nem sikerült (már van elrejtett kincs, vagy nincs online játékos).'
   events-wildhunt-started: '&4Vad Hajsza elindítva!'
   events-wildhunt-failed: '&7Nem sikerült (már kóborol egy fenevad, vagy nincs online játékos).'
+  events-abundance-started: '&aBőség-idő elindítva!'
+  events-abundance-already: '&7Már tart egy Bőség-idő.'
   events-intro-replayed: '&aIntro lejátszva: &f%s'
   events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
   events-invasion-started: '&cInvázió elindítva!'
@@ -54,6 +56,8 @@ messages:
   wild-hunt-started: '&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz, ha le tudod teríteni!'
   wild-hunt-slain: '&a🏹 {player} leterítette a Vad Hajsza fenevadját — a ritka zsákmány az övé!'
   wild-hunt-escaped: '&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve.'
+  abundance-start: '&a🌱 BŐSÉG-IDŐ! A termés virul, az állatok szaporák, a szörnyek csendesebbek — egy pillanatnyi béke.'
+  abundance-end: '&7🌱 A Bőség-idő elmúlt — a világ visszatér a rendes kerékvágásba.'
   invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>
