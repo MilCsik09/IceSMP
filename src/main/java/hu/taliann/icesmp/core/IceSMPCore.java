@@ -81,6 +81,7 @@ import hu.taliann.icesmp.listeners.TheftListener;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.ConfigValidator;
 import hu.taliann.icesmp.managers.ShopManager;
 import hu.taliann.icesmp.managers.CaravanManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
@@ -371,6 +372,9 @@ public final class IceSMPCore {
      */
     public void enable() {
         configManager.load();
+        // Surface admin typos (bad material/currency names, out-of-range percents, negative
+        // durations) as clear log warnings — never blocks startup, only reports.
+        ConfigValidator.validate(configManager, plugin.getLogger());
         messageManager.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();

@@ -80,3 +80,6 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   config-vezérelt. Fordítás-ellenőrzés minden változás után.
 - Player-facing szöveg magyarul; a guide-ok (PLAYER_GUIDE + docs/player-guide + PLAYTEST)
   minden játékmenet-változással együtt frissülnek.
+- Betöltéskor a `ConfigValidator` konvenció-alapon ellenőrzi a configot (material/currency-nevek,
+  százalék-tartomány, nem-negatív időtartamok) — az admin-elgépelések tiszta log-figyelmeztetésként
+  jelennek meg, nem némán az alapértékre esve vissza.
