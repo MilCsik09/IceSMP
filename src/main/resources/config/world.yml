@@ -117,3 +117,21 @@ ambient-events:
     spectral-wanderers: true
     animal-migration: true
     fireflies: true
+
+# ===== Gyűjtögető buff-események =====
+# Időszakos, szerver-szintű bónusz-ablakok, amelyek a hétköznapi gyűjtögetést
+# jutalmazzák — kizárólag nyersanyag/XP, SOSEM valuta. Egyszerre egy ablak fut:
+# bányász-láz (érc-blokk bónusz drop), termés-óra (beérett termés bónusz drop),
+# halászati láz (dupla fogás esély), tapasztalat-óra (XP-szorzó). Admin: /events gathering.
+gathering-buffs:
+  enabled: true
+  interval-minutes: 60           # két ablak közti idő
+  duration-minutes: 15           # egy ablak hossza
+  chance-percent: 50             # esély, hogy az intervallum végén tényleg megnyílik
+  bonus-drop-chance-percent: 50  # bányász/termés/halászati bónusz drop esélye blokként/fogásonként
+  xp-multiplier: 2.0             # a tapasztalat-óra XP-szorzója
+  types:
+    mining-rush: true
+    harvest-hour: true
+    fishing-frenzy: true
+    xp-hour: true

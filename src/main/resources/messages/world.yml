@@ -18,6 +18,8 @@ messages:
   events-caravan-usage: '&cHasználat: /events caravan [arrive|depart]'
   events-ambient-fired: '&bHangulat-esemény kiváltva!'
   events-ambient-none: '&7Nincs engedélyezett hangulat-esemény a configban.'
+  events-gathering-fired: '&eGyűjtögető buff-ablak megnyitva!'
+  events-gathering-none: '&7Már fut egy buff-ablak, vagy egy sincs engedélyezve.'
   events-intro-replayed: '&aIntro lejátszva: &f%s'
   events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
   events-invasion-started: '&cInvázió elindítva!'
@@ -34,6 +36,14 @@ messages:
   caravan-arrived: <gold>✦ KERESKEDŐ-KARAVÁN érkezett a(z) {world} világba ({x}, {y}, {z}) — {minutes} percig marad! Kattints rá a ritka portékákért.</gold>
   caravan-closed: '&7A karaván már bezárta a standját.'
   caravan-departed: '&6✦ A kereskedő-karaván összepakolt és továbbállt. Legközelebb máshol bukkan fel.'
+  gathering-mining-rush-start: '&e⛏ BÁNYÁSZ-LÁZ! A következő {minutes} percben az érc-blokkok bónusz nyersanyagot adhatnak.'
+  gathering-mining-rush-end: '&7⛏ A bányász-láz alábbhagyott.'
+  gathering-harvest-hour-start: '&a🌾 TERMÉS-ÓRA! A következő {minutes} percben a beérett termés bónusz hozamot adhat.'
+  gathering-harvest-hour-end: '&7🌾 A termés-óra véget ért.'
+  gathering-fishing-frenzy-start: '&b🎣 HALÁSZATI LÁZ! A következő {minutes} percben nagyobb a víz zsákmánya.'
+  gathering-fishing-frenzy-end: '&7🎣 A halászati láz elcsendesedett.'
+  gathering-xp-hour-start: '&d✦ TAPASZTALAT-ÓRA! A következő {minutes} percben több XP-t kapsz mindenből.'
+  gathering-xp-hour-end: '&7✦ A tapasztalat-óra lejárt.'
   invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>

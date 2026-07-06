@@ -487,10 +487,16 @@ Időnként apró, **légköri események** teszik élőbbé a világot (nem befo
 irányával), **köd**, **bolyongó szellemek**, **szentjánosbogarak**, valamint **állat-vándorlás**
 (egy passzív állatcsorda vándorol be a közeledbe — élelemforrás, nem pénz).
 
+### Gyűjtögető buff-ablakok ⛏🎣
+Időnként megnyílik egy **szerver-szintű bónusz-ablak** (kb. 15 percre) — csak nyersanyag/XP, sosem
+pénz: **bányász-láz** (érc-blokk bónusz drop), **termés-óra** (beérett termés bónusz hozam),
+**halászati láz** (esély dupla fogásra), **tapasztalat-óra** (XP-szorzó mindenből). Egy broadcast
+jelzi a kezdetét és a végét — ilyenkor érdemes rákapcsolni a megfelelő tevékenységre!
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` — hangulat-
-esemény kiváltása.)
+esemény • `/events gathering` — gyűjtögető buff-ablak kiváltása.)
 
 ---
 
