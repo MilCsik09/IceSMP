@@ -73,6 +73,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events abundance          # Bőség-idő (a vérhold pozitív ellenpárja)
 /events challenge          # kollektív szerver-kihívás indítása
 /events escort             # karaván-kíséret (konvoj + szörny-hullámok)
+/events meteor             # meteor-becsapódás (kráter + kibányászható érc)
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```
@@ -370,6 +371,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ~45 mp-enként szörny-hullám támadja a konvojt; célba érve loot hullik + a karaván-bolt bónusz-készlete
       (`bonus-items`) egy időre elérhető; a konvoj halálakor/lejáratkor bukás. **Terep-teszt:** a kíséret-mob
       robbanása (ha van) **nem tör blokkot**; a konvoj/mobok reload után nem maradnak ott (nem perzisztens).
+- [ ] **Meteor** (`/events meteor`): kráter jelenik meg érc-blokkokkal + broadcast a koordinátákkal; az érc
+      kibányászható (valódi drop). **Terep-teszt (fontos):** `expire-minutes` után VAGY `/reload`/leállítás
+      után a kráter **teljesen visszaáll** az eredeti terepre; `avoid-territory: true` mellett **nem** csapódik
+      claimelt területre (állj egy `/territory`-be és nézd, hogy máshova kerül).
 
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,

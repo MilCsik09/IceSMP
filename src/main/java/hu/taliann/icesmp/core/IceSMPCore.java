@@ -91,6 +91,7 @@ import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.AbundanceManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
 import hu.taliann.icesmp.managers.EscortManager;
+import hu.taliann.icesmp.managers.MeteorEventManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -208,6 +209,7 @@ public final class IceSMPCore {
     private final AbundanceManager abundanceManager;
     private final ServerChallengeManager serverChallengeManager;
     private final EscortManager escortManager;
+    private final MeteorEventManager meteorEventManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -287,6 +289,7 @@ public final class IceSMPCore {
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
+        this.meteorEventManager = new MeteorEventManager(plugin, configManager, territoryManager, messageManager);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
@@ -515,6 +518,7 @@ public final class IceSMPCore {
         treasureEventManager.shutdown();
         wildHuntManager.shutdown();
         escortManager.shutdown();
+        meteorEventManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -557,6 +561,7 @@ public final class IceSMPCore {
                     abundanceManager.tick();
                     serverChallengeManager.tick();
                     escortManager.tick();
+                    meteorEventManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -653,7 +658,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));

@@ -245,3 +245,21 @@ escort:
     - "EXPERIENCE_BOTTLE:8:16"
     - "NETHERITE_SCRAP:1:2"
     - "GOLDEN_APPLE:2:4"
+
+# ===== Meteor-becsapódás (kráter + kibányászható érc) =====
+# Időnként egy meteor csapódik be a vadonba: egy kis kráter marad, benne ritka,
+# kibányászható érc-blokkokkal, amiért a játékosok versengenek, míg el nem enyészik.
+# TEREP-VÉDELEM: a meteor NEM robban — LEHELYEZI a krátert, és MINDEN érintett blokk
+# eredeti állapotát elmenti, majd lejáratkor (és leálláskor) VISSZAÁLLÍTJA. Ráadásul
+# frakció-területen kívülre irányítja magát. Így csak az marad, amit a játékosok
+# kibányásznak, mielőtt a kráter elenyészik.
+meteor:
+  enabled: true
+  interval-minutes: 85       # két meteor közti idő
+  expire-minutes: 10         # ennyi idő után a kráter visszaáll az eredeti terepre
+  chance-percent: 35         # esély, hogy az intervallum végén tényleg becsapódik
+  spawn-radius: 90           # ilyen sugarú körben a horgony-játékos körül
+  crater-radius: 3           # a kráter sugara (blokk) — kicsi, hogy gyors legyen a visszaállítás
+  crater-depth: 2            # a kráter mélysége a közepén
+  ore-chance: 0.45           # a kráter-közép blokkjai ekkora eséllyel érc (különben díszes bélés)
+  avoid-territory: true      # ne csapódjon be claimelt frakció-területre

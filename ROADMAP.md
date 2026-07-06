@@ -20,11 +20,19 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 
 ### Játékmenet
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
-  bekerült a **hangulat-események** rendszere (északi fény, hulló csillag, köd, szellemek,
-  szentjánosbogarak, állat-vándorlás), a **gyűjtögető buff-ablakok** (bányász-láz / termés-óra /
-  halászati láz / XP-óra), a **felfedező kincs-esemény** (megjelölt loot-láda, első megtaláló viszi)
-  és a **Vad Hajsza** (kóborló elit fenevad ritka loottal). Mind config-vezérelt és pénz-semleges
-  (tárgy/effekt/XP, sosem valuta). További ötlet: heti/eseményhez kötött rotáció, karaván-kíséret.
+  bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),
+  és mind a `/events <típus>` admin-triggerrel is kiváltható:
+  - **hangulat-események** (északi fény, hulló csillag, köd, szellemek, szentjánosbogarak, állat-vándorlás),
+  - **gyűjtögető buff-ablakok** (bányász-láz / termés-óra / halászati láz / XP-óra),
+  - **felfedező kincs-esemény** (megjelölt loot-láda, első megtaláló viszi),
+  - **Vad Hajsza** (kóborló elit fenevad ritka loottal),
+  - **Bőség-idő** (a vérhold pozitív ellenpárja: gyorsabb termés, iker-állatok, csendesebb éj, regen),
+  - **kollektív szerver-kihívás** (közös cél boss-baron → mindenki jutalma),
+  - **karaván-kíséret** (kooperatív escort: konvoj védése hullámok ellen → loot + bónusz-bolt),
+  - **meteor-becsapódás** (kráter kibányászható érccel).
+  **Terep-szabály:** a világpusztító események sosem grief-elnek — nincs blokk-romboló robbanás, a meteor
+  frakció-területen kívülre irányít és lejáratkor/leálláskor visszaállítja az eredeti terepet.
+  További ötlet: heti/eseményhez kötött rotáció, vihar / aranyláz-zóna / napfogyatkozás.
 - 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
   pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
   több egyidejű raid, védő-oldali erődítés-mechanika.

@@ -523,11 +523,17 @@ míg célba ér. Ha odaér, a **zsákmány a célnál** hullik, és a **keresked
 bővebb (ritka) készlettel árul**. Ha a konvoj elesik vagy lejár az idő, a szállítmány elvész. (A
 kíséret-mobok robbanása **sosem rongálja a terepet**.)
 
+### Meteor-becsapódás ☄
+Időnként egy **meteor** csapódik be a vadonba (a broadcast megadja a helyét), és egy kis **kráter**
+marad, tele **ritka, kibányászható érccel** (gyémánt, smaragd, ősi törmelék…). Siess: a kráter csak
+egy ideig marad, aztán **magától visszaáll az eredeti terep** — amit addig kibányászol, a tiéd. A
+meteor **sosem csapódik claimelt frakció-területre**, és **nem rombolja maradandóan** a világot.
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
 gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
-`/events escort`.)
+`/events escort` • `/events meteor`.)
 
 ---
 
