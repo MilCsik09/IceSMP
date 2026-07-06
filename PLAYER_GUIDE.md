@@ -81,6 +81,10 @@ Kivétel: **raid alatt** a **jelentkezett harcosok** (`/faction raid join`) köz
 ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett, arra raid alatt
 is a békeidős szabályok élnek.
 
+**Fejvadászat:** aki elér **3 bűnt**, az **körözötté** válik — a fejére **fejpénz** kerül (a
+`/bounty` lista mutatja). Aki megöl egy körözöttet, **megkapja a fejpénzt** és **nem kap érte
+bűnt** (igazságos kivégzés); a bűnöző bűnszámlálója nullázódik.
+
 ---
 
 ## 3. Gazdaság ✅

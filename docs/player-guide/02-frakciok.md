@@ -41,6 +41,19 @@ A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.
 > A bűnösöket egy különleges relikvia, a **Mételytépő** is megjelölheti és megbüntetheti —
 > erről a [Relikviák](09-relikviak.md) oldalon olvashatsz.
 
+## Fejvadászat (körözés) 💰
+
+Aki elér egy bizonyos bűnszámot (alapból **3 bűn**), az **körözötté** válik — a fejére
+**fejpénz** kerül (a bűnök száma × egy fix összeg, alapból Semleges tokenben). A `/bounty`
+paranccsal megnézheted a körözési listát: ki körözött és mennyit ér a feje.
+
+Ha **megölsz egy körözött bűnözőt**:
+- **megkapod a fejpénzt** (a bankodba);
+- **nem kapsz érte bűnt** — ez igazságos kivégzés, nem gyilkosság;
+- a bűnöző **bűnszámlálója nullázódik** (a bűnös-jelölése viszont megmarad).
+
+Így a bűnözés kockázatos: minél többet vétkezel, annál nagyobb célpont vagy a fejvadászoknak.
+
 ## Frakció-viszonyok (reputáció)
 
 A frakciók **barátok vagy ellenségek** lehetnek egymással (a szerver állítja be, és raid alatt

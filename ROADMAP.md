@@ -23,7 +23,8 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
   több egyidejű raid, védő-oldali erődítés-mechanika.
 - 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
-  konténer-fosztás +1, frakciótárs ölése +2); további ötlet: bűn-alapú fejvadász-jutalom.
+  konténer-fosztás +1, frakciótárs ölése +2). A **bűn-alapú fejvadász-rendszer** (fejpénz a
+  körözöttekre, `/bounty` lista, igazságos kivégzés bűn nélkül) is **kész**.
 - 🔨 **Kaszt-questek felturbózása:** a plugin-oldal **kész** (TALK_TO_NPC + PARKOUR_TRIAL
   objektívák, FancyNpcs-bridge, 4 kaszt mester-lánca configban) — a mester-NPC-k és
   próbapályák kihelyezése a szerver-csapatra vár; utána jöhet a többi 9 kaszt lánca (config).

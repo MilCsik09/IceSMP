@@ -45,6 +45,16 @@ factions:
       enabled: true
       weight: 1
       cooldown-seconds: 60
+    # Fejvadászat: a min-sins bűnt elért játékos KÖRÖZÖTT — a fejére fejpénz kerül
+    # (bűnök száma * reward-per-sin, a megadott valutában). Aki megöli, megkapja a
+    # fejpénzt ÉS nem kap bűnt érte (igazságos kivégzés); a körözött bűnszámlálója
+    # nullázódik (clear-sins-on-death), a bűnös-jelölés viszont marad. Lista: /bounty.
+    bounty:
+      enabled: true
+      min-sins: 3
+      reward-per-sin: 25.0
+      currency: "NEUTRAL"
+      clear-sins-on-death: true
   # ===== Királyok és választás =====
   # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
   # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.

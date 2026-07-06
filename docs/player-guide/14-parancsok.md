@@ -45,6 +45,7 @@ jelenti, hogy **elhagyható**.
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
 | `/quest log` | `gui`, `naplo` | **Küldetésnapló GUI** — Aktív / Felvehető / Teljesített fülek, lapozható |
 | `/souls` / `/souls champion` | `soul`, `lelek` | Lélekszilánk (csak Nekromanta) |
+| `/bounty` | `fejvadasz`, `korozes` | Körözési lista: ki körözött és mennyit ér a feje |
 | `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: cooldown-csökkentés valutáért |
 | `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a katalizátoron* is megnyitja. |
 | `/events season` / `/events blood-moon` | `event`, `esemeny` | Világesemények állása |

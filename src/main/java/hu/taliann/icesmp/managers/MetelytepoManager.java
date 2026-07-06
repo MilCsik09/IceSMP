@@ -242,6 +242,19 @@ public final class MetelytepoManager implements PlayerStateCleanup {
     }
 
     /**
+     * Resets the sin counter to zero while KEEPING the sinner mark (and dark
+     * pact). Used by the bounty system: an executed criminal "paid" with their
+     * life, so their bounty resets, but they remain a marked sinner.
+     *
+     * @param player the executed player
+     */
+    public void resetSinCount(final Player player) {
+        if (player != null) {
+            player.getPersistentDataContainer().set(sinCountKey, PersistentDataType.INTEGER, 0);
+        }
+    }
+
+    /**
      * Seals the dark pact on a player who joined the Dark faction:
      * the sinner mark becomes permanent and can never be cleansed again.
      *

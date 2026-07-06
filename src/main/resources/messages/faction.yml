@@ -1,5 +1,10 @@
 # IceSMP üzenetek — faction alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
+  bounty-claimed: '<gold>💰 {hunter} beváltotta a fejpénzt {target} fejére: {reward} {currency}!</gold>'
+  bounty-disabled: '&7A fejvadász-rendszer ki van kapcsolva.'
+  bounty-header: '&6💰 Körözési lista (fejpénzek):'
+  bounty-line: '&e%s &7- bűnök: &f%s &7| fejpénz: &f%s %s'
+  bounty-none: '&7Jelenleg nincs körözött játékos a szerveren.'
   faction-already-member: '&cMár tagja vagy ennek a frakciónak!'
   faction-change-success: '&aFrakcióváltás sikeres!'
   faction-dark-pact-sealed: '&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad.'

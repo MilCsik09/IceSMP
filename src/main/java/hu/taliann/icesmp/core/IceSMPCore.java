@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.core;
 
 import hu.taliann.icesmp.commands.BankCommand;
+import hu.taliann.icesmp.commands.BountyCommand;
 import hu.taliann.icesmp.commands.CurrencyCommand;
 import hu.taliann.icesmp.commands.DailyCommand;
 import hu.taliann.icesmp.commands.FactionCommand;
@@ -593,6 +594,7 @@ public final class IceSMPCore {
         plugin.registerCommand("leaderboard", "Ranglisták (szint, vagyon, raid-kill)", List.of("lb", "top", "rangsor"), new LeaderboardCommand(commandMenuContext, messageManager));
         plugin.registerCommand("profile", "Karakterlap — kaszt, spec, szakma, talent menük", List.of("karakter", "char", "status"), new ProfileCommand(characterMenuContext, messageManager));
         plugin.registerCommand("sinner", "Bűnös állapot kezelése (admin)", List.of(), new SinnerCommand(plugin, metelytepoManager, messageManager));
+        plugin.registerCommand("bounty", "Körözési lista (fejpénzek)", List.of("fejvadasz", "korozes"), new BountyCommand(metelytepoManager, currencyManager, configManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(relicManager, messageManager));
         plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
         plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
@@ -648,7 +650,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new PetCombatListener(petManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
-        pluginManager.registerEvents(new SinListener(plugin, metelytepoManager, raidManager, factionManager, statsManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SinListener(plugin, metelytepoManager, raidManager, factionManager, statsManager, currencyManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new TheftListener(metelytepoManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

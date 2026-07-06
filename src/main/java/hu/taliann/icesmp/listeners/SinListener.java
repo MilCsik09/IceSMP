@@ -1,12 +1,15 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -31,17 +34,20 @@ public final class SinListener implements Listener {
     private final RaidManager raidManager;
     private final FactionManager factionManager;
     private final StatsManager statsManager;
+    private final CurrencyManager currencyManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
     public SinListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager, final RaidManager raidManager,
                        final FactionManager factionManager, final StatsManager statsManager,
-                       final ConfigManager configManager, final MessageManager messageManager) {
+                       final CurrencyManager currencyManager, final ConfigManager configManager,
+                       final MessageManager messageManager) {
         this.plugin = plugin;
         this.metelytepoManager = metelytepoManager;
         this.raidManager = raidManager;
         this.factionManager = factionManager;
         this.statsManager = statsManager;
+        this.currencyManager = currencyManager;
         this.configManager = configManager;
         this.messageManager = messageManager;
     }
@@ -74,6 +80,38 @@ public final class SinListener implements Listener {
                 ));
             }, null);
             return;
+        }
+
+        // Bounty hunter rule (ROADMAP "Bűn-alapú fejvadász"): a high-sin victim carries a
+        // bounty. Executing them is a justified kill — the hunter is PAID and gains NO sin,
+        // and the criminal's bounty resets (they paid with their life). The sin count is
+        // read on the victim's own region thread (this event runs there); the currency
+        // payout is UUID-keyed (safe off-thread) and the broadcast names the reward.
+        if (configManager.getBoolean("factions.sins.bounty.enabled", true)) {
+            final int victimSins = metelytepoManager.getSinCount(victim);
+            final int minSins = Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
+            if (victimSins >= minSins) {
+                final double reward = victimSins
+                        * Math.max(0.0D, configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D));
+                final CurrencyType currency = resolveBountyCurrency();
+                if (configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
+                    metelytepoManager.resetSinCount(victim);
+                }
+                if (reward > 0.0D && currency != null) {
+                    currencyManager.addToBalance(killer.getUniqueId(), currency, reward);
+                }
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        "bounty-claimed",
+                        "<gold>💰 {hunter} beváltotta a fejpénzt {target} fejére: {reward} {currency}!</gold>",
+                        Map.of(
+                                "hunter", killer.getName(),
+                                "target", victim.getName(),
+                                "reward", currencyManager.formatBalance(reward),
+                                "currency", currency == null ? "?" : currency.getDisplayName()
+                        )
+                ));
+                return;
+            }
         }
 
         // Betrayal (ROADMAP "Bűn-rendszer bővítés"): killing your own faction member weighs
@@ -109,5 +147,12 @@ public final class SinListener implements Listener {
                     Map.of("count", String.valueOf(sinCount), "threshold", String.valueOf(threshold))
             ));
         }, null);
+    }
+
+    /** The currency bounties are paid in (config; defaults to Neutral tokens). */
+    private CurrencyType resolveBountyCurrency() {
+        final CurrencyType configured = CurrencyType.fromInput(
+                configManager.getString("factions.sins.bounty.currency", "NEUTRAL"));
+        return configured == null ? CurrencyType.fromFactionType(FactionType.NEUTRAL) : configured;
     }
 }

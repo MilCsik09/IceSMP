@@ -256,6 +256,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       claimeletlen vadonban nincs bűn; virtuális GUI-k (piac, menük) nem érintettek.
 - [ ] **Lopás-kivételek:** raid-háború alatt a hadviselő fél területén a zsákmányolás nem bűn;
       a `icesmp.admin.territory.bypass` joggal szintén nem.
+- [ ] **Fejvadászat:** vigyél fel egy játékost 3+ bűnre (`/sinner <j> add`) → megjelenik a `/bounty`
+      listán fejpénzzel. Öld meg → a gyilkos MEGKAPJA a fejpénzt (bank), NEM kap érte bűnt, a
+      célpont bűnszámlálója 0-ra áll (de bűnös marad); broadcast jelzi. 3 bűn alatt sima gyilkosság.
 - [ ] **Mester-lánc (NPC):** rakj ki egy FancyNpcs NPC-t `harcos_mester` néven; a `warrior_trial`
       után vedd fel a `warrior_mentor` questet, katt az NPC-re → a mentor-quest teljesül ÉS az NPC
       azonnal ADJA a `warrior_master_trial`-t (❕ üzenet); az a `harcos_proba` pálya lefutásával
