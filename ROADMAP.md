@@ -44,7 +44,8 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   (Címek/rangok NEM — ütközne a szerver rang-pluginjaival.)
 
 ### Gazdaság
-- 💡 **Bank-kamat / kölcsön**, **frakció-bolt NPC-k** (money sink), **kereskedő-karaván esemény**.
+- 💡 **Bank-kamat / kölcsön**, **kereskedő-karaván esemény**. (A **frakció-bolt NPC-k** money
+  sink **kész**: FancyNpcs-hez kötött, config-vezérelt boltok, jobb-katt vásárló GUI, égetett ár.)
 - 💡 **Aukció-finomítás:** kézi licit-összeg megadása (most a GUI mindig a minimum következő
   licitet teszi), buy-out ár. (A licit + lejárat + túllicit-visszafizetés alap **kész**.)
 

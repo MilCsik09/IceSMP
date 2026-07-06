@@ -68,6 +68,9 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
 - **Kereslet-sokk** (időnként): egy véletlen valuta értéke átmenetileg **megugrik** (x1,2–1,6) —
   ezt egy üzenet jelzi mindenkinek. Jó alkalom kereskedni!
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
+- **Frakció-boltok:** a fővárosokban álló **bolt-NPC-kre jobb-kattintva** egy vásárló felület
+  nyílik — fix áron vehetsz alapanyagot/fogyóeszközt a banki egyenlegedből. A kifizetett pénz
+  **eltűnik** a gazdaságból (money sink). Egyes boltok csak a saját frakciód tagjainak árulnak.
 
 ## Lélekkő — a veszélyes vidékek jutalma
 

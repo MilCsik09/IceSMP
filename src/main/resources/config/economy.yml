@@ -74,3 +74,32 @@ market:
     default-duration-hours: 24
     max-duration-hours: 72
     min-increment-percent: 10
+
+# ===== Frakció-boltok (NPC money sink) =====
+# Egy FancyNpcs NPC-hez kötött bolt: a szerver-csapat kirakja az NPC-t a lenti
+# belső névvel (/npc create altalanos_bolt), és jobb-katt megnyitja a vásárló
+# GUI-t. A vételár a banki egyenlegből megy és ELÉG (money sink — nem kerül
+# senkihez). A currency lehet konkrét valuta (RED/BLUE/NEUTRAL/DARK) vagy "OWN"
+# (a vásárló saját frakciója valutája). A faction: "ALL" = bárki vásárolhat,
+# vagy egy frakció-név = csak annak tagjai.
+faction-shops:
+  enabled: true
+  altalanos_bolt:
+    title: "Általános Bolt"
+    faction: "ALL"
+    items:
+      1:
+        material: "BREAD"
+        amount: 16
+        price: 20
+        currency: "OWN"
+      2:
+        material: "TORCH"
+        amount: 32
+        price: 15
+        currency: "OWN"
+      3:
+        material: "IRON_INGOT"
+        amount: 8
+        price: 60
+        currency: "OWN"

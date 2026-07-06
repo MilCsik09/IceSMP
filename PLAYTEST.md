@@ -207,6 +207,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Dinamikus árfolyam:** több valuta a szerveren → kevesebbet ér (`/currency rates`).
 - [ ] **Piac:** `/market sell <ár>` a kézben tartott tárgyra (max 5 tétel); `/market` vétel a bankból;
       `/market cancel` visszavon. Eladásnál ~10% „elég" (money sink).
+- [ ] **Frakció-bolt NPC:** rakj ki egy FancyNpcs NPC-t `altalanos_bolt` néven → jobb-katt megnyitja
+      a vásárló GUI-t; kattintás vesz (bankból fizet, a pénz ELÉG — money sink), tele táska a földre
+      dob. Elég fedezet híján hibaüzenet; `faction`-korlátozott boltban más frakciós tag nem vehet.
 - [ ] **Aukció:** `/market auction <ár> [óra]` indít; a GUI-ban kattintás licitál (bankból zárol);
       másik játékos túllicitál → az első **visszakapja** a zárolt licitet + üzenetet kap.
 - [ ] **Aukció-lejárat:** rövid (pl. 0.05 óra = 3 perc) aukció lejár → nyertesnél a tárgy, eladónál

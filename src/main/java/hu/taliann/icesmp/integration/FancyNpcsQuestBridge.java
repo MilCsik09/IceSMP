@@ -49,6 +49,12 @@ public final class FancyNpcsQuestBridge {
     private final Method npcGetData;
     private final Method dataGetName;
     private final Method dataGetLocation;
+    private java.util.function.BiConsumer<Player, String> interactHook;
+
+    /** Registers an extra (player, npcName) consumer fired on every NPC interaction (e.g. shops). */
+    public void setInteractHook(final java.util.function.BiConsumer<Player, String> hook) {
+        this.interactHook = hook;
+    }
 
     private FancyNpcsQuestBridge(final JavaPlugin plugin, final ConfigManager configManager,
                                  final QuestManager questManager) throws ReflectiveOperationException {
@@ -119,6 +125,11 @@ public final class FancyNpcsQuestBridge {
                             // so a master completes "talk to me" and gives the trial in one click.
                             questManager.handleNpcInteract(player, npcName);
                             questManager.acceptFromNpc(player, npcName);
+                            // Extra interaction consumers (e.g. faction shops) run last; the event
+                            // is already on the player's region thread, so this is Folia-safe.
+                            if (interactHook != null) {
+                                interactHook.accept(player, npcName);
+                            }
                         }
                     } catch (final ReflectiveOperationException exception) {
                         plugin.getLogger().warning("FancyNpcs quest-bridge hiba: " + exception.getMessage());

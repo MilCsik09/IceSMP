@@ -80,6 +80,7 @@ import hu.taliann.icesmp.listeners.TheftListener;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.ShopManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -186,6 +187,7 @@ public final class IceSMPCore {
     private final MarketManager marketManager;
     private final QuestManager questManager;
     private final CommunityGoalManager communityGoalManager;
+    private final ShopManager shopManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -255,6 +257,7 @@ public final class IceSMPCore {
                 currencyManager, factionManager, metelytepoManager, seasonManager);
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager);
+        this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, metelytepoManager, questManager);
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
@@ -411,8 +414,14 @@ public final class IceSMPCore {
         }
         try {
             npcQuestBridge = hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(plugin, configManager, questManager);
+            // Faction shop NPCs: right-clicking a shop NPC opens its buy GUI (money sink).
+            npcQuestBridge.setInteractHook((player, npcName) -> {
+                if (shopManager.hasShop(npcName)) {
+                    hu.taliann.icesmp.gui.ShopGUI.open(player, shopManager, currencyManager, messageManager, npcName);
+                }
+            });
             scheduleQuestNpcMarkers();
-            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek).");
+            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
                     + throwable.getMessage());
@@ -631,6 +640,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ShopListener(shopManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
