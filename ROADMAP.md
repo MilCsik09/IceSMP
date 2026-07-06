@@ -33,7 +33,8 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   játékon-belüli admin-szerkesztő (`/quest admin`), és **frakció-közösségi célok** (közös
   számláló → kassza-jutalom + buff). További ötlet: quest-lánc-térkép GUI, heti/eseményhez
   kötött rotáció.
-- ⬜ **Szezonliga jutalom:** a győztes frakció kozmetikai/relikvia-jutalma a szezon végén.
+- 💡 **Szezonliga jutalom-bővítés:** a szezon-végi győztes-jutalom **kész** (kassza + tagoknak
+  buff/tárgy/tűzijáték); további ötlet: egyedi kozmetikai relikvia vagy szezon-emléktárgy.
 - 💡 **Frakció-diplomácia:** szövetség/békekötés parancsok a királyoknak — 3 királysággal a
   szövetség-tér minimális (egyetlen 2v1 kapcsoló), ezért csak akkor éri meg, ha valaha
   több frakció / al-klán rendszer lesz. (A statikus viszonyok + raid-ellenségesség kész.)

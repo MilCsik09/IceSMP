@@ -44,8 +44,12 @@ telegrafált földcsapással támad. Veszélyes, de a legyőzésük **több kasz
 ## Szezonális liga 🏆
 
 A frakciók **pontot gyűjtenek** a **raid-** és **világboss-győzelmekből**. A szezon végén
-(alapból 60 nap) a **vezető frakció kasszája jutalmat kap**, és a pontok lenullázódnak — kezdődik
-az új szezon. Az aktuális állást a `/events season` mutatja.
+(alapból 60 nap) a **vezető frakció** győz:
+- a **frakciókassza** nagy jutalmat kap;
+- a győztes frakció **online tagjai** győzelmi **buffot** (Erő + Regeneráció + Falu Hőse) és
+  **tárgy-jutalmat** (alapból gyémánt + aranyalma) kapnak, egy ünneplő **tűzijátékkal**;
+
+majd a pontok lenullázódnak — kezdődik az új szezon. Az aktuális állást a `/events season` mutatja.
 
 ## Bemutató (intro)
 

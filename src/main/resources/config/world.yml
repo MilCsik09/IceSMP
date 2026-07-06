@@ -69,10 +69,18 @@ world-events:
     mini-boss-level-bonus: 6   # a horda bajnoka ennyivel magasabb szintű a hullámnál
     champion-slam-damage: 5.0  # a bajnok ~6 mp-enkénti telegrafált földcsapásának sebzése
   # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
+  # A szezon végén a győztes frakció KASSZÁJA treasury-reward-ot kap, az online
+  # TAGJAI pedig győzelmi buffot + tárgy-jutalmat + ünneplő tűzijátékot.
   season:
     enabled: true
     length-days: 60
     treasury-reward: 1000.0
+    champion-buff-minutes: 30
+    champion-firework: true
+    # Tárgy-jutalom a bajnok frakció online tagjainak: "MATERIAL:DARAB" lista.
+    champion-reward-items:
+      - "DIAMOND:8"
+      - "GOLDEN_APPLE:4"
   # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
   intro:
     enabled: true

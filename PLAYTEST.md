@@ -315,6 +315,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Ostromágyú** (craftolható) csak aktív raid alatt sül el; terep-barát robbanás.
       ⚠️ **Folia:** célozz **távoli** pontra (másik régió) → a robbanás ott történik, konzol-hiba nélkül.
 - [ ] `/events season` mutatja a liga-pontokat; a szezon végén jutalom + reset.
+- [ ] **Szezon-győztes tagi jutalom:** a szezon lezárultakor a győztes frakció KASSZÁJA kapja a
+      treasury-reward-ot, az ONLINE TAGJAI pedig győzelmi buffot (Erő/Regen/Falu Hőse) + tárgy-jutalmat
+      (config: champion-reward-items) + ünneplő tűzijátékot; a más frakciós tagok semmit. Döntetlennél/
+      pont nélkül nincs bajnok, nincs tagi jutalom.
 
 ### 4.13 Világesemények ✅
 - [ ] **Mob-szintezés:** a spawntól távolodva erősebb, `[Lvl X]` nevű mobok; a névtábla csak ránézésre

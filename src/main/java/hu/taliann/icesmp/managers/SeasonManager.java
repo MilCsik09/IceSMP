@@ -7,9 +7,17 @@ import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,17 +37,20 @@ public final class SeasonManager implements PersistentStore {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final FactionTreasuryManager treasuryManager;
+    private final FactionManager factionManager;
     private final File storageFile;
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
 
     private volatile long seasonStart = System.currentTimeMillis();
 
     public SeasonManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final MessageManager messageManager, final FactionTreasuryManager treasuryManager) {
+                         final MessageManager messageManager, final FactionTreasuryManager treasuryManager,
+                         final FactionManager factionManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.treasuryManager = treasuryManager;
+        this.factionManager = factionManager;
         this.storageFile = new File(plugin.getDataFolder(), "season.yml");
         plugin.getDataFolder().mkdirs();
     }
@@ -149,10 +160,89 @@ public final class SeasonManager implements PersistentStore {
                             "reward", String.valueOf(reward)
                     )
             ));
+
+            // Member-facing spoils: the champion faction's online members get a victory buff,
+            // configured item rewards and a celebratory firework — each on their own region thread.
+            awardChampionMembers(champion);
         }
 
         points.clear();
         seasonStart = System.currentTimeMillis();
         save();
+    }
+
+    /**
+     * Grants the champion faction's online members their season spoils: a
+     * victory buff, any configured reward items, and a celebratory firework.
+     * Runs from tick() on the global scheduler, so every player mutation and
+     * the firework spawn hop to that player's own region thread (Folia).
+     *
+     * @param champion the winning faction
+     */
+    private void awardChampionMembers(final FactionType champion) {
+        final int buffMinutes = Math.max(0, configManager.getInt("world-events.season.champion-buff-minutes", 30));
+        final java.util.List<String> rewardItems = configManager.getStringList("world-events.season.champion-reward-items");
+        final boolean firework = configManager.getBoolean("world-events.season.champion-firework", true);
+
+        for (final Player online : Bukkit.getOnlinePlayers()) {
+            if (factionManager.getFaction(online.getUniqueId()) != champion) {
+                continue;
+            }
+
+            online.getScheduler().run(plugin, task -> {
+                if (buffMinutes > 0) {
+                    final int durationTicks = buffMinutes * 60 * 20;
+                    online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, 0, false, true, true));
+                    online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, 0, false, true, true));
+                    online.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, durationTicks, 0, false, true, true));
+                }
+
+                giveRewardItems(online, rewardItems);
+
+                if (firework) {
+                    spawnCelebrationFirework(online);
+                }
+
+                online.sendMessage(messageManager.getMessage(
+                        "season-champion-member",
+                        "<gold>🏆 A frakciód lett a szezon bajnoka — fogadd a győzelmi jutalmadat!</gold>"
+                ));
+            }, null);
+        }
+    }
+
+    /** Hands over the configured "MATERIAL:AMOUNT" reward items, dropping any overflow. */
+    private void giveRewardItems(final Player player, final java.util.List<String> rewardItems) {
+        for (final String entry : rewardItems) {
+            final String[] parts = entry.split(":");
+            final Material material = Material.matchMaterial(parts[0].trim());
+            if (material == null || material.isAir()) {
+                continue;
+            }
+            int amount = 1;
+            if (parts.length >= 2) {
+                try {
+                    amount = Math.max(1, Integer.parseInt(parts[1].trim()));
+                } catch (final NumberFormatException ignored) {
+                    // Malformed amount: give one.
+                }
+            }
+            final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(new ItemStack(material, amount));
+            leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+        }
+    }
+
+    /** Spawns a short celebratory firework at the player (must run on the player's region thread). */
+    private void spawnCelebrationFirework(final Player player) {
+        final Firework firework = player.getWorld().spawn(player.getLocation(), Firework.class);
+        final FireworkMeta meta = firework.getFireworkMeta();
+        meta.addEffect(org.bukkit.FireworkEffect.builder()
+                .withColor(Color.YELLOW, Color.WHITE)
+                .withFade(Color.ORANGE)
+                .with(org.bukkit.FireworkEffect.Type.BALL_LARGE)
+                .trail(true)
+                .build());
+        meta.setPower(1);
+        firework.setFireworkMeta(meta);
     }
 }

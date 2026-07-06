@@ -237,7 +237,7 @@ public final class IceSMPCore {
         this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
-        this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager);
+        this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
         this.territoryManager = new TerritoryManager(plugin);
         this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, territoryManager, messageManager);
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);

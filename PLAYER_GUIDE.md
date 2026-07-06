@@ -501,7 +501,8 @@ maximumáig).
 
 ### Szezonális liga 🏆
 A frakciók **raid- és világboss-győzelmekből pontot** gyűjtenek. A szezon végén (alapból 60 nap)
-a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás: `/events season`.
+a vezető frakció **kasszája jutalmat kap**, a győztes frakció **online tagjai** pedig **győzelmi
+buffot + tárgy-jutalmat + ünneplő tűzijátékot**; utána a pontok resetelnek. Állás: `/events season`.
 
 ---
 
@@ -577,7 +578,6 @@ Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rá
   keresés, a reputáció-árazás és a **licitálós aukciósház** már **kész**).
 - 🚧 **Intro:** a cím-szekvencia és a kamera-utaztatás **kész**, de a kameraút alapból ki van
   kapcsolva, amíg a szerver-csapat ki nem jelöli a waypointokat.
-- 🚧 **Szezonális liga:** működik a pontgyűjtés, de a győztes **kozmetikai relikvia-jutalma** még nincs.
 - ⏳ **Ultimate képességek** külön rendszerként (jelenleg a spec-ultik töltik be ezt a szerepet).
 - ⏳ **Világépítés:** a fővárosok, a Sötét romváros és a távolság-gyűrűk loot-asztalai a szerver
   csapatának feladata (a plugin a `/territory` paranccsal adja hozzá az eszközt a kijelölésükhöz).
