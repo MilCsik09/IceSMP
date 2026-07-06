@@ -86,7 +86,7 @@ public final class QuestManager implements PersistentStore {
     private final JobManager jobManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final SeasonManager seasonManager;
     private final NamespacedKey activeQuestsKey;
     private final NamespacedKey completedQuestsKey;
@@ -96,14 +96,14 @@ public final class QuestManager implements PersistentStore {
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
                         final CurrencyManager currencyManager, final FactionManager factionManager,
-                        final MetelytepoManager metelytepoManager, final SeasonManager seasonManager) {
+                        final SinManager sinManager, final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.jobManager = jobManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.seasonManager = seasonManager;
         this.activeQuestsKey = new NamespacedKey(plugin, "quests_active");
         this.completedQuestsKey = new NamespacedKey(plugin, "quests_completed");
@@ -1419,7 +1419,7 @@ public final class QuestManager implements PersistentStore {
 
         // The penance chain's final mercy: even the dark pact can be broken.
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
-            metelytepoManager.breakDarkPact(player);
+            sinManager.breakDarkPact(player);
         }
     }
 

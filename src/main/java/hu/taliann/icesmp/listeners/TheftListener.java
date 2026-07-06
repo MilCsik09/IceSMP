@@ -4,7 +4,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.FactionManager;
-import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -67,7 +67,7 @@ public final class TheftListener implements Listener {
             InventoryAction.HOTBAR_SWAP
     );
 
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final TerritoryManager territoryManager;
     private final FactionManager factionManager;
     private final RaidManager raidManager;
@@ -76,10 +76,10 @@ public final class TheftListener implements Listener {
     // Per-player, per-territory timestamp of the last recorded theft sin.
     private final Map<UUID, Map<String, Long>> lastTheftAt = new ConcurrentHashMap<>();
 
-    public TheftListener(final MetelytepoManager metelytepoManager, final TerritoryManager territoryManager,
+    public TheftListener(final SinManager sinManager, final TerritoryManager territoryManager,
                          final FactionManager factionManager, final RaidManager raidManager,
                          final ConfigManager configManager, final MessageManager messageManager) {
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.territoryManager = territoryManager;
         this.factionManager = factionManager;
         this.raidManager = raidManager;
@@ -150,7 +150,7 @@ public final class TheftListener implements Listener {
 
         final int weight = Math.max(1, configManager.getInt("factions.sins.theft.weight", 1));
         final int threshold = Math.max(0, configManager.getInt("factions.sins.exile-threshold", 4));
-        final int sinCount = metelytepoManager.addSin(player, weight);
+        final int sinCount = sinManager.addSin(player, weight);
         player.sendMessage(messageManager.getMessage(
                 "sinner.theft-recorded",
                 "<dark_purple>Bűnt követtél el: lopás a(z) {faction} frakció területén ({territory}). "

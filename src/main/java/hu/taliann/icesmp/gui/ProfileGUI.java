@@ -141,7 +141,7 @@ public final class ProfileGUI {
         final ProfessionSpecializationType profSpec = ctx.specializationManager().getProfessionSpecialization(target);
         lore.add(label("Szakma-spec", profSpec == null ? Component.text("nincs", NamedTextColor.GRAY) : profSpec.getDisplayName()));
 
-        final boolean sinner = ctx.metelytepoManager() != null && ctx.metelytepoManager().isSinner(target);
+        final boolean sinner = ctx.sinManager() != null && ctx.sinManager().isSinner(target);
         lore.add(label("Állapot", sinner
                 ? Component.text("Bűnös", NamedTextColor.RED)
                 : Component.text("Tiszta", NamedTextColor.GREEN)));

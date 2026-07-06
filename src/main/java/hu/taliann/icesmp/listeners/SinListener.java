@@ -5,7 +5,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
-import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  * Records sins for player murder and betrayal: the killer gains sin points,
- * and the MetelytepoManager exiles repeat offenders to the Dark faction once
+ * and the SinManager exiles repeat offenders to the Dark faction once
  * the configured threshold is reached. Killing a member of your OWN faction
  * is betrayal and weighs more than plain murder (Neutrals are a loose
  * association, so a Neutral-on-Neutral kill stays plain murder). Sanctioned
@@ -30,7 +30,7 @@ import java.util.Map;
 public final class SinListener implements Listener {
 
     private final JavaPlugin plugin;
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final RaidManager raidManager;
     private final FactionManager factionManager;
     private final StatsManager statsManager;
@@ -38,12 +38,12 @@ public final class SinListener implements Listener {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public SinListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager, final RaidManager raidManager,
+    public SinListener(final JavaPlugin plugin, final SinManager sinManager, final RaidManager raidManager,
                        final FactionManager factionManager, final StatsManager statsManager,
                        final CurrencyManager currencyManager, final ConfigManager configManager,
                        final MessageManager messageManager) {
         this.plugin = plugin;
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.raidManager = raidManager;
         this.factionManager = factionManager;
         this.statsManager = statsManager;
@@ -88,14 +88,14 @@ public final class SinListener implements Listener {
         // read on the victim's own region thread (this event runs there); the currency
         // payout is UUID-keyed (safe off-thread) and the broadcast names the reward.
         if (configManager.getBoolean("factions.sins.bounty.enabled", true)) {
-            final int victimSins = metelytepoManager.getSinCount(victim);
+            final int victimSins = sinManager.getSinCount(victim);
             final int minSins = Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
             if (victimSins >= minSins) {
                 final double reward = victimSins
                         * Math.max(0.0D, configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D));
                 final CurrencyType currency = resolveBountyCurrency();
                 if (configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
-                    metelytepoManager.resetSinCount(victim);
+                    sinManager.resetSinCount(victim);
                 }
                 if (reward > 0.0D && currency != null) {
                     currencyManager.addToBalance(killer.getUniqueId(), currency, reward);
@@ -140,7 +140,7 @@ public final class SinListener implements Listener {
 
         final int threshold = Math.max(0, configManager.getInt("factions.sins.exile-threshold", 4));
         killer.getScheduler().run(plugin, task -> {
-            final int sinCount = metelytepoManager.addSin(killer, weight);
+            final int sinCount = sinManager.addSin(killer, weight);
             killer.sendMessage(messageManager.getMessage(
                     messageKey,
                     messageDefault,

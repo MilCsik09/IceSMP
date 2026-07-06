@@ -2,7 +2,7 @@ package hu.taliann.icesmp.commands.faction;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.FactionManager;
-import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -12,13 +12,13 @@ import java.util.List;
 public final class FactionJoinSubcommand implements FactionSubcommand {
 
     private final FactionManager factionManager;
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final MessageManager messageManager;
 
-    public FactionJoinSubcommand(final FactionManager factionManager, final MetelytepoManager metelytepoManager,
+    public FactionJoinSubcommand(final FactionManager factionManager, final SinManager sinManager,
                                  final MessageManager messageManager) {
         this.factionManager = factionManager;
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.messageManager = messageManager;
     }
 
@@ -56,7 +56,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         }
 
         if (factionType == FactionType.DARK) {
-            if (!metelytepoManager.isSinner(player)) {
+            if (!sinManager.isSinner(player)) {
                 sender.sendMessage(messageManager.get(
                         "messages.faction-dark-sinners-only",
                         "&5A Sötét frakcióba csak bűnösök léphetnek be."
@@ -65,7 +65,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             }
 
             factionManager.setFaction(player.getUniqueId(), FactionType.DARK);
-            metelytepoManager.sealDarkPact(player);
+            sinManager.sealDarkPact(player);
             sender.sendMessage(messageManager.get(
                     "messages.faction-dark-pact-sealed",
                     "&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad."

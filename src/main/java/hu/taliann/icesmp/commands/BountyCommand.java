@@ -4,7 +4,7 @@ import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
-import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -25,14 +25,14 @@ import java.util.List;
  */
 public final class BountyCommand implements BasicCommand {
 
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final CurrencyManager currencyManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public BountyCommand(final MetelytepoManager metelytepoManager, final CurrencyManager currencyManager,
+    public BountyCommand(final SinManager sinManager, final CurrencyManager currencyManager,
                          final ConfigManager configManager, final MessageManager messageManager) {
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.currencyManager = currencyManager;
         this.configManager = configManager;
         this.messageManager = messageManager;
@@ -53,11 +53,11 @@ public final class BountyCommand implements BasicCommand {
 
         final List<Player> wanted = new ArrayList<>();
         for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (metelytepoManager.getSinCount(online) >= minSins) {
+            if (sinManager.getSinCount(online) >= minSins) {
                 wanted.add(online);
             }
         }
-        wanted.sort(Comparator.comparingInt(metelytepoManager::getSinCount).reversed());
+        wanted.sort(Comparator.comparingInt(sinManager::getSinCount).reversed());
 
         if (wanted.isEmpty()) {
             sender.sendMessage(messageManager.get("bounty-none", "&7Jelenleg nincs körözött játékos a szerveren."));
@@ -66,7 +66,7 @@ public final class BountyCommand implements BasicCommand {
 
         sender.sendMessage(messageManager.get("bounty-header", "&6💰 Körözési lista (fejpénzek):"));
         for (final Player target : wanted) {
-            final int sins = metelytepoManager.getSinCount(target);
+            final int sins = sinManager.getSinCount(target);
             sender.sendMessage(messageManager.get(
                     "bounty-line",
                     "&e%s &7- bűnök: &f%s &7| fejpénz: &f%s %s",
