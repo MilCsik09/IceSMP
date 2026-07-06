@@ -13,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -161,7 +160,8 @@ public final class TreasureEventManager {
         active.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, active.clone().add(0.5D, 1.0D, 0.5D), 24, 0.5D, 0.5D, 0.5D, 0.0D);
         active.getWorld().playSound(active, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
 
-        for (final ItemStack loot : rollLoot()) {
+        final int rolls = Math.max(1, configManager.getInt("treasure-events.rolls", 3));
+        for (final ItemStack loot : LootTable.roll(configManager, "treasure-events.loot", rolls)) {
             finder.getInventory().addItem(loot).values()
                     .forEach(left -> finder.getWorld().dropItemNaturally(finder.getLocation(), left));
         }
@@ -227,45 +227,6 @@ public final class TreasureEventManager {
                 // Already cancelled / region gone.
             }
         }
-    }
-
-    /** Rolls a random subset of the configured loot table into item stacks. */
-    private List<ItemStack> rollLoot() {
-        final List<String> table = configManager.getStringList("treasure-events.loot");
-        if (table.isEmpty()) {
-            return List.of();
-        }
-        final int rolls = Math.max(1, configManager.getInt("treasure-events.rolls", 3));
-        final List<ItemStack> loot = new ArrayList<>();
-        for (int i = 0; i < rolls; i++) {
-            final ItemStack stack = parseLootEntry(table.get(ThreadLocalRandom.current().nextInt(table.size())));
-            if (stack != null) {
-                loot.add(stack);
-            }
-        }
-        return loot;
-    }
-
-    /** Parses a {@code "MATERIAL"}, {@code "MATERIAL:COUNT"} or {@code "MATERIAL:MIN:MAX"} loot entry. */
-    private ItemStack parseLootEntry(final String entry) {
-        final String[] parts = entry.split(":");
-        final Material material = Material.matchMaterial(parts[0].trim());
-        if (material == null || material.isAir()) {
-            return null;
-        }
-        int amount = 1;
-        try {
-            if (parts.length == 2) {
-                amount = Integer.parseInt(parts[1].trim());
-            } else if (parts.length >= 3) {
-                final int min = Integer.parseInt(parts[1].trim());
-                final int max = Integer.parseInt(parts[2].trim());
-                amount = min >= max ? min : ThreadLocalRandom.current().nextInt(min, max + 1);
-            }
-        } catch (final NumberFormatException ignored) {
-            amount = 1;
-        }
-        return new ItemStack(material, Math.max(1, Math.min(material.getMaxStackSize(), amount)));
     }
 
     private long intervalMillis() {

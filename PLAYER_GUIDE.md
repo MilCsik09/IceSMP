@@ -499,10 +499,17 @@ Időnként egy **megjelölt kincsesláda** bukkan fel egy játékos közelében,
 kibányássza), viszi a teljes loot-ot (nyersanyag, nem pénz), majd a láda eltűnik. Ha senki nem
 találja meg időben, feltáratlanul elenyészik — érdemes sietni!
 
+### Vad Hajsza 🐺
+Időnként egy **megnevezett, feldühödött elit fenevad** (Ősi Fenevad, Csont Vadász, Vén Mágus,
+Pokoli Behemót) kóborol be egy játékos közelébe — kóborló mini-fenyegetés az invázió-hordák és a
+világbossok között. Aki **leteríti**, **ritka loot-ot** kap (nyersanyag, nem pénz); ha időben senki
+nem öli meg, eltűnik a vadonban.
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` — hangulat-
-esemény • `/events gathering` — gyűjtögető buff-ablak • `/events treasure` — kincs elrejtése.)
+esemény • `/events gathering` — gyűjtögető buff-ablak • `/events treasure` — kincs elrejtése •
+`/events wild-hunt` — Vad Hajsza indítása.)
 
 ---
 

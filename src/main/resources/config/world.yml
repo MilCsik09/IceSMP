@@ -157,3 +157,24 @@ treasure-events:
     - "EXPERIENCE_BOTTLE:8:16"
     - "NETHERITE_SCRAP:1:2"
     - "GOLDEN_APPLE:2:4"
+
+# ===== Vad Hajsza (harci variáns) =====
+# Időnként egy megnevezett, szintre skálázott elit fenevad kóborol be egy véletlen
+# játékos közelébe — kóborló mini-fenyegetés az invázió-hordák és a világbossok
+# között. Aki leteríti, ritka loot-táblát kap (nyersanyag, sosem valuta); ha időben
+# senki nem öli meg, eltűnik. Loot-formátum mint a kincsnél: "MATERIAL[:DARAB|:MIN:MAX]".
+wild-hunt:
+  enabled: true
+  interval-minutes: 70     # két hajsza közti idő
+  expire-minutes: 20       # ennyi idő után elszökik, ha nem ölik meg
+  chance-percent: 30       # esély, hogy az intervallum végén tényleg felbukkan
+  beast-level: 8           # a fenevad skálázott szintje (MobScalingManager)
+  rolls: 4                 # ennyi tételt húz a loot-táblából halálkor
+  loot:
+    - "DIAMOND:3:7"
+    - "EMERALD:4:9"
+    - "NETHERITE_SCRAP:1:3"
+    - "ENCHANTED_GOLDEN_APPLE:1:2"
+    - "EXPERIENCE_BOTTLE:12:24"
+    - "GOLD_BLOCK:1:3"
+    - "DIAMOND_BLOCK:1"

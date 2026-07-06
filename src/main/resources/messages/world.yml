@@ -22,6 +22,8 @@ messages:
   events-gathering-none: '&7Már fut egy buff-ablak, vagy egy sincs engedélyezve.'
   events-treasure-spawned: '&6Kincs elrejtve a közeledben!'
   events-treasure-failed: '&7Nem sikerült (már van elrejtett kincs, vagy nincs online játékos).'
+  events-wildhunt-started: '&4Vad Hajsza elindítva!'
+  events-wildhunt-failed: '&7Nem sikerült (már kóborol egy fenevad, vagy nincs online játékos).'
   events-intro-replayed: '&aIntro lejátszva: &f%s'
   events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
   events-invasion-started: '&cInvázió elindítva!'
@@ -49,6 +51,9 @@ messages:
   treasure-spawned: '&6🗺 Elrejtett kincs bukkant fel a(z) {world} világban a(z) ({x}, {z}) környékén — az első megtaláló viszi!'
   treasure-claimed: '&e🗺 {player} megtalálta az elrejtett kincset!'
   treasure-expired: '&7🗺 Az elrejtett kincs feltáratlanul eltűnt a homokban.'
+  wild-hunt-started: '&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz, ha le tudod teríteni!'
+  wild-hunt-slain: '&a🏹 {player} leterítette a Vad Hajsza fenevadját — a ritka zsákmány az övé!'
+  wild-hunt-escaped: '&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve.'
   invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>

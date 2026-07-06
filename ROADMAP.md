@@ -19,6 +19,12 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 
 ### Játékmenet
+- 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
+  bekerült a **hangulat-események** rendszere (északi fény, hulló csillag, köd, szellemek,
+  szentjánosbogarak, állat-vándorlás), a **gyűjtögető buff-ablakok** (bányász-láz / termés-óra /
+  halászati láz / XP-óra), a **felfedező kincs-esemény** (megjelölt loot-láda, első megtaláló viszi)
+  és a **Vad Hajsza** (kóborló elit fenevad ritka loottal). Mind config-vezérelt és pénz-semleges
+  (tárgy/effekt/XP, sosem valuta). További ötlet: heti/eseményhez kötött rotáció, karaván-kíséret.
 - 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
   pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
   több egyidejű raid, védő-oldali erődítés-mechanika.

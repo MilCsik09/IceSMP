@@ -87,6 +87,7 @@ import hu.taliann.icesmp.managers.CaravanManager;
 import hu.taliann.icesmp.managers.AmbientEventManager;
 import hu.taliann.icesmp.managers.GatheringBuffManager;
 import hu.taliann.icesmp.managers.TreasureEventManager;
+import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -200,6 +201,7 @@ public final class IceSMPCore {
     private final AmbientEventManager ambientEventManager;
     private final GatheringBuffManager gatheringBuffManager;
     private final TreasureEventManager treasureEventManager;
+    private final WildHuntManager wildHuntManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -275,6 +277,7 @@ public final class IceSMPCore {
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.treasureEventManager = new TreasureEventManager(plugin, configManager, messageManager);
+        this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, messageManager);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
         // buyable only while the merchant is in town.
         this.shopManager.setCaravanActiveCheck(caravanManager::isActive);
@@ -499,6 +502,7 @@ public final class IceSMPCore {
         invasionManager.shutdown();
         caravanManager.shutdown();
         treasureEventManager.shutdown();
+        wildHuntManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -537,6 +541,7 @@ public final class IceSMPCore {
                     ambientEventManager.tick();
                     gatheringBuffManager.tick();
                     treasureEventManager.tick();
+                    wildHuntManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -633,7 +638,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -674,6 +679,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CaravanListener(caravanManager, shopManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.GatheringBuffListener(gatheringBuffManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.TreasureListener(treasureEventManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WildHuntListener(wildHuntManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
