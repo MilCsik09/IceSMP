@@ -8,6 +8,7 @@ import hu.taliann.icesmp.managers.GatheringBuffManager;
 import hu.taliann.icesmp.managers.TreasureEventManager;
 import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.AbundanceManager;
+import hu.taliann.icesmp.managers.ServerChallengeManager;
 import hu.taliann.icesmp.managers.IntroManager;
 import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.SeasonManager;
@@ -41,6 +42,7 @@ public final class EventsCommand implements BasicCommand {
     private final TreasureEventManager treasureEventManager;
     private final WildHuntManager wildHuntManager;
     private final AbundanceManager abundanceManager;
+    private final ServerChallengeManager serverChallengeManager;
     private final IntroManager introManager;
     private final MessageManager messageManager;
 
@@ -49,7 +51,8 @@ public final class EventsCommand implements BasicCommand {
                          final CaravanManager caravanManager, final AmbientEventManager ambientEventManager,
                          final GatheringBuffManager gatheringBuffManager, final TreasureEventManager treasureEventManager,
                          final WildHuntManager wildHuntManager, final AbundanceManager abundanceManager,
-                         final IntroManager introManager, final MessageManager messageManager) {
+                         final ServerChallengeManager serverChallengeManager, final IntroManager introManager,
+                         final MessageManager messageManager) {
         this.seasonManager = seasonManager;
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
@@ -60,6 +63,7 @@ public final class EventsCommand implements BasicCommand {
         this.treasureEventManager = treasureEventManager;
         this.wildHuntManager = wildHuntManager;
         this.abundanceManager = abundanceManager;
+        this.serverChallengeManager = serverChallengeManager;
         this.introManager = introManager;
         this.messageManager = messageManager;
     }
@@ -83,6 +87,7 @@ public final class EventsCommand implements BasicCommand {
             case "treasure", "kincs" -> handleTreasure(sender);
             case "wild-hunt", "wildhunt", "hajsza" -> handleWildHunt(sender);
             case "abundance", "boseg" -> handleAbundance(sender);
+            case "challenge", "kihivas" -> handleChallenge(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -219,6 +224,16 @@ public final class EventsCommand implements BasicCommand {
                 : messageManager.get("events-abundance-already", "&7Már tart egy Bőség-idő."));
     }
 
+    private void handleChallenge(final CommandSender sender) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
+        sender.sendMessage(serverChallengeManager.forceStart()
+                ? messageManager.get("events-challenge-started", "&6Szerver-kihívás elindítva!")
+                : messageManager.get("events-challenge-already", "&7Már fut egy szerver-kihívás, vagy egy sincs engedélyezve."));
+    }
+
     private void handleSeason(final CommandSender sender) {
         sender.sendMessage(messageManager.get("events-season-header", "&6Szezon-állás:"));
         for (final FactionType faction : FactionType.values()) {
@@ -261,7 +276,7 @@ public final class EventsCommand implements BasicCommand {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                    ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "intro")
+                    ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "intro")
                     : List.of("season", "blood-moon", "caravan");
             return options.stream().filter(option -> option.startsWith(prefix)).toList();
         }

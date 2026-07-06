@@ -510,10 +510,16 @@ A vérhold **pozitív ellenpárja**: egy nyugodt időablak, amikor a **termés g
 **állatok néha ikret ellenek**, **kevesebb szörny** spawnol, és **gyengéd regeneráció** leng
 mindenkin. Építeni, farmolni, feltöltődni való — a béke szigete a háború közepén.
 
+### Kollektív szerver-kihívás ⚔
+Időnként az **egész szerver** kap egy közös, időzített célt (pl. öljetek meg együtt 500 szörnyet /
+bányásszatok 800 ércet / takarítsatok be 1000 termést) — a haladást **boss-bar** mutatja mindenkinek.
+Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap (XP + nyersanyag-csomag +
+rövid Sietség-buff). Közös cél, közös jutalom.
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
-gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` — Bőség-idő.)
+gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge`.)
 
 ---
 

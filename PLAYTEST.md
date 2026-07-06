@@ -71,6 +71,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events treasure           # elrejtett kincs a közeledbe
 /events wild-hunt          # kóborló elit fenevad (Vad Hajsza) idézése
 /events abundance          # Bőség-idő (a vérhold pozitív ellenpárja)
+/events challenge          # kollektív szerver-kihívás indítása
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```
@@ -361,6 +362,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       + broadcast a vadászról; ha `expire-minutes`-en belül nem ölik meg, elszökik (broadcast).
 - [ ] **Bőség-idő** (`/events abundance`): broadcast; a termés gyorsabban nő, szaporodáskor néha iker,
       kevesebb természetes szörny-spawn, gyengéd regeneráció; a végén záró broadcast. Terephez nem nyúl.
+- [ ] **Szerver-kihívás** (`/events challenge`): broadcast + **boss-bar** a közös haladással; szörny-ölés
+      / érc-bányászás / termés-betakarítás növeli; célnál MINDEN online játékos jutalmat kap (XP + loot +
+      Sietség); lejáratkor bukás-broadcast. Belépő játékos is látja a boss-bart.
 
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,

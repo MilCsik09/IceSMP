@@ -26,6 +26,8 @@ messages:
   events-wildhunt-failed: '&7Nem sikerült (már kóborol egy fenevad, vagy nincs online játékos).'
   events-abundance-started: '&aBőség-idő elindítva!'
   events-abundance-already: '&7Már tart egy Bőség-idő.'
+  events-challenge-started: '&6Szerver-kihívás elindítva!'
+  events-challenge-already: '&7Már fut egy szerver-kihívás, vagy egy sincs engedélyezve.'
   events-intro-replayed: '&aIntro lejátszva: &f%s'
   events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
   events-invasion-started: '&cInvázió elindítva!'
@@ -58,6 +60,9 @@ messages:
   wild-hunt-escaped: '&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve.'
   abundance-start: '&a🌱 BŐSÉG-IDŐ! A termés virul, az állatok szaporák, a szörnyek csendesebbek — egy pillanatnyi béke.'
   abundance-end: '&7🌱 A Bőség-idő elmúlt — a világ visszatér a rendes kerékvágásba.'
+  server-challenge-start: '&6⚔ SZERVER-KIHÍVÁS: {goal} — {minutes} perc! Teljesítsétek együtt, és mindenki jutalmat kap!'
+  server-challenge-success: '&a✔ SZERVER-KIHÍVÁS teljesítve! Mindenki jutalmat kap — szép munka!'
+  server-challenge-fail: '&7✘ A szerver-kihívás lejárt — {progress}/{target}. Legközelebb összekapjuk magunkat!'
   invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>
