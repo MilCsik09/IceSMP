@@ -68,6 +68,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events caravan arrive     # kereskedő-karaván most (távozás: /events caravan depart)
 /events ambient            # véletlen hangulat-esemény kiváltása
 /events gathering          # véletlen gyűjtögető buff-ablak megnyitása
+/events treasure           # elrejtett kincs a közeledbe
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```

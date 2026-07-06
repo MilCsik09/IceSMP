@@ -493,10 +493,16 @@ pénz: **bányász-láz** (érc-blokk bónusz drop), **termés-óra** (beérett 
 **halászati láz** (esély dupla fogásra), **tapasztalat-óra** (XP-szorzó mindenből). Egy broadcast
 jelzi a kezdetét és a végét — ilyenkor érdemes rákapcsolni a megfelelő tevékenységre!
 
+### Elrejtett kincs 🗺
+Időnként egy **megjelölt kincsesláda** bukkan fel egy játékos közelében, és a broadcast megadja a
+**hozzávetőleges helyét** (világ + koordináta). Az **első**, aki odaér és **rákattint** (vagy
+kibányássza), viszi a teljes loot-ot (nyersanyag, nem pénz), majd a láda eltűnik. Ha senki nem
+találja meg időben, feltáratlanul elenyészik — érdemes sietni!
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` — hangulat-
-esemény • `/events gathering` — gyűjtögető buff-ablak kiváltása.)
+esemény • `/events gathering` — gyűjtögető buff-ablak • `/events treasure` — kincs elrejtése.)
 
 ---
 

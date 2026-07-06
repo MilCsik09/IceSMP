@@ -135,3 +135,25 @@ gathering-buffs:
     harvest-hour: true
     fishing-frenzy: true
     xp-hour: true
+
+# ===== Felfedező kincs-események =====
+# Időnként egy megjelölt kincsesláda bukkan fel egy véletlen játékos közelében, és
+# a hozzávetőleges helyét broadcast jelzi — az ELSŐ megtaláló, aki jobb-kattint rá,
+# viszi a loot-ot, aztán a láda eltűnik. A jutalom nyersanyag (loot-tábla), nem pénz.
+# A loot-tábla bejegyzések: "MATERIAL", "MATERIAL:DARAB" vagy "MATERIAL:MIN:MAX".
+treasure-events:
+  enabled: true
+  interval-minutes: 45     # két kincs közti idő
+  expire-minutes: 15       # ennyi idő után feltáratlanul eltűnik
+  chance-percent: 40       # esély, hogy az intervallum végén tényleg felbukkan
+  spawn-radius: 80         # ilyen sugarú körben a horgony-játékos körül
+  rolls: 3                 # ennyi tételt húz a loot-táblából
+  loot:
+    - "DIAMOND:2:5"
+    - "GOLD_INGOT:4:9"
+    - "IRON_INGOT:6:12"
+    - "EMERALD:2:6"
+    - "ENCHANTED_GOLDEN_APPLE:1"
+    - "EXPERIENCE_BOTTLE:8:16"
+    - "NETHERITE_SCRAP:1:2"
+    - "GOLDEN_APPLE:2:4"
