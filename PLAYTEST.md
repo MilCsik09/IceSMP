@@ -188,7 +188,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
 - [ ] **Kombó:** egy konfigurált spell-pár (pl. Fagyérintés → Arkán Lökés) rövid időn belül →
       „⚡ Kombó!" + gyorsabb felépülés.
-- [ ] `/spell upgrade <id>` valutáért növeli a mesterség-rangot (cooldown-csökkentés, max 5 rang).
+- [ ] `/spell upgrade <id>` valutáért növeli a mesterség-rangot (max 5 rang): a cooldown csökken
+      (-8%/rang) ÉS az erő nő (+5%/rang) — magasabb rangon egy sebző spell nagyobbat üt, egy
+      buff/debuff spell effektje tovább tart, a self-heal többet gyógyít; a költség/self-damage nem nő.
 - [ ] Idézett társak (Nekromanta/Vadmester) **nem fordulnak ellened**, a célpontodra támadnak, idővel eltűnnek.
 
 ### 4.6 Talentek ✅

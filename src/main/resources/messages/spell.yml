@@ -275,7 +275,7 @@ messages:
       name: Farkashívás
     wraith_form:
       name: Kísértetforma
-  spell-mastery-header: '&6Spell-mesterség &7(magasabb rang = rövidebb cooldown):'
+  spell-mastery-header: '&6Spell-mesterség &7(magasabb rang = rövidebb cooldown + erősebb hatás):'
   spell-mastery-line: '&e%s &7[★%s/%s] &8| &7köv. rang: &f%s &8(&7/spell upgrade %s&8)'
   spell-mastery-max: '&7Ez a képesség már maximális mesterségű.'
   spell-mastery-none: '&7Nincs feloldott képességed.'

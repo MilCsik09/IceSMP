@@ -54,7 +54,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - 🔨 **Hibrid spell-költség finomhangolás:** határeset-spellek „valutájának" pontosítása
   (pl. a 8-éhséges Gyökerezés), tier-alapú erőforrás-költségek és regen-ráta hangolása.
 - ⬜ **Frakció-passzív számok** felülvizsgálata playtest után (a Semleges invis már kivéve).
-- ⬜ **Spell-mesterség kiterjesztés:** a rang sebzés/hatás-skálázása (most csak cooldown-ra hat).
+- 💡 **Spell-mesterség — kész:** a rang a cooldown mellett a **sebzést, self-heal-t és az
+  effekt-időtartamot** is skálázza (config: power-per-rank / max-power-multiplier). További
+  ötlet: rang-alapú extra effektek (pl. egy plusz státusz a max rangon).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
 - ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések.

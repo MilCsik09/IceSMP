@@ -44,8 +44,11 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
 ## ⭐ Spell-mesterség és kombók
 
 - **Mesterség (rang):** a `/spell` paranccsal **frakcióvalutáért** fejlesztheted a képességeid
-  „mesterségét". Minden rang **rövidíti a várakozási időt** (rangonként -8%, max 5 rang = -40%).
-  A kiválasztott képesség action bar-ján a **★ + szám** mutatja a rangot. (`/spell upgrade <id>`)
+  „mesterségét". Minden rang **rövidíti a várakozási időt** (rangonként -8%, max 5 rang = -40%)
+  **ÉS erősíti a hatást**: a **sebzés**, az **önmagad gyógyítása** és a felrakott **effektek
+  időtartama** rangonként +5%-kal nő (max +50% az 5. rangon). A költséget és az önsebzést a
+  mesterség NEM növeli. A kiválasztott képesség action bar-ján a **★ + szám** mutatja a rangot.
+  (`/spell upgrade <id>`)
 - **Kombók:** ha **rövid időn belül** (pár mp) bizonyos képességeket **megfelelő sorrendben**
   sütsz el, a második **gyorsabban épül fel** (cooldown-visszatérítés) — és látványos „⚡ Kombó!"
   jelzést kapsz. Néhány alap kombó: Fagyérintés → Arkán Lökés • Ínmetszés → Fojtás •
