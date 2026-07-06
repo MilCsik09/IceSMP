@@ -27,6 +27,13 @@ public final class ShopManager {
     private final FactionManager factionManager;
     private final MessageManager messageManager;
 
+    /**
+     * Gate for the reserved {@code "caravan"} shop: true only while the merchant
+     * caravan is in town. Set by {@link CaravanManager} after both are constructed
+     * (avoids a construction-order dependency). Null = caravan feature not wired.
+     */
+    private java.util.function.BooleanSupplier caravanActiveCheck;
+
     public ShopManager(final ConfigManager configManager, final CurrencyManager currencyManager,
                        final FactionManager factionManager, final MessageManager messageManager) {
         this.configManager = configManager;
@@ -35,14 +42,32 @@ public final class ShopManager {
         this.messageManager = messageManager;
     }
 
+    /** Registers the predicate that reports whether the caravan is currently present. */
+    public void setCaravanActiveCheck(final java.util.function.BooleanSupplier caravanActiveCheck) {
+        this.caravanActiveCheck = caravanActiveCheck;
+    }
+
     /** Whether an NPC name has a configured, enabled shop. */
     public boolean hasShop(final String npcName) {
         return getShop(npcName) != null;
     }
 
     public ConfigurationSection getShop(final String npcName) {
-        if (npcName == null || configManager.getConfiguration() == null
-                || !configManager.getBoolean("faction-shops.enabled", true)) {
+        if (npcName == null || configManager.getConfiguration() == null) {
+            return null;
+        }
+
+        // The caravan's rotating stock lives at the config root `caravan`, and is only
+        // buyable while the merchant is actually in town (gated by the active-check).
+        if (CaravanManager.SHOP_NAME.equalsIgnoreCase(npcName)) {
+            if (!configManager.getBoolean("caravan.enabled", true)
+                    || caravanActiveCheck == null || !caravanActiveCheck.getAsBoolean()) {
+                return null;
+            }
+            return configManager.getConfiguration().getConfigurationSection("caravan");
+        }
+
+        if (!configManager.getBoolean("faction-shops.enabled", true)) {
             return null;
         }
         return configManager.getConfiguration()

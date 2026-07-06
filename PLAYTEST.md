@@ -65,6 +65,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events blood-moon start   # vérhold most (stop: /events blood-moon stop)
 /events worldboss          # világboss spawn a közeledbe
 /events invasion           # invázió-horda indítása köréd
+/events caravan arrive     # kereskedő-karaván most (távozás: /events caravan depart)
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```
@@ -212,6 +213,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Frakció-bolt NPC:** rakj ki egy FancyNpcs NPC-t `altalanos_bolt` néven → jobb-katt megnyitja
       a vásárló GUI-t; kattintás vesz (bankból fizet, a pénz ELÉG — money sink), tele táska a földre
       dob. Elég fedezet híján hibaüzenet; `faction`-korlátozott boltban más frakciós tag nem vehet.
+- [ ] **Kereskedő-karaván:** `/events caravan arrive` → broadcast + megjelenik a vándorkereskedő
+      (WanderingTrader) a közeledben; jobb-katt megnyitja a ritka-portéka boltját (nem a natív
+      trade-et!), vétel a bankból ELÉG. `/events caravan depart` → broadcast + eltűnik; utána a
+      korábbi NPC-re kattintva a bolt már nem nyílik. Az entity **sebezhetetlen** és nem tolható.
 - [ ] **Aukció:** `/market auction <ár> [óra]` indít; a GUI-ban **bal-katt** = min. licit,
       **jobb-katt** = nagyobb ugrás (+25%) — mindkettő bankból zárol; másik játékos túllicitál →
       az első **visszakapja** a zárolt licitet + üzenetet kap.

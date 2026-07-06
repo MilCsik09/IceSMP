@@ -107,3 +107,44 @@ faction-shops:
         amount: 8
         price: 60
         currency: "OWN"
+
+# ===== Kereskedő-karaván (időszakos világesemény + money sink) =====
+# Egy vándorkereskedő időnként felbukkan egy stop-helyszínen (vagy ha nincs stop
+# megadva, egy véletlen online játékos közelében), egy ideig marad, majd
+# továbbáll. Amíg a városban van, jobb-katt a karaván-NPC-re megnyitja a ritka
+# portékák boltját — a vételár a banki egyenlegből ELÉG (money sink, mint a
+# frakció-boltoknál). Az items séma azonos a faction-shops-éval (material,
+# amount, price, currency; a currency lehet "OWN" vagy konkrét valuta).
+# Admin: /events caravan arrive|depart.
+caravan:
+  enabled: true
+  title: "Vándorkereskedő Karaván"
+  # Két érkezés közti idő (percben, az érkezéstől számítva) és az ottmaradás ideje.
+  interval-minutes: 90
+  duration-minutes: 20
+  # Rögzített megálló-helyszínek; a karaván sorban járja őket. Ha üres, egy
+  # véletlen online játékos közelében jelenik meg (a szerver-csapat töltheti fel).
+  stops: []
+  # Példa stop:
+  #   - {world: world, x: 100, y: 64, z: -200}
+  items:
+    1:
+      material: "ENCHANTED_GOLDEN_APPLE"
+      amount: 1
+      price: 2500
+      currency: "OWN"
+    2:
+      material: "DIAMOND_BLOCK"
+      amount: 1
+      price: 1200
+      currency: "OWN"
+    3:
+      material: "NAME_TAG"
+      amount: 2
+      price: 400
+      currency: "OWN"
+    4:
+      material: "EXPERIENCE_BOTTLE"
+      amount: 16
+      price: 350
+      currency: "OWN"

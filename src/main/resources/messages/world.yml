@@ -9,6 +9,13 @@ messages:
   events-bloodmoon-not-active: '&7Most nincs vérhold.'
   events-bloodmoon-stopped: '&aVérhold leállítva.'
   events-bloodmoon-usage: '&cHasználat: /events bloodmoon [start|stop]'
+  events-caravan-active: '&6A kereskedő-karaván épp a városban van!'
+  events-caravan-already: '&7A karaván már a városban van.'
+  events-caravan-arrived: '&6Kereskedő-karaván megérkezett!'
+  events-caravan-departed: '&6A karaván továbbállt.'
+  events-caravan-inactive: '&7Jelenleg nincs itt kereskedő-karaván.'
+  events-caravan-not-active: '&7Most nincs itt karaván.'
+  events-caravan-usage: '&cHasználat: /events caravan [arrive|depart]'
   events-intro-replayed: '&aIntro lejátszva: &f%s'
   events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
   events-invasion-started: '&cInvázió elindítva!'
@@ -16,6 +23,9 @@ messages:
   events-season-line: '&e%s&7: &f%s pont'
   events-worldboss-failed: '&7Nem sikerült (már aktív boss, vagy nincs online játékos).'
   events-worldboss-spawned: '&cVilágboss megidézve!'
+  caravan-arrived: <gold>✦ KERESKEDŐ-KARAVÁN érkezett a(z) {world} világba ({x}, {y}, {z}) — {minutes} percig marad! Kattints rá a ritka portékákért.</gold>
+  caravan-closed: '&7A karaván már bezárta a standját.'
+  caravan-departed: '&6✦ A kereskedő-karaván összepakolt és továbbállt. Legközelebb máshol bukkan fel.'
   invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>

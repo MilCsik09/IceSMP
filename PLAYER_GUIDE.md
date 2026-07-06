@@ -133,6 +133,11 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
   x1.2–1.6-ra ugrik** (broadcast jelzi) — kereskedési lehetőség.
 - **Lélekkő:** a magas szintű (Lvl 3+) skálázott szörnyek eséllyel **Sötét tokent** dobnak — a
   veszélyes, spawntól távoli vidékek így gazdaságilag is megérik.
+- **Frakció-boltok:** a fővárosi **bolt-NPC-kre jobb-kattintva** fix áron vehetsz portékát a banki
+  egyenlegedből — a pénz eltűnik (money sink).
+- **Kereskedő-karaván:** időnként egy **vándorkereskedő** bukkan fel a világban (broadcast jelzi,
+  merre, és meddig marad). Amíg itt van, **jobb-katt a karaván-NPC-re** → ritka portékák boltja fix
+  áron (a pénz szintén eltűnik). Ha lekésed, legközelebb máshol tűnik fel.
 
 ---
 
@@ -469,8 +474,16 @@ Időnként egy **szörnyhorda** spawnol egy véletlen játékos köré (broadcas
 **skálázott, megnevezett bajnok (mini-boss)** vezet, amely szintén telegrafált földcsapással támad.
 A horda mobjai skálázottak — extra **XP-vel és lélekkő-eséllyel** jutalmaznak.
 
+### Kereskedő-karaván ✦
+Időnként egy **vándorkereskedő karaván** érkezik egy helyszínre (broadcast jelzi, melyik világba és
+mennyi ideig marad). Amíg a városban van, **jobb-katt a karaván-NPC-re** → egy bolt nyílik **ritka
+portékákkal** (arany alma, gyémánttömb, névcímke, tapasztalat-palack…), fix áron a banki
+egyenlegedből. A kifizetett pénz eltűnik (money sink). A karaván **korlátozott ideig** marad, majd
+továbbáll — ha lekésed, legközelebb máshol bukkan fel.
+
 ### Események megtekintése
-`/events season` — szezon-állás • `/events blood-moon` — vérhold állapota.
+`/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
+kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart`.)
 
 ---
 
@@ -566,7 +579,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/market`, `/market sell/auction/claim/cancel` | Piactér + aukciósház |
 | `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
 | `/quest list/info/accept/abandon`, `/quest log` | Küldetések + grafikus küldetésnapló |
-| `/events season/blood-moon` | Világesemények |
+| `/events season/blood-moon/caravan` | Világesemények (szezon, vérhold, kereskedő-karaván) |
 | `/faction king tax <%>` | Király: adókulcs beállítása |
 | `/job givecatalyst` (admin) | Katalizátor pótlása |
 | `/exchangeboard place/remove` (admin) | Árfolyamtábla kezelése |

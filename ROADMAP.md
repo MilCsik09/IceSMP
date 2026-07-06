@@ -45,8 +45,12 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   (Címek/rangok NEM — ütközne a szerver rang-pluginjaival.)
 
 ### Gazdaság
-- 💡 **Bank-kamat / kölcsön**, **kereskedő-karaván esemény**. (A **frakció-bolt NPC-k** money
-  sink **kész**: FancyNpcs-hez kötött, config-vezérelt boltok, jobb-katt vásárló GUI, égetett ár.)
+- 💡 **Bank-kamat / kölcsön.** (A **frakció-bolt NPC-k** money sink **kész**: FancyNpcs-hez kötött,
+  config-vezérelt boltok, jobb-katt vásárló GUI, égetett ár.)
+- 💡 **Kereskedő-karaván esemény — kész:** időszakos vándorkereskedő (config-vezérelt megállók vagy
+  véletlen játékos-közeli felbukkanás), időkorlátos ottmaradás, jobb-katt = ritka portékák boltja
+  (égetett ár = money sink). Admin: `/events caravan arrive|depart`. További ötlet: véletlenszerű
+  napi készlet-rotáció, karaván-kíséret védelmi mini-esemény.
 - 💡 **Aukció-finomítás — kész:** a GUI-ban kattintás-típus szerinti licit (bal = minimum, jobb =
   nagyobb ugrás +25%), **buy-out ár** (`/market auction ... buyout:<ár>`, shift-katt = azonnali
   megvétel). További ötlet: teljesen szabad összegű licit chat-parancsból (listing-ID targeting).

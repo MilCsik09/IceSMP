@@ -82,6 +82,7 @@ import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ShopManager;
+import hu.taliann.icesmp.managers.CaravanManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -191,6 +192,7 @@ public final class IceSMPCore {
     private final QuestManager questManager;
     private final CommunityGoalManager communityGoalManager;
     private final ShopManager shopManager;
+    private final CaravanManager caravanManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -262,6 +264,10 @@ public final class IceSMPCore {
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
+        this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
+        // The caravan's stock is served through ShopManager under the reserved "caravan" name,
+        // buyable only while the merchant is in town.
+        this.shopManager.setCaravanActiveCheck(caravanManager::isActive);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
@@ -478,6 +484,7 @@ public final class IceSMPCore {
         }
         worldBossManager.shutdown();
         invasionManager.shutdown();
+        caravanManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -512,6 +519,7 @@ public final class IceSMPCore {
                     statsManager.tick();
                     achievementManager.tick();
                     marketManager.tickAuctions();
+                    caravanManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -608,7 +616,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -646,6 +654,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ShopListener(shopManager, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CaravanListener(caravanManager, shopManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
