@@ -481,9 +481,16 @@ portékákkal** (arany alma, gyémánttömb, névcímke, tapasztalat-palack…),
 egyenlegedből. A kifizetett pénz eltűnik (money sink). A karaván **korlátozott ideig** marad, majd
 továbbáll — ha lekésed, legközelebb máshol bukkan fel.
 
+### Hangulat-események ✦
+Időnként apró, **légköri események** teszik élőbbé a világot (nem befolyásolják a balanszot):
+**északi fény** (rövid éjjellátás + csillámló égbolt), **hulló csillag** (broadcast a becsapódás
+irányával), **köd**, **bolyongó szellemek**, **szentjánosbogarak**, valamint **állat-vándorlás**
+(egy passzív állatcsorda vándorol be a közeledbe — élelemforrás, nem pénz).
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
-kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart`.)
+kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` — hangulat-
+esemény kiváltása.)
 
 ---
 

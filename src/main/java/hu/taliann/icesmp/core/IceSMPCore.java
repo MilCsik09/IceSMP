@@ -84,6 +84,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ConfigValidator;
 import hu.taliann.icesmp.managers.ShopManager;
 import hu.taliann.icesmp.managers.CaravanManager;
+import hu.taliann.icesmp.managers.AmbientEventManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -194,6 +195,7 @@ public final class IceSMPCore {
     private final CommunityGoalManager communityGoalManager;
     private final ShopManager shopManager;
     private final CaravanManager caravanManager;
+    private final AmbientEventManager ambientEventManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -266,6 +268,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, messageManager);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
+        this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
         // buyable only while the merchant is in town.
         this.shopManager.setCaravanActiveCheck(caravanManager::isActive);
@@ -524,6 +527,7 @@ public final class IceSMPCore {
                     achievementManager.tick();
                     marketManager.tickAuctions();
                     caravanManager.tick();
+                    ambientEventManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -620,7 +624,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));

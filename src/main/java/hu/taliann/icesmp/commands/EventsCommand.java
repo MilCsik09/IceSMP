@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.managers.AmbientEventManager;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CaravanManager;
 import hu.taliann.icesmp.managers.IntroManager;
@@ -31,18 +32,20 @@ public final class EventsCommand implements BasicCommand {
     private final WorldBossManager worldBossManager;
     private final InvasionManager invasionManager;
     private final CaravanManager caravanManager;
+    private final AmbientEventManager ambientEventManager;
     private final IntroManager introManager;
     private final MessageManager messageManager;
 
     public EventsCommand(final SeasonManager seasonManager, final BloodMoonManager bloodMoonManager,
                          final WorldBossManager worldBossManager, final InvasionManager invasionManager,
-                         final CaravanManager caravanManager, final IntroManager introManager,
-                         final MessageManager messageManager) {
+                         final CaravanManager caravanManager, final AmbientEventManager ambientEventManager,
+                         final IntroManager introManager, final MessageManager messageManager) {
         this.seasonManager = seasonManager;
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
         this.invasionManager = invasionManager;
         this.caravanManager = caravanManager;
+        this.ambientEventManager = ambientEventManager;
         this.introManager = introManager;
         this.messageManager = messageManager;
     }
@@ -61,6 +64,7 @@ public final class EventsCommand implements BasicCommand {
             case "world-boss", "worldboss", "boss" -> handleWorldBoss(sender);
             case "invasion", "invazio" -> handleInvasion(sender);
             case "caravan", "karavan" -> handleCaravan(sender, args);
+            case "ambient", "hangulat" -> handleAmbient(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -145,6 +149,16 @@ public final class EventsCommand implements BasicCommand {
                 caravanManager.isActive() ? "&6A kereskedő-karaván épp a városban van!" : "&7Jelenleg nincs itt kereskedő-karaván."));
     }
 
+    private void handleAmbient(final CommandSender sender) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
+        sender.sendMessage(ambientEventManager.forceRandom()
+                ? messageManager.get("events-ambient-fired", "&bHangulat-esemény kiváltva!")
+                : messageManager.get("events-ambient-none", "&7Nincs engedélyezett hangulat-esemény a configban."));
+    }
+
     private void handleSeason(final CommandSender sender) {
         sender.sendMessage(messageManager.get("events-season-header", "&6Szezon-állás:"));
         for (final FactionType faction : FactionType.values()) {
@@ -187,7 +201,7 @@ public final class EventsCommand implements BasicCommand {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                    ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "intro")
+                    ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "intro")
                     : List.of("season", "blood-moon", "caravan");
             return options.stream().filter(option -> option.startsWith(prefix)).toList();
         }

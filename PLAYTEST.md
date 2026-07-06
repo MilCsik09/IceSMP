@@ -66,6 +66,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events worldboss          # világboss spawn a közeledbe
 /events invasion           # invázió-horda indítása köréd
 /events caravan arrive     # kereskedő-karaván most (távozás: /events caravan depart)
+/events ambient            # véletlen hangulat-esemény kiváltása
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```

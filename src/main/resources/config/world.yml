@@ -97,3 +97,23 @@ world-events:
       enabled: false
       point-seconds: 3
       waypoints: []
+
+# ===== Hangulat-események (ambient) =====
+# Gyakori, apró, légköri események, amelyek élőbbé teszik a világot — soha nem
+# nyúlnak a balanszhoz vagy a gazdasághoz (kozmetikai effekt / apró buff, illetve
+# az állat-vándorlásnál passzív állatok = élelem-forrás, sosem valuta). Időnként a
+# tick kiválaszt egy ENGEDÉLYEZETT típust és lefuttatja. Admin: /events ambient.
+ambient-events:
+  enabled: true
+  interval-minutes: 15
+  chance-percent: 55
+  aurora-nightvision-seconds: 45   # az északi fény rövid, kozmetikai éjjellátása
+  migration-herd-size: 5           # az állat-vándorlás csordamérete
+  # Az egyes típusok külön ki/be kapcsolhatók:
+  types:
+    aurora: true
+    falling-star: true
+    fog-roll: true
+    spectral-wanderers: true
+    animal-migration: true
+    fireflies: true

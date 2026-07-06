@@ -45,8 +45,11 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   (Címek/rangok NEM — ütközne a szerver rang-pluginjaival.)
 
 ### Gazdaság
-- 💡 **Bank-kamat / kölcsön.** (A **frakció-bolt NPC-k** money sink **kész**: FancyNpcs-hez kötött,
-  config-vezérelt boltok, jobb-katt vásárló GUI, égetett ár.)
+- ❌ **Bank-kamat — elvetve:** a kamat a semmiből teremtene valutát (addolt pénz → infláció), ez
+  ellentétes a szerver „nincs addolt pénz" elvével. Csak akkor jöhet szóba, ha szigorúan
+  pénz-semleges / kizárólag a frakciókasszából fedezett formában tervezzük. (A **frakció-bolt
+  NPC-k** money sink **kész**: FancyNpcs-hez kötött, config-vezérelt boltok, jobb-katt vásárló GUI,
+  égetett ár. Minden gazdasági bővítés nyelő vagy pénz-semleges legyen, sosem faucet.)
 - 💡 **Kereskedő-karaván esemény — kész:** időszakos vándorkereskedő (config-vezérelt megállók vagy
   véletlen játékos-közeli felbukkanás), időkorlátos ottmaradás, jobb-katt = ritka portékák boltja
   (égetett ár = money sink). Admin: `/events caravan arrive|depart`. További ötlet: véletlenszerű
