@@ -34,6 +34,13 @@ public final class ShopManager {
      */
     private java.util.function.BooleanSupplier caravanActiveCheck;
 
+    /**
+     * Gate for the caravan's bonus stock: true while a recent escort success keeps
+     * the {@code caravan.bonus-items} entries on sale. Set by the core after the
+     * {@link EscortManager} is constructed. Null = escort feature not wired.
+     */
+    private java.util.function.BooleanSupplier escortBonusCheck;
+
     public ShopManager(final ConfigManager configManager, final CurrencyManager currencyManager,
                        final FactionManager factionManager, final MessageManager messageManager) {
         this.configManager = configManager;
@@ -45,6 +52,11 @@ public final class ShopManager {
     /** Registers the predicate that reports whether the caravan is currently present. */
     public void setCaravanActiveCheck(final java.util.function.BooleanSupplier caravanActiveCheck) {
         this.caravanActiveCheck = caravanActiveCheck;
+    }
+
+    /** Registers the predicate that reports whether the escort-success bonus stock is unlocked. */
+    public void setEscortBonusCheck(final java.util.function.BooleanSupplier escortBonusCheck) {
+        this.escortBonusCheck = escortBonusCheck;
     }
 
     /** Whether an NPC name has a configured, enabled shop. */
@@ -82,7 +94,23 @@ public final class ShopManager {
     /** The sale entries of a shop, in numeric key order. */
     public List<ConfigurationSection> getItems(final String npcName) {
         final ConfigurationSection shop = getShop(npcName);
-        final ConfigurationSection items = shop == null ? null : shop.getConfigurationSection("items");
+        if (shop == null) {
+            return List.of();
+        }
+        final java.util.List<ConfigurationSection> entries =
+                new java.util.ArrayList<>(sectionsOf(shop.getConfigurationSection("items")));
+
+        // Escort-success perk: while the bonus window is open, the caravan also
+        // sells its bonus-items entries (appended after the regular stock).
+        if (CaravanManager.SHOP_NAME.equalsIgnoreCase(npcName)
+                && escortBonusCheck != null && escortBonusCheck.getAsBoolean()) {
+            entries.addAll(sectionsOf(shop.getConfigurationSection("bonus-items")));
+        }
+        return List.copyOf(entries);
+    }
+
+    /** The child sections of a shop item list, in numeric key order (empty if null). */
+    private static List<ConfigurationSection> sectionsOf(final ConfigurationSection items) {
         if (items == null) {
             return List.of();
         }

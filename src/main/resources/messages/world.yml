@@ -28,6 +28,8 @@ messages:
   events-abundance-already: '&7Már tart egy Bőség-idő.'
   events-challenge-started: '&6Szerver-kihívás elindítva!'
   events-challenge-already: '&7Már fut egy szerver-kihívás, vagy egy sincs engedélyezve.'
+  events-escort-started: '&eKaraván-kíséret elindítva!'
+  events-escort-failed: '&7Nem sikerült (már úton van egy konvoj, vagy nincs online játékos).'
   events-intro-replayed: '&aIntro lejátszva: &f%s'
   events-invasion-failed: '&7Nem sikerült (nincs online játékos).'
   events-invasion-started: '&cInvázió elindítva!'
@@ -63,6 +65,10 @@ messages:
   server-challenge-start: '&6⚔ SZERVER-KIHÍVÁS: {goal} — {minutes} perc! Teljesítsétek együtt, és mindenki jutalmat kap!'
   server-challenge-success: '&a✔ SZERVER-KIHÍVÁS teljesítve! Mindenki jutalmat kap — szép munka!'
   server-challenge-fail: '&7✘ A szerver-kihívás lejárt — {progress}/{target}. Legközelebb összekapjuk magunkat!'
+  escort-started: '&e🛡 KARAVÁN-KÍSÉRET! Egy konvoj indult útnak ({world}: {x}, {z} → {dx}, {dz}) — védd meg a szörnyektől, míg célba ér!'
+  escort-success: '&a🛡 A konvoj célba ért! A zsákmány a célnál vár, és a kereskedő-karaván &f{minutes} percig&a bővebb készlettel árul — köszönet a kísérőknek!'
+  escort-failed-died: '&c🛡 A konvoj odaveszett — a szörnyek széthordták a rakományt.'
+  escort-failed-timeout: '&7🛡 A konvoj nem ért célba időben — a karaván lemondta a szállítmányt.'
   invasion-started: <dark_red>⚔ INVÁZIÓ! Egy szörnyhorda tört be a vidékre — vigyázz!</dark_red>
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>

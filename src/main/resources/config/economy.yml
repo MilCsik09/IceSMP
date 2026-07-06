@@ -148,3 +148,21 @@ caravan:
       amount: 16
       price: 350
       currency: "OWN"
+  # Bónusz-készlet: csak akkor árulja, ha a legutóbbi karaván-kíséret (escort)
+  # sikerrel célba ért (world.yml: escort.bonus-stock-minutes ideig).
+  bonus-items:
+    1:
+      material: "NETHERITE_INGOT"
+      amount: 1
+      price: 4000
+      currency: "OWN"
+    2:
+      material: "TOTEM_OF_UNDYING"
+      amount: 1
+      price: 3000
+      currency: "OWN"
+    3:
+      material: "GOLDEN_CARROT"
+      amount: 32
+      price: 600
+      currency: "OWN"

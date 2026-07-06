@@ -219,3 +219,29 @@ server-challenge:
     slay: true
     mine: true
     harvest: true
+
+# ===== Karaván-kíséret (kooperatív escort) =====
+# Egy konvoj (ládás láma) indul útnak egy célpont felé; útközben szörny-hullámok
+# támadják — a játékosoknak életben kell tartaniuk, míg célba ér. Siker: közös loot
+# a célnál + a kereskedő-karaván boltja bonus-stock-minutes-ig a bonus-items
+# készletet is árulja. TEREP-VÉDELEM: a hullám-poolban nincs robbanó mob, és a
+# kíséret-mobok robbanása blokkot akkor sem sérthet (listener-védelem).
+escort:
+  enabled: true
+  interval-minutes: 120      # két kíséret közti idő
+  max-duration-minutes: 15   # ennyi idő után a konvoj elveszettnek számít
+  chance-percent: 30         # esély, hogy az intervallum végén tényleg elindul
+  route-distance: 150        # légvonalbeli táv az indulástól a célig (blokk)
+  convoy-health: 60          # a konvoj életereje
+  wave-interval-seconds: 45  # két támadó hullám közti idő
+  wave-size: 4               # mob / hullám
+  wave-level: 3              # a hullám-mobok skálázott szintje
+  bonus-stock-minutes: 60    # siker után ennyi ideig árul bónusz-készletet a karaván
+  reward-rolls: 4            # ennyi tételt húz a loot-táblából célba éréskor
+  reward-loot:
+    - "DIAMOND:2:5"
+    - "EMERALD:3:7"
+    - "GOLD_INGOT:5:10"
+    - "EXPERIENCE_BOTTLE:8:16"
+    - "NETHERITE_SCRAP:1:2"
+    - "GOLDEN_APPLE:2:4"

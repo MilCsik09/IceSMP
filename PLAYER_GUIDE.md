@@ -516,10 +516,18 @@ bányásszatok 800 ércet / takarítsatok be 1000 termést) — a haladást **bo
 Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap (XP + nyersanyag-csomag +
 rövid Sietség-buff). Közös cél, közös jutalom.
 
+### Karaván-kíséret 🛡
+Időnként egy **konvoj** (ládás láma) indul útnak egy cél felé, és útközben **szörny-hullámok**
+támadják — a haladást **boss-bar** mutatja. A közelben lévő játékosoknak **életben kell tartaniuk**,
+míg célba ér. Ha odaér, a **zsákmány a célnál** hullik, és a **kereskedő-karaván boltja egy ideig
+bővebb (ritka) készlettel árul**. Ha a konvoj elesik vagy lejár az idő, a szállítmány elvész. (A
+kíséret-mobok robbanása **sosem rongálja a terepet**.)
+
 ### Események megtekintése
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
-gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge`.)
+gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
+`/events escort`.)
 
 ---
 

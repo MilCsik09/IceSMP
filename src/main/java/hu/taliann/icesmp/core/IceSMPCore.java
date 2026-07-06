@@ -90,6 +90,7 @@ import hu.taliann.icesmp.managers.TreasureEventManager;
 import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.AbundanceManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
+import hu.taliann.icesmp.managers.EscortManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -206,6 +207,7 @@ public final class IceSMPCore {
     private final WildHuntManager wildHuntManager;
     private final AbundanceManager abundanceManager;
     private final ServerChallengeManager serverChallengeManager;
+    private final EscortManager escortManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -284,6 +286,9 @@ public final class IceSMPCore {
         this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, messageManager);
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
+        this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
+        // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
+        this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
         // buyable only while the merchant is in town.
         this.shopManager.setCaravanActiveCheck(caravanManager::isActive);
@@ -509,6 +514,7 @@ public final class IceSMPCore {
         caravanManager.shutdown();
         treasureEventManager.shutdown();
         wildHuntManager.shutdown();
+        escortManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -550,6 +556,7 @@ public final class IceSMPCore {
                     wildHuntManager.tick();
                     abundanceManager.tick();
                     serverChallengeManager.tick();
+                    escortManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -646,7 +653,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
-        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, introManager, messageManager));
+        plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -690,6 +697,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WildHuntListener(wildHuntManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.AbundanceListener(abundanceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ServerChallengeListener(serverChallengeManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EscortListener(escortManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);

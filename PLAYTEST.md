@@ -72,6 +72,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /events wild-hunt          # kóborló elit fenevad (Vad Hajsza) idézése
 /events abundance          # Bőség-idő (a vérhold pozitív ellenpárja)
 /events challenge          # kollektív szerver-kihívás indítása
+/events escort             # karaván-kíséret (konvoj + szörny-hullámok)
 /events intro [j]          # bevezető cím-szekvencia újrajátszása
 /events season             # szezon-pontállás
 ```
@@ -365,6 +366,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Szerver-kihívás** (`/events challenge`): broadcast + **boss-bar** a közös haladással; szörny-ölés
       / érc-bányászás / termés-betakarítás növeli; célnál MINDEN online játékos jutalmat kap (XP + loot +
       Sietség); lejáratkor bukás-broadcast. Belépő játékos is látja a boss-bart.
+- [ ] **Karaván-kíséret** (`/events escort`): ládás láma-konvoj a cél felé halad (boss-bar = haladás + HP);
+      ~45 mp-enként szörny-hullám támadja a konvojt; célba érve loot hullik + a karaván-bolt bónusz-készlete
+      (`bonus-items`) egy időre elérhető; a konvoj halálakor/lejáratkor bukás. **Terep-teszt:** a kíséret-mob
+      robbanása (ha van) **nem tör blokkot**; a konvoj/mobok reload után nem maradnak ott (nem perzisztens).
 
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
