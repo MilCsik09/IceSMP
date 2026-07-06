@@ -212,8 +212,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Frakció-bolt NPC:** rakj ki egy FancyNpcs NPC-t `altalanos_bolt` néven → jobb-katt megnyitja
       a vásárló GUI-t; kattintás vesz (bankból fizet, a pénz ELÉG — money sink), tele táska a földre
       dob. Elég fedezet híján hibaüzenet; `faction`-korlátozott boltban más frakciós tag nem vehet.
-- [ ] **Aukció:** `/market auction <ár> [óra]` indít; a GUI-ban kattintás licitál (bankból zárol);
-      másik játékos túllicitál → az első **visszakapja** a zárolt licitet + üzenetet kap.
+- [ ] **Aukció:** `/market auction <ár> [óra]` indít; a GUI-ban **bal-katt** = min. licit,
+      **jobb-katt** = nagyobb ugrás (+25%) — mindkettő bankból zárol; másik játékos túllicitál →
+      az első **visszakapja** a zárolt licitet + üzenetet kap.
+- [ ] **Buy-out:** `/market auction <ár> [óra] buyout:<ár>` (a buy-out ≥ kikiáltási ár, különben
+      hibaüzenet); a GUI-ban **shift-katt** → azonnal megnyered a buy-out áron, a tárgy `/market
+      claim`-mel átvehető, az eladó megkapja a bevételt (−díj).
 - [ ] **Aukció-lejárat:** rövid (pl. 0.05 óra = 3 perc) aukció lejár → nyertesnél a tárgy, eladónál
       a licit (−10% díj); licit nélkül a tárgy visszajár. Offline nyertes **belépéskor** vagy
       `/market claim`-mel kapja meg.

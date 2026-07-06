@@ -44,9 +44,13 @@ A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktu
 - `/market cancel` — visszaveszed a saját tételeidet (visszakapod a tárgyat).
 
 **Aukció (licitálás):** ⚖️
-- `/market auction <kikiáltási ár> [óra] [valuta]` — a kezedben tartott tárgyra **aukciót**
-  indítasz (alapból 24 órás, legfeljebb 72). A böngészőben kattintással licitálsz — mindig a
-  minimum következő licitet ajánlod (az aktuális +10%).
+- `/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]` — a kezedben tartott tárgyra
+  **aukciót** indítasz (alapból 24 órás, legfeljebb 72). A `buyout:<ár>` opcionális: aki ennyit
+  licitál, **azonnal megnyeri** az aukciót. (A buy-out nem lehet kisebb a kikiáltási árnál.)
+- A böngészőben a licit **kattintás-típussal** állítható:
+  - **bal-katt** → a minimum következő licit (az aktuális +10%),
+  - **jobb-katt** → nagyobb ugrás (az aktuális +25%),
+  - **shift-katt** → azonnali megvétel a buy-out áron (ha van megadva).
 - A licited a **bankodból azonnal zárolódik**; ha valaki túllicitál, **automatikusan visszakapod**.
 - Lejáratkor a nyertes viszi a tárgyat, az eladó a legmagasabb licitet (díj levonásával). Ha a
   nyertes (vagy licit nélküli aukciónál az eladó) épp nincs fenn, **belépéskor** vagy

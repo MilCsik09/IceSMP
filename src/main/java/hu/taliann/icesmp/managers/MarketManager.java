@@ -46,22 +46,30 @@ public final class MarketManager implements PersistentStore {
     public record Listing(UUID id, UUID seller, String sellerName, double price,
                           CurrencyType currency, ItemStack item, long createdAt,
                           boolean auction, long endsAt, double highestBid,
-                          UUID highestBidder, String highestBidderName) {
+                          UUID highestBidder, String highestBidderName, double buyOut) {
 
         public boolean hasBid() {
             return highestBidder != null;
+        }
+
+        /** Whether this auction offers an instant buy-out price. */
+        public boolean hasBuyOut() {
+            return buyOut > 0.0D;
         }
     }
 
     /**
      * The result of a bid attempt: on failure only {@code errorKey} is set; on
      * success it is null and the escrowed amount plus the refunded previous
-     * bidder (if any) are reported so the caller can notify them.
+     * bidder (if any) are reported so the caller can notify them. When
+     * {@code boughtOut} is true the bid met the buy-out price and the auction
+     * was won immediately — the item is already on its way to the bidder.
      */
-    public record BidOutcome(String errorKey, double amount, UUID previousBidder, double previousBid) {
+    public record BidOutcome(String errorKey, double amount, UUID previousBidder, double previousBid,
+                             boolean boughtOut) {
 
         static BidOutcome error(final String errorKey) {
-            return new BidOutcome(errorKey, 0.0D, null, 0.0D);
+            return new BidOutcome(errorKey, 0.0D, null, 0.0D, false);
         }
     }
 
@@ -140,7 +148,8 @@ public final class MarketManager implements PersistentStore {
                                 section.getLong(idKey + ".ends-at", 0L),
                                 section.getDouble(idKey + ".highest-bid", 0.0D),
                                 bidderRaw.isEmpty() ? null : UUID.fromString(bidderRaw),
-                                section.getString(idKey + ".highest-bidder-name", null)
+                                section.getString(idKey + ".highest-bidder-name", null),
+                                section.getDouble(idKey + ".buy-out", 0.0D)
                         ));
                     } catch (final IllegalArgumentException ignored) {
                         // Skip malformed entries.
@@ -192,6 +201,9 @@ public final class MarketManager implements PersistentStore {
                 yaml.set(basePath + ".auction", true);
                 yaml.set(basePath + ".ends-at", listing.endsAt());
                 yaml.set(basePath + ".highest-bid", listing.highestBid());
+                if (listing.hasBuyOut()) {
+                    yaml.set(basePath + ".buy-out", listing.buyOut());
+                }
                 if (listing.hasBid()) {
                     yaml.set(basePath + ".highest-bidder", listing.highestBidder().toString());
                     yaml.set(basePath + ".highest-bidder-name", listing.highestBidderName());
@@ -237,7 +249,7 @@ public final class MarketManager implements PersistentStore {
      * @return null on success, otherwise an error message key
      */
     public synchronized String createListing(final Player seller, final double price, final CurrencyType currency) {
-        return createListingInternal(seller, price, currency, 0L);
+        return createListingInternal(seller, price, currency, 0L, 0.0D);
     }
 
     /**
@@ -252,16 +264,23 @@ public final class MarketManager implements PersistentStore {
      * @return null on success, otherwise an error message key
      */
     public synchronized String createAuction(final Player seller, final double startPrice,
-                                             final CurrencyType currency, final long requestedDurationMillis) {
+                                             final CurrencyType currency, final long requestedDurationMillis,
+                                             final double buyOut) {
         final long defaultMillis = (long) (configManager.getDouble("market.auction.default-duration-hours", 24.0D) * 3_600_000L);
         final long maxMillis = (long) (configManager.getDouble("market.auction.max-duration-hours", 72.0D) * 3_600_000L);
         final long duration = Math.max(60_000L, Math.min(Math.max(60_000L, maxMillis),
                 requestedDurationMillis > 0L ? requestedDurationMillis : defaultMillis));
-        return createListingInternal(seller, startPrice, currency, duration);
+
+        // A buy-out below the opening bid is nonsensical — reject it rather than silently drop it.
+        if (buyOut > 0.0D && buyOut < startPrice) {
+            return "market-buyout-too-low";
+        }
+        return createListingInternal(seller, startPrice, currency, duration, Math.max(0.0D, buyOut));
     }
 
     private String createListingInternal(final Player seller, final double price,
-                                         final CurrencyType currency, final long auctionDurationMillis) {
+                                         final CurrencyType currency, final long auctionDurationMillis,
+                                         final double buyOut) {
         final ItemStack held = seller.getInventory().getItemInMainHand();
         if (held.getType().isAir()) {
             return "market-no-item";
@@ -281,7 +300,7 @@ public final class MarketManager implements PersistentStore {
         final boolean auction = auctionDurationMillis > 0L;
         listings.put(id, new Listing(id, seller.getUniqueId(), seller.getName(), price,
                 currency, held.clone(), now, auction, auction ? now + auctionDurationMillis : 0L,
-                0.0D, null, null));
+                0.0D, null, null, auction ? buyOut : 0.0D));
         seller.getInventory().setItemInMainHand(null);
         save();
         return null;
@@ -359,15 +378,40 @@ public final class MarketManager implements PersistentStore {
     }
 
     /**
-     * Places the minimum next bid on an auction from the bidder's bank balance.
-     * The bid is escrowed immediately; the previously escrowed bid (if any) is
-     * refunded to the outbid player's bank.
+     * Gets a larger "quick raise" bid for the GUI's right-click: the current bid
+     * (or opening price) raised by the configured big-increment percent, never
+     * below the ordinary minimum next bid.
+     *
+     * @param listing the auction listing
+     * @return the big-jump bid amount
+     */
+    public double getBigBid(final Listing listing) {
+        final double base = listing.hasBid() ? listing.highestBid() : listing.price();
+        final double bigPercent = Math.max(1.0D,
+                configManager.getDouble("market.auction.big-increment-percent", 25.0D));
+        final double big = Math.ceil(base * (1.0D + bigPercent / 100.0D) * 100.0D) / 100.0D;
+        return Math.max(big, getMinimumBid(listing));
+    }
+
+    /** Places the minimum next bid — convenience wrapper for the GUI's plain click. */
+    public synchronized BidOutcome bid(final Player bidder, final UUID listingId) {
+        final Listing listing = listings.get(listingId);
+        return bid(bidder, listingId, listing == null ? 0.0D : getMinimumBid(listing));
+    }
+
+    /**
+     * Places a bid of at least {@code amount} on an auction from the bidder's
+     * bank balance (the amount must reach the minimum next bid). The bid is
+     * escrowed immediately; the previously escrowed bid (if any) is refunded to
+     * the outbid player. If the amount reaches the listing's buy-out price, the
+     * auction is won on the spot ({@link BidOutcome#boughtOut()} is true).
      *
      * @param bidder the bidding player
      * @param listingId the auction listing
+     * @param amount the bid amount the player wants to place
      * @return the outcome; {@link BidOutcome#errorKey()} is null on success
      */
-    public synchronized BidOutcome bid(final Player bidder, final UUID listingId) {
+    public synchronized BidOutcome bid(final Player bidder, final UUID listingId, final double amount) {
         final Listing listing = listings.get(listingId);
         if (listing == null || !listing.auction()) {
             return BidOutcome.error("market-listing-gone");
@@ -385,8 +429,16 @@ public final class MarketManager implements PersistentStore {
             return BidOutcome.error("market-already-highest");
         }
 
-        final double amount = getMinimumBid(listing);
-        if (!currencyManager.deductFromBalance(bidder.getUniqueId(), listing.currency(), amount)) {
+        final double minimum = getMinimumBid(listing);
+        if (!Double.isFinite(amount) || amount < minimum) {
+            return BidOutcome.error("market-bid-too-low");
+        }
+
+        // Reaching the buy-out price wins immediately at that price.
+        final double effective = listing.hasBuyOut() ? Math.min(amount, listing.buyOut()) : amount;
+        final boolean boughtOut = listing.hasBuyOut() && amount >= listing.buyOut();
+
+        if (!currencyManager.deductFromBalance(bidder.getUniqueId(), listing.currency(), effective)) {
             return BidOutcome.error("market-insufficient-balance");
         }
 
@@ -395,11 +447,23 @@ public final class MarketManager implements PersistentStore {
             currencyManager.addToBalance(listing.highestBidder(), listing.currency(), listing.highestBid());
         }
 
+        final UUID previousBidder = listing.highestBidder();
+        final double previousBid = listing.highestBid();
+
+        if (boughtOut) {
+            // Settle now: seller paid (minus fee), item delivered to the buyer.
+            listings.remove(listingId);
+            creditSellerShare(listing.seller(), listing.currency(), effective);
+            queueDelivery(bidder.getUniqueId(), listing.item());
+            save();
+            return new BidOutcome(null, effective, previousBidder, previousBid, true);
+        }
+
         listings.put(listingId, new Listing(listing.id(), listing.seller(), listing.sellerName(),
                 listing.price(), listing.currency(), listing.item(), listing.createdAt(),
-                true, listing.endsAt(), amount, bidder.getUniqueId(), bidder.getName()));
+                true, listing.endsAt(), effective, bidder.getUniqueId(), bidder.getName(), listing.buyOut()));
         save();
-        return new BidOutcome(null, amount, listing.highestBidder(), listing.highestBid());
+        return new BidOutcome(null, effective, previousBidder, previousBid, false);
     }
 
     /**

@@ -66,7 +66,17 @@ public final class MarketGUIListener implements Listener {
 
         final MarketManager.Listing listing = marketManager.getListing(listingId);
         if (listing != null && listing.auction()) {
-            handleBid(player, holder, listingId, listing);
+            // Left-click = minimum next bid; right-click = a bigger quick raise;
+            // shift-click = buy the auction out at its buy-out price (if it has one).
+            final double amount;
+            if (event.isShiftClick() && listing.hasBuyOut()) {
+                amount = listing.buyOut();
+            } else if (event.isRightClick()) {
+                amount = marketManager.getBigBid(listing);
+            } else {
+                amount = marketManager.getMinimumBid(listing);
+            }
+            handleBid(player, holder, listingId, listing, amount);
             return;
         }
 
@@ -104,13 +114,30 @@ public final class MarketGUIListener implements Listener {
         MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
     }
 
-    /** Places the minimum next bid on the clicked auction and refreshes the GUI. */
+    /** Places {@code amount} on the clicked auction and refreshes the GUI. */
     private void handleBid(final Player player, final MarketHolder holder,
-                           final UUID listingId, final MarketManager.Listing listing) {
-        final MarketManager.BidOutcome outcome = marketManager.bid(player, listingId);
+                           final UUID listingId, final MarketManager.Listing listing,
+                           final double amount) {
+        final MarketManager.BidOutcome outcome = marketManager.bid(player, listingId, amount);
         if (outcome.errorKey() != null) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
             player.sendMessage(messageManager.get(outcome.errorKey(), defaultErrorFor(outcome.errorKey())));
+            MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
+            return;
+        }
+
+        if (outcome.boughtOut()) {
+            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.2F);
+            player.sendMessage(messageManager.getMessage(
+                    "market-buyout-success",
+                    "&aMegvetted azonnal a buy-out áron: &f{price} {currency}&a — a tárgy a /market claim paranccsal átvehető.",
+                    Map.of(
+                            "price", currencyManager.formatBalance(outcome.amount()),
+                            "currency", listing.currency().getDisplayName()
+                    )
+            ));
+            notifyOutbid(outcome, listing);
+            notifySellerSold(listing, player.getName());
             MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
             return;
         }
@@ -125,20 +152,38 @@ public final class MarketGUIListener implements Listener {
                 )
         ));
 
-        // Folia: the outbid player may be in another region — hop to their scheduler.
-        if (outcome.previousBidder() != null) {
-            final Player outbid = Bukkit.getPlayer(outcome.previousBidder());
-            if (outbid != null) {
-                final String itemName = listing.item().getType().name();
-                outbid.getScheduler().run(plugin, task -> outbid.sendMessage(messageManager.getMessage(
-                        "market-outbid-notice",
-                        "&cTúllicitáltak (&f{item}&c) — a zárolt licited visszakerült a bankodba.",
-                        Map.of("item", itemName)
-                )), null);
-            }
-        }
+        notifyOutbid(outcome, listing);
 
         MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
+    }
+
+    /** Notifies the previously-escrowed bidder (if any) that their bid was refunded. */
+    private void notifyOutbid(final MarketManager.BidOutcome outcome, final MarketManager.Listing listing) {
+        if (outcome.previousBidder() == null) {
+            return;
+        }
+        // Folia: the outbid player may be in another region — hop to their scheduler.
+        final Player outbid = Bukkit.getPlayer(outcome.previousBidder());
+        if (outbid != null) {
+            final String itemName = listing.item().getType().name();
+            outbid.getScheduler().run(plugin, task -> outbid.sendMessage(messageManager.getMessage(
+                    "market-outbid-notice",
+                    "&cTúllicitáltak (&f{item}&c) — a zárolt licited visszakerült a bankodba.",
+                    Map.of("item", itemName)
+            )), null);
+        }
+    }
+
+    /** Notifies the seller that a buy-out settled their auction immediately. */
+    private void notifySellerSold(final MarketManager.Listing listing, final String buyerName) {
+        final Player seller = Bukkit.getPlayer(listing.seller());
+        if (seller != null) {
+            seller.getScheduler().run(plugin, task -> seller.sendMessage(messageManager.getMessage(
+                    "market-sold-notice",
+                    "&aEladtad egy tárgyadat a piacon &f{buyer}&a részére — a bevétel a bankodba került.",
+                    Map.of("buyer", buyerName)
+            )), null);
+        }
     }
 
     private String defaultErrorFor(final String errorKey) {
@@ -148,6 +193,7 @@ public final class MarketGUIListener implements Listener {
             case "market-insufficient-balance" -> "&cNincs elég fedezet a bankodban ehhez a vásárláshoz.";
             case "market-auction-ended" -> "&cEz az aukció már lezárult.";
             case "market-already-highest" -> "&cMár te vagy a legmagasabb licitáló.";
+            case "market-bid-too-low" -> "&cA licit nem éri el a minimum következő licitet.";
             case "market-auction-use-bid" -> "&cEz aukciós tétel — licitálni lehet rá.";
             default -> "&cA vásárlás nem sikerült.";
         };

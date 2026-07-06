@@ -105,13 +105,43 @@ public final class MarketCommand implements BasicCommand {
     private void handleAuction(final Player player, final String[] args) {
         if (args.length < 2) {
             player.sendMessage(messageManager.get("market-auction-usage",
-                    "&cHasználat: /market auction <kikiáltási ár> [óra] [valuta]"));
+                    "&cHasználat: /market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]"));
+            return;
+        }
+
+        // A buy-out is given as a keyword token (buyout:<ár> / bo:<ár>) so it never
+        // collides positionally with the optional hours / currency arguments.
+        double buyOut = 0.0D;
+        final String[] positional = new String[args.length];
+        int positionalCount = 0;
+        positional[positionalCount++] = args[0];
+        for (int i = 1; i < args.length; i++) {
+            final String buyOutToken = parseBuyOutToken(args[i]);
+            if (buyOutToken != null) {
+                try {
+                    buyOut = Double.parseDouble(buyOutToken);
+                } catch (final NumberFormatException exception) {
+                    player.sendMessage(messageManager.get("invalid-amount", "&cÉrvénytelen összeg."));
+                    return;
+                }
+                if (!Double.isFinite(buyOut) || buyOut <= 0.0D) {
+                    player.sendMessage(messageManager.get("amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
+                    return;
+                }
+                continue;
+            }
+            positional[positionalCount++] = args[i];
+        }
+
+        if (positionalCount < 2) {
+            player.sendMessage(messageManager.get("market-auction-usage",
+                    "&cHasználat: /market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]"));
             return;
         }
 
         final double startPrice;
         try {
-            startPrice = Double.parseDouble(args[1]);
+            startPrice = Double.parseDouble(positional[1]);
         } catch (final NumberFormatException exception) {
             player.sendMessage(messageManager.get("invalid-amount", "&cÉrvénytelen összeg."));
             return;
@@ -124,12 +154,12 @@ public final class MarketCommand implements BasicCommand {
 
         double hours = 0.0D;
         int currencyArgIndex = 2;
-        if (args.length >= 3) {
+        if (positionalCount >= 3) {
             try {
-                hours = Double.parseDouble(args[2]);
+                hours = Double.parseDouble(positional[2]);
                 currencyArgIndex = 3;
             } catch (final NumberFormatException exception) {
-                // Second argument is not a number: treat it as the currency.
+                // Second positional argument is not a number: treat it as the currency.
             }
         }
         if (hours < 0.0D || !Double.isFinite(hours)) {
@@ -137,8 +167,8 @@ public final class MarketCommand implements BasicCommand {
             return;
         }
 
-        CurrencyType currency = args.length > currencyArgIndex ? CurrencyType.fromInput(args[currencyArgIndex]) : null;
-        if (args.length > currencyArgIndex && currency == null) {
+        CurrencyType currency = positionalCount > currencyArgIndex ? CurrencyType.fromInput(positional[currencyArgIndex]) : null;
+        if (positionalCount > currencyArgIndex && currency == null) {
             player.sendMessage(messageManager.get("bank-unknown-currency", "&cIsmeretlen valuta típus."));
             return;
         }
@@ -147,18 +177,40 @@ public final class MarketCommand implements BasicCommand {
         }
 
         final String errorKey = marketManager.createAuction(player, startPrice, currency,
-                (long) (hours * 3_600_000.0D));
+                (long) (hours * 3_600_000.0D), buyOut);
         if (errorKey != null) {
             player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey)));
             return;
         }
 
-        player.sendMessage(messageManager.get(
-                "market-auction-success",
-                "&aAukció elindítva: kikiáltási ár &f%s %s&a. A licitek a /market GUI-ból érkeznek.",
-                currencyManager.formatBalance(startPrice),
-                currency.getDisplayName()
-        ));
+        if (buyOut > 0.0D) {
+            player.sendMessage(messageManager.get(
+                    "market-auction-success-buyout",
+                    "&aAukció elindítva: kikiáltási ár &f%s %s&a, buy-out &f%s&a. A licitek a /market GUI-ból érkeznek.",
+                    currencyManager.formatBalance(startPrice),
+                    currency.getDisplayName(),
+                    currencyManager.formatBalance(buyOut)
+            ));
+        } else {
+            player.sendMessage(messageManager.get(
+                    "market-auction-success",
+                    "&aAukció elindítva: kikiáltási ár &f%s %s&a. A licitek a /market GUI-ból érkeznek.",
+                    currencyManager.formatBalance(startPrice),
+                    currency.getDisplayName()
+            ));
+        }
+    }
+
+    /** Returns the numeric part of a {@code buyout:<ár>} / {@code bo:<ár>} token, or null if not such a token. */
+    private String parseBuyOutToken(final String arg) {
+        final String lower = arg.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("buyout:")) {
+            return arg.substring("buyout:".length());
+        }
+        if (lower.startsWith("bo:")) {
+            return arg.substring("bo:".length());
+        }
+        return null;
     }
 
     private void handleClaim(final Player player) {
@@ -212,7 +264,8 @@ public final class MarketCommand implements BasicCommand {
         player.sendMessage(messageManager.get("market-help-header", "&6/market &7- Elérhető parancsok:"));
         player.sendMessage(messageManager.get("market-help-browse", "&e/market &7- Piactér böngészése."));
         player.sendMessage(messageManager.get("market-help-sell", "&e/market sell <ár> [valuta] &7- A kezedben lévő tárgy listázása."));
-        player.sendMessage(messageManager.get("market-help-auction", "&e/market auction <kikiáltási ár> [óra] [valuta] &7- Aukció indítása a kezedben lévő tárgyra."));
+        player.sendMessage(messageManager.get("market-help-auction", "&e/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>] &7- Aukció indítása (buy-out ár opcionális)."));
+        player.sendMessage(messageManager.get("market-help-bid", "&e(GUI) &7bal-katt: min. licit • jobb-katt: nagyobb licit • shift-katt: buy-out."));
         player.sendMessage(messageManager.get("market-help-claim", "&e/market claim &7- Megnyert / visszajáró tárgyak átvétele."));
         player.sendMessage(messageManager.get("market-help-cancel", "&e/market cancel &7- Saját tételeid visszavonása (licites aukció nem vonható vissza)."));
         player.sendMessage(messageManager.get("market-help-search", "&e/market search <szöveg> &7- Keresés a piacon."));
@@ -234,6 +287,13 @@ public final class MarketCommand implements BasicCommand {
                     .map(type -> type.name().toLowerCase(Locale.ROOT))
                     .filter(name -> name.startsWith(prefix))
                     .toList();
+        }
+
+        // Offer the buy-out keyword on any auction argument past the opening price.
+        if ("auction".equalsIgnoreCase(args[0]) && args.length >= 3
+                && "buyout:".startsWith(args[args.length - 1].toLowerCase(Locale.ROOT))
+                && !args[args.length - 1].isEmpty()) {
+            return List.of("buyout:");
         }
 
         return List.of();

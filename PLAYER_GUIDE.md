@@ -110,9 +110,11 @@ Játékos–játékos kereskedés:
 - `/market` — böngésző felület; kattints egy tételre a **megvásárláshoz** (a banki egyenlegedből fizet).
 - `/market cancel` — visszavonod a saját tételeidet (visszakapod az itemeket).
 - **Eladási díj:** minden eladásból ~10% „elég" (eltűnik a gazdaságból) — ez fékezi az inflációt.
-- **Aukció:** `/market auction <kikiáltási ár> [óra] [valuta]` — a kezedben tartott tárgyra
-  **licitálós** aukciót indítasz (alapból 24 óra, max. 72). A GUI-ban kattintással licitálsz:
-  a licit a **bankodból zárolódik**, túllicitálásnál **automatikusan visszajár**. Lejáratkor a
+- **Aukció:** `/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]` — a kezedben tartott
+  tárgyra **licitálós** aukciót indítasz (alapból 24 óra, max. 72). A `buyout:<ár>` opcionális:
+  aki eléri, **azonnal megnyeri** az aukciót. A GUI-ban kattintás-típussal licitálsz — **bal-katt**:
+  minimum licit, **jobb-katt**: nagyobb ugrás, **shift-katt**: azonnali buy-out.
+  A licit a **bankodból zárolódik**, túllicitálásnál **automatikusan visszajár**. Lejáratkor a
   legmagasabb licit (díj levonása után) az eladóé, a tárgy a nyertesé — ha épp nem vagy fenn,
   belépéskor vagy `/market claim`-mel kapod meg. Élő licites aukció **nem vonható vissza**.
   (Aukciónál a licit fix összeg — a reputáció-felár csak a fix-áras tételekre vonatkozik.)

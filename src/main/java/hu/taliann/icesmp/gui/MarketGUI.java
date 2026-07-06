@@ -157,14 +157,39 @@ public final class MarketGUI {
                     "&7Eladó: &f{seller}",
                     Map.of("seller", listing.sellerName())
             ));
+            if (listing.hasBuyOut()) {
+                lore.add(messageManager.getMessage(
+                        "market-lore-buyout",
+                        "&6Buy-out ár: &f{price} {currency}",
+                        Map.of(
+                                "price", currencyManager.formatBalance(listing.buyOut()),
+                                "currency", listing.currency().getDisplayName()
+                        )
+                ));
+            }
             lore.add(messageManager.getMessage(
                     "market-lore-bid",
-                    "&eKattints a licitáláshoz! &7(min. {next} {currency})",
+                    "&eBal-katt: min. licit &7({next} {currency})",
                     Map.of(
                             "next", currencyManager.formatBalance(marketManager.getMinimumBid(listing)),
                             "currency", listing.currency().getDisplayName()
                     )
             ));
+            lore.add(messageManager.getMessage(
+                    "market-lore-bid-big",
+                    "&eJobb-katt: nagyobb licit &7({big} {currency})",
+                    Map.of(
+                            "big", currencyManager.formatBalance(marketManager.getBigBid(listing)),
+                            "currency", listing.currency().getDisplayName()
+                    )
+            ));
+            if (listing.hasBuyOut()) {
+                lore.add(messageManager.getMessage(
+                        "market-lore-bid-buyout",
+                        "&eShift-katt: azonnali megvétel a buy-out áron",
+                        Map.of()
+                ));
+            }
         } else {
             // Show the price the VIEWER will actually pay (faction reputation adjusts it), not the
             // base list price — otherwise the lore and the charged amount disagree.
