@@ -547,6 +547,11 @@ párttagok látják). A csapatvezetőnek külön jogai vannak: `/party kick <né
 <név>`, `/party disband`. Ha valaki kilép a szerverről, kikerül a csapatból; ha 2 fő alá csökken a
 létszám, a csapat automatikusan feloszlik.
 
+**Party-HUD:** amíg csapatban vagy, a HUD-oldalsávon egy **„— Csapat —" szekció** mutatja a tagokat:
+név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezetőt 👑 jelöli — élőben frissül,
+így harc közben is látod, kinek kell segítség (WoW party-frame-módra). Ha nem vagy csapatban, a
+szekció el sem foglal helyet az oldalsávon.
+
 ---
 
 ## 11. Királyság, raid és háború ✅

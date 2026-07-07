@@ -39,3 +39,4 @@ party:
   xp-share: true         # A mob-ölésből járó XP fejenként oszlik meg a közeli párttagok közt
   personal-loot: true    # A plugin loot-eseményeinél (Vad Hajsza, elrejtett kincs) mindenki saját jutalmat kap
   block-friendly-fire: true  # Párttagok nem sebezhetik egymást (közelharc és lövedék sem)
+  hud-enabled: true      # Party-frame-ek a HUD-oldalsávon: tagok neve + színkódolt élet-sáv (👑 = vezető)
