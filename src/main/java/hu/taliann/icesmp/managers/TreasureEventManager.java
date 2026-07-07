@@ -40,9 +40,10 @@ public final class TreasureEventManager {
     private volatile long nextAttemptAt;
 
     public TreasureEventManager(final JavaPlugin plugin, final ConfigManager configManager,
-                                final MessageManager messageManager) {
+                                final PartyManager partyManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.partyManager = partyManager;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
@@ -161,9 +162,13 @@ public final class TreasureEventManager {
         active.getWorld().playSound(active, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
 
         final int rolls = Math.max(1, configManager.getInt("treasure-events.rolls", 3));
-        for (final ItemStack loot : LootTable.roll(configManager, "treasure-events.loot", rolls)) {
-            finder.getInventory().addItem(loot).values()
-                    .forEach(left -> finder.getWorld().dropItemNaturally(finder.getLocation(), left));
+        // WoW-style personal loot: a finder in a party shares the discovery — every
+        // nearby member rolls their own reward; solo finders keep the classic grant.
+        if (!partyManager.distributePersonalLoot(finder, "treasure-events.loot", rolls)) {
+            for (final ItemStack loot : LootTable.roll(configManager, "treasure-events.loot", rolls)) {
+                finder.getInventory().addItem(loot).values()
+                        .forEach(left -> finder.getWorld().dropItemNaturally(finder.getLocation(), left));
+            }
         }
 
         Bukkit.getServer().broadcast(messageManager.getMessage(

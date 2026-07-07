@@ -50,6 +50,7 @@ public final class WildHuntManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MobScalingManager mobScalingManager;
+    private final PartyManager partyManager;
     private final MessageManager messageManager;
 
     private volatile UUID beastId;
@@ -57,10 +58,12 @@ public final class WildHuntManager {
     private volatile long nextAttemptAt;
 
     public WildHuntManager(final JavaPlugin plugin, final ConfigManager configManager,
-                           final MobScalingManager mobScalingManager, final MessageManager messageManager) {
+                           final MobScalingManager mobScalingManager, final PartyManager partyManager,
+                           final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
+        this.partyManager = partyManager;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
@@ -121,8 +124,14 @@ public final class WildHuntManager {
         final World world = where.getWorld();
         if (world != null) {
             final int rolls = Math.max(1, configManager.getInt("wild-hunt.rolls", 4));
-            for (final ItemStack loot : LootTable.roll(configManager, "wild-hunt.loot", rolls)) {
-                world.dropItemNaturally(where, loot);
+            // WoW-style personal loot: a slayer in a party shares the kill — every nearby
+            // member rolls their own reward; otherwise the loot drops at the carcass.
+            final boolean personal = slayer != null
+                    && partyManager.distributePersonalLoot(slayer, "wild-hunt.loot", rolls);
+            if (!personal) {
+                for (final ItemStack loot : LootTable.roll(configManager, "wild-hunt.loot", rolls)) {
+                    world.dropItemNaturally(where, loot);
+                }
             }
             world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 40, 0.6D, 0.8D, 0.6D, 0.1D);
             world.playSound(where, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5F, 1.5F);

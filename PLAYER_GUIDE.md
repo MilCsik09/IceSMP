@@ -535,6 +535,18 @@ kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/eve
 gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
 `/events escort` • `/events meteor`.)
 
+### Party (csapat) 👥
+WoW-stílusú csapat: max **5 fő**, teljesen **frakciótól függetlenül** (bármelyik frakcióból lehet
+egy csapatban). Meghívás: `/party invite <név>`, elfogadás: `/party accept` (elutasítás: `/party
+decline`). A közeli mob-ölésekből járó XP a közelben lévő párttagok közt **fejenként oszlik meg** —
+minél többen vagytok együtt, annál kisebb rész jut mindenkinek (igazi WoW-módra). A plugin saját
+loot-eseményeinél (**Vad Hajsza**, **elrejtett kincs**) nem egy közös zsákmány esik le: minden
+közelben lévő párttag a **saját (personal) jutalmát** kapja. Párton belül **nincs PvP** — a tagok
+sem közelharccal, sem nyíllal nem tudják sebezni egymást. Csapat-chat: `/p <üzenet>` (csak a
+párttagok látják). A csapatvezetőnek külön jogai vannak: `/party kick <név>`, `/party promote
+<név>`, `/party disband`. Ha valaki kilép a szerverről, kikerül a csapatból; ha 2 fő alá csökken a
+létszám, a csapat automatikusan feloszlik.
+
 ---
 
 ## 11. Királyság, raid és háború ✅
@@ -630,6 +642,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
 | `/quest list/info/accept/abandon`, `/quest log` | Küldetések + grafikus küldetésnapló |
 | `/events season/blood-moon/caravan` | Világesemények (szezon, vérhold, kereskedő-karaván) |
+| `/party`, `/p <üzenet>` | Party (csapat) + csapat-chat |
 | `/faction king tax <%>` | Király: adókulcs beállítása |
 | `/job givecatalyst` (admin) | Katalizátor pótlása |
 | `/exchangeboard place/remove` (admin) | Árfolyamtábla kezelése |

@@ -33,6 +33,10 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   **Terep-szabály:** a világpusztító események sosem grief-elnek — nincs blokk-romboló robbanás, a meteor
   frakció-területen kívülre irányít és lejáratkor/leálláskor visszaállítja az eredeti terepet.
   További ötlet: heti/eseményhez kötött rotáció, vihar / aranyláz-zóna / napfogyatkozás.
+- 💡 **Party-rendszer — kész:** WoW-stílusú csapat (max 5 fő, frakciótól független): meghívó/elfogadás,
+  vezetői jogok (kick/promote/disband), csapat-chat (`/p`), **fejenként osztott XP** a közeli tagok közt,
+  **personal loot** a plugin-eseményekből (Vad Hajsza, kincs), párton belüli PvP tiltva. További ötlet:
+  party-HUD (tag-életerők a képernyőn), party-célpont jelölés.
 - 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
   pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
   több egyidejű raid, védő-oldali erődítés-mechanika.

@@ -23,3 +23,19 @@ hud:
     lifetime-ticks: 200
     distance: 3.0
     height-offset: -0.25
+
+# WoW-stílusú csapat (party) rendszer: max 5 fő, teljesen frakció-független (bármelyik
+# frakcióból lehet egy csapatban), meghívó/elfogadás alapú tagság. A közeli mob-ölésekből
+# járó XP a közelben lévő párttagok közt FEJENKÉNT oszlik meg (minél többen vannak, annál
+# kisebb rész jut mindenkinek). A plugin saját loot-eseményeinél (pl. Vad Hajsza, elrejtett
+# kincs) nem egy közös zsákmány esik le, hanem minden közeli párttag a SAJÁT (personal)
+# jutalmát kapja. Párton belül nincs friendly fire — a tagok sem közelharccal, sem
+# lövedékkel (nyíl stb.) nem tudják sebezni egymást.
+party:
+  enabled: true          # A party-rendszer be/ki kapcsolása
+  max-size: 5            # Egy csapat maximális létszáma
+  invite-expire-seconds: 60  # Ennyi másodperc után jár le a meghívó, ha nincs válasz
+  share-radius: 50       # Ilyen sugarú körben (blokk) számítanak "közelinek" a párttagok XP/loot szempontjából
+  xp-share: true         # A mob-ölésből járó XP fejenként oszlik meg a közeli párttagok közt
+  personal-loot: true    # A plugin loot-eseményeinél (Vad Hajsza, elrejtett kincs) mindenki saját jutalmat kap
+  block-friendly-fire: true  # Párttagok nem sebezhetik egymást (közelharc és lövedék sem)

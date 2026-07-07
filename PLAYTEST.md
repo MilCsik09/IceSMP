@@ -375,6 +375,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       kibányászható (valódi drop). **Terep-teszt (fontos):** `expire-minutes` után VAGY `/reload`/leállítás
       után a kráter **teljesen visszaáll** az eredeti terepre; `avoid-territory: true` mellett **nem** csapódik
       claimelt területre (állj egy `/territory`-be és nézd, hogy máshova kerül).
+- [ ] **Party:** `/party invite` két fiókkal → accept után közös csapat; közeli mob-ölés XP-je
+      **fejenként oszlik**; párttag **nem sebezhető** (kard + nyíl); Vad Hajsza/kincs esemény párttal →
+      **mindenki saját (personal) lootot kap**; kilépő játékos kikerül; 2 fő alatt a csapat feloszlik;
+      `/p szia` csapat-chat.
 
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,

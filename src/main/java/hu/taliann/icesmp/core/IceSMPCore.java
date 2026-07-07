@@ -92,6 +92,7 @@ import hu.taliann.icesmp.managers.AbundanceManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
 import hu.taliann.icesmp.managers.EscortManager;
 import hu.taliann.icesmp.managers.MeteorEventManager;
+import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -210,6 +211,7 @@ public final class IceSMPCore {
     private final ServerChallengeManager serverChallengeManager;
     private final EscortManager escortManager;
     private final MeteorEventManager meteorEventManager;
+    private final PartyManager partyManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -284,8 +286,9 @@ public final class IceSMPCore {
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
-        this.treasureEventManager = new TreasureEventManager(plugin, configManager, messageManager);
-        this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, messageManager);
+        this.partyManager = new PartyManager(plugin, configManager, messageManager);
+        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, messageManager);
+        this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
@@ -343,6 +346,7 @@ public final class IceSMPCore {
                 relicManager,
                 craftingRestrictionManager,
                 resourceManager,
+                partyManager,
                 spellRegistry
         );
 
@@ -658,6 +662,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
+        plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
@@ -703,6 +708,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.AbundanceListener(abundanceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ServerChallengeListener(serverChallengeManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EscortListener(escortManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PartyListener(plugin, partyManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
