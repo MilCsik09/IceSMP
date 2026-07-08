@@ -21,6 +21,8 @@ authors: [ Taliann ]
 #    (FancyNpcsQuestBridge) join-classpath-tal éri el az API-ját futásidőben.
 #  - WorldGuard: a blokkot helyező események (meteor, kincs) kerülik a WG-régiókat. A
 #    reflexiós híd (ProtectionBridge) join-classpath-tal éri el az API-ját futásidőben.
+#  - LuckPerms: a natív chat-formázó a LP prefix/suffix-et jeleníti meg. A reflexiós híd
+#    (LuckPermsBridge) join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
 #  - TAB: csak load-order (az indulási kompatibilitás-tanácsadó megbízhatóan észlelje);
 #    az IceSMP nem hívja az API-ját.
 dependencies:
@@ -37,6 +39,10 @@ dependencies:
       required: false
       join-classpath: true
     WorldGuard:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    LuckPerms:
       load: BEFORE
       required: false
       join-classpath: true

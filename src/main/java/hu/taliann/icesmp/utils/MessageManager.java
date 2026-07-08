@@ -23,7 +23,7 @@ public final class MessageManager {
     private static final Pattern LEGACY_CODE = Pattern.compile("[&§][0-9a-fk-orA-FK-OR]");
     /** Bundled per-subsystem message files under messages/ (extracted on first run). */
     private static final String[] MESSAGE_GROUPS = {
-            "currency", "faction", "job", "market", "party", "pet", "profession",
+            "claim", "currency", "faction", "job", "market", "party", "pet", "profession",
             "quest", "relic", "spec", "spell", "system", "world"
     };
 

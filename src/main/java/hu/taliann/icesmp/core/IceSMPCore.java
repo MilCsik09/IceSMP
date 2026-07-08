@@ -93,6 +93,7 @@ import hu.taliann.icesmp.managers.ServerChallengeManager;
 import hu.taliann.icesmp.managers.EscortManager;
 import hu.taliann.icesmp.managers.MeteorEventManager;
 import hu.taliann.icesmp.managers.PartyManager;
+import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
@@ -212,6 +213,7 @@ public final class IceSMPCore {
     private final EscortManager escortManager;
     private final MeteorEventManager meteorEventManager;
     private final PartyManager partyManager;
+    private final ClaimManager claimManager;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -287,12 +289,13 @@ public final class IceSMPCore {
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
-        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, messageManager);
+        this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
+        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, claimManager, messageManager);
         this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
-        this.meteorEventManager = new MeteorEventManager(plugin, configManager, territoryManager, messageManager);
+        this.meteorEventManager = new MeteorEventManager(plugin, configManager, territoryManager, claimManager, messageManager);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
@@ -327,7 +330,8 @@ public final class IceSMPCore {
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
-                exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager);
+                exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
+                claimManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -511,6 +515,17 @@ public final class IceSMPCore {
         if (pluginManager.getPlugin("WorldGuard") != null) {
             plugin.getLogger().info("WorldGuard észlelve: a meteor/kincs események kerülik a WG-régiókat (ProtectionBridge).");
         }
+        if (pluginManager.getPlugin("LuckPermsChatFormatterFolia") != null
+                && configManager.getBoolean("chat.format-enabled", true)) {
+            plugin.getLogger().warning("LuckPermsChatFormatterFolia észlelve, de az IceSMP natív chat-formázója is aktív"
+                    + " — DUPLA formázás lesz! Töröld a régi plugint, vagy állítsd: general.yml → chat.format-enabled: false.");
+        }
+        if (pluginManager.getPlugin("SimpleClaimSystem") != null
+                && configManager.getBoolean("claims.enabled", true)) {
+            plugin.getLogger().warning("SimpleClaimSystem észlelve, de az IceSMP natív claim-rendszere is aktív — a két"
+                    + " védelem ütközhet. A régi SCS-claimek nem konvertálódnak automatikusan; migrálás után töröld az"
+                    + " SCS jart, vagy állítsd: general.yml → claims.enabled: false.");
+        }
     }
 
     /**
@@ -689,6 +704,7 @@ public final class IceSMPCore {
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
         plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));
+        plugin.registerCommand("claim", "Terület-claim parancsok", List.of("birtok"), new hu.taliann.icesmp.commands.ClaimCommand(claimManager, currencyManager, messageManager));
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
@@ -735,6 +751,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ServerChallengeListener(serverChallengeManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EscortListener(escortManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PartyListener(plugin, partyManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimProtectionListener(claimManager, configManager, factionManager, raidManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatFormatListener(configManager, hudManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);

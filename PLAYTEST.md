@@ -40,7 +40,8 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 |---|---|
 | **TAB** | ⚠️ Állítsd be: `general.yml` → `hud.sidebar-enabled: false` és `hud.tablist-enabled: false` (induláskor a konzol figyelmeztet, ha nem). Az IceSMP-adatok a TAB-ban `%icesmp_...%` placeholderekkel jeleníthetők meg — a **party-HUD-hoz**: `%icesmp_party_size%` és `%icesmp_party_1%`…`%icesmp_party_5%` (soronként „👑 Név ▮▮▮░░ 6❤"). A boss-barok (raid/vérhold/boss/kihívás/escort) TAB mellett is mennek. |
 | **WorldGuard** | ✅ Automatikus: a blokkot helyező események (**meteor, kincs**) reflexiós hídon át **kerülik a WG-régiókat** (spawn/városok). Induláskor a konzol jelzi, ha a híd él. WG-régióban a mob-spawn flag blokkolhatja az esemény-mobokat (invázió/hajsza) — ez nem hiba, az esemény kecsesen kezeli. |
-| **SimpleClaimSystem** | A meteor/kincs a WG-régiókat kerüli, az SCS-claimeket nem ismeri — de mindkét esemény **magától teljesen visszaáll/eltűnik**, maradandó nyomot nem hagy. Ha zavaró, a spawn-sugár (`spawn-radius`) csökkenthető. |
+| **SimpleClaimSystem** | ⚠️ **Kiváltva a natív `/claim` rendszerrel** — az SCS ezután feleslegessé válik. **Migrálás:** a régi SCS-claimek **nem konvertálódnak automatikusan** — a játékosoknak újra kell claimelniük a területüket (vagy admin kézzel pótolja), utána az SCS jar **törölhető** a szerverről. |
+| **LuckPermsChatFormatterFolia** | ⚠️ **Kiváltva a natív chat-formázóval** (`chat.format-enabled` a `general.yml`-ben) — a jar **törölhető**. Amíg mindkettő fent van, kapcsold ki az egyiket, különben dupla formázás történik a chatben. |
 | **GrimAC** | 🔎 Playtesten figyelni: a mozgató spellek (Villanás, Árnyéklépés, Hősi Szökellés, Dupla Ugrás, Fázisugrás…), az invázió-bajnok földcsapás-lökése és a frakció-elytrák okozhatnak fals riasztást. Ha igen: Grim-oldali exempt/enyhítés a jelzett check-re. |
 | **CoreProtect** | A plugin által lehelyezett/visszaállított blokkok (meteor-kráter, kincsesláda) nem játékos-akciók, a CoreProtect nem naplózza őket — egy nagy területű **rollback a kráter-visszaállítás után** felesleges (magától visszaáll). |
 | **VillagerTradeEdit** | A karaván-NPC (WanderingTrader) natív trade-GUI-ját az IceSMP letiltja és a saját boltját nyitja — a VTE a karaván-kereskedőt így nem érinti. Playtesten egyszer ellenőrizd. |
@@ -402,6 +403,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Party-HUD:** csapatban a HUD-oldalsávon megjelenik a „— Csapat —" szekció (👑 vezető, tagnév +
       élet-sáv); a társ sebződésekor a sávja **sárgára/pirosra vált** (~1 mp-en belül frissül); a csapat
       feloszlása után a szekció **eltűnik és nem hagy üres sorokat** az oldalsávon.
+- [ ] **Claim:** `/claim` lefoglal (részecske-határ); másik fiók NEM tud törni/rakni/ládát nyitni benne
+      (action-bar üzenet); `trust` után igen; robbanás nem bont claimelt blokkot;
+      frakció-territóriumban/WG-régióban a claim elutasítva; a 4. chunktól ár (bankból, ELÉG); `unclaim`
+      nem ad vissza pénzt; admin: `/claim admin unclaim`.
+- [ ] **Chat-formázó:** a chatben `[LP-prefix] Név: üzenet` formátum, a név frakció-színnel; LuckPerms
+      nélkül is működik (prefix nélkül). ⚠️ Ha a régi LuckPermsChatFormatterFolia plugin még fent van,
+      kapcsold ki az egyiket (dupla formázás)!
 
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,

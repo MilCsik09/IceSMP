@@ -31,6 +31,8 @@ public final class TreasureEventManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final PartyManager partyManager;
+    private final ClaimManager claimManager;
     private final MessageManager messageManager;
 
     private volatile Location chest;
@@ -40,10 +42,12 @@ public final class TreasureEventManager {
     private volatile long nextAttemptAt;
 
     public TreasureEventManager(final JavaPlugin plugin, final ConfigManager configManager,
-                                final PartyManager partyManager, final MessageManager messageManager) {
+                                final PartyManager partyManager, final ClaimManager claimManager,
+                                final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.partyManager = partyManager;
+        this.claimManager = claimManager;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
@@ -122,9 +126,10 @@ public final class TreasureEventManager {
     private void placeChest(final World world, final int x, final int z) {
         final int y = world.getHighestBlockYAt(x, z) + 1;
         final Location spot = new Location(world, x, y, z);
-        // Never place the chest inside a WorldGuard region (towns/spawn) — a protected
-        // area would also block players from opening/breaking it. Retry next interval.
-        if (hu.taliann.icesmp.integration.ProtectionBridge.isProtected(spot)) {
+        // Never place the chest inside a WorldGuard region (towns/spawn) or a player
+        // claim — protection would also block opening/breaking it. Retry next interval.
+        if (hu.taliann.icesmp.integration.ProtectionBridge.isProtected(spot)
+                || claimManager.getClaimAt(spot) != null) {
             return;
         }
         final Block block = spot.getBlock();

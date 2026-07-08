@@ -63,6 +63,8 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 > A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
 > helyzetben (Piros a tűznél, Kék a víz alatt, Semleges esésnél és vándorlásnál, Sötét a szörnyek közt).
 
+A chatben a neved a **frakciód színében** jelenik meg (a rang-prefixszel együtt).
+
 **Fontos a Sötét frakcióról:**
 - Csak az léphet be, akit **bűnössé (sinner)** bélyegeztek.
 - Belépéskor megköttetik a **sötét paktum** — onnantól a bűnös jelölést **soha nem lehet
@@ -552,6 +554,26 @@ név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezető
 így harc közben is látod, kinek kell segítség (WoW party-frame-módra). Ha nem vagy csapatban, a
 szekció el sem foglal helyet az oldalsávon.
 
+### Terület-claim (saját birtok) 🏠
+`/claim` lefoglalja azt a chunkot, amiben éppen állsz. Az első **3 chunk ingyenes**, utána a claim
+ára a **saját frakció-valutádban** fizetendő és chunkonként **egyre drágább** — ez az ár **ELÉG**
+(money sink), tehát az `/claim unclaim`-nál sem jár vissza.
+
+**Mit véd a claim:** idegenek nem törhetnek/rakhatnak blokkot, nem nyithatnak konténert (láda,
+hordó, kemence…), nem üríthetnek vödröt, nem szedhetnek le kép-/festménykeretet a te chunkodban —
+és a **robbanás sem bontja** a claimelt blokkokat (a blokk-evő mobok, pl. enderman, szintén nem
+vihetnek el blokkot). **Fontos:** a claim a **PvP-t NEM tiltja** — ez háborús szerver, a claim csak
+az építést és a lopást védi.
+
+A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozzáférés minden
+claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza. `/claim info` megmutatja, kié az
+adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel rajzolja ki a chunk-határt.
+
+Frakció-territóriumba (királyság földje) és védett zónába (spawn/város) **nem lehet claimelni** — a
+meteor-becsapódás és az elrejtett kincs esemény is elkerüli a claimelt chunkokat. Raid alatt a
+claim alapból véd, de szerver-beállítástól függően a jelentkezett támadók a claim-ládákat
+hadizsákmányként **kinyithatják** (nem lebonthatják).
+
 ---
 
 ## 11. Királyság, raid és háború ✅
@@ -648,6 +670,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/quest list/info/accept/abandon`, `/quest log` | Küldetések + grafikus küldetésnapló |
 | `/events season/blood-moon/caravan` | Világesemények (szezon, vérhold, kereskedő-karaván) |
 | `/party`, `/p <üzenet>` | Party (csapat) + csapat-chat |
+| `/claim`, `/claim trust <név>` | Terület-claim (saját birtok) |
 | `/faction king tax <%>` | Király: adókulcs beállítása |
 | `/job givecatalyst` (admin) | Katalizátor pótlása |
 | `/exchangeboard place/remove` (admin) | Árfolyamtábla kezelése |
