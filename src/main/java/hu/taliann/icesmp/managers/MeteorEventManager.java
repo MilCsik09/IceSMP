@@ -136,9 +136,11 @@ public final class MeteorEventManager {
         final int surfaceY = world.getHighestBlockYAt(x, z);
         final Location center = new Location(world, x + 0.5D, surfaceY + 1, z + 0.5D);
 
-        // Terrain safety: never land inside a claimed faction territory.
+        // Terrain safety: never land inside a claimed faction territory, nor inside
+        // a WorldGuard region (towns/spawn) — the bridge fails open without WG.
         if (configManager.getBoolean("meteor.avoid-territory", true)
-                && territoryManager.getTerritoryAt(center) != null) {
+                && (territoryManager.getTerritoryAt(center) != null
+                        || hu.taliann.icesmp.integration.ProtectionBridge.isProtected(center))) {
             return; // Try again next interval, elsewhere.
         }
 

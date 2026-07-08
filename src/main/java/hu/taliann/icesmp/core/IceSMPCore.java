@@ -405,6 +405,7 @@ public final class IceSMPCore {
         // Surface admin typos (bad material/currency names, out-of-range percents, negative
         // durations) as clear log warnings — never blocks startup, only reports.
         ConfigValidator.validate(configManager, plugin.getLogger());
+        adviseOnPluginCompatibility();
         messageManager.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();
@@ -485,6 +486,31 @@ public final class IceSMPCore {
         final long intervalTicks = Math.max(10L, configManager.getLong("quest-npc-markers.interval-ticks", 40L));
         questNpcMarkerTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> npcQuestBridge.tickMarkers(), intervalTicks, intervalTicks);
+    }
+
+    /**
+     * Logs actionable guidance when known scoreboard/region plugins are present, so
+     * admins see the right config switches at startup instead of debugging a
+     * flickering sidebar or events landing in protected towns. Log-only; never
+     * changes behaviour by itself.
+     */
+    private void adviseOnPluginCompatibility() {
+        final org.bukkit.plugin.PluginManager pluginManager = plugin.getServer().getPluginManager();
+
+        if (pluginManager.getPlugin("TAB") != null) {
+            if (configManager.getBoolean("hud.sidebar-enabled", true)) {
+                plugin.getLogger().warning("TAB észlelve, de a hud.sidebar-enabled még true — a két scoreboard ütközni fog!"
+                        + " Ajánlott: general.yml → hud.sidebar-enabled: false, és a TAB-ban a %icesmp_...% placeholderek"
+                        + " (party-HUD: %icesmp_party_size%, %icesmp_party_1..5%).");
+            }
+            if (configManager.getBoolean("hud.tablist-enabled", true)) {
+                plugin.getLogger().warning("TAB észlelve, de a hud.tablist-enabled még true — a tab-lista neveken osztozni fognak."
+                        + " Ajánlott: general.yml → hud.tablist-enabled: false (frakció-szín a TAB-ból, %icesmp_faction%).");
+            }
+        }
+        if (pluginManager.getPlugin("WorldGuard") != null) {
+            plugin.getLogger().info("WorldGuard észlelve: a meteor/kincs események kerülik a WG-régiókat (ProtectionBridge).");
+        }
     }
 
     /**

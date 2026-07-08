@@ -122,6 +122,11 @@ public final class TreasureEventManager {
     private void placeChest(final World world, final int x, final int z) {
         final int y = world.getHighestBlockYAt(x, z) + 1;
         final Location spot = new Location(world, x, y, z);
+        // Never place the chest inside a WorldGuard region (towns/spawn) — a protected
+        // area would also block players from opening/breaking it. Retry next interval.
+        if (hu.taliann.icesmp.integration.ProtectionBridge.isProtected(spot)) {
+            return;
+        }
         final Block block = spot.getBlock();
         block.setType(Material.CHEST);
         chest = spot;

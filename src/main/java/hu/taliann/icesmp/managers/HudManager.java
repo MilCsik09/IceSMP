@@ -60,7 +60,8 @@ public final class HudManager {
      */
     public record HudSnapshot(String faction, String factionId, String className, int classLevel,
                               String balance, boolean hasClass, int resource, int resourceMax,
-                              int resourcePercent, String resourceName, String resourceBar) {
+                              int resourcePercent, String resourceName, String resourceBar,
+                              List<String> partyLines) {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
@@ -220,7 +221,25 @@ public final class HudManager {
                 resourceManager.resourceMax(),
                 showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
-                showResource ? resourceManager.resourceBarPlain(player) : "");
+                showResource ? resourceManager.resourceBarPlain(player) : "",
+                partyLinesPlain(player));
+    }
+
+    /**
+     * Plain-text party-frame lines for the PlaceholderAPI bridge (%icesmp_party_N%),
+     * so scoreboard plugins like TAB can render the party HUD when the IceSMP
+     * sidebar is disabled. Empty when the player is not in a party.
+     */
+    private List<String> partyLinesPlain(final Player player) {
+        final PartyManager.Party party = partyManager.getParty(player.getUniqueId());
+        if (party == null || !configManager.getBoolean("party.hud-enabled", true)) {
+            return List.of();
+        }
+        final List<String> lines = new ArrayList<>();
+        for (final UUID memberId : party.getMembers()) {
+            lines.add(PlainTextComponentSerializer.plainText().serialize(partyMemberLine(party, memberId)));
+        }
+        return List.copyOf(lines);
     }
 
     public void cleanup(final Player player) {

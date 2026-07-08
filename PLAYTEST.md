@@ -28,6 +28,26 @@ pipálni egy másolt példányban.
 - **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
   szerkeszthető és `/icesmp reload`-dal (vagy újraindítással) frissíthető. Néhány érték a manager
   indulásakor töltődik be — ha egy config-változás nem üt át reload-ra, **indítsd újra** a szervert.
+- **FRISSÍTÉS régi jar-ról:** az éles szerveren futó `IceSMP-1.0-SNAPSHOT` (áprilisi, ~200 KiB) óta a
+  plugin sokszorosára nőtt — az új jar feltöltése után az **új config/üzenet-fájlok maguktól
+  kicsomagolódnak** első indításkor, a régiek megmaradnak (a hiányzó kulcsok biztonságos
+  alapértékre esnek, a ConfigValidator a konzolon jelzi az elgépeléseket).
+
+### Kompatibilitás az éles szerver plugin-készletével 🔌
+Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. A lényeges pontok:
+
+| Plugin | Mit kell tudni / beállítani |
+|---|---|
+| **TAB** | ⚠️ Állítsd be: `general.yml` → `hud.sidebar-enabled: false` és `hud.tablist-enabled: false` (induláskor a konzol figyelmeztet, ha nem). Az IceSMP-adatok a TAB-ban `%icesmp_...%` placeholderekkel jeleníthetők meg — a **party-HUD-hoz**: `%icesmp_party_size%` és `%icesmp_party_1%`…`%icesmp_party_5%` (soronként „👑 Név ▮▮▮░░ 6❤"). A boss-barok (raid/vérhold/boss/kihívás/escort) TAB mellett is mennek. |
+| **WorldGuard** | ✅ Automatikus: a blokkot helyező események (**meteor, kincs**) reflexiós hídon át **kerülik a WG-régiókat** (spawn/városok). Induláskor a konzol jelzi, ha a híd él. WG-régióban a mob-spawn flag blokkolhatja az esemény-mobokat (invázió/hajsza) — ez nem hiba, az esemény kecsesen kezeli. |
+| **SimpleClaimSystem** | A meteor/kincs a WG-régiókat kerüli, az SCS-claimeket nem ismeri — de mindkét esemény **magától teljesen visszaáll/eltűnik**, maradandó nyomot nem hagy. Ha zavaró, a spawn-sugár (`spawn-radius`) csökkenthető. |
+| **GrimAC** | 🔎 Playtesten figyelni: a mozgató spellek (Villanás, Árnyéklépés, Hősi Szökellés, Dupla Ugrás, Fázisugrás…), az invázió-bajnok földcsapás-lökése és a frakció-elytrák okozhatnak fals riasztást. Ha igen: Grim-oldali exempt/enyhítés a jelzett check-re. |
+| **CoreProtect** | A plugin által lehelyezett/visszaállított blokkok (meteor-kráter, kincsesláda) nem játékos-akciók, a CoreProtect nem naplózza őket — egy nagy területű **rollback a kráter-visszaállítás után** felesleges (magától visszaáll). |
+| **VillagerTradeEdit** | A karaván-NPC (WanderingTrader) natív trade-GUI-ját az IceSMP letiltja és a saját boltját nyitja — a VTE a karaván-kereskedőt így nem érinti. Playtesten egyszer ellenőrizd. |
+| **ViaVersion/Backwards** | Régi kliens-verziók a HUD unicode-jeleit (👑 ❤ ▮) és a hosszú oldalsáv-sorokat csonkíthatják — kozmetikai, nem hiba. |
+| **FarmProtect** | Együttműködik: az IceSMP termés-listenerei `ignoreCancelled`-del futnak, a FarmProtect által tiltott esemény nem ad bónuszt. |
+| **economist** | Külön gazdaság: az IceSMP saját frakció-valutát használ (nincs Vault-híd) — a két rendszer nem keveredik. |
+| LuckPerms, GSit, CrazyCrates, FancyHolograms, AuMenus, voicechat, SModeration, minimotd, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert ütközés. |
 
 ### Permissionök tesztelőknek
 A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb jogosultság kell:

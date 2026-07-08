@@ -81,6 +81,13 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "resource_percent" -> snapshot.hasClass() ? String.valueOf(snapshot.resourcePercent()) : "";
             case "resource_name" -> snapshot.resourceName();
             case "resource_bar" -> snapshot.hasClass() ? snapshot.resourceBar() : "";
+            // Party frames for scoreboard plugins (TAB): the member count and one
+            // plain line per member ("👑 Name ▮▮▮░░ 6❤"); blank outside a party.
+            case "party_size" -> String.valueOf(snapshot.partyLines().size());
+            case "party_1", "party_2", "party_3", "party_4", "party_5" -> {
+                final int index = params.charAt(params.length() - 1) - '1';
+                yield index < snapshot.partyLines().size() ? snapshot.partyLines().get(index) : "";
+            }
             default -> null;
         };
     }
