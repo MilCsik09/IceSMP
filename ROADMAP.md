@@ -90,6 +90,32 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   effekt-időtartamot** is skálázza (config: power-per-rank / max-power-multiplier). További
   ötlet: rang-alapú extra effektek (pl. egy plusz státusz a max rangon).
 
+### Lehetséges további irányok (döntésre vár — egyik sincs elkezdve)
+A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erőfeszítés sorrendben:
+
+1. **Plugin-beolvasztás folytatása** (kevesebb külső függőség):
+   - 🟢 gyors: **FarmProtect** (termés-taposás, ~30 sor), **minimotd** (MOTD), **ICEsmpadditions**
+     (saját 2 KB-os mini-plugin — a forrása kell hozzá);
+   - 🟡 közepes: **economist + service-io** (ha semmi nem függ tőlük → törölhetők; vagy IceSMP
+     gazdaság-szolgáltató híd), **FancyHolograms** (általános `/hologram` admin-parancs a meglévő
+     TextDisplay-infrára), **AuMenus** (config-vezérelt hub-menü), **VillagerTradeEdit** (statikus
+     trade-módosítások configból);
+   - 🟠 nagy: **TAB** (header/footer + LP-prefix sorrend a saját HUD-ba), **WorldGuard**
+     (admin-zóna flagek a TerritoryManagerbe) — csak alapos playtest után.
+2. **Végjáték-progresszió:** presztízs/paragon szintek a max kaszt után, relikvia-fejlesztés
+   (reforge), szezon-emléktárgyak.
+3. **Egyedi dungeonök (PvE):** kézzel készített helyszínek megnevezett bossokkal, mechanikákkal,
+   loot-táblákkal (a LootTable + world-event infra újrahasznosítható).
+4. **Kozmetikumok GUI-ból, valutáért** (money sink): részecske-nyomok, kalapok, halál-üzenetek.
+   Ide köthető egy **natív crate-rendszer** is (CrazyCrates-kiváltás, frakció-valutás kulcsokkal).
+5. **Világesemény-bővítések:** vihar / aranyláz-zóna / napfogyatkozás, heti/eseményhez kötött
+   esemény-rotáció, karaván-készlet napi rotáció.
+6. **Party-extrák:** party-célpont jelölés, party-waypoint.
+7. **Claim-extrák:** claim-GUI, claim-bérlés frakciótársnak, piston/tűz edge-case védelem.
+8. **Raid-variánsok:** zászlófoglalás-mód, több egyidejű raid, védő-oldali erődítés.
+9. **Quest-extrák:** quest-lánc-térkép GUI, a maradék 9 kaszt mester-lánca (csak config).
+10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
+
 ### Világépítés (szerver-csapat, nem plugin-kód)
 - ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések.
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
