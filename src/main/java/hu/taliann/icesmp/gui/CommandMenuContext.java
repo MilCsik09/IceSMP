@@ -8,7 +8,6 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.EscortManager;
 import hu.taliann.icesmp.managers.MeteorEventManager;
-import hu.taliann.icesmp.managers.ParkourManager;
 import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
 import hu.taliann.icesmp.managers.SinManager;
@@ -59,6 +58,5 @@ public record CommandMenuContext(
         ClaimManager claimManager,
         SinManager sinManager,
         DailyQuestManager dailyQuestManager,
-        ParkourManager parkourManager,
         ConfigManager configManager) {
 }

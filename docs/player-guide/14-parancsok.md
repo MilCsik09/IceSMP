@@ -8,8 +8,8 @@ jelenti, hogy **elhagyható**.
 > főmenü** nyílik meg, ahonnan minden rendszer egy gombnyomásra elérhető, tematikus sorokba
 > rendezve: **Karakter** (Karakterlap, Varázskönyv, Társ, Küldetésnapló, Napi küldetés,
 > Elérések, Ranglisták) • **Közösség & világ** (Frakció, Csapat, Birtok, Események,
-> Körözési lista, Relikviák, Lélekszilánk) • **Gazdaság & egyéb** (Bank & Pénz, Piac,
-> Parkour — és adminoknak egy admin panel). Minden almenüben gombokkal intézhetsz mindent —
+> Körözési lista, Relikviák, Lélekszilánk) • **Gazdaság** (Bank & Pénz, Piac — és
+> adminoknak egy admin panel). Minden almenüben gombokkal intézhetsz mindent —
 > a háttérben ugyanazokat a parancsokat futtatja, amiket lent látsz.
 
 ## Mindennapi parancsok (mindenkinek)

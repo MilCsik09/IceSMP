@@ -63,7 +63,6 @@ public final class CommandMenus {
             case PARTY -> openParty(player, ctx);
             case CLAIM -> openClaim(player, ctx);
             case BOUNTY -> openBounty(player, ctx);
-            case PARKOUR -> openParkour(player, ctx);
             case ADMIN -> openAdmin(player, ctx);
         }
     }
@@ -112,8 +111,6 @@ public final class CommandMenus {
                 List.of(grey("Egyenleg, befizetés, kivét, árfolyam."), click())), "MENU:BANK");
         put(inv, holder, 29, GuiUtil.icon(Material.CHEST, title("Piac"),
                 List.of(grey("Vásárlás és eladás más játékosokkal."), click())), "OPEN:market");
-        put(inv, holder, 30, GuiUtil.icon(Material.FEATHER, title("Parkour"),
-                List.of(grey("Időmérős pályák, jutalommal."), click())), "MENU:PARKOUR");
         if (hasAnyAdminAccess(player)) {
             put(inv, holder, 34, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
@@ -488,39 +485,6 @@ public final class CommandMenus {
                                 label("Fejpénz", Component.text(ctx.currencyManager().formatBalance(sins * perSin)
                                         + " " + currency.getDisplayName(), NamedTextColor.GOLD)))), null);
             }
-        }
-
-        put(inv, holder, 22, backButton(), "MENU:MAIN");
-        player.openInventory(inv);
-    }
-
-    // ===== PARKOUR =====
-    public static void openParkour(final Player player, final CommandMenuContext ctx) {
-        final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.PARKOUR, player.getUniqueId());
-        final Inventory inv = create(holder, 27, "<dark_aqua>» Parkour «</dark_aqua>", ctx);
-
-        put(inv, holder, 4, GuiUtil.icon(Material.FEATHER, accent("Parkour-pályák"),
-                List.of(grey("Időmérős futamok — a cél"),
-                        grey("eléréséért jutalom jár."))), null);
-
-        int slot = 10;
-        boolean any = false;
-        for (final String id : ctx.parkourManager().getCourseIds()) {
-            if (!ctx.parkourManager().isReady(id)) {
-                continue;
-            }
-            if (slot > 16) {
-                break;
-            }
-            any = true;
-            put(inv, holder, slot++, GuiUtil.icon(Material.RABBIT_FOOT,
-                    Component.text(id, NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
-                    List.of(grey("Kattints: teleport a startra,"),
-                            grey("és indul az időmérés."), click())), "OPEN:parkour start " + id);
-        }
-        if (!any) {
-            put(inv, holder, 13, GuiUtil.icon(Material.GRAY_DYE,
-                    Component.text("Még nincs beállított pálya", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false), List.of()), null);
         }
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
