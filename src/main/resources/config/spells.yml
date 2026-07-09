@@ -36,6 +36,10 @@ spells:
     cooldown-reduction-per-rank: 0.08   # rangonként -8% cooldown
     min-cooldown-multiplier: 0.5        # max 50% csökkenés
     upgrade-base-cost: 50               # a köv. rang ára = base * (jelenlegi rang + 1)
+    # A rang a spell EREJÉT is skálázza: a sebzést, az önmagunk gyógyítását és a
+    # felrakott effektek IDŐTARTAMÁT (a költséget/self-damage-et NEM).
+    power-per-rank: 0.05                # rangonként +5% erő
+    max-power-multiplier: 1.5           # max +50% erő (5. rangon)
   # Kombók: ha az adott időablakon belül a 'first' után a 'second' spellt sütöd el,
   # a második gyorsabban épül fel (cooldown-visszatérítés) + látvány.
   combos:

@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.commands;
 
-import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -18,12 +18,12 @@ public final class SinnerCommand implements BasicCommand {
     private static final String PERMISSION = "icesmp.admin";
 
     private final JavaPlugin plugin;
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final MessageManager messageManager;
 
-    public SinnerCommand(final JavaPlugin plugin, final MetelytepoManager metelytepoManager, final MessageManager messageManager) {
+    public SinnerCommand(final JavaPlugin plugin, final SinManager sinManager, final MessageManager messageManager) {
         this.plugin = plugin;
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.messageManager = messageManager;
     }
 
@@ -55,7 +55,7 @@ public final class SinnerCommand implements BasicCommand {
         target.getScheduler().run(plugin, task -> {
             switch (action) {
                 case "add" -> {
-                    final int newCount = metelytepoManager.addSin(target, 1);
+                    final int newCount = sinManager.addSin(target, 1);
                     sender.sendMessage(messageManager.getMessage(
                             "sinner.add-success",
                             "<green>Bűn rögzítve: <white>{player}</white> <gray>(bűnök: <white>{count}</white>)</gray></green>",
@@ -67,13 +67,13 @@ public final class SinnerCommand implements BasicCommand {
                         "<gray>{player}: bűnös: <white>{sinner}</white> | bűnök: <white>{count}</white> | sötét paktum: <white>{pact}</white></gray>",
                         java.util.Map.of(
                                 "player", target.getName(),
-                                "sinner", metelytepoManager.isSinner(target) ? "igen" : "nem",
-                                "count", String.valueOf(metelytepoManager.getSinCount(target)),
-                                "pact", metelytepoManager.hasDarkPact(target) ? "igen" : "nem"
+                                "sinner", sinManager.isSinner(target) ? "igen" : "nem",
+                                "count", String.valueOf(sinManager.getSinCount(target)),
+                                "pact", sinManager.hasDarkPact(target) ? "igen" : "nem"
                         )
                 ));
                 case "set" -> {
-                    metelytepoManager.markAsSinner(target);
+                    sinManager.markAsSinner(target);
                     sender.sendMessage(messageManager.getMessage(
                             "sinner.set-success",
                             "<green>A jatekos bunosse lett teve: <white>{player}</white></green>",
@@ -81,7 +81,7 @@ public final class SinnerCommand implements BasicCommand {
                     ));
                 }
                 case "clear" -> {
-                    if (!metelytepoManager.clearSinner(target)) {
+                    if (!sinManager.clearSinner(target)) {
                         sender.sendMessage(messageManager.getMessage(
                                 "sinner.clear-blocked-dark-pact",
                                 "<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>",

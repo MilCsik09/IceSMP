@@ -66,6 +66,25 @@ public final class SpellMasteryManager {
         return Math.max(floor, 1.0D - (getRank(player, spellId) * perRank));
     }
 
+    /**
+     * The power multiplier for the player's mastery of a spell:
+     * {@code 1 + rank * power-per-rank}, capped at a configured maximum. Scales
+     * the spell's offensive output (damage, self-heal, effect duration); 1.0 =
+     * no boost.
+     *
+     * @param player the caster
+     * @param spellId the spell id
+     * @return a value >= 1.0
+     */
+    public double getPowerMultiplier(final Player player, final String spellId) {
+        if (!isEnabled()) {
+            return 1.0D;
+        }
+        final double perRank = Math.max(0.0D, configManager.getDouble("spells.mastery.power-per-rank", 0.05D));
+        final double cap = Math.max(1.0D, configManager.getDouble("spells.mastery.max-power-multiplier", 1.5D));
+        return Math.min(cap, 1.0D + (getRank(player, spellId) * perRank));
+    }
+
     /** The currency cost of the player's next rank for a spell. */
     public long getUpgradeCost(final Player player, final String spellId) {
         final long base = Math.max(1L, configManager.getLong("spells.mastery.upgrade-base-cost", 50L));

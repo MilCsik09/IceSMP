@@ -224,7 +224,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         } else {
             selected.consumeCost(player);
         }
-        if (!selected.executeSpell(player)) {
+        // Spell-mastery power scales the offensive output (damage, self-heal, effect duration).
+        final double power = masteryManager.getPowerMultiplier(player, selected.getId());
+        if (!selected.executeSpell(player, power)) {
             // No effect fired (no target, no companions, …) — refund the cost and skip the
             // cooldown so a missed cast costs the player nothing.
             if (useResource) {

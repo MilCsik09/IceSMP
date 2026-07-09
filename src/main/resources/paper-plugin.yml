@@ -16,7 +16,15 @@ authors: [ Taliann ]
 #  - LibsDisguises: a Druida formák vizuális átalakulása (mob-disguise). A reflexiós híd
 #    (DruidDisguise) join-classpath-tal éri el az osztályait futásidőben.
 #  - PlaceholderAPI: a %icesmp_...% placeholderek (pl. a TAB megjeleníti az Erő-csíkot,
-#    frakciót, kasztot). load: BEFORE, hogy a regisztrációkor már elérhető legyen.
+#    frakciót, kasztot, party-HUD-ot). load: BEFORE, hogy a regisztrációkor már elérhető legyen.
+#  - FancyNpcs: a TALK_TO_NPC quest-objektívák (kaszt-mester próbák). A reflexiós híd
+#    (FancyNpcsQuestBridge) join-classpath-tal éri el az API-ját futásidőben.
+#  - WorldGuard: a blokkot helyező események (meteor, kincs) kerülik a WG-régiókat. A
+#    reflexiós híd (ProtectionBridge) join-classpath-tal éri el az API-ját futásidőben.
+#  - LuckPerms: a natív chat-formázó a LP prefix/suffix-et jeleníti meg. A reflexiós híd
+#    (LuckPermsBridge) join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
+#  - TAB: csak load-order (az indulási kompatibilitás-tanácsadó megbízhatóan észlelje);
+#    az IceSMP nem hívja az API-ját.
 dependencies:
   server:
     LibsDisguises:
@@ -24,6 +32,21 @@ dependencies:
       required: false
       join-classpath: true
     PlaceholderAPI:
+      load: BEFORE
+      required: false
+    FancyNpcs:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    WorldGuard:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    LuckPerms:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    TAB:
       load: BEFORE
       required: false
 

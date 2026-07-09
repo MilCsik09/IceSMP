@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.MetelytepoManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
@@ -49,6 +50,7 @@ public final class MetelytepoRelicListener implements Listener {
 
     private final JavaPlugin plugin;
     private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final MessageManager messageManager;
 
     /**
@@ -56,12 +58,14 @@ public final class MetelytepoRelicListener implements Listener {
      *
      * @param plugin the owning plugin (for Folia cross-entity scheduling)
      * @param metelytepoManager the manager for Metelytepo-specific mechanics
+     * @param sinManager the sin domain (sinner marks read for PvP relic transfer)
      * @param messageManager the manager for player-facing messages
      */
     public MetelytepoRelicListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager,
-                                   final MessageManager messageManager) {
+                                   final SinManager sinManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.messageManager = messageManager;
     }
 
@@ -135,7 +139,7 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        if (!metelytepoManager.isSinner(target)) {
+        if (!metelytepoManager.isRelicTarget(target)) {
             playRejectedTargetSound(target.getLocation());
             event.setDamage(event.getDamage() * NON_SINNER_DAMAGE_MULTIPLIER);
             return;
@@ -213,7 +217,7 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        if (victim instanceof Player victimPlayer && metelytepoManager.isSinner(victimPlayer)) {
+        if (victim instanceof Player victimPlayer && sinManager.isSinner(victimPlayer)) {
             return;
         }
 
@@ -221,8 +225,8 @@ public final class MetelytepoRelicListener implements Listener {
         // writes the killer's PDC and messages the killer (a different entity). Hop onto the killer's
         // own scheduler so the whole check-and-mark happens on the killer's region thread.
         killer.getScheduler().run(plugin, task -> {
-            if (!metelytepoManager.isSinner(killer)) {
-                metelytepoManager.markAsSinner(killer);
+            if (!sinManager.isSinner(killer)) {
+                sinManager.markAsSinner(killer);
                 killer.sendMessage(messageManager.getComponent("messages.sinner-marked",
                         "&5A Metelytepo igazsagot latott: &cbunos lettel."));
             }
@@ -257,7 +261,7 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        final boolean sinner = metelytepoManager.isSinner(target);
+        final boolean sinner = metelytepoManager.isRelicTarget(target);
         if (!sinner) {
             playRejectedTargetSound(target.getLocation());
             player.sendActionBar(messageManager.getComponent("messages.target-not-sinner",
@@ -352,7 +356,7 @@ public final class MetelytepoRelicListener implements Listener {
                 continue;
             }
 
-            if (!metelytepoManager.isUndead(living) && !metelytepoManager.isSinner(living)) {
+            if (!metelytepoManager.isUndead(living) && !metelytepoManager.isRelicTarget(living)) {
                 continue;
             }
 

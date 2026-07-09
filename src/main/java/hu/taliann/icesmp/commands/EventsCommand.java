@@ -1,7 +1,16 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.managers.AmbientEventManager;
 import hu.taliann.icesmp.managers.BloodMoonManager;
+import hu.taliann.icesmp.managers.CaravanManager;
+import hu.taliann.icesmp.managers.GatheringBuffManager;
+import hu.taliann.icesmp.managers.TreasureEventManager;
+import hu.taliann.icesmp.managers.WildHuntManager;
+import hu.taliann.icesmp.managers.AbundanceManager;
+import hu.taliann.icesmp.managers.ServerChallengeManager;
+import hu.taliann.icesmp.managers.EscortManager;
+import hu.taliann.icesmp.managers.MeteorEventManager;
 import hu.taliann.icesmp.managers.IntroManager;
 import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.SeasonManager;
@@ -29,16 +38,39 @@ public final class EventsCommand implements BasicCommand {
     private final BloodMoonManager bloodMoonManager;
     private final WorldBossManager worldBossManager;
     private final InvasionManager invasionManager;
+    private final CaravanManager caravanManager;
+    private final AmbientEventManager ambientEventManager;
+    private final GatheringBuffManager gatheringBuffManager;
+    private final TreasureEventManager treasureEventManager;
+    private final WildHuntManager wildHuntManager;
+    private final AbundanceManager abundanceManager;
+    private final ServerChallengeManager serverChallengeManager;
+    private final EscortManager escortManager;
+    private final MeteorEventManager meteorEventManager;
     private final IntroManager introManager;
     private final MessageManager messageManager;
 
     public EventsCommand(final SeasonManager seasonManager, final BloodMoonManager bloodMoonManager,
                          final WorldBossManager worldBossManager, final InvasionManager invasionManager,
-                         final IntroManager introManager, final MessageManager messageManager) {
+                         final CaravanManager caravanManager, final AmbientEventManager ambientEventManager,
+                         final GatheringBuffManager gatheringBuffManager, final TreasureEventManager treasureEventManager,
+                         final WildHuntManager wildHuntManager, final AbundanceManager abundanceManager,
+                         final ServerChallengeManager serverChallengeManager, final EscortManager escortManager,
+                         final MeteorEventManager meteorEventManager, final IntroManager introManager,
+                         final MessageManager messageManager) {
         this.seasonManager = seasonManager;
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
         this.invasionManager = invasionManager;
+        this.caravanManager = caravanManager;
+        this.ambientEventManager = ambientEventManager;
+        this.gatheringBuffManager = gatheringBuffManager;
+        this.treasureEventManager = treasureEventManager;
+        this.wildHuntManager = wildHuntManager;
+        this.abundanceManager = abundanceManager;
+        this.serverChallengeManager = serverChallengeManager;
+        this.escortManager = escortManager;
+        this.meteorEventManager = meteorEventManager;
         this.introManager = introManager;
         this.messageManager = messageManager;
     }
@@ -56,6 +88,15 @@ public final class EventsCommand implements BasicCommand {
             case "blood-moon", "bloodmoon" -> handleBloodMoon(sender, args);
             case "world-boss", "worldboss", "boss" -> handleWorldBoss(sender);
             case "invasion", "invazio" -> handleInvasion(sender);
+            case "caravan", "karavan" -> handleCaravan(sender, args);
+            case "ambient", "hangulat" -> handleAmbient(sender);
+            case "gathering", "buff", "gyujtes" -> handleGathering(sender);
+            case "treasure", "kincs" -> handleTreasure(sender);
+            case "wild-hunt", "wildhunt", "hajsza" -> handleWildHunt(sender);
+            case "abundance", "boseg" -> handleAbundance(sender);
+            case "challenge", "kihivas" -> handleChallenge(sender);
+            case "escort", "kiseret" -> handleEscort(sender);
+            case "meteor" -> handleMeteor(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -89,8 +130,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleWorldBoss(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
 
@@ -101,8 +141,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleInvasion(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
 
@@ -110,6 +149,119 @@ public final class EventsCommand implements BasicCommand {
         sender.sendMessage(invasionManager.forceStart(anchor)
                 ? messageManager.get("events-invasion-started", "&cInvázió elindítva!")
                 : messageManager.get("events-invasion-failed", "&7Nem sikerült (nincs online játékos)."));
+    }
+
+    private void handleCaravan(final CommandSender sender, final String[] args) {
+        // /events caravan [arrive|depart] — admin override; no arg = status.
+        if (args.length >= 2) {
+            if (!sender.hasPermission(ADMIN_PERMISSION)) {
+                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+                return;
+            }
+            final String sub = args[1].toLowerCase(Locale.ROOT);
+            if ("arrive".equals(sub) || "start".equals(sub)) {
+                final Player anchor = sender instanceof Player player ? player : null;
+                sender.sendMessage(caravanManager.forceArrive(anchor)
+                        ? messageManager.get("events-caravan-arrived", "&6Kereskedő-karaván megérkezett!")
+                        : messageManager.get("events-caravan-already", "&7A karaván már a városban van."));
+            } else if ("depart".equals(sub) || "stop".equals(sub)) {
+                sender.sendMessage(caravanManager.forceDepart()
+                        ? messageManager.get("events-caravan-departed", "&6A karaván továbbállt.")
+                        : messageManager.get("events-caravan-not-active", "&7Most nincs itt karaván."));
+            } else {
+                sender.sendMessage(messageManager.get("events-caravan-usage", "&cHasználat: /events caravan [arrive|depart]"));
+            }
+            return;
+        }
+
+        sender.sendMessage(messageManager.get(
+                caravanManager.isActive() ? "events-caravan-active" : "events-caravan-inactive",
+                caravanManager.isActive() ? "&6A kereskedő-karaván épp a városban van!" : "&7Jelenleg nincs itt kereskedő-karaván."));
+    }
+
+    private void handleAmbient(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        sender.sendMessage(ambientEventManager.forceRandom()
+                ? messageManager.get("events-ambient-fired", "&bHangulat-esemény kiváltva!")
+                : messageManager.get("events-ambient-none", "&7Nincs engedélyezett hangulat-esemény a configban."));
+    }
+
+    private void handleGathering(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        sender.sendMessage(gatheringBuffManager.forceRandom()
+                ? messageManager.get("events-gathering-fired", "&eGyűjtögető buff-ablak megnyitva!")
+                : messageManager.get("events-gathering-none", "&7Már fut egy buff-ablak, vagy egy sincs engedélyezve."));
+    }
+
+    private void handleTreasure(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(treasureEventManager.forceSpawn(anchor)
+                ? messageManager.get("events-treasure-spawned", "&6Kincs elrejtve a közeledben!")
+                : messageManager.get("events-treasure-failed", "&7Nem sikerült (már van elrejtett kincs, vagy nincs online játékos)."));
+    }
+
+    private void handleWildHunt(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(wildHuntManager.forceStart(anchor)
+                ? messageManager.get("events-wildhunt-started", "&4Vad Hajsza elindítva!")
+                : messageManager.get("events-wildhunt-failed", "&7Nem sikerült (már kóborol egy fenevad, vagy nincs online játékos)."));
+    }
+
+    private void handleAbundance(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        sender.sendMessage(abundanceManager.forceStart()
+                ? messageManager.get("events-abundance-started", "&aBőség-idő elindítva!")
+                : messageManager.get("events-abundance-already", "&7Már tart egy Bőség-idő."));
+    }
+
+    private void handleChallenge(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        sender.sendMessage(serverChallengeManager.forceStart()
+                ? messageManager.get("events-challenge-started", "&6Szerver-kihívás elindítva!")
+                : messageManager.get("events-challenge-already", "&7Már fut egy szerver-kihívás, vagy egy sincs engedélyezve."));
+    }
+
+    private void handleEscort(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(escortManager.forceStart(anchor)
+                ? messageManager.get("events-escort-started", "&eKaraván-kíséret elindítva!")
+                : messageManager.get("events-escort-failed", "&7Nem sikerült (már úton van egy konvoj, vagy nincs online játékos)."));
+    }
+
+    private void handleMeteor(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(meteorEventManager.forceSpawn(anchor)
+                ? messageManager.get("events-meteor-spawned", "&cMeteor becsapódott a közeledben!")
+                : messageManager.get("events-meteor-failed", "&7Nem sikerült (már van kráter, vagy nincs online játékos)."));
+    }
+
+    /** One admin gate for every admin-only subcommand: messages and returns false when denied. */
+    private boolean requireAdmin(final CommandSender sender) {
+        if (sender.hasPermission(ADMIN_PERMISSION)) {
+            return true;
+        }
+        sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        return false;
     }
 
     private void handleSeason(final CommandSender sender) {
@@ -125,8 +277,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleIntro(final CommandSender sender, final String[] args) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
 
@@ -154,14 +305,21 @@ public final class EventsCommand implements BasicCommand {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                    ? List.of("season", "blood-moon", "worldboss", "invasion", "intro")
-                    : List.of("season", "blood-moon");
+                    ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
+                    : List.of("season", "blood-moon", "caravan");
             return options.stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
         if (args.length == 2 && ("blood-moon".equalsIgnoreCase(args[0]) || "bloodmoon".equalsIgnoreCase(args[0]))
                 && sender.hasPermission(ADMIN_PERMISSION)) {
             return List.of("start", "stop").stream()
+                    .filter(option -> option.startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .toList();
+        }
+
+        if (args.length == 2 && ("caravan".equalsIgnoreCase(args[0]) || "karavan".equalsIgnoreCase(args[0]))
+                && sender.hasPermission(ADMIN_PERMISSION)) {
+            return List.of("arrive", "depart").stream()
                     .filter(option -> option.startsWith(args[1].toLowerCase(Locale.ROOT)))
                     .toList();
         }

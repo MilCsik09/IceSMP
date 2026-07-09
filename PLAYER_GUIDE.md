@@ -63,15 +63,29 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 > A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
 > helyzetben (Piros a tűznél, Kék a víz alatt, Semleges esésnél és vándorlásnál, Sötét a szörnyek közt).
 
+A chatben a neved a **frakciód színében** jelenik meg (a rang-prefixszel együtt).
+
 **Fontos a Sötét frakcióról:**
 - Csak az léphet be, akit **bűnössé (sinner)** bélyegeztek.
 - Belépéskor megköttetik a **sötét paktum** — onnantól a bűnös jelölést **soha nem lehet
   levenni** (még frakcióelhagyás után sem). Az egyetlen visszaút a **vezeklés-küldetéslánc**
   (lásd a Küldetéseknél).
 
-**Hogyan leszel bűnös?** Ha **megölsz egy másik játékost**, +1 bűnt kapsz. **4 bűnnél**
-automatikusan **száműznek a Sötét frakcióba** (örök paktummal). Kivétel: raid alatt a
-hadviselő frakciók közti ölés **nem számít bűnnek**.
+**Hogyan leszel bűnös?** **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök
+paktummal). Bűnt háromféleképp követhetsz el:
+- **Gyilkosság:** megölsz egy másik játékost → **+1 bűn**.
+- **Árulás:** a **saját frakciótársadat** ölöd meg → **+2 bűn** (a Semlegesek laza közössége
+  kivétel — köztük az ölés sima gyilkosság).
+- **Lopás:** egy **másik frakció területén** konténerből (láda, hordó, kemence…) tárgyat
+  veszel ki → **+1 bűn** (egy fosztogatás-sorozat területenként egyszer számít).
+
+Kivétel: **raid alatt** a **jelentkezett harcosok** (`/faction raid join`) közti **ölés és az
+ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett, arra raid alatt
+is a békeidős szabályok élnek.
+
+**Fejvadászat:** aki elér **3 bűnt**, az **körözötté** válik — a fejére **fejpénz** kerül (a
+`/bounty` lista mutatja). Aki megöl egy körözöttet, **megkapja a fejpénzt** és **nem kap érte
+bűnt** (igazságos kivégzés); a bűnöző bűnszámlálója nullázódik.
 
 ---
 
@@ -98,6 +112,14 @@ Játékos–játékos kereskedés:
 - `/market` — böngésző felület; kattints egy tételre a **megvásárláshoz** (a banki egyenlegedből fizet).
 - `/market cancel` — visszavonod a saját tételeidet (visszakapod az itemeket).
 - **Eladási díj:** minden eladásból ~10% „elég" (eltűnik a gazdaságból) — ez fékezi az inflációt.
+- **Aukció:** `/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]` — a kezedben tartott
+  tárgyra **licitálós** aukciót indítasz (alapból 24 óra, max. 72). A `buyout:<ár>` opcionális:
+  aki eléri, **azonnal megnyeri** az aukciót. A GUI-ban kattintás-típussal licitálsz — **bal-katt**:
+  minimum licit, **jobb-katt**: nagyobb ugrás, **shift-katt**: azonnali buy-out.
+  A licit a **bankodból zárolódik**, túllicitálásnál **automatikusan visszajár**. Lejáratkor a
+  legmagasabb licit (díj levonása után) az eladóé, a tárgy a nyertesé — ha épp nem vagy fenn,
+  belépéskor vagy `/market claim`-mel kapod meg. Élő licites aukció **nem vonható vissza**.
+  (Aukciónál a licit fix összeg — a reputáció-felár csak a fix-áras tételekre vonatkozik.)
 - **Frakció-reputáció:** a vételár attól is függ, milyen viszonyban van a frakciód az
   eladóéval. **Ellenséges** (vagy épp raidben álló) frakciótól drágább (+25% felár, ami elég),
   **szövetségestől** olcsóbb (−10%). Semleges viszonynál nincs változás.
@@ -113,6 +135,11 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
   x1.2–1.6-ra ugrik** (broadcast jelzi) — kereskedési lehetőség.
 - **Lélekkő:** a magas szintű (Lvl 3+) skálázott szörnyek eséllyel **Sötét tokent** dobnak — a
   veszélyes, spawntól távoli vidékek így gazdaságilag is megérik.
+- **Frakció-boltok:** a fővárosi **bolt-NPC-kre jobb-kattintva** fix áron vehetsz portékát a banki
+  egyenlegedből — a pénz eltűnik (money sink).
+- **Kereskedő-karaván:** időnként egy **vándorkereskedő** bukkan fel a világban (broadcast jelzi,
+  merre, és meddig marad). Amíg itt van, **jobb-katt a karaván-NPC-re** → ritka portékák boltja fix
+  áron (a pénz szintén eltűnik). Ha lekésed, legközelebb máshol tűnik fel.
 
 ---
 
@@ -449,8 +476,103 @@ Időnként egy **szörnyhorda** spawnol egy véletlen játékos köré (broadcas
 **skálázott, megnevezett bajnok (mini-boss)** vezet, amely szintén telegrafált földcsapással támad.
 A horda mobjai skálázottak — extra **XP-vel és lélekkő-eséllyel** jutalmaznak.
 
+### Kereskedő-karaván ✦
+Időnként egy **vándorkereskedő karaván** érkezik egy helyszínre (broadcast jelzi, melyik világba és
+mennyi ideig marad). Amíg a városban van, **jobb-katt a karaván-NPC-re** → egy bolt nyílik **ritka
+portékákkal** (arany alma, gyémánttömb, névcímke, tapasztalat-palack…), fix áron a banki
+egyenlegedből. A kifizetett pénz eltűnik (money sink). A karaván **korlátozott ideig** marad, majd
+továbbáll — ha lekésed, legközelebb máshol bukkan fel.
+
+### Hangulat-események ✦
+Időnként apró, **légköri események** teszik élőbbé a világot (nem befolyásolják a balanszot):
+**északi fény** (rövid éjjellátás + csillámló égbolt), **hulló csillag** (broadcast a becsapódás
+irányával), **köd**, **bolyongó szellemek**, **szentjánosbogarak**, valamint **állat-vándorlás**
+(egy passzív állatcsorda vándorol be a közeledbe — élelemforrás, nem pénz).
+
+### Gyűjtögető buff-ablakok ⛏🎣
+Időnként megnyílik egy **szerver-szintű bónusz-ablak** (kb. 15 percre) — csak nyersanyag/XP, sosem
+pénz: **bányász-láz** (érc-blokk bónusz drop), **termés-óra** (beérett termés bónusz hozam),
+**halászati láz** (esély dupla fogásra), **tapasztalat-óra** (XP-szorzó mindenből). Egy broadcast
+jelzi a kezdetét és a végét — ilyenkor érdemes rákapcsolni a megfelelő tevékenységre!
+
+### Elrejtett kincs 🗺
+Időnként egy **megjelölt kincsesláda** bukkan fel egy játékos közelében, és a broadcast megadja a
+**hozzávetőleges helyét** (világ + koordináta). Az **első**, aki odaér és **rákattint** (vagy
+kibányássza), viszi a teljes loot-ot (nyersanyag, nem pénz), majd a láda eltűnik. Ha senki nem
+találja meg időben, feltáratlanul elenyészik — érdemes sietni!
+
+### Vad Hajsza 🐺
+Időnként egy **megnevezett, feldühödött elit fenevad** (Ősi Fenevad, Csont Vadász, Vén Mágus,
+Pokoli Behemót) kóborol be egy játékos közelébe — kóborló mini-fenyegetés az invázió-hordák és a
+világbossok között. Aki **leteríti**, **ritka loot-ot** kap (nyersanyag, nem pénz); ha időben senki
+nem öli meg, eltűnik a vadonban.
+
+### Bőség-idő 🌱
+A vérhold **pozitív ellenpárja**: egy nyugodt időablak, amikor a **termés gyorsabban nő**, az
+**állatok néha ikret ellenek**, **kevesebb szörny** spawnol, és **gyengéd regeneráció** leng
+mindenkin. Építeni, farmolni, feltöltődni való — a béke szigete a háború közepén.
+
+### Kollektív szerver-kihívás ⚔
+Időnként az **egész szerver** kap egy közös, időzített célt (pl. öljetek meg együtt 500 szörnyet /
+bányásszatok 800 ércet / takarítsatok be 1000 termést) — a haladást **boss-bar** mutatja mindenkinek.
+Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap (XP + nyersanyag-csomag +
+rövid Sietség-buff). Közös cél, közös jutalom.
+
+### Karaván-kíséret 🛡
+Időnként egy **konvoj** (ládás láma) indul útnak egy cél felé, és útközben **szörny-hullámok**
+támadják — a haladást **boss-bar** mutatja. A közelben lévő játékosoknak **életben kell tartaniuk**,
+míg célba ér. Ha odaér, a **zsákmány a célnál** hullik, és a **kereskedő-karaván boltja egy ideig
+bővebb (ritka) készlettel árul**. Ha a konvoj elesik vagy lejár az idő, a szállítmány elvész. (A
+kíséret-mobok robbanása **sosem rongálja a terepet**.)
+
+### Meteor-becsapódás ☄
+Időnként egy **meteor** csapódik be a vadonba (a broadcast megadja a helyét), és egy kis **kráter**
+marad, tele **ritka, kibányászható érccel** (gyémánt, smaragd, ősi törmelék…). Siess: a kráter csak
+egy ideig marad, aztán **magától visszaáll az eredeti terep** — amit addig kibányászol, a tiéd. A
+meteor **sosem csapódik claimelt frakció-területre**, és **nem rombolja maradandóan** a világot.
+
 ### Események megtekintése
-`/events season` — szezon-állás • `/events blood-moon` — vérhold állapota.
+`/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
+kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
+gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
+`/events escort` • `/events meteor`.)
+
+### Party (csapat) 👥
+WoW-stílusú csapat: max **5 fő**, teljesen **frakciótól függetlenül** (bármelyik frakcióból lehet
+egy csapatban). Meghívás: `/party invite <név>`, elfogadás: `/party accept` (elutasítás: `/party
+decline`). A közeli mob-ölésekből járó XP a közelben lévő párttagok közt **fejenként oszlik meg** —
+minél többen vagytok együtt, annál kisebb rész jut mindenkinek (igazi WoW-módra). A plugin saját
+loot-eseményeinél (**Vad Hajsza**, **elrejtett kincs**) nem egy közös zsákmány esik le: minden
+közelben lévő párttag a **saját (personal) jutalmát** kapja. Párton belül **nincs PvP** — a tagok
+sem közelharccal, sem nyíllal nem tudják sebezni egymást. Csapat-chat: `/p <üzenet>` (csak a
+párttagok látják). A csapatvezetőnek külön jogai vannak: `/party kick <név>`, `/party promote
+<név>`, `/party disband`. Ha valaki kilép a szerverről, kikerül a csapatból; ha 2 fő alá csökken a
+létszám, a csapat automatikusan feloszlik.
+
+**Party-HUD:** amíg csapatban vagy, a HUD-oldalsávon egy **„— Csapat —" szekció** mutatja a tagokat:
+név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezetőt 👑 jelöli — élőben frissül,
+így harc közben is látod, kinek kell segítség (WoW party-frame-módra). Ha nem vagy csapatban, a
+szekció el sem foglal helyet az oldalsávon.
+
+### Terület-claim (saját birtok) 🏠
+`/claim` lefoglalja azt a chunkot, amiben éppen állsz. Az első **3 chunk ingyenes**, utána a claim
+ára a **saját frakció-valutádban** fizetendő és chunkonként **egyre drágább** — ez az ár **ELÉG**
+(money sink), tehát az `/claim unclaim`-nál sem jár vissza.
+
+**Mit véd a claim:** idegenek nem törhetnek/rakhatnak blokkot, nem nyithatnak konténert (láda,
+hordó, kemence…), nem üríthetnek vödröt, nem szedhetnek le kép-/festménykeretet a te chunkodban —
+és a **robbanás sem bontja** a claimelt blokkokat (a blokk-evő mobok, pl. enderman, szintén nem
+vihetnek el blokkot). **Fontos:** a claim a **PvP-t NEM tiltja** — ez háborús szerver, a claim csak
+az építést és a lopást védi.
+
+A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozzáférés minden
+claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza. `/claim info` megmutatja, kié az
+adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel rajzolja ki a chunk-határt.
+
+Frakció-territóriumba (királyság földje) és védett zónába (spawn/város) **nem lehet claimelni** — a
+meteor-becsapódás és az elrejtett kincs esemény is elkerüli a claimelt chunkokat. Raid alatt a
+claim alapból véd, de szerver-beállítástól függően a jelentkezett támadók a claim-ládákat
+hadizsákmányként **kinyithatják** (nem lebonthatják).
 
 ---
 
@@ -471,28 +593,56 @@ maximumáig).
 - A kasszát az **adó** és az **adományok** töltik; a király és a raid-zsákmány költi.
 
 ### Raid ⚔️
-- `/faction raid <célfrakció>` — **csak a király** hirdethet; a nevezési díj a kasszából megy.
-- A raid alatt (alapból 15 perc) a **két hadviselő frakció közti ölés nem bűn**, hanem **pontot
-  ér**.
-- A végén a **több ölést szerző** oldal **hadizsákmányként** elviszi a vesztes kasszájának egy
-  részét (és **liga-pontot** kap a szezonba). A győztes frakció online tagjai **győzelmi buffot**
-  kapnak (Erő + Regeneráció egy ideig).
+- `/faction raid <célfrakció> [terület]` — **csak a király** hirdethet; a nevezési díj a
+  kasszából megy. A raid alapból a védő **fővárosáért** folyik.
+- **Felkészülés** (2 perc): harcosok jelentkezése `/faction raid join`-nal (**max 10/oldal**);
+  állás: `/faction raid status`.
+- A harci szakaszban **csak a jelentkezett harcosok közti ölés** szentesített és pontozó
+  (területkötött raidnél csak a zónán belül); a terület **középpontjának tartása** is pontot
+  termel. Ha a **támadó nyer**, a **területet is elfoglalja**.
+- A végén (a harc alapból 15 perc) a **több pontot szerző** oldal **hadizsákmányként** elviszi a
+  vesztes kasszájának egy részét (és **liga-pontot** kap a szezonba). A győztes frakció online
+  tagjai **győzelmi buffot** kapnak (Erő + Regeneráció egy ideig).
 - **Ostromágyú:** craftolható ostromfegyver (vasblokk-keret + TNT + tűzpor), ami **csak aktív
   raid alatt** sül el. Jobb katt = **pusztító, de terep-barát robbanás** a célzott pontra (sebzi
   az ellenfeleket, de nem rombolja a világot). Raiden kívül nem működik.
 
 ### Szezonális liga 🏆
 A frakciók **raid- és világboss-győzelmekből pontot** gyűjtenek. A szezon végén (alapból 60 nap)
-a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás: `/events season`.
+a vezető frakció **kasszája jutalmat kap**, a győztes frakció **online tagjai** pedig **győzelmi
+buffot + tárgy-jutalmat + ünneplő tűzijátékot**; utána a pontok resetelnek. Állás: `/events season`.
 
 ---
 
 ## 12. Küldetések ✅
 
 `/quest list` (felvehető), `/quest info` (aktív + haladás), `/quest accept <id>`,
-`/quest abandon <id>`. A haladásod az action barban követhető, teljesítéskor jutalmat kapsz
-(kaszt XP, valuta, képesség-feloldás, vagy különleges hatás).
+`/quest abandon <id>`, `/quest log` (grafikus **küldetésnapló**: Aktív / Felvehető /
+Teljesített fülek, shift-katt = feladás). A haladásod az action barban követhető,
+teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód pénze** —,
+**tárgy**, képesség-feloldás vagy különleges hatás).
 
+- **Több feladat egy questben:** egy küldetés több objektívát is tartalmazhat egyszerre
+  (pl. „ölj 10 szörnyet ÉS gyűjts 16 kenyeret”); mód: **ALL** (párhuzamos) vagy **SEQUENCE**
+  (sorban, story-lánchoz). A HUD/`/quest info` feladatonként mutatja a haladást.
+- **Ismétlődő és szezonális:** vannak **repeatable** questek (cooldown, pl. napi 24 óra után
+  újra felvehető) és **szezonális** questek (szezononként egyszer, új szezonban újra).
+  Egyes NPC-k **naponta frissülő** kínálatból (rotáció) adnak questeket, és a párbeszédük
+  után **választós opciók** indíthatnak eltérő folytatást.
+- **Frakció-közösségi célok:** szerver-szintű, **megosztott számláló**, amibe egy frakció
+  (vagy az egész szerver) minden tagja beleszámít (pl. „a Piros frakció gyűjtsön 1000 vasat”).
+  Nem egyéni quest — a normál játék közben gyűlik; teljesítéskor a frakció **kassza-jutalmat +
+  rövid buffot** kap, majd a cél újraindul.
+- **Mester-próbák (NPC-s láncok):** a kezdő próba után a kasztod **mester-NPC-jénél**
+  jelentkezhetsz (beszélj vele — FancyNpcs NPC a fővárosban); a **mester-próbát már maga
+  az NPC adja**, és teljesítened kell a **próbapályáját** (időmérős parkour).
+  Jutalom: 100 + 400 kaszt-XP.
+- **NPC-jelzés csak neked:** a quest-NPC-k felett **részecske-aura** világít, kizárólag annak
+  a játékosnak, akit érint — **arany** = questet tud adni neked, **zöld** = aktív küldetésed
+  hozzá szól.
+- **Story és beszállítás:** a quest-NPC-k **párbeszédet mondanak** a küldetés átadásakor és
+  leadásakor; a **beszállító questeknél** (DELIVER_ITEMS) a kért tárgyakat az NPC kattintásra
+  **átveszi tőled**. A jutalom-valuta lehet mindig a **saját frakciód pénze** is.
 - **Kaszt-próbák:** jelenleg a négy kezdő próba érhető el (`warrior_trial`, `archer_trial`,
   `wizard_trial`, `assassin_trial`), kaszt XP jutalommal. A többi kaszt saját NPC-s próbája
   még tervezett tartalom.
@@ -515,10 +665,12 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 | `/profession join/info/list` | Szakmák |
 | `/bank balance/deposit/withdraw` | Bank |
 | `/currency balance/pay/exchange/rates` | Valuta + árfolyam |
-| `/market`, `/market sell/cancel` | Piactér |
+| `/market`, `/market sell/auction/claim/cancel` | Piactér + aukciósház |
 | `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
-| `/quest list/info/accept/abandon` | Küldetések |
-| `/events season/blood-moon` | Világesemények |
+| `/quest list/info/accept/abandon`, `/quest log` | Küldetések + grafikus küldetésnapló |
+| `/events season/blood-moon/caravan` | Világesemények (szezon, vérhold, kereskedő-karaván) |
+| `/party`, `/p <üzenet>` | Party (csapat) + csapat-chat |
+| `/claim`, `/claim trust <név>` | Terület-claim (saját birtok) |
 | `/faction king tax <%>` | Király: adókulcs beállítása |
 | `/job givecatalyst` (admin) | Katalizátor pótlása |
 | `/exchangeboard place/remove` (admin) | Árfolyamtábla kezelése |
@@ -529,17 +681,13 @@ a vezető frakció **kasszája jutalmat kap**, és a pontok resetelnek. Állás:
 
 Ezek **még nem elérhetők** vagy csak részben működnek — ne számíts rájuk a játékban:
 
-- 🚧 **Bűn-rendszer:** a gyilkosság-számláló és a küszöbnél az automatikus száműzetés **kész**;
-  a lopás/árulás detektálás még nincs.
-- 🚧 **Raid:** nincs még 10v10 létszámkorlát vagy aréna-/területkötés (a győztes-buff és az
-  ostromágyú már **kész**).
-- 🚧 **Kaszt-questek:** egyelőre egyszerű „ölj X-et" típusú próbák — NPC-s pályák tervben
-  (a parkour-keret már **kész**: `/parkour`).
+- 🚧 **Kaszt-questek:** az NPC-s mester-próba láncok (mentor-NPC + próbapálya) **készek a
+  pluginban**, de a mester-NPC-k és a pályák kihelyezése a szerver-csapatra vár — addig a
+  láncok nem haladnak.
 - 🚧 **Piactér:** fizikai piactábla a fővárosokban még nincs (a lapozás, a `/market search`
-  keresés és a reputáció-árazás már **kész**).
+  keresés, a reputáció-árazás és a **licitálós aukciósház** már **kész**).
 - 🚧 **Intro:** a cím-szekvencia és a kamera-utaztatás **kész**, de a kameraút alapból ki van
   kapcsolva, amíg a szerver-csapat ki nem jelöli a waypointokat.
-- 🚧 **Szezonális liga:** működik a pontgyűjtés, de a győztes **kozmetikai relikvia-jutalma** még nincs.
 - ⏳ **Ultimate képességek** külön rendszerként (jelenleg a spec-ultik töltik be ezt a szerepet).
 - ⏳ **Világépítés:** a fővárosok, a Sötét romváros és a távolság-gyűrűk loot-asztalai a szerver
   csapatának feladata (a plugin a `/territory` paranccsal adja hozzá az eszközt a kijelölésükhöz).

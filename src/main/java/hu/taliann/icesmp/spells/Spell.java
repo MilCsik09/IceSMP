@@ -111,6 +111,20 @@ public interface Spell {
     }
 
     /**
+     * Casts the spell with a spell-mastery power multiplier (1.0 = base). The
+     * default ignores the multiplier and delegates to {@link #executeSpell(Player)},
+     * so only spells that support scaling (the configured spells) override it —
+     * every hand-written stateful spell keeps working unchanged.
+     *
+     * @param player the caster
+     * @param powerMultiplier the mastery power multiplier (>= 1.0)
+     * @return true if the spell's effect was applied
+     */
+    default boolean executeSpell(final Player player, final double powerMultiplier) {
+        return executeSpell(player);
+    }
+
+    /**
      * Human-facing effect description lines (damage, range, effects, …) shown in the
      * spellbook. Configured spells auto-generate precise numbers from their stats; the
      * default is empty so callers can fall back to a messages.yml description.

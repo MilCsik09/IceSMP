@@ -60,6 +60,13 @@ olvassa a fő `config.yml`-t (override, ez nyer). A betöltött fájlokat a `CON
 fel. Minden hívó a megszokott `getInt/getDouble/getString("alrendszer.kulcs", default)` API-t
 használja — a kulcs-útvonalak a fájlok között oszthatatlanok.
 
+Betöltés után a `ConfigValidator.validate(...)` **konvenció-alapú** ellenőrzést futtat a teljes
+kulcstéren (soha nem dob, csak a konzolra figyelmeztet): a `material`/`materials` kulcsok valós
+`Material`-t adnak-e, a `currency` kulcsok `OWN`/valuta-nevek-e, a `…percent` kulcsok a 0–100
+tartományban vannak-e, a `…-minutes/-hours/-seconds/-ticks/-millis` kulcsok nem negatívak-e. Így az
+admin-elgépelések (rossz item-név, kilógó százalék) tiszta log-figyelmeztetésként jelennek meg
+ahelyett, hogy némán az alapértékre esnének vissza.
+
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
 majd a fő `messages.yml`-t override-ként. Rendering: a `get`/`getMessage`/`getComponent` **mind**

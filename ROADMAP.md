@@ -17,34 +17,123 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   célpont-scheduler hibák, az Angry Chicken cross-region damager kockázata és az orb Java 21
   build-környezete javítva lett; playtesten továbbra is figyeljétek a konzolt
   `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
+- **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
+  - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
+    enabled-enum sorsolás, mulandó entity biztonságos eltávolítása) 5-8 helyen duplikáltak — egy
+    közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes.
+  - `ClaimManager.save()` minden mutációnál a teljes claims.yml-t írja (sok ezer claimnél
+    parancs-késleltetés) — dirty-flag + késleltetett mentés a megoldás.
+  - A LootTable a `MIN:MAX` elgépeléseket (min>max, negatív) csendben koercálja — log-figyelmeztetés
+    kellene; az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
+    lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem).
+  - Aukció: a minimum/nagy licit elérheti a buy-out árat és azonnal zár (eBay-szemantika —
+    szándékos, de a GUI-tipp csak a shift-kattot említi); a vétel-üzenet ára elvben eltérhet a
+    ténylegesen levonttól, ha a frakció-viszony épp a kattintás pillanatában vált.
 
 ### Játékmenet
-- ⬜ **Raid-mélyítés:** 10v10 létszámkorlát és jelentkezés; aréna-/területkötés;
-  objektív-alapú raid (zászlófoglalás, pont-tartás); terület átvétele győzelemmel.
-  (A győztes-buff és az ostromágyú kész.)
-- ⬜ **Bűn-rendszer bővítés:** lopás/árulás detektálás (most csak a gyilkosság számít bűnnek).
-- ⬜ **Kaszt-questek felturbózása:** NPC-s próbák az „ölj X-et" helyett (FancyNpcs a szerveren
-  elérhető; a parkour-keret kész).
-- ⬜ **Szezonliga jutalom:** a győztes frakció kozmetikai/relikvia-jutalma a szezon végén.
-- ⬜ **Frakció-diplomácia:** szövetség/békekötés parancsok a királyoknak; frakció-szintek és perkek.
+- 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
+  bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),
+  és mind a `/events <típus>` admin-triggerrel is kiváltható:
+  - **hangulat-események** (északi fény, hulló csillag, köd, szellemek, szentjánosbogarak, állat-vándorlás),
+  - **gyűjtögető buff-ablakok** (bányász-láz / termés-óra / halászati láz / XP-óra),
+  - **felfedező kincs-esemény** (megjelölt loot-láda, első megtaláló viszi),
+  - **Vad Hajsza** (kóborló elit fenevad ritka loottal),
+  - **Bőség-idő** (a vérhold pozitív ellenpárja: gyorsabb termés, iker-állatok, csendesebb éj, regen),
+  - **kollektív szerver-kihívás** (közös cél boss-baron → mindenki jutalma),
+  - **karaván-kíséret** (kooperatív escort: konvoj védése hullámok ellen → loot + bónusz-bolt),
+  - **meteor-becsapódás** (kráter kibányászható érccel).
+  **Terep-szabály:** a világpusztító események sosem grief-elnek — nincs blokk-romboló robbanás, a meteor
+  frakció-területen kívülre irányít és lejáratkor/leálláskor visszaállítja az eredeti terepet.
+  További ötlet: heti/eseményhez kötött rotáció, vihar / aranyláz-zóna / napfogyatkozás.
+- 💡 **Party-rendszer — kész:** WoW-stílusú csapat (max 5 fő, frakciótól független): meghívó/elfogadás,
+  vezetői jogok (kick/promote/disband), csapat-chat (`/p`), **fejenként osztott XP** a közeli tagok közt,
+  **personal loot** a plugin-eseményekből (Vad Hajsza, kincs), párton belüli PvP tiltva, és **party-HUD**
+  (a HUD-oldalsávon „— Csapat —" szekció: tagnév + színkódolt élet-sáv + 👑 vezető-jelölés, csak csapatban
+  látszik). További ötlet: party-célpont jelölés, party-waypoint.
+- 💡 **Natív claim + chat-formázó — kész:** chunk-alapú terület-claim (első 3 ingyen, utána égetett
+  frakció-valuta ár — money sink; trust; robbanás-védelem; raid-lootable kapcsoló; a meteor/kincs
+  események kerülik) a SimpleClaimSystem kiváltására, és natív chat-formázó (LP-prefix + frakció-színes
+  név) a LuckPermsChatFormatterFolia kiváltására. További ötlet: claim-GUI, claim-bérlés frakciótársnak,
+  piston/fire edge-case védelem.
+- 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
+  pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
+  több egyidejű raid, védő-oldali erődítés-mechanika.
+- 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
+  konténer-fosztás +1, frakciótárs ölése +2). A **bűn-alapú fejvadász-rendszer** (fejpénz a
+  körözöttekre, `/bounty` lista, igazságos kivégzés bűn nélkül) is **kész**.
+- 🔨 **Kaszt-questek felturbózása:** a plugin-oldal **kész** (TALK_TO_NPC + PARKOUR_TRIAL
+  objektívák, FancyNpcs-bridge, 4 kaszt mester-lánca configban) — a mester-NPC-k és
+  próbapályák kihelyezése a szerver-csapatra vár; utána jöhet a többi 9 kaszt lánca (config).
+- 💡 **Quest-keretrendszer — kész bővítések:** 21 objektíva-típus, **több-objektívás questek**
+  (ALL/SEQUENCE), ismétlődő + szezonális questek, NPC quest-adók napi rotációval, választós
+  párbeszéd, tárgy/saját-frakció-valuta jutalom, **quest-napló GUI** (`/quest log`), teljes
+  játékon-belüli admin-szerkesztő (`/quest admin`), és **frakció-közösségi célok** (közös
+  számláló → kassza-jutalom + buff). További ötlet: quest-lánc-térkép GUI, heti/eseményhez
+  kötött rotáció.
+- 💡 **Szezonliga jutalom-bővítés:** a szezon-végi győztes-jutalom **kész** (kassza + tagoknak
+  buff/tárgy/tűzijáték); további ötlet: egyedi kozmetikai relikvia vagy szezon-emléktárgy.
+- 💡 **Frakció-diplomácia:** szövetség/békekötés parancsok a királyoknak — 3 királysággal a
+  szövetség-tér minimális (egyetlen 2v1 kapcsoló), ezért csak akkor éri meg, ha valaha
+  több frakció / al-klán rendszer lesz. (A statikus viszonyok + raid-ellenségesség kész.)
 - 💡 **Külön ulti-töltő sáv:** a kivett „kirobbanás" helyett egy második, lassan töltődő ulti-mérő,
   hogy az erőforrás-költség MELLETT látványos burst-jutalom is legyen.
 - 💡 **Cosmetics:** részecske-effektek, kalapok (a szezon-jutalom kiterjesztése), GUI-ból.
   (Címek/rangok NEM — ütközne a szerver rang-pluginjaival.)
 
 ### Gazdaság
-- ⬜ **Valódi aukciósház:** licit, lejárat, túllicit-visszafizetés (a fix-áras piac + keresés + lapozás kész).
-- 💡 **Bank-kamat / kölcsön**, **frakció-bolt NPC-k** (money sink), **kereskedő-karaván esemény**.
+- ❌ **Bank-kamat — elvetve:** a kamat a semmiből teremtene valutát (addolt pénz → infláció), ez
+  ellentétes a szerver „nincs addolt pénz" elvével. Csak akkor jöhet szóba, ha szigorúan
+  pénz-semleges / kizárólag a frakciókasszából fedezett formában tervezzük. (A **frakció-bolt
+  NPC-k** money sink **kész**: FancyNpcs-hez kötött, config-vezérelt boltok, jobb-katt vásárló GUI,
+  égetett ár. Minden gazdasági bővítés nyelő vagy pénz-semleges legyen, sosem faucet.)
+- 💡 **Kereskedő-karaván esemény — kész:** időszakos vándorkereskedő (config-vezérelt megállók vagy
+  véletlen játékos-közeli felbukkanás), időkorlátos ottmaradás, jobb-katt = ritka portékák boltja
+  (égetett ár = money sink). Admin: `/events caravan arrive|depart`. További ötlet: véletlenszerű
+  napi készlet-rotáció, karaván-kíséret védelmi mini-esemény.
+- 💡 **Aukció-finomítás — kész:** a GUI-ban kattintás-típus szerinti licit (bal = minimum, jobb =
+  nagyobb ugrás +25%), **buy-out ár** (`/market auction ... buyout:<ár>`, shift-katt = azonnali
+  megvétel). További ötlet: teljesen szabad összegű licit chat-parancsból (listing-ID targeting).
 
 ### Balansz (élő playtest visszajelzés alapján)
 - 🔨 **Hibrid spell-költség finomhangolás:** határeset-spellek „valutájának" pontosítása
   (pl. a 8-éhséges Gyökerezés), tier-alapú erőforrás-költségek és regen-ráta hangolása.
 - ⬜ **Frakció-passzív számok** felülvizsgálata playtest után (a Semleges invis már kivéve).
-- ⬜ **Spell-mesterség kiterjesztés:** a rang sebzés/hatás-skálázása (most csak cooldown-ra hat).
+- 💡 **Spell-mesterség — kész:** a rang a cooldown mellett a **sebzést, self-heal-t és az
+  effekt-időtartamot** is skálázza (config: power-per-rank / max-power-multiplier). További
+  ötlet: rang-alapú extra effektek (pl. egy plusz státusz a max rangon).
+
+### Lehetséges további irányok (döntésre vár — egyik sincs elkezdve)
+A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erőfeszítés sorrendben:
+
+1. **Plugin-beolvasztás folytatása** (kevesebb külső függőség):
+   - 🟢 gyors: **FarmProtect** (termés-taposás, ~30 sor), **minimotd** (MOTD), **ICEsmpadditions**
+     (saját 2 KB-os mini-plugin — a forrása kell hozzá);
+   - 🟡 közepes: **economist + service-io** (ha semmi nem függ tőlük → törölhetők; vagy IceSMP
+     gazdaság-szolgáltató híd), **FancyHolograms** (általános `/hologram` admin-parancs a meglévő
+     TextDisplay-infrára), **AuMenus** (config-vezérelt hub-menü), **VillagerTradeEdit** (statikus
+     trade-módosítások configból);
+   - 🟠 nagy: **TAB** (header/footer + LP-prefix sorrend a saját HUD-ba), **WorldGuard**
+     (admin-zóna flagek a TerritoryManagerbe) — csak alapos playtest után.
+2. **Végjáték-progresszió:** presztízs/paragon szintek a max kaszt után, relikvia-fejlesztés
+   (reforge), szezon-emléktárgyak.
+3. **Egyedi dungeonök (PvE):** kézzel készített helyszínek megnevezett bossokkal, mechanikákkal,
+   loot-táblákkal (a LootTable + world-event infra újrahasznosítható).
+4. **Kozmetikumok GUI-ból, valutáért** (money sink): részecske-nyomok, kalapok, halál-üzenetek.
+   Ide köthető egy **natív crate-rendszer** is (CrazyCrates-kiváltás, frakció-valutás kulcsokkal).
+5. **Világesemény-bővítések:** vihar / aranyláz-zóna / napfogyatkozás, heti/eseményhez kötött
+   esemény-rotáció, karaván-készlet napi rotáció.
+6. **Party-extrák:** party-célpont jelölés, party-waypoint.
+7. **Claim-extrák:** claim-GUI, claim-bérlés frakciótársnak, piston/tűz edge-case védelem.
+8. **Raid-variánsok:** zászlófoglalás-mód, több egyidejű raid, védő-oldali erődítés.
+9. **Quest-extrák:** quest-lánc-térkép GUI, a maradék 9 kaszt mester-lánca (csak config).
+10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
 - ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések.
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
+- ⬜ Kaszt-mester NPC-k (FancyNpcs: `harcos_mester`, `ijasz_mester`, `varazslo_mester`,
+  `orgyilkos_mester`) és a mester-próbapályák (`harcos_proba`, `ijasz_proba`,
+  `varazslo_proba`, `orgyilkos_proba`) kihelyezése a fővárosokban.
 
 ---
 
@@ -56,3 +145,6 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   config-vezérelt. Fordítás-ellenőrzés minden változás után.
 - Player-facing szöveg magyarul; a guide-ok (PLAYER_GUIDE + docs/player-guide + PLAYTEST)
   minden játékmenet-változással együtt frissülnek.
+- Betöltéskor a `ConfigValidator` konvenció-alapon ellenőrzi a configot (material/currency-nevek,
+  százalék-tartomány, nem-negatív időtartamok) — az admin-elgépelések tiszta log-figyelmeztetésként
+  jelennek meg, nem némán az alapértékre esve vissza.

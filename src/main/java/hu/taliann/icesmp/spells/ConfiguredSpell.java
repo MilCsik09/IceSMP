@@ -93,38 +93,52 @@ public final class ConfiguredSpell extends BaseSpell {
 
     @Override
     public boolean executeSpell(final Player player) {
+        return executeSpell(player, 1.0D);
+    }
+
+    /**
+     * Casts with a spell-mastery power multiplier (1.0 = base). Higher mastery
+     * ranks scale the offensive output — damage, self-heal and the DURATION of
+     * the applied potion effects — while costs and self-damage stay at base.
+     *
+     * @param player the caster
+     * @param power the mastery power multiplier (>= 1.0)
+     * @return true if the spell's effect fired
+     */
+    @Override
+    public boolean executeSpell(final Player player, final double power) {
         return switch (targeting) {
             case SELF -> {
-                executeSelf(player);
+                executeSelf(player, power);
                 yield true;
             }
-            case TARGET -> executeTarget(player);
+            case TARGET -> executeTarget(player, power);
             case AOE -> {
-                executeAoe(player);
+                executeAoe(player, power);
                 yield true;
             }
         };
     }
 
-    private void executeSelf(final Player player) {
-        applySelf(player);
+    private void executeSelf(final Player player, final double power) {
+        applySelf(player, power);
         playFeedback(player, player.getLocation());
     }
 
-    private boolean executeTarget(final Player player) {
+    private boolean executeTarget(final Player player, final double power) {
         final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, range);
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
             return false;
         }
 
-        affect(player, target);
-        applySelf(player);
+        affect(player, target, power);
+        applySelf(player, power);
         playFeedback(player, target.getLocation());
         return true;
     }
 
-    private void executeAoe(final Player player) {
+    private void executeAoe(final Player player, final double power) {
         for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
             if (!(entity instanceof LivingEntity living) || entity == player) {
                 continue;
@@ -134,10 +148,10 @@ public final class ConfiguredSpell extends BaseSpell {
                 continue;
             }
 
-            affect(player, living);
+            affect(player, living, power);
         }
 
-        applySelf(player);
+        applySelf(player, power);
         playFeedback(player, player.getLocation());
     }
 
@@ -205,17 +219,27 @@ public final class ConfiguredSpell extends BaseSpell {
         return type + " " + level + " (" + secondsOf(effect.getDuration()) + " mp)";
     }
 
-    private void affect(final Player caster, final LivingEntity target) {
+    /** Rebuilds a potion effect with its duration scaled by the mastery power (1.0 = unchanged). */
+    private static PotionEffect scaledDuration(final PotionEffect effect, final double power) {
+        if (power <= 1.0D) {
+            return effect;
+        }
+        final int scaledTicks = Math.max(1, (int) Math.round(effect.getDuration() * power));
+        return new PotionEffect(effect.getType(), scaledTicks, effect.getAmplifier(),
+                effect.isAmbient(), effect.hasParticles(), effect.hasIcon());
+    }
+
+    private void affect(final Player caster, final LivingEntity target, final double power) {
         if (lightning) {
             target.getWorld().strikeLightningEffect(target.getLocation());
         }
 
         if (damage > 0.0D) {
-            target.damage(damage, caster);
+            target.damage(damage * power, caster);
         }
 
         for (final PotionEffect effect : targetEffects) {
-            target.addPotionEffect(effect);
+            target.addPotionEffect(scaledDuration(effect, power));
         }
 
         if (igniteTicks > 0) {
@@ -245,11 +269,12 @@ public final class ConfiguredSpell extends BaseSpell {
         }
     }
 
-    private void applySelf(final Player player) {
+    private void applySelf(final Player player, final double power) {
         for (final PotionEffect effect : selfEffects) {
-            player.addPotionEffect(effect);
+            player.addPotionEffect(scaledDuration(effect, power));
         }
 
+        // Self-damage is a cost, not offensive output — it stays at base regardless of mastery.
         if (selfDamage > 0.0D) {
             player.damage(selfDamage);
         }
@@ -257,7 +282,7 @@ public final class ConfiguredSpell extends BaseSpell {
         if (healSelf > 0.0D) {
             final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) {
-                player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + healSelf));
+                player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + (healSelf * power)));
             }
         }
 

@@ -123,28 +123,111 @@ public final class MarketGUI {
             return display;
         }
 
-        // Show the price the VIEWER will actually pay (faction reputation adjusts it), not the base
-        // list price — otherwise the lore and the charged amount disagree.
-        final double effectivePrice = marketManager.getEffectivePrice(viewer, listing);
-
         final List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
         lore.add(Component.empty());
-        lore.add(messageManager.getMessage(
-                "market-lore-price",
-                "&6Ár: &f{price} {currency}",
-                Map.of(
-                        "price", currencyManager.formatBalance(effectivePrice),
-                        "currency", listing.currency().getDisplayName()
-                )
-        ));
-        lore.add(messageManager.getMessage(
-                "market-lore-seller",
-                "&7Eladó: &f{seller}",
-                Map.of("seller", listing.sellerName())
-        ));
-        lore.add(messageManager.getMessage("market-lore-buy", "&eKattints a megvételhez!"));
+        if (listing.auction()) {
+            // Auctions are settled by absolute bids, so no reputation multiplier applies.
+            if (listing.hasBid()) {
+                lore.add(messageManager.getMessage(
+                        "market-lore-current-bid",
+                        "&6Aktuális licit: &f{bid} {currency} &7({bidder})",
+                        Map.of(
+                                "bid", currencyManager.formatBalance(listing.highestBid()),
+                                "currency", listing.currency().getDisplayName(),
+                                "bidder", listing.highestBidderName() == null ? "?" : listing.highestBidderName()
+                        )
+                ));
+            } else {
+                lore.add(messageManager.getMessage(
+                        "market-lore-start-price",
+                        "&6Kikiáltási ár: &f{price} {currency}",
+                        Map.of(
+                                "price", currencyManager.formatBalance(listing.price()),
+                                "currency", listing.currency().getDisplayName()
+                        )
+                ));
+            }
+            lore.add(messageManager.getMessage(
+                    "market-lore-time-left",
+                    "&7Hátralévő idő: &f{time}",
+                    Map.of("time", formatRemaining(listing.endsAt() - System.currentTimeMillis()))
+            ));
+            lore.add(messageManager.getMessage(
+                    "market-lore-seller",
+                    "&7Eladó: &f{seller}",
+                    Map.of("seller", listing.sellerName())
+            ));
+            if (listing.hasBuyOut()) {
+                lore.add(messageManager.getMessage(
+                        "market-lore-buyout",
+                        "&6Buy-out ár: &f{price} {currency}",
+                        Map.of(
+                                "price", currencyManager.formatBalance(listing.buyOut()),
+                                "currency", listing.currency().getDisplayName()
+                        )
+                ));
+            }
+            lore.add(messageManager.getMessage(
+                    "market-lore-bid",
+                    "&eBal-katt: min. licit &7({next} {currency})",
+                    Map.of(
+                            "next", currencyManager.formatBalance(marketManager.getMinimumBid(listing)),
+                            "currency", listing.currency().getDisplayName()
+                    )
+            ));
+            lore.add(messageManager.getMessage(
+                    "market-lore-bid-big",
+                    "&eJobb-katt: nagyobb licit &7({big} {currency})",
+                    Map.of(
+                            "big", currencyManager.formatBalance(marketManager.getBigBid(listing)),
+                            "currency", listing.currency().getDisplayName()
+                    )
+            ));
+            if (listing.hasBuyOut()) {
+                lore.add(messageManager.getMessage(
+                        "market-lore-bid-buyout",
+                        "&eShift-katt: azonnali megvétel a buy-out áron",
+                        Map.of()
+                ));
+            }
+        } else {
+            // Show the price the VIEWER will actually pay (faction reputation adjusts it), not the
+            // base list price — otherwise the lore and the charged amount disagree.
+            final double effectivePrice = marketManager.getEffectivePrice(viewer, listing);
+            lore.add(messageManager.getMessage(
+                    "market-lore-price",
+                    "&6Ár: &f{price} {currency}",
+                    Map.of(
+                            "price", currencyManager.formatBalance(effectivePrice),
+                            "currency", listing.currency().getDisplayName()
+                    )
+            ));
+            lore.add(messageManager.getMessage(
+                    "market-lore-seller",
+                    "&7Eladó: &f{seller}",
+                    Map.of("seller", listing.sellerName())
+            ));
+            lore.add(messageManager.getMessage("market-lore-buy", "&eKattints a megvételhez!"));
+        }
         meta.lore(lore);
         display.setItemMeta(meta);
         return display;
+    }
+
+    /** Formats a remaining-time millis span as a compact Hungarian "1n 2ó 3p" string. */
+    public static String formatRemaining(final long millis) {
+        final long totalMinutes = Math.max(0L, millis / 60_000L);
+        final long days = totalMinutes / (24L * 60L);
+        final long hours = (totalMinutes / 60L) % 24L;
+        final long minutes = totalMinutes % 60L;
+        final StringBuilder text = new StringBuilder();
+        if (days > 0) {
+            text.append(days).append("n ");
+        }
+        if (hours > 0) {
+            text.append(hours).append("ó ");
+        }
+        text.append(minutes).append("p");
+        return text.toString();
     }
 }

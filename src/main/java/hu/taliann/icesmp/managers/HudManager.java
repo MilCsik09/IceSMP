@@ -32,7 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HudManager {
 
-    private static final int LINES = 7;
+    /** Sidebar row budget: the 7 base rows + up to 7 party-frame rows (separator, header, 5 members). */
+    private static final int LINES = 14;
     private static final String OBJECTIVE = "icesmp_hud";
 
     private final JavaPlugin plugin;
@@ -44,6 +45,7 @@ public final class HudManager {
     private final BloodMoonManager bloodMoonManager;
     private final WorldBossManager worldBossManager;
     private final ResourceManager resourceManager;
+    private final PartyManager partyManager;
 
     private final BossBar raidBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
     private final BossBar bloodMoonBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
@@ -58,7 +60,8 @@ public final class HudManager {
      */
     public record HudSnapshot(String faction, String factionId, String className, int classLevel,
                               String balance, boolean hasClass, int resource, int resourceMax,
-                              int resourcePercent, String resourceName, String resourceBar) {
+                              int resourcePercent, String resourceName, String resourceBar,
+                              List<String> partyLines) {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
@@ -66,7 +69,7 @@ public final class HudManager {
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
                       final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
-                      final ResourceManager resourceManager) {
+                      final ResourceManager resourceManager, final PartyManager partyManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.factionManager = factionManager;
@@ -76,6 +79,7 @@ public final class HudManager {
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
         this.resourceManager = resourceManager;
+        this.partyManager = partyManager;
     }
 
     public boolean isEnabled() {
@@ -120,12 +124,12 @@ public final class HudManager {
 
         final Team[] teams = new Team[LINES];
         for (int i = 0; i < LINES; i++) {
-            final String entry = entry(i);
             final Team team = board.registerNewTeam("hud_" + i);
-            team.addEntry(entry);
-            objective.getScore(entry).setScore(LINES - i);
+            team.addEntry(entry(i));
             teams[i] = team;
         }
+        // Row scores are set lazily in update(), so unused rows (e.g. the party
+        // frames while not in a party) don't render as blank sidebar lines.
         playerTeams.put(player.getUniqueId(), teams);
         player.setScoreboard(board);
     }
@@ -143,8 +147,20 @@ public final class HudManager {
             }
             if (teams != null) {
                 final List<Component> lines = buildLines(player);
+                final Scoreboard board = player.getScoreboard();
+                final Objective objective = board.getObjective(OBJECTIVE);
                 for (int i = 0; i < LINES; i++) {
-                    teams[i].prefix(i < lines.size() ? lines.get(i) : Component.empty());
+                    final String entry = entry(i);
+                    if (i < lines.size()) {
+                        teams[i].prefix(lines.get(i));
+                        if (objective != null && !objective.getScore(entry).isScoreSet()) {
+                            objective.getScore(entry).setScore(LINES - i);
+                        }
+                    } else {
+                        // Hide the unused row entirely (no empty sidebar line).
+                        teams[i].prefix(Component.empty());
+                        board.resetScores(entry);
+                    }
                 }
             }
         } else if (playerTeams.remove(player.getUniqueId()) != null) {
@@ -205,7 +221,25 @@ public final class HudManager {
                 resourceManager.resourceMax(),
                 showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
-                showResource ? resourceManager.resourceBarPlain(player) : "");
+                showResource ? resourceManager.resourceBarPlain(player) : "",
+                partyLinesPlain(player));
+    }
+
+    /**
+     * Plain-text party-frame lines for the PlaceholderAPI bridge (%icesmp_party_N%),
+     * so scoreboard plugins like TAB can render the party HUD when the IceSMP
+     * sidebar is disabled. Empty when the player is not in a party.
+     */
+    private List<String> partyLinesPlain(final Player player) {
+        final PartyManager.Party party = partyManager.getParty(player.getUniqueId());
+        if (party == null || !configManager.getBoolean("party.hud-enabled", true)) {
+            return List.of();
+        }
+        final List<String> lines = new ArrayList<>();
+        for (final UUID memberId : party.getMembers()) {
+            lines.add(PlainTextComponentSerializer.plainText().serialize(partyMemberLine(party, memberId)));
+        }
+        return List.copyOf(lines);
     }
 
     public void cleanup(final Player player) {
@@ -224,7 +258,12 @@ public final class HudManager {
         if (raid != null) {
             final long totalMs = Math.max(1L, configManager.getInt("factions.raid.duration-minutes", 15) * 60L * 1000L);
             final long remaining = Math.max(0L, raid.endsAtMillis() - System.currentTimeMillis());
-            raidBar.name(Component.text("⚔ RAID: " + raid.attacker().getDisplayName() + " ⚔ " + raid.defender().getDisplayName(), NamedTextColor.RED));
+            final String label = raid.inWarmup()
+                    ? "⚔ RAID (felkészülés — /faction raid join): "
+                            + raid.attacker().getDisplayName() + " ⚔ " + raid.defender().getDisplayName()
+                    : "⚔ RAID: " + raid.attacker().getDisplayName() + " " + raidManager.getPoints(raid.attacker())
+                            + " ⚔ " + raidManager.getPoints(raid.defender()) + " " + raid.defender().getDisplayName();
+            raidBar.name(Component.text(label, NamedTextColor.RED));
             raidBar.progress(clamp((float) remaining / (float) totalMs));
         }
         bloodMoonBar.name(Component.text("🌕 VÉRHOLD — a szörnyek erősebbek", NamedTextColor.DARK_RED));
@@ -267,8 +306,58 @@ public final class HudManager {
         }
         lines.add(Component.text(" ", NamedTextColor.DARK_GRAY));
         lines.add(label("Esemény", eventLabel()));
+
+        // WoW-style party frames: one row per member with a colour-coded health bar,
+        // shown only while the viewer is in a party (otherwise these rows are hidden).
+        final PartyManager.Party party = partyManager.getParty(player.getUniqueId());
+        if (party != null && configManager.getBoolean("party.hud-enabled", true)) {
+            lines.add(Component.text("  ", NamedTextColor.DARK_GRAY));
+            lines.add(Component.text("— Csapat —", NamedTextColor.LIGHT_PURPLE));
+            for (final UUID memberId : party.getMembers()) {
+                lines.add(partyMemberLine(party, memberId));
+            }
+        }
+
         lines.add(Component.text("play.icesmp", NamedTextColor.DARK_GRAY));
         return lines;
+    }
+
+    /** One party-frame row: 👑/• + name + a colour-coded 5-segment health bar + hearts. */
+    private Component partyMemberLine(final PartyManager.Party party, final UUID memberId) {
+        final boolean leader = memberId.equals(party.getLeader());
+        final Component marker = Component.text(leader ? "👑 " : "• ",
+                leader ? NamedTextColor.GOLD : NamedTextColor.GRAY);
+
+        final Player member = Bukkit.getPlayer(memberId);
+        if (member == null || !member.isOnline()) {
+            return marker.append(Component.text("?", NamedTextColor.DARK_GRAY));
+        }
+        final String name = member.getName().length() > 10
+                ? member.getName().substring(0, 10) : member.getName();
+
+        try {
+            // Cross-region reads on Folia: health/max-health are plain field reads; if the
+            // member's region is mid-transition we fall back to a placeholder for one tick.
+            final org.bukkit.attribute.AttributeInstance maxAttr =
+                    member.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            final double max = Math.max(1.0D, maxAttr == null ? 20.0D : maxAttr.getValue());
+            final double hp = Math.max(0.0D, member.getHealth());
+            return marker.append(Component.text(name + " ", NamedTextColor.WHITE)).append(healthBar(hp, max));
+        } catch (final Exception ignored) {
+            return marker.append(Component.text(name + " …", NamedTextColor.DARK_GRAY));
+        }
+    }
+
+    /** A 5-segment health bar coloured by remaining fraction (green/yellow/red) plus the heart count. */
+    private Component healthBar(final double hp, final double max) {
+        final double fraction = Math.max(0.0D, Math.min(1.0D, hp / max));
+        final int segments = 5;
+        final int filled = (int) Math.ceil(fraction * segments);
+        final NamedTextColor color = fraction > 0.66D ? NamedTextColor.GREEN
+                : fraction > 0.33D ? NamedTextColor.YELLOW : NamedTextColor.RED;
+        return Component.text("▮".repeat(filled), color)
+                .append(Component.text("▮".repeat(segments - filled), NamedTextColor.DARK_GRAY))
+                .append(Component.text(" " + (int) Math.ceil(hp / 2.0D) + "❤", color));
     }
 
     private Component eventLabel() {

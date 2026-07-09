@@ -23,3 +23,51 @@ hud:
     lifetime-ticks: 200
     distance: 3.0
     height-offset: -0.25
+
+# WoW-stílusú csapat (party) rendszer: max 5 fő, teljesen frakció-független (bármelyik
+# frakcióból lehet egy csapatban), meghívó/elfogadás alapú tagság. A közeli mob-ölésekből
+# járó XP a közelben lévő párttagok közt FEJENKÉNT oszlik meg (minél többen vannak, annál
+# kisebb rész jut mindenkinek). A plugin saját loot-eseményeinél (pl. Vad Hajsza, elrejtett
+# kincs) nem egy közös zsákmány esik le, hanem minden közeli párttag a SAJÁT (personal)
+# jutalmát kapja. Párton belül nincs friendly fire — a tagok sem közelharccal, sem
+# lövedékkel (nyíl stb.) nem tudják sebezni egymást.
+party:
+  enabled: true          # A party-rendszer be/ki kapcsolása
+  max-size: 5            # Egy csapat maximális létszáma
+  invite-expire-seconds: 60  # Ennyi másodperc után jár le a meghívó, ha nincs válasz
+  share-radius: 50       # Ilyen sugarú körben (blokk) számítanak "közelinek" a párttagok XP/loot szempontjából
+  xp-share: true         # A mob-ölésből járó XP fejenként oszlik meg a közeli párttagok közt
+  personal-loot: true    # A plugin loot-eseményeinél (Vad Hajsza, elrejtett kincs) mindenki saját jutalmat kap
+  block-friendly-fire: true  # Párttagok nem sebezhetik egymást (közelharc és lövedék sem)
+  hud-enabled: true      # Party-frame-ek a HUD-oldalsávon: tagok neve + színkódolt élet-sáv (👑 = vezető)
+
+# Natív, chunk-alapú terület-claim rendszer — a SimpleClaimSystem KIVÁLTÁSA. /claim lefoglalja
+# az aktuális chunkot; az első pár ingyenes, utána a claim ára a JÁTÉKOS SAJÁT frakció-valutájában
+# fizetendő és egyre drágább (money sink — az ár ELÉG, nem kerül vissza a gazdaságba, unclaimkor
+# sem jár vissza). A tulaj /claim trust <név> paranccsal megbízottakat adhat, akiknek teljes
+# hozzáférésük lesz MINDEN claimjéhez. Frakció-territóriumba (királyság földje) és WorldGuard-
+# régióba nem lehet claimelni. A védelem: blokk-törés/-rakás, konténerek, vödör, kép/festmény-keret,
+# robbanás (sosem tör claimelt blokkot), blokk-evő mobok (pl. enderman). FONTOS: PvP-t a claim NEM
+# tiltja (háborús szerver) — csak az építést/lopást védi. Raid alatt a `raid-lootable` dönti el, hogy
+# a jelentkezett (regisztrált) támadók hadizsákmányként KINYITHATJÁK-e (nem lebonthatják!) az
+# ellenséges frakció claim-ládáit. Admin megkerülő jog: icesmp.admin.territory.bypass.
+claims:
+  enabled: true
+  max-chunks-per-player: 10   # claim-plafon játékosonként
+  free-chunks: 3              # ennyi chunk ingyenes
+  base-cost: 100.0            # az első fizetős chunk ára (saját frakció-valuta, ELÉG)
+  cost-multiplier: 1.5        # minden további chunk ára ennyiszeres
+  protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
+  protect-explosions: true    # robbanás sosem tör claimelt blokkot
+  block-in-territory: true    # frakció-territóriumban nem lehet claimelni
+  block-in-protected-region: true  # WorldGuard-régióban nem lehet claimelni
+  raid-lootable: false        # raid alatt a jelentkezett támadók nyithatják-e az ellenséges claim-ládákat
+
+# Natív chat-formázó — a LuckPermsChatFormatterFolia plugin KIVÁLTÁSA. A chat-üzenetet a plugin maga
+# formázza "[LP-prefix] Név [LP-suffix]: üzenet" alakra, a névben a beszélő FRAKCIÓJÁNAK színével
+# (piros/kék/szürke/sötétszürke) — LuckPerms NÉLKÜL is működik (akkor prefix/suffix egyszerűen
+# nincs). FONTOS: ha a régi LuckPermsChatFormatterFolia plugin még fent van a szerveren, kapcsold KI
+# ezt (vagy a régit), különben DUPLA formázás történik.
+chat:
+  format-enabled: true        # natív chat-formázó ([LP-prefix] Név [suffix]: üzenet)
+  name-faction-color: true    # a beszélő neve a frakciója színében

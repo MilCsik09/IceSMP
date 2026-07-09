@@ -69,10 +69,18 @@ world-events:
     mini-boss-level-bonus: 6   # a horda bajnoka ennyivel magasabb szintű a hullámnál
     champion-slam-damage: 5.0  # a bajnok ~6 mp-enkénti telegrafált földcsapásának sebzése
   # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
+  # A szezon végén a győztes frakció KASSZÁJA treasury-reward-ot kap, az online
+  # TAGJAI pedig győzelmi buffot + tárgy-jutalmat + ünneplő tűzijátékot.
   season:
     enabled: true
     length-days: 60
     treasury-reward: 1000.0
+    champion-buff-minutes: 30
+    champion-firework: true
+    # Tárgy-jutalom a bajnok frakció online tagjainak: "MATERIAL:DARAB" lista.
+    champion-reward-items:
+      - "DIAMOND:8"
+      - "GOLDEN_APPLE:4"
   # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
   intro:
     enabled: true
@@ -89,3 +97,169 @@ world-events:
       enabled: false
       point-seconds: 3
       waypoints: []
+
+# ===== Hangulat-események (ambient) =====
+# Gyakori, apró, légköri események, amelyek élőbbé teszik a világot — soha nem
+# nyúlnak a balanszhoz vagy a gazdasághoz (kozmetikai effekt / apró buff, illetve
+# az állat-vándorlásnál passzív állatok = élelem-forrás, sosem valuta). Időnként a
+# tick kiválaszt egy ENGEDÉLYEZETT típust és lefuttatja. Admin: /events ambient.
+ambient-events:
+  enabled: true
+  interval-minutes: 15
+  chance-percent: 55
+  aurora-nightvision-seconds: 45   # az északi fény rövid, kozmetikai éjjellátása
+  migration-herd-size: 5           # az állat-vándorlás csordamérete
+  # Az egyes típusok külön ki/be kapcsolhatók:
+  types:
+    aurora: true
+    falling-star: true
+    fog-roll: true
+    spectral-wanderers: true
+    animal-migration: true
+    fireflies: true
+
+# ===== Gyűjtögető buff-események =====
+# Időszakos, szerver-szintű bónusz-ablakok, amelyek a hétköznapi gyűjtögetést
+# jutalmazzák — kizárólag nyersanyag/XP, SOSEM valuta. Egyszerre egy ablak fut:
+# bányász-láz (érc-blokk bónusz drop), termés-óra (beérett termés bónusz drop),
+# halászati láz (dupla fogás esély), tapasztalat-óra (XP-szorzó). Admin: /events gathering.
+gathering-buffs:
+  enabled: true
+  interval-minutes: 60           # két ablak közti idő
+  duration-minutes: 15           # egy ablak hossza
+  chance-percent: 50             # esély, hogy az intervallum végén tényleg megnyílik
+  bonus-drop-chance-percent: 50  # bányász/termés/halászati bónusz drop esélye blokként/fogásonként
+  xp-multiplier: 2.0             # a tapasztalat-óra XP-szorzója
+  types:
+    mining-rush: true
+    harvest-hour: true
+    fishing-frenzy: true
+    xp-hour: true
+
+# ===== Felfedező kincs-események =====
+# Időnként egy megjelölt kincsesláda bukkan fel egy véletlen játékos közelében, és
+# a hozzávetőleges helyét broadcast jelzi — az ELSŐ megtaláló, aki jobb-kattint rá,
+# viszi a loot-ot, aztán a láda eltűnik. A jutalom nyersanyag (loot-tábla), nem pénz.
+# A loot-tábla bejegyzések: "MATERIAL", "MATERIAL:DARAB" vagy "MATERIAL:MIN:MAX".
+treasure-events:
+  enabled: true
+  interval-minutes: 45     # két kincs közti idő
+  expire-minutes: 15       # ennyi idő után feltáratlanul eltűnik
+  chance-percent: 40       # esély, hogy az intervallum végén tényleg felbukkan
+  spawn-radius: 80         # ilyen sugarú körben a horgony-játékos körül
+  rolls: 3                 # ennyi tételt húz a loot-táblából
+  loot:
+    - "DIAMOND:2:5"
+    - "GOLD_INGOT:4:9"
+    - "IRON_INGOT:6:12"
+    - "EMERALD:2:6"
+    - "ENCHANTED_GOLDEN_APPLE:1"
+    - "EXPERIENCE_BOTTLE:8:16"
+    - "NETHERITE_SCRAP:1:2"
+    - "GOLDEN_APPLE:2:4"
+
+# ===== Vad Hajsza (harci variáns) =====
+# Időnként egy megnevezett, szintre skálázott elit fenevad kóborol be egy véletlen
+# játékos közelébe — kóborló mini-fenyegetés az invázió-hordák és a világbossok
+# között. Aki leteríti, ritka loot-táblát kap (nyersanyag, sosem valuta); ha időben
+# senki nem öli meg, eltűnik. Loot-formátum mint a kincsnél: "MATERIAL[:DARAB|:MIN:MAX]".
+wild-hunt:
+  enabled: true
+  interval-minutes: 70     # két hajsza közti idő
+  expire-minutes: 20       # ennyi idő után elszökik, ha nem ölik meg
+  chance-percent: 30       # esély, hogy az intervallum végén tényleg felbukkan
+  beast-level: 8           # a fenevad skálázott szintje (MobScalingManager)
+  rolls: 4                 # ennyi tételt húz a loot-táblából halálkor
+  loot:
+    - "DIAMOND:3:7"
+    - "EMERALD:4:9"
+    - "NETHERITE_SCRAP:1:3"
+    - "ENCHANTED_GOLDEN_APPLE:1:2"
+    - "EXPERIENCE_BOTTLE:12:24"
+    - "GOLD_BLOCK:1:3"
+    - "DIAMOND_BLOCK:1"
+
+# ===== Bőség-idő (a vérhold pozitív ellenpárja) =====
+# Nyugodt, építő/farm-barát időablak: a termés gyorsabban nő, az állatok néha ikret
+# ellenek, a természetes szörny-spawnok egy része elmarad, és gyengéd regeneráció leng
+# az online játékosokon. Terephez NEM nyúl (csak a már növekvő termést lépteti előrébb).
+abundance:
+  enabled: true
+  interval-minutes: 80             # két Bőség-idő közti idő
+  duration-minutes: 15             # egy ablak hossza
+  chance-percent: 45               # esély, hogy az intervallum végén tényleg megnyílik
+  crop-boost-chance-percent: 40    # esély, hogy egy növekvő termés +1 fázist ugrik
+  twin-chance-percent: 25          # esély iker-utódra sikeres szaporodáskor
+  calm-spawn-chance-percent: 35    # ennyi eséllyel marad el egy természetes szörny-spawn
+  regen-seconds: 8                 # a gyengéd regeneráció-pulzus hossza
+
+# ===== Kollektív szerver-kihívás =====
+# Az egész szerver egy közös, időzített célt kap (együtt X szörny / X érc / X termés),
+# boss-baron követhető haladással. Ha időben teljesül, MINDEN online játékos jutalmat
+# kap (XP + nyersanyag-csomag + rövid Sietség-buff) — sosem valuta. Admin: /events challenge.
+server-challenge:
+  enabled: true
+  interval-minutes: 100      # két kihívás közti idő
+  duration-minutes: 30       # egy kihívás időkerete
+  chance-percent: 40         # esély, hogy az intervallum végén tényleg indul
+  targets:
+    slay: 500                # ennyi szörnyet kell közösen leölni
+    mine: 800                # ennyi ércet kibányászni
+    harvest: 1000            # ennyi termést betakarítani
+  reward-xp: 300             # minden online játékosnak siker esetén
+  reward-haste-seconds: 45   # rövid Sietség-buff siker esetén
+  reward-rolls: 2            # ennyi tételt húz a jutalom-loot-táblából játékosonként
+  reward-loot:
+    - "DIAMOND:1:3"
+    - "GOLD_INGOT:3:6"
+    - "EMERALD:1:4"
+    - "EXPERIENCE_BOTTLE:4:8"
+    - "IRON_INGOT:4:8"
+  types:
+    slay: true
+    mine: true
+    harvest: true
+
+# ===== Karaván-kíséret (kooperatív escort) =====
+# Egy konvoj (ládás láma) indul útnak egy célpont felé; útközben szörny-hullámok
+# támadják — a játékosoknak életben kell tartaniuk, míg célba ér. Siker: közös loot
+# a célnál + a kereskedő-karaván boltja bonus-stock-minutes-ig a bonus-items
+# készletet is árulja. TEREP-VÉDELEM: a hullám-poolban nincs robbanó mob, és a
+# kíséret-mobok robbanása blokkot akkor sem sérthet (listener-védelem).
+escort:
+  enabled: true
+  interval-minutes: 120      # két kíséret közti idő
+  max-duration-minutes: 15   # ennyi idő után a konvoj elveszettnek számít
+  chance-percent: 30         # esély, hogy az intervallum végén tényleg elindul
+  route-distance: 150        # légvonalbeli táv az indulástól a célig (blokk)
+  convoy-health: 60          # a konvoj életereje
+  wave-interval-seconds: 45  # két támadó hullám közti idő
+  wave-size: 4               # mob / hullám
+  wave-level: 3              # a hullám-mobok skálázott szintje
+  bonus-stock-minutes: 60    # siker után ennyi ideig árul bónusz-készletet a karaván
+  reward-rolls: 4            # ennyi tételt húz a loot-táblából célba éréskor
+  reward-loot:
+    - "DIAMOND:2:5"
+    - "EMERALD:3:7"
+    - "GOLD_INGOT:5:10"
+    - "EXPERIENCE_BOTTLE:8:16"
+    - "NETHERITE_SCRAP:1:2"
+    - "GOLDEN_APPLE:2:4"
+
+# ===== Meteor-becsapódás (kráter + kibányászható érc) =====
+# Időnként egy meteor csapódik be a vadonba: egy kis kráter marad, benne ritka,
+# kibányászható érc-blokkokkal, amiért a játékosok versengenek, míg el nem enyészik.
+# TEREP-VÉDELEM: a meteor NEM robban — LEHELYEZI a krátert, és MINDEN érintett blokk
+# eredeti állapotát elmenti, majd lejáratkor (és leálláskor) VISSZAÁLLÍTJA. Ráadásul
+# frakció-területen kívülre irányítja magát. Így csak az marad, amit a játékosok
+# kibányásznak, mielőtt a kráter elenyészik.
+meteor:
+  enabled: true
+  interval-minutes: 85       # két meteor közti idő
+  expire-minutes: 10         # ennyi idő után a kráter visszaáll az eredeti terepre
+  chance-percent: 35         # esély, hogy az intervallum végén tényleg becsapódik
+  spawn-radius: 90           # ilyen sugarú körben a horgony-játékos körül
+  crater-radius: 3           # a kráter sugara (blokk) — kicsi, hogy gyors legyen a visszaállítás
+  crater-depth: 2            # a kráter mélysége a közepén
+  ore-chance: 0.45           # a kráter-közép blokkjai ekkora eséllyel érc (különben díszes bélés)
+  avoid-territory: true      # ne csapódjon be claimelt frakció-területre

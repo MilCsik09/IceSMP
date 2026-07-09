@@ -5,8 +5,8 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
-import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.managers.TalentManager;
@@ -26,7 +26,7 @@ public record CharacterMenuContext(
         TalentManager talentManager,
         FactionManager factionManager,
         CurrencyManager currencyManager,
-        MetelytepoManager metelytepoManager,
+        SinManager sinManager,
         CatalystItemFactory catalystItemFactory,
         SpellRegistry spellRegistry,
         ConfigManager configManager) {

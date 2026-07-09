@@ -43,6 +43,20 @@ A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktu
   egyenlegedből fizet).
 - `/market cancel` — visszaveszed a saját tételeidet (visszakapod a tárgyat).
 
+**Aukció (licitálás):** ⚖️
+- `/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]` — a kezedben tartott tárgyra
+  **aukciót** indítasz (alapból 24 órás, legfeljebb 72). A `buyout:<ár>` opcionális: aki ennyit
+  licitál, **azonnal megnyeri** az aukciót. (A buy-out nem lehet kisebb a kikiáltási árnál.)
+- A böngészőben a licit **kattintás-típussal** állítható:
+  - **bal-katt** → a minimum következő licit (az aktuális +10%),
+  - **jobb-katt** → nagyobb ugrás (az aktuális +25%),
+  - **shift-katt** → azonnali megvétel a buy-out áron (ha van megadva).
+- A licited a **bankodból azonnal zárolódik**; ha valaki túllicitál, **automatikusan visszakapod**.
+- Lejáratkor a nyertes viszi a tárgyat, az eladó a legmagasabb licitet (díj levonásával). Ha a
+  nyertes (vagy licit nélküli aukciónál az eladó) épp nincs fenn, **belépéskor** vagy
+  `/market claim`-mel veszi át a tárgyat.
+- Élő licites aukció **nem vonható vissza**; licit nélkülit a `/market cancel` visszaad.
+
 **Eladási díj:** minden eladásból kb. **10% eltűnik** a gazdaságból — ez tartja kordában az
 inflációt (a pénz „elértéktelenedését").
 
@@ -58,6 +72,13 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
 - **Kereslet-sokk** (időnként): egy véletlen valuta értéke átmenetileg **megugrik** (x1,2–1,6) —
   ezt egy üzenet jelzi mindenkinek. Jó alkalom kereskedni!
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
+- **Frakció-boltok:** a fővárosokban álló **bolt-NPC-kre jobb-kattintva** egy vásárló felület
+  nyílik — fix áron vehetsz alapanyagot/fogyóeszközt a banki egyenlegedből. A kifizetett pénz
+  **eltűnik** a gazdaságból (money sink). Egyes boltok csak a saját frakciód tagjainak árulnak.
+- **Kereskedő-karaván:** időnként egy **vándorkereskedő** bukkan fel a világban (egy üzenet jelzi,
+  merre) — csak **korlátozott ideig** marad. Amíg itt van, **jobb-kattints a karaván-NPC-re**, és
+  ritka portékákat (pl. arany alma, gyémánttömb, névcímke) vehetsz a banki egyenlegedből. A kifizetett
+  pénz szintén **eltűnik** (money sink). Ha lekésed, legközelebb máshol tűnik fel — érdemes odasietni!
 
 ## Lélekkő — a veszélyes vidékek jutalma
 

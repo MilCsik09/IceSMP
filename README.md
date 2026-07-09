@@ -29,6 +29,9 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 **A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
 **bűnössé (sinner)** bélyegzett. Belépéskor megköttetik a **sötét paktum** — onnantól a
 bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később elhagyod a frakciót.
+Bűn a **gyilkosság** (+1), az **árulás** (saját frakciótárs megölése, +2) és a **lopás**
+(másik frakció területén konténer-fosztás, +1); 4 bűnnél automatikus a száműzetés. Raid
+alatt a hadviselők közti ölés és zsákmányolás nem bűn.
 
 ### 🧙 Kasztok és specializációk
 
@@ -163,6 +166,9 @@ itemként és banki egyenlegként is léteznek:
   hologramok** (`/exchangeboard`) mutatják.
 - **Piactér** (`/market`): játékosok közti adásvétel banki egyenlegből, eladási díjjal. A
   vételárat a **frakció-reputáció** is módosítja (ellenségtől felár, szövetségestől kedvezmény).
+- **Aukciósház** (`/market auction`): licitálós eladás lejárattal — a licit a bankból zárolódik,
+  túllicitálásnál automatikusan visszajár; a lejárt aukció nyertese offline is megkapja a
+  tárgyat (belépéskor vagy `/market claim`).
 
 ### 🧟 Távolság-alapú nehézség
 
@@ -190,7 +196,7 @@ alap konfigurációban az értesítés aktív, az építésvédelem viszont ki v
 | `/profession join/info/list` | `prof`, `szakma` | Szakma választás és állapot |
 | `/bank balance/deposit/withdraw` | `wallet`, `vault` | Banki műveletek |
 | `/currency balance/pay/exchange/rates` | `money`, `eco` | Valutaműveletek és árfolyamok |
-| `/market`, `/market sell/cancel/search` | `piac`, `ah` | Piactér (reputáció-árazással) |
+| `/market`, `/market sell/auction/claim/cancel/search` | `piac`, `ah` | Piactér + aukciósház (reputáció-árazással) |
 | `/faction king vote/tax/raid` | `f` | Királyválasztás, adókulcs, raid (király) |
 | `/souls`, `/souls champion` | `soul`, `lelek` | Nekromanta lélekszilánk + bajnok |
 | `/quest …` | `quests`, `kuldetes` | Küldetések |
@@ -224,7 +230,8 @@ adatmappájában — minden játékmeneti érték és üzenet ott testreszabhat�
 - **API:** Folia 1.21.11 (Paper API kompatibilis) • **Nyelv:** Java 21 • **Build:** Gradle
 - **Folia-kompatibilis:** `folia-supported: true`; minden feladat régió-/entitás-ütemezőn fut
 - **Soft-dependenciák:** PlaceholderAPI (`%icesmp_...%` placeholderek, pl. TAB-hoz),
-  LibsDisguises (Druida-formák vizuálja) — mindkettő nélkül is teljes értékűen fut
+  LibsDisguises (Druida-formák vizuálja), FancyNpcs (NPC-s kaszt-mester próbák) —
+  mindegyik nélkül is teljes értékűen fut
 - Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 31 spec / 390+ spell,
   hibrid erőforrás-költség, talentek, szakmák, gazdaság + piac, relikviák + rituálék,
   világesemények (vérhold / világbossok / inváziók), király/raid/szezon, küldetések, pet-rendszer.

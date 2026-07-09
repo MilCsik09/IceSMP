@@ -29,7 +29,7 @@ public final class SpecializationManager {
     private final JobManager jobManager;
     private final ProfessionManager professionManager;
     private final FactionManager factionManager;
-    private final MetelytepoManager metelytepoManager;
+    private final SinManager sinManager;
     private final QuestManager questManager;
     private final NamespacedKey classSpecKey;
     private final NamespacedKey professionSpecKey;
@@ -37,13 +37,13 @@ public final class SpecializationManager {
     public SpecializationManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager, final JobManager jobManager,
                                  final ProfessionManager professionManager, final FactionManager factionManager,
-                                 final MetelytepoManager metelytepoManager, final QuestManager questManager) {
+                                 final SinManager sinManager, final QuestManager questManager) {
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.jobManager = jobManager;
         this.professionManager = professionManager;
         this.factionManager = factionManager;
-        this.metelytepoManager = metelytepoManager;
+        this.sinManager = sinManager;
         this.questManager = questManager;
         this.classSpecKey = new NamespacedKey(plugin, "class_spec");
         this.professionSpecKey = new NamespacedKey(plugin, "profession_spec");
@@ -92,7 +92,7 @@ public final class SpecializationManager {
             return false;
         }
 
-        if (specialization.requiresSinner() && !metelytepoManager.isSinner(player)) {
+        if (specialization.requiresSinner() && !sinManager.isSinner(player)) {
             return false;
         }
 
