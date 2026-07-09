@@ -50,7 +50,8 @@ jelenti, hogy **elhagyható**.
 | `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a katalizátoron* is megnyitja. |
 | `/events season` / `/events blood-moon` / `/events caravan` | `event`, `esemeny` | Világesemények állása (szezon, vérhold, kereskedő-karaván) |
 | `/party invite\|accept\|decline\|leave\|list` | `p`, `parti` | **Party (csapat)**: meghívás, csatlakozás, kilépés, taglista (max 5 fő) |
-| `/party kick\|promote\|disband <név>` | | Csapatvezetői műveletek: kirúgás, vezetés átadása, feloszlatás |
+| `/party kick\|promote <név>` | | Csapatvezetői műveletek: kirúgás, vezetés átadása |
+| `/party disband` | | Csapat feloszlatása (csak vezető) |
 | `/p <üzenet>` | | **Csapat-chat** — csak a párttagok látják |
 | `/claim` | `birtok` | Az aktuális chunk lefoglalása (**saját birtok** — első 3 ingyen) |
 | `/claim unclaim\|info\|list\|show` | | Claim felszabadítása / infó / lista / határ-kirajzolás |
