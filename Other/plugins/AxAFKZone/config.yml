@@ -1,0 +1,39 @@
+# DOCUMENTATION: https://docs.artillex-studios.com/axafkzone.html
+
+prefix: '<gradient:#FF8800:#CC0055><b>AxAFKZone</b></gradient> &7» '
+
+# 1 - HH:MM:SS, for example 01:25:35
+# 2 - short format, for example 20m
+# 3 - text format, for example 01h 25m 35s
+timer-format: 1
+
+# you must define at least 1
+# requires a restart to update
+command-aliases:
+- axafkzone
+- afkzone
+- axaz
+
+# should the timer reset after a player gets their afk zone rewards?
+# this is just for the placeholders, it will not change functionality
+reset-after-reward: false
+
+# how many players can gain rewards at once from a single ip?
+# set to -1 for unlimited
+zone-per-ip-limit: -1
+
+# should the bossbar progress start from full or empty?
+# directions:
+# 0 - decreasing value (starts filled)
+# 1 - increasing value (starts empty)
+bossbar-direction: 0
+
+# should be plugin notify you if there is a new update?
+update-notifier:
+  # if enabled, it will display the message in the console
+  enabled: true
+  # if enabled, it will broadcast the update message to all players who have the <plugin-name>.update-notify permission
+  on-join: true
+
+# do not change this
+version: 2

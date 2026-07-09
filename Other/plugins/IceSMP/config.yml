@@ -1,0 +1,4 @@
+# IceSMP — Konfiguráció
+# A beállítások alrendszerenként a 'config/' mappában vannak (config/<alrendszer>.yml).
+# A ConfigManager ezt a fájlt ÉS a config/ mappa összes .yml-jét betölti és egyesíti.
+# Itt felülírhatsz bármely kulcsot (ez a fájl tölt be utoljára, így nyer).

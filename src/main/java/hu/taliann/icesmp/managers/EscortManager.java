@@ -407,7 +407,7 @@ public final class EscortManager {
         destination = null;
         clearWaves();
         hideBarFromAll();
-        Bukkit.getServer().broadcast(messageManager.get(messageKey, defaultFor(messageKey)));
+        Bukkit.getServer().broadcast(messageManager.getMessage(messageKey, defaultFor(messageKey)));
     }
 
     private String defaultFor(final String messageKey) {

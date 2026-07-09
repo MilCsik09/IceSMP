@@ -226,7 +226,7 @@ public final class MeteorEventManager {
             // Scheduler unavailable during shutdown — a graceful disable normally still runs it.
         }
         if (announce) {
-            Bukkit.getServer().broadcast(messageManager.get(
+            Bukkit.getServer().broadcast(messageManager.getMessage(
                     "meteor-faded", "&7☄ A meteor-kráter beomlott és elenyészett — a táj visszanyerte régi formáját."));
         }
     }

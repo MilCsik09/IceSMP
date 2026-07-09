@@ -1,0 +1,30 @@
+version: 2 # DO NOT CHANGE
+holograms:
+  test:
+    type: TEXT
+    location:
+      world: world
+      x: 571.5
+      y: 66.12000274658203
+      z: 111.5
+      yaw: 87.29938
+      pitch: -0.60029805
+    visibility_distance: 10000000
+    visibility: ALL
+    persistent: true
+    scale_x: 1.0
+    scale_y: 1.0
+    scale_z: 1.0
+    translation_x: 0.0
+    translation_y: 0.0
+    translation_z: 0.0
+    shadow_radius: 0.0
+    shadow_strength: 1.0
+    text:
+    - '<yellow>◀ ʙᴀʟ ᴋʟɪᴋᴋ: ᴋɪᴋᴀᴘᴄѕᴏʟáѕ'
+    - '<green>▶ ᴊᴏʙʙ ᴋʟɪᴋᴋ: ʙᴇᴋᴀᴄѕᴏʟáѕ'
+    text_shadow: false
+    see_through: false
+    text_alignment: center
+    update_text_interval: -1
+    linkedNpc: test

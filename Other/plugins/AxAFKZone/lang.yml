@@ -1,0 +1,67 @@
+# DOCUMENTATION: https://docs.artillex-studios.com/axafkzone.html
+
+help:
+- ' '
+- <gradient:#FF8800:#CC0055><b>AxAFKZone</b></gradient> <#FF7700>Help
+- ' <#FF7700>➤ <white>/axafkzone reload <#DDDDDD>| <#FFAA00>Reload plugin'
+- ' <#FF7700>➤ <white>/axafkzone wand <#DDDDDD>| <#FFAA00>Give wand'
+- ' <#FF7700>➤ <white>/axafkzone create <zone> <#DDDDDD>| <#FFAA00>Create zone'
+- ' <#FF7700>➤ <white>/axafkzone delete <zone> <#DDDDDD>| <#FFAA00>Delete zone'
+- ' <#FF7700>➤ <white>/axafkzone redefine <zone> <#DDDDDD>| <#FFAA00>Update zone area'
+- ' <#FF7700>➤ <white>/axafkzone tp <zone> <#DDDDDD>| <#FFAA00>Teleport to center of zone'
+- ' '
+
+reload:
+  success: '&#33FF33Plugin successfully reloaded!'
+  failed: '&#FF3333Failed to reload the plugin! Something is wrong in the &f%file%&#FF3333 file, look in the console or use a yaml validator to fix the errors!'
+
+time:
+  second: s
+  minute: m
+  hour: h
+  day: d
+
+selection-wand:
+  material: GOLDEN_AXE
+  name: '&#FF8800&lSELECTION WAND'
+  lore:
+  - ' '
+  - '&#FF8800ʟᴇғᴛ ᴄʟɪᴄᴋ'
+  - ' &7- &fSelect position #1'
+  - ' '
+  - '&#FF8800ʀɪɢʜᴛ ᴄʟɪᴄᴋ'
+  - ' &7- &fSelect position #2'
+  - ' '
+
+zone:
+  created: '&#FF8855You have created a zone named &#CC0055%name%&#FF8855!'
+  deleted: '&#FF8855You have deleted the zone named &#CC0055%name%&#FF8855!'
+  not-found: '&#FF8855Can''t find zone named &#CC0055%name%&#FF8855!'
+  already-exists: '&#FF8855Zone with name &#CC0055%name% &#FF8855already exists!'
+  ip-limit: '&#FF8855You can not have any more accounts in this zone from your IP address.'
+  redefined: '&#FF8855You have redefined the zone named &#CC0055%name%&#FF8855!'
+
+teleport:
+  success: '&#FF8855Successfully teleported to the &#CC0055%name% &#FF8855zone!'
+  fail: '&#FF8855Can''t teleport to the &#CC0055%name% &#FF8855zone, because the world is not loaded!'
+
+selection:
+  pos1: '&#FFBB00Selected &#CC0055POSITION #1 &7- &#DDDDDD%location%'
+  pos2: '&#FFBB00Selected &#CC0055POSITION #2 &7- &#DDDDDD%location%'
+  no-selection: '&#CC0055You must select 2 corners with /axafkzone wand to create a new zone!'
+  small-selection: '&#CC0055The zone selected only has a height of 1, make sure that you didn''t just select the ground level!'
+
+commands:
+  invalid-value: '&#FF0000Invalid parameter: &#BB0000%value%'
+  invalid-command: '&#FF0000Invalid command or subcommand!'
+  missing-argument: '&#FF0000Missing argument! You must specify a value for &#BB0000%value%&#FF0000.'
+  no-permission: '&#FF0000You don''t have permission to access this command!'
+  out-of-range: '&#FF0000The &#BB0000%number% &#FF0000must be between &#BB0000%min% &#FF0000and &#BB0000%max%&#FF0000!'
+  player-only: '&#FF0000You must be a player to use this command!'
+  invalid-player: '&#FF0000The player &#BB0000%player% &#FF0000can not be found!'
+  invalid-selector: '&#FF0000You can not use this selector in this command!'
+
+update-notifier: '&#FFAA77There is a new version of AxAFKZone available! &#DDDDDD(&#FFFFFFcurrent: &#FF0000%current% &#DDDDDD| &#FFFFFFlatest: &#00FF00%latest%&#DDDDDD)'
+
+# do not change this
+version: 3

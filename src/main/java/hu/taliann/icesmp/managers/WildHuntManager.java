@@ -240,7 +240,7 @@ public final class WildHuntManager {
             return; // The death listener won the race — the slain path already settled it.
         }
         removeEntityById(id);
-        Bukkit.getServer().broadcast(messageManager.get(
+        Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-escaped", "&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve."));
     }
 

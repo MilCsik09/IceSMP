@@ -1,0 +1,51 @@
+# DOCUMENTATION: https://docs.artillex-studios.com/axafkzone.html
+# ITEM BUILDER: https://docs.artillex-studios.com/item-builder.html
+
+messages:
+  entered: '&#FF8855You have entered the AFK zone! You will get a reward in &#CC0055%time%&#FF8855!'
+  left: '&#FF8855You have left the AFK zone! You stayed here for &#CC0055%time%&#FF8855!'
+  # the %rewards% line will be duplicated for every reward given
+  reward:
+  - '&#FF8855You have waited for &#CC0055%time% &#FF8855and you have been rewarded:'
+  - '&7 - &f%reward%'
+
+# set any of the lines to "" if you want to disable one of them
+in-zone:
+  title: '&#CC0055⌚ &7| &#FF8855ʏᴏᴜ ᴀʀᴇ ᴀғᴋ &7| &#CC0055⌚'
+  subtitle: '&#FFBB00Next reward in: &#CC0055%time%'
+  actionbar: ''
+  # remove the section to disable
+  bossbar:
+    name: '&#CC0055⌚ &7| &#FF8855ʏᴏᴜ ᴀʀᴇ ᴀғᴋ &7| &#FFBB00Next reward in: &#CC0055%time%'
+    # colors: https://javadoc.io/static/net.kyori/adventure-api/4.17.0/net/kyori/adventure/bossbar/BossBar.Color.html
+    color: RED
+    # styles: https://javadoc.io/static/net.kyori/adventure-api/4.17.0/net/kyori/adventure/bossbar/BossBar.Overlay.html
+    style: NOTCHED_20
+
+# the required permission to gain rewards in this zone
+# example: axafkzone.vip
+# set to "" to disable, so everyone will get rewards
+permission: ''
+
+# how often should a reward be rolled? (in seconds)
+reward-time-seconds: 60
+
+# how many rewards should be rolled after the time has passed?
+roll-amount: 3
+
+# chances can go over 100%
+# you can add as many rewards as you would like
+rewards:
+- chance: 50.0
+  display: '&#AAAAAA1x Iron Ingot'
+  commands:
+  - give %player% iron_ingot 1
+- chance: 25.0
+  display: '&#88FFFF1x Diamond'
+  items:
+  - amount: 1
+    material: diamond
+
+zone:
+  location1: world;1000109.0;71.0;99997.0;0.0;0.0
+  location2: world;1000118.0;76.0;100005.0;0.0;0.0

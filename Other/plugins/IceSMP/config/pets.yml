@@ -1,0 +1,31 @@
+# IceSMP konfiguráció — pets (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Idézett társak (pet/minion) =====
+# max-active: hány aktív idézett társa lehet egyszerre egy játékosnak (spam-védelem);
+# talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.
+# Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
+pets:
+  max-active: 8
+  talent-health-share: 0.5
+  # Vadmester / Nekromanta társa (ROADMAP 12. + befogás): bármilyen mob lehet a társ,
+  # befogó itemmel (Vadmester = nem ellenséges állat, Nekromanta = ellenséges / élőholt mob).
+  # Megnevezett, szintet lépő companion; a nem szelídíthető társakat teleport-követés tartja a gazda mellett.
+  companion:
+    max-level: 30
+    base-xp: 10
+    increment-per-level: 5
+    xp-per-kill: 2
+    health-per-level: 2.0
+    damage-per-level: 0.5
+    # Ennél messzebb (blokk) a társ visszateleportál a gazdához (lemaradás esetén).
+    follow-distance: 16.0
+    # Ennél messzebb (blokk) a társ gyalog elindul a gazda után (alap követés minden petnek).
+    follow-start-distance: 5.0
+    # Plugin-vezérelt harc (a mob saját AI-jától függetlenül): a társ a célpont felé
+    # pathfinderrel megy, és a plugin osztja a sebzést — így bármilyen mob "rendes pet".
+    tick-ticks: 5             # milyen sűrűn fusson a társ-vezérlő (tick)
+    attack-damage-base: 3.0   # alap sebzés (+ szintenkénti damage-per-level)
+    attack-reach: 2.6         # ekkora távolságból üt (blokk)
+    attack-cooldown-ticks: 16 # két ütés közti idő (tick)
+    chase-speed: 1.3          # üldözési sebesség-szorzó
+    aggro-range: 10.0         # ennyiről véd meg automatikusan ellenséges mobtól (blokk)
+    leash-range: 24.0         # ennél messzebb levő célpontot elenged (blokk)

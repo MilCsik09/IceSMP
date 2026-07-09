@@ -228,7 +228,7 @@ public final class TreasureEventManager {
                         chest = null;
                         cancelBeacon();
                         restoreBlock(active);
-                        Bukkit.getServer().broadcast(messageManager.get(
+                        Bukkit.getServer().broadcast(messageManager.getMessage(
                                 "treasure-expired", "&7🗺 Az elrejtett kincs feltáratlanul eltűnt a homokban."));
                     }
                 } finally {
@@ -266,7 +266,7 @@ public final class TreasureEventManager {
             // Scheduler unavailable during shutdown — leave the block.
         }
         if (announce) {
-            Bukkit.getServer().broadcast(messageManager.get(
+            Bukkit.getServer().broadcast(messageManager.getMessage(
                     "treasure-expired", "&7🗺 Az elrejtett kincs feltáratlanul eltűnt a homokban."));
         }
     }
