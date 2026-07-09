@@ -72,8 +72,17 @@ public final class ProtectionBridge {
             final Class<?> worldGuardClass = Class.forName("com.sk89q.worldguard.WorldGuard");
             final Object worldGuard = worldGuardClass.getMethod("getInstance").invoke(null);
             final Object platform = worldGuardClass.getMethod("getPlatform").invoke(worldGuard);
-            final Class<?> platformInterface = Class.forName("com.sk89q.worldguard.internal.platform.WorldGuardPlatform");
-            final Object container = platformInterface.getMethod("getRegionContainer").invoke(platform);
+            // WG7's getPlatform() returns internal.platform.WorldGuardPlatform; if a future
+            // version moves/renames it, fall back to the runtime class (made accessible).
+            java.lang.reflect.Method getRegionContainer;
+            try {
+                getRegionContainer = Class.forName("com.sk89q.worldguard.internal.platform.WorldGuardPlatform")
+                        .getMethod("getRegionContainer");
+            } catch (final ClassNotFoundException moved) {
+                getRegionContainer = platform.getClass().getMethod("getRegionContainer");
+                getRegionContainer.setAccessible(true);
+            }
+            final Object container = getRegionContainer.invoke(platform);
             final Class<?> containerClass = Class.forName("com.sk89q.worldguard.protection.regions.RegionContainer");
             regionQuery = containerClass.getMethod("createQuery").invoke(container);
 

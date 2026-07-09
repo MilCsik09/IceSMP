@@ -169,7 +169,8 @@ public final class QuestProgressListener implements Listener {
         // Only re-check on block-level movement (same hot-path guard as the TerritoryListener).
         final Location from = event.getFrom();
         final Location to = event.getTo();
-        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+        if (to == null
+                || (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ())) {
             return;
         }
 

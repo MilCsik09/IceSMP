@@ -53,11 +53,17 @@ public final class PartyListener implements Listener {
             return; // Solo (or party-less) kill: vanilla orbs as usual.
         }
 
-        // WoW-style split: everyone nearby gets an equal share instead of the orbs.
-        final int share = Math.max(1, xp / nearby.size());
+        // WoW-style split that CONSERVES the total: everyone gets floor(xp/n) and the
+        // killer takes the remainder, so the sum always equals the mob's original XP
+        // (no minting when xp < party size — members may get 0 on tiny drops).
+        final int share = xp / nearby.size();
+        final int remainder = xp % nearby.size();
         event.setDroppedExp(0);
         for (final Player member : nearby) {
-            member.getScheduler().run(plugin, task -> member.giveExp(share), null);
+            final int amount = share + (member.getUniqueId().equals(killer.getUniqueId()) ? remainder : 0);
+            if (amount > 0) {
+                member.getScheduler().run(plugin, task -> member.giveExp(amount), null);
+            }
         }
     }
 
