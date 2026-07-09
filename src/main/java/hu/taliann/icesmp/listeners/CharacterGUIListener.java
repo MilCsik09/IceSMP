@@ -100,6 +100,10 @@ public final class CharacterGUIListener implements Listener {
                 SkillTreeGUI.open(player, ctx.jobManager(), ctx.specializationManager(),
                         ctx.spellRegistry(), ctx.configManager(), ctx.messageManager());
             }
+            case ProfileGUI.MENU_SLOT -> {
+                click(player);
+                player.performCommand("menu");
+            }
             case ProfileGUI.CLOSE_SLOT -> player.closeInventory();
             default -> {
                 // Head and economy panes are display-only.

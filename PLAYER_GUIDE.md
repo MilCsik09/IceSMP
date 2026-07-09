@@ -536,7 +536,9 @@ meteor **sosem csapódik claimelt frakció-területre**, és **nem rombolja mara
 `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
 gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
-`/events escort` • `/events meteor`.)
+`/events escort` • `/events meteor`.) A `/menu` → **Események** almenü mindezt egy helyen, **élő
+státusszal** mutatja: szezon-állás, vérhold, világboss, karaván, kíséret, bőség-idő,
+szerver-kihívás és meteor-kráter.
 
 ### Party (csapat) 👥
 WoW-stílusú csapat: max **5 fő**, teljesen **frakciótól függetlenül** (bármelyik frakcióból lehet

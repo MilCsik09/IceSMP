@@ -4,11 +4,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.List;
 
@@ -69,6 +71,23 @@ public final class GuiUtil {
         if (glow) {
             meta.addEnchant(Enchantment.UNBREAKING, 1, true);
         }
+        itemStack.setItemMeta(meta);
+        return itemStack;
+    }
+
+    /**
+     * A player-head icon carrying {@code owner}'s skin. Falls back to the plain
+     * head when the owner is unknown (the skin resolves from the player cache).
+     */
+    public static ItemStack playerHead(final OfflinePlayer owner, final Component name, final List<Component> lore) {
+        final ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
+        final ItemMeta meta = itemStack.getItemMeta();
+        if (owner != null && meta instanceof SkullMeta skullMeta) {
+            skullMeta.setOwningPlayer(owner);
+        }
+        meta.displayName(name);
+        meta.lore(lore);
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         itemStack.setItemMeta(meta);
         return itemStack;
     }

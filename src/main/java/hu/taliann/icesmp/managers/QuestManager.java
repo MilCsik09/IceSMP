@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -137,6 +138,24 @@ public final class QuestManager implements PersistentStore {
         }
     }
 
+    /**
+     * Copy-on-write snapshot of the custom-quest tree. The admin editor mutates a
+     * private copy and swaps the volatile {@code customQuests} reference, so reader
+     * threads (every region thread resolves quest sections on each progress event)
+     * never observe a YamlConfiguration whose backing maps are mid-mutation — on
+     * Folia the admin edit and player progress genuinely run in parallel.
+     */
+    private static YamlConfiguration copyOf(final YamlConfiguration source) {
+        final YamlConfiguration copy = new YamlConfiguration();
+        try {
+            copy.loadFromString(source.saveToString());
+        } catch (final InvalidConfigurationException exception) {
+            // Round-tripping our own serialized config cannot produce invalid YAML.
+            throw new IllegalStateException("custom-quests snapshot failed", exception);
+        }
+        return copy;
+    }
+
     public Set<String> getCustomQuestIds() {
         final ConfigurationSection section = customQuests.getConfigurationSection("quests");
         return section == null ? Set.of() : section.getKeys(false);
@@ -181,9 +200,11 @@ public final class QuestManager implements PersistentStore {
         }
 
         final String base = "quests." + normalizedId;
-        customQuests.set(base + ".display-name", displayName == null || displayName.isBlank() ? normalizedId : displayName);
-        customQuests.set(base + ".objective.type", objectiveType.toUpperCase(Locale.ROOT));
-        customQuests.set(base + ".objective.count", count);
+        final YamlConfiguration draft = copyOf(customQuests);
+        draft.set(base + ".display-name", displayName == null || displayName.isBlank() ? normalizedId : displayName);
+        draft.set(base + ".objective.type", objectiveType.toUpperCase(Locale.ROOT));
+        draft.set(base + ".objective.count", count);
+        customQuests = draft;
         save();
         return null;
     }
@@ -321,7 +342,9 @@ public final class QuestManager implements PersistentStore {
             default -> parsed = rawValue.trim();
         }
 
-        customQuests.set("quests." + questId.toLowerCase(Locale.ROOT) + "." + normalizedField, parsed);
+        final YamlConfiguration draft = copyOf(customQuests);
+        draft.set("quests." + questId.toLowerCase(Locale.ROOT) + "." + normalizedField, parsed);
+        customQuests = draft;
         save();
         return null;
     }
@@ -353,7 +376,8 @@ public final class QuestManager implements PersistentStore {
         }
 
         final String base = "quests." + questId.toLowerCase(Locale.ROOT);
-        final ConfigurationSection quest = customQuests.getConfigurationSection(base);
+        final YamlConfiguration draft = copyOf(customQuests);
+        final ConfigurationSection quest = draft.getConfigurationSection(base);
         if (quest == null) {
             return "quest-admin-not-custom";
         }
@@ -381,6 +405,7 @@ public final class QuestManager implements PersistentStore {
         if (description != null && !description.isBlank()) {
             multi.set(next + ".description", description.trim());
         }
+        customQuests = draft;
         save();
         if (index != null && index.length > 0) {
             index[0] = next;
@@ -400,7 +425,9 @@ public final class QuestManager implements PersistentStore {
             return false;
         }
 
-        customQuests.set("quests." + questId.toLowerCase(Locale.ROOT), null);
+        final YamlConfiguration draft = copyOf(customQuests);
+        draft.set("quests." + questId.toLowerCase(Locale.ROOT), null);
+        customQuests = draft;
         save();
         return true;
     }
@@ -588,8 +615,10 @@ public final class QuestManager implements PersistentStore {
         forEachActive(player, "BREAK_BLOCKS", (questId, objective) -> materialMatches(objective, material));
     }
 
-    public void handleCraft(final Player player, final Material material) {
-        forEachActive(player, "CRAFT_ITEMS", (questId, objective) -> materialMatches(objective, material));
+    /** Crafting progresses by the recipe's yield per craft action (e.g. 4 for planks). */
+    public void handleCraft(final Player player, final Material material, final int amount) {
+        forEachActive(player, "CRAFT_ITEMS", Math.max(1, amount),
+                (questId, objective) -> materialMatches(objective, material));
     }
 
     public void handleFish(final Player player) {
@@ -922,7 +951,9 @@ public final class QuestManager implements PersistentStore {
         }
 
         pool.sort(Comparator.naturalOrder());
-        final long daySeed = System.currentTimeMillis() / 86_400_000L;
+        // Local-date bucket (same rule as DailyQuestManager.today()): the rotation flips
+        // at the server's LOCAL midnight, not at UTC midnight mid-day for non-UTC servers.
+        final long daySeed = java.time.LocalDate.now(java.time.ZoneId.systemDefault()).toEpochDay();
         Collections.shuffle(pool, new Random(daySeed * 31L + group.toLowerCase(Locale.ROOT).hashCode()));
         return new ArrayList<>(pool.subList(0, dailyCount));
     }

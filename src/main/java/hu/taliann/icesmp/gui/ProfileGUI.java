@@ -42,6 +42,7 @@ public final class ProfileGUI {
     public static final int TALENT_SLOT = 20;
     public static final int SKILLTREE_SLOT = 22;
     public static final int ECONOMY_SLOT = 24;
+    public static final int MENU_SLOT = 27;
     public static final int CLOSE_SLOT = 31;
 
     private ProfileGUI() {
@@ -75,6 +76,9 @@ public final class ProfileGUI {
                 accent("Képesség-fa"),
                 List.of(grey("A kasztod és specializációd"), grey("képességei feloldási szint szerint."), Component.empty(), click("Megnyitás"))));
         inventory.setItem(ECONOMY_SLOT, createEconomy(viewer, ctx));
+        inventory.setItem(MENU_SLOT, GuiUtil.icon(Material.ARROW,
+                Component.text("Főmenü", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
+                List.of(grey("Vissza a /menu főmenübe."))));
         inventory.setItem(CLOSE_SLOT, GuiUtil.icon(Material.BARRIER,
                 Component.text("Bezárás", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()));
 

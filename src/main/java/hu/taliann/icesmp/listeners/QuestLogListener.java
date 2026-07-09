@@ -48,6 +48,10 @@ public final class QuestLogListener implements Listener {
             case QuestLogGUI.TAB_COMPLETED_SLOT -> reopen(player, 0, QuestLogHolder.Tab.COMPLETED);
             case QuestLogGUI.PREV_SLOT -> reopen(player, holder.getPage() - 1, holder.getTab());
             case QuestLogGUI.NEXT_SLOT -> reopen(player, holder.getPage() + 1, holder.getTab());
+            case QuestLogGUI.MENU_SLOT -> {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
+                player.performCommand("menu");
+            }
             default -> handleQuestClick(player, holder, event, slot);
         }
     }
