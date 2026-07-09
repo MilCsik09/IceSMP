@@ -15,6 +15,9 @@ helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyi
 | ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
 | ⚫ **Sötét** | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
 
+> 💬 A **chatben a neved a frakciód színében** jelenik meg (a rang-prefixszel együtt) — így
+> mindenki azonnal látja, ki melyik oldalon áll.
+
 ## A Sötét frakció — fontos tudnivalók ⚫
 
 A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.

@@ -46,9 +46,15 @@ jelenti, hogy **elhagyható**.
 | `/quest log` | `gui`, `naplo` | **Küldetésnapló GUI** — Aktív / Felvehető / Teljesített fülek, lapozható |
 | `/souls` / `/souls champion` | `soul`, `lelek` | Lélekszilánk (csak Nekromanta) |
 | `/bounty` | `fejvadasz`, `korozes` | Körözési lista: ki körözött és mennyit ér a feje |
-| `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: cooldown-csökkentés valutáért |
+| `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: valutáért rövidebb cooldown ÉS erősebb hatás (sebzés, gyógyítás, effekt-időtartam) |
 | `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a katalizátoron* is megnyitja. |
-| `/events season` / `/events blood-moon` | `event`, `esemeny` | Világesemények állása |
+| `/events season` / `/events blood-moon` / `/events caravan` | `event`, `esemeny` | Világesemények állása (szezon, vérhold, kereskedő-karaván) |
+| `/party invite\|accept\|decline\|leave\|list` | `p`, `parti` | **Party (csapat)**: meghívás, csatlakozás, kilépés, taglista (max 5 fő) |
+| `/party kick\|promote\|disband <név>` | | Csapatvezetői műveletek: kirúgás, vezetés átadása, feloszlatás |
+| `/p <üzenet>` | | **Csapat-chat** — csak a párttagok látják |
+| `/claim` | `birtok` | Az aktuális chunk lefoglalása (**saját birtok** — első 3 ingyen) |
+| `/claim unclaim\|info\|list\|show` | | Claim felszabadítása / infó / lista / határ-kirajzolás |
+| `/claim trust\|untrust <név>` | | Megbízott hozzáadása / elvétele (teljes hozzáférés a claimjeidhez) |
 
 ## Király-parancsok (csak a frakció királyának)
 
@@ -90,9 +96,19 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/events blood-moon start\|stop` | Vérhold kézi indítása / leállítása |
 | `/events worldboss` | Világboss azonnali megidézése |
 | `/events invasion` | Szörny-invázió azonnali indítása |
+| `/events caravan arrive\|depart` | Kereskedő-karaván kézi indítása / elküldése |
+| `/events ambient` | Hangulat-esemény azonnali kiváltása |
+| `/events gathering` | Gyűjtögető buff-ablak megnyitása |
+| `/events treasure` | Elrejtett kincs elhelyezése |
+| `/events wild-hunt` | Vad Hajsza fenevad megidézése |
+| `/events abundance` | Bőség-idő indítása |
+| `/events challenge` | Kollektív szerver-kihívás indítása |
+| `/events escort` | Karaván-kíséret (konvoj) indítása |
+| `/events meteor` | Meteor-becsapódás kiváltása |
 | `/events intro [játékos]` | Bemutató újrajátszása |
+| `/claim admin unclaim` | Idegen claim törlése admin-jogon |
 | `/parkour setstart\|setfinish\|remove <id>` | Parkour-pálya beállítása |
 
 ---
 
-[Vissza a tartalomhoz](README.md)
+➡️ Tovább: [Party (csapat)](15-csapat.md) • [Vissza a tartalomhoz](README.md)
