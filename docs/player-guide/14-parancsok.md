@@ -34,7 +34,7 @@ jelenti, hogy **elhagyható**.
 | `/currency rates` | | Aktuális árfolyamok |
 | `/market` | `piac`, `ah` | Piactér böngésző (vásárlás / licitálás) |
 | `/market sell <ár> [valuta]` | | A kézben tartott tárgy eladása |
-| `/market auction <kikiáltási ár> [óra] [valuta]` | | Aukció indítása a kézben tartott tárgyra |
+| `/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]` | | Aukció indítása a kézben tartott tárgyra (a `buyout:` opcionális azonnali-vétel ár) |
 | `/market claim` | | Megnyert / visszajáró aukciós tárgyak átvétele |
 | `/market cancel` | | Saját eladásaid visszavonása (élő licites aukció nem) |
 | `/spec list` / `/spec choose <id>` | `specialization`, `specializacio` | Specializációk |

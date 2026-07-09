@@ -13,7 +13,8 @@ frakcióból lehet valaki a csapatodban, akár egy Piros és egy Kék is együtt
 
 - **Közös XP:** a közeli mob-ölésekből járó kaszt-XP a közelben lévő párttagok közt
   **fejenként oszlik meg** — minél többen vagytok együtt, annál kisebb rész jut mindenkinek
-  (igazi WoW-módra). Cserébe együtt sokkal gyorsabban és biztonságosabban öltök.
+  (igazi WoW-módra); az osztás utáni maradék a **megölőé**. Cserébe együtt sokkal gyorsabban
+  és biztonságosabban öltök.
 - **Personal loot az eseményeknél:** a plugin loot-eseményeinél (**Vad Hajsza**,
   **elrejtett kincs**) nem egy közös zsákmányon kell osztozni — minden közelben lévő párttag
   a **saját jutalmát** kapja. Lásd [Világesemények](10-vilagesemenyek.md).
