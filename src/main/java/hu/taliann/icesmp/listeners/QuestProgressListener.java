@@ -80,7 +80,8 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
-            questManager.handleCraft(player, event.getRecipe().getResult().getType());
+            final var result = event.getRecipe().getResult();
+            questManager.handleCraft(player, result.getType(), result.getAmount());
         }
     }
 
