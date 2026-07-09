@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 
 /**
  * Handles clicks in the spellbook GUI: clicking an unlocked spell selects it on the
@@ -58,6 +59,13 @@ public final class SpellbookListener implements Listener {
         if (catalyst.selectSpell(player, spellId)) {
             player.playSound(player.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 0.8F, 1.4F);
             catalyst.openSpellbook(player, holder.getPage()); // refresh the highlight
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(final InventoryDragEvent event) {
+        if (event.getInventory().getHolder() instanceof SpellbookHolder) {
+            event.setCancelled(true);
         }
     }
 }

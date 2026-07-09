@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class StatsManager implements PersistentStore {
 
     /** A read-only leaderboard row. */
-    public record Entry(String name, int level, double wealth, int raidKills) { }
+    public record Entry(UUID uuid, String name, int level, double wealth, int raidKills) { }
 
     public enum Category { LEVEL, WEALTH, RAID_KILLS }
 
@@ -145,10 +146,11 @@ public final class StatsManager implements PersistentStore {
         };
 
         final List<Entry> rows = new ArrayList<>();
-        stats.values().stream()
-                .sorted(comparator.reversed())
+        stats.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(comparator.reversed()))
                 .limit(Math.max(1, limit))
-                .forEach(s -> rows.add(new Entry(s.name, s.level, s.wealth, s.raidKills)));
+                .forEach(e -> rows.add(new Entry(e.getKey(), e.getValue().name, e.getValue().level,
+                        e.getValue().wealth, e.getValue().raidKills)));
         return rows;
     }
 }

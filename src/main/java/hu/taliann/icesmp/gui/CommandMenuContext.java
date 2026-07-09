@@ -1,7 +1,13 @@
 package hu.taliann.icesmp.gui;
 
+import hu.taliann.icesmp.managers.AbundanceManager;
 import hu.taliann.icesmp.managers.BloodMoonManager;
+import hu.taliann.icesmp.managers.CaravanManager;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.EscortManager;
+import hu.taliann.icesmp.managers.MeteorEventManager;
+import hu.taliann.icesmp.managers.ServerChallengeManager;
+import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
 import hu.taliann.icesmp.managers.FactionManager;
@@ -33,6 +39,12 @@ public record CommandMenuContext(
         QuestManager questManager,
         SeasonManager seasonManager,
         BloodMoonManager bloodMoonManager,
+        WorldBossManager worldBossManager,
+        CaravanManager caravanManager,
+        EscortManager escortManager,
+        AbundanceManager abundanceManager,
+        ServerChallengeManager serverChallengeManager,
+        MeteorEventManager meteorEventManager,
         SoulShardManager soulShardManager,
         SpecializationManager specializationManager,
         RelicManager relicManager,

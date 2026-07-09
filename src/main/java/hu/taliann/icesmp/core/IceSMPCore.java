@@ -322,8 +322,9 @@ public final class IceSMPCore {
                 professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
-                seasonManager, bloodMoonManager, soulShardManager, specializationManager, relicManager,
-                statsManager, achievementManager, configManager);
+                seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
+                abundanceManager, serverChallengeManager, meteorEventManager, soulShardManager,
+                specializationManager, relicManager, statsManager, achievementManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and

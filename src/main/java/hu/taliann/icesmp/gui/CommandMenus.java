@@ -31,7 +31,12 @@ import java.util.UUID;
  */
 public final class CommandMenus {
 
-    private static final String ADMIN_PERMISSION = "icesmp.admin";
+    // The buttons in the admin menu delegate to commands with their own permission
+    // nodes — the menu must gate on the SAME nodes, otherwise a button would show
+    // but its command would be denied (or a permitted admin would not see it).
+    private static final String ADMIN_EVENTS_PERMISSION = "icesmp.admin.events";
+    private static final String ADMIN_RELOAD_PERMISSION = "icesmp.admin.reload";
+    private static final String ADMIN_EXCHANGEBOARD_PERMISSION = "icesmp.admin.exchangeboard";
 
     private CommandMenus() {
     }
@@ -58,7 +63,7 @@ public final class CommandMenus {
 
         put(inv, holder, 4, GuiUtil.icon(Material.NETHER_STAR, accent("IceSMP — Főmenü"),
                 List.of(grey("Válassz egy rendszert."))), null);
-        put(inv, holder, 10, GuiUtil.icon(Material.PLAYER_HEAD, title("Karakterlap"),
+        put(inv, holder, 10, GuiUtil.playerHead(player, title("Karakterlap"),
                 List.of(grey("Kaszt, spec, szakma, talent, képesség-fa."), click())), "OPEN:profile");
         put(inv, holder, 11, GuiUtil.icon(Material.RED_BANNER, title("Frakció"),
                 List.of(grey("Belépés, kassza, király, raid."), click())), "MENU:FACTION");
@@ -78,7 +83,7 @@ public final class CommandMenus {
                 List.of(grey("Leggazdagabb, legmagasabb szint, raid-kill."), click())), "MENU:LEADERBOARD");
         put(inv, holder, 23, GuiUtil.icon(Material.NETHER_STAR, title("Elérések"),
                 List.of(grey("Mérföldkövek és jutalmaik."), click())), "MENU:ACHIEVEMENTS");
-        if (player.hasPermission(ADMIN_PERMISSION)) {
+        if (hasAnyAdminAccess(player)) {
             put(inv, holder, 24, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
         }
@@ -213,17 +218,60 @@ public final class CommandMenus {
         for (final FactionType type : FactionType.values()) {
             standings.add(label(type.getDisplayName(), Component.text(ctx.seasonManager().getPoints(type) + " pont", NamedTextColor.WHITE)));
         }
-        put(inv, holder, 11, GuiUtil.icon(Material.GOLDEN_HELMET, accent("Szezonális liga"), standings), "RUN:events season");
-        put(inv, holder, 13, GuiUtil.icon(ctx.bloodMoonManager().isActive() ? Material.RED_DYE : Material.GRAY_DYE,
-                accent("Vérhold"),
-                List.of(label("Állapot", Component.text(ctx.bloodMoonManager().isActive() ? "AKTÍV" : "nyugalom",
-                        ctx.bloodMoonManager().isActive() ? NamedTextColor.RED : NamedTextColor.GRAY)),
-                        grey("Vérholdkor a szörnyek erősebbek."))), "RUN:events blood-moon");
-        put(inv, holder, 15, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, accent("Világboss"),
-                List.of(grey("Időnként boss spawnol; a legyőző"), grey("frakciója kasszát és liga-pontot kap."))), null);
+        put(inv, holder, 4, GuiUtil.icon(Material.GOLDEN_HELMET, accent("Szezonális liga"), standings), "RUN:events season");
+
+        final boolean bloodMoon = ctx.bloodMoonManager().isActive();
+        put(inv, holder, 10, GuiUtil.icon(bloodMoon ? Material.RED_DYE : Material.GRAY_DYE, accent("Vérhold"),
+                List.of(statusLine(bloodMoon, NamedTextColor.RED),
+                        grey("Vérholdkor a szörnyek erősebbek.")), bloodMoon), "RUN:events blood-moon");
+
+        final boolean boss = ctx.worldBossManager().isBossActive();
+        put(inv, holder, 11, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, accent("Világboss"),
+                List.of(statusLine(boss, NamedTextColor.DARK_RED),
+                        grey("Időnként boss spawnol; a legyőző"),
+                        grey("frakciója kasszát és liga-pontot kap.")), boss), null);
+
+        final boolean caravan = ctx.caravanManager().isActive();
+        put(inv, holder, 12, GuiUtil.icon(caravan ? Material.EMERALD : Material.CHEST_MINECART, accent("Kereskedő-karaván"),
+                List.of(statusLine(caravan, NamedTextColor.GOLD),
+                        grey("Amíg a városban van, különleges"),
+                        grey("áruit a karaván-boltban veheted.")), caravan), "RUN:events caravan");
+
+        final boolean escort = ctx.escortManager().isActive();
+        final List<Component> escortLore = new ArrayList<>();
+        escortLore.add(statusLine(escort, NamedTextColor.YELLOW));
+        escortLore.add(grey("Kísérd el a konvojt a célig —"));
+        escortLore.add(grey("siker esetén bónusz-készlet nyílik."));
+        if (ctx.escortManager().isBonusStockActive()) {
+            escortLore.add(label("Bónusz-készlet", Component.text("elérhető!", NamedTextColor.GREEN)));
+        }
+        put(inv, holder, 13, GuiUtil.icon(Material.LEAD, accent("Karaván-kíséret"), escortLore, escort), null);
+
+        final boolean abundance = ctx.abundanceManager().isActive();
+        put(inv, holder, 14, GuiUtil.icon(Material.HAY_BLOCK, accent("Bőség-idő"),
+                List.of(statusLine(abundance, NamedTextColor.GREEN),
+                        grey("Amíg tart, a gyűjtögetés"),
+                        grey("extra hozamot ad.")), abundance), null);
+
+        final boolean challenge = ctx.serverChallengeManager().isActive();
+        put(inv, holder, 15, GuiUtil.icon(Material.TARGET, accent("Szerver-kihívás"),
+                List.of(statusLine(challenge, NamedTextColor.GOLD),
+                        grey("Közös cél az egész szervernek,"),
+                        grey("jutalommal a résztvevőknek.")), challenge), null);
+
+        final boolean meteor = ctx.meteorEventManager().isActive();
+        put(inv, holder, 16, GuiUtil.icon(meteor ? Material.MAGMA_BLOCK : Material.COBBLESTONE, accent("Meteor"),
+                List.of(statusLine(meteor, NamedTextColor.RED),
+                        grey("Becsapódás után a kráter ritka"),
+                        grey("ércekben gazdag — amíg ki nem hűl.")), meteor), null);
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    /** "Állapot: AKTÍV/nyugalom" lore line for the event tiles. */
+    private static Component statusLine(final boolean active, final NamedTextColor activeColor) {
+        return label("Állapot", Component.text(active ? "AKTÍV" : "nyugalom", active ? activeColor : NamedTextColor.GRAY));
     }
 
     // ===== RELIC =====
@@ -278,31 +326,54 @@ public final class CommandMenus {
     // ===== ADMIN =====
     public static void openAdmin(final Player player, final CommandMenuContext ctx) {
         final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.ADMIN, player.getUniqueId());
-        final Inventory inv = create(holder, 27, "<dark_aqua>» Admin «</dark_aqua>", ctx);
+        final Inventory inv = create(holder, 36, "<dark_aqua>» Admin «</dark_aqua>", ctx);
 
-        if (!player.hasPermission(ADMIN_PERMISSION)) {
+        if (!hasAnyAdminAccess(player)) {
             put(inv, holder, 13, GuiUtil.icon(Material.BARRIER, Component.text("Nincs jogosultságod", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), null);
-        } else {
+            put(inv, holder, 31, backButton(), "MENU:MAIN");
+            player.openInventory(inv);
+            return;
+        }
+
+        // Each button is gated on the permission node of the command it runs.
+        if (player.hasPermission(ADMIN_RELOAD_PERMISSION)) {
             put(inv, holder, 10, GuiUtil.icon(Material.COMMAND_BLOCK, title("Config újratöltés"),
                     List.of(grey("/icesmp reload"), click())), "RUN:icesmp reload");
+        }
+        if (player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)) {
             put(inv, holder, 12, GuiUtil.icon(Material.ITEM_FRAME, title("Árfolyamtábla lerakása"),
                     List.of(grey("/exchangeboard place"), click())), "RUN:exchangeboard place");
             put(inv, holder, 14, GuiUtil.icon(Material.SHEARS, title("Árfolyamtábla törlése"),
                     List.of(grey("/exchangeboard remove"), click())), "RUN:exchangeboard remove");
+        }
+        if (player.hasPermission(ADMIN_EVENTS_PERMISSION)) {
             put(inv, holder, 16, GuiUtil.icon(Material.ENDER_EYE, title("Intro újrajátszása"),
                     List.of(grey("/events intro"), click())), "RUN:events intro");
             put(inv, holder, 19, GuiUtil.icon(Material.RED_DYE, title("Vérhold: indítás"),
                     List.of(grey("/events bloodmoon start"), click())), "RUN:events bloodmoon start");
             put(inv, holder, 20, GuiUtil.icon(Material.GRAY_DYE, title("Vérhold: leállítás"),
                     List.of(grey("/events bloodmoon stop"), click())), "RUN:events bloodmoon stop");
-            put(inv, holder, 22, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, title("Világboss idézése"),
+            put(inv, holder, 21, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, title("Világboss idézése"),
                     List.of(grey("/events worldboss"), click())), "RUN:events worldboss");
-            put(inv, holder, 24, GuiUtil.icon(Material.ZOMBIE_HEAD, title("Invázió indítása"),
+            put(inv, holder, 22, GuiUtil.icon(Material.ZOMBIE_HEAD, title("Invázió indítása"),
                     List.of(grey("/events invasion"), click())), "RUN:events invasion");
+            put(inv, holder, 23, GuiUtil.icon(Material.EMERALD, title("Karaván: érkezés"),
+                    List.of(grey("/events caravan arrive"), click())), "RUN:events caravan arrive");
+            put(inv, holder, 24, GuiUtil.icon(Material.BONE, title("Vad Hajsza indítása"),
+                    List.of(grey("/events wild-hunt"), click())), "RUN:events wild-hunt");
+            put(inv, holder, 25, GuiUtil.icon(Material.MAGMA_BLOCK, title("Meteor idézése"),
+                    List.of(grey("/events meteor"), click())), "RUN:events meteor");
         }
 
-        put(inv, holder, 25, backButton(), "MENU:MAIN");
+        put(inv, holder, 31, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    /** True when the player can use at least one admin menu button (per-command nodes). */
+    private static boolean hasAnyAdminAccess(final Player player) {
+        return player.hasPermission(ADMIN_RELOAD_PERMISSION)
+                || player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)
+                || player.hasPermission(ADMIN_EVENTS_PERMISSION);
     }
 
     // ===== LEADERBOARD =====
@@ -325,7 +396,7 @@ public final class CommandMenus {
                 case WEALTH -> Component.text(ctx.currencyManager().formatBalance(row.wealth()), NamedTextColor.GOLD);
                 case RAID_KILLS -> Component.text(row.raidKills() + " raid-kill", NamedTextColor.RED);
             };
-            put(inv, holder, slot++, GuiUtil.icon(Material.PLAYER_HEAD,
+            put(inv, holder, slot++, GuiUtil.playerHead(Bukkit.getOfflinePlayer(row.uuid()),
                     Component.text("#" + rank + " " + row.name(), rank == 1 ? NamedTextColor.GOLD : NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
                     List.of(value)), null);
             rank++;

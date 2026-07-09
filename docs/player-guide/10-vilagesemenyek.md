@@ -132,7 +132,9 @@ Amikor **először** lépsz be, lejátszódik egy rövid, hangulatos **cím-szek
 egyszer fut le. (Admin újra le tudja játszani.)
 
 > Ezeket az eseményeket a `/events` paranccsal nézheted meg (`/events season`, `/events
-> blood-moon`, `/events caravan`). A többi eseményt (meteor, kincs, kihívás…) az adminok
+> blood-moon`, `/events caravan`), vagy egyben a `/menu` → **Események** almenüben, ami
+> **élő státusszal** mutatja a vérholdat, világbosst, karavánt, kíséretet, bőség-időt,
+> szerver-kihívást és a meteor-krátert. A többi eseményt (meteor, kincs, kihívás…) az adminok
 > tudják kézzel is kiváltani — lásd a [Parancsok](14-parancsok.md) oldalt.
 
 ---
