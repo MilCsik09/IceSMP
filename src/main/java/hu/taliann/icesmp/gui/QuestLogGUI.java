@@ -34,6 +34,7 @@ public final class QuestLogGUI {
     public static final int PREV_SLOT = 48;
     public static final int PAGE_INFO_SLOT = 49;
     public static final int NEXT_SLOT = 50;
+    public static final int MENU_SLOT = 53;
 
     private QuestLogGUI() {
     }
@@ -80,6 +81,7 @@ public final class QuestLogGUI {
         }
         inventory.setItem(PAGE_INFO_SLOT, nav(Material.PAPER,
                 "Oldal " + (safePage + 1) + "/" + totalPages + " — " + quests.size() + " küldetés"));
+        inventory.setItem(MENU_SLOT, nav(Material.ARROW, "Főmenü (/menu)"));
 
         viewer.openInventory(inventory);
     }

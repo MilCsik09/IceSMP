@@ -3,10 +3,15 @@ package hu.taliann.icesmp.gui;
 import hu.taliann.icesmp.managers.AbundanceManager;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CaravanManager;
+import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.EscortManager;
 import hu.taliann.icesmp.managers.MeteorEventManager;
+import hu.taliann.icesmp.managers.ParkourManager;
+import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
+import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
@@ -50,5 +55,10 @@ public record CommandMenuContext(
         RelicManager relicManager,
         StatsManager statsManager,
         AchievementManager achievementManager,
+        PartyManager partyManager,
+        ClaimManager claimManager,
+        SinManager sinManager,
+        DailyQuestManager dailyQuestManager,
+        ParkourManager parkourManager,
         ConfigManager configManager) {
 }
