@@ -32,11 +32,12 @@ külön oldala van, hogy könnyen megtaláld, amit keresel.
 7. [Talentek (talent-fa)](07-talentek.md) — passzív erősítések pontokból
 8. [Szakmák](08-szakmak.md) — **minden** szakma: mit ad XP-t és mennyit
 9. [Relikviák és rituálék](09-relikviak.md) — legendás tárgyak
-10. [Világesemények](10-vilagesemenyek.md) — vérhold, világboss, szezon, intro
+10. [Világesemények](10-vilagesemenyek.md) — vérhold, világboss, karaván, meteor, kincs, kihívás…
 11. [Királyság, raid és háború](11-raid-haboru.md) — királyok, ostrom, reputáció
 12. [Küldetések](12-kuldetesek.md) — mit hol vegyél fel, mit kapsz
-13. [Frakcióterületek](13-teruletek.md) — fővárosok, claimek, építésvédelem
+13. [Frakcióterületek és saját birtok](13-teruletek.md) — fővárosok, claim, építésvédelem
 14. [Parancsok listája](14-parancsok.md) — minden parancs egy helyen
+15. [Party (csapat)](15-csapat.md) — csapatalakítás, közös XP, party-HUD
 
 ---
 

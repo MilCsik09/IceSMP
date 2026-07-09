@@ -41,6 +41,81 @@ Káosz-horda), és minden hullámot egy **megnevezett bajnok (mini-boss)** vezet
 telegrafált földcsapással támad. Veszélyes, de a legyőzésük **több kaszt-XP-t** és nagyobb
 **lélekkő-esélyt** ad, mint a hétköznapi szörnyek. (Admin: `/events invasion`.)
 
+## Kereskedő-karaván ✦
+
+Időnként egy **vándorkereskedő karaván** érkezik (egy üzenet jelzi, melyik világba és mennyi
+ideig marad). Amíg itt van, **jobb-katt a karaván-NPC-re** → bolt nyílik **ritka portékákkal**
+(arany alma, gyémánttömb, névcímke, tapasztalat-palack…), fix áron a banki egyenlegedből.
+A kifizetett pénz eltűnik (money sink). Ha lekésed, legközelebb **máshol** bukkan fel.
+Állapot: `/events caravan`. Részletek: [Valuta és gazdaság](03-valuta-gazdasag.md).
+
+## Vad Hajsza 🐺
+
+Időnként egy **megnevezett, feldühödött elit fenevad** (pl. Ősi Fenevad, Csont Vadász, Vén
+Mágus, Pokoli Behemót) kóborol be egy játékos közelébe — kóborló mini-fenyegetés az
+invázió-hordák és a világbossok között. Aki **leteríti**, **ritka zsákmányt** kap (nyersanyag,
+nem pénz); ha időben senki nem öli meg, eltűnik a vadonban.
+
+## Elrejtett kincs 🗺
+
+Időnként egy **megjelölt kincsesláda** bukkan fel valahol, és az üzenet megadja a
+**hozzávetőleges helyét** (világ + koordináta). Az **első**, aki odaér és **rákattint** (vagy
+kibányássza), viszi a teljes zsákmányt (nyersanyag, nem pénz), majd a láda eltűnik. Ha senki
+nem találja meg időben, feltáratlanul elenyészik — siess!
+
+## Gyűjtögető buff-ablakok ⛏🎣
+
+Időnként megnyílik egy **szerver-szintű bónusz-ablak** (kb. 15 percre) — csak nyersanyag/XP,
+sosem pénz:
+- **Bányász-láz** — az érc-blokkok bónusz dropot adnak.
+- **Termés-óra** — a beérett termés bónusz hozamot ad.
+- **Halászati láz** — esély dupla fogásra.
+- **Tapasztalat-óra** — XP-szorzó mindenből.
+
+Egy üzenet jelzi a kezdetét és a végét — ilyenkor érdemes rákapcsolni a megfelelő tevékenységre!
+
+## Bőség-idő 🌱
+
+A vérhold **pozitív ellenpárja**: egy nyugodt időablak, amikor a **termés gyorsabban nő**, az
+**állatok néha ikret ellenek**, **kevesebb szörny** spawnol, és **gyengéd regeneráció** leng
+mindenkin. Építeni, farmolni, feltöltődni való — a béke szigete a háború közepén.
+
+## Kollektív szerver-kihívás ⚔
+
+Időnként az **egész szerver** kap egy közös, időzített célt (pl. öljetek meg együtt 500
+szörnyet / bányásszatok 800 ércet / takarítsatok be 1000 termést) — a haladást **boss-bar**
+mutatja mindenkinek. Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap
+(XP + nyersanyag-csomag + rövid Sietség-buff). Közös cél, közös jutalom.
+
+## Karaván-kíséret 🛡
+
+Időnként egy **konvoj** (ládás láma) indul útnak egy cél felé, és útközben **szörny-hullámok**
+támadják — a haladást **boss-bar** mutatja. A közelben lévő játékosoknak **életben kell
+tartaniuk**, míg célba ér:
+- Ha **odaér**: a zsákmány a célnál hullik, és a **kereskedő-karaván boltja egy ideig bővebb
+  (ritka) készlettel árul**.
+- Ha a konvoj **elesik** vagy lejár az idő, a szállítmány elvész.
+- A kíséret-mobok robbanása **sosem rongálja a terepet**.
+
+## Meteor-becsapódás ☄
+
+Időnként egy **meteor** csapódik be a vadonba (az üzenet megadja a helyét), és egy kis
+**kráter** marad, tele **ritka, kibányászható érccel** (gyémánt, smaragd, ősi törmelék…).
+Siess: a kráter csak egy ideig marad, aztán **magától visszaáll az eredeti terep** — amit addig
+kibányászol, a tiéd. A meteor **sosem csapódik claimelt területre vagy frakció-territóriumba**,
+és **nem rombolja maradandóan** a világot.
+
+## Hangulat-események ✦
+
+Időnként apró, **légköri események** teszik élőbbé a világot (nem befolyásolják a balanszot):
+**északi fény** (rövid éjjellátás + csillámló égbolt), **hulló csillag** (üzenet a becsapódás
+irányával), **köd**, **bolyongó szellemek**, **szentjánosbogarak**, valamint **állat-vándorlás**
+(egy passzív állatcsorda vándorol a közeledbe — élelemforrás).
+
+> 👥 **Csapatban vagy?** A plugin loot-eseményeinél (**Vad Hajsza**, **elrejtett kincs**) nem
+> egy közös zsákmány esik le: minden közelben lévő párttag a **saját (personal) jutalmát**
+> kapja. Részletek: [Party (csapat)](15-csapat.md).
+
 ## Szezonális liga 🏆
 
 A frakciók **pontot gyűjtenek** a **raid-** és **világboss-győzelmekből**. A szezon végén
@@ -57,7 +132,8 @@ Amikor **először** lépsz be, lejátszódik egy rövid, hangulatos **cím-szek
 egyszer fut le. (Admin újra le tudja játszani.)
 
 > Ezeket az eseményeket a `/events` paranccsal nézheted meg (`/events season`, `/events
-> blood-moon`).
+> blood-moon`, `/events caravan`). A többi eseményt (meteor, kincs, kihívás…) az adminok
+> tudják kézzel is kiváltani — lásd a [Parancsok](14-parancsok.md) oldalt.
 
 ---
 

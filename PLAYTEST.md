@@ -256,7 +256,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       a licit (−10% díj); licit nélkül a tárgy visszajár. Offline nyertes **belépéskor** vagy
       `/market claim`-mel kapja meg.
 - [ ] **Aukció-védelem:** saját aukcióra nem licitálhatsz; élő licites aukció `/market cancel`-lel
-      nem vonható vissza; legmagasabb licitálóként nem licitálhatsz rá még egyszer.
+      nem vonható vissza; legmagasabb licitálóként nem licitálhatsz rá még egyszer — de a
+      **buy-outot a vezető licitáló is használhatja** (a saját zárolt licitje visszajár).
 - [ ] **Reputáció-árazás:** ellenséges/raidelő frakciótól drágább (+25%), szövetségestől olcsóbb (−10%).
 - [ ] **Adó:** óránként a frakciótagok a valuta-egyenlegük 2%-át a kasszába fizetik (Semleges mentes).
 - [ ] ⚠️ **Folia:** vásárolj olyan eladótól, aki **másik régióban/máshol van** → az eladó értesítése
@@ -397,7 +398,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       után a kráter **teljesen visszaáll** az eredeti terepre; `avoid-territory: true` mellett **nem** csapódik
       claimelt területre (állj egy `/territory`-be és nézd, hogy máshova kerül).
 - [ ] **Party:** `/party invite` két fiókkal → accept után közös csapat; közeli mob-ölés XP-je
-      **fejenként oszlik**; párttag **nem sebezhető** (kard + nyíl); Vad Hajsza/kincs esemény párttal →
+      **fejenként oszlik** (floor(xp/n), a maradék a megölőé; ha xp < létszám, csak a megölő kap);
+      párttag **nem sebezhető** (kard + nyíl); Vad Hajsza/kincs esemény párttal →
       **mindenki saját (personal) lootot kap**; kilépő játékos kikerül; 2 fő alatt a csapat feloszlik;
       `/p szia` csapat-chat.
 - [ ] **Party-HUD:** csapatban a HUD-oldalsávon megjelenik a „— Csapat —" szekció (👑 vezető, tagnév +

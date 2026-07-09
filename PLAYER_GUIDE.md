@@ -22,8 +22,9 @@ talentek, a gazdaság és a világesemények. A végén külön listában megtal
 > - 🌕 [Világesemények](docs/player-guide/10-vilagesemenyek.md)
 > - 👑 [Királyság, raid és háború](docs/player-guide/11-raid-haboru.md)
 > - 📜 [Küldetések](docs/player-guide/12-kuldetesek.md)
-> - 🏰 [Frakcióterületek](docs/player-guide/13-teruletek.md)
+> - 🏰 [Frakcióterületek és saját birtok (claim)](docs/player-guide/13-teruletek.md)
 > - ⌨️ [Parancsok listája](docs/player-guide/14-parancsok.md)
+> - 👥 [Party (csapat)](docs/player-guide/15-csapat.md)
 >
 > Kezdőlap: [docs/player-guide/README.md](docs/player-guide/README.md)
 

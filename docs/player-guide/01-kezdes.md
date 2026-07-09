@@ -37,6 +37,8 @@ Első belépéskor egy rövid **bemutató cím-szekvencia** is lejátszódik —
 | Pénzt nézni / utalni | `/bank balance`, `/currency pay` |
 | Eladni valamit | `/market sell <ár>` |
 | Küldetést felvenni | `/quest list` |
+| Csapatot alakítani a barátaiddal | `/party invite <név>` — lásd [Party](15-csapat.md) |
+| Megvédeni a házam (saját birtok) | állj a chunkba és `/claim` — lásd [Területek](13-teruletek.md) |
 
 > A teljes parancslista: [Parancsok](14-parancsok.md).
 
