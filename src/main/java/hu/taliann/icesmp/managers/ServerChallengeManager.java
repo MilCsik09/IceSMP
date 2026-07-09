@@ -187,6 +187,13 @@ public final class ServerChallengeManager {
         ));
     }
 
+    /** Hides the live boss bar on plugin disable so no frozen bar lingers on clients. */
+    public void shutdown() {
+        if (active) {
+            stop();
+        }
+    }
+
     /** Silent stop (feature disabled): just clear the window and bar. */
     private void stop() {
         active = false;

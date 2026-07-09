@@ -43,8 +43,10 @@ public final class ChatFormatListener implements Listener {
             return;
         }
         final UUID speakerId = event.getPlayer().getUniqueId();
-        final String rawPrefix = LuckPermsBridge.prefix(speakerId);
-        final String rawSuffix = LuckPermsBridge.suffix(speakerId);
+        // LP prefixes conventionally use '&', but some setups store '§' — normalise so
+        // the legacy-ampersand parser renders both instead of leaking raw § glyphs.
+        final String rawPrefix = LuckPermsBridge.prefix(speakerId).replace('\u00a7', '&');
+        final String rawSuffix = LuckPermsBridge.suffix(speakerId).replace('\u00a7', '&');
         final NamedTextColor nameColor = configManager.getBoolean("chat.name-faction-color", true)
                 ? factionColor(speakerId) : NamedTextColor.WHITE;
 

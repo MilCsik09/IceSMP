@@ -38,6 +38,12 @@ public final class TreasureEventManager {
     private volatile Location chest;
     private volatile long expiresAt;
     private volatile ScheduledTask beaconTask;
+    /** The block the chest replaced — restored (not AIR-ed) when the treasure ends. */
+    private volatile org.bukkit.block.BlockState originalState;
+    /** Reserves the "active" state while a spawn is still hopping region threads. */
+    private volatile long spawnGraceUntil;
+    /** True while an expiry settle-task is queued on the chest's region thread. */
+    private volatile boolean expirySettling;
 
     private volatile long nextAttemptAt;
 
@@ -66,7 +72,7 @@ public final class TreasureEventManager {
     public void tick() {
         if (!configManager.getBoolean("treasure-events.enabled", true)) {
             if (chest != null) {
-                despawn(true);
+                expireViaRegion();
             }
             return;
         }
@@ -74,9 +80,12 @@ public final class TreasureEventManager {
         final long now = System.currentTimeMillis();
         if (chest != null) {
             if (now >= expiresAt) {
-                despawn(true);
+                expireViaRegion();
             }
             return;
+        }
+        if (now < spawnGraceUntil) {
+            return; // A spawn is still hopping region threads.
         }
 
         if (now >= nextAttemptAt) {
@@ -90,14 +99,17 @@ public final class TreasureEventManager {
     }
 
     /** Admin override: spawns a treasure now near the given anchor (or a random player). */
-    public boolean forceSpawn(final Player anchor) {
-        if (chest != null) {
+    public synchronized boolean forceSpawn(final Player anchor) {
+        if (chest != null || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         return spawn(anchor);
     }
 
     private boolean spawn(final Player preferredAnchor) {
+        // Reserve the active state while the spawn hops threads (self-heals after 10s),
+        // so a second chest can never be placed and orphan the first.
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -132,10 +144,17 @@ public final class TreasureEventManager {
                 || claimManager.getClaimAt(spot) != null) {
             return;
         }
+        // Terrain rule: don't hover over water, and remember whatever non-solid block
+        // (grass, snow layer, flower…) we replace so it is RESTORED, never AIR-ed.
+        if (world.getBlockAt(x, y - 1, z).isLiquid()) {
+            return; // Retry next interval, elsewhere.
+        }
         final Block block = spot.getBlock();
+        originalState = block.getState();
         block.setType(Material.CHEST);
         chest = spot;
         expiresAt = System.currentTimeMillis() + expireMillis();
+        spawnGraceUntil = 0L;
         startBeacon(spot);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
@@ -164,10 +183,7 @@ public final class TreasureEventManager {
         chest = null;
         cancelBeacon();
 
-        final Block block = active.getBlock();
-        if (block.getType() == Material.CHEST) {
-            block.setType(Material.AIR);
-        }
+        restoreBlock(active);
         active.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, active.clone().add(0.5D, 1.0D, 0.5D), 24, 0.5D, 0.5D, 0.5D, 0.0D);
         active.getWorld().playSound(active, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
 
@@ -193,6 +209,49 @@ public final class TreasureEventManager {
         despawn(false);
     }
 
+    /**
+     * Expiry settle, serialized with {@link #claim} on the chest's region thread:
+     * the field is only cleared INSIDE the region task, so a player clicking the
+     * chest in the same instant either wins the loot or sees it already gone —
+     * never an unclaimable ghost chest.
+     */
+    private void expireViaRegion() {
+        final Location active = chest;
+        if (active == null || expirySettling) {
+            return;
+        }
+        expirySettling = true;
+        try {
+            plugin.getServer().getRegionScheduler().run(plugin, active, task -> {
+                try {
+                    if (chest == active) { // claim() may have won on this same thread.
+                        chest = null;
+                        cancelBeacon();
+                        restoreBlock(active);
+                        Bukkit.getServer().broadcast(messageManager.get(
+                                "treasure-expired", "&7🗺 Az elrejtett kincs feltáratlanul eltűnt a homokban."));
+                    }
+                } finally {
+                    expirySettling = false;
+                }
+            });
+        } catch (final Exception exception) {
+            expirySettling = false;
+        }
+    }
+
+    /** Puts back whatever block the chest replaced (falls back to AIR). Region thread. */
+    private void restoreBlock(final Location at) {
+        final org.bukkit.block.BlockState original = originalState;
+        originalState = null;
+        final Block block = at.getBlock();
+        if (original != null) {
+            original.update(true, false);
+        } else if (block.getType() == Material.CHEST) {
+            block.setType(Material.AIR);
+        }
+    }
+
     private void despawn(final boolean announce) {
         final Location active = chest;
         chest = null;
@@ -200,14 +259,9 @@ public final class TreasureEventManager {
         if (active == null) {
             return;
         }
-        // Folia: removing the block must run on its own region thread.
+        // Folia: restoring the block must run on its own region thread.
         try {
-            plugin.getServer().getRegionScheduler().run(plugin, active, task -> {
-                final Block block = active.getBlock();
-                if (block.getType() == Material.CHEST) {
-                    block.setType(Material.AIR);
-                }
-            });
+            plugin.getServer().getRegionScheduler().run(plugin, active, task -> restoreBlock(active));
         } catch (final Exception ignored) {
             // Scheduler unavailable during shutdown — leave the block.
         }

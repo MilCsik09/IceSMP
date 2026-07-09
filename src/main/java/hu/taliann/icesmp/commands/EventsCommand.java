@@ -130,8 +130,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleWorldBoss(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
 
@@ -142,8 +141,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleInvasion(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
 
@@ -182,8 +180,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleAmbient(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         sender.sendMessage(ambientEventManager.forceRandom()
@@ -192,8 +189,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleGathering(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         sender.sendMessage(gatheringBuffManager.forceRandom()
@@ -202,8 +198,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleTreasure(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         final Player anchor = sender instanceof Player player ? player : null;
@@ -213,8 +208,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleWildHunt(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         final Player anchor = sender instanceof Player player ? player : null;
@@ -224,8 +218,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleAbundance(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         sender.sendMessage(abundanceManager.forceStart()
@@ -234,8 +227,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleChallenge(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         sender.sendMessage(serverChallengeManager.forceStart()
@@ -244,8 +236,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleEscort(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         final Player anchor = sender instanceof Player player ? player : null;
@@ -255,14 +246,22 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleMeteor(final CommandSender sender) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
         final Player anchor = sender instanceof Player player ? player : null;
         sender.sendMessage(meteorEventManager.forceSpawn(anchor)
                 ? messageManager.get("events-meteor-spawned", "&cMeteor becsapódott a közeledben!")
                 : messageManager.get("events-meteor-failed", "&7Nem sikerült (már van kráter, vagy nincs online játékos)."));
+    }
+
+    /** One admin gate for every admin-only subcommand: messages and returns false when denied. */
+    private boolean requireAdmin(final CommandSender sender) {
+        if (sender.hasPermission(ADMIN_PERMISSION)) {
+            return true;
+        }
+        sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        return false;
     }
 
     private void handleSeason(final CommandSender sender) {
@@ -278,8 +277,7 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleIntro(final CommandSender sender, final String[] args) {
-        if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        if (!requireAdmin(sender)) {
             return;
         }
 

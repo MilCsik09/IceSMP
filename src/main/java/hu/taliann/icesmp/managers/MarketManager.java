@@ -135,7 +135,15 @@ public final class MarketManager implements PersistentStore {
                             continue;
                         }
 
-                        final String bidderRaw = section.getString(idKey + ".highest-bidder", "");
+                        // A malformed bidder id must not discard the whole listing (the item
+                        // would vanish) — degrade to "no bid" and keep the auction alive.
+                        UUID bidderId = null;
+                        try {
+                            final String bidderRaw = section.getString(idKey + ".highest-bidder", "");
+                            bidderId = bidderRaw.isEmpty() ? null : UUID.fromString(bidderRaw);
+                        } catch (final IllegalArgumentException ignored) {
+                            bidderId = null;
+                        }
                         listings.put(id, new Listing(
                                 id,
                                 seller,
@@ -147,7 +155,7 @@ public final class MarketManager implements PersistentStore {
                                 section.getBoolean(idKey + ".auction", false),
                                 section.getLong(idKey + ".ends-at", 0L),
                                 section.getDouble(idKey + ".highest-bid", 0.0D),
-                                bidderRaw.isEmpty() ? null : UUID.fromString(bidderRaw),
+                                bidderId,
                                 section.getString(idKey + ".highest-bidder-name", null),
                                 section.getDouble(idKey + ".buy-out", 0.0D)
                         ));
@@ -425,18 +433,23 @@ public final class MarketManager implements PersistentStore {
             return BidOutcome.error("market-own-listing");
         }
 
-        if (bidder.getUniqueId().equals(listing.highestBidder())) {
-            return BidOutcome.error("market-already-highest");
-        }
-
-        final double minimum = getMinimumBid(listing);
-        if (!Double.isFinite(amount) || amount < minimum) {
+        if (!Double.isFinite(amount)) {
             return BidOutcome.error("market-bid-too-low");
         }
 
-        // Reaching the buy-out price wins immediately at that price.
-        final double effective = listing.hasBuyOut() ? Math.min(amount, listing.buyOut()) : amount;
+        // Reaching the buy-out price wins immediately at that price — this path also
+        // bypasses the minimum-increment rule (the buy-out IS the closing price), and
+        // the current leader may use it too (their escrowed bid refunds like any outbid).
         final boolean boughtOut = listing.hasBuyOut() && amount >= listing.buyOut();
+
+        if (bidder.getUniqueId().equals(listing.highestBidder()) && !boughtOut) {
+            return BidOutcome.error("market-already-highest");
+        }
+        if (!boughtOut && amount < getMinimumBid(listing)) {
+            return BidOutcome.error("market-bid-too-low");
+        }
+
+        final double effective = boughtOut ? listing.buyOut() : amount;
 
         if (!currencyManager.deductFromBalance(bidder.getUniqueId(), listing.currency(), effective)) {
             return BidOutcome.error("market-insufficient-balance");

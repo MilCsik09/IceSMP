@@ -17,6 +17,18 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   célpont-scheduler hibák, az Angry Chicken cross-region damager kockázata és az orb Java 21
   build-környezete javítva lett; playtesten továbbra is figyeljétek a konzolt
   `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
+- **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
+  - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
+    enabled-enum sorsolás, mulandó entity biztonságos eltávolítása) 5-8 helyen duplikáltak — egy
+    közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes.
+  - `ClaimManager.save()` minden mutációnál a teljes claims.yml-t írja (sok ezer claimnél
+    parancs-késleltetés) — dirty-flag + késleltetett mentés a megoldás.
+  - A LootTable a `MIN:MAX` elgépeléseket (min>max, negatív) csendben koercálja — log-figyelmeztetés
+    kellene; az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
+    lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem).
+  - Aukció: a minimum/nagy licit elérheti a buy-out árat és azonnal zár (eBay-szemantika —
+    szándékos, de a GUI-tipp csak a shift-kattot említi); a vétel-üzenet ára elvben eltérhet a
+    ténylegesen levonttól, ha a frakció-viszony épp a kattintás pillanatában vált.
 
 ### Játékmenet
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé

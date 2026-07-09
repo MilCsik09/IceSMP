@@ -57,6 +57,8 @@ public final class EscortManager {
     private final BossBar bar = BossBar.bossBar(Component.empty(), 0.0F, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
 
     private volatile UUID convoyId;
+    /** Reserves the "active" state while a spawn is still hopping region threads. */
+    private volatile long spawnGraceUntil;
     private volatile Location destination;
     private volatile double totalDistance;
     private volatile long expiresAt;
@@ -79,6 +81,17 @@ public final class EscortManager {
     /** Whether an escort is currently under way. */
     public boolean isActive() {
         return convoyId != null;
+    }
+
+    /**
+     * Atomically claims the right to settle the escort (success OR failure): only
+     * the first caller wins — the convoy driver (region thread) and the timeout
+     * check (global tick) can never both settle the same convoy.
+     */
+    private synchronized UUID claimSettlement() {
+        final UUID id = convoyId;
+        convoyId = null;
+        return id;
     }
 
     /** Whether the given entity is the escorted convoy (for the death listener). */
@@ -122,6 +135,9 @@ public final class EscortManager {
             }
             return;
         }
+        if (now < spawnGraceUntil) {
+            return; // A spawn is still hopping region threads.
+        }
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
@@ -134,8 +150,8 @@ public final class EscortManager {
     }
 
     /** Admin override: starts an escort now near the anchor (or a random player). */
-    public boolean forceStart(final Player anchor) {
-        if (isActive()) {
+    public synchronized boolean forceStart(final Player anchor) {
+        if (isActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         return start(anchor);
@@ -162,6 +178,9 @@ public final class EscortManager {
     }
 
     private boolean start(final Player preferredAnchor) {
+        // Reserve the active state while the spawn hops threads (self-heals after 10s),
+        // so a second convoy can never start and orphan the first.
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -216,6 +235,7 @@ public final class EscortManager {
         destination = dest;
         totalDistance = Math.max(1.0D, horizontalDistance(start, dest));
         expiresAt = System.currentTimeMillis() + maxDurationMillis();
+        spawnGraceUntil = 0L;
 
         startConvoyDriver(convoy);
         updateBar(convoy, totalDistance);
@@ -349,9 +369,11 @@ public final class EscortManager {
 
     /** The convoy arrived: shared loot at the goal + the caravan's bonus stock unlocks. */
     private void succeed(final Llama convoy) {
+        if (claimSettlement() == null) {
+            return; // The timeout tick won the race and already settled as failure.
+        }
         final Location where = convoy.getLocation().clone();
         final World world = where.getWorld();
-        convoyId = null;
         destination = null;
 
         final int rolls = Math.max(1, configManager.getInt("escort.reward-rolls", 4));
@@ -377,8 +399,11 @@ public final class EscortManager {
     }
 
     private void fail(final String messageKey) {
-        removeEntity(convoyId);
-        convoyId = null;
+        final UUID id = claimSettlement();
+        if (id == null) {
+            return; // The driver already settled it (success) — no contradictory broadcast.
+        }
+        removeEntity(id);
         destination = null;
         clearWaves();
         hideBarFromAll();

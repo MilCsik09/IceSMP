@@ -564,6 +564,7 @@ public final class IceSMPCore {
         wildHuntManager.shutdown();
         escortManager.shutdown();
         meteorEventManager.shutdown();
+        serverChallengeManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.

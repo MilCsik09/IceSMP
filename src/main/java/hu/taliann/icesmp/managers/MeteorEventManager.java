@@ -148,6 +148,14 @@ public final class MeteorEventManager {
             return; // Try again next interval, elsewhere.
         }
 
+        // Terrain rule: a crater in a tree canopy or on a water surface would look broken
+        // (getHighestBlockYAt reports leaf/water tops) — pick another spot next interval.
+        final org.bukkit.block.Block surface = world.getBlockAt(x, surfaceY, z);
+        if (surface.isLiquid() || org.bukkit.Tag.LEAVES.isTagged(surface.getType())
+                || org.bukkit.Tag.LOGS.isTagged(surface.getType())) {
+            return;
+        }
+
         final int craterRadius = Math.max(2, configManager.getInt("meteor.crater-radius", 3));
         final int craterDepth = Math.max(1, configManager.getInt("meteor.crater-depth", 2));
         final double oreChance = Math.max(0.0D, Math.min(1.0D, configManager.getDouble("meteor.ore-chance", 0.45D)));

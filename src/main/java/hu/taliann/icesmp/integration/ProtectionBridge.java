@@ -67,17 +67,23 @@ public final class ProtectionBridge {
             return;
         }
         try {
+            // Resolve every Method from the PUBLIC WorldGuard API types — resolving from
+            // implementation classes risks IllegalAccessException on non-public impls.
             final Class<?> worldGuardClass = Class.forName("com.sk89q.worldguard.WorldGuard");
             final Object worldGuard = worldGuardClass.getMethod("getInstance").invoke(null);
-            final Object platform = worldGuard.getClass().getMethod("getPlatform").invoke(worldGuard);
-            final Object container = platform.getClass().getMethod("getRegionContainer").invoke(platform);
-            regionQuery = container.getClass().getMethod("createQuery").invoke(container);
+            final Object platform = worldGuardClass.getMethod("getPlatform").invoke(worldGuard);
+            final Class<?> platformInterface = Class.forName("com.sk89q.worldguard.internal.platform.WorldGuardPlatform");
+            final Object container = platformInterface.getMethod("getRegionContainer").invoke(platform);
+            final Class<?> containerClass = Class.forName("com.sk89q.worldguard.protection.regions.RegionContainer");
+            regionQuery = containerClass.getMethod("createQuery").invoke(container);
 
             final Class<?> bukkitAdapter = Class.forName("com.sk89q.worldguard.bukkit.BukkitAdapter");
             adaptMethod = bukkitAdapter.getMethod("adapt", Location.class);
             final Class<?> weLocation = Class.forName("com.sk89q.worldedit.util.Location");
-            getApplicableRegionsMethod = regionQuery.getClass().getMethod("getApplicableRegions", weLocation);
-            sizeMethod = getApplicableRegionsMethod.getReturnType().getMethod("size");
+            getApplicableRegionsMethod = Class.forName("com.sk89q.worldguard.protection.regions.RegionQuery")
+                    .getMethod("getApplicableRegions", weLocation);
+            sizeMethod = Class.forName("com.sk89q.worldguard.protection.ApplicableRegionSet")
+                    .getMethod("size");
 
             available = true;
             Bukkit.getLogger().info("[IceSMP] WorldGuard-híd bekapcsolva: a meteor/kincs események kerülik a WG-régiókat.");

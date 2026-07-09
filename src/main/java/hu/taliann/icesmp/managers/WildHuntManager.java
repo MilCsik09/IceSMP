@@ -56,6 +56,8 @@ public final class WildHuntManager {
     private volatile UUID beastId;
     private volatile long expiresAt;
     private volatile long nextAttemptAt;
+    /** Reserves the "active" state while a spawn is still hopping region threads. */
+    private volatile long spawnGraceUntil;
 
     public WildHuntManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final PartyManager partyManager,
@@ -71,6 +73,24 @@ public final class WildHuntManager {
     /** Whether the given entity is the active wild-hunt beast (for the death listener). */
     public boolean isWildHunt(final UUID entityId) {
         return entityId != null && entityId.equals(beastId);
+    }
+
+    /** Active (or a spawn is in flight): guards double-starts during the hop window. */
+    private boolean isActiveOrSpawning() {
+        return beastId != null || System.currentTimeMillis() < spawnGraceUntil;
+    }
+
+    /**
+     * Atomically claims the right to settle the hunt (slain OR escaped): only the
+     * first caller wins, so the expiry tick and the death listener can never both
+     * settle the same beast (global vs region thread race).
+     */
+    private synchronized boolean claimSettlement() {
+        if (beastId == null) {
+            return false;
+        }
+        beastId = null;
+        return true;
     }
 
     /** Periodic driver on the global world-events tick. */
@@ -89,6 +109,9 @@ public final class WildHuntManager {
             }
             return;
         }
+        if (now < spawnGraceUntil) {
+            return; // A spawn is still hopping region threads.
+        }
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
@@ -101,8 +124,8 @@ public final class WildHuntManager {
     }
 
     /** Admin override: unleashes the hunt now near the anchor (or a random player). */
-    public boolean forceStart(final Player anchor) {
-        if (beastId != null) {
+    public synchronized boolean forceStart(final Player anchor) {
+        if (isActiveOrSpawning()) {
             return false;
         }
         return spawn(anchor);
@@ -116,10 +139,9 @@ public final class WildHuntManager {
      * @param where the death location
      */
     public void onSlain(final Player slayer, final Location where) {
-        if (beastId == null) {
-            return;
+        if (!claimSettlement()) {
+            return; // Expiry won the race — the escape path already settled it.
         }
-        beastId = null;
 
         final World world = where.getWorld();
         if (world != null) {
@@ -146,11 +168,14 @@ public final class WildHuntManager {
 
     /** Removes the beast on plugin disable / expiry. */
     public void shutdown() {
-        removeBeast();
+        removeEntityById(beastId);
         beastId = null;
     }
 
     private boolean spawn(final Player preferredAnchor) {
+        // Reserve the active state while the spawn hops threads (self-healing after 10s
+        // if the chain dies, e.g. the world unloads), so no second beast can start.
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -195,6 +220,7 @@ public final class WildHuntManager {
 
         beastId = mob.getUniqueId();
         expiresAt = System.currentTimeMillis() + expireMillis();
+        spawnGraceUntil = 0L;
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-started",
@@ -209,17 +235,16 @@ public final class WildHuntManager {
     }
 
     private void escape() {
-        removeBeast();
-        final boolean wasActive = beastId != null;
-        beastId = null;
-        if (wasActive) {
-            Bukkit.getServer().broadcast(messageManager.get(
-                    "wild-hunt-escaped", "&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve."));
+        final UUID id = beastId;
+        if (!claimSettlement()) {
+            return; // The death listener won the race — the slain path already settled it.
         }
+        removeEntityById(id);
+        Bukkit.getServer().broadcast(messageManager.get(
+                "wild-hunt-escaped", "&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve."));
     }
 
-    private void removeBeast() {
-        final UUID id = beastId;
+    private void removeEntityById(final UUID id) {
         if (id == null) {
             return;
         }
