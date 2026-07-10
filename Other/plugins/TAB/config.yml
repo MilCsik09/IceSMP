@@ -89,22 +89,17 @@ scoreboard:
   delay-on-join-milliseconds: 0
   scoreboards:
     scoreboard:
-      title: "%animation:scoreboard_logo%"
+      title: "㍐"
       lines:
+        - "&r"
         - "%animation:bar%"
-        - "&r"
-        - "        ㍐"
-        - "&r"
-        - "&r"
-        - "&#00ffff&l%player%"
-        - "&8| &7ᴘɪɴɢ&8: &#00FF00%ping%"
-        - "&8| &7ʀᴀɴɢ&8:&r %luckperms_prefix% "
         - "&8| &7ꜰʀᴀᴋᴄɪó&8: %icesmp_faction%"
         - "&8| &7ᴋᴀꜱᴢᴛ&8: %icesmp_class% &7Lvl &f%icesmp_class_level%"
         - "&8| &7%icesmp_resource_name%&8: %icesmp_resource_bar%"
         - "&8| &7ᴇꜱᴇᴍéɴʏ&8: %icesmp_event%"
-        - "&r"
+        - "%animation:bar%"
         - "&8⭐ &7ᴠᴀʟᴜᴛᴀ&8: &#F8BF28%icesmp_balance%"
+        - "&r"
         - "%icesmp_party_1%"
         - "%icesmp_party_2%"
         - "%icesmp_party_3%"

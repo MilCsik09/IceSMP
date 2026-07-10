@@ -77,6 +77,7 @@ public final class QuestManager implements PersistentStore {
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
+            "objective.description",
             "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
             "rewards.items", "rewards.unlock-spell", "rewards.cleanse-sins",
             "dialogue.speaker", "dialogue.give", "dialogue.complete");

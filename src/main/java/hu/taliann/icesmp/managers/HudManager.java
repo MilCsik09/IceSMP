@@ -379,7 +379,11 @@ public final class HudManager {
                 .append(Component.text(" " + (int) Math.ceil(hp / 2.0D) + "❤", color));
     }
 
-    /** EVERY currently running world event, comma-separated (sidebar + %icesmp_event%). */
+    /**
+     * The running world events on ONE line (sidebar + %icesmp_event%), width-capped:
+     * at most two names are spelled out, the rest collapse into a "+N" suffix so the
+     * scoreboard can never grow arbitrarily wide.
+     */
     private Component eventLabel() {
         final List<String> active = new ArrayList<>();
         if (raidManager.isRaidActive()) {
@@ -413,15 +417,16 @@ public final class HudManager {
         if (active.isEmpty()) {
             return Component.text("nyugalom", NamedTextColor.GRAY);
         }
-        return Component.text(String.join(", ", active), NamedTextColor.YELLOW);
+        final String shown = String.join(", ", active.subList(0, Math.min(2, active.size())));
+        final Component label = Component.text(shown, NamedTextColor.YELLOW);
+        return active.size() <= 2 ? label
+                : label.append(Component.text(" +" + (active.size() - 2), NamedTextColor.GOLD));
     }
 
     private Component tabName(final Player player) {
+        // A név MAGA kapja a frakció színét — külön [Frakció] tag nélkül (rövidebb tab-lista).
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        final Component prefix = faction == null
-                ? Component.empty()
-                : Component.text("[" + faction.getDisplayName() + "] ", factionColor(faction));
-        return prefix.append(Component.text(player.getName(), NamedTextColor.WHITE));
+        return Component.text(player.getName(), faction == null ? NamedTextColor.WHITE : factionColor(faction));
     }
 
     private NamedTextColor factionColor(final FactionType faction) {

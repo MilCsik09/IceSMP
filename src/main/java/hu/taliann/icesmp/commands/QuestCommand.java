@@ -405,7 +405,10 @@ public final class QuestCommand implements BasicCommand {
                 ? List.of("log", "list", "info", "accept", "abandon", "complete", "admin")
                 : List.of("log", "list", "info", "accept", "abandon");
 
-        if (args.length <= 1) {
+        // A Paper a lezáró szóköz utáni ÜRES szót nem adja át (args rövidebb), ezért minden
+        // szintet két hosszal kezelünk: N+1 = szó közben (prefix az utolsó arg), N = szóköz
+        // után (üres prefix) — utóbbit a megelőző arg pontos egyezése különbözteti meg.
+        if (args.length == 0 || (args.length == 1 && !subcommands.contains(args[0].toLowerCase(Locale.ROOT)))) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             return subcommands.stream().filter(option -> option.startsWith(prefix)).toList();
         }
@@ -414,27 +417,34 @@ public final class QuestCommand implements BasicCommand {
         if ("admin".equals(subcommand)) {
             return suggestAdmin(sender, args);
         }
-        if (args.length == 2 && ("accept".equals(subcommand) || "abandon".equals(subcommand))) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if (args.length <= 2 && ("accept".equals(subcommand) || "abandon".equals(subcommand))) {
+            final String prefix = prefixAt(args, 1);
             if ("abandon".equals(subcommand) && sender instanceof Player player) {
                 return questManager.getActiveQuests(player).stream().filter(id -> id.startsWith(prefix)).toList();
             }
             return questManager.getQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
 
-        if (args.length == 2 && "complete".equals(subcommand)) {
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
-                    .toList();
-        }
-
-        if (args.length == 3 && "complete".equals(subcommand)) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
-            return questManager.getQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
+        if ("complete".equals(subcommand)) {
+            final boolean nameComplete = args.length >= 2 && Bukkit.getPlayerExact(args[1]) != null;
+            if (args.length <= 2 && !nameComplete) {
+                return Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefixAt(args, 1)))
+                        .toList();
+            }
+            if (args.length <= 3) {
+                final String prefix = prefixAt(args, 2);
+                return questManager.getQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
+            }
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 
     private Collection<String> suggestAdmin(final CommandSender sender, final String[] args) {
@@ -442,31 +452,36 @@ public final class QuestCommand implements BasicCommand {
             return List.of();
         }
 
-        if (args.length == 2) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
-            return List.of("create", "addobjective", "set", "delete", "info", "list").stream()
-                    .filter(option -> option.startsWith(prefix)).toList();
+        final List<String> actions = List.of("create", "addobjective", "set", "delete", "info", "list");
+        final String action = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "";
+        if (args.length == 1 || (args.length == 2 && !actions.contains(action))) {
+            final String prefix = prefixAt(args, 1);
+            return actions.stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        final String action = args[1].toLowerCase(Locale.ROOT);
-        if (args.length == 3 && ("set".equals(action) || "delete".equals(action) || "addobjective".equals(action))) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
+        // A quest-id pozíció (P=2): akkor lépünk tovább a P=3 javaslatokra, ha az id már
+        // egy létező küldetésre pontosan illeszkedik.
+        final boolean idComplete = args.length >= 3
+                && questManager.getQuestIds().contains(args[2].toLowerCase(Locale.ROOT));
+        if (("set".equals(action) || "delete".equals(action) || "addobjective".equals(action))
+                && (args.length == 2 || (args.length == 3 && !idComplete))) {
+            final String prefix = prefixAt(args, 2);
             return questManager.getCustomQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
-
-        if (args.length == 3 && "info".equals(action)) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
+        if ("info".equals(action) && (args.length == 2 || (args.length == 3 && !idComplete))) {
+            final String prefix = prefixAt(args, 2);
             return questManager.getQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
 
-        if (args.length == 4 && ("create".equals(action) || "addobjective".equals(action))) {
-            final String prefix = args[3].toUpperCase(Locale.ROOT);
+        if (("create".equals(action) || "addobjective".equals(action)) && args.length <= 4) {
+            // create-nél az id szabad szöveg — a típus-javaslat szóköz után (üres prefixszel) is jön.
+            final String prefix = prefixAt(args, 3).toUpperCase(Locale.ROOT);
             return new ArrayList<>(QuestManager.OBJECTIVE_TYPES).stream()
                     .filter(type -> type.startsWith(prefix)).toList();
         }
 
-        if (args.length == 4 && "set".equals(action)) {
-            final String prefix = args[3].toLowerCase(Locale.ROOT);
+        if ("set".equals(action) && args.length <= 4) {
+            final String prefix = prefixAt(args, 3);
             return QuestManager.EDITABLE_FIELDS.stream().filter(field -> field.startsWith(prefix)).toList();
         }
 

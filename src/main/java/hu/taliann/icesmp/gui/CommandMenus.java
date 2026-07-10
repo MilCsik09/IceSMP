@@ -82,8 +82,12 @@ public final class CommandMenus {
                 List.of(grey("Kaszt, spec, szakma, talent, képesség-fa."), click())), "OPEN:profile");
         put(inv, holder, 11, GuiUtil.icon(Material.ENCHANTED_BOOK, title("Varázskönyv"),
                 List.of(grey("Feloldott spelljeid böngészése"), grey("és kiválasztása a Katalizátorra."), click())), "OPEN:spellbook");
-        put(inv, holder, 12, GuiUtil.icon(Material.BONE, title("Társ"),
-                List.of(grey("Vadmester / Nekromanta társ:"), grey("befogás, idézés, szint — infó chatben."), click())), "OPEN:pet");
+        // Dinamikus menü: a Társ csak azoknak látszik, akiknek lehet társa.
+        final SpecializationType spec = ctx.specializationManager().getClassSpecialization(player);
+        if (spec == SpecializationType.BEAST_MASTER || spec == SpecializationType.NECROMANCER) {
+            put(inv, holder, 12, GuiUtil.icon(Material.BONE, title("Társ"),
+                    List.of(grey("Vadmester / Nekromanta társ:"), grey("befogás, idézés, szint — infó chatben."), click())), "OPEN:pet");
+        }
         put(inv, holder, 13, GuiUtil.icon(Material.WRITTEN_BOOK, title("Küldetésnapló"),
                 List.of(grey("Aktív, felvehető és teljesített"), grey("küldetések — lapozható napló."), click())), "OPEN:quest log");
         put(inv, holder, 14, dailyTile(player, ctx), "OPEN:daily");
@@ -105,8 +109,11 @@ public final class CommandMenus {
                 List.of(grey("Bűnös játékosok fejpénzzel."), click())), "MENU:BOUNTY");
         put(inv, holder, 24, GuiUtil.icon(Material.TOTEM_OF_UNDYING, title("Relikviák"),
                 List.of(grey("Legendás tárgyak és tulajdonosaik."), click())), "MENU:RELIC");
-        put(inv, holder, 25, GuiUtil.icon(Material.SOUL_LANTERN, title("Lélekszilánk"),
-                List.of(grey("Nekromanta erőforrás és bajnok-idézés."), click())), "MENU:SOULS");
+        // Dinamikus menü: a Lélekszilánk a Nekromanta specé — másnak nem jelenik meg.
+        if (spec == SpecializationType.NECROMANCER) {
+            put(inv, holder, 25, GuiUtil.icon(Material.SOUL_LANTERN, title("Lélekszilánk"),
+                    List.of(grey("Nekromanta erőforrás és bajnok-idézés."), click())), "MENU:SOULS");
+        }
 
         // Row: gazdaság & egyéb
         put(inv, holder, 28, GuiUtil.icon(Material.GOLD_INGOT, title("Bank & Pénz"),
