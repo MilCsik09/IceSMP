@@ -234,7 +234,7 @@ public final class QuestCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("quest-admin-help-addobjective",
                 "&e/quest admin addobjective <id> <objektíva> <darab> [leírás...] &7- További feladat (több-objektívás quest)."));
         sender.sendMessage(messageManager.get("quest-admin-help-set",
-                "&e/quest admin set <id> <mező> <érték...> &7- Mező beállítása (feltételek, jutalmak, NPC, objectives-mode...)."));
+                "&e/quest admin set <id> <mező> <érték...> &7- Mező beállítása (feltételek, jutalmak, NPC, objectives-mode, dialogue.choices.N.text|quest...)."));
         sender.sendMessage(messageManager.get("quest-admin-help-delete", "&e/quest admin delete <id> &7- Küldetés törlése."));
         sender.sendMessage(messageManager.get("quest-admin-help-info", "&e/quest admin info <id> &7- Definíció megtekintése."));
         sender.sendMessage(messageManager.get("quest-admin-help-list", "&e/quest admin list &7- Admin-készítette küldetések."));

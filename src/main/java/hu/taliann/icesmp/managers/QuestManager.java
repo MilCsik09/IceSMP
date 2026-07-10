@@ -80,7 +80,10 @@ public final class QuestManager implements PersistentStore {
             "objective.description",
             "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
             "rewards.items", "rewards.unlock-spell", "rewards.cleanse-sins",
-            "dialogue.speaker", "dialogue.give", "dialogue.complete");
+            "dialogue.speaker", "dialogue.give", "dialogue.complete",
+            // Kattintható párbeszéd-válaszok: bármely index mehet (dialogue.choices.<N>.text|quest),
+            // az 1-es példaként szerepel itt a tab-complete kedvéért.
+            "dialogue.choices.1.text", "dialogue.choices.1.quest");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -238,11 +241,16 @@ public final class QuestManager implements PersistentStore {
         String parseKey = normalizedField;
         final java.util.regex.Matcher indexed =
                 java.util.regex.Pattern.compile("objectives\\.(\\d+)\\.([a-z-]+)").matcher(normalizedField);
+        // Kattintható párbeszéd-válaszok tetszőleges indexszel: dialogue.choices.<N>.text|quest.
+        final java.util.regex.Matcher choice =
+                java.util.regex.Pattern.compile("dialogue\\.choices\\.(\\d+)\\.(text|quest)").matcher(normalizedField);
         if (indexed.matches()) {
             if (!OBJECTIVE_SUBFIELDS.contains(indexed.group(2))) {
                 return "quest-admin-bad-field";
             }
             parseKey = "objective." + indexed.group(2);
+        } else if (choice.matches()) {
+            parseKey = "dialogue.choice-" + choice.group(2);
         } else if (!EDITABLE_FIELDS.contains(normalizedField) && !"objectives-mode".equals(normalizedField)) {
             return "quest-admin-bad-field";
         }
@@ -276,6 +284,8 @@ public final class QuestManager implements PersistentStore {
                 }
             }
             case "rewards.cleanse-sins", "repeatable", "seasonal" -> parsed = Boolean.parseBoolean(rawValue.trim());
+            // A választás cél-questje: kisbetűs id-ként tárolódik (mint minden quest-kulcs).
+            case "dialogue.choice-quest" -> parsed = rawValue.trim().toLowerCase(Locale.ROOT);
             case "cooldown-hours" -> {
                 try {
                     parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));

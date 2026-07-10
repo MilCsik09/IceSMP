@@ -57,3 +57,10 @@ minimotd, voicechat, FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
 Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms.
 Megjegyzés: az `ICEsmpadditions.jar` (WardenDeathListener) érdemes lenne beolvasztani a fő
 pluginba, hogy ne legyen kósza extra jar.
+
+## 5. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
+
+Az XP-sávon forgáskor megjelenő, játékost jelző pötty NEM plugin: a Minecraft 1.21.6-ban
+bevezetett **Locator Bar** (a közeli játékosok irány-jelzője, az XP-sáv helyén). Kikapcsolás:
+`/gamerule locatorBar false` (világonként), vagy szerver-szinten a paper/vanilla waypoint
+beállításokkal.
