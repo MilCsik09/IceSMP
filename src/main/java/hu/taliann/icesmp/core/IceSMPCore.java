@@ -462,6 +462,9 @@ public final class IceSMPCore {
         // declaratively-configured (ConfiguredSpell) spell. Must run after configManager.load() and
         // after registerSpells() (already done in the constructor) — spells register only once at
         // startup, so this is the single application point; changing spells-balance.yml needs a restart.
+        // A statikus (kódolt) spellek viszont cast-időben olvassák a felülbírálásokat innen,
+        // így rájuk a /icesmp reload is azonnal hat.
+        hu.taliann.icesmp.spells.BaseSpell.setBalanceSource(configManager);
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
