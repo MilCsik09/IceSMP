@@ -4,6 +4,7 @@ import static hu.taliann.icesmp.gui.GuiUtil.accent;
 import static hu.taliann.icesmp.gui.GuiUtil.grey;
 import static hu.taliann.icesmp.gui.GuiUtil.label;
 
+import hu.taliann.icesmp.commands.ClaimCommand;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
@@ -47,6 +48,8 @@ public final class CommandMenus {
     private static final String ADMIN_EVENTS_PERMISSION = "icesmp.admin.events";
     private static final String ADMIN_RELOAD_PERMISSION = "icesmp.admin.reload";
     private static final String ADMIN_EXCHANGEBOARD_PERMISSION = "icesmp.admin.exchangeboard";
+    private static final String ADMIN_NPC_PERMISSION = "icesmp.admin.npc";
+    private static final String ADMIN_QUEST_PERMISSION = "icesmp.admin.quest";
 
     private CommandMenus() {
     }
@@ -617,14 +620,18 @@ public final class CommandMenus {
     // ===== ADMIN =====
     public static void openAdmin(final Player player, final CommandMenuContext ctx) {
         final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.ADMIN, player.getUniqueId());
-        final Inventory inv = create(holder, 36, "<dark_aqua>» Admin «</dark_aqua>", ctx);
+        final Inventory inv = create(holder, 54, "<dark_aqua>» Admin «</dark_aqua>", ctx);
 
         if (!hasAnyAdminAccess(player)) {
-            put(inv, holder, 13, GuiUtil.icon(Material.BARRIER, Component.text("Nincs jogosultságod", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), null);
-            put(inv, holder, 31, backButton(), "MENU:MAIN");
+            put(inv, holder, 22, GuiUtil.icon(Material.BARRIER, Component.text("Nincs jogosultságod", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), null);
+            put(inv, holder, 49, backButton(), "MENU:MAIN");
             player.openInventory(inv);
             return;
         }
+
+        put(inv, holder, 4, GuiUtil.icon(Material.COMMAND_BLOCK, accent("Admin panel"),
+                List.of(grey("Felül: rendszer • középen: esemény-"),
+                        grey("triggerek • alul: kezelő-listák."))), null);
 
         // Each button is gated on the permission node of the command it runs.
         if (player.hasPermission(ADMIN_RELOAD_PERMISSION)) {
@@ -634,12 +641,13 @@ public final class CommandMenus {
         if (player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)) {
             put(inv, holder, 12, GuiUtil.icon(Material.ITEM_FRAME, title("Árfolyamtábla lerakása"),
                     List.of(grey("/exchangeboard place"), click())), "RUN:exchangeboard place");
-            put(inv, holder, 14, GuiUtil.icon(Material.SHEARS, title("Árfolyamtábla törlése"),
+            put(inv, holder, 13, GuiUtil.icon(Material.SHEARS, title("Árfolyamtábla törlése"),
                     List.of(grey("/exchangeboard remove"), click())), "RUN:exchangeboard remove");
         }
         if (player.hasPermission(ADMIN_EVENTS_PERMISSION)) {
             put(inv, holder, 16, GuiUtil.icon(Material.ENDER_EYE, title("Intro újrajátszása"),
                     List.of(grey("/events intro"), click())), "RUN:events intro");
+            // Esemény-triggerek (két sor): minden világesemény kézzel indítható.
             put(inv, holder, 19, GuiUtil.icon(Material.RED_DYE, title("Vérhold: indítás"),
                     List.of(grey("/events bloodmoon start"), click())), "RUN:events bloodmoon start");
             put(inv, holder, 20, GuiUtil.icon(Material.GRAY_DYE, title("Vérhold: leállítás"),
@@ -650,13 +658,41 @@ public final class CommandMenus {
                     List.of(grey("/events invasion"), click())), "RUN:events invasion");
             put(inv, holder, 23, GuiUtil.icon(Material.EMERALD, title("Karaván: érkezés"),
                     List.of(grey("/events caravan arrive"), click())), "RUN:events caravan arrive");
-            put(inv, holder, 24, GuiUtil.icon(Material.BONE, title("Vad Hajsza indítása"),
+            put(inv, holder, 24, GuiUtil.icon(Material.MINECART, title("Karaván: távozás"),
+                    List.of(grey("/events caravan depart"), click())), "RUN:events caravan depart");
+            put(inv, holder, 25, GuiUtil.icon(Material.BONE, title("Vad Hajsza indítása"),
                     List.of(grey("/events wild-hunt"), click())), "RUN:events wild-hunt");
-            put(inv, holder, 25, GuiUtil.icon(Material.MAGMA_BLOCK, title("Meteor idézése"),
+            put(inv, holder, 28, GuiUtil.icon(Material.MAGMA_BLOCK, title("Meteor idézése"),
                     List.of(grey("/events meteor"), click())), "RUN:events meteor");
+            put(inv, holder, 29, GuiUtil.icon(Material.CHEST, title("Kincs elrejtése"),
+                    List.of(grey("/events treasure"), click())), "RUN:events treasure");
+            put(inv, holder, 30, GuiUtil.icon(Material.GLOWSTONE_DUST, title("Buff-óra nyitása"),
+                    List.of(grey("/events gathering"), click())), "RUN:events gathering");
+            put(inv, holder, 31, GuiUtil.icon(Material.HAY_BLOCK, title("Bőség-idő indítása"),
+                    List.of(grey("/events abundance"), click())), "RUN:events abundance");
+            put(inv, holder, 32, GuiUtil.icon(Material.TARGET, title("Szerver-kihívás indítása"),
+                    List.of(grey("/events challenge"), click())), "RUN:events challenge");
+            put(inv, holder, 33, GuiUtil.icon(Material.LEAD, title("Kíséret indítása"),
+                    List.of(grey("/events escort"), click())), "RUN:events escort");
+            put(inv, holder, 34, GuiUtil.icon(Material.FIREWORK_STAR, title("Hangulat-esemény"),
+                    List.of(grey("/events ambient"), click())), "RUN:events ambient");
+        }
+        // Kezelő-sor: pozíció-/lista-alapú admin műveletek, saját node-jaikra kapuzva.
+        if (player.hasPermission(ClaimCommand.ADMIN_PERMISSION)) {
+            put(inv, holder, 37, GuiUtil.icon(Material.IRON_SHOVEL, title("Claim törlése (itt)"),
+                    List.of(grey("A claim törlése, amiben állsz."),
+                            grey("/claim admin unclaim"), click())), "RUN:claim admin unclaim");
+        }
+        if (player.hasPermission(ADMIN_NPC_PERMISSION)) {
+            put(inv, holder, 38, GuiUtil.icon(Material.PLAYER_HEAD, title("NPC-kötések listája"),
+                    List.of(grey("/npcbind list — chatben."), click())), "OPEN:npcbind list");
+        }
+        if (player.hasPermission(ADMIN_QUEST_PERMISSION)) {
+            put(inv, holder, 39, GuiUtil.icon(Material.WRITABLE_BOOK, title("Admin-questek listája"),
+                    List.of(grey("/quest admin list — chatben."), click())), "OPEN:quest admin list");
         }
 
-        put(inv, holder, 31, backButton(), "MENU:MAIN");
+        put(inv, holder, 49, backButton(), "MENU:MAIN");
         player.openInventory(inv);
     }
 
@@ -664,7 +700,10 @@ public final class CommandMenus {
     private static boolean hasAnyAdminAccess(final Player player) {
         return player.hasPermission(ADMIN_RELOAD_PERMISSION)
                 || player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)
-                || player.hasPermission(ADMIN_EVENTS_PERMISSION);
+                || player.hasPermission(ADMIN_EVENTS_PERMISSION)
+                || player.hasPermission(ClaimCommand.ADMIN_PERMISSION)
+                || player.hasPermission(ADMIN_NPC_PERMISSION)
+                || player.hasPermission(ADMIN_QUEST_PERMISSION);
     }
 
     // ===== LEADERBOARD =====
