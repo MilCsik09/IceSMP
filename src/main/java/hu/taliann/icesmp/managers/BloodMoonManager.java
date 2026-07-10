@@ -115,6 +115,17 @@ public final class BloodMoonManager {
         }
         final long minutes = Math.max(1L, configManager.getLong("world-events.blood-moon.force-duration-minutes", 10L));
         forcedEndAtMillis = System.currentTimeMillis() + (minutes * 60_000L);
+        // A vérhold éjszakai esemény: admin-indításnál nappal is behozzuk az estét, hogy
+        // a hangulat stimmeljen. A nap-éj ciklust Folián a globális régió birtokolja,
+        // ezért az időállítás oda ütemeződik (a parancs a játékos régió-szálán fut).
+        if (configManager.getBoolean("world-events.blood-moon.force-night", true)) {
+            plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
+                final World world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0);
+                if (world != null && (world.getTime() < NIGHT_START_TICK || world.getTime() > 23000L)) {
+                    world.setTime(NIGHT_START_TICK);
+                }
+            });
+        }
         startBloodMoon();
         return true;
     }
