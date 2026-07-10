@@ -18,7 +18,9 @@ relics:
     metelytepo:
       display-name: "Mételytépő"
       display-color: "&5"
-      material: "NETHERITE_AXE"
+      # A material/custom-model-data itt dokumentáció: a tényleges értéket a kód adja
+      # (RelicManager.registerRelic) — a kettő szinkronban tartandó (GOLDEN_AXE + 4101).
+      material: "GOLDEN_AXE"
       custom-model-data: 4101
       lore:
         - "&7A Mételytépő a törpék rejtélyes"

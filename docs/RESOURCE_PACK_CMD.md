@@ -10,10 +10,10 @@ modellt kötni.
 | CMD | Alapanyag | Item | Megjelenített név | Forrás |
 |-----|-----------|------|-------------------|--------|
 | 1001 | PAPER | Piros valuta | Piros Token | `data/CurrencyType.java:6` |
-| 1001 | GOLDEN_AXE | Mételytépő relikvia | Mételytépő | `managers/RelicManager.java:92` |
 | 1002 | PAPER | Kék valuta | Kék Token | `data/CurrencyType.java:7` |
 | 1003 | PAPER | Semleges valuta | Semleges Token | `data/CurrencyType.java:8` |
 | 1004 | PAPER | Sötét valuta | Sötét Token | `data/CurrencyType.java:9` |
+| 4101 | GOLDEN_AXE | Mételytépő relikvia | Mételytépő | `managers/RelicManager.java` |
 | 4201 | ELYTRA | Szárny-relikvia (Piros) | Főnix-szárny | `managers/RelicManager.java:102` |
 | 4202 | ELYTRA | Szárny-relikvia (Kék) | Zúzmara-szárny | `managers/RelicManager.java:110` |
 | 4203 | ELYTRA | Szárny-relikvia (Semleges) | Vándorszél | `managers/RelicManager.java:118` |
@@ -32,15 +32,15 @@ modellt kötni.
 | 5212 | ENDER_EYE | Katalizátor — Démonvadász | Démonszem | `items/CatalystItemFactory.java:86` |
 | 5213 | DRAGON_BREATH | Katalizátor — Idéző | Sárkány Esszencia | `items/CatalystItemFactory.java:89` |
 
-Összesen **22 hozzárendelés, 21 egyedi CMD-érték**. Az 1001 kétszer szerepel (PAPER ill.
-GOLDEN_AXE) — ez **nem ütközés**: a resource pack alapanyagonként külön modellt rendel.
+Összesen **22 hozzárendelés, mind a 22 CMD-érték egyedi** (a Mételytépő korábban az 1001-en
+osztozott a Piros Tokennel; 4101-re számoztuk át, ami a relics.yml-ben dokumentált érték).
 
 ## Tartományok
 
 | Tartomány | Cél |
 |-----------|-----|
 | 1001–1004 | Frakció-valuták (PAPER) |
-| 1001 | Mételytépő (GOLDEN_AXE) |
+| 4101 | Mételytépő (GOLDEN_AXE) |
 | 4201–4204 | Frakció-szárnyak (ELYTRA) |
 | 5201–5213 | Kaszt-katalizátorok (kasztonként saját alapanyag) |
 
@@ -50,9 +50,8 @@ GOLDEN_AXE) — ez **nem ütközés**: a resource pack alapanyagonként külön 
 
 Ha ezekhez is modell kell, előbb CMD-t kell kapniuk a factory-jukban.
 
-## Ismert config/kód eltérés (teendő, ha valaha configurálható legyen)
+## Config/kód viszony
 - Az `economy.yml` `model-data` és a `relics.yml` `custom-model-data`/`material` kulcsait a
-  kód **nem olvassa** — a tényleges értékek a fenti Java-forrásokban vannak hardkódolva.
-  Kirívó példa: a relics.yml a Mételytépőt NETHERITE_AXE + 4101-ként írja le, a kód viszont
-  GOLDEN_AXE + 1001-et használ. Resource pack készítésénél **mindig ez a táblázat a mérvadó**,
-  ne a config.
+  kód **nem olvassa** — a tényleges értékek a fenti Java-forrásokban vannak hardkódolva; a
+  config-értékek dokumentációként vannak velük szinkronban tartva (a Mételytépő
+  GOLDEN_AXE + 4101 mindkét helyen). Resource pack készítésénél ez a táblázat a mérvadó.

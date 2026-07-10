@@ -89,7 +89,9 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "metelytepo",
                 Material.GOLDEN_AXE,
-                1001,
+                // 4101 — a relics.yml-ben dokumentált érték; az 1001 a Piros Tokennel osztozott,
+                // és a resource pack kedvéért minden CMD egyedi (lásd docs/RESOURCE_PACK_CMD.md).
+                4101,
                 "A Mételytépő",
                 "DARK_PURPLE",
                 List.of("&7A törpék rejtélyes civilizációjának...", "&7egy relikviája.")
