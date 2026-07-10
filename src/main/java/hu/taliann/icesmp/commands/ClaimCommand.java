@@ -58,6 +58,9 @@ public final class ClaimCommand implements BasicCommand {
             case "trust" -> handleTrust(player, args);
             case "untrust" -> handleUntrust(player, args);
             case "show" -> handleShow(player);
+            case "pos1" -> handleCorner(player, true);
+            case "pos2" -> handleCorner(player, false);
+            case "area" -> handleArea(player);
             case "admin" -> handleAdmin(player, args);
             case "help" -> sendHelp(player);
             default -> sendHelp(player);
@@ -157,7 +160,37 @@ public final class ClaimCommand implements BasicCommand {
     private void handleShow(final Player player) {
         claimManager.showBorder(player);
         player.sendMessage(messageManager.get("claim-show",
-                "&7Chunk-határ kirajzolva (zöld=szabad/sajátod, láng=másé)."));
+                "&7Claim-határok kirajzolva pár másodpercre (zöld=sajátod, láng=másé, komposzt=szabad chunk)."));
+    }
+
+    private void handleCorner(final Player player, final boolean first) {
+        final int[] corner = claimManager.setCorner(player, first);
+        player.sendMessage(messageManager.get(first ? "claim-pos1-set" : "claim-pos2-set",
+                first ? "&aKijelölés 1. sarka: &f%s, %s &7(chunk)" : "&aKijelölés 2. sarka: &f%s, %s &7(chunk)",
+                corner[0], corner[1]));
+
+        final ClaimManager.SelectionInfo info = claimManager.getSelectionInfo(player.getUniqueId());
+        if (info != null) {
+            player.sendMessage(messageManager.get("claim-area-preview",
+                    "&7Kijelölt terület: &f%s&7 chunk (új: &f%s&7, másé: &f%s&7) — ár: &f%s&7. Foglalás: &e/claim area",
+                    info.totalChunks(), info.newChunks(), info.foreignChunks(),
+                    info.cost() == 0.0D ? "ingyenes" : currencyManager.formatBalance(info.cost())));
+        }
+    }
+
+    private void handleArea(final Player player) {
+        final ClaimManager.SelectionInfo info = claimManager.getSelectionInfo(player.getUniqueId());
+        final String errorKey = claimManager.claimSelection(player);
+        if (errorKey != null) {
+            player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey)));
+            return;
+        }
+        player.sendMessage(messageManager.get("claim-area-success",
+                "&aTerület lefoglalva: &f%s&a új chunk. Ár: &f%s&a (elégett). Összesen: &f%s&a claimed.",
+                info == null ? "?" : info.newChunks(),
+                info == null || info.cost() == 0.0D ? "ingyenes" : currencyManager.formatBalance(info.cost()),
+                claimManager.countClaims(player.getUniqueId())));
+        claimManager.showBorder(player);
     }
 
     private void handleAdmin(final Player player, final String[] args) {
@@ -190,7 +223,9 @@ public final class ClaimCommand implements BasicCommand {
         player.sendMessage(messageManager.get("claim-help-trust",
                 "&e/claim trust/untrust <név> &7- Hozzáférés adása/elvétele minden claimedhez."));
         player.sendMessage(messageManager.get("claim-help-show",
-                "&e/claim show &7- Chunk-határ kirajzolása részecskékkel."));
+                "&e/claim show &7- Claim-határok kirajzolása részecskékkel."));
+        player.sendMessage(messageManager.get("claim-help-area",
+                "&e/claim pos1 &7+ &e/claim pos2 &7+ &e/claim area &7- Több chunkos terület foglalása egyben."));
     }
 
     private String defaultErrorFor(final String errorKey) {
@@ -208,6 +243,11 @@ public final class ClaimCommand implements BasicCommand {
             case "claim-no-claims" -> "&7Nincs claimelt chunkod.";
             case "claim-not-trusted" -> "&7Ez a játékos nem volt megbízva.";
             case "target-player-offline" -> "&cA célpont játékos nem elérhető.";
+            case "claim-area-incomplete" -> "&cElőbb jelöld ki a terület két sarkát: /claim pos1 és /claim pos2.";
+            case "claim-area-cross-world" -> "&cA kijelölés másik világban van — jelöld ki újra itt.";
+            case "claim-area-too-big" -> "&cTúl nagy terület — csökkentsd a kijelölést.";
+            case "claim-area-foreign" -> "&cA kijelölésben más játékos claimje is van.";
+            case "claim-area-nothing" -> "&7A kijelölés minden chunkja már a tiéd.";
             default -> "&cA művelet nem sikerült.";
         };
     }
@@ -219,7 +259,7 @@ public final class ClaimCommand implements BasicCommand {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             final List<String> options = new ArrayList<>(
-                    List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "help"));
+                    List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "pos1", "pos2", "area", "help"));
             if (sender.hasPermission(ADMIN_PERMISSION)) {
                 options.add("admin");
             }

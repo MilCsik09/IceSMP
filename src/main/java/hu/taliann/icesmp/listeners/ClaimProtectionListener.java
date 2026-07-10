@@ -24,6 +24,9 @@ import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+
+import java.util.Map;
 
 /**
  * Enforces the native chunk-claim protection (SimpleClaimSystem replacement):
@@ -57,6 +60,40 @@ public final class ClaimProtectionListener implements Listener {
         this.factionManager = factionManager;
         this.raidManager = raidManager;
         this.messageManager = messageManager;
+    }
+
+    /**
+     * Action-bar notice on claim-border crossing (claim edge feedback). Gated on a
+     * CHUNK change so the move hot path stays cheap; the owner-change detection and
+     * per-player state live in the ClaimManager (cleaned on quit).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onMove(final PlayerMoveEvent event) {
+        final Location from = event.getFrom();
+        final Location to = event.getTo();
+        if ((from.getBlockX() >> 4) == (to.getBlockX() >> 4)
+                && (from.getBlockZ() >> 4) == (to.getBlockZ() >> 4)
+                && from.getWorld().equals(to.getWorld())) {
+            return;
+        }
+
+        final Player player = event.getPlayer();
+        final String change = claimManager.handleChunkEnter(player, to);
+        if (change == null) {
+            return;
+        }
+        switch (change) {
+            case "own" -> player.sendActionBar(messageManager.getMessage(
+                    "claim-enter-own", "<green>⚑ Saját birtokod</green>"));
+            case "foreign" -> {
+                final ClaimManager.Claim claim = claimManager.getClaimAt(to);
+                player.sendActionBar(messageManager.getMessage(
+                        "claim-enter-foreign", "<red>⚑ {owner} birtoka</red>",
+                        Map.of("owner", claim == null ? "?" : claim.getOwnerName())));
+            }
+            default -> player.sendActionBar(messageManager.getMessage(
+                    "claim-leave", "<gray>Vadon — szabad terület</gray>"));
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)

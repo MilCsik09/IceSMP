@@ -65,6 +65,11 @@ claims:
   block-in-territory: true    # frakció-territóriumban nem lehet claimelni
   block-in-protected-region: true  # WorldGuard-régióban nem lehet claimelni
   raid-lootable: false        # raid alatt a jelentkezett támadók nyithatják-e az ellenséges claim-ládákat
+  area-max-chunks: 25         # a /claim pos1+pos2+area kijelölés max mérete (chunkban, teljes téglalap)
+  border:
+    show-seconds: 8           # a /claim show határrajz ennyi másodpercig ismétlődik
+    radius: 2                 # ekkora chunk-sugárban rajzolja ki a környező claimek pereméit
+    enter-notice: true        # action-bar értesítés claim-határ átlépésekor (kié a birtok)
 
 # Natív chat-formázó — a LuckPermsChatFormatterFolia plugin KIVÁLTÁSA. A chat-üzenetet a plugin maga
 # formázza "[LP-prefix] Név [LP-suffix]: üzenet" alakra, a névben a beszélő FRAKCIÓJÁNAK színével

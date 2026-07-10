@@ -252,7 +252,7 @@ public final class IceSMPCore {
         this.configManager = new ConfigManager(plugin);
         this.messageManager = new MessageManager(plugin, configManager);
         this.currencyManager = new CurrencyManager(plugin, configManager);
-        this.factionManager = new FactionManager(plugin);
+        this.factionManager = new FactionManager(plugin, configManager);
         this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
         this.catalystItemFactory = new CatalystItemFactory(plugin);
@@ -353,6 +353,7 @@ public final class IceSMPCore {
                 craftingRestrictionManager,
                 resourceManager,
                 partyManager,
+                claimManager,
                 spellRegistry
         );
 

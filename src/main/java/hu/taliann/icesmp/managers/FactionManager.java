@@ -7,7 +7,10 @@ import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.YamlStore;
 
 import hu.taliann.icesmp.data.FactionType;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -23,17 +26,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class FactionManager implements PlayerStateCleanup, PersistentStore {
 
     private final JavaPlugin plugin;
+    private final ConfigManager configManager;
     private final File storageFile;
     private final Map<UUID, FactionType> playerFactions = new ConcurrentHashMap<>();
+    /** PDC key storing the epoch-millis timestamp of the player's last PAID faction switch. */
+    private final NamespacedKey lastSwitchKey;
 
     /**
      * Constructs a new FactionManager.
      *
      * @param plugin the plugin instance
+     * @param configManager the config manager (for the faction-switch cost/cooldown settings)
      */
-    public FactionManager(final JavaPlugin plugin) {
+    public FactionManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.storageFile = new File(plugin.getDataFolder(), "factions.yml");
+        this.lastSwitchKey = new NamespacedKey(plugin, "faction_last_switch");
         plugin.getDataFolder().mkdirs();
     }
 
@@ -114,6 +123,73 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     public void setFaction(final UUID uuid, final FactionType factionType) {
         playerFactions.put(uuid, factionType == null ? FactionType.NEUTRAL : factionType);
         save();
+    }
+
+    /**
+     * Checks whether the player has already made an explicit faction choice
+     * (as opposed to merely defaulting to NEUTRAL because no record exists yet).
+     * Used to tell a free first join apart from a paid/cooldown-gated switch.
+     *
+     * @param uuid the player UUID
+     * @return true if a faction assignment is on record for this player
+     */
+    public boolean hasChosenFaction(final UUID uuid) {
+        return playerFactions.containsKey(uuid);
+    }
+
+    /**
+     * Gets the currency cost of switching from one faction to another
+     * (charged in the player's CURRENT faction currency). First join is free.
+     *
+     * @return the switch cost, from {@code factions.switch.cost} (default 500.0)
+     */
+    public double getSwitchCost() {
+        return configManager.getDouble("factions.switch.cost", 500.0);
+    }
+
+    /**
+     * Gets the minimum number of hours a player must wait between faction switches.
+     *
+     * @return the cooldown in hours, from {@code factions.switch.cooldown-hours} (default 72.0, 0 = off)
+     */
+    public double getSwitchCooldownHours() {
+        return configManager.getDouble("factions.switch.cooldown-hours", 72.0);
+    }
+
+    /**
+     * Gets the switch cooldown in milliseconds.
+     *
+     * @return the cooldown in milliseconds (0 = no cooldown)
+     */
+    public long getSwitchCooldownMillis() {
+        return Math.round(getSwitchCooldownHours() * 3_600_000.0D);
+    }
+
+    /**
+     * Gets how much longer the player must wait before their next paid faction switch.
+     *
+     * @param player the player
+     * @return remaining cooldown in milliseconds, or 0 if the player may switch now
+     */
+    public long getRemainingSwitchCooldownMillis(final Player player) {
+        final long cooldownMillis = getSwitchCooldownMillis();
+        if (cooldownMillis <= 0) {
+            return 0L;
+        }
+
+        final long lastSwitchMillis = player.getPersistentDataContainer()
+                .getOrDefault(lastSwitchKey, PersistentDataType.LONG, 0L);
+        final long elapsed = System.currentTimeMillis() - lastSwitchMillis;
+        return Math.max(0L, cooldownMillis - elapsed);
+    }
+
+    /**
+     * Records "now" as the player's last paid faction switch timestamp, starting the cooldown.
+     *
+     * @param player the player who just paid to switch factions
+     */
+    public void recordSwitch(final Player player) {
+        player.getPersistentDataContainer().set(lastSwitchKey, PersistentDataType.LONG, System.currentTimeMillis());
     }
 
     public void removeFaction(final UUID uuid) {
