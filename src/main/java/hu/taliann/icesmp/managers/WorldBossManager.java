@@ -136,6 +136,14 @@ public final class WorldBossManager {
     }
 
     /**
+     * Reserved while a spawn hops threads (set synchronously, self-heals after 10s):
+     * activeBossUntil is only written at the END of the two-hop spawn chain, so without
+     * this a second force-spawn issued during the hop would double-spawn and orphan a boss
+     * (same pattern as WildHuntManager/TreasureEventManager.spawnGraceUntil).
+     */
+    private volatile long spawnGraceUntil;
+
+    /**
      * Despawns the active world boss on plugin disable so the persistent, buffed
      * boss does not survive a reload as an unmanaged orphan (and a fresh boss can
      * spawn cleanly next start). Best-effort direct removal.
@@ -143,6 +151,7 @@ public final class WorldBossManager {
     public void shutdown() {
         activeBossUntil = 0L;
         nextAttemptAt = 0L;
+        spawnGraceUntil = 0L;
         final java.util.UUID id = activeBossId;
         activeBossId = null;
         if (id == null) {
@@ -165,7 +174,7 @@ public final class WorldBossManager {
         }
 
         final long now = System.currentTimeMillis();
-        if (now < nextAttemptAt || now < activeBossUntil) {
+        if (now < nextAttemptAt || now < activeBossUntil || now < spawnGraceUntil) {
             return;
         }
 
@@ -195,7 +204,7 @@ public final class WorldBossManager {
      * @return true if a boss spawn was scheduled (false if one is already active or nobody is online)
      */
     public boolean forceSpawn(final Player anchor) {
-        if (isBossActive()) {
+        if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
 
@@ -213,6 +222,7 @@ public final class WorldBossManager {
     }
 
     private void triggerSpawnNear(final Player anchor) {
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         // Folia: read the anchor's location on its OWN region thread first (it may be in a
         // different region than the caller), then hop to the spawn location's region.
         anchor.getScheduler().run(plugin, task -> {

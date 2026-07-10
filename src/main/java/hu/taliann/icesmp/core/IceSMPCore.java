@@ -290,7 +290,7 @@ public final class IceSMPCore {
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
         this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
-        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, claimManager, messageManager);
+        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, claimManager, territoryManager, messageManager);
         this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
@@ -776,7 +776,8 @@ public final class IceSMPCore {
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicItemRefreshListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicTriggerListener(relicManager), plugin);
-            pluginManager.registerEvents(new MetelytepoRelicListener(plugin, metelytepoManager, sinManager, messageManager), plugin);
+            pluginManager.registerEvents(new MetelytepoRelicListener(plugin, metelytepoManager, sinManager,
+                    worldBossManager, invasionManager, messageManager), plugin);
             pluginManager.registerEvents(new ElytraRelicListener(relicManager, factionManager, messageManager), plugin);
             pluginManager.registerEvents(new RelicPvpTransferListener(plugin, relicManager, configManager, messageManager), plugin);
         }
