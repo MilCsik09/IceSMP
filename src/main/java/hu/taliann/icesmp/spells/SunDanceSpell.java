@@ -36,8 +36,8 @@ public final class SunDanceSpell extends BaseSpell {
         // reads + tile-entity access on the region thread AND crossed region boundaries (illegal).
         // 8 wide / 5 tall stays inside the caster's region.
         final Location center = player.getLocation();
-        final int radius = 8;
-        final int vertical = 5;
+        final int radius = balanceInt("radius", 8);
+        final int vertical = balanceInt("vertical-range", 5);
         int furnaceCount = 0;
         int totalItems = 0;
 

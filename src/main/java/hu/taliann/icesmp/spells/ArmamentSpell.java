@@ -66,7 +66,8 @@ public final class ArmamentSpell extends BaseSpell {
         });
         player.getInventory().addItem(sword);
         final UUID playerId = player.getUniqueId();
-        ACTIVE_UNTIL.put(playerId, System.currentTimeMillis() + (DURATION_TICKS * 50L));
+        final long durationTicks = balanceInt("duration-ticks", (int) DURATION_TICKS);
+        ACTIVE_UNTIL.put(playerId, System.currentTimeMillis() + (durationTicks * 50L));
 
         // Folia: per-player region scheduler instead of the unsupported Bukkit scheduler.
         player.getScheduler().runDelayed(plugin, task -> {
@@ -75,7 +76,7 @@ public final class ArmamentSpell extends BaseSpell {
                 removeTaggedItems(onlinePlayer);
             }
             ACTIVE_UNTIL.remove(playerId);
-        }, () -> ACTIVE_UNTIL.remove(playerId), DURATION_TICKS);
+        }, () -> ACTIVE_UNTIL.remove(playerId), durationTicks);
     }
 
     private ItemStack createLockedItem(final Material material) {

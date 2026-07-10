@@ -22,8 +22,8 @@ public final class RainDanceSpell extends BaseSpell {
         // reads on the region thread AND crossed region boundaries (illegal). 6 wide / 3 tall stays
         // inside the caster's region and is cheap; crops only grow on the surface, so the Y band is small.
         final Location center = player.getLocation();
-        final int radius = 6;
-        final int vertical = 3;
+        final int radius = balanceInt("radius", 6);
+        final int vertical = balanceInt("vertical-range", 3);
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
                 if ((x * x) + (z * z) > (radius * radius)) {

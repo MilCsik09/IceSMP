@@ -24,17 +24,19 @@ public final class LifeDrainSpell extends BaseSpell {
 
     @Override
     public boolean executeSpell(final Player player) {
-        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
+        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, balance("range", RANGE));
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
             return false;
         }
 
-        target.damage(DRAIN_AMOUNT, player);
+        final double damage = balance("damage", DRAIN_AMOUNT);
+        target.damage(damage, player);
 
+        final double heal = balance("heal", DRAIN_AMOUNT);
         final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
-            player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + DRAIN_AMOUNT));
+            player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + heal));
         }
 
         player.getWorld().spawnParticle(Particle.SOUL, target.getLocation().add(0.0D, 1.0D, 0.0D), 20, 0.3D, 0.5D, 0.3D, 0.05D);

@@ -26,8 +26,9 @@ public final class DoubleJumpSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         usedDoubleJump.add(player.getUniqueId());
+        final double jumpVelocity = balance("jump-velocity", 0.8D);
         final Vector velocity = player.getVelocity().clone();
-        velocity.setY(Math.max(0.8D, velocity.getY() + 0.8D));
+        velocity.setY(Math.max(jumpVelocity, velocity.getY() + jumpVelocity));
         player.setVelocity(velocity);
         player.getWorld().spawnParticle(Particle.CLOUD, player.getLocation().add(0.0D, 0.1D, 0.0D), 18, 0.25D, 0.1D, 0.25D, 0.02D);
         player.playSound(player.getLocation(), Sound.ENTITY_PHANTOM_FLAP, 1.0F, 1.15F);

@@ -80,7 +80,8 @@ public final class SummonMinionsSpell extends BaseSpell {
         final Location center = player.getLocation();
 
         // Never summon more than the player's remaining slots allow.
-        final int toSummon = Math.min(count, remainingSlots(player));
+        final int toSummon = Math.min(balanceInt("count", count), remainingSlots(player));
+        final int lifespan = balanceInt("duration-ticks", lifespanTicks);
         // Class "max-health" talents also empower the owner's minions.
         final double bonusHealth = Math.max(0.0D, talentManager.getEffectTotal(player, "max-health")
                 * Math.max(0.0D, configManager.getDouble("pets.talent-health-share", 0.5D)));
@@ -114,7 +115,7 @@ public final class SummonMinionsSpell extends BaseSpell {
 
             // Per-entity scheduler: runs on the minion's region thread and is
             // retired automatically if the minion dies before the lifespan ends.
-            minion.getScheduler().runDelayed(plugin, task -> minion.remove(), null, lifespanTicks);
+            minion.getScheduler().runDelayed(plugin, task -> minion.remove(), null, lifespan);
             player.getWorld().spawnParticle(particle, spawnLocation.clone().add(0.0D, 1.0D, 0.0D), 15, 0.3D, 0.5D, 0.3D, 0.02D);
         }
 
@@ -128,15 +129,16 @@ public final class SummonMinionsSpell extends BaseSpell {
     }
 
     private LivingEntity resolveTarget(final Player player) {
-        final LivingEntity rayTarget = SpellTargetingUtil.rayTraceLivingEntity(player, TARGET_RANGE);
+        final LivingEntity rayTarget = SpellTargetingUtil.rayTraceLivingEntity(player, balance("range", TARGET_RANGE));
         if (rayTarget != null && !minionManager.isOwnedBy(rayTarget, player.getUniqueId())) {
             return rayTarget;
         }
 
         LivingEntity nearest = null;
         double nearestDistanceSquared = Double.MAX_VALUE;
+        final double fallbackScanRadius = balance("fallback-scan-radius", FALLBACK_SCAN_RADIUS);
         for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(),
-                FALLBACK_SCAN_RADIUS, FALLBACK_SCAN_RADIUS, FALLBACK_SCAN_RADIUS)) {
+                fallbackScanRadius, fallbackScanRadius, fallbackScanRadius)) {
             if (!(entity instanceof Monster monster) || minionManager.isMinion(monster)) {
                 continue;
             }

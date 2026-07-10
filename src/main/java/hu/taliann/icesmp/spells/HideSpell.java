@@ -30,8 +30,9 @@ public final class HideSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        final int teleportRadius = balanceInt("teleport-radius", 10);
         final Location origin = player.getLocation();
-        final Location destination = randomNearbySafeLocation(origin, 10);
+        final Location destination = randomNearbySafeLocation(origin, teleportRadius);
         if (destination != null) {
             player.teleportAsync(destination);
         }
@@ -39,8 +40,10 @@ public final class HideSpell extends BaseSpell {
         HIDDEN_ARMOR.put(player.getUniqueId(), player.getInventory().getArmorContents().clone());
         player.getInventory().setArmorContents(new ItemStack[]{null, null, null, null});
 
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20 * 10, 0, false, true, true));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 10, 1, false, true, true));
+        final int durationTicks = balanceInt("duration-ticks", (int) HIDE_DURATION_TICKS);
+        final int speedAmplifier = balanceInt("speed-amplifier", 1);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, speedAmplifier, false, true, true));
         player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation(), 40, 0.5D, 0.5D, 0.5D, 0.01D);
 
         final UUID playerId = player.getUniqueId();
@@ -48,7 +51,7 @@ public final class HideSpell extends BaseSpell {
         // The retired-callback ensures the armor is restored even if the task is retired before firing
         // (e.g. the entity is removed); clearHide is idempotent. Normal logout is also covered by the
         // PlayerQuit cleanup, which restores the armor while the player is still online.
-        player.getScheduler().runDelayed(plugin, task -> clearHide(playerId), () -> clearHide(playerId), HIDE_DURATION_TICKS);
+        player.getScheduler().runDelayed(plugin, task -> clearHide(playerId), () -> clearHide(playerId), durationTicks);
     }
 
     private Location randomNearbySafeLocation(final Location origin, final int radius) {

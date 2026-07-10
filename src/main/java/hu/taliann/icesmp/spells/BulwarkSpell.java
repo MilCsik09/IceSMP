@@ -21,8 +21,10 @@ public final class BulwarkSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, DURATION_TICKS, 1, false, true, true));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, DURATION_TICKS, 1, false, true, true));
+        final int durationTicks = balanceInt("duration-ticks", DURATION_TICKS);
+        final int amplifier = balanceInt("amplifier", 1);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, durationTicks, amplifier, false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, durationTicks, amplifier, false, true, true));
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.5D, 0.8D, 0.5D, 0.02D);
         player.playSound(player.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0F, 0.7F);
         player.sendMessage(resolveMessage("spell.bulwark.activated", "<gold>Bástyává szilárdulsz: a csapások lepattannak rólad.</gold>"));

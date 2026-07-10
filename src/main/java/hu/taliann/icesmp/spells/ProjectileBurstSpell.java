@@ -57,12 +57,15 @@ public final class ProjectileBurstSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final Vector direction = player.getEyeLocation().getDirection();
+        final int projectileCount = Math.max(1, balanceInt("count", count));
+        final double spread = balance("spread", spreadDegrees);
+        final double projectileSpeed = balance("speed", speed);
 
-        for (int index = 0; index < count; index++) {
-            final double angle = spreadDegrees * (index - ((count - 1) / 2.0D));
+        for (int index = 0; index < projectileCount; index++) {
+            final double angle = spread * (index - ((projectileCount - 1) / 2.0D));
             final Vector velocity = direction.clone()
                     .rotateAroundY(Math.toRadians(angle))
-                    .multiply(speed);
+                    .multiply(projectileSpeed);
             final Projectile projectile = player.launchProjectile(kind.projectileClass, velocity);
             if (projectile instanceof AbstractArrow arrow) {
                 arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);

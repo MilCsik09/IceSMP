@@ -31,8 +31,11 @@ public final class PrimalBondSpell extends BaseSpell {
     @Override
     public boolean executeSpell(final Player player) {
         int empowered = 0;
+        final double radius = balance("radius", RADIUS);
+        final int effectTicks = balanceInt("duration-ticks", EFFECT_TICKS);
+        final int absorptionAmplifier = balanceInt("absorption-amplifier", 1);
 
-        for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), RADIUS, RADIUS, RADIUS)) {
+        for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
             if (!(entity instanceof Tameable tameable) || !tameable.isTamed()
                     || !(entity instanceof LivingEntity companion)
                     || tameable.getOwner() == null
@@ -40,9 +43,9 @@ public final class PrimalBondSpell extends BaseSpell {
                 continue;
             }
 
-            companion.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, EFFECT_TICKS, 0, false, true, true));
-            companion.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, EFFECT_TICKS, 0, false, true, true));
-            companion.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, EFFECT_TICKS, 1, false, true, true));
+            companion.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, effectTicks, 0, false, true, true));
+            companion.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, effectTicks, 0, false, true, true));
+            companion.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, effectTicks, absorptionAmplifier, false, true, true));
             player.getWorld().spawnParticle(Particle.HEART, companion.getLocation().add(0.0D, 1.0D, 0.0D), 5, 0.3D, 0.3D, 0.3D);
             empowered++;
         }

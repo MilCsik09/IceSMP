@@ -103,8 +103,9 @@ public final class DruidFormSpell extends BaseSpell {
             return;
         }
 
+        final int durationTicks = balanceInt("duration-ticks", FORM_DURATION_TICKS);
         for (final FormEffect effect : form.effects) {
-            player.addPotionEffect(new PotionEffect(effect.type(), FORM_DURATION_TICKS, effect.amplifier(), true, false, true));
+            player.addPotionEffect(new PotionEffect(effect.type(), durationTicks, effect.amplifier(), true, false, true));
         }
         ACTIVE_FORM.put(playerId, form);
         // Optional visual layer: disguise as the matching mob when LibsDisguises is installed (else no-op).

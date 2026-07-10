@@ -82,6 +82,15 @@ public abstract class BaseSpell implements Spell {
         return source == null ? defaultValue : source.getInt("spell-balance." + id + "." + key, defaultValue);
     }
 
+    /**
+     * Static variant for the rare {@code static} helper methods (e.g. dodge-chance checks invoked
+     * from listeners without a spell instance) that still need a cast-time balansz-felülbírálás.
+     */
+    protected static double balanceStatic(final String spellId, final String key, final double defaultValue) {
+        final hu.taliann.icesmp.managers.ConfigManager source = balanceSource;
+        return source == null ? defaultValue : source.getDouble("spell-balance." + spellId + "." + key, defaultValue);
+    }
+
     protected net.kyori.adventure.text.Component resolveMessage(final String key, final String fallback) {
         if (messageManager == null) {
             return net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(fallback);

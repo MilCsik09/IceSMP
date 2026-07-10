@@ -35,7 +35,8 @@ public final class AntidoteSpell extends BaseSpell {
             player.removePotionEffect(effectType);
         }
 
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 5 * 20, 0, false, false, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
+                balanceInt("duration-ticks", 5 * 20), balanceInt("amplifier", 0), false, false, true));
         player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, player.getLocation().add(0.0D, 1.0D, 0.0D), 20, 0.4D, 0.6D, 0.4D);
         player.playSound(player.getLocation(), Sound.ENTITY_WITCH_DRINK, 1.0F, 1.3F);
         player.sendMessage(resolveMessage("spell.antidote.activated", "<green>A mérgek elhagyják a testedet.</green>"));

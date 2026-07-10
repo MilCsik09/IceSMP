@@ -23,17 +23,22 @@ public final class SmokeBombSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final Location center = player.getLocation();
+        final double radius = balance("radius", RADIUS);
+        final int blindnessTicks = balanceInt("blindness-duration-ticks", BLINDNESS_TICKS);
+        final int slownessAmplifier = balanceInt("slowness-amplifier", 1);
+        final int escapeSpeedTicks = balanceInt("escape-speed-duration-ticks", ESCAPE_SPEED_TICKS);
+        final int escapeSpeedAmplifier = balanceInt("escape-speed-amplifier", 1);
 
-        for (final Entity entity : player.getWorld().getNearbyEntities(center, RADIUS, RADIUS, RADIUS)) {
+        for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (!(entity instanceof LivingEntity living) || entity == player) {
                 continue;
             }
 
-            living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, BLINDNESS_TICKS, 0, false, true, true));
-            living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, BLINDNESS_TICKS, 1, false, true, true));
+            living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, false, true, true));
+            living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, blindnessTicks, slownessAmplifier, false, true, true));
         }
 
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, ESCAPE_SPEED_TICKS, 1, false, false, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, escapeSpeedTicks, escapeSpeedAmplifier, false, false, true));
         player.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, center.clone().add(0.0D, 1.0D, 0.0D), 80, 2.0D, 1.0D, 2.0D, 0.01D);
         player.getWorld().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 0.6F, 1.6F);
     }

@@ -38,12 +38,13 @@ public final class InnerFocusSpell extends BaseSpell {
         final UUID playerId = player.getUniqueId();
         FROZEN_PLAYERS.put(playerId, originalWalkSpeed);
         player.setWalkSpeed(0.0F);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 5, 5, false, true, true));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 5, 1, false, true, true));
+        final int durationTicks = balanceInt("duration-ticks", 20 * 5);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, durationTicks, balanceInt("resistance-amplifier", 5), false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, balanceInt("regen-amplifier", 1), false, true, true));
 
         // Folia: per-player region scheduler instead of the unsupported Bukkit scheduler.
         player.getScheduler().runDelayed(plugin, task -> restorePlayer(playerId, originalWalkSpeed),
-                () -> restorePlayer(playerId, originalWalkSpeed), 20L * 5L);
+                () -> restorePlayer(playerId, originalWalkSpeed), durationTicks);
     }
 
     @Override

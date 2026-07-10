@@ -17,14 +17,17 @@ public final class RootSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final Location center = player.getLocation();
-        for (final Entity entity : player.getWorld().getNearbyEntities(center, 5.0D, 5.0D, 5.0D)) {
+        final double radius = balance("radius", 5.0D);
+        final int durationTicks = balanceInt("duration-ticks", 80);
+        for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (!(entity instanceof LivingEntity living) || entity == player) {
                 continue;
             }
-            living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 80, 10, false, true, true));
+            living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, durationTicks, balanceInt("slowness-amplifier", 10), false, true, true));
             // JUMP_BOOST 128 is the vanilla "no jump" level — it pins the target in place.
             // (A high positive amplifier such as 250 would instead launch it skyward to its death.)
-            living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 128, false, true, true));
+            // Intentionally NOT balance-overridable: it's a mechanism sentinel, not a strength dial.
+            living.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, durationTicks, 128, false, true, true));
         }
     }
 }

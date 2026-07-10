@@ -416,7 +416,9 @@ public final class IceSMPCore {
     /**
      * Applies the {@code config/spells-balance.yml} overrides on top of every declaratively-configured
      * (ConfiguredSpell) spell already in the registry, re-registering the overridden copies in place.
-     * The ~40 stateful spell classes (hardcoded constants) are out of scope and left untouched.
+     * The stateful spell classes (hardcoded-constant subclasses of BaseSpell) read the same file
+     * directly at cast time via {@code balance()}/{@code balanceInt()}, so they need no re-registration
+     * step here — only {@link hu.taliann.icesmp.spells.BaseSpell#setBalanceSource} below wires them up.
      * Also validates the {@code spell-balance} section's keys against the registry so a typo'd spell
      * id is reported at startup instead of silently doing nothing.
      */
@@ -443,9 +445,6 @@ public final class IceSMPCore {
             if (spell == null) {
                 plugin.getLogger().warning("spells-balance.yml: ismeretlen spell id a 'spell-balance." + key
                         + "' alatt — elgépelés? A felülbírálás nem érvényesül.");
-            } else if (!(spell instanceof ConfiguredSpell)) {
-                plugin.getLogger().warning("spells-balance.yml: '" + key + "' egy statikus (kódolt) spell, "
-                        + "a spells-balance.yml felülbírálásai nem érvényesülnek rá.");
             }
         }
     }

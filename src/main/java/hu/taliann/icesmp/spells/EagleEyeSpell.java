@@ -16,8 +16,9 @@ public final class EagleEyeSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, DURATION_TICKS, 0, false, false, true));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, DURATION_TICKS, 0, false, false, true));
+        final int durationTicks = balanceInt("duration-ticks", DURATION_TICKS);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, durationTicks, 0, false, false, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, 0, false, false, true));
         player.playSound(player.getLocation(), Sound.ENTITY_ENDER_EYE_LAUNCH, 1.0F, 1.4F);
         player.sendMessage(resolveMessage("spell.eagle_eye.activated", "<green>Sasszem aktív: élesedik a látásod és gyorsulnak a lépteid.</green>"));
     }

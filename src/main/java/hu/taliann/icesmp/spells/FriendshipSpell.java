@@ -37,7 +37,8 @@ public final class FriendshipSpell extends BaseSpell {
     }
 
     private Tameable resolveTarget(final Player player) {
-        final LivingEntity directTarget = SpellTargetingUtil.rayTraceLivingEntity(player, 16.0D);
+        final double range = balance("range", 16.0D);
+        final LivingEntity directTarget = SpellTargetingUtil.rayTraceLivingEntity(player, range);
         if (directTarget instanceof Tameable tameable && !tameable.isTamed()) {
             return tameable;
         }
@@ -45,8 +46,9 @@ public final class FriendshipSpell extends BaseSpell {
         final Vector direction = player.getEyeLocation().getDirection().normalize();
         Tameable bestTarget = null;
         double bestDistanceSquared = Double.MAX_VALUE;
+        final double minAlignment = balance("target-cone", 0.6D);
 
-        for (final var entity : player.getNearbyEntities(16.0D, 16.0D, 16.0D)) {
+        for (final var entity : player.getNearbyEntities(range, range, range)) {
             if (!(entity instanceof Tameable tameable) || tameable.isTamed()) {
                 continue;
             }
@@ -58,7 +60,7 @@ public final class FriendshipSpell extends BaseSpell {
             }
 
             final double alignment = direction.dot(toTarget.normalize());
-            if (alignment < 0.6D || distanceSquared >= bestDistanceSquared) {
+            if (alignment < minAlignment || distanceSquared >= bestDistanceSquared) {
                 continue;
             }
 
