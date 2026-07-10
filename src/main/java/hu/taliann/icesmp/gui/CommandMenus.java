@@ -277,14 +277,20 @@ public final class CommandMenus {
             balances.add(label(type.getDisplayName(), Component.text(
                     ctx.currencyManager().formatBalance(ctx.currencyManager().getBalance(player, type)), NamedTextColor.WHITE)));
         }
+        final boolean capitalOnly = ctx.configManager().getBoolean("banking.capital-only", true);
+        if (capitalOnly) {
+            balances.add(Component.text("⚑ Banki ügyintézés csak fővárosban!", NamedTextColor.GOLD)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         put(inv, holder, 4, GuiUtil.icon(Material.GOLD_INGOT, accent("Egyenlegeid"), balances), null);
 
+        final Component capitalNote = grey(capitalOnly ? "Csak fővárosban működik!" : " ");
         put(inv, holder, 11, GuiUtil.icon(Material.HOPPER, title("Befizetés (összes)"),
-                List.of(grey("A nálad lévő tokeneket bankba teszi."), click())), "RUN:bank deposit");
+                List.of(grey("A nálad lévő tokeneket bankba teszi."), capitalNote, click())), "RUN:bank deposit");
         final FactionType own = ctx.factionManager().getFaction(player.getUniqueId());
         final String cur = (own == null ? FactionType.NEUTRAL : own).name().toLowerCase();
         put(inv, holder, 13, GuiUtil.icon(Material.DROPPER, title("Kivét: 64 (saját valuta)"),
-                List.of(grey("64 token kivétele itemként."), click())), "RUN:bank withdraw " + cur + " 64");
+                List.of(grey("64 token kivétele itemként (KP)."), capitalNote, click())), "RUN:bank withdraw " + cur + " 64");
         put(inv, holder, 15, GuiUtil.icon(Material.PAPER, title("Árfolyamok"),
                 List.of(grey("Aktuális valuta-értékek és váltási arány."), click())), "RUN:currency rates");
 
@@ -298,7 +304,7 @@ public final class CommandMenus {
             put(inv, holder, exchangeSlot, GuiUtil.icon(woolFor(target),
                     title("Váltás: 64 → " + target.getDisplayName()),
                     List.of(grey("64 saját token váltása " + target.getDisplayName() + " tokenre"),
-                            grey("az élő árfolyamon (díjjal)."),
+                            grey("az élő árfolyamon (díjjal)."), capitalNote,
                             grey("Más összeg: /currency exchange <összeg> <honnan> <hová>"), click())),
                     "RUN:currency exchange 64 " + cur + " " + target.name().toLowerCase(Locale.ROOT));
             exchangeSlot += 2;

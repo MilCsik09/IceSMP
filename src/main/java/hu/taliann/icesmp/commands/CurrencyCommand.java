@@ -8,17 +8,19 @@ import hu.taliann.icesmp.commands.currency.CurrencySetSubcommand;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
 
 public final class CurrencyCommand extends AbstractDispatchCommand {
 
     public CurrencyCommand(final CurrencyManager currencyManager, final ConfigManager configManager,
-                           final ExchangeRateService exchangeRateService, final MessageManager messageManager) {
+                           final ExchangeRateService exchangeRateService, final TerritoryManager territoryManager,
+                           final MessageManager messageManager) {
         super(messageManager, "currency", "&6/currency &7- elérhető parancsok:");
         register(new CurrencyBalanceSubcommand(currencyManager, messageManager));
-        register(new CurrencyPaySubcommand(currencyManager, messageManager));
+        register(new CurrencyPaySubcommand(currencyManager, configManager, messageManager));
         register(new CurrencySetSubcommand(currencyManager, messageManager));
-        register(new CurrencyExchangeSubcommand(currencyManager, configManager, exchangeRateService, messageManager));
+        register(new CurrencyExchangeSubcommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         register(new CurrencyRatesSubcommand(currencyManager, exchangeRateService, messageManager));
     }
 }

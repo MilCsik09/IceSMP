@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.commands.currency;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -11,10 +12,13 @@ import org.bukkit.entity.Player;
 public final class CurrencyPaySubcommand implements CurrencySubcommand {
 
     private final CurrencyManager currencyManager;
+    private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public CurrencyPaySubcommand(final CurrencyManager currencyManager, final MessageManager messageManager) {
+    public CurrencyPaySubcommand(final CurrencyManager currencyManager, final ConfigManager configManager,
+                                 final MessageManager messageManager) {
         this.currencyManager = currencyManager;
+        this.configManager = configManager;
         this.messageManager = messageManager;
     }
 
@@ -35,6 +39,13 @@ public final class CurrencyPaySubcommand implements CurrencySubcommand {
 
     @Override
     public boolean execute(final CommandSender sender, final String[] args) {
+        // A közvetlen számla-utalás a KP-alapú világban alapból tiltott: a player-player
+        // kereskedelem kézből kézbe, tokennel (vagy a piacon) zajlik.
+        if (!configManager.getBoolean("banking.pay-enabled", false)) {
+            sender.sendMessage(messageManager.get("messages.currency-pay-disabled",
+                    "&cA közvetlen utalás nincs engedélyezve — kereskedj kézből kézbe tokenekkel, vagy a piacon."));
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
             return true;

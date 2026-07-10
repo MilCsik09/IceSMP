@@ -98,3 +98,12 @@ megéri**.
 ---
 
 ➡️ Tovább: [Kasztok](04-kasztok.md) • [Vissza a tartalomhoz](README.md)
+
+## A KP-alapú gazdaság szabályai 🏦
+
+- A szerveren a **készpénz (token item)** az alap: a **player–player kereskedelem kézből
+  kézbe** zajlik (átadod a tokent / az itemet), vagy a **piacon**.
+- **Banki ügyintézés** (befizetés, kivét, **valutaváltás**) **csak a fővárosokban** lehetséges —
+  keresd fel valamelyik város bankját.
+- **Közvetlen utalás (`/currency pay`) nincs** — a bankszámla a player–szerver ügyletekhez van
+  (boltok, piac, claimek ára onnan megy).

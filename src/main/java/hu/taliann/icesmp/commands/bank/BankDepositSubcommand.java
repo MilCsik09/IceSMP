@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.commands.bank;
 
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -8,10 +10,15 @@ import org.bukkit.entity.Player;
 public final class BankDepositSubcommand implements BankSubcommand {
 
     private final CurrencyManager currencyManager;
+    private final ConfigManager configManager;
+    private final TerritoryManager territoryManager;
     private final MessageManager messageManager;
 
-    public BankDepositSubcommand(final CurrencyManager currencyManager, final MessageManager messageManager) {
+    public BankDepositSubcommand(final CurrencyManager currencyManager, final ConfigManager configManager,
+                                 final TerritoryManager territoryManager, final MessageManager messageManager) {
         this.currencyManager = currencyManager;
+        this.configManager = configManager;
+        this.territoryManager = territoryManager;
         this.messageManager = messageManager;
     }
 
@@ -34,6 +41,14 @@ public final class BankDepositSubcommand implements BankSubcommand {
     public boolean execute(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+            return true;
+        }
+
+        // Banki ügyintézés csak fővárosban (a világban készpénz — token — jár kézről kézre).
+        if (configManager.getBoolean("banking.capital-only", true)
+                && !territoryManager.isInCapital(player.getLocation())) {
+            sender.sendMessage(messageManager.get("messages.bank-capital-only",
+                    "&cBanki ügyintézés csak a fővárosokban lehetséges — keresd fel valamelyik város bankját."));
             return true;
         }
 
