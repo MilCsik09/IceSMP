@@ -39,6 +39,8 @@ jelenti, hogy **elhagyható**.
 | `/market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]` | | Aukció indítása a kézben tartott tárgyra (a `buyout:` opcionális azonnali-vétel ár) |
 | `/market claim` | | Megnyert / visszajáró aukciós tárgyak átvétele |
 | `/market cancel` | | Saját eladásaid visszavonása (élő licites aukció nem) |
+| `/adomany` | `donate`, `adomanylada` | Közösségi adomány-láda böngésző (ingyenes elvétel) |
+| `/adomany add` | | A kézben tartott tárgy (teljes stack) adományozása a közös ládába |
 | `/spec list` / `/spec choose <id>` | `specialization`, `specializacio` | Specializációk |
 | `/spec respec <class\|profession>` | | Specializáció visszaváltása |
 | `/talent` / `/talent spend <class\|profession> <talent>` | `talents`, `talentfa` | Talentek |
@@ -55,8 +57,10 @@ jelenti, hogy **elhagyható**.
 | `/party kick\|promote <név>` | | Csapatvezetői műveletek: kirúgás, vezetés átadása |
 | `/party disband` | | Csapat feloszlatása (csak vezető) |
 | `/p <üzenet>` | | **Csapat-chat** — csak a párttagok látják |
-| `/claim` | `birtok` | Az aktuális chunk lefoglalása (**saját birtok** — első 3 ingyen) |
+| `/claim` | `birtok` | 16×16 blokk gyorsfoglalása körülötted (**saját birtok**, ±20 blokk magasan) |
 | `/claim unclaim\|info\|list\|show` | | Claim felszabadítása / infó / lista / határ-kirajzolás |
+| `/claim pos1\|pos2\|area` | | Blokk-pontos terület kijelölése és foglalása |
+| `/claim extend up\|down` | | Claim magasítása / mélyítése (+5 blokk, pénzért) |
 | `/claim trust\|untrust <név>` | | Megbízott hozzáadása / elvétele (teljes hozzáférés a claimjeidhez) |
 
 ## Király-parancsok (csak a frakció királyának)

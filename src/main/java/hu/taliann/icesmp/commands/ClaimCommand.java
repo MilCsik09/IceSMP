@@ -61,6 +61,7 @@ public final class ClaimCommand implements BasicCommand {
             case "pos1" -> handleCorner(player, true);
             case "pos2" -> handleCorner(player, false);
             case "area" -> handleArea(player);
+            case "extend" -> handleExtend(player, args);
             case "admin" -> handleAdmin(player, args);
             case "help" -> sendHelp(player);
             default -> sendHelp(player);
@@ -166,14 +167,15 @@ public final class ClaimCommand implements BasicCommand {
     private void handleCorner(final Player player, final boolean first) {
         final int[] corner = claimManager.setCorner(player, first);
         player.sendMessage(messageManager.get(first ? "claim-pos1-set" : "claim-pos2-set",
-                first ? "&aKijelölés 1. sarka: &f%s, %s &7(chunk)" : "&aKijelölés 2. sarka: &f%s, %s &7(chunk)",
+                first ? "&aKijelölés 1. sarka: &f%s, %s &7(blokk)" : "&aKijelölés 2. sarka: &f%s, %s &7(blokk)",
                 corner[0], corner[1]));
 
         final ClaimManager.SelectionInfo info = claimManager.getSelectionInfo(player.getUniqueId());
         if (info != null) {
             player.sendMessage(messageManager.get("claim-area-preview",
-                    "&7Kijelölt terület: &f%s&7 chunk (új: &f%s&7, másé: &f%s&7) — ár: &f%s&7. Foglalás: &e/claim area",
-                    info.totalChunks(), info.newChunks(), info.foreignChunks(),
+                    "&7Kijelölt terület: &f%s×%s&7 blokk (&f%s&7 oszlop)%s &7— ár: &f%s&7. Foglalás: &e/claim area",
+                    info.width(), info.depth(), info.columns(),
+                    info.overlaps() ? " &c(meglévő claimet fed!)" : "",
                     info.cost() == 0.0D ? "ingyenes" : currencyManager.formatBalance(info.cost())));
         }
     }
@@ -186,10 +188,22 @@ public final class ClaimCommand implements BasicCommand {
             return;
         }
         player.sendMessage(messageManager.get("claim-area-success",
-                "&aTerület lefoglalva: &f%s&a új chunk. Ár: &f%s&a (elégett). Összesen: &f%s&a claimed.",
-                info == null ? "?" : info.newChunks(),
-                info == null || info.cost() == 0.0D ? "ingyenes" : currencyManager.formatBalance(info.cost()),
-                claimManager.countClaims(player.getUniqueId())));
+                "&aTerület lefoglalva: &f%s&a oszlop (±20 blokk magasságban). Ár: &f%s&a (elégett).",
+                info == null ? "?" : info.columns(),
+                info == null || info.cost() == 0.0D ? "ingyenes" : currencyManager.formatBalance(info.cost())));
+        claimManager.showBorder(player);
+    }
+
+    private void handleExtend(final Player player, final String[] args) {
+        final boolean up = args.length < 2 || !"down".equalsIgnoreCase(args[1]);
+        final String errorKey = claimManager.extendClaim(player, up);
+        if (errorKey != null) {
+            player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey)));
+            return;
+        }
+        player.sendMessage(messageManager.get(up ? "claim-extended-up" : "claim-extended-down",
+                up ? "&aA claim teteje megemelve. &7(Az ár elégett.)"
+                        : "&aA claim alja lejjebb víve. &7(Az ár elégett.)"));
         claimManager.showBorder(player);
     }
 
@@ -225,7 +239,9 @@ public final class ClaimCommand implements BasicCommand {
         player.sendMessage(messageManager.get("claim-help-show",
                 "&e/claim show &7- Claim-határok kirajzolása részecskékkel."));
         player.sendMessage(messageManager.get("claim-help-area",
-                "&e/claim pos1 &7+ &e/claim pos2 &7+ &e/claim area &7- Több chunkos terület foglalása egyben."));
+                "&e/claim pos1 &7+ &e/claim pos2 &7+ &e/claim area &7- Blokk-pontos terület foglalása a két sarok közt."));
+        player.sendMessage(messageManager.get("claim-help-extend",
+                "&e/claim extend up|down &7- A claim magasítása/mélyítése (+5 blokk, pénzért)."));
     }
 
     private String defaultErrorFor(final String errorKey) {
@@ -246,8 +262,10 @@ public final class ClaimCommand implements BasicCommand {
             case "claim-area-incomplete" -> "&cElőbb jelöld ki a terület két sarkát: /claim pos1 és /claim pos2.";
             case "claim-area-cross-world" -> "&cA kijelölés másik világban van — jelöld ki újra itt.";
             case "claim-area-too-big" -> "&cTúl nagy terület — csökkentsd a kijelölést.";
-            case "claim-area-foreign" -> "&cA kijelölésben más játékos claimje is van.";
-            case "claim-area-nothing" -> "&7A kijelölés minden chunkja már a tiéd.";
+            case "claim-area-foreign" -> "&cA kijelölés más játékos claimjét fedi.";
+            case "claim-area-overlap-own" -> "&cA kijelölés a saját claimedet fedi — előbb szüntesd meg (/claim unclaim).";
+            case "claim-overlap-own" -> "&cItt már van saját claimed — a claimek nem fedhetik egymást.";
+            case "claim-extend-at-limit" -> "&cA claim elérte a világ határát — nem bővíthető tovább.";
             default -> "&cA művelet nem sikerült.";
         };
     }
@@ -259,7 +277,7 @@ public final class ClaimCommand implements BasicCommand {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             final List<String> options = new ArrayList<>(
-                    List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "pos1", "pos2", "area", "help"));
+                    List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "pos1", "pos2", "area", "extend", "help"));
             if (sender.hasPermission(ADMIN_PERMISSION)) {
                 options.add("admin");
             }
@@ -272,6 +290,11 @@ public final class ClaimCommand implements BasicCommand {
                     .map(Player::getName)
                     .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
+        }
+
+        if (args.length == 2 && "extend".equalsIgnoreCase(args[0])) {
+            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            return List.of("up", "down").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
         if (args.length == 2 && "admin".equalsIgnoreCase(args[0])) {

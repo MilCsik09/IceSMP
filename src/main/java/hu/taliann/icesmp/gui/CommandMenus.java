@@ -113,6 +113,9 @@ public final class CommandMenus {
                 List.of(grey("Egyenleg, befizetés, kivét, árfolyam."), click())), "MENU:BANK");
         put(inv, holder, 29, GuiUtil.icon(Material.CHEST, title("Piac"),
                 List.of(grey("Vásárlás és eladás más játékosokkal."), click())), "OPEN:market");
+        put(inv, holder, 30, GuiUtil.icon(Material.HOPPER, title("Adomány-láda"),
+                List.of(grey("Ingyenes, közösségi ajándéktár —"),
+                        grey("tegyél bele vagy vegyél ki bármit."), click())), "OPEN:adomany");
         if (hasAnyAdminAccess(player)) {
             put(inv, holder, 34, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
@@ -464,29 +467,43 @@ public final class CommandMenus {
         }
 
         final double nextCost = ctx.claimManager().nextClaimCost(player.getUniqueId());
+        final int usedColumns = ctx.claimManager().countColumns(player.getUniqueId());
         final List<Component> headerLore = new ArrayList<>();
-        headerLore.add(label("Claimjeid", Component.text(ctx.claimManager().countClaims(player.getUniqueId()) + " chunk", NamedTextColor.WHITE)));
-        headerLore.add(label("Következő chunk ára", nextCost <= 0.0D
+        headerLore.add(label("Birtokaid", Component.text(ctx.claimManager().countClaims(player.getUniqueId())
+                + " terület (" + usedColumns + " oszlop)", NamedTextColor.WHITE)));
+        headerLore.add(label("Ingyenes keret", Component.text(
+                Math.max(0, ctx.claimManager().freeColumns() - usedColumns) + " oszlop", NamedTextColor.WHITE)));
+        headerLore.add(label("Köv. gyorsfoglalás ára", nextCost <= 0.0D
                 ? Component.text("ingyenes", NamedTextColor.GREEN)
                 : Component.text(ctx.currencyManager().formatBalance(nextCost) + " (saját valuta)", NamedTextColor.WHITE)));
         put(inv, holder, 4, GuiUtil.icon(Material.GRASS_BLOCK, accent("Birtok (claim)"), headerLore), null);
 
-        put(inv, holder, 10, GuiUtil.icon(Material.GOLDEN_SHOVEL, title("Ez a chunk claimelése"),
-                List.of(grey("Lefoglalja a chunkot, amiben állsz."), click())), "RUN:claim");
-        put(inv, holder, 11, GuiUtil.icon(Material.IRON_SHOVEL, title("Chunk feloldása"),
-                List.of(grey("Feloldja az itteni claimedet."), click())), "RUN:claim unclaim");
+        put(inv, holder, 10, GuiUtil.icon(Material.GOLDEN_SHOVEL, title("Gyorsfoglalás"),
+                List.of(grey("16×16 blokk lefoglalása körülötted"),
+                        grey("(±20 blokk magasságban)."), click())), "RUN:claim");
+        put(inv, holder, 11, GuiUtil.icon(Material.IRON_SHOVEL, title("Birtok feloldása"),
+                List.of(grey("Feloldja azt a claimet, amiben állsz."), click())), "RUN:claim unclaim");
         put(inv, holder, 12, GuiUtil.icon(Material.MAP, title("Határok mutatása"),
                 List.of(grey("Kirajzolja a környező claimek pereméit."), click())), "RUN:claim show");
         put(inv, holder, 13, GuiUtil.icon(Material.PAPER, title("Claimjeid listája"),
                 List.of(grey("Chatben listázza a chunkjaidat."),
                         grey("Megbízott: /claim trust <név>"), click())), "OPEN:claim list");
         put(inv, holder, 14, GuiUtil.icon(Material.STICK, title("Terület: 1. sarok"),
-                List.of(grey("A jelenlegi chunk a kijelölés"), grey("első sarka."), click())), "RUN:claim pos1");
+                List.of(grey("A blokk, amin állsz, a kijelölés"), grey("első sarka."), click())), "RUN:claim pos1");
         put(inv, holder, 15, GuiUtil.icon(Material.BLAZE_ROD, title("Terület: 2. sarok"),
-                List.of(grey("A jelenlegi chunk a kijelölés"), grey("második sarka."), click())), "RUN:claim pos2");
+                List.of(grey("A blokk, amin állsz, a kijelölés"), grey("második sarka."), click())), "RUN:claim pos2");
         put(inv, holder, 16, GuiUtil.icon(Material.EMERALD, title("Terület foglalása"),
-                List.of(grey("A kijelölt téglalap minden szabad"),
-                        grey("chunkját egyben claimeli (összár ég el)."), click())), "RUN:claim area");
+                List.of(grey("Blokk-pontos téglalap a két sarok"),
+                        grey("között (az ár előre kiírva, elég)."), click())), "RUN:claim area");
+
+        final double extendCost = ctx.claimManager().extendCostAt(player);
+        final Component extendPrice = extendCost < 0.0D
+                ? grey("Állj a saját claimedbe hozzá.")
+                : label("Ár", Component.text(ctx.currencyManager().formatBalance(extendCost) + " / +5 blokk", NamedTextColor.GOLD));
+        put(inv, holder, 19, GuiUtil.icon(Material.SCAFFOLDING, title("Magasítás (+5 blokk)"),
+                List.of(grey("A claim tetejét emeli meg."), extendPrice, click())), "RUN:claim extend up");
+        put(inv, holder, 20, GuiUtil.icon(Material.POINTED_DRIPSTONE, title("Mélyítés (+5 blokk)"),
+                List.of(grey("A claim alját viszi lejjebb."), extendPrice, click())), "RUN:claim extend down");
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
         player.openInventory(inv);

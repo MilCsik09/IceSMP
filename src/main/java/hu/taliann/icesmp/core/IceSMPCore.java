@@ -9,6 +9,7 @@ import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
 import hu.taliann.icesmp.commands.LeaderboardCommand;
 import hu.taliann.icesmp.commands.AchievementsCommand;
+import hu.taliann.icesmp.commands.DonationChestCommand;
 import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.commands.ExchangeBoardCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
@@ -40,6 +41,7 @@ import hu.taliann.icesmp.listeners.HudListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
 import hu.taliann.icesmp.listeners.DailyQuestListener;
+import hu.taliann.icesmp.listeners.DonationChestListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.IntroListener;
@@ -97,6 +99,7 @@ import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
+import hu.taliann.icesmp.managers.DonationChestManager;
 import hu.taliann.icesmp.managers.EconomyEventManager;
 import hu.taliann.icesmp.managers.IntroManager;
 import hu.taliann.icesmp.managers.InvasionManager;
@@ -200,6 +203,7 @@ public final class IceSMPCore {
     private final EconomyEventManager economyEventManager;
     private final FactionRelationManager factionRelationManager;
     private final MarketManager marketManager;
+    private final DonationChestManager donationChestManager;
     private final QuestManager questManager;
     private final CommunityGoalManager communityGoalManager;
     private final ShopManager shopManager;
@@ -280,6 +284,7 @@ public final class IceSMPCore {
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
         this.factionRelationManager = new FactionRelationManager(configManager, raidManager);
         this.marketManager = new MarketManager(plugin, configManager, currencyManager, factionManager, factionRelationManager, messageManager);
+        this.donationChestManager = new DonationChestManager(plugin, configManager);
         this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
                 currencyManager, factionManager, sinManager, seasonManager);
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
@@ -333,7 +338,7 @@ public final class IceSMPCore {
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
-                claimManager);
+                claimManager, donationChestManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -707,6 +712,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
+        plugin.registerCommand("adomany", "Közösségi adomány-láda", List.of("donate", "adomanylada"), new DonationChestCommand(donationChestManager, messageManager));
         plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));
         plugin.registerCommand("claim", "Terület-claim parancsok", List.of("birtok"), new hu.taliann.icesmp.commands.ClaimCommand(claimManager, currencyManager, messageManager));
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager));
@@ -730,6 +736,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new MarketDeliveryListener(marketManager, messageManager), plugin);
+        pluginManager.registerEvents(new DonationChestListener(donationChestManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);

@@ -54,10 +54,11 @@ Első belépéskor egy rövid **bevezető cím-szekvencia** is lejátszódik. �
 Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van. Belépés:
 `/faction join <red|blue|neutral|dark>`, kilépés: `/faction leave`.
 
-Az **első csatlakozás ingyenes és időzítetlen**. Ha viszont már van frakciód és **átlépsz egy
-másikba** (frakcióváltás — a Sötétre lépés is beleszámít, ha volt már frakciód), az a jelenlegi
-frakciód valutájában **alapból 500-ba** kerül, és utána **72 óráig** nem válthatsz újra
-(`factions.switch.cost` / `factions.switch.cooldown-hours`).
+Az **első csatlakozás ingyenes és időzítetlen**, és mindenki **Semlegesként kezd**. A
+**Semlegesből bárhová ingyen** léphetsz át, és a **Sötétbe lépés is mindig ingyenes** (annak a
+bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék, illetve vissza a
+Semlegesbe) a jelenlegi frakciód valutájában **alapból 500-ba** kerül, és utána **72 óráig**
+nem válthatsz újra (`factions.switch.cost` / `factions.switch.cooldown-hours`).
 
 | Frakció | Passzív bónusz |
 |---|---|
@@ -128,7 +129,14 @@ Játékos–játékos kereskedés:
   (Aukciónál a licit fix összeg — a reputáció-felár csak a fix-áras tételekre vonatkozik.)
 - **Frakció-reputáció:** a vételár attól is függ, milyen viszonyban van a frakciód az
   eladóéval. **Ellenséges** (vagy épp raidben álló) frakciótól drágább (+25% felár, ami elég),
-  **szövetségestől** olcsóbb (−10%). Semleges viszonynál nincs változás.
+  **szövetségestől** olcsóbb (−10%). Semleges viszonylatban nincs változás.
+
+### Adomány-láda ✅
+Közösségi, **ár nélküli** ajándék-tár — mindenkié, mindenki tehet bele és vehet ki belőle:
+- `/adomany add` — a **kezedben tartott tárgyat** (teljes stack) a közös ládába teszed.
+- `/adomany` — megnyitod a böngészőt; kattints egy tárgyra és **elviszed** (nincs fizetés).
+- A ládának van teljes kapacitása, és annak van egy plafonja, hogy egy adományozónak
+  hány **el nem vitt** tétele lehet egyszerre benne (admin-konfigurálható).
 
 ### Árfolyamtáblák 📊
 A fővárosokban admin által lerakott **hologram-táblák** mutatják a valuták élő, kínálat-alapú
@@ -674,6 +682,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/bank balance/deposit/withdraw` | Bank |
 | `/currency balance/pay/exchange/rates` | Valuta + árfolyam |
 | `/market`, `/market sell/auction/claim/cancel` | Piactér + aukciósház |
+| `/adomany`, `/adomany add` | Közösségi adomány-láda (ár nélküli ajándékozás) |
 | `/souls`, `/souls champion` | Nekromanta lélekszilánk + bajnok-idézés |
 | `/quest list/info/accept/abandon`, `/quest log` | Küldetések + grafikus küldetésnapló |
 | `/events season/blood-moon/caravan` | Világesemények (szezon, vérhold, kereskedő-karaván) |

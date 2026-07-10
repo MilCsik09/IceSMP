@@ -263,6 +263,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] ⚠️ **Folia:** vásárolj olyan eladótól, aki **másik régióban/máshol van** → az eladó értesítése
       hibamentes (cross-entity).
 - [ ] **Árfolyamtábla:** `/exchangeboard place` hologram lerak; magától frissül; `/exchangeboard remove`.
+- [ ] **Adomány-láda:** `/adomany add` a kézben tartott tárgyat (teljes stack) a közös ládába teszi
+      — a tárgy csak SIKERES adományozás UTÁN tűnik el a kezedből (üres kézzel / kapacitás
+      betelt / saját-limit elérve esetén hibaüzenet, a tárgy marad nálad). `/adomany` megnyitja a
+      lapozható böngészőt (45 tétel/oldal); kattintás egy tárgyra **azonnal elviszi** (nincs ár).
+      Már elvitt tételre kattintva "már elvitte valaki más" hibaüzenet, nincs dupe. Az
+      "Adományozás" csempe a GUI-ban ugyanazt csinálja, mint `/adomany add` (a kezedben lévő
+      tárgyat adományozza). A Főmenü gomb visszaviszi a `/menu`-be.
+- [ ] ⚠️ **Adomány-láda dupe-teszt:** két játékos (vagy gyors dupla katt) egyszerre próbálja
+      elvinni ugyanazt a tételt → csak az egyik kapja meg a tárgyat, a másik hibaüzenetet kap.
 
 ### 4.8.1 Frakcióterületek ✅
 - [ ] `/territory setcapital|claim|list|info|remove` admin parancsok működnek.

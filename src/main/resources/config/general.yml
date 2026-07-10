@@ -44,28 +44,34 @@ party:
   block-friendly-fire: true  # Párttagok nem sebezhetik egymást (közelharc és lövedék sem)
   hud-enabled: true      # Party-frame-ek a HUD-oldalsávon: tagok neve + színkódolt élet-sáv (👑 = vezető)
 
-# Natív, chunk-alapú terület-claim rendszer — a SimpleClaimSystem KIVÁLTÁSA. /claim lefoglalja
-# az aktuális chunkot; az első pár ingyenes, utána a claim ára a JÁTÉKOS SAJÁT frakció-valutájában
-# fizetendő és egyre drágább (money sink — az ár ELÉG, nem kerül vissza a gazdaságba, unclaimkor
-# sem jár vissza). A tulaj /claim trust <név> paranccsal megbízottakat adhat, akiknek teljes
-# hozzáférésük lesz MINDEN claimjéhez. Frakció-territóriumba (királyság földje) és WorldGuard-
-# régióba nem lehet claimelni. A védelem: blokk-törés/-rakás, konténerek, vödör, kép/festmény-keret,
-# robbanás (sosem tör claimelt blokkot), blokk-evő mobok (pl. enderman). FONTOS: PvP-t a claim NEM
-# tiltja (háborús szerver) — csak az építést/lopást védi. Raid alatt a `raid-lootable` dönti el, hogy
-# a jelentkezett (regisztrált) támadók hadizsákmányként KINYITHATJÁK-e (nem lebonthatják!) az
-# ellenséges frakció claim-ládáit. Admin megkerülő jog: icesmp.admin.territory.bypass.
+# Natív, BLOKK-PONTOS 3D terület-claim rendszer — a SimpleClaimSystem KIVÁLTÁSA. A claim egy
+# doboz: pontos blokk-téglalap alapterület + korlátos függőleges sáv (alapból a létrehozási
+# Y-tól 20 blokk fel és 20 le — a menüből pénzért bővíthető). /claim egy quick-size oldalú
+# négyzetet foglal a játékos körül; /claim pos1 + pos2 + area pontos téglalapot a két
+# sarokpont között. Az ár OSZLOPONKÉNT (1×1 blokk alapterület) számolódik a JÁTÉKOS SAJÁT
+# frakció-valutájában (money sink — az ár ELÉG, unclaimkor sem jár vissza). A tulaj
+# /claim trust <név> paranccsal megbízottakat adhat (teljes hozzáférés MINDEN claimjéhez).
+# Frakció-territóriumba és WorldGuard-régióba nem lehet claimelni. Védelem: blokk-törés/-rakás,
+# konténerek, vödör, képkeret, robbanás, blokk-evő mobok — de csak a claim Y-sávján BELÜL!
+# PvP-t a claim NEM tiltja (háborús szerver). Raid alatt a `raid-lootable` dönti el, hogy a
+# jelentkezett támadók kinyithatják-e az ellenséges claim-ládákat.
+# Admin megkerülő jog: icesmp.admin.territory.bypass.
 claims:
   enabled: true
-  max-chunks-per-player: 10   # claim-plafon játékosonként
-  free-chunks: 3              # ennyi chunk ingyenes
-  base-cost: 100.0            # az első fizetős chunk ára (saját frakció-valuta, ELÉG)
-  cost-multiplier: 1.5        # minden további chunk ára ennyiszeres
+  quick-size: 16              # a /claim gyorsfoglalás négyzetének oldalhossza (blokk)
+  default-height: 20          # a claim teteje: létrehozási Y + ennyi blokk
+  default-depth: 20           # a claim alja: létrehozási Y - ennyi blokk
+  free-columns: 768           # összesen ennyi oszlop ingyenes (768 ≈ 3 chunknyi terület)
+  column-cost: 0.5            # minden további oszlop ára (saját frakció-valuta, ELÉG)
+  max-columns-per-player: 8192   # claim-plafon játékosonként, oszlopban (≈ 32 chunknyi)
+  area-max-columns: 6400      # a pos1+pos2 kijelölés max alapterülete (6400 = 80×80 blokk)
+  y-extend-step: 5            # a magasítás/mélyítés lépésköze (blokk)
+  y-extend-cost-per-column: 0.1  # bővítés ára lépésenként: a claim oszlopai × ez az összeg
   protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
   protect-explosions: true    # robbanás sosem tör claimelt blokkot
   block-in-territory: true    # frakció-territóriumban nem lehet claimelni
   block-in-protected-region: true  # WorldGuard-régióban nem lehet claimelni
   raid-lootable: false        # raid alatt a jelentkezett támadók nyithatják-e az ellenséges claim-ládákat
-  area-max-chunks: 25         # a /claim pos1+pos2+area kijelölés max mérete (chunkban, teljes téglalap)
   border:
     show-seconds: 8           # a /claim show határrajz ennyi másodpercig ismétlődik
     radius: 2                 # ekkora chunk-sugárban rajzolja ki a környező claimek pereméit
@@ -79,3 +85,12 @@ claims:
 chat:
   format-enabled: true        # natív chat-formázó ([LP-prefix] Név [suffix]: üzenet)
   name-faction-color: true    # a beszélő neve a frakciója színében
+
+# Közösségi adomány-láda: bárki bedobhat egy tárgyat (a kezében tartott teljes stack-et), bárki
+# elveheti — nincs ár, nincs valuta, tiszta ajándékozás. Szerver-szintű, közös lista, nem
+# frakciónkénti. A max-items a GUI teljes kapacitása (270 = 6 oldal × 45 slot); a
+# max-per-player az EGY adományozó élő (még el nem vitt) tételeinek plafonja (0 = nincs limit).
+donation-chest:
+  enabled: true
+  max-items: 270          # a láda teljes kapacitása (élő tételek összesen)
+  max-per-player: 27      # egy adományozó élő tételeinek plafonja (0 = korlátlan)

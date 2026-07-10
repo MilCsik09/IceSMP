@@ -63,16 +63,18 @@ public final class ClaimProtectionListener implements Listener {
     }
 
     /**
-     * Action-bar notice on claim-border crossing (claim edge feedback). Gated on a
-     * CHUNK change so the move hot path stays cheap; the owner-change detection and
-     * per-player state live in the ClaimManager (cleaned on quit).
+     * Action-bar notice on claim-border crossing (claim edge feedback). Gated on
+     * block-level movement (like TerritoryListener) because claims are block-precise
+     * and Y-bounded; the change detection and per-player state live in the
+     * ClaimManager (cleaned on quit), and the lookup is a lock-free index read.
      */
     @EventHandler(ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
         final Location from = event.getFrom();
         final Location to = event.getTo();
-        if ((from.getBlockX() >> 4) == (to.getBlockX() >> 4)
-                && (from.getBlockZ() >> 4) == (to.getBlockZ() >> 4)
+        if (from.getBlockX() == to.getBlockX()
+                && from.getBlockY() == to.getBlockY()
+                && from.getBlockZ() == to.getBlockZ()
                 && from.getWorld().equals(to.getWorld())) {
             return;
         }
