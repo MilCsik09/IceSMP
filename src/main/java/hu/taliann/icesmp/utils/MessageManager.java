@@ -9,7 +9,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Manager for localized and configurable messages throughout the plugin.
@@ -19,8 +18,16 @@ public final class MessageManager {
 
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
-    /** Detects legacy colour codes (&a, §c, …); if present, the message is treated as legacy, not MiniMessage. */
-    private static final Pattern LEGACY_CODE = Pattern.compile("[&§][0-9a-fk-orA-FK-OR]");
+    /** Legacy (&/§) colour code → MiniMessage tag, so mixed-format messages parse as one format. */
+    private static final Map<Character, String> LEGACY_TO_TAG = Map.ofEntries(
+            Map.entry('0', "black"), Map.entry('1', "dark_blue"), Map.entry('2', "dark_green"),
+            Map.entry('3', "dark_aqua"), Map.entry('4', "dark_red"), Map.entry('5', "dark_purple"),
+            Map.entry('6', "gold"), Map.entry('7', "gray"), Map.entry('8', "dark_gray"),
+            Map.entry('9', "blue"), Map.entry('a', "green"), Map.entry('b', "aqua"),
+            Map.entry('c', "red"), Map.entry('d', "light_purple"), Map.entry('e', "yellow"),
+            Map.entry('f', "white"), Map.entry('k', "obfuscated"), Map.entry('l', "bold"),
+            Map.entry('m', "strikethrough"), Map.entry('n', "underlined"), Map.entry('o', "italic"),
+            Map.entry('r', "reset"));
     /** Bundled per-subsystem message files under messages/ (extracted on first run). */
     private static final String[] MESSAGE_GROUPS = {
             "claim", "currency", "faction", "job", "market", "party", "pet", "profession",
@@ -161,18 +168,42 @@ public final class MessageManager {
     }
 
     /**
-     * Whether a message should be parsed as MiniMessage: it has {@code <...>} tags and
-     * carries no legacy {@code &}/{@code §} colour codes (those mark a legacy message).
+     * Whether a message should go through the MiniMessage parser: it carries {@code <...>}
+     * tags. Mixed messages (tags + legacy codes) are normalized first via
+     * {@link #legacyToTags(String)} — before this, one legacy {@code &7} in a MiniMessage
+     * template pushed the whole string onto the legacy path and the tags leaked raw to chat.
      */
-    private boolean isMiniMessage(final String message) {
-        return message.indexOf('<') >= 0 && message.indexOf('>') >= 0 && !LEGACY_CODE.matcher(message).find();
+    private boolean hasMiniTags(final String message) {
+        return message.indexOf('<') >= 0 && message.indexOf('>') >= 0;
+    }
+
+    /**
+     * Converts legacy (&/§) colour codes to MiniMessage tags. Placeholder values substituted
+     * from {@link #get} return legacy §-strings, so a MiniMessage template can end up mixed
+     * even when its source YAML is clean — normalizing here covers both cases.
+     */
+    private static String legacyToTags(final String message) {
+        final StringBuilder out = new StringBuilder(message.length() + 16);
+        for (int i = 0; i < message.length(); i++) {
+            final char c = message.charAt(i);
+            if ((c == '&' || c == '§') && i + 1 < message.length()) {
+                final String tag = LEGACY_TO_TAG.get(Character.toLowerCase(message.charAt(i + 1)));
+                if (tag != null) {
+                    out.append('<').append(tag).append('>');
+                    i++;
+                    continue;
+                }
+            }
+            out.append(c);
+        }
+        return out.toString();
     }
 
     /** Renders a raw message to a legacy (§) string, parsing MiniMessage when applicable. */
     private String colorize(final String message) {
-        if (isMiniMessage(message)) {
+        if (hasMiniTags(message)) {
             try {
-                return SECTION_SERIALIZER.serialize(MINI_MESSAGE.deserialize(message));
+                return SECTION_SERIALIZER.serialize(MINI_MESSAGE.deserialize(legacyToTags(message)));
             } catch (final Exception ignored) {
                 // Not valid MiniMessage — fall through to legacy colouring.
             }
@@ -182,9 +213,9 @@ public final class MessageManager {
 
     /** Renders a raw message to a Component, parsing MiniMessage when applicable, else legacy. */
     private Component renderComponent(final String message) {
-        if (isMiniMessage(message)) {
+        if (hasMiniTags(message)) {
             try {
-                return MINI_MESSAGE.deserialize(message);
+                return MINI_MESSAGE.deserialize(legacyToTags(message));
             } catch (final Exception ignored) {
                 // Fall back to legacy parsing if MiniMessage tags are invalid.
             }
