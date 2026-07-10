@@ -14,6 +14,7 @@ import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.commands.ExchangeBoardCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
 import hu.taliann.icesmp.commands.MenuCommand;
+import hu.taliann.icesmp.commands.NpcBindCommand;
 import hu.taliann.icesmp.commands.PetCommand;
 import hu.taliann.icesmp.commands.ParkourCommand;
 import hu.taliann.icesmp.commands.ProfessionCommand;
@@ -115,6 +116,7 @@ import hu.taliann.icesmp.managers.MarketManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.MinionManager;
+import hu.taliann.icesmp.managers.NpcBindingManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ParkourManager;
@@ -209,6 +211,7 @@ public final class IceSMPCore {
     private final QuestManager questManager;
     private final CommunityGoalManager communityGoalManager;
     private final ShopManager shopManager;
+    private final NpcBindingManager npcBindingManager;
     private final CaravanManager caravanManager;
     private final AmbientEventManager ambientEventManager;
     private final GatheringBuffManager gatheringBuffManager;
@@ -292,6 +295,7 @@ public final class IceSMPCore {
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
+        this.npcBindingManager = new NpcBindingManager(plugin);
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
@@ -342,7 +346,7 @@ public final class IceSMPCore {
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
-                claimManager, donationChestManager);
+                claimManager, donationChestManager, npcBindingManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -518,15 +522,21 @@ public final class IceSMPCore {
             return;
         }
         try {
-            npcQuestBridge = hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(plugin, configManager, questManager);
-            // Faction shop NPCs: right-clicking a shop NPC opens its buy GUI (money sink).
-            npcQuestBridge.setInteractHook((player, npcName) -> {
-                if (shopManager.hasShop(npcName)) {
-                    hu.taliann.icesmp.gui.ShopGUI.open(player, shopManager, currencyManager, messageManager, npcName);
+            npcQuestBridge = hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(
+                    plugin, configManager, questManager, npcBindingManager);
+            // Faction shop NPCs: right-clicking a shop NPC opens its buy GUI (money sink). Also
+            // fired with an explicit /npcbind SHOP binding's shop name instead of the NPC's own.
+            npcQuestBridge.setInteractHook((player, shopName) -> {
+                if (shopManager.hasShop(shopName)) {
+                    hu.taliann.icesmp.gui.ShopGUI.open(player, shopManager, currencyManager, messageManager, shopName);
                 }
             });
+            // /npcbind <npc> bank|exchange: both open the existing bank menu — the deposit/withdraw/
+            // exchange buttons there are already gated by the banking.capital-only config.
+            npcQuestBridge.setBankOpenHook(player ->
+                    hu.taliann.icesmp.gui.CommandMenus.openBank(player, commandMenuContext));
             scheduleQuestNpcMarkers();
-            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok).");
+            plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
                     + throwable.getMessage());
@@ -768,6 +778,7 @@ public final class IceSMPCore {
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
         plugin.registerCommand("exchangeboard", "Árfolyamtábla admin", List.of("ratesboard", "arfolyamtabla"), new ExchangeBoardCommand(exchangeBoardManager, messageManager));
+        plugin.registerCommand("npcbind", "NPC-kötések: küldetés/bolt/bankár/valutaváltó (admin)", List.of("npckotes"), new NpcBindCommand(npcBindingManager, questManager, shopManager, messageManager));
     }
 
     /**

@@ -65,6 +65,7 @@ A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb
 | `icesmp.relic.admin` | relikvia adása |
 | `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / építésvédelem megkerülése |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
+| `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz |
 
 ---
 

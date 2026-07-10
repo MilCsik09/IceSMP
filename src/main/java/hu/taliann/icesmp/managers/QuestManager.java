@@ -1061,23 +1061,50 @@ public final class QuestManager implements PersistentStore {
                 continue;
             }
 
-            if (!accept(player, questId)) {
-                continue;
+            final String accepted = tryAcceptAndAnnounce(player, questId, npcName);
+            if (accepted != null) {
+                return accepted;
             }
-
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
-            player.sendMessage(messageManager.getMessage(
-                    "quest.accepted-from-npc",
-                    "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
-                    Map.of(
-                            "quest", getDisplayName(questId),
-                            "description", getQuestSection(questId).getString("description", "")
-                    )
-            ));
-            sendDialogue(player, questId, "give", npcName);
-            return questId;
         }
         return null;
+    }
+
+    /**
+     * Hands out a specific quest regardless of its configured {@code giver-npc} —
+     * used by explicit {@code /npcbind <npc> quest <questId>} bindings, where the
+     * admin already decided which NPC gives this quest out-of-band. Same
+     * accept + announce + dialogue flow as {@link #acceptFromNpc}, just for a
+     * single target id instead of scanning every quest for a name match.
+     *
+     * @param player the interacting player
+     * @param questId the bound quest id
+     * @param npcName the NPC's internal name (used for the "give" dialogue lookup)
+     * @return the accepted quest id, or null if it could not be accepted right now
+     */
+    public String acceptBoundQuest(final Player player, final String questId, final String npcName) {
+        if (questId == null || getAcceptBlocker(player, questId) != null) {
+            return null;
+        }
+        return tryAcceptAndAnnounce(player, questId, npcName);
+    }
+
+    /** Accepts {@code questId} and — on success — plays the sound/message/dialogue trio. */
+    private String tryAcceptAndAnnounce(final Player player, final String questId, final String npcName) {
+        if (!accept(player, questId)) {
+            return null;
+        }
+
+        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
+        player.sendMessage(messageManager.getMessage(
+                "quest.accepted-from-npc",
+                "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                Map.of(
+                        "quest", getDisplayName(questId),
+                        "description", getQuestSection(questId).getString("description", "")
+                )
+        ));
+        sendDialogue(player, questId, "give", npcName);
+        return questId;
     }
 
     /**

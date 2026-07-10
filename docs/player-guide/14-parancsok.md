@@ -115,6 +115,8 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/events intro [játékos]` | Bemutató újrajátszása |
 | `/claim admin unclaim` | Idegen claim törlése admin-jogon |
 | `/parkour setstart\|setfinish\|remove <id>` | Parkour-pálya beállítása |
+| `/npcbind <npc> quest\|shop\|bank\|exchange\|clear` (`npckotes`) | NPC explicit kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz (a bank/exchange a meglévő bank menüt nyitja) |
+| `/npcbind list` | Minden NPC-kötés kiírása |
 
 ---
 
