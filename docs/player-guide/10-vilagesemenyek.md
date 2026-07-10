@@ -131,6 +131,11 @@ majd a pontok lenullázódnak — kezdődik az új szezon. Az aktuális állást
 Amikor **először** lépsz be, lejátszódik egy rövid, hangulatos **cím-szekvencia**. Ez csak
 egyszer fut le. (Admin újra le tudja játszani.)
 
+> **Hangulat-események napszakhoz kötve:** az északi fény, a hulló csillag és a szellemek
+> csak **éjjel**, a szentjánosbogarak **szürkületkor**, a köd **hajnalban vagy esőben**, az
+> állatvándorlás **nappal** jelenik meg — és aki az esemény pillanatában a **szabad ég alatt**
+> van, kis token-jutalmat + az eseményhez illő rövid buffot kap (pl. aurora → éjjellátás).
+>
 > Ezeket az eseményeket a `/events` paranccsal nézheted meg (`/events season`, `/events
 > blood-moon`, `/events caravan`), vagy egyben a `/menu` → **Események** almenüben, ami
 > **élő státusszal** mutatja a vérholdat, világbosst, karavánt, kíséretet, bőség-időt,

@@ -99,16 +99,30 @@ world-events:
       waypoints: []
 
 # ===== Hangulat-események (ambient) =====
-# Gyakori, apró, légköri események, amelyek élőbbé teszik a világot — soha nem
+# Ritka, apró, légköri események, amelyek élőbbé teszik a világot — soha nem
 # nyúlnak a balanszhoz vagy a gazdasághoz (kozmetikai effekt / apró buff, illetve
 # az állat-vándorlásnál passzív állatok = élelem-forrás, sosem valuta). Időnként a
-# tick kiválaszt egy ENGEDÉLYEZETT típust és lefuttatja. Admin: /events ambient.
+# tick kiválaszt egy ENGEDÉLYEZETT típust, majd ELLENŐRZI a fő világ napszakát/
+# időjárását a típushoz tartozó ablakhoz képest — ha nem illik rá, a kör csendben
+# kimarad (NEM sorsol új típust). Aki a tűzeléskor a SZABAD ÉG ALATT tartózkodik
+# (nincs tető felette), kap egy apró jutalmat: valuta + rövid, ízléshez illő buff.
+# Admin: /events ambient (a force teszt-tűzelés figyelmen kívül hagyja az ablakot).
+#
+# Az egyes típusok napszak/időjárás-ablaka (world-time tick, 0=hajnal, 13000-23000=éjszaka):
+#   aurora              — éjszaka (13000-23000) ÉS derült idő (nincs vihar)
+#   falling-star        — éjszaka (13000-23000)
+#   spectral-wanderers  — éjszaka (13000-23000)
+#   fireflies           — alkonyat/kora éjszaka (12000-15000)
+#   fog-roll            — hajnal/kora reggel (0-2000) VAGY esik az eső
+#   animal-migration    — nappal (1000-11000)
 ambient-events:
   enabled: true
-  interval-minutes: 15
-  chance-percent: 55
-  aurora-nightvision-seconds: 45   # az északi fény rövid, kozmetikai éjjellátása
-  migration-herd-size: 5           # az állat-vándorlás csordamérete
+  interval-minutes: 40
+  chance-percent: 35
+  min-online-players: 1              # ennyi játékos legyen fenn, különben a kör kimarad
+  reward-amount: 5.0                 # apró valuta-jutalom a szabad ég alatt lévőknek (0 = csak buff, valuta nélkül)
+  aurora-nightvision-seconds: 45     # az északi fény rövid, kozmetikai éjjellátása (mindenkinek)
+  migration-herd-size: 5             # az állat-vándorlás csordamérete
   # Az egyes típusok külön ki/be kapcsolhatók:
   types:
     aurora: true
@@ -125,9 +139,10 @@ ambient-events:
 # halászati láz (dupla fogás esély), tapasztalat-óra (XP-szorzó). Admin: /events gathering.
 gathering-buffs:
   enabled: true
-  interval-minutes: 60           # két ablak közti idő
+  interval-minutes: 90           # két ablak közti idő
   duration-minutes: 15           # egy ablak hossza
-  chance-percent: 50             # esély, hogy az intervallum végén tényleg megnyílik
+  chance-percent: 40             # esély, hogy az intervallum végén tényleg megnyílik
+  min-online-players: 1          # ennyi online játékos alatt nem nyílik ablak
   bonus-drop-chance-percent: 50  # bányász/termés/halászati bónusz drop esélye blokként/fogásonként
   xp-multiplier: 2.0             # a tapasztalat-óra XP-szorzója
   types:
@@ -199,9 +214,10 @@ abundance:
 # kap (XP + nyersanyag-csomag + rövid Sietség-buff) — sosem valuta. Admin: /events challenge.
 server-challenge:
   enabled: true
-  interval-minutes: 100      # két kihívás közti idő
+  interval-minutes: 150      # két kihívás közti idő
   duration-minutes: 30       # egy kihívás időkerete
-  chance-percent: 40         # esély, hogy az intervallum végén tényleg indul
+  chance-percent: 30         # esély, hogy az intervallum végén tényleg indul
+  min-online-players: 2      # ennyi online játékos alatt nem indul közös kihívás
   targets:
     slay: 500                # ennyi szörnyet kell közösen leölni
     mine: 800                # ennyi ércet kibányászni

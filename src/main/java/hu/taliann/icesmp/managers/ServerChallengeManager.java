@@ -112,12 +112,32 @@ public final class ServerChallengeManager {
 
         if (nowMillis >= nextAttemptAt) {
             nextAttemptAt = nowMillis + intervalMillis();
+            // Kevés online játékosnál a közös cél értelmetlen (0/1000 lejáratok) — kihagyjuk.
+            if (org.bukkit.Bukkit.getOnlinePlayers().size()
+                    < Math.max(0, configManager.getInt("server-challenge.min-online-players", 2))) {
+                return;
+            }
             final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("server-challenge.chance-percent", 40.0D)));
+                    configManager.getDouble("server-challenge.chance-percent", 30.0D)));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 start(pickRandomEnabled());
             }
         }
+    }
+
+    /** Live progress of the running challenge (menu display). */
+    public long getProgress() {
+        return progress.get();
+    }
+
+    /** The running challenge's goal count (menu display; 0 when inactive). */
+    public long getTarget() {
+        return active ? target : 0L;
+    }
+
+    /** Hungarian goal text of the running challenge (menu display), or null when inactive. */
+    public String describeGoal() {
+        return active ? goalText(type, target) : null;
     }
 
     /** Admin override: starts a random enabled challenge now. Returns false if one runs or none enabled. */

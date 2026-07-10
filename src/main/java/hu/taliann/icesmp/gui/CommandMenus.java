@@ -332,16 +332,32 @@ public final class CommandMenus {
                         grey("extra hozamot ad.")), abundance), null);
 
         final boolean challenge = ctx.serverChallengeManager().isActive();
-        put(inv, holder, 15, GuiUtil.icon(Material.TARGET, accent("Szerver-kihívás"),
-                List.of(statusLine(challenge, NamedTextColor.GOLD),
-                        grey("Közös cél az egész szervernek,"),
-                        grey("jutalommal a résztvevőknek.")), challenge), null);
+        final List<Component> challengeLore = new ArrayList<>();
+        challengeLore.add(statusLine(challenge, NamedTextColor.GOLD));
+        if (challenge) {
+            challengeLore.add(label("Cél", Component.text(String.valueOf(ctx.serverChallengeManager().describeGoal()), NamedTextColor.WHITE)));
+            challengeLore.add(label("Állás", Component.text(ctx.serverChallengeManager().getProgress()
+                    + " / " + ctx.serverChallengeManager().getTarget(), NamedTextColor.GOLD)));
+        } else {
+            challengeLore.add(grey("Közös cél az egész szervernek,"));
+            challengeLore.add(grey("jutalommal a résztvevőknek."));
+        }
+        put(inv, holder, 15, GuiUtil.icon(Material.TARGET, accent("Szerver-kihívás"), challengeLore, challenge), null);
 
         final boolean meteor = ctx.meteorEventManager().isActive();
         put(inv, holder, 16, GuiUtil.icon(meteor ? Material.MAGMA_BLOCK : Material.COBBLESTONE, accent("Meteor"),
                 List.of(statusLine(meteor, NamedTextColor.RED),
                         grey("Becsapódás után a kráter ritka"),
                         grey("ércekben gazdag — amíg ki nem hűl.")), meteor), null);
+
+        final String buff = ctx.gatheringBuffManager().describeActive();
+        put(inv, holder, 19, GuiUtil.icon(buff != null ? Material.GLOWSTONE_DUST : Material.GRAY_DYE,
+                accent("Buff-óra"),
+                List.of(label("Állapot", buff != null
+                                ? Component.text(buff + " — AKTÍV", NamedTextColor.YELLOW)
+                                : Component.text("nyugalom", NamedTextColor.GRAY)),
+                        grey("Időnként bányász-/termés-/horgász-/"),
+                        grey("XP-bónusz ablak nyílik mindenkinek.")), buff != null), null);
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
         player.openInventory(inv);

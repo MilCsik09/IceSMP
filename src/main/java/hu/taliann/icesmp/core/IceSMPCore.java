@@ -291,7 +291,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, messageManager);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
-        this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager);
+        this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
         this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
@@ -328,7 +328,7 @@ public final class IceSMPCore {
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
-                abundanceManager, serverChallengeManager, meteorEventManager, soulShardManager,
+                abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
