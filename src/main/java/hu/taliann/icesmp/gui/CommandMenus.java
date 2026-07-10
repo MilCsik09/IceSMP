@@ -287,11 +287,34 @@ public final class CommandMenus {
                 List.of(grey("64 token kivétele itemként."), click())), "RUN:bank withdraw " + cur + " 64");
         put(inv, holder, 15, GuiUtil.icon(Material.PAPER, title("Árfolyamok"),
                 List.of(grey("Aktuális valuta-értékek és váltási arány."), click())), "RUN:currency rates");
-        put(inv, holder, 22, GuiUtil.icon(Material.COMPARATOR, title("Váltás (chat)"),
-                List.of(grey("Használat: /currency exchange <összeg> <honnan> <hová>"))), null);
+
+        // Kattintható valutaváltás: 64 egység a SAJÁT valutából a másik háromba,
+        // az aktuális árfolyamon (a díj/árfolyam részleteit a parancs kezeli).
+        int exchangeSlot = 20;
+        for (final FactionType target : FactionType.values()) {
+            if (target == (own == null ? FactionType.NEUTRAL : own)) {
+                continue;
+            }
+            put(inv, holder, exchangeSlot, GuiUtil.icon(woolFor(target),
+                    title("Váltás: 64 → " + target.getDisplayName()),
+                    List.of(grey("64 saját token váltása " + target.getDisplayName() + " tokenre"),
+                            grey("az élő árfolyamon (díjjal)."),
+                            grey("Más összeg: /currency exchange <összeg> <honnan> <hová>"), click())),
+                    "RUN:currency exchange 64 " + cur + " " + target.name().toLowerCase(Locale.ROOT));
+            exchangeSlot += 2;
+        }
 
         put(inv, holder, 31, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    private static Material woolFor(final FactionType faction) {
+        return switch (faction) {
+            case RED -> Material.RED_WOOL;
+            case BLUE -> Material.BLUE_WOOL;
+            case NEUTRAL -> Material.WHITE_WOOL;
+            case DARK -> Material.BLACK_WOOL;
+        };
     }
 
     // ===== EVENTS =====
