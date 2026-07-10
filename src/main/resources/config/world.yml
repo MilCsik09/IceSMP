@@ -37,6 +37,9 @@ world-events:
     soul-drop-multiplier: 2.0
     # Admin /events bloodmoon start esetén ennyi percig tart (a napciklustól függetlenül).
     force-duration-minutes: 10
+    # Admin-indításnál nappal is estét csinál (a vérhold éjszakai esemény — a természetes
+    # indulása amúgy is csak az éj beálltakor sorsolódik).
+    force-night: true
   # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
   # Spawnkor VÉLETLEN archetípus kerül kiválasztásra (A Gyűrűk Őre / Lávakohó Behemót /
   # Fagyott Trón Királya / Csontkirály / Mélységi Rém) — saját entitással, névvel, stat-
