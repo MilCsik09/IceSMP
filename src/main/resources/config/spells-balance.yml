@@ -1,0 +1,31 @@
+# Spell-balansz felülbírálások — CSAK az itt megadott kulcsok írják felül a kódbeli értéket.
+# Kulcsok spellenként: damage, self-damage, heal-self, feed-self, cooldown, cost-amount,
+# range, radius, knockback, ignite-ticks, freeze-ticks
+#
+# A spell id a regisztrációs (SpellRegistry) id — ugyanaz, mint a /spell parancsokban és a
+# messages.yml "spell.<id>.name" kulcsaiban használt azonosító.
+#
+# FONTOS — csak a DEKLARATÍV (ConfiguredSpell, ~343 db, SpellCatalog) spellekre hat.
+# A STATEFUL spellek (~49 db, saját osztály a spells/ csomagban, kódba égetett konstansokkal)
+# NEM olvassák ezt a fájlt — az itt megadott felülbírálásuk figyelmen kívül marad (a szerver
+# csak egy WARNING logsort ír indításkor). Ezek listája:
+#   angry_chicken, antidote, armament, bee_swarm, blink, phase_blink, bone_chill, bulwark,
+#   confusion, double_jump, druid_bear_form, druid_cat_form, druid_moonkin_form,
+#   druid_travel_form, eagle_eye, feast, featherfoot, friendship, gust, hide, inner_focus,
+#   life_drain, lucky_star, multishot, piercing_bolt, arrow_storm, dagger_throw, fireball,
+#   gale_burst, bone_spear, double_tap, spectral_volley, primal_bond, rain_dance, raise_horde,
+#   bone_archers, panda_guard, wild_pack, root, shadowstep, smoke_bomb, sun_dance,
+#   venom_strike, wisplight, wolf_call, healing_stream_totem, searing_totem, windfury_totem,
+#   earthbind_totem
+#
+# FONTOS — a spellek csak szerverindításkor regisztrálódnak egyszer; a /icesmp reload NEM
+# regisztrálja újra őket. Ha itt módosítasz valamit, SZERVER-ÚJRAINDÍTÁS KELL, hogy érvénybe
+# lépjen (a /icesmp reload nem elég).
+#
+# Ismeretlen spell id (elgépelés) vagy statikus spellre adott felülbírálás esetén a szerver
+# indításkor WARNING-ot ír a logba.
+spell-balance:
+  # példa (alapból kikommentezve — a kódbeli érték él); mana_dart deklaratív (ConfiguredSpell) spell:
+  # mana_dart:
+  #   damage: 8.0
+  #   cooldown: 12

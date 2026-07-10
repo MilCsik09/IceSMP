@@ -138,6 +138,7 @@ import hu.taliann.icesmp.spells.AngryChickenSpell;
 import hu.taliann.icesmp.spells.ArmamentSpell;
 import hu.taliann.icesmp.spells.BoneChillSpell;
 import hu.taliann.icesmp.spells.BulwarkSpell;
+import hu.taliann.icesmp.spells.ConfiguredSpell;
 import hu.taliann.icesmp.spells.ConfusionSpell;
 import hu.taliann.icesmp.spells.DoubleJumpSpell;
 import hu.taliann.icesmp.spells.EagleEyeSpell;
@@ -154,6 +155,7 @@ import hu.taliann.icesmp.spells.RainDanceSpell;
 import hu.taliann.icesmp.spells.RootSpell;
 import hu.taliann.icesmp.spells.ShadowstepSpell;
 import hu.taliann.icesmp.spells.SmokeBombSpell;
+import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.spells.SpellCatalog;
 import hu.taliann.icesmp.spells.SunDanceSpell;
 import hu.taliann.icesmp.spells.VenomStrikeSpell;
@@ -412,6 +414,43 @@ public final class IceSMPCore {
     }
 
     /**
+     * Applies the {@code config/spells-balance.yml} overrides on top of every declaratively-configured
+     * (ConfiguredSpell) spell already in the registry, re-registering the overridden copies in place.
+     * The ~40 stateful spell classes (hardcoded constants) are out of scope and left untouched.
+     * Also validates the {@code spell-balance} section's keys against the registry so a typo'd spell
+     * id is reported at startup instead of silently doing nothing.
+     */
+    private void applySpellBalanceOverrides() {
+        for (final Spell spell : List.copyOf(spellRegistry.getAll())) {
+            if (spell instanceof ConfiguredSpell configuredSpell) {
+                final ConfiguredSpell overridden = ConfiguredSpell.withBalanceOverrides(configuredSpell, configManager, plugin.getLogger());
+                if (overridden != configuredSpell) {
+                    spellRegistry.register(overridden);
+                }
+            }
+        }
+
+        if (configManager.getConfiguration() == null) {
+            return;
+        }
+        final org.bukkit.configuration.ConfigurationSection balanceSection =
+                configManager.getConfiguration().getConfigurationSection("spell-balance");
+        if (balanceSection == null) {
+            return;
+        }
+        for (final String key : balanceSection.getKeys(false)) {
+            final Spell spell = spellRegistry.getById(key);
+            if (spell == null) {
+                plugin.getLogger().warning("spells-balance.yml: ismeretlen spell id a 'spell-balance." + key
+                        + "' alatt — elgépelés? A felülbírálás nem érvényesül.");
+            } else if (!(spell instanceof ConfiguredSpell)) {
+                plugin.getLogger().warning("spells-balance.yml: '" + key + "' egy statikus (kódolt) spell, "
+                        + "a spells-balance.yml felülbírálásai nem érvényesülnek rá.");
+            }
+        }
+    }
+
+    /**
      * Enables the plugin core by loading all managers and registering systems.
      */
     public void enable() {
@@ -419,6 +458,11 @@ public final class IceSMPCore {
         // Surface admin typos (bad material/currency names, out-of-range percents, negative
         // durations) as clear log warnings — never blocks startup, only reports.
         ConfigValidator.validate(configManager, plugin.getLogger());
+        // Config-driven spell balance: applies config/spells-balance.yml overrides on top of every
+        // declaratively-configured (ConfiguredSpell) spell. Must run after configManager.load() and
+        // after registerSpells() (already done in the constructor) — spells register only once at
+        // startup, so this is the single application point; changing spells-balance.yml needs a restart.
+        applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.

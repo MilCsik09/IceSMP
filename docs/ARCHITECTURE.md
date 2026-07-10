@@ -99,6 +99,11 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   `particle`, `sound`, `aoe`, `target`, `friendly`…). A számok automatikusan a `describe()`-ba kerülnek.
 - **`SpellCatalog`**: a kaszt-/spec-spellkészletek deklaratív regisztrációja (`ConfiguredSpell`-ekből).
 - **Egyedi (bespoke) spellek**: ha a hatás nem fér a builderbe (pl. `HideSpell`), `extends BaseSpell`.
+- **Config-driven balansz-felülbírálás** (`config/spells-balance.yml`): `IceSMPCore.applySpellBalanceOverrides()`
+  az `enable()`-ben, `configManager.load()` után egyszer lefut, és minden `ConfiguredSpell`-re alkalmazza
+  a `spell-balance.<id>` alatti kulcsokat (`ConfiguredSpell.withBalanceOverrides`, immutable copy). A ~49
+  bespoke (stateful) spell nincs benne — a `spells-balance.yml` fejlécében fel van sorolva. Mivel a spellek
+  csak indításkor regisztrálódnak, a fájl módosítása után szerver-újraindítás kell (`/icesmp reload` nem elég).
 
 ### 3.6 GUI — közös helperek + adat-vezérelt menük
 - **`GuiUtil`**: közös item-/lore-építők (`icon`, `filler`, `fill`, `label`, `accent`, `grey`).
