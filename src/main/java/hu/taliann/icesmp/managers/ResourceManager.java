@@ -167,15 +167,25 @@ public final class ResourceManager implements PlayerStateCleanup {
         return maxValue <= 0.0D ? 0 : (int) Math.round(current(player.getUniqueId()) / maxValue * 100.0D);
     }
 
-    /** A plain (uncoloured) 10-segment bar string of the resource, for PlaceholderAPI (e.g. TAB colours it). */
+    /**
+     * A §-colour-coded 10-segment bar string of the resource for PlaceholderAPI
+     * consumers (TAB renders the legacy codes): filled segments aqua, empty ones
+     * dark grey, then the numeric value — an uncoloured ▰/▱ pair is nearly
+     * indistinguishable on the scoreboard.
+     */
     public String resourceBarPlain(final Player player) {
         final int maxValue = (int) Math.round(max());
         final int value = Math.max(0, Math.min(maxValue, (int) Math.round(current(player.getUniqueId()))));
         final int filled = maxValue <= 0 ? 0 : Math.round(value / (float) maxValue * 10.0F);
-        final StringBuilder bar = new StringBuilder(10);
+        final StringBuilder bar = new StringBuilder(26);
+        bar.append("§b");
         for (int i = 0; i < 10; i++) {
-            bar.append(i < filled ? '▰' : '▱');
+            if (i == filled) {
+                bar.append("§8");
+            }
+            bar.append('▰');
         }
+        bar.append(" §f").append(value).append('/').append(maxValue);
         return bar.toString();
     }
 

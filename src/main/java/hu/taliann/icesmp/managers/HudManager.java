@@ -61,7 +61,7 @@ public final class HudManager {
     public record HudSnapshot(String faction, String factionId, String className, int classLevel,
                               String balance, boolean hasClass, int resource, int resourceMax,
                               int resourcePercent, String resourceName, String resourceBar,
-                              List<String> partyLines) {
+                              String event, List<String> partyLines) {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
@@ -222,6 +222,7 @@ public final class HudManager {
                 showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
                 showResource ? resourceManager.resourceBarPlain(player) : "",
+                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(eventLabel()),
                 partyLinesPlain(player));
     }
 
@@ -237,7 +238,10 @@ public final class HudManager {
         }
         final List<String> lines = new ArrayList<>();
         for (final UUID memberId : party.getMembers()) {
-            lines.add(PlainTextComponentSerializer.plainText().serialize(partyMemberLine(party, memberId)));
+            // Legacy (§) serialization keeps the colour-coded health bar readable in TAB;
+            // plain text stripped the colours and every bar segment looked identical.
+            lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
+                    .serialize(partyMemberLine(party, memberId)));
         }
         return List.copyOf(lines);
     }

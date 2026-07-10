@@ -81,6 +81,8 @@ public final class IceSMPPlaceholders extends PlaceholderExpansion {
             case "resource_percent" -> snapshot.hasClass() ? String.valueOf(snapshot.resourcePercent()) : "";
             case "resource_name" -> snapshot.resourceName();
             case "resource_bar" -> snapshot.hasClass() ? snapshot.resourceBar() : "";
+            // Aktív világesemény címke (Raid!/Világboss/Vérhold/nyugalom), §-színekkel.
+            case "event" -> snapshot.event();
             // Party frames for scoreboard plugins (TAB): the member count and one
             // plain line per member ("👑 Name ▮▮▮░░ 6❤"); blank outside a party.
             case "party_size" -> String.valueOf(snapshot.partyLines().size());

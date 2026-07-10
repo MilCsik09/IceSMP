@@ -101,7 +101,8 @@ scoreboard:
         - "&8| &7ʀᴀɴɢ&8:&r %luckperms_prefix% "
         - "&8| &7ꜰʀᴀᴋᴄɪó&8: %icesmp_faction%"
         - "&8| &7ᴋᴀꜱᴢᴛ&8: %icesmp_class% &7Lvl &f%icesmp_class_level%"
-        - "&8| &7ᴇʀő&8: %icesmp_resource_bar%"
+        - "&8| &7%icesmp_resource_name%&8: %icesmp_resource_bar%"
+        - "&8| &7ᴇꜱᴇᴍéɴʏ&8: %icesmp_event%"
         - "&r"
         - "&8⭐ &7ᴠᴀʟᴜᴛᴀ&8: &#F8BF28%icesmp_balance%"
         - "%icesmp_party_1%"
@@ -201,6 +202,8 @@ conditions:
 
 placeholder-refresh-intervals:
   default-refresh-interval: 500
+  "%icesmp_resource_bar%": 500
+  "%icesmp_event%": 1000
   "%server_uptime%": 1000
   "%server_tps_1_colored%": 1000
   "%server_unique_joins%": 5000

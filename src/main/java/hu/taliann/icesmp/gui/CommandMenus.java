@@ -215,6 +215,8 @@ public final class CommandMenus {
                                 + " (jelenlegi valutádban)", NamedTextColor.GOLD)),
                         label("Várakozás két váltás közt", Component.text(
                                 (long) ctx.factionManager().getSwitchCooldownHours() + " óra", NamedTextColor.WHITE)),
+                        grey("Semlegesből bárhová, és a Sötétbe"),
+                        grey("bárhonnan ingyenes a váltás."),
                         Component.text("A passzívák azonnal cserélődnek,", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
                         Component.text("a Sötét paktum bűne viszont veled marad.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
 
