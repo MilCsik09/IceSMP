@@ -169,6 +169,9 @@ itemként és banki egyenlegként is léteznek:
 - **Aukciósház** (`/market auction`): licitálós eladás lejárattal — a licit a bankból zárolódik,
   túllicitálásnál automatikusan visszajár; a lejárt aukció nyertese offline is megkapja a
   tárgyat (belépéskor vagy `/market claim`).
+- **Adomány-láda** (`/adomany`): szerver-szintű, ár nélküli közösségi ajándéktár — bárki
+  adományozhat egy tárgyat (`/adomany add`, a kézben tartott stack), és bárki elveheti a
+  böngésző GUI-ból, ingyen.
 
 ### 🧟 Távolság-alapú nehézség
 
@@ -197,6 +200,7 @@ alap konfigurációban az értesítés aktív, az építésvédelem viszont ki v
 | `/bank balance/deposit/withdraw` | `wallet`, `vault` | Banki műveletek |
 | `/currency balance/pay/exchange/rates` | `money`, `eco` | Valutaműveletek és árfolyamok |
 | `/market`, `/market sell/auction/claim/cancel/search` | `piac`, `ah` | Piactér + aukciósház (reputáció-árazással) |
+| `/adomany`, `/adomany add` | `donate`, `adomanylada` | Közösségi adomány-láda (ár nélküli ajándékozás) |
 | `/faction king vote/tax/raid` | `f` | Királyválasztás, adókulcs, raid (király) |
 | `/souls`, `/souls champion` | `soul`, `lelek` | Nekromanta lélekszilánk + bajnok |
 | `/quest …` | `quests`, `kuldetes` | Küldetések |

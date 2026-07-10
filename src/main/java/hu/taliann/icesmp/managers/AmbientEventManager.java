@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,28 +21,78 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Ambient world events (ROADMAP "élőbb világ"): frequent, small, atmospheric
+ * Ambient world events (ROADMAP "élőbb világ"): infrequent, small, atmospheric
  * happenings that make the world feel alive without touching balance or the
- * economy. Each firing picks one <em>enabled</em> flavour at random and either
- * broadcasts + paints client-side particles, hands out a short cosmetic buff,
- * or spawns a small herd of passive animals (an item faucet, never currency).
+ * economy. Each firing picks one <em>enabled</em> flavour at random, checks
+ * that flavour's environmental gate (time of day / weather) against the main
+ * world and — only if it passes — broadcasts + paints client-side particles,
+ * hands out a short cosmetic buff, or spawns a small herd of passive animals.
+ * If the rolled flavour's gate fails the cycle is skipped silently (no reroll),
+ * so flavours stay tied to a believable moment (aurora at night, fog at dawn…).
  *
- * <p>The tick runs on the global region scheduler; every player- or
- * location-touching effect hops to the owning region thread (Folia-safe).
+ * <p>Players who are outdoors (sky access) in the firing world when an event
+ * lands get a small "caught the moment" reward: a little currency into their
+ * own faction balance plus a short flavour-appropriate potion effect.
+ *
+ * <p>The tick runs on the global region scheduler; world time/weather reads are
+ * therefore thread-safe here (same precedent as {@link BloodMoonManager#tick()}).
+ * Every player- or location-touching effect hops to the owning region thread
+ * (Folia-safe).
  */
 public final class AmbientEventManager {
 
-    /** The atmospheric flavours; each is individually toggleable in config. */
+    /** How a flavour's time window interacts with weather. */
+    private enum WeatherGate {
+        /** Only the time window matters. */
+        NONE,
+        /** Time window AND clear (no storm). */
+        CLEAR_ONLY,
+        /** Time window OR currently storming. */
+        WINDOW_OR_RAIN
+    }
+
+    /** The atmospheric flavours; each is individually toggleable in config, and each
+     * carries its own environmental gate (time-of-day window + weather rule) and its
+     * own outdoors-participation reward effect. */
     private enum Ambient {
-        AURORA,
-        FALLING_STAR,
-        FOG_ROLL,
-        SPECTRAL_WANDERERS,
-        ANIMAL_MIGRATION,
-        FIREFLIES;
+        AURORA(13000L, 23000L, WeatherGate.CLEAR_ONLY, PotionEffectType.NIGHT_VISION, 60),
+        FALLING_STAR(13000L, 23000L, WeatherGate.NONE, PotionEffectType.LUCK, 120),
+        FOG_ROLL(0L, 2000L, WeatherGate.WINDOW_OR_RAIN, null, 0),
+        SPECTRAL_WANDERERS(13000L, 23000L, WeatherGate.NONE, PotionEffectType.INVISIBILITY, 30),
+        ANIMAL_MIGRATION(1000L, 11000L, WeatherGate.NONE, PotionEffectType.HERO_OF_THE_VILLAGE, 120),
+        FIREFLIES(12000L, 15000L, WeatherGate.NONE, PotionEffectType.SPEED, 60);
+
+        private final long windowStartTick;
+        private final long windowEndTick;
+        private final WeatherGate weatherGate;
+        private final PotionEffectType rewardEffect;
+        private final int rewardSeconds;
+
+        Ambient(final long windowStartTick, final long windowEndTick, final WeatherGate weatherGate,
+                final PotionEffectType rewardEffect, final int rewardSeconds) {
+            this.windowStartTick = windowStartTick;
+            this.windowEndTick = windowEndTick;
+            this.weatherGate = weatherGate;
+            this.rewardEffect = rewardEffect;
+            this.rewardSeconds = rewardSeconds;
+        }
 
         String configKey() {
             return name().toLowerCase(Locale.ROOT).replace('_', '-');
+        }
+
+        private boolean inWindow(final long time) {
+            return time >= windowStartTick && time <= windowEndTick;
+        }
+
+        /** Whether this flavour's environmental gate currently passes for the given world. */
+        boolean environmentAllows(final World world) {
+            final boolean inWindow = inWindow(world.getTime());
+            return switch (weatherGate) {
+                case NONE -> inWindow;
+                case CLEAR_ONLY -> inWindow && !world.hasStorm();
+                case WINDOW_OR_RAIN -> inWindow || world.hasStorm();
+            };
         }
     }
 
@@ -52,14 +104,19 @@ public final class AmbientEventManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final CurrencyManager currencyManager;
+    private final FactionManager factionManager;
 
     private volatile long nextAttemptAt;
 
     public AmbientEventManager(final JavaPlugin plugin, final ConfigManager configManager,
-                               final MessageManager messageManager) {
+                               final MessageManager messageManager, final CurrencyManager currencyManager,
+                               final FactionManager factionManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.currencyManager = currencyManager;
+        this.factionManager = factionManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
 
@@ -75,40 +132,67 @@ public final class AmbientEventManager {
         }
         nextAttemptAt = now + intervalMillis();
 
+        final int minOnline = Math.max(0, configManager.getInt("ambient-events.min-online-players", 1));
+        if (Bukkit.getOnlinePlayers().size() < minOnline) {
+            return;
+        }
+
         final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("ambient-events.chance-percent", 55.0D)));
+                configManager.getDouble("ambient-events.chance-percent", 35.0D)));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
             return;
         }
 
-        final List<Ambient> enabled = new ArrayList<>();
-        for (final Ambient ambient : Ambient.values()) {
-            if (configManager.getBoolean("ambient-events.types." + ambient.configKey(), true)) {
-                enabled.add(ambient);
-            }
-        }
+        final List<Ambient> enabled = collectEnabled();
         if (enabled.isEmpty()) {
             return;
         }
-        fire(enabled.get(ThreadLocalRandom.current().nextInt(enabled.size())));
+
+        final World world = mainWorld();
+        if (world == null) {
+            return;
+        }
+
+        final Ambient chosen = enabled.get(ThreadLocalRandom.current().nextInt(enabled.size()));
+        // Environmental gate: wrong time of day / weather for this flavour → skip this
+        // cycle silently. We do NOT reroll another flavour, so gated-out flavours stay rare.
+        if (!chosen.environmentAllows(world)) {
+            return;
+        }
+        fire(chosen, world);
     }
 
-    /** Admin override: fires a random enabled ambient event now. Returns false if none are enabled. */
+    /** Admin override: fires a random enabled ambient event now, bypassing the environmental
+     * gate and the min-online-players guard (it is an explicit debug/admin action). Returns
+     * false if none are enabled or there is no world to fire it in. */
     public boolean forceRandom() {
+        final List<Ambient> enabled = collectEnabled();
+        if (enabled.isEmpty()) {
+            return false;
+        }
+        final World world = mainWorld();
+        if (world == null) {
+            return false;
+        }
+        fire(enabled.get(ThreadLocalRandom.current().nextInt(enabled.size())), world);
+        return true;
+    }
+
+    private List<Ambient> collectEnabled() {
         final List<Ambient> enabled = new ArrayList<>();
         for (final Ambient ambient : Ambient.values()) {
             if (configManager.getBoolean("ambient-events.types." + ambient.configKey(), true)) {
                 enabled.add(ambient);
             }
         }
-        if (enabled.isEmpty()) {
-            return false;
-        }
-        fire(enabled.get(ThreadLocalRandom.current().nextInt(enabled.size())));
-        return true;
+        return enabled;
     }
 
-    private void fire(final Ambient ambient) {
+    private World mainWorld() {
+        return Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0);
+    }
+
+    private void fire(final Ambient ambient, final World world) {
         switch (ambient) {
             case AURORA -> aurora();
             case FALLING_STAR -> fallingStar();
@@ -117,6 +201,7 @@ public final class AmbientEventManager {
             case FIREFLIES -> skyEffect("ambient-fireflies", Particle.END_ROD, Sound.BLOCK_BEEHIVE_WORK, 0.5F);
             case ANIMAL_MIGRATION -> animalMigration();
         }
+        rewardParticipants(ambient, world);
     }
 
     /** Aurora: broadcast + shimmering sky particles and a brief, purely-cosmetic Night Vision. */
@@ -218,6 +303,53 @@ public final class AmbientEventManager {
         }
     }
 
+    /**
+     * Active-participation reward: players standing outdoors (sky access) in the firing
+     * world when the event lands get a small currency drop into their own faction balance
+     * plus a flavour-fitting potion effect. Each player is visited at most once per firing,
+     * so the reward can only land once per event per player. Every player- and
+     * location-touching check hops to the player's own region thread (Folia rule).
+     */
+    private void rewardParticipants(final Ambient ambient, final World world) {
+        final double rewardAmount = Math.max(0.0D, configManager.getDouble("ambient-events.reward-amount", 5.0D));
+        for (final Player player : List.copyOf(world.getPlayers())) {
+            player.getScheduler().run(plugin, task -> rewardIfOutdoors(ambient, player, rewardAmount), null);
+        }
+    }
+
+    /** Runs on the player's own region thread: checks sky access and, if outdoors, pays out. */
+    private void rewardIfOutdoors(final Ambient ambient, final Player player, final double rewardAmount) {
+        final Location location = player.getLocation();
+        final World world = location.getWorld();
+        if (world == null) {
+            return;
+        }
+        final int highestY = world.getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
+        if (location.getBlockY() < highestY - 1) {
+            // Under a roof / underground — no sky access, no reward for this firing.
+            return;
+        }
+
+        if (ambient.rewardEffect != null) {
+            player.addPotionEffect(new PotionEffect(ambient.rewardEffect, ambient.rewardSeconds * 20, 0, true, true, true));
+        }
+
+        if (rewardAmount > 0.0D) {
+            final FactionType faction = factionManager.getFaction(player.getUniqueId());
+            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), rewardAmount);
+            player.sendMessage(messageManager.getMessage(
+                    "ambient-reward", "&d✨ Az esemény megérintett: &f+{amount} token",
+                    Map.of("amount", formatAmount(rewardAmount))));
+        }
+    }
+
+    private static String formatAmount(final double amount) {
+        if (amount == Math.rint(amount)) {
+            return String.valueOf((long) amount);
+        }
+        return String.format(Locale.ROOT, "%.2f", amount);
+    }
+
     private String defaultFor(final String messageKey) {
         return switch (messageKey) {
             case "ambient-fog" -> "&7🌫 Sűrű köd ereszkedik a tájra — óvatosan az utakon.";
@@ -228,6 +360,6 @@ public final class AmbientEventManager {
     }
 
     private long intervalMillis() {
-        return Math.max(1L, configManager.getLong("ambient-events.interval-minutes", 15L)) * 60_000L;
+        return Math.max(1L, configManager.getLong("ambient-events.interval-minutes", 40L)) * 60_000L;
     }
 }

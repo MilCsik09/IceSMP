@@ -4,6 +4,18 @@ import hu.taliann.icesmp.utils.MessageManager;
 
 public abstract class BaseSpell implements Spell {
 
+    /**
+     * Balansz-forrás a statikus (kódolt) spellek cast-időbeni felülbírálásaihoz
+     * (spell-balance.&lt;id&gt;.&lt;kulcs&gt;). Az IceSMPCore injektálja enable()-kor;
+     * mivel a kiolvasás cast-időben történik, a statikus spellek felülbírálására
+     * a /icesmp reload is azonnal hat (a deklaratívakéra továbbra is restart kell).
+     */
+    private static volatile hu.taliann.icesmp.managers.ConfigManager balanceSource;
+
+    public static void setBalanceSource(final hu.taliann.icesmp.managers.ConfigManager configManager) {
+        balanceSource = configManager;
+    }
+
     private final String id;
     private final String defaultName;
     private final int cooldown;
@@ -26,6 +38,15 @@ public abstract class BaseSpell implements Spell {
         return id;
     }
 
+    /**
+     * Exposes the untranslated fallback name so subclasses can rebuild themselves (e.g. the
+     * config-driven balance-override copy in {@link hu.taliann.icesmp.spells.ConfiguredSpell})
+     * without re-resolving it through the {@link MessageManager}.
+     */
+    protected String getDefaultName() {
+        return defaultName;
+    }
+
     @Override
     public String getName() {
         if (messageManager == null) {
@@ -36,7 +57,7 @@ public abstract class BaseSpell implements Spell {
 
     @Override
     public int getCooldown() {
-        return cooldown;
+        return balanceInt("cooldown", cooldown);
     }
 
     @Override
@@ -46,7 +67,28 @@ public abstract class BaseSpell implements Spell {
 
     @Override
     public int getCostAmount() {
-        return costAmount;
+        return balanceInt("cost-amount", costAmount);
+    }
+
+    /** A spell-balance.&lt;id&gt;.&lt;key&gt; felülbírálás, vagy a kódbeli default. */
+    protected double balance(final String key, final double defaultValue) {
+        final hu.taliann.icesmp.managers.ConfigManager source = balanceSource;
+        return source == null ? defaultValue : source.getDouble("spell-balance." + id + "." + key, defaultValue);
+    }
+
+    /** Egész értékű balansz-felülbírálás (ticks, darabszám, cooldown…). */
+    protected int balanceInt(final String key, final int defaultValue) {
+        final hu.taliann.icesmp.managers.ConfigManager source = balanceSource;
+        return source == null ? defaultValue : source.getInt("spell-balance." + id + "." + key, defaultValue);
+    }
+
+    /**
+     * Static variant for the rare {@code static} helper methods (e.g. dodge-chance checks invoked
+     * from listeners without a spell instance) that still need a cast-time balansz-felülbírálás.
+     */
+    protected static double balanceStatic(final String spellId, final String key, final double defaultValue) {
+        final hu.taliann.icesmp.managers.ConfigManager source = balanceSource;
+        return source == null ? defaultValue : source.getDouble("spell-balance." + spellId + "." + key, defaultValue);
     }
 
     protected net.kyori.adventure.text.Component resolveMessage(final String key, final String fallback) {

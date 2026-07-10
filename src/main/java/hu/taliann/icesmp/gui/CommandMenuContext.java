@@ -7,6 +7,7 @@ import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.EscortManager;
+import hu.taliann.icesmp.managers.GatheringBuffManager;
 import hu.taliann.icesmp.managers.MeteorEventManager;
 import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
@@ -48,6 +49,7 @@ public record CommandMenuContext(
         EscortManager escortManager,
         AbundanceManager abundanceManager,
         ServerChallengeManager serverChallengeManager,
+        GatheringBuffManager gatheringBuffManager,
         MeteorEventManager meteorEventManager,
         SoulShardManager soulShardManager,
         SpecializationManager specializationManager,

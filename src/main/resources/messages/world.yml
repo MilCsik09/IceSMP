@@ -40,6 +40,7 @@ messages:
   events-worldboss-failed: '&7Nem sikerült (már aktív boss, vagy nincs online játékos).'
   events-worldboss-spawned: '&cVilágboss megidézve!'
   ambient-aurora: '&b🌌 Északi fény ragyog fel az égen — a világ egy pillanatra elcsendesedik.'
+  ambient-reward: '&d✨ Az esemény megérintett: &f+{amount} token'
   ambient-falling-star: '&e☄ Hulló csillag hasít át az égbolton a(z) {world} felett ({x}, {z})!'
   ambient-fireflies: '&e✨ Szentjánosbogarak raja gyúl fel a szürkületben.'
   ambient-fog: '&7🌫 Sűrű köd ereszkedik a tájra — óvatosan az utakon.'

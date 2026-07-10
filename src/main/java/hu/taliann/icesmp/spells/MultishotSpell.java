@@ -19,11 +19,12 @@ public final class MultishotSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final Vector direction = player.getEyeLocation().getDirection();
+        final double arrowSpeed = balance("speed", ARROW_SPEED);
 
         for (final double spreadDegrees : SPREAD_DEGREES) {
             final Vector velocity = direction.clone()
                     .rotateAroundY(Math.toRadians(spreadDegrees))
-                    .multiply(ARROW_SPEED);
+                    .multiply(arrowSpeed);
             final Arrow arrow = player.launchProjectile(Arrow.class, velocity);
             arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
             arrow.setCritical(true);

@@ -1,5 +1,17 @@
 # IceSMP üzenetek — market alrendszer (a MessageManager az összes messages/*.yml-t betölti)
+# Az adomány-láda (donation-*) üzenetei is itt élnek: közösségi, ár nélküli item-ajándékozás.
 messages:
+  donation-add-success: '&aA kezedben tartott tárgyat az adomány-ládába tetted — bárki elveheti.'
+  donation-chest-disabled: '&cAz adomány-láda jelenleg ki van kapcsolva.'
+  donation-chest-full: '&cAz adomány-láda megtelt — próbáld később, ha valaki elvitt valamit.'
+  donation-chest-title: '&6» Adomány-láda «'
+  donation-lore-donor: '&7Adományozó: &f{donor}'
+  donation-lore-take: '&eKattints az elvételhez!'
+  donation-no-item: '&cNincs tárgy a kezedben — ezt adományoznád?'
+  donation-per-player-limit: '&cElérted a saját adomány-limitedet ebben a ládában (&f{limit} tétel&c).'
+  donation-take-gone: '&cEzt a tárgyat már elvitte valaki más.'
+  donation-take-success: '&aElvettél egy adományt az adomány-ládából.'
+  donation-tile-info: '&eAdományozás: &ffogd kézbe a tárgyat és kattints ide!'
   market-already-highest: '&cMár te vagy a legmagasabb licitáló.'
   market-auction-ended: '&cEz az aukció már lezárult.'
   market-auction-sold: '&aAz aukciód lezárult: &f{bidder}&a vitte el &f{price} {currency}&a-ért — a bevétel a bankodba került.'

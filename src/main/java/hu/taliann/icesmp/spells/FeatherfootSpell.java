@@ -13,8 +13,9 @@ public final class FeatherfootSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 10, 0, false, true, true));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 10, 0, false, true, true));
+        final int durationTicks = balanceInt("duration-ticks", 20 * 10);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, durationTicks, 0, false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, durationTicks, 0, false, true, true));
     }
 }
 

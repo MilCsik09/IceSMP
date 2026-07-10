@@ -60,6 +60,15 @@ A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktu
 **Eladási díj:** minden eladásból kb. **10% eltűnik** a gazdaságból — ez tartja kordában az
 inflációt (a pénz „elértéktelenedését").
 
+## Adomány-láda (közösségi ajándékozás) 🎁
+
+Ez **nem piac** — nincs ár, nincs valuta, tiszta ajándékozás. Egy szerver-szintű, közös tár:
+- `/adomany add` — a **kezedben tartott tárgyat** (a teljes stack-et) beteszed a közös ládába.
+- `/adomany` — megnyitod a böngésző felületet; kattints egy tárgyra, és **ingyen elviszed**.
+- A tárgy neve mellett a lorén látod, **ki** adományozta.
+- A ládának van egy teljes kapacitása, és annak, hogy egy adományozónak hány **el nem vitt**
+  tétele lehet egyszerre benne (mindkettő admin-konfigurálható).
+
 **Reputáció-ár:** a vételár attól is függ, milyen viszonyban van a frakciód az eladóéval:
 **ellenségtől drágább (+25%)**, **szövetségestől olcsóbb (−10%)**.
 

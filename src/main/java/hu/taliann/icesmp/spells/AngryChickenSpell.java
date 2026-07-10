@@ -42,21 +42,23 @@ public final class AngryChickenSpell extends BaseSpell {
                 return;
             }
 
-            final Vector step = direction.clone().multiply(0.4D); // ~8 blocks/second at 20 TPS
+            final Vector step = direction.clone().multiply(balance("speed", 0.4D)); // ~8 blocks/second at 20 TPS
             chicken.teleportAsync(chicken.getLocation().add(step));
 
             final Player shooter = plugin.getServer().getPlayer(shooterId);
             final boolean shooterInCurrentRegion = shooter != null && Bukkit.isOwnedByCurrentRegion(shooter);
 
-            for (final Entity nearby : chicken.getNearbyEntities(1.1D, 1.1D, 1.1D)) {
+            final double hitRadius = balance("hit-radius", 1.1D);
+            for (final Entity nearby : chicken.getNearbyEntities(hitRadius, hitRadius, hitRadius)) {
                 if (!(nearby instanceof LivingEntity living) || living == chicken || living.getUniqueId().equals(shooterId)) {
                     continue;
                 }
 
+                final double damage = balance("damage", 8.0D);
                 if (shooterInCurrentRegion) {
-                    living.damage(8.0D, shooter);
+                    living.damage(damage, shooter);
                 } else {
-                    living.damage(8.0D);
+                    living.damage(damage);
                 }
                 chicken.remove();
                 task.cancel();
@@ -68,7 +70,7 @@ public final class AngryChickenSpell extends BaseSpell {
             if (chicken.isValid()) {
                 chicken.remove();
             }
-        }, null, 40L);
+        }, null, balanceInt("duration-ticks", 40));
 
         player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_HURT, 1.0F, 0.8F);
     }

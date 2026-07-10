@@ -28,15 +28,17 @@ public final class BeeSwarmSpell extends BaseSpell {
 
     @Override
     public boolean executeSpell(final Player player) {
-        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
+        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, balance("range", RANGE));
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
             return false;
         }
 
-        for (int index = 0; index < BEE_COUNT; index++) {
+        final int beeCount = balanceInt("count", BEE_COUNT);
+        final int angerTicks = balanceInt("duration-ticks", ANGER_TICKS);
+        for (int index = 0; index < beeCount; index++) {
             player.getWorld().spawn(player.getLocation().add(0.0D, 1.0D, 0.0D), Bee.class, bee -> {
-                bee.setAnger(ANGER_TICKS);
+                bee.setAnger(angerTicks);
                 bee.setTarget(target);
             });
         }

@@ -14,14 +14,16 @@ public final class ConfusionSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        for (final LivingEntity target : player.getLocation().getNearbyLivingEntities(15.0D, 15.0D, 15.0D)) {
-            if (target == player || target.getLocation().distanceSquared(player.getLocation()) > (15.0D * 15.0D)) {
+        final double radius = balance("radius", 15.0D);
+        final int durationTicks = balanceInt("duration-ticks", 20 * 10);
+        for (final LivingEntity target : player.getLocation().getNearbyLivingEntities(radius, radius, radius)) {
+            if (target == player || target.getLocation().distanceSquared(player.getLocation()) > (radius * radius)) {
                 continue;
             }
 
-            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 0, false, true, true));
-            target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 10, 0, false, true, true));
-            target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 20 * 10, 0, false, true, true));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, durationTicks, 0, false, true, true));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, durationTicks, 0, false, true, true));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, durationTicks, 0, false, true, true));
         }
     }
 }

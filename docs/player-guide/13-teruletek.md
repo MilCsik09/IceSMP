@@ -1,7 +1,7 @@
 # 13. Frakcióterületek és saját birtok 🏰
 
 A világban vannak **frakcióterületek** és **fővárosok** (ezeket az adminok jelölik ki), és
-**saját birtokod** is lehet: a `/claim` paranccsal lefoglalhatsz chunkokat, ahol senki más nem
+**saját birtokod** is lehet: a `/claim` paranccsal blokk-pontos területeket foglalhatsz, ahol senki más nem
 építhet és nem lophat.
 
 ## Mit veszel észre belőlük?
@@ -28,22 +28,24 @@ A **claim** a te személyes, védett földed — frakciótól függetlenül bár
 
 ### Hogyan claimelj?
 
-1. Állj bele abba a **chunkba** (16×16 blokkos terület), amit le akarsz foglalni.
-2. Írd be: **`/claim`** — kész is! A claim-határokat részecskék rajzolják ki pár másodpercig.
-   Nagyobb, összefüggő birtokhoz: állj a terület egyik sarkába (`/claim pos1`), a másikba
-   (`/claim pos2`), majd `/claim area` — az árat előre kiírja. Claim-határ átlépésekor az
-   action-bar mutatja, kinek a birtokára léptél.
+1. Állj oda, ahol a birtokod közepét szeretnéd.
+2. Írd be: **`/claim`** — egy **16×16 blokkos** területet foglal körülötted, **±20 blokk
+   magasságban** (a claim egy doboz: fölötte/alatta a világ szabad — a menüből pénzért
+   magasíthatod/mélyítheted +5 blokkonként). A határokat részecskék rajzolják ki.
+   **Blokk-pontos, egyedi méretű** birtokhoz: állj a terület egyik sarkára (`/claim pos1`),
+   a másikra (`/claim pos2`), majd `/claim area` — a méretet és az árat előre kiírja.
+   Claim-határ átlépésekor az action-bar mutatja, kinek a birtokára léptél.
 
 **Mennyibe kerül?**
-- Az első **3 chunk ingyenes**.
-- Utána minden további chunk a **saját frakció-valutádba** kerül, és **egyre drágább**
+- Az ár **oszloponként** (1×1 blokk alapterület) számolódik: az első **768 oszlop ingyenes** (~3 chunknyi terület).
+- Utána minden további oszlop a **saját frakció-valutádba** kerül (alapból 0,5/oszlop)
   (alapból az első fizetős 100, utána mindegyik másfélszeres). Az ár **ELÉG** (money sink) —
   az `/claim unclaim`-nél sem jár vissza!
-- Játékosonként alapból legfeljebb **10 chunkod** lehet.
+- Játékosonként alapból legfeljebb **8192 oszlopnyi** (~32 chunknyi) birtokod lehet.
 
 ### Mit véd a claim?
 
-A te chunkodban **idegenek**:
+A birtokodon (a claim dobozán belül) **idegenek**:
 - nem törhetnek és nem rakhatnak le blokkot;
 - nem nyithatnak **konténert** (láda, hordó, kemence…);
 - nem üríthetnek vödröt, nem szedhetik le a kép-/festménykereteket;
@@ -63,20 +65,21 @@ A te chunkodban **idegenek**:
 
 | Parancs | Mit csinál |
 |---|---|
-| `/claim` | Az aktuális chunk lefoglalása |
-| `/claim unclaim` | Az aktuális chunk felszabadítása (az ár NEM jár vissza) |
-| `/claim info` | Kié ez a chunk? (+ határ-kirajzolás) |
+| `/claim` | 16×16 blokk gyorsfoglalása körülötted (±20 blokk magasságban) |
+| `/claim unclaim` | A claim felszabadítása, amiben állsz (az ár NEM jár vissza) |
+| `/claim info` | Kié ez a terület? (+ határ-kirajzolás) |
 | `/claim list` | Saját claimjeid listája |
-| `/claim show` | A környező claimek PEREMÉNEK kirajzolása pár másodpercig (zöld = sajátod, láng = másé, komposzt = az aktuális szabad chunk) |
-| `/claim pos1` / `/claim pos2` | Terület-kijelölés két sarka (az a chunk, amiben állsz) |
-| `/claim area` | A kijelölt téglalap MINDEN szabad chunkjának lefoglalása egyben (összár egyben ég el; a sajátjaid nem fizetnek újra) |
+| `/claim show` | A környező claimek PEREMÉNEK kirajzolása pár másodpercig (zöld = sajátod, láng = másé, komposzt = a gyorsfoglalás előnézete) |
+| `/claim pos1` / `/claim pos2` | Blokk-pontos kijelölés két sarka (a blokk, amin állsz) |
+| `/claim area` | A két sarok közti pontos téglalap lefoglalása (az ár előre kiírva, egyben ég el) |
+| `/claim extend up\|down` | A claim magasítása / mélyítése +5 blokkonként, pénzért (a menüből is) |
 | `/claim trust <név>` / `/claim untrust <név>` | Megbízott hozzáadása / elvétele |
 
 ### Hol NEM lehet claimelni?
 
 - **Frakció-territóriumban** (az a királyság földje) és **védett zónában** (spawn/város).
 - Cserébe a **meteor-becsapódás** és az **elrejtett kincs** esemény is elkerüli a claimelt
-  chunkokat — a birtokod biztonságban van tőlük.
+  claimelt területet — a birtokod biztonságban van tőlük.
 - **Raid alatt** a claim alapból véd, de szerver-beállítástól függően a jelentkezett támadók
   a claim-ládákat hadizsákmányként **kinyithatják** (lebontani akkor sem tudják).
 
@@ -86,7 +89,7 @@ A te chunkodban **idegenek**:
 - `/territory claim` — terület lefoglalása.
 - `/territory remove` — terület törlése.
 - `/territory list` / `/territory info` — területek listája / infó.
-- `/claim admin unclaim` — idegen claim törlése admin-jogon (az adott chunkban állva).
+- `/claim admin unclaim` — idegen claim törlése admin-jogon (a claimben állva).
 
 ---
 

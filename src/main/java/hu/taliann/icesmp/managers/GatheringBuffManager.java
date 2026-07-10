@@ -91,12 +91,31 @@ public final class GatheringBuffManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
+            // Üres (vagy majdnem üres) szerveren ne nyíljon buff-ablak a senkinek.
+            if (org.bukkit.Bukkit.getOnlinePlayers().size()
+                    < Math.max(0, configManager.getInt("gathering-buffs.min-online-players", 1))) {
+                return;
+            }
             final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("gathering-buffs.chance-percent", 50.0D)));
+                    configManager.getDouble("gathering-buffs.chance-percent", 40.0D)));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 start(pickRandomEnabled());
             }
         }
+    }
+
+    /** Hungarian label of the active buff window (menu display), or null when none. */
+    public String describeActive() {
+        final GatheringBuff current = active;
+        if (current == null) {
+            return null;
+        }
+        return switch (current) {
+            case MINING_RUSH -> "Bányász-láz";
+            case HARVEST_HOUR -> "Termés-óra";
+            case FISHING_FRENZY -> "Horgász-láz";
+            case XP_HOUR -> "Tapasztalat-óra";
+        };
     }
 
     /** Admin override: opens a random enabled buff now. Returns false if none are enabled or one is open. */

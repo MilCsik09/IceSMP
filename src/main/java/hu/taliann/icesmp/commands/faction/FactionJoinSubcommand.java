@@ -69,9 +69,13 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
-        // Első csatlakozás mindig ingyenes és időzítetlen; frakcióváltás (van már frakciód,
-        // és másikba lépsz) fizetős és cooldownhoz kötött — a DARK ágra is vonatkozik.
-        final boolean isSwitch = hasFaction;
+        // Első csatlakozás mindig ingyenes és időzítetlen. Frakcióváltás fizetős és
+        // cooldownhoz kötött, KIVÉVE: a Semlegesből (alapértelmezett kezdő frakció)
+        // bárhová ingyen léphetsz, és a Sötétbe lépés is ingyenes (annak a sinner-
+        // feltétel + az örök paktum az ára).
+        final boolean isSwitch = hasFaction
+                && currentFaction != FactionType.NEUTRAL
+                && factionType != FactionType.DARK;
 
         if (factionType == FactionType.DARK) {
             if (!sinManager.isSinner(player)) {

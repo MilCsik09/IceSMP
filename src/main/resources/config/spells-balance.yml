@@ -1,0 +1,217 @@
+# Spell-balansz felülbírálások — CSAK az itt megadott kulcsok írják felül a kódbeli értéket.
+#
+# A spell id a regisztrációs (SpellRegistry) id — ugyanaz, mint a /spell parancsokban és a
+# messages.yml "spell.<id>.name" kulcsaiban használt azonosító.
+#
+# KÉT spell-csoport van, mindkettő ugyanezt a fájlt olvassa:
+#
+# 1. DEKLARATÍV spellek (ConfiguredSpell, ~343 db, SpellCatalog): a felülbírálás a
+#    szerverindítás egyetlen applySpellBalanceOverrides() lépésénél épül be az újraregisztrált
+#    spell-példányba. A spellek csak szerverindításkor regisztrálódnak; a /icesmp reload NEM
+#    regisztrálja újra őket, tehát MÓDOSÍTÁS UTÁN SZERVER-ÚJRAINDÍTÁS KELL.
+#
+# 2. STATEFUL (kódba írt osztályú, saját state-et tartó) spellek — druidformák, totemek,
+#    beast master / poisoner / guardian jelspellek stb., a spells/ csomagban, ~29 migrált
+#    osztály — cast-időben olvassák ezt a fájlt a BaseSpell.balance()/balanceInt() segédeken
+#    keresztül, ezért rájuk a /icesmp reload IS AZONNAL HAT (nem kell újraindítás).
+#
+# Ismeretlen spell id (elgépelés) esetén a szerver indításkor WARNING-ot ír a logba.
+spell-balance:
+  # példa (alapból kikommentezve — a kódbeli érték él); mana_dart deklaratív (ConfiguredSpell) spell:
+  # mana_dart:
+  #   damage: 8.0
+  #   cooldown: 12
+
+  # ---------------------------------------------------------------------------------------------
+  # STATEFUL spellek referencia-blokkja — a lenti kulcsok mindegyike felülbírálható, cast-időben
+  # (reload-barát). Csak azok a kulcsok szerepelnek, amiket a hozzá tartozó osztály ténylegesen
+  # a balance()/balanceInt() segéden keresztül olvas; minden más a kódban marad (kozmetikai
+  # részecske/hang-értékek, vagy szándékosan nem konfigurálható mechanizmus-konstansok, pl. a
+  # root JUMP_BOOST=128 "nem tud ugrani" szint-jelzője).
+  # ---------------------------------------------------------------------------------------------
+
+  # angry_chicken:
+  #   damage: 8.0
+  #   speed: 0.4
+  #   hit-radius: 1.1
+  #   duration-ticks: 40
+
+  # antidote:
+  #   duration-ticks: 100
+  #   amplifier: 0
+
+  # armament:
+  #   duration-ticks: 2400
+
+  # bee_swarm:
+  #   range: 12.0
+  #   count: 3
+  #   duration-ticks: 400
+
+  # blink:
+  #   distance: 8.0
+  # phase_blink:
+  #   distance: 6.0
+
+  # bone_chill:
+  #   radius: 6.0
+  #   duration-ticks: 120
+  #   slowness-amplifier: 2
+  #   weakness-amplifier: 1
+
+  # bulwark:
+  #   duration-ticks: 200
+  #   amplifier: 1
+
+  # confusion:
+  #   radius: 15.0
+  #   duration-ticks: 200
+
+  # double_jump:
+  #   jump-velocity: 0.8
+
+  # druid_bear_form:
+  # druid_cat_form:
+  # druid_moonkin_form:
+  # druid_travel_form:
+  #   duration-ticks: 36000
+
+  # eagle_eye:
+  #   duration-ticks: 600
+
+  # feast:
+  #   food-level: 20
+  #   saturation: 20.0
+
+  # featherfoot:
+  #   duration-ticks: 200
+
+  # friendship:
+  #   range: 16.0
+  #   target-cone: 0.6
+
+  # gust:
+  #   radius: 5.0
+  #   knockback: 2.0
+  #   knockback-up: 0.45
+
+  # hide:
+  #   teleport-radius: 10
+  #   duration-ticks: 200
+  #   speed-amplifier: 1
+
+  # inner_focus:
+  #   duration-ticks: 100
+  #   resistance-amplifier: 5
+  #   regen-amplifier: 1
+
+  # life_drain:
+  #   range: 10.0
+  #   damage: 4.0
+  #   heal: 4.0
+
+  # lucky_star:
+  #   drain-amount: 20
+  #   dodge-chance: 0.40
+
+  # multishot:
+  #   speed: 2.2
+
+  # primal_bond:
+  #   radius: 12.0
+  #   duration-ticks: 400
+  #   absorption-amplifier: 1
+
+  # piercing_bolt:
+  #   count: 1
+  #   spread: 0.0
+  #   speed: 3.2
+  # arrow_storm:
+  #   count: 7
+  #   spread: 6.0
+  #   speed: 2.0
+  # dagger_throw:
+  #   count: 1
+  #   spread: 0.0
+  #   speed: 2.6
+  # fireball:
+  #   count: 1
+  #   spread: 0.0
+  #   speed: 1.8
+  # gale_burst:
+  #   count: 1
+  #   spread: 0.0
+  #   speed: 1.6
+  # bone_spear:
+  #   count: 1
+  #   spread: 0.0
+  #   speed: 3.0
+  # double_tap:
+  #   count: 2
+  #   spread: 2.0
+  #   speed: 2.8
+  # spectral_volley:
+  #   count: 5
+  #   spread: 5.0
+  #   speed: 2.4
+
+  # rain_dance:
+  #   radius: 6
+  #   vertical-range: 3
+
+  # root:
+  #   radius: 5.0
+  #   duration-ticks: 80
+  #   slowness-amplifier: 10
+
+  # shadowstep:
+  #   range: 15.0
+  #   distance: 1.5
+  #   duration-ticks: 60
+
+  # smoke_bomb:
+  #   radius: 5.0
+  #   blindness-duration-ticks: 100
+  #   slowness-amplifier: 1
+  #   escape-speed-duration-ticks: 80
+  #   escape-speed-amplifier: 1
+
+  # raise_horde:
+  #   count: 4
+  #   duration-ticks: 900
+  #   range: 16.0
+  #   fallback-scan-radius: 12.0
+  # bone_archers:
+  #   count: 2
+  #   duration-ticks: 900
+  #   range: 16.0
+  #   fallback-scan-radius: 12.0
+  # panda_guard:
+  #   count: 2
+  #   duration-ticks: 800
+  #   range: 16.0
+  #   fallback-scan-radius: 12.0
+  # wild_pack:
+  #   count: 3
+  #   duration-ticks: 800
+  #   range: 16.0
+  #   fallback-scan-radius: 12.0
+
+  # sun_dance:
+  #   radius: 8
+  #   vertical-range: 5
+
+  # venom_strike:
+  #   range: 10.0
+  #   poison-duration-ticks: 160
+  #   poison-amplifier: 1
+  #   weakness-duration-ticks: 120
+
+  # wisplight:
+  #   speed: 1.8
+  #   duration-ticks: 6000
+
+  # NINCS balansz-releváns konstans a saját osztályukban (a delegált manager/vanilla viselkedés
+  # állítja be az értékeket), ezért nincs kulcsuk:
+  #   healing_stream_totem, searing_totem, windfury_totem, earthbind_totem (ShamanTotemSpell —
+  #     a tényleges totem-hatásokat a TotemManager vezérli), wolf_call (vanília farkas-statok)

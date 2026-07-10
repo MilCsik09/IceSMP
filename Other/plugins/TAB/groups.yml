@@ -2,17 +2,17 @@
 #  tabprefix: "&0&l[&a&lOwner&0&l] &a"
 #  tagprefix: "&2&lOwner &a"
 mod:
-      tabprefix: "%vault_prefix%"
-      tagprefix: "%vault-prefix%"
+      tabprefix: "%icesmp_faction_id%%vault_prefix%"
+      tagprefix: "%icesmp_faction_id%%vault-prefix%"
 helper:
-      tabprefix: "%vault_prefix%"
-      tagprefix: "%vault-prefix%"
+      tabprefix: "%icesmp_faction_id%%vault_prefix%"
+      tagprefix: "%icesmp_faction_id%%vault-prefix%"
 vip:
-      tabprefix: "%vault-prefix%"
-      tagprefix: "%vault-prefix%"
+      tabprefix: "%icesmp_faction_id%%vault-prefix%"
+      tagprefix: "%icesmp_faction_id%%vault-prefix%"
 Default:
-      tabprefix: "%vault-prefix%"
-      tagprefix: "%vault-prefix%"
+      tabprefix: "%icesmp_faction_id%%vault-prefix%"
+      tagprefix: "%icesmp_faction_id%%vault-prefix%"
 
  # default settings for all groups, all groups will take properties from this section unless player's primary group overrides a specific setting
 _DEFAULT_:

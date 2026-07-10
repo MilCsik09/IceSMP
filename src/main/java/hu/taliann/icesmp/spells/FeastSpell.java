@@ -11,8 +11,8 @@ public final class FeastSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
-        player.setFoodLevel(20);
-        player.setSaturation(20.0F);
+        player.setFoodLevel(balanceInt("food-level", 20));
+        player.setSaturation((float) balance("saturation", 20.0D));
     }
 }
 

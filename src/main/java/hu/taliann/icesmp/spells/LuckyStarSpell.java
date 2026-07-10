@@ -26,7 +26,7 @@ public final class LuckyStarSpell extends BaseSpell {
 
     @Override
     public boolean canCast(final Player player) {
-        return isActive(player) || ExperienceUtil.getTotalExperience(player) >= XP_DRAIN_PER_SECOND;
+        return isActive(player) || ExperienceUtil.getTotalExperience(player) >= balanceInt("drain-amount", XP_DRAIN_PER_SECOND);
     }
 
     @Override
@@ -48,6 +48,7 @@ public final class LuckyStarSpell extends BaseSpell {
             existing.cancel();
         }
 
+        final int drainAmount = balanceInt("drain-amount", XP_DRAIN_PER_SECOND);
         // Folia: per-player region scheduler with a fixed 1s rate instead of the unsupported Bukkit scheduler.
         final ScheduledTask task = player.getScheduler().runAtFixedRate(plugin, scheduled -> {
             final Player online = Bukkit.getPlayer(playerId);
@@ -57,12 +58,12 @@ public final class LuckyStarSpell extends BaseSpell {
                 return;
             }
 
-            if (ExperienceUtil.getTotalExperience(online) < XP_DRAIN_PER_SECOND) {
+            if (ExperienceUtil.getTotalExperience(online) < drainAmount) {
                 deactivate(online, false);
                 return;
             }
 
-            ExperienceUtil.setTotalExperience(online, ExperienceUtil.getTotalExperience(online) - XP_DRAIN_PER_SECOND);
+            ExperienceUtil.setTotalExperience(online, ExperienceUtil.getTotalExperience(online) - drainAmount);
         }, () -> cleanup(playerId), 20L, 20L);
         // EntityScheduler returns null if the player is already gone; ConcurrentHashMap rejects nulls.
         if (task != null) {
@@ -71,7 +72,7 @@ public final class LuckyStarSpell extends BaseSpell {
     }
 
     public static boolean shouldDodge(final Player player) {
-        return isActive(player) && ThreadLocalRandom.current().nextDouble() < 0.40D;
+        return isActive(player) && ThreadLocalRandom.current().nextDouble() < balanceStatic("lucky_star", "dodge-chance", 0.40D);
     }
 
     public static boolean isActive(final Player player) {

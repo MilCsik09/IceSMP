@@ -167,16 +167,25 @@ public final class ResourceManager implements PlayerStateCleanup {
         return maxValue <= 0.0D ? 0 : (int) Math.round(current(player.getUniqueId()) / maxValue * 100.0D);
     }
 
-    /** A plain (uncoloured) 10-segment bar string of the resource, for PlaceholderAPI (e.g. TAB colours it). */
+    /**
+     * A §-colour-coded 10-segment bar string of the resource for PlaceholderAPI
+     * consumers (TAB renders the legacy codes): filled segments in the CLASS
+     * resource colour (Düh=piros, Energia=sárga…, mint a saját sidebar), empty
+     * ones dark grey, then a vivid numeric counter — an uncoloured bar was
+     * nearly unreadable on the scoreboard.
+     */
     public String resourceBarPlain(final Player player) {
         final int maxValue = (int) Math.round(max());
         final int value = Math.max(0, Math.min(maxValue, (int) Math.round(current(player.getUniqueId()))));
         final int filled = maxValue <= 0 ? 0 : Math.round(value / (float) maxValue * 10.0F);
-        final StringBuilder bar = new StringBuilder(10);
+        Component bar = Component.empty();
+        final NamedTextColor color = colorFor(player);
         for (int i = 0; i < 10; i++) {
-            bar.append(i < filled ? '▰' : '▱');
+            bar = bar.append(Component.text("▰", i < filled ? color : NamedTextColor.DARK_GRAY));
         }
-        return bar.toString();
+        bar = bar.append(Component.text(" " + value, NamedTextColor.YELLOW))
+                .append(Component.text("/" + maxValue, NamedTextColor.GRAY));
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(bar);
     }
 
     private String nameFor(final Player player) {

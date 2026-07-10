@@ -25,7 +25,7 @@ public final class WisplightSpell extends BaseSpell {
     @Override
     public void execute(final Player player) {
         final Snowball projectile = player.launchProjectile(Snowball.class,
-                player.getEyeLocation().getDirection().normalize().multiply(1.8D));
+                player.getEyeLocation().getDirection().normalize().multiply(balance("speed", 1.8D)));
         projectile.addScoreboardTag(PROJECTILE_TAG);
     }
 
@@ -50,11 +50,12 @@ public final class WisplightSpell extends BaseSpell {
                 25, 0.2D, 0.2D, 0.2D, 0.01D);
 
         // Folia: block edits must run on the region that owns the location.
+        final long durationTicks = (long) balanceStatic("wisplight", "duration-ticks", DURATION_TICKS);
         plugin.getServer().getRegionScheduler().runDelayed(plugin, location, task -> {
             if (block.getType() == Material.LIGHT) {
                 block.setType(Material.AIR, false);
             }
-        }, DURATION_TICKS);
+        }, durationTicks);
     }
 }
 

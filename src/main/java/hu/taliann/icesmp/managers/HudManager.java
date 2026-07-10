@@ -46,6 +46,12 @@ public final class HudManager {
     private final WorldBossManager worldBossManager;
     private final ResourceManager resourceManager;
     private final PartyManager partyManager;
+    private final CaravanManager caravanManager;
+    private final EscortManager escortManager;
+    private final AbundanceManager abundanceManager;
+    private final ServerChallengeManager serverChallengeManager;
+    private final MeteorEventManager meteorEventManager;
+    private final GatheringBuffManager gatheringBuffManager;
 
     private final BossBar raidBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
     private final BossBar bloodMoonBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
@@ -61,7 +67,7 @@ public final class HudManager {
     public record HudSnapshot(String faction, String factionId, String className, int classLevel,
                               String balance, boolean hasClass, int resource, int resourceMax,
                               int resourcePercent, String resourceName, String resourceBar,
-                              List<String> partyLines) {
+                              String event, List<String> partyLines) {
     }
 
     private final ConcurrentHashMap<UUID, HudSnapshot> snapshots = new ConcurrentHashMap<>();
@@ -69,7 +75,10 @@ public final class HudManager {
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
                       final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
-                      final ResourceManager resourceManager, final PartyManager partyManager) {
+                      final ResourceManager resourceManager, final PartyManager partyManager,
+                      final CaravanManager caravanManager, final EscortManager escortManager,
+                      final AbundanceManager abundanceManager, final ServerChallengeManager serverChallengeManager,
+                      final MeteorEventManager meteorEventManager, final GatheringBuffManager gatheringBuffManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.factionManager = factionManager;
@@ -80,6 +89,12 @@ public final class HudManager {
         this.worldBossManager = worldBossManager;
         this.resourceManager = resourceManager;
         this.partyManager = partyManager;
+        this.caravanManager = caravanManager;
+        this.escortManager = escortManager;
+        this.abundanceManager = abundanceManager;
+        this.serverChallengeManager = serverChallengeManager;
+        this.meteorEventManager = meteorEventManager;
+        this.gatheringBuffManager = gatheringBuffManager;
     }
 
     public boolean isEnabled() {
@@ -222,6 +237,7 @@ public final class HudManager {
                 showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
                 showResource ? resourceManager.resourceBarPlain(player) : "",
+                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(eventLabel()),
                 partyLinesPlain(player));
     }
 
@@ -237,7 +253,10 @@ public final class HudManager {
         }
         final List<String> lines = new ArrayList<>();
         for (final UUID memberId : party.getMembers()) {
-            lines.add(PlainTextComponentSerializer.plainText().serialize(partyMemberLine(party, memberId)));
+            // Legacy (§) serialization keeps the colour-coded health bar readable in TAB;
+            // plain text stripped the colours and every bar segment looked identical.
+            lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
+                    .serialize(partyMemberLine(party, memberId)));
         }
         return List.copyOf(lines);
     }
@@ -360,17 +379,41 @@ public final class HudManager {
                 .append(Component.text(" " + (int) Math.ceil(hp / 2.0D) + "❤", color));
     }
 
+    /** EVERY currently running world event, comma-separated (sidebar + %icesmp_event%). */
     private Component eventLabel() {
+        final List<String> active = new ArrayList<>();
         if (raidManager.isRaidActive()) {
-            return Component.text("Raid!", NamedTextColor.RED);
+            active.add("Raid!");
         }
         if (worldBossManager.isBossActive()) {
-            return Component.text("Világboss", NamedTextColor.LIGHT_PURPLE);
+            active.add("Világboss");
         }
         if (bloodMoonManager.isActive()) {
-            return Component.text("Vérhold", NamedTextColor.DARK_RED);
+            active.add("Vérhold");
         }
-        return Component.text("nyugalom", NamedTextColor.GRAY);
+        if (caravanManager.isActive()) {
+            active.add("Karaván");
+        }
+        if (escortManager.isActive()) {
+            active.add("Kíséret");
+        }
+        if (abundanceManager.isActive()) {
+            active.add("Bőség-idő");
+        }
+        if (serverChallengeManager.isActive()) {
+            active.add("Kihívás");
+        }
+        if (meteorEventManager.isActive()) {
+            active.add("Meteor");
+        }
+        final String buff = gatheringBuffManager.describeActive();
+        if (buff != null) {
+            active.add(buff);
+        }
+        if (active.isEmpty()) {
+            return Component.text("nyugalom", NamedTextColor.GRAY);
+        }
+        return Component.text(String.join(", ", active), NamedTextColor.YELLOW);
     }
 
     private Component tabName(final Player player) {

@@ -31,11 +31,12 @@ public final class BlinkSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        final double blinkDistance = balance("distance", distance);
         final Location eye = player.getEyeLocation();
         final Vector direction = eye.getDirection();
-        final RayTraceResult hit = player.getWorld().rayTraceBlocks(eye, direction, distance, FluidCollisionMode.NEVER, true);
+        final RayTraceResult hit = player.getWorld().rayTraceBlocks(eye, direction, blinkDistance, FluidCollisionMode.NEVER, true);
         final double travel = hit == null
-                ? distance
+                ? blinkDistance
                 : Math.max(0.5D, eye.toVector().distance(hit.getHitPosition()) - 1.0D);
 
         final Location origin = player.getLocation();

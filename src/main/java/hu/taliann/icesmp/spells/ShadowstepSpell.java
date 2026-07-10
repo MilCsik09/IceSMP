@@ -27,12 +27,13 @@ public final class ShadowstepSpell extends BaseSpell {
 
     @Override
     public boolean executeSpell(final Player player) {
-        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, RANGE);
+        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, balance("range", RANGE));
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
             return false;
         }
 
+        final double behindDistance = balance("distance", BEHIND_DISTANCE);
         final Location origin = player.getLocation();
         final Location targetLocation = target.getLocation();
 
@@ -45,7 +46,7 @@ public final class ShadowstepSpell extends BaseSpell {
         }
         facing.normalize();
 
-        final Location destination = targetLocation.clone().subtract(facing.clone().multiply(BEHIND_DISTANCE));
+        final Location destination = targetLocation.clone().subtract(facing.clone().multiply(behindDistance));
         destination.setDirection(targetLocation.toVector().subtract(destination.toVector()));
 
         player.getWorld().spawnParticle(Particle.PORTAL, origin.clone().add(0.0D, 1.0D, 0.0D), 30, 0.3D, 0.5D, 0.3D, 0.05D);
@@ -54,7 +55,7 @@ public final class ShadowstepSpell extends BaseSpell {
                 return;
             }
 
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, INVISIBILITY_TICKS, 0, false, false, true));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, balanceInt("duration-ticks", INVISIBILITY_TICKS), 0, false, false, true));
             player.getWorld().spawnParticle(Particle.PORTAL, destination.clone().add(0.0D, 1.0D, 0.0D), 30, 0.3D, 0.5D, 0.3D, 0.05D);
             player.playSound(destination, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.2F);
         });

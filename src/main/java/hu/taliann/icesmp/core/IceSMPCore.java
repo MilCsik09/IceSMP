@@ -9,6 +9,7 @@ import hu.taliann.icesmp.commands.IceSMPCommand;
 import hu.taliann.icesmp.commands.JobCommand;
 import hu.taliann.icesmp.commands.LeaderboardCommand;
 import hu.taliann.icesmp.commands.AchievementsCommand;
+import hu.taliann.icesmp.commands.DonationChestCommand;
 import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.commands.ExchangeBoardCommand;
 import hu.taliann.icesmp.commands.MarketCommand;
@@ -40,6 +41,7 @@ import hu.taliann.icesmp.listeners.HudListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
 import hu.taliann.icesmp.listeners.DailyQuestListener;
+import hu.taliann.icesmp.listeners.DonationChestListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
 import hu.taliann.icesmp.listeners.IntroListener;
@@ -97,6 +99,7 @@ import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.CraftingRestrictionManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.DailyQuestManager;
+import hu.taliann.icesmp.managers.DonationChestManager;
 import hu.taliann.icesmp.managers.EconomyEventManager;
 import hu.taliann.icesmp.managers.IntroManager;
 import hu.taliann.icesmp.managers.InvasionManager;
@@ -135,6 +138,7 @@ import hu.taliann.icesmp.spells.AngryChickenSpell;
 import hu.taliann.icesmp.spells.ArmamentSpell;
 import hu.taliann.icesmp.spells.BoneChillSpell;
 import hu.taliann.icesmp.spells.BulwarkSpell;
+import hu.taliann.icesmp.spells.ConfiguredSpell;
 import hu.taliann.icesmp.spells.ConfusionSpell;
 import hu.taliann.icesmp.spells.DoubleJumpSpell;
 import hu.taliann.icesmp.spells.EagleEyeSpell;
@@ -151,6 +155,7 @@ import hu.taliann.icesmp.spells.RainDanceSpell;
 import hu.taliann.icesmp.spells.RootSpell;
 import hu.taliann.icesmp.spells.ShadowstepSpell;
 import hu.taliann.icesmp.spells.SmokeBombSpell;
+import hu.taliann.icesmp.spells.Spell;
 import hu.taliann.icesmp.spells.SpellCatalog;
 import hu.taliann.icesmp.spells.SunDanceSpell;
 import hu.taliann.icesmp.spells.VenomStrikeSpell;
@@ -200,6 +205,7 @@ public final class IceSMPCore {
     private final EconomyEventManager economyEventManager;
     private final FactionRelationManager factionRelationManager;
     private final MarketManager marketManager;
+    private final DonationChestManager donationChestManager;
     private final QuestManager questManager;
     private final CommunityGoalManager communityGoalManager;
     private final ShopManager shopManager;
@@ -280,13 +286,14 @@ public final class IceSMPCore {
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
         this.factionRelationManager = new FactionRelationManager(configManager, raidManager);
         this.marketManager = new MarketManager(plugin, configManager, currencyManager, factionManager, factionRelationManager, messageManager);
+        this.donationChestManager = new DonationChestManager(plugin, configManager);
         this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
                 currencyManager, factionManager, sinManager, seasonManager);
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
-        this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager);
+        this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
         this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
@@ -323,17 +330,19 @@ public final class IceSMPCore {
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
-                abundanceManager, serverChallengeManager, meteorEventManager, soulShardManager,
+                abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
-                raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager);
+                raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
+                caravanManager, escortManager, abundanceManager, serverChallengeManager,
+                meteorEventManager, gatheringBuffManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
-                claimManager);
+                claimManager, donationChestManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -405,6 +414,42 @@ public final class IceSMPCore {
     }
 
     /**
+     * Applies the {@code config/spells-balance.yml} overrides on top of every declaratively-configured
+     * (ConfiguredSpell) spell already in the registry, re-registering the overridden copies in place.
+     * The stateful spell classes (hardcoded-constant subclasses of BaseSpell) read the same file
+     * directly at cast time via {@code balance()}/{@code balanceInt()}, so they need no re-registration
+     * step here — only {@link hu.taliann.icesmp.spells.BaseSpell#setBalanceSource} below wires them up.
+     * Also validates the {@code spell-balance} section's keys against the registry so a typo'd spell
+     * id is reported at startup instead of silently doing nothing.
+     */
+    private void applySpellBalanceOverrides() {
+        for (final Spell spell : List.copyOf(spellRegistry.getAll())) {
+            if (spell instanceof ConfiguredSpell configuredSpell) {
+                final ConfiguredSpell overridden = ConfiguredSpell.withBalanceOverrides(configuredSpell, configManager, plugin.getLogger());
+                if (overridden != configuredSpell) {
+                    spellRegistry.register(overridden);
+                }
+            }
+        }
+
+        if (configManager.getConfiguration() == null) {
+            return;
+        }
+        final org.bukkit.configuration.ConfigurationSection balanceSection =
+                configManager.getConfiguration().getConfigurationSection("spell-balance");
+        if (balanceSection == null) {
+            return;
+        }
+        for (final String key : balanceSection.getKeys(false)) {
+            final Spell spell = spellRegistry.getById(key);
+            if (spell == null) {
+                plugin.getLogger().warning("spells-balance.yml: ismeretlen spell id a 'spell-balance." + key
+                        + "' alatt — elgépelés? A felülbírálás nem érvényesül.");
+            }
+        }
+    }
+
+    /**
      * Enables the plugin core by loading all managers and registering systems.
      */
     public void enable() {
@@ -412,6 +457,14 @@ public final class IceSMPCore {
         // Surface admin typos (bad material/currency names, out-of-range percents, negative
         // durations) as clear log warnings — never blocks startup, only reports.
         ConfigValidator.validate(configManager, plugin.getLogger());
+        // Config-driven spell balance: applies config/spells-balance.yml overrides on top of every
+        // declaratively-configured (ConfiguredSpell) spell. Must run after configManager.load() and
+        // after registerSpells() (already done in the constructor) — spells register only once at
+        // startup, so this is the single application point; changing spells-balance.yml needs a restart.
+        // A statikus (kódolt) spellek viszont cast-időben olvassák a felülbírálásokat innen,
+        // így rájuk a /icesmp reload is azonnal hat.
+        hu.taliann.icesmp.spells.BaseSpell.setBalanceSource(configManager);
+        applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.
@@ -707,6 +760,7 @@ public final class IceSMPCore {
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
+        plugin.registerCommand("adomany", "Közösségi adomány-láda", List.of("donate", "adomanylada"), new DonationChestCommand(donationChestManager, messageManager));
         plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));
         plugin.registerCommand("claim", "Terület-claim parancsok", List.of("birtok"), new hu.taliann.icesmp.commands.ClaimCommand(claimManager, currencyManager, messageManager));
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager));
@@ -730,6 +784,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new MarketDeliveryListener(marketManager, messageManager), plugin);
+        pluginManager.registerEvents(new DonationChestListener(donationChestManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
