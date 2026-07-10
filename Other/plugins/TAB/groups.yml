@@ -16,8 +16,8 @@ Default:
 
  # default settings for all groups, all groups will take properties from this section unless player's primary group overrides a specific setting
 _DEFAULT_:
-  tabprefix: "%luckperms-prefix%"
-  tagprefix: "%luckperms-prefix%"
+  tabprefix: "%icesmp_faction_id%%luckperms-prefix%"
+  tagprefix: "%icesmp_faction_id%%luckperms-prefix%"
   customtabname: "%player%"
   tabsuffix: "%luckperms-suffix%"
   tagsuffix: "%luckperms-suffix%"

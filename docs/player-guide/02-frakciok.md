@@ -5,6 +5,13 @@ bónusza** (egy állandó képesség, amiért nem kell semmit csinálnod) van.
 
 Belépés: `/faction join <red|blue|neutral|dark>` • Kilépés: `/faction leave`
 
+Az **első csatlakozásod** teljesen **ingyenes és időzítetlen** — válaszd ki nyugodtan az
+első frakciódat. Ha viszont **már van frakciód** és **másikba akarsz átlépni**
+(frakcióváltás), az a **jelenlegi frakciód valutájában** kerül **alapból 500-ba**, és utána
+**72 óráig** nem válthatsz megint (`factions.switch.cost` / `factions.switch.cooldown-hours`
+a configban) — ez a frakció-hopping ellen véd. A Sötét frakcióba való átlépésre is vonatkozik,
+ha az frakcióváltásnak számít (tehát már volt frakciód).
+
 A passzívok **egy szintre vannak hangolva** — mindegyik kb. egyformán hasznos, csak más
 helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyik a legjobb":
 

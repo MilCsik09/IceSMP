@@ -1,7 +1,9 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.managers.InvasionManager;
 import hu.taliann.icesmp.managers.MetelytepoManager;
 import hu.taliann.icesmp.managers.SinManager;
+import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
@@ -51,6 +53,8 @@ public final class MetelytepoRelicListener implements Listener {
     private final JavaPlugin plugin;
     private final MetelytepoManager metelytepoManager;
     private final SinManager sinManager;
+    private final WorldBossManager worldBossManager;
+    private final InvasionManager invasionManager;
     private final MessageManager messageManager;
 
     /**
@@ -59,14 +63,28 @@ public final class MetelytepoRelicListener implements Listener {
      * @param plugin the owning plugin (for Folia cross-entity scheduling)
      * @param metelytepoManager the manager for Metelytepo-specific mechanics
      * @param sinManager the sin domain (sinner marks read for PvP relic transfer)
+     * @param worldBossManager world-boss identity check (event mobs never count as protected)
+     * @param invasionManager invasion-mob identity check (same exclusion)
      * @param messageManager the manager for player-facing messages
      */
     public MetelytepoRelicListener(final JavaPlugin plugin, final MetelytepoManager metelytepoManager,
-                                   final SinManager sinManager, final MessageManager messageManager) {
+                                   final SinManager sinManager, final WorldBossManager worldBossManager,
+                                   final InvasionManager invasionManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.metelytepoManager = metelytepoManager;
         this.sinManager = sinManager;
+        this.worldBossManager = worldBossManager;
+        this.invasionManager = invasionManager;
         this.messageManager = messageManager;
+    }
+
+    /**
+     * Plugin-spawned event mobs (world boss, invasion horde) share entity types with the
+     * relic's protected list (IRON_GOLEM, PIGLIN) but are legitimate combat targets:
+     * killing them must never mark a sinner nor trigger the rejected-target penalty.
+     */
+    private boolean isEventMob(final Entity entity) {
+        return worldBossManager.isWorldBoss(entity) || invasionManager.isInvasionMob(entity.getUniqueId());
     }
 
     /**
@@ -139,7 +157,7 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        if (!metelytepoManager.isRelicTarget(target)) {
+        if (!metelytepoManager.isRelicTarget(target) && !isEventMob(target)) {
             playRejectedTargetSound(target.getLocation());
             event.setDamage(event.getDamage() * NON_SINNER_DAMAGE_MULTIPLIER);
             return;
@@ -214,6 +232,11 @@ public final class MetelytepoRelicListener implements Listener {
         }
 
         if (!metelytepoManager.isProtectedEntityType(victim.getType())) {
+            return;
+        }
+
+        // Event mobs (world boss golem, invasion piglin) are fair game — no sin.
+        if (isEventMob(victim)) {
             return;
         }
 

@@ -29,7 +29,10 @@ A **claim** a te személyes, védett földed — frakciótól függetlenül bár
 ### Hogyan claimelj?
 
 1. Állj bele abba a **chunkba** (16×16 blokkos terület), amit le akarsz foglalni.
-2. Írd be: **`/claim`** — kész is! A chunk-határt részecskék rajzolják ki.
+2. Írd be: **`/claim`** — kész is! A claim-határokat részecskék rajzolják ki pár másodpercig.
+   Nagyobb, összefüggő birtokhoz: állj a terület egyik sarkába (`/claim pos1`), a másikba
+   (`/claim pos2`), majd `/claim area` — az árat előre kiírja. Claim-határ átlépésekor az
+   action-bar mutatja, kinek a birtokára léptél.
 
 **Mennyibe kerül?**
 - Az első **3 chunk ingyenes**.
@@ -64,7 +67,9 @@ A te chunkodban **idegenek**:
 | `/claim unclaim` | Az aktuális chunk felszabadítása (az ár NEM jár vissza) |
 | `/claim info` | Kié ez a chunk? (+ határ-kirajzolás) |
 | `/claim list` | Saját claimjeid listája |
-| `/claim show` | Chunk-határ kirajzolása részecskékkel (zöld = szabad/sajátod, láng = másé) |
+| `/claim show` | A környező claimek PEREMÉNEK kirajzolása pár másodpercig (zöld = sajátod, láng = másé, komposzt = az aktuális szabad chunk) |
+| `/claim pos1` / `/claim pos2` | Terület-kijelölés két sarka (az a chunk, amiben állsz) |
+| `/claim area` | A kijelölt téglalap MINDEN szabad chunkjának lefoglalása egyben (összár egyben ég el; a sajátjaid nem fizetnek újra) |
 | `/claim trust <név>` / `/claim untrust <név>` | Megbízott hozzáadása / elvétele |
 
 ### Hol NEM lehet claimelni?

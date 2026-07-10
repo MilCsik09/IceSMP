@@ -62,6 +62,11 @@ public final class BloodMoonManager {
     /** Periodic tick on the global region scheduler. */
     public void tick() {
         if (!configManager.getBoolean("world-events.blood-moon.enabled", true)) {
+            // A mid-event disable must still end the active window, or the mob-level and
+            // soul-drop buffs stay stuck on until restart (sibling managers do the same).
+            if (active) {
+                endBloodMoon();
+            }
             return;
         }
 

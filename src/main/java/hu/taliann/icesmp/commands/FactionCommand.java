@@ -23,7 +23,7 @@ public final class FactionCommand extends AbstractDispatchCommand {
                           final KingManager kingManager, final RaidManager raidManager,
                           final TerritoryManager territoryManager, final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
-        register(new FactionJoinSubcommand(factionManager, sinManager, messageManager));
+        register(new FactionJoinSubcommand(factionManager, sinManager, currencyManager, messageManager));
         register(new FactionLeaveSubcommand(factionManager, messageManager));
         register(new FactionSetSubcommand(factionManager, sinManager, messageManager));
         register(new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager));

@@ -26,6 +26,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -54,6 +55,7 @@ public final class CommandMenus {
         switch (menu) {
             case MAIN -> openMain(player, ctx);
             case FACTION -> openFaction(player, ctx);
+            case FACTION_SWITCH -> openFactionSwitch(player, ctx);
             case BANK -> openBank(player, ctx);
             case EVENTS -> openEvents(player, ctx);
             case RELIC -> openRelic(player, ctx);
@@ -165,18 +167,7 @@ public final class CommandMenus {
         put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore), null);
 
         if (faction == null) {
-            put(inv, holder, 10, GuiUtil.icon(Material.RED_WOOL, Component.text("Csatlakozás: Piros", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
-                    List.of(grey("Tűz-immunitás."), click())), "RUN:faction join red");
-            put(inv, holder, 12, GuiUtil.icon(Material.BLUE_WOOL, Component.text("Csatlakozás: Kék", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false),
-                    List.of(grey("Fagy-immunitás, lassabb éhség."), click())), "RUN:faction join blue");
-            put(inv, holder, 14, GuiUtil.icon(Material.WHITE_WOOL, Component.text("Csatlakozás: Semleges", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
-                    List.of(grey("Esés-immunitás, adómentesség."), click())), "RUN:faction join neutral");
-            final boolean sinner = ctx.sinManager() != null && ctx.sinManager().isSinner(player);
-            put(inv, holder, 16, GuiUtil.icon(Material.BLACK_WOOL, Component.text("Csatlakozás: Sötét", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false),
-                    List.of(grey("Wither-immunitás, élőholtak békéje."),
-                            sinner ? Component.text("A sötét paktum vár rád…", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false)
-                                    : Component.text("Feltétel: bűnös jelölés", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
-                            click())), "RUN:faction join dark");
+            putJoinButtons(inv, holder, player, ctx, null, "Csatlakozás");
         } else {
             put(inv, holder, 10, GuiUtil.icon(Material.GOLD_NUGGET, title("Adomány: 10"),
                     List.of(grey("10 token a frakciókasszába."), click())), "RUN:faction donate 10");
@@ -189,6 +180,8 @@ public final class CommandMenus {
                     ? GuiUtil.icon(Material.PAPER, title("Király & szavazás"), kingLore)
                     : GuiUtil.playerHead(Bukkit.getOfflinePlayer(kingId), title("Király: " + nameOf(kingId)), kingLore),
                     "RUN:faction king");
+            put(inv, holder, 16, GuiUtil.icon(Material.COMPASS, title("Frakcióváltás"),
+                    List.of(grey("Átlépés egy másik frakcióba."), click())), "MENU:FACTION_SWITCH");
             if (ctx.kingManager().isKing(player)) {
                 put(inv, holder, 15, GuiUtil.icon(Material.DIAMOND, title("Kassza-kivét: 100"),
                         List.of(grey("Király: 100 token kivétele."), click())), "RUN:faction treasury withdraw 100");
@@ -208,6 +201,58 @@ public final class CommandMenus {
 
         put(inv, holder, 31, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    // ===== FACTION SWITCH =====
+    public static void openFactionSwitch(final Player player, final CommandMenuContext ctx) {
+        final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.FACTION_SWITCH, player.getUniqueId());
+        final Inventory inv = create(holder, 36, "<dark_aqua>» Frakcióváltás «</dark_aqua>", ctx);
+        final FactionType current = ctx.factionManager().getFaction(player.getUniqueId());
+
+        put(inv, holder, 4, GuiUtil.icon(Material.COMPASS, accent("Frakcióváltás"),
+                List.of(label("Jelenlegi", Component.text(current == null ? "nincs" : current.getDisplayName(), NamedTextColor.WHITE)),
+                        label("Váltás ára", Component.text(ctx.currencyManager().formatBalance(ctx.factionManager().getSwitchCost())
+                                + " (jelenlegi valutádban)", NamedTextColor.GOLD)),
+                        label("Várakozás két váltás közt", Component.text(
+                                (long) ctx.factionManager().getSwitchCooldownHours() + " óra", NamedTextColor.WHITE)),
+                        Component.text("A passzívák azonnal cserélődnek,", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
+                        Component.text("a Sötét paktum bűne viszont veled marad.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
+
+        putJoinButtons(inv, holder, player, ctx, current, "Váltás");
+
+        put(inv, holder, 31, backButton(), "MENU:FACTION");
+        player.openInventory(inv);
+    }
+
+    /**
+     * The four faction join/switch tiles (slots 10/12/14/16), skipping {@code exclude}.
+     * Shared by the no-faction join view and the switch sub-menu; the join command
+     * itself enforces the Dark faction's sinner requirement.
+     */
+    private static void putJoinButtons(final Inventory inv, final CommandMenuHolder holder, final Player player,
+                                       final CommandMenuContext ctx, final FactionType exclude, final String prefix) {
+        int slot = 10;
+        for (final FactionType type : FactionType.values()) {
+            if (type == exclude) {
+                continue;
+            }
+            final ItemStack icon = switch (type) {
+                case RED -> GuiUtil.icon(Material.RED_WOOL, Component.text(prefix + ": Piros", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
+                        List.of(grey("Tűz-immunitás."), click()));
+                case BLUE -> GuiUtil.icon(Material.BLUE_WOOL, Component.text(prefix + ": Kék", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false),
+                        List.of(grey("Fagy-immunitás, lassabb éhség."), click()));
+                case NEUTRAL -> GuiUtil.icon(Material.WHITE_WOOL, Component.text(prefix + ": Semleges", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                        List.of(grey("Esés-immunitás, adómentesség."), click()));
+                case DARK -> GuiUtil.icon(Material.BLACK_WOOL, Component.text(prefix + ": Sötét", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false),
+                        List.of(grey("Wither-immunitás, élőholtak békéje."),
+                                ctx.sinManager() != null && ctx.sinManager().isSinner(player)
+                                        ? Component.text("A sötét paktum vár rád…", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false)
+                                        : Component.text("Feltétel: bűnös jelölés", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
+                                click()));
+            };
+            put(inv, holder, slot, icon, "RUN:faction join " + type.name().toLowerCase(Locale.ROOT));
+            slot += 2;
+        }
     }
 
     // ===== BANK =====
@@ -426,13 +471,20 @@ public final class CommandMenus {
 
         put(inv, holder, 10, GuiUtil.icon(Material.GOLDEN_SHOVEL, title("Ez a chunk claimelése"),
                 List.of(grey("Lefoglalja a chunkot, amiben állsz."), click())), "RUN:claim");
-        put(inv, holder, 12, GuiUtil.icon(Material.IRON_SHOVEL, title("Chunk feloldása"),
+        put(inv, holder, 11, GuiUtil.icon(Material.IRON_SHOVEL, title("Chunk feloldása"),
                 List.of(grey("Feloldja az itteni claimedet."), click())), "RUN:claim unclaim");
-        put(inv, holder, 14, GuiUtil.icon(Material.MAP, title("Határok mutatása"),
-                List.of(grey("Megmutatja a chunk-határokat."), click())), "RUN:claim show");
-        put(inv, holder, 16, GuiUtil.icon(Material.PAPER, title("Claimjeid listája"),
+        put(inv, holder, 12, GuiUtil.icon(Material.MAP, title("Határok mutatása"),
+                List.of(grey("Kirajzolja a környező claimek pereméit."), click())), "RUN:claim show");
+        put(inv, holder, 13, GuiUtil.icon(Material.PAPER, title("Claimjeid listája"),
                 List.of(grey("Chatben listázza a chunkjaidat."),
                         grey("Megbízott: /claim trust <név>"), click())), "OPEN:claim list");
+        put(inv, holder, 14, GuiUtil.icon(Material.STICK, title("Terület: 1. sarok"),
+                List.of(grey("A jelenlegi chunk a kijelölés"), grey("első sarka."), click())), "RUN:claim pos1");
+        put(inv, holder, 15, GuiUtil.icon(Material.BLAZE_ROD, title("Terület: 2. sarok"),
+                List.of(grey("A jelenlegi chunk a kijelölés"), grey("második sarka."), click())), "RUN:claim pos2");
+        put(inv, holder, 16, GuiUtil.icon(Material.EMERALD, title("Terület foglalása"),
+                List.of(grey("A kijelölt téglalap minden szabad"),
+                        grey("chunkját egyben claimeli (összár ég el)."), click())), "RUN:claim area");
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
         player.openInventory(inv);

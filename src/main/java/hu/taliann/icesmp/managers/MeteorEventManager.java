@@ -52,6 +52,13 @@ public final class MeteorEventManager {
     private volatile long expiresAt;
     private volatile List<BlockState> restoreStates;
     private volatile long nextAttemptAt;
+    /**
+     * Reserved while a spawn hops threads (set synchronously, self-heals after 10s):
+     * craterCenter is only written at the END of the async landing chain, so without this a
+     * second force-spawn issued during the hop could carve two craters and orphan one
+     * (same pattern as TreasureEventManager.spawnGraceUntil).
+     */
+    private volatile long spawnGraceUntil;
 
     public MeteorEventManager(final JavaPlugin plugin, final ConfigManager configManager,
                               final TerritoryManager territoryManager, final ClaimManager claimManager,
@@ -98,7 +105,7 @@ public final class MeteorEventManager {
 
     /** Admin override: lands a meteor now near the anchor (or a random player). */
     public boolean forceSpawn(final Player anchor) {
-        if (isActive()) {
+        if (isActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         return spawn(anchor);
@@ -110,6 +117,7 @@ public final class MeteorEventManager {
     }
 
     private boolean spawn(final Player preferredAnchor) {
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -156,7 +164,9 @@ public final class MeteorEventManager {
             return;
         }
 
-        final int craterRadius = Math.max(2, configManager.getInt("meteor.crater-radius", 3));
+        // Upper clamp: the carve loop runs in ONE region-scheduler callback keyed to the
+        // centre block, so the scan must stay region-local (Folia) even if misconfigured.
+        final int craterRadius = Math.min(8, Math.max(2, configManager.getInt("meteor.crater-radius", 3)));
         final int craterDepth = Math.max(1, configManager.getInt("meteor.crater-depth", 2));
         final double oreChance = Math.max(0.0D, Math.min(1.0D, configManager.getDouble("meteor.ore-chance", 0.45D)));
 

@@ -1,0 +1,59 @@
+# Éles szerver — plugin-integráció és ütközések
+
+A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzése alapján.
+(Frissítve az ütközések felszámolásakor.)
+
+## 1. TAB ↔ IceSMP HUD (scoreboard / tab-lista) — JAVÍTVA
+
+**Gyökérok:** a `HudManager` belépéskor `player.setScoreboard(új board)`-ot hívott, ami
+**letörölte a TAB nametag-csapatait és ping-objective-jét**; emellett másodpercenként
+felülírta a `playerListName`-et → villogás. Ezért a repo-defaultok átbillentek:
+`hud.sidebar-enabled: false`, `hud.tablist-enabled: false` (`config/general.yml`). A
+boss-barok (raid/vérhold/világboss) maradnak IceSMP-oldalon — a TAB bossbar funkciója
+ki van kapcsolva, nincs ütközés.
+
+**TAB-oldali teendő (élesben):** a TAB scoreboard jelenleg a gyári példa-config — Vault
+(Economist) egyenleget mutat, ami NEM az IceSMP valutája. Cseréld a
+`TAB/config.yml` → `scoreboard.scoreboards.scoreboard.lines` sorait `%icesmp_...%`
+placeholderekre. Elérhető placeholderek (`integration/IceSMPPlaceholders`):
+
+| Placeholder | Érték |
+|---|---|
+| `%icesmp_faction%` / `%icesmp_faction_id%` | frakció display-név / stabil enum-id |
+| `%icesmp_class%`, `%icesmp_class_level%` | kaszt és szint |
+| `%icesmp_balance%` | IceSMP-valutaegyenleg (formázva) |
+| `%icesmp_resource%`, `_max`, `_percent`, `_name`, `_bar` | Erő-forrás (Mana/Düh/…) |
+| `%icesmp_party_size%`, `%icesmp_party_1..5%` | party-tagok soronként |
+
+Frakció-színes tab-prefixhez: `placeholder-output-replacements` a `%icesmp_faction_id%`-re
+(RED→`&c[Piros] `, BLUE→`&9[Kék] `, NEUTRAL→`&7`, DARK→`&8[Sötét] `), majd hivatkozás a
+`groups.yml` `_DEFAULT_.tabprefix`/`tagprefix`-ében.
+
+## 2. SimpleClaimSystem ↔ IceSMP claim — PARANCS-ÜTKÖZÉS
+
+Mindkét plugin regisztrálja a `/claim` parancsot; amelyik később tölt be, az nyer, a másiké
+némán elérhetetlen. Az IceSMP `claims.enabled: true` óta a natív claim-rendszer él —
+**a SimpleClaimSystem.jar eltávolítása javasolt** az éles szerverről. (A SCS gazdagabb
+GUI/claim-piac funkcióit a claim-rework roadmap-tétel fedheti le.)
+
+## 3. LuckPermsChatFormatterFolia ↔ IceSMP chat-formázó — DUPLA FORMÁZÁS
+
+Az IceSMP `chat.format-enabled: true` ÉS a LuckPermsChatFormatterFolia is telepítve van —
+a general.yml kommentje szerint a natív formázó pont ezt a plugint váltja ki.
+**A LuckPermsChatFormatterFolia-1.1.1.jar eltávolítása javasolt.**
+
+## 4. Crossover-ötletek (top 3)
+
+1. **AuMenus** — a menü-fájljai még a gyári példák; IceSMP-parancsokra kötve (console:
+   `icesmp ...` akciók + `%icesmp_...%` lore-placeholderek) staff Java nélkül építhet új
+   front-endeket, a gameplay-logika a parancsokban marad (CLAUDE.md GUI-szabály).
+2. **AxAFKZone** — AFK-zóna jelzés átvétele: AFK-zónában az IceSMP passzív XP/erőforrás-regen
+   szüneteltethető, hogy az AFK-jutalom ne legyen párhuzamos power-leveling exploit.
+3. **VillagerTradeEdit** — szakma-specifikus vendor-villagerek (recept/valuta-árak) a
+   profession/market rendszerhez, egyedi trade-GUI kód nélkül.
+
+Semleges (nem ütközik): GSit, ImageFrame, FarmProtect, CoreProtect, GrimAC, ViaVersion,
+minimotd, voicechat, FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
+Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms.
+Megjegyzés: az `ICEsmpadditions.jar` (WardenDeathListener) érdemes lenne beolvasztani a fő
+pluginba, hogy ne legyen kósza extra jar.

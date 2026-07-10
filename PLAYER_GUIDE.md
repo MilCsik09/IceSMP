@@ -54,6 +54,11 @@ Első belépéskor egy rövid **bevezető cím-szekvencia** is lejátszódik. �
 Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van. Belépés:
 `/faction join <red|blue|neutral|dark>`, kilépés: `/faction leave`.
 
+Az **első csatlakozás ingyenes és időzítetlen**. Ha viszont már van frakciód és **átlépsz egy
+másikba** (frakcióváltás — a Sötétre lépés is beleszámít, ha volt már frakciód), az a jelenlegi
+frakciód valutájában **alapból 500-ba** kerül, és utána **72 óráig** nem válthatsz újra
+(`factions.switch.cost` / `factions.switch.cooldown-hours`).
+
 | Frakció | Passzív bónusz |
 |---|---|
 | 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |

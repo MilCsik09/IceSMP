@@ -8,6 +8,16 @@ factions:
     display-name: "Semleges"
   dark:
     display-name: "Sötét"
+  # ===== Frakcióváltás =====
+  # Az ELSŐ csatlakozás (amikor a játékosnak még nincs frakciója) mindig ingyenes
+  # és nincs rá cooldown. Ha a játékosnak MÁR van frakciója és másikba lép át
+  # (frakcióváltás), azért a JELENLEGI frakciója valutájában kell fizetnie,
+  # és csak cooldown-hours óránként válthat újra (money sink + a frakció-hopping
+  # ellen). A Sötét frakcióba való átlépésre (bűnösöknek) is vonatkozik, ha az
+  # frakcióváltás.
+  switch:
+    cost: 500.0
+    cooldown-hours: 72.0
   # Passzív frakció bónuszok (kiegyensúlyozva — minden frakció kb. egy szinten hasznos):
   # RED: tűz/láva/forró blokk-immunitás (hő-mesterség, Nether)
   # BLUE: fagy- ÉS fulladás-immunitás + lassabb éhség (hideg/víz-mesterség, óceán)

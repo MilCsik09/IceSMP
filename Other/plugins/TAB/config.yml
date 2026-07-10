@@ -99,12 +99,16 @@ scoreboard:
         - "&#00ffff&l%player%"
         - "&8| &7ᴘɪɴɢ&8: &#00FF00%ping%"
         - "&8| &7ʀᴀɴɢ&8:&r %luckperms_prefix% "
+        - "&8| &7ꜰʀᴀᴋᴄɪó&8: %icesmp_faction%"
+        - "&8| &7ᴋᴀꜱᴢᴛ&8: %icesmp_class% &7Lvl &f%icesmp_class_level%"
+        - "&8| &7ᴇʀő&8: %icesmp_resource_bar%"
         - "&r"
-        - "&#00ffff&lStatisztika"
-        - "&8⚔ &7ᴍᴏʙ öʟéѕᴇᴋ&8: &#FF0000%statistic_mob_kills%"
-        - "&8☠ &7ʜᴀʟáʟᴏᴋ&8: &#61F0b9%statistic_deaths%"
-        - "&8⭐ &7ᴘéɴᴢ&8: &#F8BF28$%vault_eco_balance_fixed%"
-        - "&r"
+        - "&8⭐ &7ᴠᴀʟᴜᴛᴀ&8: &#F8BF28%icesmp_balance%"
+        - "%icesmp_party_1%"
+        - "%icesmp_party_2%"
+        - "%icesmp_party_3%"
+        - "%icesmp_party_4%"
+        - "%icesmp_party_5%"
         - "%animation:bar%"
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Layout
 layout:
@@ -179,6 +183,13 @@ placeholder-output-replacements:
   "%essentials_vanished%":
     "yes": "&7| Vanished"
     "no": ""
+  # IceSMP frakció-prefix a tab-nevekhez / nametagekhez (groups.yml hivatkozza).
+  "%icesmp_faction_id%":
+    "RED": "&c[Piros] "
+    "BLUE": "&9[Kék] "
+    "NEUTRAL": "&7"
+    "DARK": "&8[Sötét] "
+    "": ""
 
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:

@@ -14,8 +14,8 @@ hud:
   # ezeket, hogy ne ütközzenek/villogjanak. A boss-barokat az 'enabled' vezérli (azokat
   # a TAB nem kezeli, így maradhatnak). Az IceSMP adatait — köztük az Erő-csíkot —
   # PlaceholderAPI-n át a TAB is meg tudja jeleníteni (%icesmp_...% placeholderek).
-  sidebar-enabled: true     # IceSMP saját scoreboard-oldalsáv (TAB mellett ajánlott: false)
-  tablist-enabled: true     # IceSMP frakció-színes tab-nevek (TAB mellett ajánlott: false)
+  sidebar-enabled: false    # TAB kezeli a scoreboardot (IceSMP-adatok: %icesmp_...% placeholderek)
+  tablist-enabled: false    # TAB kezeli a tab-listát (frakció-prefix: TAB groups.yml + %icesmp_faction_id%)
   refresh-ticks: 20
   profile:
     enabled: true

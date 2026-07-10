@@ -139,6 +139,12 @@ public final class InvasionManager {
      * Despawns any still-living invasion mobs on plugin disable so a wave does not
      * survive a reload as orphaned, glowing, leveled mobs. Best-effort direct removal.
      */
+
+    /** Whether the entity is a live invasion-horde mob (killing one must never count as sin). */
+    public boolean isInvasionMob(final UUID entityId) {
+        return entityId != null && activeMobs.contains(entityId);
+    }
+
     public void shutdown() {
         nextAttemptAt = 0L;
         for (final UUID id : activeMobs) {
