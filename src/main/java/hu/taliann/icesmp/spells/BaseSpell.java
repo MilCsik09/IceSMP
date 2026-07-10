@@ -26,6 +26,15 @@ public abstract class BaseSpell implements Spell {
         return id;
     }
 
+    /**
+     * Exposes the untranslated fallback name so subclasses can rebuild themselves (e.g. the
+     * config-driven balance-override copy in {@link hu.taliann.icesmp.spells.ConfiguredSpell})
+     * without re-resolving it through the {@link MessageManager}.
+     */
+    protected String getDefaultName() {
+        return defaultName;
+    }
+
     @Override
     public String getName() {
         if (messageManager == null) {

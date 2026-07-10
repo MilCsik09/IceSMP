@@ -1,11 +1,13 @@
 package hu.taliann.icesmp.spells;
 
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -15,6 +17,7 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Declaratively configured spell used by the SpellCatalog to define the large
@@ -84,6 +87,99 @@ public final class ConfiguredSpell extends BaseSpell {
     public static Builder builder(final MessageManager messageManager, final String id, final String defaultName,
                                   final int cooldown, final SpellCostType costType, final int costAmount) {
         return new Builder(messageManager, id, defaultName, cooldown, costType, costAmount);
+    }
+
+    /**
+     * Config-driven balance layer: returns a copy of {@code spell} with any keys present under
+     * {@code spell-balance.<id>} in {@code config/spells-balance.yml} applied on top of the
+     * code-declared defaults. Absent keys leave the corresponding field unchanged. If no
+     * {@code spell-balance.<id>} section exists, the original instance is returned unmodified
+     * (no copy, no log line). Only affects declaratively-configured spells — the ~40 stateful
+     * spell classes (spells/*.java with hardcoded constants) are out of scope, see
+     * config/spells-balance.yml's header comment for the full list.
+     *
+     * @param spell the freshly-built spell (code defaults)
+     * @param configManager the loaded ConfigManager (must already have {@code load()} called)
+     * @param logger where to report applied overrides (one INFO line per overridden spell)
+     * @return {@code spell} unchanged, or a rebuilt copy with the configured overrides applied
+     */
+    public static ConfiguredSpell withBalanceOverrides(final ConfiguredSpell spell, final ConfigManager configManager,
+                                                        final Logger logger) {
+        if (spell == null || configManager == null || configManager.getConfiguration() == null) {
+            return spell;
+        }
+
+        final ConfigurationSection section = configManager.getConfiguration()
+                .getConfigurationSection("spell-balance." + spell.getId());
+        if (section == null) {
+            return spell;
+        }
+
+        final List<String> changes = new ArrayList<>();
+        final int overriddenCooldown = readOverride(section, "cooldown", spell.getCooldown(), changes, "cooldown");
+        final int overriddenCostAmount = readOverride(section, "cost-amount", spell.getCostAmount(), changes, "cost-amount");
+
+        final Builder b = new Builder(spell.messageManager, spell.getId(), spell.getDefaultName(),
+                overriddenCooldown, spell.getCostType(), overriddenCostAmount);
+        // Copy every other field verbatim, then override the ones present in config.
+        b.targeting = spell.targeting;
+        b.range = readOverride(section, "range", spell.range, changes, "range");
+        b.radius = readOverride(section, "radius", spell.radius, changes, "radius");
+        b.friendlyAoe = spell.friendlyAoe;
+        b.damage = readOverride(section, "damage", spell.damage, changes, "damage");
+        b.selfDamage = readOverride(section, "self-damage", spell.selfDamage, changes, "self-damage");
+        b.healSelf = readOverride(section, "heal-self", spell.healSelf, changes, "heal-self");
+        b.feedSelf = readOverride(section, "feed-self", spell.feedSelf, changes, "feed-self");
+        b.igniteTicks = readOverride(section, "ignite-ticks", spell.igniteTicks, changes, "ignite-ticks");
+        b.freezeTicks = readOverride(section, "freeze-ticks", spell.freezeTicks, changes, "freeze-ticks");
+        b.lightning = spell.lightning;
+        b.knockback = readOverride(section, "knockback", spell.knockback, changes, "knockback");
+        b.launchUp = spell.launchUp;
+        b.pullStrength = spell.pullStrength;
+        b.dashForward = spell.dashForward;
+        b.dashUp = spell.dashUp;
+        b.targetEffects.addAll(spell.targetEffects);
+        b.selfEffects.addAll(spell.selfEffects);
+        b.particle = spell.particle;
+        b.particleCount = spell.particleCount;
+        b.sound = spell.sound;
+        b.soundVolume = spell.soundVolume;
+        b.soundPitch = spell.soundPitch;
+
+        if (changes.isEmpty()) {
+            return spell;
+        }
+
+        if (logger != null) {
+            logger.info("Spell-balansz felülbírálva: " + spell.getId() + " (" + String.join(", ", changes) + ")");
+        }
+        return b.build();
+    }
+
+    /** Reads a double override from {@code section} if present, recording a "key old→new" change note. */
+    private static double readOverride(final ConfigurationSection section, final String key, final double current,
+                                       final List<String> changes, final String label) {
+        if (!section.isSet(key)) {
+            return current;
+        }
+        final double value = section.getDouble(key, current);
+        if (value != current) {
+            changes.add(label + " " + trim(current) + "→" + trim(value));
+        }
+        return value;
+    }
+
+    /** Reads an int override from {@code section} if present, recording a "key old→new" change note. */
+    private static int readOverride(final ConfigurationSection section, final String key, final int current,
+                                    final List<String> changes, final String label) {
+        if (!section.isSet(key)) {
+            return current;
+        }
+        final int value = section.getInt(key, current);
+        if (value != current) {
+            changes.add(label + " " + current + "→" + value);
+        }
+        return value;
     }
 
     @Override
