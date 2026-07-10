@@ -158,27 +158,35 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
-            final String prefix = args[0].toLowerCase(Locale.ROOT);
-            final List<String> options = new ArrayList<>(List.of("join", "status"));
-            Arrays.stream(FactionType.values())
-                    .map(faction -> faction.name().toLowerCase(Locale.ROOT))
-                    .forEach(options::add);
-            return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        final List<String> options = new ArrayList<>(List.of("join", "status"));
+        Arrays.stream(FactionType.values())
+                .map(faction -> faction.name().toLowerCase(Locale.ROOT))
+                .forEach(options::add);
+
+        final String first = prefixAt(args, 0);
+        final boolean firstComplete = args.length >= 1 && options.contains(first);
+
+        // Két hosszal: 0 = "/faction raid " (üres prefix), 1 = gépelés közben — kivéve, ha az
+        // args[0] már pontos egyezés, akkor a P=1 (terület) pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !firstComplete)) {
+            return options.stream().filter(option -> option.startsWith(first)).toList();
         }
 
-        if (args.length == 2) {
-            final FactionType defender = FactionType.fromInput(args[0]);
-            if (defender != null) {
-                final String prefix = args[1].toLowerCase(Locale.ROOT);
-                return territoryManager.all().stream()
-                        .filter(territory -> territory.faction() == defender)
-                        .map(Territory::id)
-                        .filter(id -> id.startsWith(prefix))
-                        .toList();
-            }
+        final FactionType defender = args.length >= 1 ? FactionType.fromInput(args[0]) : null;
+        if (defender != null && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
+            return territoryManager.all().stream()
+                    .filter(territory -> territory.faction() == defender)
+                    .map(Territory::id)
+                    .filter(id -> id.startsWith(prefix))
+                    .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

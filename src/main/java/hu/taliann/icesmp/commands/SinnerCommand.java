@@ -102,7 +102,11 @@ public final class SinnerCommand implements BasicCommand {
 
     @Override
     public Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
-        if (args.length <= 1) {
+        // Két hosszal: 0 = "/sinner " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már egy online játékosnévre pontosan illeszkedik, akkor a P=1 (művelet) pozíció jön.
+        final boolean targetComplete = args.length >= 1 && Bukkit.getPlayerExact(args[0]) != null;
+
+        if (args.length == 0 || (args.length == 1 && !targetComplete)) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase();
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
@@ -110,9 +114,10 @@ public final class SinnerCommand implements BasicCommand {
                     .toList();
         }
 
-        if (args.length == 2) {
+        if ((args.length == 1 && targetComplete) || args.length == 2) {
+            final String prefix = args.length > 1 ? args[1].toLowerCase() : "";
             return java.util.stream.Stream.of("set", "clear", "add", "status")
-                    .filter(option -> option.startsWith(args[1].toLowerCase()))
+                    .filter(option -> option.startsWith(prefix))
                     .toList();
         }
 

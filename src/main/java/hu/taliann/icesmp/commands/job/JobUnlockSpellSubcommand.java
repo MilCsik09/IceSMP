@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.Locale;
 
 public final class JobUnlockSpellSubcommand implements JobSubcommand {
 
@@ -89,21 +90,32 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
+        final boolean playerComplete = args.length >= 1 && Bukkit.getPlayerExact(args[0]) != null;
+
+        // Két hosszal: 0 = "/job unlockspell " (üres prefix), 1 = gépelés közben — kivéve, ha az
+        // args[0] már online játékosnévre pontosan illeszkedik, akkor a P=1 (spellId) jön.
+        if (args.length == 0 || (args.length == 1 && !playerComplete)) {
+            final String prefix = prefixAt(args, 0);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[0].toLowerCase()))
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 2) {
+        if ((args.length == 1 && playerComplete) || args.length == 2) {
+            final String prefix = prefixAt(args, 1);
             return spellRegistry.getAll().stream()
                     .map(Spell::getId)
-                    .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .filter(id -> id.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }
 

@@ -283,14 +283,17 @@ public final class SpecCommand implements BasicCommand {
                 ? List.of("list", "choose", "info", "respec", "reset")
                 : List.of("list", "choose", "info", "respec");
 
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return subcommands.stream().filter(option -> option.startsWith(prefix)).toList();
+        final String subcommand = prefixAt(args, 0);
+        final boolean subcommandComplete = subcommands.contains(subcommand);
+
+        // Két hosszal: 0 = "/spec " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már pontos egyezés, akkor a P=1 pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !subcommandComplete)) {
+            return subcommands.stream().filter(option -> option.startsWith(subcommand)).toList();
         }
 
-        final String subcommand = args[0].toLowerCase(Locale.ROOT);
-        if (args.length == 2 && "choose".equals(subcommand)) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if ("choose".equals(subcommand) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             final List<String> options = new ArrayList<>();
             for (final SpecializationType specialization : SpecializationType.values()) {
                 if (specialization.getId().startsWith(prefix)) {
@@ -305,18 +308,24 @@ public final class SpecCommand implements BasicCommand {
             return options;
         }
 
-        if (args.length == 2 && "respec".equals(subcommand)) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if ("respec".equals(subcommand) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return List.of("class", "profession").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if (args.length == 2 && "reset".equals(subcommand)) {
+        if ("reset".equals(subcommand) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

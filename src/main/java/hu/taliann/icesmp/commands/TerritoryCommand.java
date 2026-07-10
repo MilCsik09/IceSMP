@@ -243,24 +243,26 @@ public final class TerritoryCommand implements BasicCommand {
             return List.of();
         }
 
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("setcapital", "claim", "remove", "list", "info").stream()
-                    .filter(option -> option.startsWith(prefix))
-                    .toList();
+        final List<String> options = List.of("setcapital", "claim", "remove", "list", "info");
+        final String subcommand = prefixAt(args, 0);
+        final boolean subcommandComplete = options.contains(subcommand);
+
+        // Két hosszal: 0 = "/territory " (üres prefix), 1 = gépelés közben — kivéve, ha az
+        // args[0] már pontos egyezés, akkor a P=1 pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !subcommandComplete)) {
+            return options.stream().filter(option -> option.startsWith(subcommand)).toList();
         }
 
-        final String subcommand = args[0].toLowerCase(Locale.ROOT);
-        if (args.length == 2 && ("setcapital".equals(subcommand) || "claim".equals(subcommand))) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if (("setcapital".equals(subcommand) || "claim".equals(subcommand)) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return Arrays.stream(FactionType.values())
                     .map(faction -> faction.name().toLowerCase(Locale.ROOT))
                     .filter(name -> name.startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 2 && "remove".equals(subcommand)) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if ("remove".equals(subcommand) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return territoryManager.all().stream()
                     .map(Territory::id)
                     .filter(id -> id.startsWith(prefix))
@@ -268,5 +270,10 @@ public final class TerritoryCommand implements BasicCommand {
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

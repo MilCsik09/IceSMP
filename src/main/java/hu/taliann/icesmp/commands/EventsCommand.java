@@ -302,35 +302,43 @@ public final class EventsCommand implements BasicCommand {
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                    ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
-                    : List.of("season", "blood-moon", "caravan");
-            return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
+                ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
+                : List.of("season", "blood-moon", "caravan");
+        final String first = prefixAt(args, 0);
+        final boolean firstComplete = options.contains(first);
+
+        // Két hosszal: 0 = "/events " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már pontos egyezés, akkor a P=1 pozíció (blood-moon/caravan/intro alparancsa) jön.
+        if (args.length == 0 || (args.length == 1 && !firstComplete)) {
+            return options.stream().filter(option -> option.startsWith(first)).toList();
         }
 
-        if (args.length == 2 && ("blood-moon".equalsIgnoreCase(args[0]) || "bloodmoon".equalsIgnoreCase(args[0]))
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return List.of("start", "stop").stream()
-                    .filter(option -> option.startsWith(args[1].toLowerCase(Locale.ROOT)))
-                    .toList();
+        if (("blood-moon".equals(first) || "bloodmoon".equals(first))
+                && sender.hasPermission(ADMIN_PERMISSION) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
+            return List.of("start", "stop").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if (args.length == 2 && ("caravan".equalsIgnoreCase(args[0]) || "karavan".equalsIgnoreCase(args[0]))
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return List.of("arrive", "depart").stream()
-                    .filter(option -> option.startsWith(args[1].toLowerCase(Locale.ROOT)))
-                    .toList();
+        if (("caravan".equals(first) || "karavan".equals(first))
+                && sender.hasPermission(ADMIN_PERMISSION) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
+            return List.of("arrive", "depart").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if (args.length == 2 && "intro".equalsIgnoreCase(args[0]) && sender.hasPermission(ADMIN_PERMISSION)) {
+        if ("intro".equals(first) && sender.hasPermission(ADMIN_PERMISSION) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return org.bukkit.Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

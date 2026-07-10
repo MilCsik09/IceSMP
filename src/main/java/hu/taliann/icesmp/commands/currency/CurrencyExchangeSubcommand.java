@@ -113,8 +113,21 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 2 || args.length == 3) {
-            final String prefix = args[args.length - 1].toLowerCase();
+        // Két hosszal kezeljük mindkét pozíciót: P (üres prefix, szóköz után) és P+1 (args[P] prefix);
+        // a "from" pozíció (1) és a "to" pozíció (2) hossza 2-nél ütközik, ezt a from pontos
+        // egyezése dönti el (az amount szabad szöveg, azt nem kell/lehet ellenőrizni).
+        final boolean fromComplete = args.length >= 2 && FactionType.fromInput(args[1]) != null;
+
+        if (args.length == 1 || (args.length == 2 && !fromComplete)) {
+            final String prefix = prefixAt(args, 1);
+            return Arrays.stream(FactionType.values())
+                    .map(type -> type.name().toLowerCase())
+                    .filter(name -> name.startsWith(prefix))
+                    .toList();
+        }
+
+        if ((args.length == 2 && fromComplete) || args.length == 3) {
+            final String prefix = prefixAt(args, 2);
             return Arrays.stream(FactionType.values())
                     .map(type -> type.name().toLowerCase())
                     .filter(name -> name.startsWith(prefix))
@@ -122,6 +135,11 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }
 

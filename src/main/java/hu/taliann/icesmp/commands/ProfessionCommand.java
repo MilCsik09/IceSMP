@@ -303,34 +303,40 @@ public final class ProfessionCommand implements BasicCommand {
                 ? List.of("join", "info", "list", "set", "clear", "addxp")
                 : List.of("join", "info", "list");
 
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return subcommands.stream().filter(option -> option.startsWith(prefix)).toList();
+        final String subcommand = prefixAt(args, 0);
+        final boolean subcommandComplete = subcommands.contains(subcommand);
+
+        // Két hosszal: 0 = "/profession " (üres prefix), 1 = gépelés közben — kivéve, ha az
+        // args[0] már pontos egyezés, akkor a P=1 pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !subcommandComplete)) {
+            return subcommands.stream().filter(option -> option.startsWith(subcommand)).toList();
         }
 
-        final String subcommand = args[0].toLowerCase(Locale.ROOT);
-        if (args.length == 2 && "join".equals(subcommand)) {
-            return primaryProfessionIds(args[1]);
+        if ("join".equals(subcommand) && args.length <= 2) {
+            return primaryProfessionIds(prefixAt(args, 1));
         }
 
-        if (args.length == 2 && ("set".equals(subcommand) || "clear".equals(subcommand) || "addxp".equals(subcommand))) {
+        final boolean targetComplete = args.length >= 2 && Bukkit.getPlayerExact(args[1]) != null;
+        if (("set".equals(subcommand) || "clear".equals(subcommand) || "addxp".equals(subcommand))
+                && (args.length <= 1 || (args.length == 2 && !targetComplete))) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 3 && "set".equals(subcommand)) {
-            return primaryProfessionIds(args[2]);
+        if ("set".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            return primaryProfessionIds(prefixAt(args, 2));
         }
 
-        if (args.length == 3 && "clear".equals(subcommand)) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
+        if ("clear".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            final String prefix = prefixAt(args, 2);
             return List.of("gathering", "crafting").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if (args.length == 3 && "addxp".equals(subcommand)) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
+        if ("addxp".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            final String prefix = prefixAt(args, 2);
             return Arrays.stream(ProfessionType.values())
                     .map(ProfessionType::getId)
                     .filter(id -> id.startsWith(prefix))
@@ -338,6 +344,11 @@ public final class ProfessionCommand implements BasicCommand {
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 
     private List<String> primaryProfessionIds(final String rawPrefix) {

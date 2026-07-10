@@ -53,31 +53,38 @@ public final class RelicCommand implements BasicCommand {
 
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
-        if (args.length == 0) {
-            return List.of("list", "give");
+        final String first = prefixAt(args, 0);
+        final boolean firstComplete = "list".equals(first) || "give".equals(first);
+
+        // Két hosszal: 0 = "/relic " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már pontos egyezés, akkor a P=1 (give esetén játékosnév) pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !firstComplete)) {
+            return Stream.of("list", "give").filter(name -> name.startsWith(first)).toList();
         }
 
-        if (args.length == 1) {
-            return Stream.of("list", "give")
-                    .filter(name -> name.startsWith(args[0].toLowerCase()))
-                    .toList();
-        }
-
-        if (args.length == 2 && "give".equalsIgnoreCase(args[0])) {
+        final boolean targetComplete = args.length >= 2 && Bukkit.getPlayerExact(args[1]) != null;
+        if ("give".equals(first) && (args.length == 1 || (args.length == 2 && !targetComplete))) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .filter(name -> name.toLowerCase().startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 3 && "give".equalsIgnoreCase(args[0])) {
+        if ("give".equals(first) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            final String prefix = prefixAt(args, 2);
             return relicManager.getDefinitions().stream()
                     .map(RelicDefinition::id)
-                    .filter(id -> id.startsWith(args[2].toLowerCase()))
+                    .filter(id -> id.startsWith(prefix))
                     .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase() : "";
     }
 
     private void handleList(final CommandSender sender) {
