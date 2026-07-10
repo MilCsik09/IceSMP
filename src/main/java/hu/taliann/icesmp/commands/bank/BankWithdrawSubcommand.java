@@ -77,8 +77,9 @@ public final class BankWithdrawSubcommand implements BankSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
-            final String prefix = args[0].toLowerCase();
+        // Két hosszal kezeljük: 0 = "/bank withdraw " (üres prefix), 1 = gépelés közben (args[0] prefix).
+        if (args.length <= 1) {
+            final String prefix = args.length == 0 ? "" : args[0].toLowerCase();
             return Stream.of("red", "blue", "neutral")
                     .filter(name -> name.startsWith(prefix))
                     .toList();

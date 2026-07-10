@@ -68,13 +68,19 @@ public abstract class AbstractDispatchCommand implements BasicCommand {
             return subcommands.keySet().stream().toList();
         }
 
-        if (args.length == 1) {
+        // Paper nem adja át a lezáró szóköz utáni üres szót, ezért a subcommand-név pozícióját
+        // csak akkor tekintjük "még gépelés alatt"-nak, ha args[0] nem egyezik pontosan egy
+        // ismert alparanccsal — egyébként (args.length==1, pontos egyezés) már a subcommand
+        // saját tabComplete()-jét kell hívni üres maradék-args-szal (első alparancs-argumentum).
+        final String first = args[0].toLowerCase(Locale.ROOT);
+        final Subcommand subcommand = subcommands.get(first);
+
+        if (args.length == 1 && subcommand == null) {
             return subcommands.keySet().stream()
-                    .filter(name -> name.startsWith(args[0].toLowerCase(Locale.ROOT)))
+                    .filter(name -> name.startsWith(first))
                     .toList();
         }
 
-        final Subcommand subcommand = subcommands.get(args[0].toLowerCase(Locale.ROOT));
         if (subcommand == null) {
             return List.of();
         }
