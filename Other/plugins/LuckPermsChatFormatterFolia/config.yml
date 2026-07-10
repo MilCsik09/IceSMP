@@ -1,0 +1,40 @@
+# LuckPermsChatFormatterFolia Configuration
+# Please read the https://luckperms.net/wiki/Prefixes,-Suffixes-&-Meta before you set up.
+#
+# Placeholders:
+# {message} - the chat message
+# {name} - the player's name
+# {displayname} - the player's display name / nickname
+# {world} - the world name of the player's current world
+# {prefix} - the player's highest priority prefix
+# {suffix} - the player's highest priority suffix
+# {prefixes} - the player's prefixes sorted by the highest priority
+# {suffixes} - the player's suffixes sorted by the highest priority
+# {username-color} - the player's or the group's username color
+# {message-color} - the player's or the group's message color
+
+# Prefixes, suffixes, and formats support MiniMessage tags and legacy codes like '&l', '&a', and '&#RRGGBB'.
+
+# To reload the configuration, run '/lpcf reload'. Make sure you have the 'lpcf.reload' permission assigned.
+# More information can be found at the Github Wiki.
+chat-format: "{prefix}{name}<dark_gray> »<reset> {message}"
+
+# Name tag format applied to the player's display name.
+# Supports the same placeholders as chat-format except {message}.
+nametag-format: "{prefix}{name}"
+
+# Set the format per group.
+# Note: Option for more advanced users. Remove comments to use.
+group-formats:
+#  default: "<gray>[User]</gray> {name}<dark_gray> »<reset> {message}"
+
+# Set the format per track
+# Note: Group formatting takes priority over track formatting, ensure user isn't in a group with corresponding format to apply track format
+track-formats:
+#  staff_track: "<gold>[Staff]</gold> {name}<dark_gray> »<reset> {message}"
+
+# Should the [ITEM] placeholder be enabled
+use-item-placeholder: true
+
+# Message sent after /lpcf reload
+reload-message: "<green>LPCF configuration reloaded successfully!"

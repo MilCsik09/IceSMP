@@ -121,7 +121,7 @@ public final class AmbientEventManager {
 
     /** Aurora: broadcast + shimmering sky particles and a brief, purely-cosmetic Night Vision. */
     private void aurora() {
-        Bukkit.getServer().broadcast(messageManager.get(
+        Bukkit.getServer().broadcast(messageManager.getMessage(
                 "ambient-aurora", "&b🌌 Északi fény ragyog fel az égen — a világ egy pillanatra elcsendesedik."));
         final int seconds = Math.max(5, configManager.getInt("ambient-events.aurora-nightvision-seconds", 45));
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
@@ -166,7 +166,7 @@ public final class AmbientEventManager {
 
     /** Shared cosmetic sky/atmosphere effect: broadcast + per-player local particles and a soft sound. */
     private void skyEffect(final String messageKey, final Particle particle, final Sound sound, final float volume) {
-        Bukkit.getServer().broadcast(messageManager.get(messageKey, defaultFor(messageKey)));
+        Bukkit.getServer().broadcast(messageManager.getMessage(messageKey, defaultFor(messageKey)));
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
             player.getScheduler().run(plugin, task -> {
                 final Location base = player.getLocation().clone().add(0.0D, 3.0D, 0.0D);
@@ -213,7 +213,7 @@ public final class AmbientEventManager {
         }
         if (spawned > 0) {
             world.spawnParticle(Particle.HAPPY_VILLAGER, center.clone().add(0.0D, 1.0D, 0.0D), 12, 3.0D, 1.0D, 3.0D, 0.0D);
-            Bukkit.getServer().broadcast(messageManager.get(
+            Bukkit.getServer().broadcast(messageManager.getMessage(
                     "ambient-migration", "&a🐾 Vándorló állatcsorda kelt át a vidéken — élelem az éber telepeseknek."));
         }
     }

@@ -171,7 +171,7 @@ public final class ServerChallengeManager {
     private void succeed() {
         active = false;
         hideBarFromAll();
-        Bukkit.getServer().broadcast(messageManager.get(
+        Bukkit.getServer().broadcast(messageManager.getMessage(
                 "server-challenge-success",
                 "&a✔ SZERVER-KIHÍVÁS teljesítve! Mindenki jutalmat kap — szép munka!"));
         rewardAll();

@@ -202,7 +202,7 @@ public final class CaravanManager {
         active = false;
         merchantId = null;
         if (wasActive) {
-            Bukkit.getServer().broadcast(messageManager.get(
+            Bukkit.getServer().broadcast(messageManager.getMessage(
                     "caravan-departed",
                     "&6✦ A kereskedő-karaván összepakolt és továbbállt. Legközelebb máshol bukkan fel."));
         }

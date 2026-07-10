@@ -84,8 +84,8 @@ public final class BountyCommand implements BasicCommand {
     }
 
     @Override
-    public @NonNull java.util.Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack,
-                                                          final @NonNull String[] args) {
+    public java.util.Collection<String> suggest(final CommandSourceStack commandSourceStack,
+                                                          final String[] args) {
         return List.of();
     }
 }

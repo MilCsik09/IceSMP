@@ -100,7 +100,7 @@ public final class AbundanceManager {
     private void start() {
         active = true;
         activeUntil = System.currentTimeMillis() + durationMillis();
-        Bukkit.getServer().broadcast(messageManager.get(
+        Bukkit.getServer().broadcast(messageManager.getMessage(
                 "abundance-start",
                 "&a🌱 BŐSÉG-IDŐ! A termés virul, az állatok szaporák, a szörnyek csendesebbek — egy pillanatnyi béke."));
         pulseHeal();
@@ -108,7 +108,7 @@ public final class AbundanceManager {
 
     private void end() {
         active = false;
-        Bukkit.getServer().broadcast(messageManager.get(
+        Bukkit.getServer().broadcast(messageManager.getMessage(
                 "abundance-end", "&7🌱 A Bőség-idő elmúlt — a világ visszatér a rendes kerékvágásba."));
     }
 

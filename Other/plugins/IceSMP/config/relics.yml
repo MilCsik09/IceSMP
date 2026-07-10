@@ -1,0 +1,97 @@
+# IceSMP konfiguráció — relics (a ConfigManager az összes config/*.yml-t betölti)
+relics:
+  enabled: true
+  # Inaktivitás-kezelés: a megadott számú nap után a relikvia törlődik
+  # a tulajdonos inventoryjából belépéskor, és újra megszerezhetővé válik.
+  inactivity:
+    enabled: true
+    expiry-days: 14
+  # Fegyver-relikviák: PvP-ben gazdát cserélhetnek (a passzívak védettek).
+  weapon-relics:
+    - "metelytepo"
+  pvp-transfer:
+    enabled: true
+  messages:
+    cooldown: "&cA relikvia pihen: &f%seconds%s &cmaradék"
+    expired: "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."
+  definitions:
+    metelytepo:
+      display-name: "Mételytépő"
+      display-color: "&5"
+      material: "NETHERITE_AXE"
+      custom-model-data: 4101
+      lore:
+        - "&7A Mételytépő a törpék rejtélyes"
+        - "&7civilizációjának ősi relikviája."
+        - ""
+        - "&7Ősi mágia övezi, melynek segítségével"
+        - "&7ez a harci fejsze lesújt a bűnösökre,"
+        - "&7igazságot szolgáltatva a világnak."
+    phoenix_wing:
+      display-name: "Főnix-szárny"
+      display-color: "&c"
+      lore:
+        - "&7A Piros királyság lángoló ereklyéje."
+        - "&7Viselőjét nem égeti tűz, és zuhanása"
+        - "&7lángviharban végződik."
+    frost_wing:
+      display-name: "Zúzmara-szárny"
+      display-color: "&b"
+      lore:
+        - "&7A Kék királyság jeges ereklyéje."
+        - "&7Szárnyra kapva megfagyasztja"
+        - "&7a körülötte lévőket."
+    wander_wind:
+      display-name: "Vándorszél"
+      display-color: "&f"
+      lore:
+        - "&7A Semlegesek szabad szele."
+        - "&7Gyorsabb sikló, és a föld"
+        - "&7sosem üti meg viselőjét."
+    bone_wing:
+      display-name: "Csontszárny"
+      display-color: "&8"
+      lore:
+        - "&7Az összeomlott királyság csontból"
+        - "&7szőtt szárnya. Éjjel a viselője"
+        - "&7maga is árnyékká válik."
+
+# ===== Rituálé-oltárok =====
+# A relikvia nem craftolható, hanem a megadott oltár-blokk SHIFT+jobb kattal való
+# aktiválásakor idézhető meg, áldozati tárgyak feláldozásával. A relikvia-egyediség
+# szabálya érvényes: ha már van élő tulajdonosa, nem idézhető újra.
+# Kulcs = relic-definíció azonosító. sacrifice formátum: "MATERIAL:darab".
+rituals:
+  phoenix_wing:
+    altar-block: "MAGMA_BLOCK"
+    sacrifice:
+      - "BLAZE_ROD:8"
+      - "FIRE_CHARGE:16"
+      - "GOLD_BLOCK:1"
+  frost_wing:
+    altar-block: "BLUE_ICE"
+    sacrifice:
+      - "PACKED_ICE:16"
+      - "PRISMARINE_CRYSTALS:8"
+      - "DIAMOND_BLOCK:1"
+  wander_wind:
+    altar-block: "AMETHYST_BLOCK"
+    sacrifice:
+      - "FEATHER:32"
+      - "PHANTOM_MEMBRANE:8"
+      - "EMERALD_BLOCK:1"
+  bone_wing:
+    altar-block: "SOUL_SOIL"
+    sacrifice:
+      - "BONE_BLOCK:8"
+      - "WITHER_SKELETON_SKULL:1"
+      - "NETHERITE_SCRAP:2"
+
+# ===== Nekromanta lélek-erőforrás =====
+# A Nekromanta-spec játékosok ölésenként lélekszilánkot kapnak, amiből
+# megerősített Wither-csontváz bajnokot idézhetnek (/souls champion).
+souls:
+  shards-per-kill: 1
+  champion-cost: 10
+  champion-health: 60.0
+  champion-lifespan-seconds: 60

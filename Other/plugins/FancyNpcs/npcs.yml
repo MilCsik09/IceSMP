@@ -1,0 +1,1077 @@
+npcs:
+  7346404d-2966-4fc7-b8a2-e01e9ee5f96d:
+    name: test
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 111.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: https://www.minecraftskins.com/uploads/skins/2023/03/27/yuepheng-medivel-21459590.png?v951
+      variant: SLIM
+    actions:
+      LEFT_CLICK:
+        '1':
+          action: console_command
+          value: tab scoreboard on %player_name% -s
+      RIGHT_CLICK:
+        '1':
+          action: console_command
+          value: tab scoreboard on Zoleee -s
+        '2':
+          action: console_command
+          value: tab scoreboard off %player_name% -s
+  bd27a693-47c5-46a8-80a6-a73642e4676f:
+    name: han
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#1c253c:#ffffff><b>Han Solo</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 115.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: https://www.minecraftskins.com/uploads/skins/2026/05/09/han-24042136.png?v951
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1004.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Han Solo Blaster"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#1c253c:#ffffff><b>Han Solo</b></gradient>: Ha van elég
+            pénz nálad, akkor talán el tudlak fuvarozni!'
+  926bbc49-3787-441c-90f0-753a472a3556:
+    name: puzser
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#2c3e50:#bdc3c7><b>Puzsér Róbert</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 121.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: https://www.minecraftskins.com/uploads/skins/2026/05/09/puzsr-24042141.png?v951
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1003.0f]}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#2c3e50:#bdc3c7><b>Puzsér Róbert</b></gradient>: A kerva
+            életbe! Ekkora kollektív sötétséget még nem láttam! Ez a digitális nihil,
+            aszellemi vágóhíd legalja!'
+  460bd1cd-75be-4b25-8bdc-2ec51908f398:
+    name: cartman
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#cc0000:#ff0000><b>Cartman</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 117.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: https://www.minecraftskins.com/uploads/skins/2026/05/09/cartman-24042133.png?v951
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1006.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Sajtospufi"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#cc0000:#ff0000><b>Cartman</b></gradient>: TISZTELJÉTEK
+            A TEKINTÉLYEMET! ADJÁL SAJTOS PUFIT!!!'
+  9ecaf7aa-6c8c-4d9e-8c50-1313d9fe797a:
+    name: vader
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#000000:#330000:#660000><b>Darth Vader</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 119.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: https://www.minecraftskins.com/uploads/skins/2026/05/09/vader-24042131.png?v951
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1001.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Vader LaserKard"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#000000:#4a0000:#990000><b>Darth Vader</b></gradient>:
+            Khúúúúúúú-Phúúúúúú Khhhhhhhhh-Phúúúúúúúú hhhhhhhhhhhhhhrrrrrrrrrrrrrrrrr
+            Addát magad a sötétségnek!'
+  958c7e61-2e2f-4b56-874b-6c4d11f4c1dd:
+    name: magyar
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#ff0000:#ffffff:#00ff00><b>Magyar Péter</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 123.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: magyar.png
+      variant: AUTO
+      mirrorSkin: false
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#ff0000:#ffffff:#00ff00><b>Magyar Péter</b></gradient>:
+            Lépésről lépésre vesszük vissza a hazánkat!'
+  27f1fce9-8270-43a5-a3fd-6dc7f0fa3e1d:
+    name: hermione
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#740001:#d3a625><b>Hermione</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 113.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: https://www.minecraftskins.com/uploads/skins/2026/05/09/hermione-24042138.png?v951
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1005.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Elder Wand"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#740001:#d3a625><b>Hermione</b></gradient>: Segítek neked
+            bármiben szívesen! Kérlek viselkedj kedvesen!'
+  c1353165-d544-43b7-8a25-f1e2a168d431:
+    name: whisperton
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#ff9999:#ffcc99:#ffffcc:#ccffcc:#cce6ff:#e6ccff><b>Whisper
+      Ton</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 129.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: efee50f865f2299d.png
+      variant: SLIM
+      mirrorSkin: false
+    attributes:
+      pose: standing
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#ff9999:#ffcc99:#ffffcc:#ccffcc:#cce6ff:#e6ccff><b>Whisper
+            Ton</b></gradient>: Hatalmas nézettséget fogok neked generálni a csodálatos
+            highlighteremmel!Még keresem a daddy vibe-ot.'
+  281c3f73-c035-4991-a574-8bf0cfb033ef:
+    name: mc_isti
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#00ffff:#ffffff><b>MC Isti</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 109.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: mc-isti.png
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1002.0f]}'
+        schema_version: 1
+  f35d40ef-5ace-4435-a6b4-de5d11895875:
+    name: csubakka
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <#5c4033><b>Chewbacca</b></#5c4033>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 125.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: 40455e54-c7cf-404e-adad-a05af6960c10.png
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1004.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Han Solo Blaster"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#3d2b1f:#a67c52><b>Chewbacca</b></gradient>: RWAAAGGHHH
+            RRRRR-RRRR-GGGHHGHGHGH'
+  a40d61b5-744b-403f-9299-2ac3e88bc707:
+    name: trump
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#d4af37:#f9d71c:#b8860b><b>Donald Trump</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 127.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: e1bd3f58e7c84b3d.png
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1007.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Money"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#d4af37:#f9d71c:#b8860b><b>Donald Trump</b></gradient>:
+            Megépítem a világ legpusztítóbb atombombáját!'
+  d5fce66e-e6af-4a41-ae0a-1fd9c5369225:
+    name: orban
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#ff8c00:#ffae42><b>Orbán Viktor</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 571.5
+      y: 64.0
+      z: 107.5
+      yaw: 90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: orban.png
+      variant: AUTO
+      mirrorSkin: false
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1007.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Money"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: <gradient:#ff8c00:#ffae42><b>Orbán Viktor:</b></gradient> &fHahó
+            fiatalok! Felkészültem a közpénz lopásra, de ez is szolgálja a magyar
+            emberek javát!
+  8684ead4-7062-484b-b36a-f35afb8468c3:
+    name: gyozike
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#4a2c00:#ffd700:#4a2c00><b>Győzike</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 565.5
+      y: 64.0
+      z: 126.5
+      yaw: -90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: https://www.minecraftskins.com/uploads/skins/2026/07/03/gyzike-24168714.png?v960
+      variant: AUTO
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1007.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Money"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#4a2c00:#ffd700:#4a2c00><b>Győzike</b></gradient>: Jáj
+            more’ diksu'
+  85f762db-9a46-45ff-9672-4c62dc341ceb:
+    name: teri-neni
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#9370db:#ffffff:#ff69b4><b>Teri Néni</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 565.5
+      y: 64.0
+      z: 130.5
+      yaw: -90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: lorraine-old-lady.png
+      variant: AUTO
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#9370db:#ffffff:#ff69b4><b>Teri Néni</b></gradient>: Jaj
+            édes fiam! Jerj’ készítek neked egy hamuba sült pogácsát, ne maradj éhes!'
+  697377ca-f25d-4bac-8339-a847970919d8:
+    name: pista_bacsi
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#5c4033:#ffffff:#1a1a1a><b>Pista Bácsi</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 565.5
+      y: 64.0
+      z: 128.5
+      yaw: -90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: sajt-betyr.png
+      variant: AUTO
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#5c4033:#ffffff:#1a1a1a><b>Pista Bácsi</b></gradient>:
+            Fiam megyünk ki a földekre dolgozni, hogy legyen betevőnk!'
+  71e58479-28a3-456e-b981-a0a2af68a601:
+    name: toth_gabi
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#800000:#ffffff:#ffd700><b>Tóth Gabi</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 565.5
+      y: 64.0
+      z: 124.5
+      yaw: -90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: c1e35edd1c21411d.png
+      variant: SLIM
+    equipment:
+      MAINHAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4671
+        id: minecraft:stick
+        count: 1
+        components:
+          minecraft:custom_model_data: '{floats:[1007.0f]}'
+          minecraft:item_name: '{italic:0b,text:"Money"}'
+        schema_version: 1
+    actions:
+      RIGHT_CLICK:
+        '1':
+          action: message
+          value: '<gradient:#800000:#ffffff:#ffd700><b>Tóth Gabi</b></gradient>: Büszkén
+            vállalom a szent magyarságom!'
+  f77d5999-3472-4105-be51-276280979d3c:
+    name: Maomao
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#004d00:#98ff98:#004d00><b>Maomao</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 1105.5
+      y: 122.0
+      z: -5433.5
+      yaw: -90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: 2024_01_19_aiwakusuri-22269591.png
+      variant: SLIM
+      mirrorSkin: false
+  31e64510-ed54-4856-b155-89db4121421e:
+    name: Jinshi
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#4b0082:#9370db:#4b0082><b>Jinshi</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 1105.5
+      y: 122.0
+      z: -5434.5
+      yaw: -90.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: 2024_02_05_omoikaze-22311997.png
+      variant: SLIM
+      mirrorSkin: false
+  a3c4c90f-5edc-402a-a9a8-cfc597fb7f35:
+    name: Leshy
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#1b4d22:#ffffff:#eebb00><b>Leshy</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 5911.5
+      y: 56.0
+      z: 2442.5
+      yaw: 85.16852
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: skin_Wizard_Tree_e52b5472bbf9faab1a1703b1fca3b274.png
+      variant: AUTO
+  69e45ea7-c5d7-43e3-ba8d-75df3e3eff25:
+    name: Heket
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#8b4513:#ffffff:#d2b48c><b>Heket</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 5881.5
+      y: 56.0
+      z: 2442.5
+      yaw: -93.638855
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: skin_Boss_Priest_6006326d40e15adc23a001f0043ea12c.png
+      variant: AUTO
+  f076a0ad-067e-4e7d-86ae-a4143ad910d5:
+    name: Shamura
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#4b0082:#ffffff:#9370db><b>Shamura</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 5881.5
+      y: 56.0
+      z: 2434.5
+      yaw: -92.43671
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: skin_Boss_Priest_82ca5181f311242d5b8ad7f9ca367060.png
+      variant: AUTO
+  8c7d2b65-768c-48fe-a1d0-c4af9b0cc0c0:
+    name: Kallamar
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#0f52ba:#ffffff:#00ced1><b>Kallamar</b></gradient>
+    type: PLAYER
+    location:
+      world: world
+      x: 5911.5
+      y: 56.0
+      z: 2434.5
+      yaw: 88.9082
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: HEKKET.png
+      variant: AUTO
+  3385a646-34d3-446d-88c7-131623de7c9d:
+    name: The_One_Who_Waits
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: The_One_Who_Waits
+    type: PLAYER
+    location:
+      world: world
+      x: 5896.5
+      y: 56.0
+      z: 2420.5
+      yaw: 0.0
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: -1
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: Cult-Of-The-Lamb-Narinder-on-planetminecraft-com.png
+      variant: SLIM
+  90ca94c4-e2b8-43f4-ab83-87a96659e894:
+    name: cult
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <gradient:#b31f24:#ffffff:#b31f24><b>%player_name%</b></gradient>
+    type: SHEEP
+    location:
+      world: world
+      x: 5896.5
+      y: 56.0
+      z: 2445.5
+      yaw: -175.39368
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+    attributes:
+      baby: 'false'
+      wool_color: red
+  e2a17fe9-3726-49e8-9be7-f972029745cb:
+    name: cult5
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5889.5
+      y: 56.0
+      z: 2430.5
+      yaw: -45.842133
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: skin4.png
+      variant: AUTO
+      mirrorSkin: false
+  598baf73-5e97-4c4f-bb00-7ffa4360a967:
+    name: cult8
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5906.5
+      y: 62.0
+      z: 2423.5
+      yaw: 71.007385
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: skin7.png
+      variant: AUTO
+  16be6d54-6b89-4112-ae2f-d183604cfb25:
+    name: cult7
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: cult7
+    type: PLAYER
+    location:
+      world: world
+      x: 5886.5
+      y: 61.0
+      z: 2426.5
+      yaw: -59.49199
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: skin7.png
+      variant: AUTO
+  9d5ad0dd-f87c-4889-9e84-48ce87db9626:
+    name: cult6
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5906.5
+      y: 56.0625
+      z: 2429.5
+      yaw: 46.408386
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      mirrorSkin: false
+      identifier: skin6.png
+      variant: AUTO
+  63fd8da3-a7de-4ad1-9310-7003c1964322:
+    name: cult4
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5890.5
+      y: 56.0
+      z: 2436.5
+      yaw: -157.89502
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: skin3.png
+      variant: AUTO
+      mirrorSkin: false
+  cf8d6f1c-9128-4a29-8ab0-f50c2fbfeccd:
+    name: cult3
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5890.5
+      y: 56.0
+      z: 2447.5
+      yaw: -155.6463
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: skin2.png
+      variant: AUTO
+      mirrorSkin: false
+  1ee61ce4-006f-45e6-b90c-cfca114d1760:
+    name: cult1
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5898.5
+      y: 56.0
+      z: 2445.5
+      yaw: 174.65729
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: barany1.png
+      variant: SLIM
+      mirrorSkin: false
+  f178da59-d9da-4450-b126-20732a786224:
+    name: cult2
+    creator: b2c4d0a1-8a1a-4a91-8b76-345883fcd4c7
+    displayName: <empty>
+    type: PLAYER
+    location:
+      world: world
+      x: 5903.5
+      y: 56.0
+      z: 2439.5
+      yaw: 144.94977
+      pitch: 0.0
+    showInTab: false
+    spawnEntity: true
+    collidable: true
+    glowing: false
+    glowingColor: white
+    turnToPlayer: false
+    turnToPlayerDistance: -1
+    interactionCooldown: 0.0
+    scale: 1.0
+    visibility_distance: 2147483647
+    visibility: ALL
+    skin:
+      identifier: skin1.png
+      variant: AUTO
+      mirrorSkin: false

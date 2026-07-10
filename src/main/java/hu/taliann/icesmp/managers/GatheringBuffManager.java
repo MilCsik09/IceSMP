@@ -138,7 +138,7 @@ public final class GatheringBuffManager {
         final GatheringBuff ended = active;
         active = null;
         if (ended != null) {
-            Bukkit.getServer().broadcast(messageManager.get(endKey(ended), endDefault(ended)));
+            Bukkit.getServer().broadcast(messageManager.getMessage(endKey(ended), endDefault(ended)));
         }
     }
 

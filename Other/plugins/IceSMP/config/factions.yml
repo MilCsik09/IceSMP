@@ -1,0 +1,124 @@
+# IceSMP konfiguráció — factions (a ConfigManager az összes config/*.yml-t betölti)
+factions:
+  red:
+    display-name: "Piros"
+  blue:
+    display-name: "Kék"
+  neutral:
+    display-name: "Semleges"
+  dark:
+    display-name: "Sötét"
+  # Passzív frakció bónuszok (kiegyensúlyozva — minden frakció kb. egy szinten hasznos):
+  # RED: tűz/láva/forró blokk-immunitás (hő-mesterség, Nether)
+  # BLUE: fagy- ÉS fulladás-immunitás + lassabb éhség (hideg/víz-mesterség, óceán)
+  # NEUTRAL: zuhanás-sebzés immunitás; a nem-ellenséges mobok ÉS endermanök békések; adómentes
+  # DARK: wither-immunitás, élőhalottak nem támadják (tudatosan a legerősebb PvE-passzív,
+  #       amit az örök bűnös-jelölés ellensúlyoz)
+  passives:
+    enabled: true
+    blue-hunger-slow-chance: 0.5
+  # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
+  # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
+  # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  tax:
+    enabled: true
+    interval-minutes: 60
+    rate-percent: 2.0
+    # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
+    max-rate-percent: 10.0
+    exempt:
+      - "NEUTRAL"
+  # ===== Bűn-számláló és száműzetés =====
+  # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
+  # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
+  sins:
+    murder-counts: true
+    exile-threshold: 4
+    # Árulás: a SAJÁT frakciótársad megölése súlyosabban esik latba (a Semlegesek
+    # laza közösség — köztük az ölés sima gyilkosság marad).
+    betrayal-counts: true
+    betrayal-weight: 2
+    # Lopás: másik frakció területén (territory-claim) konténerből tárgyat kivenni
+    # bűn. Hadban álló frakciók közt (raid) a zsákmányolás szentesített — nem bűn.
+    # A cooldown egy fosztogatás-sorozatot egyetlen bűnként számol területenként.
+    theft:
+      enabled: true
+      weight: 1
+      cooldown-seconds: 60
+    # Fejvadászat: a min-sins bűnt elért játékos KÖRÖZÖTT — a fejére fejpénz kerül
+    # (bűnök száma * reward-per-sin, a megadott valutában). Aki megöli, megkapja a
+    # fejpénzt ÉS nem kap bűnt érte (igazságos kivégzés); a körözött bűnszámlálója
+    # nullázódik (clear-sins-on-death), a bűnös-jelölés viszont marad. Lista: /bounty.
+    bounty:
+      enabled: true
+      min-sins: 3
+      reward-per-sin: 25.0
+      currency: "NEUTRAL"
+      clear-sins-on-death: true
+  # ===== Királyok és választás =====
+  # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
+  # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.
+  kings:
+    min-votes: 2
+    term-days: 7
+    excluded:
+      - "NEUTRAL"
+  # ===== Raid =====
+  # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
+  # A raid felkészüléssel indul (warmup): mindkét oldal harcosai a
+  # /faction raid join paranccsal jelentkeznek (max-participants-per-side fő).
+  # Csak a JELENTKEZETT harcosok közti ölés szentesített (bűntelen) és pontozó.
+  # A raid alapból a védő fővárosáért folyik (vagy a megadott territóriumért):
+  # ott az ölés (kill-points) mellett a középpont tartása is pontot ér
+  # (capture-points / harcos, capture-interval-seconds-enként, capture-radius
+  # blokkon belül). A győztes (több pont) a vesztes kasszájának spoils-percent
+  # %-át zsákmányolja; ha a TÁMADÓ nyer, a territórium is átkerül hozzá
+  # (territory-takeover) — a fővárosi státusz elvész. Territórium nélküli
+  # célpontnál a raid kötetlen, csak ölés-pontokkal.
+  raid:
+    duration-minutes: 15
+    warmup-minutes: 2
+    max-participants-per-side: 10
+    kill-points: 5
+    capture-interval-seconds: 5
+    capture-radius: 8
+    capture-points: 1
+    territory-takeover: true
+    entry-cost: 200
+    spoils-percent: 20
+    season-points: 5
+    # Győztes-buff a győztes frakció online tagjainak (0 perc = kikapcsolva).
+    winner-buff-minutes: 30
+    winner-buff-strength: 0
+    winner-buff-regen: 0
+    protected:
+      - "NEUTRAL"
+    # Ostromgép (craftolható TNT_MINECART): csak raid alatt sül el, terep-barát robbanás.
+    siege:
+      range: 40.0
+      power: 4.0
+  # ===== Frakció-reputáció =====
+  # Statikus viszonyok (a raid alatt a hadviselők automatikusan ENEMY-k).
+  # A viszony a piaci árat módosítja: ellenségtől drágább, szövetségestől olcsóbb.
+  relations:
+    enemy-market-surcharge-percent: 25.0
+    ally-market-discount-percent: 10.0
+    red:
+      enemies:
+        - "BLUE"
+    blue:
+      enemies:
+        - "RED"
+    dark:
+      enemies: []
+      allies: []
+
+# ===== Frakció területek =====
+territory:
+  notify:
+    # Action bar üzenet területhatár átlépésekor.
+    enabled: true
+  protection:
+    # Ha true, idegen frakció területén nem lehet építeni/bontani
+    # (bypass: icesmp.admin.territory.bypass jogosultság).
+    enabled: false
