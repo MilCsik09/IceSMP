@@ -39,7 +39,7 @@ public final class ItemRarityService {
 
     /** One rung of the shared rarity ladder. */
     private record Rarity(String id, String name, String color, int affixCount, double negativeChance,
-                         double valueMultiplier, List<String> adjectives) {
+                         double valueMultiplier, List<String> adjectives, List<String> flavor) {
     }
 
     /** Source tiers (config: item-rarity.tiers.&lt;id&gt;.weights). */
@@ -115,6 +115,11 @@ public final class ItemRarityService {
         final List<Component> extraLore = new ArrayList<>();
         extraLore.add(Component.text("✦ " + rarity.name() + (randomName ? "" : " mestermű"), colorOf(rarity.color()))
                 .decoration(TextDecoration.ITALIC, false));
+        // Flavour line: a random evocative line for the rarity, italic in the rarity colour.
+        if (!rarity.flavor().isEmpty()) {
+            extraLore.add(Component.text("\"" + rarity.flavor().get(ThreadLocalRandom.current().nextInt(rarity.flavor().size())) + "\"",
+                    colorOf(rarity.color())).decoration(TextDecoration.ITALIC, true));
+        }
 
         final int count = Math.min(rarity.affixCount(), eligible.size());
         for (int i = 0; i < count; i++) {
@@ -201,7 +206,7 @@ public final class ItemRarityService {
                     Math.max(1, r.getInt("affixes", 1)),
                     Math.max(0.0D, Math.min(1.0D, r.getDouble("negative-chance", 0.0D))),
                     Math.max(0.0D, r.getDouble("value-multiplier", 1.0D)),
-                    r.getStringList("adjectives")));
+                    r.getStringList("adjectives"), r.getStringList("flavor")));
         }
         return ladder;
     }

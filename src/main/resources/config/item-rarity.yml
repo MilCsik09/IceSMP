@@ -27,6 +27,7 @@ item-rarity:
       negative-chance: 1.0        # CSAK negatív affix (átok)
       value-multiplier: 0.4
       adjectives: [ "Rozsdás", "Törött", "Repedezett", "Nyomorult", "Szánalmas", "Csorba" ]
+      flavor: [ "Jobb lenne a kohóba dobni.", "Még a hollók is elkerülik." ]
     kozonseges:
       name: "Közönséges"
       color: "&f"
@@ -34,6 +35,7 @@ item-rarity:
       negative-chance: 0.10
       value-multiplier: 0.6
       adjectives: [ "Egyszerű", "Kopott", "Hétköznapi", "Dísztelen", "Régi" ]
+      flavor: [ "Semmi különös — de működik.", "Ezer ilyen hever a raktárban." ]
     nem_mindennapi:
       name: "Nem mindennapi"
       color: "&a"
@@ -41,6 +43,7 @@ item-rarity:
       negative-chance: 0.05
       value-multiplier: 0.8
       adjectives: [ "Megbízható", "Edzett", "Kovácsolt", "Szolid", "Tartós" ]
+      flavor: [ "Kicsit több, mint a többi.", "A kovács büszke lehetne rá." ]
     ritka:
       name: "Ritka"
       color: "&9"
@@ -48,6 +51,7 @@ item-rarity:
       negative-chance: 0.0
       value-multiplier: 1.0
       adjectives: [ "Fényes", "Rúnás", "Kiváló", "Nemes", "Csillámló" ]
+      flavor: [ "Nem sok ilyen forog a világban.", "Becses darab a gyűjteményben." ]
     epikus:
       name: "Epikus"
       color: "&5"
@@ -55,6 +59,7 @@ item-rarity:
       negative-chance: 0.0
       value-multiplier: 1.2
       adjectives: [ "Ragyogó", "Szentelt", "Hősi", "Viharvert", "Dicső" ]
+      flavor: [ "Regék suttognak a birtoklójáról.", "Ereje messziről érződik." ]
     legendas:
       name: "Legendás"
       color: "&6"
@@ -62,6 +67,7 @@ item-rarity:
       negative-chance: 0.0
       value-multiplier: 1.4
       adjectives: [ "Legendás", "Isteni", "Fenséges", "Lángoló", "Diadalmas" ]
+      flavor: [ "Nevét dalokban éneklik.", "Egy korszakban egy ha születik." ]
     ereklye:
       name: "Ereklye"
       color: "&c"
@@ -69,6 +75,7 @@ item-rarity:
       negative-chance: 0.0
       value-multiplier: 1.6
       adjectives: [ "Ősi", "Mennyei", "Halhatatlan", "Mitikus", "Sárkánykovácsolt" ]
+      flavor: [ "Az idő előtti világ maradványa.", "Hordozója a történelmet írja." ]
   # Mob-loot alaptárgy-nevek family szerint (a jelző a raritásból jön).
   nouns:
     weapon: [ "Penge", "Kard", "Fog", "Tőr", "Szablya", "Kard" ]
