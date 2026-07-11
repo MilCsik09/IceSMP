@@ -1,0 +1,35 @@
+# IceSMP konfiguráció — loot (a ConfigManager az összes config/*.yml-t betölti)
+# ===== WoW-szerű mob loot (rolled-affix tárgyak) =====
+# A megölt szörnyek eséllyel egyedi, random-attribútumos felszerelést dobnak (ugyanaz az affix-
+# motor, mint a szakma-mestermunkáké, lásd professions.masterwork). A BALANSZ a tierből jön:
+#   - sima szörny  -> 'drop' tier (gyengébb)
+#   - világboss / invázió-bajnok / Vad Hajsza fenevad -> 'boss' tier (szakma-craft szinten)
+loot:
+  enabled: true
+  # Sima szörnyeknél megköveteli, hogy játékos ölje meg (a boss/event-mobokra nem vonatkozik).
+  require-player-kill: true
+  mob-drop:
+    chance: 0.02        # ennyi eséllyel dob egy sima szörny egy rolled tárgyat
+    gear-pool:
+      - IRON_SWORD
+      - IRON_HELMET
+      - IRON_CHESTPLATE
+      - IRON_LEGGINGS
+      - IRON_BOOTS
+      - IRON_PICKAXE
+      - IRON_AXE
+      - SHIELD
+      - BOW
+  boss-drop:
+    chance: 1.0         # a boss/event-mobok garantáltan dobnak (magasabb tier)
+    gear-pool:
+      - DIAMOND_SWORD
+      - DIAMOND_HELMET
+      - DIAMOND_CHESTPLATE
+      - DIAMOND_LEGGINGS
+      - DIAMOND_BOOTS
+      - DIAMOND_PICKAXE
+      - NETHERITE_SWORD
+      - NETHERITE_CHESTPLATE
+      - TRIDENT
+      - CROSSBOW

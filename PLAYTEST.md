@@ -239,6 +239,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] A megfelelő tevékenység ad XP-t (bányászat/aratás/horgászat/sütés/craft).
 - [ ] 25. szinten szakma-spec választható.
 - [ ] **Craft-korlát:** netherite felszerelést csak 25+ Kovács craftol (különben nem jön létre + üzenet).
+- [ ] **Rolled-affix mestermunka:** mestermunkát craftolva a tárgy VÉLETLEN minőséget ([Közönséges]…
+      [Legendás]) + random attribútum-affixeket kap (a leírásban); két craft nem ugyanaz. Shift-click
+      bulk-craft alap-statú marad.
+- [ ] **WoW-mob loot:** sima szörnyek kis eséllyel (`loot.mob-drop.chance`) rolled `drop`-tier
+      (gyengébb) tárgyat dobnak; **világboss / invázió-bajnok / Vad Hajsza** garantáltan `boss`-tier
+      (craft-szintű) tárgyat. A drop-tier érték gyengébb (value-multiplier 0.6), a boss-tier nem.
 
 ### 4.8 Gazdaság ✅
 - [ ] `/bank deposit|withdraw|balance`, `/currency balance|pay|exchange|rates`, `/currency set` (admin).
