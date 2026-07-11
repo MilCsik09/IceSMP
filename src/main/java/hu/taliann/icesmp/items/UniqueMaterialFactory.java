@@ -32,10 +32,14 @@ public final class UniqueMaterialFactory {
         this.idKey = new NamespacedKey(plugin, "unique_material");
     }
 
-    /** The display name of a unique material (for GUI/lore), or the raw id if undefined. */
+    /** The plain display name of a unique material (for GUI labels), or the raw id if undefined. */
     public String displayName(final String uniqueId) {
         final ConfigurationSection section = configOf(uniqueId);
-        return section == null ? uniqueId : section.getString("display-name", uniqueId);
+        if (section == null) {
+            return uniqueId;
+        }
+        // Strip legacy '&x' colour codes for a plain label.
+        return section.getString("display-name", uniqueId).replaceAll("&[0-9a-fk-orA-FK-OR]", "");
     }
 
     /** Creates {@code amount} of the unique material, or null if the id is undefined / has a bad icon. */
@@ -50,13 +54,18 @@ public final class UniqueMaterialFactory {
         }
         final ItemStack item = new ItemStack(icon, Math.max(1, amount));
         final ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text(section.getString("display-name", uniqueId), NamedTextColor.AQUA)
-                .decoration(TextDecoration.ITALIC, false));
+        meta.displayName(legacy(section.getString("display-name", uniqueId))
+                .colorIfAbsent(NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
         final List<Component> lore = new ArrayList<>();
         for (final String line : section.getStringList("lore")) {
-            lore.add(Component.text(line, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            lore.add(legacy(line).colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         }
         meta.lore(lore);
+        // Resource-pack hook: a custom model data so the pack can render each unique material distinctly.
+        final int cmd = section.getInt("custom-model-data", 0);
+        if (cmd > 0) {
+            meta.setCustomModelData(cmd);
+        }
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
         return item;
@@ -73,6 +82,11 @@ public final class UniqueMaterialFactory {
     /** Whether the id refers to a defined unique material. */
     public boolean isDefined(final String uniqueId) {
         return configOf(uniqueId) != null;
+    }
+
+    /** Parses a legacy '&'-coded string into a Component. */
+    private static Component legacy(final String text) {
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().deserialize(text);
     }
 
     private ConfigurationSection configOf(final String uniqueId) {
