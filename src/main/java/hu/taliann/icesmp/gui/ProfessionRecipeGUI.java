@@ -113,7 +113,7 @@ public final class ProfessionRecipeGUI {
         lore.add(Component.empty());
         lore.add(grey("Hozzávalók:"));
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            final int have = countMaterial(player, entry.getKey());
+            final int have = countMaterial(player, entry.getKey(), uniqueMaterials);
             final boolean enough = have >= entry.getValue();
             lore.add(Component.text("  " + (enough ? "✔ " : "✘ ") + have + "/" + entry.getValue() + " "
                     + prettyName(entry.getKey()), enough ? NamedTextColor.GRAY : NamedTextColor.RED)
@@ -146,7 +146,7 @@ public final class ProfessionRecipeGUI {
     private static boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
                                           final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            if (countMaterial(player, entry.getKey()) < entry.getValue()) {
+            if (countMaterial(player, entry.getKey(), uniqueMaterials) < entry.getValue()) {
                 return false;
             }
         }
@@ -169,10 +169,12 @@ public final class ProfessionRecipeGUI {
         return count;
     }
 
-    private static int countMaterial(final Player player, final Material material) {
+    /** Counts plain items of the given material — EXCLUDING unique materials that share the base type. */
+    private static int countMaterial(final Player player, final Material material,
+                                     final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         int count = 0;
         for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
+            if (item != null && item.getType() == material && uniqueMaterials.idOf(item) == null) {
                 count += item.getAmount();
             }
         }

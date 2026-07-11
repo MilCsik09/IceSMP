@@ -137,7 +137,12 @@ public final class ItemRarityService {
             if (negative) {
                 raw = -raw;
             }
-            final double amount = round(raw, decimals);
+            double amount = round(raw, decimals);
+            // A low-multiplier roll (e.g. Ócska ×0.4) can round to 0 on an integer attribute — clamp to
+            // the smallest representable step (keeping the sign) so the affix always shows.
+            if (amount == 0.0D && raw != 0.0D) {
+                amount = Math.copySign(Math.pow(10, -Math.max(0, decimals)), raw);
+            }
             if (amount == 0.0D) {
                 continue;
             }

@@ -116,7 +116,7 @@ public final class ProfessionRecipeBookListener implements Listener {
 
     private boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            if (!player.getInventory().contains(entry.getKey(), entry.getValue())) {
+            if (countPlain(player, entry.getKey()) < entry.getValue()) {
                 return false;
             }
         }
@@ -126,6 +126,17 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
         }
         return true;
+    }
+
+    /** Counts plain items of a material, EXCLUDING unique materials that share the base type. */
+    private int countPlain(final Player player, final Material material) {
+        int count = 0;
+        for (final ItemStack item : player.getInventory().getContents()) {
+            if (item != null && item.getType() == material && uniqueMaterials.idOf(item) == null) {
+                count += item.getAmount();
+            }
+        }
+        return count;
     }
 
     private int countUnique(final Player player, final String uniqueId) {

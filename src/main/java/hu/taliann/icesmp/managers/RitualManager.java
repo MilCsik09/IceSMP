@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class RitualManager {
 
+    private final org.bukkit.plugin.java.JavaPlugin plugin;
     private final ConfigManager configManager;
     private final RelicManager relicManager;
     private final SinManager sinManager;
@@ -53,10 +54,12 @@ public final class RitualManager {
     // Per-player, per-ritual cooldown expiry (in-memory; only used by non-relic rituals).
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
-    public RitualManager(final ConfigManager configManager, final RelicManager relicManager,
+    public RitualManager(final org.bukkit.plugin.java.JavaPlugin plugin, final ConfigManager configManager,
+                         final RelicManager relicManager,
                          final SinManager sinManager, final FactionManager factionManager,
                          final TerritoryManager territoryManager, final JobManager jobManager,
                          final MessageManager messageManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.relicManager = relicManager;
         this.sinManager = sinManager;
@@ -257,11 +260,14 @@ public final class RitualManager {
             ));
             return false;
         }
-        final int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
-        final Location target = new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D,
-                player.getLocation().getYaw(), player.getLocation().getPitch());
-        // The player is on their own region thread here (interaction event) — teleportAsync is Folia-safe.
-        player.teleportAsync(target);
+        final float yaw = player.getLocation().getYaw();
+        final float pitch = player.getLocation().getPitch();
+        // The highest-block lookup reads the capital's chunk — it must run on the DESTINATION region's
+        // thread (Folia), not the altar's. Hop there, resolve the safe Y, then teleportAsync.
+        plugin.getServer().getRegionScheduler().run(plugin, world, capital.x() >> 4, capital.z() >> 4, task -> {
+            final int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
+            player.teleportAsync(new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D, yaw, pitch));
+        });
         player.sendMessage(messageManager.getMessage(
                 "ritual-home-success",
                 "<gold>Az oltár fénye hazaröpít a fővárosodba.</gold>"
