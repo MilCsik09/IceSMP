@@ -224,12 +224,13 @@ public final class WildHuntManager {
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-started",
-                "&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz, ha le tudod teríteni!",
+                "&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz, ha {minutes} percen belül le tudod teríteni!",
                 Map.of(
                         "beast", beast.displayName,
                         "world", world.getName(),
                         "x", String.valueOf(x),
-                        "z", String.valueOf(z)
+                        "z", String.valueOf(z),
+                        "minutes", String.valueOf(Math.max(1L, expireMillis() / 60_000L))
                 )
         ));
     }
