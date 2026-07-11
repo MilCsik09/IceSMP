@@ -870,3 +870,197 @@ profession-recipes:
     category: "Fegyver (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:2", "unique:osi_ereklyeszilank:1", "unique:szorny_mag:3" ]
+
+  # =========================================================
+  # --- Kereszt-szakma egyedi alapanyag háló (bővítés) ---
+  #   Termelők: minden szakma-gyártott köztes anyagot egy MÁSIK
+  #   szakma köztes anyaga katalizál (kereszt-függőség), majd a
+  #   fogyasztó receptek a nyolc szakma közt szétosztva használják
+  #   fel az egyedi alapanyagokat (a mob-only négyet csak erős,
+  #   magas szintű recepteknél).
+  # =========================================================
+  rezotvozet_runasegitett_ontes:
+    profession: miner
+    level: 30
+    learn: level
+    display-name: "Rúnasegített Rézöntés"
+    category: "Egyedi alapanyag"
+    result: { unique: rezgo_rez_otvozet, amount: 4 }
+    ingredients: [ "COPPER_INGOT:6", "GOLD_NUGGET:6", "unique:runapor:1" ]
+  gyogykivonat_gerendaszures:
+    profession: herbalist
+    level: 32
+    learn: level
+    display-name: "Gerendaszűrt Gyógy-kivonat"
+    category: "Egyedi alapanyag"
+    result: { unique: gyogy_kivonat, amount: 4 }
+    ingredients: [ "GLOW_BERRIES:6", "GLISTERING_MELON_SLICE:2", "unique:kemenyfa_gerenda:1" ]
+  kemenyfa_tartositas:
+    profession: lumberjack
+    level: 32
+    learn: level
+    display-name: "Tartósított Keményfa"
+    category: "Egyedi alapanyag"
+    result: { unique: kemenyfa_gerenda, amount: 4 }
+    ingredients: [ "STRIPPED_DARK_OAK_WOOD:3", "STRING:3", "unique:gyogy_kivonat:1" ]
+  vasesszencia_otvozetkatalizis:
+    profession: armorer
+    level: 34
+    learn: level
+    display-name: "Ötvözet-katalizált Vasesszencia"
+    category: "Egyedi alapanyag"
+    result: { unique: tiszta_vasesszencia, amount: 4 }
+    ingredients: [ "IRON_INGOT:6", "REDSTONE:3", "unique:rezgo_rez_otvozet:1" ]
+  runapor_fokozott_orles:
+    profession: enchanter
+    level: 34
+    learn: level
+    display-name: "Fokozott Rúnapor Őrlés"
+    category: "Egyedi alapanyag"
+    result: { unique: runapor, amount: 4 }
+    ingredients: [ "GLOWSTONE_DUST:6", "LAPIS_LAZULI:3", "unique:tiszta_vasesszencia:1" ]
+  # --- Fogyasztók: szétosztva mind a nyolc szakma közt ---
+  runafenyes_csakany:
+    profession: miner
+    level: 32
+    learn: level
+    display-name: "Rúnafényes Bányászcsákány"
+    category: "Szerszám"
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:3", "STICK:2", "unique:runapor:2" ]
+  ereklyeszilankos_banyasisak:
+    profession: miner
+    level: 50
+    learn: blueprint
+    display-name: "Ereklyeszilánkos Bányászsisak"
+    category: "Páncél (tervrajz)"
+    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:5", "NETHERITE_INGOT:1", "unique:osi_ereklyeszilank:1" ]
+  kivonatos_csontliszt_bomba:
+    profession: herbalist
+    level: 22
+    learn: level
+    display-name: "Kivonatos Csontliszt Bomba"
+    category: "Alapanyag"
+    result: { material: BONE_MEAL, amount: 12 }
+    ingredients: [ "BONE:4", "unique:gyogy_kivonat:1" ]
+  vadesszencias_taptalaj:
+    profession: herbalist
+    level: 36
+    learn: blueprint
+    display-name: "Vadesszenciás Táptalaj"
+    category: "Ritka Alapanyag (tervrajz)"
+    result: { material: SPORE_BLOSSOM, amount: 2 }
+    ingredients: [ "MOSS_BLOCK:4", "BONE_MEAL:6", "unique:vad_esszencia:2" ]
+  kemenyfa_nyelkoteg:
+    profession: lumberjack
+    level: 20
+    learn: level
+    display-name: "Keményfa Nyélköteg"
+    category: "Alapanyag"
+    result: { material: STICK, amount: 16 }
+    ingredients: [ "unique:kemenyfa_gerenda:1" ]
+  arnyekfa_gerenda:
+    profession: lumberjack
+    level: 40
+    learn: blueprint
+    display-name: "Árnyékfa Gerenda"
+    category: "Építőanyag (tervrajz)"
+    result: { material: CRIMSON_PLANKS, amount: 8 }
+    ingredients: [ "unique:kemenyfa_gerenda:2", "unique:arnyekpor:2" ]
+  vasesszencias_pajzs:
+    profession: armorer
+    level: 30
+    learn: level
+    display-name: "Vasesszenciás Pajzs"
+    category: "Páncél"
+    result: { material: SHIELD, amount: 1, affix-tier: crafted }
+    ingredients: [ "IRON_INGOT:4", "unique:tiszta_vasesszencia:2" ]
+  rezvertezet_lablemez:
+    profession: armorer
+    level: 33
+    learn: level
+    display-name: "Rézvértezet Lábvért"
+    category: "Páncél"
+    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:6", "unique:rezgo_rez_otvozet:3" ]
+  vadolo_csizma:
+    profession: armorer
+    level: 32
+    learn: level
+    display-name: "Vadölő Csizma"
+    category: "Páncél"
+    result: { material: DIAMOND_BOOTS, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:4", "unique:vad_esszencia:2" ]
+  szornyvert_mellveny:
+    profession: armorer
+    level: 46
+    learn: blueprint
+    display-name: "Szörnyvért Mellvény"
+    category: "Páncél (tervrajz)"
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
+    ingredients: [ "NETHERITE_INGOT:3", "unique:szorny_mag:3" ]
+  kivonatos_regeneracio_fozet:
+    profession: alchemist
+    level: 28
+    learn: level
+    display-name: "Kivonatos Regeneráció Főzet"
+    category: "Ital"
+    result: { material: POTION, amount: 3 }
+    ingredients: [ "GLASS_BOTTLE:3", "NETHER_WART:1", "unique:gyogy_kivonat:2" ]
+  runasav_bomba:
+    profession: alchemist
+    level: 32
+    learn: level
+    display-name: "Rúnasav Bomba"
+    category: "Ital"
+    result: { material: SPLASH_POTION, amount: 2 }
+    ingredients: [ "GLASS_BOTTLE:2", "GUNPOWDER:1", "unique:runapor:2" ]
+  ereklye_elixir:
+    profession: alchemist
+    level: 49
+    learn: blueprint
+    display-name: "Ereklyeelixír"
+    category: "Ital (tervrajz)"
+    result: { material: POTION, amount: 1 }
+    ingredients: [ "GLASS_BOTTLE:1", "GOLDEN_APPLE:1", "unique:osi_ereklyeszilank:1" ]
+  vasesszencias_paloscsapas_tomus:
+    profession: enchanter
+    level: 30
+    learn: level
+    display-name: "Vasesszenciás Páncéltörés Tomus"
+    category: "Bűvölés"
+    result: { material: ENCHANTED_BOOK, amount: 1 }
+    ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "unique:tiszta_vasesszencia:2" ]
+  kemenyfa_ijkeret_tomus:
+    profession: enchanter
+    level: 27
+    learn: level
+    display-name: "Keményfa Íjkeret Tomus"
+    category: "Bűvölés"
+    result: { material: ENCHANTED_BOOK, amount: 1 }
+    ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "unique:kemenyfa_gerenda:2" ]
+  rezhorgany_horgaszbot:
+    profession: fisherman
+    level: 26
+    learn: level
+    display-name: "Rézhorgony Horgászbot"
+    category: "Szerszám"
+    result: { material: FISHING_ROD, amount: 1 }
+    ingredients: [ "STICK:3", "STRING:2", "unique:rezgo_rez_otvozet:2" ]
+  melytengeri_ereklyeszigony:
+    profession: fisherman
+    level: 47
+    learn: blueprint
+    display-name: "Mélytengeri Ereklyeszigony"
+    category: "Fegyver (tervrajz)"
+    result: { material: TRIDENT, amount: 1, affix-tier: crafted }
+    ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2", "unique:osi_ereklyeszilank:1" ]
+  gyogyerovel_dusitott_lakoma:
+    profession: cook
+    level: 26
+    learn: level
+    display-name: "Gyógyerővel Dúsított Lakoma"
+    category: "Étel"
+    result: { material: GOLDEN_CARROT, amount: 6 }
+    ingredients: [ "CARROT:6", "GOLD_NUGGET:32", "unique:gyogy_kivonat:1" ]
