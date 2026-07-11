@@ -33,6 +33,12 @@ messages:
   ritual-missing-sacrifice: <red>Hiányoznak az áldozati tárgyak a rituáléhoz.</red>
   ritual-relic-unavailable: <red>A relikvia jelenleg nem idézhető meg (már van élő tulajdonosa).</red>
   ritual-success: <gold>A rituálé sikeres — a relikvia testet öltött a kezedben!</gold>
+  ritual-cooldown: <red>Az oltár még nem töltődött fel — várj még {seconds} másodpercet.</red>
+  ritual-cleanse-nothing: <gray>Nincs mit feloldoznod — a lelked már tiszta.</gray>
+  ritual-cleanse-blocked: <red>A sötét paktum köt — ezt az oltár nem oldhatja fel, csak a vezeklés útja.</red>
+  ritual-cleanse-success: <gold>Az oltár feloldozott — bűneid lemosattak, a fejvadászok lekerülnek a nyomodról.</gold>
+  ritual-buff-success: <gold>Az oltár áldása átjár — a rituálé ereje végigfut a testeden!</gold>
+  ritual-heal-success: <gold>Az oltár helyreállító fénye teljesen felüdít.</gold>
   souls-balance: '<dark_purple>Lélekszilánkjaid: <white>{shards}</white> <gray>(/souls champion — bajnok idézése)</gray></dark_purple>'
   souls-champion-cap: '&cElérted a maximális idézett társ-számot.'
   souls-champion-insufficient: '&cNincs elég lélekszilánkod a bajnokhoz.'

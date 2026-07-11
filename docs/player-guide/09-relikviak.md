@@ -42,6 +42,20 @@ A négy szárnyat **nem lehet craftolni** — egy **oltáron kell megidézni** �
 Ha a szárnynak **már van élő tulajdonosa**, nem idézheted meg újra (az „egy példány" szabály
 miatt). Várnod kell, amíg felszabadul.
 
+### Egyéb oltárok 🕯️ — nem csak szárnyak
+
+Az oltár-rituálé nem csak relikviát adhat. Ugyanúgy működik (SHIFT + jobb katt, ha nálad vannak
+az áldozati tárgyak), de más a kimenet — és ezek **ismételhetők** (van egy rövid „feltöltődés"):
+
+| Oltár | Oltár-blokk | Áldozat | Mit ad |
+|---|---|---|---|
+| 🕯️ Feloldozás | Lélek-lámpás | 3 aranytömb, 2 ghast-könny, 1 megmentő-totem | Leveszi a **bűnös-jelet** és nullázza a bűneidet (a sötét paktumot nem oldja fel) |
+| ⚔️ Erő áldása | Aranyozott feketekő | 12 aranyrúd, 8 lidércpor | 5 percre **Erő II + Ellenállás + Tűzállóság** |
+| 💚 Megújulás | Tengeri lámpás | 8 csillámló dinnye, 8 aranyrépa | **Teljes élet + telítettség** visszatöltés |
+
+> Az oltár-blokkok, áldozatok és hatások a `config/relics.yml` `rituals:` szekciójában
+> testreszabhatók — új oltárt is felvehet az admin (`type: relic|cleanse|buff|heal`).
+
 ---
 
 ➡️ Tovább: [Világesemények](10-vilagesemenyek.md) • [Vissza a tartalomhoz](README.md)

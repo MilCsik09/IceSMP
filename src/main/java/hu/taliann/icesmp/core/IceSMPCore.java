@@ -326,7 +326,7 @@ public final class IceSMPCore {
         this.parkourManager = new ParkourManager(plugin, currencyManager, factionManager, messageManager);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
-        this.ritualManager = new RitualManager(configManager, relicManager, messageManager);
+        this.ritualManager = new RitualManager(configManager, relicManager, sinManager, messageManager);
         this.exchangeBoardManager = new ExchangeBoardManager(plugin, configManager, exchangeRateService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,

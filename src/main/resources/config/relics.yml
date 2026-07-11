@@ -59,10 +59,17 @@ relics:
         - "&7maga is árnyékká válik."
 
 # ===== Rituálé-oltárok =====
-# A relikvia nem craftolható, hanem a megadott oltár-blokk SHIFT+jobb kattal való
-# aktiválásakor idézhető meg, áldozati tárgyak feláldozásával. A relikvia-egyediség
-# szabálya érvényes: ha már van élő tulajdonosa, nem idézhető újra.
-# Kulcs = relic-definíció azonosító. sacrifice formátum: "MATERIAL:darab".
+# Egy oltár = egy blokk-típus, amit SHIFT+jobb kattal aktiválsz, ha nálad vannak az
+# áldozati tárgyak. A kimenetet a 'type' dönti el:
+#   relic   (alap): egy relikviát idéz meg (a relic-egyediség szabálya érvényes — ha
+#           már van élő tulajdonosa, nem idézhető újra). A 'relic' mező adja a relic-id-t
+#           (alapból a rituálé kulcsa).
+#   cleanse: leveszi a bűnös-jelet és nullázza a bűn-számlálót (a lezárt sötét paktumot
+#           NEM oldja fel — az a vezeklés-questlánc dolga).
+#   buff:   a megadott effekteket rakja fel ('effects': "TÍPUS:tick:erősség").
+#   heal:   teljes élet + telítettség visszatöltés.
+# Nem-relic rituáléknál a 'cooldown-seconds' korlátozza az ismétlést (memóriában, újraindításkor
+# nullázódik). sacrifice / effects formátum: "MATERIAL:darab" ill. "EFFECT:tick:erősség".
 rituals:
   phoenix_wing:
     altar-block: "MAGMA_BLOCK"
@@ -88,6 +95,35 @@ rituals:
       - "BONE_BLOCK:8"
       - "WITHER_SKELETON_SKULL:1"
       - "NETHERITE_SCRAP:2"
+  # --- Feloldozás oltára: bűn-tisztítás (a sötét paktumot nem oldja fel) ---
+  feloldozas:
+    type: "cleanse"
+    altar-block: "SOUL_LANTERN"
+    cooldown-seconds: 1800
+    sacrifice:
+      - "GOLD_BLOCK:3"
+      - "GHAST_TEAR:2"
+      - "TOTEM_OF_UNDYING:1"
+  # --- Erő áldása: időleges harci buff ---
+  ero_aldasa:
+    type: "buff"
+    altar-block: "GILDED_BLACKSTONE"
+    cooldown-seconds: 900
+    sacrifice:
+      - "GOLD_INGOT:12"
+      - "BLAZE_POWDER:8"
+    effects:
+      - "STRENGTH:6000:1"      # 5 perc, +2 szint
+      - "RESISTANCE:6000:0"    # 5 perc
+      - "FIRE_RESISTANCE:6000:0"
+  # --- Megújulás oltára: teljes gyógyulás ---
+  megujulas:
+    type: "heal"
+    altar-block: "SEA_LANTERN"
+    cooldown-seconds: 300
+    sacrifice:
+      - "GLISTERING_MELON_SLICE:8"
+      - "GOLDEN_CARROT:8"
 
 # ===== Nekromanta lélek-erőforrás =====
 # A Nekromanta-spec játékosok ölésenként lélekszilánkot kapnak, amiből
