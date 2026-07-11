@@ -101,7 +101,11 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/currency set <játékos> <összeg> [valuta]` | Valuta-egyenleg beállítása |
 | `/faction set <játékos> <frakció>` | Játékos frakcióba sorolása |
 | `/relic give <játékos> <relic_id>` | Relikvia adása |
-| `/territory setcapital\|claim\|remove` | Területek kezelése |
+| `/territory circle\|create <típus> ...` | Kör- vagy poligon-zóna kijelölése (típus: faction, protected-faction, protected-city, capital) |
+| `/territory pos\|undo\|clearpoints\|points\|show [id]` | Poligon-határpontok bejárása és előnézete (pl. városfal mentén) |
+| `/territory tp <id>` | Teleportálás a zóna középpontjához |
+| `/territory rename\|resize\|settype\|sety <id> ...` | Meglévő zóna módosítása (név / sugár / típus / magassági sáv) |
+| `/territory setcapital\|remove\|list\|info` | Főváros gyorskijelölés / zóna törlése / listája / infó |
 | `/exchangeboard place\|remove` | Árfolyamtábla lerakása/törlése |
 | `/events blood-moon start\|stop` | Vérhold kézi indítása / leállítása |
 | `/events worldboss` | Világboss azonnali megidézése |

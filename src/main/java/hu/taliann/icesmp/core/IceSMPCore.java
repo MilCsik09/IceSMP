@@ -80,6 +80,7 @@ import hu.taliann.icesmp.listeners.SpellProjectileListener;
 import hu.taliann.icesmp.listeners.SpellStateListener;
 import hu.taliann.icesmp.listeners.TalentAttributeListener;
 import hu.taliann.icesmp.listeners.TerritoryListener;
+import hu.taliann.icesmp.listeners.TerritoryProtectionListener;
 import hu.taliann.icesmp.listeners.TheftListener;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
@@ -136,6 +137,7 @@ import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.managers.AchievementManager;
 import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
+import hu.taliann.icesmp.managers.TerritoryProtectionService;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.spells.AngryChickenSpell;
 import hu.taliann.icesmp.spells.ArmamentSpell;
@@ -233,6 +235,7 @@ public final class IceSMPCore {
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
+    private final TerritoryProtectionService territoryProtectionService;
     private final FactionTreasuryManager factionTreasuryManager;
     private final KingManager kingManager;
     private final RaidManager raidManager;
@@ -284,6 +287,7 @@ public final class IceSMPCore {
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
         this.territoryManager = new TerritoryManager(plugin);
+        this.territoryProtectionService = new TerritoryProtectionService(plugin, configManager, territoryManager, factionManager, messageManager);
         this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, territoryManager, messageManager);
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
         this.introManager = new IntroManager(plugin, configManager);
@@ -383,6 +387,7 @@ public final class IceSMPCore {
                 resourceManager,
                 partyManager,
                 claimManager,
+                territoryManager,
                 spellRegistry
         );
 
@@ -810,7 +815,7 @@ public final class IceSMPCore {
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(plugin, professionManager, messageManager, professionRecipeBookListener, professionRecipeCatalog, blueprintItemFactory));
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
-        plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
+        plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(plugin, territoryManager, messageManager));
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager, questBuilderListener));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
         plugin.registerCommand("adomany", "Közösségi adomány-láda", List.of("donate", "adomanylada"), new DonationChestCommand(donationChestManager, messageManager));
@@ -857,7 +862,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
-        pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
+        pluginManager.registerEvents(new TerritoryListener(territoryManager, configManager, questManager, messageManager), plugin);
+        pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
         pluginManager.registerEvents(questBuilderListener, plugin);

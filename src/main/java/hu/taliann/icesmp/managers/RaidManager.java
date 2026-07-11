@@ -486,10 +486,17 @@ public final class RaidManager {
             return;
         }
 
-        // Captured claims never carry capital status into the conqueror's hands —
-        // a faction's capital is its own seat, not a war trophy.
-        territoryManager.define(territory.id(), conqueror, territory.name(),
-                new Location(world, territory.x(), 0.0D, territory.z()), territory.radius(), false);
+        // Captured zones never carry capital status into the conqueror's hands —
+        // a faction's capital is its own seat, not a war trophy. A polygon boundary
+        // (e.g. a besieged city wall) is preserved so the exact shape transfers too.
+        if (territory.isPolygon()) {
+            territoryManager.definePolygon(territory.id(), conqueror, territory.name(),
+                    hu.taliann.icesmp.data.TerritoryType.FACTION, territory.world(), territory.polygon());
+        } else {
+            territoryManager.define(territory.id(), conqueror, territory.name(),
+                    hu.taliann.icesmp.data.TerritoryType.FACTION,
+                    new Location(world, territory.x(), 0.0D, territory.z()), territory.radius());
+        }
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-territory-captured",
                 "<dark_red>⚑ A(z) <white>{territory}</white> terület elesett — mostantól a(z) <white>{winner}</white> frakcióé!</dark_red>",

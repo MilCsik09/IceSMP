@@ -30,6 +30,7 @@ messages:
   claim-help-trust: '&e/claim trust/untrust <név> &7- Hozzáférés adása/elvétele minden claimedhez.'
   claim-help-unclaim: '&e/claim unclaim &7- A claim felszabadítása, amiben állsz.'
   claim-in-protected-region: '&cVédett zónában (spawn/város) nem claimelhetsz.'
+  claim-in-protected-zone: '&cVédett zóna (főváros/védett város/védett frakcióterület) — itt nem claimelhetsz.'
   claim-in-territory: '&cFrakció-territóriumban nem claimelhetsz — az a királyság földje.'
   claim-info-owner: '&6Tulajdonos: &f%s'
   claim-info-trusted: '&7Megbízottak: &f%s'
