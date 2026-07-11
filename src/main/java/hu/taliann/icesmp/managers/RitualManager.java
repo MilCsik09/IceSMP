@@ -1,16 +1,22 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -19,46 +25,55 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Ritual altars (ideas.md "Rituálé-oltárok"): sneak-right-clicking a configured
- * altar block with the required sacrifices in the inventory consumes them and
- * grants an outcome. The outcome is chosen by the ritual's {@code type}:
+ * Ritual altars (ideas.md "Rituálé-oltárok"): each altar is a multi-block shrine.
+ * Sneak-right-clicking the altar's core block validates the surrounding structure
+ * (if configured) and, given the required sacrifices, consumes them and grants an
+ * outcome chosen by the ritual's {@code type}:
  * <ul>
  *   <li>{@code relic} (default): summons the matching relic — the RelicManager
  *       enforces the one-of-each singleton rule.</li>
  *   <li>{@code cleanse}: removes the sinner mark and the sin counter (blocked by
  *       a sealed dark pact — that penance runs its own quest chain).</li>
  *   <li>{@code buff}: applies the configured potion effects for a duration.</li>
- *   <li>{@code heal}: fully restores health and saturation.</li>
+ *   <li>{@code home}: teleports the ritualist to their faction's capital.</li>
  * </ul>
- * Non-relic rituals may set {@code cooldown-seconds} to rate-limit repeats (kept
- * in memory — a per-player convenience limiter, reset on restart). Definitions
- * live under {@code rituals.&lt;id&gt;} in config.
+ * The {@code structure} list ("dx,dy,dz:MATERIAL" offsets relative to the core
+ * block) turns an altar into a buildable shrine; non-relic rituals may set
+ * {@code cooldown-seconds} to rate-limit repeats (in memory, reset on restart).
  */
 public final class RitualManager {
 
     private final ConfigManager configManager;
     private final RelicManager relicManager;
     private final SinManager sinManager;
+    private final FactionManager factionManager;
+    private final TerritoryManager territoryManager;
+    private final JobManager jobManager;
     private final MessageManager messageManager;
     // Per-player, per-ritual cooldown expiry (in-memory; only used by non-relic rituals).
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
     public RitualManager(final ConfigManager configManager, final RelicManager relicManager,
-                         final SinManager sinManager, final MessageManager messageManager) {
+                         final SinManager sinManager, final FactionManager factionManager,
+                         final TerritoryManager territoryManager, final JobManager jobManager,
+                         final MessageManager messageManager) {
         this.configManager = configManager;
         this.relicManager = relicManager;
         this.sinManager = sinManager;
+        this.factionManager = factionManager;
+        this.territoryManager = territoryManager;
+        this.jobManager = jobManager;
         this.messageManager = messageManager;
     }
 
     /**
-     * Attempts a ritual at an altar block of the given material.
+     * Attempts a ritual at the given altar block (the core block the player clicked).
      *
      * @param player the ritualist
-     * @param altarMaterial the block they interacted with
+     * @param altar the block they interacted with
      * @return true if a ritual was matched and handled (success or failure feedback sent)
      */
-    public boolean tryRitual(final Player player, final Material altarMaterial) {
+    public boolean tryRitual(final Player player, final Block altar) {
         if (configManager.getConfiguration() == null) {
             return false;
         }
@@ -74,20 +89,54 @@ public final class RitualManager {
                 continue;
             }
 
-            final Material altar = Material.matchMaterial(ritual.getString("altar-block", ""));
-            if (altar != altarMaterial) {
+            final Material core = Material.matchMaterial(ritual.getString("altar-block", ""));
+            if (core != altar.getType()) {
                 continue;
             }
 
-            performRitual(player, ritualId, ritual);
+            performRitual(player, ritualId, ritual, altar);
             return true;
         }
 
         return false;
     }
 
-    private void performRitual(final Player player, final String ritualId, final ConfigurationSection ritual) {
+    private void performRitual(final Player player, final String ritualId, final ConfigurationSection ritual,
+                               final Block altar) {
         final String type = ritual.getString("type", "relic").toLowerCase(Locale.ROOT);
+
+        // Optional gates: class-specific and faction-specific altars (config: requires-class / requires-faction).
+        final String requiredClass = ritual.getString("requires-class", "");
+        if (!requiredClass.isBlank()) {
+            final var job = jobManager.getPrimaryJob(player);
+            if (job == null || !job.getId().equalsIgnoreCase(requiredClass.trim())) {
+                player.sendMessage(messageManager.getMessage(
+                        "ritual-wrong-class",
+                        "<red>Ez az oltár nem a te kasztodhoz szól.</red>"
+                ));
+                return;
+            }
+        }
+        final String requiredFaction = ritual.getString("requires-faction", "");
+        if (!requiredFaction.isBlank()) {
+            final FactionType faction = factionManager.getFaction(player.getUniqueId());
+            if (faction == null || !faction.name().equalsIgnoreCase(requiredFaction.trim())) {
+                player.sendMessage(messageManager.getMessage(
+                        "ritual-wrong-faction",
+                        "<red>Ez az oltár nem a te frakciódhoz szól.</red>"
+                ));
+                return;
+            }
+        }
+
+        // Multi-block structure: every configured offset block must match, or the shrine is incomplete.
+        if (!matchesStructure(altar, ritual.getStringList("structure"))) {
+            player.sendMessage(messageManager.getMessage(
+                    "ritual-structure-incomplete",
+                    "<red>Az oltár szerkezete hiányos — építsd meg a teljes szentélyt a mag-blokk köré.</red>"
+            ));
+            return;
+        }
 
         // Cooldown (non-relic rituals; the relic singleton rule is its own gate).
         final long cooldownSeconds = Math.max(0L, ritual.getLong("cooldown-seconds", 0L));
@@ -116,7 +165,7 @@ public final class RitualManager {
         final boolean success = switch (type) {
             case "cleanse" -> tryCleanse(player);
             case "buff" -> tryBuff(player, ritual);
-            case "heal" -> tryHeal(player);
+            case "home" -> tryHome(player);
             default -> tryRelic(player, ritualId, ritual);
         };
         if (!success) {
@@ -189,24 +238,73 @@ public final class RitualManager {
         return true;
     }
 
-    /** Heal: fully restores health and saturation. */
-    private boolean tryHeal(final Player player) {
-        final var maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
-        player.setHealth(maxHealth == null ? player.getHealth() : maxHealth.getValue());
-        player.setFoodLevel(20);
-        player.setSaturation(20.0F);
-        player.setFireTicks(0);
+    /** Home: teleports the ritualist to their faction's capital (a "hearthstone" altar). */
+    private boolean tryHome(final Player player) {
+        final FactionType faction = factionManager.getFaction(player.getUniqueId());
+        final Territory capital = faction == null ? null : territoryManager.getCapital(faction);
+        if (capital == null) {
+            player.sendMessage(messageManager.getMessage(
+                    "ritual-home-no-capital",
+                    "<red>A frakciódnak nincs fővárosa, ahová hazatérhetnél.</red>"
+            ));
+            return false;
+        }
+        final World world = Bukkit.getWorld(capital.world());
+        if (world == null) {
+            player.sendMessage(messageManager.getMessage(
+                    "ritual-home-no-capital",
+                    "<red>A frakciódnak nincs fővárosa, ahová hazatérhetnél.</red>"
+            ));
+            return false;
+        }
+        final int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
+        final Location target = new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D,
+                player.getLocation().getYaw(), player.getLocation().getPitch());
+        // The player is on their own region thread here (interaction event) — teleportAsync is Folia-safe.
+        player.teleportAsync(target);
         player.sendMessage(messageManager.getMessage(
-                "ritual-heal-success",
-                "<gold>Az oltár helyreállító fénye teljesen felüdít.</gold>"
+                "ritual-home-success",
+                "<gold>Az oltár fénye hazaröpít a fővárosodba.</gold>"
         ));
+        return true;
+    }
+
+    /** Validates every "dx,dy,dz:MATERIAL" offset against the blocks around the core. */
+    private boolean matchesStructure(final Block core, final List<String> structure) {
+        if (structure == null || structure.isEmpty()) {
+            return true;
+        }
+        for (final String token : structure) {
+            final String[] halves = token.split(":", 2);
+            if (halves.length < 2) {
+                continue;
+            }
+            final String[] offset = halves[0].split(",");
+            if (offset.length < 3) {
+                continue;
+            }
+            final Material expected = Material.matchMaterial(halves[1].trim().toUpperCase(Locale.ROOT));
+            if (expected == null) {
+                continue;
+            }
+            try {
+                final int dx = Integer.parseInt(offset[0].trim());
+                final int dy = Integer.parseInt(offset[1].trim());
+                final int dz = Integer.parseInt(offset[2].trim());
+                if (core.getRelative(dx, dy, dz).getType() != expected) {
+                    return false;
+                }
+            } catch (final NumberFormatException ignored) {
+                // Skip malformed offsets rather than failing the whole check on an admin typo.
+            }
+        }
         return true;
     }
 
     private void playSuccessEffect(final Player player, final String type) {
         final Particle particle = switch (type) {
             case "cleanse" -> Particle.END_ROD;
-            case "heal" -> Particle.HEART;
+            case "home" -> Particle.PORTAL;
             case "buff" -> Particle.ENCHANT;
             default -> Particle.SOUL_FIRE_FLAME;
         };
@@ -225,7 +323,7 @@ public final class RitualManager {
     }
 
     private List<PotionEffect> parseEffects(final List<String> raw) {
-        final List<PotionEffect> effects = new java.util.ArrayList<>();
+        final List<PotionEffect> effects = new ArrayList<>();
         for (final String token : raw) {
             final String[] parts = token.split(":");
             if (parts.length < 3) {

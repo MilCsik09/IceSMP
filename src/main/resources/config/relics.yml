@@ -58,39 +58,68 @@ relics:
         - "&7szőtt szárnya. Éjjel a viselője"
         - "&7maga is árnyékká válik."
 
-# ===== Rituálé-oltárok =====
-# Egy oltár = egy blokk-típus, amit SHIFT+jobb kattal aktiválsz, ha nálad vannak az
-# áldozati tárgyak. A kimenetet a 'type' dönti el:
+# ===== Rituálé-oltárok (multi-block szentélyek) =====
+# Egy oltár egy MAG-BLOKK (altar-block), amit SHIFT+jobb kattal aktiválsz. Ha van 'structure',
+# akkor a mag köré meg kell építeni a teljes szentélyt — a 'structure' minden eleme egy
+# "dx,dy,dz:MATERIAL" eltolás a mag-blokkhoz képest, és mindnek stimmelnie kell.
+# A kimenetet a 'type' dönti el:
 #   relic   (alap): egy relikviát idéz meg (a relic-egyediség szabálya érvényes — ha
 #           már van élő tulajdonosa, nem idézhető újra). A 'relic' mező adja a relic-id-t
 #           (alapból a rituálé kulcsa).
 #   cleanse: leveszi a bűnös-jelet és nullázza a bűn-számlálót (a lezárt sötét paktumot
 #           NEM oldja fel — az a vezeklés-questlánc dolga).
 #   buff:   a megadott effekteket rakja fel ('effects': "TÍPUS:tick:erősség").
-#   heal:   teljes élet + telítettség visszatöltés.
+#   home:   a frakciód fővárosába teleportál (hazatérés-kő).
+# Kapuk (opcionális): 'requires-class' (kaszt-id, pl. wizard) és 'requires-faction' (RED/BLUE/
+# NEUTRAL/DARK) → csak az adott kaszt/frakció aktiválhatja. Így könnyű kaszt-specifikus oltárt
+# felvenni pusztán configból.
 # Nem-relic rituáléknál a 'cooldown-seconds' korlátozza az ismétlést (memóriában, újraindításkor
 # nullázódik). sacrifice / effects formátum: "MATERIAL:darab" ill. "EFFECT:tick:erősség".
 rituals:
   phoenix_wing:
     altar-block: "MAGMA_BLOCK"
+    structure:
+      - "0,-1,0:NETHERRACK"
+      - "1,0,1:GOLD_BLOCK"
+      - "1,0,-1:GOLD_BLOCK"
+      - "-1,0,1:GOLD_BLOCK"
+      - "-1,0,-1:GOLD_BLOCK"
     sacrifice:
       - "BLAZE_ROD:8"
       - "FIRE_CHARGE:16"
       - "GOLD_BLOCK:1"
   frost_wing:
     altar-block: "BLUE_ICE"
+    structure:
+      - "0,-1,0:PACKED_ICE"
+      - "1,0,1:PRISMARINE"
+      - "1,0,-1:PRISMARINE"
+      - "-1,0,1:PRISMARINE"
+      - "-1,0,-1:PRISMARINE"
     sacrifice:
       - "PACKED_ICE:16"
       - "PRISMARINE_CRYSTALS:8"
       - "DIAMOND_BLOCK:1"
   wander_wind:
     altar-block: "AMETHYST_BLOCK"
+    structure:
+      - "0,-1,0:AMETHYST_BLOCK"
+      - "1,0,1:COPPER_BLOCK"
+      - "1,0,-1:COPPER_BLOCK"
+      - "-1,0,1:COPPER_BLOCK"
+      - "-1,0,-1:COPPER_BLOCK"
     sacrifice:
       - "FEATHER:32"
       - "PHANTOM_MEMBRANE:8"
       - "EMERALD_BLOCK:1"
   bone_wing:
     altar-block: "SOUL_SOIL"
+    structure:
+      - "0,-1,0:SOUL_SAND"
+      - "1,0,1:BONE_BLOCK"
+      - "1,0,-1:BONE_BLOCK"
+      - "-1,0,1:BONE_BLOCK"
+      - "-1,0,-1:BONE_BLOCK"
     sacrifice:
       - "BONE_BLOCK:8"
       - "WITHER_SKELETON_SKULL:1"
@@ -100,6 +129,12 @@ rituals:
     type: "cleanse"
     altar-block: "SOUL_LANTERN"
     cooldown-seconds: 1800
+    structure:
+      - "0,-1,0:QUARTZ_BLOCK"
+      - "1,0,1:QUARTZ_PILLAR"
+      - "1,0,-1:QUARTZ_PILLAR"
+      - "-1,0,1:QUARTZ_PILLAR"
+      - "-1,0,-1:QUARTZ_PILLAR"
     sacrifice:
       - "GOLD_BLOCK:3"
       - "GHAST_TEAR:2"
@@ -109,6 +144,12 @@ rituals:
     type: "buff"
     altar-block: "GILDED_BLACKSTONE"
     cooldown-seconds: 900
+    structure:
+      - "0,-1,0:BLACKSTONE"
+      - "1,0,1:GOLD_BLOCK"
+      - "1,0,-1:GOLD_BLOCK"
+      - "-1,0,1:GOLD_BLOCK"
+      - "-1,0,-1:GOLD_BLOCK"
     sacrifice:
       - "GOLD_INGOT:12"
       - "BLAZE_POWDER:8"
@@ -116,14 +157,37 @@ rituals:
       - "STRENGTH:6000:1"      # 5 perc, +2 szint
       - "RESISTANCE:6000:0"    # 5 perc
       - "FIRE_RESISTANCE:6000:0"
-  # --- Megújulás oltára: teljes gyógyulás ---
-  megujulas:
-    type: "heal"
-    altar-block: "SEA_LANTERN"
+  # --- Hazatérés-kő: a frakciód fővárosába teleportál ---
+  hazateres:
+    type: "home"
+    altar-block: "LODESTONE"
     cooldown-seconds: 300
+    structure:
+      - "0,-1,0:OBSIDIAN"
+      - "1,0,1:OBSIDIAN"
+      - "1,0,-1:OBSIDIAN"
+      - "-1,0,1:OBSIDIAN"
+      - "-1,0,-1:OBSIDIAN"
     sacrifice:
-      - "GLISTERING_MELON_SLICE:8"
-      - "GOLDEN_CARROT:8"
+      - "ENDER_PEARL:2"
+  # --- Kaszt-specifikus PÉLDA: Varázsló arkán szentélye (csak varázslónak) ---
+  # Másold ezt más kasztokra a 'requires-class' és a tematikus blokkok/effektek átírásával.
+  varazslo_szentely:
+    type: "buff"
+    requires-class: "wizard"
+    altar-block: "ENCHANTING_TABLE"
+    cooldown-seconds: 1200
+    structure:
+      - "1,0,1:BOOKSHELF"
+      - "1,0,-1:BOOKSHELF"
+      - "-1,0,1:BOOKSHELF"
+      - "-1,0,-1:BOOKSHELF"
+    sacrifice:
+      - "LAPIS_LAZULI:32"
+      - "AMETHYST_SHARD:8"
+    effects:
+      - "REGENERATION:1200:0"  # 1 perc regeneráció (arkán megújulás)
+      - "HASTE:6000:1"         # 5 perc — "arkán gyorsaság"
 
 # ===== Nekromanta lélek-erőforrás =====
 # A Nekromanta-spec játékosok ölésenként lélekszilánkot kapnak, amiből

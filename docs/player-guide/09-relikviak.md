@@ -42,19 +42,32 @@ A négy szárnyat **nem lehet craftolni** — egy **oltáron kell megidézni** �
 Ha a szárnynak **már van élő tulajdonosa**, nem idézheted meg újra (az „egy példány" szabály
 miatt). Várnod kell, amíg felszabadul.
 
+### Multi-block szentélyek 🏛️
+
+Az oltárok **több-blokkos szentélyek**: nem elég a mag-blokk, köré kell építeni a teljes
+szerkezetet is (a `config/relics.yml` `structure` mezője adja a mintát). A szárnyak alapmintája
+egy **mag-blokk**, alatta egy alapkő, és **4 sarok-pillér** átlósan — ha a szentély hiányos, az
+oltár szól, mielőtt aktiválnád.
+
 ### Egyéb oltárok 🕯️ — nem csak szárnyak
 
-Az oltár-rituálé nem csak relikviát adhat. Ugyanúgy működik (SHIFT + jobb katt, ha nálad vannak
-az áldozati tárgyak), de más a kimenet — és ezek **ismételhetők** (van egy rövid „feltöltődés"):
+Az oltár-rituálé nem csak relikviát adhat. Ugyanúgy működik (építsd meg a szentélyt, gyűjtsd össze
+az áldozatot, SHIFT + jobb katt a mag-blokkon), de más a kimenet — és ezek **ismételhetők**
+(van egy rövid „feltöltődés"):
 
-| Oltár | Oltár-blokk | Áldozat | Mit ad |
+| Oltár | Mag-blokk | Áldozat | Mit ad |
 |---|---|---|---|
 | 🕯️ Feloldozás | Lélek-lámpás | 3 aranytömb, 2 ghast-könny, 1 megmentő-totem | Leveszi a **bűnös-jelet** és nullázza a bűneidet (a sötét paktumot nem oldja fel) |
 | ⚔️ Erő áldása | Aranyozott feketekő | 12 aranyrúd, 8 lidércpor | 5 percre **Erő II + Ellenállás + Tűzállóság** |
-| 💚 Megújulás | Tengeri lámpás | 8 csillámló dinnye, 8 aranyrépa | **Teljes élet + telítettség** visszatöltés |
+| 🏠 Hazatérés-kő | Iránytű-kő (lodestone) | 2 ender-gyöngy | A frakciód **fővárosába teleportál** |
 
-> Az oltár-blokkok, áldozatok és hatások a `config/relics.yml` `rituals:` szekciójában
-> testreszabhatók — új oltárt is felvehet az admin (`type: relic|cleanse|buff|heal`).
+Vannak **kaszt-specifikus** oltárok is: pl. a **Varázsló arkán szentélye** (varázslótábla +
+könyvespolc-sarkok) csak varázslónak ad arkán buffot. Az admin bármelyik kasztnak felvehet
+sajátot a `requires-class` kapuval.
+
+> Minden oltár-blokk, szerkezet, áldozat és hatás a `config/relics.yml` `rituals:` szekciójában
+> testreszabható — új oltárt is felvehet az admin (`type: relic|cleanse|buff|home`,
+> `requires-class`/`requires-faction` kapukkal).
 
 ---
 
