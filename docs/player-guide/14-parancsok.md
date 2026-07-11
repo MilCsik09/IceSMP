@@ -95,6 +95,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/quest admin set <id> objectives-mode ALL\|SEQUENCE` | Több-objektívás mód: párhuzamos vagy sorban |
 | `/quest admin set <id> <mező> <érték...>` | Küldetés-mező beállítása (feltétel, jutalom, giver-npc, dialogue.choices, rotation-group, seasonal...) |
 | `/quest admin delete/info/list` | Admin-küldetés törlése / megtekintése / listája |
+| `/quest admin builder <id>` | **Kattintós küldetés-szerkesztő** — új id-vel létrehozó varázsló (objektíva-választó + chat-bevitel), létező custom questtel mező-szerkesztő GUI |
 | `/currency set <játékos> <összeg> [valuta]` | Valuta-egyenleg beállítása |
 | `/faction set <játékos> <frakció>` | Játékos frakcióba sorolása |
 | `/relic give <játékos> <relic_id>` | Relikvia adása |

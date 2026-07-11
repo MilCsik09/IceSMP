@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.listeners.QuestBuilderListener;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -28,11 +29,14 @@ public final class QuestCommand implements BasicCommand {
     private final JavaPlugin plugin;
     private final QuestManager questManager;
     private final MessageManager messageManager;
+    private final QuestBuilderListener questBuilderListener;
 
-    public QuestCommand(final JavaPlugin plugin, final QuestManager questManager, final MessageManager messageManager) {
+    public QuestCommand(final JavaPlugin plugin, final QuestManager questManager,
+                        final MessageManager messageManager, final QuestBuilderListener questBuilderListener) {
         this.plugin = plugin;
         this.questManager = questManager;
         this.messageManager = messageManager;
+        this.questBuilderListener = questBuilderListener;
     }
 
     @Override
@@ -79,6 +83,7 @@ public final class QuestCommand implements BasicCommand {
             case "delete" -> handleAdminDelete(sender, args);
             case "info" -> handleAdminInfo(sender, args);
             case "list" -> handleAdminList(sender);
+            case "builder" -> handleAdminBuilder(sender, args);
             default -> sendAdminHelp(sender);
         }
     }
@@ -200,6 +205,19 @@ public final class QuestCommand implements BasicCommand {
         }
     }
 
+    private void handleAdminBuilder(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("quest-builder-usage",
+                    "&cHasználat: /quest admin builder <id> &7(új id = új küldetés varázsló)"));
+            return;
+        }
+        questBuilderListener.openBuilder(player, args[2]);
+    }
+
     private void handleAdminList(final CommandSender sender) {
         final var customIds = questManager.getCustomQuestIds();
         if (customIds.isEmpty()) {
@@ -238,6 +256,8 @@ public final class QuestCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("quest-admin-help-delete", "&e/quest admin delete <id> &7- Küldetés törlése."));
         sender.sendMessage(messageManager.get("quest-admin-help-info", "&e/quest admin info <id> &7- Definíció megtekintése."));
         sender.sendMessage(messageManager.get("quest-admin-help-list", "&e/quest admin list &7- Admin-készítette küldetések."));
+        sender.sendMessage(messageManager.get("quest-admin-help-builder",
+                "&e/quest admin builder <id> &7- Kattintós küldetés-szerkesztő (új id-vel varázsló)."));
     }
 
     private void handleLog(final CommandSender sender) {
@@ -452,7 +472,7 @@ public final class QuestCommand implements BasicCommand {
             return List.of();
         }
 
-        final List<String> actions = List.of("create", "addobjective", "set", "delete", "info", "list");
+        final List<String> actions = List.of("create", "addobjective", "set", "delete", "info", "list", "builder");
         final String action = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "";
         if (args.length == 1 || (args.length == 2 && !actions.contains(action))) {
             final String prefix = prefixAt(args, 1);
@@ -463,7 +483,8 @@ public final class QuestCommand implements BasicCommand {
         // egy létező küldetésre pontosan illeszkedik.
         final boolean idComplete = args.length >= 3
                 && questManager.getQuestIds().contains(args[2].toLowerCase(Locale.ROOT));
-        if (("set".equals(action) || "delete".equals(action) || "addobjective".equals(action))
+        if (("set".equals(action) || "delete".equals(action) || "addobjective".equals(action)
+                || "builder".equals(action))
                 && (args.length == 2 || (args.length == 3 && !idComplete))) {
             final String prefix = prefixAt(args, 2);
             return questManager.getCustomQuestIds().stream().filter(id -> id.startsWith(prefix)).toList();

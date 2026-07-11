@@ -187,6 +187,7 @@ public final class IceSMPCore {
     private final CatalystItemFactory catalystItemFactory;
     private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
     private final AbilityCatalystListener abilityCatalystListener;
+    private final hu.taliann.icesmp.listeners.QuestBuilderListener questBuilderListener;
     private final SpellMasteryManager spellMasteryManager;
     private final PlayerSessionCleanupListener playerSessionCleanupListener;
     private final RelicManager relicManager;
@@ -317,6 +318,7 @@ public final class IceSMPCore {
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
                 catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager, messageManager);
+        this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
@@ -768,7 +770,7 @@ public final class IceSMPCore {
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
-        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager));
+        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager, questBuilderListener));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, messageManager));
         plugin.registerCommand("adomany", "Közösségi adomány-láda", List.of("donate", "adomanylada"), new DonationChestCommand(donationChestManager, messageManager));
         plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));
@@ -812,6 +814,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
+        pluginManager.registerEvents(questBuilderListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ShopListener(shopManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CaravanListener(caravanManager, shopManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.GatheringBuffListener(gatheringBuffManager), plugin);

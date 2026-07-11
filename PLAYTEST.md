@@ -426,6 +426,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
       a gombok működnek, a kattintások nem visznek ki tárgyat a menüből.
+- [ ] **Quest builder** (`/quest admin builder <id>`, admin): új id-vel a típus-választó nyílik →
+      darabszám + név a chatben → szerkesztő; létező custom questtel rögtön a szerkesztő. Mező-csempe
+      kattintás után a chatbe írt érték mentődik ('mégse' megszakít), a kapcsolók (ismételhető,
+      szezonális, bűn-tisztítás, objektíva-mód) helyben váltanak; törléshez két kattintás kell;
+      a chatbe írt érték NEM jelenik meg a publikus chatben.
 - [ ] **Admin panel** (`/menu` → Admin, csak admin-joggal): minden világesemény indítható gombbal
       (vérhold start/stop, világboss, invázió, karaván érkezés/távozás, Vad Hajsza, meteor, kincs,
       gyűjtögető buff, bőség, kihívás, kíséret, hangulat-esemény); a kezelősor (admin unclaim,
