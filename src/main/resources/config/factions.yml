@@ -140,11 +140,14 @@ territory:
     protect-zones: true
     # Zónatípusonként állítható, mi TILTOTT (true = védve) az adott zónában:
     #   build       - blokk törése/rakása, vödör, kép-/festménykeret, armor stand
-    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik)
+    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik);
+    #                 VÉDETT zónában a mob-grief (enderman), folyadék-befolyás és
+    #                 dugattyú-tolás is ehhez a szabályhoz kötött
     #   interact    - konténer/ajtó/gomb/kar/műhely jobbklikk
     #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik)
-    #   pvp         - játékos↔játékos sebzés a zónán belül (biztonságos zóna)
-    #   explosions  - robbanás (creeper/TNT/kristály) blokk-kára
+    #   pvp         - játékos↔játékos sebzés a zónán belül (biztonságos zóna):
+    #                 közelharc, nyíl/lövedék, háziállat, TNT és ártó/dobott bájital is
+    #   explosions  - robbanás (creeper/TNT/kristály) blokk- ÉS dekoráció-kára
     #   fire        - tűz gyújtása/terjedése/égése
     # Megkerülő jogok: icesmp.admin.territory.bypass (mindent + PvP),
     #                  icesmp.territory.builder (build + interact védett zónában is).

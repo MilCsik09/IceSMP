@@ -151,17 +151,44 @@ public final class TerritoryProtectionService {
      * (Folia cross-entity touch). The admin bypass lets staff fight anywhere.
      */
     public boolean denyPvp(final Player victim, final Player attacker) {
-        final Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
-        if (zone == null || !ruleEnabled(zone.type(), PVP) || attacker.hasPermission(ADMIN_BYPASS)) {
+        return denyCombat(victim.getLocation(), attacker, true);
+    }
+
+    /**
+     * Whether damage to a victim at {@code victimLocation} is denied by the zone's
+     * PvP rule. {@code attacker} may be {@code null} for unattributed sources
+     * (e.g. a TNT with no player origin) — such damage is still blocked in a
+     * safe zone, just without a notice. A non-null attacker with the admin bypass
+     * is allowed to fight, and (when {@code notify}) is told why on their own
+     * scheduler. Used for melee, projectiles, pets, TNT and harmful potions.
+     */
+    public boolean denyCombat(final Location victimLocation, final Player attacker, final boolean notify) {
+        final Territory zone = territoryManager.getTerritoryAt(victimLocation);
+        if (zone == null || !ruleEnabled(zone.type(), PVP)) {
             return false;
         }
-        attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(
-                "territory-pvp-denied", "<red>⛨ {name} — biztonságos zóna, itt tilos a PvP.</red>",
-                Map.of("name", zone.name()))), null);
+        if (attacker != null && attacker.hasPermission(ADMIN_BYPASS)) {
+            return false;
+        }
+        if (notify && attacker != null) {
+            attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(
+                    "territory-pvp-denied", "<red>⛨ {name} — biztonságos zóna, itt tilos a PvP.</red>",
+                    Map.of("name", zone.name()))), null);
+        }
         return true;
     }
 
-    // ==================== environment (explosions / fire) ====================
+    // ==================== environment (explosions / fire / terrain) ====================
+
+    /**
+     * Whether unauthorised, ownerless terrain changes (mob griefing, liquid flow,
+     * pistons) are forbidden here: true inside a PROTECTED zone whose build rule is
+     * active. Normal faction land is left to ordinary survival mechanics.
+     */
+    public boolean isTerrainProtectedAt(final Location location) {
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        return zone != null && zone.type().isProtectedZone() && ruleEnabled(zone.type(), BUILD);
+    }
 
     /** Whether an explosion may not damage the block at this location. */
     public boolean isExplosionBlockedAt(final Location location) {

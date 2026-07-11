@@ -35,12 +35,12 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 1 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 61 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, stb.). |
-| `listeners/` | 66 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `managers/` | 62 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 67 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 38 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 32 (+ al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `gui/` | 31 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
-| `data/` | 10 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`…). |
+| `data/` | 11 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 6 (+ `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 7 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 2 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
@@ -140,6 +140,45 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
+
+### 3.9 Territórium-zónák és zóna-védelem
+
+A **zóna-modell** három rétegre bomlik, hogy a geometria, a szabály-feloldás és az
+eseménykezelés külön változhasson:
+
+1. **`data/Territory` (+ `TerritoryType`)** — egy zóna: kör (`x,z,radius`) VAGY poligon
+   (`{x,z}` csúcsgyűrű, ≥3), opcionális `minY`/`maxY` sávval (`NO_MIN_Y`/`NO_MAX_Y` =
+   korlátlan). A `contains(...)` befoglaló-kör gyors elutasítással kezd, poligonnál
+   páros-páratlan ray-casttel folytat; a `radius` a poligonnál a befoglaló-kör sugara (ez a
+   „legspecifikusabb zóna nyer" méret-összevetés alapja is). A típus dönti el az építés/claim
+   jogot (`isProtectedZone`, `isClaimable`).
+2. **`TerritoryManager`** — a zónák állapota + perzisztencia (`territories.yml`, régi `capital:
+   true/false` migrál). A lekérés **lock-free**: `chunkIndex` (`world;cx;cz → zónák`) a
+   `ClaimManager` mintájára, minden (ritka, parancs-vezérelt) mutáció `synchronized` alatt
+   újraépíti és atomikusan cseréli. Poligon-kijelöléshez per-player pont-puffer
+   (`PlayerStateCleanup`). Szerkesztők: `define`/`definePolygon`/`rename`/`resize`/`setType`/
+   `setYBounds`/`remove` — mind index-újraépítés + mentés.
+3. **`TerritoryProtectionService` + `TerritoryProtectionListener`** — a védelmi szabályokat a
+   `territory.protection.rules.<típus>.<szabály>` configból oldja fel (`build`, `interact`,
+   `pvp`, `explosions`, `fire`; beégetett defaultok). `true` = tiltott: védett zónában
+   mindenkinek, frakcióterületen csak a nem-tagnak. A service tiszta feloldó (Bukkit-esemény
+   nélkül), a listener kizárólag delegál — így új eseményt bekötni = egy handler, ami a
+   megfelelő `deny*`/`is*BlockedAt` metódust hívja.
+
+**Fedett rések (a fő kulcsokra visszavezetve, nincs új config):** a `build` védett zónában a
+mob-griefet (`EntityChangeBlockEvent`), folyadék-befolyást (`BlockFromToEvent`) és
+dugattyú-tolást (`BlockPiston*Event`) is tiltja (`isTerrainProtectedAt`); a `pvp` a közelharcon
+túl a lövedéket, háziállatot, TNT-t és a dobott/lingering ártó bájitalt is
+(`denyCombat` + `resolveAttacker`); az `explosions` a képkeret/armor stand dekorációt is óvja.
+
+**Bypass:** `icesmp.admin.territory.bypass` (minden, PvP is) és `icesmp.territory.builder`
+(build+interakció védett zónában is, PvP nem). **Folia:** minden handler az esemény régió-szálán
+fut, a lekérés lock-free; az egyetlen kereszt-entitás érintés a PvP-tiltás értesítése, ami a
+támadó saját `getScheduler()`-ére hoppol.
+
+> **Új szabály/típus bekötése:** típus → `TerritoryType` (build/claim jog); szabály → új kulcs a
+> `rules` alá + `defaultRule` + a service egy `deny*`/`is*At` metódusa + egy listener-handler.
+> A `claim` tiltását a `TerritoryManager.isClaimBlockedAt` adja (csak védett zónában).
 
 ---
 

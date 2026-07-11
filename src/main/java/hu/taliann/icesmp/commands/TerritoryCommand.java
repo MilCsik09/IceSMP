@@ -39,7 +39,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "pos", "undo", "clearpoints", "points", "create", "circle",
-            "setcapital", "rename", "resize", "settype", "sety", "remove", "list", "info", "show");
+            "setcapital", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
     private static final List<String> TYPE_NAMES = List.of(
             "faction", "protected-faction", "protected-city", "capital");
 
@@ -82,7 +82,8 @@ public final class TerritoryCommand implements BasicCommand {
             case "remove" -> handleRemove(sender, args);
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender);
-            case "show" -> handleShow(sender);
+            case "show" -> handleShow(sender, args);
+            case "tp", "teleport" -> handleTeleport(sender, args);
             default -> {
                 sender.sendMessage(messageManager.get("territory-unknown-subcommand", "&cIsmeretlen alparancs: &f%s", args[0]));
                 sendHelp(sender);
@@ -433,14 +434,28 @@ public final class TerritoryCommand implements BasicCommand {
 
     // ==================== particle preview ====================
 
-    private void handleShow(final CommandSender sender) {
+    private void handleShow(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
         final List<int[]> buffer = territoryManager.getPoints(player.getUniqueId());
-        final Territory here = territoryManager.getTerritoryAt(player.getLocation());
+        final Territory here;
+        if (args.length >= 2) {
+            here = territoryManager.getById(args[1]);
+            if (here == null) {
+                sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+                return;
+            }
+            if (!here.world().equals(player.getWorld().getName())) {
+                sender.sendMessage(messageManager.get("territory-show-cross-world",
+                        "&cEz a zóna másik világban van (&f%s&c) — a rajz csak abban a világban látszik.", here.world()));
+                return;
+            }
+        } else {
+            here = territoryManager.getTerritoryAt(player.getLocation());
+        }
         if (buffer.isEmpty() && here == null) {
             sender.sendMessage(messageManager.get("territory-show-nothing",
                     "&eNincs mit megjeleníteni (nincs határpont, és nem állsz területen)."));
@@ -469,6 +484,47 @@ public final class TerritoryCommand implements BasicCommand {
             }
         }, null, 1L, 20L);
         sender.sendMessage(messageManager.get("territory-show-started", "&aHatárrajz megjelenítve (8 mp)."));
+    }
+
+    /**
+     * Teleports the admin to a zone's centre. Folia-safe: the destination chunk is
+     * loaded async, the highest-block probe runs on THAT chunk's region thread, and
+     * {@code teleportAsync} is dispatched from there; the viewer's facing is captured
+     * up front (we are on the player's own region thread in the command).
+     */
+    private void handleTeleport(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messageManager.get("territory-tp-usage", "&cHasználat: /territory tp <azonosító>"));
+            return;
+        }
+        final Territory zone = territoryManager.getById(args[1]);
+        if (zone == null) {
+            sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+            return;
+        }
+        final World world = org.bukkit.Bukkit.getWorld(zone.world());
+        if (world == null) {
+            sender.sendMessage(messageManager.get("territory-tp-world-missing",
+                    "&cA zóna világa (&f%s&c) nincs betöltve.", zone.world()));
+            return;
+        }
+        final float yaw = player.getLocation().getYaw();
+        final float pitch = player.getLocation().getPitch();
+        final int cx = zone.x() >> 4;
+        final int cz = zone.z() >> 4;
+        world.getChunkAtAsync(cx, cz).thenRun(() ->
+                org.bukkit.Bukkit.getRegionScheduler().run(plugin, world, cx, cz, task -> {
+                    final int baseY = zone.minY() != Territory.NO_MIN_Y
+                            ? zone.minY() + 1
+                            : world.getHighestBlockYAt(zone.x(), zone.z()) + 1;
+                    player.teleportAsync(new Location(world, zone.x() + 0.5D, baseY, zone.z() + 0.5D, yaw, pitch));
+                }));
+        sender.sendMessage(messageManager.get("territory-tp-success",
+                "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…", zone.name(), zone.x(), zone.z()));
     }
 
     /** Draws particle segments between consecutive vertices (closing the ring). */
@@ -602,7 +658,8 @@ public final class TerritoryCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("territory-help-remove", "&e/territory remove <id> &7- Terület törlése."));
         sender.sendMessage(messageManager.get("territory-help-list", "&e/territory list &7- Területek listája."));
         sender.sendMessage(messageManager.get("territory-help-info", "&e/territory info &7- Az aktuális pozíció területe."));
-        sender.sendMessage(messageManager.get("territory-help-show", "&e/territory show &7- Határrajz (puffer + aktuális terület)."));
+        sender.sendMessage(messageManager.get("territory-help-show", "&e/territory show [id] &7- Határrajz (puffer / aktuális / megadott zóna)."));
+        sender.sendMessage(messageManager.get("territory-help-tp", "&e/territory tp <id> &7- Teleportálás a zóna középpontjához."));
         sender.sendMessage(messageManager.get("territory-help-types",
                 "&7Típusok: &ffaction &7(csak tagok), &fprotected-faction&7/&fprotected-city &7(senki), &fcapital &7(főváros)."));
     }
@@ -630,8 +687,8 @@ public final class TerritoryCommand implements BasicCommand {
         if ("setcapital".equals(subcommand) && args.length == 2) {
             return factionSuggestions(prefixAt(args, 1));
         }
-        // Edit/remove commands take an existing zone id at arg1.
-        if (args.length == 2 && List.of("remove", "rename", "resize", "settype", "sety").contains(subcommand)) {
+        // Edit/remove/tp/show commands take an existing zone id at arg1.
+        if (args.length == 2 && List.of("remove", "rename", "resize", "settype", "sety", "tp", "show").contains(subcommand)) {
             return idSuggestions(prefixAt(args, 1));
         }
         // settype <id> <type>

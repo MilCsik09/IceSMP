@@ -41,11 +41,15 @@ Az adminok **zónatípusonként külön-külön** állíthatják, mi tiltott az 
 | **build** | blokk törése/rakása, vödör, kép-/festménykeret, armor stand | 🔒 nem-tagoknak | 🔒 mindenkinek |
 | **interact** | konténer/ajtó/gomb/kar/műhely jobbklikk | 🔓 szabad | 🔒 mindenkinek |
 | **pvp** | játékos↔játékos sebzés (biztonságos zóna) | 🔓 szabad (harc mehet) | 🔒 tilos |
-| **explosions** | creeper/TNT/kristály blokk-kára | 🔓 mehet | 🔒 tiltva |
+| **explosions** | creeper/TNT/kristály blokk- és dekoráció-kára | 🔓 mehet | 🔒 tiltva |
 | **fire** | tűz gyújtása/terjedése/égése | 🔓 mehet | 🔒 tiltva |
 
 > Így pl. egy „védett város" teljes biztonságos zóna (se rombolás, se PvP, se tűz), egy
 > frakcióváros viszont csak a nem-tagok építését tiltja, de a harc és a nyílt interakció megy.
+
+A védelem a „hátsó ajtókat" is lefedi: védett zónában a **mob-grief** (enderman), a kívülről
+**befolyó víz/láva** és a **dugattyú** sem módosítja a terepet (a `build` szabály alá esnek); a
+**PvP** a közelharcon túl a **nyílra/lövedékre, háziállatra, TNT-re és ártó bájitalra** is áll.
 
 ### Megkerülő jogok (bypass)
 
@@ -128,7 +132,8 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 - `/territory create <típus> <frakció> <id> [név...]` — poligon-zóna lezárása a pontokból.
 - `/territory circle <típus> <frakció> <id> <sugár> [név...]` — kör-zóna a pozíciódnál.
 - `/territory setcapital <frakció> <sugár> [név...]` — főváros (kör) gyorsan.
-- `/territory show` — a puffered és az aktuális zóna határának kirajzolása részecskékkel.
+- `/territory show [id]` — határrajz: a puffered + az aktuális zóna, vagy a megadott zóna.
+- `/territory tp <id>` — teleportálás a zóna középpontjához.
 - `/territory rename <id> <név...>` — zóna átnevezése.
 - `/territory resize <id> <sugár>` — kör-zóna új sugara (poligonra nem működik).
 - `/territory settype <id> <típus>` — zóna típusának megváltoztatása.

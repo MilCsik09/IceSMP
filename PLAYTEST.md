@@ -323,6 +323,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);
       `icesmp.territory.builder` védett zónában is építhet/interaktálhat, de PvP-zni NEM.
 - [ ] **Kill-switch:** `protect-zones: false` → a védett zónák minden szabálya kikapcsol.
+- [ ] **Grief-rések (védett zóna):** enderman nem visz el blokkot; kívülről víz/láva nem folyik be;
+      dugattyú nem tol be blokkot; TNT nem pusztít képkeretet/armor standot.
+- [ ] **PvP-rések (biztonságos zóna):** nyíl/lövedék, farkas (háziállat), TNT-sebzés és ártó
+      splash/lingering bájital sem hat a játékosra; a támadó action-bar üzenetet kap.
+- [ ] **`/territory tp <id>`** a zóna középpontjához teleportál (a legfelső blokkra; Y-korlátnál a sávba).
+- [ ] **`/territory show <id>`** tetszőleges (nem alattad lévő) zóna határát is kirajzolja.
+- [ ] **messages/territory.yml** felülírja az alapszövegeket (pl. `territory-pvp-denied`).
 - [ ] **Claim tiltás:** védett zónában a `/claim` és `/claim area` elutasítva
       (`claim-in-protected-zone`); **normál frakcióterületen viszont ENGEDETT** (alapból
       `claims.block-in-territory: false`). Kis poligon-zóna szélén is véd (sarok+közép próbák).
