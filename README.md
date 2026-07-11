@@ -107,10 +107,13 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
 - **Lopakodás + ütés (bal katt)** — váltás a feloldott képességek között, kaszt-specifikus
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
+- **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben tartott
+  **kard/balta is katalizátor** — nem kell tárgyat váltani harc közben.
 
 Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. Több mint 390 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
-átfedés a kasztok között.
+átfedés a kasztok között. A képességek **ereje a kaszt-szinttel és talentekkel skálázódik**
+(a spell-mesterség fölött), a **balansz pedig config-vezérelt** (`spells-balance.yml`).
 
 ### 🌟 Talentek
 
@@ -140,18 +143,39 @@ főzőállványból, horgászat, étel sütése. A szintek **egyre több XP-be k
 
 A **netherite felszerelést csak a 25+ szintű Kovács** készítheti el! A 25. szinttől
 minden szakma specializálódhat — szakmánként 2 irány (pl. Fegyverkovács / Páncélkovács,
-Főzetmester / Transzmutátor, Séf / Hentes).
+Főzetmester / Transzmutátor, Séf / Hentes) **valódi mechanikai passzívokkal** (dupladrop,
+XP-bónusz, ital-hosszabbítás).
 
-### 🗡 Relikviák
+**Recept-könyv** (`/profession recipes`): WoW-szerű, több mint **120 recept** — a tanultak
+zölddel, a zároltak szürkén, egy kattintással craftolható. A receptek **szintre** vagy
+**tervrajzból** (Knowledge Book — NPC-bolt / mob-drop / admin) nyílnak meg. Egyes szakmák
+**egyedi köztes alapanyagot** gyártanak (pl. *Tiszta Vasesszencia*, *Rúnapor*), amit a
+magasabb receptek igényelnek — ezek nem használhatók normál módon, csak a recept-könyvben.
 
-Egyedi, legendás tárgyak (jelenleg: **A Mételytépő** harci fejsze, amely megbélyegzi a
-bűnösöket és ítéletet hajt végre rajtuk). Szabályaik:
+### ✨ Tárgy-raritás és loot (rolled itemek)
+
+Minden craftolt felszerelés és mob-loot **véletlen raritást** kap egy létrán (**Ócska → Közönséges
+→ Nem mindennapi → Ritka → Epikus → Legendás → Ereklye**) + random **attribútum-affixeket** — mint
+WoW-ban / Terraria reforge-ban. A raritás a nevet, a színt, az affixek számát és erejét adja; az
+**Ócska csak átkos (negatív) affixet** kap.
+
+- 🧑‍🏭 **Szakma-craft:** erős alap, megtervezett névvel.
+- 👹 **Mob-loot:** súlyozott loot-tábláról sokféle tárgy — rolled felszerelés (random névvel, akár
+  átkos), nyersanyagok, és **csak-mobból-eső egyedi alapanyagok** (*Vad Esszencia*, *Szörny Mag*…),
+  amiket a szakma-receptek igényelnek. Szakma-craftolt tárgy sosem esik mobból.
+- 🐉 **Világboss / nehéz event loot:** a legmagasabb raritások + boss-only *Ősi Ereklyeszilánk*.
+
+### 🗡 Relikviák és rituálé-oltárok
+
+Egyedi, legendás tárgyak (pl. **A Mételytépő** harci fejsze, amely megbélyegzi a
+bűnösöket). Szabályaik:
 
 - Egy relikviából **csak egy létezhet** a szerveren.
 - **14 nap inaktivitás** után a relikvia füstként elenyészik, és újra megszerezhetővé válik.
-- A négy **frakció-elytra** (Főnix-/Zúzmara-/Vándor-/Csontszárny) nem craftolható, hanem
-  **rituálé-oltáron** idézhető meg: a megfelelő blokkon lopakodás + jobb katt az áldozati
-  tárgyakkal.
+- A négy **frakció-elytra** (Főnix-/Zúzmara-/Vándor-/Csontszárny) **rituálé-oltáron** idézhető meg.
+- Az oltárok **több-blokkos szentélyek** (5×5 alapzat + saroktornyok), és nem csak relikviát adnak:
+  **Feloldozás** (bűn-tisztítás), **Hazatérés-kő** (fővárosba teleport), és **mind a 13 kasztnak
+  saját szentélye** tematikus buffal.
 
 ### 💰 Gazdaság — dinamikus árfolyammal
 
@@ -159,7 +183,9 @@ Minden frakciónak saját valutája van (Piros / Kék / Semleges / Sötét token
 itemként és banki egyenlegként is léteznek:
 
 - `/bank deposit` — a nálad lévő tokenek bankba helyezése; `/bank withdraw` — kivét itemként
-- `/currency pay` — utalás játékosok közt; `/currency exchange` — valutaváltás
+  (**a banki ügyintézés alapból csak a fővárosokban** működik — KP-gazdaság)
+- `/currency exchange` — valutaváltás (kattintós **Valutaváltó** a `/menu` → Bank & Pénz alatt is);
+  a `/currency pay` közvetlen utalás alapból **ki van kapcsolva** (a játékos–játékos csere item-alapú)
 - **Az árfolyam élő:** egy valuta értékét a szerveren lévő összmennyisége határozza meg.
   Ha egy frakció elárasztja a gazdaságot a pénzével, az inflálódik és kevesebbet ér.
   Az aktuális árfolyamokat a `/currency rates`, illetve a fővárosokba lerakható **árfolyam-
