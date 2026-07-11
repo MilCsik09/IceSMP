@@ -44,10 +44,10 @@ miatt). Várnod kell, amíg felszabadul.
 
 ### Multi-block szentélyek 🏛️
 
-Az oltárok **több-blokkos szentélyek**: nem elég a mag-blokk, köré kell építeni a teljes
-szerkezetet is (a `config/relics.yml` `structure` mezője adja a mintát). A szárnyak alapmintája
-egy **mag-blokk**, alatta egy alapkő, és **4 sarok-pillér** átlósan — ha a szentély hiányos, az
-oltár szól, mielőtt aktiválnád.
+Az oltárok **komoly, több-blokkos szentélyek**: nem elég a mag-blokk, meg kell **építeni a teljes
+szerkezetet** köré. Az alapminta egy **5×5-ös alapzat** (a mag-blokk alatt, tematikus blokkból) és
+**4 két-magas saroktorony** a külső sarkokban — ha a szentély hiányos, az oltár szól, mielőtt
+aktiválnád. A pontos mintát a `config/relics.yml` `structure` mezője adja.
 
 ### Egyéb oltárok 🕯️ — nem csak szárnyak
 
@@ -58,12 +58,28 @@ az áldozatot, SHIFT + jobb katt a mag-blokkon), de más a kimenet — és ezek 
 | Oltár | Mag-blokk | Áldozat | Mit ad |
 |---|---|---|---|
 | 🕯️ Feloldozás | Lélek-lámpás | 3 aranytömb, 2 ghast-könny, 1 megmentő-totem | Leveszi a **bűnös-jelet** és nullázza a bűneidet (a sötét paktumot nem oldja fel) |
-| ⚔️ Erő áldása | Aranyozott feketekő | 12 aranyrúd, 8 lidércpor | 5 percre **Erő II + Ellenállás + Tűzállóság** |
 | 🏠 Hazatérés-kő | Iránytű-kő (lodestone) | 2 ender-gyöngy | A frakciód **fővárosába teleportál** |
 
-Vannak **kaszt-specifikus** oltárok is: pl. a **Varázsló arkán szentélye** (varázslótábla +
-könyvespolc-sarkok) csak varázslónak ad arkán buffot. Az admin bármelyik kasztnak felvehet
-sajátot a `requires-class` kapuval.
+### Kaszt-szentélyek ⚜️ — mind a 13 kasztnak
+
+Minden kaszt kap egy **saját szentélyt**, ami csak neki ad tematikus, időleges buffot (5 perc,
+`requires-class` kapuval). Mindegyik 5×5-ös szentély, egyedi mag-blokkal és áldozattal:
+
+| Kaszt | Mag-blokk | Buff |
+|---|---|---|
+| Varázsló | Varázsló-asztal | Sietség II + Regeneráció |
+| Harcos | Üllő | Erő II + Ellenállás |
+| Íjász | Nyílkészítő-asztal | Gyorsaság + Ugrás II |
+| Orgyilkos | Sculk-katalizátor | Láthatatlanság + Gyorsaság II |
+| Druida | Virágzó azálea | Regeneráció + Ugrás + Vízlégzés |
+| Paplovag | Fényporkő (glowstone) | Ellenállás + Regeneráció + Tűzállóság |
+| Halállovag | Síró obszidián | Erő + Felszívás III |
+| Sámán | Villámhárító | Sietség + Conduit-erő + Gyorsaság |
+| Szerzetes | Harang | Gyorsaság II + Ugrás + Ellenállás |
+| Pap | Tengeri lámpás | Regeneráció + Ellenállás |
+| Boszorkánymester | Újraéledés-horgony | Erő + Tűzállóság + Felszívás |
+| Démonvadász | Vésett nether-tégla | Gyorsaság II + Erő |
+| Sárkányidéző | Végkő-tégla | Sietség II + Felszívás + Tűzállóság |
 
 > Minden oltár-blokk, szerkezet, áldozat és hatás a `config/relics.yml` `rituals:` szekciójában
 > testreszabható — új oltárt is felvehet az admin (`type: relic|cleanse|buff|home`,

@@ -297,14 +297,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       PvP-ben **nem** cserélnek gazdát.
 - [ ] **Rituálé-oltár:** a megfelelő oltár-blokk + áldozati tárgyak + **SHIFT+jobb katt** → megidézi a szárnyat.
 - [ ] **Egy-példány szabály:** ha él a tulajdonos, nem idézhető/adható újra.
-- [ ] **Multi-block szentélyek:** hiányos szerkezettel (csak a mag-blokk áll) az oltár hibát ír
-      és nem aktiválódik; a teljes szentély (alapkő + 4 sarok-pillér) megépítve működik.
+- [ ] **Multi-block szentélyek (5×5):** hiányos szerkezettel (csak a mag-blokk áll) az oltár hibát
+      ír és nem aktiválódik; a teljes szentély (5×5 alapzat + 4 két-magas saroktorony) megépítve működik.
 - [ ] **Típusos oltárok** (config `type`): **Feloldozás** (Lélek-lámpás) leveszi a bűnös-jelet és
-      nullázza a bűnöket — de sötét paktumossal elutasítja; **Erő áldása** (Aranyozott feketekő)
-      felrakja a buffokat; **Hazatérés-kő** (Lodestone) a frakció fővárosába teleportál (fóváros
-      híján hibaüzenet). Sikertelen kimenetnél az áldozat NEM fogy; cooldown alatt ismétléskor hiba.
-- [ ] **Kaszt-oltár:** a Varázsló arkán szentélye (`requires-class: wizard`) csak varázslónak
-      aktiválódik, más kaszt hibaüzenetet kap.
+      nullázza a bűnöket — de sötét paktumossal elutasítja; **Hazatérés-kő** (Lodestone) a frakció
+      fővárosába teleportál (főváros híján hibaüzenet). Sikertelen kimenetnél az áldozat NEM fogy;
+      cooldown alatt ismétléskor hiba.
+- [ ] **Kaszt-szentélyek (13):** mindegyik `*_szentely` csak a saját kasztjának aktiválódik
+      (`requires-class`), más kaszt hibaüzenetet kap; a buff a táblázat szerint felkerül.
 - [ ] ⚠️ **Folia:** a Mételytépő ölés-büntetése a gyilkost **másik régióból** is hibamentesen jelöli.
 
 ### 4.10 Pet / minion ✅
