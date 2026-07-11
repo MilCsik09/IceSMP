@@ -103,26 +103,32 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 
 ### ✨ Minőség és affixek (egyedi tárgyak)
 
-Minden mestermunka craftoláskor **véletlen minőséget** és **random attribútum-bónuszokat** kap —
-így nincs két egyforma darab! A minőség a nevet és a bónuszok számát adja:
+Minden mestermunka craftoláskor (és minden mob-loot tárgy) **véletlen raritást** és **random
+attribútum-affixeket** kap — így nincs két egyforma darab! A raritás egy **létrán** helyezkedik el
+(mint WoW-ban / Terraria reforge-ban): a jelző, a szín és az affixek illenek a raritáshoz, és a
+**magasabb raritás erősebb affixeket** ad (a prefix „fedi" az affixet):
 
-| Minőség | Szín | Affixek száma |
-|---|---|---|
-| Közönséges | fehér | 1 |
-| Ritka | kék | 2 |
-| Epikus | lila | 3 |
-| Legendás | arany | 4 |
+| Raritás | Szín | Affixek | Erő | Megjegyzés |
+|---|---|---|---|---|
+| Ócska | sötétszürke | 1 | 0.4× | **csak negatív** affix (átok)! |
+| Közönséges | fehér | 1 | 0.6× | ritkán negatív |
+| Nem mindennapi | zöld | 2 | 0.8× | |
+| Ritka | kék | 2 | 1.0× | |
+| Epikus | lila | 3 | 1.2× | |
+| Legendás | arany | 4 | 1.4× | |
+| Ereklye | piros | 4 | 1.6× | csúcs (csak boss-loot) |
 
 Az affixek attribútumok: **Szívósság** (+élet), **Vértezet**, **Keménység**, **Fürgeség**
 (páncélon), illetve **Élesség** (+sebzés) és **Gyorsaság** (fegyveren/szerszámon). A tárgy neve
-elé kerül a minőség (pl. `[Epikus] Bástya Pajzs`), a bónuszok a leírásban látszanak.
+elé a raritás kerül a hozzá illő jelzővel (pl. `[Legendás] Isteni Penge` vagy `[Ócska] Rozsdás Vért`),
+a bónuszok a leírásban látszanak (negatív affix pirossal).
 
-**Balansz — honnan milyen erős a loot:**
-- 🧑‍🏭 **Szakma-craft:** erős alap, akár Legendás minőségig, **megtervezett névvel** (pl. „Bástya Pajzs").
-- 👹 **Mob-drop:** gyengébb (kisebb bónuszok, ritkábban magas minőség), **random névvel** (pl.
-  „[Ritka] Rozsdás Penge") — és **negatív affixe is lehet** (átok, pl. „- 2 Vértezet")! A szakma
-  által craftolt (nevesített) tárgyak **soha nem esnek mobból**.
-- 🐉 **Világboss / nehéz event loot:** a szakma-crafttal egy szinten (magas minőség-eloszlás).
+**Balansz — a forrás dönti el, MELY raritások eshetnek:**
+- 🧑‍🏭 **Szakma-craft:** nincs Ócska, kiegyensúlyozott (Közönséges→Legendás), **megtervezett névvel**.
+- 👹 **Mob-drop:** eshet **Ócska** is (csak átkos affix!), ritkán jó — **random, raritáshoz illő
+  névvel** (pl. „[Ócska] Rozsdás Vért"). A szakma által craftolt (nevesített) tárgyak **soha nem
+  esnek mobból**.
+- 🐉 **Világboss / nehéz event loot:** magas raritások (Ritka→**Ereklye**) — a legjobb forrás.
 
 ## Talentpontok a szakmákból
 
