@@ -383,7 +383,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         probes.add(new Location(world, midX, y, midZ));
 
         for (final Location probe : probes) {
-            final hu.taliann.icesmp.data.Territory territory = territoryManager.getTerritoryAt(probe);
+            // Column (2D) lookup: a claim box is tall, so a protected zone must veto
+            // it regardless of the zone's optional Y band or the probe's sample height.
+            final hu.taliann.icesmp.data.Territory territory =
+                    territoryManager.getTerritoryColumnAt(world.getName(), probe.getBlockX(), probe.getBlockZ());
             if (territory != null) {
                 if (blockProtectedZone && !territory.type().isClaimable()) {
                     return "claim-in-protected-zone";

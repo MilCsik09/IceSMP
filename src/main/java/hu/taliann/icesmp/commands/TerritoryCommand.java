@@ -298,16 +298,17 @@ public final class TerritoryCommand implements BasicCommand {
         if (radius == null) {
             return;
         }
-        if (territoryManager.getById(args[1]) == null) {
+        final Territory existing = territoryManager.getById(args[1]);
+        if (existing == null) {
             sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
             return;
         }
-        final Territory territory = territoryManager.resize(args[1], radius);
-        if (territory == null) {
+        if (existing.isPolygon()) {
             sender.sendMessage(messageManager.get("territory-resize-polygon",
                     "&cPoligon-területet nem lehet sugárral átméretezni — használj /territory create-et új pontokkal."));
             return;
         }
+        final Territory territory = territoryManager.resize(args[1], radius);
         sender.sendMessage(messageManager.get("territory-resize-success",
                 "&aÚj sugár: &f%s &7(%s)", territory.radius(), territory.id()));
     }

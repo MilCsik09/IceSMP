@@ -410,10 +410,43 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             if (!territory.contains(worldName, location.getX(), location.getY(), location.getZ())) {
                 continue;
             }
-            if (best == null
-                    || territory.radius() < best.radius()
-                    || (territory.radius() == best.radius()
-                        && territory.type().isProtectedZone() && !best.type().isProtectedZone())) {
+            if (best == null || shadows(territory, best)) {
+                best = territory;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Whether {@code candidate} should win over the current {@code best} at an
+     * overlapping point. A PROTECTED zone always shadows a non-protected one (so
+     * the map's shield can never be undercut by a smaller faction zone drawn
+     * inside it); otherwise the most specific (smallest radius/bounding-radius) wins.
+     */
+    private static boolean shadows(final Territory candidate, final Territory best) {
+        final boolean candidateProtected = candidate.type().isProtectedZone();
+        if (candidateProtected != best.type().isProtectedZone()) {
+            return candidateProtected;
+        }
+        return candidate.radius() < best.radius();
+    }
+
+    /**
+     * 2D (column) zone lookup — like {@link #getTerritoryAt} but ignoring any Y
+     * band. Used by the claim veto: a claim is a tall box, so its footprint must
+     * not overlap a protected zone's footprint at ANY height, even a Y-limited one.
+     */
+    public Territory getTerritoryColumnAt(final String worldName, final int x, final int z) {
+        final List<Territory> candidates = chunkIndex.get(chunkKey(worldName, x >> 4, z >> 4));
+        if (candidates == null) {
+            return null;
+        }
+        Territory best = null;
+        for (final Territory territory : candidates) {
+            if (!territory.contains(worldName, x, z)) {
+                continue;
+            }
+            if (best == null || shadows(territory, best)) {
                 best = territory;
             }
         }

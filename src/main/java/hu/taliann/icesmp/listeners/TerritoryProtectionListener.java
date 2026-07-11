@@ -247,15 +247,16 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPistonRetract(final org.bukkit.event.block.BlockPistonRetractEvent event) {
-        if (pistonAffectsProtected(event.getBlocks(), event.getDirection())) {
+        // On retract the pulled blocks move TOWARD the piston — opposite getDirection().
+        if (pistonAffectsProtected(event.getBlocks(), event.getDirection().getOppositeFace())) {
             event.setCancelled(true);
         }
     }
 
-    private boolean pistonAffectsProtected(final java.util.List<Block> blocks, final org.bukkit.block.BlockFace direction) {
+    private boolean pistonAffectsProtected(final java.util.List<Block> blocks, final org.bukkit.block.BlockFace movement) {
         for (final Block block : blocks) {
             if (protection.isTerrainProtectedAt(block.getLocation())
-                    || protection.isTerrainProtectedAt(block.getRelative(direction).getLocation())) {
+                    || protection.isTerrainProtectedAt(block.getRelative(movement).getLocation())) {
                 return true;
             }
         }
@@ -265,14 +266,17 @@ public final class TerritoryProtectionListener implements Listener {
     // ==================== pvp (dobott/lingering bájitalok) ====================
 
     /**
-     * Splash potions a player throws onto ANOTHER player in a safe zone are
-     * neutralised (self-buffs pass). Instant-damage potions are additionally
-     * handled by {@link #onEntityDamageByEntity} (a thrown potion is a projectile),
-     * so this closes the debuff gap (poison/slowness/weakness…) without depending
-     * on the version-specific harmful-category API.
+     * HARMFUL splash potions a player throws onto ANOTHER player in a safe zone are
+     * neutralised (beneficial team-splashes and self-buffs pass). Instant-damage
+     * potions are additionally handled by {@link #onEntityDamageByEntity} (a thrown
+     * potion is a projectile). Harmfulness is keyed off the effect's stable
+     * namespaced key, not the version-specific category API.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPotionSplash(final org.bukkit.event.entity.PotionSplashEvent event) {
+        if (!hasHarmfulEffect(event.getPotion().getEffects())) {
+            return;
+        }
         final Player thrower = event.getPotion().getShooter() instanceof Player player ? player : null;
         boolean notified = false;
         for (final org.bukkit.entity.LivingEntity affected : event.getAffectedEntities()) {
@@ -286,12 +290,54 @@ public final class TerritoryProtectionListener implements Listener {
         }
     }
 
-    /** Lingering-potion clouds a player created stop affecting other players in a safe zone. */
+    /** HARMFUL lingering-potion clouds stop affecting OTHER players in a safe zone. */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onAreaEffectCloud(final org.bukkit.event.entity.AreaEffectCloudApplyEvent event) {
-        final Player owner = event.getEntity().getSource() instanceof Player player ? player : null;
+        final org.bukkit.entity.AreaEffectCloud cloud = event.getEntity();
+        if (!cloudIsHarmful(cloud)) {
+            return;
+        }
+        final Player owner = cloud.getSource() instanceof Player player ? player : null;
         event.getAffectedEntities().removeIf(affected ->
                 affected instanceof Player victim && !victim.equals(owner)
                         && protection.denyCombat(victim.getLocation(), owner, false));
     }
+
+    /** Harmful potion-effect keys (version-stable paths; covers old and 1.21 names). */
+    private static final java.util.Set<String> HARMFUL_EFFECT_KEYS = java.util.Set.of(
+            "instant_damage", "harm", "poison", "wither", "slowness", "slow", "weakness",
+            "mining_fatigue", "slow_digging", "nausea", "confusion", "blindness", "hunger",
+            "levitation", "unluck", "darkness", "infested", "oozing", "weaving", "wind_charged");
+
+    private static boolean hasHarmfulEffect(final java.util.Collection<org.bukkit.potion.PotionEffect> effects) {
+        for (final org.bukkit.potion.PotionEffect effect : effects) {
+            if (HARMFUL_EFFECT_KEYS.contains(effect.getType().getKey().getKey())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean cloudIsHarmful(final org.bukkit.entity.AreaEffectCloud cloud) {
+        if (hasHarmfulEffect(cloud.getCustomEffects())) {
+            return true;
+        }
+        // Vanilla lingering potions carry no custom effects — inspect the base type
+        // key (substring match tolerates strong_/long_ variants, e.g. strong_harming).
+        final org.bukkit.potion.PotionType base = cloud.getBasePotionType();
+        if (base == null) {
+            return false;
+        }
+        final String key = base.getKey().getKey();
+        for (final String hint : HARMFUL_BASE_HINTS) {
+            if (key.contains(hint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static final java.util.Set<String> HARMFUL_BASE_HINTS = java.util.Set.of(
+            "harm", "poison", "slow", "weak", "wither", "nausea", "blind", "hunger",
+            "fatigue", "levitation", "darkness", "infested", "oozing", "weaving", "wind_charged");
 }

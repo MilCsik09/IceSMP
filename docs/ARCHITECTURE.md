@@ -149,9 +149,12 @@ eseménykezelés külön változhasson:
 1. **`data/Territory` (+ `TerritoryType`)** — egy zóna: kör (`x,z,radius`) VAGY poligon
    (`{x,z}` csúcsgyűrű, ≥3), opcionális `minY`/`maxY` sávval (`NO_MIN_Y`/`NO_MAX_Y` =
    korlátlan). A `contains(...)` befoglaló-kör gyors elutasítással kezd, poligonnál
-   páros-páratlan ray-casttel folytat; a `radius` a poligonnál a befoglaló-kör sugara (ez a
-   „legspecifikusabb zóna nyer" méret-összevetés alapja is). A típus dönti el az építés/claim
-   jogot (`isProtectedZone`, `isClaimable`).
+   páros-páratlan ray-casttel folytat; a `radius` a poligonnál a befoglaló-kör sugara. Átfedő
+   zónáknál (`shadows`) **a védett zóna MINDIG elfedi a nem-védettet** (a pajzsot kisebb
+   frakció-zóna sem tudja alávágni), egyébként a legspecifikusabb (legkisebb sugarú) nyer. A
+   claim-veto 2D (oszlop) lekérést használ (`getTerritoryColumnAt`), hogy a magas claim-doboz a
+   zóna Y-sávjától függetlenül ütközzön. A típus dönti el az építés/claim jogot
+   (`isProtectedZone`, `isClaimable`).
 2. **`TerritoryManager`** — a zónák állapota + perzisztencia (`territories.yml`, régi `capital:
    true/false` migrál). A lekérés **lock-free**: `chunkIndex` (`world;cx;cz → zónák`) a
    `ClaimManager` mintájára, minden (ritka, parancs-vezérelt) mutáció `synchronized` alatt
