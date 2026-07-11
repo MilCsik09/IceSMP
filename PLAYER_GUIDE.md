@@ -589,10 +589,12 @@ A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozz�
 claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza. `/claim info` megmutatja, kié az
 adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel rajzolja ki a chunk-határt.
 
-Frakció-territóriumba (királyság földje) és védett zónába (spawn/város) **nem lehet claimelni** — a
-meteor-becsapódás és az elrejtett kincs esemény is elkerüli a claimelt chunkokat. Raid alatt a
-claim alapból véd, de szerver-beállítástól függően a jelentkezett támadók a claim-ládákat
-hadizsákmányként **kinyithatják** (nem lebonthatják).
+**Védett zónába** (főváros, védett város, védett frakcióterület) **nem lehet claimelni** — ott
+senki sem építhet. **Normál frakcióterületre viszont IGEN**: a saját birtokod a frakciód földjén
+is elférhet, így a claim és a territórium rendszer együtt működik. A meteor-becsapódás és az
+elrejtett kincs esemény is elkerüli a claimelt területet. Raid alatt a claim alapból véd, de
+szerver-beállítástól függően a jelentkezett támadók a claim-ládákat hadizsákmányként
+**kinyithatják** (nem lebonthatják). A zónatípusokról bővebben: [Frakcióterületek](docs/player-guide/13-teruletek.md).
 
 ---
 

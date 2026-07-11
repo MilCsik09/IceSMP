@@ -207,10 +207,14 @@ skálázódnak, így a farmok nem törhetik el a rendszert.
 
 ### 🏰 Frakcióterületek
 
-Adminok fővárosokat és területeket jelölhetnek ki (`/territory setcapital`, `/territory claim`).
-A határátlépést a játékosok action bar üzenetben látják ("✦ Piros főváros ✦"), és opcionálisan
-bekapcsolható az **építésvédelem** is: idegen frakció területén nem lehet építeni/bontani. Az
-alap konfigurációban az értesítés aktív, az építésvédelem viszont ki van kapcsolva.
+Adminok **kör-** vagy **poligon-zónákat** jelölhetnek ki (`/territory circle`, illetve a fal
+mentén bejárt pontokból `/territory pos` → `/territory create`). Négy **zónatípus** védi a
+térképet: **frakcióterület** (csak a frakció tagjai építhetnek, de ide a játékosok
+**claimelhetnek** is), valamint a **védett frakcióterület**, **védett város** és **főváros**,
+ahol **senki** sem építhet és claimelni sem lehet. A határátlépést a játékosok típusfüggő action
+bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). A védett zónák védelme alapból
+aktív; a frakcióterület tag-only építése a `territory.protection.faction-members-only` kapcsolóval
+állítható.
 
 ---
 

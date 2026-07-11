@@ -304,12 +304,21 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] ⚠️ **Adomány-láda dupe-teszt:** két játékos (vagy gyors dupla katt) egyszerre próbálja
       elvinni ugyanazt a tételt → csak az egyik kapja meg a tárgyat, a másik hibaüzenetet kap.
 
-### 4.8.1 Frakcióterületek ✅
-- [ ] `/territory setcapital|claim|list|info|remove` admin parancsok működnek.
-- [ ] Területhatár átlépésekor action bar üzenet jön.
-- [ ] Alap config mellett (`territory.protection.enabled: false`) az építés/bontás nincs blokkolva.
-- [ ] Ha tesztre bekapcsolod az építésvédelmet, idegen frakció területén a build/break tiltott,
-      `icesmp.admin.territory.bypass` joggal pedig engedett.
+### 4.8.1 Frakcióterületek (zónák) ✅
+- [ ] `/territory circle|setcapital|remove|list|info` admin parancsok működnek.
+- [ ] **Poligon-zóna:** `/territory pos` több ponton (pl. egy fal mentén), `/territory points`
+      listáz, `/territory undo` visszavon, `/territory show` kirajzolja, `/territory create
+      protected-city <frakció> <id>` lezárja (≥3 pont kell). Belül vagy-e a poligonon: `/territory info`.
+- [ ] Területhatár átlépésekor típusfüggő action bar üzenet jön (főváros / védett város / védett
+      frakcióterület / frakcióterület).
+- [ ] **Védett zóna** (capital / protected-city / protected-faction): **senki** nem tud
+      építeni/bontani (`protect-zones: true`, alap), `icesmp.admin.territory.bypass` joggal igen.
+- [ ] **Frakcióterület** (`faction`): csak az adott frakció tagja épít (`faction-members-only: true`),
+      idegen nem; bypass-szal igen.
+- [ ] **Claim tiltás:** védett zónában a `/claim` és `/claim area` elutasítva
+      (`claim-in-protected-zone`); **normál frakcióterületen viszont ENGEDETT** (alapból
+      `claims.block-in-territory: false`). Kis poligon-zóna szélén is véd (sarok+közép próbák).
+- [ ] Régi `territories.yml` (csak `capital: true/false`) betöltése: capital→CAPITAL, egyébként FACTION.
 
 ### 4.9 Relikviák + rituálé-oltárok ✅
 - [ ] `/relic give <j> <id>` → a relikvia megjelenik; `/relic list` az id-khez.

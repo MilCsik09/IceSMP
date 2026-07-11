@@ -78,13 +78,28 @@ public final class TerritoryListener implements Listener {
         // VISIT_TERRITORY quest objectives complete on border crossing.
         questManager.handleTerritoryEnter(player, territory.id());
 
-        player.sendActionBar(messageManager.getMessage(
-                territory.capital() ? "territory-enter-capital" : "territory-enter",
-                territory.capital()
-                        ? "<gold>✦ {name} ✦</gold> <gray>({faction} főváros)</gray>"
-                        : "<yellow>{name}</yellow> <gray>({faction} terület)</gray>",
-                Map.of("name", territory.name(), "faction", territory.faction().getDisplayName())
-        ));
+        final String key;
+        final String fallback;
+        switch (territory.type()) {
+            case CAPITAL -> {
+                key = "territory-enter-capital";
+                fallback = "<gold>✦ {name} ✦</gold> <gray>({faction} főváros)</gray>";
+            }
+            case PROTECTED_CITY -> {
+                key = "territory-enter-protected-city";
+                fallback = "<aqua>⛨ {name} ⛨</aqua> <gray>(védett város)</gray>";
+            }
+            case PROTECTED_FACTION -> {
+                key = "territory-enter-protected-faction";
+                fallback = "<gold>⛨ {name} ⛨</gold> <gray>({faction} védett terület)</gray>";
+            }
+            default -> {
+                key = "territory-enter";
+                fallback = "<yellow>{name}</yellow> <gray>({faction} terület)</gray>";
+            }
+        }
+        player.sendActionBar(messageManager.getMessage(key, fallback,
+                Map.of("name", territory.name(), "faction", territory.faction().getDisplayName())));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -113,13 +128,36 @@ public final class TerritoryListener implements Listener {
     }
 
     private boolean isBuildBlocked(final Player player, final Location location) {
-        if (!configManager.getBoolean("territory.protection.enabled", false)
-                || player.hasPermission(BYPASS_PERMISSION)) {
+        if (player.hasPermission(BYPASS_PERMISSION)) {
             return false;
         }
 
         final Territory territory = territoryManager.getTerritoryAt(location);
         if (territory == null) {
+            return false;
+        }
+
+        // Protected zones (capital, protected city/faction) are the map's shield:
+        // NOBODY may build there. This ban is always in force (only the admin bypass
+        // overrides it), independent of the softer faction-members-only rule.
+        if (territory.type().isProtectedZone()) {
+            if (!configManager.getBoolean("territory.protection.protect-zones", true)) {
+                return false;
+            }
+            player.sendActionBar(messageManager.getMessage(
+                    "territory-build-denied-protected",
+                    "<red>⛨ {name} — védett zóna, itt senki sem építhet.</red>",
+                    Map.of("name", territory.name())
+            ));
+            return true;
+        }
+
+        // Normal faction land: only members of the owning faction may build.
+        // Governed by 'territory.protection.faction-members-only' (legacy key:
+        // 'territory.protection.enabled').
+        final boolean factionOnly = configManager.getBoolean("territory.protection.faction-members-only",
+                configManager.getBoolean("territory.protection.enabled", false));
+        if (!factionOnly) {
             return false;
         }
 

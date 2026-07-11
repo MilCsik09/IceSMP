@@ -123,12 +123,21 @@ factions:
       enemies: []
       allies: []
 
-# ===== Frakció területek =====
+# ===== Frakció területek (zónák) =====
+# Zónatípusok (/territory create|circle <típus> ...):
+#   faction            - normál frakcióterület: csak a frakció tagjai építhetnek; ide LEHET claimelni
+#   protected-faction  - védett frakcióterület: SENKI nem építhet; claim tiltva
+#   protected-city     - védett város (jellemzően semleges): SENKI nem építhet; claim tiltva
+#   capital            - főváros: SENKI nem építhet; claim tiltva; egyben a bank/valutaváltó helyszíne
+# A zónák kör- vagy poligon-alakúak lehetnek (poligon: /territory pos pontokból, pl. városfal mentén).
 territory:
   notify:
     # Action bar üzenet területhatár átlépésekor.
     enabled: true
   protection:
-    # Ha true, idegen frakció területén nem lehet építeni/bontani
-    # (bypass: icesmp.admin.territory.bypass jogosultság).
-    enabled: false
+    # VÉDETT zónák (főváros, védett város/frakcióterület): senki sem építhet — ez a map pajzsa,
+    # mindig aktív, csak az admin-bypass kerüli meg (icesmp.admin.territory.bypass).
+    protect-zones: true
+    # NORMÁL frakcióterületen csak a frakció tagjai építhetnek (mások nem).
+    # (Régi kulcs: 'enabled' — ha csak az van beállítva, azt vesszük figyelembe.)
+    faction-members-only: true

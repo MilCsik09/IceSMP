@@ -350,23 +350,50 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return null;
     }
 
-    /** Territory/WorldGuard veto over every chunk the footprint touches (null = OK). */
+    /**
+     * Territory/WorldGuard veto over the footprint (null = OK). Claiming inside a
+     * PROTECTED zone (capital, protected city/faction) is always forbidden — the
+     * whole point of the map's shield; NORMAL faction land stays claimable unless
+     * the legacy {@code claims.block-in-territory} switch is turned back on.
+     *
+     * <p>Probes both every touched chunk centre AND the footprint's four corners +
+     * centre, so a small protected polygon can't slip between chunk-centre samples.
+     */
     private String territoryOrRegionVeto(final World world, final int minX, final int minZ,
                                          final int maxX, final int maxZ) {
-        final boolean blockTerritory = configManager.getBoolean("claims.block-in-territory", true);
-        final boolean blockProtected = configManager.getBoolean("claims.block-in-protected-region", true);
-        if (!blockTerritory && !blockProtected) {
+        final boolean blockProtectedZone = configManager.getBoolean("claims.block-in-protected-zone", true);
+        final boolean blockFactionTerritory = configManager.getBoolean("claims.block-in-territory", false);
+        final boolean blockRegion = configManager.getBoolean("claims.block-in-protected-region", true);
+        if (!blockProtectedZone && !blockFactionTerritory && !blockRegion) {
             return null;
         }
+        final int y = world.getSeaLevel();
+        final List<Location> probes = new ArrayList<>();
         for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
             for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
-                final Location probe = new Location(world, (cx << 4) + 8, world.getSeaLevel(), (cz << 4) + 8);
-                if (blockTerritory && territoryManager.getTerritoryAt(probe) != null) {
+                probes.add(new Location(world, (cx << 4) + 8, y, (cz << 4) + 8));
+            }
+        }
+        final int midX = (minX + maxX) / 2;
+        final int midZ = (minZ + maxZ) / 2;
+        probes.add(new Location(world, minX, y, minZ));
+        probes.add(new Location(world, maxX, y, minZ));
+        probes.add(new Location(world, minX, y, maxZ));
+        probes.add(new Location(world, maxX, y, maxZ));
+        probes.add(new Location(world, midX, y, midZ));
+
+        for (final Location probe : probes) {
+            final hu.taliann.icesmp.data.Territory territory = territoryManager.getTerritoryAt(probe);
+            if (territory != null) {
+                if (blockProtectedZone && !territory.type().isClaimable()) {
+                    return "claim-in-protected-zone";
+                }
+                if (blockFactionTerritory && territory.type().isClaimable()) {
                     return "claim-in-territory";
                 }
-                if (blockProtected && ProtectionBridge.isProtected(probe)) {
-                    return "claim-in-protected-region";
-                }
+            }
+            if (blockRegion && ProtectionBridge.isProtected(probe)) {
+                return "claim-in-protected-region";
             }
         }
         return null;

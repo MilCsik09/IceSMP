@@ -7,20 +7,32 @@ A világban vannak **frakcióterületek** és **fővárosok** (ezeket az adminok
 ## Mit veszel észre belőlük?
 
 - Amikor **átlépsz** egy terület határán, a képernyő alján (action bar) egy felirat jelzi, hol
-  vagy: pl. „✦ Piros főváros ✦", vagy „vadon" ha senkié.
-- Minden frakciónak lehet **1 fővárosa** és több **claimelt** (lefoglalt) területe.
+  vagy: pl. „✦ Piros főváros ✦", „⛨ védett város ⛨", vagy „vadon" ha senkié.
+- Minden frakciónak lehet **1 fővárosa** és több **területe**.
+- A területek lehetnek **kör** alakúak vagy **poligonok** (pontos határvonal, pl. egy városfal
+  mentén kijelölve) — ezt az adminok döntik el.
 
-## Építésvédelem (ha be van kapcsolva)
+## Zónatípusok
 
-A szerver bekapcsolhatja az **építésvédelmet** (`territory.protection.enabled`). Az alap
-konfigurációban ez **ki van kapcsolva**, tehát alapból csak a határátlépés-értesítés fut.
-Ha az adminok bekapcsolják:
-- **Idegen frakció területén nem tudsz építeni vagy bontani.**
-- A saját frakciód területén és a vadonban szabadon építkezhetsz.
-- (Adminoknak van „bypass" joguk, nekik mindenhol szabad.)
+A térkép védelme több **zónatípusra** épül:
 
-> Ez megvédi a frakciók fővárosait a rongálástól. Ha valahol nem tudsz blokkot lerakni/törni,
-> valószínűleg egy másik frakció területén állsz.
+| Típus | Ki építhet itt? | Lehet ide claimelni? |
+|---|---|---|
+| **Frakcióterület** | Csak az adott **frakció tagjai** | ✅ Igen (a saját birtokod ide is mehet) |
+| **Védett frakcióterület** | **Senki** (a frakció magja: falak, műemlékek) | ❌ Nem |
+| **Védett város** | **Senki** (jellemzően semleges városok) | ❌ Nem |
+| **Főváros** | **Senki** (egyben a bank/valutaváltó helyszíne) | ❌ Nem |
+
+> ⛨ A **védett zónák** (védett város/frakcióterület és a főváros) a térkép **pajzsa**: ott
+> **senki** sem építhet vagy bonthat, és **claimelni sem lehet**. Ez a védelem mindig aktív —
+> csak az adminok „bypass" joga kerüli meg.
+
+**Frakcióterületen** csak az adott frakció tagjai építhetnek (mások nem), viszont ide a
+játékosok **saját birtokot (`/claim`) is foglalhatnak** — így a claim rendszer és a
+territórium rendszer együtt működik.
+
+> Ha valahol nem tudsz blokkot lerakni/törni: vagy egy másik frakció területén állsz, vagy egy
+> védett zónában (főváros/védett város).
 
 ## Saját birtok — terület-claim 🏠
 
@@ -77,19 +89,31 @@ A birtokodon (a claim dobozán belül) **idegenek**:
 
 ### Hol NEM lehet claimelni?
 
-- **Frakció-territóriumban** (az a királyság földje) és **védett zónában** (spawn/város).
+- **Védett zónában**: főváros, védett város, védett frakcióterület (spawn/város).
+- **Frakcióterületen viszont IGEN** — a saját birtokod a frakciód földjén is elférhet
+  (kivéve, ha a szerver a `claims.block-in-territory` kapcsolóval ezt is letiltja).
 - Cserébe a **meteor-becsapódás** és az **elrejtett kincs** esemény is elkerüli a claimelt
-  claimelt területet — a birtokod biztonságban van tőlük.
+  területet — a birtokod biztonságban van tőlük.
 - **Raid alatt** a claim alapból véd, de szerver-beállítástól függően a jelentkezett támadók
   a claim-ládákat hadizsákmányként **kinyithatják** (lebontani akkor sem tudják).
 
 ## Admin parancsok (csak adminoknak)
 
-- `/territory setcapital` — főváros kijelölése.
-- `/territory claim` — terület lefoglalása.
-- `/territory remove` — terület törlése.
-- `/territory list` / `/territory info` — területek listája / infó.
+Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
+
+- `/territory pos` — határpont hozzáadása a jelenlegi pozíciódnál (poligonhoz, akár 10+ pont).
+- `/territory undo` / `clearpoints` / `points` — a határpont-puffer kezelése.
+- `/territory create <típus> <frakció> <id> [név...]` — poligon-zóna lezárása a pontokból.
+- `/territory circle <típus> <frakció> <id> <sugár> [név...]` — kör-zóna a pozíciódnál.
+- `/territory setcapital <frakció> <sugár> [név...]` — főváros (kör) gyorsan.
+- `/territory show` — a puffered és az aktuális zóna határának kirajzolása részecskékkel.
+- `/territory remove <id>` — zóna törlése.
+- `/territory list` / `/territory info` — zónák listája / az aktuális zóna infója.
 - `/claim admin unclaim` — idegen claim törlése admin-jogon (a claimben állva).
+
+> **Típusok:** `faction` (csak tagok építhetnek), `protected-faction` / `protected-city`
+> (senki), `capital` (főváros). A városfal mentén így pontosan kijelölhető a terület: járd
+> körbe a falat, minden saroknál `/territory pos`, végül `/territory create protected-city ...`.
 
 ---
 
