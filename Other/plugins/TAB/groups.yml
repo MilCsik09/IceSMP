@@ -3,16 +3,16 @@
 #  tagprefix: "&2&lOwner &a"
 mod:
       tabprefix: "%vault_prefix%%icesmp_faction_color%"
-      tagprefix: "%vault-prefix%%icesmp_faction_color%"
+      tagprefix: "%vault_prefix%%icesmp_faction_color%"
 helper:
       tabprefix: "%vault_prefix%%icesmp_faction_color%"
-      tagprefix: "%vault-prefix%%icesmp_faction_color%"
+      tagprefix: "%vault_prefix%%icesmp_faction_color%"
 vip:
-      tabprefix: "%vault-prefix%%icesmp_faction_color%"
-      tagprefix: "%vault-prefix%%icesmp_faction_color%"
+      tabprefix: "%vault_prefix%%icesmp_faction_color%"
+      tagprefix: "%vault_prefix%%icesmp_faction_color%"
 Default:
-      tabprefix: "%vault-prefix%%icesmp_faction_color%"
-      tagprefix: "%vault-prefix%%icesmp_faction_color%"
+      tabprefix: "%vault_prefix%%icesmp_faction_color%"
+      tagprefix: "%vault_prefix%%icesmp_faction_color%"
 
  # default settings for all groups, all groups will take properties from this section unless player's primary group overrides a specific setting
 _DEFAULT_:
