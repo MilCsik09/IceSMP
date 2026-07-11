@@ -72,6 +72,20 @@ Amikor egy szakmád eléri a **25. szintet**, **specializálódhat** — ezt a `
 > Egyszerre **egy** szakma-specializációd lehet. Ha váltanál, a Specializáció menü **Respec**
 > gombjával tudod visszacsinálni (a frakcióvalutádba kerül).
 
+## Recept-könyv 📖 (`/profession recipes`)
+
+A szakmáidnak **teljes recept-listája** van, WoW-módra. Nyisd meg a **`/profession recipes`**
+paranccsal (vagy `/menu` → **Recept-könyv**): egy lapozható könyvben látod a szakmáid összes
+receptjét — a **tanultakat zölddel**, a **zároltakat szürkén** (odaírja, mi kell: szint vagy
+tervrajz), és minden recepthez a **hozzávalókat** (megvan/hiányzik). Egy kattintással **craftolsz**,
+ha minden feltétel megvan (a hozzávalók a táskádból fogynak).
+
+**Kétféleképp tanulsz receptet:**
+- 📈 **Szintre:** a receptek nagy része a szakma adott szintjén magától megnyílik.
+- 📜 **Tervrajzból:** a ritka/erős receptekhez egy **tervrajz** (Knowledge Book) kell — ezt
+  **NPC-boltból** veheted, **szörnyek ejthetik**, vagy admin adhatja. **Jobb katt** a tervrajzon =
+  megtanulod a receptet (utána már a recept-könyvből craftolható, ha megvan hozzá a szint).
+
 ## Mestermű receptek 🛠️
 
 Magas szinten a szakmák **különleges tárgyakat** craftolhatnak, amiket **csak az adott szakma +

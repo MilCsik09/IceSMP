@@ -127,6 +127,9 @@ public final class CommandMenus {
         put(inv, holder, 30, GuiUtil.icon(Material.HOPPER, title("Adomány-láda"),
                 List.of(grey("Ingyenes, közösségi ajándéktár —"),
                         grey("tegyél bele vagy vegyél ki bármit."), click())), "OPEN:adomany");
+        put(inv, holder, 31, GuiUtil.icon(Material.CRAFTING_TABLE, title("Recept-könyv"),
+                List.of(grey("Szakma-receptek: tanult/zárolt lista,"),
+                        grey("egyedi (rolled) craftok egy kattintással."), click())), "OPEN:profession recipes");
         if (hasAnyAdminAccess(player)) {
             put(inv, holder, 34, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");

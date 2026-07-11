@@ -239,6 +239,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] A megfelelő tevékenység ad XP-t (bányászat/aratás/horgászat/sütés/craft).
 - [ ] 25. szinten szakma-spec választható.
 - [ ] **Craft-korlát:** netherite felszerelést csak 25+ Kovács craftol (különben nem jön létre + üzenet).
+- [ ] **Recept-könyv** (`/profession recipes` vagy `/menu` → Recept-könyv): a szakmáid receptjei
+      tanult (zöld) / zárolt (szürke) állapottal, hozzávaló megvan/hiányzik jelzéssel, lapozva;
+      kattintásra craft (hozzávalók fogynak), `affix-tier`-es recept egyedi rolled tárgyat ad.
+- [ ] **Tervrajz:** blueprint-recept zárolva marad, míg meg nem szerzed a tervrajzot (mob-drop
+      ritkán / `/profession blueprint <j> <id>` admin). Jobb katt a tervrajzon → megtanulod
+      (már ismert tervrajz nem fogy el); utána a recept-könyvből craftolható (szint is kell).
 - [ ] **Rolled-affix mestermunka:** mestermunkát craftolva a tárgy VÉLETLEN minőséget ([Közönséges]…
       [Legendás]) + random attribútum-affixeket kap (a leírásban); két craft nem ugyanaz. Shift-click
       bulk-craft alap-statú marad.

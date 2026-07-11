@@ -20,6 +20,10 @@ loot:
       - IRON_AXE
       - SHIELD
       - BOW
+  # Ritka tervrajz-drop: egy blueprint-recept (profession-recipes learn: blueprint) megtanulására.
+  blueprint-drop:
+    chance: 0.002       # sima szörny: 0.2%
+    boss-chance: 0.05   # boss/event-mob: 5%
   boss-drop:
     chance: 1.0         # a boss/event-mobok garantáltan dobnak (magasabb tier)
     gear-pool:

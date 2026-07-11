@@ -205,6 +205,9 @@ public final class IceSMPCore {
     private final ProfessionManager professionManager;
     private final ProfessionRecipeManager professionRecipeManager;
     private final MasterworkAffixService masterworkAffixService;
+    private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog professionRecipeCatalog;
+    private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintItemFactory;
+    private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
     private final EconomyEventManager economyEventManager;
@@ -288,6 +291,10 @@ public final class IceSMPCore {
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.professionRecipeManager = new ProfessionRecipeManager(plugin, configManager);
         this.masterworkAffixService = new MasterworkAffixService(plugin, configManager);
+        this.professionRecipeCatalog = new hu.taliann.icesmp.managers.ProfessionRecipeCatalog(plugin, configManager);
+        this.blueprintItemFactory = new hu.taliann.icesmp.items.BlueprintItemFactory(plugin, professionRecipeCatalog);
+        this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(
+                professionManager, professionRecipeCatalog, masterworkAffixService, messageManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
@@ -481,6 +488,7 @@ public final class IceSMPCore {
         // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();
         craftingRestrictionManager.load();
+        professionRecipeCatalog.load();
         persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::load);
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
@@ -797,7 +805,7 @@ public final class IceSMPCore {
         plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
         plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
         plugin.registerCommand("pet", "Társ (befogó item, idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, captureItemFactory, messageManager));
-        plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(plugin, professionManager, messageManager));
+        plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(plugin, professionManager, messageManager, professionRecipeBookListener, professionRecipeCatalog, blueprintItemFactory));
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), new TerritoryCommand(territoryManager, messageManager));
@@ -841,7 +849,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, masterworkAffixService), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobLootListener(configManager, masterworkAffixService, worldBossManager, invasionManager, wildHuntManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobLootListener(configManager, masterworkAffixService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog), plugin);
+        pluginManager.registerEvents(professionRecipeBookListener, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, factionManager, configManager, questManager, messageManager), plugin);

@@ -1,0 +1,64 @@
+# IceSMP konfiguráció — profession-recipes (a ConfigManager az összes config/*.yml-t betölti)
+# ===== WoW-szerű szakma recept-lista =====
+# Minden recept egy szakmához tartozik, szintet igényel, és vagy szintre nyílik meg
+# (learn: level), vagy tervrajzból tanulható (learn: blueprint — NPC-bolt / mob-drop / admin).
+# A recept-könyv: /profession recipes (a tanult/zárolt receptek + craftolás egy kattintással).
+#
+# Séma:
+#   <recept-id>:
+#     profession: miner|herbalist|lumberjack|armorer|alchemist|enchanter|fisherman|cook
+#     level: <szükséges szakma-szint>
+#     learn: level | blueprint          # blueprint = tervrajz kell hozzá
+#     display-name: "<megjelenő név>"
+#     category: "<kategória-címke>"
+#     result:
+#       material: <MATERIAL>
+#       amount: <db>                     # alapból 1
+#       affix-tier: crafted              # HA szerepel, a kész tárgy egyedi minőséget + affixeket kap
+#     ingredients: [ "MATERIAL:db", ... ]
+#
+# Az alábbi néhány MINTA a sémát mutatja; a teljes katalógust (8-12 recept/szakma) bővítsd ki.
+profession-recipes:
+  # --- Bányász ---
+  finomitott_vas:
+    profession: miner
+    level: 5
+    learn: level
+    display-name: "Finomított Vasrúd"
+    category: "Alapanyag"
+    result: { material: IRON_INGOT, amount: 3 }
+    ingredients: [ "RAW_IRON:2", "COAL:1" ]
+  tarnasz_csakany_recept:
+    profession: miner
+    level: 15
+    learn: level
+    display-name: "Tárnász Csákány"
+    category: "Szerszám"
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:3", "EMERALD:2", "STICK:2" ]
+  # --- Kovács ---
+  bastya_pajzs_recept:
+    profession: armorer
+    level: 15
+    learn: level
+    display-name: "Bástya Pajzs"
+    category: "Páncél"
+    result: { material: SHIELD, amount: 1, affix-tier: crafted }
+    ingredients: [ "IRON_INGOT:6", "EMERALD:2" ]
+  sarkanyvert_recept:
+    profession: armorer
+    level: 40
+    learn: blueprint
+    display-name: "Sárkányvért"
+    category: "Páncél (tervrajz)"
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
+    ingredients: [ "NETHERITE_INGOT:4", "EMERALD_BLOCK:1" ]
+  # --- Szakács (másodlagos, mindenkié) ---
+  tapláló_lakoma:
+    profession: cook
+    level: 5
+    learn: level
+    display-name: "Tápláló Lakoma"
+    category: "Étel"
+    result: { material: COOKED_BEEF, amount: 6 }
+    ingredients: [ "BEEF:6", "CARROT:2" ]

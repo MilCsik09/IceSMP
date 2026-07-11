@@ -30,15 +30,21 @@ public final class MobLootListener implements Listener {
     private final WorldBossManager worldBossManager;
     private final InvasionManager invasionManager;
     private final WildHuntManager wildHuntManager;
+    private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory;
+    private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
 
     public MobLootListener(final ConfigManager configManager, final MasterworkAffixService affixService,
                            final WorldBossManager worldBossManager, final InvasionManager invasionManager,
-                           final WildHuntManager wildHuntManager) {
+                           final WildHuntManager wildHuntManager,
+                           final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory,
+                           final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog) {
         this.configManager = configManager;
         this.affixService = affixService;
         this.worldBossManager = worldBossManager;
         this.invasionManager = invasionManager;
         this.wildHuntManager = wildHuntManager;
+        this.blueprintFactory = blueprintFactory;
+        this.recipeCatalog = recipeCatalog;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -60,6 +66,9 @@ public final class MobLootListener implements Listener {
             return;
         }
 
+        // Rare blueprint drop: teaches a blueprint-gated profession recipe (config loot.blueprint-drop).
+        rollBlueprintDrop(event, bossTier);
+
         final String path = bossTier ? "loot.boss-drop" : "loot.mob-drop";
         final String tier = bossTier ? MasterworkAffixService.TIER_BOSS : MasterworkAffixService.TIER_DROP;
 
@@ -76,6 +85,22 @@ public final class MobLootListener implements Listener {
         // are possible on the weaker tiers (config negative-affix-chance).
         final ItemStack rolled = affixService.roll(new ItemStack(base), tier, true);
         event.getDrops().add(rolled);
+    }
+
+    private void rollBlueprintDrop(final EntityDeathEvent event, final boolean bossTier) {
+        final double chance = configManager.getDouble(
+                bossTier ? "loot.blueprint-drop.boss-chance" : "loot.blueprint-drop.chance", bossTier ? 0.05D : 0.002D);
+        if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble() >= chance) {
+            return;
+        }
+        final List<String> ids = recipeCatalog.blueprintRecipeIds();
+        if (ids.isEmpty()) {
+            return;
+        }
+        final ItemStack blueprint = blueprintFactory.create(ids.get(ThreadLocalRandom.current().nextInt(ids.size())));
+        if (blueprint != null) {
+            event.getDrops().add(blueprint);
+        }
     }
 
     private Material pickGear(final List<String> pool) {
