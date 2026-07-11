@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,19 +28,28 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Manager for faction territory zones. A zone is either a circular disc or an
  * arbitrary polygon (traced from a series of admin-placed boundary points, e.g.
- * along a city wall), persisted to territories.yml. Each zone carries a
- * {@link TerritoryType} that decides who may build inside it and whether players
- * may claim there. A faction has at most one capital zone.
+ * along a city wall), optionally limited to a vertical band, and persisted to
+ * territories.yml. Each zone carries a {@link TerritoryType} that decides who may
+ * build inside it and whether players may claim there. A faction has at most one
+ * capital zone.
  *
- * <p>Polygon definition uses a per-player, in-memory point buffer (cleared on
- * quit via {@link PlayerStateCleanup}); the zone map itself is concurrent and
- * read lock-free from region threads.
+ * <p>Threading (Folia): the hot-path lookup is lock-free — a volatile chunk index
+ * maps {@code world;chunkX;chunkZ} to the (few) zones overlapping that chunk, and
+ * every mutation rebuilds and atomically swaps the index under {@code synchronized}
+ * (mutations are rare, command-driven). Polygon definition uses a per-player,
+ * in-memory point buffer cleared on quit via {@link PlayerStateCleanup}.
  */
 public final class TerritoryManager implements PersistentStore, PlayerStateCleanup {
 
     private final JavaPlugin plugin;
     private final File storageFile;
     private final Map<String, Territory> territories = new ConcurrentHashMap<>();
+    /**
+     * world;chunkX;chunkZ → zones overlapping that chunk. Rebuilt and swapped whole
+     * on every (rare) mutation, so the hot-path lookup is a lock-free read of an
+     * immutable snapshot.
+     */
+    private volatile Map<String, List<Territory>> chunkIndex = Map.of();
     /** Per-player boundary-point buffer for polygon definition (world + {x,z} points). */
     private final Map<UUID, PointBuffer> pointBuffers = new ConcurrentHashMap<>();
 
@@ -55,10 +65,11 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         plugin.getDataFolder().mkdirs();
     }
 
-    public void load() {
+    public synchronized void load() {
         territories.clear();
 
         if (!storageFile.exists()) {
+            rebuildIndex();
             return;
         }
 
@@ -66,6 +77,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
             final ConfigurationSection territoriesSection = yaml.getConfigurationSection("territories");
             if (territoriesSection == null) {
+                rebuildIndex();
                 return;
             }
 
@@ -99,7 +111,9 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                         section.getInt("x", 0),
                         section.getInt("z", 0),
                         Math.max(1, section.getInt("radius", 50)),
-                        polygon
+                        polygon,
+                        section.getInt("min-y", Territory.NO_MIN_Y),
+                        section.getInt("max-y", Territory.NO_MAX_Y)
                 ));
             }
 
@@ -107,6 +121,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load territories: " + exception.getMessage());
         }
+        rebuildIndex();
     }
 
     public void save() {
@@ -124,6 +139,12 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 yaml.set(basePath + ".capital", territory.capital());
                 if (territory.isPolygon()) {
                     yaml.set(basePath + ".polygon", writePolygon(territory.polygon()));
+                }
+                if (territory.minY() != Territory.NO_MIN_Y) {
+                    yaml.set(basePath + ".min-y", territory.minY());
+                }
+                if (territory.maxY() != Territory.NO_MAX_Y) {
+                    yaml.set(basePath + ".max-y", territory.maxY());
                 }
             }
 
@@ -172,8 +193,8 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
      * @param radius the radius in blocks
      * @return the stored zone
      */
-    public Territory define(final String id, final FactionType faction, final String name,
-                            final TerritoryType type, final Location center, final int radius) {
+    public synchronized Territory define(final String id, final FactionType faction, final String name,
+                                         final TerritoryType type, final Location center, final int radius) {
         final String normalizedId = id.toLowerCase(Locale.ROOT);
         demotePreviousCapital(type, faction, normalizedId);
 
@@ -186,9 +207,12 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 center.getBlockX(),
                 center.getBlockZ(),
                 Math.max(1, radius),
-                null
+                null,
+                Territory.NO_MIN_Y,
+                Territory.NO_MAX_Y
         );
         territories.put(normalizedId, territory);
+        rebuildIndex();
         save();
         return territory;
     }
@@ -199,8 +223,8 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
      *
      * @return the stored zone, or {@code null} when fewer than 3 vertices are given
      */
-    public Territory definePolygon(final String id, final FactionType faction, final String name,
-                                   final TerritoryType type, final String world, final List<int[]> points) {
+    public synchronized Territory definePolygon(final String id, final FactionType faction, final String name,
+                                                final TerritoryType type, final String world, final List<int[]> points) {
         if (points == null || points.size() < 3) {
             return null;
         }
@@ -231,9 +255,12 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 centroidX,
                 centroidZ,
                 boundingRadius,
-                List.copyOf(points)
+                List.copyOf(points),
+                Territory.NO_MIN_Y,
+                Territory.NO_MAX_Y
         );
         territories.put(normalizedId, territory);
+        rebuildIndex();
         save();
         return territory;
     }
@@ -245,20 +272,90 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         for (final Map.Entry<String, Territory> entry : territories.entrySet()) {
             final Territory existing = entry.getValue();
             if (existing.capital() && existing.faction() == faction && !existing.id().equals(keepId)) {
-                entry.setValue(new Territory(existing.id(), existing.faction(), existing.name(),
-                        TerritoryType.FACTION, existing.world(), existing.x(), existing.z(),
-                        existing.radius(), existing.polygon()));
+                entry.setValue(withType(existing, TerritoryType.FACTION));
             }
         }
     }
 
-    public boolean remove(final String id) {
+    // ==================== edits (rename / resize / settype / sety) ====================
+
+    /** Renames an existing zone. Returns the updated zone, or null if unknown. */
+    public synchronized Territory rename(final String id, final String name) {
+        final Territory existing = getById(id);
+        if (existing == null || name == null || name.isBlank()) {
+            return null;
+        }
+        final Territory updated = new Territory(existing.id(), existing.faction(), name, existing.type(),
+                existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(),
+                existing.minY(), existing.maxY());
+        territories.put(existing.id(), updated);
+        rebuildIndex();
+        save();
+        return updated;
+    }
+
+    /** Resizes a CIRCULAR zone's radius. Returns null if unknown or a polygon. */
+    public synchronized Territory resize(final String id, final int radius) {
+        final Territory existing = getById(id);
+        if (existing == null || existing.isPolygon()) {
+            return null;
+        }
+        final Territory updated = new Territory(existing.id(), existing.faction(), existing.name(), existing.type(),
+                existing.world(), existing.x(), existing.z(), Math.max(1, radius), null,
+                existing.minY(), existing.maxY());
+        territories.put(existing.id(), updated);
+        rebuildIndex();
+        save();
+        return updated;
+    }
+
+    /** Changes a zone's type (re-running capital demotion when promoting to capital). */
+    public synchronized Territory setType(final String id, final TerritoryType type) {
+        final Territory existing = getById(id);
+        if (existing == null) {
+            return null;
+        }
+        demotePreviousCapital(type, existing.faction(), existing.id());
+        final Territory updated = withType(existing, type);
+        territories.put(existing.id(), updated);
+        rebuildIndex();
+        save();
+        return updated;
+    }
+
+    /**
+     * Sets (or clears) a zone's vertical band. Pass {@link Territory#NO_MIN_Y} /
+     * {@link Territory#NO_MAX_Y} to leave that side unbounded. Returns null if unknown.
+     */
+    public synchronized Territory setYBounds(final String id, final int minY, final int maxY) {
+        final Territory existing = getById(id);
+        if (existing == null) {
+            return null;
+        }
+        final int lo = Math.min(minY, maxY);
+        final int hi = Math.max(minY, maxY);
+        final Territory updated = new Territory(existing.id(), existing.faction(), existing.name(), existing.type(),
+                existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(), lo, hi);
+        territories.put(existing.id(), updated);
+        rebuildIndex();
+        save();
+        return updated;
+    }
+
+    private static Territory withType(final Territory existing, final TerritoryType type) {
+        return new Territory(existing.id(), existing.faction(), existing.name(), type, existing.world(),
+                existing.x(), existing.z(), existing.radius(), existing.polygon(),
+                existing.minY(), existing.maxY());
+    }
+
+    public synchronized boolean remove(final String id) {
         if (id == null || id.isBlank()) {
             return false;
         }
 
         final boolean removed = territories.remove(id.toLowerCase(Locale.ROOT)) != null;
         if (removed) {
+            rebuildIndex();
             save();
         }
         return removed;
@@ -289,9 +386,10 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
     }
 
     /**
-     * Gets the zone at a location. When zones overlap, the smallest (most specific)
-     * one wins — by radius/bounding-radius — with protected zones and capitals
-     * breaking ties so a protective zone always shadows plain faction land.
+     * Gets the zone at a location (Y included when the zone is height-limited). When
+     * zones overlap, the smallest (most specific) one wins — by radius/bounding-radius
+     * — with protected zones and capitals breaking ties so a protective zone always
+     * shadows plain faction land. Lock-free: reads an immutable chunk-index snapshot.
      *
      * @param location the location to check
      * @return the zone, or null if unclaimed wilderness
@@ -300,13 +398,18 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         if (location == null || location.getWorld() == null) {
             return null;
         }
+        final String worldName = location.getWorld().getName();
+        final List<Territory> candidates = chunkIndex.get(
+                chunkKey(worldName, location.getBlockX() >> 4, location.getBlockZ() >> 4));
+        if (candidates == null) {
+            return null;
+        }
 
         Territory best = null;
-        for (final Territory territory : territories.values()) {
-            if (!territory.contains(location.getWorld().getName(), location.getX(), location.getZ())) {
+        for (final Territory territory : candidates) {
+            if (!territory.contains(worldName, location.getX(), location.getY(), location.getZ())) {
                 continue;
             }
-
             if (best == null
                     || territory.radius() < best.radius()
                     || (territory.radius() == best.radius()
@@ -314,7 +417,6 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 best = territory;
             }
         }
-
         return best;
     }
 
@@ -330,6 +432,51 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
 
     public Collection<Territory> all() {
         return territories.values();
+    }
+
+    // ==================== spatial index ====================
+
+    /** Rebuilds the chunk→zones lookup from each zone's bounding box and swaps it atomically. */
+    private void rebuildIndex() {
+        final Map<String, List<Territory>> fresh = new HashMap<>();
+        for (final Territory territory : territories.values()) {
+            final int minX;
+            final int maxX;
+            final int minZ;
+            final int maxZ;
+            if (territory.isPolygon()) {
+                int loX = Integer.MAX_VALUE;
+                int hiX = Integer.MIN_VALUE;
+                int loZ = Integer.MAX_VALUE;
+                int hiZ = Integer.MIN_VALUE;
+                for (final int[] point : territory.polygon()) {
+                    loX = Math.min(loX, point[0]);
+                    hiX = Math.max(hiX, point[0]);
+                    loZ = Math.min(loZ, point[1]);
+                    hiZ = Math.max(hiZ, point[1]);
+                }
+                minX = loX;
+                maxX = hiX;
+                minZ = loZ;
+                maxZ = hiZ;
+            } else {
+                minX = territory.x() - territory.radius();
+                maxX = territory.x() + territory.radius();
+                minZ = territory.z() - territory.radius();
+                maxZ = territory.z() + territory.radius();
+            }
+            for (int cx = minX >> 4; cx <= maxX >> 4; cx++) {
+                for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
+                    fresh.computeIfAbsent(chunkKey(territory.world(), cx, cz), k -> new ArrayList<>()).add(territory);
+                }
+            }
+        }
+        fresh.replaceAll((k, list) -> List.copyOf(list));
+        chunkIndex = Map.copyOf(fresh);
+    }
+
+    private static String chunkKey(final String world, final int chunkX, final int chunkZ) {
+        return world + ";" + chunkX + ";" + chunkZ;
     }
 
     // ==================== polygon boundary point buffer (per player) ====================

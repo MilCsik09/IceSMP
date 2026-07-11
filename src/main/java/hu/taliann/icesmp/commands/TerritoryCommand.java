@@ -39,7 +39,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "pos", "undo", "clearpoints", "points", "create", "circle",
-            "setcapital", "remove", "list", "info", "show");
+            "setcapital", "rename", "resize", "settype", "sety", "remove", "list", "info", "show");
     private static final List<String> TYPE_NAMES = List.of(
             "faction", "protected-faction", "protected-city", "capital");
 
@@ -75,6 +75,10 @@ public final class TerritoryCommand implements BasicCommand {
             case "create" -> handleCreatePolygon(sender, args);
             case "circle" -> handleCircle(sender, args);
             case "setcapital" -> handleSetCapital(sender, args);
+            case "rename" -> handleRename(sender, args);
+            case "resize" -> handleResize(sender, args);
+            case "settype" -> handleSetType(sender, args);
+            case "sety" -> handleSetY(sender, args);
             case "remove" -> handleRemove(sender, args);
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender);
@@ -179,6 +183,11 @@ public final class TerritoryCommand implements BasicCommand {
                     "&cA határpontok másik világban vannak — állj vissza abba a világba, vagy töröld őket."));
             return;
         }
+        if (isSelfIntersecting(points)) {
+            sender.sendMessage(messageManager.get("territory-create-self-intersect",
+                    "&cA határvonal önmagát keresztezi — igazítsd a pontokat, hogy a fal ne messe át saját magát."));
+            return;
+        }
 
         final String name = args.length > 4
                 ? String.join(" ", Arrays.copyOfRange(args, 4, args.length))
@@ -260,6 +269,109 @@ public final class TerritoryCommand implements BasicCommand {
                 territory.name(), faction.getDisplayName(), territory.radius(), territory.x(), territory.z()));
     }
 
+    // ==================== zone edits ====================
+
+    private void handleRename(final CommandSender sender, final String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("territory-rename-usage",
+                    "&cHasználat: /territory rename <azonosító> <új név...>"));
+            return;
+        }
+        final String name = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+        final Territory territory = territoryManager.rename(args[1], name);
+        if (territory == null) {
+            sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+            return;
+        }
+        sender.sendMessage(messageManager.get("territory-rename-success",
+                "&aTerület átnevezve: &f%s &7(%s)", territory.name(), territory.id()));
+    }
+
+    private void handleResize(final CommandSender sender, final String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("territory-resize-usage",
+                    "&cHasználat: /territory resize <azonosító> <sugár>"));
+            return;
+        }
+        final Integer radius = parseRadius(sender, args[2]);
+        if (radius == null) {
+            return;
+        }
+        if (territoryManager.getById(args[1]) == null) {
+            sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+            return;
+        }
+        final Territory territory = territoryManager.resize(args[1], radius);
+        if (territory == null) {
+            sender.sendMessage(messageManager.get("territory-resize-polygon",
+                    "&cPoligon-területet nem lehet sugárral átméretezni — használj /territory create-et új pontokkal."));
+            return;
+        }
+        sender.sendMessage(messageManager.get("territory-resize-success",
+                "&aÚj sugár: &f%s &7(%s)", territory.radius(), territory.id()));
+    }
+
+    private void handleSetType(final CommandSender sender, final String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("territory-settype-usage",
+                    "&cHasználat: /territory settype <azonosító> <típus>"));
+            return;
+        }
+        final TerritoryType type = parseType(sender, args[2]);
+        if (type == null) {
+            return;
+        }
+        final Territory territory = territoryManager.setType(args[1], type);
+        if (territory == null) {
+            sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+            return;
+        }
+        sender.sendMessage(messageManager.get("territory-settype-success",
+                "&aÚj típus: &f%s &7(%s)", type.getDisplayName(), territory.id()));
+    }
+
+    private void handleSetY(final CommandSender sender, final String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(messageManager.get("territory-sety-usage",
+                    "&cHasználat: /territory sety <azonosító> <minY|~> <maxY|~> &7(a ~ = korlátlan)"));
+            return;
+        }
+        if (territoryManager.getById(args[1]) == null) {
+            sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+            return;
+        }
+        final Integer minY = parseYBound(sender, args[2], Territory.NO_MIN_Y);
+        if (minY == null) {
+            return;
+        }
+        final Integer maxY = parseYBound(sender, args[3], Territory.NO_MAX_Y);
+        if (maxY == null) {
+            return;
+        }
+        final Territory territory = territoryManager.setYBounds(args[1], minY, maxY);
+        if (territory == null) {
+            sender.sendMessage(messageManager.get("territory-unknown", "&cIsmeretlen terület: &f%s", args[1]));
+            return;
+        }
+        final String range = (territory.minY() == Territory.NO_MIN_Y ? "−∞" : String.valueOf(territory.minY()))
+                + " … " + (territory.maxY() == Territory.NO_MAX_Y ? "+∞" : String.valueOf(territory.maxY()));
+        sender.sendMessage(messageManager.get("territory-sety-success",
+                "&aMagassági sáv: &f%s &7(%s)", range, territory.id()));
+    }
+
+    /** Parses a Y bound; the literal {@code ~} means "unbounded" (returns the sentinel). */
+    private Integer parseYBound(final CommandSender sender, final String raw, final int unbounded) {
+        if ("~".equals(raw) || "*".equalsIgnoreCase(raw)) {
+            return unbounded;
+        }
+        try {
+            return Integer.parseInt(raw);
+        } catch (final NumberFormatException exception) {
+            sender.sendMessage(messageManager.get("invalid-amount", "&cÉrvénytelen szám (használd a ~ jelet a korlátlanhoz)."));
+            return null;
+        }
+    }
+
     private void handleRemove(final CommandSender sender, final String[] args) {
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("territory-remove-usage", "&cHasználat: /territory remove <azonosító>"));
@@ -306,9 +418,17 @@ public final class TerritoryCommand implements BasicCommand {
             return;
         }
         sender.sendMessage(messageManager.get("territory-info-line",
-                "&6Terület: &f%s &7| Típus: &f%s &7| Frakció: &f%s &7| Azonosító: &f%s",
+                "&6Terület: &f%s &7| Típus: &f%s &7| Frakció: &f%s &7| Azonosító: &f%s &7| Magasság: &f%s",
                 territory.name(), territory.type().getDisplayName(),
-                territory.faction().getDisplayName(), territory.id()));
+                territory.faction().getDisplayName(), territory.id(), describeY(territory)));
+    }
+
+    private static String describeY(final Territory territory) {
+        if (!territory.hasYBounds()) {
+            return "teljes";
+        }
+        return (territory.minY() == Territory.NO_MIN_Y ? "−∞" : String.valueOf(territory.minY()))
+                + ".." + (territory.maxY() == Territory.NO_MAX_Y ? "+∞" : String.valueOf(territory.maxY()));
     }
 
     // ==================== particle preview ====================
@@ -427,6 +547,44 @@ public final class TerritoryCommand implements BasicCommand {
         }
     }
 
+    /**
+     * Whether the closed vertex ring crosses itself (any two non-adjacent edges
+     * intersect). Rejects tangled boundaries before they become a zone.
+     */
+    private static boolean isSelfIntersecting(final List<int[]> ring) {
+        final int n = ring.size();
+        for (int i = 0; i < n; i++) {
+            final int[] a1 = ring.get(i);
+            final int[] a2 = ring.get((i + 1) % n);
+            for (int j = i + 1; j < n; j++) {
+                // Skip edges that share a vertex (adjacent, or the wrap-around pair).
+                if (j == i || (i + 1) % n == j || (j + 1) % n == i) {
+                    continue;
+                }
+                final int[] b1 = ring.get(j);
+                final int[] b2 = ring.get((j + 1) % n);
+                if (segmentsIntersect(a1, a2, b1, b2)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean segmentsIntersect(final int[] p1, final int[] p2, final int[] p3, final int[] p4) {
+        final long d1 = cross(p3, p4, p1);
+        final long d2 = cross(p3, p4, p2);
+        final long d3 = cross(p1, p2, p3);
+        final long d4 = cross(p1, p2, p4);
+        return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0))
+                && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+    }
+
+    /** Cross product of (b-a)×(c-a) — sign gives the orientation of c about a→b. */
+    private static long cross(final int[] a, final int[] b, final int[] c) {
+        return (long) (b[0] - a[0]) * (c[1] - a[1]) - (long) (b[1] - a[1]) * (c[0] - a[0]);
+    }
+
     private void sendHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("territory-help-header", "&6/territory &7- Elérhető parancsok (Admin):"));
         sender.sendMessage(messageManager.get("territory-help-pos",
@@ -439,6 +597,8 @@ public final class TerritoryCommand implements BasicCommand {
                 "&e/territory circle <típus> <frakció> <id> <sugár> [név...] &7- Kör-terület."));
         sender.sendMessage(messageManager.get("territory-help-setcapital",
                 "&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros (kör)."));
+        sender.sendMessage(messageManager.get("territory-help-edit",
+                "&e/territory rename|resize|settype|sety <id> ... &7- Meglévő zóna módosítása."));
         sender.sendMessage(messageManager.get("territory-help-remove", "&e/territory remove <id> &7- Terület törlése."));
         sender.sendMessage(messageManager.get("territory-help-list", "&e/territory list &7- Területek listája."));
         sender.sendMessage(messageManager.get("territory-help-info", "&e/territory info &7- Az aktuális pozíció területe."));
@@ -470,14 +630,22 @@ public final class TerritoryCommand implements BasicCommand {
         if ("setcapital".equals(subcommand) && args.length == 2) {
             return factionSuggestions(prefixAt(args, 1));
         }
-        if ("remove".equals(subcommand) && args.length == 2) {
-            final String prefix = prefixAt(args, 1);
-            return territoryManager.all().stream()
-                    .map(Territory::id)
-                    .filter(id -> id.startsWith(prefix))
-                    .toList();
+        // Edit/remove commands take an existing zone id at arg1.
+        if (args.length == 2 && List.of("remove", "rename", "resize", "settype", "sety").contains(subcommand)) {
+            return idSuggestions(prefixAt(args, 1));
+        }
+        // settype <id> <type>
+        if ("settype".equals(subcommand) && args.length == 3) {
+            return TYPE_NAMES.stream().filter(name -> name.startsWith(prefixAt(args, 2))).toList();
         }
         return List.of();
+    }
+
+    private List<String> idSuggestions(final String prefix) {
+        return territoryManager.all().stream()
+                .map(Territory::id)
+                .filter(id -> id.startsWith(prefix))
+                .toList();
     }
 
     private static List<String> factionSuggestions(final String prefix) {

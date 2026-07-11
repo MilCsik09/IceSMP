@@ -129,13 +129,19 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 - `/territory circle <típus> <frakció> <id> <sugár> [név...]` — kör-zóna a pozíciódnál.
 - `/territory setcapital <frakció> <sugár> [név...]` — főváros (kör) gyorsan.
 - `/territory show` — a puffered és az aktuális zóna határának kirajzolása részecskékkel.
+- `/territory rename <id> <név...>` — zóna átnevezése.
+- `/territory resize <id> <sugár>` — kör-zóna új sugara (poligonra nem működik).
+- `/territory settype <id> <típus>` — zóna típusának megváltoztatása.
+- `/territory sety <id> <minY> <maxY>` — magassági sáv beállítása (`~` = korlátlan; pl.
+  `/territory sety varos 60 ~` = csak 60-as magasságtól felfelé véd).
 - `/territory remove <id>` — zóna törlése.
-- `/territory list` / `/territory info` — zónák listája / az aktuális zóna infója.
+- `/territory list` / `/territory info` — zónák listája / az aktuális zóna infója (magassággal).
 - `/claim admin unclaim` — idegen claim törlése admin-jogon (a claimben állva).
 
 > **Típusok:** `faction` (csak tagok építhetnek), `protected-faction` / `protected-city`
 > (senki), `capital` (főváros). A városfal mentén így pontosan kijelölhető a terület: járd
 > körbe a falat, minden saroknál `/territory pos`, végül `/territory create protected-city ...`.
+> A rendszer figyelmeztet, ha a határvonal **önmagát keresztezné** (összegabalyodott fal).
 
 ---
 

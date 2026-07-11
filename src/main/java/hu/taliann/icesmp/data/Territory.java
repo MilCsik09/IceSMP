@@ -14,6 +14,10 @@ import java.util.List;
  *       for the "most specific claim wins" size comparison.</li>
  * </ul>
  *
+ * <p>A zone can optionally be limited to a vertical band [{@code minY}, {@code maxY}];
+ * {@link #NO_MIN_Y}/{@link #NO_MAX_Y} mark an unbounded (full-height) column, which
+ * is the default for zones defined without an explicit Y-range.
+ *
  * @param id unique identifier of the zone
  * @param faction the owning faction (NEUTRAL for ownerless protected cities)
  * @param name display name shown to players
@@ -23,6 +27,8 @@ import java.util.List;
  * @param z centre/centroid block Z
  * @param radius circular radius, or the polygon's bounding-circle radius
  * @param polygon polygon vertices as {@code {x, z}} pairs, or {@code null}/empty for a disc
+ * @param minY lower Y bound (inclusive), or {@link #NO_MIN_Y} for unbounded
+ * @param maxY upper Y bound (inclusive), or {@link #NO_MAX_Y} for unbounded
  */
 public record Territory(
         String id,
@@ -33,8 +39,13 @@ public record Territory(
         int x,
         int z,
         int radius,
-        List<int[]> polygon
+        List<int[]> polygon,
+        int minY,
+        int maxY
 ) {
+
+    public static final int NO_MIN_Y = Integer.MIN_VALUE;
+    public static final int NO_MAX_Y = Integer.MAX_VALUE;
 
     /** Whether this zone is the faction's capital (banking/exchange gate). */
     public boolean capital() {
@@ -46,6 +57,12 @@ public record Territory(
         return polygon != null && polygon.size() >= 3;
     }
 
+    /** Whether the zone is limited to a vertical band (vs. a full-height column). */
+    public boolean hasYBounds() {
+        return minY != NO_MIN_Y || maxY != NO_MAX_Y;
+    }
+
+    /** 2D (column) containment test — ignores any Y bounds. */
     public boolean contains(final String worldName, final double blockX, final double blockZ) {
         if (!world.equals(worldName)) {
             return false;
@@ -59,6 +76,12 @@ public record Territory(
             return false;
         }
         return !isPolygon() || pointInPolygon(blockX, blockZ);
+    }
+
+    /** Full 3D containment test — the column test plus the optional Y band. */
+    public boolean contains(final String worldName, final double blockX, final double blockY,
+                            final double blockZ) {
+        return blockY >= minY && blockY <= maxY && contains(worldName, blockX, blockZ);
     }
 
     /** Even-odd ray casting against the vertex ring. */

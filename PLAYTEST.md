@@ -326,6 +326,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Claim tiltás:** védett zónában a `/claim` és `/claim area` elutasítva
       (`claim-in-protected-zone`); **normál frakcióterületen viszont ENGEDETT** (alapból
       `claims.block-in-territory: false`). Kis poligon-zóna szélén is véd (sarok+közép próbák).
+- [ ] **Zóna-módosítás:** `/territory rename|resize|settype|sety <id> ...` a meglévő zónát módosítja
+      (a `resize` poligonra elutasít); `settype ... capital` a régi fővárost lefokozza.
+- [ ] **Magassági sáv:** `/territory sety <id> 60 ~` után a zóna csak Y=60 felett véd; az `info`
+      a „Magasság" mezőben mutatja; a `~`/`*` = korlátlan.
+- [ ] **Poligon-validáció:** önmetsző határvonalnál (a fal átvágja saját magát) a `create` elutasít.
+- [ ] **Teljesítmény:** sok zónával is gyors a mozgás/építés (chunk-index; a lookup nem lassít).
 - [ ] Régi `territories.yml` (csak `capital: true/false`) betöltése: capital→CAPITAL, egyébként FACTION.
 
 ### 4.9 Relikviák + rituálé-oltárok ✅
