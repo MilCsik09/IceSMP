@@ -121,7 +121,7 @@ import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.PetManager;
 import hu.taliann.icesmp.managers.ParkourManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
-import hu.taliann.icesmp.managers.MasterworkAffixService;
+import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.ProfessionRecipeManager;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.RaidManager;
@@ -204,9 +204,10 @@ public final class IceSMPCore {
     private final ParkourManager parkourManager;
     private final ProfessionManager professionManager;
     private final ProfessionRecipeManager professionRecipeManager;
-    private final MasterworkAffixService masterworkAffixService;
+    private final ItemRarityService itemRarityService;
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog professionRecipeCatalog;
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintItemFactory;
+    private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
@@ -290,11 +291,12 @@ public final class IceSMPCore {
         this.invasionManager = new InvasionManager(plugin, configManager, mobScalingManager, messageManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.professionRecipeManager = new ProfessionRecipeManager(plugin, configManager);
-        this.masterworkAffixService = new MasterworkAffixService(plugin, configManager);
+        this.itemRarityService = new ItemRarityService(plugin, configManager);
         this.professionRecipeCatalog = new hu.taliann.icesmp.managers.ProfessionRecipeCatalog(plugin, configManager);
         this.blueprintItemFactory = new hu.taliann.icesmp.items.BlueprintItemFactory(plugin, professionRecipeCatalog);
+        this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(
-                professionManager, professionRecipeCatalog, masterworkAffixService, messageManager);
+                professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
@@ -848,8 +850,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, masterworkAffixService), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobLootListener(configManager, masterworkAffixService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, itemRarityService), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobLootListener(configManager, itemRarityService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog), plugin);
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);

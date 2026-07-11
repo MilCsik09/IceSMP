@@ -761,3 +761,66 @@ profession-recipes:
     category: "Étel (tervrajz)"
     result: { material: ENCHANTED_GOLDEN_APPLE, amount: 1 }
     ingredients: [ "GOLDEN_APPLE:4", "NETHER_STAR:1" ]
+
+  # =========================================================
+  # --- Egyedi (unique) köztes alapanyagok + felhasználásuk ---
+  #   Termelő receptek (result: { unique: <id> }) és fogyasztók
+  #   (ingredients: "unique:<id>:db"). Def.: profession-materials.yml
+  # =========================================================
+  vasesszencia_leparlas:
+    profession: armorer
+    level: 22
+    learn: level
+    display-name: "Vasesszencia Lepárlás"
+    category: "Egyedi alapanyag"
+    result: { unique: tiszta_vasesszencia, amount: 2 }
+    ingredients: [ "IRON_INGOT:4", "REDSTONE:2" ]
+  rezotvozet_ontes:
+    profession: miner
+    level: 24
+    learn: level
+    display-name: "Rézötvözet Öntés"
+    category: "Egyedi alapanyag"
+    result: { unique: rezgo_rez_otvozet, amount: 2 }
+    ingredients: [ "COPPER_INGOT:4", "GOLD_NUGGET:4" ]
+  gyogykivonat_fozes:
+    profession: herbalist
+    level: 24
+    learn: level
+    display-name: "Gyógy-kivonat Főzés"
+    category: "Egyedi alapanyag"
+    result: { unique: gyogy_kivonat, amount: 2 }
+    ingredients: [ "GLOW_BERRIES:4", "GLISTERING_MELON_SLICE:1" ]
+  kemenyfa_gyaluzas:
+    profession: lumberjack
+    level: 24
+    learn: level
+    display-name: "Keményfa Gyalulás"
+    category: "Egyedi alapanyag"
+    result: { unique: kemenyfa_gerenda, amount: 2 }
+    ingredients: [ "STRIPPED_OAK_WOOD:2", "STRING:2" ]
+  runapor_orles:
+    profession: enchanter
+    level: 26
+    learn: level
+    display-name: "Rúnapor Őrlés"
+    category: "Egyedi alapanyag"
+    result: { unique: runapor, amount: 2 }
+    ingredients: [ "GLOWSTONE_DUST:4", "LAPIS_LAZULI:2" ]
+  # Fogyasztók: egyedi alapanyagot igénylő, erős végtermékek
+  esszencialt_vasvert:
+    profession: armorer
+    level: 35
+    learn: level
+    display-name: "Esszenciált Vasvért"
+    category: "Páncél"
+    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:6", "unique:tiszta_vasesszencia:3" ]
+  runakovacsolt_penge:
+    profession: armorer
+    level: 44
+    learn: blueprint
+    display-name: "Rúnakovácsolt Penge"
+    category: "Fegyver (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
+    ingredients: [ "NETHERITE_INGOT:1", "unique:tiszta_vasesszencia:2", "unique:runapor:2" ]

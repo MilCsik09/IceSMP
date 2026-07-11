@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.managers.MasterworkAffixService;
+import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.ProfessionRecipeManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,10 +18,10 @@ import org.bukkit.inventory.ItemStack;
 public final class MasterworkCraftListener implements Listener {
 
     private final ProfessionRecipeManager recipeManager;
-    private final MasterworkAffixService affixService;
+    private final ItemRarityService affixService;
 
     public MasterworkCraftListener(final ProfessionRecipeManager recipeManager,
-                                   final MasterworkAffixService affixService) {
+                                   final ItemRarityService affixService) {
         this.recipeManager = recipeManager;
         this.affixService = affixService;
     }
@@ -35,7 +35,7 @@ public final class MasterworkCraftListener implements Listener {
         if (recipeManager.getRequirement(result) == null || affixService.isRolled(result)) {
             return;
         }
-        final ItemStack rolled = affixService.roll(result, MasterworkAffixService.TIER_CRAFTED);
+        final ItemStack rolled = affixService.roll(result, ItemRarityService.TIER_CRAFTED);
         if (rolled != result) {
             event.setCurrentItem(rolled);
         }

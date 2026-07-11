@@ -17,15 +17,20 @@ import java.util.Map;
  * belongs to a profession, requires a level, is learned either automatically at that level
  * ({@code learn: level}) or from a blueprint ({@code learn: blueprint}), consumes a list of
  * ingredients and yields a result. When the result declares an {@code affix-tier}, the crafted
- * item is rolled through {@link MasterworkAffixService} (so gear comes out unique). Loaded once on
+ * item is rolled through {@link ItemRarityService} (so gear comes out unique). Loaded once on
  * enable; the actual crafting/learning lives in the profession-recipe GUI and its listener.
  */
 public final class ProfessionRecipeCatalog {
 
-    /** One catalog recipe. {@code affixTier} is null for plain (non-gear) results. */
+    /**
+     * One catalog recipe. {@code affixTier} is null for plain (non-gear) results. {@code uniqueResult}
+     * is the produced unique-material id (null = a normal {@code result} Material). {@code ingredients}
+     * are vanilla materials; {@code uniqueIngredients} are unique-material ids the recipe also needs.
+     */
     public record Recipe(String id, ProfessionType profession, int level, boolean blueprint,
                          String displayName, String category, Material result, int resultAmount,
-                         String affixTier, Map<Material, Integer> ingredients) {
+                         String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
+                         Map<String, Integer> uniqueIngredients) {
     }
 
     private final JavaPlugin plugin;
@@ -69,30 +74,34 @@ public final class ProfessionRecipeCatalog {
             return null;
         }
         final ConfigurationSection resultSection = section.getConfigurationSection("result");
-        final Material result = resultSection == null ? null
+        if (resultSection == null) {
+            plugin.getLogger().warning("profession-recipes." + id + ": hiányzó result — kihagyva.");
+            return null;
+        }
+        // A unique-material eredmény ikonját a profession-materials config adja; a sima eredmény a material.
+        final String uniqueResult = resultSection.getString("unique", null);
+        final Material result = uniqueResult != null
+                ? Material.matchMaterial(uniqueIconMaterial(uniqueResult))
                 : Material.matchMaterial(resultSection.getString("material", "").toUpperCase(Locale.ROOT));
         if (result == null) {
-            plugin.getLogger().warning("profession-recipes." + id + ": érvénytelen result.material — kihagyva.");
+            plugin.getLogger().warning("profession-recipes." + id + ": érvénytelen result — kihagyva.");
             return null;
         }
         final Map<Material, Integer> ingredients = new LinkedHashMap<>();
+        final Map<String, Integer> uniqueIngredients = new LinkedHashMap<>();
         for (final String token : section.getStringList("ingredients")) {
-            final String[] parts = token.split(":", 2);
+            final String[] parts = token.split(":");
+            if (parts.length >= 3 && "unique".equalsIgnoreCase(parts[0].trim())) {
+                uniqueIngredients.merge(parts[1].trim().toLowerCase(Locale.ROOT), parseCount(parts[2]), Integer::sum);
+                continue;
+            }
             final Material material = Material.matchMaterial(parts[0].trim().toUpperCase(Locale.ROOT));
             if (material == null) {
                 continue;
             }
-            int amount = 1;
-            if (parts.length > 1) {
-                try {
-                    amount = Math.max(1, Integer.parseInt(parts[1].trim()));
-                } catch (final NumberFormatException ignored) {
-                    amount = 1;
-                }
-            }
-            ingredients.merge(material, amount, Integer::sum);
+            ingredients.merge(material, parts.length > 1 ? parseCount(parts[1]) : 1, Integer::sum);
         }
-        if (ingredients.isEmpty()) {
+        if (ingredients.isEmpty() && uniqueIngredients.isEmpty()) {
             plugin.getLogger().warning("profession-recipes." + id + ": nincs érvényes ingredient — kihagyva.");
             return null;
         }
@@ -103,7 +112,9 @@ public final class ProfessionRecipeCatalog {
         final int amount = Math.max(1, resultSection.getInt("amount", 1));
         final String affixTier = resultSection.getString("affix-tier", null);
         return new Recipe(id, profession, level, blueprint, displayName, category, result, amount,
-                affixTier == null || affixTier.isBlank() ? null : affixTier.toLowerCase(Locale.ROOT), ingredients);
+                affixTier == null || affixTier.isBlank() ? null : affixTier.toLowerCase(Locale.ROOT),
+                uniqueResult == null || uniqueResult.isBlank() ? null : uniqueResult.toLowerCase(Locale.ROOT),
+                ingredients, uniqueIngredients);
     }
 
     public Recipe get(final String id) {
@@ -127,6 +138,24 @@ public final class ProfessionRecipeCatalog {
 
     public boolean isEmpty() {
         return byId.isEmpty();
+    }
+
+    /** The icon material configured for a unique material (fallback PAPER), upper-cased for matching. */
+    private String uniqueIconMaterial(final String uniqueId) {
+        if (configManager.getConfiguration() == null) {
+            return "PAPER";
+        }
+        return configManager.getConfiguration()
+                .getString("profession-materials." + uniqueId.toLowerCase(Locale.ROOT) + ".material", "PAPER")
+                .toUpperCase(Locale.ROOT);
+    }
+
+    private static int parseCount(final String raw) {
+        try {
+            return Math.max(1, Integer.parseInt(raw.trim()));
+        } catch (final NumberFormatException ignored) {
+            return 1;
+        }
     }
 
     private static String prettyName(final Material material) {

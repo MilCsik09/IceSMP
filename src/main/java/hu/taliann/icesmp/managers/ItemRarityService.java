@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * a source can roll (and their weights) comes from the loot tier. Rolled items carry a PDC tag so
  * they are never re-rolled.
  */
-public final class MasterworkAffixService {
+public final class ItemRarityService {
 
     private enum Family { ARMOR, WEAPON, TOOL, OTHER }
 
@@ -42,7 +42,7 @@ public final class MasterworkAffixService {
                          double valueMultiplier, List<String> adjectives) {
     }
 
-    /** Source tiers (config: professions.masterwork.tiers.&lt;id&gt;.weights). */
+    /** Source tiers (config: item-rarity.tiers.&lt;id&gt;.weights). */
     public static final String TIER_DROP = "drop";
     public static final String TIER_CRAFTED = "crafted";
     public static final String TIER_BOSS = "boss";
@@ -59,14 +59,14 @@ public final class MasterworkAffixService {
     private final ConfigManager configManager;
     private final NamespacedKey qualityKey;
 
-    public MasterworkAffixService(final JavaPlugin plugin, final ConfigManager configManager) {
+    public ItemRarityService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.qualityKey = new NamespacedKey(plugin, "masterwork_quality");
     }
 
     public boolean isEnabled() {
-        return configManager.getBoolean("professions.masterwork.enabled", true);
+        return configManager.getBoolean("item-rarity.enabled", true);
     }
 
     /** Whether the item already carries a rolled rarity (so it is not re-rolled). */
@@ -178,14 +178,14 @@ public final class MasterworkAffixService {
         return Family.OTHER;
     }
 
-    /** Loads the shared rarity ladder (professions.masterwork.rarities). */
+    /** Loads the shared rarity ladder (item-rarity.rarities). */
     private Map<String, Rarity> loadRarities() {
         final Map<String, Rarity> ladder = new LinkedHashMap<>();
         if (configManager.getConfiguration() == null) {
             return ladder;
         }
         final ConfigurationSection section = configManager.getConfiguration()
-                .getConfigurationSection("professions.masterwork.rarities");
+                .getConfigurationSection("item-rarity.rarities");
         if (section == null) {
             return ladder;
         }
@@ -212,7 +212,7 @@ public final class MasterworkAffixService {
             return null;
         }
         final ConfigurationSection weights = configManager.getConfiguration()
-                .getConfigurationSection("professions.masterwork.tiers." + tierId + ".weights");
+                .getConfigurationSection("item-rarity.tiers." + tierId + ".weights");
         if (weights == null) {
             return null;
         }
@@ -242,7 +242,7 @@ public final class MasterworkAffixService {
         if (configManager.getConfiguration() == null) {
             return null;
         }
-        return configManager.getConfiguration().getConfigurationSection("professions.masterwork.affixes." + affixId);
+        return configManager.getConfiguration().getConfigurationSection("item-rarity.affixes." + affixId);
     }
 
     private String nounFor(final Family family, final Material material) {
@@ -252,7 +252,7 @@ public final class MasterworkAffixService {
             case TOOL -> "tool";
             default -> "weapon";
         };
-        final List<String> nouns = configManager.getStringList("professions.masterwork.nouns." + key);
+        final List<String> nouns = configManager.getStringList("item-rarity.nouns." + key);
         return nouns.isEmpty() ? prettyName(material) : nouns.get(ThreadLocalRandom.current().nextInt(nouns.size()));
     }
 

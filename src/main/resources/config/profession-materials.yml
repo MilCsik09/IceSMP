@@ -1,0 +1,36 @@
+# IceSMP konfiguráció — profession-materials (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Egyedi (unique) szakma-alapanyagok =====
+# A szakmák egyedi, PDC-jelölt köztes alapanyagokat gyárthatnak, amiket más receptek igényelnek
+# (mint WoW-ban a "Spirit Dust" / Terrariában a köztes bárok). Ezek NEM vanilla itemek: a recept-
+# motor a PDC-tag alapján ismeri fel őket, így nem keverednek a sima itemekkel.
+#
+# Használat a profession-recipes.yml-ben:
+#   - eredményként:   result: { unique: tiszta_vasesszencia }   (a material a megjelenítő ikon)
+#   - hozzávalóként:  ingredients: [ "unique:tiszta_vasesszencia:2", "IRON_INGOT:1" ]
+#
+# Séma:
+#   <unique-id>:
+#     material: <ikon MATERIAL>
+#     display-name: "<megjelenő név>"
+#     lore: [ "<sor>", ... ]           # opcionális
+profession-materials:
+  tiszta_vasesszencia:
+    material: IRON_NUGGET
+    display-name: "Tiszta Vasesszencia"
+    lore: [ "Kovács köztes alapanyag.", "Magas szintű páncélokhoz." ]
+  gyogy_kivonat:
+    material: GLOW_BERRIES
+    display-name: "Gyógy-kivonat"
+    lore: [ "Gyógynövényész köztes alapanyag.", "Erős bájitalokhoz." ]
+  rezgo_rez_otvozet:
+    material: COPPER_INGOT
+    display-name: "Rezgő Rézötvözet"
+    lore: [ "Bányász köztes alapanyag.", "Vezető rúnákhoz és eszközökhöz." ]
+  kemenyfa_gerenda:
+    material: STRIPPED_OAK_WOOD
+    display-name: "Keményfa Gerenda"
+    lore: [ "Favágó köztes alapanyag.", "Tartós szerszámnyelekhez." ]
+  runapor:
+    material: GLOWSTONE_DUST
+    display-name: "Rúnapor"
+    lore: [ "Bűvölő köztes alapanyag.", "Csúcs-bűvölésekhez." ]

@@ -2,7 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.InvasionManager;
-import hu.taliann.icesmp.managers.MasterworkAffixService;
+import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import org.bukkit.Material;
@@ -19,21 +19,21 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * WoW-style mob loot: slain mobs have a chance to drop a unique, random-attribute gear item
- * (rolled by {@link MasterworkAffixService}). The tier balances the source — ordinary mobs roll
+ * (rolled by {@link ItemRarityService}). The tier balances the source — ordinary mobs roll
  * the weaker {@code drop} tier, while world bosses / invasion champions / wild-hunt beasts roll
  * the {@code boss} tier, on par with profession crafts. Config: {@code loot} (loot.yml).
  */
 public final class MobLootListener implements Listener {
 
     private final ConfigManager configManager;
-    private final MasterworkAffixService affixService;
+    private final ItemRarityService affixService;
     private final WorldBossManager worldBossManager;
     private final InvasionManager invasionManager;
     private final WildHuntManager wildHuntManager;
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory;
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
 
-    public MobLootListener(final ConfigManager configManager, final MasterworkAffixService affixService,
+    public MobLootListener(final ConfigManager configManager, final ItemRarityService affixService,
                            final WorldBossManager worldBossManager, final InvasionManager invasionManager,
                            final WildHuntManager wildHuntManager,
                            final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory,
@@ -70,7 +70,7 @@ public final class MobLootListener implements Listener {
         rollBlueprintDrop(event, bossTier);
 
         final String path = bossTier ? "loot.boss-drop" : "loot.mob-drop";
-        final String tier = bossTier ? MasterworkAffixService.TIER_BOSS : MasterworkAffixService.TIER_DROP;
+        final String tier = bossTier ? ItemRarityService.TIER_BOSS : ItemRarityService.TIER_DROP;
 
         final double chance = configManager.getDouble(path + ".chance", bossTier ? 1.0D : 0.02D);
         if (ThreadLocalRandom.current().nextDouble() >= chance) {

@@ -48,7 +48,8 @@ public final class ProfessionRecipeGUI {
     }
 
     public static void open(final Player player, final int page, final ProfessionManager professionManager,
-                            final ProfessionRecipeCatalog catalog) {
+                            final ProfessionRecipeCatalog catalog,
+                            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         final List<ProfessionRecipeCatalog.Recipe> recipes = visibleRecipes(player, professionManager, catalog);
         final int maxPage = Math.max(0, (recipes.size() - 1) / PAGE_SIZE);
         final int shownPage = Math.max(0, Math.min(page, maxPage));
@@ -67,7 +68,7 @@ public final class ProfessionRecipeGUI {
         final int start = shownPage * PAGE_SIZE;
         for (int i = 0; i < PAGE_SIZE && start + i < recipes.size(); i++) {
             final ProfessionRecipeCatalog.Recipe recipe = recipes.get(start + i);
-            inv.setItem(i, buildTile(player, professionManager, recipe));
+            inv.setItem(i, buildTile(player, professionManager, recipe, uniqueMaterials));
             holder.map(i, recipe.id());
         }
 
@@ -90,11 +91,12 @@ public final class ProfessionRecipeGUI {
     }
 
     private static org.bukkit.inventory.ItemStack buildTile(final Player player, final ProfessionManager professionManager,
-                                                            final ProfessionRecipeCatalog.Recipe recipe) {
+                                                            final ProfessionRecipeCatalog.Recipe recipe,
+                                                            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         final int level = professionManager.getLevel(player, recipe.profession());
         final boolean levelOk = level >= recipe.level();
         final boolean learned = !recipe.blueprint() || professionManager.hasLearnedRecipe(player, recipe.id());
-        final boolean hasMats = hasIngredients(player, recipe);
+        final boolean hasMats = hasIngredients(player, recipe, uniqueMaterials);
         final boolean craftable = levelOk && learned && hasMats;
 
         final List<Component> lore = new ArrayList<>();
@@ -117,6 +119,13 @@ public final class ProfessionRecipeGUI {
                     + prettyName(entry.getKey()), enough ? NamedTextColor.GRAY : NamedTextColor.RED)
                     .decoration(TextDecoration.ITALIC, false));
         }
+        for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
+            final int have = countUnique(player, entry.getKey(), uniqueMaterials);
+            final boolean enough = have >= entry.getValue();
+            lore.add(Component.text("  " + (enough ? "✔ " : "✘ ") + have + "/" + entry.getValue() + " "
+                    + uniqueMaterials.displayName(entry.getKey()), enough ? NamedTextColor.AQUA : NamedTextColor.RED)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         if (recipe.affixTier() != null) {
             lore.add(Component.empty());
             lore.add(Component.text("✦ Egyedi (rolled) minőség + affixek", NamedTextColor.LIGHT_PURPLE)
@@ -134,13 +143,30 @@ public final class ProfessionRecipeGUI {
         return icon(recipe.result(), name, lore, recipe.affixTier() != null);
     }
 
-    private static boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
+    private static boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
+                                          final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
             if (countMaterial(player, entry.getKey()) < entry.getValue()) {
                 return false;
             }
         }
+        for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
+            if (countUnique(player, entry.getKey(), uniqueMaterials) < entry.getValue()) {
+                return false;
+            }
+        }
         return true;
+    }
+
+    private static int countUnique(final Player player, final String uniqueId,
+                                   final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
+        int count = 0;
+        for (final org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+            if (item != null && uniqueId.equals(uniqueMaterials.idOf(item))) {
+                count += item.getAmount();
+            }
+        }
+        return count;
     }
 
     private static int countMaterial(final Player player, final Material material) {

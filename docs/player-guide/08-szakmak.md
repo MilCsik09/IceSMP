@@ -86,6 +86,11 @@ ha minden feltétel megvan (a hozzávalók a táskádból fogynak).
   **NPC-boltból** veheted, **szörnyek ejthetik**, vagy admin adhatja. **Jobb katt** a tervrajzon =
   megtanulod a receptet (utána már a recept-könyvből craftolható, ha megvan hozzá a szint).
 
+**Egyedi köztes alapanyagok:** egyes szakmák **egyedi alapanyagot** gyártanak (pl. *Tiszta
+Vasesszencia*, *Rúnapor*), amit a magasabb receptek hozzávalóként kérnek — ezek nem sima itemek,
+hanem szakma-specifikus félkész anyagok (mint WoW-ban a „Spirit Dust"). A recept-könyv jelzi, ha
+egy recepthez egyedi alapanyag kell (kék színnel).
+
 ## Mestermű receptek 🛠️
 
 Magas szinten a szakmák **különleges tárgyakat** craftolhatnak, amiket **csak az adott szakma +

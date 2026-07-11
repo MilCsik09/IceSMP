@@ -1,7 +1,7 @@
 # IceSMP konfiguráció — loot (a ConfigManager az összes config/*.yml-t betölti)
 # ===== WoW-szerű mob loot (rolled-affix tárgyak) =====
 # A megölt szörnyek eséllyel egyedi, random-attribútumos felszerelést dobnak (ugyanaz az affix-
-# motor, mint a szakma-mestermunkáké, lásd professions.masterwork). A BALANSZ a tierből jön:
+# motor, mint a szakma-mestermunkáké, lásd item-rarity). A BALANSZ a tierből jön:
 #   - sima szörny  -> 'drop' tier (gyengébb)
 #   - világboss / invázió-bajnok / Vad Hajsza fenevad -> 'boss' tier (szakma-craft szinten)
 loot:
