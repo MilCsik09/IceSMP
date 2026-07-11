@@ -104,8 +104,10 @@ Az affixek attribútumok: **Szívósság** (+élet), **Vértezet**, **Keménysé
 elé kerül a minőség (pl. `[Epikus] Bástya Pajzs`), a bónuszok a leírásban látszanak.
 
 **Balansz — honnan milyen erős a loot:**
-- 🧑‍🏭 **Szakma-craft:** erős alap, akár Legendás minőségig.
-- 👹 **Mob-drop:** gyengébb (kisebb bónuszok, ritkábban magas minőség).
+- 🧑‍🏭 **Szakma-craft:** erős alap, akár Legendás minőségig, **megtervezett névvel** (pl. „Bástya Pajzs").
+- 👹 **Mob-drop:** gyengébb (kisebb bónuszok, ritkábban magas minőség), **random névvel** (pl.
+  „[Ritka] Rozsdás Penge") — és **negatív affixe is lehet** (átok, pl. „- 2 Vértezet")! A szakma
+  által craftolt (nevesített) tárgyak **soha nem esnek mobból**.
 - 🐉 **Világboss / nehéz event loot:** a szakma-crafttal egy szinten (magas minőség-eloszlás).
 
 ## Talentpontok a szakmákból

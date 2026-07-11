@@ -39,8 +39,8 @@ public final class MasterworkAffixService {
     private record Quality(String id, String name, String color, int weight, int affixCount) {
     }
 
-    /** A loot source tier: its quality profile and a multiplier on the rolled affix values. */
-    private record LootTier(List<Quality> qualities, double valueMultiplier) {
+    /** A loot source tier: its quality profile, affix-value multiplier and negative-roll chance. */
+    private record LootTier(List<Quality> qualities, double valueMultiplier, double negativeChance) {
     }
 
     /** Source tiers (config: professions.masterwork.tiers.&lt;id&gt;). */
@@ -86,6 +86,16 @@ public final class MasterworkAffixService {
      * multiplier — drops roll weaker than crafts, boss/hard-event loot rolls on par with crafts.
      */
     public ItemStack roll(final ItemStack base, final String tierId) {
+        return roll(base, tierId, false);
+    }
+
+    /**
+     * Rolls quality + affixes for the given loot tier. With {@code randomName} the item gets a
+     * generated random name (mob loot) instead of keeping its designed name (profession crafts);
+     * a tier's {@code negative-affix-chance} lets individual affixes roll negative (a curse) — used
+     * for mob drops, so scavenged gear can be worse than crafted gear.
+     */
+    public ItemStack roll(final ItemStack base, final String tierId, final boolean randomName) {
         if (base == null || !isEnabled() || isRolled(base)) {
             return base;
         }
@@ -114,7 +124,7 @@ public final class MasterworkAffixService {
         final ItemStack rolled = base.clone();
         final ItemMeta meta = rolled.getItemMeta();
         final List<Component> extraLore = new ArrayList<>();
-        extraLore.add(Component.text("✦ " + quality.name() + " mestermű", colorOf(quality.color()))
+        extraLore.add(Component.text("✦ " + quality.name() + (randomName ? "" : " mestermű"), colorOf(quality.color()))
                 .decoration(TextDecoration.ITALIC, false));
 
         final int count = Math.min(quality.affixCount(), eligible.size());
@@ -127,30 +137,55 @@ public final class MasterworkAffixService {
                 continue;
             }
             final int decimals = cfg.getInt("decimals", 0);
-            final double raw = (min + ThreadLocalRandom.current().nextDouble() * Math.max(0.0D, max - min)) * valueMultiplier;
+            double raw = (min + ThreadLocalRandom.current().nextDouble() * Math.max(0.0D, max - min)) * valueMultiplier;
+            final boolean negative = tier.negativeChance() > 0.0D
+                    && ThreadLocalRandom.current().nextDouble() < tier.negativeChance();
+            if (negative) {
+                raw = -raw;
+            }
             final double amount = round(raw, decimals);
-            if (amount <= 0.0D) {
+            if (amount == 0.0D) {
                 continue;
             }
             final String affixName = cfg.getString("name", affix.id());
             meta.addAttributeModifier(affix.attribute(), new AttributeModifier(
                     new NamespacedKey(plugin, "mw_" + affix.id() + "_" + i),
                     amount, AttributeModifier.Operation.ADD_NUMBER, affix.slot()));
-            extraLore.add(Component.text("  + " + format(amount, decimals) + " " + affixName, NamedTextColor.GRAY)
-                    .decoration(TextDecoration.ITALIC, false));
+            final String sign = amount > 0.0D ? "+ " : "- ";
+            extraLore.add(Component.text("  " + sign + format(Math.abs(amount), decimals) + " " + affixName,
+                    amount > 0.0D ? NamedTextColor.GRAY : NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         }
 
         final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
         lore.addAll(extraLore);
         meta.lore(lore);
-        // Prefix the name with the quality colour so it reads as a rolled unique.
-        final Component baseName = meta.hasDisplayName() ? meta.displayName()
-                : Component.text(prettyName(rolled.getType()));
+        // Name: keep the designed name for crafts; generate a random name for mob loot.
+        final Component baseName = randomName ? Component.text(randomName(rolled.getType()))
+                : (meta.hasDisplayName() ? meta.displayName() : Component.text(prettyName(rolled.getType())));
         meta.displayName(Component.text("[" + quality.name() + "] ", colorOf(quality.color()))
                 .decoration(TextDecoration.ITALIC, false).append(baseName));
         meta.getPersistentDataContainer().set(qualityKey, PersistentDataType.STRING, quality.id());
         rolled.setItemMeta(meta);
         return rolled;
+    }
+
+    /** A generated "&lt;adjective&gt; &lt;noun&gt;" name for mob loot, from the config word pools. */
+    private String randomName(final Material material) {
+        final List<String> adjectives = configManager.getStringList("professions.masterwork.random-names.adjectives");
+        final List<String> nouns = nounPoolFor(familyOf(material));
+        final String adjective = adjectives.isEmpty() ? "" : adjectives.get(ThreadLocalRandom.current().nextInt(adjectives.size())) + " ";
+        final String noun = nouns.isEmpty() ? prettyName(material) : nouns.get(ThreadLocalRandom.current().nextInt(nouns.size()));
+        return adjective + noun;
+    }
+
+    private List<String> nounPoolFor(final Family family) {
+        final String key = switch (family) {
+            case ARMOR -> "armor";
+            case WEAPON -> "weapon";
+            case TOOL -> "tool";
+            default -> "weapon";
+        };
+        return configManager.getStringList("professions.masterwork.random-names.nouns." + key);
     }
 
     private Family familyOf(final Material material) {
@@ -194,7 +229,8 @@ public final class MasterworkAffixService {
             }
         }
         final double valueMultiplier = Math.max(0.0D, tierSection.getDouble("value-multiplier", 1.0D));
-        return new LootTier(qualities, valueMultiplier);
+        final double negativeChance = Math.max(0.0D, Math.min(1.0D, tierSection.getDouble("negative-affix-chance", 0.0D)));
+        return new LootTier(qualities, valueMultiplier, negativeChance);
     }
 
     private static String str(final Object value, final String fallback) {

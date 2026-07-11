@@ -72,7 +72,9 @@ public final class MobLootListener implements Listener {
         if (base == null) {
             return;
         }
-        final ItemStack rolled = affixService.roll(new ItemStack(base), tier);
+        // Mob loot always gets a random name (never a designed masterwork name); negative affixes
+        // are possible on the weaker tiers (config negative-affix-chance).
+        final ItemStack rolled = affixService.roll(new ItemStack(base), tier, true);
         event.getDrops().add(rolled);
     }
 

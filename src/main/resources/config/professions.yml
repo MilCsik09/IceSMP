@@ -48,9 +48,43 @@ professions:
       movement_speed:  { name: "Fürgeség",   min: 0.005, max: 0.02, decimals: 3 }
       attack_damage:   { name: "Élesség",    min: 0.5,   max: 3.0,  decimals: 1 }
       attack_speed:    { name: "Gyorsaság",  min: 0.1,   max: 0.6,  decimals: 2 }
+    # Mob-loot random nevek: <jelző> <alaptárgy-név>. A jelző közös, az alaptárgy-név family szerint.
+    random-names:
+      adjectives:
+        - "Rozsdás"
+        - "Ősi"
+        - "Repedezett"
+        - "Baljós"
+        - "Fénylő"
+        - "Kovácsolt"
+        - "Elátkozott"
+        - "Vérfoltos"
+        - "Rúnás"
+        - "Viharvert"
+        - "Szentelt"
+        - "Törött"
+      nouns:
+        weapon:
+          - "Penge"
+          - "Kard"
+          - "Fog"
+          - "Tőr"
+          - "Szablya"
+        armor:
+          - "Vért"
+          - "Páncél"
+          - "Sisak"
+          - "Pajzs"
+          - "Köntös"
+        tool:
+          - "Szerszám"
+          - "Csákány"
+          - "Fejsze"
+          - "Véső"
     tiers:
       drop:
         value-multiplier: 0.6
+        negative-affix-chance: 0.25   # mob-loot: 25% eséllyel egy-egy affix NEGATÍV (átok)
         qualities:
           - { id: "kozonseges", name: "Közönséges", color: "&f", weight: 70, affixes: 1 }
           - { id: "ritka", name: "Ritka", color: "&9", weight: 25, affixes: 1 }

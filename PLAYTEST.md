@@ -243,8 +243,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       [Legendás]) + random attribútum-affixeket kap (a leírásban); két craft nem ugyanaz. Shift-click
       bulk-craft alap-statú marad.
 - [ ] **WoW-mob loot:** sima szörnyek kis eséllyel (`loot.mob-drop.chance`) rolled `drop`-tier
-      (gyengébb) tárgyat dobnak; **világboss / invázió-bajnok / Vad Hajsza** garantáltan `boss`-tier
-      (craft-szintű) tárgyat. A drop-tier érték gyengébb (value-multiplier 0.6), a boss-tier nem.
+      (gyengébb) tárgyat dobnak **random névvel** (pl. „[Ritka] Rozsdás Penge") és akár **negatív
+      affixszel** (átok); **világboss / invázió-bajnok / Vad Hajsza** garantáltan `boss`-tier
+      (craft-szintű) tárgyat. Szakma által craftolt (nevesített) mestermunka SOHA nem esik mobból.
 
 ### 4.8 Gazdaság ✅
 - [ ] `/bank deposit|withdraw|balance`, `/currency balance|pay|exchange|rates`, `/currency set` (admin).
