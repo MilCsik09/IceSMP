@@ -87,6 +87,27 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 
 > A receptek smaragd-alapanyaggal készülnek (hogy ne ütközzenek a vanilla receptekkel).
 
+### ✨ Minőség és affixek (egyedi tárgyak)
+
+Minden mestermunka craftoláskor **véletlen minőséget** és **random attribútum-bónuszokat** kap —
+így nincs két egyforma darab! A minőség a nevet és a bónuszok számát adja:
+
+| Minőség | Szín | Affixek száma |
+|---|---|---|
+| Közönséges | fehér | 1 |
+| Ritka | kék | 2 |
+| Epikus | lila | 3 |
+| Legendás | arany | 4 |
+
+Az affixek attribútumok: **Szívósság** (+élet), **Vértezet**, **Keménység**, **Fürgeség**
+(páncélon), illetve **Élesség** (+sebzés) és **Gyorsaság** (fegyveren/szerszámon). A tárgy neve
+elé kerül a minőség (pl. `[Epikus] Bástya Pajzs`), a bónuszok a leírásban látszanak.
+
+**Balansz — honnan milyen erős a loot:**
+- 🧑‍🏭 **Szakma-craft:** erős alap, akár Legendás minőségig.
+- 👹 **Mob-drop:** gyengébb (kisebb bónuszok, ritkábban magas minőség).
+- 🐉 **Világboss / nehéz event loot:** a szakma-crafttal egy szinten (magas minőség-eloszlás).
+
 ## Talentpontok a szakmákból
 
 Az **összes szakmád szintje** együtt **talentpontot** termel a szakma-talentfádhoz: **minden

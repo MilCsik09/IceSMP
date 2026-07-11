@@ -32,3 +32,39 @@ professions:
   specialization:
     # A szakma ezen a szinten specializálódhat (/spec choose).
     required-level: 25
+  # Mestermű-affixek: az affixelhető tárgyak (szakma-mestermunkák, később drop/boss loot) craftoláskor
+  # VÉLETLEN minőséget és random attribútum-bónuszokat kapnak, így minden darab egyedi. A fegyver/
+  # szerszám kéz-slotos affixet kap (sebzés/gyorsaság), a páncél páncél-slotosat (élet/vért/keménység/
+  # sebesség). A 'tiers' adja a forrásonkénti BALANSZT:
+  #   drop    — mob-drop loot: GYENGÉBB (alacsonyabb minőség-eloszlás + value-multiplier < 1)
+  #   crafted — szakma-craft: ERŐS alap (value-multiplier 1.0)
+  #   boss    — világboss / nehéz event loot: a crafttal EGY SZINTEN (magas minőség-eloszlás)
+  masterwork:
+    enabled: true
+    affixes:
+      max_health:      { name: "Szívósság",  min: 1.0,   max: 4.0,  decimals: 0 }
+      armor:           { name: "Vértezet",   min: 1.0,   max: 3.0,  decimals: 0 }
+      armor_toughness: { name: "Keménység",  min: 1.0,   max: 3.0,  decimals: 0 }
+      movement_speed:  { name: "Fürgeség",   min: 0.005, max: 0.02, decimals: 3 }
+      attack_damage:   { name: "Élesség",    min: 0.5,   max: 3.0,  decimals: 1 }
+      attack_speed:    { name: "Gyorsaság",  min: 0.1,   max: 0.6,  decimals: 2 }
+    tiers:
+      drop:
+        value-multiplier: 0.6
+        qualities:
+          - { id: "kozonseges", name: "Közönséges", color: "&f", weight: 70, affixes: 1 }
+          - { id: "ritka", name: "Ritka", color: "&9", weight: 25, affixes: 1 }
+          - { id: "epikus", name: "Epikus", color: "&5", weight: 5, affixes: 2 }
+      crafted:
+        value-multiplier: 1.0
+        qualities:
+          - { id: "kozonseges", name: "Közönséges", color: "&f", weight: 55, affixes: 1 }
+          - { id: "ritka", name: "Ritka", color: "&9", weight: 30, affixes: 2 }
+          - { id: "epikus", name: "Epikus", color: "&5", weight: 12, affixes: 3 }
+          - { id: "legendas", name: "Legendás", color: "&6", weight: 3, affixes: 4 }
+      boss:
+        value-multiplier: 1.0
+        qualities:
+          - { id: "ritka", name: "Ritka", color: "&9", weight: 40, affixes: 2 }
+          - { id: "epikus", name: "Epikus", color: "&5", weight: 45, affixes: 3 }
+          - { id: "legendas", name: "Legendás", color: "&6", weight: 15, affixes: 4 }
