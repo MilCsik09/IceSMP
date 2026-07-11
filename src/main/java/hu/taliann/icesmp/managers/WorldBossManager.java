@@ -291,10 +291,11 @@ public final class WorldBossManager {
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "world-boss-spawned",
-                "<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>",
+                "<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén — {minutes} perc múlva elvonul! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>",
                 Map.of(
                         "x", String.valueOf(spawnLocation.getBlockX()),
-                        "z", String.valueOf(spawnLocation.getBlockZ())
+                        "z", String.valueOf(spawnLocation.getBlockZ()),
+                        "minutes", String.valueOf(lifetimeMinutes)
                 )
         ));
 

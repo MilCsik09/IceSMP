@@ -27,12 +27,14 @@ public final class ProfessionManager {
     private final ConfigManager configManager;
     private final NamespacedKey gatheringKey;
     private final NamespacedKey craftingKey;
+    private final NamespacedKey learnedRecipesKey;
     private final Map<ProfessionType, NamespacedKey> xpKeys = new EnumMap<>(ProfessionType.class);
 
     public ProfessionManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.configManager = configManager;
         this.gatheringKey = new NamespacedKey(plugin, "profession_gathering");
         this.craftingKey = new NamespacedKey(plugin, "profession_crafting");
+        this.learnedRecipesKey = new NamespacedKey(plugin, "learned_recipes");
         for (final ProfessionType professionType : ProfessionType.values()) {
             xpKeys.put(professionType, new NamespacedKey(plugin, "profession_xp_" + professionType.getId()));
         }
@@ -217,6 +219,35 @@ public final class ProfessionManager {
         }
 
         return level;
+    }
+
+    /** Whether the player has learned a blueprint-gated recipe (level-gated recipes need no store). */
+    public boolean hasLearnedRecipe(final Player player, final String recipeId) {
+        if (recipeId == null) {
+            return false;
+        }
+        final String raw = player.getPersistentDataContainer().getOrDefault(learnedRecipesKey, PersistentDataType.STRING, "");
+        for (final String id : raw.split(",")) {
+            if (id.equalsIgnoreCase(recipeId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Records a learned blueprint recipe on the player.
+     *
+     * @return true if it was newly learned, false if already known
+     */
+    public boolean learnRecipe(final Player player, final String recipeId) {
+        if (recipeId == null || recipeId.isBlank() || hasLearnedRecipe(player, recipeId)) {
+            return false;
+        }
+        final String raw = player.getPersistentDataContainer().getOrDefault(learnedRecipesKey, PersistentDataType.STRING, "");
+        final String updated = raw.isBlank() ? recipeId : raw + "," + recipeId;
+        player.getPersistentDataContainer().set(learnedRecipesKey, PersistentDataType.STRING, updated);
+        return true;
     }
 
     public void cleanup(final UUID playerId) {

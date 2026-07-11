@@ -35,14 +35,14 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 1 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 39 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, pet, stb.). |
-| `listeners/` | 44 | Bukkit eseménykezelők (gameplay + GUI-klikk). |
-| `spells/` | 36 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 27 (+ al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 21 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `managers/` | 61 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, stb.). |
+| `listeners/` | 66 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `spells/` | 38 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
+| `commands/` | 32 (+ al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `gui/` | 31 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
 | `data/` | 10 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`…). |
 | `relics/` | 6 (+ `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
-| `items/` | 5 | Item-gyárak (katalizátor, befogó item…). |
+| `items/` | 7 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 2 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 3 | `MessageManager`, `ExperienceUtil`, egyebek. |

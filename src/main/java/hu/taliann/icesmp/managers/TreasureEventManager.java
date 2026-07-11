@@ -163,11 +163,12 @@ public final class TreasureEventManager {
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "treasure-spawned",
-                "&6🗺 Elrejtett kincs bukkant fel a(z) {world} világban a(z) ({x}, {z}) környékén — az első megtaláló viszi!",
+                "&6🗺 Elrejtett kincs bukkant fel a(z) {world} világban a(z) ({x}, {z}) környékén — {minutes} percig marad, az első megtaláló viszi!",
                 Map.of(
                         "world", world.getName(),
                         "x", String.valueOf(x),
-                        "z", String.valueOf(z)
+                        "z", String.valueOf(z),
+                        "minutes", String.valueOf(Math.max(1L, expireMillis() / 60_000L))
                 )
         ));
     }

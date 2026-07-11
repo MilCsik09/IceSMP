@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class FactionJoinSubcommand implements FactionSubcommand {
@@ -157,8 +158,12 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
-            return List.of("red", "blue", "neutral", "dark");
+        // Két hosszal: 0 = "/faction join " (üres prefix), 1 = gépelés közben (args[0] prefix).
+        if (args.length <= 1) {
+            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
+            return List.of("red", "blue", "neutral", "dark").stream()
+                    .filter(option -> option.startsWith(prefix))
+                    .toList();
         }
         return List.of();
     }

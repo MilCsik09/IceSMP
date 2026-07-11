@@ -5,6 +5,11 @@
 settings:
   default-faction: "NEUTRAL"
   debug: true
+  # Kliens-gamerule-ök, amiket a plugin minden világra ráállít (indításkor + világ-betöltéskor).
+  # A 'locator-bar' a vanilla 1.21.6+ Locator Bar (az XP-sáv felett megjelenő pötty/nyíl, ami a
+  # közeli játékosok irányát mutatja forgáskor) — alapból KI, mert ütközik a saját HUD-dal és
+  # zavaró. Állítsd false-ra, ha meg akarod hagyni a vanilla viselkedést.
+  disable-locator-bar: true
 
 hud:
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény),

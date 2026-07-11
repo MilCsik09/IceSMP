@@ -126,8 +126,10 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
         final boolean canWithdraw = sender.hasPermission(ADMIN_PERMISSION)
                 || (sender instanceof Player player && kingManager.isKing(player));
-        if (args.length == 1 && canWithdraw) {
-            return "withdraw".startsWith(args[0].toLowerCase()) ? List.of("withdraw") : List.of();
+        // Két hosszal: 0 = "/faction treasury " (üres prefix), 1 = gépelés közben (args[0] prefix).
+        if (args.length <= 1 && canWithdraw) {
+            final String prefix = args.length == 0 ? "" : args[0].toLowerCase();
+            return "withdraw".startsWith(prefix) ? List.of("withdraw") : List.of();
         }
         return List.of();
     }

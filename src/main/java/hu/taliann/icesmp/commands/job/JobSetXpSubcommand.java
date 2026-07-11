@@ -92,10 +92,12 @@ public final class JobSetXpSubcommand implements JobSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
+        // Két hosszal: 0 = "/job setxp " (üres prefix), 1 = gépelés közben (args[0] prefix).
+        if (args.length <= 1) {
+            final String prefix = args.length == 0 ? "" : args[0].toLowerCase();
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[0].toLowerCase()))
+                    .filter(name -> name.toLowerCase().startsWith(prefix))
                     .toList();
         }
 

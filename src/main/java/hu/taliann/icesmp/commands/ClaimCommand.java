@@ -274,34 +274,43 @@ public final class ClaimCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
 
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            final List<String> options = new ArrayList<>(
-                    List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "pos1", "pos2", "area", "extend", "help"));
-            if (sender.hasPermission(ADMIN_PERMISSION)) {
-                options.add("admin");
-            }
-            return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        final List<String> options = new ArrayList<>(
+                List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "pos1", "pos2", "area", "extend", "help"));
+        if (sender.hasPermission(ADMIN_PERMISSION)) {
+            options.add("admin");
+        }
+        final String first = prefixAt(args, 0);
+        final boolean firstComplete = options.contains(first);
+
+        // Két hosszal: 0 = "/claim " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már pontos egyezés, akkor a P=1 pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !firstComplete)) {
+            return options.stream().filter(option -> option.startsWith(first)).toList();
         }
 
-        if (args.length == 2 && ("trust".equalsIgnoreCase(args[0]) || "untrust".equalsIgnoreCase(args[0]))) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if (("trust".equals(first) || "untrust".equals(first)) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 2 && "extend".equalsIgnoreCase(args[0])) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if ("extend".equals(first) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return List.of("up", "down").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if (args.length == 2 && "admin".equalsIgnoreCase(args[0])) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if ("admin".equals(first) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return List.of("unclaim").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

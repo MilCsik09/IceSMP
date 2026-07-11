@@ -42,7 +42,19 @@ Az IceSMP `chat.format-enabled: true` ÉS a LuckPermsChatFormatterFolia is telep
 a general.yml kommentje szerint a natív formázó pont ezt a plugint váltja ki.
 **A LuckPermsChatFormatterFolia-1.1.1.jar eltávolítása javasolt.**
 
-## 4. Crossover-ötletek (top 3)
+## 4. FancyNpcs — explicit NPC-kötések (`/npcbind`)
+
+Az NPC-integráció (küldetés-adó, bolt, bankár, valutaváltó) mostantól nem az NPC saját
+nevéből (`giver-npc:` / `faction-shops.<név>`) következik: `/npcbind <npc> quest|shop|bank|exchange|clear`
+paranccsal bármelyik FancyNpcs-NPC kötelezővé tehető. A bankár/valutaváltó kötés a
+**meglévő bank menüt** nyitja (`/menu` → Bank & Pénz gombjai) — ezért **a bankár-NPC-t
+tedd a frakció fővárosába**: a bank-parancsok (`deposit`/`withdraw`/`exchange`) tényleges
+végrehajtása a `banking.capital-only` config-kapun megy át (alapból `true`), ami csak
+fővárosban engedi át a műveletet; ha ezt a korlátozást fel akarod oldani (pl. tetszőleges
+helyen működő bankár), állítsd `false`-ra a `config/economy.yml`-ben. Kötés nélküli NPC-k
+változatlanul a régi név-alapú logikával működnek (teljes visszafele-kompatibilitás).
+
+## 5. Crossover-ötletek (top 3)
 
 1. **AuMenus** — a menü-fájljai még a gyári példák; IceSMP-parancsokra kötve (console:
    `icesmp ...` akciók + `%icesmp_...%` lore-placeholderek) staff Java nélkül építhet új
@@ -57,3 +69,13 @@ minimotd, voicechat, FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
 Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms.
 Megjegyzés: az `ICEsmpadditions.jar` (WardenDeathListener) érdemes lenne beolvasztani a fő
 pluginba, hogy ne legyen kósza extra jar.
+
+## 6. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
+
+Az XP-sávon forgáskor megjelenő, játékost jelző pötty NEM plugin: a Minecraft 1.21.6-ban
+bevezetett **Locator Bar** (a közeli játékosok irány-jelzője, az XP-sáv helyén).
+
+**Az IceSMP ezt már magától kikapcsolja:** indításkor és minden világ-betöltéskor a `locatorBar`
+gamerule-t `false`-ra állítja minden világon (`config/general.yml` → `settings.disable-locator-bar`,
+alapból `true`). Ha mégis meg akarod hagyni a vanilla viselkedést, állítsd `false`-ra a config-ban.
+Kézi kikapcsolás továbbra is: `/gamerule locatorBar false` (világonként).

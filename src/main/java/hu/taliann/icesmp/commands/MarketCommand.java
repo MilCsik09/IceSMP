@@ -279,10 +279,13 @@ public final class MarketCommand implements BasicCommand {
                     .filter(option -> option.startsWith(prefix)).toList();
         }
 
-        final boolean sellCurrencyArg = args.length == 3 && "sell".equalsIgnoreCase(args[0]);
-        final boolean auctionCurrencyArg = args.length == 4 && "auction".equalsIgnoreCase(args[0]);
-        if (sellCurrencyArg || auctionCurrencyArg) {
-            final String prefix = args[args.length - 1].toLowerCase(Locale.ROOT);
+        // Az ár (sell) / kikiáltási ár + óra (auction) szabad szöveg, ezért a valuta-javaslat a
+        // rá következő szóköz után (üres prefixszel) is jön — két hosszal kezelve a pozíciót.
+        final boolean sellCurrencyPosition = "sell".equalsIgnoreCase(args[0]) && args.length >= 2 && args.length <= 3;
+        final boolean auctionCurrencyPosition = "auction".equalsIgnoreCase(args[0]) && args.length >= 3 && args.length <= 4;
+        if (sellCurrencyPosition || auctionCurrencyPosition) {
+            final int currencyIndex = sellCurrencyPosition ? 2 : 3;
+            final String prefix = args.length > currencyIndex ? args[currencyIndex].toLowerCase(Locale.ROOT) : "";
             return Arrays.stream(CurrencyType.values())
                     .map(type -> type.name().toLowerCase(Locale.ROOT))
                     .filter(name -> name.startsWith(prefix))

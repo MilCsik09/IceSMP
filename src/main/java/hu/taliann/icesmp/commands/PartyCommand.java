@@ -172,21 +172,25 @@ public final class PartyCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
 
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("invite", "accept", "decline", "leave", "kick", "promote", "disband", "list", "chat", "help").stream()
-                    .filter(option -> option.startsWith(prefix)).toList();
+        final List<String> options = List.of("invite", "accept", "decline", "leave", "kick", "promote", "disband", "list", "chat", "help");
+        final String first = prefixAt(args, 0);
+        final boolean firstComplete = options.contains(first);
+
+        // Két hosszal: 0 = "/party " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már pontos egyezés, akkor a P=1 pozíció (célnév) javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !firstComplete)) {
+            return options.stream().filter(option -> option.startsWith(first)).toList();
         }
 
-        if (args.length == 2 && "invite".equalsIgnoreCase(args[0])) {
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+        if ("invite".equals(first) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 2 && ("kick".equalsIgnoreCase(args[0]) || "promote".equalsIgnoreCase(args[0]))) {
+        if (("kick".equals(first) || "promote".equals(first)) && args.length <= 2) {
             if (!(sender instanceof Player player)) {
                 return List.of();
             }
@@ -194,7 +198,7 @@ public final class PartyCommand implements BasicCommand {
             if (party == null) {
                 return List.of();
             }
-            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            final String prefix = prefixAt(args, 1);
             final List<String> names = new ArrayList<>();
             for (final UUID memberId : party.getMembers()) {
                 final Player member = Bukkit.getPlayer(memberId);
@@ -206,5 +210,10 @@ public final class PartyCommand implements BasicCommand {
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

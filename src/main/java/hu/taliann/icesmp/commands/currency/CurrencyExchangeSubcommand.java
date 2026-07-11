@@ -5,6 +5,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.ExchangeRateService;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -18,13 +19,16 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
     private final CurrencyManager currencyManager;
     private final ConfigManager configManager;
     private final ExchangeRateService exchangeRateService;
+    private final TerritoryManager territoryManager;
     private final MessageManager messageManager;
 
     public CurrencyExchangeSubcommand(final CurrencyManager currencyManager, final ConfigManager configManager,
-                                      final ExchangeRateService exchangeRateService, final MessageManager messageManager) {
+                                      final ExchangeRateService exchangeRateService, final TerritoryManager territoryManager,
+                                      final MessageManager messageManager) {
         this.currencyManager = currencyManager;
         this.configManager = configManager;
         this.exchangeRateService = exchangeRateService;
+        this.territoryManager = territoryManager;
         this.messageManager = messageManager;
     }
 
@@ -47,6 +51,14 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
     public boolean execute(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+            return true;
+        }
+
+        // Valutaváltás csak fővárosban (mint minden banki ügyintézés).
+        if (configManager.getBoolean("banking.capital-only", true)
+                && !territoryManager.isInCapital(player.getLocation())) {
+            sender.sendMessage(messageManager.get("messages.bank-capital-only",
+                    "&cBanki ügyintézés csak a fővárosokban lehetséges — keresd fel valamelyik város bankját."));
             return true;
         }
 
@@ -113,8 +125,21 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 2 || args.length == 3) {
-            final String prefix = args[args.length - 1].toLowerCase();
+        // Két hosszal kezeljük mindkét pozíciót: P (üres prefix, szóköz után) és P+1 (args[P] prefix);
+        // a "from" pozíció (1) és a "to" pozíció (2) hossza 2-nél ütközik, ezt a from pontos
+        // egyezése dönti el (az amount szabad szöveg, azt nem kell/lehet ellenőrizni).
+        final boolean fromComplete = args.length >= 2 && FactionType.fromInput(args[1]) != null;
+
+        if (args.length == 1 || (args.length == 2 && !fromComplete)) {
+            final String prefix = prefixAt(args, 1);
+            return Arrays.stream(FactionType.values())
+                    .map(type -> type.name().toLowerCase())
+                    .filter(name -> name.startsWith(prefix))
+                    .toList();
+        }
+
+        if ((args.length == 2 && fromComplete) || args.length == 3) {
+            final String prefix = prefixAt(args, 2);
             return Arrays.stream(FactionType.values())
                     .map(type -> type.name().toLowerCase())
                     .filter(name -> name.startsWith(prefix))
@@ -122,6 +147,11 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }
 

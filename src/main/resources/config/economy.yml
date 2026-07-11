@@ -166,3 +166,10 @@ caravan:
       amount: 32
       price: 600
       currency: "OWN"
+
+# ===== Banki ügyintézés (KP-alapú világ) =====
+# A szerveren alapból KÉSZPÉNZ (token item) jár kézről kézre: a player-player kereskedelem
+# item-alapú (f2f vagy piac), a player-szerver oldal (boltok, piac, claimek) számláról megy.
+banking:
+  capital-only: true    # bank be-/kivét és valutaváltás CSAK a fővárosokban
+  pay-enabled: false    # /currency pay (közvetlen számla-utalás) — a KP-világban tiltott

@@ -204,8 +204,9 @@ public final class MeteorEventManager {
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "meteor-landed",
-                "&c☄ METEOR csapódott be a(z) {world} világban ({x}, {z}) — a kráterben ritka érc, de csak míg el nem enyészik!",
-                Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z))
+                "&c☄ METEOR csapódott be a(z) {world} világban ({x}, {z}) — a kráterben ritka érc, de {minutes} perc múlva elenyészik!",
+                Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z),
+                        "minutes", String.valueOf(Math.max(1L, expireMillis() / 60_000L)))
         ));
     }
 

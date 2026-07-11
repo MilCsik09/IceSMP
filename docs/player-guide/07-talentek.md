@@ -47,6 +47,7 @@ A két pontfajta külön: kaszt-pontot csak a kaszt-fába, szakma-pontot csak a 
 | **Fürgeség** | gyorsabban jársz | 5 |
 | **Erő** | +0,5 sebzés | 5 |
 | **Tudásszomj** | +5% kaszt-XP minden öléskor | 4 |
+| **Arkán Hatalom** | +2% spell-erő (a dinamikus skálázás rétegében) | 5 |
 
 ### 2. szint — kaszt-kötött (előbb a szülőt kell fejleszteni)
 

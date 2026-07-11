@@ -4,6 +4,7 @@ import static hu.taliann.icesmp.gui.GuiUtil.accent;
 import static hu.taliann.icesmp.gui.GuiUtil.grey;
 import static hu.taliann.icesmp.gui.GuiUtil.label;
 
+import hu.taliann.icesmp.commands.ClaimCommand;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
@@ -47,6 +48,8 @@ public final class CommandMenus {
     private static final String ADMIN_EVENTS_PERMISSION = "icesmp.admin.events";
     private static final String ADMIN_RELOAD_PERMISSION = "icesmp.admin.reload";
     private static final String ADMIN_EXCHANGEBOARD_PERMISSION = "icesmp.admin.exchangeboard";
+    private static final String ADMIN_NPC_PERMISSION = "icesmp.admin.npc";
+    private static final String ADMIN_QUEST_PERMISSION = "icesmp.admin.quest";
 
     private CommandMenus() {
     }
@@ -57,6 +60,7 @@ public final class CommandMenus {
             case FACTION -> openFaction(player, ctx);
             case FACTION_SWITCH -> openFactionSwitch(player, ctx);
             case BANK -> openBank(player, ctx);
+            case EXCHANGE -> openExchange(player, ctx);
             case EVENTS -> openEvents(player, ctx);
             case RELIC -> openRelic(player, ctx);
             case SOULS -> openSouls(player, ctx);
@@ -82,8 +86,12 @@ public final class CommandMenus {
                 List.of(grey("Kaszt, spec, szakma, talent, képesség-fa."), click())), "OPEN:profile");
         put(inv, holder, 11, GuiUtil.icon(Material.ENCHANTED_BOOK, title("Varázskönyv"),
                 List.of(grey("Feloldott spelljeid böngészése"), grey("és kiválasztása a Katalizátorra."), click())), "OPEN:spellbook");
-        put(inv, holder, 12, GuiUtil.icon(Material.BONE, title("Társ"),
-                List.of(grey("Vadmester / Nekromanta társ:"), grey("befogás, idézés, szint — infó chatben."), click())), "OPEN:pet");
+        // Dinamikus menü: a Társ csak azoknak látszik, akiknek lehet társa.
+        final SpecializationType spec = ctx.specializationManager().getClassSpecialization(player);
+        if (spec == SpecializationType.BEAST_MASTER || spec == SpecializationType.NECROMANCER) {
+            put(inv, holder, 12, GuiUtil.icon(Material.BONE, title("Társ"),
+                    List.of(grey("Vadmester / Nekromanta társ:"), grey("befogás, idézés, szint — infó chatben."), click())), "OPEN:pet");
+        }
         put(inv, holder, 13, GuiUtil.icon(Material.WRITTEN_BOOK, title("Küldetésnapló"),
                 List.of(grey("Aktív, felvehető és teljesített"), grey("küldetések — lapozható napló."), click())), "OPEN:quest log");
         put(inv, holder, 14, dailyTile(player, ctx), "OPEN:daily");
@@ -105,8 +113,11 @@ public final class CommandMenus {
                 List.of(grey("Bűnös játékosok fejpénzzel."), click())), "MENU:BOUNTY");
         put(inv, holder, 24, GuiUtil.icon(Material.TOTEM_OF_UNDYING, title("Relikviák"),
                 List.of(grey("Legendás tárgyak és tulajdonosaik."), click())), "MENU:RELIC");
-        put(inv, holder, 25, GuiUtil.icon(Material.SOUL_LANTERN, title("Lélekszilánk"),
-                List.of(grey("Nekromanta erőforrás és bajnok-idézés."), click())), "MENU:SOULS");
+        // Dinamikus menü: a Lélekszilánk a Nekromanta specé — másnak nem jelenik meg.
+        if (spec == SpecializationType.NECROMANCER) {
+            put(inv, holder, 25, GuiUtil.icon(Material.SOUL_LANTERN, title("Lélekszilánk"),
+                    List.of(grey("Nekromanta erőforrás és bajnok-idézés."), click())), "MENU:SOULS");
+        }
 
         // Row: gazdaság & egyéb
         put(inv, holder, 28, GuiUtil.icon(Material.GOLD_INGOT, title("Bank & Pénz"),
@@ -116,6 +127,9 @@ public final class CommandMenus {
         put(inv, holder, 30, GuiUtil.icon(Material.HOPPER, title("Adomány-láda"),
                 List.of(grey("Ingyenes, közösségi ajándéktár —"),
                         grey("tegyél bele vagy vegyél ki bármit."), click())), "OPEN:adomany");
+        put(inv, holder, 31, GuiUtil.icon(Material.CRAFTING_TABLE, title("Recept-könyv"),
+                List.of(grey("Szakma-receptek: tanult/zárolt lista,"),
+                        grey("egyedi (rolled) craftok egy kattintással."), click())), "OPEN:profession recipes");
         if (hasAnyAdminAccess(player)) {
             put(inv, holder, 34, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
@@ -270,21 +284,160 @@ public final class CommandMenus {
             balances.add(label(type.getDisplayName(), Component.text(
                     ctx.currencyManager().formatBalance(ctx.currencyManager().getBalance(player, type)), NamedTextColor.WHITE)));
         }
+        final boolean capitalOnly = ctx.configManager().getBoolean("banking.capital-only", true);
+        if (capitalOnly) {
+            balances.add(Component.text("⚑ Banki ügyintézés csak fővárosban!", NamedTextColor.GOLD)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         put(inv, holder, 4, GuiUtil.icon(Material.GOLD_INGOT, accent("Egyenlegeid"), balances), null);
 
+        final Component capitalNote = grey(capitalOnly ? "Csak fővárosban működik!" : " ");
         put(inv, holder, 11, GuiUtil.icon(Material.HOPPER, title("Befizetés (összes)"),
-                List.of(grey("A nálad lévő tokeneket bankba teszi."), click())), "RUN:bank deposit");
+                List.of(grey("A nálad lévő tokeneket bankba teszi."), capitalNote, click())), "RUN:bank deposit");
         final FactionType own = ctx.factionManager().getFaction(player.getUniqueId());
         final String cur = (own == null ? FactionType.NEUTRAL : own).name().toLowerCase();
         put(inv, holder, 13, GuiUtil.icon(Material.DROPPER, title("Kivét: 64 (saját valuta)"),
-                List.of(grey("64 token kivétele itemként."), click())), "RUN:bank withdraw " + cur + " 64");
+                List.of(grey("64 token kivétele itemként (KP)."), capitalNote, click())), "RUN:bank withdraw " + cur + " 64");
         put(inv, holder, 15, GuiUtil.icon(Material.PAPER, title("Árfolyamok"),
                 List.of(grey("Aktuális valuta-értékek és váltási arány."), click())), "RUN:currency rates");
-        put(inv, holder, 22, GuiUtil.icon(Material.COMPARATOR, title("Váltás (chat)"),
-                List.of(grey("Használat: /currency exchange <összeg> <honnan> <hová>"))), null);
+
+        // Valutaváltó: külön, interaktív almenü (honnan/hová választó + élő árfolyam + gyors összegek).
+        put(inv, holder, 22, GuiUtil.icon(Material.EMERALD, title("Valutaváltó"),
+                List.of(grey("Interaktív váltó: válaszd ki a forrás- és cél-"),
+                        grey("valutát, és az élő árfolyamon válts (díjjal)."), capitalNote, click())),
+                "MENU:EXCHANGE");
 
         put(inv, holder, 31, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    // ===== VALUTAVÁLTÓ =====
+    /** Opens the interactive currency exchanger with the caller's own currency preselected as source. */
+    public static void openExchange(final Player player, final CommandMenuContext ctx) {
+        final FactionType own = ctx.factionManager().getFaction(player.getUniqueId());
+        openExchange(player, ctx, own == null ? FactionType.NEUTRAL : own, null);
+    }
+
+    /**
+     * Renders the currency exchanger for a chosen source/target pair. The selectors set the
+     * pair; the quick-amount tiles delegate to {@code /currency exchange}. The pair is stored on
+     * the holder so the listener can preserve it across the post-command refresh.
+     */
+    public static void openExchange(final Player player, final CommandMenuContext ctx,
+                                    final FactionType from, final FactionType to) {
+        final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.EXCHANGE, player.getUniqueId());
+        holder.setExchangeSelection(from == null ? null : from.name(), to == null ? null : to.name());
+        final Inventory inv = create(holder, 45, "<dark_aqua>» Valutaváltó «</dark_aqua>", ctx);
+
+        final boolean capitalOnly = ctx.configManager().getBoolean("banking.capital-only", true);
+        final List<Component> header = new ArrayList<>();
+        for (final FactionType type : FactionType.values()) {
+            header.add(label(type.getDisplayName(), Component.text(
+                    ctx.currencyManager().formatBalance(ctx.currencyManager().getBalance(player, type)), NamedTextColor.WHITE)));
+        }
+        header.add(grey("Váltási díj: " + trimPercent(ctx.exchangeRateService().getFeePercent()) + "%"));
+        if (capitalOnly) {
+            header.add(Component.text("⚑ Váltás csak fővárosban!", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+        }
+        put(inv, holder, 4, GuiUtil.icon(Material.GOLD_INGOT, accent("Egyenlegeid"), header), null);
+
+        // Forrás-választók (felső sor): a kiválasztott ragyog.
+        put(inv, holder, 9, GuiUtil.icon(Material.NAME_TAG, title("⬅ Honnan (miből)"),
+                List.of(grey("Válaszd ki a forrás-valutát."))), null);
+        final int[] fromSlots = {11, 12, 14, 15};
+        final FactionType[] all = FactionType.values();
+        for (int i = 0; i < all.length; i++) {
+            final FactionType type = all[i];
+            final boolean selected = type == from;
+            put(inv, holder, fromSlots[i], GuiUtil.icon(woolFor(type),
+                    title((selected ? "✔ " : "") + type.getDisplayName()),
+                    List.of(grey("Forrás-valuta: " + type.getDisplayName()),
+                            selected ? grey("Kiválasztva.") : click()), selected),
+                    "XFROM:" + type.name());
+        }
+
+        // Cél-választók (alsó sor): a forrással azonos szürke és nem választható.
+        put(inv, holder, 27, GuiUtil.icon(Material.NAME_TAG, title("➡ Hová (mire)"),
+                List.of(grey("Válaszd ki a cél-valutát."))), null);
+        final int[] toSlots = {29, 30, 32, 33};
+        for (int i = 0; i < all.length; i++) {
+            final FactionType type = all[i];
+            if (type == from) {
+                put(inv, holder, toSlots[i], GuiUtil.icon(Material.GRAY_STAINED_GLASS_PANE,
+                        grey(type.getDisplayName() + " (a forrás)"), List.of(grey("Ez a forrás-valuta."))), null);
+                continue;
+            }
+            final boolean selected = type == to;
+            put(inv, holder, toSlots[i], GuiUtil.icon(woolFor(type),
+                    title((selected ? "✔ " : "") + type.getDisplayName()),
+                    List.of(grey("Cél-valuta: " + type.getDisplayName()),
+                            selected ? grey("Kiválasztva.") : click()), selected),
+                    "XTO:" + type.name());
+        }
+
+        // Árfolyam-kártya + gyors összegek (a középső/alsó sorban), csak ha van érvényes pár.
+        if (from != null && to != null && from != to) {
+            final CurrencyType cf = CurrencyType.fromFactionType(from);
+            final CurrencyType ctto = CurrencyType.fromFactionType(to);
+            final double rate = ctx.exchangeRateService().getRate(cf, ctto);
+            final double fee = ctx.exchangeRateService().getFeePercent();
+            final long balance = (long) ctx.currencyManager().getBalance(player, from);
+            final List<Component> rateLore = new ArrayList<>();
+            rateLore.add(label("1 " + from.getDisplayName(), Component.text(trimRate(rate) + " " + to.getDisplayName(), NamedTextColor.WHITE)));
+            rateLore.add(grey("64 " + shortName(from) + " ≈ " + Math.round(64 * rate * (1.0D - fee / 100.0D)) + " " + shortName(to) + " (díj után)"));
+            rateLore.add(grey("Egyenleged: " + balance + " " + shortName(from)));
+            put(inv, holder, 22, GuiUtil.icon(Material.SUNFLOWER, accent(from.getDisplayName() + " → " + to.getDisplayName()), rateLore, true), null);
+
+            final long[] amounts = {16, 32, 64};
+            final int[] amountSlots = {38, 39, 40};
+            final String fromId = from.name().toLowerCase(Locale.ROOT);
+            final String toId = to.name().toLowerCase(Locale.ROOT);
+            for (int i = 0; i < amounts.length; i++) {
+                final long amount = amounts[i];
+                put(inv, holder, amountSlots[i], GuiUtil.icon(Material.GOLD_NUGGET, title("Váltás: " + amount),
+                        List.of(grey(amount + " " + shortName(from) + " → " + shortName(to)),
+                                grey("az élő árfolyamon (díjjal)."), click())),
+                        "RUN:currency exchange " + amount + " " + fromId + " " + toId);
+            }
+            if (balance > 0L) {
+                put(inv, holder, 41, GuiUtil.icon(Material.GOLD_BLOCK, title("Váltás: mind (" + balance + ")"),
+                        List.of(grey("A teljes " + shortName(from) + "-egyenleged váltása."), click())),
+                        "RUN:currency exchange " + balance + " " + fromId + " " + toId);
+            }
+        } else {
+            put(inv, holder, 22, GuiUtil.icon(Material.BARRIER, grey("Válassz forrás- és cél-valutát!"),
+                    List.of(grey("Fent a forrás, lent a cél."))), null);
+        }
+
+        put(inv, holder, 36, GuiUtil.icon(Material.ARROW,
+                Component.text("Vissza a bankba", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), "MENU:BANK");
+        player.openInventory(inv);
+    }
+
+    private static String shortName(final FactionType faction) {
+        return switch (faction) {
+            case RED -> "Piros";
+            case BLUE -> "Kék";
+            case NEUTRAL -> "Semleges";
+            case DARK -> "Sötét";
+        };
+    }
+
+    private static String trimRate(final double value) {
+        return String.format(Locale.ROOT, "%.3f", value);
+    }
+
+    private static String trimPercent(final double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    private static Material woolFor(final FactionType faction) {
+        return switch (faction) {
+            case RED -> Material.RED_WOOL;
+            case BLUE -> Material.BLUE_WOOL;
+            case NEUTRAL -> Material.WHITE_WOOL;
+            case DARK -> Material.BLACK_WOOL;
+        };
     }
 
     // ===== EVENTS =====
@@ -581,14 +734,18 @@ public final class CommandMenus {
     // ===== ADMIN =====
     public static void openAdmin(final Player player, final CommandMenuContext ctx) {
         final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.ADMIN, player.getUniqueId());
-        final Inventory inv = create(holder, 36, "<dark_aqua>» Admin «</dark_aqua>", ctx);
+        final Inventory inv = create(holder, 54, "<dark_aqua>» Admin «</dark_aqua>", ctx);
 
         if (!hasAnyAdminAccess(player)) {
-            put(inv, holder, 13, GuiUtil.icon(Material.BARRIER, Component.text("Nincs jogosultságod", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), null);
-            put(inv, holder, 31, backButton(), "MENU:MAIN");
+            put(inv, holder, 22, GuiUtil.icon(Material.BARRIER, Component.text("Nincs jogosultságod", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), null);
+            put(inv, holder, 49, backButton(), "MENU:MAIN");
             player.openInventory(inv);
             return;
         }
+
+        put(inv, holder, 4, GuiUtil.icon(Material.COMMAND_BLOCK, accent("Admin panel"),
+                List.of(grey("Felül: rendszer • középen: esemény-"),
+                        grey("triggerek • alul: kezelő-listák."))), null);
 
         // Each button is gated on the permission node of the command it runs.
         if (player.hasPermission(ADMIN_RELOAD_PERMISSION)) {
@@ -598,12 +755,13 @@ public final class CommandMenus {
         if (player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)) {
             put(inv, holder, 12, GuiUtil.icon(Material.ITEM_FRAME, title("Árfolyamtábla lerakása"),
                     List.of(grey("/exchangeboard place"), click())), "RUN:exchangeboard place");
-            put(inv, holder, 14, GuiUtil.icon(Material.SHEARS, title("Árfolyamtábla törlése"),
+            put(inv, holder, 13, GuiUtil.icon(Material.SHEARS, title("Árfolyamtábla törlése"),
                     List.of(grey("/exchangeboard remove"), click())), "RUN:exchangeboard remove");
         }
         if (player.hasPermission(ADMIN_EVENTS_PERMISSION)) {
             put(inv, holder, 16, GuiUtil.icon(Material.ENDER_EYE, title("Intro újrajátszása"),
                     List.of(grey("/events intro"), click())), "RUN:events intro");
+            // Esemény-triggerek (két sor): minden világesemény kézzel indítható.
             put(inv, holder, 19, GuiUtil.icon(Material.RED_DYE, title("Vérhold: indítás"),
                     List.of(grey("/events bloodmoon start"), click())), "RUN:events bloodmoon start");
             put(inv, holder, 20, GuiUtil.icon(Material.GRAY_DYE, title("Vérhold: leállítás"),
@@ -614,13 +772,41 @@ public final class CommandMenus {
                     List.of(grey("/events invasion"), click())), "RUN:events invasion");
             put(inv, holder, 23, GuiUtil.icon(Material.EMERALD, title("Karaván: érkezés"),
                     List.of(grey("/events caravan arrive"), click())), "RUN:events caravan arrive");
-            put(inv, holder, 24, GuiUtil.icon(Material.BONE, title("Vad Hajsza indítása"),
+            put(inv, holder, 24, GuiUtil.icon(Material.MINECART, title("Karaván: távozás"),
+                    List.of(grey("/events caravan depart"), click())), "RUN:events caravan depart");
+            put(inv, holder, 25, GuiUtil.icon(Material.BONE, title("Vad Hajsza indítása"),
                     List.of(grey("/events wild-hunt"), click())), "RUN:events wild-hunt");
-            put(inv, holder, 25, GuiUtil.icon(Material.MAGMA_BLOCK, title("Meteor idézése"),
+            put(inv, holder, 28, GuiUtil.icon(Material.MAGMA_BLOCK, title("Meteor idézése"),
                     List.of(grey("/events meteor"), click())), "RUN:events meteor");
+            put(inv, holder, 29, GuiUtil.icon(Material.CHEST, title("Kincs elrejtése"),
+                    List.of(grey("/events treasure"), click())), "RUN:events treasure");
+            put(inv, holder, 30, GuiUtil.icon(Material.GLOWSTONE_DUST, title("Buff-óra nyitása"),
+                    List.of(grey("/events gathering"), click())), "RUN:events gathering");
+            put(inv, holder, 31, GuiUtil.icon(Material.HAY_BLOCK, title("Bőség-idő indítása"),
+                    List.of(grey("/events abundance"), click())), "RUN:events abundance");
+            put(inv, holder, 32, GuiUtil.icon(Material.TARGET, title("Szerver-kihívás indítása"),
+                    List.of(grey("/events challenge"), click())), "RUN:events challenge");
+            put(inv, holder, 33, GuiUtil.icon(Material.LEAD, title("Kíséret indítása"),
+                    List.of(grey("/events escort"), click())), "RUN:events escort");
+            put(inv, holder, 34, GuiUtil.icon(Material.FIREWORK_STAR, title("Hangulat-esemény"),
+                    List.of(grey("/events ambient"), click())), "RUN:events ambient");
+        }
+        // Kezelő-sor: pozíció-/lista-alapú admin műveletek, saját node-jaikra kapuzva.
+        if (player.hasPermission(ClaimCommand.ADMIN_PERMISSION)) {
+            put(inv, holder, 37, GuiUtil.icon(Material.IRON_SHOVEL, title("Claim törlése (itt)"),
+                    List.of(grey("A claim törlése, amiben állsz."),
+                            grey("/claim admin unclaim"), click())), "RUN:claim admin unclaim");
+        }
+        if (player.hasPermission(ADMIN_NPC_PERMISSION)) {
+            put(inv, holder, 38, GuiUtil.icon(Material.PLAYER_HEAD, title("NPC-kötések listája"),
+                    List.of(grey("/npcbind list — chatben."), click())), "OPEN:npcbind list");
+        }
+        if (player.hasPermission(ADMIN_QUEST_PERMISSION)) {
+            put(inv, holder, 39, GuiUtil.icon(Material.WRITABLE_BOOK, title("Admin-questek listája"),
+                    List.of(grey("/quest admin list — chatben."), click())), "OPEN:quest admin list");
         }
 
-        put(inv, holder, 31, backButton(), "MENU:MAIN");
+        put(inv, holder, 49, backButton(), "MENU:MAIN");
         player.openInventory(inv);
     }
 
@@ -628,7 +814,10 @@ public final class CommandMenus {
     private static boolean hasAnyAdminAccess(final Player player) {
         return player.hasPermission(ADMIN_RELOAD_PERMISSION)
                 || player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)
-                || player.hasPermission(ADMIN_EVENTS_PERMISSION);
+                || player.hasPermission(ADMIN_EVENTS_PERMISSION)
+                || player.hasPermission(ClaimCommand.ADMIN_PERMISSION)
+                || player.hasPermission(ADMIN_NPC_PERMISSION)
+                || player.hasPermission(ADMIN_QUEST_PERMISSION);
     }
 
     // ===== LEADERBOARD =====

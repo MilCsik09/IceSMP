@@ -1,0 +1,93 @@
+# IceSMP konfiguráció — profession-materials (a ConfigManager az összes config/*.yml-t betölti)
+# ===== Egyedi (unique) szakma-alapanyagok =====
+# A szakmák egyedi, PDC-jelölt köztes alapanyagokat gyártanak/szereznek, amiket más receptek
+# igényelnek (mint WoW-ban a "Spirit Dust" / Terrariában a köztes bárok). Ezek NEM sima itemek: a
+# recept-motor a PDC-tag alapján ismeri fel őket, és a plugin MINDEN normál felhasználásukat tiltja
+# (craft, kovácsolás, kemence-tüzelő, evés, lerakás) — CSAK a szakma recept-könyvben használhatók.
+# Van saját CustomModelData-juk is (resource pack egyedi textúrához).
+#
+# Használat a profession-recipes.yml-ben:
+#   - eredményként:   result: { unique: tiszta_vasesszencia }   (a material a megjelenítő ikon)
+#   - hozzávalóként:  ingredients: [ "unique:tiszta_vasesszencia:2", "IRON_INGOT:1" ]
+#
+# Séma:
+#   <unique-id>:
+#     material: <ikon MATERIAL>
+#     display-name: "<megjelenő név>"
+#     custom-model-data: <egyedi CMD>
+#     lore: [ "<sor>", ... ]
+profession-materials:
+  # --- Szakma által gyártott köztes alapanyagok ---
+  tiszta_vasesszencia:
+    material: IRON_NUGGET
+    display-name: "&fTiszta Vasesszencia"
+    custom-model-data: 6000
+    lore:
+      - "&7A kohó szívében sűrűsödött,"
+      - "&7ezerszer hajtogatott vas lelke."
+      - "&8Kovács köztes alapanyag"
+  gyogy_kivonat:
+    material: GLOW_BERRIES
+    display-name: "&aGyógy-kivonat"
+    custom-model-data: 6001
+    lore:
+      - "&7Hajnalban szedett gyógyfüvek"
+      - "&7cseppfolyós, ragyogó párlata."
+      - "&8Gyógynövényész köztes alapanyag"
+  rezgo_rez_otvozet:
+    material: COPPER_INGOT
+    display-name: "&6Rezgő Rézötvözet"
+    custom-model-data: 6002
+    lore:
+      - "&7Halkan zúg, ha rúna simítja —"
+      - "&7a vezető fémek nyughatatlanja."
+      - "&8Bányász köztes alapanyag"
+  kemenyfa_gerenda:
+    material: STRIPPED_OAK_WOOD
+    display-name: "&eKeményfa Gerenda"
+    custom-model-data: 6003
+    lore:
+      - "&7Évszázados tölgy magja,"
+      - "&7melyet fejsze el nem repeszt."
+      - "&8Favágó köztes alapanyag"
+  runapor:
+    material: GLOWSTONE_DUST
+    display-name: "&bRúnapor"
+    custom-model-data: 6004
+    lore:
+      - "&7Szétmorzsolt rúnakő csilláma —"
+      - "&7a varázslat nyers alapanyaga."
+      - "&8Bűvölő köztes alapanyag"
+  # --- CSAK mobból eső egyedi alapanyagok (a szakma-receptek igénylik) ---
+  vad_esszencia:
+    material: PHANTOM_MEMBRANE
+    display-name: "&2Vad Esszencia"
+    custom-model-data: 6010
+    lore:
+      - "&7A vadon dühe, mely a legyőzött"
+      - "&7fenevad testéből száll el."
+      - "&cCsak szörnyekből esik"
+  szorny_mag:
+    material: ECHO_SHARD
+    display-name: "&5Szörny Mag"
+    custom-model-data: 6011
+    lore:
+      - "&7Egy szörny lüktető, sötét szíve —"
+      - "&7még kihűlve is hatalmat rejt."
+      - "&cCsak erősebb szörnyekből esik"
+  arnyekpor:
+    material: SCULK_VEIN
+    display-name: "&8Árnyékpor"
+    custom-model-data: 6012
+    lore:
+      - "&7Tapadós, éjfekete por, mely"
+      - "&7elnyeli a fényt és a hangot."
+      - "&cCsak szörnyekből esik"
+  osi_ereklyeszilank:
+    material: NETHER_STAR
+    display-name: "&cŐsi Ereklyeszilánk"
+    custom-model-data: 6013
+    lore:
+      - "&7Egy réges-rég széttört ereklye"
+      - "&7szilánkja — legendák csírája."
+      - "&4Csak világbossból / nehéz eventből esik"

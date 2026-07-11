@@ -198,6 +198,10 @@ az alapkasztod.
   hanggal; az action bar mutatja a kiválasztott képességet + a költségét).
 - Ha elveszne: a Kaszt menüből bármikor újra igényelheted (admin: `/job givecatalyst`).
 - A katalizátort **nem lehet** craftolásnál vagy kemencében elhasználni — védett.
+- **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben
+  tartott **kard vagy balta is katalizátorként működik** — harc közben nem kell tárgyat váltani.
+- **Dinamikus skálázás:** a képességek ereje a kaszt-szinttel nő (+0,5%/szint), és az
+  **Arkán Hatalom** talent (+2%/rang) tovább növeli (a bónusz +50%-ig kúszhat).
 
 ### Képesség-fa
 A Kaszt menü **„Képesség-fa"** gombja megmutatja a kasztod (és a választott specializációd)

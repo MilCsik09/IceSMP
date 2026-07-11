@@ -49,7 +49,7 @@ public final class RitualListener implements Listener {
             return;
         }
 
-        if (ritualManager.tryRitual(player, block.getType())) {
+        if (ritualManager.tryRitual(player, block)) {
             debounce.put(player.getUniqueId(), now);
             event.setUseInteractedBlock(Event.Result.DENY);
             event.setUseItemInHand(Event.Result.DENY);

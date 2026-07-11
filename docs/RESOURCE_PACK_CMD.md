@@ -31,8 +31,17 @@ modellt kötni.
 | 5211 | SOUL_LANTERN | Katalizátor — Boszorkánymester | Lélek Lámpás | `items/CatalystItemFactory.java:83` |
 | 5212 | ENDER_EYE | Katalizátor — Démonvadász | Démonszem | `items/CatalystItemFactory.java:86` |
 | 5213 | DRAGON_BREATH | Katalizátor — Idéző | Sárkány Esszencia | `items/CatalystItemFactory.java:89` |
+| 6000 | IRON_NUGGET | Egyedi szakma-alapanyag | Tiszta Vasesszencia | `config/profession-materials.yml` |
+| 6001 | GLOW_BERRIES | Egyedi szakma-alapanyag | Gyógy-kivonat | `config/profession-materials.yml` |
+| 6002 | COPPER_INGOT | Egyedi szakma-alapanyag | Rezgő Rézötvözet | `config/profession-materials.yml` |
+| 6003 | STRIPPED_OAK_WOOD | Egyedi szakma-alapanyag | Keményfa Gerenda | `config/profession-materials.yml` |
+| 6004 | GLOWSTONE_DUST | Egyedi szakma-alapanyag | Rúnapor | `config/profession-materials.yml` |
+| 6010 | PHANTOM_MEMBRANE | Mob-only alapanyag | Vad Esszencia | `config/profession-materials.yml` |
+| 6011 | ECHO_SHARD | Mob-only alapanyag | Szörny Mag | `config/profession-materials.yml` |
+| 6012 | SCULK_VEIN | Mob-only alapanyag | Árnyékpor | `config/profession-materials.yml` |
+| 6013 | NETHER_STAR | Mob-only alapanyag (boss) | Ősi Ereklyeszilánk | `config/profession-materials.yml` |
 
-Összesen **22 hozzárendelés, mind a 22 CMD-érték egyedi** (a Mételytépő korábban az 1001-en
+Összesen **31 hozzárendelés, mind egyedi** (a Mételytépő korábban az 1001-en
 osztozott a Piros Tokennel; 4101-re számoztuk át, ami a relics.yml-ben dokumentált érték).
 
 ## Tartományok
@@ -43,6 +52,8 @@ osztozott a Piros Tokennel; 4101-re számoztuk át, ami a relics.yml-ben dokumen
 | 4101 | Mételytépő (GOLDEN_AXE) |
 | 4201–4204 | Frakció-szárnyak (ELYTRA) |
 | 5201–5213 | Kaszt-katalizátorok (kasztonként saját alapanyag) |
+| 6000–6004 | Szakma által gyártott egyedi köztes alapanyagok |
+| 6010–6013 | Csak-mobból-eső egyedi szakma-alapanyagok |
 
 ## CMD nélküli egyedi itemek (csak PDC-tag azonosítja őket)
 - Befogó eszközök (`CaptureItemFactory`): LEAD ill. GHAST_TEAR

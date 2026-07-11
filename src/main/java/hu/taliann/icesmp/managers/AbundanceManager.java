@@ -102,7 +102,8 @@ public final class AbundanceManager {
         activeUntil = System.currentTimeMillis() + durationMillis();
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "abundance-start",
-                "&a🌱 BŐSÉG-IDŐ! A termés virul, az állatok szaporák, a szörnyek csendesebbek — egy pillanatnyi béke."));
+                "&a🌱 BŐSÉG-IDŐ! A következő {minutes} percben a termés virul, az állatok szaporák, a szörnyek csendesebbek — egy pillanatnyi béke.",
+                java.util.Map.of("minutes", String.valueOf(Math.max(1L, durationMillis() / 60_000L)))));
         pulseHeal();
     }
 

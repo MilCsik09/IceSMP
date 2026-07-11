@@ -33,6 +33,10 @@ Megnézheted és válthatsz:
 - `/currency exchange <összeg> <honnan> <hová>` — átváltod egyik valutát a másikra a mostani
   árfolyamon (kis díjjal). Aki figyeli a piacot, jól járhat!
 
+> 🖱️ **Nem kell parancsot gépelned!** A `/menu` → **Bank & Pénz** → **Valutaváltó** gombbal egy
+> kattintós váltó nyílik: fent kiválasztod a **forrás-**, lent a **cél-valutát**, középen látod az
+> élő árfolyamot, és gyors gombokkal (16 / 32 / 64 / mind) rögtön válthatsz.
+
 A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktuális értékeket. 📊
 
 ## Piactér (kereskedés más játékosokkal) 🛒
@@ -98,3 +102,12 @@ megéri**.
 ---
 
 ➡️ Tovább: [Kasztok](04-kasztok.md) • [Vissza a tartalomhoz](README.md)
+
+## A KP-alapú gazdaság szabályai 🏦
+
+- A szerveren a **készpénz (token item)** az alap: a **player–player kereskedelem kézből
+  kézbe** zajlik (átadod a tokent / az itemet), vagy a **piacon**.
+- **Banki ügyintézés** (befizetés, kivét, **valutaváltás**) **csak a fővárosokban** lehetséges —
+  keresd fel valamelyik város bankját.
+- **Közvetlen utalás (`/currency pay`) nincs** — a bankszámla a player–szerver ügyletekhez van
+  (boltok, piac, claimek ára onnan megy).

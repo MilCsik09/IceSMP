@@ -168,6 +168,12 @@ public final class TerritoryManager implements PersistentStore {
      * @param location the location to check
      * @return the territory, or null if unclaimed wilderness
      */
+    /** Whether the location lies inside ANY faction's capital (banking/exchange gate). */
+    public boolean isInCapital(final Location location) {
+        final Territory territory = getTerritoryAt(location);
+        return territory != null && territory.capital();
+    }
+
     public Territory getTerritoryAt(final Location location) {
         if (location == null || location.getWorld() == null) {
             return null;

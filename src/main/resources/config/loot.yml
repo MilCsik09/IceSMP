@@ -1,0 +1,55 @@
+# IceSMP konfiguráció — loot (a ConfigManager az összes config/*.yml-t betölti)
+# ===== WoW-szerű mob loot (súlyozott loot-tábla) =====
+# A megölt szörnyek eséllyel dobnak egy plusz tárgyat a 'table' súlyozott listájából. Egy dobás
+# EGY táblasort választ (weight szerint). Sortípusok:
+#   gear     -> egyedi, rolled-affix felszerelés a gear-pool-ból (a rarity/affix motor: item-rarity.yml)
+#   material -> sima vanilla item (item + min..max darab) — "minden féle" nyersanyag/érték
+#   unique   -> egyedi alapanyag (id, profession-materials.yml) — köztük CSAK-mobból-eső anyagok,
+#               amiket a szakma-receptek igényelnek
+# BALANSZ: sima szörny -> 'drop' tier (gyengébb, eshet Ócska); világboss/invázió-bajnok/Vad Hajsza
+#          -> 'boss' tier (erős, magas rarity + boss-only unique anyagok).
+loot:
+  enabled: true
+  require-player-kill: true
+  mob-drop:
+    chance: 0.15        # ennyi eséllyel dob egy sima szörny valamit a tábláról
+    gear-pool: [ IRON_SWORD, IRON_HELMET, IRON_CHESTPLATE, IRON_LEGGINGS, IRON_BOOTS, IRON_PICKAXE, IRON_AXE, SHIELD, BOW ]
+    table:
+      # --- egyedi felszerelés (rolled) ---
+      - { type: gear, weight: 15 }
+      # --- "minden féle" nyersanyag / érték ---
+      - { type: material, weight: 40, item: BONE, min: 1, max: 3 }
+      - { type: material, weight: 40, item: STRING, min: 1, max: 3 }
+      - { type: material, weight: 35, item: GUNPOWDER, min: 1, max: 2 }
+      - { type: material, weight: 30, item: ROTTEN_FLESH, min: 1, max: 4 }
+      - { type: material, weight: 30, item: SPIDER_EYE, min: 1, max: 2 }
+      - { type: material, weight: 25, item: IRON_NUGGET, min: 2, max: 6 }
+      - { type: material, weight: 25, item: GOLD_NUGGET, min: 2, max: 6 }
+      - { type: material, weight: 22, item: COAL, min: 1, max: 4 }
+      - { type: material, weight: 20, item: LEATHER, min: 1, max: 3 }
+      - { type: material, weight: 18, item: REDSTONE, min: 1, max: 4 }
+      - { type: material, weight: 18, item: FLINT, min: 1, max: 3 }
+      - { type: material, weight: 15, item: ARROW, min: 2, max: 8 }
+      - { type: material, weight: 12, item: IRON_INGOT, min: 1, max: 2 }
+      - { type: material, weight: 10, item: EMERALD, min: 1, max: 2 }
+      - { type: material, weight: 8,  item: GOLD_INGOT, min: 1, max: 2 }
+      - { type: material, weight: 6,  item: LAPIS_LAZULI, min: 1, max: 4 }
+      - { type: material, weight: 5,  item: DIAMOND, min: 1, max: 1 }
+      - { type: material, weight: 3,  item: ENDER_PEARL, min: 1, max: 1 }
+      # --- CSAK-mobból-eső egyedi alapanyagok (szakma-receptek igénylik) ---
+      - { type: unique, weight: 18, id: vad_esszencia, min: 1, max: 2 }
+      - { type: unique, weight: 8,  id: szorny_mag, min: 1, max: 1 }
+      - { type: unique, weight: 5,  id: arnyekpor, min: 1, max: 2 }
+  # Ritka tervrajz-drop: egy blueprint-recept (profession-recipes learn: blueprint) megtanulására.
+  blueprint-drop:
+    chance: 0.002       # sima szörny: 0.2%
+    boss-chance: 0.05   # boss/event-mob: 5%
+  boss-drop:
+    chance: 1.0         # a boss/event-mobok garantáltan dobnak
+    gear-pool: [ DIAMOND_SWORD, DIAMOND_HELMET, DIAMOND_CHESTPLATE, DIAMOND_LEGGINGS, DIAMOND_BOOTS, DIAMOND_PICKAXE, NETHERITE_SWORD, NETHERITE_CHESTPLATE, TRIDENT, CROSSBOW ]
+    table:
+      - { type: gear, weight: 55 }
+      - { type: unique, weight: 25, id: osi_ereklyeszilank, min: 1, max: 2 }
+      - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 3 }
+      - { type: material, weight: 6, item: NETHERITE_SCRAP, min: 1, max: 2 }
+      - { type: material, weight: 4, item: DIAMOND, min: 2, max: 5 }

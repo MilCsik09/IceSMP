@@ -31,11 +31,21 @@ public final class ProfessionCommand implements BasicCommand {
     private final JavaPlugin plugin;
     private final ProfessionManager professionManager;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener recipeBook;
+    private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
+    private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory;
 
-    public ProfessionCommand(final JavaPlugin plugin, final ProfessionManager professionManager, final MessageManager messageManager) {
+    public ProfessionCommand(final JavaPlugin plugin, final ProfessionManager professionManager,
+                             final MessageManager messageManager,
+                             final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener recipeBook,
+                             final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
+                             final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory) {
         this.plugin = plugin;
         this.professionManager = professionManager;
         this.messageManager = messageManager;
+        this.recipeBook = recipeBook;
+        this.recipeCatalog = recipeCatalog;
+        this.blueprintFactory = blueprintFactory;
     }
 
     @Override
@@ -51,6 +61,8 @@ public final class ProfessionCommand implements BasicCommand {
             case "join" -> handleJoin(sender, args);
             case "info" -> handleInfo(sender);
             case "list" -> handleList(sender);
+            case "recipes", "receptek", "book" -> handleRecipes(sender);
+            case "blueprint", "tervrajz" -> handleBlueprint(sender, args);
             case "set" -> handleSet(sender, args);
             case "clear" -> handleClear(sender, args);
             case "addxp" -> handleAddXp(sender, args);
@@ -98,6 +110,40 @@ public final class ProfessionCommand implements BasicCommand {
         player.sendMessage(messageManager.getMessage("profession-join-success", "&aSzakma kiválasztva:")
                 .append(Component.space())
                 .append(profession.getDisplayName()));
+    }
+
+    private void handleRecipes(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        recipeBook.open(player);
+    }
+
+    /** Admin: hands a blueprint item for a recipe to a player (so NPC shops / rewards can distribute it). */
+    private void handleBlueprint(final CommandSender sender, final String[] args) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("profession-blueprint-usage", "&cHasználat: /profession blueprint <játékos> <recept-id>"));
+            return;
+        }
+        final Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(messageManager.get("player-not-found", "&cNincs ilyen online játékos: &f%s", args[1]));
+            return;
+        }
+        final var item = blueprintFactory.create(args[2].toLowerCase(Locale.ROOT));
+        if (item == null) {
+            sender.sendMessage(messageManager.get("profession-blueprint-unknown", "&cNincs ilyen recept: &f%s", args[2]));
+            return;
+        }
+        for (final var overflow : target.getInventory().addItem(item).values()) {
+            target.getWorld().dropItemNaturally(target.getLocation(), overflow);
+        }
+        sender.sendMessage(messageManager.get("profession-blueprint-given", "&aTervrajz átadva: &e%s &7-> &f%s", args[2].toLowerCase(Locale.ROOT), target.getName()));
     }
 
     private void handleInfo(final CommandSender sender) {
@@ -289,7 +335,9 @@ public final class ProfessionCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("profession-help-join", "&e/profession join <szakma> &7- Fő szakma kiválasztása (1 gyűjtögető + 1 készítő)."));
         sender.sendMessage(messageManager.get("profession-help-info", "&e/profession info &7- Szakmáid és szintjeid."));
         sender.sendMessage(messageManager.get("profession-help-list", "&e/profession list &7- Elérhető szakmák kategóriánként."));
+        sender.sendMessage(messageManager.get("profession-help-recipes", "&e/profession recipes &7- Recept-könyv (tanult/zárolt receptek, craftolás)."));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
+            sender.sendMessage(messageManager.get("profession-help-blueprint", "&e/profession blueprint <játékos> <recept-id> &7- Tervrajz átadása (Admin)."));
             sender.sendMessage(messageManager.get("profession-help-set", "&e/profession set <játékos> <szakma> &7- Szakma beállítása (Admin)."));
             sender.sendMessage(messageManager.get("profession-help-clear", "&e/profession clear <játékos> <gathering|crafting> &7- Szakma slot törlése (Admin)."));
             sender.sendMessage(messageManager.get("profession-help-addxp", "&e/profession addxp <játékos> <szakma> <mennyiség> &7- XP hozzáadása (Admin)."));
@@ -300,37 +348,49 @@ public final class ProfessionCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("join", "info", "list", "set", "clear", "addxp")
-                : List.of("join", "info", "list");
+                ? List.of("join", "info", "list", "recipes", "blueprint", "set", "clear", "addxp")
+                : List.of("join", "info", "list", "recipes");
 
-        if (args.length <= 1) {
-            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return subcommands.stream().filter(option -> option.startsWith(prefix)).toList();
+        final String subcommand = prefixAt(args, 0);
+        final boolean subcommandComplete = subcommands.contains(subcommand);
+
+        // Két hosszal: 0 = "/profession " (üres prefix), 1 = gépelés közben — kivéve, ha az
+        // args[0] már pontos egyezés, akkor a P=1 pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !subcommandComplete)) {
+            return subcommands.stream().filter(option -> option.startsWith(subcommand)).toList();
         }
 
-        final String subcommand = args[0].toLowerCase(Locale.ROOT);
-        if (args.length == 2 && "join".equals(subcommand)) {
-            return primaryProfessionIds(args[1]);
+        if ("join".equals(subcommand) && args.length <= 2) {
+            return primaryProfessionIds(prefixAt(args, 1));
         }
 
-        if (args.length == 2 && ("set".equals(subcommand) || "clear".equals(subcommand) || "addxp".equals(subcommand))) {
+        final boolean targetComplete = args.length >= 2 && Bukkit.getPlayerExact(args[1]) != null;
+        if (("set".equals(subcommand) || "clear".equals(subcommand) || "addxp".equals(subcommand)
+                || "blueprint".equals(subcommand))
+                && (args.length <= 1 || (args.length == 2 && !targetComplete))) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
-        if (args.length == 3 && "set".equals(subcommand)) {
-            return primaryProfessionIds(args[2]);
+        if ("blueprint".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            final String prefix = prefixAt(args, 2);
+            return recipeCatalog.blueprintRecipeIds().stream().filter(id -> id.startsWith(prefix)).toList();
         }
 
-        if (args.length == 3 && "clear".equals(subcommand)) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
+        if ("set".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            return primaryProfessionIds(prefixAt(args, 2));
+        }
+
+        if ("clear".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            final String prefix = prefixAt(args, 2);
             return List.of("gathering", "crafting").stream().filter(option -> option.startsWith(prefix)).toList();
         }
 
-        if (args.length == 3 && "addxp".equals(subcommand)) {
-            final String prefix = args[2].toLowerCase(Locale.ROOT);
+        if ("addxp".equals(subcommand) && ((args.length == 2 && targetComplete) || args.length == 3)) {
+            final String prefix = prefixAt(args, 2);
             return Arrays.stream(ProfessionType.values())
                     .map(ProfessionType::getId)
                     .filter(id -> id.startsWith(prefix))
@@ -338,6 +398,11 @@ public final class ProfessionCommand implements BasicCommand {
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 
     private List<String> primaryProfessionIds(final String rawPrefix) {

@@ -582,6 +582,12 @@ talents:
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 4
+      arcane_might:
+        display-name: "Arkán Hatalom"
+        tier: 1
+        effect: "spell-power"     # százalékos spell-erő bónusz (dynamic-scaling rétegben adódik hozzá)
+        per-rank: 2.0
+        max-rank: 5
       # --- 2. szint: kaszt-kötött talentek (szülő-talentet igényelnek) ---
       weapon_mastery:
         display-name: "Fegyvermesteri Fokozat"

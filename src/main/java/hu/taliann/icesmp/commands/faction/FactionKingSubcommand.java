@@ -196,21 +196,31 @@ public final class FactionKingSubcommand implements FactionSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
-            final String prefix = args[0].toLowerCase(Locale.ROOT);
-            final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                    ? List.of("vote", "tax", "set", "clear")
-                    : List.of("vote", "tax");
-            return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
+                ? List.of("vote", "tax", "set", "clear")
+                : List.of("vote", "tax");
+        final String action = prefixAt(args, 0);
+        final boolean actionComplete = options.contains(action);
+
+        // Két hosszal: 0 = "/faction king " (üres prefix), 1 = gépelés közben — kivéve, ha az
+        // args[0] már pontosan egy ismert al-akció, akkor a P=1 pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !actionComplete)) {
+            return options.stream().filter(option -> option.startsWith(action)).toList();
         }
 
-        if (args.length == 2 && "vote".equalsIgnoreCase(args[0])) {
+        if ("vote".equals(action) && args.length <= 2) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }

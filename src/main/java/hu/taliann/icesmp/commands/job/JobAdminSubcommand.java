@@ -133,20 +133,30 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
-            return java.util.stream.Stream.of("resetcd", "unlockallskills", "resetskills", "resetclass")
-                    .filter(value -> value.startsWith(args[0].toLowerCase()))
-                    .toList();
+        final List<String> actions = List.of("resetcd", "unlockallskills", "resetskills", "resetclass");
+        final String action = prefixAt(args, 0);
+        final boolean actionComplete = actions.contains(action);
+
+        // Két hosszal: 0 = "/job admin " (üres prefix), 1 = gépelés közben — kivéve, ha az args[0]
+        // már pontos egyezés, akkor a P=1 (játékosnév) pozíció javaslatai jönnek.
+        if (args.length == 0 || (args.length == 1 && !actionComplete)) {
+            return actions.stream().filter(value -> value.startsWith(action)).toList();
         }
 
-        if (args.length == 2) {
+        if ((args.length == 1 && actionComplete) || args.length == 2) {
+            final String prefix = prefixAt(args, 1);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .filter(name -> name.toLowerCase().startsWith(prefix))
                     .toList();
         }
 
         return List.of();
+    }
+
+    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
+    private static String prefixAt(final String[] args, final int index) {
+        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
     }
 }
 

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.integration;
 
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.NpcBindingManager;
 import hu.taliann.icesmp.managers.QuestManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -16,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Reflective FancyNpcs bridge — no compile-time dependency (mirroring the
@@ -26,7 +28,11 @@ import java.util.Set;
  *       QuestManager (the event fires on the player's own region thread, so
  *       the PDC write is Folia-safe without a hop).</li>
  *   <li><b>Quest-giver NPCs:</b> after the talk objectives ran, the NPC hands
- *       out its first acceptable {@code giver-npc} quest.</li>
+ *       out its first acceptable {@code giver-npc} quest — unless an explicit
+ *       {@code /npcbind} binding exists for it, in which case the binding wins:
+ *       a bound QUEST hands out that exact quest id, a bound SHOP opens that
+ *       shop, and BANK/EXCHANGE both open the bank menu (see
+ *       {@link NpcBindingManager}).</li>
  *   <li><b>Per-player markers:</b> {@link #tickMarkers()} shows a particle
  *       aura above quest NPCs — gold for "has a quest for YOU", green for
  *       "your active quest wants you to talk to them". Particles are sent
@@ -44,23 +50,36 @@ public final class FancyNpcsQuestBridge {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final QuestManager questManager;
+    private final NpcBindingManager npcBindingManager;
     private final Object npcManager;
     private final Method getNpcByName;
     private final Method npcGetData;
     private final Method dataGetName;
     private final Method dataGetLocation;
     private java.util.function.BiConsumer<Player, String> interactHook;
+    private Consumer<Player> bankOpenHook;
 
-    /** Registers an extra (player, npcName) consumer fired on every NPC interaction (e.g. shops). */
+    /**
+     * Registers an extra (player, shopName) consumer fired on every NPC interaction that is
+     * NOT explicitly bound (legacy name-based shops), or, for an explicit {@code SHOP} binding,
+     * fired with the bound shop's name instead of the NPC's own name.
+     */
     public void setInteractHook(final java.util.function.BiConsumer<Player, String> hook) {
         this.interactHook = hook;
     }
 
+    /** Registers the consumer that opens the bank menu — fired for {@code BANK}/{@code EXCHANGE} bindings. */
+    public void setBankOpenHook(final Consumer<Player> hook) {
+        this.bankOpenHook = hook;
+    }
+
     private FancyNpcsQuestBridge(final JavaPlugin plugin, final ConfigManager configManager,
-                                 final QuestManager questManager) throws ReflectiveOperationException {
+                                 final QuestManager questManager,
+                                 final NpcBindingManager npcBindingManager) throws ReflectiveOperationException {
         this.plugin = plugin;
         this.configManager = configManager;
         this.questManager = questManager;
+        this.npcBindingManager = npcBindingManager;
 
         // Every method is resolved from public API types (declared return types where
         // possible), never from runtime impl classes or hardcoded impl-package names.
@@ -84,12 +103,14 @@ public final class FancyNpcsQuestBridge {
      * @param plugin the IceSMP plugin
      * @param configManager the config manager (marker settings)
      * @param questManager the quest manager to progress
+     * @param npcBindingManager the explicit NPC-binding store (quest/shop/bank/exchange overrides)
      * @return the registered bridge
      * @throws ReflectiveOperationException if the FancyNpcs API is not on the classpath
      */
     public static FancyNpcsQuestBridge register(final JavaPlugin plugin, final ConfigManager configManager,
-                                                final QuestManager questManager) throws ReflectiveOperationException {
-        final FancyNpcsQuestBridge bridge = new FancyNpcsQuestBridge(plugin, configManager, questManager);
+                                                final QuestManager questManager,
+                                                final NpcBindingManager npcBindingManager) throws ReflectiveOperationException {
+        final FancyNpcsQuestBridge bridge = new FancyNpcsQuestBridge(plugin, configManager, questManager, npcBindingManager);
         bridge.registerInteractListener();
         return bridge;
     }
@@ -121,14 +142,35 @@ public final class FancyNpcsQuestBridge {
                             return;
                         }
                         if (dataGetName.invoke(data) instanceof String npcName) {
-                            // Talk objectives first, then the NPC hands out its next quest —
-                            // so a master completes "talk to me" and gives the trial in one click.
+                            // TALK_TO_NPC / DELIVER_ITEMS objectives always resolve by the NPC's own
+                            // name — legacy behavior, independent of any explicit binding below.
                             questManager.handleNpcInteract(player, npcName);
-                            questManager.acceptFromNpc(player, npcName);
-                            // Extra interaction consumers (e.g. faction shops) run last; the event
-                            // is already on the player's region thread, so this is Folia-safe.
-                            if (interactHook != null) {
-                                interactHook.accept(player, npcName);
+
+                            // Explicit /npcbind binding (if any) takes over what happens next;
+                            // no binding = exactly the legacy name-based behavior.
+                            final NpcBindingManager.Binding binding =
+                                    npcBindingManager == null ? null : npcBindingManager.get(npcName);
+                            if (binding == null) {
+                                // Legacy: the NPC hands out its own giver-npc quest by name, then
+                                // extra interaction consumers (e.g. faction shops) run last.
+                                questManager.acceptFromNpc(player, npcName);
+                                if (interactHook != null) {
+                                    interactHook.accept(player, npcName);
+                                }
+                            } else {
+                                switch (binding.type()) {
+                                    case QUEST -> questManager.acceptBoundQuest(player, binding.value(), npcName);
+                                    case SHOP -> {
+                                        if (interactHook != null) {
+                                            interactHook.accept(player, binding.value());
+                                        }
+                                    }
+                                    case BANK, EXCHANGE -> {
+                                        if (bankOpenHook != null) {
+                                            bankOpenHook.accept(player);
+                                        }
+                                    }
+                                }
                             }
                         }
                     } catch (final ReflectiveOperationException exception) {

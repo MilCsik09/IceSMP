@@ -77,9 +77,13 @@ public final class QuestManager implements PersistentStore {
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
+            "objective.description",
             "rewards.class-xp", "rewards.currency.type", "rewards.currency.amount",
             "rewards.items", "rewards.unlock-spell", "rewards.cleanse-sins",
-            "dialogue.speaker", "dialogue.give", "dialogue.complete");
+            "dialogue.speaker", "dialogue.give", "dialogue.complete",
+            // Kattintható párbeszéd-válaszok: bármely index mehet (dialogue.choices.<N>.text|quest),
+            // az 1-es példaként szerepel itt a tab-complete kedvéért.
+            "dialogue.choices.1.text", "dialogue.choices.1.quest");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -237,11 +241,16 @@ public final class QuestManager implements PersistentStore {
         String parseKey = normalizedField;
         final java.util.regex.Matcher indexed =
                 java.util.regex.Pattern.compile("objectives\\.(\\d+)\\.([a-z-]+)").matcher(normalizedField);
+        // Kattintható párbeszéd-válaszok tetszőleges indexszel: dialogue.choices.<N>.text|quest.
+        final java.util.regex.Matcher choice =
+                java.util.regex.Pattern.compile("dialogue\\.choices\\.(\\d+)\\.(text|quest)").matcher(normalizedField);
         if (indexed.matches()) {
             if (!OBJECTIVE_SUBFIELDS.contains(indexed.group(2))) {
                 return "quest-admin-bad-field";
             }
             parseKey = "objective." + indexed.group(2);
+        } else if (choice.matches()) {
+            parseKey = "dialogue.choice-" + choice.group(2);
         } else if (!EDITABLE_FIELDS.contains(normalizedField) && !"objectives-mode".equals(normalizedField)) {
             return "quest-admin-bad-field";
         }
@@ -275,6 +284,8 @@ public final class QuestManager implements PersistentStore {
                 }
             }
             case "rewards.cleanse-sins", "repeatable", "seasonal" -> parsed = Boolean.parseBoolean(rawValue.trim());
+            // A választás cél-questje: kisbetűs id-ként tárolódik (mint minden quest-kulcs).
+            case "dialogue.choice-quest" -> parsed = rawValue.trim().toLowerCase(Locale.ROOT);
             case "cooldown-hours" -> {
                 try {
                     parsed = Math.max(0.0D, Double.parseDouble(rawValue.trim()));
@@ -1050,23 +1061,50 @@ public final class QuestManager implements PersistentStore {
                 continue;
             }
 
-            if (!accept(player, questId)) {
-                continue;
+            final String accepted = tryAcceptAndAnnounce(player, questId, npcName);
+            if (accepted != null) {
+                return accepted;
             }
-
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
-            player.sendMessage(messageManager.getMessage(
-                    "quest.accepted-from-npc",
-                    "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
-                    Map.of(
-                            "quest", getDisplayName(questId),
-                            "description", getQuestSection(questId).getString("description", "")
-                    )
-            ));
-            sendDialogue(player, questId, "give", npcName);
-            return questId;
         }
         return null;
+    }
+
+    /**
+     * Hands out a specific quest regardless of its configured {@code giver-npc} —
+     * used by explicit {@code /npcbind <npc> quest <questId>} bindings, where the
+     * admin already decided which NPC gives this quest out-of-band. Same
+     * accept + announce + dialogue flow as {@link #acceptFromNpc}, just for a
+     * single target id instead of scanning every quest for a name match.
+     *
+     * @param player the interacting player
+     * @param questId the bound quest id
+     * @param npcName the NPC's internal name (used for the "give" dialogue lookup)
+     * @return the accepted quest id, or null if it could not be accepted right now
+     */
+    public String acceptBoundQuest(final Player player, final String questId, final String npcName) {
+        if (questId == null || getAcceptBlocker(player, questId) != null) {
+            return null;
+        }
+        return tryAcceptAndAnnounce(player, questId, npcName);
+    }
+
+    /** Accepts {@code questId} and — on success — plays the sound/message/dialogue trio. */
+    private String tryAcceptAndAnnounce(final Player player, final String questId, final String npcName) {
+        if (!accept(player, questId)) {
+            return null;
+        }
+
+        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1.0F, 1.1F);
+        player.sendMessage(messageManager.getMessage(
+                "quest.accepted-from-npc",
+                "<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                Map.of(
+                        "quest", getDisplayName(questId),
+                        "description", getQuestSection(questId).getString("description", "")
+                )
+        ));
+        sendDialogue(player, questId, "give", npcName);
+        return questId;
     }
 
     /**

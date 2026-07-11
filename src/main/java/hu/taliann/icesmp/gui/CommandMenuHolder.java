@@ -17,12 +17,15 @@ import java.util.UUID;
  */
 public final class CommandMenuHolder implements InventoryHolder {
 
-    public enum Menu { MAIN, FACTION, FACTION_SWITCH, BANK, EVENTS, RELIC, SOULS, LEADERBOARD, ACHIEVEMENTS, PARTY, CLAIM, BOUNTY, ADMIN }
+    public enum Menu { MAIN, FACTION, FACTION_SWITCH, BANK, EXCHANGE, EVENTS, RELIC, SOULS, LEADERBOARD, ACHIEVEMENTS, PARTY, CLAIM, BOUNTY, ADMIN }
 
     private final Menu menu;
     private final UUID ownerUuid;
     private final Map<Integer, String> actions = new HashMap<>();
     private Inventory inventory;
+    // A valutaváltó almenü kiválasztott iránya — a RUN utáni frissítés így őrzi meg a választást.
+    private String exchangeFrom;
+    private String exchangeTo;
 
     public CommandMenuHolder(final Menu menu, final UUID ownerUuid) {
         this.menu = menu;
@@ -43,6 +46,19 @@ public final class CommandMenuHolder implements InventoryHolder {
 
     public void bind(final int slot, final String action) {
         actions.put(slot, action);
+    }
+
+    public String getExchangeFrom() {
+        return exchangeFrom;
+    }
+
+    public String getExchangeTo() {
+        return exchangeTo;
+    }
+
+    public void setExchangeSelection(final String from, final String to) {
+        this.exchangeFrom = from;
+        this.exchangeTo = to;
     }
 
     @Override
