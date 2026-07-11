@@ -266,8 +266,9 @@ adatmappájában — minden játékmeneti érték és üzenet ott testreszabhat�
 - **API:** Folia 1.21.11 (Paper API kompatibilis) • **Nyelv:** Java 21 • **Build:** Gradle
 - **Folia-kompatibilis:** `folia-supported: true`; minden feladat régió-/entitás-ütemezőn fut
 - **Soft-dependenciák:** PlaceholderAPI (`%icesmp_...%` placeholderek, pl. TAB-hoz),
-  LibsDisguises (Druida-formák vizuálja), FancyNpcs (NPC-s kaszt-mester próbák) —
-  mindegyik nélkül is teljes értékűen fut
+  LibsDisguises (Druida-formák vizuálja), FancyNpcs (NPC-s kaszt-mester próbák),
+  WorldGuard (a meteor/kincs események kerülik a WG-régiókat), LuckPerms (chat
+  prefix/suffix a natív chat-formázóban) — mindegyik nélkül is teljes értékűen fut
 - Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 31 spec / 390+ spell,
   hibrid erőforrás-költség, talentek, szakmák, gazdaság + piac, relikviák + rituálék,
   világesemények (vérhold / világbossok / inváziók), király/raid/szezon, küldetések, pet-rendszer.
