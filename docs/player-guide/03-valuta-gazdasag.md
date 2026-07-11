@@ -33,6 +33,10 @@ Megnézheted és válthatsz:
 - `/currency exchange <összeg> <honnan> <hová>` — átváltod egyik valutát a másikra a mostani
   árfolyamon (kis díjjal). Aki figyeli a piacot, jól járhat!
 
+> 🖱️ **Nem kell parancsot gépelned!** A `/menu` → **Bank & Pénz** → **Valutaváltó** gombbal egy
+> kattintós váltó nyílik: fent kiválasztod a **forrás-**, lent a **cél-valutát**, középen látod az
+> élő árfolyamot, és gyors gombokkal (16 / 32 / 64 / mind) rögtön válthatsz.
+
 A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktuális értékeket. 📊
 
 ## Piactér (kereskedés más játékosokkal) 🛒

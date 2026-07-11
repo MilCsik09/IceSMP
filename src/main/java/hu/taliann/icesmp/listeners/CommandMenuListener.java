@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.gui.CommandMenuContext;
 import hu.taliann.icesmp.gui.CommandMenuHolder;
 import hu.taliann.icesmp.gui.CommandMenus;
@@ -82,10 +83,40 @@ public final class CommandMenuListener implements Listener {
             return;
         }
 
+        // Valutaváltó: a forrás/cél kiválasztása helyben újrarajzol, a párt megőrizve.
+        if (action.startsWith("XFROM:")) {
+            final FactionType from = parseFaction(action.substring(6));
+            final FactionType to = parseFaction(holder.getExchangeTo());
+            CommandMenus.openExchange(player, ctx, from, from == to ? null : to);
+            return;
+        }
+        if (action.startsWith("XTO:")) {
+            final FactionType from = parseFaction(holder.getExchangeFrom());
+            final FactionType to = parseFaction(action.substring(4));
+            CommandMenus.openExchange(player, ctx, from, from == to ? null : to);
+            return;
+        }
+
         if (action.startsWith("RUN:")) {
             player.performCommand(action.substring(4));
-            // Refresh the current menu so updated state (balances, quests, ...) shows.
-            CommandMenus.open(player, holder.getMenu(), ctx);
+            // Refresh the current menu so updated state (balances, quests, ...) shows. The exchanger
+            // keeps its selected currency pair across the refresh.
+            if (holder.getMenu() == CommandMenuHolder.Menu.EXCHANGE) {
+                CommandMenus.openExchange(player, ctx, parseFaction(holder.getExchangeFrom()), parseFaction(holder.getExchangeTo()));
+            } else {
+                CommandMenus.open(player, holder.getMenu(), ctx);
+            }
+        }
+    }
+
+    private FactionType parseFaction(final String name) {
+        if (name == null) {
+            return null;
+        }
+        try {
+            return FactionType.valueOf(name.toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException exception) {
+            return null;
         }
     }
 

@@ -60,6 +60,7 @@ public final class CommandMenus {
             case FACTION -> openFaction(player, ctx);
             case FACTION_SWITCH -> openFactionSwitch(player, ctx);
             case BANK -> openBank(player, ctx);
+            case EXCHANGE -> openExchange(player, ctx);
             case EVENTS -> openEvents(player, ctx);
             case RELIC -> openRelic(player, ctx);
             case SOULS -> openSouls(player, ctx);
@@ -297,24 +298,134 @@ public final class CommandMenus {
         put(inv, holder, 15, GuiUtil.icon(Material.PAPER, title("Árfolyamok"),
                 List.of(grey("Aktuális valuta-értékek és váltási arány."), click())), "RUN:currency rates");
 
-        // Kattintható valutaváltás: 64 egység a SAJÁT valutából a másik háromba,
-        // az aktuális árfolyamon (a díj/árfolyam részleteit a parancs kezeli).
-        int exchangeSlot = 20;
-        for (final FactionType target : FactionType.values()) {
-            if (target == (own == null ? FactionType.NEUTRAL : own)) {
-                continue;
-            }
-            put(inv, holder, exchangeSlot, GuiUtil.icon(woolFor(target),
-                    title("Váltás: 64 → " + target.getDisplayName()),
-                    List.of(grey("64 saját token váltása " + target.getDisplayName() + " tokenre"),
-                            grey("az élő árfolyamon (díjjal)."), capitalNote,
-                            grey("Más összeg: /currency exchange <összeg> <honnan> <hová>"), click())),
-                    "RUN:currency exchange 64 " + cur + " " + target.name().toLowerCase(Locale.ROOT));
-            exchangeSlot += 2;
-        }
+        // Valutaváltó: külön, interaktív almenü (honnan/hová választó + élő árfolyam + gyors összegek).
+        put(inv, holder, 22, GuiUtil.icon(Material.EMERALD, title("Valutaváltó"),
+                List.of(grey("Interaktív váltó: válaszd ki a forrás- és cél-"),
+                        grey("valutát, és az élő árfolyamon válts (díjjal)."), capitalNote, click())),
+                "MENU:EXCHANGE");
 
         put(inv, holder, 31, backButton(), "MENU:MAIN");
         player.openInventory(inv);
+    }
+
+    // ===== VALUTAVÁLTÓ =====
+    /** Opens the interactive currency exchanger with the caller's own currency preselected as source. */
+    public static void openExchange(final Player player, final CommandMenuContext ctx) {
+        final FactionType own = ctx.factionManager().getFaction(player.getUniqueId());
+        openExchange(player, ctx, own == null ? FactionType.NEUTRAL : own, null);
+    }
+
+    /**
+     * Renders the currency exchanger for a chosen source/target pair. The selectors set the
+     * pair; the quick-amount tiles delegate to {@code /currency exchange}. The pair is stored on
+     * the holder so the listener can preserve it across the post-command refresh.
+     */
+    public static void openExchange(final Player player, final CommandMenuContext ctx,
+                                    final FactionType from, final FactionType to) {
+        final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.EXCHANGE, player.getUniqueId());
+        holder.setExchangeSelection(from == null ? null : from.name(), to == null ? null : to.name());
+        final Inventory inv = create(holder, 45, "<dark_aqua>» Valutaváltó «</dark_aqua>", ctx);
+
+        final boolean capitalOnly = ctx.configManager().getBoolean("banking.capital-only", true);
+        final List<Component> header = new ArrayList<>();
+        for (final FactionType type : FactionType.values()) {
+            header.add(label(type.getDisplayName(), Component.text(
+                    ctx.currencyManager().formatBalance(ctx.currencyManager().getBalance(player, type)), NamedTextColor.WHITE)));
+        }
+        header.add(grey("Váltási díj: " + trimPercent(ctx.exchangeRateService().getFeePercent()) + "%"));
+        if (capitalOnly) {
+            header.add(Component.text("⚑ Váltás csak fővárosban!", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+        }
+        put(inv, holder, 4, GuiUtil.icon(Material.GOLD_INGOT, accent("Egyenlegeid"), header), null);
+
+        // Forrás-választók (felső sor): a kiválasztott ragyog.
+        put(inv, holder, 9, GuiUtil.icon(Material.NAME_TAG, title("⬅ Honnan (miből)"),
+                List.of(grey("Válaszd ki a forrás-valutát."))), null);
+        final int[] fromSlots = {11, 12, 14, 15};
+        final FactionType[] all = FactionType.values();
+        for (int i = 0; i < all.length; i++) {
+            final FactionType type = all[i];
+            final boolean selected = type == from;
+            put(inv, holder, fromSlots[i], GuiUtil.icon(woolFor(type),
+                    title((selected ? "✔ " : "") + type.getDisplayName()),
+                    List.of(grey("Forrás-valuta: " + type.getDisplayName()),
+                            selected ? grey("Kiválasztva.") : click()), selected),
+                    "XFROM:" + type.name());
+        }
+
+        // Cél-választók (alsó sor): a forrással azonos szürke és nem választható.
+        put(inv, holder, 27, GuiUtil.icon(Material.NAME_TAG, title("➡ Hová (mire)"),
+                List.of(grey("Válaszd ki a cél-valutát."))), null);
+        final int[] toSlots = {29, 30, 32, 33};
+        for (int i = 0; i < all.length; i++) {
+            final FactionType type = all[i];
+            if (type == from) {
+                put(inv, holder, toSlots[i], GuiUtil.icon(Material.GRAY_STAINED_GLASS_PANE,
+                        grey(type.getDisplayName() + " (a forrás)"), List.of(grey("Ez a forrás-valuta."))), null);
+                continue;
+            }
+            final boolean selected = type == to;
+            put(inv, holder, toSlots[i], GuiUtil.icon(woolFor(type),
+                    title((selected ? "✔ " : "") + type.getDisplayName()),
+                    List.of(grey("Cél-valuta: " + type.getDisplayName()),
+                            selected ? grey("Kiválasztva.") : click()), selected),
+                    "XTO:" + type.name());
+        }
+
+        // Árfolyam-kártya + gyors összegek (a középső/alsó sorban), csak ha van érvényes pár.
+        if (from != null && to != null && from != to) {
+            final CurrencyType cf = CurrencyType.fromFactionType(from);
+            final CurrencyType ctto = CurrencyType.fromFactionType(to);
+            final double rate = ctx.exchangeRateService().getRate(cf, ctto);
+            final double fee = ctx.exchangeRateService().getFeePercent();
+            final long balance = (long) ctx.currencyManager().getBalance(player, from);
+            final List<Component> rateLore = new ArrayList<>();
+            rateLore.add(label("1 " + from.getDisplayName(), Component.text(trimRate(rate) + " " + to.getDisplayName(), NamedTextColor.WHITE)));
+            rateLore.add(grey("64 " + shortName(from) + " ≈ " + Math.round(64 * rate * (1.0D - fee / 100.0D)) + " " + shortName(to) + " (díj után)"));
+            rateLore.add(grey("Egyenleged: " + balance + " " + shortName(from)));
+            put(inv, holder, 22, GuiUtil.icon(Material.SUNFLOWER, accent(from.getDisplayName() + " → " + to.getDisplayName()), rateLore, true), null);
+
+            final long[] amounts = {16, 32, 64};
+            final int[] amountSlots = {38, 39, 40};
+            final String fromId = from.name().toLowerCase(Locale.ROOT);
+            final String toId = to.name().toLowerCase(Locale.ROOT);
+            for (int i = 0; i < amounts.length; i++) {
+                final long amount = amounts[i];
+                put(inv, holder, amountSlots[i], GuiUtil.icon(Material.GOLD_NUGGET, title("Váltás: " + amount),
+                        List.of(grey(amount + " " + shortName(from) + " → " + shortName(to)),
+                                grey("az élő árfolyamon (díjjal)."), click())),
+                        "RUN:currency exchange " + amount + " " + fromId + " " + toId);
+            }
+            if (balance > 0L) {
+                put(inv, holder, 41, GuiUtil.icon(Material.GOLD_BLOCK, title("Váltás: mind (" + balance + ")"),
+                        List.of(grey("A teljes " + shortName(from) + "-egyenleged váltása."), click())),
+                        "RUN:currency exchange " + balance + " " + fromId + " " + toId);
+            }
+        } else {
+            put(inv, holder, 22, GuiUtil.icon(Material.BARRIER, grey("Válassz forrás- és cél-valutát!"),
+                    List.of(grey("Fent a forrás, lent a cél."))), null);
+        }
+
+        put(inv, holder, 36, GuiUtil.icon(Material.ARROW,
+                Component.text("Vissza a bankba", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false), List.of()), "MENU:BANK");
+        player.openInventory(inv);
+    }
+
+    private static String shortName(final FactionType faction) {
+        return switch (faction) {
+            case RED -> "Piros";
+            case BLUE -> "Kék";
+            case NEUTRAL -> "Semleges";
+            case DARK -> "Sötét";
+        };
+    }
+
+    private static String trimRate(final double value) {
+        return String.format(Locale.ROOT, "%.3f", value);
+    }
+
+    private static String trimPercent(final double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.format(Locale.ROOT, "%.1f", value);
     }
 
     private static Material woolFor(final FactionType faction) {

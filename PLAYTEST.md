@@ -243,6 +243,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.8 Gazdaság ✅
 - [ ] `/bank deposit|withdraw|balance`, `/currency balance|pay|exchange|rates`, `/currency set` (admin).
 - [ ] **Dinamikus árfolyam:** több valuta a szerveren → kevesebbet ér (`/currency rates`).
+- [ ] **Valutaváltó GUI** (`/menu` → Bank & Pénz → Valutaváltó): forrás-választó fent, cél-választó
+      lent (a forrással azonos valuta szürke, nem választható), középen élő árfolyam + 64-es előnézet;
+      a 16/32/64/mind gombok a `/currency exchange` parancsot futtatják, és a váltás után a kiválasztott
+      pár megmarad; fővároson kívül a váltás elutasítva (capital-only).
 - [ ] **Piac:** `/market sell <ár>` a kézben tartott tárgyra (max 5 tétel); `/market` vétel a bankból;
       `/market cancel` visszavon. Eladásnál ~10% „elég" (money sink).
 - [ ] **Frakció-bolt NPC:** rakj ki egy FancyNpcs NPC-t `altalanos_bolt` néven → jobb-katt megnyitja
