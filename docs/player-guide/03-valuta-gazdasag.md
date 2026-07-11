@@ -14,10 +14,11 @@ Minden frakciónak saját **token**-je (érméje) van: Piros, Kék, Semleges, S�
 
 Parancsok:
 - `/bank balance` — megnézed a banki egyenlegeidet.
-- `/bank deposit` — a nálad lévő tokeneket **bankba teszed**.
-- `/bank withdraw <valuta> <összeg>` — a bankból **kiveszel** tokeneket.
-- `/currency pay <játékos> <összeg> [valuta]` — **utalsz** valakinek.
+- `/bank deposit` — a nálad lévő tokeneket **bankba teszed** (**csak fővárosban**).
+- `/bank withdraw <valuta> <összeg>` — a bankból **kiveszel** tokeneket (**csak fővárosban**).
 - `/currency balance` — gyors egyenleg-nézet.
+- `/currency pay <játékos> <összeg> [valuta]` — közvetlen utalás, de a KP-alapú gazdaságban
+  **alapból ki van kapcsolva** (lásd lentebb, „A KP-alapú gazdaság szabályai").
 
 ## Dinamikus árfolyam (miért változik a pénz értéke?)
 

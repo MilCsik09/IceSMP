@@ -28,11 +28,11 @@ jelenti, hogy **elhagyható**.
 | `/faction leave` | `/f` | Kilépés a frakcióból |
 | `/faction king vote <játékos>` | `/f` | Szavazás a frakciód királyára |
 | `/bank balance` | `wallet`, `vault` | Banki egyenlegeid |
-| `/bank deposit` | | Tokenek bankba helyezése |
-| `/bank withdraw <valuta> <összeg>` | | Tokenek kivétele |
+| `/bank deposit` | | Tokenek bankba helyezése (**csak fővárosban**) |
+| `/bank withdraw <valuta> <összeg>` | | Tokenek kivétele (**csak fővárosban**) |
 | `/currency balance` | `money`, `eco` | Egyenleg gyorsnézet |
-| `/currency pay <játékos> <összeg> [valuta]` | | Pénz utalása |
-| `/currency exchange <összeg> <honnan> <hová>` | | Valutaváltás |
+| `/currency pay <játékos> <összeg> [valuta]` | | Közvetlen utalás — **alapból kikapcsolva** (KP-gazdaság) |
+| `/currency exchange <összeg> <honnan> <hová>` | | Valutaváltás (**csak fővárosban**) |
 | `/currency rates` | | Aktuális árfolyamok |
 | `/market` | `piac`, `ah` | Piactér böngésző (vásárlás / licitálás) |
 | `/market sell <ár> [valuta]` | | A kézben tartott tárgy eladása |
