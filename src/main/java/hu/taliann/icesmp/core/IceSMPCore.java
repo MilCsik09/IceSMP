@@ -316,10 +316,11 @@ public final class IceSMPCore {
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
-        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
-                catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager, messageManager);
-        this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
+        this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
+                catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager,
+                talentManager, messageManager);
+        this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.parkourManager = new ParkourManager(plugin, currencyManager, factionManager, messageManager);

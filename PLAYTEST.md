@@ -131,6 +131,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - **Kasztok** (13) + **specializációk** (31), egy kaszt/játékos (végleges, admin-reset van), 50-es max szint.
 - **Képességek** (390+): katalizátor-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
   cooldown, kombók, spell-mesterség.
+- [ ] **Közelharci katalizátor**: melee kaszttal (pl. Harcos) a kézben tartott kard/balta is
+      katalizátor — jobb katt cast, SHIFT+jobb katt varázskönyv, SHIFT+ütés spell-váltás; a balta
+      jobb-katt fahántása NEM fut le; nem-melee kaszttal (pl. Varázsló) a kard NEM katalizátor.
+- [ ] **Dinamikus spell-skálázás**: magasabb kaszt-szinten mérhetően nagyobb spell-sebzés
+      (+0,5%/szint), az Arkán Hatalom talent rangonként +2%-ot ad; a bónusz +50%-nál tetőzik.
 - **Erő-csík** (osztály-erőforrás): HUD-sáv, regenerálódó költség-pool.
 - **Talentek**: kaszt- és szakma-ponttár, általános + kötött talentek.
 - **Szakmák** (gyűjtögető/készítő/másodlagos) + szakma-specializációk + craft-korlátok.

@@ -49,6 +49,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final SpellMasteryManager masteryManager;
     private final SpecializationManager specializationManager;
     private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
+    private final hu.taliann.icesmp.managers.TalentManager talentManager;
     private final MessageManager messageManager;
     private final NamespacedKey selectedSpellIndexKey;
     private final Map<String, NamespacedKey> longCooldownKeys = new ConcurrentHashMap<>();
@@ -64,6 +65,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                                    final ConfigManager configManager, final SpellMasteryManager masteryManager,
                                    final SpecializationManager specializationManager,
                                    final hu.taliann.icesmp.managers.ResourceManager resourceManager,
+                                   final hu.taliann.icesmp.managers.TalentManager talentManager,
                                    final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
@@ -72,8 +74,43 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         this.masteryManager = masteryManager;
         this.specializationManager = specializationManager;
         this.resourceManager = resourceManager;
+        this.talentManager = talentManager;
         this.messageManager = messageManager;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
+    }
+
+    /**
+     * Whether the held item works as a spell catalyst for this player: the class-themed
+     * catalyst item always does; for the configured melee classes (spells.melee-catalyst)
+     * their held sword/axe does too, so a frontliner can cast without swapping items.
+     */
+    private boolean isUsableCatalyst(final Player player, final ItemStack item) {
+        if (catalystItemFactory.isCatalyst(item)) {
+            return true;
+        }
+        if (item == null || !configManager.getBoolean("spells.melee-catalyst.enabled", true)) {
+            return false;
+        }
+        if (!configManager.getStringList("spells.melee-catalyst.materials").contains(item.getType().name())) {
+            return false;
+        }
+        final var job = jobManager.getPrimaryJob(player);
+        return job != null && configManager.getStringList("spells.melee-catalyst.classes").contains(job.getId());
+    }
+
+    /**
+     * Dynamic power scaling on top of the mastery multiplier: the class level and the
+     * 'spell-power' talent effect add a capped percentage bonus (spells.dynamic-scaling).
+     */
+    private double dynamicPowerMultiplier(final Player player) {
+        if (!configManager.getBoolean("spells.dynamic-scaling.enabled", true)) {
+            return 1.0D;
+        }
+        final double perLevel = Math.max(0.0D, configManager.getDouble("spells.dynamic-scaling.per-level-percent", 0.5D));
+        final double talentBonus = talentManager == null ? 0.0D : talentManager.getEffectTotal(player, "spell-power");
+        final double cap = Math.max(0.0D, configManager.getDouble("spells.dynamic-scaling.max-bonus-percent", 50.0D));
+        final double bonusPercent = Math.min(cap, jobManager.getPrimaryLevel(player) * perLevel + Math.max(0.0D, talentBonus));
+        return 1.0D + bonusPercent / 100.0D;
     }
 
     @EventHandler
@@ -84,7 +121,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
         final Player player = event.getPlayer();
         final ItemStack mainHand = player.getInventory().getItemInMainHand();
-        if (!catalystItemFactory.isCatalyst(mainHand)) {
+        if (!isUsableCatalyst(player, mainHand)) {
             return;
         }
 
@@ -124,7 +161,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
 
-        if (!catalystItemFactory.isCatalyst(player.getInventory().getItemInMainHand())) {
+        if (!isUsableCatalyst(player, player.getInventory().getItemInMainHand())) {
             return;
         }
 
@@ -224,8 +261,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         } else {
             selected.consumeCost(player);
         }
-        // Spell-mastery power scales the offensive output (damage, self-heal, effect duration).
-        final double power = masteryManager.getPowerMultiplier(player, selected.getId());
+        // Spell-mastery power scales the offensive output (damage, self-heal, effect duration);
+        // the dynamic layer adds a capped class-level + 'spell-power' talent bonus on top.
+        final double power = masteryManager.getPowerMultiplier(player, selected.getId())
+                * dynamicPowerMultiplier(player);
         if (!selected.executeSpell(player, power)) {
             // No effect fired (no target, no companions, …) — refund the cost and skip the
             // cooldown so a missed cast costs the player nothing.

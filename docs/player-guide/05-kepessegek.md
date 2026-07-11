@@ -14,6 +14,15 @@ a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
 
+> ⚔️ **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász): a kezedben
+> tartott **kard vagy balta is katalizátorként működik** — nem kell tárgyat váltanod a harc közben!
+> Ugyanazok a mozdulatok érvényesek (jobb katt = cast, SHIFT+jobb katt = varázskönyv,
+> SHIFT+ütés = képesség-váltás).
+
+> 📈 **Dinamikus erő-skálázás:** a képességeid ereje a **kaszt-szinteddel** nő (alapból
+> +0,5%/szint), és az **Arkán Hatalom** talent (+2%/rang) tovább növeli — a spell-mesterség
+> (`/spell upgrade`) bónusza fölött. A szint+talent bónusz felső korlátja +50%.
+
 ### ⚡ Az Erő-csík (osztály-erőforrás) — a fő költség
 Minden kasztnak van egy **erőforrása** (Mana, Düh, Energia, Fókusz, Csi…), amit a HUD oldalsávban
 egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**

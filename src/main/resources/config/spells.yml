@@ -40,6 +40,32 @@ spells:
     # felrakott effektek IDŐTARTAMÁT (a költséget/self-damage-et NEM).
     power-per-rank: 0.05                # rangonként +5% erő
     max-power-multiplier: 1.5           # max +50% erő (5. rangon)
+  # Közelharci katalizátor: a felsorolt kasztok a kezükben tartott kardot/baltát is
+  # katalizátorként használhatják (jobb katt = cast, sunyítva jobb katt = varázskönyv,
+  # sunyítva karlengetés = spell-váltás). A kaszt-katalizátor item továbbra is működik.
+  melee-catalyst:
+    enabled: true
+    classes: [warrior, paladin, death_knight, monk, demon_hunter]
+    materials:
+      - WOODEN_SWORD
+      - STONE_SWORD
+      - IRON_SWORD
+      - GOLDEN_SWORD
+      - DIAMOND_SWORD
+      - NETHERITE_SWORD
+      - WOODEN_AXE
+      - STONE_AXE
+      - IRON_AXE
+      - GOLDEN_AXE
+      - DIAMOND_AXE
+      - NETHERITE_AXE
+  # Dinamikus spell-skálázás: a spell-erő a kaszt-szinttel és a 'spell-power' effektű
+  # talentekkel nő, a mastery-szorzó FELETT:
+  #   erő = mastery * (1 + min(max-bonus-percent, szint*per-level-percent + talent-bónusz) / 100)
+  dynamic-scaling:
+    enabled: true
+    per-level-percent: 0.5     # kaszt-szintenként +0,5% spell-erő
+    max-bonus-percent: 50      # a szint+talent bónusz felső korlátja (%)
   # Kombók: ha az adott időablakon belül a 'first' után a 'second' spellt sütöd el,
   # a második gyorsabban épül fel (cooldown-visszatérítés) + látvány.
   combos:
