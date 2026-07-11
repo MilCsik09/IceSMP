@@ -489,9 +489,35 @@ public final class IceSMPCore {
         schedulePetCombat();
         registerPlaceholders();
         registerNpcQuestBridge();
+        applyWorldGameRules();
 
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
+    }
+
+    /**
+     * Applies the configured client gamerules to every loaded world (and to worlds loaded later,
+     * via {@link hu.taliann.icesmp.listeners.WorldGameRuleListener}). Currently just disables the
+     * vanilla 1.21.6+ Locator Bar, which otherwise draws a direction pip above the XP bar and
+     * clashes with the plugin's own HUD. Looked up by name so it degrades gracefully on server
+     * versions where the gamerule does not exist.
+     */
+    private void applyWorldGameRules() {
+        if (!configManager.getBoolean("settings.disable-locator-bar", true)) {
+            return;
+        }
+        for (final org.bukkit.World world : Bukkit.getWorlds()) {
+            disableLocatorBar(world);
+        }
+    }
+
+    /** Sets the locatorBar gamerule to false on one world, no-op if the gamerule is unavailable. */
+    @SuppressWarnings("unchecked")
+    static void disableLocatorBar(final org.bukkit.World world) {
+        final org.bukkit.GameRule<?> rule = org.bukkit.GameRule.getByName("locatorBar");
+        if (rule != null && rule.getType() == Boolean.class) {
+            world.setGameRule((org.bukkit.GameRule<Boolean>) rule, false);
+        }
     }
 
     /**
@@ -842,6 +868,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SiegeWeaponListener(plugin, siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
         pluginManager.registerEvents(new RitualListener(ritualManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);
             pluginManager.registerEvents(new RelicInactivityListener(relicManager), plugin);

@@ -73,6 +73,9 @@ pluginba, hogy ne legyen kósza extra jar.
 ## 6. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
 
 Az XP-sávon forgáskor megjelenő, játékost jelző pötty NEM plugin: a Minecraft 1.21.6-ban
-bevezetett **Locator Bar** (a közeli játékosok irány-jelzője, az XP-sáv helyén). Kikapcsolás:
-`/gamerule locatorBar false` (világonként), vagy szerver-szinten a paper/vanilla waypoint
-beállításokkal.
+bevezetett **Locator Bar** (a közeli játékosok irány-jelzője, az XP-sáv helyén).
+
+**Az IceSMP ezt már magától kikapcsolja:** indításkor és minden világ-betöltéskor a `locatorBar`
+gamerule-t `false`-ra állítja minden világon (`config/general.yml` → `settings.disable-locator-bar`,
+alapból `true`). Ha mégis meg akarod hagyni a vanilla viselkedést, állítsd `false`-ra a config-ban.
+Kézi kikapcsolás továbbra is: `/gamerule locatorBar false` (világonként).
