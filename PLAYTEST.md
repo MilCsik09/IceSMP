@@ -248,10 +248,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Rolled-affix mestermunka:** mestermunkát craftolva a tárgy VÉLETLEN minőséget ([Közönséges]…
       [Legendás]) + random attribútum-affixeket kap (a leírásban); két craft nem ugyanaz. Shift-click
       bulk-craft alap-statú marad.
-- [ ] **WoW-mob loot:** sima szörnyek kis eséllyel (`loot.mob-drop.chance`) rolled `drop`-tier
-      (gyengébb) tárgyat dobnak **random névvel** (pl. „[Ritka] Rozsdás Penge") és akár **negatív
-      affixszel** (átok); **világboss / invázió-bajnok / Vad Hajsza** garantáltan `boss`-tier
-      (craft-szintű) tárgyat. Szakma által craftolt (nevesített) mestermunka SOHA nem esik mobból.
+- [ ] **WoW-mob loot (loot-tábla):** sima szörnyek `loot.mob-drop.chance` eséllyel dobnak egy
+      táblasort: rolled `drop`-tier felszerelést (random névvel, akár Ócska/negatív affix), sokféle
+      nyersanyagot/értéket, vagy **csak-mobból-eső egyedi alapanyagot** (Vad Esszencia / Szörny Mag
+      / Árnyékpor). Boss/event-mob garantáltan `boss`-tier tárgyat + boss-only Ősi Ereklyeszilánkot.
+      Szakma-craftolt nevesített tárgy SOHA nem esik mobból.
+- [ ] **Mob-only alapanyag receptekben:** a mob-only egyedi alapanyagokat igénylő receptek
+      (pl. Vadbőr Vért, Ereklyepenge) csak akkor craftolhatók, ha begyűjtötted a mobból-eső anyagot;
+      a recept-könyv kékkel jelzi a hiányt.
 
 ### 4.8 Gazdaság ✅
 - [ ] `/bank deposit|withdraw|balance`, `/currency balance|pay|exchange|rates`, `/currency set` (admin).

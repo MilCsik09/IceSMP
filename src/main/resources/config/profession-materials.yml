@@ -34,3 +34,20 @@ profession-materials:
     material: GLOWSTONE_DUST
     display-name: "Rúnapor"
     lore: [ "Bűvölő köztes alapanyag.", "Csúcs-bűvölésekhez." ]
+  # --- CSAK mobból eső egyedi alapanyagok (a szakma-receptek igénylik) ---
+  vad_esszencia:
+    material: PHANTOM_MEMBRANE
+    display-name: "Vad Esszencia"
+    lore: [ "Csak szörnyekből esik.", "Sok szakma-recept alapanyaga." ]
+  szorny_mag:
+    material: ECHO_SHARD
+    display-name: "Szörny Mag"
+    lore: [ "Csak erősebb szörnyekből esik.", "Erős tárgyak magja." ]
+  arnyekpor:
+    material: SCULK_VEIN
+    display-name: "Árnyékpor"
+    lore: [ "Csak szörnyekből esik.", "Sötét bűvölések és mérgek anyaga." ]
+  osi_ereklyeszilank:
+    material: NETHER_STAR
+    display-name: "Ősi Ereklyeszilánk"
+    lore: [ "Csak világbossból / nehéz eventből esik.", "A legendás receptek szíve." ]

@@ -824,3 +824,49 @@ profession-recipes:
     category: "Fegyver (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:1", "unique:tiszta_vasesszencia:2", "unique:runapor:2" ]
+
+  # =========================================================
+  # --- Mob-only egyedi alapanyagot igénylő receptek ---
+  #   (vad_esszencia / szorny_mag / arnyekpor / osi_ereklyeszilank
+  #    CSAK mobból esnek — lásd loot.yml + profession-materials.yml)
+  # =========================================================
+  vadbor_pancel:
+    profession: armorer
+    level: 28
+    learn: level
+    display-name: "Vadbőr Vért"
+    category: "Páncél"
+    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted }
+    ingredients: [ "DIAMOND:5", "unique:vad_esszencia:3" ]
+  eszencias_fozet:
+    profession: alchemist
+    level: 26
+    learn: level
+    display-name: "Esszenciás Főzet"
+    category: "Ital"
+    result: { material: POTION, amount: 1 }
+    ingredients: [ "GLASS_BOTTLE:1", "unique:vad_esszencia:2" ]
+  arnyekmereg:
+    profession: alchemist
+    level: 38
+    learn: blueprint
+    display-name: "Árnyékméreg"
+    category: "Ital (tervrajz)"
+    result: { material: SPLASH_POTION, amount: 1 }
+    ingredients: [ "GLASS_BOTTLE:1", "unique:arnyekpor:2", "SPIDER_EYE:1" ]
+  szornymag_talizman:
+    profession: enchanter
+    level: 40
+    learn: blueprint
+    display-name: "Szörnymag Talizmán"
+    category: "Bűvölés (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1 }
+    ingredients: [ "BOOK:1", "unique:szorny_mag:2", "unique:runapor:2" ]
+  ereklye_penge:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    display-name: "Ereklyepenge"
+    category: "Fegyver (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
+    ingredients: [ "NETHERITE_INGOT:2", "unique:osi_ereklyeszilank:1", "unique:szorny_mag:3" ]

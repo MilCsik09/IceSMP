@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -32,12 +33,14 @@ public final class MobLootListener implements Listener {
     private final WildHuntManager wildHuntManager;
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory;
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog;
+    private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
 
     public MobLootListener(final ConfigManager configManager, final ItemRarityService affixService,
                            final WorldBossManager worldBossManager, final InvasionManager invasionManager,
                            final WildHuntManager wildHuntManager,
                            final hu.taliann.icesmp.items.BlueprintItemFactory blueprintFactory,
-                           final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog) {
+                           final hu.taliann.icesmp.managers.ProfessionRecipeCatalog recipeCatalog,
+                           final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         this.configManager = configManager;
         this.affixService = affixService;
         this.worldBossManager = worldBossManager;
@@ -45,6 +48,7 @@ public final class MobLootListener implements Listener {
         this.wildHuntManager = wildHuntManager;
         this.blueprintFactory = blueprintFactory;
         this.recipeCatalog = recipeCatalog;
+        this.uniqueMaterials = uniqueMaterials;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -72,19 +76,79 @@ public final class MobLootListener implements Listener {
         final String path = bossTier ? "loot.boss-drop" : "loot.mob-drop";
         final String tier = bossTier ? ItemRarityService.TIER_BOSS : ItemRarityService.TIER_DROP;
 
-        final double chance = configManager.getDouble(path + ".chance", bossTier ? 1.0D : 0.02D);
+        final double chance = configManager.getDouble(path + ".chance", bossTier ? 1.0D : 0.15D);
         if (ThreadLocalRandom.current().nextDouble() >= chance) {
             return;
         }
 
-        final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
-        if (base == null) {
-            return;
+        final ItemStack drop = rollTable(path, tier);
+        if (drop != null) {
+            event.getDrops().add(drop);
         }
-        // Mob loot always gets a random name (never a designed masterwork name); negative affixes
-        // are possible on the weaker tiers (config negative-affix-chance).
-        final ItemStack rolled = affixService.roll(new ItemStack(base), tier, true);
-        event.getDrops().add(rolled);
+    }
+
+    /**
+     * Picks one entry from the source's weighted loot table (config {@code <path>.table}) and builds
+     * the drop. Entry {@code type}: {@code gear} (affix-rolled gear from {@code <path>.gear-pool}),
+     * {@code material} (a plain item {@code item} × {@code min..max}), or {@code unique} (a unique
+     * material {@code id} — including mob-only ones that recipes need). Falls back to the gear-pool
+     * when no table is configured.
+     */
+    private ItemStack rollTable(final String path, final String tier) {
+        final List<Map<?, ?>> table = configManager.getConfiguration() == null
+                ? List.of() : configManager.getConfiguration().getMapList(path + ".table");
+        if (table.isEmpty()) {
+            final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
+            return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
+        }
+
+        int total = 0;
+        for (final Map<?, ?> entry : table) {
+            total += toInt(entry.get("weight"), 1);
+        }
+        int roll = ThreadLocalRandom.current().nextInt(Math.max(1, total));
+        Map<?, ?> chosen = table.get(0);
+        for (final Map<?, ?> entry : table) {
+            roll -= toInt(entry.get("weight"), 1);
+            if (roll < 0) {
+                chosen = entry;
+                break;
+            }
+        }
+
+        final String type = String.valueOf(chosen.getOrDefault("type", "gear")).toLowerCase(Locale.ROOT);
+        switch (type) {
+            case "material" -> {
+                final Material material = Material.matchMaterial(String.valueOf(chosen.get("item")).toUpperCase(Locale.ROOT));
+                if (material == null || material.isAir()) {
+                    return null;
+                }
+                final int min = toInt(chosen.get("min"), 1);
+                final int max = Math.max(min, toInt(chosen.get("max"), min));
+                return new ItemStack(material, min + ThreadLocalRandom.current().nextInt(max - min + 1));
+            }
+            case "unique" -> {
+                final int min = toInt(chosen.get("min"), 1);
+                final int max = Math.max(min, toInt(chosen.get("max"), min));
+                return uniqueMaterials.create(String.valueOf(chosen.get("id")),
+                        min + ThreadLocalRandom.current().nextInt(max - min + 1));
+            }
+            default -> {
+                final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
+                return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
+            }
+        }
+    }
+
+    private static int toInt(final Object value, final int fallback) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return value == null ? fallback : Integer.parseInt(String.valueOf(value).trim());
+        } catch (final NumberFormatException exception) {
+            return fallback;
+        }
     }
 
     private void rollBlueprintDrop(final EntityDeathEvent event, final boolean bossTier) {

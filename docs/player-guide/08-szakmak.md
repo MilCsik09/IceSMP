@@ -130,10 +130,12 @@ a bónuszok a leírásban látszanak (negatív affix pirossal).
 
 **Balansz — a forrás dönti el, MELY raritások eshetnek:**
 - 🧑‍🏭 **Szakma-craft:** nincs Ócska, kiegyensúlyozott (Közönséges→Legendás), **megtervezett névvel**.
-- 👹 **Mob-drop:** eshet **Ócska** is (csak átkos affix!), ritkán jó — **random, raritáshoz illő
-  névvel** (pl. „[Ócska] Rozsdás Vért"). A szakma által craftolt (nevesített) tárgyak **soha nem
-  esnek mobból**.
-- 🐉 **Világboss / nehéz event loot:** magas raritások (Ritka→**Ereklye**) — a legjobb forrás.
+- 👹 **Mob-drop:** a szörnyek **sokféle** tárgyat ejtenek egy súlyozott loot-tábláról: egyedi
+  rolled felszerelést (eshet **Ócska** is, csak átkos affixszel!), mindenféle nyersanyagot/értéket,
+  és **csak-mobból-eső egyedi alapanyagokat** (*Vad Esszencia*, *Szörny Mag*, *Árnyékpor*), amiket a
+  szakma-receptek igényelnek. A szakma által craftolt (nevesített) tárgyak **soha nem esnek mobból**.
+- 🐉 **Világboss / nehéz event loot:** magas raritások (Ritka→**Ereklye**) + boss-only egyedi
+  alapanyag (*Ősi Ereklyeszilánk*, a legendás receptekhez) — a legjobb forrás.
 
 ## Talentpontok a szakmákból
 
