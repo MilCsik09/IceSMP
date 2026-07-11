@@ -135,9 +135,41 @@ territory:
     # Action bar üzenet területhatár átlépésekor.
     enabled: true
   protection:
-    # VÉDETT zónák (főváros, védett város/frakcióterület): senki sem építhet — ez a map pajzsa,
-    # mindig aktív, csak az admin-bypass kerüli meg (icesmp.admin.territory.bypass).
+    # Fő kapcsoló a VÉDETT zónákra (protected-faction/protected-city/capital). Ha false, a védett
+    # zónák MINDEN szabálya kikapcsol. (A normál frakcióterület szabályai külön, a rules alatt.)
     protect-zones: true
-    # NORMÁL frakcióterületen csak a frakció tagjai építhetnek (mások nem).
-    # (Régi kulcs: 'enabled' — ha csak az van beállítva, azt vesszük figyelembe.)
-    faction-members-only: true
+    # Zónatípusonként állítható, mi TILTOTT (true = védve) az adott zónában:
+    #   build       - blokk törése/rakása, vödör, kép-/festménykeret, armor stand
+    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik)
+    #   interact    - konténer/ajtó/gomb/kar/műhely jobbklikk
+    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik)
+    #   pvp         - játékos↔játékos sebzés a zónán belül (biztonságos zóna)
+    #   explosions  - robbanás (creeper/TNT/kristály) blokk-kára
+    #   fire        - tűz gyújtása/terjedése/égése
+    # Megkerülő jogok: icesmp.admin.territory.bypass (mindent + PvP),
+    #                  icesmp.territory.builder (build + interact védett zónában is).
+    rules:
+      faction:              # normál frakcióterület
+        build: true         # nem-tag nem építhet; a frakció tagjai igen
+        interact: false     # jobbklikk/konténer szabadon (állítsd true-ra zárt frakcióvárosokhoz)
+        pvp: false          # háborús szerver: a frakcióterületen szabad a harc
+        explosions: false
+        fire: false
+      protected-faction:    # védett frakcióterület (falak, műemlékek): senki nem építhet
+        build: true
+        interact: true
+        pvp: true
+        explosions: true
+        fire: true
+      protected-city:       # védett város (jellemzően semleges): senki nem építhet
+        build: true
+        interact: true
+        pvp: true
+        explosions: true
+        fire: true
+      capital:              # főváros (+ bank/valutaváltó): senki nem építhet
+        build: true
+        interact: true
+        pvp: true
+        explosions: true
+        fire: true

@@ -212,9 +212,11 @@ mentén bejárt pontokból `/territory pos` → `/territory create`). Négy **z�
 térképet: **frakcióterület** (csak a frakció tagjai építhetnek, de ide a játékosok
 **claimelhetnek** is), valamint a **védett frakcióterület**, **védett város** és **főváros**,
 ahol **senki** sem építhet és claimelni sem lehet. A határátlépést a játékosok típusfüggő action
-bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). A védett zónák védelme alapból
-aktív; a frakcióterület tag-only építése a `territory.protection.faction-members-only` kapcsolóval
-állítható.
+bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). Zónatípusonként **külön
+állítható**, mi tiltott (`territory.protection.rules`): **build**, **interact**, **pvp**,
+**explosions**, **fire** — így egy védett város teljes biztonságos zóna, egy frakcióváros viszont
+csak a nem-tagok építését tiltja. Megkerülő jogok: `icesmp.admin.territory.bypass` (minden) és
+`icesmp.territory.builder` (építő-jog védett zónában is).
 
 ---
 

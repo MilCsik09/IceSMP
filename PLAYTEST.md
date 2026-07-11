@@ -63,7 +63,8 @@ A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb
 | `icesmp.faction.admin` | frakció-kényszerítés, király/kassza admin-műveletek |
 | `icesmp.admin.quest` | küldetés force-complete + a `/quest admin` szerkesztő |
 | `icesmp.relic.admin` | relikvia adása |
-| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / építésvédelem megkerülése |
+| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / zóna-védelem teljes megkerülése (build+interakció+PvP) |
+| `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
 | `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz |
 
@@ -311,10 +312,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       protected-city <frakció> <id>` lezárja (≥3 pont kell). Belül vagy-e a poligonon: `/territory info`.
 - [ ] Területhatár átlépésekor típusfüggő action bar üzenet jön (főváros / védett város / védett
       frakcióterület / frakcióterület).
-- [ ] **Védett zóna** (capital / protected-city / protected-faction): **senki** nem tud
-      építeni/bontani (`protect-zones: true`, alap), `icesmp.admin.territory.bypass` joggal igen.
-- [ ] **Frakcióterület** (`faction`): csak az adott frakció tagja épít (`faction-members-only: true`),
-      idegen nem; bypass-szal igen.
+- [ ] **Védett zóna** (capital / protected-city / protected-faction) — alapból teljes védelem:
+  - [ ] **build**: senki nem tör/rak blokkot, nem használ vödröt, nem szed le képkeretet/armor standot.
+  - [ ] **interact**: konténer/ajtó/gomb/kar/műhely jobbklikk tiltott.
+  - [ ] **pvp**: játékos↔játékos sebzés (közelharc ÉS nyíl/lövedék) blokkolva, a támadó action-bar üzenetet kap.
+  - [ ] **explosions**: creeper/TNT nem tör blokkot a zónában.
+  - [ ] **fire**: tűzcsiholó nem gyújt, a tűz nem terjed/nem éget a zónában.
+- [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
+      explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
+- [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);
+      `icesmp.territory.builder` védett zónában is építhet/interaktálhat, de PvP-zni NEM.
+- [ ] **Kill-switch:** `protect-zones: false` → a védett zónák minden szabálya kikapcsol.
 - [ ] **Claim tiltás:** védett zónában a `/claim` és `/claim area` elutasítva
       (`claim-in-protected-zone`); **normál frakcióterületen viszont ENGEDETT** (alapból
       `claims.block-in-territory: false`). Kis poligon-zóna szélén is véd (sarok+közép próbák).

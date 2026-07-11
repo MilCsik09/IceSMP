@@ -24,12 +24,34 @@ A térkép védelme több **zónatípusra** épül:
 | **Főváros** | **Senki** (egyben a bank/valutaváltó helyszíne) | ❌ Nem |
 
 > ⛨ A **védett zónák** (védett város/frakcióterület és a főváros) a térkép **pajzsa**: ott
-> **senki** sem építhet vagy bonthat, és **claimelni sem lehet**. Ez a védelem mindig aktív —
-> csak az adminok „bypass" joga kerüli meg.
+> alapból **senki** sem építhet/bonthat, nincs interakció, **nincs PvP**, robbanás és tűz sem
+> tesz kárt, és **claimelni sem lehet**. Csak az admin/builder jogok kerülik meg.
 
 **Frakcióterületen** csak az adott frakció tagjai építhetnek (mások nem), viszont ide a
 játékosok **saját birtokot (`/claim`) is foglalhatnak** — így a claim rendszer és a
 territórium rendszer együtt működik.
+
+## Mi tiltható zónánként?
+
+Az adminok **zónatípusonként külön-külön** állíthatják, mi tiltott az adott zónában
+(`territory.protection.rules` a configban):
+
+| Szabály | Mit tilt le | Frakcióterület alapból | Védett zóna alapból |
+|---|---|---|---|
+| **build** | blokk törése/rakása, vödör, kép-/festménykeret, armor stand | 🔒 nem-tagoknak | 🔒 mindenkinek |
+| **interact** | konténer/ajtó/gomb/kar/műhely jobbklikk | 🔓 szabad | 🔒 mindenkinek |
+| **pvp** | játékos↔játékos sebzés (biztonságos zóna) | 🔓 szabad (harc mehet) | 🔒 tilos |
+| **explosions** | creeper/TNT/kristály blokk-kára | 🔓 mehet | 🔒 tiltva |
+| **fire** | tűz gyújtása/terjedése/égése | 🔓 mehet | 🔒 tiltva |
+
+> Így pl. egy „védett város" teljes biztonságos zóna (se rombolás, se PvP, se tűz), egy
+> frakcióváros viszont csak a nem-tagok építését tiltja, de a harc és a nyílt interakció megy.
+
+### Megkerülő jogok (bypass)
+
+- **`icesmp.admin.territory.bypass`** — mindent megkerül (build, interakció, **PvP** is).
+- **`icesmp.territory.builder`** — **építő-jog**: a védett zónában is **építhet és
+  interaktálhat** (de a PvP-tiltás rá is vonatkozik). Az építő-csapatnak ideális, admin-jog nélkül.
 
 > Ha valahol nem tudsz blokkot lerakni/törni: vagy egy másik frakció területén állsz, vagy egy
 > védett zónában (főváros/védett város).
