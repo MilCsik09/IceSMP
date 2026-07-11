@@ -1,217 +1,1897 @@
-# Spell-balansz felülbírálások — CSAK az itt megadott kulcsok írják felül a kódbeli értéket.
+# Spell-balansz — MINDEN regisztrált spell explicit entry-vel, a kódbeli alapértékekkel.
+# Az itt szereplő érték felülbírálja a kódbelit; ha megegyezik vele, nincs hatása (no-op).
 #
-# A spell id a regisztrációs (SpellRegistry) id — ugyanaz, mint a /spell parancsokban és a
-# messages.yml "spell.<id>.name" kulcsaiban használt azonosító.
+# 1. DEKLARATÍV spellek (ConfiguredSpell, SpellCatalog): a felülbírálás szerverindításkor
+#    épül be — MÓDOSÍTÁS UTÁN SZERVER-ÚJRAINDÍTÁS KELL.
+# 2. STATEFUL (saját osztályú) spellek: cast-időben olvassák a fájlt, a /icesmp reload
+#    AZONNAL érvényesíti őket (cooldown és cost-amount ezeknél is állítható).
 #
-# KÉT spell-csoport van, mindkettő ugyanezt a fájlt olvassa:
-#
-# 1. DEKLARATÍV spellek (ConfiguredSpell, ~343 db, SpellCatalog): a felülbírálás a
-#    szerverindítás egyetlen applySpellBalanceOverrides() lépésénél épül be az újraregisztrált
-#    spell-példányba. A spellek csak szerverindításkor regisztrálódnak; a /icesmp reload NEM
-#    regisztrálja újra őket, tehát MÓDOSÍTÁS UTÁN SZERVER-ÚJRAINDÍTÁS KELL.
-#
-# 2. STATEFUL (kódba írt osztályú, saját state-et tartó) spellek — druidformák, totemek,
-#    beast master / poisoner / guardian jelspellek stb., a spells/ csomagban, ~29 migrált
-#    osztály — cast-időben olvassák ezt a fájlt a BaseSpell.balance()/balanceInt() segédeken
-#    keresztül, ezért rájuk a /icesmp reload IS AZONNAL HAT (nem kell újraindítás).
-#
-# Ismeretlen spell id (elgépelés) esetén a szerver indításkor WARNING-ot ír a logba.
+# Felülbírálható kulcsok (deklaratív): cooldown, cost-amount, range, radius, damage,
+# self-damage, heal-self, feed-self, ignite-ticks, freeze-ticks, knockback.
+# A stateful spelleknél a saját mechanika-kulcsaik + cooldown + cost-amount állíthatók.
+# Ismeretlen spell id esetén a szerver indításkor WARNING-ot ír a logba.
 spell-balance:
-  # példa (alapból kikommentezve — a kódbeli érték él); mana_dart deklaratív (ConfiguredSpell) spell:
-  # mana_dart:
-  #   damage: 8.0
-  #   cooldown: 12
 
-  # ---------------------------------------------------------------------------------------------
-  # STATEFUL spellek referencia-blokkja — a lenti kulcsok mindegyike felülbírálható, cast-időben
-  # (reload-barát). Csak azok a kulcsok szerepelnek, amiket a hozzá tartozó osztály ténylegesen
-  # a balance()/balanceInt() segéden keresztül olvas; minden más a kódban marad (kozmetikai
-  # részecske/hang-értékek, vagy szándékosan nem konfigurálható mechanizmus-konstansok, pl. a
-  # root JUMP_BOOST=128 "nem tud ugrani" szint-jelzője).
-  # ---------------------------------------------------------------------------------------------
+  # ===== TalentSpells =====
+  talent_surge:
+    cooldown: 300
+    cost-amount: 100  # XP
 
-  # angry_chicken:
-  #   damage: 8.0
-  #   speed: 0.4
-  #   hit-radius: 1.1
-  #   duration-ticks: 40
+  # ===== Wizard =====
+  mana_dart:
+    cooldown: 10
+    cost-amount: 8  # XP
+    range: 14
+    damage: 3
+  frost_touch:
+    cooldown: 45
+    cost-amount: 15  # XP
+    range: 8
+    freeze-ticks: 100
+  arcane_shield:
+    cooldown: 90
+    cost-amount: 30  # XP
+  arcane_nova:
+    cooldown: 90
+    cost-amount: 40  # XP
+    radius: 5
+    damage: 3
+    knockback: 1.1
+  gravity_well:
+    cooldown: 150
+    cost-amount: 60  # XP
+    radius: 6
 
-  # antidote:
-  #   duration-ticks: 100
-  #   amplifier: 0
+  # ===== Warrior =====
+  battle_shout:
+    cooldown: 90
+    cost-amount: 4  # HUNGER
+  heroic_leap:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+  pommel_strike:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    range: 4
+    damage: 3
+  second_wind:
+    cooldown: 180
+    cost-amount: 8  # HUNGER
+    heal-self: 6
+  whirlwind:
+    cooldown: 60
+    cost-amount: 6  # HUNGER
+    radius: 4
+    damage: 4
+    knockback: 0.7
+  iron_skin:
+    cooldown: 150
+    cost-amount: 8  # HUNGER
+  intimidate:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 6
 
-  # armament:
-  #   duration-ticks: 2400
+  # ===== Archer =====
+  hunters_mark:
+    cooldown: 30
+    cost-amount: 2  # HUNGER
+    range: 20
+  disengage:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+  snare:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+    range: 14
+  camouflage:
+    cooldown: 120
+    cost-amount: 5  # HUNGER
+  swift_steps:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
 
-  # bee_swarm:
-  #   range: 12.0
-  #   count: 3
-  #   duration-ticks: 400
+  # ===== Assassin =====
+  adrenaline:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  hamstring:
+    cooldown: 35
+    cost-amount: 4  # HUNGER
+    range: 5
+    damage: 2
+  blackout:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    range: 10
+  evasion:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  garrote:
+    cooldown: 90
+    cost-amount: 3  # HEALTH
+    range: 3.5
+    damage: 5
+  shadow_dash:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+  death_mark:
+    cooldown: 120
+    cost-amount: 3  # HEALTH
+    range: 15
 
-  # blink:
-  #   distance: 8.0
-  # phase_blink:
-  #   distance: 6.0
+  # ===== Elementalist =====
+  frost_nova:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 6
+    freeze-ticks: 120
+  thunder_strike:
+    cooldown: 120
+    cost-amount: 80  # XP
+    range: 18
+    damage: 6
+  ember_storm:
+    cooldown: 120
+    cost-amount: 70  # XP
+    radius: 6
+    damage: 2
+    ignite-ticks: 80
+  riptide_pull:
+    cooldown: 60
+    cost-amount: 45  # XP
+    range: 14
+  stone_skin:
+    cooldown: 150
+    cost-amount: 60  # XP
+  elemental_overload:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 5
+    ignite-ticks: 60
+    freeze-ticks: 80
+    knockback: 0.8
 
-  # bone_chill:
-  #   radius: 6.0
-  #   duration-ticks: 120
-  #   slowness-amplifier: 2
-  #   weakness-amplifier: 1
+  # ===== Necromancer =====
+  grave_grasp:
+    cooldown: 45
+    cost-amount: 2  # HEALTH
+    range: 10
+  soul_siphon:
+    cooldown: 90
+    cost-amount: 50  # XP
+    radius: 5
+    damage: 2
+    heal-self: 4
+  dread_aura:
+    cooldown: 120
+    cost-amount: 4  # HEALTH
+    radius: 6
+  plague_touch:
+    cooldown: 75
+    cost-amount: 3  # HEALTH
+    range: 6
+  death_pact:
+    cooldown: 150
+    cost-amount: 40  # XP
+    self-damage: 4
+  wraith_form:
+    cooldown: 180
+    cost-amount: 4  # HEALTH
+  soul_harvest:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 6
+    heal-self: 6
 
-  # bulwark:
-  #   duration-ticks: 200
-  #   amplifier: 1
+  # ===== Berserker =====
+  rage:
+    cooldown: 90
+    cost-amount: 4  # HEALTH
+  reckless_swing:
+    cooldown: 25
+    cost-amount: 4  # HUNGER
+    range: 4.5
+    damage: 6
+    self-damage: 2
+  blood_frenzy:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    self-damage: 2
+  ground_slam:
+    cooldown: 60
+    cost-amount: 6  # HUNGER
+    radius: 5
+    damage: 3
+  roar:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+    radius: 7
+  unstoppable:
+    cooldown: 150
+    cost-amount: 4  # HEALTH
+  savage_leap:
+    cooldown: 40
+    cost-amount: 4  # HUNGER
+  bloodbath:
+    cooldown: 150
+    cost-amount: 4  # HEALTH
+    radius: 5
+    damage: 5
+    heal-self: 4
+  berserk:
+    cooldown: 300
+    cost-amount: 12  # HUNGER
 
-  # confusion:
-  #   radius: 15.0
-  #   duration-ticks: 200
+  # ===== Guardian =====
+  taunt:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+    radius: 6
+  fortify:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  shield_wall:
+    cooldown: 150
+    cost-amount: 8  # HUNGER
+  healing_word:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 8
+    heal-self: 2
+  iron_bastion:
+    cooldown: 150
+    cost-amount: 7  # HUNGER
+  shield_charge:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+  aegis:
+    cooldown: 180
+    cost-amount: 8  # HUNGER
+    radius: 8
+  retribution:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    range: 5
+    damage: 4
+    knockback: 1.3
+  last_stand:
+    cooldown: 300
+    cost-amount: 10  # HUNGER
 
-  # double_jump:
-  #   jump-velocity: 0.8
+  # ===== Sharpshooter =====
+  deadeye:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+    radius: 20
+  headshot:
+    cooldown: 60
+    cost-amount: 40  # XP
+    range: 15
+    damage: 7
+  flare:
+    cooldown: 90
+    cost-amount: 4  # HUNGER
+    radius: 15
+  kneecap:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    range: 15
+    damage: 2
+  high_perch:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  perfect_focus:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  masterful_shot:
+    cooldown: 300
+    cost-amount: 80  # XP
+    range: 20
+    damage: 12
 
-  # druid_bear_form:
-  # druid_cat_form:
-  # druid_moonkin_form:
-  # druid_travel_form:
-  #   duration-ticks: 36000
+  # ===== BeastMaster =====
+  thick_hide:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  predator_senses:
+    cooldown: 90
+    cost-amount: 4  # HUNGER
+    radius: 18
+  stampede:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+  falcon_strike:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    range: 12
+    damage: 5
+  king_of_beasts:
+    cooldown: 300
+    cost-amount: 10  # HUNGER
+    radius: 7
 
-  # eagle_eye:
-  #   duration-ticks: 600
+  # ===== Poisoner =====
+  toxin_dart:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 12
+    damage: 1
+  acid_splash:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+    radius: 4
+    damage: 2
+  numbing_agent:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    range: 8
+  contagion:
+    cooldown: 120
+    cost-amount: 7  # HUNGER
+    radius: 6
+  paralytic_strike:
+    cooldown: 75
+    cost-amount: 6  # HUNGER
+    range: 4.5
+    damage: 2
+  toxic_cloud:
+    cooldown: 120
+    cost-amount: 7  # HUNGER
+    radius: 5
+  debilitating_poison:
+    cooldown: 90
+    cost-amount: 50  # XP
+    range: 8
+  deathcap:
+    cooldown: 240
+    cost-amount: 70  # XP
+    range: 8
+    damage: 4
 
-  # feast:
-  #   food-level: 20
-  #   saturation: 20.0
+  # ===== Phantom =====
+  ghost_step:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  haunt:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    range: 10
+  terror:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 6
+  cold_spot:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+    radius: 5
+    freeze-ticks: 100
+  ethereal_form:
+    cooldown: 180
+    cost-amount: 7  # HUNGER
+  phantom_grip:
+    cooldown: 75
+    cost-amount: 3  # HEALTH
+    range: 10
+    damage: 2
+  dread_whisper:
+    cooldown: 90
+    cost-amount: 3  # HEALTH
+    range: 12
+  spectre:
+    cooldown: 300
+    cost-amount: 4  # HEALTH
 
-  # featherfoot:
-  #   duration-ticks: 200
+  # ===== Druid =====
+  regrowth:
+    cooldown: 30
+    cost-amount: 40  # XP
+    heal-self: 6
+  barkskin:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  entangling_roots:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+    range: 8
+  thornlash:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 5
+    damage: 4
+  sunfire:
+    cooldown: 25
+    cost-amount: 35  # XP
+    range: 12
+    damage: 4
+    ignite-ticks: 60
+  wild_mushroom:
+    cooldown: 45
+    cost-amount: 40  # XP
+    heal-self: 5
+  cyclone:
+    cooldown: 50
+    cost-amount: 4  # HUNGER
+    range: 10
 
-  # friendship:
-  #   range: 16.0
-  #   target-cone: 0.6
+  # ===== Feral =====
+  savage_claw:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+  feral_charge:
+    cooldown: 35
+    cost-amount: 4  # HUNGER
+  maul:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    range: 4
+    damage: 7
+    knockback: 0.8
+  rampage:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+  primal_roar:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+    radius: 6
+  swipe:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    radius: 4
+    damage: 5
+  survival_instincts:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  rejuvenate:
+    cooldown: 60
+    cost-amount: 50  # XP
+    heal-self: 4
+  the_wild_hunt:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 8
+    knockback: 1
 
-  # gust:
-  #   radius: 5.0
-  #   knockback: 2.0
-  #   knockback-up: 0.45
+  # ===== Lunar =====
+  moonfire:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 16
+    damage: 5
+    ignite-ticks: 60
+  starsurge:
+    cooldown: 35
+    cost-amount: 45  # XP
+    range: 18
+    damage: 7
+  solar_beam:
+    cooldown: 60
+    cost-amount: 55  # XP
+    range: 14
+    damage: 6
+    ignite-ticks: 80
+  hurricane:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 3
+    knockback: 0.6
+  starfall:
+    cooldown: 120
+    cost-amount: 80  # XP
+    radius: 6
+    damage: 6
+  lunar_blessing:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 8
+    heal-self: 2
+  stellar_flare:
+    cooldown: 30
+    cost-amount: 40  # XP
+    range: 14
+    damage: 5
+    ignite-ticks: 40
+  celestial_alignment:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 8
 
-  # hide:
-  #   teleport-radius: 10
-  #   duration-ticks: 200
-  #   speed-amplifier: 1
+  # ===== Paladin =====
+  smite:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 14
+    damage: 5
+  flash_heal:
+    cooldown: 30
+    cost-amount: 40  # XP
+    heal-self: 5
+  devotion_aura:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  hammer_of_justice:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+    range: 8
+    damage: 3
+  consecration:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    radius: 5
+    damage: 2
+    ignite-ticks: 40
+  lay_on_hands:
+    cooldown: 150
+    cost-amount: 70  # XP
+    heal-self: 10
+  blessing_of_might:
+    cooldown: 120
+    cost-amount: 5  # HUNGER
+  holy_wrath:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 4
+    knockback: 0.8
+  divine_protection:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  radiance:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 8
+    heal-self: 3
 
-  # inner_focus:
-  #   duration-ticks: 100
-  #   resistance-amplifier: 5
-  #   regen-amplifier: 1
+  # ===== Holy =====
+  holy_light:
+    cooldown: 30
+    cost-amount: 45  # XP
+    heal-self: 8
+  beacon_of_light:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+    radius: 8
+    heal-self: 4
+  blessing_of_kings:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 8
+  divine_shield:
+    cooldown: 180
+    cost-amount: 8  # HUNGER
+  aura_mastery:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 8
+  guardian_angel:
+    cooldown: 150
+    cost-amount: 70  # XP
+    heal-self: 6
+  word_of_glory:
+    cooldown: 30
+    cost-amount: 45  # XP
+    radius: 6
+    heal-self: 5
+  avenging_wrath:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    heal-self: 8
 
-  # life_drain:
-  #   range: 10.0
-  #   damage: 4.0
-  #   heal: 4.0
+  # ===== Retribution =====
+  crusader_strike:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+  judgment:
+    cooldown: 30
+    cost-amount: 40  # XP
+    range: 16
+    damage: 6
+  blade_of_justice:
+    cooldown: 35
+    cost-amount: 4  # HUNGER
+    range: 6
+    damage: 7
+    knockback: 0.6
+  divine_storm:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    radius: 5
+    damage: 5
+    knockback: 0.5
+  holy_fire:
+    cooldown: 45
+    cost-amount: 50  # XP
+    range: 14
+    damage: 5
+    ignite-ticks: 60
+  wake_of_ashes:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 5
+    damage: 4
+    ignite-ticks: 80
+  zeal:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  final_verdict:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 9
+    knockback: 1
 
-  # lucky_star:
-  #   drain-amount: 20
-  #   dodge-chance: 0.40
+  # ===== DeathKnight =====
+  death_strike:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+    heal-self: 3
+  death_coil:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 14
+    damage: 5
+  chains_of_ice:
+    cooldown: 30
+    cost-amount: 3  # HUNGER
+    range: 12
+  blood_boil:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+    radius: 5
+    damage: 3
+  bone_shield:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+  icy_touch:
+    cooldown: 35
+    cost-amount: 35  # XP
+    range: 10
+    damage: 3
+    freeze-ticks: 60
+  rune_strike:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 7
+  anti_magic_shell:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  dark_command:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+    radius: 6
+  frost_fever:
+    cooldown: 45
+    cost-amount: 40  # XP
+    range: 12
+    damage: 2
+    freeze-ticks: 80
 
-  # multishot:
-  #   speed: 2.2
+  # ===== Blood =====
+  heart_strike:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+    heal-self: 2
+  vampiric_blood:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    heal-self: 6
+  marrowrend:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    range: 4
+    damage: 5
+  blood_mirror:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  rune_tap:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+    heal-self: 5
+  bonestorm:
+    cooldown: 120
+    cost-amount: 70  # XP
+    radius: 5
+    damage: 4
+    heal-self: 4
+    knockback: 0.5
+  dancing_rune_weapon:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 8
+    heal-self: 8
 
-  # primal_bond:
-  #   radius: 12.0
-  #   duration-ticks: 400
-  #   absorption-amplifier: 1
+  # ===== Frost =====
+  obliterate:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 8
+  frost_strike:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 5
+    damage: 6
+    freeze-ticks: 40
+  howling_blast:
+    cooldown: 45
+    cost-amount: 45  # XP
+    radius: 5
+    damage: 4
+    freeze-ticks: 80
+  pillar_of_frost:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  remorseless_winter:
+    cooldown: 75
+    cost-amount: 55  # XP
+    radius: 5
+    damage: 3
+    freeze-ticks: 60
+  frostscythe:
+    cooldown: 35
+    cost-amount: 4  # HUNGER
+    radius: 4
+    damage: 5
+    freeze-ticks: 40
+  chill_streak:
+    cooldown: 60
+    cost-amount: 50  # XP
+    range: 12
+    damage: 5
+    freeze-ticks: 60
+  breath_of_sindragosa:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 8
+    freeze-ticks: 120
 
-  # piercing_bolt:
-  #   count: 1
-  #   spread: 0.0
-  #   speed: 3.2
-  # arrow_storm:
-  #   count: 7
-  #   spread: 6.0
-  #   speed: 2.0
-  # dagger_throw:
-  #   count: 1
-  #   spread: 0.0
-  #   speed: 2.6
-  # fireball:
-  #   count: 1
-  #   spread: 0.0
-  #   speed: 1.8
-  # gale_burst:
-  #   count: 1
-  #   spread: 0.0
-  #   speed: 1.6
-  # bone_spear:
-  #   count: 1
-  #   spread: 0.0
-  #   speed: 3.0
-  # double_tap:
-  #   count: 2
-  #   spread: 2.0
-  #   speed: 2.8
-  # spectral_volley:
-  #   count: 5
-  #   spread: 5.0
-  #   speed: 2.4
+  # ===== Shaman =====
+  lightning_bolt:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 16
+    damage: 5
+  healing_surge:
+    cooldown: 30
+    cost-amount: 40  # XP
+    heal-self: 6
+  earth_shock:
+    cooldown: 30
+    cost-amount: 3  # HUNGER
+    range: 10
+    damage: 5
+    knockback: 0.6
+  flame_shock:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 12
+    damage: 4
+    ignite-ticks: 80
+  frost_shock:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 12
+    damage: 4
+    freeze-ticks: 60
+  lightning_shield:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  ancestral_spirit:
+    cooldown: 150
+    cost-amount: 70  # XP
+    heal-self: 8
+  wind_rush:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
 
-  # rain_dance:
-  #   radius: 6
-  #   vertical-range: 3
+  # ===== Elemental =====
+  lava_burst:
+    cooldown: 25
+    cost-amount: 40  # XP
+    range: 16
+    damage: 7
+    ignite-ticks: 80
+  chain_lightning:
+    cooldown: 35
+    cost-amount: 45  # XP
+    radius: 6
+    damage: 5
+  earthquake:
+    cooldown: 60
+    cost-amount: 55  # XP
+    radius: 6
+    damage: 4
+    knockback: 0.6
+  thunderstorm:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 4
+    knockback: 1
+  elemental_blast:
+    cooldown: 45
+    cost-amount: 50  # XP
+    range: 14
+    damage: 6
+    freeze-ticks: 40
+    ignite-ticks: 40
+  stormkeeper:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  ascendance_flame:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 8
+    ignite-ticks: 60
 
-  # root:
-  #   radius: 5.0
-  #   duration-ticks: 80
-  #   slowness-amplifier: 10
+  # ===== Enhancement =====
+  stormstrike:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 7
+  lava_lash:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+    ignite-ticks: 60
+  windfury:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  feral_spirit:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  crash_lightning:
+    cooldown: 45
+    cost-amount: 45  # XP
+    radius: 5
+    damage: 5
+  sundering:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    range: 5
+    damage: 7
+    knockback: 1
+  earthen_weapon:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  doom_winds:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 8
 
-  # shadowstep:
-  #   range: 15.0
-  #   distance: 1.5
-  #   duration-ticks: 60
+  # ===== Monk =====
+  tiger_palm:
+    cooldown: 15
+    cost-amount: 2  # HUNGER
+    range: 4.5
+    damage: 5
+  roll:
+    cooldown: 20
+    cost-amount: 2  # HUNGER
+  blackout_kick:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4
+    damage: 6
+    knockback: 0.5
+  provoke:
+    cooldown: 45
+    cost-amount: 3  # HUNGER
+    radius: 6
+  vivify:
+    cooldown: 30
+    cost-amount: 40  # XP
+    heal-self: 5
+  spinning_crane_kick:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    radius: 4
+    damage: 4
+  flying_serpent_kick:
+    cooldown: 35
+    cost-amount: 3  # HUNGER
+  expel_harm:
+    cooldown: 45
+    cost-amount: 45  # XP
+    radius: 4
+    damage: 2
+    heal-self: 4
+  leg_sweep:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+    radius: 5
+    knockback: 0.4
+  chi_wave:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 12
+    damage: 3
+    heal-self: 3
 
-  # smoke_bomb:
-  #   radius: 5.0
-  #   blindness-duration-ticks: 100
-  #   slowness-amplifier: 1
-  #   escape-speed-duration-ticks: 80
-  #   escape-speed-amplifier: 1
+  # ===== Windwalker =====
+  rising_sun_kick:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 5
+    damage: 7
+  fists_of_fury:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    radius: 5
+    damage: 6
+  whirling_dragon_punch:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    radius: 5
+    damage: 6
+    knockback: 0.6
+  touch_of_death:
+    cooldown: 90
+    cost-amount: 60  # XP
+    range: 5
+    damage: 9
+  storm_earth_fire:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+  flying_kick:
+    cooldown: 35
+    cost-amount: 3  # HUNGER
+  serenity:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 9
 
-  # raise_horde:
-  #   count: 4
-  #   duration-ticks: 900
-  #   range: 16.0
-  #   fallback-scan-radius: 12.0
-  # bone_archers:
-  #   count: 2
-  #   duration-ticks: 900
-  #   range: 16.0
-  #   fallback-scan-radius: 12.0
-  # panda_guard:
-  #   count: 2
-  #   duration-ticks: 800
-  #   range: 16.0
-  #   fallback-scan-radius: 12.0
-  # wild_pack:
-  #   count: 3
-  #   duration-ticks: 800
-  #   range: 16.0
-  #   fallback-scan-radius: 12.0
+  # ===== Brewmaster =====
+  keg_smash:
+    cooldown: 25
+    cost-amount: 4  # HUNGER
+    radius: 5
+    damage: 4
+  breath_of_fire:
+    cooldown: 45
+    cost-amount: 45  # XP
+    radius: 5
+    damage: 3
+    ignite-ticks: 60
+  purifying_brew:
+    cooldown: 45
+    cost-amount: 40  # XP
+    heal-self: 5
+  celestial_brew:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  fortifying_brew:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  clash:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+    radius: 6
+    knockback: 0.8
+  ironskin_brew:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  invoke_niuzao:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 7
 
-  # sun_dance:
-  #   radius: 8
-  #   vertical-range: 5
+  # ===== Priest =====
+  holy_smite:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 14
+    damage: 5
+  heal:
+    cooldown: 30
+    cost-amount: 40  # XP
+    heal-self: 6
+  power_word_shield:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+  renew:
+    cooldown: 30
+    cost-amount: 30  # XP
+  mind_blast:
+    cooldown: 30
+    cost-amount: 40  # XP
+    range: 14
+    damage: 6
+  shadow_word_pain:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 12
+  dispel:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  holy_nova:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    radius: 6
+    heal-self: 3
+  fade:
+    cooldown: 75
+    cost-amount: 4  # HUNGER
+  levitate:
+    cooldown: 60
+    cost-amount: 3  # HUNGER
 
-  # venom_strike:
-  #   range: 10.0
-  #   poison-duration-ticks: 160
-  #   poison-amplifier: 1
-  #   weakness-duration-ticks: 120
+  # ===== Discipline =====
+  power_word_radiance:
+    cooldown: 30
+    cost-amount: 45  # XP
+    radius: 8
+    heal-self: 4
+  penance:
+    cooldown: 35
+    cost-amount: 45  # XP
+    range: 14
+    damage: 5
+    heal-self: 3
+  pain_suppression:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  barrier:
+    cooldown: 150
+    cost-amount: 7  # HUNGER
+  atonement:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+    radius: 8
+  rapture:
+    cooldown: 120
+    cost-amount: 70  # XP
+  evangelism:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 8
+    heal-self: 8
 
-  # wisplight:
-  #   speed: 1.8
-  #   duration-ticks: 6000
+  # ===== Shadow =====
+  mind_flay:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 12
+    damage: 4
+  vampiric_touch:
+    cooldown: 30
+    cost-amount: 2  # HEALTH
+    range: 12
+    heal-self: 4
+  shadow_word_death:
+    cooldown: 45
+    cost-amount: 50  # XP
+    range: 12
+    damage: 8
+  mind_sear:
+    cooldown: 60
+    cost-amount: 55  # XP
+    radius: 5
+    damage: 4
+  void_eruption:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 5
+    knockback: 0.6
+  dispersion:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  void_torrent:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 8
 
-  # NINCS balansz-releváns konstans a saját osztályukban (a delegált manager/vanilla viselkedés
-  # állítja be az értékeket), ezért nincs kulcsuk:
-  #   healing_stream_totem, searing_totem, windfury_totem, earthbind_totem (ShamanTotemSpell —
-  #     a tényleges totem-hatásokat a TotemManager vezérli), wolf_call (vanília farkas-statok)
+  # ===== Warlock =====
+  shadow_bolt:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 16
+    damage: 5
+  corruption:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 12
+  curse_of_weakness:
+    cooldown: 30
+    cost-amount: 3  # HUNGER
+    range: 12
+  drain_life:
+    cooldown: 45
+    cost-amount: 35  # XP
+    range: 12
+    damage: 3
+    heal-self: 4
+  immolate:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 14
+    damage: 4
+    ignite-ticks: 80
+  fear:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+    range: 10
+  demon_armor:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  shadowburn:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 12
+    damage: 5
+    ignite-ticks: 40
+  curse_of_agony:
+    cooldown: 45
+    cost-amount: 2  # HEALTH
+    range: 12
+  demonic_circle:
+    cooldown: 45
+    cost-amount: 3  # HUNGER
+
+  # ===== Affliction =====
+  unstable_affliction:
+    cooldown: 25
+    cost-amount: 2  # HEALTH
+    range: 12
+  agony:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 12
+  malefic_grasp:
+    cooldown: 30
+    cost-amount: 40  # XP
+    range: 12
+    damage: 5
+  seed_of_corruption:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    radius: 5
+  siphon_life:
+    cooldown: 45
+    cost-amount: 45  # XP
+    range: 12
+    damage: 4
+    heal-self: 4
+  soul_rot:
+    cooldown: 90
+    cost-amount: 3  # HEALTH
+    radius: 6
+    damage: 3
+  darkglare:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 7
+
+  # ===== Destruction =====
+  chaos_bolt:
+    cooldown: 30
+    cost-amount: 45  # XP
+    range: 16
+    damage: 8
+  incinerate:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 14
+    damage: 5
+    ignite-ticks: 60
+  conflagrate:
+    cooldown: 30
+    cost-amount: 35  # XP
+    range: 12
+    damage: 4
+    ignite-ticks: 100
+  rain_of_fire:
+    cooldown: 60
+    cost-amount: 55  # XP
+    radius: 6
+    damage: 4
+    ignite-ticks: 80
+  cataclysm:
+    cooldown: 75
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 6
+    ignite-ticks: 60
+    knockback: 0.8
+  shadowfury:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+    radius: 6
+    damage: 3
+  summon_infernal:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 8
+    ignite-ticks: 100
+    knockback: 1
+
+  # ===== DemonHunter =====
+  demons_bite:
+    cooldown: 15
+    cost-amount: 2  # HUNGER
+    range: 4.5
+    damage: 5
+  fel_rush:
+    cooldown: 20
+    cost-amount: 2  # HUNGER
+  shear:
+    cooldown: 20
+    cost-amount: 2  # HUNGER
+    range: 4
+    damage: 5
+  immolation_aura:
+    cooldown: 45
+    cost-amount: 40  # XP
+    radius: 5
+    damage: 3
+    ignite-ticks: 60
+  consume_magic:
+    cooldown: 60
+    cost-amount: 3  # HUNGER
+  spectral_sight:
+    cooldown: 75
+    cost-amount: 3  # HUNGER
+  torment:
+    cooldown: 45
+    cost-amount: 3  # HUNGER
+    radius: 6
+  glide:
+    cooldown: 45
+    cost-amount: 2  # HUNGER
+  chaos_strike:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+  throw_glaive:
+    cooldown: 25
+    cost-amount: 30  # XP
+    range: 14
+    damage: 5
+
+  # ===== Havoc =====
+  blade_dance:
+    cooldown: 25
+    cost-amount: 4  # HUNGER
+    radius: 4
+    damage: 5
+  eye_beam:
+    cooldown: 60
+    cost-amount: 55  # XP
+    range: 16
+    damage: 7
+    ignite-ticks: 40
+  fel_barrage:
+    cooldown: 75
+    cost-amount: 55  # XP
+    radius: 6
+    damage: 5
+  metamorphosis_havoc:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  vengeful_retreat:
+    cooldown: 45
+    cost-amount: 3  # HUNGER
+  essence_break:
+    cooldown: 60
+    cost-amount: 55  # XP
+    range: 5
+    damage: 8
+  the_hunt:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 8
+
+  # ===== Vengeance =====
+  soul_cleave:
+    cooldown: 25
+    cost-amount: 4  # HUNGER
+    radius: 5
+    damage: 4
+    heal-self: 3
+  demon_spikes:
+    cooldown: 60
+    cost-amount: 4  # HUNGER
+  fiery_brand:
+    cooldown: 60
+    cost-amount: 45  # XP
+    range: 10
+    damage: 3
+    ignite-ticks: 80
+  sigil_of_flame:
+    cooldown: 45
+    cost-amount: 45  # XP
+    radius: 5
+    damage: 4
+    ignite-ticks: 60
+  fel_devastation:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 5
+    damage: 6
+    heal-self: 5
+  metamorphosis_veng:
+    cooldown: 150
+    cost-amount: 7  # HUNGER
+  fel_blade:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6
+    damage: 8
+    heal-self: 8
+
+  # ===== Evoker =====
+  living_flame:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 15
+    damage: 5
+    ignite-ticks: 40
+  azure_strike:
+    cooldown: 20
+    cost-amount: 30  # XP
+    range: 14
+    damage: 5
+  fire_breath:
+    cooldown: 45
+    cost-amount: 45  # XP
+    radius: 6
+    damage: 5
+    ignite-ticks: 60
+  wing_buffet:
+    cooldown: 30
+    cost-amount: 3  # HUNGER
+    radius: 5
+    knockback: 1
+  emerald_blossom:
+    cooldown: 45
+    cost-amount: 40  # XP
+    heal-self: 5
+  hover:
+    cooldown: 45
+    cost-amount: 2  # HUNGER
+  deep_breath:
+    cooldown: 90
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 6
+    ignite-ticks: 80
+  tail_swipe:
+    cooldown: 30
+    cost-amount: 3  # HUNGER
+    radius: 5
+    damage: 4
+    knockback: 0.8
+  obsidian_scales:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  verdant_embrace:
+    cooldown: 60
+    cost-amount: 50  # XP
+    heal-self: 8
+
+  # ===== Devastation =====
+  pyre:
+    cooldown: 30
+    cost-amount: 45  # XP
+    radius: 5
+    damage: 5
+    ignite-ticks: 60
+  disintegrate:
+    cooldown: 25
+    cost-amount: 40  # XP
+    range: 16
+    damage: 7
+  eternity_surge:
+    cooldown: 60
+    cost-amount: 55  # XP
+    radius: 6
+    damage: 6
+  shattering_star:
+    cooldown: 45
+    cost-amount: 50  # XP
+    range: 16
+    damage: 6
+  dragonrage:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+  firestorm:
+    cooldown: 75
+    cost-amount: 60  # XP
+    radius: 6
+    damage: 4
+    ignite-ticks: 80
+  eternity_breath:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 7
+    damage: 9
+    ignite-ticks: 80
+
+  # ===== Preservation =====
+  dream_breath:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+    radius: 8
+    heal-self: 3
+  spiritbloom:
+    cooldown: 45
+    cost-amount: 50  # XP
+    radius: 6
+    heal-self: 5
+  reversion:
+    cooldown: 30
+    cost-amount: 40  # XP
+    heal-self: 5
+  echo:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+  temporal_anomaly:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+  stasis:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  rewind:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 8
+    heal-self: 8
+
+  # ===== Ironbark =====
+  iron_bark:
+    cooldown: 60
+    cost-amount: 5  # HUNGER
+  thornguard:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+  mangle:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6
+  bristling_fur:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  frenzied_regen:
+    cooldown: 90
+    cost-amount: 60  # XP
+    heal-self: 6
+  guardian_swipe:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    radius: 4
+    damage: 4
+    knockback: 0.6
+  survival_instinct:
+    cooldown: 150
+    cost-amount: 7  # HUNGER
+  incarnation_bear:
+    cooldown: 300
+    cost-amount: 150  # XP
+
+  # ===== Restoration =====
+  rejuvenation:
+    cooldown: 20
+    cost-amount: 35  # XP
+  healing_touch:
+    cooldown: 30
+    cost-amount: 45  # XP
+    heal-self: 8
+  swiftmend:
+    cooldown: 30
+    cost-amount: 45  # XP
+    heal-self: 5
+  lifebloom:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    radius: 8
+    heal-self: 3
+  wild_bloom:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+    radius: 8
+  natures_cure:
+    cooldown: 60
+    cost-amount: 50  # XP
+    heal-self: 6
+  tranquility:
+    cooldown: 180
+    cost-amount: 8  # HUNGER
+    radius: 8
+    heal-self: 5
+  flourish:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 8
+    heal-self: 8
+
+  # ===== Tidal =====
+  healing_wave:
+    cooldown: 25
+    cost-amount: 40  # XP
+    heal-self: 7
+  riptide:
+    cooldown: 20
+    cost-amount: 35  # XP
+    heal-self: 4
+  chain_heal:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    radius: 8
+    heal-self: 3
+  healing_rain:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+    radius: 8
+  earth_shield:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  spirit_link:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+    radius: 8
+  ancestral_guidance:
+    cooldown: 120
+    cost-amount: 70  # XP
+    heal-self: 6
+  spirit_tide:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 8
+    heal-self: 8
+
+  # ===== Mistweaver =====
+  soothing_mist:
+    cooldown: 20
+    cost-amount: 35  # XP
+    heal-self: 5
+  enveloping_mist:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    radius: 8
+    heal-self: 3
+  renewing_mist:
+    cooldown: 25
+    cost-amount: 35  # XP
+  life_cocoon:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+  thunder_focus_tea:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
+  essence_font:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+    radius: 8
+  sheilun_blessing:
+    cooldown: 120
+    cost-amount: 70  # XP
+    heal-self: 8
+  revival:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 8
+    heal-self: 8
+
+  # ===== Protection =====
+  avengers_shield:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    range: 14
+    damage: 5
+    knockback: 0.6
+  shield_of_the_righteous:
+    cooldown: 25
+    cost-amount: 4  # HUNGER
+  consecrated_ground:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    radius: 5
+    damage: 3
+  ardent_defender:
+    cooldown: 90
+    cost-amount: 6  # HUNGER
+  hammer_of_the_righteous:
+    cooldown: 25
+    cost-amount: 4  # HUNGER
+    radius: 4
+    damage: 4
+  blessed_hammer:
+    cooldown: 30
+    cost-amount: 40  # XP
+    range: 8
+    damage: 4
+  guardian_of_kings:
+    cooldown: 150
+    cost-amount: 7  # HUNGER
+  final_stand:
+    cooldown: 300
+    cost-amount: 150  # XP
+
+  # ===== Stateful spellek (reload-barát) =====
+  angry_chicken:
+    cooldown: 30
+    cost-amount: 5  # HUNGER
+    damage: 8.0
+    speed: 0.4
+    hit-radius: 1.1
+    duration-ticks: 40
+  antidote:
+    cooldown: 90
+    cost-amount: 4  # HUNGER
+    duration-ticks: 100
+    amplifier: 0
+  armament:
+    cooldown: 300
+    cost-amount: 352  # XP
+    duration-ticks: 2400
+  bee_swarm:
+    cooldown: 180
+    cost-amount: 6  # HUNGER
+    range: 12.0
+    count: 3
+    duration-ticks: 400
+  bone_chill:
+    cooldown: 90
+    cost-amount: 25  # XP
+    radius: 6.0
+    duration-ticks: 120
+    slowness-amplifier: 2
+    weakness-amplifier: 1
+  bulwark:
+    cooldown: 120
+    cost-amount: 8  # HUNGER
+    duration-ticks: 200
+    amplifier: 1
+  confusion:
+    cooldown: 1200
+    cost-amount: 160  # XP
+    radius: 15.0
+    duration-ticks: 200
+  double_jump:
+    cooldown: 0
+    cost-amount: 3  # HUNGER
+    jump-velocity: 0.8
+  eagle_eye:
+    cooldown: 90
+    cost-amount: 4  # HUNGER
+    duration-ticks: 600
+  feast:
+    cooldown: 120
+    cost-amount: 352  # XP
+    food-level: 20
+    saturation: 20.0
+  featherfoot:
+    cooldown: 45
+    cost-amount: 1  # HUNGER
+    duration-ticks: 200
+  friendship:
+    cooldown: 45
+    cost-amount: 4  # HUNGER
+    range: 16.0
+    target-cone: 0.6
+  gust:
+    cooldown: 60
+    cost-amount: 30  # XP
+    radius: 5.0
+    knockback: 2.0
+    knockback-up: 0.45
+  hide:
+    cooldown: 480
+    cost-amount: 550  # XP
+    teleport-radius: 10
+    duration-ticks: 200
+    speed-amplifier: 1
+  inner_focus:
+    cooldown: 480
+    cost-amount: 20  # HUNGER
+    duration-ticks: 100
+    resistance-amplifier: 5
+    regen-amplifier: 1
+  life_drain:
+    cooldown: 60
+    cost-amount: 20  # XP
+    range: 10.0
+    damage: 4.0
+    heal: 4.0
+  lucky_star:
+    cooldown: 0
+    cost-amount: 0  # XP
+    drain-amount: 20
+    dodge-chance: 0.40
+  multishot:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    speed: 2.2
+  primal_bond:
+    cooldown: 120
+    cost-amount: 5  # HUNGER
+    radius: 12.0
+    duration-ticks: 400
+    absorption-amplifier: 1
+  rain_dance:
+    cooldown: 3600
+    cost-amount: 352  # XP
+    radius: 6
+    vertical-range: 3
+  root:
+    cooldown: 300
+    cost-amount: 8  # HUNGER
+    radius: 5.0
+    duration-ticks: 80
+    slowness-amplifier: 10
+  shadowstep:
+    cooldown: 60
+    cost-amount: 6  # HUNGER
+    range: 15.0
+    distance: 1.5
+    duration-ticks: 60
+  smoke_bomb:
+    cooldown: 120
+    cost-amount: 6  # HUNGER
+    radius: 5.0
+    blindness-duration-ticks: 100
+    slowness-amplifier: 1
+    escape-speed-duration-ticks: 80
+    escape-speed-amplifier: 1
+  raise_horde:
+    cooldown: 240
+    cost-amount: 90  # XP
+    count: 4
+    duration-ticks: 900
+    range: 16.0
+    fallback-scan-radius: 12.0
+  bone_archers:
+    cooldown: 240
+    cost-amount: 100  # XP
+    count: 2
+    duration-ticks: 900
+    range: 16.0
+    fallback-scan-radius: 12.0
+  panda_guard:
+    cooldown: 240
+    cost-amount: 8  # HUNGER
+    count: 2
+    duration-ticks: 800
+    range: 16.0
+    fallback-scan-radius: 12.0
+  wild_pack:
+    cooldown: 240
+    cost-amount: 9  # HUNGER
+    count: 3
+    duration-ticks: 800
+    range: 16.0
+    fallback-scan-radius: 12.0
+  blink:
+    cooldown: 30
+    cost-amount: 25  # XP
+    distance: 8.0
+  piercing_bolt:
+    cooldown: 35
+    cost-amount: 25  # XP
+    count: 1
+    spread: 0.0
+    speed: 3.2
+  arrow_storm:
+    cooldown: 90
+    cost-amount: 60  # XP
+    count: 7
+    spread: 6.0
+    speed: 2.0
+  dagger_throw:
+    cooldown: 15
+    cost-amount: 2  # HUNGER
+    count: 1
+    spread: 0.0
+    speed: 2.6
+  fireball:
+    cooldown: 45
+    cost-amount: 40  # XP
+    count: 1
+    spread: 0.0
+    speed: 1.8
+  gale_burst:
+    cooldown: 40
+    cost-amount: 35  # XP
+    count: 1
+    spread: 0.0
+    speed: 1.6
+  bone_spear:
+    cooldown: 30
+    cost-amount: 30  # XP
+    count: 1
+    spread: 0.0
+    speed: 3.0
+  double_tap:
+    cooldown: 30
+    cost-amount: 4  # HUNGER
+    count: 2
+    spread: 2.0
+    speed: 2.8
+  spectral_volley:
+    cooldown: 90
+    cost-amount: 60  # XP
+    count: 5
+    spread: 5.0
+    speed: 2.4
+  phase_blink:
+    cooldown: 45
+    cost-amount: 5  # HUNGER
+    distance: 6.0
+  sun_dance:
+    cooldown: 3600
+    cost-amount: 352  # XP
+    radius: 8
+    vertical-range: 5
+  venom_strike:
+    cooldown: 60
+    cost-amount: 6  # HUNGER
+    range: 10.0
+    poison-duration-ticks: 160
+    poison-amplifier: 1
+    weakness-duration-ticks: 120
+  wisplight:
+    cooldown: 0
+    cost-amount: 1  # HUNGER
+    speed: 1.8
+    duration-ticks: 6000
+  wolf_call:
+    cooldown: 600
+    cost-amount: 100  # XP
+  druid_bear_form:
+    cooldown: 6
+    cost-amount: 1  # HUNGER
+    duration-ticks: 36000
+  druid_cat_form:
+    cooldown: 6
+    cost-amount: 1  # HUNGER
+    duration-ticks: 36000
+  druid_moonkin_form:
+    cooldown: 6
+    cost-amount: 1  # HUNGER
+    duration-ticks: 36000
+  druid_travel_form:
+    cooldown: 6
+    cost-amount: 1  # HUNGER
+    duration-ticks: 36000
+  healing_stream_totem:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  searing_totem:
+    cooldown: 75
+    cost-amount: 50  # XP
+  windfury_totem:
+    cooldown: 90
+    cost-amount: 5  # HUNGER
+  earthbind_totem:
+    cooldown: 75
+    cost-amount: 5  # HUNGER
