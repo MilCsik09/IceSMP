@@ -43,6 +43,53 @@ community-goals:
       count: 5000
     reward-treasury: 250
     reward-buff-minutes: 10
+  blue_fish_market:
+    faction: "BLUE"
+    display-name: "Kék Halpiac"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials:
+        - "COD"
+        - "SALMON"
+      count: 800
+    reward-treasury: 400
+    reward-buff-minutes: 12
+  neutral_ore_exchange:
+    faction: "NEUTRAL"
+    display-name: "Semleges Szén-tőzsde"
+    objective:
+      type: "BREAK_BLOCKS"
+      materials:
+        - "COAL_ORE"
+        - "DEEPSLATE_COAL_ORE"
+      count: 2000
+    reward-treasury: 300
+    reward-buff-minutes: 10
+  dark_undead_purge:
+    faction: "DARK"
+    display-name: "Holtak Tisztogatása"
+    objective:
+      type: "KILL_MOBS"
+      entity-type: "ZOMBIE"
+      count: 3000
+    reward-treasury: 350
+    reward-buff-minutes: 12
+  red_raid_conquest:
+    faction: "RED"
+    display-name: "Piros Hódító Hadjárat"
+    objective:
+      type: "WIN_RAID"
+      count: 20
+    reward-treasury: 450
+    reward-buff-minutes: 15
+  server_worldboss_hunt:
+    faction: "ALL"
+    display-name: "Világfaló Vadászat"
+    objective:
+      type: "KILL_WORLDBOSS"
+      count: 5
+    reward-treasury: 800
+    reward-buff-minutes: 20
 
 # ===== Küldetések (quest-keretrendszer) =====
 # Objective típusok:
@@ -343,6 +390,426 @@ quests:
         type: "NEUTRAL"
         amount: 100
       cleanse-sins: true
+
+  # --- Hiányzó kaszt-próbák (bevezető questek a maradék kasztokhoz) ---
+  druid_trial:
+    display-name: "A Druida Próbája"
+    description: "Kösd össze magad a természettel: párosíts 5 állatot a vadonban."
+    requires-job: "druid"
+    objective:
+      type: "BREED_ANIMALS"
+      count: 5
+    rewards:
+      class-xp: 200
+  paladin_trial:
+    display-name: "A Paplovag Próbája"
+    description: "Bizonyítsd szent eltökéltséged: ejts el 15 szörnyet."
+    requires-job: "paladin"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+    rewards:
+      class-xp: 200
+  death_knight_trial:
+    display-name: "A Halállovag Próbája"
+    description: "Tisztítsd meg a vidéket a rontástól: pusztíts el 15 erős szörnyet (min. Lvl 1)."
+    requires-job: "death_knight"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+      min-mob-level: 1
+    rewards:
+      class-xp: 200
+  shaman_trial:
+    display-name: "A Sámán Próbája"
+    description: "Faragj totemeket: gyűjts 10 rönköt az erdőből."
+    requires-job: "shaman"
+    objective:
+      type: "BREAK_BLOCKS"
+      count: 10
+      materials:
+        - "OAK_LOG"
+        - "BIRCH_LOG"
+        - "SPRUCE_LOG"
+        - "JUNGLE_LOG"
+        - "ACACIA_LOG"
+        - "DARK_OAK_LOG"
+        - "MANGROVE_LOG"
+        - "CHERRY_LOG"
+    rewards:
+      class-xp: 200
+  monk_trial:
+    display-name: "A Szerzetes Próbája"
+    description: "Fegyelmezd testedet és elmédet: győzz le 15 szörnyet puszta elszántsággal."
+    requires-job: "monk"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+    rewards:
+      class-xp: 200
+  priest_trial:
+    display-name: "A Pap Próbája"
+    description: "Gyűjts szentfényt a szentély számára: bányássz 10 fénykövet."
+    requires-job: "priest"
+    objective:
+      type: "BREAK_BLOCKS"
+      count: 10
+      materials:
+        - "GLOWSTONE"
+    rewards:
+      class-xp: 200
+  warlock_trial:
+    display-name: "A Boszorkánymester Próbája"
+    description: "Pecsételd meg paktumod: küldj a mélységbe 15 teremtményt."
+    requires-job: "warlock"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+    rewards:
+      class-xp: 200
+  demon_hunter_trial:
+    display-name: "A Démonvadász Próbája"
+    description: "Vadássz a sötétség szolgáira: semmisíts meg 15 erős szörnyet (min. Lvl 1)."
+    requires-job: "demon_hunter"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+      min-mob-level: 1
+    rewards:
+      class-xp: 200
+  evoker_trial:
+    display-name: "A Sárkányidéző Próbája"
+    description: "Hangold rá magad a sárkány-mágiára: gyűjts 10 ametisztfürtöt."
+    requires-job: "evoker"
+    objective:
+      type: "BREAK_BLOCKS"
+      count: 10
+      materials:
+        - "AMETHYST_CLUSTER"
+    rewards:
+      class-xp: 200
+
+  # --- Szakma-questek (nem kaszthoz kötöttek) ---
+  miner_ore_haul:
+    display-name: "Ércfejtő Norma"
+    description: "Bányássz ki 64 érctömböt a mélyben."
+    objective:
+      type: "BREAK_BLOCKS"
+      count: 64
+      materials:
+        - "IRON_ORE"
+        - "DEEPSLATE_IRON_ORE"
+        - "GOLD_ORE"
+        - "DEEPSLATE_GOLD_ORE"
+        - "COPPER_ORE"
+        - "DEEPSLATE_COPPER_ORE"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 60
+      items:
+        - "IRON_PICKAXE:1"
+  angler_big_catch:
+    display-name: "Nagy Fogás"
+    description: "Fogj ki 20 halat a vizekből."
+    objective:
+      type: "CATCH_FISH"
+      count: 20
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 50
+      items:
+        - "FISHING_ROD:1"
+  smith_smelt_iron:
+    display-name: "Kovács Kaloda"
+    description: "Olvassz be 32 vasat a kohóban."
+    objective:
+      type: "SMELT_ITEMS"
+      count: 32
+      materials:
+        - "IRON_INGOT"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 55
+      items:
+        - "ANVIL:1"
+  farmer_harvest:
+    display-name: "Learatás Ideje"
+    description: "Takaríts be 96 termést a földekről."
+    objective:
+      type: "COLLECT_ITEMS"
+      count: 96
+      materials:
+        - "WHEAT"
+        - "CARROT"
+        - "POTATO"
+        - "BEETROOT"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 45
+      items:
+        - "BREAD:16"
+
+  # --- Story-lánc: A Vándorkereskedő Segélykiáltása (elágazó, NPC: vandor_kereskedo) ---
+  merchant_distress:
+    dialogue:
+      speaker: "Benedek kereskedő"
+      give:
+        - "Segíts, vándor! A karavánomat rablók fosztották ki az úton."
+        - "Gyere közelebb, hadd meséljem el, mi történt!"
+      complete:
+        - "Hála az égnek, hogy megálltál. Elmondom, mire lenne szükségem."
+    display-name: "A Kereskedő Segélykiáltása"
+    description: "Keresd fel a bajba jutott vándorkereskedőt az úton."
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "vandor_kereskedo"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 20
+  merchant_choice:
+    dialogue:
+      speaker: "Benedek kereskedő"
+      give:
+        - "Két út áll előtted: vagy megbosszulod a rablást, vagy segítesz újraindítani a kereskedést."
+      complete:
+        - "Bölcs döntés lesz, bárhogy is választasz."
+      choices:
+        1: { text: "Vadásszatok a rablókra", quest: "merchant_bandit_hunt" }
+        2: { text: "Segítek újjáépíteni a kereskedést", quest: "merchant_trade_help" }
+    display-name: "A Kereskedő Kérése"
+    description: "Beszélj újra Benedekkel, és válassz utat."
+    requires-quest: "merchant_distress"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "vandor_kereskedo"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 10
+  merchant_bandit_hunt:
+    dialogue:
+      speaker: "Benedek kereskedő"
+      complete:
+        - "Megbosszultad a karavánomat. Örökké hálás leszek!"
+    display-name: "Bosszú az Úton"
+    description: "Tisztítsd meg az utat a rablóktól: számolj le 20 fosztogatóval (min. Lvl 1)."
+    requires-quest: "merchant_choice"
+    objective:
+      type: "KILL_MOBS"
+      count: 20
+      entity-type: "PILLAGER"
+      min-mob-level: 1
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 80
+  merchant_trade_help:
+    dialogue:
+      speaker: "Benedek kereskedő"
+      complete:
+        - "A raktáram újra megtelt! Fogadd el ezt hálám jeléül."
+    display-name: "Új Kezdet a Piacon"
+    description: "Szállíts Benedeknek friss árut, hogy újraindíthassa a kereskedést."
+    requires-quest: "merchant_choice"
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "vandor_kereskedo"
+      count: 40
+      materials:
+        - "BREAD"
+        - "EMERALD"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 80
+
+  # --- Story-lánc: Az Erdő Nyugtalansága (SEQUENCE + dialogue, NPC: erdei_venek) ---
+  forest_elder_call:
+    dialogue:
+      speaker: "Sylvana vénasszony"
+      give:
+        - "Érzed? Az erdő beteg. Valami rontás terjed a fák között."
+      complete:
+        - "Jó, hogy eljöttél. Szükségem lesz a segítségedre."
+    display-name: "Az Erdei Véne Hívása"
+    description: "Keresd fel az erdei vénasszonyt a szentélynél."
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "erdei_venek"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 15
+  forest_cleansing:
+    dialogue:
+      speaker: "Sylvana vénasszony"
+      give:
+        - "Először tisztítsd meg a ligetet a romlott vadaktól."
+        - "Aztán gyűjts gyógynövényt, hogy elkészíthessem az ellenszert."
+        - "Végül vidd el az elixírt a szentélybe, hogy hasson."
+      complete:
+        - "Az erdő újra lélegzik. Köszönöm, vándor."
+    display-name: "Az Erdő Megtisztítása"
+    description: "Segíts Sylvanának megtisztítani az erdőt a rontástól — három lépésben."
+    requires-quest: "forest_elder_call"
+    objectives-mode: "SEQUENCE"
+    objectives:
+      1:
+        type: "KILL_MOBS"
+        count: 15
+        entity-type: "ZOMBIE"
+        description: "Romlott vadak"
+      2:
+        type: "COLLECT_ITEMS"
+        count: 20
+        materials:
+          - "SWEET_BERRIES"
+          - "GLOW_BERRIES"
+        description: "Gyógynövények"
+      3:
+        type: "VISIT_TERRITORY"
+        territory: "erdei-szentely"
+        description: "Az erdei szentély"
+    rewards:
+      class-xp: 180
+      currency:
+        type: "OWN"
+        amount: 60
+  forest_restoration:
+    dialogue:
+      speaker: "Sylvana vénasszony"
+      complete:
+        - "Az új csemeték gyökeret vernek. Az erdő emlékezni fog rád."
+    display-name: "Az Erdő Újjászületése"
+    description: "Ültess 30 csemetét, hogy az erdő újjászülethessen."
+    requires-quest: "forest_cleansing"
+    objective:
+      type: "PLACE_BLOCKS"
+      count: 30
+      materials:
+        - "OAK_SAPLING"
+        - "BIRCH_SAPLING"
+        - "SPRUCE_SAPLING"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 50
+
+  # --- Deliver-quest (NPC: kovacs_mester) ---
+  blacksmith_delivery:
+    dialogue:
+      speaker: "Gorvik kovácsmester"
+      give:
+        - "Kifogytam a nyersanyagból! Hozz vasat és szenet, jól megfizetlek."
+      complete:
+        - "Pont ez kellett. A kalapácsom újra dolgozhat."
+    display-name: "Utánpótlás a Kovácsműhelynek"
+    description: "Szállíts vasat és szenet a kovácsmesternek."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "kovacs_mester"
+      count: 30
+      materials:
+        - "IRON_INGOT"
+        - "COAL"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 70
+      items:
+        - "IRON_INGOT:8"
+
+  # --- Frakció-questek ---
+  red_supply_run:
+    display-name: "Piros Utánpótlás"
+    description: "Gyűjts 40 vasat a Piros frakció hadigazdaságának."
+    requires-faction: "RED"
+    objective:
+      type: "COLLECT_ITEMS"
+      count: 40
+      materials:
+        - "IRON_INGOT"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 90
+  blue_coastal_watch:
+    display-name: "Kék Parti Őrjárat"
+    description: "Védd a partvidéket: ölj meg 20 vízi szörnyet."
+    requires-faction: "BLUE"
+    objective:
+      type: "KILL_MOBS"
+      count: 20
+      entity-type: "DROWNED"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 90
+  neutral_trade_pact:
+    display-name: "Semleges Kereskedelmi Egyezmény"
+    description: "Köss 10 kereskedést egy falusival a Semleges kassza javára."
+    requires-faction: "NEUTRAL"
+    objective:
+      type: "TRADE_WITH_VILLAGER"
+      count: 10
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 90
+  dark_bone_harvest:
+    display-name: "Csontgyűjtés a Sötétségnek"
+    description: "Arass 25 csontvázat a Sötét frakció rituáléihoz."
+    requires-faction: "DARK"
+    objective:
+      type: "KILL_MOBS"
+      count: 25
+      entity-type: "SKELETON"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 90
+
+  # --- Felfedező / parkour questek ---
+  wanderlust_desert:
+    display-name: "Vándorlás — Sivatag"
+    description: "Fedezd fel a végtelen sivatagot."
+    objective:
+      type: "EXPLORE_BIOME"
+      biome: "desert"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 30
+  wanderlust_jungle:
+    display-name: "Vándorlás — Dzsungel"
+    description: "Vágj utat a sűrű dzsungelben."
+    objective:
+      type: "EXPLORE_BIOME"
+      biome: "jungle"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 30
+  acrobat_challenge:
+    display-name: "Akrobata Kihívás"
+    description: "Teljesítsd a kezdő ügyességi pályát (/parkour start kezdo_parkour)."
+    objective:
+      type: "PARKOUR_TRIAL"
+      course: "kezdo_parkour"
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 40
 
 # ===== Quest-NPC markerek =====
 # A quest-adó / quest-célpont NPC-k felett részecske-aura jelzi a teendőt —
