@@ -116,7 +116,8 @@ public final class MobLootListener implements Listener {
             }
         }
 
-        final String type = String.valueOf(chosen.getOrDefault("type", "gear")).toLowerCase(Locale.ROOT);
+        final Object typeObj = chosen.get("type");
+        final String type = typeObj != null ? String.valueOf(typeObj).toLowerCase(Locale.ROOT) : "gear";
         switch (type) {
             case "material" -> {
                 final Material material = Material.matchMaterial(String.valueOf(chosen.get("item")).toUpperCase(Locale.ROOT));

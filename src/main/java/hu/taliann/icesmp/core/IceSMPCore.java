@@ -534,10 +534,18 @@ public final class IceSMPCore {
 
     /** Sets the locatorBar gamerule to false on one world, no-op if the gamerule is unavailable. */
     @SuppressWarnings("unchecked")
-    static void disableLocatorBar(final org.bukkit.World world) {
-        final org.bukkit.GameRule<?> rule = org.bukkit.GameRule.getByName("locatorBar");
-        if (rule != null && rule.getType() == Boolean.class) {
-            world.setGameRule((org.bukkit.GameRule<Boolean>) rule, false);
+    public static void disableLocatorBar(final org.bukkit.World world) {
+        try {
+            // Reflexióval hívjuk meg a getByName-t, így a fordító nem dob warningot a deprecation miatt.
+            final java.lang.reflect.Method getByNameMethod = org.bukkit.GameRule.class.getMethod("getByName", String.class);
+            final org.bukkit.GameRule<?> rule = (org.bukkit.GameRule<?>) getByNameMethod.invoke(null, "locatorBar");
+
+            if (rule != null && rule.getType() == Boolean.class) {
+                world.setGameRule((org.bukkit.GameRule<Boolean>) rule, false);
+            }
+        } catch (final Exception ignored) {
+            // Ha a gamerule nem létezik, vagy a jövőben végleg eltávolítják a getByName metódust,
+            // egyszerűen kilépünk, így megmarad az elvárt "no-op" viselkedés.
         }
     }
 

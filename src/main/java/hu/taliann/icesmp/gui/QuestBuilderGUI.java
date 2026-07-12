@@ -41,7 +41,7 @@ public final class QuestBuilderGUI {
             new FieldTile(12, "giver-npc", Material.VILLAGER_SPAWN_EGG, "Küldetésadó NPC"),
             new FieldTile(13, "cooldown-hours", Material.CLOCK, "Újrafelvétel (óra)"),
             new FieldTile(19, "requires-level", Material.EXPERIENCE_BOTTLE, "Szint-feltétel"),
-            new FieldTile(20, "requires-quest", Material.CHAIN, "Előfeltétel-küldetés"),
+            new FieldTile(20, "requires-quest", Material.IRON_CHAIN, "Előfeltétel-küldetés"),
             new FieldTile(21, "requires-faction", Material.WHITE_BANNER, "Frakció-feltétel"),
             new FieldTile(22, "requires-job", Material.IRON_PICKAXE, "Kaszt-feltétel"),
             new FieldTile(23, "auto-start-territory", Material.COMPASS, "Auto-start terület"),

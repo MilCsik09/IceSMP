@@ -9,6 +9,19 @@
 # Felülbírálható kulcsok (deklaratív): cooldown, cost-amount, range, radius, damage,
 # self-damage, heal-self, feed-self, ignite-ticks, freeze-ticks, knockback.
 # A stateful spelleknél a saját mechanika-kulcsaik + cooldown + cost-amount állíthatók.
+#
+# --- ERŐFORRÁS (MANA, DÜH, ENERGIA...) ÁRAZÁS ---
+# Ha a resource rendszer aktív (spells.resource.enabled: true), a spellek ára
+# automatikusan a beállított COOLDOWN (újratöltési idő) alapján számolódik ki,
+# NEM a 'cost-amount' alapján:
+#   • 0 (azonnali)       -> 15 erőforrás
+#   • 1 - 30 másodperc   -> 20 erőforrás
+#   • 31 - 90 másodperc  -> 30 erőforrás
+#   • 91 - 180 másodperc -> 40 erőforrás
+#   • 181+ másodperc     -> 50 erőforrás
+# (Tehát ha csökkenteni akarod egy képesség Mana-igényét, a cooldownját kell
+# alacsonyabbra állítanod, vagy ki kell kapcsolnod az erőforrás-rendszert.)
+#
 # Ismeretlen spell id esetén a szerver indításkor WARNING-ot ír a logba.
 spell-balance:
 
