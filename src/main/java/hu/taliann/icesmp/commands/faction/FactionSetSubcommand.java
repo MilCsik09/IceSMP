@@ -8,17 +8,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FactionSetSubcommand implements FactionSubcommand {
 
     private static final String PERMISSION = "icesmp.faction.admin";
 
+    private final JavaPlugin plugin;
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final MessageManager messageManager;
 
-    public FactionSetSubcommand(final FactionManager factionManager, final SinManager sinManager,
+    public FactionSetSubcommand(final JavaPlugin plugin, final FactionManager factionManager, final SinManager sinManager,
                                 final MessageManager messageManager) {
+        this.plugin = plugin;
         this.factionManager = factionManager;
         this.sinManager = sinManager;
         this.messageManager = messageManager;
@@ -62,8 +65,9 @@ public final class FactionSetSubcommand implements FactionSubcommand {
         factionManager.setFaction(target.getUniqueId(), factionType);
 
         // Admin placement into the Dark faction also seals the permanent pact (requires the target online).
+        // Folia: sealDarkPact writes the target's PDC — run it on the target's own region thread.
         if (factionType == FactionType.DARK && target.getPlayer() instanceof Player onlineTarget) {
-            sinManager.sealDarkPact(onlineTarget);
+            onlineTarget.getScheduler().run(plugin, task -> sinManager.sealDarkPact(onlineTarget), null);
         }
 
         sender.sendMessage(messageManager.get(

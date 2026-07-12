@@ -15,17 +15,18 @@ import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FactionCommand extends AbstractDispatchCommand {
 
-    public FactionCommand(final FactionManager factionManager, final SinManager sinManager,
+    public FactionCommand(final JavaPlugin plugin, final FactionManager factionManager, final SinManager sinManager,
                           final FactionTreasuryManager treasuryManager, final CurrencyManager currencyManager,
                           final KingManager kingManager, final RaidManager raidManager,
                           final TerritoryManager territoryManager, final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
         register(new FactionJoinSubcommand(factionManager, sinManager, currencyManager, messageManager));
         register(new FactionLeaveSubcommand(factionManager, messageManager));
-        register(new FactionSetSubcommand(factionManager, sinManager, messageManager));
+        register(new FactionSetSubcommand(plugin, factionManager, sinManager, messageManager));
         register(new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager));
         register(new FactionDonateSubcommand(treasuryManager, factionManager, currencyManager, messageManager));
         register(new FactionKingSubcommand(kingManager, factionManager, treasuryManager, messageManager));

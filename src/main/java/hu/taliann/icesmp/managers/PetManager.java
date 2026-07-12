@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * re-apply on summon. Tameable pets follow via vanilla; the rest are kept near the
  * owner by a teleport-follow tick. Levels come from the owner's nearby kills.
  */
-public final class PetManager {
+public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -495,6 +495,18 @@ public final class PetManager {
     private void updateName(final Mob pet, final Player player) {
         pet.customName(Component.text(getName(player) + " [Lv " + getLevel(player) + "]", NamedTextColor.GREEN));
         pet.setCustomNameVisible(true);
+    }
+
+    /**
+     * Clears the owner-keyed combat-target entry on logout so a player who disconnects mid-combat
+     * does not leave a stale {@code combatTargets} entry. ({@code attackReady} is pet-UUID-keyed and
+     * pruned on pet death/removal.)
+     */
+    @Override
+    public void clearPlayerState(final UUID playerId) {
+        if (playerId != null) {
+            combatTargets.remove(playerId);
+        }
     }
 
     private Mob activePet(final Player player) {

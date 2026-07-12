@@ -39,11 +39,13 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.PartyManager partyManager,
                                         final hu.taliann.icesmp.managers.ClaimManager claimManager,
                                         final hu.taliann.icesmp.managers.TerritoryManager territoryManager,
+                                        final hu.taliann.icesmp.managers.PetManager petManager,
+                                        final hu.taliann.icesmp.managers.RitualManager ritualManager,
                                         final SpellRegistry spellRegistry) {
         // Register every stateful component here; adding a new one needs only this line + the interface.
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 metelytepoManager, relicManager, craftingRestrictionManager, resourceManager, partyManager,
-                claimManager, territoryManager);
+                claimManager, territoryManager, petManager, ritualManager);
         this.spellRegistry = spellRegistry;
     }
 

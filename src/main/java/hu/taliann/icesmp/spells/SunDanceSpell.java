@@ -18,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class SunDanceSpell extends BaseSpell {
 
     private static final Map<Material, List<CookingRecipe<?>>> RECIPE_CACHE = new ConcurrentHashMap<>();
-    private static boolean recipeCachePopulated = false;
+    // volatile: casters on different region threads may race the populate check; publish the flag safely.
+    private static volatile boolean recipeCachePopulated = false;
 
     public SunDanceSpell(final MessageManager messageManager) {
         super(messageManager, "sun_dance", "Naptanc", 3600, SpellCostType.XP, 352);
