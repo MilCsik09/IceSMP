@@ -21,7 +21,9 @@ public final class ConfigManager {
     };
 
     private final JavaPlugin plugin;
-    private FileConfiguration configuration;
+    // volatile: load()/reload() runs from the (admin command) thread that fires /icesmp reload, while
+    // every manager reads this reference from arbitrary region threads — publish the reload safely.
+    private volatile FileConfiguration configuration;
 
     /**
      * Constructs a new ConfigManager.

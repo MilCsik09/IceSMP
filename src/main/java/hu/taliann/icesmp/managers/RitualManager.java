@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * block) turns an altar into a buildable shrine; non-relic rituals may set
  * {@code cooldown-seconds} to rate-limit repeats (in memory, reset on restart).
  */
-public final class RitualManager {
+public final class RitualManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
 
     private final org.bukkit.plugin.java.JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -67,6 +67,14 @@ public final class RitualManager {
         this.territoryManager = territoryManager;
         this.jobManager = jobManager;
         this.messageManager = messageManager;
+    }
+
+    /** Drops the player's per-ritual cooldown map on logout so the nested map cannot grow unbounded. */
+    @Override
+    public void clearPlayerState(final UUID playerId) {
+        if (playerId != null) {
+            cooldowns.remove(playerId);
+        }
     }
 
     /**

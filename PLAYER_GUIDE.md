@@ -103,7 +103,11 @@ Minden frakciónak saját **token**-je van (Piros / Kék / Semleges / Sötét). 
 létezik: **fizikai itemként** (token a táskádban) és **banki egyenlegként**.
 
 - `/bank balance` — egyenlegeid • `/bank deposit` — tokenek bankba • `/bank withdraw <valuta> <összeg>` — kivét itemként
-- `/currency pay <játékos> <összeg> [valuta]` — utalás • `/currency balance` — egyenleg
+- `/currency balance` — egyenleg-nézet
+
+> 💡 A **banki ügyintézés** (be-/kivét és **valutaváltás**) alapból **csak a fővárosokban** működik.
+> A **közvetlen utalás** (`/currency pay`) a KP-alapú gazdaságban **alapból ki van kapcsolva** — a
+> játékos–játékos csere kézből kézbe (token/item) vagy a **piacon** keresztül zajlik.
 
 ### Dinamikus árfolyam
 A valuták értéke **élő, kínálat-alapú**: minél több van egy valutából a szerveren összesen,
@@ -373,6 +377,15 @@ Lvl 25–45 közt feloldódó ulti-készlettel rendelkezik — a teljes listát 
 > a szilánkokból egy **megerősített Wither-csontváz bajnokot** idézel, ami a szokásos
 > időzített idézéseknél erősebb (az idézés-limited rá is vonatkozik).
 
+> **Idézett társak ≠ társ-állat (pet):** a fenti minionok a spell által idézett, ideiglenes
+> segítők. Ettől külön van a **tartós társ-állat** (`/pet`): a Vadmester/Nekromanta egy
+> spec-specifikus **befogó tárggyal** befoghat egy mobot, ami **szintet lép (max 30)**,
+> előhívható és eltehető — részletek: [Képességek oldal](docs/player-guide/05-kepessegek.md).
+
+> **Spell-mesterség (`spell mastery`):** a feloldott képességeidet **frakcióvalutáért
+> rangsorolhatod** (max. **5 rang**), ami rangonként **−8% cooldownt** és **+5% erőt** ad —
+> tiszta, nem tolakodó „képesség-erősítés" a talentek és a kaszt-szint fölött.
+
 ---
 
 ## 7. Talentek ✅
@@ -463,13 +476,22 @@ egy adott **oltár-blokkot**, gyűjtsd össze a hozzá tartozó **áldozati tár
 
 Ha a relikviának már van **élő tulajdonosa**, nem idézhető meg újra (egy-példány szabály).
 
+### Egyéb oltárok — nem csak relikvia
+Az oltárok nem csak a szárnyakat adják. Ugyanezzel a **SHIFT + jobb katt** módszerrel működnek:
+- 🕊️ **Feloldozás-oltár** — **letörli a bűnös-jelölést és a bűn-számlálódat** (a sötét paktum
+  visszafordíthatatlan része NEM törölhető így — azt csak a Vezeklés-lánc bontja); van cooldownja.
+- 🏠 **Hazatérés-kő** — a frakciód **fővárosába teleportál**.
+- ⚜️ **13 kaszt-szentély** — kasztonként egy-egy tematikus **buff-oltár**.
+
+A teljes lista áldozati költségekkel: [Relikviák oldal](docs/player-guide/09-relikviak.md).
+
 ---
 
 ## 10. A világ veszélyei ✅
 
 ### Mob-szintezés
 A spawntól távolodva a szörnyek **erősödnek**: minden **1000 blokk = +1 mob-szint**
-(`[Lvl X]` névvel, több élettel és sebzéssel). Cserébe a magasabb szintű mobok **több kaszt
+(`[Lvl X]` névvel, több élettel és sebzéssel), alapból **legfeljebb 10 szintig**. Cserébe a magasabb szintű mobok **több kaszt
 XP-t** és nagyobb eséllyel **lélekkövet** adnak. (A spawner-/parancs-spawnolt mobok nem
 skálázódnak — a farmok biztonságosak.) A szint-névtábla alapból **csak akkor jelenik meg,
 amikor ránézel a mobra** (közelről, takarás nélkül), így nem zsúfolja tele a képernyőt
@@ -575,12 +597,14 @@ név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezető
 szekció el sem foglal helyet az oldalsávon.
 
 ### Terület-claim (saját birtok) 🏠
-`/claim` lefoglalja azt a chunkot, amiben éppen állsz. Az első **3 chunk ingyenes**, utána a claim
-ára a **saját frakció-valutádban** fizetendő és chunkonként **egyre drágább** — ez az ár **ELÉG**
-(money sink), tehát az `/claim unclaim`-nál sem jár vissza.
+`/claim` egy **16×16 blokkos négyzetet** foglal le **körülötted** (a pozíciódra igazítva, **nem** a
+vanilla chunk-rácshoz). Az első **~768 oszlop (kb. 3 gyorsfoglalásnyi terület) ingyenes**, utána
+minden további oszlop a **saját frakció-valutádban** fizetendő, **fix 0,5/oszlop** áron (nem drágul
+oszloponként — csak a megvett oszlopok számával nő a végösszeg). Ez az ár **ELÉG** (money sink),
+tehát az `/claim unclaim`-nál sem jár vissza.
 
 **Mit véd a claim:** idegenek nem törhetnek/rakhatnak blokkot, nem nyithatnak konténert (láda,
-hordó, kemence…), nem üríthetnek vödröt, nem szedhetnek le kép-/festménykeretet a te chunkodban —
+hordó, kemence…), nem üríthetnek vödröt, nem szedhetnek le kép-/festménykeretet a te birtokodon —
 és a **robbanás sem bontja** a claimelt blokkokat (a blokk-evő mobok, pl. enderman, szintén nem
 vihetnek el blokkot). **Fontos:** a claim a **PvP-t NEM tiltja** — ez háborús szerver, a claim csak
 az építést és a lopást védi.
@@ -685,6 +709,11 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/spec list/choose/info/respec` | Specializációk |
 | `/talent`, `/talent spend …` | Talentek |
 | `/profession join/info/list` | Szakmák |
+| `/profession recipes` | Recept-könyv (egy-kattintásos craftolás a tanult receptekből) |
+| `/daily` | Napi (naponta forgó) küldetések |
+| `/achievements` | Teljesítmények — mérföldkő-célok valuta-jutalommal |
+| `/leaderboard` | Ranglisták (kaszt-szint, vagyon, raid-ölések) |
+| `/pet` | Társ-állat (Vadmester/Nekromanta): befogás, előhívás, szintlépés |
 | `/bank balance/deposit/withdraw` | Bank |
 | `/currency balance/pay/exchange/rates` | Valuta + árfolyam |
 | `/market`, `/market sell/auction/claim/cancel` | Piactér + aukciósház |

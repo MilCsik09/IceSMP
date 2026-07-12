@@ -18,6 +18,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public final class SpecCommand implements BasicCommand {
 
     private static final String ADMIN_PERMISSION = "icesmp.admin.spec";
 
+    private final JavaPlugin plugin;
     private final SpecializationManager specializationManager;
     private final JobManager jobManager;
     private final ProfessionManager professionManager;
@@ -37,10 +39,11 @@ public final class SpecCommand implements BasicCommand {
     private final TalentManager talentManager;
     private final MessageManager messageManager;
 
-    public SpecCommand(final SpecializationManager specializationManager, final JobManager jobManager,
+    public SpecCommand(final JavaPlugin plugin, final SpecializationManager specializationManager, final JobManager jobManager,
                        final ProfessionManager professionManager, final CurrencyManager currencyManager,
                        final FactionManager factionManager, final TalentManager talentManager,
                        final MessageManager messageManager) {
+        this.plugin = plugin;
         this.specializationManager = specializationManager;
         this.jobManager = jobManager;
         this.professionManager = professionManager;
@@ -261,8 +264,11 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
 
-        specializationManager.resetSpecializations(target);
-        sender.sendMessage(messageManager.get("spec-reset-success", "&aSpecializációk törölve: &f%s", target.getName()));
+        // Folia: resetSpecializations writes the target's PDC — run it on the target's region thread.
+        target.getScheduler().run(plugin, task -> {
+            specializationManager.resetSpecializations(target);
+            sender.sendMessage(messageManager.get("spec-reset-success", "&aSpecializációk törölve: &f%s", target.getName()));
+        }, null);
     }
 
     private void sendHelp(final CommandSender sender) {

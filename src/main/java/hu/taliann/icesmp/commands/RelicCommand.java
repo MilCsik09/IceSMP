@@ -8,6 +8,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
@@ -19,10 +20,12 @@ public final class RelicCommand implements BasicCommand {
 
     private static final String ADMIN_PERMISSION = "icesmp.relic.admin";
 
+    private final JavaPlugin plugin;
     private final RelicManager relicManager;
     private final MessageManager messageManager;
 
-    public RelicCommand(final RelicManager relicManager, final MessageManager messageManager) {
+    public RelicCommand(final JavaPlugin plugin, final RelicManager relicManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.relicManager = relicManager;
         this.messageManager = messageManager;
     }
@@ -32,7 +35,7 @@ public final class RelicCommand implements BasicCommand {
         final CommandSender sender = commandSourceStack.getSender();
 
         if (!relicManager.isEnabled()) {
-            sender.sendMessage(messageManager.get("messages.relic-disabled", "&cRelic system is disabled."));
+            sender.sendMessage(messageManager.get("messages.relic-disabled", "&cA relikvia-rendszer ki van kapcsolva."));
             return;
         }
 
@@ -45,7 +48,7 @@ public final class RelicCommand implements BasicCommand {
             case "list" -> handleList(sender);
             case "give" -> handleGive(sender, args);
             default -> {
-                sender.sendMessage(messageManager.get("messages.relic-unknown-subcommand", "&cUnknown subcommand: &f%s", args[0]));
+                sender.sendMessage(messageManager.get("messages.relic-unknown-subcommand", "&cIsmeretlen alparancs: &f%s", args[0]));
                 sendHelp(sender);
             }
         }
@@ -96,27 +99,27 @@ public final class RelicCommand implements BasicCommand {
                 .collect(Collectors.joining("&7, &e", "&e", ""));
 
         if (relicList.isBlank()) {
-            sender.sendMessage(messageManager.get("messages.relic-list-empty", "&eNo relic definitions are registered."));
+            sender.sendMessage(messageManager.get("messages.relic-list-empty", "&eNincs regisztrált relikvia."));
             return;
         }
 
-        sender.sendMessage(messageManager.get("messages.relic-list-header", "&6Registered relics: %s", relicList));
+        sender.sendMessage(messageManager.get("messages.relic-list-header", "&6Regisztrált relikviák: %s", relicList));
     }
 
     private void handleGive(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("messages.relic-no-permission", "&cNo permission. Required: &f%s", ADMIN_PERMISSION));
+            sender.sendMessage(messageManager.get("messages.relic-no-permission", "&cNincs jogosultságod. Szükséges: &f%s", ADMIN_PERMISSION));
             return;
         }
 
         if (args.length < 3) {
-            sender.sendMessage(messageManager.get("messages.relic-give-usage", "&cUsage: /relic give <player> <relicId> [amount]"));
+            sender.sendMessage(messageManager.get("messages.relic-give-usage", "&cHasználat: /relic give <játékos> <relikvia-id> [mennyiség]"));
             return;
         }
 
         final Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cPlayer not found or offline."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA játékos nem található vagy offline."));
             return;
         }
 
@@ -125,7 +128,7 @@ public final class RelicCommand implements BasicCommand {
             try {
                 amount = Integer.parseInt(args[3]);
             } catch (final NumberFormatException exception) {
-                sender.sendMessage(messageManager.get("messages.invalid-amount", "&cAmount must be a number."));
+                sender.sendMessage(messageManager.get("messages.invalid-amount", "&cA mennyiségnek számnak kell lennie."));
                 return;
             }
         } else {
@@ -133,33 +136,35 @@ public final class RelicCommand implements BasicCommand {
         }
 
         if (amount <= 0) {
-            sender.sendMessage(messageManager.get("messages.amount-must-be-positive", "&cAmount must be positive."));
+            sender.sendMessage(messageManager.get("messages.amount-must-be-positive", "&cA mennyiségnek pozitívnak kell lennie."));
             return;
         }
 
         if (!relicManager.isEnabled()) {
-            sender.sendMessage(messageManager.get("messages.relic-disabled", "&cRelic system is disabled."));
+            sender.sendMessage(messageManager.get("messages.relic-disabled", "&cA relikvia-rendszer ki van kapcsolva."));
             return;
         }
 
         if (relicManager.getDefinition(args[2]) == null) {
-            sender.sendMessage(messageManager.get("messages.relic-unknown-id", "&cUnknown relic id: &f%s", args[2]));
-            sender.sendMessage(messageManager.get("messages.relic-list-hint", "&7Use &f/relic list &7to see loaded relic ids."));
+            sender.sendMessage(messageManager.get("messages.relic-unknown-id", "&cIsmeretlen relikvia-id: &f%s", args[2]));
+            sender.sendMessage(messageManager.get("messages.relic-list-hint", "&7Használd a &f/relic list &7parancsot a betöltött relikvia-id-kért."));
             return;
         }
 
-        if (!relicManager.giveRelic(target, args[2], amount)) {
-            sender.sendMessage(messageManager.get("messages.relic-give-failed", "&cCould not give relic item."));
-            return;
-        }
-
-        sender.sendMessage(messageManager.get("messages.relic-give-success", "&aGiven &f%s&a relic item(s) of &f%s&a to &f%s&a.", amount, args[2], target.getName()));
+        // Folia: giveRelic writes the target's inventory — run it on the target's region thread.
+        target.getScheduler().run(plugin, task -> {
+            if (!relicManager.giveRelic(target, args[2], amount)) {
+                sender.sendMessage(messageManager.get("messages.relic-give-failed", "&cNem sikerült relikviát adni (talán már létezik egy aktív példány)."));
+                return;
+            }
+            sender.sendMessage(messageManager.get("messages.relic-give-success", "&aRelikvia átadva: &f%s&a db &f%s &a-> &f%s&a.", amount, args[2], target.getName()));
+        }, null);
     }
 
     private void sendHelp(final CommandSender sender) {
-        sender.sendMessage(messageManager.get("messages.relic-help-header", "&6/relic &7- available commands:"));
-        sender.sendMessage(messageManager.get("messages.relic-help-list", "&e/relic list &7- lists registered relic placeholders."));
-        sender.sendMessage(messageManager.get("messages.relic-help-give", "&e/relic give <player> <relicId> [amount] &7- gives test relic items."));
+        sender.sendMessage(messageManager.get("messages.relic-help-header", "&6/relic &7- elérhető parancsok:"));
+        sender.sendMessage(messageManager.get("messages.relic-help-list", "&e/relic list &7- a regisztrált relikviák listája."));
+        sender.sendMessage(messageManager.get("messages.relic-help-give", "&e/relic give <játékos> <relikvia-id> [mennyiség] &7- relikvia-tárgy adása."));
     }
 }
 

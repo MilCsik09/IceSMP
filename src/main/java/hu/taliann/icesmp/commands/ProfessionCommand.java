@@ -140,10 +140,14 @@ public final class ProfessionCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("profession-blueprint-unknown", "&cNincs ilyen recept: &f%s", args[2]));
             return;
         }
-        for (final var overflow : target.getInventory().addItem(item).values()) {
-            target.getWorld().dropItemNaturally(target.getLocation(), overflow);
-        }
-        sender.sendMessage(messageManager.get("profession-blueprint-given", "&aTervrajz átadva: &e%s &7-> &f%s", args[2].toLowerCase(Locale.ROOT), target.getName()));
+        // Folia: mutating the target's inventory must run on the target's region thread (mirrors the
+        // sibling handleSet/handleAddXp handlers below).
+        target.getScheduler().run(plugin, task -> {
+            for (final var overflow : target.getInventory().addItem(item).values()) {
+                target.getWorld().dropItemNaturally(target.getLocation(), overflow);
+            }
+            sender.sendMessage(messageManager.get("profession-blueprint-given", "&aTervrajz átadva: &e%s &7-> &f%s", args[2].toLowerCase(Locale.ROOT), target.getName()));
+        }, null);
     }
 
     private void handleInfo(final CommandSender sender) {

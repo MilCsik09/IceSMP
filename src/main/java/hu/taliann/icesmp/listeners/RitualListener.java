@@ -8,6 +8,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 import java.util.Map;
@@ -54,5 +56,15 @@ public final class RitualListener implements Listener {
             event.setUseInteractedBlock(Event.Result.DENY);
             event.setUseItemInHand(Event.Result.DENY);
         }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(final PlayerQuitEvent event) {
+        debounce.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onPlayerKick(final PlayerKickEvent event) {
+        debounce.remove(event.getPlayer().getUniqueId());
     }
 }

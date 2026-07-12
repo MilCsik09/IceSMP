@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Sandboxban, ahol a Gradle nem éri el a repókat: `javac`-kal fordíts a cache-elt szerver-libek ellen (`run/libraries`), vagy ha az sincs, `javac -sourcepath src/main/java` futtatással szűrd ki, hogy minden hiba külső függőségből jön-e (Bukkit/Adventure „cannot find symbol" elfogadható, minden más nem). **Push előtt mindig fordítás-ellenőrzés.**
 
 ## Mi ez a projekt
-Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: frakciók, kasztok+specializációk (~390 spell), szakmák, talentek, questek, piac, claimek, világesemények. Minden játékos-szöveg **magyar**.
+Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 31 specializáció (~390 spell)**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A kód ~298 Java-fájl / ~62 manager. Minden játékos-szöveg **magyar**.
 
 ## Architektúra (nagy kép)
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader`. A tényleges élet a `core/IceSMPCore`-ban van: konstruktorban épül fel az ÖSSZES manager (kézi DI, sorrend számít), majd `enable()`: `load()` a `persistentStores` listán → listener-regisztráció → parancs-regisztráció (kódból, nem manifestből!) → schedulerek; `disable()`: `save()` + cleanup.
