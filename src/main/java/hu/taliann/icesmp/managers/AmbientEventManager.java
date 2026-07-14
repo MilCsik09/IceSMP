@@ -255,7 +255,7 @@ public final class AmbientEventManager {
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
             player.getScheduler().run(plugin, task -> {
                 final Location base = player.getLocation().clone().add(0.0D, 3.0D, 0.0D);
-                player.spawnParticle(particle, base, 30, 5.0D, 2.5D, 5.0D, 0.01D);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(player, particle, base, 30, 5.0D, 2.5D, 5.0D, 0.01D);
                 player.playSound(player.getLocation(), sound, volume, 1.0F);
             }, null);
         }

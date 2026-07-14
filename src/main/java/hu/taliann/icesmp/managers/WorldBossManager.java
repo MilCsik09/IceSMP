@@ -312,7 +312,7 @@ public final class WorldBossManager {
             boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
         }
 
-        spawnLocation.getWorld().spawnParticle(Particle.FLASH, spawnLocation, 3);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(spawnLocation.getWorld(), Particle.FLASH, spawnLocation, 3);
         spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
 
         startPhaseTick(boss, archetype);
@@ -364,7 +364,7 @@ public final class WorldBossManager {
                 enraged.set(true);
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
-                boss.getWorld().spawnParticle(Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 3);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 3);
                 boss.getWorld().playSound(boss.getLocation(), archetype.sound, 2.0F, 0.5F);
                 Bukkit.getServer().broadcast(messageManager.getMessage(
                         "world-boss-enraged",
@@ -389,7 +389,7 @@ public final class WorldBossManager {
                     }
                 }
             }
-            boss.getWorld().spawnParticle(archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
 
             // Every ~8s (every 4th tick) the boss uses its signature special — a telegraphed mechanic
             // players must react to, so it is more than a stat-buffed mob.
@@ -432,13 +432,13 @@ public final class WorldBossManager {
         switch (archetype.special) {
             case SLAM -> {
                 final Location center = boss.getLocation().clone();
-                world.spawnParticle(archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
                 world.playSound(center, archetype.sound, 1.6F, 0.6F);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
                     }
-                    world.spawnParticle(Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
+                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
                     // Folia: hit players region-safely — direct (with the boss as damager) when we own
                     // them, otherwise hopped to their scheduler (damager omitted cross-region).
                     for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
@@ -471,13 +471,13 @@ public final class WorldBossManager {
                     return;
                 }
                 final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
-                world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
                 world.playSound(spot, archetype.sound, 1.2F, 0.8F);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
                     }
-                    world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
+                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
                     // Folia: same region-safe hit pattern as SLAM; the zone check runs on the
                     // target's own thread so its location read is always safe.
                     for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {

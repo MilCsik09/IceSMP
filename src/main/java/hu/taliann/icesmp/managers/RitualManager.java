@@ -322,8 +322,8 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             case "buff" -> Particle.ENCHANT;
             default -> Particle.SOUL_FIRE_FLAME;
         };
-        player.getWorld().spawnParticle(particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 80, 0.5D, 1.0D, 0.5D, 0.05D);
-        player.getWorld().spawnParticle(Particle.FLASH, player.getLocation().add(0.0D, 1.0D, 0.0D), 2);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 80, 0.5D, 1.0D, 0.5D, 0.05D);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), Particle.FLASH, player.getLocation().add(0.0D, 1.0D, 0.0D), 2);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0F, 0.6F);
     }
 

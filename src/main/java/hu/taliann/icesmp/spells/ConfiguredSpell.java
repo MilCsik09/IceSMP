@@ -400,7 +400,7 @@ public final class ConfiguredSpell extends BaseSpell {
 
     private void playFeedback(final Player player, final Location focus) {
         if (particle != null) {
-            player.getWorld().spawnParticle(particle, focus.clone().add(0.0D, 1.0D, 0.0D),
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, focus.clone().add(0.0D, 1.0D, 0.0D),
                     particleCount, radius > 0.0D ? radius / 2.0D : 0.4D, 0.6D, radius > 0.0D ? radius / 2.0D : 0.4D, 0.02D);
         }
 
