@@ -29,7 +29,7 @@ import java.util.Map;
 public final class NpcBindCommand implements BasicCommand {
 
     private static final String PERMISSION = "icesmp.admin.npc";
-    private static final List<String> ACTIONS = List.of("quest", "shop", "bank", "exchange", "clear");
+    private static final List<String> ACTIONS = List.of("quest", "shop", "bank", "exchange", "faction", "clear");
 
     private final NpcBindingManager npcBindingManager;
     private final QuestManager questManager;
@@ -73,6 +73,7 @@ public final class NpcBindCommand implements BasicCommand {
             case "shop" -> handleShop(sender, npcName, args);
             case "bank" -> handleBankOrExchange(sender, npcName, BindingType.BANK);
             case "exchange" -> handleBankOrExchange(sender, npcName, BindingType.EXCHANGE);
+            case "faction" -> handleFaction(sender, npcName);
             case "clear" -> handleClear(sender, npcName);
             default -> {
                 sender.sendMessage(messageManager.get("npcbind-unknown-action", "&cIsmeretlen kötés-típus: &f%s", args[1]));
@@ -126,6 +127,15 @@ public final class NpcBindCommand implements BasicCommand {
         }
     }
 
+    private void handleFaction(final CommandSender sender, final String npcName) {
+        npcBindingManager.bind(npcName, BindingType.FACTION, "");
+        sender.sendMessage(messageManager.get(
+                "npcbind-faction-success",
+                "&aKötve: &e%s &7NPC most királyság-választó hírnökként a frakció-menüt nyitja.",
+                npcName
+        ));
+    }
+
     private void handleBankOrExchange(final CommandSender sender, final String npcName, final BindingType type) {
         npcBindingManager.bind(npcName, type, "");
         final String kind = type == BindingType.BANK ? "bankár" : "valutaváltó";
@@ -171,6 +181,7 @@ public final class NpcBindCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("npcbind-help-shop", "&e/npcbind <npc> shop <bolt> &7- Az NPC ezt a boltot nyitja."));
         sender.sendMessage(messageManager.get("npcbind-help-bank", "&e/npcbind <npc> bank &7- Az NPC bankárként a bank menüt nyitja."));
         sender.sendMessage(messageManager.get("npcbind-help-exchange", "&e/npcbind <npc> exchange &7- Az NPC valutaváltóként a bank menüt nyitja."));
+        sender.sendMessage(messageManager.get("npcbind-help-faction", "&e/npcbind <npc> faction &7- Az NPC a frakció-menüt nyitja (királyság-választó hírnök)."));
         sender.sendMessage(messageManager.get("npcbind-help-clear", "&e/npcbind <npc> clear &7- Kötés törlése."));
         sender.sendMessage(messageManager.get("npcbind-help-list", "&e/npcbind list &7- Minden kötés kiírása."));
     }

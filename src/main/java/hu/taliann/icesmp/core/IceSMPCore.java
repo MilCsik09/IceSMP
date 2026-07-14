@@ -45,6 +45,7 @@ import hu.taliann.icesmp.listeners.DailyQuestListener;
 import hu.taliann.icesmp.listeners.DonationChestListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
+import hu.taliann.icesmp.listeners.FactionSpawnListener;
 import hu.taliann.icesmp.listeners.IntroListener;
 import hu.taliann.icesmp.listeners.JobCraftRestrictionListener;
 import hu.taliann.icesmp.listeners.JobGUIListener;
@@ -594,6 +595,10 @@ public final class IceSMPCore {
             // exchange buttons there are already gated by the banking.capital-only config.
             npcQuestBridge.setBankOpenHook(player ->
                     hu.taliann.icesmp.gui.CommandMenus.openBank(player, commandMenuContext));
+            // /npcbind <npc> faction: kingdom-choice NPC (the neutral capital's herald) — opens the
+            // faction menu; the actual join/switch rules stay in /faction join (capital gate, cost).
+            npcQuestBridge.setFactionMenuHook(player ->
+                    hu.taliann.icesmp.gui.CommandMenus.openFaction(player, commandMenuContext));
             scheduleQuestNpcMarkers();
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
@@ -811,7 +816,7 @@ public final class IceSMPCore {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(configManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
-        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, messageManager));
+        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));
         plugin.registerCommand("class", "Kaszt (class): szint, katalizátor, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, specializationManager, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
@@ -901,6 +906,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
+        pluginManager.registerEvents(new FactionSpawnListener(factionManager, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new SiegeWeaponListener(plugin, siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
         pluginManager.registerEvents(new RitualListener(ritualManager), plugin);

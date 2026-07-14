@@ -39,7 +39,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "pos", "undo", "clearpoints", "points", "create", "circle",
-            "setcapital", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
+            "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
     private static final List<String> TYPE_NAMES = List.of(
             "faction", "protected-faction", "protected-city", "capital");
 
@@ -75,6 +75,7 @@ public final class TerritoryCommand implements BasicCommand {
             case "create" -> handleCreatePolygon(sender, args);
             case "circle" -> handleCircle(sender, args);
             case "setcapital" -> handleSetCapital(sender, args);
+            case "setspawn" -> handleSetSpawn(sender, args);
             case "rename" -> handleRename(sender, args);
             case "resize" -> handleResize(sender, args);
             case "settype" -> handleSetType(sender, args);
@@ -268,6 +269,34 @@ public final class TerritoryCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("territory-setcapital-success",
                 "&aFőváros kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)",
                 territory.name(), faction.getDisplayName(), territory.radius(), territory.x(), territory.z()));
+    }
+
+    /**
+     * Sets a faction's kingdom spawn to the admin's EXACT standing position (full Y + view
+     * direction) — no highest-block guessing. Used by first-join placement, the faction-join
+     * teleport and the faction respawn.
+     */
+    private void handleSetSpawn(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messageManager.get("territory-setspawn-usage",
+                    "&cHasználat: /territory setspawn <frakció> — az aktuális pozíciód lesz a spawn."));
+            return;
+        }
+
+        final FactionType faction = parseFaction(sender, args[1]);
+        if (faction == null) {
+            return;
+        }
+
+        territoryManager.setFactionSpawn(faction, player.getLocation());
+        sender.sendMessage(messageManager.get("territory-setspawn-success",
+                "&aKirályság-spawn beállítva: &f%s &7(%s: %.1f, %.1f, %.1f)",
+                faction.getDisplayName(), player.getWorld().getName(),
+                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
     }
 
     // ==================== zone edits ====================
@@ -654,6 +683,8 @@ public final class TerritoryCommand implements BasicCommand {
                 "&e/territory circle <típus> <frakció> <id> <sugár> [név...] &7- Kör-terület."));
         sender.sendMessage(messageManager.get("territory-help-setcapital",
                 "&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros (kör)."));
+        sender.sendMessage(messageManager.get("territory-help-setspawn",
+                "&e/territory setspawn <frakció> &7- Királyság-spawn az aktuális pozíciódra."));
         sender.sendMessage(messageManager.get("territory-help-edit",
                 "&e/territory rename|resize|settype|sety <id> ... &7- Meglévő zóna módosítása."));
         sender.sendMessage(messageManager.get("territory-help-remove", "&e/territory remove <id> &7- Terület törlése."));
@@ -685,7 +716,7 @@ public final class TerritoryCommand implements BasicCommand {
         if (("create".equals(subcommand) || "circle".equals(subcommand)) && args.length == 3) {
             return factionSuggestions(prefixAt(args, 2));
         }
-        if ("setcapital".equals(subcommand) && args.length == 2) {
+        if (("setcapital".equals(subcommand) || "setspawn".equals(subcommand)) && args.length == 2) {
             return factionSuggestions(prefixAt(args, 1));
         }
         // Edit/remove/tp/show commands take an existing zone id at arg1.

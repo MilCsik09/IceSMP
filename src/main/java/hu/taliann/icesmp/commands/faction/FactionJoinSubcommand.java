@@ -1,11 +1,13 @@
 package hu.taliann.icesmp.commands.faction;
 
-import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.SinManager;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -18,13 +20,18 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final CurrencyManager currencyManager;
+    private final TerritoryManager territoryManager;
+    private final ConfigManager configManager;
     private final MessageManager messageManager;
 
     public FactionJoinSubcommand(final FactionManager factionManager, final SinManager sinManager,
-                                 final CurrencyManager currencyManager, final MessageManager messageManager) {
+                                 final CurrencyManager currencyManager, final TerritoryManager territoryManager,
+                                 final ConfigManager configManager, final MessageManager messageManager) {
         this.factionManager = factionManager;
         this.sinManager = sinManager;
         this.currencyManager = currencyManager;
+        this.territoryManager = territoryManager;
+        this.configManager = configManager;
         this.messageManager = messageManager;
     }
 
@@ -70,6 +77,13 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
+        // Frakciót VÁLTANI (ha már választottál) csak a semleges fővárosban lehet —
+        // gyakorlatban a semleges királyság spawn-területén, a leendő frakció-NPC-nél.
+        // Fail-open: ha még nincs kijelölt semleges főváros, a kapu nem zár.
+        if (hasFaction && !FactionSwitchRules.passesNeutralCapitalGate(player, territoryManager, configManager, messageManager)) {
+            return true;
+        }
+
         // Első csatlakozás mindig ingyenes és időzítetlen. Frakcióváltás fizetős és
         // cooldownhoz kötött, KIVÉVE: a Semlegesből (alapértelmezett kezdő frakció)
         // bárhová ingyen léphetsz, és a Sötétbe lépés is ingyenes (annak a sinner-
@@ -87,7 +101,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                 return true;
             }
 
-            if (isSwitch && !chargeSwitch(player, currentFaction)) {
+            if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
                 return true;
             }
 
@@ -97,61 +111,41 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                     "messages.faction-dark-pact-sealed",
                     "&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad."
             ));
+            teleportToFactionSpawn(player, FactionType.DARK);
             return true;
         }
 
-        if (isSwitch && !chargeSwitch(player, currentFaction)) {
+        if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
             return true;
         }
 
         factionManager.setFaction(uuid, factionType);
         sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s", factionType.getDisplayName()));
+        teleportToFactionSpawn(player, factionType);
         return true;
     }
 
     /**
-     * Charges the faction-switch cost (in the player's CURRENT faction currency) and enforces the
-     * switch cooldown. On success, deducts the cost, records the switch timestamp and notifies the
-     * player. Only called when the player already has a faction and is moving to a different one.
-     *
-     * @param player the switching player
-     * @param currentFaction the player's faction before the switch
-     * @return true if the switch may proceed, false if it was refused (a message was already sent)
+     * Welcomes the player into the chosen kingdom by teleporting them to its admin-set spawn
+     * (config: factions.spawn.teleport-on-join; no-op while the spawn is unset). Runs after the
+     * join succeeded, on the player's own region thread — teleportAsync is Folia-safe.
      */
-    private boolean chargeSwitch(final Player player, final FactionType currentFaction) {
-        final long remainingCooldownMillis = factionManager.getRemainingSwitchCooldownMillis(player);
-        if (remainingCooldownMillis > 0) {
-            final double remainingHours = remainingCooldownMillis / 3_600_000.0D;
-            player.sendMessage(messageManager.get(
-                    "messages.faction-switch-cooldown",
-                    "&cFrakciót nemrég váltottál — még &f%.1f óra&c van hátra, mire újra válthatsz.",
-                    remainingHours
-            ));
-            return false;
+    private void teleportToFactionSpawn(final Player player, final FactionType factionType) {
+        if (!configManager.getBoolean("factions.spawn.teleport-on-join", true)) {
+            return;
         }
-
-        final double cost = factionManager.getSwitchCost();
-        final CurrencyType currency = CurrencyType.fromFactionType(currentFaction);
-        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
-        if (cost > 0.0D && !currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
-            player.sendMessage(messageManager.get(
-                    "messages.faction-switch-insufficient",
-                    "&cA frakcióváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.",
-                    currencyManager.formatBalance(cost),
-                    currency.getDisplayName(),
-                    currencyManager.formatBalance(currencyManager.getBalance(player, currency))
-            ));
-            return false;
+        final Location spawn = territoryManager.getFactionSpawn(factionType);
+        if (spawn == null) {
+            return;
         }
-        factionManager.recordSwitch(player);
-        player.sendMessage(messageManager.get(
-                "messages.faction-switch-paid",
-                "&aFrakcióváltás díja levonva: &f%s %s &7(új egyenleg: &f%s&7).",
-                currencyManager.formatBalance(cost),
-                currency.getDisplayName(),
-                currencyManager.formatBalance(balance - cost)
-        ));
-        return true;
+        player.teleportAsync(spawn).thenAccept(success -> {
+            if (Boolean.TRUE.equals(success)) {
+                player.sendMessage(messageManager.get(
+                        "messages.faction-spawn-welcome",
+                        "&aÜdvözöl a(z) &f%s&a! A királyság spawnjára kerültél.",
+                        factionType.getDisplayName()));
+            }
+        });
     }
 
     @Override

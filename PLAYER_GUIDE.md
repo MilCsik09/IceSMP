@@ -54,11 +54,18 @@ Első belépéskor egy rövid **bevezető cím-szekvencia** is lejátszódik. �
 Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van. Belépés:
 `/faction join <red|blue|neutral|dark>`, kilépés: `/faction leave`.
 
-Az **első csatlakozás ingyenes és időzítetlen**, és mindenki **Semlegesként kezd**. A
-**Semlegesből bárhová ingyen** léphetsz át, és a **Sötétbe lépés is mindig ingyenes** (annak a
+Az **első csatlakozás ingyenes és időzítetlen**, és mindenki **Semlegesként kezd** — új
+játékosként a **Semleges Királyság spawnján** jelensz meg, és amikor királyságot választasz,
+a plugin **odateleportál az új királyságod spawnjára**. Ha nincs ágyad/respawn-horgonyod,
+halál után is a **saját királyságod spawnján** éledsz újra.
+
+A **Semlegesből bárhová ingyen** léphetsz át, és a **Sötétbe lépés is mindig ingyenes** (annak a
 bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék, illetve vissza a
-Semlegesbe) a jelenlegi frakciód valutájában **alapból 500-ba** kerül, és utána **72 óráig**
-nem válthatsz újra (`factions.switch.cost` / `factions.switch.cooldown-hours`).
+Semlegesbe — a `/faction leave` is ide számít!) a jelenlegi frakciód valutájában **alapból
+500-ba** kerül, és utána **72 óráig** nem válthatsz újra (`factions.switch.cost` /
+`factions.switch.cooldown-hours`). **Frakciót váltani csak a Semleges Királyság fővárosában
+állva lehet** (ott, ahol a királyság-választó hírnök NPC is áll) — amíg a szerveren nincs
+kijelölt semleges főváros, ez a korlát nem él.
 
 | Frakció | Passzív bónusz |
 |---|---|

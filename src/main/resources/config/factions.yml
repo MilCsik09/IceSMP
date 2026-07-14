@@ -18,6 +18,15 @@ factions:
   switch:
     cost: 500.0
     cooldown-hours: 72.0
+    # Frakciót váltani (ha már választottál) csak a Semleges Királyság fővárosában állva lehet.
+    # Fail-open: amíg nincs kijelölt semleges főváros (/territory setcapital neutral ...), nem zár.
+    only-in-neutral-capital: true
+  # ===== Királyság-spawnok (/territory setspawn <frakció> — a beállító admin PONTOS pozíciója,
+  # magassággal és nézésiránnyal együtt; amíg nincs beállítva, minden ág no-op) =====
+  spawn:
+    first-join-at-neutral: true      # új játékos a Semleges Királyság spawnján jelenik meg
+    teleport-on-join: true           # frakcióválasztáskor teleport az új frakció spawnjára
+    respawn-at-faction-spawn: true   # ágy/horgony nélküli halál után a saját frakció spawnján éledsz
   # Passzív frakció bónuszok (kiegyensúlyozva — minden frakció kb. egy szinten hasznos):
   # RED: tűz/láva/forró blokk-immunitás (hő-mesterség, Nether)
   # BLUE: fagy- ÉS fulladás-immunitás + lassabb éhség (hideg/víz-mesterség, óceán)

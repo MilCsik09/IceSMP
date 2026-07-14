@@ -189,6 +189,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       **nem támad** rád. (A láthatatlanság SZÁNDÉKOSAN megszűnt — ne teszteld hibaként.)
 - [ ] `factions.passives.enabled: false` → minden passzív kikapcsol.
 
+### 4.1.1 Királyság-spawnok és váltás-kapu ✅
+- [ ] **Spawn-kijelölés:** `/territory setspawn <frakció>` a PONTOS álláspontot menti (magasság +
+      nézésirány) — ellenőrizd egy fa alatt állva, hogy NEM a fa tetejére kerülsz.
+- [ ] **Első belépés:** vadonatúj fiók a Semleges Királyság spawnján jelenik meg (nem a világ-spawnon);
+      az intro-kamera utána lejátszódik.
+- [ ] **Választás-teleport:** `/faction join red` után a Piros Királyság spawnjára kerülsz
+      („Üdvözöl a(z)…" üzenettel); `factions.spawn.teleport-on-join: false` → nincs teleport.
+- [ ] **Respawn:** ágy/horgony nélkül meghalva a SAJÁT frakciód spawnján éledsz; ággyal az ágynál.
+- [ ] **Váltás-kapu:** kijelölt semleges főváros mellett frakciót váltani (join ÉS leave) csak a
+      semleges fővárosban állva lehet — máshol hibaüzenet; semleges főváros nélkül a kapu nem zár.
+- [ ] **Leave = fizetős váltás:** nem-semleges frakcióból `/faction leave` levonja az 500-at és
+      indítja a 72 órás cooldownt (a leave+join kerülőút megszűnt).
+- [ ] **Hírnök-NPC:** `/npcbind <npc> faction` után az NPC jobb-kattra a frakció-menüt nyitja.
+
 ### 4.2 Kasztok, katalizátor, szintezés ✅
 - [ ] `/profile` → Kaszt menüből mind a **13 kaszt** választható; **egy kaszt** vehető fel, utána a
       menü „Már van kasztod" jelzést ad; `/class admin resetclass` után újra választható.

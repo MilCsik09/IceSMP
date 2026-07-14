@@ -35,10 +35,10 @@ public final class NpcBindingManager implements PersistentStore {
 
     /** What an NPC is bound to. QUEST/SHOP carry a value (quest id / shop name); BANK/EXCHANGE don't. */
     public enum BindingType {
-        QUEST, SHOP, BANK, EXCHANGE
+        QUEST, SHOP, BANK, EXCHANGE, FACTION
     }
 
-    /** A single binding: its type, and the type-specific value (empty for BANK/EXCHANGE). */
+    /** A single binding: its type, and the type-specific value (empty for BANK/EXCHANGE/FACTION). */
     public record Binding(BindingType type, String value) {
     }
 

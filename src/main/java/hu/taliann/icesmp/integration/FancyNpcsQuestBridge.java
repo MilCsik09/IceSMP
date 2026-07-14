@@ -58,6 +58,7 @@ public final class FancyNpcsQuestBridge {
     private final Method dataGetLocation;
     private java.util.function.BiConsumer<Player, String> interactHook;
     private Consumer<Player> bankOpenHook;
+    private Consumer<Player> factionMenuHook;
 
     /**
      * Registers an extra (player, shopName) consumer fired on every NPC interaction that is
@@ -71,6 +72,11 @@ public final class FancyNpcsQuestBridge {
     /** Registers the consumer that opens the bank menu — fired for {@code BANK}/{@code EXCHANGE} bindings. */
     public void setBankOpenHook(final Consumer<Player> hook) {
         this.bankOpenHook = hook;
+    }
+
+    /** Registers the consumer that opens the faction menu — fired for {@code FACTION} bindings (kingdom-choice NPC). */
+    public void setFactionMenuHook(final Consumer<Player> hook) {
+        this.factionMenuHook = hook;
     }
 
     private FancyNpcsQuestBridge(final JavaPlugin plugin, final ConfigManager configManager,
@@ -168,6 +174,11 @@ public final class FancyNpcsQuestBridge {
                                     case BANK, EXCHANGE -> {
                                         if (bankOpenHook != null) {
                                             bankOpenHook.accept(player);
+                                        }
+                                    }
+                                    case FACTION -> {
+                                        if (factionMenuHook != null) {
+                                            factionMenuHook.accept(player);
                                         }
                                     }
                                 }

@@ -219,18 +219,16 @@ public final class CharacterGUIListener implements Listener {
         final double cost = ctx.specializationManager().getRespecCost();
         final FactionType faction = ctx.factionManager().getFaction(player.getUniqueId());
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
-        final double balance = ctx.currencyManager().getBalance(player, currency);
-        if (balance < cost) {
+        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
+        if (cost > 0.0D && !ctx.currencyManager().deductFromBalance(player.getUniqueId(), currency, cost)) {
             fail(player, ctx.messageManager().getComponent(
                     "spec-respec-insufficient",
                     "&cA respec ára &f%s %s&c, de csak &f%s&c van a bankodban.",
                     ctx.currencyManager().formatBalance(cost),
                     currency.getDisplayName(),
-                    ctx.currencyManager().formatBalance(balance)));
+                    ctx.currencyManager().formatBalance(ctx.currencyManager().getBalance(player, currency))));
             return;
         }
-
-        ctx.currencyManager().setBalance(player, currency, balance - cost);
         int refunded = 0;
         if (classPool) {
             ctx.specializationManager().resetClassSpecialization(player);

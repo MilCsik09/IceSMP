@@ -31,6 +31,13 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
     ténylegesen levonttól, ha a frakció-viszony épp a kattintás pillanatában vált.
 
 ### Játékmenet
+- 💡 **Királyság-spawnok — kész:** admin-kijelölt, PONTOS (magasság + nézésirány) spawn-pont
+  frakciónként (`/territory setspawn <frakció>`); új játékos a Semleges Királyság spawnján
+  jelenik meg, frakcióválasztáskor teleport az új királyság spawnjára, ágy/horgony nélkül a
+  saját frakció spawnján éledsz újra. **Frakciót váltani (join ÉS leave) csak a semleges
+  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` is teljes értékű
+  fizetős váltás (a leave+join ingyenes kerülőút megszűnt), és `/npcbind <npc> faction`
+  királyság-választó hírnök-NPC-t köt. További ötlet: váltás-megerősítő GUI a hírnöknél.
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
   bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),
   és mind a `/events <típus>` admin-triggerrel is kiváltható:
@@ -129,7 +136,9 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
-- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések.
+- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések,
+  majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
+  hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
 - ⬜ Kaszt-mester NPC-k (FancyNpcs: `harcos_mester`, `ijasz_mester`, `varazslo_mester`,
   `orgyilkos_mester`) és a mester-próbapályák (`harcos_proba`, `ijasz_proba`,
