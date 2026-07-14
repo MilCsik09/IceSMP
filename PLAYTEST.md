@@ -272,6 +272,26 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Újracast-védelem:** Belső Fókusz lefagyás alatt, Elrejtőzés aktív invis alatt nem castolható
       újra (a sebesség/páncél nem veszhet el).
 
+### 4.5.1 Playtest-balansz reworkök (Ice SMP 5 TEST doksi) ✅
+- [ ] **Dobható spellek:** Vadgomba (gomba 3mp után robban: slowness+poison), Rúnacsapás (kő —
+      hozzáérő ellenfél 7 sebzés), Démoni Kör (só-csapda poison), Átok Nyúl (nyúl-akna 3 szív splash) —
+      az itemek nem vehetők fel, a kaszterre nem hatnak.
+- [ ] **Lövedékek:** Szent Harag (meglévő élet 30%-a; világbosson/Wardenen HATÁSTALAN), Lélek Csere
+      (25% átszáll rád), Sarlóvetés (bumeráng oda-vissza sebez), Tűzgolyó (splash a cél körül),
+      Elmerobbantás (3mp múlva robban a jelölt cél).
+- [ ] **Channelek:** Mély Lélegzet (3.5mp lángszórás a nézésirányba, mozgás közben követi), Forgószél
+      (5mp pörgés, újracast tiltva közben), Szellemlátás (2mp-enként váltakozó invis 8mp-ig) — kilépésre
+      mind leáll (nincs beragadt állapot).
+- [ ] **Kiűzés Botja:** 5mp-re kapott Knockback 3 bot — nem dobható el, nem mozgatható, lejáratkor és
+      kilépéskor eltűnik.
+- [ ] **Áhítat Aurája:** 10mp-ig a támadók 1 visszavert sebzést kapnak; két aurás játékos egymást ütve
+      NEM kerül végtelen pingpongba (max 2 visszaverés/mp).
+- [ ] **Jéglánc:** pontosan max 2 célt fagyaszt (fő cél + legközelebbi 3 blokkon belül).
+- [ ] **Fagycsapás (volt Fagyláz):** 2 blokk széles sugár, minden útba esőt fagyaszt. ⚠️ A név most
+      ütközik a Fagylovag-spec Fagycsapásával — playtest-döntés kell az egyik átnevezéséről.
+- [ ] **Druida-formák:** Párducformában −4 szív max-élet (visszaváltáskor/relogkor visszaáll);
+      Medve: éhség-debuff; Hold: mining fatigue; Utazó: weakness.
+
 ### 4.6 Talentek ✅
 - [ ] `/profile` → Talentek: kaszt-ponttár (5 szintenként 1) és szakma-ponttár (10 szintenként 1).
 - [ ] Általános talent (Életerő/Erő/Fürgeség/…) azonnal hat; kötött talent csak a feltételt teljesítőnél jelenik meg.
