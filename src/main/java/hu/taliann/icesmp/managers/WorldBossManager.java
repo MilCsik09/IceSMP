@@ -111,6 +111,8 @@ public final class WorldBossManager {
     private volatile long activeBossUntil;
     private volatile long nextAttemptAt;
     private volatile java.util.UUID activeBossId;
+    /** Current health fraction (0–1) of the active boss, driving the shared HUD boss-bar. */
+    private volatile float bossHealthFraction = 1.0F;
 
     public WorldBossManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager, final FactionManager factionManager,
@@ -133,6 +135,31 @@ public final class WorldBossManager {
     /** Whether a world boss is currently alive (for HUD / boss-bar display). */
     public boolean isBossActive() {
         return activeBossUntil > System.currentTimeMillis();
+    }
+
+    /** The active boss's current health fraction (0–1) for the shared HUD boss-bar. */
+    public float getBossHealthFraction() {
+        return bossHealthFraction;
+    }
+
+    /**
+     * Refreshes the shared boss-bar fraction right after the boss takes a hit, so players see their
+     * damage register immediately (the phase tick only refreshes every ~2s). The {@link org.bukkit.event.entity.EntityDamageEvent}
+     * fires pre-damage, so the incoming amount is subtracted to project the post-hit health. Called
+     * from {@code WorldBossListener} on the boss's own region thread (the damaged entity), so reading
+     * its health here is Folia-safe.
+     *
+     * @param boss the world boss being hit
+     * @param incomingDamage the event's final damage (subtracted from current health)
+     */
+    public void updateHealthBar(final LivingEntity boss, final double incomingDamage) {
+        final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
+        final double maxHp = maxHealth != null ? maxHealth.getValue() : boss.getHealth();
+        if (maxHp <= 0.0D) {
+            return;
+        }
+        final double projected = Math.max(0.0D, boss.getHealth() - Math.max(0.0D, incomingDamage));
+        bossHealthFraction = (float) Math.max(0.0D, Math.min(1.0D, projected / maxHp));
     }
 
     /**
@@ -272,6 +299,7 @@ public final class WorldBossManager {
             maxHealth.setBaseValue(health);
             boss.setHealth(health);
         }
+        bossHealthFraction = 1.0F;
 
         final double damageMultiplier = Math.max(1.0D, configManager.getDouble("world-events.world-boss.damage-multiplier", 2.0D)) * archetype.damageMult;
         final AttributeInstance attackDamage = boss.getAttribute(Attribute.ATTACK_DAMAGE);
@@ -330,6 +358,8 @@ public final class WorldBossManager {
 
             final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
             final double maxHp = maxHealth != null ? maxHealth.getValue() : boss.getHealth();
+            bossHealthFraction = maxHp > 0.0D
+                    ? (float) Math.max(0.0D, Math.min(1.0D, boss.getHealth() / maxHp)) : 0.0F;
             if (!enraged.get() && boss.getHealth() < maxHp * 0.5D) {
                 enraged.set(true);
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
