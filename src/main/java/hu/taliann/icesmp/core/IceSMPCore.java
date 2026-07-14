@@ -430,6 +430,26 @@ public final class IceSMPCore {
         SpellCatalog.registerExpansionSpells(spellRegistry, messageManager);
         SpellCatalog.registerSummonSpells(spellRegistry, messageManager, plugin, minionManager, configManager, talentManager);
 
+        // Playtest-rework spellek (bespoke osztályok — a katalógusbeli deklaratív elődjeik törölve).
+        spellRegistry.register(new hu.taliann.icesmp.spells.WildMushroomSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.RuneStrikeSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.DemonicCircleSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ShadowburnSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ExpelHarmSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.DevotionAuraSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.HolyWrathSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.SoulExchangeSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.GlaiveThrowSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.LivingFlameSpell(messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.MindBlastSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.DeepBreathSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.WhirlwindSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.SpinningCraneKickSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.FlyingSerpentKickSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.SpectralSightSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.ChainsOfIceSpell(plugin, messageManager));
+        spellRegistry.register(new hu.taliann.icesmp.spells.FrostFeverSpell(plugin, messageManager));
+
         // Persistent Shaman totems (bespoke — need the TotemManager). Registered after the catalog so
         // they own their ids (the data-driven instant-aura versions were removed from SpellCatalog).
         spellRegistry.register(new hu.taliann.icesmp.spells.ShamanTotemSpell(messageManager, totemManager,

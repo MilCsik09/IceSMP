@@ -196,10 +196,6 @@ public final class SpellCatalog {
                 .healSelf(6.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 0)
                 .particle(Particle.HEART, 10).sound(Sound.ENTITY_PLAYER_LEVELUP, 0.6F, 1.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "whirlwind", "Forgószél", 60, SpellCostType.HUNGER, 6)
-                .aoe(4.0D).damage(4.0D).knockback(0.7D)
-                .particle(Particle.SWEEP_ATTACK, 12).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.7F)
-                .build());
         registry.register(ConfiguredSpell.builder(mm, "iron_skin", "Vasbőr", 150, SpellCostType.HUNGER, 8)
                 .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 1)
                 .particle(Particle.ASH, 30).sound(Sound.BLOCK_ANVIL_LAND, 0.5F, 1.6F)
@@ -652,10 +648,6 @@ public final class SpellCatalog {
                 .target(12.0D).damage(4.0D).ignite(3 * 20)
                 .particle(Particle.FLAME, 20).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.2F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "wild_mushroom", "Vadgomba", 45, SpellCostType.XP, 40)
-                .healSelf(5.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 0)
-                .particle(Particle.HEART, 18).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F)
-                .build());
         registry.register(ConfiguredSpell.builder(mm, "cyclone", "Ciklon", 50, SpellCostType.HUNGER, 4)
                 .target(10.0D).launchUp(0.8D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 1)
                 .particle(Particle.CLOUD, 25).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.1F)
@@ -749,10 +741,6 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "flash_heal", "Villámgyógyítás", 30, SpellCostType.XP, 40)
                 .healSelf(5.0D).particle(Particle.HEART, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "devotion_aura", "Áhítat Aurája", 60, SpellCostType.HUNGER, 4)
-                .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 0)
-                .particle(Particle.END_ROD, 15).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.0F)
-                .build());
         registry.register(ConfiguredSpell.builder(mm, "hammer_of_justice", "Igazság Pörölye", 45, SpellCostType.HUNGER, 4)
                 .target(8.0D).damage(3.0D).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 3)
                 .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.7F)
@@ -768,10 +756,6 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "blessing_of_might", "Erő Áldása", 120, SpellCostType.HUNGER, 5)
                 .selfEffect(PotionEffectType.STRENGTH, 15 * 20, 0)
                 .particle(Particle.END_ROD, 20).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.2F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "holy_wrath", "Szent Harag", 90, SpellCostType.XP, 60)
-                .aoe(6.0D).damage(4.0D).knockback(0.8D)
-                .particle(Particle.FLASH, 4).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.7F, 1.4F)
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "divine_protection", "Isteni Védelem", 120, SpellCostType.HUNGER, 6)
                 .selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 2).selfEffect(PotionEffectType.FIRE_RESISTANCE, 8 * 20, 0)
@@ -867,10 +851,6 @@ public final class SpellCatalog {
                 .target(14.0D).damage(5.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
                 .particle(Particle.SOUL, 25).sound(Sound.ENTITY_WITHER_AMBIENT, 0.7F, 1.2F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "chains_of_ice", "Jéglánc", 30, SpellCostType.HUNGER, 3)
-                .target(12.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 3)
-                .particle(Particle.SNOWFLAKE, 25).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.7F)
-                .build());
         registry.register(ConfiguredSpell.builder(mm, "blood_boil", "Vérforralás", 45, SpellCostType.HUNGER, 4)
                 .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.WITHER, 5 * 20, 0)
                 .particle(Particle.SQUID_INK, 30).sound(Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.9F)
@@ -883,10 +863,6 @@ public final class SpellCatalog {
                 .target(10.0D).damage(3.0D).freeze(60).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 1)
                 .particle(Particle.SNOWFLAKE, 20).sound(Sound.BLOCK_POWDER_SNOW_STEP, 1.0F, 0.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "rune_strike", "Rúnacsapás", 20, SpellCostType.HUNGER, 3)
-                .target(4.5D).damage(7.0D)
-                .particle(Particle.CRIT, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.8F)
-                .build());
         registry.register(ConfiguredSpell.builder(mm, "anti_magic_shell", "Mágiapajzs", 90, SpellCostType.HUNGER, 5)
                 .selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 1).selfEffect(PotionEffectType.FIRE_RESISTANCE, 8 * 20, 0)
                 .particle(Particle.END_ROD, 25).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 0.7F)
@@ -894,10 +870,6 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "dark_command", "Sötét Parancs", 60, SpellCostType.HUNGER, 4)
                 .aoe(6.0D).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 1).selfEffect(PotionEffectType.RESISTANCE, 6 * 20, 0)
                 .particle(Particle.SQUID_INK, 25).sound(Sound.ENTITY_WITHER_AMBIENT, 0.7F, 0.6F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "frost_fever", "Fagyláz", 45, SpellCostType.XP, 40)
-                .target(12.0D).damage(2.0D).freeze(80).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 2)
-                .particle(Particle.SNOWFLAKE, 25).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.5F)
                 .build());
     }
 
@@ -1097,18 +1069,6 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "vivify", "Élénkítés", 30, SpellCostType.XP, 40)
                 .aoe(6.0D).healSelf(5.0D).targetEffect(PotionEffectType.GLOWING, 150, 0).particle(Particle.HEART, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.8F, 1.5F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "spinning_crane_kick", "Pörgő Darurúgás", 30, SpellCostType.HUNGER, 4)
-                .aoe(4.0D).damage(4.0D)
-                .particle(Particle.SWEEP_ATTACK, 18).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 1.1F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "flying_serpent_kick", "Repülő Kígyórúgás", 35, SpellCostType.HUNGER, 3)
-                .dash(2.0D, 0.4D).selfEffect(PotionEffectType.SPEED, 3 * 20, 0)
-                .particle(Particle.CLOUD, 15).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.2F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "expel_harm", "Ártalom Kiűzése", 45, SpellCostType.XP, 45)
-                .aoe(4.0D).damage(2.0D).healSelf(4.0D)
-                .particle(Particle.HEART, 15).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.2F)
-                .build());
         registry.register(ConfiguredSpell.builder(mm, "leg_sweep", "Lábseprés", 60, SpellCostType.HUNGER, 4)
                 .aoe(5.0D).targetEffect(PotionEffectType.WEAKNESS, 3 * 20, 1).knockback(0.4D)
                 .particle(Particle.SWEEP_ATTACK, 15).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.7F)
@@ -1199,8 +1159,6 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 1).selfEffect(PotionEffectType.SLOWNESS, 5 * 20, 0).particle(Particle.END_ROD, 20).sound(Sound.BLOCK_BEACON_ACTIVATE, 0.8F, 1.0F).build());
         registry.register(ConfiguredSpell.builder(mm, "renew", "Megújulás", 30, SpellCostType.XP, 30)
                 .selfEffect(PotionEffectType.REGENERATION, 8 * 20, 0).particle(Particle.HEART, 12).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.3F).build());
-        registry.register(ConfiguredSpell.builder(mm, "mind_blast", "Elmerobbantás", 30, SpellCostType.XP, 40)
-                .target(14.0D).damage(6.0D).particle(Particle.SCULK_SOUL, 20).sound(Sound.ENTITY_PHANTOM_AMBIENT, 1.0F, 1.2F).build());
         registry.register(ConfiguredSpell.builder(mm, "shadow_word_pain", "Árnyszó: Fájdalom", 25, SpellCostType.HUNGER, 3)
                 .target(12.0D).targetEffect(PotionEffectType.WITHER, 6 * 20, 0).particle(Particle.SQUID_INK, 18).sound(Sound.ENTITY_WITHER_AMBIENT, 0.7F, 1.3F).build());
         registry.register(ConfiguredSpell.builder(mm, "dispel", "Feloldozás", 60, SpellCostType.HUNGER, 4)
@@ -1265,12 +1223,8 @@ public final class SpellCatalog {
                 .target(10.0D).targetEffect(PotionEffectType.SLOWNESS, 6 * 20, 1).targetEffect(PotionEffectType.NAUSEA, 6 * 20, 0).particle(Particle.SQUID_INK, 20).sound(Sound.ENTITY_PHANTOM_DEATH, 0.8F, 0.6F).build());
         registry.register(ConfiguredSpell.builder(mm, "demon_armor", "Démonpáncél", 90, SpellCostType.HUNGER, 5)
                 .selfEffect(PotionEffectType.RESISTANCE, 10 * 20, 1).particle(Particle.SOUL_FIRE_FLAME, 20).sound(Sound.ENTITY_WITHER_SPAWN, 0.5F, 1.5F).build());
-        registry.register(ConfiguredSpell.builder(mm, "shadowburn", "Árnyékégés", 30, SpellCostType.XP, 35)
-                .target(12.0D).damage(5.0D).ignite(2 * 20).particle(Particle.SOUL_FIRE_FLAME, 18).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 0.7F).build());
         registry.register(ConfiguredSpell.builder(mm, "curse_of_agony", "Gyötrelem Átka", 45, SpellCostType.HEALTH, 2)
                 .target(12.0D).targetEffect(PotionEffectType.WITHER, 5 * 20, 0).targetEffect(PotionEffectType.POISON, 6 * 20, 0).particle(Particle.SCULK_SOUL, 18).sound(Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.9F).build());
-        registry.register(ConfiguredSpell.builder(mm, "demonic_circle", "Démoni Kör", 45, SpellCostType.HUNGER, 3)
-                .dash(1.6D, 0.3D).selfEffect(PotionEffectType.SPEED, 4 * 20, 0).particle(Particle.SOUL_FIRE_FLAME, 20).sound(Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 0.7F).build());
     }
 
     // ===== ÁTOK (warlock spec) — tartós sebző átkok =====
@@ -1315,22 +1269,16 @@ public final class SpellCatalog {
                 .target(4.5D).damage(5.0D).particle(Particle.SOUL_FIRE_FLAME, 12).sound(Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0F, 1.0F).build());
         registry.register(ConfiguredSpell.builder(mm, "fel_rush", "Fel Roham", 20, SpellCostType.HUNGER, 2)
                 .dash(2.0D, 0.3D).selfEffect(PotionEffectType.SPEED, 3 * 20, 0).particle(Particle.SOUL_FIRE_FLAME, 15).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.2F).build());
-        registry.register(ConfiguredSpell.builder(mm, "shear", "Nyírás", 20, SpellCostType.HUNGER, 2)
-                .target(4.0D).damage(5.0D).particle(Particle.CRIT, 12).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 1.1F).build());
         registry.register(ConfiguredSpell.builder(mm, "immolation_aura", "Lángaura", 45, SpellCostType.XP, 40)
                 .aoe(5.0D).damage(3.0D).ignite(3 * 20).particle(Particle.FLAME, 30).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 0.8F).build());
         registry.register(ConfiguredSpell.builder(mm, "consume_magic", "Mágiafalás", 60, SpellCostType.HUNGER, 3)
                 .selfEffect(PotionEffectType.RESISTANCE, 5 * 20, 0).particle(Particle.SOUL_FIRE_FLAME, 15).sound(Sound.ENTITY_WITHER_AMBIENT, 0.6F, 1.3F).build());
-        registry.register(ConfiguredSpell.builder(mm, "spectral_sight", "Szellemlátás", 75, SpellCostType.HUNGER, 3)
-                .selfEffect(PotionEffectType.SPEED, 8 * 20, 0).particle(Particle.SCULK_SOUL, 15).sound(Sound.ENTITY_PHANTOM_AMBIENT, 0.7F, 1.0F).build());
         registry.register(ConfiguredSpell.builder(mm, "torment", "Gyötrés", 45, SpellCostType.HUNGER, 3)
                 .aoe(6.0D).targetEffect(PotionEffectType.WEAKNESS, 6 * 20, 0).selfEffect(PotionEffectType.RESISTANCE, 5 * 20, 0).particle(Particle.SOUL_FIRE_FLAME, 20).sound(Sound.ENTITY_WITHER_AMBIENT, 0.7F, 0.7F).build());
         registry.register(ConfiguredSpell.builder(mm, "glide", "Siklás", 45, SpellCostType.HUNGER, 2)
                 .selfEffect(PotionEffectType.JUMP_BOOST, 6 * 20, 1).selfEffect(PotionEffectType.SPEED, 6 * 20, 0).particle(Particle.CLOUD, 15).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.3F).build());
         registry.register(ConfiguredSpell.builder(mm, "chaos_strike", "Káoszcsapás", 25, SpellCostType.HUNGER, 3)
                 .target(4.5D).damage(6.0D).launchUp(1.2D).particle(Particle.SOUL_FIRE_FLAME, 15).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.9F).build());
-        registry.register(ConfiguredSpell.builder(mm, "throw_glaive", "Pengevetés", 25, SpellCostType.XP, 30)
-                .target(14.0D).damage(5.0D).particle(Particle.CRIT, 18).sound(Sound.ITEM_CROSSBOW_LOADING_START, 1.0F, 1.2F).build());
     }
 
     // ===== TOMBOLÁS (demon hunter spec) — fel-sebző közelharc =====
@@ -1371,8 +1319,6 @@ public final class SpellCatalog {
 
     // ===== SÁRKÁNYIDÉZŐ (base class) — sárkány-mágia: tűz, szél, smaragd-gyógyítás =====
     private static void registerEvoker(final SpellRegistry registry, final MessageManager mm) {
-        registry.register(ConfiguredSpell.builder(mm, "living_flame", "Tűzgolyó", 20, SpellCostType.XP, 30)
-                .target(15.0D).damage(5.0D).ignite(2 * 20).particle(Particle.FLAME, 20).sound(Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.1F).build());
         registry.register(ConfiguredSpell.builder(mm, "azure_strike", "Azúr Csapás", 20, SpellCostType.XP, 30)
                 .target(14.0D).damage(5.0D).particle(Particle.ELECTRIC_SPARK, 20).sound(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.2F).build());
         registry.register(ConfiguredSpell.builder(mm, "fire_breath", "Tűzlehelet", 45, SpellCostType.XP, 45)
@@ -1383,8 +1329,6 @@ public final class SpellCatalog {
                 .healSelf(5.0D).selfEffect(PotionEffectType.REGENERATION, 6 * 20, 0).particle(Particle.HEART, 18).sound(Sound.BLOCK_BELL_RESONATE, 0.7F, 1.4F).build());
         registry.register(ConfiguredSpell.builder(mm, "hover", "Lebegés", 45, SpellCostType.HUNGER, 2)
                 .selfEffect(PotionEffectType.JUMP_BOOST, 6 * 20, 1).selfEffect(PotionEffectType.SPEED, 6 * 20, 0).selfEffect(PotionEffectType.SLOW_FALLING, 6 * 20, 0).particle(Particle.CLOUD, 15).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.4F).build());
-        registry.register(ConfiguredSpell.builder(mm, "deep_breath", "Mély Lélegzet", 90, SpellCostType.XP, 60)
-                .aoe(6.0D).damage(6.0D).ignite(4 * 20).particle(Particle.FLAME, 50).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.7F, 0.9F).build());
         registry.register(ConfiguredSpell.builder(mm, "tail_swipe", "Farokcsapás", 30, SpellCostType.HUNGER, 3)
                 .aoe(5.0D).damage(4.0D).knockback(0.8D).particle(Particle.SWEEP_ATTACK, 20).sound(Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.7F).build());
         registry.register(ConfiguredSpell.builder(mm, "obsidian_scales", "Obszidián Pikkelyek", 90, SpellCostType.HUNGER, 5)
