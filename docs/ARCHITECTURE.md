@@ -61,6 +61,13 @@ olvassa a fő `config.yml`-t (override, ez nyer). A betöltött fájlokat a `CON
 fel. Minden hívó a megszokott `getInt/getDouble/getString("alrendszer.kulcs", default)` API-t
 használja — a kulcs-útvonalak a fájlok között oszthatatlanok.
 
+A `config.yml`-t az **ingame config-vezérlés** is ezt a réteget írja: `/icesmp config
+get|set|unset|list|find` (node: `icesmp.admin.config`) bármely kulcsot lekér/felülbírál/töröl,
+set/unset után azonnali reload + `ConfigValidator` fut. Mivel a managerek túlnyomó része
+használat idején olvassa a configot, a legtöbb érték azonnal él; a szerverindításkor beépülő
+értékekhez (pl. a deklaratív spellek SpellCatalog-beli defaultjai) restart kell — kivéve a
+`spell-balance.<id>.resource-cost`-ot, amit a `ResourceManager.costOf` cast-időben old fel.
+
 Betöltés után a `ConfigValidator.validate(...)` **konvenció-alapú** ellenőrzést futtat a teljes
 kulcstéren (soha nem dob, csak a konzolra figyelmeztet): a `material`/`materials` kulcsok valós
 `Material`-t adnak-e, a `currency` kulcsok `OWN`/valuta-nevek-e, a `…percent` kulcsok a 0–100

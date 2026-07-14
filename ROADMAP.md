@@ -31,7 +31,12 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
     ténylegesen levonttól, ha a frakció-viszony épp a kattintás pillanatában vált.
 
 ### Játékmenet
-- 💡 **Királyság-spawnok — kész:** admin-kijelölt, PONTOS (magasság + nézésirány) spawn-pont
+- 💡 **Ingame config-vezérlés — kész:** `/icesmp config get|set|unset|list|find` bármely
+  config-kulcsot játékon belülről lekér/felülbírál (config.yml-be perzisztálva, azonnali
+  reload + validátor, kulcs-tab-complete a teljes kulcstérből). A spellek erőforrás-ára
+  (`spell-balance.<id>.resource-cost`) spellenként felülbírálható és cast-időben olvasódik —
+  többé nem fixen a cooldown-sáv határozza meg. További ötlet: config-diff nézet (mi tér el
+  a defaulttól), többsoros lista-szerkesztő. admin-kijelölt, PONTOS (magasság + nézésirány) spawn-pont
   frakciónként (`/territory setspawn <frakció>`); új játékos a Semleges Királyság spawnján
   jelenik meg, frakcióválasztáskor teleport az új királyság spawnjára, ágy/horgony nélkül a
   saját frakció spawnján éledsz újra. **Frakciót váltani (join ÉS leave) csak a semleges

@@ -98,12 +98,24 @@ public final class ResourceManager implements PlayerStateCleanup {
         return value;
     }
 
+    /**
+     * The spell's EFFECTIVE resource cost: the per-spell config override
+     * ({@code spell-balance.<id>.resource-cost}) if set, otherwise the cooldown-tier default
+     * ({@link Spell#getResourceCost()}). Read at cast time, so {@code /icesmp reload} (or an
+     * ingame {@code /icesmp config set}) applies it immediately — the cost is no longer fixed
+     * to the cooldown tier.
+     */
+    public int costOf(final Spell spell) {
+        return Math.max(0, configManager.getInt(
+                "spell-balance." + spell.getId() + ".resource-cost", spell.getResourceCost()));
+    }
+
     /** True if the player has enough resource to cast the spell (always true when the system is off). */
     public boolean canAfford(final Player player, final Spell spell) {
         if (!isEnabled()) {
             return true;
         }
-        return current(player.getUniqueId()) >= spell.getResourceCost();
+        return current(player.getUniqueId()) >= costOf(spell);
     }
 
     /** Spends the spell's resource cost. No-op when the system is off. */
@@ -111,7 +123,7 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return;
         }
-        final double after = Math.max(0.0D, current(player.getUniqueId()) - spell.getResourceCost());
+        final double after = Math.max(0.0D, current(player.getUniqueId()) - costOf(spell));
         resource.put(player.getUniqueId(), after);
     }
 
@@ -120,7 +132,7 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return;
         }
-        final double after = Math.min(max(), current(player.getUniqueId()) + spell.getResourceCost());
+        final double after = Math.min(max(), current(player.getUniqueId()) + costOf(spell));
         resource.put(player.getUniqueId(), after);
     }
 

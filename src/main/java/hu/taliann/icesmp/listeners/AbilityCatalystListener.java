@@ -343,7 +343,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     /** The cost shown to the player: the class-resource cost for resource spells, else the thematic cost. */
     private int displayedCost(final Spell spell) {
-        return resourceManager.usesResource(spell) ? spell.getResourceCost() : spell.getCostAmount();
+        return resourceManager.usesResource(spell) ? resourceManager.costOf(spell) : spell.getCostAmount();
     }
 
     /** The resource name shown to the player: the class pool (Mana/Düh…) for resource spells, else the type. */

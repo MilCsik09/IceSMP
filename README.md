@@ -243,6 +243,7 @@ csak a nem-tagok építését tiltja. Megkerülő jogok: `icesmp.admin.territory
 | `/sinner <játékos> set/clear/add/status` | — | Bűnös státusz kezelése (admin) |
 | `/territory …` | `terulet` | Területek kijelölése (admin) |
 | `/icesmp reload` | `ismp` | Konfiguráció újratöltése (admin) |
+| `/icesmp config get/set/unset/list/find` | `ismp config` | Bármely config-kulcs ingame lekérése/felülbírálása (admin) |
 
 A teljes parancs-referencia: [docs/player-guide/14-parancsok.md](docs/player-guide/14-parancsok.md);
 a jogosultság-node-ok listája a [PLAYTEST.md](PLAYTEST.md)-ben.

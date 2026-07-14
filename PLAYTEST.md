@@ -28,6 +28,10 @@ pipálni egy másolt példányban.
 - **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
   szerkeszthető és `/icesmp reload`-dal (vagy újraindítással) frissíthető. Néhány érték a manager
   indulásakor töltődik be — ha egy config-változás nem üt át reload-ra, **indítsd újra** a szervert.
+- **Ingame config-vezérlés:** `/icesmp config set <kulcs> <érték>` bármely kulcsot felülbírál
+  játékon belülről (a `config.yml`-be íródik, azonnali reload + validátor); `get`/`find` a
+  kulcsok felderítéséhez (tab-complete a teljes kulcstérből), `unset`/`list` a felülbírálások
+  kezeléséhez. Spell-mana példa: `/icesmp config set spell-balance.hide.resource-cost 25`.
 - **FRISSÍTÉS régi jar-ról:** az éles szerveren futó `IceSMP-1.0-SNAPSHOT` (áprilisi, ~200 KiB) óta a
   plugin sokszorosára nőtt — az új jar feltöltése után az **új config/üzenet-fájlok maguktól
   kicsomagolódnak** első indításkor, a régiek megmaradnak (a hiányzó kulcsok biztonságos
@@ -57,6 +61,7 @@ A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb
 |---|---|
 | `icesmp.admin` | általános admin (sinner) |
 | `icesmp.admin.reload` | `/icesmp reload` |
+| `icesmp.admin.config` | `/icesmp config get/set/unset/list/find` (ingame config-felülbírálás) |
 | `icesmp.admin.events` | világesemény-triggerek |
 | `icesmp.job.admin` | kaszt XP / katalizátor / spell-unlock |
 | `icesmp.currency.admin` | valuta-egyenleg beállítás |
@@ -243,6 +248,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (-8%/rang) ÉS az erő nő (+5%/rang) — magasabb rangon egy sebző spell nagyobbat üt, egy
       buff/debuff spell effektje tovább tart, a self-heal többet gyógyít; a költség/self-damage nem nő.
 - [ ] Idézett társak (Nekromanta/Vadmester) **nem fordulnak ellened**, a célpontodra támadnak, idővel eltűnnek.
+- [ ] **Resource-cost override:** `/icesmp config set spell-balance.<id>.resource-cost <érték>` után a
+      Spellbook AZONNAL az új árat mutatja és a cast annyit von le (cooldown-módosítás nélkül);
+      `unset` után visszaáll a cooldown-sávos alapár.
 - [ ] **Üres AOE-cast visszatérítés:** Lökéshullám/Gyökerezés/Megzavarás/Csontfagy célpont nélkül
       „Nincs célpont" üzenetet ad, a költség visszajár és NEM indul cooldown.
 - [ ] **Újracast-védelem:** Belső Fókusz lefagyás alatt, Elrejtőzés aktív invis alatt nem castolható

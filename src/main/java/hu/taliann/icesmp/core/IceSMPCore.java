@@ -813,7 +813,7 @@ public final class IceSMPCore {
      * Registers all command handlers.
      */
     private void registerCommands() {
-        plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(configManager, messageManager));
+        plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));
