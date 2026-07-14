@@ -371,11 +371,22 @@ public final class WorldBossManager {
                         "<dark_red>👹 A világboss feldühödött — második fázis!</dark_red>"));
             }
 
-            // Signature aura: debuff nearby survivors (region-local, so Folia-safe on the boss thread).
+            // Signature aura: debuff nearby survivors. Folia: a nearby player can belong to a
+            // neighbouring region, so mutate it on its own scheduler unless we own it.
             for (final Entity nearby : boss.getNearbyEntities(radius, radius, radius)) {
-                if (nearby instanceof Player player
-                        && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
-                    player.addPotionEffect(new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true));
+                if (nearby instanceof Player player) {
+                    final PotionEffect aura = new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true);
+                    if (Bukkit.isOwnedByCurrentRegion(player)) {
+                        if (isSurvivor(player)) {
+                            player.addPotionEffect(aura);
+                        }
+                    } else {
+                        player.getScheduler().run(plugin, t -> {
+                            if (isSurvivor(player)) {
+                                player.addPotionEffect(aura);
+                            }
+                        }, null);
+                    }
                 }
             }
             boss.getWorld().spawnParticle(archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
@@ -391,6 +402,20 @@ public final class WorldBossManager {
     /** A survivor (survival/adventure) — never debuff/hit creative or spectator players. */
     private static boolean isSurvivor(final Player player) {
         return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+    }
+
+    /** A survivor standing inside the 3-block telegraphed ZONE spot (checked on the player's thread). */
+    private static boolean isInZone(final Player player, final Location spot) {
+        return isSurvivor(player) && player.getWorld().equals(spot.getWorld())
+                && player.getLocation().distanceSquared(spot) <= 9.0D;
+    }
+
+    /** Knocks the player away from the SLAM center (runs on the player's own region thread). */
+    private static void applySlamKnockback(final Player player, final Location center) {
+        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+        if (kb.lengthSquared() > 0.0D) {
+            player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
+        }
     }
 
     /**
@@ -414,12 +439,22 @@ public final class WorldBossManager {
                         return;
                     }
                     world.spawnParticle(Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
+                    // Folia: hit players region-safely — direct (with the boss as damager) when we own
+                    // them, otherwise hopped to their scheduler (damager omitted cross-region).
                     for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
-                        if (nearby instanceof Player player && isSurvivor(player)) {
-                            player.damage(damage, boss);
-                            final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
-                            if (kb.lengthSquared() > 0.0D) {
-                                player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
+                        if (nearby instanceof Player player) {
+                            if (Bukkit.isOwnedByCurrentRegion(player)) {
+                                if (isSurvivor(player)) {
+                                    player.damage(damage, boss);
+                                    applySlamKnockback(player, center);
+                                }
+                            } else {
+                                player.getScheduler().run(plugin, t2 -> {
+                                    if (isSurvivor(player)) {
+                                        player.damage(damage);
+                                        applySlamKnockback(player, center);
+                                    }
+                                }, null);
                             }
                         }
                     }
@@ -443,12 +478,24 @@ public final class WorldBossManager {
                         return;
                     }
                     world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
+                    // Folia: same region-safe hit pattern as SLAM; the zone check runs on the
+                    // target's own thread so its location read is always safe.
                     for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {
-                        if (nearby instanceof Player player && isSurvivor(player)
-                                && player.getWorld().equals(spot.getWorld())
-                                && player.getLocation().distanceSquared(spot) <= 9.0D) {
-                            player.damage(damage, boss);
-                            player.addPotionEffect(new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true));
+                        if (nearby instanceof Player player) {
+                            final PotionEffect zoneDebuff = new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true);
+                            if (Bukkit.isOwnedByCurrentRegion(player)) {
+                                if (isInZone(player, spot)) {
+                                    player.damage(damage, boss);
+                                    player.addPotionEffect(zoneDebuff);
+                                }
+                            } else {
+                                player.getScheduler().run(plugin, t2 -> {
+                                    if (isInZone(player, spot)) {
+                                        player.damage(damage);
+                                        player.addPotionEffect(zoneDebuff);
+                                    }
+                                }, null);
+                            }
                         }
                     }
                 }, null, 30L);

@@ -149,6 +149,10 @@ public final class MinionManager {
                 ids.remove(id);
             }
         }
+        if (alive == 0 && ids.isEmpty()) {
+            // Drop the owner key too, so one-time summoners don't linger in the registry forever.
+            minionsByOwner.remove(owner, ids);
+        }
         return alive;
     }
 }

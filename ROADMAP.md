@@ -23,9 +23,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
     közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes.
   - `ClaimManager.save()` minden mutációnál a teljes claims.yml-t írja (sok ezer claimnél
     parancs-késleltetés) — dirty-flag + késleltetett mentés a megoldás.
-  - A LootTable a `MIN:MAX` elgépeléseket (min>max, negatív) csendben koercálja — log-figyelmeztetés
-    kellene; az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
-    lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem).
+  - Az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
+    lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem). (A LootTable `MIN:MAX`
+    elgépelései már betöltéskor log-figyelmeztetést adnak a ConfigValidatoron át — megoldva.)
   - Aukció: a minimum/nagy licit elérheti a buy-out árat és azonnal zár (eBay-szemantika —
     szándékos, de a GUI-tipp csak a shift-kattot említi); a vétel-üzenet ára elvben eltérhet a
     ténylegesen levonttól, ha a frakció-viszony épp a kattintás pillanatában vált.

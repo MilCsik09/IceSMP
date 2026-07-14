@@ -7,6 +7,7 @@ import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.Tag;
@@ -365,13 +366,20 @@ public final class MetelytepoRelicListener implements Listener {
 
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.45F, 1.2F);
 
+        // Folia: 100 blokkos sugárnál a talált entitások más régióhoz tartozhatnak —
+        // minden mutáció (effekt, fagyasztás) a cél saját ütemezőjén fut, ha nem miénk a régiója.
         for (final Entity entity : player.getNearbyEntities(HONOR_EYE_RANGE, HONOR_EYE_RANGE, HONOR_EYE_RANGE)) {
             if (!(entity instanceof LivingEntity living)) {
                 continue;
             }
 
             if (living instanceof Player targetPlayer) {
-                targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, HONOR_EYE_GLOWING_DURATION_TICKS, HONOR_EYE_GLOWING_LEVEL, true, true, true));
+                final PotionEffect glow = new PotionEffect(PotionEffectType.GLOWING, HONOR_EYE_GLOWING_DURATION_TICKS, HONOR_EYE_GLOWING_LEVEL, true, true, true);
+                if (Bukkit.isOwnedByCurrentRegion(targetPlayer)) {
+                    targetPlayer.addPotionEffect(glow);
+                } else {
+                    targetPlayer.getScheduler().run(plugin, task -> targetPlayer.addPotionEffect(glow), null);
+                }
                 continue;
             }
 
@@ -379,13 +387,19 @@ public final class MetelytepoRelicListener implements Listener {
                 continue;
             }
 
-            if (!metelytepoManager.isUndead(living) && !metelytepoManager.isRelicTarget(living)) {
-                continue;
+            final Runnable reveal = () -> {
+                if (!living.isValid()
+                        || (!metelytepoManager.isUndead(living) && !metelytepoManager.isRelicTarget(living))) {
+                    return;
+                }
+                living.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, HONOR_EYE_GLOWING_DURATION_TICKS, HONOR_EYE_GLOWING_LEVEL, true, true, true));
+                metelytepoManager.freezeUndead(living, 20L * 60L);
+            };
+            if (Bukkit.isOwnedByCurrentRegion(living)) {
+                reveal.run();
+            } else {
+                living.getScheduler().run(plugin, task -> reveal.run(), null);
             }
-
-            living.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, HONOR_EYE_GLOWING_DURATION_TICKS, HONOR_EYE_GLOWING_LEVEL, true, true, true));
-
-            metelytepoManager.freezeUndead(living, 20L * 60L);
         }
 
         // FLASH throws on this runtime because it expects extra particle data; use a no-data burst combo.

@@ -390,6 +390,7 @@ public final class IceSMPCore {
                 territoryManager,
                 petManager,
                 ritualManager,
+                professionManager,
                 spellRegistry
         );
 

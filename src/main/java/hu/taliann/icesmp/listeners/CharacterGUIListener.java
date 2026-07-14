@@ -60,8 +60,10 @@ public final class CharacterGUIListener implements Listener {
             return;
         }
 
-        if (holder instanceof ProfileHolder) {
-            handleProfile(player, slot);
+        if (holder instanceof ProfileHolder profileHolder) {
+            if (profileHolder.getOwnerUuid().equals(player.getUniqueId())) {
+                handleProfile(player, slot);
+            }
         } else if (holder instanceof SpecHolder specHolder) {
             if (specHolder.getOwnerUuid().equals(player.getUniqueId())) {
                 handleSpec(player, slot);

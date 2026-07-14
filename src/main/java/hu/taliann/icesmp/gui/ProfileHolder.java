@@ -4,9 +4,20 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.jspecify.annotations.NonNull;
 
+import java.util.UUID;
+
 public final class ProfileHolder implements InventoryHolder {
 
+    private final UUID ownerUuid;
     private Inventory inventory;
+
+    public ProfileHolder(final UUID ownerUuid) {
+        this.ownerUuid = ownerUuid;
+    }
+
+    public UUID getOwnerUuid() {
+        return ownerUuid;
+    }
 
     @Override
     public @NonNull Inventory getInventory() {
@@ -20,4 +31,3 @@ public final class ProfileHolder implements InventoryHolder {
         this.inventory = inventory;
     }
 }
-
