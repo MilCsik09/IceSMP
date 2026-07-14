@@ -220,7 +220,7 @@ public final class SpellCatalog {
                 .particle(Particle.CLOUD, 12).sound(Sound.ENTITY_RABBIT_JUMP, 1.0F, 0.8F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "piercing_bolt", "Átütő Lövedék", 35, SpellCostType.XP, 25,
-                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.2D,
+                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.2D, 3,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 0.7F));
         registry.register(ConfiguredSpell.builder(mm, "snare", "Csapdázás", 45, SpellCostType.HUNGER, 4)
                 .target(14.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 3)

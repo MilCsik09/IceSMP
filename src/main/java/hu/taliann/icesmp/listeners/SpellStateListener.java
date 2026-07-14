@@ -53,6 +53,27 @@ public final class SpellStateListener implements Listener {
     public void onInventoryClick(final InventoryClickEvent event) {
         if (hasArmamentTag(event.getCurrentItem()) || hasArmamentTag(event.getCursor())) {
             event.setCancelled(true);
+            return;
+        }
+        // Hotbar-számgombos csere (1–9): a mozgó item a HOTBAR-slotban van, nem a kattintott
+        // slotban — e nélkül a megidézett kard átrakható volt az inventoryban (playtest-bug).
+        if (event.getClick() == org.bukkit.event.inventory.ClickType.NUMBER_KEY && event.getHotbarButton() >= 0
+                && hasArmamentTag(event.getWhoClicked().getInventory().getItem(event.getHotbarButton()))) {
+            event.setCancelled(true);
+            return;
+        }
+        // Offhand-csere (F egy slot fölött): a másik mozgó fél az offhand item.
+        if (event.getClick() == org.bukkit.event.inventory.ClickType.SWAP_OFFHAND
+                && hasArmamentTag(event.getWhoClicked().getInventory().getItemInOffHand())) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** F-gomb (kéz-csere) az inventoryn kívül: a megidézett fegyver nem kerülhet offhandbe. */
+    @EventHandler(ignoreCancelled = true)
+    public void onSwapHandItems(final org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
+        if (hasArmamentTag(event.getMainHandItem()) || hasArmamentTag(event.getOffHandItem())) {
+            event.setCancelled(true);
         }
     }
 
