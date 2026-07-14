@@ -66,6 +66,13 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return false;
         }
+        // Spellenkénti explicit felülbírálás (spell-balance.<id>.use-resource: false):
+        // a playtest-balansz szerint néhány mobilitás-spell tudatosan a tematikus költségét
+        // (éhség) égesse a kaszt-erőforrás helyett.
+        final String overrideKey = "spell-balance." + spell.getId() + ".use-resource";
+        if (configManager.getConfiguration() != null && configManager.getConfiguration().isSet(overrideKey)) {
+            return configManager.getBoolean(overrideKey, true);
+        }
         return switch (spell.getCostType()) {
             case HEALTH -> false;
             case XP -> spell.getCostAmount() < configManager.getInt("spells.resource.xp-ritual-threshold", 80);

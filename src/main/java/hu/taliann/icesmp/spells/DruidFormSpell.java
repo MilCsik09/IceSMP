@@ -2,8 +2,12 @@ package hu.taliann.icesmp.spells;
 
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -42,10 +46,11 @@ public final class DruidFormSpell extends BaseSpell {
     public enum Form {
         BEAR("druid_bear_form", "Medveforma", "Tank-alak: ellenállás, felszívás és erő, kissé lassabban.",
                 "POLAR_BEAR", Particle.CRIT, Sound.ENTITY_RAVAGER_ROAR, new FormEffect[]{
-                new FormEffect(PotionEffectType.RESISTANCE, 1),
+                new FormEffect(PotionEffectType.RESISTANCE, 0),
                 new FormEffect(PotionEffectType.ABSORPTION, 1),
                 new FormEffect(PotionEffectType.STRENGTH, 0),
-                new FormEffect(PotionEffectType.SLOWNESS, 0)
+                new FormEffect(PotionEffectType.SLOWNESS, 0),
+                new FormEffect(PotionEffectType.HUNGER, 0)
         }),
         CAT("druid_cat_form", "Párducforma", "Fürge harci alak: sebesség és erő a gyors lecsapásokhoz.",
                 "CAT", Particle.SMOKE, Sound.ENTITY_PHANTOM_AMBIENT, new FormEffect[]{
@@ -55,11 +60,13 @@ public final class DruidFormSpell extends BaseSpell {
         MOONKIN("druid_moonkin_form", "Holdforma", "Varázsló-alak: regeneráció és tűzállóság a hold-mágiához.",
                 "PARROT", Particle.END_ROD, Sound.BLOCK_BEACON_ACTIVATE, new FormEffect[]{
                 new FormEffect(PotionEffectType.REGENERATION, 0),
-                new FormEffect(PotionEffectType.FIRE_RESISTANCE, 0)
+                new FormEffect(PotionEffectType.FIRE_RESISTANCE, 0),
+                new FormEffect(PotionEffectType.MINING_FATIGUE, 5)
         }),
         TRAVEL("druid_travel_form", "Utazóforma", "Utazó-alak: jelentős sebesség a gyors helyváltáshoz.",
                 "HORSE", Particle.CLOUD, Sound.ENTITY_BREEZE_SHOOT, new FormEffect[]{
-                new FormEffect(PotionEffectType.SPEED, 2)
+                new FormEffect(PotionEffectType.SPEED, 2),
+                new FormEffect(PotionEffectType.WEAKNESS, 1)
         });
 
         private final String id;
@@ -81,6 +88,10 @@ public final class DruidFormSpell extends BaseSpell {
             this.effects = effects;
         }
     }
+
+    /** Párducforma ára (playtest-balansz): -4 teljes szív max-élet, amíg a forma aktív. */
+    private static final NamespacedKey CAT_HEALTH_KEY = new NamespacedKey("icesmp", "druid_cat_form_health");
+    private static final double CAT_HEALTH_PENALTY = -8.0D;
 
     private final Form form;
 
@@ -107,6 +118,9 @@ public final class DruidFormSpell extends BaseSpell {
         for (final FormEffect effect : form.effects) {
             player.addPotionEffect(new PotionEffect(effect.type(), durationTicks, effect.amplifier(), true, false, true));
         }
+        if (form == Form.CAT) {
+            applyCatHealthPenalty(player);
+        }
         ACTIVE_FORM.put(playerId, form);
         // Optional visual layer: disguise as the matching mob when LibsDisguises is installed (else no-op).
         hu.taliann.icesmp.integration.DruidDisguise.apply(player, form.disguiseType);
@@ -121,6 +135,36 @@ public final class DruidFormSpell extends BaseSpell {
         }
         for (final FormEffect effect : which.effects) {
             player.removePotionEffect(effect.type());
+        }
+        if (which == Form.CAT) {
+            removeCatHealthPenalty(player);
+        }
+    }
+
+    private static void applyCatHealthPenalty(final Player player) {
+        final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) {
+            return;
+        }
+        removeCatHealthPenalty(player);
+        // Transient: kilépéskor magától lejár, így relog után sosem ragad be a levont élet.
+        maxHealth.addTransientModifier(new AttributeModifier(CAT_HEALTH_KEY,
+                balanceStatic("druid_cat_form", "health-penalty", CAT_HEALTH_PENALTY),
+                AttributeModifier.Operation.ADD_NUMBER));
+        if (player.getHealth() > maxHealth.getValue()) {
+            player.setHealth(maxHealth.getValue());
+        }
+    }
+
+    private static void removeCatHealthPenalty(final Player player) {
+        final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) {
+            return;
+        }
+        for (final AttributeModifier modifier : java.util.List.copyOf(maxHealth.getModifiers())) {
+            if (CAT_HEALTH_KEY.equals(modifier.getKey())) {
+                maxHealth.removeModifier(modifier);
+            }
         }
     }
 
