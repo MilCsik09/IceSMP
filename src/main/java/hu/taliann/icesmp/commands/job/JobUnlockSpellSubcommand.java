@@ -14,7 +14,7 @@ import java.util.Locale;
 
 public final class JobUnlockSpellSubcommand implements JobSubcommand {
 
-    private static final String PERMISSION = "icesmp.job.admin";
+    private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.JOB;
 
     private final JavaPlugin plugin;
     private final JobManager jobManager;

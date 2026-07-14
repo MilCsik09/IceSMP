@@ -99,6 +99,13 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 - **Egyrészes / implicit-default:** néhány parancs (Market, Pet, Soul, Spell, Events…) üres argra
   műveletet végez (nem helpet ad), vagy nem `args[0]`-ra diszpécsel. Ezek szándékosan külön
   `BasicCommand`-ok — a dispatch-bázis nem modellezi ezt a szemantikát.
+- **Permissionök:** kanonikus séma a `core/Permissions` osztályban (konstansok + `register()` az
+  `enable()` elején). Minden admin-node `icesmp.admin.<domain>` (default: OP), az
+  `icesmp.admin.all` regisztrált szülő-node az összeset megadja egyben; a régi nevek
+  (`icesmp.admin`, `icesmp.job.admin`, `icesmp.currency.admin`, `icesmp.faction.admin`,
+  `icesmp.relic.admin`) alias-Permissionként a kanonikus gyereküket adják — meglévő
+  LP-beállítás nem törik. Új admin-parancsnál: konstans a `Permissions`-be + a `register()`
+  canonical-map-jébe egy sor.
 
 ### 3.5 Spellek — registry + builder + katalógus
 - **`SpellRegistry`**: id → `Spell` map (`register`, `getById`, `getAll`).

@@ -12,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FactionSetSubcommand implements FactionSubcommand {
 
-    private static final String PERMISSION = "icesmp.faction.admin";
+    private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.FACTION;
 
     private final JavaPlugin plugin;
     private final FactionManager factionManager;

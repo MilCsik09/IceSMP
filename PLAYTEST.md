@@ -55,23 +55,32 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 | LuckPerms, GSit, CrazyCrates, FancyHolograms, AuMenus, voicechat, SModeration, minimotd, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert ütközés. |
 
 ### Permissionök tesztelőknek
-A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb jogosultság kell:
+A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan), vagy egyetlen sorral:
+**`icesmp.admin.all`** — regisztrált szülő-node, az ÖSSZES alábbi admin-node a gyereke
+(wildcard-támogatás nélküli permission-pluginnal is működik). Pontosabb jogosztáshoz az
+egységes `icesmp.admin.<domain>` séma:
 
 | Node | Mire |
 |---|---|
-| `icesmp.admin` | általános admin (sinner) |
+| `icesmp.admin.all` | **super-admin: az összes alábbi egyben** |
 | `icesmp.admin.reload` | `/icesmp reload` |
 | `icesmp.admin.config` | `/icesmp config get/set/unset/list/find` (ingame config-felülbírálás) |
 | `icesmp.admin.events` | világesemény-triggerek |
-| `icesmp.job.admin` | kaszt XP / katalizátor / spell-unlock |
-| `icesmp.currency.admin` | valuta-egyenleg beállítás |
-| `icesmp.faction.admin` | frakció-kényszerítés, király/kassza admin-műveletek |
+| `icesmp.admin.job` | kaszt XP / katalizátor / spell-unlock / `/class admin` |
+| `icesmp.admin.currency` | valuta-egyenleg beállítás |
+| `icesmp.admin.faction` | frakció-kényszerítés, király/kassza admin-műveletek |
 | `icesmp.admin.quest` | küldetés force-complete + a `/quest admin` szerkesztő |
-| `icesmp.relic.admin` | relikvia adása |
-| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / zóna-védelem teljes megkerülése (build+interakció+PvP) |
-| `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) |
+| `icesmp.admin.relic` | relikvia adása |
+| `icesmp.admin.sinner` | `/sinner` bűn-kezelés |
+| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés (+ királyság-spawnok) / zóna- és claim-védelem teljes megkerülése (build+interakció+PvP) |
+| `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) — szerep-node, NEM admin |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
 | `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz/frakció-menühöz/parancshoz |
+
+> ♻️ **Visszafelé kompatibilis:** a régi nevek (`icesmp.admin`, `icesmp.job.admin`,
+> `icesmp.currency.admin`, `icesmp.faction.admin`, `icesmp.relic.admin`) alias-ként
+> regisztrálva maradnak — a meglévő LuckPerms-beállítás átírás nélkül tovább működik,
+> de új jogosztásnál már a kanonikus `icesmp.admin.<domain>` nevet használd.
 
 ---
 

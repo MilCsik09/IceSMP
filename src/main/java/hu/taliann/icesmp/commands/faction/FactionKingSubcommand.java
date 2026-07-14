@@ -20,7 +20,7 @@ import java.util.UUID;
  */
 public final class FactionKingSubcommand implements FactionSubcommand {
 
-    private static final String ADMIN_PERMISSION = "icesmp.faction.admin";
+    private static final String ADMIN_PERMISSION = hu.taliann.icesmp.core.Permissions.FACTION;
 
     private final KingManager kingManager;
     private final FactionManager factionManager;

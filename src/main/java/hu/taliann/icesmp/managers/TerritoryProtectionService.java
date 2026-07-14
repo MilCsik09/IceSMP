@@ -35,7 +35,7 @@ public final class TerritoryProtectionService {
     /** Full admin bypass — overrides every player-action rule. */
     public static final String ADMIN_BYPASS = "icesmp.admin.territory.bypass";
     /** Builder bypass — may build/interact even in protected zones (not PvP). */
-    public static final String BUILDER_BYPASS = "icesmp.territory.builder";
+    public static final String BUILDER_BYPASS = hu.taliann.icesmp.core.Permissions.TERRITORY_BUILDER;
 
     public static final String BUILD = "build";
     public static final String INTERACT = "interact";

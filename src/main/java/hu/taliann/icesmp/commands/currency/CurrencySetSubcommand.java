@@ -14,7 +14,7 @@ import java.util.Locale;
 
 public final class CurrencySetSubcommand implements CurrencySubcommand {
 
-    private static final String PERMISSION = "icesmp.currency.admin";
+    private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.CURRENCY;
 
     private final CurrencyManager currencyManager;
     private final MessageManager messageManager;

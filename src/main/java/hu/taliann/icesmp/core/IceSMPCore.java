@@ -482,16 +482,16 @@ public final class IceSMPCore {
      * Enables the plugin core by loading all managers and registering systems.
      */
     public void enable() {
+        // Canonical permission scheme + the icesmp.admin.all parent + legacy aliases.
+        Permissions.register();
         configManager.load();
         // Surface admin typos (bad material/currency names, out-of-range percents, negative
         // durations) as clear log warnings — never blocks startup, only reports.
         ConfigValidator.validate(configManager, plugin.getLogger());
-        // Config-driven spell balance: applies config/spells-balance.yml overrides on top of every
-        // declaratively-configured (ConfiguredSpell) spell. Must run after configManager.load() and
-        // after registerSpells() (already done in the constructor) — spells register only once at
-        // startup, so this is the single application point; changing spells-balance.yml needs a restart.
-        // A statikus (kódolt) spellek viszont cast-időben olvassák a felülbírálásokat innen,
-        // így rájuk a /icesmp reload is azonnal hat.
+        // Config-driven spell balance: seeds config/spells-balance.yml overrides at startup
+        // (startup log + unknown-id warnings). The overridable keys are ALSO read live at
+        // cast time (BaseSpell.balance + ConfiguredSpell live accessors), so /icesmp reload
+        // applies changes immediately for every spell — no restart needed.
         hu.taliann.icesmp.spells.BaseSpell.setBalanceSource(configManager);
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();

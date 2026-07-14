@@ -16,7 +16,7 @@ import java.util.List;
 
 public final class JobAdminSubcommand implements JobSubcommand {
 
-    private static final String PERMISSION = "icesmp.admin";
+    private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.JOB;
 
     private final JavaPlugin plugin;
     private final JobManager jobManager;
