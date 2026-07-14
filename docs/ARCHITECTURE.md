@@ -46,6 +46,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `storage/` | 2 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 3 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `integration/` | 5 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
 
@@ -117,8 +118,9 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.7 Player-state takarítás — registry-iterált
 A `PlayerSessionCleanupListener` kilépéskor/kickkor: (a) végigmegy a regisztrált
 `List<PlayerStateCleanup>`-on (managerek), és (b) a `SpellRegistry.getAll()`-on, minden spell
-`clearPlayerState(uuid)`-jét hívva. **Nincs hardkódolt lista** — új állapotos egység automatikusan
-bekerül (lásd 5.7 recept).
+`clearPlayerState(uuid)`-jét hívva. A spell-ágon **nincs hardkódolt lista** — új állapotos spell
+automatikusan bekerül; a manager-ág viszont kézzel karbantartott konstruktor-lista (lásd 5.7/5.8
+recept: új állapotos managert fel kell venni a `stateOwners` listába).
 
 ### 3.8 Kaszt-erőforrás (`ResourceManager`) — hibrid költség
 Per-kaszt „erő" 0–max meter, a HUD-oldalsávban megjelenítve (`HudManager.buildLines` hív egy

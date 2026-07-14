@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Player market (ideas.md "Piaci tábla / aukciósház"): sellers list the item
@@ -84,6 +86,7 @@ public final class MarketManager implements PersistentStore {
     // Items owed to (possibly offline) players: auction wins and unsold auction
     // returns. Delivered on the owner's own region thread (join / /market claim).
     private final Map<UUID, List<ItemStack>> pendingDeliveries = new ConcurrentHashMap<>();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     public MarketManager(final JavaPlugin plugin, final ConfigManager configManager,
                          final CurrencyManager currencyManager, final FactionManager factionManager,
@@ -192,6 +195,21 @@ public final class MarketManager implements PersistentStore {
                     + pendingDeliveries.size() + " pending deliver(y/ies).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load market.yml: " + exception.getMessage());
+        }
+    }
+
+    /**
+     * Debounced async flush for transaction paths: a busy market used to rewrite the whole
+     * market.yml synchronously on the region thread for every buy/bid/cancel — bursts now
+     * coalesce into one write ~2s later (CurrencyManager pattern). Shutdown still calls
+     * {@link #save()} directly for a final synchronous flush.
+     */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                save();
+            }, 2L, TimeUnit.SECONDS);
         }
     }
 
@@ -310,7 +328,7 @@ public final class MarketManager implements PersistentStore {
                 currency, held.clone(), now, auction, auction ? now + auctionDurationMillis : 0L,
                 0.0D, null, null, auction ? buyOut : 0.0D));
         seller.getInventory().setItemInMainHand(null);
-        save();
+        requestSave();
         return null;
     }
 
@@ -352,7 +370,7 @@ public final class MarketManager implements PersistentStore {
 
         creditSellerShare(listing.seller(), listing.currency(), buyerCost);
 
-        save();
+        requestSave();
 
         final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(listing.item());
         leftovers.values().forEach(item -> buyer.getWorld().dropItemNaturally(buyer.getLocation(), item));
@@ -468,14 +486,14 @@ public final class MarketManager implements PersistentStore {
             listings.remove(listingId);
             creditSellerShare(listing.seller(), listing.currency(), effective);
             queueDelivery(bidder.getUniqueId(), listing.item());
-            save();
+            requestSave();
             return new BidOutcome(null, effective, previousBidder, previousBid, true);
         }
 
         listings.put(listingId, new Listing(listing.id(), listing.seller(), listing.sellerName(),
                 listing.price(), listing.currency(), listing.item(), listing.createdAt(),
                 true, listing.endsAt(), effective, bidder.getUniqueId(), bidder.getName(), listing.buyOut()));
-        save();
+        requestSave();
         return new BidOutcome(null, effective, previousBidder, previousBid, false);
     }
 
@@ -505,7 +523,7 @@ public final class MarketManager implements PersistentStore {
                 settled.add(listing);
             }
             if (!settled.isEmpty()) {
-                save();
+                requestSave();
             }
         }
 
@@ -575,7 +593,7 @@ public final class MarketManager implements PersistentStore {
             final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
             leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
         }
-        save();
+        requestSave();
         return items.size();
     }
 
@@ -600,7 +618,7 @@ public final class MarketManager implements PersistentStore {
         }
 
         if (cancelled > 0) {
-            save();
+            requestSave();
         }
         return cancelled;
     }

@@ -2,6 +2,9 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Supply-driven dynamic exchange rates between faction currencies.
  *
@@ -12,9 +15,15 @@ import hu.taliann.icesmp.data.CurrencyType;
  */
 public final class ExchangeRateService {
 
+    /** Supply-scan cache TTL: getTotalSupply walks every stored balance (O(players)). */
+    private static final long SUPPLY_CACHE_TTL_MILLIS = 5_000L;
+
+    private record CachedSupply(double supply, long expiresAt) { }
+
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
     private final EconomyEventManager economyEventManager;
+    private final Map<CurrencyType, CachedSupply> supplyCache = new ConcurrentHashMap<>();
 
     public ExchangeRateService(final ConfigManager configManager, final CurrencyManager currencyManager,
                                final EconomyEventManager economyEventManager) {
@@ -51,10 +60,26 @@ public final class ExchangeRateService {
         final double maxMultiplier = Math.max(minMultiplier, configManager.getDouble(
                 "currency.dynamic-exchange.max-multiplier", 4.0D));
 
-        final double supply = Math.max(1.0D, currencyManager.getTotalSupply(currencyType));
+        final double supply = Math.max(1.0D, cachedTotalSupply(currencyType));
         final double rawMultiplier = Math.pow(referenceSupply / supply, elasticity);
         final double multiplier = Math.min(maxMultiplier, Math.max(minMultiplier, rawMultiplier));
         return baseValue * multiplier;
+    }
+
+    /**
+     * Total supply with a short TTL cache: the exchange-board tick queries all four currencies
+     * every refresh, and each uncached query walks the full balance store. A few seconds of
+     * staleness is invisible in the rates (supply moves slowly) but removes the repeated scans.
+     */
+    private double cachedTotalSupply(final CurrencyType currencyType) {
+        final long now = System.currentTimeMillis();
+        final CachedSupply cached = supplyCache.get(currencyType);
+        if (cached != null && cached.expiresAt() > now) {
+            return cached.supply();
+        }
+        final double supply = currencyManager.getTotalSupply(currencyType);
+        supplyCache.put(currencyType, new CachedSupply(supply, now + SUPPLY_CACHE_TTL_MILLIS));
+        return supply;
     }
 
     /**

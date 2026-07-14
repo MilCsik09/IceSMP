@@ -6,6 +6,10 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 public final class CurrencyBalanceSubcommand implements CurrencySubcommand {
 
     private final CurrencyManager currencyManager;
@@ -56,6 +60,18 @@ public final class CurrencyBalanceSubcommand implements CurrencySubcommand {
                 currencyManager.formatBalance(currencyManager.getBalance(player, currencyType))
         ));
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(final CommandSender sender, final String[] args) {
+        if (args.length <= 1) {
+            final String prefix = args.length > 0 ? args[0].toLowerCase(Locale.ROOT) : "";
+            return Arrays.stream(FactionType.values())
+                    .map(type -> type.name().toLowerCase(Locale.ROOT))
+                    .filter(name -> name.startsWith(prefix))
+                    .toList();
+        }
+        return List.of();
     }
 }
 

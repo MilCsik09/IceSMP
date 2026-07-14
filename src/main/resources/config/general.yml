@@ -74,6 +74,8 @@ claims:
   y-extend-cost-per-column: 0.1  # bővítés ára lépésenként: a claim oszlopai × ez az összeg
   protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
   protect-explosions: true    # robbanás sosem tör claimelt blokkot
+  protect-fire: true          # tűz nem gyullad/terjed/éget claimelt blokkon (játékos-gyújtás = build-szabály)
+  protect-terrain: true       # idegen dugattyú nem tolhat/húzhat blokkot a claimben; folyadék nem folyik be kívülről
   block-in-protected-zone: true    # VÉDETT zónában (főváros, védett város/frakcióterület) SOSEM lehet claimelni
   block-in-territory: false   # ha true: még a NORMÁL frakcióterületen sem lehet claimelni (alapból szabad — a claim mehet a territory rendszerrel)
   block-in-protected-region: true  # WorldGuard-régióban nem lehet claimelni

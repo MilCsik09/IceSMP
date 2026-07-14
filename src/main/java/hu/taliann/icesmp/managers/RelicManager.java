@@ -405,7 +405,10 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         return itemFactory.create(definition, owner);
     }
 
-    public boolean giveRelic(final Player player, final String relicId, final int amount) {
+    // synchronized: the singleton-ownership check and recordOwnership must be atomic, or two
+    // concurrent grants (two altars / altar + admin give) could both pass the check and
+    // duplicate a supposedly unique relic.
+    public synchronized boolean giveRelic(final Player player, final String relicId, final int amount) {
         if (!enabled || amount <= 0) {
             return false;
         }

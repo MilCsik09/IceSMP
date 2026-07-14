@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -146,6 +148,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     /** claim-id → claim. */
     private final Map<String, Claim> claims = new ConcurrentHashMap<>();
+    private final Object saveLock = new Object();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     /**
      * world;chunkX;chunkZ → claims overlapping that chunk. Rebuilt and swapped whole
      * on every (rare) mutation, so the hot-path lookup is a lock-free read of an
@@ -336,7 +340,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 player.getUniqueId(), player.getName(), System.currentTimeMillis());
         claims.put(claim.id, claim);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 
@@ -413,7 +417,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
         claims.remove(claim.id);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 
@@ -548,7 +552,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         extended.trusted.addAll(claim.trusted);
         claims.put(claim.id, extended);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 
@@ -572,7 +576,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
         claims.remove(claim.id);
         rebuildIndex();
-        save();
+        requestSave();
         return true;
     }
 
@@ -595,7 +599,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (!any) {
             return "claim-no-claims";
         }
-        save();
+        requestSave();
         return null;
     }
 
@@ -614,7 +618,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (!any) {
             return "claim-not-trusted";
         }
-        save();
+        requestSave();
         return null;
     }
 
@@ -792,8 +796,38 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         rebuildIndex();
     }
 
+    /**
+     * Synchronously flushes claims to disk. Used on shutdown; gameplay mutations
+     * call {@link #requestSave()} instead, which debounces the full-file rewrite
+     * off the region threads (mirrors the CurrencyManager pattern).
+     */
     @Override
     public void save() {
+        flushToDisk();
+    }
+
+    /** Schedules a debounced asynchronous flush — many claim edits in a short window coalesce into one write. */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                flushToDisk();
+            }, 2L, TimeUnit.SECONDS);
+        }
+    }
+
+    private void flushToDisk() {
+        synchronized (saveLock) {
+            final YamlConfiguration yaml = buildYaml();
+            try {
+                YamlStore.saveAtomic(storageFile, yaml);
+            } catch (final IOException exception) {
+                plugin.getLogger().log(Level.SEVERE, "A claims.yml mentése nem sikerült", exception);
+            }
+        }
+    }
+
+    private YamlConfiguration buildYaml() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final Claim claim : claims.values()) {
             final String basePath = "claims." + claim.id;
@@ -811,11 +845,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 yaml.set(basePath + ".trusted", claim.trusted.stream().map(UUID::toString).toList());
             }
         }
-        try {
-            YamlStore.saveAtomic(storageFile, yaml);
-        } catch (final IOException exception) {
-            plugin.getLogger().log(Level.SEVERE, "A claims.yml mentése nem sikerült", exception);
-        }
+        return yaml;
     }
 
     // ==================== internals ====================

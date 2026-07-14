@@ -229,6 +229,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (-8%/rang) ÉS az erő nő (+5%/rang) — magasabb rangon egy sebző spell nagyobbat üt, egy
       buff/debuff spell effektje tovább tart, a self-heal többet gyógyít; a költség/self-damage nem nő.
 - [ ] Idézett társak (Nekromanta/Vadmester) **nem fordulnak ellened**, a célpontodra támadnak, idővel eltűnnek.
+- [ ] **Üres AOE-cast visszatérítés:** Lökéshullám/Gyökerezés/Megzavarás/Csontfagy célpont nélkül
+      „Nincs célpont" üzenetet ad, a költség visszajár és NEM indul cooldown.
+- [ ] **Újracast-védelem:** Belső Fókusz lefagyás alatt, Elrejtőzés aktív invis alatt nem castolható
+      újra (a sebesség/páncél nem veszhet el).
 
 ### 4.6 Talentek ✅
 - [ ] `/profile` → Talentek: kaszt-ponttár (5 szintenként 1) és szakma-ponttár (10 szintenként 1).
@@ -238,6 +242,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.7 Szakmák ✅
 - [ ] `/profession join` 1 gyűjtögető + 1 készítő; Halász/Szakács alapból megvan.
 - [ ] A megfelelő tevékenység ad XP-t (bányászat/aratás/horgászat/sütés/craft).
+- [ ] **Creative-guard:** creative módú blokktörés NEM ad szakma-XP-t, és nem viszi a napi
+      küldetés / quest / közösségi cél számlálóit sem.
 - [ ] 25. szinten szakma-spec választható.
 - [ ] **Craft-korlát:** netherite felszerelést csak 25+ Kovács craftol (különben nem jön létre + üzenet).
 - [ ] **Recept-könyv** (`/profession recipes` vagy `/menu` → Recept-könyv): a szakmáid receptjei
@@ -487,6 +493,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (action-bar üzenet); `trust` után igen; robbanás nem bont claimelt blokkot;
       frakció-territóriumban/WG-régióban a claim elutasítva; a 4. chunktól ár (bankból, ELÉG); `unclaim`
       nem ad vissza pénzt; admin: `/claim admin unclaim`.
+- [ ] **Claim terep-védelem:** kívülről gyújtott tűz nem terjed be claimre és claimelt blokk nem ég el;
+      claim-határon kívüli dugattyú nem tol be / nem húz ki blokkot (claimen BELÜLI saját gép működik);
+      kívülről víz/láva nem folyik be; idegen flint-and-steel gyújtás a claimen tiltva (action-bar).
 - [ ] **Chat-formázó:** a chatben `[LP-prefix] Név: üzenet` formátum, a név frakció-színnel; LuckPerms
       nélkül is működik (prefix nélkül). ⚠️ Ha a régi LuckPermsChatFormatterFolia plugin még fent van,
       kapcsold ki az egyiket (dupla formázás)!

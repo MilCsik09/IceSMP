@@ -7,6 +7,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 
 public final class CurrencySetSubcommand implements CurrencySubcommand {
 
@@ -88,6 +92,25 @@ public final class CurrencySetSubcommand implements CurrencySubcommand {
         }
 
         return FactionType.fromInput(args[2]);
+    }
+
+    @Override
+    public List<String> tabComplete(final CommandSender sender, final String[] args) {
+        if (args.length <= 1) {
+            final String prefix = args.length > 0 ? args[0].toLowerCase(Locale.ROOT) : "";
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                    .toList();
+        }
+        if (args.length == 2 || args.length == 3) {
+            final String prefix = args.length > 2 ? args[2].toLowerCase(Locale.ROOT) : "";
+            return Arrays.stream(FactionType.values())
+                    .map(type -> type.name().toLowerCase(Locale.ROOT))
+                    .filter(name -> name.startsWith(prefix))
+                    .toList();
+        }
+        return List.of();
     }
 }
 

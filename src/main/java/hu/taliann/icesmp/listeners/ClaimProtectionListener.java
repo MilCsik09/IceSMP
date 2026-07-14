@@ -15,8 +15,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
@@ -167,6 +173,110 @@ public final class ClaimProtectionListener implements Listener {
         if (configManager.getBoolean("claims.protect-explosions", true)) {
             event.blockList().removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
         }
+    }
+
+    // ==================== terrain (tűz / folyadék / dugattyú) ====================
+    // Mirrors TerritoryProtectionListener: without these, fire spread and piston push/pull
+    // bypass the claim protection entirely (neither fires BlockBreak/BlockPlaceEvent).
+
+    /** Player ignition inside a claim follows the build rule; natural ignition is always blocked. */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onIgnite(final BlockIgniteEvent event) {
+        if (!configManager.getBoolean("claims.protect-fire", true)
+                || claimManager.getClaimAt(event.getBlock().getLocation()) == null) {
+            return;
+        }
+        final Player player = event.getPlayer();
+        if (player == null || denied(player, event.getBlock().getLocation())) {
+            event.setCancelled(true);
+            if (player != null) {
+                warn(player, event.getBlock().getLocation());
+            }
+        }
+    }
+
+    /** Claimed blocks never burn away. */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onBurn(final BlockBurnEvent event) {
+        if (configManager.getBoolean("claims.protect-fire", true)
+                && claimManager.getClaimAt(event.getBlock().getLocation()) != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Fire never spreads onto claimed blocks. */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onSpread(final BlockSpreadEvent event) {
+        if (event.getSource().getType() == org.bukkit.Material.FIRE
+                && configManager.getBoolean("claims.protect-fire", true)
+                && claimManager.getClaimAt(event.getBlock().getLocation()) != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Liquid may not flow into a claim from outside (or from another owner's claim). */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onLiquidFlow(final BlockFromToEvent event) {
+        if (!configManager.getBoolean("claims.protect-terrain", true)) {
+            return;
+        }
+        final ClaimManager.Claim to = claimManager.getClaimAt(event.getToBlock().getLocation());
+        if (to == null) {
+            return;
+        }
+        final ClaimManager.Claim from = claimManager.getClaimAt(event.getBlock().getLocation());
+        if (from == null || !from.getOwner().equals(to.getOwner())) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Pistons outside a claim may not push blocks into it or pull blocks out of it. */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onPistonExtend(final BlockPistonExtendEvent event) {
+        if (!configManager.getBoolean("claims.protect-terrain", true)) {
+            return;
+        }
+        // The extending head itself claims the space ahead even with no carried blocks.
+        final java.util.UUID pistonOwner = claimOwnerAt(event.getBlock().getLocation());
+        if (isForeignClaim(event.getBlock().getRelative(event.getDirection()).getLocation(), pistonOwner)
+                || pistonCrossesForeignClaim(event.getBlocks(), event.getDirection(), pistonOwner)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onPistonRetract(final BlockPistonRetractEvent event) {
+        if (!configManager.getBoolean("claims.protect-terrain", true)) {
+            return;
+        }
+        // On retract the pulled blocks move TOWARD the piston — opposite getDirection().
+        final java.util.UUID pistonOwner = claimOwnerAt(event.getBlock().getLocation());
+        if (pistonCrossesForeignClaim(event.getBlocks(), event.getDirection().getOppositeFace(), pistonOwner)) {
+            event.setCancelled(true);
+        }
+    }
+
+    private java.util.UUID claimOwnerAt(final Location location) {
+        final ClaimManager.Claim claim = claimManager.getClaimAt(location);
+        return claim == null ? null : claim.getOwner();
+    }
+
+    /** True when the location lies in a claim NOT owned by the piston's owner — machines fully inside one claim keep working. */
+    private boolean isForeignClaim(final Location location, final java.util.UUID pistonOwner) {
+        final ClaimManager.Claim claim = claimManager.getClaimAt(location);
+        return claim != null && !claim.getOwner().equals(pistonOwner);
+    }
+
+    private boolean pistonCrossesForeignClaim(final java.util.List<org.bukkit.block.Block> blocks,
+                                              final org.bukkit.block.BlockFace movement,
+                                              final java.util.UUID pistonOwner) {
+        for (final org.bukkit.block.Block block : blocks) {
+            if (isForeignClaim(block.getLocation(), pistonOwner)
+                    || isForeignClaim(block.getRelative(movement).getLocation(), pistonOwner)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Block-eating/-moving mobs (enderman, ravager…) leave claimed chunks alone. */

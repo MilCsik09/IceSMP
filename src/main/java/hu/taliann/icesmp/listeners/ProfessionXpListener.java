@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.TalentManager;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
@@ -64,6 +65,11 @@ public final class ProfessionXpListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
+        // Creative farm-guard (same as GatheringBuffListener): no profession XP for
+        // creative/spectator breaks or silk-touch-less no-drop breaks.
+        if (!isSurvival(player) || !event.isDropItems()) {
+            return;
+        }
         final Block block = event.getBlock();
         final Material material = block.getType();
 
@@ -90,7 +96,14 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerHarvestBlock(final PlayerHarvestBlockEvent event) {
+        if (!isSurvival(event.getPlayer())) {
+            return;
+        }
         awardXp(event.getPlayer(), ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+    }
+
+    private static boolean isSurvival(final Player player) {
+        return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
     }
 
     @EventHandler(ignoreCancelled = true)

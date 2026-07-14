@@ -55,6 +55,12 @@ public final class DailyQuestListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
+        // Creative farm-guard (same as GatheringBuffListener): creative/spectator breaks
+        // must not progress daily quests.
+        if (player.getGameMode() != org.bukkit.GameMode.SURVIVAL
+                && player.getGameMode() != org.bukkit.GameMode.ADVENTURE) {
+            return;
+        }
         dailyQuestManager.handle(player, "BREAK_BLOCKS");
 
         // Ore mining: any block whose material name ends with "_ORE" (covers every ore tier),

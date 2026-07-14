@@ -132,19 +132,17 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
 
         final double cost = factionManager.getSwitchCost();
         final CurrencyType currency = CurrencyType.fromFactionType(currentFaction);
-        final double balance = currencyManager.getBalance(player, currency);
-        if (balance < cost) {
+        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
+        if (cost > 0.0D && !currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
             player.sendMessage(messageManager.get(
                     "messages.faction-switch-insufficient",
                     "&cA frakcióváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.",
                     currencyManager.formatBalance(cost),
                     currency.getDisplayName(),
-                    currencyManager.formatBalance(balance)
+                    currencyManager.formatBalance(currencyManager.getBalance(player, currency))
             ));
             return false;
         }
-
-        currencyManager.setBalance(player, currency, balance - cost);
         factionManager.recordSwitch(player);
         player.sendMessage(messageManager.get(
                 "messages.faction-switch-paid",

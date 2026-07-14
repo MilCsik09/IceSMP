@@ -15,10 +15,16 @@ public final class GustSpell extends BaseSpell {
 
     @Override
     public void execute(final Player player) {
+        executeSpell(player);
+    }
+
+    @Override
+    public boolean executeSpell(final Player player) {
         final Location center = player.getLocation();
         final double radius = balance("radius", 5.0D);
         final double knockback = balance("knockback", 2.0D);
         final double knockbackUp = balance("knockback-up", 0.45D);
+        boolean hit = false;
         for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (!(entity instanceof LivingEntity) || entity == player) {
                 continue;
@@ -26,7 +32,14 @@ public final class GustSpell extends BaseSpell {
 
             final Vector push = entity.getLocation().toVector().subtract(center.toVector()).normalize().multiply(knockback).setY(knockbackUp);
             entity.setVelocity(push);
+            hit = true;
         }
+        // No target in range: report failure so the cost is refunded and no cooldown starts
+        // (same contract as BeeSwarm/LifeDrain).
+        if (!hit) {
+            player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a közeledben."));
+        }
+        return hit;
     }
 }
 

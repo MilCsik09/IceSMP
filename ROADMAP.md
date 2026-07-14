@@ -53,8 +53,8 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - 💡 **Natív claim + chat-formázó — kész:** chunk-alapú terület-claim (első 3 ingyen, utána égetett
   frakció-valuta ár — money sink; trust; robbanás-védelem; raid-lootable kapcsoló; a meteor/kincs
   események kerülik) a SimpleClaimSystem kiváltására, és natív chat-formázó (LP-prefix + frakció-színes
-  név) a LuckPermsChatFormatterFolia kiváltására. További ötlet: claim-GUI, claim-bérlés frakciótársnak,
-  piston/fire edge-case védelem.
+  név) a LuckPermsChatFormatterFolia kiváltására. A piston/tűz/folyadék edge-case védelem **kész**
+  (a TerritoryProtectionListener mintáját követi). További ötlet: claim-GUI, claim-bérlés frakciótársnak.
 - 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
   pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
   több egyidejű raid, védő-oldali erődítés-mechanika.
@@ -123,7 +123,7 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 5. **Világesemény-bővítések:** vihar / aranyláz-zóna / napfogyatkozás, heti/eseményhez kötött
    esemény-rotáció, karaván-készlet napi rotáció.
 6. **Party-extrák:** party-célpont jelölés, party-waypoint.
-7. **Claim-extrák:** claim-GUI, claim-bérlés frakciótársnak, piston/tűz edge-case védelem.
+7. **Claim-extrák:** claim-GUI, claim-bérlés frakciótársnak. (A piston/tűz/folyadék védelem kész.)
 8. **Raid-variánsok:** zászlófoglalás-mód, több egyidejű raid, védő-oldali erődítés.
 9. **Quest-extrák:** quest-lánc-térkép GUI, a maradék 9 kaszt mester-lánca (csak config).
 10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).

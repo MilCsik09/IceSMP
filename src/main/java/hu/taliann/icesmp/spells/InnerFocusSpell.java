@@ -24,7 +24,9 @@ public final class InnerFocusSpell extends BaseSpell {
 
     @Override
     public boolean canCast(final Player player) {
-        return player.getFoodLevel() >= 20;
+        // Recast guard: while frozen, a second cast would save the already-zeroed walk speed
+        // as "original" and permanently strand the player at 0 speed.
+        return player.getFoodLevel() >= 20 && !FROZEN_PLAYERS.containsKey(player.getUniqueId());
     }
 
     @Override

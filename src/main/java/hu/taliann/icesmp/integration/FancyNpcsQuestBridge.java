@@ -173,7 +173,9 @@ public final class FancyNpcsQuestBridge {
                                 }
                             }
                         }
-                    } catch (final ReflectiveOperationException exception) {
+                    } catch (final Throwable exception) {
+                        // Fail-soft like the other reflective bridges: a broken quest definition or
+                        // NPC-API change must never propagate out of the third-party event pipeline.
                         plugin.getLogger().warning("FancyNpcs quest-bridge hiba: " + exception.getMessage());
                     }
                 },

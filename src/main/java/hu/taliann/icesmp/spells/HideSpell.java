@@ -29,6 +29,13 @@ public final class HideSpell extends BaseSpell {
     }
 
     @Override
+    public boolean canCast(final Player player) {
+        // Recast guard: while hidden, a second cast would stash the already-emptied armor slots
+        // as "original", and the restore would permanently destroy the real armor set.
+        return !HIDDEN_ARMOR.containsKey(player.getUniqueId());
+    }
+
+    @Override
     public void execute(final Player player) {
         final int teleportRadius = balanceInt("teleport-radius", 10);
         final Location origin = player.getLocation();

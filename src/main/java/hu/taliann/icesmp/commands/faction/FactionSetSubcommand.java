@@ -54,7 +54,17 @@ public final class FactionSetSubcommand implements FactionSubcommand {
             return true;
         }
 
-        final OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
+        // Never Bukkit.getOfflinePlayer(name): for unknown names it fires a BLOCKING Mojang
+        // lookup on the region thread. Online-exact first, then the local profile cache.
+        OfflinePlayer target = Bukkit.getPlayerExact(args[0]);
+        if (target == null) {
+            target = Bukkit.getOfflinePlayerIfCached(args[0]);
+        }
+        if (target == null) {
+            sender.sendMessage(messageManager.get("messages.faction-set-player-unknown",
+                    "&cIsmeretlen játékos (még sosem járt a szerveren): &f%s", args[0]));
+            return true;
+        }
         final FactionType factionType = FactionType.fromInput(args[1]);
 
         if (factionType == null) {

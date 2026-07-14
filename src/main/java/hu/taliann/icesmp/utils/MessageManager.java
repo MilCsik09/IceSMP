@@ -36,7 +36,8 @@ public final class MessageManager {
 
     private final JavaPlugin plugin;
     private final File messagesFile;
-    private YamlConfiguration messagesConfiguration;
+    /** volatile: reload() swaps it on one thread while region threads read it concurrently. */
+    private volatile YamlConfiguration messagesConfiguration;
 
     /**
      * Constructs a new MessageManager.

@@ -99,19 +99,17 @@ public final class SpecCommand implements BasicCommand {
         final double cost = specializationManager.getRespecCost();
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
-        final double balance = currencyManager.getBalance(player, currency);
-        if (balance < cost) {
+        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
+        if (cost > 0.0D && !currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
             sender.sendMessage(messageManager.get(
                     "spec-respec-insufficient",
                     "&cA respec ára &f%s %s&c, de csak &f%s&c van a bankodban.",
                     currencyManager.formatBalance(cost),
                     currency.getDisplayName(),
-                    currencyManager.formatBalance(balance)
+                    currencyManager.formatBalance(currencyManager.getBalance(player, currency))
             ));
             return;
         }
-
-        currencyManager.setBalance(player, currency, balance - cost);
         int refundedPoints = 0;
         if (classRespec) {
             specializationManager.resetClassSpecialization(player);

@@ -606,8 +606,10 @@ tehát az `/claim unclaim`-nál sem jár vissza.
 **Mit véd a claim:** idegenek nem törhetnek/rakhatnak blokkot, nem nyithatnak konténert (láda,
 hordó, kemence…), nem üríthetnek vödröt, nem szedhetnek le kép-/festménykeretet a te birtokodon —
 és a **robbanás sem bontja** a claimelt blokkokat (a blokk-evő mobok, pl. enderman, szintén nem
-vihetnek el blokkot). **Fontos:** a claim a **PvP-t NEM tiltja** — ez háborús szerver, a claim csak
-az építést és a lopást védi.
+vihetnek el blokkot). A **tűz** nem gyullad meg, nem terjed és nem éget el claimelt blokkot, kívülről
+**folyadék** (víz/láva) nem folyhat be, és idegen **dugattyú** sem tolhat be/húzhat ki blokkot a
+birtokodról (a saját claimeden belüli gépeid persze működnek). **Fontos:** a claim a **PvP-t NEM
+tiltja** — ez háborús szerver, a claim csak az építést és a lopást védi.
 
 A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozzáférés minden
 claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza. `/claim info` megmutatja, kié az
