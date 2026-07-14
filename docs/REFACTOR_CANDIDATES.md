@@ -33,6 +33,7 @@ Jelölés: 🔴 érdemes hamarosan • 🟡 következő takarító körre • �
 | 14 | `RaidManager.participants` kilépéskori helyfoglalás | Gameplay-megfigyelés | 🟢 |
 | 15 | Escort-útpontok `getHighestBlockYAt` pontatlanság | Kozmetika (ROADMAP-örökség) | 🟢 |
 | 16 | Aukció: licit elérheti a buy-outot — GUI-tipp hiányos | Kozmetika (ROADMAP-örökség) | 🟢 |
+| 17 | `CharacterGUIListener` — GUI-ba duplikált respec-logika | Duplikáció / minta-sértés | 🟡 |
 
 A dokumentum végén: **megvizsgált, de teendőt nem igénylő** esetek (hogy egy későbbi audit
 ne vizsgálja meg őket újra feleslegesen).
@@ -322,6 +323,26 @@ a levonás maga konzisztens.
 ténylegesen levont összeg visszaírása a becsült helyett.
 
 **Munka/kockázat:** ~fél óra, kockázatmentes.
+
+### 17. 🟡 `CharacterGUIListener` — a respec-logika duplikálva a GUI-ban
+
+**Hely:** `listeners/CharacterGUIListener.java` (a spec-menü respec-ága, kb. 215–245. sor) vs.
+`commands/SpecCommand.handleRespec`.
+
+**Probléma:** a projekt dokumentált menü-mintája szerint „a gameplay-logika MINDIG a
+parancsokban marad, a menü csak delegál" (`RUN:<parancs>` akcióval). A karakter-menü
+respec-gombja ehelyett újraimplementálja a teljes respec-folyamatot (ár-levonás,
+spec-reset, talent-visszatérítés, üzenetek) — a 2026-07-14-i auditkör pont emiatt találta
+meg ugyanazt a get+set balance-race-t itt is, amit a parancsban már javítottunk (azóta
+mindkét hely atomi `deductFromBalance`-t használ, de a duplikáció maradt). Minden jövőbeli
+respec-szabály (pl. ár-változás, új visszatérítési ág) két helyen igényel módosítást.
+
+**Javasolt megoldás:** a respec-folyamat kiemelése egy közös helperbe (pl.
+`SpecializationManager.performRespec(player, classPool)` ami a teljes tranzakciót viszi és
+eredmény-objektumot ad), a parancs ÉS a GUI is ezt hívja; VAGY a GUI-gomb átállítása
+`RUN:spec respec ...` delegálásra a menü-minta szerint.
+
+**Munka/kockázat:** ~1 óra, alacsony; respec kézi playtest (parancsból + menüből) kell.
 
 ---
 
