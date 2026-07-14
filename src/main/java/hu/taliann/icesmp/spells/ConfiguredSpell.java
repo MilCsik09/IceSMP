@@ -216,13 +216,55 @@ public final class ConfiguredSpell extends BaseSpell {
         };
     }
 
+    // ==================== live balansz-olvasás ====================
+    // A spell-balance.<id>.<kulcs> felülbírálások HASZNÁLAT idején olvasódnak (BaseSpell.balance
+    // a volatile ConfigManager-en át), így /icesmp reload vagy /icesmp config set restart nélkül,
+    // azonnal érvényes a deklaratív spelleknél is. A mezők a kódbeli defaultok maradnak; az
+    // indításkori withBalanceOverrides csak a startup-log + ismeretlen-id warning miatt él tovább.
+
+    private double liveRange() {
+        return balance("range", range);
+    }
+
+    private double liveRadius() {
+        return balance("radius", radius);
+    }
+
+    private double liveDamage() {
+        return balance("damage", damage);
+    }
+
+    private double liveSelfDamage() {
+        return balance("self-damage", selfDamage);
+    }
+
+    private double liveHealSelf() {
+        return balance("heal-self", healSelf);
+    }
+
+    private int liveFeedSelf() {
+        return balanceInt("feed-self", feedSelf);
+    }
+
+    private int liveIgniteTicks() {
+        return balanceInt("ignite-ticks", igniteTicks);
+    }
+
+    private int liveFreezeTicks() {
+        return balanceInt("freeze-ticks", freezeTicks);
+    }
+
+    private double liveKnockback() {
+        return balance("knockback", knockback);
+    }
+
     private void executeSelf(final Player player, final double power) {
         applySelf(player, power);
         playFeedback(player, player.getLocation());
     }
 
     private boolean executeTarget(final Player player, final double power) {
-        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, range);
+        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, liveRange());
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
             return false;
@@ -235,7 +277,8 @@ public final class ConfiguredSpell extends BaseSpell {
     }
 
     private void executeAoe(final Player player, final double power) {
-        for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
+        final double aoeRadius = liveRadius();
+        for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), aoeRadius, aoeRadius, aoeRadius)) {
             if (!(entity instanceof LivingEntity living) || entity == player) {
                 continue;
             }
@@ -256,31 +299,31 @@ public final class ConfiguredSpell extends BaseSpell {
         final List<String> lines = new ArrayList<>();
         lines.add(switch (targeting) {
             case SELF -> "Cél: önmagad";
-            case TARGET -> "Cél: célzott lény (hatótáv " + trim(range) + ")";
-            case AOE -> "Cél: körzet (sugár " + trim(radius) + ")" + (friendlyAoe ? ", csak szövetségesek" : "");
+            case TARGET -> "Cél: célzott lény (hatótáv " + trim(liveRange()) + ")";
+            case AOE -> "Cél: körzet (sugár " + trim(liveRadius()) + ")" + (friendlyAoe ? ", csak szövetségesek" : "");
         });
-        if (damage > 0.0D) {
-            lines.add("Sebzés: " + trim(damage));
+        if (liveDamage() > 0.0D) {
+            lines.add("Sebzés: " + trim(liveDamage()));
         }
-        if (selfDamage > 0.0D) {
-            lines.add("Önsebzés: " + trim(selfDamage));
+        if (liveSelfDamage() > 0.0D) {
+            lines.add("Önsebzés: " + trim(liveSelfDamage()));
         }
-        if (healSelf > 0.0D) {
-            lines.add("Gyógyítás: " + trim(healSelf));
+        if (liveHealSelf() > 0.0D) {
+            lines.add("Gyógyítás: " + trim(liveHealSelf()));
         }
-        if (feedSelf > 0) {
-            lines.add("Jóllakottság: +" + feedSelf);
+        if (liveFeedSelf() > 0) {
+            lines.add("Jóllakottság: +" + liveFeedSelf());
         }
-        if (igniteTicks > 0) {
-            lines.add("Gyújtás: " + secondsOf(igniteTicks) + " mp");
+        if (liveIgniteTicks() > 0) {
+            lines.add("Gyújtás: " + secondsOf(liveIgniteTicks()) + " mp");
         }
-        if (freezeTicks > 0) {
-            lines.add("Fagyasztás: " + secondsOf(FREEZE_BASE_TICKS + freezeTicks) + " mp");
+        if (liveFreezeTicks() > 0) {
+            lines.add("Fagyasztás: " + secondsOf(FREEZE_BASE_TICKS + liveFreezeTicks()) + " mp");
         }
         if (lightning) {
             lines.add("Villámcsapás");
         }
-        if (knockback > 0.0D) {
+        if (liveKnockback() > 0.0D) {
             lines.add("Hátralökés");
         }
         if (launchUp > 0.0D) {
@@ -330,26 +373,30 @@ public final class ConfiguredSpell extends BaseSpell {
             target.getWorld().strikeLightningEffect(target.getLocation());
         }
 
-        if (damage > 0.0D) {
-            target.damage(damage * power, caster);
+        final double liveDamage = liveDamage();
+        if (liveDamage > 0.0D) {
+            target.damage(liveDamage * power, caster);
         }
 
         for (final PotionEffect effect : targetEffects) {
             target.addPotionEffect(scaledDuration(effect, power));
         }
 
-        if (igniteTicks > 0) {
-            target.setFireTicks(Math.max(target.getFireTicks(), igniteTicks));
+        final int liveIgnite = liveIgniteTicks();
+        if (liveIgnite > 0) {
+            target.setFireTicks(Math.max(target.getFireTicks(), liveIgnite));
         }
 
-        if (freezeTicks > 0) {
-            target.setFreezeTicks(Math.max(target.getFreezeTicks(), FREEZE_BASE_TICKS + freezeTicks));
+        final int liveFreeze = liveFreezeTicks();
+        if (liveFreeze > 0) {
+            target.setFreezeTicks(Math.max(target.getFreezeTicks(), FREEZE_BASE_TICKS + liveFreeze));
         }
 
-        if (knockback > 0.0D) {
+        final double liveKnockback = liveKnockback();
+        if (liveKnockback > 0.0D) {
             final Vector away = target.getLocation().toVector().subtract(caster.getLocation().toVector()).setY(0.0D);
             if (away.lengthSquared() > 1.0E-4D) {
-                target.setVelocity(away.normalize().multiply(knockback).setY(0.3D));
+                target.setVelocity(away.normalize().multiply(liveKnockback).setY(0.3D));
             }
         }
 
@@ -371,19 +418,22 @@ public final class ConfiguredSpell extends BaseSpell {
         }
 
         // Self-damage is a cost, not offensive output — it stays at base regardless of mastery.
-        if (selfDamage > 0.0D) {
-            player.damage(selfDamage);
+        final double liveSelfDamage = liveSelfDamage();
+        if (liveSelfDamage > 0.0D) {
+            player.damage(liveSelfDamage);
         }
 
-        if (healSelf > 0.0D) {
+        final double liveHealSelf = liveHealSelf();
+        if (liveHealSelf > 0.0D) {
             final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) {
-                player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + (healSelf * power)));
+                player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + (liveHealSelf * power)));
             }
         }
 
-        if (feedSelf > 0) {
-            player.setFoodLevel(Math.min(20, player.getFoodLevel() + feedSelf));
+        final int liveFeedSelf = liveFeedSelf();
+        if (liveFeedSelf > 0) {
+            player.setFoodLevel(Math.min(20, player.getFoodLevel() + liveFeedSelf));
         }
 
         if (dashForward != 0.0D || dashUp != 0.0D) {
@@ -400,8 +450,9 @@ public final class ConfiguredSpell extends BaseSpell {
 
     private void playFeedback(final Player player, final Location focus) {
         if (particle != null) {
+            final double spread = liveRadius();
             hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, focus.clone().add(0.0D, 1.0D, 0.0D),
-                    particleCount, radius > 0.0D ? radius / 2.0D : 0.4D, 0.6D, radius > 0.0D ? radius / 2.0D : 0.4D, 0.02D);
+                    particleCount, spread > 0.0D ? spread / 2.0D : 0.4D, 0.6D, spread > 0.0D ? spread / 2.0D : 0.4D, 0.02D);
         }
 
         if (sound != null) {

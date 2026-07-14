@@ -1,10 +1,10 @@
 # Spell-balansz — MINDEN regisztrált spell explicit entry-vel, a kódbeli alapértékekkel.
 # Az itt szereplő érték felülbírálja a kódbelit; ha megegyezik vele, nincs hatása (no-op).
 #
-# 1. DEKLARATÍV spellek (ConfiguredSpell, SpellCatalog): a felülbírálás szerverindításkor
-#    épül be — MÓDOSÍTÁS UTÁN SZERVER-ÚJRAINDÍTÁS KELL.
-# 2. STATEFUL (saját osztályú) spellek: cast-időben olvassák a fájlt, a /icesmp reload
-#    AZONNAL érvényesíti őket (cooldown és cost-amount ezeknél is állítható).
+# MINDEN felülbírálás CAST-IDŐBEN olvasódik (a deklaratív ConfiguredSpell-eknél és a
+# stateful saját-osztályú spelleknél is), tehát a /icesmp reload — vagy egy ingame
+# /icesmp config set spell-balance.<id>.<kulcs> <érték> — AZONNAL érvényesíti,
+# szerver-újraindítás NÉLKÜL.
 #
 # Felülbírálható kulcsok (deklaratív): cooldown, cost-amount, range, radius, damage,
 # self-damage, heal-self, feed-self, ignite-ticks, freeze-ticks, knockback.

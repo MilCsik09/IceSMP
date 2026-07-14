@@ -33,9 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class NpcBindingManager implements PersistentStore {
 
-    /** What an NPC is bound to. QUEST/SHOP carry a value (quest id / shop name); BANK/EXCHANGE don't. */
+    /**
+     * What an NPC is bound to. QUEST/SHOP/COMMAND carry a value (quest id / shop name / the
+     * command line the interacting player runs); BANK/EXCHANGE/FACTION don't.
+     */
     public enum BindingType {
-        QUEST, SHOP, BANK, EXCHANGE, FACTION
+        QUEST, SHOP, BANK, EXCHANGE, FACTION, COMMAND
     }
 
     /** A single binding: its type, and the type-specific value (empty for BANK/EXCHANGE/FACTION). */

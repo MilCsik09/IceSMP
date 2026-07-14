@@ -29,7 +29,7 @@ import java.util.Map;
 public final class NpcBindCommand implements BasicCommand {
 
     private static final String PERMISSION = "icesmp.admin.npc";
-    private static final List<String> ACTIONS = List.of("quest", "shop", "bank", "exchange", "faction", "clear");
+    private static final List<String> ACTIONS = List.of("quest", "shop", "bank", "exchange", "faction", "command", "clear");
 
     private final NpcBindingManager npcBindingManager;
     private final QuestManager questManager;
@@ -74,6 +74,7 @@ public final class NpcBindCommand implements BasicCommand {
             case "bank" -> handleBankOrExchange(sender, npcName, BindingType.BANK);
             case "exchange" -> handleBankOrExchange(sender, npcName, BindingType.EXCHANGE);
             case "faction" -> handleFaction(sender, npcName);
+            case "command" -> handleCommand(sender, npcName, args);
             case "clear" -> handleClear(sender, npcName);
             default -> {
                 sender.sendMessage(messageManager.get("npcbind-unknown-action", "&cIsmeretlen kötés-típus: &f%s", args[1]));
@@ -125,6 +126,34 @@ public final class NpcBindCommand implements BasicCommand {
                     npcName, shopName
             ));
         }
+    }
+
+    /**
+     * Binds the NPC to a command line the INTERACTING PLAYER runs on right-click
+     * (performCommand — the player's own permissions apply, so this can never grant
+     * anything the player couldn't type themselves). Leading slash is stripped.
+     */
+    private void handleCommand(final CommandSender sender, final String npcName, final String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(messageManager.get("npcbind-command-usage",
+                    "&cHasználat: /npcbind <npc> command <parancs...> &7(a kattintó játékos nevében fut)"));
+            return;
+        }
+        String commandLine = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length)).trim();
+        if (commandLine.startsWith("/")) {
+            commandLine = commandLine.substring(1);
+        }
+        if (commandLine.isEmpty()) {
+            sender.sendMessage(messageManager.get("npcbind-command-usage",
+                    "&cHasználat: /npcbind <npc> command <parancs...> &7(a kattintó játékos nevében fut)"));
+            return;
+        }
+        npcBindingManager.bind(npcName, BindingType.COMMAND, commandLine);
+        sender.sendMessage(messageManager.get(
+                "npcbind-command-success",
+                "&aKötve: &e%s &7NPC-re kattintva a játékos ezt futtatja: &e/%s",
+                npcName, commandLine
+        ));
     }
 
     private void handleFaction(final CommandSender sender, final String npcName) {
@@ -182,6 +211,7 @@ public final class NpcBindCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("npcbind-help-bank", "&e/npcbind <npc> bank &7- Az NPC bankárként a bank menüt nyitja."));
         sender.sendMessage(messageManager.get("npcbind-help-exchange", "&e/npcbind <npc> exchange &7- Az NPC valutaváltóként a bank menüt nyitja."));
         sender.sendMessage(messageManager.get("npcbind-help-faction", "&e/npcbind <npc> faction &7- Az NPC a frakció-menüt nyitja (királyság-választó hírnök)."));
+        sender.sendMessage(messageManager.get("npcbind-help-command", "&e/npcbind <npc> command <parancs...> &7- A kattintó játékos futtatja a parancsot (saját jogaival)."));
         sender.sendMessage(messageManager.get("npcbind-help-clear", "&e/npcbind <npc> clear &7- Kötés törlése."));
         sender.sendMessage(messageManager.get("npcbind-help-list", "&e/npcbind list &7- Minden kötés kiírása."));
     }

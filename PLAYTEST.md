@@ -71,7 +71,7 @@ A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb
 | `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / zóna-védelem teljes megkerülése (build+interakció+PvP) |
 | `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
-| `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz |
+| `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz/frakció-menühöz/parancshoz |
 
 ---
 
@@ -251,6 +251,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Resource-cost override:** `/icesmp config set spell-balance.<id>.resource-cost <érték>` után a
       Spellbook AZONNAL az új árat mutatja és a cast annyit von le (cooldown-módosítás nélkül);
       `unset` után visszaáll a cooldown-sávos alapár.
+- [ ] **Élő spell-balansz:** deklaratív spellnél (pl. egy sima sebző spell)
+      `/icesmp config set spell-balance.<id>.damage <érték>` → a következő cast MÁR az új sebzést
+      viszi és a Spellbook-lore is az új számot mutatja, restart nélkül (range/radius/heal/ignite/
+      freeze/knockback ugyanígy).
 - [ ] **Üres AOE-cast visszatérítés:** Lökéshullám/Gyökerezés/Megzavarás/Csontfagy célpont nélkül
       „Nincs célpont" üzenetet ad, a költség visszajár és NEM indul cooldown.
 - [ ] **Újracast-védelem:** Belső Fókusz lefagyás alatt, Elrejtőzés aktív invis alatt nem castolható
@@ -302,6 +306,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Frakció-bolt NPC:** rakj ki egy FancyNpcs NPC-t `altalanos_bolt` néven → jobb-katt megnyitja
       a vásárló GUI-t; kattintás vesz (bankból fizet, a pénz ELÉG — money sink), tele táska a földre
       dob. Elég fedezet híján hibaüzenet; `faction`-korlátozott boltban más frakciós tag nem vehet.
+- [ ] **Parancs-NPC:** `/npcbind <npc> command spellbook` után az NPC-re kattintva a JÁTÉKOS
+      futtatja a parancsot (a saját jogaival — pl. `command icesmp reload` sima játékosnak
+      jog-hibát ad, nem fut le); `/npcbind <npc> clear` visszaállítja.
 - [ ] **Kereskedő-karaván:** `/events caravan arrive` → broadcast + megjelenik a vándorkereskedő
       (WanderingTrader) a közeledben; jobb-katt megnyitja a ritka-portéka boltját (nem a natív
       trade-et!), vétel a bankból ELÉG. `/events caravan depart` → broadcast + eltűnik; utána a

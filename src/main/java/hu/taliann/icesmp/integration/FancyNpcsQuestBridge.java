@@ -181,6 +181,10 @@ public final class FancyNpcsQuestBridge {
                                             factionMenuHook.accept(player);
                                         }
                                     }
+                                    // A JÁTÉKOS nevében és jogosultságaival fut (performCommand),
+                                    // tehát nem privilégium-eszkaláció; az interact event a játékos
+                                    // saját régió-szálán jár, így a hívás Folia-biztos.
+                                    case COMMAND -> player.performCommand(binding.value());
                                 }
                             }
                         }
