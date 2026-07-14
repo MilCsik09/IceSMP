@@ -207,6 +207,8 @@ az alapkasztod.
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás + bal katt (ütés)** = váltás a feloldott képességek között (kaszt-specifikus
   hanggal; az action bar mutatja a kiválasztott képességet + a költségét).
+- **Lopakodás + görgetés** (katalizátorral a kézben) = gyors spell-váltás előre/hátra — a
+  hotbar-slot nem vált, és a katalizátor **neve mindig az épp kiválasztott képességet** mutatja.
 - Ha elveszne: a Kaszt menüből bármikor újra igényelheted (admin: `/job givecatalyst`).
 - A katalizátort **nem lehet** craftolásnál vagy kemencében elhasználni — védett.
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben

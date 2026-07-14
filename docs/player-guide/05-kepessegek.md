@@ -11,6 +11,8 @@ A kasztod képességeit egy **Katalizátor** nevű tárggyal használod (a kaszt
 a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
+- **Lopakodás (SHIFT) + görgetés** = gyors váltás a képességeid között előre/hátra — a
+  hotbar nem vált el, és a katalizátor **neve az épp kiválasztott képességet** mutatja.
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
 

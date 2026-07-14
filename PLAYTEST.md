@@ -251,6 +251,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.5 Spellek, kombó, mesterség ✅
 - [ ] Több reprezentatív spell elsül és a leírt hatást teszi (sebzés/effekt/teleport/idézés).
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
+- [ ] **Shift+görgetés spell-váltás:** katalizátorral a kézben lopakodva görgetve a spell vált
+      (előre/hátra), a hotbar-slot NEM vált el, és a katalizátor neve az épp kiválasztott
+      képességet mutatja; katalizátor nélkül a görgetés normál slot-váltás marad.
 - [ ] **Kombó:** egy konfigurált spell-pár (pl. Fagyérintés → Arkán Lökés) rövid időn belül →
       „⚡ Kombó!" + gyorsabb felépülés.
 - [ ] `/spell upgrade <id>` valutáért növeli a mesterség-rangot (max 5 rang): a cooldown csökken

@@ -22,6 +22,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerAnimationType;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -172,10 +173,27 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
 
         cycleDebounce.put(player.getUniqueId(), now);
-        cycleSpell(player);
+        cycleSpell(player, 1);
     }
 
-    private void cycleSpell(final Player player) {
+    /**
+     * Shift + görgetés a katalizátorral a kézben: gyors spell-váltás hotbar-váltás helyett.
+     * Lefelé görgetés = következő, felfelé = előző képesség; az event cancel-je megtartja
+     * az aktív hotbar-slotot. A kiválasztott spell neve az item nevére íródik.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onHotbarScroll(final PlayerItemHeldEvent event) {
+        final Player player = event.getPlayer();
+        if (!player.isSneaking() || !isUsableCatalyst(player, player.getInventory().getItemInMainHand())) {
+            return;
+        }
+        event.setCancelled(true);
+        // Kerekes irány a slot-lépésből (wrap-pel): 0->1..4 = előre, egyébként hátra.
+        final int step = ((event.getNewSlot() - event.getPreviousSlot() + 9) % 9) <= 4 ? 1 : -1;
+        cycleSpell(player, step);
+    }
+
+    private void cycleSpell(final Player player, final int step) {
         final List<String> unlocked = resolveUnlockedSpellIds(player);
         if (unlocked.isEmpty()) {
             player.sendActionBar(messageManager.getMessage("catalyst.no-spells", "<red>Nincs elérhető képesség.</red>"));
@@ -184,7 +202,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         final int currentIndex = pdc.getOrDefault(selectedSpellIndexKey, PersistentDataType.INTEGER, -1);
-        final int nextIndex = (currentIndex + 1) % unlocked.size();
+        final int nextIndex = ((currentIndex + step) % unlocked.size() + unlocked.size()) % unlocked.size();
         pdc.set(selectedSpellIndexKey, PersistentDataType.INTEGER, nextIndex);
 
         final Spell selected = spellRegistry.getById(unlocked.get(nextIndex));
@@ -207,6 +225,19 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 )
         ));
         catalystItemFactory.playCycleSound(player, jobManager.getPrimaryJob(player));
+        renameHeldCatalyst(player, selected);
+    }
+
+    /** A kézben tartott katalizátor neve a kiválasztott spellt mutatja (playtest-kérés). */
+    private void renameHeldCatalyst(final Player player, final Spell selected) {
+        final ItemStack held = player.getInventory().getItemInMainHand();
+        if (!catalystItemFactory.isCatalyst(held)) {
+            return;
+        }
+        held.editMeta(meta -> meta.displayName(
+                net.kyori.adventure.text.Component.text("⚡ " + selected.getName(),
+                                net.kyori.adventure.text.format.NamedTextColor.GOLD)
+                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)));
     }
 
     private void castSelectedSpell(final Player player) {
