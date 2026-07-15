@@ -82,7 +82,7 @@ Távolsági mágia, lassítás, védelem. A költsége többnyire **XP**.
 | **Gyökerezés** | Helyben **gyökerezteti** a környező ellenfeleket | 8 🍗 | 5 perc | 5 |
 | **Fagyérintés** | A célpontot **megfagyasztja** és lelassítja (8 blokk) | 40 ⚡ | 45 mp | 7 |
 | **Arkán Pajzs** | **Extra szíveket** (felszívódás) és sebzéscsökkentést ad magadnak | 30 XP | 90 mp | 9 |
-| **Megzavarás** | A környező ellenfeleket **összezavarja** (rosszul látnak/céloznak) | 160 XP | 20 perc | 10 |
+| **Megzavarás** | 15 blokkban **összezavar**: a játékosok megvakulnak, a mobok **elvesztik a célpontjukat** (10 mp-ig újra és újra), lelassulnak és gyengébben ütnek | 160 XP | 20 perc | 10 |
 | **Villanás** | **8 blokkot előre teleportálsz**, amerre nézel | 1,5 🍗 | 30 mp | 12 |
 | **Esőtánc** | **Esőt** hív a környékre | 352 XP | 60 perc | 15 |
 | **Arkán Lökés** | Körkörös **robbanás** (5 blokk): 3 sebzés + ellök | 40 XP | 90 mp | 18 |

@@ -291,6 +291,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       feloldva: Halállovag = Fagysugár, Sárkányidéző = Lánggolyó — a spec-spellek neve változatlan.)
 - [ ] **Spell-item CMD-k:** a Vadgomba (6101), Rúnakő (6102), Démoni Só (6103) és Kiűzés Botja (6104)
       custom model datát hordoz — resource packkel a textúrájuk cserélhető (RESOURCE_PACK_CMD.md).
+- [ ] **Megzavarás (rework):** mobokra is LÁTHATÓAN hat — a támadó mob leáll rólad (célpont-vesztés,
+      10 mp-ig ismételve), lassabb és gyengébb; játékos-ellenfél megvakul (vakság+sötétség).
+      A méreg-komponens kikerült (tiszta CC).
 - [ ] **Druida-formák:** Párducformában −4 szív max-élet (visszaváltáskor/relogkor visszaáll);
       Medve: éhség-debuff; Hold: mining fatigue; Utazó: weakness.
 

@@ -415,7 +415,7 @@ public final class IceSMPCore {
         spellRegistry.register(new RainDanceSpell(messageManager));
         spellRegistry.register(new SunDanceSpell(messageManager));
         spellRegistry.register(new ArmamentSpell(plugin, messageManager));
-        spellRegistry.register(new ConfusionSpell(messageManager));
+        spellRegistry.register(new ConfusionSpell(plugin, messageManager));
         spellRegistry.register(new HideSpell(plugin, messageManager));
         spellRegistry.register(new GustSpell(messageManager));
         spellRegistry.register(new LuckyStarSpell(plugin, messageManager));
