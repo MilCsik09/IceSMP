@@ -69,6 +69,10 @@ public final class WildMushroomSpell extends BaseSpell {
         final ItemStack stack = new ItemStack(Material.RED_MUSHROOM);
         final ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
+            // Resource pack-hez: egyedi CMD (RESOURCE_PACK_CMD.md leltár; balansz-kulccsal felülbírálható).
+            final org.bukkit.inventory.meta.components.CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+            cmd.setFloats(java.util.List.of((float) balanceInt("custom-model-data", 6101)));
+            meta.setCustomModelDataComponent(cmd);
             meta.getPersistentDataContainer().set(itemTag, PersistentDataType.BOOLEAN, true);
             stack.setItemMeta(meta);
         }

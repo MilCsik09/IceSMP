@@ -189,7 +189,7 @@ Rúnikus harc, fagy és vér; önfenntartás életszívással.
 | **Vérforralás** | Körkörös 3 sebzés + sorvadás (5 blokk) | 4 🍗 | 45 mp | 15 |
 | **Mágiapajzs** | Sebzés- és **tűzvédelem** | 5 🍗 | 90 mp | 17 |
 | **Sötét Parancs** | A közeli ellenfeleket **lelassítja**, te védettebb leszel (6 blokk) | 4 🍗 | 60 mp | 19 |
-| **Fagycsapás** | 2 blokk széles **fagysugarat** lősz előre, ami megfagyaszt mindenkit az útjában (12 blokk) | 40 XP | 90 mp | 21 |
+| **Fagysugár** | 2 blokk széles **fagysugarat** lősz előre, ami megfagyaszt mindenkit az útjában (12 blokk) | 40 XP | 90 mp | 21 |
 
 ## 🌩️ Sámán — alap képességek
 
@@ -282,7 +282,7 @@ Sárkány-mágia: tűz, szél, smaragd-gyógyítás.
 
 | Képesség | Mit csinál | Költség | Várakozás | Szint |
 |---|---|---|---|---|
-| **Tűzgolyó** | 5 sebzés + 3 mp **égés**, 2,5 blokkos **robbanással** (15 blokk) | 30 XP | 20 mp | 2 |
+| **Lánggolyó** | 5 sebzés + 3 mp **égés**, 2,5 blokkos **robbanással** (15 blokk) | 30 XP | 20 mp | 2 |
 | **Azúr Csapás** | **5 sebzés** (14 blokk) | 30 XP | 20 mp | 4 |
 | **Smaragd Virág** | Gyógyulás + regeneráció | 40 XP | 45 mp | 6 |
 | **Szárnycsapás** | A közeli ellenfeleket **ellöki + lelassítja** (5 blokk) | 3 🍗 | 30 mp | 8 |

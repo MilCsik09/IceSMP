@@ -17,10 +17,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * id stays {@code frost_fever}; display name is now "Fagycsapás" per spec. NOTE: this display
- * name collides with the existing "Fagycsapás" name already used by {@code frost_strike}
- * (Fagylovag spec) — flagged here as requested, not resolved, since the task explicitly asked
- * for this exact rename.
+ * id stays {@code frost_fever}; display name is "Fagysugár" — a playtest eredetileg
+ * "Fagycsapás"-t kért, de az ütközött a Fagylovag-spec {@code frost_strike} nevével, ezért
+ * a sugár-mechanikát leíró, egyedi név került rá.
  *
  * <p>Straight 2-block-wide, ~12-block-long ray stepping 1 block at a time from the caster's
  * eye along their current look direction. Every living entity in the path is hit once
@@ -33,7 +32,7 @@ public final class FrostFeverSpell extends BaseSpell {
     private final JavaPlugin plugin;
 
     public FrostFeverSpell(final JavaPlugin plugin, final MessageManager messageManager) {
-        super(messageManager, "frost_fever", "Fagycsapás", 90, SpellCostType.XP, 40);
+        super(messageManager, "frost_fever", "Fagysugár", 90, SpellCostType.XP, 40);
         this.plugin = plugin;
     }
 

@@ -9,14 +9,14 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 /**
- * "Tűzgolyó" (id marad {@code living_flame}) — ray-trace célzás; a célpont 5.0 sebzést és 3mp
+ * "Lánggolyó" (id marad {@code living_flame}) — ray-trace célzás; a célpont 5.0 sebzést és 3mp
  * égést kap, a célpont körüli 2.5 blokkos körben minden MÁS élőlény (a kaszter kivétel) 2.5
  * splash-sebzést és 1.5mp égést kap. Nincs célpont esetén a költség visszajár.
  */
 public final class LivingFlameSpell extends BaseSpell {
 
     public LivingFlameSpell(final MessageManager messageManager) {
-        super(messageManager, "living_flame", "Tűzgolyó", 20, SpellCostType.XP, 30);
+        super(messageManager, "living_flame", "Lánggolyó", 20, SpellCostType.XP, 30);
     }
 
     @Override
