@@ -43,7 +43,8 @@ public final class LivingFlameSpell extends BaseSpell {
 
         for (final Entity nearby : target.getNearbyEntities(splashRadius, splashRadius, splashRadius)) {
             if (!(nearby instanceof LivingEntity living) || living instanceof ArmorStand
-                    || living == target || living.getUniqueId().equals(player.getUniqueId())) {
+                    || living == target || living.getUniqueId().equals(player.getUniqueId())
+                    || SpellTargetingUtil.isAlly(player, living)) {
                 continue;
             }
 

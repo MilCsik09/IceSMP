@@ -6,6 +6,16 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
+  # ===== Baráti tűz (party-tudatos célzás) =====
+  # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
+  # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.
+  friendly-fire:
+    protect-party: true      # a saját csapattag (party) sosem célpont
+    protect-faction: false   # frakciótárs védelme — háborús szerveren alapból KI (az árulás-bűn kezeli)
+  # ===== Katalizátor-cooldown a hotbaron =====
+  # Cast után a katalizátor itemen a vanília szürke töltődés-overlay mutatja a cooldownt.
+  cooldown-overlay:
+    enabled: true
   # Kaszt-erőforrás (HIBRID, WoW-szerű): a HUD oldalsávban egy színes sáv (kasztonként névvel/színnel:
   # Mana/Düh/Energia/Fókusz/Csi…). A legtöbb spell EZT FOGYASZTJA (a költség a sáv), és idővel
   # regenerálódik; üres sávnál a spell nem sül el. Az erőforrás-költség a cooldown-szintjéből adódik

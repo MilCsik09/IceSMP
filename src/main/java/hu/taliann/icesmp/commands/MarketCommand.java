@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * /market — piactér: (arg nélkül) böngészés GUI-ban;
@@ -56,6 +57,7 @@ public final class MarketCommand implements BasicCommand {
             case "claim" -> handleClaim(player);
             case "cancel" -> handleCancel(player);
             case "search" -> handleSearch(player, args);
+            case "stats" -> handleStats(player);
             default -> sendHelp(player);
         }
     }
@@ -260,6 +262,58 @@ public final class MarketCommand implements BasicCommand {
         MarketGUI.open(player, marketManager, currencyManager, messageManager, 0, query);
     }
 
+    /** {@code /market stats} — összesítő a jelenlegi listingekből + az utolsó (max. 50) eladásból; mindenkinek elérhető. */
+    private void handleStats(final Player player) {
+        final MarketManager.MarketStats stats = marketManager.getStats();
+
+        player.sendMessage(messageManager.get("market-stats-header", "&6» Piactér statisztika «"));
+        player.sendMessage(messageManager.get(
+                "market-stats-listings",
+                "&7Aktív tételek: &f%s &7(ebből aukció: &f%s&7)",
+                stats.activeListings(), stats.activeAuctions()
+        ));
+
+        if (stats.topItemTypes().isEmpty()) {
+            player.sendMessage(messageManager.get("market-stats-top-items-none", "&7Legnépszerűbb tárgyak: &f- nincs adat -"));
+        } else {
+            final String topItems = stats.topItemTypes().stream()
+                    .map(entry -> entry.getKey().name() + " (" + entry.getValue() + ")")
+                    .collect(Collectors.joining(", "));
+            player.sendMessage(messageManager.get("market-stats-top-items", "&7Legnépszerűbb tárgyak: &f%s", topItems));
+        }
+
+        if (stats.recentSaleCount() == 0) {
+            player.sendMessage(messageManager.get("market-stats-no-sales", "&7Utóbbi eladások: &f- nincs adat -"));
+            return;
+        }
+
+        player.sendMessage(messageManager.get(
+                "market-stats-sale-count",
+                "&7Naplózott eladások: &f%s &7(max. 50)",
+                stats.recentSaleCount()
+        ));
+        for (final CurrencyType currency : CurrencyType.values()) {
+            final Double average = stats.averagePriceByCurrency().get(currency);
+            if (average == null) {
+                continue;
+            }
+            player.sendMessage(messageManager.get(
+                    "market-stats-average",
+                    "&7Átlagár (&f%s&7): &f%s",
+                    currency.getDisplayName(), currencyManager.formatBalance(average)
+            ));
+        }
+
+        final MarketManager.Transaction biggest = stats.biggestRecentSale();
+        if (biggest != null) {
+            player.sendMessage(messageManager.get(
+                    "market-stats-biggest-sale",
+                    "&7Legnagyobb friss eladás: &f%s &7- &f%s %s",
+                    biggest.itemType().name(), currencyManager.formatBalance(biggest.price()), biggest.currency().getDisplayName()
+            ));
+        }
+    }
+
     private void sendHelp(final Player player) {
         player.sendMessage(messageManager.get("market-help-header", "&6/market &7- Elérhető parancsok:"));
         player.sendMessage(messageManager.get("market-help-browse", "&e/market &7- Piactér böngészése."));
@@ -269,13 +323,14 @@ public final class MarketCommand implements BasicCommand {
         player.sendMessage(messageManager.get("market-help-claim", "&e/market claim &7- Megnyert / visszajáró tárgyak átvétele."));
         player.sendMessage(messageManager.get("market-help-cancel", "&e/market cancel &7- Saját tételeid visszavonása (licites aukció nem vonható vissza)."));
         player.sendMessage(messageManager.get("market-help-search", "&e/market search <szöveg> &7- Keresés a piacon."));
+        player.sendMessage(messageManager.get("market-help-stats", "&e/market stats &7- Piaci statisztika (tételek, forgalom)."));
     }
 
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("browse", "sell", "auction", "claim", "cancel", "search").stream()
+            return List.of("browse", "sell", "auction", "claim", "cancel", "search", "stats").stream()
                     .filter(option -> option.startsWith(prefix)).toList();
         }
 

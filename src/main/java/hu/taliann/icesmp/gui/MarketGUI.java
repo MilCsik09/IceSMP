@@ -189,6 +189,17 @@ public final class MarketGUI {
                         "&eShift-katt: azonnali megvétel a buy-out áron",
                         Map.of()
                 ));
+                // eBay-szemantika: ha a min. vagy a nagy licit már eléri/túllépi a buy-outot,
+                // a bal-/jobb-katt is azonnal lezárja az aukciót — ezt jelezzük előre.
+                final boolean minWins = marketManager.getMinimumBid(listing) >= listing.buyOut();
+                final boolean bigWins = marketManager.getBigBid(listing) >= listing.buyOut();
+                if (minWins || bigWins) {
+                    lore.add(messageManager.getMessage(
+                            "market-lore-bid-instant-win",
+                            "&7Tipp: ez a licit eléri a buy-out árat — a kattintás azonnal megnyeri az aukciót!",
+                            Map.of()
+                    ));
+                }
             }
         } else {
             // Show the price the VIEWER will actually pay (faction reputation adjusts it), not the

@@ -58,7 +58,8 @@ public final class FrostFeverSpell extends BaseSpell {
             final Location point = eye.clone().add(direction.clone().multiply(distance));
             player.getWorld().spawnParticle(Particle.SNOWFLAKE, point, 4, halfWidth / 2.0D, 0.3D, halfWidth / 2.0D, 0.01D);
             for (final Entity nearby : player.getWorld().getNearbyEntities(point, halfWidth, 1.5D, halfWidth)) {
-                if (!(nearby instanceof LivingEntity living) || living == player || !hit.add(living.getUniqueId())) {
+                if (!(nearby instanceof LivingEntity living) || living == player
+                        || SpellTargetingUtil.isAlly(player, living) || !hit.add(living.getUniqueId())) {
                     continue;
                 }
                 living.damage(damage, player);

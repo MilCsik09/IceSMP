@@ -26,7 +26,7 @@ public final class RootSpell extends BaseSpell {
         final int durationTicks = balanceInt("duration-ticks", 80);
         boolean hit = false;
         for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity living) || entity == player) {
+            if (!(entity instanceof LivingEntity living) || entity == player || SpellTargetingUtil.isAlly(player, living)) {
                 continue;
             }
             hit = true;

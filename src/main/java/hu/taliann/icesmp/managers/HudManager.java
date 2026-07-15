@@ -8,7 +8,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -18,7 +21,10 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,6 +41,17 @@ public final class HudManager {
     /** Sidebar row budget: the 7 base rows + up to 7 party-frame rows (separator, header, 5 members). */
     private static final int LINES = 14;
     private static final String OBJECTIVE = "icesmp_hud";
+
+    // /hud toggleable section keys (buildLines() rows). "mind" hides the whole sidebar.
+    public static final String SECTION_FACTION = "frakcio";
+    public static final String SECTION_CURRENCY = "valuta";
+    public static final String SECTION_CLASS = "kaszt";
+    public static final String SECTION_RESOURCE = "eroforras";
+    public static final String SECTION_EVENT = "esemeny";
+    public static final String SECTION_PARTY = "csapat";
+    public static final String SECTION_ALL = "mind";
+    public static final List<String> SECTIONS = List.of(
+            SECTION_FACTION, SECTION_CURRENCY, SECTION_CLASS, SECTION_RESOURCE, SECTION_EVENT, SECTION_PARTY);
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -58,6 +75,10 @@ public final class HudManager {
     private final BossBar worldBossBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.PURPLE, BossBar.Overlay.NOTCHED_6);
 
     private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();
+
+    private final NamespacedKey hiddenSectionsKey;
+    /** Per-player /hud toggle state, cached in memory (PDC is only touched on load/save, never per tick). */
+    private final ConcurrentHashMap<UUID, Set<String>> hiddenSectionsCache = new ConcurrentHashMap<>();
 
     /**
      * A thread-safe snapshot of a player's HUD data, refreshed on the player's region thread each
@@ -95,6 +116,7 @@ public final class HudManager {
         this.serverChallengeManager = serverChallengeManager;
         this.meteorEventManager = meteorEventManager;
         this.gatheringBuffManager = gatheringBuffManager;
+        this.hiddenSectionsKey = new NamespacedKey(plugin, "hud_hidden_sections");
     }
 
     public boolean isEnabled() {
@@ -114,12 +136,63 @@ public final class HudManager {
         return configManager.getBoolean("hud.tablist-enabled", true);
     }
 
+    /**
+     * The set of HUD section keys ({@link #SECTIONS} + {@link #SECTION_ALL}) hidden by the player
+     * via /hud. Loaded from PDC on first access after (re)join and cached in memory afterwards —
+     * never re-read from PDC on the per-second HUD tick.
+     */
+    public Set<String> hiddenSections(final Player player) {
+        return hiddenSectionsCache.computeIfAbsent(player.getUniqueId(), id -> loadHiddenSections(player));
+    }
+
+    private Set<String> loadHiddenSections(final Player player) {
+        final String raw = player.getPersistentDataContainer().get(hiddenSectionsKey, PersistentDataType.STRING);
+        final Set<String> hidden = new LinkedHashSet<>();
+        if (raw != null && !raw.isBlank()) {
+            hidden.addAll(Arrays.asList(raw.split(",")));
+        }
+        return hidden;
+    }
+
+    /** Whether the given section (or {@link #SECTION_ALL}) is currently hidden for the player. */
+    public boolean isSectionHidden(final Player player, final String section) {
+        return hiddenSections(player).contains(section);
+    }
+
+    /**
+     * Toggles a HUD section (or "mind" for the whole sidebar) on/off for the player, persists the
+     * result to their PDC (restart-proof) and refreshes the in-memory cache. Called from /hud, i.e.
+     * on the player's own region thread, so touching their own PDC directly is Folia-safe.
+     *
+     * @return true if the section is hidden after the toggle, false if it is now shown
+     */
+    public boolean toggleSection(final Player player, final String section) {
+        final Set<String> hidden = new LinkedHashSet<>(hiddenSections(player));
+        final boolean nowHidden = hidden.add(section);
+        if (!nowHidden) {
+            hidden.remove(section);
+        }
+        hiddenSectionsCache.put(player.getUniqueId(), hidden);
+        final PersistentDataContainer pdc = player.getPersistentDataContainer();
+        if (hidden.isEmpty()) {
+            pdc.remove(hiddenSectionsKey);
+        } else {
+            pdc.set(hiddenSectionsKey, PersistentDataType.STRING, String.join(",", hidden));
+        }
+        return nowHidden;
+    }
+
+    /** Whether the sidebar should render at all for this player (config gate + their own "mind" toggle). */
+    private boolean sidebarVisibleFor(final Player player) {
+        return sidebarEnabled() && !isSectionHidden(player, SECTION_ALL);
+    }
+
     /** Builds the player's HUD (called on join, on that player's region thread). */
     public void init(final Player player) {
         if (!isEnabled()) {
             return;
         }
-        if (sidebarEnabled()) {
+        if (sidebarVisibleFor(player)) {
             buildSidebar(player);
         }
         update(player);
@@ -154,7 +227,7 @@ public final class HudManager {
         if (!isEnabled()) {
             return;
         }
-        if (sidebarEnabled()) {
+        if (sidebarVisibleFor(player)) {
             Team[] teams = playerTeams.get(player.getUniqueId());
             if (teams == null) {
                 buildSidebar(player);
@@ -267,6 +340,7 @@ public final class HudManager {
         }
         playerTeams.remove(player.getUniqueId());
         snapshots.remove(player.getUniqueId());
+        hiddenSectionsCache.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
         player.hideBossBar(bloodMoonBar);
         player.hideBossBar(worldBossBar);
@@ -310,29 +384,38 @@ public final class HudManager {
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
         final JobType job = jobManager.getPrimaryJob(player);
+        final Set<String> hidden = hiddenSections(player);
 
         final List<Component> lines = new ArrayList<>();
-        lines.add(label("Frakció", faction == null
-                ? Component.text("nincs", NamedTextColor.GRAY)
-                : Component.text(faction.getDisplayName(), factionColor(faction))));
-        lines.add(label("Valuta", Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD)));
-        lines.add(label("Kaszt", job == null
-                ? Component.text("nincs", NamedTextColor.GRAY)
-                : job.getDisplayName().append(Component.text(" Lvl " + jobManager.getPrimaryLevel(player), NamedTextColor.WHITE))));
+        if (!hidden.contains(SECTION_FACTION)) {
+            lines.add(label("Frakció", faction == null
+                    ? Component.text("nincs", NamedTextColor.GRAY)
+                    : Component.text(faction.getDisplayName(), factionColor(faction))));
+        }
+        if (!hidden.contains(SECTION_CURRENCY)) {
+            lines.add(label("Valuta", Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD)));
+        }
+        if (!hidden.contains(SECTION_CLASS)) {
+            lines.add(label("Kaszt", job == null
+                    ? Component.text("nincs", NamedTextColor.GRAY)
+                    : job.getDisplayName().append(Component.text(" Lvl " + jobManager.getPrimaryLevel(player), NamedTextColor.WHITE))));
+        }
         // Per-class power resource bar (only with a class; never a separate boss bar).
-        if (job != null) {
+        if (job != null && !hidden.contains(SECTION_RESOURCE)) {
             final Component resourceLine = resourceManager.hudLine(player);
             if (resourceLine != null) {
                 lines.add(resourceLine);
             }
         }
-        lines.add(Component.text(" ", NamedTextColor.DARK_GRAY));
-        lines.add(label("Esemény", eventLabel()));
+        if (!hidden.contains(SECTION_EVENT)) {
+            lines.add(Component.text(" ", NamedTextColor.DARK_GRAY));
+            lines.add(label("Esemény", eventLabel()));
+        }
 
         // WoW-style party frames: one row per member with a colour-coded health bar,
         // shown only while the viewer is in a party (otherwise these rows are hidden).
         final PartyManager.Party party = partyManager.getParty(player.getUniqueId());
-        if (party != null && configManager.getBoolean("party.hud-enabled", true)) {
+        if (party != null && configManager.getBoolean("party.hud-enabled", true) && !hidden.contains(SECTION_PARTY)) {
             lines.add(Component.text("  ", NamedTextColor.DARK_GRAY));
             lines.add(Component.text("— Csapat —", NamedTextColor.LIGHT_PURPLE));
             for (final UUID memberId : party.getMembers()) {

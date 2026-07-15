@@ -63,7 +63,7 @@ public final class WhirlwindSpell extends BaseSpell {
 
             final Location center = online.getLocation();
             for (final Entity nearby : online.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-                if (!(nearby instanceof LivingEntity living) || living == online) {
+                if (!(nearby instanceof LivingEntity living) || living == online || SpellTargetingUtil.isAlly(online, living)) {
                     continue;
                 }
                 sweep(living, online, center, damage, knockback);

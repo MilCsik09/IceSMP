@@ -34,8 +34,8 @@ public final class VenomStrikeSpell extends BaseSpell {
             return false;
         }
 
-        target.addPotionEffect(new PotionEffect(PotionEffectType.POISON,
-                balanceInt("poison-duration-ticks", POISON_TICKS), balanceInt("poison-amplifier", 1), false, true, true));
+        target.addPotionEffect(SpellTargetingUtil.adaptForTarget(target, new PotionEffect(PotionEffectType.POISON,
+                balanceInt("poison-duration-ticks", POISON_TICKS), balanceInt("poison-amplifier", 1), false, true, true)));
         target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS,
                 balanceInt("weakness-duration-ticks", WEAKNESS_TICKS), 0, false, true, true));
         player.getWorld().spawnParticle(Particle.ITEM_SLIME, target.getLocation().add(0.0D, 1.0D, 0.0D), 25, 0.3D, 0.5D, 0.3D, 0.05D);

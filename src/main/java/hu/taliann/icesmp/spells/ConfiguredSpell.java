@@ -283,7 +283,13 @@ public final class ConfiguredSpell extends BaseSpell {
                 continue;
             }
 
-            if (friendlyAoe && !(living instanceof Player)) {
+            if (friendlyAoe) {
+                // Baráti AoE (buff): CSAK szövetséges játékost érint — ellenség nem kapja meg a buffot.
+                if (!(living instanceof Player) || !SpellTargetingUtil.isAlly(player, living)) {
+                    continue;
+                }
+            } else if (SpellTargetingUtil.isAlly(player, living)) {
+                // Ellenséges AoE: a saját párttag (és configtól függően frakciótárs) védett.
                 continue;
             }
 
@@ -379,7 +385,8 @@ public final class ConfiguredSpell extends BaseSpell {
         }
 
         for (final PotionEffect effect : targetEffects) {
-            target.addPotionEffect(scaledDuration(effect, power));
+            // IDEAS A1: mob-célponton a képernyő-effektek ható megfelelőre fordulnak (CC-audit).
+            target.addPotionEffect(SpellTargetingUtil.adaptForTarget(target, scaledDuration(effect, power)));
         }
 
         final int liveIgnite = liveIgniteTicks();

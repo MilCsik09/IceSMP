@@ -89,11 +89,13 @@ public final class DemonicCircleSpell extends BaseSpell {
             }
 
             for (final Entity nearby : item.getNearbyEntities(proximity, proximity, proximity)) {
-                if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
+                if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)
+                        || SpellTargetingUtil.isAlly(casterId, living)) {
                     continue;
                 }
 
-                living.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonDurationTicks, 0, false, true, true));
+                living.addPotionEffect(SpellTargetingUtil.adaptForTarget(living,
+                        new PotionEffect(PotionEffectType.POISON, poisonDurationTicks, 0, false, true, true)));
                 item.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, item.getLocation(), 10, 0.2D, 0.2D, 0.2D, 0.01D);
                 item.remove();
                 task.cancel();

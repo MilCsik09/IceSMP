@@ -312,6 +312,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         // A combo (configured spell pair cast in quick succession) flows faster (cooldown refund) + flair.
         final boolean combo = isComboMatch(player, selected.getId(), now);
         putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
+        applyCooldownOverlay(player, selected, combo ? comboRefundMillis(player, selected) : 0L);
         playCastFlourish(player, combo);
         if (combo) {
             player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
@@ -319,6 +320,27 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
         lastCastSpell.put(player.getUniqueId(), selected.getId());
         lastCastTime.put(player.getUniqueId(), now);
+    }
+
+    /**
+     * IDEAS A7: cast után a kézben tartott katalizátor anyagán elindítja a vanília szürke
+     * item-cooldown overlay-t — a hotbaron azonnal látszik, mikor castolhatsz újra.
+     * A vizuális réteg NEM kapuz semmit (a tényleges cooldownt a putCooldown-pipeline őrzi);
+     * a melee-katalizátoros kasztoknál a kard/balta ütés-képességét sem érinti.
+     */
+    private void applyCooldownOverlay(final Player player, final Spell spell, final long comboRefundMs) {
+        if (!configManager.getBoolean("spells.cooldown-overlay.enabled", true)) {
+            return;
+        }
+        final long cooldownTicks = (spell.getCooldown() * 20L) - (comboRefundMs / 50L);
+        if (cooldownTicks <= 0L) {
+            return;
+        }
+        final ItemStack held = player.getInventory().getItemInMainHand();
+        if (held == null || held.getType().isAir()) {
+            return;
+        }
+        player.setCooldown(held.getType(), (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
     }
 
     /** Whether the player's previous cast forms a configured combo with this one. */

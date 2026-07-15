@@ -66,7 +66,7 @@ public final class FlyingSerpentKickSpell extends BaseSpell {
 
             final Location center = online.getLocation();
             for (final Entity nearby : online.getWorld().getNearbyEntities(center, hitRadius, hitRadius, hitRadius)) {
-                if (!(nearby instanceof LivingEntity living) || living == online) {
+                if (!(nearby instanceof LivingEntity living) || living == online || SpellTargetingUtil.isAlly(online, living)) {
                     continue;
                 }
                 impact(living, online, center, impactDamage, impactKnockback);

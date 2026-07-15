@@ -26,7 +26,7 @@ public final class GustSpell extends BaseSpell {
         final double knockbackUp = balance("knockback-up", 0.45D);
         boolean hit = false;
         for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity) || entity == player) {
+            if (!(entity instanceof LivingEntity living) || entity == player || SpellTargetingUtil.isAlly(player, living)) {
                 continue;
             }
 

@@ -45,7 +45,7 @@ public final class SpinningCraneKickSpell extends BaseSpell {
     private void strike(final Player caster, final double radius, final double damage) {
         final Location center = caster.getLocation();
         for (final Entity nearby : caster.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(nearby instanceof LivingEntity living) || living == caster) {
+            if (!(nearby instanceof LivingEntity living) || living == caster || SpellTargetingUtil.isAlly(caster, living)) {
                 continue;
             }
             kick(living, caster, damage);

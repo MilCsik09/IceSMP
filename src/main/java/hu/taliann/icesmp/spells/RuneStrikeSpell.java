@@ -65,7 +65,8 @@ public final class RuneStrikeSpell extends BaseSpell {
             }
 
             for (final Entity nearby : item.getNearbyEntities(hitRadius, hitRadius, hitRadius)) {
-                if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
+                if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)
+                        || SpellTargetingUtil.isAlly(casterId, living)) {
                     continue;
                 }
 

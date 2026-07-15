@@ -513,6 +513,8 @@ public final class IceSMPCore {
         // cast time (BaseSpell.balance + ConfiguredSpell live accessors), so /icesmp reload
         // applies changes immediately for every spell — no restart needed.
         hu.taliann.icesmp.spells.BaseSpell.setBalanceSource(configManager);
+        // Party-tudatos célzás (IDEAS A2): az ellenséges spellek kihagyják a szövetségest.
+        hu.taliann.icesmp.spells.SpellTargetingUtil.initCombatContext(partyManager, factionManager, configManager);
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
@@ -834,6 +836,7 @@ public final class IceSMPCore {
      */
     private void registerCommands() {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager));
+        plugin.registerCommand("hud", "HUD beállítások", List.of(), new hu.taliann.icesmp.commands.HudCommand(hudManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));

@@ -66,7 +66,8 @@ public final class MindBlastSpell extends BaseSpell {
 
             for (final Entity nearby : target.getNearbyEntities(splashRadius, splashRadius, splashRadius)) {
                 if (!(nearby instanceof LivingEntity living) || living instanceof ArmorStand
-                        || living == target || living.getUniqueId().equals(casterId)) {
+                        || living == target || living.getUniqueId().equals(casterId)
+                        || SpellTargetingUtil.isAlly(casterId, living)) {
                     continue;
                 }
 

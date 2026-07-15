@@ -41,7 +41,8 @@ public final class ConfusionSpell extends BaseSpell {
         final int durationTicks = balanceInt("duration-ticks", 20 * 10);
         boolean hit = false;
         for (final LivingEntity target : player.getLocation().getNearbyLivingEntities(radius, radius, radius)) {
-            if (target == player || target.getLocation().distanceSquared(player.getLocation()) > (radius * radius)) {
+            if (target == player || SpellTargetingUtil.isAlly(player, target)
+                    || target.getLocation().distanceSquared(player.getLocation()) > (radius * radius)) {
                 continue;
             }
 

@@ -94,12 +94,14 @@ public final class WildMushroomSpell extends BaseSpell {
         final double radius = balance("radius", 4.0D);
         final int effectDurationTicks = balanceInt("effect-duration-ticks", 4 * 20);
         for (final Entity nearby : world.getNearbyEntities(center, radius, radius, radius)) {
-            if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
+            if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)
+                    || SpellTargetingUtil.isAlly(casterId, living)) {
                 continue;
             }
 
             living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, effectDurationTicks, 0, false, true, true));
-            living.addPotionEffect(new PotionEffect(PotionEffectType.POISON, effectDurationTicks, 0, false, true, true));
+            living.addPotionEffect(SpellTargetingUtil.adaptForTarget(living,
+                    new PotionEffect(PotionEffectType.POISON, effectDurationTicks, 0, false, true, true)));
         }
     }
 }

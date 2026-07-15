@@ -34,7 +34,7 @@ public final class BoneChillSpell extends BaseSpell {
 
         boolean hit = false;
         for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity living) || entity == player) {
+            if (!(entity instanceof LivingEntity living) || entity == player || SpellTargetingUtil.isAlly(player, living)) {
                 continue;
             }
 

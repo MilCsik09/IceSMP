@@ -65,7 +65,8 @@ public final class SoulExchangeSpell extends BaseSpell {
 
             for (final Entity nearby : projectile.getNearbyEntities(hitRadius, hitRadius, hitRadius)) {
                 if (!(nearby instanceof LivingEntity living) || living instanceof ArmorStand
-                        || living.getUniqueId().equals(shooterId)) {
+                        || living.getUniqueId().equals(shooterId)
+                        || SpellTargetingUtil.isAlly(shooterId, living)) {
                     continue;
                 }
 

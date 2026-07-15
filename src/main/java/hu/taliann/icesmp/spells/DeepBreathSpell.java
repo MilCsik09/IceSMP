@@ -75,7 +75,8 @@ public final class DeepBreathSpell extends BaseSpell {
                 final Location point = eye.clone().add(direction.clone().multiply(distance));
                 online.getWorld().spawnParticle(Particle.FLAME, point, 6, 0.2D, 0.2D, 0.2D, 0.01D);
                 for (final Entity nearby : point.getWorld().getNearbyEntities(point, coneRadius, coneRadius, coneRadius)) {
-                    if (!(nearby instanceof LivingEntity living) || living == online || !hitThisStep.add(living.getUniqueId())) {
+                    if (!(nearby instanceof LivingEntity living) || living == online
+                            || SpellTargetingUtil.isAlly(online, living) || !hitThisStep.add(living.getUniqueId())) {
                         continue;
                     }
                     scorch(living, online, damage, burnTicks);
