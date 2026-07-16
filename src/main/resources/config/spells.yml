@@ -16,6 +16,13 @@ spells:
   # Cast után a katalizátor itemen a vanília szürke töltődés-overlay mutatja a cooldownt.
   cooldown-overlay:
     enabled: true
+  # ===== Lebegő sebzés-számok =====
+  # enabled: false = semmilyen sebzés-felirat nem jelenik meg.
+  # visibility: attacker-only = csak a sebzést okozó játékos látja (default);
+  #             everyone      = minden közeli játékos látja.
+  damage-indicators:
+    enabled: true
+    visibility: attacker-only
   # Kaszt-erőforrás (HIBRID, WoW-szerű): a HUD oldalsávban egy színes sáv (kasztonként névvel/színnel:
   # Mana/Düh/Energia/Fókusz/Csi…). A legtöbb spell EZT FOGYASZTJA (a költség a sáv), és idővel
   # regenerálódik; üres sávnál a spell nem sül el. Az erőforrás-költség a cooldown-szintjéből adódik

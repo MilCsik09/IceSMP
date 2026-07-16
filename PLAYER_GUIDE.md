@@ -621,7 +621,8 @@ név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezető
 szekció el sem foglal helyet az oldalsávon.
 
 **Harc-visszajelzés:** minden ütésed fölött **lebegő sebzés-szám** jelenik meg a célponton
-(mobnál sárga, játékosnál piros — kézi és lövedékes találatra is), halálkor pedig a chatben
+(mobnál sárga, játékosnál piros — kézi és lövedékes találatra is; alapból **csak te látod**,
+a szerver configból mindenki számára láthatóra állíthatja vagy kikapcsolhatja), halálkor pedig a chatben
 **halál-összegzőt** kapsz: az utolsó 10 másodperc találatai (mennyi ❤, kitől/mitől, mikor) és
 az összesített sebzés — így mindig tudod, mi vitt el.
 

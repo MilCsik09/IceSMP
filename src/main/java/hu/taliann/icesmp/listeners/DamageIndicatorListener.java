@@ -74,7 +74,7 @@ public final class DamageIndicatorListener implements Listener {
 
         final Entity victim = event.getEntity();
         if (!isRateLimited(victim.getUniqueId())) {
-            spawnIndicator(victim, damage);
+            spawnIndicator(attacker, victim, damage);
         }
     }
 
@@ -109,11 +109,21 @@ public final class DamageIndicatorListener implements Listener {
         return false;
     }
 
-    /** Spawns the floating number over the victim and schedules its own despawn. */
-    private void spawnIndicator(final Entity victim, final double damage) {
+    /**
+     * Spawns the floating number over the victim and schedules its own despawn.
+     *
+     * <p>Láthatóság ({@code spells.damage-indicators.visibility}): {@code attacker-only}
+     * (default) esetén a display {@code visibleByDefault=false}-szal spawnol, és csak a sebző
+     * kapja meg {@code showEntity}-vel — a Folia-szabály miatt a sebző SAJÁT régió-szálán
+     * (lövedékes találatnál a lövő másik régióban lehet, ilyenkor scheduler-hoppal).
+     * {@code everyone} esetén mindenki látja, aki a közelben van.
+     */
+    private void spawnIndicator(final Player attacker, final Entity victim, final double damage) {
         if (victim.getWorld() == null) {
             return;
         }
+        final boolean attackerOnly = !"everyone".equalsIgnoreCase(
+                configManager.getString("spells.damage-indicators.visibility", "attacker-only"));
 
         final double bob = 1.8D + ThreadLocalRandom.current().nextDouble(0.4D);
         final Location at = victim.getLocation().clone().add(
@@ -132,7 +142,27 @@ public final class DamageIndicatorListener implements Listener {
             spawned.setTransformation(new Transformation(
                     new Vector3f(), new AxisAngle4f(), new Vector3f(1.0F, 1.0F, 1.0F), new AxisAngle4f()));
             spawned.text(Component.text(text, color));
+            if (attackerOnly) {
+                // A spawn-consumer még a világba kerülés ELŐTT fut, így a display soha,
+                // egyetlen tickre sem látszik azoknak, akiknek nem szánjuk.
+                spawned.setVisibleByDefault(false);
+            }
         });
+
+        if (attackerOnly) {
+            if (org.bukkit.Bukkit.isOwnedByCurrentRegion(attacker)) {
+                attacker.showEntity(plugin, display);
+            } else {
+                // Lövedékes találat: a lövő másik régió-szálon lehet — showEntity csak a
+                // saját szálán hívható. Mire a hop lefut, a display el is tűnhetett (1 mp
+                // élettartam), ezért isValid-kapu.
+                attacker.getScheduler().run(plugin, task -> {
+                    if (display.isValid()) {
+                        attacker.showEntity(plugin, display);
+                    }
+                }, null);
+            }
+        }
 
         // Despawn on the display's OWN entity scheduler (Folia-correct); the retired callback
         // covers the case where the display's region is unloaded/it is otherwise removed before

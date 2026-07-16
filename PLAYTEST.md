@@ -617,7 +617,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
-      sorozat-ütésnél nem spammel (250 ms limit/célpont). Kikapcsolás: `spells.damage-indicators.enabled: false`.
+      sorozat-ütésnél nem spammel (250 ms limit/célpont).
+  - [ ] **Láthatóság:** alapból (`visibility: attacker-only`) CSAK a sebző látja — egy közelben
+        álló harmadik játékosnak NEM jelenik meg; `spells.damage-indicators.visibility: everyone`
+        után mindenki látja; **lövedékes** (íj) találatnál is a lövő kapja meg a feliratot.
+  - [ ] **Teljes kikapcsolás:** `spells.damage-indicators.enabled: false` → semmilyen felirat.
 - [ ] **Halál-összegző (ÚJ):** halálkor a chatben az utolsó 10 mp sebzései (max 5 sor: „-2.5❤ Zombi
       (3.2 mp-e)", lövedéknél a lövő zárójelben) + összesített sebzés. Kikapcsolás:
       `spells.death-recap.enabled: false`. Ütés NEM számítódik duplán (entitás- vs. környezeti sebzés).
