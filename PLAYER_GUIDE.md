@@ -620,6 +620,14 @@ név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezető
 így harc közben is látod, kinek kell segítség (WoW party-frame-módra). Ha nem vagy csapatban, a
 szekció el sem foglal helyet az oldalsávon.
 
+**Okos oldalsáv (HUD):** a képernyő jobb szélén lévő oldalsáv **magától alkalmazkodik**:
+harcban „kitisztul" — csak az **Erő-csík** és a **party-frame-ek** maradnak, majd pár
+másodperccel az utolsó találat után visszatér a teljes nézet. Az infósor **forog**:
+aktív események ↔ szezon-visszaszámláló ↔ a napi kihívás állása váltakozik rajta.
+A `/hud <szekció>` paranccsal bármely blokk (frakció/kaszt/erőforrás/esemény/valuta/csapat)
+egyenként ki-be kapcsolható, a `/hud mind` az egész oldalsávot rejti el — a beállításod
+kilépés után is megmarad.
+
 **Harc-visszajelzés:** minden ütésed fölött **lebegő sebzés-szám** jelenik meg a célponton
 (mobnál sárga, játékosnál piros — kézi és lövedékes találatra is; alapból **csak te látod**,
 a szerver configból mindenki számára láthatóra állíthatja vagy kikapcsolhatja), halálkor pedig a chatben

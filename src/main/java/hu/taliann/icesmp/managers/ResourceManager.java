@@ -174,6 +174,22 @@ public final class ResourceManager implements PlayerStateCleanup {
     }
 
     /**
+     * Elszenvedett találat: csak a harc-időbélyeget frissíti (düh-decay kapu + a HUD
+     * harc-fókusz módja) — a megütött játékos is "harcban van", akkor is, ha nem üt vissza.
+     * Szándékosan nincs isEnabled-kapu: a harc-státusz a HUD-nak akkor is kell, ha az
+     * erőforrás-rendszer ki van kapcsolva. Csak konkurens map-írás, bármely szálról hívható.
+     */
+    public void onDamageTaken(final UUID victimId) {
+        lastCombat.put(victimId, System.currentTimeMillis());
+    }
+
+    /** Harcban van-e a játékos (az utolsó adott VAGY kapott találat a türelmi időn belül). */
+    public boolean isInCombat(final UUID playerId, final long graceMillis) {
+        final Long last = lastCombat.get(playerId);
+        return last != null && System.currentTimeMillis() - last <= graceMillis;
+    }
+
+    /**
      * The spell's EFFECTIVE resource cost: the per-spell config override
      * ({@code spell-balance.<id>.resource-cost}) if set, otherwise the cooldown-tier default
      * ({@link Spell#getResourceCost()}). Read at cast time, so {@code /icesmp reload} (or an

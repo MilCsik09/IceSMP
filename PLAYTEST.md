@@ -625,6 +625,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Oldalsáv új dizájn:** animált elválasztó-vonalak, small-caps címkék (ꜰʀᴀᴋᴄɪó/ᴋᴀꜱᴢᴛ/
         ᴇꜱᴇᴍéɴʏ/⭐ᴠᴀʟᴜᴛᴀ), cím a configból (`hud.sidebar.title`); `/hud` szekció-toggle továbbra
         is működik, és a sidebar kikapcsolása NEM töri el a nametageket/pinget (a board marad).
+  - [ ] **Harc-fókusz (ÚJ):** találat adásakor VAGY kapásakor az oldalsáv „kitisztul" — csak az
+        Erő-csík (+ party-frame-ek) maradnak; az utolsó találat után ~8 mp-cel a teljes HUD
+        visszatér. Kikapcsolás: `hud.dynamic.combat-focus: false`; a látható szekciók a
+        `combat-visible-sections` listával hangolhatók.
+  - [ ] **Rotáló infósor (ÚJ):** az esemény-sor ~4 mp-enként váltakozik: aktív események ↔
+        „ꜱᴢᴇᴢᴏɴ: még ~N nap" ↔ „ɴᴀᴘɪ: x/y" (kész napi kihívásnál zöld ✔); nyugalomban az
+        esemény-frame kimarad a rotációból. Kikapcsolás: `hud.dynamic.rotating-line: false`
+        (fix esemény-sor).
   - [ ] ⚠️ **Folia:** két játékos KÜLÖN régióban (messze egymástól) — mindkettő látja a másik
         nevét/rangját/pingjét a tablistában, konzol-hiba nélkül.
   - [ ] Ha a TAB.jar mégis fent van: induláskor konzol-figyelmeztetés jön az ütközésről.

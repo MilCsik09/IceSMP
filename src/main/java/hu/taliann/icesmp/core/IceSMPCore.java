@@ -371,7 +371,7 @@ public final class IceSMPCore {
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
                 caravanManager, escortManager, abundanceManager, serverChallengeManager,
-                meteorEventManager, gatheringBuffManager, textAnimator);
+                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
                 factionManager, textAnimator);
         // One registered list of YAML-persistent managers: the core loads them all on enable and

@@ -31,6 +31,17 @@ hud:
   # (LP-prefixes) nevet, és ez a kapcsoló hatástalan.
   tablist-enabled: true
   refresh-ticks: 20
+  # ===== Dinamikus oldalsáv =====
+  dynamic:
+    # Harc-fókusz: harcban (adott VAGY kapott találat a türelmi időn belül) csak a felsorolt
+    # szekciók látszanak — a HUD kitisztul, az Erő-csík és a party-frame-ek maradnak.
+    combat-focus: true
+    combat-grace-seconds: 8
+    combat-visible-sections: [eroforras, csapat]
+    # Rotáló infósor az esemény-sor helyén: esemény-állapot ↔ szezon-visszaszámláló ↔ napi
+    # kihívás állása váltakozik; nyugalomban az esemény-frame kimarad.
+    rotating-line: true
+    rotation-seconds: 4
   profile:
     enabled: true
     update-interval-ticks: 5

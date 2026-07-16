@@ -20,6 +20,7 @@ jelenti, hogy **elhagyható**.
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
 | `/achievements` | `ach`, `eleresek` | Elérések (mérföldkövek + jutalmak) |
 | `/stats [név]` | — | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, teljesített questek |
+| `/hud <szekció>` | — | HUD-oldalsáv szekciók ki-be kapcsolása (frakcio/kaszt/eroforras/esemeny/valuta/csapat/mind) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
 | `/pet item\|summon\|dismiss\|name` | `tars`, `companion` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
 | `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |

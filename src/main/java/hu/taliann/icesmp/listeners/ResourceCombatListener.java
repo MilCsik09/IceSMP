@@ -37,6 +37,10 @@ public final class ResourceCombatListener implements Listener {
             return;
         }
         resourceManager.onDamageDealt(damager.getUniqueId());
+        // A megütött JÁTÉKOS is harcba kerül (HUD harc-fókusz + düh-decay kapu).
+        if (event.getEntity() instanceof Player victim) {
+            resourceManager.onDamageTaken(victim.getUniqueId());
+        }
     }
 
     private Player resolveDamager(final EntityDamageByEntityEvent event) {
