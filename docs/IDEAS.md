@@ -158,6 +158,50 @@ hírnöknél), írógép-effektet (soronkénti késleltetett kiírás a global s
 🟢 • ⭐ — A recept-katalógus GUI-ba keresőmező (anvil-input vagy chat-prompt minta a quest
 builderből) és kedvenc-csillagozás (A4 PDC-mintája). 50+ receptnél a lapozgatás fájdalmas.
 
+### A25. Spell-adatlap a spellkönyvben
+🟢 • ⭐⭐ — A spell-csempére kattintva (jobb katt) részletes lap: tényleges sebzés/gyógyítás/
+időtartam a LIVE spell-balance értékekből, a mastery/dinamikus szorzókkal MÁR beszorozva
+(„nálad: 7,2 ❤"). A játékos ne fejben számoljon — a rendszer tudja a számokat.
+
+### A26. Élő cooldown a spellkönyvben
+🟢 • ⭐ — A spell-csempe lore-jában az AKTUÁLIS hátralévő cooldown (a GUI nyitáskori
+pillanatképe elég, nem kell tick-frissítés). A getRemainingCooldown API megvan, csak
+be kell kötni a csempe-építésbe.
+
+### A27. Okos gyógyítás (party-célzás)
+🟡 • ⭐⭐⭐ — Gyógyító spellek sneak-cast változata: lopakodva castolva a LEGSEBZETTEBB,
+látótávon belüli párttagra megy (a party-frame élet-adatai megvannak). A healer-játék
+Folián célkereszttel körülményes — ez a WoW-os „mouseover heal" megfelelője.
+
+### A28. Menü-badge-ek (piros pötty)
+🟡 • ⭐⭐ — A /menu és almenü-csempéken jelzés, ha teendő van: felvehető talentpont, kész
+napi quest, lejárt piaci tétel, felvehető heti megbízás. Egy közös „van-e teendő?"
+lekérdező réteg a managerek meglévő getterjeire. A játékos nem felejt el semmit.
+
+### A29. Elit/boss mobok vizuális megkülönböztetése
+🟢 • ⭐ — A mob-szintezés `[Lvl X]` névtáblája mellé az elit/bajnok mobok (invázió-bajnok,
+Vad Hajsza-fenevad, boss-addok) kapjanak szín-kódot és szimbólumot (♦ elit, ☠ boss) a
+névben. Egy pillantásból látszódjon, mibe szalad bele a játékos.
+
+### A30. Cast-hiba üzenetek egységesítése
+🟢 • ⭐ — Ma többféle üzenet jön, ha nem sül el a spell (cooldown / kevés erőforrás / nincs
+célpont / rossz forma). Egységes formátum ikonokkal (⏳ / ⚡ / 🎯), mindig a hátralévő
+idővel/hiányzó mennyiséggel. A frusztráció fele abból jön, hogy nem tudni, MIÉRT nem ment el.
+
+### A31. Frakció-infó oldal passzívákkal
+🟢 • ⭐ — A `/faction info` (és a /menu Frakció almenü) írja ki a frakció-passzívák
+TÉNYLEGES értékeit configból (ma a játékosnak a guide-ból kell tudnia). A számszerű
+állítás = config elv ide is.
+
+### A32. Színvak-barát HUD-mód
+🟢 • ⭐ — `/hud colorblind`: a piros/zöld/sárga élet- és erőforrás-sávok mellé szimbólum-
+jelzés (▲▼◆) és magasabb kontrasztú palettaválasztás. Kevés munka, hozzáférhetőség.
+
+### A33. Katalizátor-skinek (CMD)
+🟢 • ⭐ — Kasztonként (később kozmetikaként: B9) custom model data a katalizátor-itemen —
+a RESOURCE_PACK_CMD.md folyamat már kitaposott a dobó-spelleknél. A 13 kaszt vizuális
+identitása a kézben.
+
 ## B) Új mechanika
 
 ### B1. Heti Királyi Megbízások (battlepass-lite) `[TOP]`
@@ -327,6 +371,73 @@ managerek ütemezett kombinálása + broadcast-dramaturgia — a szezonoknak ív
 után mindenkinek szabad — a kincs-láda TreasureEvent kódja szinte egy az egyben jó erre).
 A keep-inventory és a full-loot közti egészséges középút; A21 irány-jelzővel párban.
 
+### B35. Céhek (frakción belüli kisközösségek)
+🔴 • ⭐⭐⭐ — A frakció 50+ fős, a party 5 fős — hiányzik a köztes réteg: 5-15 fős **céh**
+saját névvel, kasszával (bank-infra), céh-questekkel (közösségi cél-minta) és céh-szintlépéssel.
+A PartyManager perzisztens, kibővített testvére. A közösségi kohézió legerősebb eszköze.
+
+### B36. Gyorsutazás-hálózat (útkövek)
+🟡 • ⭐⭐⭐ — Admin-lehelyezett útkő-pontok (fővárosok, nevezetes helyek); aktiválás
+odautazással (PDC-ben nyílik), használat frakció-valutáért (sink, táv-arányos díj).
+A teleportAsync + a kingdom-spawn infra kész; a nagy világ bejárhatóvá válik anélkül,
+hogy az elytra/ló értékét nullázná (díj + csak felfedezett pontok).
+
+### B37. Nyíl-műhely (íjász item-ág)
+🟡 • ⭐⭐ — Craftolható speciális nyilak (ItemFactory + PDC): horgony-nyíl (rövid gyökér),
+jelző-nyíl (glowing), robbanó-nyíl (kis AoE, drága). A SpellProjectileListener PDC-tag
+alapján ismeri fel. Az íjász kaszt item-oldali mélysége — fogyóeszköz = kereslet a piacon.
+
+### B38. Mythic spell-variánsok (mastery 5 fölé)
+🔴 • ⭐⭐ — 5-ös mastery után egy spell „átlényegülhet" (nagy valuta+anyag árán): módosult
+viselkedés (pl. Tűzgolyó → kettéváló golyó; Gyökerezés → AoE gyökér), külön CMD-s
+látvánnyal. A ConfiguredSpell-variáns configból leírható — végjáték-cél a fő rotációnak.
+
+### B39. Védmű-építés raid-védelemhez
+🟡 • ⭐⭐ — A védő oldal a raid-ablak alatt lerakható védműveket kap (barikád-blokk: extra
+törés-idő; lassító mező; riasztó-harang): ostromgép-ellenpár (B11), SiegeWeaponFactory-minta
+itemként, kassza-pénzért (sink). A raid taktikusabb, a védő nem csak elszenvedi.
+
+### B40. NPC-kereskedőhajó / vándorkereskedő ritka árukkal
+🟡 • ⭐⭐ — Hetente egyszer különleges kereskedő a fővárosban (karaván-infra skin): limitált
+készletű, rotálódó ritka áruk (recept-lapok, rúna-anyagok B26-hoz, kozmetika) — kizárólag
+frakció-valutáért (nagy sink). A „gyere be szerdán" ritmus + valuta-nyelő egyben.
+
+### B41. Aréna-liga (heti bajnokság, ELO)
+🟡 • ⭐⭐ — A B2 duel + B17 aréna fölé: heti 1v1/2v2 liga ELO-val (StatsManager-bővítés),
+szezon-végi cím (B22) és liga-pont jutalom. A beleegyezéses PvP versenyszintje —
+a bűn-rendszert nem érinti.
+
+### B42. Régészet szakma-ág
+🟡 • ⭐⭐ — Gyanús homok/kavics blokkok (ritka, világ-szórt spawn a kincs-esemény mintájára)
+ecsettel áshatók: cserép-szilánkok → összeillesztve relikvia-szilánk / bestiárium-oldal /
+recept-lap. A vanília 1.20 archeológia rátölthető; felfedező-játékstílus tartalma.
+
+### B43. Pet-tenyésztés
+🔴 • ⭐ — Két max-szintű, azonos fajú pet „párosítható": az utód a szülők statjaiból
+örököl + kis mutáció-esély (szín/név-prefix). A PetManager stat-modellje bővül; niche,
+de a pet-gyűjtőknek végjáték.
+
+### B44. Diplomácia: szövetség és fegyverszünet
+🔴 • ⭐⭐ — Király-szintű döntés (B12 politika-irány): két frakció formális szövetsége
+(közös raid-védelem, ff-védelem a spellekben az isAlly-ba kötve!) vagy fizetett
+fegyverszünet (kassza→kassza, ELÉG-hányaddal). A 4 frakciós meta mélysége — az A2
+targeting-infra készen áll rá.
+
+### B45. Torony-védelem invázió-mód
+🟡 • ⭐⭐ — Az invázió-esemény változata a fővárosnál: hullámok a kapu felé, a játékosok
+védművekkel (B39) + spellekkel védenek, közösségi cél-számláló méri a betörést.
+Ko-op PvE csúcsélmény a meglévő invázió+cél infrából.
+
+### B46. Trófea-halak és horgász-dicsőség
+🟢 • ⭐ — Ritka, nevesített halak (méret-görgetéssel, PDC), a rekord a StatsManager-be +
+ranglistára; trófea-fal item a claimre (kihelyezhető keret). A Halász szakma csendes
+mélyítése a bestiárium (B21) irányába.
+
+### B47. Ereklye-expedíciók (heti PvE cél-pont)
+🟡 • ⭐⭐ — Hetente egy „expedíciós hely" jelenik meg a térképen (kincs+Vad Hajsza kombó):
+többfázisú esemény egy helyszínen (mini-boss → ásatás → menekítés), a végén rituálé-
+alapanyag/relikvia-szilánk. A világeseményekből összefűzött „mini-raid" PvE-seknek.
+
 ## C) Admin / infra ötletek
 
 ### C1. Spell-használati statisztika (balansz-adat) `[TOP]`
@@ -379,6 +490,35 @@ diagnosztika.
 ConfigManager mindkét réteget látja). Frissítéskor/hibakereséskor azonnal látszik, mi
 van felülbírálva — az ingame config-rendszer természetes párja.
 
+### C11. Custom item-katalógus parancs
+🟢 • ⭐ — `/icesmp items [szűrő]`: az összes ItemFactory-item listája (id, név, PDC-tag),
+kattintható „adj egyet" admin-gombbal. Ma az item-adáshoz a forrásban kell keresgélni.
+
+### C12. Játékos-inspektor
+🟡 • ⭐⭐ — `/icesmp inspect <név>`: a játékos plugin-állapota egyben — kaszt/szint/spec,
+erőforrás, aktív cooldownok, PDC-kulcsok, statok, claim-összesítő, aktív questek.
+Support-kérdéseknél („eltűnt a spellem!") a diagnózis fél perc lenne egy óra helyett.
+
+### C13. Esemény-naptár config
+🟡 • ⭐⭐ — A világesemények véletlen időzítése mellé opcionális **menetrend**
+(cron-szerű: „vérhold: szombat 20:00", „karaván: hétköznap esténként"). Egy ütemező-réteg
+a meglévő event-managerek start-hívásai fölé. A közösség tervezhet — a raid-ablak (B30)
+természetes párja.
+
+### C14. Loot-szimulátor
+🟢 • ⭐ — `/icesmp simulate loot <tábla> <N>`: N húzás a raritás/loot-táblából, eloszlás-
+kiírással. Drop-esély hangoláskor nem kell ölni ezret — a gazdaság-szimulátor (C4) párja.
+
+### C15. Napi szerver-digest
+🟢 • ⭐⭐ — Éjfélkor egy összefoglaló a logba (+ opcionálisan C5 Discord-webhookra):
+játékos-csúcs, új játékosok, gazdaság-egyenleg (C3 adatai), lefutott események, raid-ek.
+A tulaj reggeli kávéja mellé — trendek észrevétele adatból.
+
+### C16. YAML-séma verziózás (migrációs keret)
+🟡 • ⭐ — Minden PersistentStore-fájlba `schema-version` mező + induláskori upgrade-lépés
+lánc. Most egy formátum-változás kézi migrálást igényel — ez a technikai adósság
+megelőzése, amíg kicsi.
+
 ## D) Világ, hangulat, közösség
 
 ### D1. Szezonális ünnepek
@@ -405,6 +545,63 @@ bogár raj a mocsárban. Tisztán atmoszféra, a meglévő AmbientEventManager b
 🟡 • ⭐⭐ — A Szakács/Sörfőző (Szerzetes-spec tematika!) készíthet **italokat** (recept-
 katalógus itemek), amik a fővárosi kocsmában fogyasztva rövid, NEM harci buffokat adnak
 (szakma-XP bónusz, szerencse). Találkozóhely + szakma-sink + tematikus flair egyben.
+
+### D6. Frakció-fanfárok és kürtjelek
+🟢 • ⭐ — Nagy pillanatokhoz frakció-specifikus hangjel (vanília hangokból): raid-indítás
+kürtje, király-koronázás fanfárja, szezongyőzelem harangja. A goat horn itemként a
+frakció-boltba is kerülhet (fújható jelzőkürt). Olcsó, zsigeri hangulat.
+
+### D7. Napszak-üdvözlő NPC-k
+🟢 • ⭐ — A fővárosi NPC-k (hírnök, kereskedők) napszak-függő odaszólásai a közelben
+elhaladóknak (reggeli köszöntés, éjjel „vigyázz a vérholddal!") — a FancyNpcs-híd +
+ambient-üzenet infra. A város élőnek hat.
+
+### D8. Felfedezhető titkos helyek
+🟡 • ⭐⭐ — Admin-kijelölt rejtett pontok (territórium-minta, kis sugár): első odaérés
+felfedezés-jutalom + bestiárium/album-bejegyzés (B21) + ritkán titkos kereskedő (B40).
+A világépítés munkája megtérül — a felfedezés játékstílussá válik.
+
+### D9. Énekmondó NPC (generált balladák)
+🟢 • ⭐ — A fővárosi bárd hetente a top-játékosokról „énekel" (StatsManager + krónika B15
+adataiból sablon-szöveg: „Hallottátok-e X tettét, ki 12 fejvadászt győzött le…").
+Vicces, közösségi, és a statisztika-infra ingyen adja az alapanyagot.
+
+### D10. Szezon-ereklye vitrin
+🟢 • ⭐ — A szezonzáró emlékmű (D3) mellé: az előző szezonok győztes relikviái/trófeái
+üveg-vitrinben (ItemDisplay), táblával. A szerver „múzeuma" — history sense, ami az
+SMP-ket hosszú távon összetartja.
+
+## E) Kaszt- és specializáció-ötletek
+
+### E1. Nekromanta: lélek-kovácsolás
+🟡 • ⭐⭐ — A lélekszilánkok (souls-infra) új nyelője: minion-sereg tartós fejlesztései
+(élet/sebzés/létszám+1) drága lélek-áron, presztízs-lépcsőkkel. A Nekromanta végjáték-
+identitása: a sereg NŐ a szezonnal.
+
+### E2. Druida: évszak-hangolódás
+🟢 • ⭐ — A druida-formák kapjanak kis bónuszt a világ-állapothoz igazodva (esőben a
+gyógyítás, éjjel a holdmágia, Bőség-idő alatt a természet-spellek erősödnek +5-10%).
+Config-szorzók a meglévő esemény-getterekre — a druida „érzi a világot".
+
+### E3. Harcos: pajzsfal állás
+🟡 • ⭐⭐ — Új állás-spell (stance-minta megvan): a harcos lelassul, de a MÖGÖTTE álló
+párttagok sebzés-csökkentést kapnak (irány-szög számítás + A2 isAlly). A tank-szerep
+párt-védő dimenziója raidben/inváziónál.
+
+### E4. Szerzetes: sörfőzde-mesterség
+🟢 • ⭐⭐ — A Sörfőző spec készíthesse a kocsma (D5) italait exkluzívan — a spec így
+gazdasági szerepet is kap, a kocsma-készlet pedig játékos-termelésű (sink+kereslet).
+Recept-katalógus + ItemFactory, minden alkatrész megvan.
+
+### E5. Boszorkánymester: lélek-alku
+🟡 • ⭐ — Kockázat/jutalom mini-mechanika: `/soulpact` — X percig +spell-erő, cserébe a
+HP-költségű spellek drágábbak és halál esetén extra bűn-pont. Tematikus, önkéntes
+„deal with the devil" — a warlock identitás sűrítve.
+
+### E6. Íjász: sólyom-felderítő
+🟡 • ⭐ — Rövid ideig irányítható/köröző sólyom (spectator-szerű kamera helyett: a sólyom
+glowing-ot rak a látott ellenségekre — SpectralSight-minta madárral). Felderítő-szerep
+raidhez/vadászathoz, a pet-infra madár-ágon.
 
 ---
 
