@@ -958,6 +958,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
         pluginManager.registerEvents(new RitualListener(ritualManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
+        // Plugin-leépítés: ICEsmpadditions + FarmProtect + MiniMOTD natív kiváltása
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldTweaksListener(configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(configManager), plugin);
         // IDEAS A3/A8/A9: harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StatsCombatListener(statsManager), plugin);

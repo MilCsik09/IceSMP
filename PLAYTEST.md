@@ -636,6 +636,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] ⚠️ **Folia:** két játékos KÜLÖN régióban (messze egymástól) — mindkettő látja a másik
         nevét/rangját/pingjét a tablistában, konzol-hiba nélkül.
   - [ ] Ha a TAB.jar mégis fent van: induláskor konzol-figyelmeztetés jön az ütközésről.
+- [ ] **Plugin-kiváltások (ÚJ — a jarok NÉLKÜL tesztelendő):**
+  - [ ] **Warden-XP** (ICEsmpadditions helyett): Warden leölése 80–125 XP-t dob
+        (`world-tweaks.warden-death-xp`, configolható).
+  - [ ] **Termés-taposás** (FarmProtect helyett): szántóföldre ugrás (játékos ÉS mob) nem töri
+        fel a földet (`world-tweaks.crop-trample-protection`).
+  - [ ] **MOTD** (MiniMOTD helyett): a szerverlistában gradient-es Ice SMP MOTD, ami ~10 mp-enként
+        vált a variánsok közt (frissítsd a listát többször); `motd.yml`-ből szerkeszthető.
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).

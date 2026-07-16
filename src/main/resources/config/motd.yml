@@ -1,0 +1,15 @@
+# IceSMP konfiguráció — szerverlista-MOTD (a MiniMOTD plugin kiváltása)
+# MiniMessage-formázás (gradient/rainbow/hex), {online} és {max} tokenekkel.
+# A variánsok IDŐALAPON rotálódnak (rotation-seconds) — minden ping az aktuális frame-et kapja.
+motd:
+  enabled: true
+  rotation-seconds: 10
+  # Max játékos-szám felülírása a szerverlistán (-1 = nincs felülírás, a valódi érték látszik).
+  max-players-override: -1
+  variants:
+    frost:
+      line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
+      line2: "<gray>13 kaszt • 4 királyság • háború és dicsőség</gray>"
+    war:
+      line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
+      line2: "<red>⚔</red> <gray>Melyik királyságért harcolsz?</gray> <dark_gray>({online} hős online)</dark_gray>"

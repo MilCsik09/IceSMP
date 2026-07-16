@@ -71,11 +71,50 @@ változatlanul a régi név-alapú logikával működnek (teljes visszafele-komp
 3. **VillagerTradeEdit** — szakma-specifikus vendor-villagerek (recept/valuta-árak) a
    profession/market rendszerhez, egyedi trade-GUI kód nélkül.
 
-Semleges (nem ütközik): GSit, ImageFrame, FarmProtect, CoreProtect, GrimAC, ViaVersion,
-minimotd, voicechat, FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
+Semleges (nem ütközik): GSit, ImageFrame, CoreProtect, GrimAC, ViaVersion, voicechat,
+FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
 Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms.
-Megjegyzés: az `ICEsmpadditions.jar` (WardenDeathListener) érdemes lenne beolvasztani a fő
-pluginba, hogy ne legyen kósza extra jar.
+
+## 5.1 Plugin-leépítési terv (mi váltható ki / törölhető, és hogyan)
+
+### ✅ Kiváltva natívan — a jar TÖRÖLHETŐ
+
+| Plugin | Natív megfelelő | Teendő törlés előtt |
+|---|---|---|
+| **TAB v6.0.0** | TablistManager + `config/tablist.yml` + oldalsáv (lásd §1) | — |
+| **SimpleClaimSystem** | natív `/claim` | régi claimek újrafoglalása (nem konvertálódik) |
+| **LuckPermsChatFormatterFolia** | natív chat-formázó (`chat.format-enabled`) | — |
+| **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
+| **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
+| **MiniMOTD** | `MotdListener` + `config/motd.yml` — MiniMessage-formázás, IDŐALAPON rotálódó variánsok, {online}/{max} tokenek, max-player felülírás. (A MiniMOTD amúgy is gyári példa-configon állt.) | szabd testre a `motd.yml` variánsokat |
+
+### 🗑 Törölhető kiváltás NÉLKÜL (nem használt / kiürült)
+
+| Plugin | Indoklás |
+|---|---|
+| **Economist + ServiceIO** | Vault-gazdaság — de a szerver gazdasága az IceSMP-é. Fogyasztót nem találtunk (a TAB `%vault_prefix%`-e volt az utolsó, az már natív LP-hídon megy). Törlés előtt: konzolban `/papi parse me %vault_eco_balance%` gyors ellenőrzésnek. |
+| **AuMenus** | A menü-configjai a gyári teszt-példák (`basic_menu`, `test_*`) — a `/menu` rendszerünk teljesebb. |
+| **FancyHolograms** | Egyetlen „test" hologram van benne (NPC-hez kötött teszt). Ha hologram kell később: natív TextDisplay-infránk kész (D3/D10 ötletek). Figyelem: törlés előtt ellenőrizd, hogy a FancyNpcs verziód nem függ-e tőle. |
+| **Orebfuscator** | Már most `.inactive`. |
+
+### 🔶 Kiváltható közepes munkával (tervezett, ötlettár-hivatkozással)
+
+| Plugin | Terv |
+|---|---|
+| **AxAFKZone (+AxAPI lib)** | Van 1 aktív zóna (időzített jutalom + bossbar). Natív terv (C18): AFK-detektálás + a territórium-rendszer AFK-zóna típusa + a meglévő bossbar-infra; a jutalom a kasszából/tokenből (sink-elv). Bónusz: az AFK-státuszt a saját XP/regen-rendszerünk is látná (AFK-farm exploit-védelem). |
+| **CrazyCrates** | B8 natív crate-rendszer (loot/raritás-infra + valuta-sink kulcsok). Nagyobb munka, de tervezett. |
+| **GSit** | `/sit`/`/lay` natívan (láthatatlan display-ülés) — alacsony prioritás, a GSit érett és nem ütközik. |
+| **InvSee++ (3 jar), SModeration** | Admin-eszközök — a C12 játékos-inspektor, C17 chat-szűrő/mute és C29 /report ötletek együtt váltanák ki; távlati. |
+
+### 🔒 Marad (nem érdemes/nem szabad kiváltani)
+
+CoreProtect (rollback), GrimAC (anticheat), FAWE/WorldEdit/WorldGuard/goBrush/VoxelSniper/
+AxiomPaper (build-eszközök), ViaVersion/Backwards, ProtocolLib/packetevents (más pluginok
+függőségei), spark (profiler), voicechat, LuckPerms, PlaceholderAPI, LibsDisguises,
+FancyNpcs, ImageFrame, VillagerTradeEdit, bStats/faststats/FancyAnalytics (metrika).
+
+**Mérleg:** a ✅+🗑 lépések után a plugin-lista ~35-ről **~24-re** csökken — kevesebb
+Folia-kockázat, gyorsabb indulás, kevesebb frissítés-függés.
 
 ## 6. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
 

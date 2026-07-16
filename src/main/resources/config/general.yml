@@ -11,6 +11,18 @@ settings:
   # zavaró. Állítsd false-ra, ha meg akarod hagyni a vanilla viselkedést.
   disable-locator-bar: true
 
+# Apró világ-szabályok (a leszedett mini-pluginok natív kiváltása).
+world-tweaks:
+  # Warden-halál XP-drop felülírása (ICEsmpadditions.jar kiváltása).
+  warden-death-xp:
+    enabled: true
+    min: 80
+    max: 125
+  # Termés-taposás védelem (FarmProtect.jar kiváltása): a szántóföld nem törik fel.
+  crop-trample-protection:
+    players: true
+    mobs: true
+
 hud:
   # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
   # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
