@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.gui.SpellbookHolder;
+import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,9 +20,11 @@ public final class SpellbookListener implements Listener {
     private static final int TOP_SIZE = 54;
 
     private final AbilityCatalystListener catalyst;
+    private final SpellFavoritesManager favoritesManager;
 
-    public SpellbookListener(final AbilityCatalystListener catalyst) {
+    public SpellbookListener(final AbilityCatalystListener catalyst, final SpellFavoritesManager favoritesManager) {
         this.catalyst = catalyst;
+        this.favoritesManager = favoritesManager;
     }
 
     @EventHandler
@@ -43,11 +46,15 @@ public final class SpellbookListener implements Listener {
         }
 
         if (slot == SpellbookGUI.PREV_SLOT) {
-            catalyst.openSpellbook(player, Math.max(0, holder.getPage() - 1));
+            catalyst.openSpellbook(player, Math.max(0, holder.getPage() - 1), holder.isOnlyUnlocked());
             return;
         }
         if (slot == SpellbookGUI.NEXT_SLOT) {
-            catalyst.openSpellbook(player, holder.getPage() + 1);
+            catalyst.openSpellbook(player, holder.getPage() + 1, holder.isOnlyUnlocked());
+            return;
+        }
+        if (slot == SpellbookGUI.FILTER_SLOT) {
+            catalyst.openSpellbook(player, 0, !holder.isOnlyUnlocked());
             return;
         }
 
@@ -56,9 +63,17 @@ public final class SpellbookListener implements Listener {
             return;
         }
 
+        if (event.isShiftClick()) {
+            final boolean nowFavorite = favoritesManager.toggle(player, spellId);
+            player.playSound(player.getLocation(),
+                    nowFavorite ? Sound.ENTITY_EXPERIENCE_ORB_PICKUP : Sound.UI_BUTTON_CLICK, 0.8F, 1.2F);
+            catalyst.openSpellbook(player, holder.getPage(), holder.isOnlyUnlocked()); // refresh the star
+            return;
+        }
+
         if (catalyst.selectSpell(player, spellId)) {
             player.playSound(player.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 0.8F, 1.4F);
-            catalyst.openSpellbook(player, holder.getPage()); // refresh the highlight
+            catalyst.openSpellbook(player, holder.getPage(), holder.isOnlyUnlocked()); // refresh the highlight
         }
     }
 

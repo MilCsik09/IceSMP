@@ -190,6 +190,7 @@ public final class IceSMPCore {
     private final SpellRegistry spellRegistry;
     private final CatalystItemFactory catalystItemFactory;
     private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
+    private final hu.taliann.icesmp.managers.SpellFavoritesManager spellFavoritesManager;
     private final AbilityCatalystListener abilityCatalystListener;
     private final hu.taliann.icesmp.listeners.QuestBuilderListener questBuilderListener;
     private final SpellMasteryManager spellMasteryManager;
@@ -334,9 +335,10 @@ public final class IceSMPCore {
                 jobManager, professionManager, factionManager, sinManager, questManager);
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
+        this.spellFavoritesManager = new hu.taliann.icesmp.managers.SpellFavoritesManager(plugin);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
                 catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager,
-                talentManager, messageManager);
+                talentManager, messageManager, spellFavoritesManager);
         this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
@@ -350,6 +352,10 @@ public final class IceSMPCore {
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
+        // IDEAS A15: a quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
+        // (mindkét célosztály a DI-sorrendben korábban épül).
+        questManager.setStatsManager(statsManager);
+        abilityCatalystListener.setStatsManager(statsManager);
         this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
                 professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
@@ -837,6 +843,7 @@ public final class IceSMPCore {
     private void registerCommands() {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager));
         plugin.registerCommand("hud", "HUD beállítások", List.of(), new hu.taliann.icesmp.commands.HudCommand(hudManager, messageManager));
+        plugin.registerCommand("stats", "Statisztika-profil", List.of(), new hu.taliann.icesmp.commands.StatsCommand(statsManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));
@@ -884,7 +891,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new MarketDeliveryListener(marketManager, messageManager), plugin);
         pluginManager.registerEvents(new DonationChestListener(donationChestManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
-        pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener), plugin);
+        pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
@@ -916,6 +923,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EscortListener(escortManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PartyListener(plugin, partyManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimProtectionListener(claimManager, configManager, factionManager, raidManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimTrustGUIListener(claimManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatFormatListener(configManager, hudManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
@@ -929,6 +937,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.OnboardingListener(configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionSpawnListener(factionManager, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new SiegeWeaponListener(plugin, siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
@@ -936,6 +945,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
         // IDEAS A3/A8/A9: harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StatsCombatListener(statsManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DeathRecapListener(configManager, messageManager), plugin);
         if (relicManager.isEnabled()) {

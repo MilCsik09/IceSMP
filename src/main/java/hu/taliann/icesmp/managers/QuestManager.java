@@ -51,6 +51,12 @@ import java.util.Set;
  * requires-quest (chains). Rewards: class-xp, currency (type + amount),
  * unlock-spell, cleanse-sins.
  *
+ * <p>Linear auto-chains (no NPC/territory step needed between links, e.g. the
+ * first-join onboarding sequence): a quest's optional {@code next} field names
+ * the follow-up quest id, auto-accepted for the player the moment this quest
+ * completes (see {@link #complete}) — same accept + announce + dialogue flow
+ * as an NPC hand-out, just fired from completion instead of an interaction.</p>
+ *
  * <p>Besides the config-shipped quests, admins can build quests in-game
  * without touching code or files (<code>/quest admin create|set|delete</code>);
  * those live in custom-quests.yml under the plugin data folder (same schema)
@@ -70,7 +76,7 @@ public final class QuestManager implements PersistentStore {
 
     /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
-            "display-name", "description", "giver-npc",
+            "display-name", "description", "giver-npc", "next",
             "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
             "requires-job", "requires-faction", "requires-level", "requires-quest",
@@ -97,6 +103,8 @@ public final class QuestManager implements PersistentStore {
     private final NamespacedKey completedQuestsKey;
     private final File customQuestsFile;
     private volatile YamlConfiguration customQuests = new YamlConfiguration();
+    // Bound after construction (manual-DI ordering) — see IceSMPCore#setStatsManager wiring.
+    private volatile StatsManager statsManager;
 
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
@@ -114,6 +122,15 @@ public final class QuestManager implements PersistentStore {
         this.completedQuestsKey = new NamespacedKey(plugin, "quests_completed");
         this.customQuestsFile = new File(plugin.getDataFolder(), "custom-quests.yml");
         plugin.getDataFolder().mkdirs();
+    }
+
+    /**
+     * Binds the {@link StatsManager} used by {@code /stats} to count completed
+     * quests (IDEAS A15). Set after construction because of the manual-DI
+     * ordering in {@code IceSMPCore} (StatsManager is built after QuestManager).
+     */
+    public void setStatsManager(final StatsManager statsManager) {
+        this.statsManager = statsManager;
     }
 
     // ===== Admin-készítette questek (custom-quests.yml) =====
@@ -1429,6 +1446,9 @@ public final class QuestManager implements PersistentStore {
         }
         writeCsv(player, completedQuestsKey, completed);
         clearAllProgress(player, questId);
+        if (statsManager != null) {
+            statsManager.recordQuestComplete(player.getUniqueId());
+        }
         // Repeatable-cooldown anchor + seasonal anchor: when / in which season was it turned in.
         player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
         player.getPersistentDataContainer().set(seasonKey(questId), PersistentDataType.LONG, currentSeasonId());
@@ -1440,6 +1460,35 @@ public final class QuestManager implements PersistentStore {
                 "<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>",
                 Map.of("quest", getDisplayName(questId))
         ));
+
+        advanceChain(player, quest);
+    }
+
+    /**
+     * Linear auto-chain: if the just-completed quest names a {@code next} quest
+     * id, it is accepted for the player right away (subject to the normal
+     * accept-blockers, so requirement mismatches or an already-active/completed
+     * next link simply skip silently). Used by story sequences that shouldn't
+     * need an NPC visit or territory crossing between every link — e.g. the
+     * first-join onboarding chain (ROADMAP A5).
+     */
+    private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
+        final String next = completedQuest.getString("next");
+        if (next == null || next.isBlank() || getAcceptBlocker(player, next) != null || !accept(player, next)) {
+            return;
+        }
+
+        final ConfigurationSection nextQuest = getQuestSection(next);
+        player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.2F);
+        player.sendMessage(messageManager.getMessage(
+                "quest.auto-started",
+                "<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                Map.of(
+                        "quest", getDisplayName(next),
+                        "description", nextQuest == null ? "" : nextQuest.getString("description", "")
+                )
+        ));
+        sendDialogue(player, next, "give", dialogueSpeakerFallback(nextQuest));
     }
 
     private void applyRewards(final Player player, final ConfigurationSection quest) {

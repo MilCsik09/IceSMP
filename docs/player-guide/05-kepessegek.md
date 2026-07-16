@@ -13,6 +13,11 @@ a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás (SHIFT) + görgetés** = gyors váltás a képességeid között előre/hátra — a
   hotbar nem vált el, és a katalizátor **neve az épp kiválasztott képességet** mutatja.
+- **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** egy feloldott képességen →
+  kedvencnek jelölöd (★). Ha van legalább egy kedvenced, a shift+görgetés **csak a
+  kedvenceket** lépkedi — 20+ képességnél így villámgyors a váltás. (Újra shift-katt: levétel;
+  üres kedvenc-lista = megint mindent görget.) A spellkönyv **tölcsér-gombjával** a „csak
+  feloldottak" nézetre szűrhetsz.
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
 
@@ -72,6 +77,14 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
   sütsz el, a második **gyorsabban épül fel** (cooldown-visszatérítés) — és látványos „⚡ Kombó!"
   jelzést kapsz. Néhány alap kombó: Fagyérintés → Arkán Lökés • Ínmetszés → Fojtás •
   Csapdázás → Nyílzápor • Csatakiáltás → Forgószél • Toxinnyíl → Ragály.
+- **Kombó-láncok (3 lépés):** néhány kaszt teljes láncot fűzhet: ha mindhárom lépést az
+  időablakon belül sütöd el, a **befejező +25% erővel** csap be és gyorsabban is épül fel
+  („⚡ Kombó-lánc befejező!"). Láncok: Varázsló: Fagyérintés → Arkán Lökés → Tűzgolyó •
+  Halállovag: Jéglánc → Fagycsapás → Megsemmisítés • Sámán: Lángrengés → Lávakitörés →
+  Földrengés • Szerzetes: Felkelő Nap Rúgás → Düh Ökle → Sötét Rúgás • Pap: Szent Sújtás →
+  Elmerobbantás → Szent Nóva • Boszorkánymester: Romlás → Instabil Átok → Káoszlövedék.
+  A cast után az **action bar mutatja a nyíló kombó-ablakot** és a lánc következő lépését —
+  könnyű tanulni.
 
 ---
 

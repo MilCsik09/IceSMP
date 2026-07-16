@@ -637,6 +637,21 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return names;
     }
 
+    /**
+     * Read-only aggregate of every player trusted on ANY of the owner's claims
+     * (union across all their claim boxes). Used by {@code ClaimTrustGUI} to list
+     * the "revoke" tiles — does not mutate any trust state.
+     */
+    public synchronized Set<UUID> trustedPlayers(final UUID owner) {
+        final Set<UUID> result = new java.util.LinkedHashSet<>();
+        for (final Claim claim : claims.values()) {
+            if (claim.owner.equals(owner)) {
+                result.addAll(claim.trusted);
+            }
+        }
+        return result;
+    }
+
     // ==================== határ-megjelenítés + belépés-értesítés ====================
 
     /**

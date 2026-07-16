@@ -19,6 +19,7 @@ jelenti, hogy **elhagyható**.
 | `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
 | `/achievements` | `ach`, `eleresek` | Elérések (mérföldkövek + jutalmak) |
+| `/stats [név]` | — | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, teljesített questek |
 | `/daily` | `napi` | A napi küldetés és haladásod |
 | `/pet item\|summon\|dismiss\|name` | `tars`, `companion` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
 | `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |

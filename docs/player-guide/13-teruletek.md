@@ -101,6 +101,8 @@ A birtokodon (a claim dobozán belül) **idegenek**:
 - `/claim trust <név>` — a megbízott **teljes hozzáférést** kap **minden** claimedhez
   (építhet, nyithat ládát).
 - `/claim untrust <név>` — megbízás visszavonása.
+- **GUI-ból is megy:** `/menu` → Birtok → **„Megbízottak kezelése"** — felül a megbízottaid
+  (kattintás = visszavonás), alul a közeledben álló játékosok (kattintás = megbízás).
 
 ### Hasznos claim-parancsok
 

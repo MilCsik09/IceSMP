@@ -261,8 +261,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Shift+görgetés spell-váltás:** katalizátorral a kézben lopakodva görgetve a spell vált
       (előre/hátra), a hotbar-slot NEM vált el, és a katalizátor neve az épp kiválasztott
       képességet mutatja; katalizátor nélkül a görgetés normál slot-váltás marad.
+- [ ] **Spell-kedvencek (ÚJ):** a spellkönyvben **shift-katt** egy feloldott spellen → ★ jelölés
+      (újra shift-katt: le); ha van legalább egy kedvenc, a shift+görgetés **csak a kedvenceket**
+      lépkedi (action bar: „★1/3"); üres kedvenc-lista = a teljes feloldott lista. A spellkönyv
+      **tölcsér-gombja** a „csak feloldottak" szűrőt kapcsolja.
 - [ ] **Kombó:** egy konfigurált spell-pár (pl. Fagyérintés → Arkán Lökés) rövid időn belül →
       „⚡ Kombó!" + gyorsabb felépülés.
+- [ ] **Kombó-láncok (ÚJ, 3 lépés):** egy konfigurált lánc (pl. varázsló: Fagyérintés → Arkán
+      Lökés → Tűzgolyó; `spells.combos.chains`) mindhárom lépése az időablakon belül → a finisher
+      **+25% erővel** sül el („⚡ Kombó-lánc befejező!") + cooldown-visszatérítés; sima cast után
+      az action bar mutatja a **nyíló kombó-ablakot** („⏳ Kombó-ablak: <köv. spell>"), kombó után
+      a lánc következő lépését.
 - [ ] `/spell upgrade <id>` valutáért növeli a mesterség-rangot (max 5 rang): a cooldown csökken
       (-8%/rang) ÉS az erő nő (+5%/rang) — magasabb rangon egy sebző spell nagyobbat üt, egy
       buff/debuff spell effektje tovább tart, a self-heal többet gyógyít; a költség/self-damage nem nő.
@@ -444,6 +453,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 ### 4.11 Küldetések + bűn-rendszer + Sötét ✅
 - [ ] `/quest list|accept|info|abandon`; a haladás az action barban; teljesítéskor jutalom.
+- [ ] **Onboarding-lánc (ÚJ, első belépés):** vadonatúj játékos joinkor automatikusan megkapja a
+      „Beszélj a hírnökkel" questet (`onboarding_herald`, üdvözlő üzenettel); teljesítéskor
+      **auto-indul** a következő („Első csata": ölj 5 szörnyet → „Első gyűjtögetés": 10 rönk,
+      jutalom: valuta + csákány + kenyér). Előfeltétel a szerveren: `hirnok` nevű NPC a semleges
+      fővárosban (`/npcbind hirnok faction` ajánlott). Meglévő játékosnál NEM indul újra.
+      Kikapcsolás: `quests.yml` → `onboarding.enabled: false`. Quest-láncolás: a quest `next`
+      mezője (adminból is állítható: `/quest admin set <id> next <köv-id>`).
 - [ ] `/quest complete <j> <id>` (admin) azonnal teljesít.
 - [ ] **Bűn:** ölj meg egy másik játékost → +1 bűn; **4 bűnnél** automatikus száműzetés a Sötétbe (örök paktum).
       (Raid alatt a hadakozók közti ölés **nem** bűn.)
@@ -568,6 +584,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Party-HUD:** csapatban a HUD-oldalsávon megjelenik a „— Csapat —" szekció (👑 vezető, tagnév +
       élet-sáv); a társ sebződésekor a sávja **sárgára/pirosra vált** (~1 mp-en belül frissül); a csapat
       feloszlása után a szekció **eltűnik és nem hagy üres sorokat** az oldalsávon.
+- [ ] **Megbízott-GUI (ÚJ):** `/menu` → Birtok → „Megbízottak kezelése" (vagy `/claim trustgui`):
+      felül a megbízottak fejei (katt = visszavonás), alul a 15 blokkon belüli játékosok (katt =
+      megbízás); a kattintás a `/claim trust|untrust` parancsot futtatja és a GUI frissül.
 - [ ] **Claim:** `/claim` lefoglal (részecske-határ); másik fiók NEM tud törni/rakni/ládát nyitni benne
       (action-bar üzenet); `trust` után igen; robbanás nem bont claimelt blokkot;
       frakció-territóriumban/WG-régióban a claim elutasítva; a 4. chunktól ár (bankból, ELÉG); `unclaim`
@@ -582,6 +601,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
       a gombok működnek, a kattintások nem visznek ki tárgyat a menüből.
+- [ ] **`/stats [név]` (ÚJ):** kiírja a statisztika-profilt (játékos-ölések, halálok, K/D,
+      mob-ölések, elsütött spellek, teljesített questek); névvel másik (online vagy már látott)
+      játékosé; a számlálók ölés/halál/cast/quest-teljesítés után nőnek és restart után megmaradnak.
 - [ ] **Quest builder** (`/quest admin builder <id>`, admin): új id-vel a típus-választó nyílik →
       darabszám + név a chatben → szerkesztő; létező custom questtel rögtön a szerkesztő. Mező-csempe
       kattintás után a chatbe írt érték mentődik ('mégse' megszakít), a kapcsolók (ismételhető,

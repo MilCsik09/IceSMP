@@ -11,6 +11,9 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 
 ## A) Meglévő mechanika átdolgozása / polish
 
+> **Státusz:** A1–A16 ✅ IMPLEMENTÁLVA (3 hullámban; teszt-checklist: PLAYTEST.md).
+> A17 új felvétel — külön kör, nincs implementálva.
+
 ### A1. CC-audit — „mob-vak" effektek felderítése `[TOP]`
 🟢 • ⭐⭐⭐ — A Megzavarásnál derült ki, hogy a látás-zavaró effektek (blindness/darkness/nausea)
 mobokra hatástalanok. Ugyanez a hibaosztály máshol is ott lehet: az ÖSSZES CC-spell átnézése
@@ -89,6 +92,37 @@ StatsManager ranglista-infrája bővíthető; vigyázat: minden új számláló 
 ### A16. Kombó-rendszer mélyítés
 🟡 • ⭐⭐ — A spell-kombó (pár + gyorsabb felépülés) létezik. Bővítés: 3 lépcsős kombó-láncok
 kaszt-onként, kombó-finisher bónusz (a 3. spell +X% erő), HUD-jelzés a kombó-ablakról.
+
+### A17. Teljes HP-rendszer átdolgozása `[TULAJ KÉRÉSE — kidolgozott javaslat, külön körben]`
+🔴 • ⭐⭐⭐ — A vanília 20 HP + étel-regen nem illik egy MMO-jellegű szerverhez: minden kaszt
+ugyanannyit bír, a harc kimenetelét a golden apple / étel-spam dönti el, a spell-sebzésszámok
+pedig a 10 szíves skálán túl durva lépcsőkben hangolhatók. Javasolt átdolgozás (fázisokban):
+
+1. **Kasztonkénti alap-HP profilok** — `GENERIC_MAX_HEALTH` attribútum-módosítóval (a
+   talent-rendszer max-health effektje már pontosan így dolgozik, ugyanaz a plumbing):
+   tank/melee (harcos, paplovag, halállovag) ~26-30 HP, hibrid (szerzetes, démonvadász,
+   sámán, druida) ~22-24, íjász/orgyilkos ~20, caster (varázsló, pap, boszorkánymester,
+   evoker) ~16-18. Config: `classes.yml` → `<kaszt>.base-health`, szint-skálázással
+   (`health-per-level`, pl. +0,2/szint, cap).
+2. **Szív-kijelzés normalizálás** — `player.setHealthScale(20)` mindenkinél, hogy a több
+   HP ne csúfítsa el a hotbart (a tényleges értéket a HUD/`/stats` mutassa számmal).
+3. **Regen-átdolgozás** — a vanília saturation-regen kikapcsolása (gamerule vagy
+   `naturalRegeneration` off + saját tick): étel = éhség-költség fedezet, a gyógyulás
+   forrása harcon kívüli lassú regen (pl. 1 HP/2 mp, 8 mp-cel az utolsó sebződés után —
+   a ResourceManager lastCombat mintája újrahasznosítható) + gyógyító spellek/szakma-ételek.
+   Így a healer-spec és a Szakács tényleges értéket kap.
+4. **Sebzés-újrahangolás** — a spell-balance értékek átnézése az új HP-skálán (a
+   spell-balance.yml live-read rendszere miatt ez restart nélkül iterálható); a
+   sebzés-számok (A8) és a halál-összegző (A9) adja hozzá a visszajelzést, a C1
+   spell-statisztika az adatot.
+5. **Pajzs/absorption egységesítés** — a meglévő pajzs-jellegű effektek (Devotion Aura
+   reflect, Bulwark, absorption-adó spellek) közös „shield" rétegbe terelése, hogy a
+   HUD-on és a death recapben is egyértelmű legyen.
+6. **Kapcsolódások** — talent max-health effekt az ÚJ alapra épüljön (százalékos, ne fix);
+   faction-passzívák és relikviák HP-bónuszai auditálandók; PLAYTEST külön fejezetet kap.
+
+Kockázat: minden harci rendszert érint (spell-balansz, mob-skálázás, világboss, raid) —
+külön ágon, teljes playtest-körrel érdemes, NEM a mostani A-hullám része.
 
 ## B) Új mechanika
 

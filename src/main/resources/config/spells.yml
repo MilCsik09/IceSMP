@@ -133,6 +133,24 @@ spells:
     enabled: true
     window-seconds: 4
     bonus-cooldown-refund-percent: 40
+    # ===== 3 lépéses kombó-láncok (IDEAS A16) =====
+    # Ha a lánc első két lépését az időablakon belül sütöd el, a 3. (finisher) +X% erővel
+    # sül el ÉS a kombó-cooldown-visszatérítést is megkapja. A cast után az action bar
+    # mutatja a következő lépést ("Kombó-ablak: ...").
+    finisher-power-bonus-percent: 25   # a finisher erő-bónusza (láncnál felülírható)
+    chains:
+      arcane-execution:
+        steps: [frost_touch, arcane_nova, fireball]
+      deathfrost:
+        steps: [chains_of_ice, frost_strike, obliterate]
+      elemental-overload:
+        steps: [flame_shock, lava_burst, earth_shock]
+      way-of-hundred-fists:
+        steps: [rising_sun_kick, fists_of_fury, blackout_kick]
+      holy-trinity:
+        steps: [holy_smite, mind_blast, holy_nova]
+      soul-collapse:
+        steps: [corruption, unstable_affliction, chaos_bolt]
     pairs:
       frost-nova:
         first: "frost_touch"

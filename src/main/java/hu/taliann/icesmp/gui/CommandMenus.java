@@ -703,6 +703,8 @@ public final class CommandMenus {
                 List.of(grey("A claim tetejét emeli meg."), extendPrice, click())), "RUN:claim extend up");
         put(inv, holder, 20, GuiUtil.icon(Material.POINTED_DRIPSTONE, title("Mélyítés (+5 blokk)"),
                 List.of(grey("A claim alját viszi lejjebb."), extendPrice, click())), "RUN:claim extend down");
+        put(inv, holder, 21, GuiUtil.icon(Material.PLAYER_HEAD, title("Megbízottak kezelése"),
+                List.of(grey("Megbízottak listája + megbízás."), click())), "OPEN:claim trustgui");
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
         player.openInventory(inv);

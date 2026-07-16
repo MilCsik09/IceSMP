@@ -209,6 +209,9 @@ az alapkasztod.
   hanggal; az action bar mutatja a kiválasztott képességet + a költségét).
 - **Lopakodás + görgetés** (katalizátorral a kézben) = gyors spell-váltás előre/hátra — a
   hotbar-slot nem vált, és a katalizátor **neve mindig az épp kiválasztott képességet** mutatja.
+- **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** kedvencnek jelöl egy feloldott
+  képességet; ha van kedvenced, a görgetés **csak a kedvenceket lépkedi** (üres lista = mindent).
+  A spellkönyv tölcsér-gombja a „csak feloldottak" szűrő.
 - Ha elveszne: a Kaszt menüből bármikor újra igényelheted (admin: `/job givecatalyst`).
 - A katalizátort **nem lehet** craftolásnál vagy kemencében elhasználni — védett.
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben
@@ -399,6 +402,11 @@ Lvl 25–45 közt feloldódó ulti-készlettel rendelkezik — a teljes listát 
 > **Spell-mesterség (`spell mastery`):** a feloldott képességeidet **frakcióvalutáért
 > rangsorolhatod** (max. **5 rang**), ami rangonként **−8% cooldownt** és **+5% erőt** ad —
 > tiszta, nem tolakodó „képesség-erősítés" a talentek és a kaszt-szint fölött.
+
+> **Kombók és kombó-láncok:** bizonyos képesség-párok gyors egymásutánban elsütve „⚡ Kombó!"-t
+> adnak (gyorsabb felépülés), a **3 lépéses láncok** befejezője pedig **+25% erővel** csap be
+> (pl. Varázsló: Fagyérintés → Arkán Lökés → Tűzgolyó). A cast után az action bar mutatja a
+> **nyíló kombó-ablakot** és a következő lépést — részletek: [Képességek oldal](docs/player-guide/05-kepessegek.md).
 
 ---
 
@@ -633,7 +641,9 @@ birtokodról (a saját claimeden belüli gépeid persze működnek). **Fontos:**
 tiltja** — ez háborús szerver, a claim csak az építést és a lopást védi.
 
 A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozzáférés minden
-claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza. `/claim info` megmutatja, kié az
+claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza — vagy GUI-ból: `/menu` →
+Birtok → **„Megbízottak kezelése"** (felül a megbízottak: katt = visszavonás; alul a közeli
+játékosok: katt = megbízás). `/claim info` megmutatja, kié az
 adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel rajzolja ki a chunk-határt.
 
 **Védett zónába** (főváros, védett város, védett frakcióterület) **nem lehet claimelni** — ott
@@ -685,6 +695,10 @@ buffot + tárgy-jutalmat + ünneplő tűzijátékot**; utána a pontok resetelne
 
 ## 12. Küldetések ✅
 
+**Új játékosként** az első belépésedkor automatikusan elindul egy rövid **kezdő
+küldetés-lánc** („Beszélj a hírnökkel" → „Első csata" → „Első gyűjtögetés") — minden lépés
+teljesítésekor a következő magától indul, jutalommal.
+
 `/quest list` (felvehető), `/quest info` (aktív + haladás), `/quest accept <id>`,
 `/quest abandon <id>`, `/quest log` (grafikus **küldetésnapló**: Aktív / Felvehető /
 Teljesített fülek, shift-katt = feladás). A haladásod az action barban követhető,
@@ -735,6 +749,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/profession recipes` | Recept-könyv (egy-kattintásos craftolás a tanult receptekből) |
 | `/daily` | Napi (naponta forgó) küldetések |
 | `/achievements` | Teljesítmények — mérföldkő-célok valuta-jutalommal |
+| `/stats [név]` | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, questek |
 | `/leaderboard` | Ranglisták (kaszt-szint, vagyon, raid-ölések) |
 | `/pet` | Társ-állat (Vadmester/Nekromanta): befogás, előhívás, szintlépés |
 | `/bank balance/deposit/withdraw` | Bank |
