@@ -60,6 +60,16 @@ public final class TreasureEventManager {
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
 
+    /** Whether a treasure chest is currently waiting to be found. */
+    public boolean isActive() {
+        return chest != null;
+    }
+
+    /** Milliseconds left before the treasure expires, or -1 when none is active. */
+    public long getRemainingMillis() {
+        return chest != null ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
+    }
+
     /** Whether the given block is the active treasure chest (for the interact listener). */
     public boolean isTreasureBlock(final Block block) {
         final Location active = chest;

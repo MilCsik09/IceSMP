@@ -29,10 +29,61 @@ spells:
   # Ha enabled=false, MINDEN spell a régi éhség/XP/HP költségre esik vissza.
   resource:
     enabled: true
-    max: 100                      # a sáv maximuma
+    max: 100                      # a sáv maximuma (globális default)
     regen-per-second: 8.0         # ennyi erőforrás töltődik vissza másodpercenként (0 = nincs regen)
     xp-ritual-threshold: 80       # ennyi VAGY több XP-költségű spell marad XP (nagy rituálé); alatta erőforrás
     hunger-heavy-threshold: 8     # ennyi VAGY több éhség-költségű spell marad éhség (nehéz fizikai); alatta erőforrás
+    # ===== Kasztonkénti erőforrás-profilok (IDEAS A3) =====
+    # A tár VISELKEDÉSE kasztonként más, hogy a Düh tényleg dühként, az Energia energiaként
+    # működjön. Kulcsonként felülírható; ami nincs megadva, a fenti globális default érvényes.
+    #   max                    - a sáv maximuma ennél a kasztnál
+    #   regen-per-second       - passzív visszatöltődés (dühnél csak HARCBAN fut!)
+    #   combat-gain-per-hit    - ennyi tár jár minden BEVITT ütésért (düh-minta; 0 = kikapcsolva)
+    #   idle-decay-per-second  - harcon kívül (5 mp az utolsó ütés után) ennyivel ÜRÜL a tár
+    #                            másodpercenként; amíg > 0, harcon kívül regen sincs (0 = normál regen)
+    class:
+      # Düh-típus: harcban töltődik (ütésenként + lassú regen), harcon kívül lassan elszivárog.
+      warrior:
+        regen-per-second: 3.0
+        combat-gain-per-hit: 8.0
+        idle-decay-per-second: 2.0
+      death_knight:
+        regen-per-second: 3.0
+        combat-gain-per-hit: 8.0
+        idle-decay-per-second: 2.0
+      demon_hunter:
+        regen-per-second: 3.0
+        combat-gain-per-hit: 8.0
+        idle-decay-per-second: 2.0
+      # Energia-típus: kisebb tár, de gyorsan visszatöltődik (pörgős rotáció).
+      assassin:
+        regen-per-second: 14.0
+      monk:
+        regen-per-second: 14.0
+      archer:
+        regen-per-second: 11.0
+      # Mana-típus: nagyobb tár, lomhább regen (a nagy leadás után tényleg ki kell várni).
+      wizard:
+        max: 120
+        regen-per-second: 7.0
+      shaman:
+        max: 120
+        regen-per-second: 7.0
+      priest:
+        max: 120
+        regen-per-second: 7.0
+      warlock:
+        max: 120
+        regen-per-second: 7.0
+      evoker:
+        max: 120
+        regen-per-second: 7.0
+      druid:
+        max: 120
+        regen-per-second: 7.0
+      paladin:
+        max: 110
+        regen-per-second: 7.0
   # Sámán-totemek: lerakott, rövid életű entitások, amik periodikusan pulzálnak a közeli
   # entitásokra (gyógyítás/buff a szövetségeseknek, sebzés/debuff az ellenségeknek).
   totem:

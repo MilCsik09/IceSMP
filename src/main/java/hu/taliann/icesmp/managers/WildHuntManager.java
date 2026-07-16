@@ -75,6 +75,16 @@ public final class WildHuntManager {
         return entityId != null && entityId.equals(beastId);
     }
 
+    /** Whether the wild-hunt beast is currently roaming (for the "what's happening now" summary). */
+    public boolean isActive() {
+        return beastId != null;
+    }
+
+    /** Milliseconds left before the beast escapes, or -1 when none is active. */
+    public long getRemainingMillis() {
+        return beastId != null ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
+    }
+
     /** Active (or a spawn is in flight): guards double-starts during the hop window. */
     private boolean isActiveOrSpawning() {
         return beastId != null || System.currentTimeMillis() < spawnGraceUntil;

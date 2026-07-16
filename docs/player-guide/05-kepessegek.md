@@ -31,7 +31,13 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
 
 - **A legtöbb képesség ennyit FOGYASZT** a csíkból (a gyors képességek olcsók ~15–20, az ultik
   drágák ~50).
-- A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+- A csík **magától visszatöltődik** idővel — de **kasztonként másképp viselkedik**:
+  - **Düh-típus** (Harcos, Halállovag, Démonvadász): harcon kívül lassan **ürül**, minden
+    **bevitt ütés tölti** (+8), harcban lassú visszatöltődés is fut — dühöt a harc termel!
+  - **Energia-típus** (Orgyilkos, Szerzetes ~14/mp; Íjász ~11/mp): kis szünetekkel is gyorsan
+    visszapörög — pörgős rotációra való.
+  - **Mana-típus** (Varázsló, Sámán, Pap, Boszorkánymester, Evoker, Druida: 120-as tár;
+    Paplovag: 110): nagyobb készlet, de lomhább (~7/mp) regen — a nagy leadást ki kell várni.
 - Ha **nincs elég** erőforrásod, a képesség **nem sül el** (az action bar jelzi).
 
 **Hibrid rendszer** — minden képesség a hozzá illő költséget kéri: a legtöbb az Erő-csíkot, de a

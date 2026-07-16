@@ -145,6 +145,18 @@ public final class InvasionManager {
         return entityId != null && activeMobs.contains(entityId);
     }
 
+    /**
+     * Whether an invasion wave is currently under way (any of its mobs are still
+     * tracked as alive). No expiry timestamp is kept for invasions — the wave simply
+     * lasts until its mobs are all killed — so only presence, not remaining time, is
+     * exposed here.
+     *
+     * @return true while at least one wave mob is tracked as alive
+     */
+    public boolean isActive() {
+        return !activeMobs.isEmpty();
+    }
+
     public void shutdown() {
         nextAttemptAt = 0L;
         for (final UUID id : activeMobs) {

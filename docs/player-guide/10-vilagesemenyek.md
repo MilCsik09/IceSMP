@@ -29,7 +29,8 @@ hogy könnyű észrevenni):
   **szignatúra-aurával** (a boss közelében a túlélők témába illő debuffot kapnak). Pl.
   A Gyűrűk Őre, Lávakohó Behemót, Fagyott Trón Királya, Csontkirály, Mélységi Rém…
 - A boss **~8 másodpercenként telegrafált különleges képességet** süt el (becsapódás / mérgező
-  zóna / add-idézés) — a jelzett helyről lépj el!
+  zóna / add-idézés) — a veszélyzónát **részecske-gyűrű** rajzolja ki és külön **hangjelzés**
+  (Warden-morajlás, idézésnél Evoker-kántálás) kíséri: a jelzett helyről lépj el!
 - **50% HP alatt feldühödik** (2. fázis): erősebb, gyorsabb csapások.
 - Aki **leüti**, annak a **frakciója kasszát + liga-pontot** kap; a **legyőző játékos** egy
   időleges **harci buffot** (Erő + Védelem) kap.
@@ -136,8 +137,11 @@ egyszer fut le. (Admin újra le tudja játszani.)
 > állatvándorlás **nappal** jelenik meg — és aki az esemény pillanatában a **szabad ég alatt**
 > van, kis token-jutalmat + az eseményhez illő rövid buffot kap (pl. aurora → éjjellátás).
 >
-> Ezeket az eseményeket a `/events` paranccsal nézheted meg (`/events season`, `/events
-> blood-moon`, `/events caravan`), vagy egyben a `/menu` → **Események** almenüben, ami
+> Ezeket az eseményeket a `/events` paranccsal nézheted meg — az **`/events status`** egyben
+> kiírja, **mi történik éppen most** (minden aktív esemény + hátralévő idő + szezon-állás),
+> részletesebben pedig `/events season`, `/events blood-moon`, `/events caravan` —, vagy a
+> `/menu` → **Események** almenüben, aminek a tetején az **óra-ikon** ugyanezt az élő
+> összegzést mutatja, és ami
 > **élő státusszal** mutatja a vérholdat, világbosst, karavánt, kíséretet, bőség-időt,
 > szerver-kihívást és a meteor-krátert. A többi eseményt (meteor, kincs, kihívás…) az adminok
 > tudják kézzel is kiváltani — lásd a [Parancsok](14-parancsok.md) oldalt.

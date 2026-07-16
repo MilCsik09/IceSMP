@@ -55,6 +55,11 @@ public final class GatheringBuffManager {
         return active;
     }
 
+    /** Milliseconds left in the current buff window, or -1 when none is open. */
+    public long getRemainingMillis() {
+        return active != null ? Math.max(0L, activeUntil - System.currentTimeMillis()) : -1L;
+    }
+
     /** XP multiplier to apply right now (1.0 unless an XP hour is open). */
     public double xpMultiplier() {
         return active == GatheringBuff.XP_HOUR

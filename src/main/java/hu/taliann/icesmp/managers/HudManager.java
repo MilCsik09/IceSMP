@@ -306,7 +306,7 @@ public final class HudManager {
                 currencyManager.formatBalance(balance),
                 showResource,
                 showResource ? resourceManager.resourceValue(player) : 0,
-                resourceManager.resourceMax(),
+                showResource ? resourceManager.resourceMax(player) : resourceManager.resourceMax(),
                 showResource ? resourceManager.resourcePercent(player) : 0,
                 resourceManager.resourceName(player),
                 showResource ? resourceManager.resourceBarPlain(player) : "",

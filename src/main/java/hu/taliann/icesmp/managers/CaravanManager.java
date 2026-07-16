@@ -58,6 +58,11 @@ public final class CaravanManager {
         return active;
     }
 
+    /** Milliseconds left before the caravan departs, or -1 when it is not in town. */
+    public long getRemainingMillis() {
+        return active ? Math.max(0L, activeUntil - System.currentTimeMillis()) : -1L;
+    }
+
     /** Whether the given entity is the caravan merchant (for the interact listener). */
     public boolean isCaravanEntity(final UUID entityId) {
         return active && entityId != null && entityId.equals(merchantId);

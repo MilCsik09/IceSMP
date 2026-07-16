@@ -45,6 +45,11 @@ public final class AbundanceManager {
         return active;
     }
 
+    /** Milliseconds left in the current abundance window, or -1 when inactive. */
+    public long getRemainingMillis() {
+        return active ? Math.max(0L, activeUntil - System.currentTimeMillis()) : -1L;
+    }
+
     /** Chance (0–1) for a crop to gain an extra growth stage while active, else 0. */
     public double cropBoostChance() {
         return active ? clampChance(configManager.getDouble("abundance.crop-boost-chance-percent", 40.0D)) : 0.0D;

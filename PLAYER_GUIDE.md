@@ -229,7 +229,12 @@ mutat. **Ez a képességeid fő „üzemanyaga" — a legtöbb spell ezt fogyasz
 **Hogyan működik?**
 1. **A legtöbb képesség ennyit fogyaszt** az Erő-csíkból. A költség a képesség erejétől függ:
    a gyors, pörgős alapképességek **olcsók** (~15–20), a nagy ultik **drágák** (~50).
-2. A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+2. A csík **magától visszatöltődik** idővel — de **kasztonként másképp viselkedik**:
+   - **Düh-típus** (Harcos, Halállovag, Démonvadász): harcon kívül lassan **ürül**, minden
+     **bevitt ütés tölti** (+8), harcban lassú regen is fut — a dühöt a harc termeli!
+   - **Energia-típus** (Orgyilkos, Szerzetes ~14/mp; Íjász ~11/mp): gyorsan visszapörög.
+   - **Mana-típus** (Varázsló, Sámán, Pap, Boszorkánymester, Evoker, Druida: 120-as tár;
+     Paplovag: 110): nagyobb készlet, lomhább (~7/mp) regen.
 3. Ha **nincs elég** erőforrásod egy képességhez, az **nem sül el** — az action bar jelzi
    (pl. „Nincs elég Mana!").
 
@@ -516,7 +521,8 @@ koordináta). Spawnkor **véletlen archetípus** kerül kiválasztásra — saj�
 **szignatúra-aurával** (a túlélők a boss közelében témába illő debuffot kapnak) és jutalom-szorzóval
 (pl. A Gyűrűk Őre, Lávakohó Behemót, Fagyott Trón Királya, Csontkirály, Mélységi Rém…). A boss
 **~8 másodpercenként telegrafált különleges képességet** süt el (becsapódás / mérgező zóna /
-add-idézés), és **50% HP alatt feldühödik** (2. fázis, erősebb csapásokkal). Aki legyőzi: a
+add-idézés) — a veszélyzónát **részecske-gyűrű** rajzolja ki, külön **hangjelzéssel** —, és
+**50% HP alatt feldühödik** (2. fázis, erősebb csapásokkal). Aki legyőzi: a
 **frakciója kasszát és liga-pontot** kap, a győztes pedig **ideiglenes buffot** (erő + ellenállás).
 
 ### Inváziók 🧟
@@ -581,7 +587,8 @@ egy ideig marad, aztán **magától visszaáll az eredeti terep** — amit addig
 meteor **sosem csapódik claimelt frakció-területre**, és **nem rombolja maradandóan** a világot.
 
 ### Események megtekintése
-`/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
+**`/events status`** — „Mi történik most?": minden éppen aktív világesemény egy listában
+(hátralévő idővel) + a szezon-állás • `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
 gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
 `/events escort` • `/events meteor`.) A `/menu` → **Események** almenü mindezt egy helyen, **élő
@@ -604,6 +611,11 @@ létszám, a csapat automatikusan feloszlik.
 név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezetőt 👑 jelöli — élőben frissül,
 így harc közben is látod, kinek kell segítség (WoW party-frame-módra). Ha nem vagy csapatban, a
 szekció el sem foglal helyet az oldalsávon.
+
+**Harc-visszajelzés:** minden ütésed fölött **lebegő sebzés-szám** jelenik meg a célponton
+(mobnál sárga, játékosnál piros — kézi és lövedékes találatra is), halálkor pedig a chatben
+**halál-összegzőt** kapsz: az utolsó 10 másodperc találatai (mennyi ❤, kitől/mitől, mikor) és
+az összesített sebzés — így mindig tudod, mi vitt el.
 
 ### Terület-claim (saját birtok) 🏠
 `/claim` egy **16×16 blokkos négyzetet** foglal le **körülötted** (a pozíciódra igazítva, **nem** a

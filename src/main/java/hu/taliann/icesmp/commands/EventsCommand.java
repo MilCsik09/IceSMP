@@ -22,13 +22,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * /events — világesemények: (arg nélkül vagy "season") a szezon-állás;
- * "blood-moon" a vérhold állapota; admin: intro [játékos] az intro újrajátszása.
+ * "status" (mindenkinek) a "Mi történik most?" összegzés; "blood-moon" a vérhold
+ * állapota; admin: intro [játékos] az intro újrajátszása.
  */
 public final class EventsCommand implements BasicCommand {
 
@@ -85,6 +87,7 @@ public final class EventsCommand implements BasicCommand {
         }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
+            case "status" -> handleStatus(sender);
             case "blood-moon", "bloodmoon" -> handleBloodMoon(sender, args);
             case "world-boss", "worldboss", "boss" -> handleWorldBoss(sender);
             case "invasion", "invazio" -> handleInvasion(sender);
@@ -276,6 +279,130 @@ public final class EventsCommand implements BasicCommand {
         }
     }
 
+    /**
+     * "Mi történik most?" — publikus alparancs (senkinek sincs eltiltva): kilistázza
+     * az épp aktív világeseményeket, majd a szezon állását. Ugyanazt a
+     * {@link #activeEventLines} formázót hívja, mint a {@code /menu} Események
+     * almenüjének info-ikonja, hogy a két felület sose térjen el egymástól.
+     */
+    private void handleStatus(final CommandSender sender) {
+        sender.sendMessage(messageManager.get("events-status-header", "&6✦ Mi történik most? ✦"));
+
+        final List<String> lines = activeEventLines(messageManager, bloodMoonManager, worldBossManager,
+                invasionManager, caravanManager, gatheringBuffManager, treasureEventManager,
+                wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager);
+        if (lines.isEmpty()) {
+            sender.sendMessage(messageManager.get("events-status-empty", "&7Most éppen nyugalom van a vidéken."));
+        } else {
+            lines.forEach(sender::sendMessage);
+        }
+
+        final long remainingDays = Math.max(0L,
+                (seasonManager.getSeasonEndMillis() - System.currentTimeMillis()) / (24L * 60L * 60L * 1000L));
+        sender.sendMessage(messageManager.get("events-status-season", "&6Szezon: &7még ~%s nap", String.valueOf(remainingDays)));
+        for (final FactionType faction : FactionType.values()) {
+            sender.sendMessage(messageManager.get(
+                    "events-season-line", "&e%s&7: &f%s pont", faction.getDisplayName(), seasonManager.getPoints(faction)));
+        }
+    }
+
+    /**
+     * Shared "what's happening now" formatter: one colorized line per currently-active
+     * world event (blood moon, world boss, invasion, caravan, gathering buff, treasure,
+     * wild hunt, abundance, server challenge, escort, meteor), skipping any manager
+     * passed as {@code null} — the {@code /menu} Események almenü info-ikonja does not
+     * have every manager wired through {@code CommandMenuContext}, so it calls this with
+     * {@code null} for the ones it lacks rather than duplicating the formatting logic.
+     * Read-only: every value comes from each manager's existing volatile state getters.
+     *
+     * @return the active-event lines (empty when nothing is happening)
+     */
+    public static List<String> activeEventLines(final MessageManager messageManager,
+            final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
+            final InvasionManager invasionManager, final CaravanManager caravanManager,
+            final GatheringBuffManager gatheringBuffManager, final TreasureEventManager treasureEventManager,
+            final WildHuntManager wildHuntManager, final AbundanceManager abundanceManager,
+            final ServerChallengeManager serverChallengeManager, final EscortManager escortManager,
+            final MeteorEventManager meteorEventManager) {
+        final List<String> lines = new ArrayList<>();
+
+        if (bloodMoonManager != null && bloodMoonManager.isActive()) {
+            final long remaining = bloodMoonManager.getRemainingMillis();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-bloodmoon-timed", "&c🌕 Vérhold — még ~%s perc", String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-bloodmoon-active", "&c🌕 Vérhold tombol!"));
+        }
+        if (worldBossManager != null && worldBossManager.isBossActive()) {
+            final long pct = Math.round(worldBossManager.getBossHealthFraction() * 100.0F);
+            lines.add(messageManager.get("events-status-worldboss", "&4☠ Világboss él — HP %s%%", String.valueOf(pct)));
+        }
+        if (invasionManager != null && invasionManager.isActive()) {
+            lines.add(messageManager.get("events-status-invasion", "&4⚔ Invázió tombol a vidéken"));
+        }
+        if (caravanManager != null && caravanManager.isActive()) {
+            lines.add(messageManager.get("events-status-caravan", "&6🏜 Karaván a városban"));
+        }
+        if (gatheringBuffManager != null && gatheringBuffManager.getActive() != null) {
+            final long remaining = gatheringBuffManager.getRemainingMillis();
+            final String label = gatheringIcon(gatheringBuffManager.getActive()) + " " + gatheringBuffManager.describeActive();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-gathering-timed", "&e%s — még ~%s perc", label, String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-gathering-active", "&e%s", label));
+        }
+        if (treasureEventManager != null && treasureEventManager.isActive()) {
+            lines.add(messageManager.get("events-status-treasure", "&6📦 Kincs vár felfedezésre"));
+        }
+        if (wildHuntManager != null && wildHuntManager.isActive()) {
+            final long remaining = wildHuntManager.getRemainingMillis();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-wildhunt-timed", "&4🐺 Vad Hajsza kóborol a vidéken — még ~%s perc", String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-wildhunt-active", "&4🐺 Vad Hajsza kóborol a vidéken"));
+        }
+        if (abundanceManager != null && abundanceManager.isActive()) {
+            final long remaining = abundanceManager.getRemainingMillis();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-abundance-timed", "&a🌱 Bőség-idő van — még ~%s perc", String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-abundance-active", "&a🌱 Bőség-idő van"));
+        }
+        if (escortManager != null && escortManager.isActive()) {
+            final long remaining = escortManager.getRemainingMillis();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-escort-timed", "&e🛡 Karaván-kíséret zajlik — még ~%s perc", String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-escort-active", "&e🛡 Karaván-kíséret zajlik"));
+        }
+        if (serverChallengeManager != null && serverChallengeManager.isActive()) {
+            final long remaining = serverChallengeManager.getRemainingMillis();
+            final String goal = String.valueOf(serverChallengeManager.describeGoal());
+            final String progress = serverChallengeManager.getProgress() + "/" + serverChallengeManager.getTarget();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-challenge-timed", "&6🎯 Szerver-kihívás: %s (%s) — még ~%s perc", goal, progress, String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-challenge-active", "&6🎯 Szerver-kihívás: %s (%s)", goal, progress));
+        }
+        if (meteorEventManager != null && meteorEventManager.isActive()) {
+            final long remaining = meteorEventManager.getRemainingMillis();
+            lines.add(remaining >= 0L
+                    ? messageManager.get("events-status-meteor-timed", "&c☄ Meteor-kráter vár bányászásra — még ~%s perc", String.valueOf(minutesCeil(remaining)))
+                    : messageManager.get("events-status-meteor-active", "&c☄ Meteor-kráter vár bányászásra"));
+        }
+
+        return lines;
+    }
+
+    /** The buff's display icon for the "Mi történik most?" summary line. */
+    private static String gatheringIcon(final GatheringBuffManager.GatheringBuff buff) {
+        return switch (buff) {
+            case MINING_RUSH -> "⛏";
+            case HARVEST_HOUR -> "🌾";
+            case FISHING_FRENZY -> "🎣";
+            case XP_HOUR -> "✦";
+        };
+    }
+
+    /** Rounds a remaining-millis value up to whole minutes (at least 1 while still active). */
+    private static long minutesCeil(final long remainingMillis) {
+        return Math.max(1L, (remainingMillis + 59_999L) / 60_000L);
+    }
+
     private void handleIntro(final CommandSender sender, final String[] args) {
         if (!requireAdmin(sender)) {
             return;
@@ -303,8 +430,8 @@ public final class EventsCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
-                : List.of("season", "blood-moon", "caravan");
+                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
+                : List.of("status", "season", "blood-moon", "caravan");
         final String first = prefixAt(args, 0);
         final boolean firstComplete = options.contains(first);
 

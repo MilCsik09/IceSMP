@@ -42,6 +42,18 @@ public final class BloodMoonManager {
     }
 
     /**
+     * Milliseconds left in the current blood moon, or -1 when inactive OR when a
+     * natural (non-forced) blood moon is running: those end at dawn (world-time
+     * bound, checked in {@link #tick()}) rather than at a stored millisecond
+     * deadline, so no remaining-time estimate is available for them.
+     *
+     * @return remaining milliseconds, or -1 if unknown/inactive
+     */
+    public long getRemainingMillis() {
+        return active && forcedEndAtMillis > 0L ? Math.max(0L, forcedEndAtMillis - System.currentTimeMillis()) : -1L;
+    }
+
+    /**
      * Bonus mob levels applied by the MobScalingManager while the blood moon lasts.
      *
      * @return the extra levels (0 when inactive)

@@ -83,6 +83,11 @@ public final class EscortManager {
         return convoyId != null;
     }
 
+    /** Milliseconds left before the escort times out, or -1 when none is under way. */
+    public long getRemainingMillis() {
+        return isActive() ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
+    }
+
     /**
      * Atomically claims the right to settle the escort (success OR failure): only
      * the first caller wins — the convoy driver (region thread) and the timeout

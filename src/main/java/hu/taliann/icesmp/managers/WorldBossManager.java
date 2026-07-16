@@ -142,6 +142,11 @@ public final class WorldBossManager {
         return bossHealthFraction;
     }
 
+    /** Milliseconds left before the active world boss despawns, or -1 when none is active. */
+    public long getRemainingMillis() {
+        return isBossActive() ? Math.max(0L, activeBossUntil - System.currentTimeMillis()) : -1L;
+    }
+
     /**
      * Refreshes the shared boss-bar fraction right after the boss takes a hit, so players see their
      * damage register immediately (the phase tick only refreshes every ~2s). The {@link org.bukkit.event.entity.EntityDamageEvent}
@@ -433,7 +438,9 @@ public final class WorldBossManager {
             case SLAM -> {
                 final Location center = boss.getLocation().clone();
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
+                spawnTelegraphRing(world, archetype.particle, center, 5.0D);
                 world.playSound(center, archetype.sound, 1.6F, 0.6F);
+                world.playSound(center, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.6F);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
@@ -472,7 +479,9 @@ public final class WorldBossManager {
                 }
                 final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
+                spawnTelegraphRing(world, archetype.particle, spot, 3.0D);
                 world.playSound(spot, archetype.sound, 1.2F, 0.8F);
+                world.playSound(spot, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.8F);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
@@ -504,6 +513,9 @@ public final class WorldBossManager {
                 final Location at = boss.getLocation();
                 final int count = 2 + (enraged ? 1 : 0);
                 final long addLifespanTicks = Math.max(10L, configManager.getLong("world-events.world-boss.add-lifespan-seconds", 25L)) * 20L;
+                // Telegraph cue distinct from SLAM/ZONE's warning tone, so players learn to
+                // recognize "adds incoming" purely by ear.
+                world.playSound(at, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.5F, 1.0F);
                 for (int i = 0; i < count; i++) {
                     final Location spot = at.clone().add(
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
@@ -519,6 +531,28 @@ public final class WorldBossManager {
                 }
                 world.playSound(at, archetype.sound, 1.5F, 0.8F);
             }
+        }
+    }
+
+    /** Points evenly spaced around a telegraph ring's circumference (visual clarity of the "particle cloud" style). */
+    private static final int TELEGRAPH_RING_POINTS = 24;
+
+    /**
+     * Telegraphs an impending impact zone by tracing its EDGE with evenly-spaced particles
+     * (a crisp ring players can read at a glance) rather than only a scattered cloud over the
+     * whole area — the ring boundary is what tells a player "stand outside this" at a glance.
+     *
+     * @param world the boss's world (region-local; called only from the boss's own thread)
+     * @param particle the archetype's signature particle
+     * @param center the impact zone's center (boss location for SLAM, target spot for ZONE)
+     * @param radius the impact zone radius in blocks
+     */
+    private static void spawnTelegraphRing(final org.bukkit.World world, final Particle particle,
+                                           final Location center, final double radius) {
+        for (int i = 0; i < TELEGRAPH_RING_POINTS; i++) {
+            final double angle = (Math.PI * 2.0D * i) / TELEGRAPH_RING_POINTS;
+            final Location point = center.clone().add(Math.cos(angle) * radius, 0.15D, Math.sin(angle) * radius);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(world, particle, point, 1);
         }
     }
 

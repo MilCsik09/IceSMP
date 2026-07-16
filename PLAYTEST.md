@@ -237,6 +237,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **nehéz fizikai** (éhség ≥ 8: állások, Második Lélegzet, Pandaőrség) → **éhségbe** kerül.
   - [ ] minden más → az **Erő-csíkba**.
 - [ ] No-op cast (nincs célpont/társ) → a költség **visszatérül**, és nincs cooldown.
+- [ ] **Kaszt-profilok (ÚJ):** a tár kasztonként másképp viselkedik (`spells.resource.class.*`):
+  - [ ] **Düh-típus** (harcos/halállovag/démonvadász): harcon kívül a csík **lassan ürül** (2/mp),
+        ütésenként **+8** töltődik, harcban (5 mp-en belüli ütés) lassú regen (3/mp) fut.
+  - [ ] **Energia-típus** (orgyilkos/szerzetes 14/mp, íjász 11/mp): gyors visszatöltődés.
+  - [ ] **Mana-típus** (varázsló/sámán/pap/boszorkánymester/evoker/druida 120 max, paplovag 110):
+        nagyobb tár, lomhább (7/mp) regen — a HUD-sáv maximuma is a kaszt szerintit mutatja.
+  - [ ] Lövedékkel (íj) bevitt találat is számít harci ütésnek (düh-töltés + harc-időbélyeg).
 - [ ] `spells.resource.enabled: false` → minden spell a régi éhség/XP/HP költségre vált.
 - [ ] *(Ismert finomhangolandó: néhány határeset-spell — pl. Gyökerezés 8 éhségen — a küszöb miatt
       éhséget kér, pedig a Mana is illene rá. Jelezd, ha furcsát látsz.)*
@@ -524,6 +531,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Világboss** (`/events worldboss`): véletlen archetípus, név, aura-debuff a közelben; ~8 mp-enként
       telegrafált képesség; **50% HP alatt feldühödik**; legyőzve kassza+pont+buff.
       ⚠️ A SUMMON-special által idézett add-ok egy idő után **eltűnnek** (nem maradnak ott örökre).
+- [ ] **Boss-telegraph (ÚJ):** a SLAM/ZONE special előtt **részecske-gyűrű** rajzolja ki a veszélyzónát
+      (5, ill. 3 blokk sugár) + Warden-hang; a SUMMON előtt Evoker-idéző hang szól — kivédhetőbb a special.
+- [ ] **`/events status` (ÚJ, mindenkinek):** „Mi történik most?" — kilistázza az összes épp aktív
+      világeseményt (vérhold/boss/invázió/karaván/gyűjtögető/kincs/Vad Hajsza/bőség/kihívás/kíséret/meteor,
+      hátralévő perccel) + a szezon-állást; üresen „nyugalom van" üzenet. A `/menu` → Események almenü
+      tetején ugyanez **óra-ikonként** (kattintásra lefuttatja a parancsot).
 - [ ] **Invázió** (`/events invasion`): horda + megnevezett bajnok (telegrafált földcsapás); extra XP/lélekkő.
 - [ ] **Hangulat-események** (`/events ambient`): broadcast + kozmetikai effekt; az északi fény rövid
       éjjellátást ad, az állat-vándorlás passzív csordát idéz a közeledbe (balanszot nem érint).
@@ -580,6 +593,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       NPC-kötések, quest admin lista) csak a megfelelő jogosultsággal látszik.
 - [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
+- [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
+      szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
+      sorozat-ütésnél nem spammel (250 ms limit/célpont). Kikapcsolás: `spells.damage-indicators.enabled: false`.
+- [ ] **Halál-összegző (ÚJ):** halálkor a chatben az utolsó 10 mp sebzései (max 5 sor: „-2.5❤ Zombi
+      (3.2 mp-e)", lövedéknél a lövő zárójelben) + összesített sebzés. Kikapcsolás:
+      `spells.death-recap.enabled: false`. Ütés NEM számítódik duplán (entitás- vs. környezeti sebzés).
 
 ### 4.15 Druida formák + parkour ✅
 - [ ] Druida forma-spellek: LibsDisguises-szel vizuális átalakulás; nélküle stat-váltás (mindkettő teszt).

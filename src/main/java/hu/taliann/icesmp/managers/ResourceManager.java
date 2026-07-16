@@ -27,12 +27,24 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ResourceManager implements PlayerStateCleanup {
 
+    /** Harc utáni türelmi idő: eddig számít "harcban" a játékos (düh-típusú tárnál nincs decay). */
+    private static final long COMBAT_GRACE_MS = 5000L;
+
     private final ConfigManager configManager;
     private final JobManager jobManager;
     /** Current resource value at {@link #lastRegen} time (lazily regenerated on access). */
     private final Map<UUID, Double> resource = new ConcurrentHashMap<>();
     /** Epoch millis of the last time a player's resource was regenerated. */
     private final Map<UUID, Long> lastRegen = new ConcurrentHashMap<>();
+    /**
+     * UUID → kaszt-id (kisbetűs JobType-név) cache a kasztonkénti profilokhoz (IDEAS A3). A
+     * {@code current(UUID)} lusta regen-útvonalán nincs Player-példány (a PDC-t nem olvashatnánk
+     * biztonságosan idegen régió-szálról), ezért minden Player-t kapó publikus metódus frissíti a
+     * cache-t a játékos SAJÁT régió-szálán (HUD-tick, cast) — a UUID-alapú olvasók ebből dolgoznak.
+     */
+    private final Map<UUID, String> jobIdCache = new ConcurrentHashMap<>();
+    /** Epoch millis of the player's last dealt hit (combat-gain / idle-decay gate). */
+    private final Map<UUID, Long> lastCombat = new ConcurrentHashMap<>();
 
     public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
                            final SpecializationManager specializationManager) {
@@ -80,29 +92,85 @@ public final class ResourceManager implements PlayerStateCleanup {
         };
     }
 
-    private double max() {
-        return Math.max(10.0D, configManager.getDouble("spells.resource.max", 100.0D));
+    /**
+     * Frissíti a UUID→kaszt cache-t. CSAK a játékos saját régió-szálán hívható (PDC-olvasás!) —
+     * ezt a Player-t kapó publikus metódusok garantálják (HUD-tick, canAfford/consume a castnál).
+     */
+    private void cacheJob(final Player player) {
+        final JobType job = jobManager.getPrimaryJob(player);
+        if (job == null) {
+            jobIdCache.remove(player.getUniqueId());
+        } else {
+            jobIdCache.put(player.getUniqueId(), job.name().toLowerCase(java.util.Locale.ROOT));
+        }
     }
 
-    private double regenPerSecond() {
-        return Math.max(0.0D, configManager.getDouble("spells.resource.regen-per-second", 8.0D));
+    /**
+     * Kasztonkénti profil-érték (IDEAS A3): {@code spells.resource.class.<kaszt-id>.<kulcs>},
+     * ha nincs beállítva (vagy a kaszt még ismeretlen), a globális default érvényes.
+     */
+    private double profile(final UUID id, final String key, final double globalDefault) {
+        final String jobId = jobIdCache.get(id);
+        if (jobId == null) {
+            return globalDefault;
+        }
+        return configManager.getDouble("spells.resource.class." + jobId + "." + key, globalDefault);
+    }
+
+    private double max(final UUID id) {
+        return Math.max(10.0D, profile(id, "max",
+                configManager.getDouble("spells.resource.max", 100.0D)));
+    }
+
+    private double regenPerSecond(final UUID id) {
+        return Math.max(0.0D, profile(id, "regen-per-second",
+                configManager.getDouble("spells.resource.regen-per-second", 8.0D)));
     }
 
     /**
      * The player's current resource, after crediting the time elapsed since the last access.
      * Players start (and rejoin) at full so they can cast immediately.
+     *
+     * <p>Kasztonkénti profilok (IDEAS A3): düh-típusú táraknál ({@code idle-decay-per-second > 0})
+     * harcon kívül a tár NEM töltődik, hanem ürül; harcban (az utolsó ütéstől számított türelmi
+     * időn belül) a normál regen fut.
      */
     private double current(final UUID id) {
         final long now = System.currentTimeMillis();
-        final double maxValue = max();
-        double value = resource.getOrDefault(id, maxValue);
+        final double maxValue = max(id);
+        double value = Math.min(maxValue, resource.getOrDefault(id, maxValue));
         final Long last = lastRegen.get(id);
-        if (last != null && value < maxValue) {
-            value = Math.min(maxValue, value + ((now - last) / 1000.0D) * regenPerSecond());
+        if (last != null) {
+            final double elapsedSeconds = (now - last) / 1000.0D;
+            final double idleDecay = Math.max(0.0D, profile(id, "idle-decay-per-second", 0.0D));
+            final Long combat = lastCombat.get(id);
+            final boolean inCombat = combat != null && now - combat <= COMBAT_GRACE_MS;
+            if (idleDecay > 0.0D && !inCombat) {
+                value = Math.max(0.0D, value - elapsedSeconds * idleDecay);
+            } else if (value < maxValue) {
+                value = Math.min(maxValue, value + elapsedSeconds * regenPerSecond(id));
+            }
         }
         resource.put(id, value);
         lastRegen.put(id, now);
         return value;
+    }
+
+    /**
+     * A játékos ütést vitt be (ResourceCombatListener, MONITOR): harc-időbélyeg + a kaszt-profil
+     * {@code combat-gain-per-hit} értékével tölti a tárat (düh-minta). Csak konkurens map-eket ír,
+     * ezért BÁRMELY régió-szálról biztonságosan hívható — Player-t szándékosan nem fogad, a
+     * kaszt-cache-t a játékos saját szálán futó HUD-tick/cast tartja frissen.
+     */
+    public void onDamageDealt(final UUID damagerId) {
+        if (!isEnabled()) {
+            return;
+        }
+        lastCombat.put(damagerId, System.currentTimeMillis());
+        final double gain = Math.max(0.0D, profile(damagerId, "combat-gain-per-hit", 0.0D));
+        if (gain > 0.0D) {
+            resource.put(damagerId, Math.min(max(damagerId), current(damagerId) + gain));
+        }
     }
 
     /**
@@ -122,6 +190,7 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return true;
         }
+        cacheJob(player);
         return current(player.getUniqueId()) >= costOf(spell);
     }
 
@@ -130,6 +199,7 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return;
         }
+        cacheJob(player);
         final double after = Math.max(0.0D, current(player.getUniqueId()) - costOf(spell));
         resource.put(player.getUniqueId(), after);
     }
@@ -139,7 +209,8 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return;
         }
-        final double after = Math.min(max(), current(player.getUniqueId()) + costOf(spell));
+        cacheJob(player);
+        final double after = Math.min(max(player.getUniqueId()), current(player.getUniqueId()) + costOf(spell));
         resource.put(player.getUniqueId(), after);
     }
 
@@ -154,7 +225,8 @@ public final class ResourceManager implements PlayerStateCleanup {
         if (!isEnabled()) {
             return null;
         }
-        final int maxValue = (int) Math.round(max());
+        cacheJob(player);
+        final int maxValue = (int) Math.round(max(player.getUniqueId()));
         final int value = Math.max(0, Math.min(maxValue, (int) Math.round(current(player.getUniqueId()))));
         final int filled = Math.round(value / (float) maxValue * 10.0F);
         final NamedTextColor color = colorFor(player);
@@ -172,17 +244,25 @@ public final class ResourceManager implements PlayerStateCleanup {
 
     /** Current resource value (rounded), for HUD/PlaceholderAPI display. */
     public int resourceValue(final Player player) {
+        cacheJob(player);
         return (int) Math.round(current(player.getUniqueId()));
     }
 
-    /** The resource maximum, for HUD/PlaceholderAPI display. */
+    /** The GLOBAL resource maximum (class-profile-agnostic fallback). */
     public int resourceMax() {
-        return (int) Math.round(max());
+        return (int) Math.round(Math.max(10.0D, configManager.getDouble("spells.resource.max", 100.0D)));
+    }
+
+    /** The player's resource maximum (class profile aware), for HUD/PlaceholderAPI display. */
+    public int resourceMax(final Player player) {
+        cacheJob(player);
+        return (int) Math.round(max(player.getUniqueId()));
     }
 
     /** Current resource as a 0–100 percentage, for HUD/PlaceholderAPI display. */
     public int resourcePercent(final Player player) {
-        final double maxValue = max();
+        cacheJob(player);
+        final double maxValue = max(player.getUniqueId());
         return maxValue <= 0.0D ? 0 : (int) Math.round(current(player.getUniqueId()) / maxValue * 100.0D);
     }
 
@@ -194,7 +274,8 @@ public final class ResourceManager implements PlayerStateCleanup {
      * nearly unreadable on the scoreboard.
      */
     public String resourceBarPlain(final Player player) {
-        final int maxValue = (int) Math.round(max());
+        cacheJob(player);
+        final int maxValue = (int) Math.round(max(player.getUniqueId()));
         final int value = Math.max(0, Math.min(maxValue, (int) Math.round(current(player.getUniqueId()))));
         final int filled = maxValue <= 0 ? 0 : Math.round(value / (float) maxValue * 10.0F);
         Component bar = Component.empty();
@@ -245,5 +326,7 @@ public final class ResourceManager implements PlayerStateCleanup {
     public void clearPlayerState(final UUID playerId) {
         resource.remove(playerId);
         lastRegen.remove(playerId);
+        jobIdCache.remove(playerId);
+        lastCombat.remove(playerId);
     }
 }
