@@ -124,6 +124,40 @@ pedig a 10 szíves skálán túl durva lépcsőkben hangolhatók. Javasolt átdo
 Kockázat: minden harci rendszert érint (spell-balansz, mob-skálázás, világboss, raid) —
 külön ágon, teljes playtest-körrel érdemes, NEM a mostani A-hullám része.
 
+### A18. Spell-loadoutok (kedvenc-készletek)
+🟢 • ⭐⭐ — Az A4 kedvencekre építve: 2-3 elmenthető kedvenc-készlet (pl. „PvP" / „farm" /
+„boss"), váltás a spellkönyvből vagy `/spellbook loadout <n>`-nel. PDC-ben több csv-lista,
+a görgetés mindig az aktív készletet lépkedi. Kaszt-játékérzet nagy dobása kis munkából.
+
+### A19. Kombó-jelzések a spellkönyvben
+🟢 • ⭐ — A spell-csempe lore-jába kerüljön be, ha a spell egy kombó-pár vagy lánc tagja
+(„⚡ Kombó: Fagyérintés → EZ → Tűzgolyó"). A configból (pairs/chains) generálható, a
+játékos a GUI-ból tanulja a láncokat, nem a wikiről.
+
+### A20. Quest-tracker a HUD-on
+🟡 • ⭐⭐ — Egy kiválasztott („követett") quest objektíva-állása az oldalsávon (a party-szekció
+mintájára, A12 toggle-lal kapuzva). `/quest track <id>` + a küldetésnapló GUI-ból kattintva.
+A haladás most csak action-barban villan — a tracker állandó jelenlétet ad.
+
+### A21. Halál-pont visszajelzés
+🟢 • ⭐⭐ — Halál után a chatben a halál koordinátái + világ (a death recap A9 mellé), és egy
+rövid ideig élő irány-jelző (action bar iránytű: „⚰ 214 blokk ÉK felé"). A cucc-visszaszerzés
+frusztrációját csökkenti; a lebomló sír (grave) a B-kategóriás nagyobb testvére.
+
+### A22. Ranglisták bővítése az új statokból
+🟢 • ⭐ — Az A15 számlálói (K/D, mob-ölés, spell-cast, quest) kerüljenek fel a
+`/leaderboard`-ra új kategóriákként (a StatsManager Category enum + top() bővítése).
+Olcsó, és a statisztika-profil így versennyé válik.
+
+### A23. NPC-dialógus polish
+🟢 • ⭐ — A quest-dialógusok kapjanak beszélőnkénti hangot (falusi hümmögés, kürt a
+hírnöknél), írógép-effektet (soronkénti késleltetett kiírás a global schedulerrel) és
+`<gomb>`-stílusú folytatás-jelzést. Tisztán prezentációs réteg a meglévő sendDialogue-ra.
+
+### A24. Szakma-recept kedvencek + keresés
+🟢 • ⭐ — A recept-katalógus GUI-ba keresőmező (anvil-input vagy chat-prompt minta a quest
+builderből) és kedvenc-csillagozás (A4 PDC-mintája). 50+ receptnél a lapozgatás fájdalmas.
+
 ## B) Új mechanika
 
 ### B1. Heti Királyi Megbízások (battlepass-lite) `[TOP]`
@@ -220,6 +254,79 @@ nyáron bőség-idő — a meglévi esemény-súlyok szezon-szorzói. Olcsó „
 szint utáni paragon-pontok apró, additív bónuszokkal. Csak akkor, ha a törzs-játékosok már
 „kimaxoltak".
 
+### B21. Bestiárium / gyűjtő-album
+🟡 • ⭐⭐⭐ — Perzisztens „album": megölt mob-típusok, elkészített receptek, felfedezett
+territóriumok, legyőzött boss-archetípusok pipálódnak (StatsManager/PDC számlálók).
+Mérföldkő-jutalmak (10/50/100 faj) az achievement-infrán. Gyűjtögető-hajlamú játékosnak
+hónapokra ad célt, és minden meglévő rendszert összefűz.
+
+### B22. Címek (title-ök)
+🟡 • ⭐⭐ — Elérésekből, szezon-helyezésből, bestiáriumból nyíló **címek** („Sárkányölő",
+„A Fagy Ura"), egy választott cím a chat-prefixbe (a chat-formázó már saját) és a
+PlaceholderAPI-ba. GUI a kiválasztáshoz, PDC-tárolás. Pénz-semleges presztízs — pont
+amit a szerver-elv szeret.
+
+### B23. Játékos-boltok (chest shop)
+🔴 • ⭐⭐⭐ — Tábla+láda bolt a saját claimen (a claim-jogosultság a védelem): fix áras
+adás-vétel offline is. A piac dinamikus árfolyama mellé a „falusi kisbolt" réteg;
+tranzakció-díj ELÉG (sink). A MarketManager escrow-logikája újrahasznosítható.
+
+### B24. Bank-lekötés (betét kamattal, sink-semlegesen)
+🟡 • ⭐ — `/bank lockup <összeg> <7|14|30 nap>`: a lekötött pénz nem költhető, lejáratkor
+a **kincstárból** (nem a semmiből!) fizetett prémium — a király dönthet a kamatlábról
+(B12 politika-irány). Pénzt ültet ki a forgalomból = deflációs eszköz.
+
+### B25. Heti lottó
+🟢 • ⭐⭐ — Jegy frakció-valutáért (sink), heti sorsolás a befizetések X%-ából (a többi ELÉG).
+Broadcast + krónika-hír a nyertesről. Kis munka (YamlStore + heti tick a szezon-scheduler
+mintájára), nagy közösségi zaj.
+
+### B26. Rúna-kovácsolás (enchant-kiegészítő szakma-ág)
+🔴 • ⭐⭐⭐ — A Kovács/Varázsló közös végjátéka: rúna-itemek (PDC-tag, ItemFactory-minta)
+craftolása ritka anyagokból, felhelyezés fegyverre/páncélra kis, TEMATIKUS bónuszokkal
+(pl. +2% spell-erő, lassítás-esély). A talent/mastery mellé harmadik, ITEM-oldali
+progresszió — loot-izgalmat ad a raritás-rendszer fölé.
+
+### B27. Dungeon-affixek (kihívás-módosítók)
+🟡 • ⭐⭐ — A B3 dungeonökhöz (vagy már a világboss/invázióhoz): heti rotálódó módosítók
+(„Vérszomjas hét: +25% mob-sebzés, +50% loot"). Egy config-szekció + a MobScaling
+szorzóira kötve; a heti krónika (B15) hirdeti. Ismételhető tartalom frissen tartása.
+
+### B28. Kaszt-story questlánc
+🟡 • ⭐⭐⭐ — Kasztonként 5-8 lépéses, `next`-láncolt (A5 infra!) story-küldetéssor a kaszt
+szentélyéhez/identitásához kötve, a 25. szintű spec-választásig vezetve. A quest-rendszer
+minden eleme (dialógus, elágazás, TALK_TO_NPC) készen áll — tartalom-írás a munka zöme.
+
+### B29. NPC-reputáció
+🔴 • ⭐⭐ — Nevezetes NPC-k (hírnök, kereskedők, céh-mesterek) felé külön hírnév-skála
+(quest/karaván/eszkort teljesítésből), szintenként kedvezmény a boltjukban vagy exkluzív
+recept/quest. A frakció-rendszertől független, „város-RPG" réteg.
+
+### B30. Háború-ablakok (war window)
+🟡 • ⭐⭐⭐ — Raid csak megadott idősávban indítható (pl. este 7-10, configból; a raid
+indítás-ellenőrzésébe egy idő-kapu). Kiegészítés: „védett hétvége" a szezonzáró előtt.
+A védő fél életminőségét óriásit javítja — off-time raidelés a #1 SMP-panasz.
+
+### B31. Zsoldos-tábla
+🟡 • ⭐⭐ — A király a kasszából vérdíj-szerű **megbízásokat** tűzhet ki (raid-védelem,
+eszkort-kíséret, ellenséges relikvia-hordozó levadászása) az ExchangeBoard mintájára;
+teljesítés-ellenőrzés a meglévő event-hookokból. A kassza értelmes elköltési iránya.
+
+### B32. Építőverseny-esemény
+🟢 • ⭐ — Admin kijelöl telkeket (`/territory` PLOT), a játékosok határidőre építenek, a
+szavazás GUI-ból (fejek + katt). Jutalom kozmetika/cím (B22). Szinte csak GUI-munka a
+territórium-infra fölött.
+
+### B33. Szezonzáró világesemény („végítélet-hét")
+🟡 • ⭐⭐⭐ — A szezon utolsó hetében eszkalálódó modifikátorok (sűrűbb vérhold, erősebb
+invázió, dupla liga-pont), az utolsó napon szerver-boss a fővárosnál. A meglévő esemény-
+managerek ütemezett kombinálása + broadcast-dramaturgia — a szezonoknak íve lesz.
+
+### B34. Lebomló sír (grave) halálkor
+🟡 • ⭐⭐ — Halálkor a cucc egy védett „sír"-blokkba kerül (csak a halott nyithatja, X perc
+után mindenkinek szabad — a kincs-láda TreasureEvent kódja szinte egy az egyben jó erre).
+A keep-inventory és a full-loot közti egészséges középút; A21 irány-jelzővel párban.
+
 ## C) Admin / infra ötletek
 
 ### C1. Spell-használati statisztika (balansz-adat) `[TOP]`
@@ -241,12 +348,74 @@ esetén azonnal látszik, melyik csap folyik.
 🟡 • ⭐ — `/icesmp simulate <óra>`: durva becslés, mennyi pénz/XP termelődne N óra átlagos
 játékkal a jelenlegi configon. Balansz-döntésekhez gyors szanity-check.
 
+### C5. Discord-webhook híd
+🟢 • ⭐⭐⭐ — A nagy broadcastok (világboss, raid-indítás, szezonzárás, király-választás,
+lottó/krónika) egy configolható webhook-URL-re is kimennek (sima HTTP POST az async
+schedulerről, plugin-függőség nélkül). A szerver élete kilátszik a Discordra = retention.
+
+### C6. YAML-store integritás-őr + mentés
+🟡 • ⭐⭐ — Induláskor minden PersistentStore-fájl parse-próbája; sérült fájlnál automatikus
+`.bak`-ból helyreállítás (a saveAtomic mellé rotálódó 3 példányos backup). Egy rossz
+kézi szerkesztés ma adatvesztés lehet — ez a biztosítás.
+
+### C7. Admin audit-log
+🟢 • ⭐⭐ — Minden admin-parancs (config set, item-adás, event-indítás, quest admin) egy
+külön `logs/admin-audit.log`-ba (időbélyeg + név + parancs). Több adminos szerveren a
+„ki állította ezt át?" kérdés megválaszolója. Egy közös helyre (Permissions/parancs-router)
+beköthető.
+
+### C8. Edzőbábu (training dummy)
+🟢 • ⭐⭐⭐ — `/icesmp dummy spawn`: sebezhetetlen, visszagyógyuló ArmorStand/mob, ami
+action-barban DPS-t és összesített sebzést jelez vissza (a DamageIndicator infra méri).
+A spell-balansz teszteléshez (és a játékosoknak a rotáció-gyakorláshoz) alapeszköz.
+
+### C9. Folia régió-teljesítmény riport
+🟡 • ⭐ — `/icesmp perf`: régiónkénti TPS/MSPT top-lista (Folia API-ból), a legterheltebb
+chunk-koordinátákkal. Lag-vadászathoz Folián a globális TPS semmitmondó — ez a valódi
+diagnosztika.
+
+### C10. Config-diff parancs
+🟢 • ⭐ — `/icesmp config diff`: a jar-beli defaultoktól eltérő élő kulcsok listája (a
+ConfigManager mindkét réteget látja). Frissítéskor/hibakereséskor azonnal látszik, mi
+van felülbírálva — az ingame config-rendszer természetes párja.
+
+## D) Világ, hangulat, közösség
+
+### D1. Szezonális ünnepek
+🟡 • ⭐⭐ — Naptár-vezérelt skin az eseményekre (október: tök-fejes invázió + „rém-éj" a
+vérhold helyén; december: ajándék-ládás kincs-esemény, hó-hangulat). A meglévo esemény-
+managerek paraméterezése + pár item/üzenet — kis munka, nagy „él a világ" érzet.
+
+### D2. Városi hirdetőtábla
+🟢 • ⭐⭐ — Játékos-hirdetések (kereslek/eladó/toborzás) egy GUI-táblán a fővárosban
+(ExchangeBoard GUI-minta, X nap után lejár, feladás kis díjért — sink). A kereskedelmi
+és közösségi élet organikus találkozóhelye.
+
+### D3. Szezon-emlékművek
+🟢 • ⭐⭐ — Szezonzáráskor a győztes frakció zászlaja/szobra (admin-épített helyszínen
+tábla + fej + hologram-TextDisplay) a fővárosban, az MVP-k neveivel (StatsManager top).
+A dicsőség fizikai nyoma a világban — a következő szezon motivációja.
+
+### D4. Hangulat-rétegek bővítése
+🟢 • ⭐ — Az ambient-eseményekhez (aurora, köd, vándorlás) finom hang-réteg (vanília
+hangokból komponált „zene"), és ritka mikro-események: hullócsillag-eső éjjel, szentjános-
+bogár raj a mocsárban. Tisztán atmoszféra, a meglévő AmbientEventManager bővítése.
+
+### D5. Kocsma (social hub) ital-buffokkal
+🟡 • ⭐⭐ — A Szakács/Sörfőző (Szerzetes-spec tematika!) készíthet **italokat** (recept-
+katalógus itemek), amik a fővárosi kocsmában fogyasztva rövid, NEM harci buffokat adnak
+(szakma-XP bónusz, szerencse). Találkozóhely + szakma-sink + tematikus flair egyben.
+
 ---
 
 ## Ajánlott következő kör (értéк/munka arány szerint)
 
-1. **A2 Party-tudatos AoE** — enélkül a friss spell-munka PvP-értéke csorbul.
-2. **A1 CC-audit** — olcsó, és a Megzavarás-minta kéznél van.
-3. **B1 Heti Királyi Megbízások** — a legjobb érték/munka arányú új tartalom.
-4. **A7 Katalizátor-cooldown a hotbaron** + **A5 onboarding-lánc** — két gyors, látványos győzelem.
-5. **C1 Spell-statisztika** — hogy a 2. balansz-kör már adatból menjen.
+*(Az A1–A16 kör ✅ kész — az ajánlás a maradékra frissítve.)*
+
+1. **B1 Heti Királyi Megbízások** — továbbra is a legjobb érték/munka arányú új tartalom.
+2. **C1 Spell-statisztika + C8 edzőbábu** — a 2. balansz-kör adatból és mérésből menjen.
+3. **B30 Háború-ablakok** — kis munka, a védők életminőségének legnagyobb dobása.
+4. **A18 Spell-loadoutok + A22 ranglista-bővítés** — két gyors győzelem a friss A-infrán.
+5. **C5 Discord-híd + B25 heti lottó** — közösségi zaj, retention.
+6. **A17 HP-rendszer átdolgozás** — a nagy kör, külön ágon, teljes playtesttel (B26 rúnák
+   és B3 dungeonök UTÁNA érdemesek, az új HP-skálára hangolva).
