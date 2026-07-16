@@ -260,39 +260,254 @@ kompetitívebb PvP/PvE.
 **Buktatók:** Kockázat: minden harci rendszert érint (spell-balansz, mob-skálázás, világboss,
 raid) — külön ágon, teljes playtest-körrel érdemes, NEM a mostani A-hullám része.
 
+### A18. Spell-loadoutok (kedvenc-készletek)
+🟢 • ⭐⭐
+
+**Mi ez:** Az A4 kedvencekre építve 2-3 elmenthető kedvenc-készlet (pl. „PvP" / „farm" / „boss").
+**Hogyan működne:** Az A4-ből ismert PDC-lista mintát bővítve 2-3 külön csv-lista tárolása
+(`loadout-1/2/3`), váltás a spellkönyv fejlécéből (nyíl-gombok) vagy `/spellbook loadout <n>`
+paranccsal; az aktív loadout indexe is PDC-ben, a katalizátoros shift+görgetés mindig a
+kiválasztott loadoutot lépkedi, az action bar mutatja melyik aktív („Készlet: PvP").
+**Miért jó:** PvP/farm/boss helyzetekhez külön optimalizált rotáció gyors váltással — kaszt-
+játékérzet nagy dobása kis munkából, mert a PDC-infra már megvan A4-ből.
+**Építőkövek:** A4 kedvenc-PDC minta, `SpellbookGUI`, `AbilityCatalystListener` görgetés-logika.
+**Buktatók:** a 3 készlet elférjen a spellkönyv fejlécén, ne zsúfolja túl a GUI-t.
+
+### A19. Kombó-jelzések a spellkönyvben
+🟢 • ⭐
+
+**Mi ez:** A spell-csempe lore-jában jelezze, ha a spell egy kombó-pár vagy -lánc tagja.
+**Hogyan működne:** A `spells.combos.pairs`/`chains` configból generált lore-sor („⚡ Kombó:
+Fagyérintés → EZ → Tűzgolyó") a `SpellbookGUI` csempe-építésébe kerül; statikus, csak GUI-
+nyitáskori számítás, nincs tick-frissítés szükséges.
+**Miért jó:** A játékos a GUI-ból tanulja a kombó-láncokat, nem külső wikiről — az A16
+kombó-mélyítés befektetése jobban kihasználttá válik.
+**Építőkövek:** A16 kombó-config, `SpellbookGUI`.
+**Buktatók:** hosszú láncoknál a lore ne legyen túl zsúfolt (max 1-2 sor).
+
+### A20. Quest-tracker a HUD-on
+🟡 • ⭐⭐
+
+**Mi ez:** Egy kiválasztott („követett") quest objektíva-állása állandóan az oldalsávon.
+**Hogyan működne:** `/quest track <id>` parancs vagy a küldetésnapló GUI-ból kattintva állítja
+be a követett questet (PDC-kulcs); a `HudManager` egy új, A12 toggle-lal kapuzható szekciót épít
+a party-szekció mintájára, ami a `QuestManager` haladás-állapotát olvassa ki minden HUD-
+frissítéskor a játékos saját régió-szálán (nincs extra scheduler-hop).
+**Miért jó:** A haladás ma csak action-barban villan fel röviden — az állandó tracker nem hagyja
+elfelejteni a küldetést, különösen többlépéses (ALL/SEQUENCE) questeknél.
+**Építőkövek:** `HudManager` (A12 szekció-minta), `QuestManager`, HUD party-szekció mint minta.
+**Buktatók:** több aktív quest esetén egyértelmű kiválasztás kell (utoljára elfogadott vagy
+explicit track) — kerülni kell az oldalsáv túlzsúfolását.
+
+### A21. Halál-pont visszajelzés
+🟢 • ⭐⭐
+
+**Mi ez:** Halál után a halál helyének kiírása és rövid ideig élő irány-jelző.
+**Hogyan működne:** Az A9 death recap mellé a chatbe kiírja a halál koordinátáit + világot;
+emellett rövid ideig (pl. 2 perc) élő action bar iránytű („⚰ 214 blokk ÉK felé"), amit egy
+dedikált feladat számol a játékos aktuális pozíciójából a mentett halál-pontig, a saját
+`entity.getScheduler()`-én futva.
+**Miért jó:** A cucc-visszaszerzés frusztrációját csökkenti, köztes megoldás a keep-inventory és
+a full-loot között; a lebomló sír (lásd B34) natúr nagyobb testvére, de önmagában is elég.
+**Építőkövek:** A9 death recap infra, action bar API.
+**Buktatók:** sok halál esetén csak a legutóbbi pont kövessen, régi jelzők ne halmozódjanak.
+
+### A22. Ranglisták bővítése az új statokból
+🟢 • ⭐
+
+**Mi ez:** Az A15 statisztika-profil számlálói (K/D, mob-ölés, spell-cast, quest) kerüljenek fel
+a `/leaderboard`-ra új kategóriákként.
+**Hogyan működne:** A `StatsManager` Category enumjának bővítése (KILLS, DEATHS, KD, MOB_KILLS,
+SPELLS_CAST, QUESTS_COMPLETED) és a `top()` lekérdezés ugyanarra a YAML-alapú számláló-tárra
+épül, amit az A15 már ír — nincs új adatforrás, csak új nézet.
+**Miért jó:** Olcsó bővítés, ami versennyé teszi a statisztika-profilt — közvetlen célt ad a
+versengő játékosrétegnek.
+**Építőkövek:** `StatsManager` (A15-ből), `/leaderboard` GUI.
+**Buktatók:** sok kategóriánál a leaderboard GUI-nak lapozás kell (más listáknál már létező minta).
+
+### A23. NPC-dialógus polish
+🟢 • ⭐
+
+**Mi ez:** A quest-dialógusok prezentációs csiszolása: hang, írógép-effekt, folytatás-jelzés.
+**Hogyan működne:** Beszélőnkénti hang (falusi hümmögés, kürt a hírnöknél) minden dialógus-sor
+kiírásakor; írógép-effekt (soronkénti késleltetett kiírás `getGlobalRegionScheduler()`-rel
+ütemezve, mivel csak a nézőnek szóló chat-üzenetről van szó); `<gomb>`-stílusú
+folytatás-jelzés a sor végén.
+**Miért jó:** Tisztán prezentációs réteg a meglévő `dialogue.give`/`dialogue.complete`
+mechanikára — a questek „élőbbnek" hatnak minimális kockázattal.
+**Építőkövek:** `QuestManager` dialógus-küldés, globális scheduler.
+**Buktatók:** az írógép-effekt ne lassítsa/blokkolja a quest-progressziót — csak vizuális, a
+teljesítés-logika ne várjon rá.
+
+### A24. Szakma-recept kedvencek + keresés
+🟢 • ⭐
+
+**Mi ez:** A recept-katalógus GUI-ba keresőmező és kedvenc-csillagozás.
+**Hogyan működne:** Anvil-input vagy chat-prompt minta (a quest builderből ismert mintázat) a
+receptkönyv fejlécén szöveges szűrésre; kedvenc-csillagozás az A4 PDC-mintájával (recept-id
+lista), a csillagozott receptek a lista elejére kerülnek.
+**Miért jó:** 50+ receptnél a lapozgatás fájdalmas — a szakma-rendszer A11/A4-hez hasonló
+kényelmi párja.
+**Építőkövek:** recept-katalógus GUI, A4 kedvenc-PDC minta, anvil-input minta (quest builder).
+**Buktatók:** —
+
+### A25. Spell-adatlap a spellkönyvben
+🟢 • ⭐⭐
+
+**Mi ez:** A spell-csempére jobb-katt egy részletes adatlapot nyit a tényleges, élő számokkal.
+**Hogyan működne:** A LIVE spell-balance értékekből (`spells-balance.yml` live-read) számolt
+sebzés/gyógyítás/időtartam, a mastery-rang és a dinamikus szorzók MÁR beszorozva („nálad: 7,2
+❤"); a `SpellbookGUI` egy második réteg GUI-t (vagy bővebb lore-t) nyit a caster aktuális
+mastery-adatai alapján.
+**Miért jó:** A játékos ne fejben számoljon — a rendszer tudja a számokat, ami a hibrid
+erőforrás-rendszer (A3) mellett különösen fontos átláthatóság.
+**Építőkövek:** `spells-balance.yml` live-read, mastery-rendszer (`/spell upgrade`),
+`SpellbookGUI`.
+**Buktatók:** —
+
+### A26. Élő cooldown a spellkönyvben
+🟢 • ⭐
+
+**Mi ez:** A spell-csempe lore-jában az aktuális hátralévő cooldown megjelenítése.
+**Hogyan működne:** A meglévő `getRemainingCooldown` API-t a GUI-nyitás pillanatában (nem
+tick-frissítve) beköti a csempe-építésbe, a lore egy sorába („⏳ Hátralévő: 4 mp").
+**Miért jó:** Nem kell kilépni a GUI-ból az action bar cooldown-számláláshoz — egy pillantásból
+látszik minden spell állapota.
+**Építőkövek:** cooldown-API (`AbilityCatalystListener`), `SpellbookGUI`.
+**Buktatók:** —
+
+### A27. Okos gyógyítás (party-célzás)
+🟡 • ⭐⭐⭐
+
+**Mi ez:** Gyógyító spellek sneak-cast változata: automatikusan a legsebzettebb, látótávon
+belüli párttagra megy.
+**Hogyan működne:** Lopakodva castolva a healer-spellek a legalacsonyabb HP-arányú párttagot
+választják célpontnak (a HUD party-szekció élet-adatai már ismertek); a célválasztás a caster
+régió-szálán fut, a tényleges gyógyítás-alkalmazás a célpont schedulerén keresztül hop-ol
+(**Folia:** `target.getScheduler().run(plugin, task -> {...}, null)`).
+**Miért jó:** Folián célkereszttel gyógyítani körülményes csapatharcban — ez a WoW-os „mouseover
+heal" megfelelője, élvezetesebbé teszi a healer-játékstílust.
+**Építőkövek:** `PartyManager` (HP-adatok), A2 targeting-infra, Folia scheduler-hop minta.
+**Buktatók:** látótáv/akadály-ellenőrzés kell, nehogy falon át gyógyítson; egyforma sebzettségnél
+determinisztikus tie-break szükséges.
+
+### A28. Menü-badge-ek (piros pötty)
+🟡 • ⭐⭐
+
+**Mi ez:** A /menu és almenü-csempéken jelzés, ha van teendő (felvehető talentpont, kész napi
+quest, lejárt piaci tétel, felvehető heti megbízás).
+**Hogyan működne:** Közös „van-e teendő?" lekérdező réteg a managerek meglévő gettereire
+(TalentManager, QuestManager napi-quest állapot, MarketManager lejárt tétel); a `CommandMenus`
+GUI-nyitáskor a csempe lore-jába vagy glow-enchant-be (`addEnchant` + `HIDE_ENCHANTS`) rajzolja
+a jelzést.
+**Miért jó:** A játékos nem felejt el felvehető jutalmakat/pontokat — retention-tényező kevés
+munkából.
+**Építőkövek:** TalentManager, QuestManager, MarketManager, `CommandMenus`.
+**Buktatók:** minden lekérdezés GUI-nyitáskor fusson le, ne terhelje túl a menü-megnyitást — rövid
+TTL-es cache-eléssel érdemes.
+
+### A29. Elit/boss mobok vizuális megkülönböztetése
+🟢 • ⭐
+
+**Mi ez:** A mob-szintezés `[Lvl X]` névtáblája mellé szín-kód és szimbólum az elit/boss mobokhoz.
+**Hogyan működne:** A mob-szintezés névtábla-építő logikája kiegészül: invázió-bajnok/Vad
+Hajsza-fenevad/boss-add esetén a névtábla ♦ (elit) vagy ☠ (boss) szimbólumot és eltérő
+színkódot kap (pl. arany elit, sötétvörös boss) — ugyanott, ahol a szintezés a nevet építi.
+**Miért jó:** Egy pillantásból látszik, mibe szalad bele a játékos — kevesebb váratlan halál
+gyanútlan felfedezőknél.
+**Építőkövek:** mob-szintezés névtábla-építő, InvasionManager/WildHunt bajnok-jelölés.
+**Buktatók:** —
+
+### A30. Cast-hiba üzenetek egységesítése
+🟢 • ⭐
+
+**Mi ez:** Ma többféle üzenet jön, ha nem sül el a spell (cooldown / kevés erőforrás / nincs
+célpont / rossz forma).
+**Hogyan működne:** Egységes formátum ikonokkal (⏳ cooldown / ⚡ erőforrás / 🎯 célpont), mindig
+a hátralévő idővel/hiányzó mennyiséggel; egy közös üzenet-építő metódus (`MessageManager`
+bővítés) minden cast-elutasítási ágból hívva, felváltva a jelenleg spell-osztályonként eltérő
+szövegezést.
+**Miért jó:** A frusztráció fele abból jön, hogy nem tudni, MIÉRT nem ment el a cast — ez a
+tétel közvetlenül ezt oldja.
+**Építőkövek:** `MessageManager`, `AbilityCatalystListener`, `ConfiguredSpell` cast-elutasítási
+ágak.
+**Buktatók:** sok cast-ágat érint egyszerre — regresszió-veszély, alapos manuális playtest kell
+minden kaszthoz.
+
+### A31. Frakció-infó oldal passzívákkal
+🟢 • ⭐
+
+**Mi ez:** A `/faction info` (és a /menu Frakció almenü) írja ki a frakció-passzívák tényleges
+értékeit configból.
+**Hogyan működne:** A `FactionPassiveListener` mögötti config-értékek (pl. Semleges tax-exempt,
+Sötét wither-immunitás) kiolvasása és megjelenítése a `/faction info` szövegében, nem csak a
+guide-ban leírva; a `/menu` Frakció almenü csempe-lore-ja ugyanezt mutatja.
+**Miért jó:** A számszerű állítás = config elv itt is érvényesül — a játékosnak nem kell külső
+dokumentációt keresnie a saját passzívájához.
+**Építőkövek:** `FactionPassiveListener`, `/faction info`, `CommandMenus`.
+**Buktatók:** —
+
+### A32. Színvak-barát HUD-mód
+🟢 • ⭐
+
+**Mi ez:** A piros/zöld/sárga élet- és erőforrás-sávok mellé szimbólum-alapú, magasabb
+kontrasztú mód.
+**Hogyan működne:** `/hud colorblind` (A12 HUD-toggle mintájára, PDC-flag) — bekapcsolva a
+`HudManager` a szín mellé/helyett szimbólumokat rajzol a sávokba (▲ tele, ▼ kritikus, ◆
+közepes) és magasabb kontrasztú palettát választ.
+**Miért jó:** Hozzáférhetőségi fejlesztés kevés munkával — a színvak játékosok is egyértelműen
+olvassák a HUD-ot harc közben.
+**Építőkövek:** `HudManager` (A12 toggle-infra).
+**Buktatók:** —
+
+### A33. Katalizátor-skinek (CMD)
+🟢 • ⭐
+
+**Mi ez:** Kasztonként egyedi custom model data a katalizátor-itemen.
+**Hogyan működne:** A RESOURCE_PACK_CMD.md folyamat (a dobó-spelleknél már kitaposott, pl.
+Vadgomba 6101/Rúnakő 6102) alapján minden kaszt katalizátora kap egy CMD-értéket; resource
+pack cserélhető textúrával, az alap-item és a funkció változatlan marad.
+**Miért jó:** A 13 kaszt vizuális identitása a kézben is látszik, nemcsak a spell-listában —
+kozmetikai, de erős immerzió-nyereség (később kozmetika-boltba is köthető, lásd B9).
+**Építőkövek:** RESOURCE_PACK_CMD.md folyamat, `items/*ItemFactory` PDC-tagek.
+**Buktatók:** resource pack disztribúció szerver-oldali kérdés, nem plugin-kód.
+
 ---
 
 ## Bővítés — A34-től (QoL / polish az A-kör folytatásaként)
 
-### A34. Cast-hiba üzenetek egységesítése
-🟢 • ⭐ (lásd IDEAS.md A30 — a bővítés itt csak a kereszthivatkozás miatt szerepel; részletes
-kidolgozást lásd az eredeti tételnél, tartalma nem duplikált itt.)
+### A34. Rövid, mobil-barát üzenet-mód
+🟢 • ⭐
 
-**Mi ez:** Ma többféle üzenet jön, ha nem sül el a spell (cooldown / kevés erőforrás / nincs
-célpont / rossz forma).
-**Hogyan működne:** Egységes formátum ikonokkal (⏳ cooldown / ⚡ erőforrás / 🎯 célpont / ❌
-állapot), mindig a hátralévő idővel vagy hiányzó mennyiséggel a szövegben; egy közös
-`SpellFailureMessages` util minden cast-elutasítási ágból hívva (jelenleg szórtan, az egyes
-spell-osztályokban és az `AbilityCatalystListener`-ben van).
-**Miért jó:** A frusztráció fele abból jön, hogy nem tudni, MIÉRT nem ment el a cast — ez a
-tétel az IDEAS.md-ben A30-ként szerepel, itt csak a teljesség kedvéért van jelezve.
-**Építőkövek:** `MessageManager`, `AbilityCatalystListener`.
-**Buktatók:** sok cast-ág egyszerre módosul — regresszió-veszély, alapos manuális playtest kell.
+**Mi ez:** Sok üzenet (spellbook lore, cast-hiba, HUD-sáv) hosszú magyar szöveget használ, ami
+kis GUI-skálán vagy alacsonyabb felbontáson (pl. Bedrock-átjárós/mobil klienssel csatlakozó
+játékos) csonkolva jelenik meg.
+**Hogyan működne:** `/hud compact` kapcsoló (A12 toggle-mintájára, PDC-flag) — bekapcsolva a HUD-
+sáv és az action bar üzenetek rövidített változatot használnak (pl. „Nincs elég mana!" helyett
+„⚡ Kevés mana"); a `MessageManager` minden érintett kulcshoz egy `-compact` variánst is tárol
+`messages.yml`-ben, a HUD/üzenet-küldő a flag alapján választ.
+**Miért jó:** A kisebb képernyőn vagy alacsonyabb GUI-skálán játszóknak is olvasható marad a
+HUD — hozzáférhetőségi és kényelmi tétel egyben, ami a mobil/kontroller-közeli játékmódot is
+kiszolgálja.
+**Építőkövek:** `MessageManager` (kulcs-pár minta), `HudManager`, A12 toggle-infra.
+**Buktatók:** két üzenet-verziót kell karbantartani minden érintett kulcsnál — hosszú távon a
+karbantartási teher nő, ezért csak a leggyakoribb HUD/action bar kulcsokra érdemes bevezetni.
 
 ### A35. Katalizátor akció-bar sáv finomítás (dinamikus szín)
 🟢 • ⭐⭐
 
-**Mi ez:** Az erő-csík action bar / HUD megjelenítése jelenleg egyszínű sáv — a töltöttségi
-szint szerinti szín-átmenet (piros→sárga→zöld) azonnali vizuális visszajelzést adna kritikus
-alacsony erőforrásnál.
-**Hogyan működne:** A `HudManager` sáv-építő függvénye a jelenlegi/max arány alapján válasszon
-`§c`/`§e`/`§a` (vagy RGB, `1.16+` API) színkódot a sáv-karakterekhez; küszöbök configolhatók
-(`hud.resource-bar.thresholds`). Régió-szálon, a meglévő `HudSnapshot` frissítési ciklusba
-illesztve, nincs extra scheduler-hívás.
+**Mi ez:** Az erő-csík HUD-megjelenítése jelenleg egyszínű sáv — a töltöttségi szint szerinti
+szín-átmenet (zöld→sárga→piros) azonnali vizuális visszajelzést adna kritikusan alacsony
+erőforrásnál.
+**Hogyan működne:** A `HudManager` sáv-építő logikája a jelenlegi/max arány alapján válasszon
+színkódot a sáv-karakterekhez (pl. `§a`/`§e`/`§c`); a küszöbök configolhatók
+(`hud.resource-bar.thresholds`). A meglévő `HudSnapshot` frissítési ciklusba illesztve, a
+játékos saját régió-szálán, nincs extra scheduler-hívás.
 **Miért jó:** A játékos harc közben a periférián is észreveszi, ha kritikusan alacsony az
 erőforrása — kevesebb véletlen „nem volt mana" cast-kudarc.
 **Építőkövek:** `HudManager`, `HudSnapshot`.
-**Buktatók:** színvak-barát módban (A32) más jelzésre van szükség — a két tétel összekötendő.
+**Buktatók:** színvak-barát módban (A32) más jelzésre van szükség — a két tételt össze kell
+hangolni, hogy ne ütközzenek.
 
 ### A36. Spellbook keresőmező
 🟢 • ⭐
@@ -300,8 +515,8 @@ erőforrása — kevesebb véletlen „nem volt mana" cast-kudarc.
 **Mi ez:** 20+ feloldott spellnél a spellkönyvben szöveges keresés is segítene a szűrőn (A11)
 és kedvenceken (A4) felül.
 **Hogyan működne:** Anvil-input vagy chat-prompt minta (a quest builderből ismert mintázat) a
-Spellbook fejlécén; a beírt részszöveg a spell-névre/kulcsszóra szűr, a GUI a `SpellbookGUI`
-építő-logikáját újrafuttatva frissül.
+Spellbook fejlécén; a beírt részszöveg a spell-névre szűr, a `SpellbookGUI` építő-logikáját
+újrafuttatva frissül.
 **Miért jó:** Sok kaszt spelljei tematikusan hasonló nevűek — kereséssel gyorsabb megtalálni
 egy adott képességet, mint lapozgatással.
 **Építőkövek:** `SpellbookGUI`, `SpellbookListener`, anvil-input minta (quest builder).
@@ -310,11 +525,12 @@ egy adott képességet, mint lapozgatással.
 ### A37. Menü-breadcrumb és „vissza" konzisztencia
 🟢 • ⭐
 
-**Mi ez:** A `/menu` beágyazott almenüiben (Frakció → Bank → Valutaváltó szintig) nincs
-egységes „hova jutottam" jelzés vagy egy kattintásos visszalépés minden szinten.
-**Hogyan működne:** A GUI-cím sorába rövid útvonal-jelzés (`Menü › Bank & Pénz › Valutaváltó`),
-és minden almenü első slotjában egységes „← Vissza" gomb (`MENU:<szülő>` akció-string, a
-meglévő minta szerint) — tisztán `CommandMenus` réteg, gameplay-logikát nem érint.
+**Mi ez:** A `/menu` beágyazott almenüiben (pl. Frakció → Bank → Valutaváltó szintig) nincs
+egységes „hova jutottam" jelzés vagy azonos helyen lévő visszalépés-gomb.
+**Hogyan működne:** A GUI-cím sorába rövid útvonal-jelzés kerül (`Menü › Bank & Pénz ›
+Valutaváltó`), és minden almenü első slotjában egységes „← Vissza" gomb (`MENU:<szülő>`
+akció-string, a meglévő minta szerint) — tisztán `CommandMenus` réteg, gameplay-logikát nem
+érint.
 **Miért jó:** Mobil/kontroller-barát navigáció, kevesebb „hogy jutok vissza" tévelygés mély
 menükben.
 **Építőkövek:** `CommandMenus`, `CommandMenuHolder`.
@@ -329,8 +545,9 @@ szintű), a semleges főváros látványos pontján spawnoltatva (`teleportAsync
 üzenet configolható (`messages.yml` → `join-welcome-title`).
 **Miért jó:** Az MMO-szerverek első benyomása sokat számít — egy 2 másodperces title-élmény
 olcsó, de emlékezetes belépő.
-**Építőkövek:** `PlayerJoinListener`, `teleportAsync`, `MessageManager`.
-**Buktatók:** ne ütközzön az onboarding-quest üzenetével (időzítést egyeztetni kell).
+**Építőkövek:** join-listener, `teleportAsync`, `MessageManager`.
+**Buktatók:** ne ütközzön az onboarding-quest üzenetével — az időzítést egyeztetni kell, hogy
+ne torlódjon két üdvözlés egyszerre.
 
 ### A39. Inventory-rendezés gomb katalizátor mellett
 🟢 • ⭐
@@ -342,7 +559,7 @@ hátizsákot kategória szerint (fegyver/páncél/alapanyag/egyedi); az egyedi s
 (saját CustomModelData 6000–6013) és a katalizátort a rendezés kihagyja, hogy a hotbar-pozíció
 stabil maradjon.
 **Miért jó:** Gyűjtögető-intenzív szakma-rendszernél (50+ recept) a manuális rendezgetés
-fárasztó — ez tiszta kényelmi funkció.
+fárasztó — tiszta kényelmi funkció, ami a loot-mennyiséget kezelhetőbbé teszi.
 **Építőkövek:** `items/*ItemFactory` PDC-tagek (kategória-felismerés).
 **Buktatók:** a hotbar-slot ne csússzon el rendezéskor (a katalizátor mindig ugyanott legyen) —
 külön kizárás kell rá.
@@ -352,28 +569,28 @@ külön kizárás kell rá.
 
 **Mi ez:** Jelenleg spellenként eltérő „érzetű" hangok szólnak castkor — némelyik erősebb,
 némelyik alig hallható.
-**Hogyan működne:** Egy központi hangerő/pitch-tábla kaszt-onként és sebzés-kategóriánként
-(gyenge/közepes/erős cast), hogy a hangzásvilág konzisztens legyen; a meglévő
-`ConfiguredSpell.builder(...)` egy opcionális `soundProfile` mezőt kap, ami a táblából olvas.
+**Hogyan működne:** Központi hangerő/pitch-tábla kaszt-onként és sebzés-kategóriánként
+(gyenge/közepes/erős cast) a hangzásvilág konzisztenciájáért; a `ConfiguredSpell.builder(...)`
+egy opcionális `soundProfile` mezőt kap, ami a táblából olvas cast-kor.
 **Miért jó:** A hangzásvilág önmagában is visszajelzés a spell erejéről — konzisztens hangok
 professzionálisabb érzetet adnak a szervernek.
 **Építőkövek:** `ConfiguredSpell`, `SpellCatalog`.
 **Buktatók:** sok spellt egyszerre érint — playteszttel ellenőrizni kell, hogy egyik kaszt se
-lett „túl hangos/néma".
+lett „túl hangos" vagy „néma".
 
 ### A41. Teleport-becsapódás vizuális jelzés
 🟢 • ⭐
 
-**Mi ez:** A `teleportAsync`-alapú spell- és kaszt-teleportok (Shadowstep, hazatérés-kő,
+**Mi ez:** A `teleportAsync`-alapú spell- és kaszt-teleportok (pl. Shadowstep, hazatérés-kő,
 frakció-spawn-váltás) érkezéskor nem adnak vizuális visszajelzést.
-**Hogyan működne:** Érkezéskor rövid partikel-effekt (pl. portál-részecske gyűrű) + halk hang a
-célponton, a `teleportAsync` completion-callback-jéből indítva (célpont régió-szálán fut, nincs
-extra hop szükséges, mivel a callback már ott fut).
-**Miért jó:** Kis, de érezhető polish minden teleport-jellegű mechanikára — konzisztensebb
-„varázslatos" érzet.
+**Hogyan működne:** Érkezéskor rövid partikel-effekt (portál-részecske gyűrű) + halk hang a
+célponton, a `teleportAsync` completion-callback-jéből indítva — a callback már a célpont
+régió-szálán fut, nincs extra scheduler-hop szükséges.
+**Miért jó:** Kis, de érezhető polish minden teleport-jellegű mechanikára — konzisztensebb,
+„varázslatosabb" érzet minden villanásnál.
 **Építőkövek:** `teleportAsync` callback, `ShadowstepSpell` mint minta.
 **Buktatók:** sok helyről hívva (relikvia, spell, admin-parancs) — egy közös util-metódusba
-érdemes kiszervezni, hogy ne duplikálódjon.
+érdemes kiszervezni, hogy ne duplikálódjon a kód.
 
 ### A42. Profil-GUI összefoglaló fül
 🟡 • ⭐⭐
@@ -385,7 +602,7 @@ számait, az aktív specializációt, a talentpont-egyenleget és a frakció-st�
 összegzi (lore-szövegben) — tisztán olvasó nézet, kattintás nélkül delegál a megfelelő
 almenübe (`MENU:`-minta).
 **Miért jó:** Új és visszatérő játékosnak egy pillantásból látszik „hol tart" — csökkenti az
-almenük közti ugrálást.
+almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a teendőket is.
 **Építőkövek:** `CommandMenus`, `StatsManager`, meglévő profil-GUI építő.
 **Buktatók:** —
 
