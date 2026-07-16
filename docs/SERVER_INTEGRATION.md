@@ -3,19 +3,27 @@
 A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzése alapján.
 (Frissítve az ütközések felszámolásakor.)
 
-## 1. TAB ↔ IceSMP HUD (scoreboard / tab-lista) — JAVÍTVA
+## 1. TAB → IceSMP natív tablist — A TAB PLUGIN LESZEDHETŐ
 
-**Gyökérok:** a `HudManager` belépéskor `player.setScoreboard(új board)`-ot hívott, ami
-**letörölte a TAB nametag-csapatait és ping-objective-jét**; emellett másodpercenként
-felülírta a `playerListName`-et → villogás. Ezért a repo-defaultok átbillentek:
-`hud.sidebar-enabled: false`, `hud.tablist-enabled: false` (`config/general.yml`). A
-boss-barok (raid/vérhold/világboss) maradnak IceSMP-oldalon — a TAB bossbar funkciója
-ki van kapcsolva, nincs ütközés.
+**Új állapot:** a teljes TAB-funkcionalitás, amit a szerver használt, natívan megy
+(`managers/TablistManager` + `HudManager` + `config/tablist.yml`):
 
-**TAB-oldali teendő (élesben):** a TAB scoreboard jelenleg a gyári példa-config — Vault
-(Economist) egyenleget mutat, ami NEM az IceSMP valutája. Cseréld a
-`TAB/config.yml` → `scoreboard.scoreboards.scoreboard.lines` sorait `%icesmp_...%`
-placeholderekre. Elérhető placeholderek (`integration/IceSMPPlaceholders`):
+| TAB-funkció | Natív megfelelő |
+|---|---|
+| Header/footer (animált, glyph) | `tablist.header-footer` — `{anim:<név>}` / `{player}` / `{ping}` / `{online}` / `{max}` tokenek |
+| Tab-név (LP-prefix + frakció-szín + suffix) | `tablist.tab-names` — diff-elt (villogásmentes), LuckPerms-hídon át |
+| Nametag + rendezés (owner→…→default, ABC) | `tablist.nametags` + `tablist.sorting.group-order` — nézőnkénti scoreboard-teamek |
+| Ping-oszlop | `tablist.playerlist-ping` |
+| Scoreboard-oldalsáv (IceSMP-adatokkal) | `hud.sidebar-enabled: true` + `hud.sidebar.title` — TAB-dizájn portolva (elválasztó-animáció, small-caps címkék) |
+| Animációk (animations.yml) | `tablist.animations.<név>` — időalapú frame-váltás, minimum 250 ms (a TAB 50 ms-os marquee-i ritkított frame-ekkel portolva) |
+
+**Éles átállás:** (1) frissítsd a plugint; (2) töröld a `TAB v6.0.0.jar`-t; (3) kész — a
+repo-defaultok már a natív rétegre állnak (`hud.sidebar-enabled: true`,
+`tablist.enabled: true`). Ha a TAB fent marad, a konzol induláskor figyelmeztet, és a két
+rendszer a neveken/teameken verekedni fog. A ㍿/㍐ glyph-ek a resource packből jönnek —
+RP nélküli teszthez cseréld őket a configban sima szövegre.
+
+**PlaceholderAPI-híd megmarad** más pluginok kedvéért (`integration/IceSMPPlaceholders`):
 
 | Placeholder | Érték |
 |---|---|
@@ -25,9 +33,8 @@ placeholderekre. Elérhető placeholderek (`integration/IceSMPPlaceholders`):
 | `%icesmp_resource%`, `_max`, `_percent`, `_name`, `_bar` | Erő-forrás (Mana/Düh/…) |
 | `%icesmp_party_size%`, `%icesmp_party_1..5%` | party-tagok soronként |
 
-Frakció-színes tab-prefixhez: `placeholder-output-replacements` a `%icesmp_faction_id%`-re
-(RED→`&c[Piros] `, BLUE→`&9[Kék] `, NEUTRAL→`&7`, DARK→`&8[Sötét] `), majd hivatkozás a
-`groups.yml` `_DEFAULT_.tabprefix`/`tagprefix`-ében.
+*(A tab-nevek frakció-színét natívan a TablistManager adja — a fenti placeholderek csak
+külső megjelenítőknek, pl. BlueMap/Discord-hidaknak kellenek.)*
 
 ## 2. SimpleClaimSystem ↔ IceSMP claim — PARANCS-ÜTKÖZÉS
 

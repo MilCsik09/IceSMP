@@ -261,6 +261,9 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
+    private final hu.taliann.icesmp.utils.TextAnimator textAnimator;
+    private final hu.taliann.icesmp.managers.TablistManager tablistManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask petTask;
 
     /**
@@ -364,10 +367,13 @@ public final class IceSMPCore {
                 abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
+        this.textAnimator = new hu.taliann.icesmp.utils.TextAnimator(configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
                 caravanManager, escortManager, abundanceManager, serverChallengeManager,
-                meteorEventManager, gatheringBuffManager);
+                meteorEventManager, gatheringBuffManager, textAnimator);
+        this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
+                factionManager, textAnimator);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
@@ -660,14 +666,14 @@ public final class IceSMPCore {
         final org.bukkit.plugin.PluginManager pluginManager = plugin.getServer().getPluginManager();
 
         if (pluginManager.getPlugin("TAB") != null) {
-            if (configManager.getBoolean("hud.sidebar-enabled", true)) {
-                plugin.getLogger().warning("TAB észlelve, de a hud.sidebar-enabled még true — a két scoreboard ütközni fog!"
-                        + " Ajánlott: general.yml → hud.sidebar-enabled: false, és a TAB-ban a %icesmp_...% placeholderek"
-                        + " (party-HUD: %icesmp_party_size%, %icesmp_party_1..5%).");
-            }
-            if (configManager.getBoolean("hud.tablist-enabled", true)) {
-                plugin.getLogger().warning("TAB észlelve, de a hud.tablist-enabled még true — a tab-lista neveken osztozni fognak."
-                        + " Ajánlott: general.yml → hud.tablist-enabled: false (frakció-szín a TAB-ból, %icesmp_faction%).");
+            // A tablist/scoreboard mostantól natívan megy (TablistManager + HudManager) — a TAB
+            // plugin felesleges, és ha mindkettő aktív, a teameken/neveken verekedni fognak.
+            if (configManager.getBoolean("tablist.enabled", true)
+                    || configManager.getBoolean("hud.sidebar-enabled", true)) {
+                plugin.getLogger().warning("TAB észlelve, miközben az IceSMP natív tablist/scoreboard rétege aktív —"
+                        + " a kettő ütközni fog! Ajánlott: a TAB plugin eltávolítása (a teljes funkciója house-ban van:"
+                        + " config/tablist.yml + hud.sidebar). Ha mégis a TAB-ot tartod meg: tablist.enabled: false"
+                        + " és general.yml → hud.sidebar-enabled: false (%icesmp_...% placeholderek).");
             }
         }
         if (pluginManager.getPlugin("WorldGuard") != null) {
@@ -710,6 +716,10 @@ public final class IceSMPCore {
         if (hudTask != null) {
             hudTask.cancel();
             hudTask = null;
+        }
+        if (tablistTask != null) {
+            tablistTask.cancel();
+            tablistTask = null;
         }
         if (petTask != null) {
             petTask.cancel();
@@ -784,6 +794,11 @@ public final class IceSMPCore {
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
+        // Natív tablist (TAB-kiváltás): saját, gyorsabb tick — a header/footer és a tab-nevek
+        // diff-eltek, így a sűrűbb ütem csak valódi változáskor jelent csomagot.
+        final long tablistTicks = Math.max(5L, configManager.getLong("tablist.refresh-ticks", 10L));
+        tablistTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> tablistManager.tick(), tablistTicks, tablistTicks);
     }
 
     /**
@@ -884,7 +899,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
         pluginManager.registerEvents(new CharacterGUIListener(characterMenuContext), plugin);
         pluginManager.registerEvents(new CommandMenuListener(commandMenuContext), plugin);
-        pluginManager.registerEvents(new HudListener(hudManager), plugin);
+        pluginManager.registerEvents(new HudListener(hudManager, tablistManager), plugin);
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);

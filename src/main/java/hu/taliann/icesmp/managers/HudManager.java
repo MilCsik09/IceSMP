@@ -38,9 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HudManager {
 
-    /** Sidebar row budget: the 7 base rows + up to 7 party-frame rows (separator, header, 5 members). */
-    private static final int LINES = 14;
+    /** Sidebar row budget (scoreboard-maximum): 7 törzs-sor + 7 party-sor + 1 záró elválasztó. */
+    private static final int LINES = 15;
     private static final String OBJECTIVE = "icesmp_hud";
+    /** Statikus elválasztó, ha nincs 'bar' animáció definiálva a tablist.yml-ben. */
+    private static final String FALLBACK_SEPARATOR = "&8&m                       ";
 
     // /hud toggleable section keys (buildLines() rows). "mind" hides the whole sidebar.
     public static final String SECTION_FACTION = "frakcio";
@@ -69,6 +71,7 @@ public final class HudManager {
     private final ServerChallengeManager serverChallengeManager;
     private final MeteorEventManager meteorEventManager;
     private final GatheringBuffManager gatheringBuffManager;
+    private final hu.taliann.icesmp.utils.TextAnimator animator;
 
     private final BossBar raidBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
     private final BossBar bloodMoonBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
@@ -99,7 +102,8 @@ public final class HudManager {
                       final ResourceManager resourceManager, final PartyManager partyManager,
                       final CaravanManager caravanManager, final EscortManager escortManager,
                       final AbundanceManager abundanceManager, final ServerChallengeManager serverChallengeManager,
-                      final MeteorEventManager meteorEventManager, final GatheringBuffManager gatheringBuffManager) {
+                      final MeteorEventManager meteorEventManager, final GatheringBuffManager gatheringBuffManager,
+                      final hu.taliann.icesmp.utils.TextAnimator animator) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.factionManager = factionManager;
@@ -116,6 +120,7 @@ public final class HudManager {
         this.serverChallengeManager = serverChallengeManager;
         this.meteorEventManager = meteorEventManager;
         this.gatheringBuffManager = gatheringBuffManager;
+        this.animator = animator;
         this.hiddenSectionsKey = new NamespacedKey(plugin, "hud_hidden_sections");
     }
 
@@ -198,28 +203,50 @@ public final class HudManager {
         update(player);
     }
 
-    /** Registers the IceSMP scoreboard sidebar for the player (only when sidebar-enabled). */
-    private void buildSidebar(final Player player) {
+    /**
+     * A játékos SAJÁT scoreboardja — ha még a közös main boardon áll, kap egy sajátot.
+     * A boardot a TablistManager nametag/ping rétege is használja, ezért a sidebar
+     * ki-bekapcsolása SOSEM cseréli le magát a boardot (csak az objective-et kezeli).
+     */
+    private Scoreboard ownBoard(final Player player) {
         final ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager == null) {
+            return null;
+        }
+        Scoreboard board = player.getScoreboard();
+        if (board == manager.getMainScoreboard()) {
+            board = manager.getNewScoreboard();
+            player.setScoreboard(board);
+        }
+        return board;
+    }
+
+    /** Registers the IceSMP scoreboard sidebar for the player (only when sidebar-enabled). */
+    private void buildSidebar(final Player player) {
+        final Scoreboard board = ownBoard(player);
+        if (board == null) {
             return;
         }
-
-        final Scoreboard board = manager.getNewScoreboard();
-        final Objective objective = board.registerNewObjective(OBJECTIVE, Criteria.DUMMY,
-                Component.text("✦ IceSMP ✦", NamedTextColor.AQUA).decoration(TextDecoration.BOLD, true));
-        objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        if (board.getObjective(OBJECTIVE) == null) {
+            final String title = configManager.getString("hud.sidebar.title", "✦ Ice SMP ✦");
+            final Objective objective = board.registerNewObjective(OBJECTIVE, Criteria.DUMMY,
+                    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
+                            .deserialize(title.replace('&', '§')));
+            objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        }
 
         final Team[] teams = new Team[LINES];
         for (int i = 0; i < LINES; i++) {
-            final Team team = board.registerNewTeam("hud_" + i);
-            team.addEntry(entry(i));
+            Team team = board.getTeam("hud_" + i);
+            if (team == null) {
+                team = board.registerNewTeam("hud_" + i);
+                team.addEntry(entry(i));
+            }
             teams[i] = team;
         }
         // Row scores are set lazily in update(), so unused rows (e.g. the party
         // frames while not in a party) don't render as blank sidebar lines.
         playerTeams.put(player.getUniqueId(), teams);
-        player.setScoreboard(board);
     }
 
     /** Refreshes the sidebar text and/or tab-list name (on the player's region thread). */
@@ -252,14 +279,24 @@ public final class HudManager {
                 }
             }
         } else if (playerTeams.remove(player.getUniqueId()) != null) {
-            // The sidebar was disabled at runtime (e.g. handing the scoreboard over to TAB):
-            // restore the main scoreboard so the stale IceSMP board doesn't linger frozen.
-            final ScoreboardManager manager = Bukkit.getScoreboardManager();
-            if (manager != null) {
-                player.setScoreboard(manager.getMainScoreboard());
+            // Sidebar kikapcsolva (config vagy /hud mind): csak az objective-et és a sor-teameket
+            // szedjük le — a board marad, mert a TablistManager nametag/ping rétege azon él.
+            final Scoreboard board = player.getScoreboard();
+            final Objective objective = board.getObjective(OBJECTIVE);
+            if (objective != null) {
+                objective.unregister();
+            }
+            for (int i = 0; i < LINES; i++) {
+                final Team team = board.getTeam("hud_" + i);
+                if (team != null) {
+                    team.unregister();
+                }
             }
         }
-        if (tablistEnabled()) {
+        // Tab-név: alapesetben a TablistManager rendezi (LP-prefix + frakció-szín + suffix,
+        // diff-elve); ez az egyszerű frakció-színes fallback csak akkor él, ha a natív
+        // tablist ki van kapcsolva, különben a két írás egymással villogna.
+        if (tablistEnabled() && !configManager.getBoolean("tablist.enabled", true)) {
             player.playerListName(tabName(player));
         }
     }
@@ -380,6 +417,12 @@ public final class HudManager {
         }
     }
 
+    /**
+     * A TAB-dizájnt portoló oldalsáv (natív tablist-átállás): animált elválasztók
+     * ('bar' animáció a tablist.yml-ből), small-caps címkék, a sorok szekció-togglenként
+     * rejthetők, a nem használt sorok pedig egyáltalán nem renderelődnek — a 15 soros
+     * scoreboard-keret minden sora ki van használva.
+     */
     private List<Component> buildLines(final Player player) {
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final double balance = currencyManager.getBalance(player, faction == null ? FactionType.NEUTRAL : faction);
@@ -387,16 +430,14 @@ public final class HudManager {
         final Set<String> hidden = hiddenSections(player);
 
         final List<Component> lines = new ArrayList<>();
+        lines.add(separator());
         if (!hidden.contains(SECTION_FACTION)) {
-            lines.add(label("Frakció", faction == null
+            lines.add(row("ꜰʀᴀᴋᴄɪó", faction == null
                     ? Component.text("nincs", NamedTextColor.GRAY)
                     : Component.text(faction.getDisplayName(), factionColor(faction))));
         }
-        if (!hidden.contains(SECTION_CURRENCY)) {
-            lines.add(label("Valuta", Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD)));
-        }
         if (!hidden.contains(SECTION_CLASS)) {
-            lines.add(label("Kaszt", job == null
+            lines.add(row("ᴋᴀꜱᴢᴛ", job == null
                     ? Component.text("nincs", NamedTextColor.GRAY)
                     : job.getDisplayName().append(Component.text(" Lvl " + jobManager.getPrimaryLevel(player), NamedTextColor.WHITE))));
         }
@@ -404,12 +445,18 @@ public final class HudManager {
         if (job != null && !hidden.contains(SECTION_RESOURCE)) {
             final Component resourceLine = resourceManager.hudLine(player);
             if (resourceLine != null) {
-                lines.add(resourceLine);
+                lines.add(Component.text("| ", NamedTextColor.DARK_GRAY).append(resourceLine));
             }
         }
         if (!hidden.contains(SECTION_EVENT)) {
-            lines.add(Component.text(" ", NamedTextColor.DARK_GRAY));
-            lines.add(label("Esemény", eventLabel()));
+            lines.add(row("ᴇꜱᴇᴍéɴʏ", eventLabel()));
+        }
+        if (!hidden.contains(SECTION_CURRENCY)) {
+            lines.add(separator());
+            lines.add(Component.text("⭐ ", NamedTextColor.GOLD)
+                    .append(Component.text("ᴠᴀʟᴜᴛᴀ", NamedTextColor.GRAY))
+                    .append(Component.text(": ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text(currencyManager.formatBalance(balance), NamedTextColor.GOLD)));
         }
 
         // WoW-style party frames: one row per member with a colour-coded health bar,
@@ -423,8 +470,22 @@ public final class HudManager {
             }
         }
 
-        lines.add(Component.text("play.icesmp", NamedTextColor.DARK_GRAY));
-        return lines;
+        lines.add(separator());
+        return lines.size() > LINES ? lines.subList(0, LINES) : lines;
+    }
+
+    /** "| címke: érték" formátumú sor a TAB-dizájn szerint. */
+    private Component row(final String smallCapsLabel, final Component value) {
+        return Component.text("| ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(smallCapsLabel, NamedTextColor.GRAY))
+                .append(Component.text(": ", NamedTextColor.DARK_GRAY))
+                .append(value);
+    }
+
+    /** Animált elválasztó-sor (a tablist.yml 'bar' animációja; nélküle statikus vonal). */
+    private Component separator() {
+        final String frame = animator == null ? "" : animator.frame("bar");
+        return hu.taliann.icesmp.utils.TextAnimator.legacy(frame.isEmpty() ? FALLBACK_SEPARATOR : frame);
     }
 
     /** One party-frame row: 👑/• + name + a colour-coded 5-segment health bar + hearts. */

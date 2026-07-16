@@ -18,13 +18,12 @@ pipálni egy másolt példányban.
 - **Opcionális függőség:** **LibsDisguises** (soft-depend). Ha telepítve van, a **Druida formák**
   vizuálisan is átalakítják a játékost; nélküle a forma csak stat-szinten vált. Érdemes mindkét
   állapotot tesztelni (telepítve / nélküle).
-- **Scoreboard / TAB-koegzisztencia:** ha a szerveren **TAB** (vagy más scoreboard-plugin) fut,
-  állítsd `config/general.yml`-ben `hud.sidebar-enabled: false` és `hud.tablist-enabled: false`,
-  hogy az IceSMP ne ütközzön vele (a boss-barok maradnak). Az IceSMP adatait — köztük az
-  **Erő-csíkot** — a TAB **PlaceholderAPI**-n át jelenítheti meg ezekkel: `%icesmp_faction%`,
-  `%icesmp_class%`, `%icesmp_class_level%`, `%icesmp_balance%`, `%icesmp_resource%`,
-  `%icesmp_resource_max%`, `%icesmp_resource_percent%`, `%icesmp_resource_name%`,
-  `%icesmp_resource_bar%`. (A PlaceholderAPI-integráció magától bekapcsol, ha a PAPI fent van.)
+- **Scoreboard / tablist:** a teljes tablist-réteg (header/footer, nevek, nametag+rendezés,
+  ping-oszlop, oldalsáv) **natív** — TAB vagy más scoreboard-plugin NEM kell, sőt ütközik
+  (induláskor konzol-figyelmeztetés). Beállítások: `config/tablist.yml` + `general.yml` →
+  `hud.sidebar`. Ha mégis külső plugint használnál: `tablist.enabled: false` +
+  `hud.sidebar-enabled: false`, és az IceSMP-adatok `%icesmp_...%` placeholderekkel
+  érhetők el (PlaceholderAPI-val, lásd docs/SERVER_INTEGRATION.md).
 - **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
   szerkeszthető és `/icesmp reload`-dal (vagy újraindítással) frissíthető. Néhány érték a manager
   indulásakor töltődik be — ha egy config-változás nem üt át reload-ra, **indítsd újra** a szervert.
@@ -42,7 +41,7 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 
 | Plugin | Mit kell tudni / beállítani |
 |---|---|
-| **TAB** | ⚠️ Állítsd be: `general.yml` → `hud.sidebar-enabled: false` és `hud.tablist-enabled: false` (induláskor a konzol figyelmeztet, ha nem). Az IceSMP-adatok a TAB-ban `%icesmp_...%` placeholderekkel jeleníthetők meg — a **party-HUD-hoz**: `%icesmp_party_size%` és `%icesmp_party_1%`…`%icesmp_party_5%` (soronként „👑 Név ▮▮▮░░ 6❤"). A boss-barok (raid/vérhold/boss/kihívás/escort) TAB mellett is mennek. |
+| **TAB** | ⚠️ **Kiváltva a natív tablist-réteggel** (`config/tablist.yml` + `hud.sidebar`) — header/footer, LP-prefixes tab-nevek, nametag+rendezés, ping-oszlop, animációk mind house-ban. **A TAB.jar törölhető**; ha fent marad, a konzol induláskor figyelmeztet és a két rendszer ütközik. (Visszaút: `tablist.enabled: false` + `hud.sidebar-enabled: false` → `%icesmp_...%` placeholderek, lásd docs/SERVER_INTEGRATION.md.) |
 | **WorldGuard** | ✅ Automatikus: a blokkot helyező események (**meteor, kincs**) reflexiós hídon át **kerülik a WG-régiókat** (spawn/városok). Induláskor a konzol jelzi, ha a híd él. WG-régióban a mob-spawn flag blokkolhatja az esemény-mobokat (invázió/hajsza) — ez nem hiba, az esemény kecsesen kezeli. |
 | **SimpleClaimSystem** | ⚠️ **Kiváltva a natív `/claim` rendszerrel** — az SCS ezután feleslegessé válik. **Migrálás:** a régi SCS-claimek **nem konvertálódnak automatikusan** — a játékosoknak újra kell claimelniük a területüket (vagy admin kézzel pótolja), utána az SCS jar **törölhető** a szerverről. |
 | **LuckPermsChatFormatterFolia** | ⚠️ **Kiváltva a natív chat-formázóval** (`chat.format-enabled` a `general.yml`-ben) — a jar **törölhető**. Amíg mindkettő fent van, kapcsold ki az egyiket, különben dupla formázás történik a chatben. |
@@ -615,6 +614,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       NPC-kötések, quest admin lista) csak a megfelelő jogosultsággal látszik.
 - [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
+- [ ] **Natív tablist (ÚJ — TAB-kiváltás, a TAB.jar NÉLKÜL tesztelendő):**
+  - [ ] **Header/footer** megjelenik (glyph + animált ping/online sor, twitch/discord marquee);
+        az animáció halad, de a lista NEM villog (diff-elt küldés).
+  - [ ] **Tab-nevek:** LP-prefix + frakció-színes név + suffix; frakció-váltásnál a szín ~0,5
+        mp-en belül átvált, közben nincs villogás.
+  - [ ] **Rendezés:** a tablistában elöl a magasabb LP-rang (owner→admin→…→default), azonos
+        rangon ABC; a fej fölött is látszik a prefix + frakció-szín (nametag).
+  - [ ] **Ping-oszlop** a tablistában él és frissül.
+  - [ ] **Oldalsáv új dizájn:** animált elválasztó-vonalak, small-caps címkék (ꜰʀᴀᴋᴄɪó/ᴋᴀꜱᴢᴛ/
+        ᴇꜱᴇᴍéɴʏ/⭐ᴠᴀʟᴜᴛᴀ), cím a configból (`hud.sidebar.title`); `/hud` szekció-toggle továbbra
+        is működik, és a sidebar kikapcsolása NEM töri el a nametageket/pinget (a board marad).
+  - [ ] ⚠️ **Folia:** két játékos KÜLÖN régióban (messze egymástól) — mindkettő látja a másik
+        nevét/rangját/pingjét a tablistában, konzol-hiba nélkül.
+  - [ ] Ha a TAB.jar mégis fent van: induláskor konzol-figyelmeztetés jön az ütközésről.
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).

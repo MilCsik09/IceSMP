@@ -27,6 +27,7 @@ public final class LuckPermsBridge {
     private static Method getMetaDataMethod;
     private static Method getPrefixMethod;
     private static Method getSuffixMethod;
+    private static Method getPrimaryGroupMethod;
 
     private LuckPermsBridge() {
     }
@@ -39,6 +40,30 @@ public final class LuckPermsBridge {
     /** The player's LuckPerms suffix (legacy '&' codes), or "" without LP/suffix. */
     public static String suffix(final UUID playerId) {
         return meta(playerId, false);
+    }
+
+    /**
+     * A játékos elsődleges LuckPerms-csoportja kisbetűsítve (tablist-rendezéshez), vagy ""
+     * LP nélkül. A cached User-olvasás az LP-kontraktus szerint szálbiztos, így a
+     * régió-szálakon futó tablist-frissítés is hívhatja.
+     */
+    public static String primaryGroup(final UUID playerId) {
+        if (!initialised) {
+            initialise();
+        }
+        if (!available || playerId == null || getPrimaryGroupMethod == null) {
+            return "";
+        }
+        try {
+            final Object user = getUserMethod.invoke(userManager, playerId);
+            if (user == null) {
+                return "";
+            }
+            final Object group = getPrimaryGroupMethod.invoke(user);
+            return group == null ? "" : String.valueOf(group).toLowerCase(java.util.Locale.ROOT);
+        } catch (final Throwable throwable) {
+            return "";
+        }
     }
 
     private static String meta(final UUID playerId, final boolean prefix) {
@@ -85,6 +110,8 @@ public final class LuckPermsBridge {
             final Class<?> metaDataClass = Class.forName("net.luckperms.api.cacheddata.CachedMetaData");
             getPrefixMethod = metaDataClass.getMethod("getPrefix");
             getSuffixMethod = metaDataClass.getMethod("getSuffix");
+            getPrimaryGroupMethod = Class.forName("net.luckperms.api.model.user.User")
+                    .getMethod("getPrimaryGroup");
             available = true;
             Bukkit.getLogger().info("[IceSMP] LuckPerms-híd bekapcsolva: a chat-formázó a LP prefix/suffix-et használja.");
         } catch (final Throwable throwable) {

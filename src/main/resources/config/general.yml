@@ -12,18 +12,24 @@ settings:
   disable-locator-bar: true
 
 hud:
-  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény),
-  # frakció-színes tab-lista, és boss-bar a raid / vérhold / világboss alatt.
+  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
+  # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
+  # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.
+  # A TAB plugin többé NEM szükséges — leszedhető; a teljes megjelenés house-ban van.
   enabled: true
-  # FONTOS: az éles szerveren a TAB plugin kezeli a scoreboardot/tab-listát, ezért ez a
-  # kettő alapból KI van kapcsolva — bekapcsolva az IceSMP a belépéskor lecserélné a
-  # játékos scoreboardját (letörölve a TAB nametag-csapatait), és másodpercenként
-  # felülírná a tab-nevet (villogás). A boss-barokat az 'enabled' vezérli (azokat a TAB
-  # nem kezeli, így maradnak). Az IceSMP adatait — köztük az Erő-csíkot — PlaceholderAPI-n
-  # át a TAB jeleníti meg (%icesmp_...% placeholderek, lásd docs/SERVER_INTEGRATION.md).
-  # TAB nélküli szerveren kapcsold vissza mindkettőt true-ra.
-  sidebar-enabled: false    # IceSMP saját scoreboard-oldalsáv (TAB mellett: false)
-  tablist-enabled: false    # IceSMP frakció-színes tab-nevek (TAB mellett: false)
+  # Az IceSMP saját scoreboard-oldalsávja. Ha mégis külső scoreboard-plugint futtatsz
+  # (pl. TAB), kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
+  # IceSMP-adatok akkor a %icesmp_...% placeholderekkel jeleníthetők meg
+  # (docs/SERVER_INTEGRATION.md).
+  sidebar-enabled: true
+  sidebar:
+    # Az oldalsáv címe (legacy &-kódokkal; a ㍐ a resource pack glyph-je — RP nélkül
+    # cseréld pl. "&b&l✦ Ice SMP ✦"-re).
+    title: "㍐"
+  # Egyszerű frakció-színes tab-név FALLBACK — csak akkor él, ha a natív tablist
+  # (tablist.enabled) KI van kapcsolva; egyébként a TablistManager adja a teljes
+  # (LP-prefixes) nevet, és ez a kapcsoló hatástalan.
+  tablist-enabled: true
   refresh-ticks: 20
   profile:
     enabled: true

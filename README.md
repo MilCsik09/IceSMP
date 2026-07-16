@@ -218,6 +218,15 @@ bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). Z
 csak a nem-tagok építését tiltja. Megkerülő jogok: `icesmp.admin.territory.bypass` (minden) és
 `icesmp.territory.builder` (építő-jog védett zónában is).
 
+### 📋 Natív HUD és tablist (TAB plugin nélkül)
+
+A teljes megjelenítő-réteg beépített: **scoreboard-oldalsáv** (frakció, kaszt, Erő-csík,
+esemény, valuta, party-frame-ek, animált elválasztókkal), **tablist header/footer**
+animációkkal, **LP-prefixes + frakció-színes tab-nevek**, **fej fölötti nametag +
+rang-alapú rendezés** és **ping-oszlop** — mind villogásmentes (csak változáskor megy ki
+csomag) és Folia-korrekt. Beállítás: `config/tablist.yml` + `general.yml` → `hud.*`;
+külső tablist-plugin (TAB) nem szükséges.
+
 ---
 
 ## Parancsok (gyorsreferencia)
