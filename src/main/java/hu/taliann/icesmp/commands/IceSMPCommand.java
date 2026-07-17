@@ -1,11 +1,28 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.listeners.AbilityCatalystListener;
+import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ConfigValidator;
+import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.QuestManager;
+import hu.taliann.icesmp.managers.ResourceManager;
+import hu.taliann.icesmp.managers.SinManager;
+import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 
@@ -14,6 +31,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.UUID;
 
 /**
  * Admin entry point: {@code /icesmp reload} plus the generic ingame config control
@@ -28,18 +48,46 @@ public final class IceSMPCommand implements BasicCommand {
 
     private static final String PERMISSION = "icesmp.admin.reload";
     private static final String CONFIG_PERMISSION = "icesmp.admin.config";
+    private static final String INSPECT_PERMISSION = "icesmp.admin.inspect";
     private static final int MAX_SUGGESTED_KEYS = 40;
     private static final int MAX_LISTED_KEYS = 30;
+    private static final int MAX_INSPECT_QUESTS = 5;
+    private static final int MAX_INSPECT_COOLDOWNS = 5;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final JobManager jobManager;
+    private final SpecializationManager specializationManager;
+    private final ResourceManager resourceManager;
+    private final FactionManager factionManager;
+    private final CurrencyManager currencyManager;
+    private final StatsManager statsManager;
+    private final ClaimManager claimManager;
+    private final QuestManager questManager;
+    private final AbilityCatalystListener abilityCatalystListener;
+    private final SinManager sinManager;
 
     public IceSMPCommand(final JavaPlugin plugin, final ConfigManager configManager,
-                         final MessageManager messageManager) {
+                         final MessageManager messageManager, final JobManager jobManager,
+                         final SpecializationManager specializationManager, final ResourceManager resourceManager,
+                         final FactionManager factionManager, final CurrencyManager currencyManager,
+                         final StatsManager statsManager, final ClaimManager claimManager,
+                         final QuestManager questManager, final AbilityCatalystListener abilityCatalystListener,
+                         final SinManager sinManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.jobManager = jobManager;
+        this.specializationManager = specializationManager;
+        this.resourceManager = resourceManager;
+        this.factionManager = factionManager;
+        this.currencyManager = currencyManager;
+        this.statsManager = statsManager;
+        this.claimManager = claimManager;
+        this.questManager = questManager;
+        this.abilityCatalystListener = abilityCatalystListener;
+        this.sinManager = sinManager;
     }
 
     @Override
@@ -67,7 +115,151 @@ public final class IceSMPCommand implements BasicCommand {
             return;
         }
 
+        if (args.length >= 1 && "inspect".equalsIgnoreCase(args[0])) {
+            if (!sender.hasPermission(INSPECT_PERMISSION)) {
+                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+                return;
+            }
+            handleInspect(sender, args);
+            return;
+        }
+
         sendHelp(sender);
+    }
+
+    /**
+     * {@code /icesmp inspect <név>} (IDEAS C12): egy játékos-jelentés (kaszt, spec, erőforrás,
+     * egyenlegek, statok, bűnpontok, claimek, aktív questek, aktív cooldownok). Online célpontnál
+     * a jelentés összeállítása a CÉLPONT saját régió-szálán történik (a Player-t kérő API-k —
+     * JobManager, ResourceManager stb. — miatt), majd a kész, több soros szöveg a KÉRDEZŐ saját
+     * szálán kerül visszaküldésre (Folia: a sender is entitás lehet, ha player). Offline
+     * célpontnál csak a UUID-alapú (perzisztens) adatforrások olvashatók.
+     */
+    private void handleInspect(final CommandSender sender, final String[] args) {
+        if (args.length < 2 || args[1].isBlank()) {
+            sender.sendMessage(messageManager.get("admin.icesmp.inspect.usage", "&cHasználat: /icesmp inspect <név>"));
+            return;
+        }
+
+        final String name = args[1];
+        final Player target = Bukkit.getPlayerExact(name);
+        if (target != null) {
+            inspectOnline(sender, target);
+            return;
+        }
+
+        final OfflinePlayer offline = Bukkit.getOfflinePlayerIfCached(name);
+        if (offline == null) {
+            sender.sendMessage(messageManager.get("admin.icesmp.inspect.unknown", "&cIsmeretlen játékos: &f%s", name));
+            return;
+        }
+        inspectOffline(sender, offline);
+    }
+
+    private void inspectOnline(final CommandSender sender, final Player target) {
+        target.getScheduler().run(plugin, task -> {
+            final List<String> report = buildOnlineReport(target);
+            deliverReport(sender, report);
+        }, null);
+    }
+
+    private void inspectOffline(final CommandSender sender, final OfflinePlayer offline) {
+        final List<String> report = buildOfflineReport(offline);
+        deliverReport(sender, report);
+    }
+
+    /** Sends the finished, already-rendered report lines back on the SENDER'S own thread (Folia). */
+    private void deliverReport(final CommandSender sender, final List<String> report) {
+        if (sender instanceof Player senderPlayer) {
+            senderPlayer.getScheduler().run(plugin, task -> report.forEach(senderPlayer::sendMessage), null);
+        } else {
+            report.forEach(sender::sendMessage);
+        }
+    }
+
+    /** Full report for an online target — runs entirely on the target's own region thread. */
+    private List<String> buildOnlineReport(final Player target) {
+        final List<String> lines = new ArrayList<>();
+        final UUID id = target.getUniqueId();
+
+        lines.add(messageManager.get("admin.icesmp.inspect.header", "&6=== Inspektor: &f%s &6===", target.getName()));
+
+        final FactionType faction = factionManager.getFaction(id);
+        lines.add(messageManager.get("admin.icesmp.inspect.faction", "&7Frakció: &f%s", faction.getDisplayName()));
+
+        final JobType job = jobManager.getPrimaryJob(target);
+        lines.add(messageManager.get("admin.icesmp.inspect.job", "&7Kaszt: &f%s &7(Lv. &f%s&7, XP: &f%s&7)",
+                job == null ? "nincs" : job.getId(), jobManager.getPrimaryLevel(target), jobManager.getXp(target)));
+
+        final SpecializationType spec = specializationManager.getClassSpecialization(target);
+        lines.add(messageManager.get("admin.icesmp.inspect.spec", "&7Specializáció: &f%s",
+                spec == null ? "nincs" : spec.getId()));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.resource", "&7Erőforrás: &f%s &7- &f%s&7/&f%s",
+                resourceManager.resourceName(target), resourceManager.resourceValue(target), resourceManager.resourceMax(target)));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.balances", "&7Egyenlegek: &f%s", currencyManager.describeBalances(target)));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.stats", "&7Statok: &fÖlés &7%s &f| Halál &7%s &f| K/D &7%s "
+                        + "&f| Mob-ölés &7%s &f| Castok &7%s &f| Teljesített questek &7%s",
+                statsManager.getKills(id), statsManager.getDeaths(id), formatKd(statsManager.getKills(id), statsManager.getDeaths(id)),
+                statsManager.getMobKills(id), statsManager.getSpellCasts(id), statsManager.getQuestsCompleted(id)));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.sins", "&7Bűnpontok: &f%s &7(%s)",
+                sinManager.getSinCount(target), sinManager.isSinner(target) ? "bűnös" : "tiszta"));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.claims", "&7Claimek: &f%s db &7/ &f%s oszlop",
+                claimManager.countClaims(id), claimManager.countColumns(id)));
+
+        final List<String> activeQuests = questManager.getActiveQuests(target);
+        lines.add(messageManager.get("admin.icesmp.inspect.quests-header", "&7Aktív questek (&f%s&7):", activeQuests.size()));
+        activeQuests.stream().limit(MAX_INSPECT_QUESTS).forEach(questId -> lines.add(messageManager.get(
+                "admin.icesmp.inspect.quests-line", "&8- &e%s &7- %s",
+                questManager.getDisplayName(questId), questManager.describeProgress(target, questId))));
+
+        final Map<String, Long> cooldowns = abilityCatalystListener.activeCooldowns(id);
+        lines.add(messageManager.get("admin.icesmp.inspect.cooldowns-header", "&7Aktív cooldownok (&f%s&7):", cooldowns.size()));
+        cooldowns.entrySet().stream().limit(MAX_INSPECT_COOLDOWNS).forEach(entry -> lines.add(messageManager.get(
+                "admin.icesmp.inspect.cooldowns-line", "&8- &e%s &7- &f%s mp",
+                entry.getKey(), Math.max(1L, Math.round(entry.getValue() / 1000.0D)))));
+
+        return lines;
+    }
+
+    /** Limited report for an offline target — only UUID-keyed (persisted) data sources. */
+    private List<String> buildOfflineReport(final OfflinePlayer offline) {
+        final List<String> lines = new ArrayList<>();
+        final UUID id = offline.getUniqueId();
+        final String name = offline.getName() == null ? statsManager.getStoredName(id, "?") : offline.getName();
+
+        lines.add(messageManager.get("admin.icesmp.inspect.header", "&6=== Inspektor: &f%s &6===", name));
+        lines.add(messageManager.get("admin.icesmp.inspect.offline-notice",
+                "&eOffline — korlátozott adatok (csak a mentett/UUID-alapú értékek)."));
+
+        final FactionType faction = factionManager.getFaction(id);
+        lines.add(messageManager.get("admin.icesmp.inspect.faction", "&7Frakció: &f%s", faction.getDisplayName()));
+
+        final StringJoiner balances = new StringJoiner(", ");
+        for (final CurrencyType currencyType : CurrencyType.values()) {
+            balances.add(currencyType.toFactionType().getDisplayName() + ": "
+                    + currencyManager.formatBalance(currencyManager.getBalance(id, currencyType)));
+        }
+        lines.add(messageManager.get("admin.icesmp.inspect.balances", "&7Egyenlegek: &f%s", balances.toString()));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.stats", "&7Statok: &fÖlés &7%s &f| Halál &7%s &f| K/D &7%s "
+                        + "&f| Mob-ölés &7%s &f| Castok &7%s &f| Teljesített questek &7%s",
+                statsManager.getKills(id), statsManager.getDeaths(id), formatKd(statsManager.getKills(id), statsManager.getDeaths(id)),
+                statsManager.getMobKills(id), statsManager.getSpellCasts(id), statsManager.getQuestsCompleted(id)));
+
+        lines.add(messageManager.get("admin.icesmp.inspect.claims", "&7Claimek: &f%s db &7/ &f%s oszlop",
+                claimManager.countClaims(id), claimManager.countColumns(id)));
+
+        return lines;
+    }
+
+    private String formatKd(final int kills, final int deaths) {
+        final double ratio = deaths == 0 ? kills : (double) kills / deaths;
+        return String.format(Locale.ROOT, "%.1f", ratio);
     }
 
     private void handleConfig(final CommandSender sender, final String[] args) {
@@ -220,6 +412,8 @@ public final class IceSMPCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-unset", "&e/icesmp config unset <kulcs> &7- Felülbírálás törlése."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-list", "&e/icesmp config list &7- Aktív ingame felülbírálások."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-find", "&e/icesmp config find <szöveg> &7- Kulcs-keresés a teljes configban."));
+        sender.sendMessage(messageManager.get("admin.icesmp.help-inspect",
+                "&e/icesmp inspect <név> &7- Játékos-jelentés (kaszt, spec, statok, claimek, questek, cooldownok)."));
     }
 
     @Override
@@ -231,7 +425,22 @@ public final class IceSMPCommand implements BasicCommand {
 
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("reload", "config").stream().filter(option -> option.startsWith(prefix)).toList();
+            final List<String> options = new ArrayList<>(List.of("reload", "config"));
+            if (sender.hasPermission(INSPECT_PERMISSION)) {
+                options.add("inspect");
+            }
+            return options.stream().filter(option -> option.startsWith(prefix)).toList();
+        }
+
+        if ("inspect".equalsIgnoreCase(args[0])) {
+            if (args.length != 2 || !sender.hasPermission(INSPECT_PERMISSION)) {
+                return List.of();
+            }
+            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(playerName -> playerName.toLowerCase(Locale.ROOT).startsWith(prefix))
+                    .toList();
         }
 
         if (!"config".equalsIgnoreCase(args[0]) || !sender.hasPermission(CONFIG_PERMISSION)) {

@@ -90,6 +90,8 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **AxAFKZone (+AxAPI)** | `AfkManager` + `config/afk.yml` — AFK-zónák (doboz), időzített valuta-jutalom (tudatos kis faucet, C3 monitorral figyelendő), bossbar-visszaszámláló, be-/kilépés üzenetek; PLUSZ globális AFK-detektálás és ⌚ AFK jelzés a tablistában (amit az AxAFKZone nem tudott) | vidd át a zóna-koordinátákat az `afk.yml`-be (a régi `AxAFKZone/zones/zome1.yml`-ből) |
 | **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages kulcsok (CMD 6201/6202), súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
 | **GSit** | `SitManager` — `/sit` parancs + jobb-katt lépcsőre/fél-lapra üres kézzel; kelés minden úton takarít (quit/halál/teleport/blokk-törés) | — |
+| **SModeration** | `ModerationManager` — restart-álló némítás (`/mute`/`/unmute`, offline is), chat-szűrő (CENSOR/BLOCK), spam-fék, privát-parancs tiltás némítottnak; PLUSZ `/report` + `/reports` bejelentő-rendszer admin-értesítéssel (`config/moderation.yml`, `icesmp.admin.moderation`) | szavak felvétele a `chat-filter.words` listába |
+| **InvSee++ (3 jar)** | `/invsee <név>` — READ-ONLY inventory + ender-láda pillanatkép-GUI; PLUSZ `/icesmp inspect <név>` teljes plugin-állapot riport (kaszt/erőforrás/statok/bűn/claim/questek/cooldownok) — `icesmp.admin.inspect`. Szerkesztés/clear/give nincs (ha kell, a jar maradhat, de betekintésre már nem) | — |
 
 ### 🗑 Törölhető kiváltás NÉLKÜL (nem használt / kiürült)
 
@@ -99,11 +101,11 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **AuMenus** | A menü-configjai a gyári teszt-példák (`basic_menu`, `test_*`) — a `/menu` rendszerünk teljesebb. |
 | **FancyHolograms** | Egyetlen „test" hologram van benne (NPC-hez kötött teszt). Ha hologram kell később: natív TextDisplay-infránk kész (D3/D10 ötletek). Figyelem: törlés előtt ellenőrizd, hogy a FancyNpcs verziód nem függ-e tőle. |
 
-### 🔶 Kiváltható közepes munkával (tervezett, ötlettár-hivatkozással)
+### 🔶 Kiváltható közepes munkával (tervezett)
 
-| Plugin | Terv |
-|---|---|
-| **InvSee++ (3 jar), SModeration** | Admin-eszközök — a C12 játékos-inspektor, C17 chat-szűrő/mute és C29 /report ötletek együtt váltanák ki; távlati. |
+*(A kör lezárva — minden tervezett tétel a ✅ táblába került. Megjegyzés: az InvSee++
+szerkesztő/clear/give funkciói nincsenek kiváltva, csak a betekintés; ha az admin-csapat
+aktívan szerkeszt inventorykat, az InvSee++ maradhat, egyébként törölhető.)*
 
 ### 🔒 Marad (nem érdemes/nem szabad kiváltani)
 

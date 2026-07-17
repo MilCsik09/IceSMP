@@ -882,7 +882,11 @@ public final class IceSMPCore {
      * Registers all command handlers.
      */
     private void registerCommands() {
-        plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager));
+        plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager,
+                jobManager, specializationManager, resourceManager, factionManager, currencyManager,
+                statsManager, claimManager, questManager, abilityCatalystListener, sinManager));
+        plugin.registerCommand("invsee", "Inventory-betekintés (admin, csak olvasás)", List.of(),
+                new hu.taliann.icesmp.commands.InvseeCommand(plugin, messageManager));
         plugin.registerCommand("hud", "HUD beállítások", List.of(), new hu.taliann.icesmp.commands.HudCommand(hudManager, messageManager));
         plugin.registerCommand("stats", "Statisztika-profil", List.of(), new hu.taliann.icesmp.commands.StatsCommand(statsManager, messageManager));
         plugin.registerCommand("sit", "Ülés (leül/feláll)", List.of(), new hu.taliann.icesmp.commands.SitCommand(sitManager, messageManager));
@@ -982,6 +986,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatFormatListener(configManager, hudManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatModerationListener(
                 configManager, moderationManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.InvseeGUIListener(messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);

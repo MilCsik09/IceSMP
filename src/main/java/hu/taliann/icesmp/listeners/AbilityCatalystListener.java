@@ -668,6 +668,40 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return masteryManager.getRank(player, spellId);
     }
 
+    /**
+     * Read-only view of the player's currently active SHORT (&lt;60s, in-memory) spell
+     * cooldowns, spell id → remaining milliseconds, expired entries filtered out (IDEAS
+     * C12 inspector). UUID-based (no {@link Player} needed) so it is safe to call from any
+     * thread — it only reads the {@link #spellCooldowns} map, never touches an entity.
+     * Persistent (&gt;=60s, PDC-backed) cooldowns are NOT included here, since those require
+     * reading the target's own PDC on the target's region thread; callers that already hold
+     * the {@link Player} on its own thread should prefer {@link #getRemainingCooldownMs}.
+     *
+     * @param playerId the player to check
+     * @return spell id → remaining cooldown millis, only the not-yet-expired ones
+     */
+    public Map<String, Long> activeCooldowns(final UUID playerId) {
+        final Map<String, Long> bySpell = spellCooldowns.get(playerId);
+        if (bySpell == null || bySpell.isEmpty()) {
+            return Map.of();
+        }
+        final long now = System.currentTimeMillis();
+        final Map<String, Long> result = new java.util.LinkedHashMap<>();
+        for (final Map.Entry<String, Long> entry : bySpell.entrySet()) {
+            final Spell spell = spellRegistry.getById(entry.getKey());
+            if (spell == null) {
+                continue;
+            }
+            final long cooldownMs = Math.max(0, spell.getCooldown()) * 1000L;
+            final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
+            final long remaining = (entry.getValue() + delayMs + cooldownMs) - now;
+            if (remaining > 0L) {
+                result.put(entry.getKey(), remaining);
+            }
+        }
+        return result;
+    }
+
     /** IDEAS A15: cast-számláló bekötése (a StatsManager a DI-sorrendben később épül). */
     public void setStatsManager(final hu.taliann.icesmp.managers.StatsManager statsManager) {
         this.statsManager = statsManager;

@@ -656,6 +656,19 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Ülés** (GSit helyett): `/sit` a földön állva leültet (ArmorStand-ülés), újra `/sit`
         vagy sneak = felállás; jobb-katt lépcsőre/fél-lapra ÜRES kézzel leültet; halál/teleport/
         kilépés/blokk-törés alóla → korrekt felállás, nem marad árva ArmorStand.
+  - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5 teszt` → a némított nem tud
+        chatelni ÉS /msg-t sem küldeni (üzenetet kap a hátralévő idővel); restart után is él;
+        `/unmute` felold; `/mute list`; chat-szűrő: tiltott szó CENSOR-módban csillagozva,
+        BLOCK-módban elnyelve; spam: 1,5 mp-en belüli két üzenet / ismételt üzenet blokkolva.
+  - [ ] **Bejelentés:** `/report <név> <ok min 3 szó>` → az online moderátorok
+        (icesmp.admin.moderation) azonnal értesülnek; 60 mp-en belül második report
+        rate-limitbe fut; `/reports` lista → `/reports resolve <id>`; restart-álló.
+  - [ ] **Inspektor:** `/icesmp inspect <név>` (icesmp.admin.inspect) → teljes riport
+        (frakció/kaszt+XP/spec/erőforrás/egyenlegek/statok/bűn/claim/questek/cooldownok);
+        offline névre korlátozott riport. ⚠️ **Folia:** távoli (másik régiós) célpontra is
+        hibamentes (a riport a célpont szálán épül).
+  - [ ] **Invsee** (InvSee++ helyett, csak olvasás): `/invsee <név>` → pillanatkép-GUI a fő
+        inventoryról (páncél+offhand sorral) + ender-láda nézet gombbal; SEMMI nem vehető ki.
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).
