@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.gui.CrateSpinGUI;
 import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
@@ -187,6 +188,12 @@ public final class CrateManager implements PersistentStore {
      * Opens the crate for {@code player}: weighted-random roll, reward grant, sound +
      * particle feedback and a chat message. Returns false if the crate has no (valid)
      * reward table configured.
+     *
+     * <p>IDEAS A47: the roll and the reward grant above always happen immediately and are
+     * unconditional — everything below this point is cosmetics only. When
+     * {@code crates-settings.spin-animation} is on, the sound/particle/chat feedback is
+     * handed to {@link CrateSpinGUI} as a callback and fires only once the reel animation
+     * lands on the (already-decided) reward; otherwise it fires immediately, as before.
      */
     public boolean open(final Player player, final String crateId) {
         final List<RewardEntry> rewards = loadRewards(crateId);
@@ -197,11 +204,25 @@ public final class CrateManager implements PersistentStore {
 
         final RewardEntry picked = pickWeighted(rewards, totalWeight);
         grantReward(player, picked);
-        playFeedback(player);
-        player.sendMessage(messageManager.get("crate-opened",
-                "&6[Láda] &eKinyitottad: &f%s &e— nyeremény: &a%s",
-                displayName(crateId), describeReward(picked)));
+
+        final Runnable feedback = () -> {
+            playFeedback(player);
+            player.sendMessage(messageManager.get("crate-opened",
+                    "&6[Láda] &eKinyitottad: &f%s &e— nyeremény: &a%s",
+                    displayName(crateId), describeReward(picked)));
+        };
+
+        if (spinAnimationEnabled()) {
+            CrateSpinGUI.open(plugin, player, displayName(crateId), rewards, picked, feedback);
+        } else {
+            feedback.run();
+        }
         return true;
+    }
+
+    /** Global switch for the cosmetic reel-spin reveal (IDEAS A47) — config/crates.yml crates-settings.spin-animation. */
+    private boolean spinAnimationEnabled() {
+        return configManager.getBoolean("crates-settings.spin-animation", true);
     }
 
     private RewardEntry pickWeighted(final List<RewardEntry> rewards, final double totalWeight) {
@@ -236,7 +257,8 @@ public final class CrateManager implements PersistentStore {
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
     }
 
-    private String describeReward(final RewardEntry reward) {
+    /** Human-readable label for a reward entry — also used by {@link CrateSpinGUI} for the reel icons. */
+    public static String describeReward(final RewardEntry reward) {
         if (reward.description() != null && !reward.description().isBlank()) {
             return reward.description();
         }

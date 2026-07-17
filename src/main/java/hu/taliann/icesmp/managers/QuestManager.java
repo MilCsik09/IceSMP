@@ -3,6 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -105,6 +106,9 @@ public final class QuestManager implements PersistentStore {
     private volatile YamlConfiguration customQuests = new YamlConfiguration();
     // Bound after construction (manual-DI ordering) — see IceSMPCore#setStatsManager wiring.
     private volatile StatsManager statsManager;
+    // Bound after construction (manual-DI ordering, IDEAS A48) — see IceSMPCore#setCrateKeyFactory wiring.
+    private volatile CrateKeyFactory crateKeyFactory;
+    private volatile boolean warnedMissingCrateKeyFactory;
 
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
@@ -131,6 +135,15 @@ public final class QuestManager implements PersistentStore {
      */
     public void setStatsManager(final StatsManager statsManager) {
         this.statsManager = statsManager;
+    }
+
+    /**
+     * Binds the {@link CrateKeyFactory} used by the {@code rewards.crate-key} quest-reward
+     * field (IDEAS A48). Set after construction because of the manual-DI ordering in
+     * {@code IceSMPCore} (CrateKeyFactory is built after QuestManager).
+     */
+    public void setCrateKeyFactory(final CrateKeyFactory crateKeyFactory) {
+        this.crateKeyFactory = crateKeyFactory;
     }
 
     // ===== Admin-készítette questek (custom-quests.yml) =====
@@ -1535,10 +1548,52 @@ public final class QuestManager implements PersistentStore {
             jobManager.unlockSpell(player, unlockSpell);
         }
 
+        // Crate-key reward (IDEAS A48): "<crateId>:<darab>", pl. "koznapi:1".
+        final String crateKeyReward = quest.getString("rewards.crate-key");
+        if (crateKeyReward != null && !crateKeyReward.isBlank()) {
+            grantCrateKeyReward(player, crateKeyReward);
+        }
+
         // The penance chain's final mercy: even the dark pact can be broken.
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
             sinManager.breakDarkPact(player);
         }
+    }
+
+    /**
+     * Grants a {@code "<crateId>:<darab>"} quest reward (IDEAS A48) via the injected
+     * {@link CrateKeyFactory} — null-safe: if it was never bound (a server disabling the
+     * native crate system, or a manual-DI ordering slip), this just warns once to the
+     * console instead of throwing, and the rest of the quest's rewards still apply.
+     */
+    private void grantCrateKeyReward(final Player player, final String crateKeyReward) {
+        final CrateKeyFactory factory = crateKeyFactory;
+        if (factory == null) {
+            if (!warnedMissingCrateKeyFactory) {
+                warnedMissingCrateKeyFactory = true;
+                plugin.getLogger().warning("Quest 'rewards.crate-key' mező van beállítva, de a CrateKeyFactory "
+                        + "nincs bekötve (QuestManager#setCrateKeyFactory) — a kulcs-jutalom kimarad.");
+            }
+            return;
+        }
+
+        final String[] parts = crateKeyReward.split(":");
+        final String crateId = parts[0].trim();
+        int amount = 1;
+        if (parts.length >= 2) {
+            try {
+                amount = Math.max(1, Integer.parseInt(parts[1].trim()));
+            } catch (final NumberFormatException ignored) {
+                // Malformed amount: give one.
+            }
+        }
+
+        final org.bukkit.inventory.ItemStack key = factory.createKey(crateId, amount);
+        if (key.getType().isAir()) {
+            return; // Unknown crate id — config typo, skip rather than hand out a phantom item.
+        }
+        final Map<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(key);
+        leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
     }
 
     /** Whether the configured reward-currency type means "the player's own faction currency". */

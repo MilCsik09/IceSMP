@@ -9,6 +9,20 @@
 # rewards: súlyozott lista — egy tétel esélye = weight / (az adott láda összes
 # weight-jének összege). Egy tétel vagy "material" (+ "amount"), vagy "command"
 # (konzolként lefuttatva, {player} helyettesítéssel) — pontosan egyet adj meg.
+#
+# Kulcs-források (IDEAS A48):
+#   - Bolt: /crate buy <láda> [darab] — a key-price valuta-sinkje (lásd fent).
+#   - Quest-jutalom: config/quests.yml — egy quest rewards blokkjában a
+#     "crate-key: \"<ládaId>:<darab>\"" mező (lásd pl. onboarding_gather).
+#   - Jövőbeli forrás (még nincs bekötve): napi/heti kihívás jutalma.
+crates-settings:
+  # IDEAS A47: kozmetikus "pörgős" reveal-animáció (gui/CrateSpinGUI) a láda kinyitásakor —
+  # a nyeremény sorsolása és jóváírása EZTŐL FÜGGETLENÜL mindig azonnal megtörténik, ez a
+  # kapcsoló csak azt dönti el, hogy a visszajelzés (hang/részecske/chat) azonnal jön-e,
+  # vagy az animáció végén. Globális kapcsoló (nem láda-specifikus) — egyszerűbb, mint
+  # minden ládánál külön beállítani, és a kozmetika amúgy is szerver-szintű ízlés kérdése.
+  spin-animation: true
+
 crates:
 
   koznapi:

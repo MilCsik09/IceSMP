@@ -380,6 +380,9 @@ public final class IceSMPCore {
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager);
         this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
         this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
+        // IDEAS A48: a quest "rewards.crate-key" mezője setterrel kap CrateKeyFactory-t
+        // (CrateKeyFactory a DI-sorrendben a QuestManager UTÁN épül).
+        questManager.setCrateKeyFactory(crateKeyFactory);
         this.textAnimator = new hu.taliann.icesmp.utils.TextAnimator(configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
@@ -946,6 +949,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.AfkActivityListener(afkManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SitListener(sitManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateListener(crateManager, crateKeyFactory, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateSpinGUIListener(), plugin);
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);

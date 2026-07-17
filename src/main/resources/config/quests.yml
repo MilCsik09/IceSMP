@@ -1,4 +1,10 @@
 # IceSMP konfiguráció — quests (a ConfigManager az összes config/*.yml-t betölti)
+#
+# Egy quest "rewards" blokkjában elérhető opcionális mező (IDEAS A48):
+#   crate-key: "<ládaId>:<darab>"  — pl. "koznapi:1" — a config/crates.yml-ben
+#   definiált ládához tartozó kulcs-itemet ad a játékosnak (CrateKeyFactory,
+#   tele inventorynál a lába elé esik). Lásd a lenti onboarding_gather questet
+#   kézzelfogható példaként.
 # ===== Napi küldetések (ROADMAP 8.) =====
 daily-quests:
   enabled: true
@@ -887,6 +893,7 @@ quests:
       currency:
         type: "OWN"
         amount: 25
+      crate-key: "koznapi:1"
       items:
         - "WOODEN_PICKAXE:1"
         - "BREAD:8"
