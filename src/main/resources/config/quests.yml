@@ -27,6 +27,12 @@ achievements:
 # automatikusan felkerül a "first-quest" — a többi láncszem a quests.<id>.next
 # mezőn keresztül magától követi, amint az előző teljesül. Kikapcsolható, ha a
 # szerver saját bevezetőt épít.
+# IDEAS A70: quest-teljesítéskor vanília advancement-toast a jobb felső sarokban
+# (a chat-üzenet mellett; rejtett, egyszer használatos advancementtel — nem szennyezi
+# az advancement-képernyőt).
+quest-toast:
+  enabled: true
+
 onboarding:
   enabled: true
   first-quest: "onboarding_herald"

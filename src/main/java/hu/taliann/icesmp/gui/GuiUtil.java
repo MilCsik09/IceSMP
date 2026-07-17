@@ -23,6 +23,62 @@ public final class GuiUtil {
     private GuiUtil() {
     }
 
+    // ==================== IDEAS A69: egységes GUI-hangnyelv ====================
+
+    /** A közös GUI-hang-készlet: minden felület ugyanazt a hangnyelvet beszéli. */
+    public enum GuiSound {
+        /** Menü/almenü megnyitása. */
+        OPEN("BLOCK_BARREL_OPEN", 0.4F, 1.3F),
+        /** Lapozás / nézet-váltás. */
+        PAGE("ITEM_BOOK_PAGE_TURN", 0.7F, 1.2F),
+        /** Sima gomb-kattintás. */
+        CLICK("UI_BUTTON_CLICK", 0.4F, 1.1F),
+        /** Sikeres művelet (mentés, teljesítés, jelölés). */
+        SUCCESS("ENTITY_EXPERIENCE_ORB_PICKUP", 0.6F, 1.5F),
+        /** Hibás/elutasított művelet. */
+        ERROR("BLOCK_NOTE_BLOCK_BASS", 0.6F, 0.7F),
+        /** Vásárlás/tranzakció. */
+        BUY("BLOCK_AMETHYST_BLOCK_CHIME", 0.7F, 1.4F);
+
+        private final String defaultSound;
+        private final float defaultVolume;
+        private final float defaultPitch;
+
+        GuiSound(final String defaultSound, final float defaultVolume, final float defaultPitch) {
+            this.defaultSound = defaultSound;
+            this.defaultVolume = defaultVolume;
+            this.defaultPitch = defaultPitch;
+        }
+    }
+
+    /** Config-forrás a hang-felülbírálásokhoz (gui.sounds.*) — az IceSMPCore enable()-je tölti fel. */
+    private static volatile hu.taliann.icesmp.managers.ConfigManager soundConfig;
+
+    public static void initSounds(final hu.taliann.icesmp.managers.ConfigManager configManager) {
+        soundConfig = configManager;
+    }
+
+    /**
+     * A közös hangnyelv lejátszása a játékosnak (a hívó a játékos saját régió-szálán van —
+     * GUI-kattintás/nyitás mindig ott fut). Config-felülbírálás:
+     * {@code gui.sounds.<open|page|click|success|error|buy>.sound/volume/pitch}.
+     */
+    public static void sound(final org.bukkit.entity.Player player, final GuiSound sound) {
+        final hu.taliann.icesmp.managers.ConfigManager config = soundConfig;
+        final String base = "gui.sounds." + sound.name().toLowerCase(java.util.Locale.ROOT);
+        final String soundName = config == null ? sound.defaultSound
+                : config.getString(base + ".sound", sound.defaultSound);
+        final float volume = config == null ? sound.defaultVolume
+                : (float) config.getDouble(base + ".volume", sound.defaultVolume);
+        final float pitch = config == null ? sound.defaultPitch
+                : (float) config.getDouble(base + ".pitch", sound.defaultPitch);
+        try {
+            player.playSound(player.getLocation(), org.bukkit.Sound.valueOf(soundName), volume, pitch);
+        } catch (final IllegalArgumentException ignored) {
+            // Ismeretlen hang-név a configban — inkább csend, mint hiba.
+        }
+    }
+
     public static void fill(final Inventory inventory) {
         final ItemStack filler = filler();
         for (int slot = 0; slot < inventory.getSize(); slot++) {

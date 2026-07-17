@@ -24,6 +24,21 @@ public final class ParticleUtil {
     }
 
     /** Count-only burst (offsets 0, extra 0) — the {@code spawnParticle(p, loc, n)} shape. */
+    /**
+     * Terep-követő jelölő-magasság: a legfelső blokk teteje + 1,2 („földszinten, a blokkok
+     * felett") — a claim/territórium-határok és esemény-jelölők közös Y-forrása, hogy a perem
+     * ne a néző derékmagasságában lebegjen dombon/völgyön át.
+     *
+     * <p>Folia: a {@code getHighestBlockYAt} chunk-olvasás — ha az oszlop chunkja nem a hívó
+     * régiójáé (távoli határpont), a megadott fallback-Y-t adja vissza olvasás nélkül.
+     */
+    public static double markerY(final World world, final int x, final int z, final double fallbackY) {
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(world, x >> 4, z >> 4)) {
+            return fallbackY;
+        }
+        return world.getHighestBlockYAt(x, z) + 1.2D;
+    }
+
     public static void spawn(final World world, final Particle particle, final Location location, final int count) {
         spawn(world, particle, location, count, 0.0D, 0.0D, 0.0D, 0.0D);
     }

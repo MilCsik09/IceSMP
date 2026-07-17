@@ -40,6 +40,7 @@ public final class InvseeGUIListener implements Listener {
 
         final int slot = event.getRawSlot();
         if (holder.getView() == InvseeHolder.View.MAIN && slot == InvseeGUI.ENDER_BUTTON_SLOT) {
+            hu.taliann.icesmp.gui.GuiUtil.sound(viewer, hu.taliann.icesmp.gui.GuiUtil.GuiSound.PAGE);
             InvseeGUI.openEnder(viewer, holder, messageManager);
         } else if (holder.getView() == InvseeHolder.View.MAIN && slot == InvseeGUI.REFRESH_SLOT) {
             // IDEAS A55: új pillanatkép — a parancs-útvonal fut újra (jogosultság-ellenőrzéssel
@@ -48,9 +49,11 @@ public final class InvseeGUIListener implements Listener {
             final Long last = refreshDebounce.get(viewer.getUniqueId());
             if (last == null || now - last >= 2000L) {
                 refreshDebounce.put(viewer.getUniqueId(), now);
+                hu.taliann.icesmp.gui.GuiUtil.sound(viewer, hu.taliann.icesmp.gui.GuiUtil.GuiSound.CLICK);
                 viewer.performCommand("invsee " + holder.getTargetName());
             }
         } else if (holder.getView() == InvseeHolder.View.ENDER && slot == InvseeGUI.BACK_SLOT) {
+            hu.taliann.icesmp.gui.GuiUtil.sound(viewer, hu.taliann.icesmp.gui.GuiUtil.GuiSound.PAGE);
             InvseeGUI.openMain(viewer, holder, messageManager);
         }
     }

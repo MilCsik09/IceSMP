@@ -706,6 +706,21 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         a szerverlista-ikon is cserél (RP nélkül is működik — ez szerver-oldali).
   - [ ] **Kombó-csík:** cast után az action baron fogyó ▰▰▰▱▱ csík mutatja a kombó-ablakot; új
         cast megszakítja; lejáratkor csendben eltűnik (nem ír „lejárt"-at).
+- [ ] **QoL-kör 3 (A69–A70 + particle-fixek, ÚJ):**
+  - [ ] **Egységes menü-hangnyelv:** a /menu hubban almenü-váltás lapozás-hangot, akció
+        kattintás-hangot ad; az invsee nézet-váltása is; a hangok a gui.sounds.* kulcsokkal
+        felülírhatók (rossz hang-név = csend, nem hiba).
+  - [ ] **Quest-toast:** küldetés teljesítésekor a jobb felső sarokban vanília toast ugrik fel
+        a quest nevével (a chat-üzenet mellett); az advancement-képernyőn NEM jelenik meg
+        maradvány; kikapcsolás: quest-toast.enabled: false. Ha a szerver-implementáció nem
+        támogatja, egyszeri konzol-warn + a toast kimarad (a chat-üzenet marad).
+  - [ ] **Terep-követő határok:** a /claim show pereme dombon-völgyön át a TALAJT követi
+        („földszinten, a blokkok felett"), NEM a játékos derékmagasságában lebeg; a sarok-oszlopok
+        a claim TELJES magasságát mutatják; barlangban (felszín alatt) a perem a játékos szintjén
+        IS kirajzolódik. Ugyanez a /territory show ringre/körre. ⚠️ Folia: távoli (másik régiós)
+        határpontnál nincs hiba (fallback a néző szintjére).
+  - [ ] **Kincs-fényoszlop:** a kincs-láda fölött magas, messziről látható END_ROD-oszlop áll
+        (dombok mögül is kivehető), a láda-szintű csillogás mellett.
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).

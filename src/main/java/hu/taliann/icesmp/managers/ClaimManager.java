@@ -710,26 +710,41 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
     }
 
-    /** Perimeter at the viewer's (clamped) height + short corner posts marking the Y-extent. */
+    /**
+     * TEREP-KÖVETŐ perem („földszinten, a blokkok felett") + TELJES magasságú sarok-oszlopok
+     * (tulaj kérése): a peremvonal minden pontja a saját oszlopának legfelső blokkja fölé kerül
+     * — dombon/völgyön átfutó határnál is a talajt követi; ha a néző jóval a felszín alatt jár
+     * (barlang), a perem a néző szintjén IS kirajzolódik. A sarok-oszlopok a claim teljes
+     * minY→maxY tartományát mutatják, ritkított mintavétellel.
+     */
     private void drawBoxOutline(final Player player, final World world, final int minX, final int minZ,
                                 final int maxX, final int maxZ, final int minY, final int maxY,
                                 final int viewerY, final Particle particle) {
-        final double y = Math.max(minY, Math.min(maxY, viewerY)) + 1.2D;
         for (int x = minX; x <= maxX + 1; x += 2) {
-            player.spawnParticle(particle, new Location(world, x, y, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, x, y, maxZ + 1), 1, 0, 0, 0, 0);
+            drawEdgePoint(player, world, x, minZ, viewerY, particle);
+            drawEdgePoint(player, world, x, maxZ + 1, viewerY, particle);
         }
         for (int z = minZ; z <= maxZ + 1; z += 2) {
-            player.spawnParticle(particle, new Location(world, minX, y, z), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, y, z), 1, 0, 0, 0, 0);
+            drawEdgePoint(player, world, minX, z, viewerY, particle);
+            drawEdgePoint(player, world, maxX + 1, z, viewerY, particle);
         }
-        // Sarok-oszlopok: felfelé mutató jelzés a claim függőleges kiterjedéséről.
-        for (int dy = 0; dy <= 4; dy += 2) {
-            final double py = Math.min(maxY, Math.max(minY, viewerY) + dy) + 1.2D;
-            player.spawnParticle(particle, new Location(world, minX, py, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, minX, py, maxZ + 1), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py, maxZ + 1), 1, 0, 0, 0, 0);
+        // Sarok-oszlopok a claim TELJES függőleges kiterjedésén (max ~13 pont oszloponként).
+        final int step = Math.max(3, (maxY - minY) / 12);
+        for (int py = minY; py <= maxY; py += step) {
+            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, minZ), 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, minZ), 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
+        }
+    }
+
+    /** Egy perem-pont: terepre igazítva; barlangban (néző jóval a felszín alatt) plusz pont a néző szintjén. */
+    private void drawEdgePoint(final Player player, final World world, final int x, final int z,
+                               final int viewerY, final Particle particle) {
+        final double groundY = hu.taliann.icesmp.utils.ParticleUtil.markerY(world, x, z, viewerY + 1.2D);
+        player.spawnParticle(particle, new Location(world, x, groundY, z), 1, 0, 0, 0, 0);
+        if (viewerY + 4.0D < groundY - 1.2D) {
+            player.spawnParticle(particle, new Location(world, x, viewerY + 1.2D, z), 1, 0, 0, 0, 0);
         }
     }
 

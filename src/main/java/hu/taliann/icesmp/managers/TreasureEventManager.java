@@ -297,6 +297,9 @@ public final class TreasureEventManager {
             if (world != null) {
                 world.spawnParticle(Particle.END_ROD, spot.clone().add(0.5D, 1.2D, 0.5D), 8, 0.15D, 1.0D, 0.15D, 0.01D);
                 world.spawnParticle(Particle.GLOW, spot.clone().add(0.5D, 0.6D, 0.5D), 4, 0.3D, 0.3D, 0.3D, 0.0D);
+                // Messziről is látható fény-oszlop a láda fölött (a "merre van?" jelzés —
+                // a láda-szintű csillogás közelről szép, de dombok mögül láthatatlan volt).
+                world.spawnParticle(Particle.END_ROD, spot.clone().add(0.5D, 9.0D, 0.5D), 14, 0.1D, 7.0D, 0.1D, 0.0D);
             }
         }, 20L, 20L);
     }

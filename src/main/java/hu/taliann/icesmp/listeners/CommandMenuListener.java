@@ -51,7 +51,12 @@ public final class CommandMenuListener implements Listener {
             return;
         }
 
-        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
+        // IDEAS A69: egységes hangnyelv — menü-váltás lapozás-hangot, akció kattintás-hangot kap.
+        if (action.startsWith("MENU:")) {
+            hu.taliann.icesmp.gui.GuiUtil.sound(player, hu.taliann.icesmp.gui.GuiUtil.GuiSound.PAGE);
+        } else {
+            hu.taliann.icesmp.gui.GuiUtil.sound(player, hu.taliann.icesmp.gui.GuiUtil.GuiSound.CLICK);
+        }
 
         if ("CLOSE".equals(action)) {
             player.closeInventory();

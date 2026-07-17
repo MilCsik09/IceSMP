@@ -549,6 +549,8 @@ public final class IceSMPCore {
         hu.taliann.icesmp.spells.BaseSpell.setBalanceSource(configManager);
         // Party-tudatos célzás (IDEAS A2): az ellenséges spellek kihagyják a szövetségest.
         hu.taliann.icesmp.spells.SpellTargetingUtil.initCombatContext(partyManager, factionManager, configManager);
+        // IDEAS A69: egységes GUI-hangnyelv config-forrása (gui.sounds.* felülbírálások).
+        hu.taliann.icesmp.gui.GuiUtil.initSounds(configManager);
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();

@@ -852,7 +852,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 **Építőkövek:** DeathRecapListener ring-buffer, Adventure hover.
 **Buktatók:** A gyilkos adatainak olvasása a SÉRTETT szálán történik — csak a snapshotolható mezők (név/szint a kill-pillanatban).
 
-### A69. Egységes menü-hangnyelv
+### A69. Egységes menü-hangnyelv `[KÉSZ]`
 **Munka:** 🟢 • **Érték:** ⭐⭐
 
 **Mi ez:** Közös hang-készlet minden GUI-ra: nyitás, lapozás, siker, hiba, vásárlás — ma GUI-nként ad-hoc (vagy néma).
@@ -861,7 +861,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 **Építőkövek:** GuiUtil, meglévő GUI-listenerek.
 **Buktatók:** —
 
-### A70. Quest-teljesítés toast
+### A70. Quest-teljesítés toast `[KÉSZ]`
 **Munka:** 🟡 • **Érték:** ⭐⭐
 
 **Mi ez:** Quest teljesítésekor a jobb felső sarokban vanília advancement-toast is felugrik a chat-üzenet mellett.
