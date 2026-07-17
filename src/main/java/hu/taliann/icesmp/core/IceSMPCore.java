@@ -269,6 +269,8 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.SitManager sitManager;
     private final hu.taliann.icesmp.items.CrateKeyFactory crateKeyFactory;
     private final hu.taliann.icesmp.managers.CrateManager crateManager;
+    private final hu.taliann.icesmp.managers.ReportManager reportManager;
+    private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask petTask;
 
     /**
@@ -374,6 +376,8 @@ public final class IceSMPCore {
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin);
+        this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
+        this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager);
         this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
         this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
         this.textAnimator = new hu.taliann.icesmp.utils.TextAnimator(configManager);
@@ -388,7 +392,8 @@ public final class IceSMPCore {
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
-                claimManager, donationChestManager, npcBindingManager, crateManager);
+                claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
+                moderationManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -415,6 +420,7 @@ public final class IceSMPCore {
                 professionManager,
                 afkManager,
                 sitManager,
+                moderationManager,
                 spellRegistry
         );
 
@@ -882,6 +888,14 @@ public final class IceSMPCore {
         plugin.registerCommand("sit", "Ülés (leül/feláll)", List.of(), new hu.taliann.icesmp.commands.SitCommand(sitManager, messageManager));
         plugin.registerCommand("crate", "Láda (crate) parancsok", List.of("ladak", "crates"),
                 new hu.taliann.icesmp.commands.CrateCommand(plugin, crateManager, crateKeyFactory, currencyManager, messageManager));
+        plugin.registerCommand("report", "Játékos bejelentése (admin: /reports)", List.of("bejelent"),
+                new hu.taliann.icesmp.commands.ReportCommand(reportManager, messageManager));
+        plugin.registerCommand("reports", "Bejelentések kezelése (admin)", List.of(),
+                new hu.taliann.icesmp.commands.ReportsCommand(reportManager, messageManager));
+        plugin.registerCommand("mute", "Némítás (admin)", List.of(),
+                new hu.taliann.icesmp.commands.MuteCommand(plugin, moderationManager, messageManager));
+        plugin.registerCommand("unmute", "Némítás feloldása (admin)", List.of(),
+                new hu.taliann.icesmp.commands.UnmuteCommand(plugin, moderationManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));
@@ -966,6 +980,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimProtectionListener(claimManager, configManager, factionManager, raidManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimTrustGUIListener(claimManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatFormatListener(configManager, hudManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatModerationListener(
+                configManager, moderationManager, messageManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
