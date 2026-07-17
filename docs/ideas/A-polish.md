@@ -702,4 +702,98 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 ---
 
-**Összesen: 52 ötlet (A1–A52).**
+## Újabb QoL-vadászat a friss rendszereken (A53–A62)
+
+### A53. /afk parancs (önkéntes AFK-jelölés)
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A játékos maga jelezheti, hogy elment: `/afk` → azonnali ⌚-jelölés + hátrasorolás.
+**Hogyan működne:** Vékony parancs az AfkManager-re: egy `manualAfk` set; az isAfk ezt VAGY az időzítőt nézi; bármilyen aktivitás törli. A jutalomkapu (A46) azonnal élesedik.
+**Miért jó:** Udvariasság a csapat felé („ne várjatok rám") — és a játékos maga védi magát az AFK-halál ellen.
+**Építőkövek:** AfkManager, TablistManager AFK-útvonal (kész).
+**Buktatók:** —
+
+### A54. {event} token a tablist-fejlécben
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A header/footer sorokban használható `{event}` token: az épp aktív világesemények egy sorban.
+**Hogyan működne:** A TablistManager applyTokens-e a HudManager eventLabel()-jének plain-text változatát helyettesíti be (snapshot-ból, nem élő hívásból). A default header kapna egy „⚔ {event}" sort.
+**Miért jó:** A tablist megnyitása = azonnali helyzetkép; az A14 „mi történik most" a leggyakrabban nézett felületre kerül.
+**Építőkövek:** TablistManager token-rendszer, HudSnapshot.event().
+**Buktatók:** A diff-cache miatt esemény-váltáskor amúgy is frissül — extra csomag-teher nincs.
+
+### A55. Invsee frissítő-gomb
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A read-only invsee GUI-ba egy 🔄 gomb: új pillanatképet kér a célpontról.
+**Hogyan működne:** A gomb újra lefuttatja az InvseeCommand snapshot-útvonalát (célpont-szál hop → új GUI); a cím mutatja a pillanatkép korát („(12 mp-es kép)").
+**Miért jó:** A „pillanatkép elavul" gyengeség fele eltűnik, élő-nézet komplexitás nélkül.
+**Építőkövek:** InvseeGUI/Command (kész), holder-akció minta.
+**Buktatók:** Rate-limit (max 1 frissítés/2 mp), különben hop-spam.
+
+### A56. Crate-esélyek a kulcs-item lore-jában
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A kulcs lore-ja mutatja a top-3 jutalmat esély-százalékkal és a láda nevét.
+**Hogyan működne:** A CrateKeyFactory a createKey-nél a config reward-súlyokból %-ot számol és lore-sorokat ír; a /crate info logikája újrahasznosítható.
+**Miért jó:** A kulcs önmagát adja el — a piacra/tradebe kerülő kulcsnak is látszik az értéke.
+**Építőkövek:** CrateKeyFactory, CrateManager esély-számítás.
+**Buktatók:** Config-változás után a régi kulcsok lore-ja elavul (kozmetikai — a sorsolás mindig a friss configból megy; egy lore-frissítés nyitáskor megoldja).
+
+### A57. Mute-lejárat értesítés
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A némítás lejártakor a játékos üzenetet kap („A némításod lejárt — újra beszélhetsz").
+**Hogyan működne:** Nincs időzítő: a ModerationManager isMuted lusta-lejárat ága már észleli a lejáratot — ott egy egyszeri flag + a következő chat-próbálkozásnál (vagy azonnal, ha online: player-szál hop) az üzenet.
+**Miért jó:** A játékos ma csak próbálgatással tudja meg, hogy vége — apró, de sokat számító tisztelet.
+**Építőkövek:** ModerationManager lejárat-ág.
+**Buktatók:** —
+
+### A58. Report-visszajelzés a bejelentőnek
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A `/reports resolve` a BEJELENTŐT is értesíti (online: azonnal; offline: következő belépéskor).
+**Hogyan működne:** A resolve eltárolja a „kézbesítetlen visszajelzés" listát (reporterUuid→üzenet, YamlStore); online reporternél azonnali hop-üzenet, offline-nál a join-listener üríti.
+**Miért jó:** A bejelentés ma fekete lyuk — a visszajelzés a /report-ba vetett bizalom kulcsa (különben leszoknak róla).
+**Építőkövek:** ReportManager, join-értesítés minta (OnboardingListener).
+**Buktatók:** —
+
+### A59. Szerverlista-ikon rotáció
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A MOTD mellé az ikon is váltakozik/eseményhez igazodik (vérholdkor vörös logó).
+**Hogyan működne:** A MotdListener induláskor betölti a data-mappa `icons/` PNG-it (Bukkit.loadServerIcon — 64×64), a ping-eventen a variánshoz rendelt ikont állítja (event.setServerIcon). Az esemény-variáns configja `icon:` mezőt kap.
+**Miért jó:** Az esemény-MOTD (A50) vizuális párja — a kirakat teljes.
+**Építőkövek:** MotdListener variáns-rendszer (kész).
+**Buktatók:** Az ikon-betöltés IO — induláskor egyszer, cache-elve; a ping-en csak referencia-állítás.
+
+### A60. Sidebar-pontszámok elrejtése (blank numberFormat)
+**Munka:** 🟢 • **Érték:** ⭐⭐⭐
+
+**Mi ez:** Az oldalsáv jobb szélén látszó piros sor-számok (14, 13, 12…) eltüntetése.
+**Hogyan működne:** 1.20.3+ API: a Score `numberFormat(NumberFormat.blank())` hívása a HudManager sor-score beállításánál (és az objective-en defaultként). Egy-két sor kód.
+**Miért jó:** A legrégebbi scoreboard-csúfság tűnik el — a TAB-os szerverek ezért packet-trükköztek éveken át; nekünk egy API-hívás. A teljes oldalsáv-dizájn ettől lesz „kész".
+**Építőkövek:** HudManager update()/buildSidebar.
+**Buktatók:** API-név ellenőrzés (io.papermc.paper.scoreboard.numbers.NumberFormat) — fordítás dönti el.
+
+### A61. Ping-színezés a tablist-tokenben
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A `{ping}` token szín-kódolva: zöld <80, sárga <150, piros felette.
+**Hogyan működne:** Az applyTokens a {ping}-et „&a72" formában helyettesíti a küszöbök szerint (küszöbök configból: tablist.ping-colors).
+**Miért jó:** Egy pillantásból látszik a kapcsolat minősége — a ping-oszlop mellé a headerben is.
+**Építőkövek:** TablistManager.applyTokens.
+**Buktatók:** —
+
+### A62. Kombó-ablak visszaszámláló csík
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A „⏳ Kombó-ablak: X" action bar üzenet kap egy fogyó csíkot (▰▰▰▱▱), ami az ablak hátralévő idejét mutatja.
+**Hogyan működne:** A cast utáni hint nem egyszeri üzenet, hanem a játékos entity-schedulerén 500 ms-onként frissülő rövid task-lánc (max 8 lépés = 4 mp), ami az eltelt idő szerint rajzolja a csíkot; új cast vagy lejárat megszakítja.
+**Miért jó:** A kombó-tanulás fele az időérzék — a csík zsigeri visszajelzést ad, mikor „fér még bele" a következő spell.
+**Építőkövek:** AbilityCatalystListener kombó-hint (kész), entity-scheduler lánc (CrateSpinGUI minta).
+**Buktatók:** Az action bart más rendszerek is használják (cast-hibák) — a task ne írja felül a frissebb üzenetet (timestamp-ellenőrzés).
+
+---
+
+**Összesen: 62 ötlet (A1–A62).**
