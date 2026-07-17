@@ -4,7 +4,7 @@ Fejlesztési ötletek gyűjtője — **nincs elköteleződés**, ez a brainstorm
 zöld utat kap, az a [ROADMAP.md](../ROADMAP.md)-be kerül tervezett tételként; a technikai
 adósság külön él a [REFACTOR_CANDIDATES.md](REFACTOR_CANDIDATES.md)-ben.
 
-A tár **316 kidolgozott ötletet** tartalmaz 10 kategória-fájlban (`docs/ideas/`).
+A tár **326 kidolgozott ötletet** tartalmaz 10 kategória-fájlban (`docs/ideas/`).
 Minden tétel azonos sablonnal készült: **Mi ez / Hogyan működne / Miért jó /
 Építőkövek / Buktatók** — konkrét parancsokkal, config-kulcsokkal, a meglévő
 managerekre/mintákra hivatkozva, Folia-megjegyzésekkel ahol kell.
@@ -18,7 +18,7 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 
 | Kategória | Fájl | Tételek | Miről szól |
 |---|---|---|---|
-| **A) Polish / meglévő átdolgozás** | [ideas/A-polish.md](ideas/A-polish.md) | A1–A42 | GUI/HUD/spell-QoL, kényelmi funkciók, hozzáférhetőség. **A1–A16 ✅ implementálva** (teszt: PLAYTEST.md); A17 = HP-rendszer átdolgozás (tulaj kérése, külön kör) |
+| **A) Polish / meglévő átdolgozás** | [ideas/A-polish.md](ideas/A-polish.md) | A1–A52 | GUI/HUD/spell-QoL, kényelmi funkciók, hozzáférhetőség. **A1–A16 ✅ implementálva** (teszt: PLAYTEST.md); A17 = HP-rendszer átdolgozás (tulaj kérése, külön kör) |
 | **B) Új mechanika** | [ideas/B-mechanika.md](ideas/B-mechanika.md) | B1–B62 | Progresszió-rendszerek, item-mechanikák, céhek, dungeonök, claim/territórium-mélyítés, kockázat/jutalom |
 | **C) Admin / infra** | [ideas/C-infra.md](ideas/C-infra.md) | C1–C29 | Balansz-adat, moderáció, teljesítmény-riportok, üzemeltetés, fejlesztői eszközök |
 | **D) Világ, hangulat, közösség** | [ideas/D-vilag.md](ideas/D-vilag.md) | D1–D26 | Immerzió, fővárosi élet, közösségi események, világ-narratíva, játékos-nyomhagyás |

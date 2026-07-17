@@ -608,4 +608,98 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 ---
 
-**Összesen: 42 ötlet (A1–A42).**
+## Továbbfejlesztési kör a natív plugin-kiváltásokhoz (A43–A52)
+
+### A43. Relációs tablist-színek (háború-tudatos nevek)
+**Munka:** 🟡 • **Érték:** ⭐⭐⭐
+
+**Mi ez:** Raid/háború alatt az ELLENSÉGES frakció tagjainak neve pirosas árnyalatot kap a tablistában és a fej fölött — nézőnként másképp.
+**Hogyan működne:** A nametag-teamek amúgy is a NÉZŐ saját scoreboardján élnek (TablistManager) — a `syncViewerBoard` a team-színt a néző↔célpont reláció szerint választaná: aktív raidben a szemben álló fél piros, szövetséges (B44) zöldes. A RaidManager aktív feleit és az isAlly-t (A2) olvassa; diff-elt, csak raid-állapotváltáskor megy ki csomag.
+**Miért jó:** Harcban egy pillantásból látszik, ki ellenség — a TAB ezt sosem tudta volna (relációs szín per-viewer). A PvP-élmény legnagyobb olcsó dobása a friss tablist-infrán.
+**Építőkövek:** TablistManager per-viewer teamek, RaidManager.getActiveRaid, SpellTargetingUtil.isAlly.
+**Buktatók:** Rendezés-kulcs ne változzon relációtól (különben sorrend-ugrálás); csak a team-szín módosuljon.
+
+### A44. AFK-játékosok hátrasorolása a tablistában
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** Az AFK-jelölt játékosok a tablista aljára kerülnek (a rangjukon belül).
+**Hogyan működne:** A TablistManager `sortKey`-e AFK esetén egy 'z'-közeli előtag-karaktert szúr a rang-karakter után; a diff-logika miatt a váltás egyetlen team-átrakás.
+**Miért jó:** Az aktív játékosok elöl — ránézésre látszik, ki elérhető.
+**Építőkövek:** TablistManager.sortKey, AfkManager.isAfk (már bekötve).
+**Buktatók:** Gyakori AFK-váltakozás sorrend-ugrálást okoz — az afk-after-seconds elég nagy legyen.
+
+### A45. Harc-fókusz: célpont-sor a HUD-on
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Harc-fókusz módban az oldalsáv tetején az UTOLJÁRA megütött célpont neve + élet-sávja.
+**Hogyan működne:** A DamageIndicatorListener (A8) úgyis látja a találatokat: egy ConcurrentHashMap<UUID, célpont-UUID+idő>; a HudManager harc-fókusz ágában egy plusz sor a party-frame élet-sáv renderelőjével (mob-célpontnál a mob típusneve). 10 mp után a sor eltűnik.
+**Miért jó:** WoW-os target-frame érzés — bossnál/duelben a legfontosabb hiányzó információ.
+**Építőkövek:** DamageIndicatorListener, HudManager healthBar, harc-fókusz ág.
+**Buktatók:** Cross-region entitás-olvasás — a party-frame try/catch mintáját kell követni.
+
+### A46. AFK-kapuk a jutalom-rendszereken
+**Munka:** 🟢 • **Érték:** ⭐⭐⭐
+
+**Mi ez:** AFK-státuszban a kill-reward/kaszt-XP/szakma-XP nem jár — az AFK-farm exploit lezárása.
+**Hogyan működne:** Az AfkManager.isAfk (már globális) kapuként a ClassXpListener/kill-reward/ProfessionXp útvonalak elején: AFK-nál csendes no-op (config: `afk.block-rewards: true`). Az AFK-zóna-jutalom persze kivétel.
+**Miért jó:** A natív AFK-rendszer fő ígérete volt — auto-farm mellett AFK-zó játékos ne termeljen XP-t/pénzt.
+**Építőkövek:** AfkManager.isAfk, a meglévő XP/reward-listenerek.
+**Buktatók:** A mozgás-detektálás ne legyen kijátszható (AFK-gép: nézés-forgatás — yaw/pitch delta már aktivitásnak számít; megfontolandó a szigorítás: csak pozíció-változás számítson).
+
+### A47. Crate-nyitás animáció (rulett-GUI)
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Kulcs-nyitáskor rövid „pörgetés": egy 27-es GUI-ban végigfutó item-sor, ami a nyereményen áll meg.
+**Hogyan működne:** A CrateManager.open a sorsolás UTÁN nyit egy GUI-t; a pörgetést a néző entity-schedulerén futó ismétlődő task lépteti (0,1→0,5 mp lassulással, hanggal), a végén a középső slot a nyeremény + tényleges jóváírás. A GUI-minta (holder+listener, mindent cancel) kész.
+**Miért jó:** A crate-élmény fele a dramaturgia — a CrazyCrates fő vonzereje pont ez volt.
+**Építőkövek:** CrateManager, GUI-minta, entity-scheduler ismétlődő task (DamageIndicator despawn-minta).
+**Buktatók:** A jutalom a pörgetés ELŐTT dőljön el (bezárt GUI = attól még jóváírás); task-leak ellen a close-event állítsa le a léptetőt.
+
+### A48. Kulcs-források bekötése (crate a gazdaságba)
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A crate-kulcsok a meglévő jutalom-csatornákba: napi/heti kihívás, quest-jutalom, világesemény-loot, szezon-helyezés.
+**Hogyan működne:** A quest-jutalom sémába `crate-key: <id>:<db>` mező; a DailyQuest/heti megbízás (B1) és a boss-loot táblák kulcs-itemet adhatnak (CrateKeyFactory.createKey). A /crate buy mellett így „megkeresett" kulcs is van.
+**Miért jó:** A crate így nem csak sink, hanem motivációs hurok — a kulcs a visszatérés jutalma.
+**Építőkövek:** CrateKeyFactory, QuestManager applyRewards, loot-táblák.
+**Buktatók:** A kiosztott (ingyen) kulcsok aránya kontrollált legyen, különben a buy-sink kiürül.
+
+### A49. Ülés-bővítés: /lay és ülés-pózok
+**Munka:** 🟡 • **Érték:** ⭐
+
+**Mi ez:** GSit-paritás kiegészítés: fekvés (/lay) és pár ülés-변 póz.
+**Hogyan működne:** A fekvés kliens-oldalon póz-trükköt igényel (alvás-póz packet vagy LibsDisguises-híd) — a meglévő DruidDisguise reflexiós minta kiterjeszthető; ha nincs LibsDisguises, a /lay nem elérhető (soft-degrade, mint a druida-formáknál).
+**Miért jó:** Szerepjáték/screenshot-érték; a kocsma (D5) hangulatához illik.
+**Építőkövek:** SitManager, LibsDisguises-híd.
+**Buktatók:** Póz-packetek anticheat (GrimAC) false-positive kockázata — teszt kell.
+
+### A50. Esemény-tudatos MOTD
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A szerverlista-MOTD tükrözi az élő állapotot: vérhold alatt vörös MOTD, világboss alatt boss-hirdetés, szezonzáró héten visszaszámláló.
+**Hogyan működne:** A MotdListener a variáns-választás előtt megnézi az esemény-managerek getterjeit (BloodMoon/WorldBoss/Season — mind volatile-olvasás, async-safe getterek kellenek, ellenőrzendő); configban `event-variants.<esemény>` blokkok, amik aktív eseménynél felülírják a normál rotációt.
+**Miért jó:** A szerverlista élő kirakat — „valami történik BENT" érzés, ami belépésre csábít.
+**Építőkövek:** MotdListener, esemény-getterek (A14-hez már kiépítve).
+**Buktatók:** Az esemény-getterek async-hívhatóságát egyenként ellenőrizni kell (csak volatile mező-olvasás lehet).
+
+### A51. Kombó/finisher sebzés-szám kiemelés
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A lebegő sebzés-szám (A8) kombónál/finishernél nagyobb és színesebb („25.4!" arany, skálázott TextDisplay).
+**Hogyan működne:** Az AbilityCatalystListener a kombó/finisher tényét egy rövid TTL-es konkurens map-be írja; a DamageIndicatorListener a spawn előtt megnézi, és a Transformation scale-t 1.5×-re, a színt aranyra állítja.
+**Miért jó:** A kombó-rendszer (A16) vizuális jutalma — a „nagy szám" dopamin ingyen.
+**Építőkövek:** DamageIndicatorListener (Transformation már használatban), kombó-detektálás.
+**Buktatók:** A spell-sebzés nem mindig EntityDamageByEntity-ként csapódik le (potion/tick-sebzés) — csak a közvetlen sebzésre működik.
+
+### A52. Moderáció-eszkaláció és chat-napló
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** Ismételt némítás automatikusan hosszabb (5→30→180 perc), és a kiszűrt/némított üzenetek külön naplóba kerülnek.
+**Hogyan működne:** A ModerationManager mute-történetet tart (UUID→count, YamlStore); a /mute perc-megadás nélkül az eszkalációs lépcsőt használja. A blokkolt üzenetek `logs/chat-moderation.log`-ba (async append), az admin audit-log (C7) mintájára.
+**Miért jó:** Következetes büntetés-lépcső vita nélkül; a napló bizonyíték vitás esetekben.
+**Építőkövek:** ModerationManager (most készül), YamlStore.
+**Buktatók:** A napló forgatása (méret-limit), különben nő a végtelenbe.
+
+---
+
+**Összesen: 52 ötlet (A1–A52).**
