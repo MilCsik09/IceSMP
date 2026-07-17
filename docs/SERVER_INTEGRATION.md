@@ -95,7 +95,6 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **Economist + ServiceIO** | Vault-gazdaság — de a szerver gazdasága az IceSMP-é. Fogyasztót nem találtunk (a TAB `%vault_prefix%`-e volt az utolsó, az már natív LP-hídon megy). Törlés előtt: konzolban `/papi parse me %vault_eco_balance%` gyors ellenőrzésnek. |
 | **AuMenus** | A menü-configjai a gyári teszt-példák (`basic_menu`, `test_*`) — a `/menu` rendszerünk teljesebb. |
 | **FancyHolograms** | Egyetlen „test" hologram van benne (NPC-hez kötött teszt). Ha hologram kell később: natív TextDisplay-infránk kész (D3/D10 ötletek). Figyelem: törlés előtt ellenőrizd, hogy a FancyNpcs verziód nem függ-e tőle. |
-| **Orebfuscator** | Már most `.inactive`. |
 
 ### 🔶 Kiváltható közepes munkával (tervezett, ötlettár-hivatkozással)
 
@@ -111,7 +110,9 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 CoreProtect (rollback), GrimAC (anticheat), FAWE/WorldEdit/WorldGuard/goBrush/VoxelSniper/
 AxiomPaper (build-eszközök), ViaVersion/Backwards, ProtocolLib/packetevents (más pluginok
 függőségei), spark (profiler), voicechat, LuckPerms, PlaceholderAPI, LibsDisguises,
-FancyNpcs, ImageFrame, VillagerTradeEdit, bStats/faststats/FancyAnalytics (metrika).
+FancyNpcs, ImageFrame, VillagerTradeEdit, bStats/faststats/FancyAnalytics (metrika),
+**Orebfuscator** (X-ray védelem — csak az építési fázis alatt inaktív, éles indulásra
+visszakapcsolandó).
 
 **Mérleg:** a ✅+🗑 lépések után a plugin-lista ~35-ről **~24-re** csökken — kevesebb
 Folia-kockázat, gyorsabb indulás, kevesebb frissítés-függés.

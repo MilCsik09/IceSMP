@@ -11,6 +11,11 @@ settings:
   # zavaró. Állítsd false-ra, ha meg akarod hagyni a vanilla viselkedést.
   disable-locator-bar: true
 
+# Ülés (a GSit plugin kiváltása): /sit parancs + jobb-katt a lépcsőre/fél-lapra üres kézzel.
+sit:
+  enabled: true
+  click-to-sit: true
+
 # Apró világ-szabályok (a leszedett mini-pluginok natív kiváltása).
 world-tweaks:
   # Warden-halál XP-drop felülírása (ICEsmpadditions.jar kiváltása).
