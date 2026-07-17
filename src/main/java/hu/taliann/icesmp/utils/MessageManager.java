@@ -30,7 +30,7 @@ public final class MessageManager {
             Map.entry('r', "reset"));
     /** Bundled per-subsystem message files under messages/ (extracted on first run). */
     private static final String[] MESSAGE_GROUPS = {
-            "claim", "currency", "faction", "job", "market", "party", "pet", "profession",
+            "afk", "claim", "currency", "faction", "job", "market", "party", "pet", "profession",
             "quest", "relic", "spec", "spell", "system", "territory", "world"
     };
 

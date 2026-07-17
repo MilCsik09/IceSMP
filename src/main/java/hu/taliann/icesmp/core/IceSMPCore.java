@@ -262,8 +262,13 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask afkTask;
     private final hu.taliann.icesmp.utils.TextAnimator textAnimator;
     private final hu.taliann.icesmp.managers.TablistManager tablistManager;
+    private final hu.taliann.icesmp.managers.AfkManager afkManager;
+    private final hu.taliann.icesmp.managers.SitManager sitManager;
+    private final hu.taliann.icesmp.items.CrateKeyFactory crateKeyFactory;
+    private final hu.taliann.icesmp.managers.CrateManager crateManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask petTask;
 
     /**
@@ -367,19 +372,23 @@ public final class IceSMPCore {
                 abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
+        this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
+        this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin);
+        this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
+        this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
         this.textAnimator = new hu.taliann.icesmp.utils.TextAnimator(configManager);
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
                 caravanManager, escortManager, abundanceManager, serverChallengeManager,
                 meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
-                factionManager, textAnimator);
+                factionManager, textAnimator, afkManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
-                claimManager, donationChestManager, npcBindingManager);
+                claimManager, donationChestManager, npcBindingManager, crateManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -404,6 +413,8 @@ public final class IceSMPCore {
                 petManager,
                 ritualManager,
                 professionManager,
+                afkManager,
+                sitManager,
                 spellRegistry
         );
 
@@ -721,6 +732,10 @@ public final class IceSMPCore {
             tablistTask.cancel();
             tablistTask = null;
         }
+        if (afkTask != null) {
+            afkTask.cancel();
+            afkTask = null;
+        }
         if (petTask != null) {
             petTask.cancel();
             petTask = null;
@@ -743,6 +758,7 @@ public final class IceSMPCore {
         // Then clean up live player session state (HUD teams, restored armor, caches).
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             hudManager.cleanup(onlinePlayer);
+            afkManager.cleanup(onlinePlayer);
             playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
         }
 
@@ -799,6 +815,10 @@ public final class IceSMPCore {
         final long tablistTicks = Math.max(5L, configManager.getLong("tablist.refresh-ticks", 10L));
         tablistTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> tablistManager.tick(), tablistTicks, tablistTicks);
+        // Natív AFK-rendszer (AxAFKZone-kiváltás): zóna-jutalom + bossbar tick.
+        final long afkTicks = Math.max(5L, configManager.getLong("afk.refresh-ticks", 20L));
+        afkTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> afkManager.tick(), afkTicks, afkTicks);
     }
 
     /**
@@ -859,6 +879,9 @@ public final class IceSMPCore {
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager));
         plugin.registerCommand("hud", "HUD beállítások", List.of(), new hu.taliann.icesmp.commands.HudCommand(hudManager, messageManager));
         plugin.registerCommand("stats", "Statisztika-profil", List.of(), new hu.taliann.icesmp.commands.StatsCommand(statsManager, messageManager));
+        plugin.registerCommand("sit", "Ülés (leül/feláll)", List.of(), new hu.taliann.icesmp.commands.SitCommand(sitManager, messageManager));
+        plugin.registerCommand("crate", "Láda (crate) parancsok", List.of("ladak", "crates"),
+                new hu.taliann.icesmp.commands.CrateCommand(plugin, crateManager, crateKeyFactory, currencyManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));
@@ -900,6 +923,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new CharacterGUIListener(characterMenuContext), plugin);
         pluginManager.registerEvents(new CommandMenuListener(commandMenuContext), plugin);
         pluginManager.registerEvents(new HudListener(hudManager, tablistManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.AfkActivityListener(afkManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SitListener(sitManager, configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateListener(crateManager, crateKeyFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);

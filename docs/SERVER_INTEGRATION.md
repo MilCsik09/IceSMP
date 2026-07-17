@@ -87,6 +87,9 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
 | **MiniMOTD** | `MotdListener` + `config/motd.yml` — MiniMessage-formázás, IDŐALAPON rotálódó variánsok, {online}/{max} tokenek, max-player felülírás. (A MiniMOTD amúgy is gyári példa-configon állt.) | szabd testre a `motd.yml` variánsokat |
+| **AxAFKZone (+AxAPI)** | `AfkManager` + `config/afk.yml` — AFK-zónák (doboz), időzített valuta-jutalom (tudatos kis faucet, C3 monitorral figyelendő), bossbar-visszaszámláló, be-/kilépés üzenetek; PLUSZ globális AFK-detektálás és ⌚ AFK jelzés a tablistában (amit az AxAFKZone nem tudott) | vidd át a zóna-koordinátákat az `afk.yml`-be (a régi `AxAFKZone/zones/zome1.yml`-ből) |
+| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages kulcsok (CMD 6201/6202), súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
+| **GSit** | `SitManager` — `/sit` parancs + jobb-katt lépcsőre/fél-lapra üres kézzel; kelés minden úton takarít (quit/halál/teleport/blokk-törés) | — |
 
 ### 🗑 Törölhető kiváltás NÉLKÜL (nem használt / kiürült)
 
@@ -100,9 +103,6 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 
 | Plugin | Terv |
 |---|---|
-| **AxAFKZone (+AxAPI lib)** | Van 1 aktív zóna (időzített jutalom + bossbar). Natív terv (C18): AFK-detektálás + a territórium-rendszer AFK-zóna típusa + a meglévő bossbar-infra; a jutalom a kasszából/tokenből (sink-elv). Bónusz: az AFK-státuszt a saját XP/regen-rendszerünk is látná (AFK-farm exploit-védelem). |
-| **CrazyCrates** | B8 natív crate-rendszer (loot/raritás-infra + valuta-sink kulcsok). Nagyobb munka, de tervezett. |
-| **GSit** | `/sit`/`/lay` natívan (láthatatlan display-ülés) — alacsony prioritás, a GSit érett és nem ütközik. |
 | **InvSee++ (3 jar), SModeration** | Admin-eszközök — a C12 játékos-inspektor, C17 chat-szűrő/mute és C29 /report ötletek együtt váltanák ki; távlati. |
 
 ### 🔒 Marad (nem érdemes/nem szabad kiváltani)

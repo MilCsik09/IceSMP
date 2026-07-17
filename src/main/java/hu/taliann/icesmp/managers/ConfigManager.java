@@ -17,7 +17,7 @@ public final class ConfigManager {
     /** Bundled per-subsystem config files under config/ (extracted on first run). */
     private static final String[] CONFIG_FILES = {
             "general", "economy", "factions", "classes", "spells", "spells-balance",
-            "professions", "quests", "world", "relics", "pets", "crafting"
+            "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk"
     };
 
     private final JavaPlugin plugin;

@@ -1,0 +1,45 @@
+# Natív láda (crate) rendszer — a CrazyCrates kiváltása (IDEAS B8).
+#
+# Minden láda egy fizikai blokk-hely (lásd /crate set), amit egy hozzá tartozó
+# kulcs-itemmel lehet kinyitni. A kulcs ÁRA (key-price) a valuta-sink: a
+# /crate buy paranccsal levont pénz VÉGLEGESEN elég, nem kerül vissza a
+# gazdaságba. Az ELÉG a bevétel a rendszernek — a láda-jutalom maga SOSEM
+# pénz, mindig nyers item (ritkán parancs-jutalom, ha a config úgy definiálja).
+#
+# rewards: súlyozott lista — egy tétel esélye = weight / (az adott láda összes
+# weight-jének összege). Egy tétel vagy "material" (+ "amount"), vagy "command"
+# (konzolként lefuttatva, {player} helyettesítéssel) — pontosan egyet adj meg.
+crates:
+
+  koznapi:
+    display-name: "Köznapi Láda"
+    key-name: "&fKöznapi Kulcs"
+    key-material: TRIPWIRE_HOOK
+    key-custom-model-data: 6201
+    # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
+    key-price:
+      currency: NEUTRAL
+      amount: 25.0
+    rewards:
+      - {weight: 40, material: IRON_INGOT, amount: 8}
+      - {weight: 25, material: GOLDEN_APPLE, amount: 2}
+      - {weight: 20, material: DIAMOND, amount: 2}
+      - {weight: 10, material: NETHERITE_SCRAP, amount: 1}
+      - {weight: 5, material: DIAMOND_BLOCK, amount: 1, description: "&bDiamond blokk"}
+
+  ritka:
+    display-name: "&5Ritka Láda"
+    key-name: "&5Ritka Kulcs"
+    key-material: TRIPWIRE_HOOK
+    key-custom-model-data: 6202
+    # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
+    key-price:
+      currency: NEUTRAL
+      amount: 100.0
+    rewards:
+      - {weight: 30, material: NETHERITE_INGOT, amount: 1}
+      - {weight: 25, material: DIAMOND_BLOCK, amount: 3}
+      - {weight: 20, material: ENCHANTED_GOLDEN_APPLE, amount: 1}
+      - {weight: 15, material: NETHER_STAR, amount: 1}
+      - {weight: 7, material: TOTEM_OF_UNDYING, amount: 1}
+      - {weight: 3, material: NETHERITE_BLOCK, amount: 1, description: "&5Netherite blokk"}
