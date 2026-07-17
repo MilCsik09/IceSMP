@@ -27,7 +27,14 @@ public final class MotdListener implements Listener {
     private final hu.taliann.icesmp.managers.WorldBossManager worldBossManager;
     private final hu.taliann.icesmp.managers.SeasonManager seasonManager;
 
-    public MotdListener(final ConfigManager configManager,
+    /**
+     * IDEAS A59: a data-mappa {@code icons/*.png} fájljaiból betöltött szerverlista-ikonok
+     * (64×64). Az IO/dekódolás egyszer, a konstruktorban (enable, fő szál) fut; a ping-event
+     * async szálán már csak a cache-elt referencia állítódik.
+     */
+    private final java.util.Map<String, org.bukkit.util.CachedServerIcon> icons = new java.util.HashMap<>();
+
+    public MotdListener(final org.bukkit.plugin.java.JavaPlugin plugin, final ConfigManager configManager,
                         final hu.taliann.icesmp.managers.BloodMoonManager bloodMoonManager,
                         final hu.taliann.icesmp.managers.WorldBossManager worldBossManager,
                         final hu.taliann.icesmp.managers.SeasonManager seasonManager) {
@@ -35,6 +42,22 @@ public final class MotdListener implements Listener {
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
         this.seasonManager = seasonManager;
+        final java.io.File iconDir = new java.io.File(plugin.getDataFolder(), "icons");
+        final java.io.File[] files = iconDir.listFiles((dir, name) -> name.toLowerCase(java.util.Locale.ROOT).endsWith(".png"));
+        if (files != null) {
+            for (final java.io.File file : files) {
+                try {
+                    icons.put(file.getName().substring(0, file.getName().length() - 4),
+                            Bukkit.loadServerIcon(file));
+                } catch (final Exception exception) {
+                    plugin.getLogger().warning("Szerverlista-ikon nem tölthető be (" + file.getName() + "): "
+                            + exception.getMessage());
+                }
+            }
+            if (!icons.isEmpty()) {
+                plugin.getLogger().info("Szerverlista-ikonok betöltve: " + icons.keySet());
+            }
+        }
     }
 
     @EventHandler
@@ -50,6 +73,7 @@ public final class MotdListener implements Listener {
             event.motd(render(eventVariant.getString("line1", ""))
                     .append(Component.newline())
                     .append(render(eventVariant.getString("line2", ""))));
+            applyIcon(event, eventVariant.getString("icon", null));
             applyMaxPlayers(event);
             return;
         }
@@ -65,10 +89,26 @@ public final class MotdListener implements Listener {
                     event.motd(render(variant.getString("line1", ""))
                             .append(Component.newline())
                             .append(render(variant.getString("line2", ""))));
+                    applyIcon(event, variant.getString("icon", null));
                 }
             }
         }
         applyMaxPlayers(event);
+    }
+
+    /** IDEAS A59: variánshoz rendelt ikon beállítása (icons/<név>.png), ha be van töltve. */
+    private void applyIcon(final PaperServerListPingEvent event, final String iconName) {
+        if (iconName == null || iconName.isBlank()) {
+            return;
+        }
+        final org.bukkit.util.CachedServerIcon icon = icons.get(iconName);
+        if (icon != null) {
+            try {
+                event.setServerIcon(icon);
+            } catch (final Exception ignored) {
+                // Néhány ping-implementáció elutasíthatja — a default ikon marad.
+            }
+        }
     }
 
     private void applyMaxPlayers(final PaperServerListPingEvent event) {

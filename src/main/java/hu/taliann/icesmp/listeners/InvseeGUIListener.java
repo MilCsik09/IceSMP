@@ -41,10 +41,23 @@ public final class InvseeGUIListener implements Listener {
         final int slot = event.getRawSlot();
         if (holder.getView() == InvseeHolder.View.MAIN && slot == InvseeGUI.ENDER_BUTTON_SLOT) {
             InvseeGUI.openEnder(viewer, holder, messageManager);
+        } else if (holder.getView() == InvseeHolder.View.MAIN && slot == InvseeGUI.REFRESH_SLOT) {
+            // IDEAS A55: új pillanatkép — a parancs-útvonal fut újra (jogosultság-ellenőrzéssel
+            // és a célpont-száli snapshottal együtt); nézőnként 2 mp-es fék a hop-spam ellen.
+            final long now = System.currentTimeMillis();
+            final Long last = refreshDebounce.get(viewer.getUniqueId());
+            if (last == null || now - last >= 2000L) {
+                refreshDebounce.put(viewer.getUniqueId(), now);
+                viewer.performCommand("invsee " + holder.getTargetName());
+            }
         } else if (holder.getView() == InvseeHolder.View.ENDER && slot == InvseeGUI.BACK_SLOT) {
             InvseeGUI.openMain(viewer, holder, messageManager);
         }
     }
+
+    /** IDEAS A55: frissítés-fék nézőnként (a performCommand célpont-száli hopot indít). */
+    private final java.util.concurrent.ConcurrentHashMap<java.util.UUID, Long> refreshDebounce =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryDrag(final InventoryDragEvent event) {

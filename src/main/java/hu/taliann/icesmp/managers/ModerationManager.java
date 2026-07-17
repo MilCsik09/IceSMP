@@ -3,6 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
+import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -56,6 +57,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final MessageManager messageManager;
     private final File storageFile;
     private final File logDir;
     private final File chatLogFile;
@@ -69,9 +71,11 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
     private final Map<UUID, String> lastMessage = new ConcurrentHashMap<>();
 
-    public ModerationManager(final JavaPlugin plugin, final ConfigManager configManager) {
+    public ModerationManager(final JavaPlugin plugin, final ConfigManager configManager,
+                              final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.messageManager = messageManager;
         this.storageFile = new File(plugin.getDataFolder(), "moderation-data.yml");
         plugin.getDataFolder().mkdirs();
         this.logDir = new File(plugin.getDataFolder(), "logs");
@@ -212,6 +216,12 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
      * A hátralévő némítás adatai, vagy {@code null} ha nincs (érvényes) némítás.
      * Lejárt bejegyzést lustán, a memória-térképből eltávolítja (a diszk csak a következő
      * {@link #save()}-nél frissül — ez elfogadható, {@link #load()} úgyis kiszűri újraindításkor).
+     *
+     * <p>A lejárat-észlelést több szál is elindíthatja egyidejűleg (ld. {@link #isMuted}/
+     * {@link #muteInfo} async chat-szálú hívása) — a {@link Map#remove(Object, Object)} atomi
+     * compare-and-remove, tehát legfeljebb EGY hívó kapja vissza {@code true}-t ugyanarra a
+     * bejegyzésre; ez az "egyszeri jog" dönti el, ki küldi a lejárat-értesítést (A57), így az
+     * sosem duplikálódik.</p>
      */
     public MuteEntry muteInfo(final UUID playerId) {
         final MuteEntry entry = mutes.get(playerId);
@@ -219,10 +229,28 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
             return null;
         }
         if (entry.isExpired()) {
-            mutes.remove(playerId, entry);
+            if (mutes.remove(playerId, entry)) {
+                notifyMuteExpired(playerId);
+            }
             return null;
         }
         return entry;
+    }
+
+    /**
+     * A57: ha a lejárt némítást töröljük és a játékos ONLINE, értesítjük — a küldés a JÁTÉKOS
+     * saját entitás-régió-szálán történik (Folia — ez a hívó szálról, akár az async chat-szálról
+     * is legális hop, maga a hop thread-safe; ld. CLAUDE.md Folia-szabályok). Ha a játékos nincs
+     * online, nincs teendő.
+     */
+    private void notifyMuteExpired(final UUID playerId) {
+        final Player player = plugin.getServer().getPlayer(playerId);
+        if (player == null) {
+            return;
+        }
+        player.getScheduler().run(plugin, task ->
+                player.sendMessage(messageManager.get("moderation.mute-expired",
+                        "&aA némításod lejárt — újra beszélhetsz.")), null);
     }
 
     /** Minden érvényes (le nem járt) némítás, UUID szerint rendezve — snapshot olvasás. */

@@ -28,6 +28,8 @@ public final class InvseeGUI {
 
     public static final int ENDER_BUTTON_SLOT = 49;
     public static final int BACK_SLOT = 31;
+    /** IDEAS A55: frissítő-gomb a fő nézet bal alsó sarkában. */
+    public static final int REFRESH_SLOT = 45;
 
     private InvseeGUI() {
     }
@@ -35,16 +37,17 @@ public final class InvseeGUI {
     /** Reopens the main view from an existing holder's snapshot (no new item access). */
     public static void openMain(final Player viewer, final InvseeHolder source, final MessageManager messageManager) {
         openMain(viewer, source.getTargetName(), source.getMainSnapshot(), source.getArmorSnapshot(),
-                source.getOffHandSnapshot(), source.getEnderSnapshot(), messageManager);
+                source.getOffHandSnapshot(), source.getEnderSnapshot(), source.getSnapshotAtMillis(), messageManager);
     }
 
     public static void openMain(final Player viewer, final String targetName, final ItemStack[] mainSnapshot,
                                 final ItemStack[] armorSnapshot, final ItemStack offHandSnapshot,
-                                final ItemStack[] enderSnapshot, final MessageManager messageManager) {
+                                final ItemStack[] enderSnapshot, final long snapshotAtMillis,
+                                final MessageManager messageManager) {
         final Component title = messageManager.getComponent("admin.icesmp.invsee.title-main",
-                "&6» %s inventoryja (csak olvasás — pillanatkép) «", targetName);
+                "&6» %s inventoryja (csak olvasás%s) «", targetName, ageSuffix(snapshotAtMillis));
         final InvseeHolder holder = new InvseeHolder(targetName, mainSnapshot, armorSnapshot, offHandSnapshot,
-                enderSnapshot, InvseeHolder.View.MAIN);
+                enderSnapshot, snapshotAtMillis, InvseeHolder.View.MAIN);
         final Inventory inventory = Bukkit.createInventory(holder, MAIN_SIZE, title);
         holder.setInventory(inventory);
 
@@ -65,16 +68,18 @@ public final class InvseeGUI {
             inventory.setItem(slot, GuiUtil.filler());
         }
         inventory.setItem(ENDER_BUTTON_SLOT, enderButton());
+        inventory.setItem(REFRESH_SLOT, refreshButton(snapshotAtMillis));
 
         viewer.openInventory(inventory);
     }
 
     public static void openEnder(final Player viewer, final InvseeHolder source, final MessageManager messageManager) {
         final Component title = messageManager.getComponent("admin.icesmp.invsee.title-ender",
-                "&6» %s ender-ládája (csak olvasás — pillanatkép) «", source.getTargetName());
+                "&6» %s ender-ládája (csak olvasás%s) «", source.getTargetName(),
+                ageSuffix(source.getSnapshotAtMillis()));
         final InvseeHolder holder = new InvseeHolder(source.getTargetName(), source.getMainSnapshot(),
                 source.getArmorSnapshot(), source.getOffHandSnapshot(), source.getEnderSnapshot(),
-                InvseeHolder.View.ENDER);
+                source.getSnapshotAtMillis(), InvseeHolder.View.ENDER);
         final Inventory inventory = Bukkit.createInventory(holder, ENDER_SIZE, title);
         holder.setInventory(inventory);
 
@@ -110,5 +115,17 @@ public final class InvseeGUI {
     private static ItemStack backButton() {
         return GuiUtil.icon(Material.ARROW, GuiUtil.accent("« Vissza a fő nézethez"),
                 List.of(GuiUtil.grey("Pillanatkép — nem élő nézet")));
+    }
+
+    /** IDEAS A55: a pillanatkép kora a címben („ — 12 mp-es kép"), friss képnél üres. */
+    private static String ageSuffix(final long snapshotAtMillis) {
+        final long ageSeconds = Math.max(0L, (System.currentTimeMillis() - snapshotAtMillis) / 1000L);
+        return ageSeconds < 5L ? " — pillanatkép" : " — " + ageSeconds + " mp-es kép";
+    }
+
+    private static ItemStack refreshButton(final long snapshotAtMillis) {
+        return GuiUtil.icon(Material.CLOCK, GuiUtil.accent("🔄 Frissítés"),
+                List.of(GuiUtil.grey("Új pillanatkép kérése a célpontról."),
+                        GuiUtil.grey(ageSuffix(snapshotAtMillis).replaceFirst("^ — ", "Kora: "))));
     }
 }

@@ -69,6 +69,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
     // IDEAS A51: kombó/lánc-befejező után rövid ideig kiemelt sebzés-szám (DamageIndicatorListener olvassa).
     private final Map<UUID, Long> comboBoostUntil = new ConcurrentHashMap<>();
+    // IDEAS A62: az aktív kombó-ablak hint-lánc indítási időbélyege — az újabb cast érvényteleníti.
+    private final Map<UUID, Long> hintStartedAt = new ConcurrentHashMap<>();
+    private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
@@ -87,6 +90,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         this.talentManager = talentManager;
         this.messageManager = messageManager;
         this.spellFavoritesManager = spellFavoritesManager;
+        this.plugin = plugin;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
     }
 
@@ -343,6 +347,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         // kombó után a HUD a lánc következő lépését, sima cast után a nyíló kombó-ablakot jelzi.
         final boolean chainFinisher = chainBonusPercent > 0.0D;
         final boolean combo = chainFinisher || isComboMatch(player, selected.getId(), now);
+        // IDEAS A62: az új cast érvényteleníti az előző kombó-hint láncot (a hint-ág újraindítja).
+        hintStartedAt.remove(player.getUniqueId());
         if (combo) {
             // IDEAS A51: 3 mp-ig kiemelt (nagyobb, arany) sebzés-szám a kombó/lánc-befejező castjaira.
             comboBoostUntil.put(player.getUniqueId(), now + 3000L);
@@ -487,10 +493,34 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (next == null) {
             return;
         }
-        final long windowSeconds = Math.max(1L, configManager.getLong("spells.combos.window-seconds", 4L));
+        // IDEAS A62: nem egyszeri üzenet, hanem 500 ms-onként frissülő FOGYÓ CSÍK a hátralévő
+        // kombó-ablakról — az időbélyeg az "aktív hint" azonosítója, egy újabb cast (új put vagy
+        // remove) némán leállítja a régi láncot.
+        final long windowMillis = Math.max(1L, configManager.getLong("spells.combos.window-seconds", 4L)) * 1000L;
+        final long startedAt = System.currentTimeMillis();
+        hintStartedAt.put(player.getUniqueId(), startedAt);
+        renderComboHint(player, next.getName(), startedAt, windowMillis);
+    }
+
+    /** IDEAS A62: egy hint-lánc lépése — csak addig fut, amíg az időbélyege az aktuális. */
+    private void renderComboHint(final Player player, final String nextName, final long startedAt,
+                                 final long windowMillis) {
+        final Long current = hintStartedAt.get(player.getUniqueId());
+        if (current == null || current.longValue() != startedAt) {
+            return; // Újabb cast érvénytelenítette — a lánc némán leáll.
+        }
+        final long elapsed = System.currentTimeMillis() - startedAt;
+        if (elapsed >= windowMillis) {
+            hintStartedAt.remove(player.getUniqueId(), current);
+            return; // Lejárt — csend, nincs "lejárt" üzenet.
+        }
+        final int segments = 8;
+        final int filled = segments - (int) Math.min(segments, elapsed * segments / windowMillis);
         player.sendActionBar(messageManager.getMessage("catalyst.combo-window",
-                "<gray>⏳ Kombó-ablak: <gold>{next}</gold> ({window} mp)</gray>",
-                Map.of("next", next.getName(), "window", String.valueOf(windowSeconds))));
+                "<gray>⏳ <gold>{bar}</gold><dark_gray>{empty}</dark_gray> Kombó: <gold>{next}</gold></gray>",
+                Map.of("bar", "▰".repeat(filled), "empty", "▱".repeat(segments - filled), "next", nextName)));
+        player.getScheduler().runDelayed(plugin,
+                task -> renderComboHint(player, nextName, startedAt, windowMillis), null, 10L);
     }
 
     /**
@@ -726,6 +756,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         secondLastCastSpell.remove(playerId);
         secondLastCastTime.remove(playerId);
         comboBoostUntil.remove(playerId);
+        hintStartedAt.remove(playerId);
     }
 
     /**

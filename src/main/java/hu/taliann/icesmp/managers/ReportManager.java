@@ -117,6 +117,7 @@ public final class ReportManager implements PersistentStore {
                 }
             }
             nextId.set(maxId + 1);
+            loadPendingFeedback(yaml.getConfigurationSection("pending-feedback"));
             plugin.getLogger().info("Loaded " + reports.size() + " report(s).");
             if (pruned) {
                 // Shrink the on-disk file immediately rather than waiting for the next mutation.
@@ -140,6 +141,12 @@ public final class ReportManager implements PersistentStore {
             yaml.set(basePath + ".resolved", report.resolved());
             if (report.resolvedBy() != null) {
                 yaml.set(basePath + ".resolved-by", report.resolvedBy());
+            }
+        }
+
+        for (final Map.Entry<UUID, java.util.List<String>> entry : pendingFeedbackSnapshot().entrySet()) {
+            synchronized (entry.getValue()) {
+                yaml.set("pending-feedback." + entry.getKey(), new java.util.ArrayList<>(entry.getValue()));
             }
         }
 
@@ -236,8 +243,61 @@ public final class ReportManager implements PersistentStore {
         }
         reports.put(id, new Report(existing.id(), existing.reporterUuid(), existing.reporterName(),
                 existing.targetName(), existing.reason(), existing.createdAtMillis(), true, adminName));
+        // IDEAS A58: a bejelentő visszajelzést kap — online: azonnal (saját régió-szálán);
+        // offline: eltárolt üzenet, a következő belépéskor kézbesíti a ReportFeedbackListener.
+        final String feedback = messageManager.get("report-feedback-resolved",
+                "&a✔ A bejelentésedet (&f%s&a) egy moderátor lezárta. Köszönjük!", existing.targetName());
+        final Player reporter = plugin.getServer().getPlayer(existing.reporterUuid());
+        if (reporter != null) {
+            reporter.getScheduler().run(plugin, task -> reporter.sendMessage(feedback), null);
+        } else {
+            pendingFeedback.computeIfAbsent(existing.reporterUuid(),
+                    key -> java.util.Collections.synchronizedList(new java.util.ArrayList<>())).add(feedback);
+        }
         save();
         return true;
+    }
+
+    /** IDEAS A58: kézbesítetlen visszajelzések (offline bejelentőknek) — a reports.yml-be perzisztálva. */
+    private final Map<UUID, java.util.List<String>> pendingFeedback = new ConcurrentHashMap<>();
+
+    /**
+     * IDEAS A58: a belépő játékos függő visszajelzéseinek kézbesítése (a join a játékos saját
+     * régió-szálán fut, a közvetlen sendMessage legális). Kézbesítés után törlés + mentés.
+     */
+    public void deliverPendingFeedback(final Player player) {
+        final java.util.List<String> pending = pendingFeedback.remove(player.getUniqueId());
+        if (pending == null || pending.isEmpty()) {
+            return;
+        }
+        synchronized (pending) {
+            pending.forEach(player::sendMessage);
+        }
+        save();
+    }
+
+    /** A pending-feedback szekció betöltése (a load() hívja). */
+    void loadPendingFeedback(final org.bukkit.configuration.ConfigurationSection section) {
+        pendingFeedback.clear();
+        if (section == null) {
+            return;
+        }
+        for (final String key : section.getKeys(false)) {
+            try {
+                final java.util.List<String> messages = section.getStringList(key);
+                if (!messages.isEmpty()) {
+                    pendingFeedback.put(UUID.fromString(key),
+                            java.util.Collections.synchronizedList(new java.util.ArrayList<>(messages)));
+                }
+            } catch (final IllegalArgumentException ignored) {
+                // Sérült kulcs — kihagyjuk.
+            }
+        }
+    }
+
+    /** A pending-feedback szekció kiírása (a save() hívja). */
+    Map<UUID, java.util.List<String>> pendingFeedbackSnapshot() {
+        return pendingFeedback;
     }
 
     /** Count of unresolved reports — cheap snapshot, safe from any region thread. */

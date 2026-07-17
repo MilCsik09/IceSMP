@@ -690,6 +690,22 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         logs/chat-moderation.log-ba kerülnek (5 MB-nál forgatás).
   - [ ] **Esemény-MOTD:** vérhold indítása után a szerverlista MOTD-ja a vérhold-variánsra vált
         (frissítsd a listát), utána vissza a normál rotációra.
+- [ ] **QoL-kör 2 (A53–A62, ÚJ):**
+  - [ ] **`/afk`:** azonnali ⌚-jelölés + hátrasorolás + jutalomkapu; bármilyen mozgás/üzenet törli
+        (a parancs kiadása maga NEM törli — a toggle megmarad).
+  - [ ] **Sidebar-számok:** az oldalsáv jobb szélén NINCSENEK piros sor-számok (blank numberFormat).
+  - [ ] **{event}/{ping} tokenek:** a tablist headerben/footerben használható az {event} (aktív
+        események) és a {ping} mostantól színkódolt (zöld <80 / sárga <150 / piros).
+  - [ ] **Invsee-frissítés:** a 🔄 gombbal új pillanatkép (2 mp-es fék); a cím mutatja a kép korát.
+  - [ ] **Kulcs-lore:** a crate-kulcs lore-jában a láda neve + top-3 jutalom esély-%-kal.
+  - [ ] **Mute-lejárat:** a némítás lejártakor a játékos üzenetet kap (csak EGYSZER, akkor is, ha
+        chat-spammel próbálkozott közben).
+  - [ ] **Report-visszajelzés:** resolve után a bejelentő üzenetet kap — online azonnal, offline a
+        következő belépéskor (restart-álló).
+  - [ ] **Ikon-rotáció:** icons/*.png betöltés a konzol-logban; variánshoz kötött ikon váltáskor
+        a szerverlista-ikon is cserél (RP nélkül is működik — ez szerver-oldali).
+  - [ ] **Kombó-csík:** cast után az action baron fogyó ▰▰▰▱▱ csík mutatja a kombó-ablakot; új
+        cast megszakítja; lejáratkor csendben eltűnik (nem ír „lejárt"-at).
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).

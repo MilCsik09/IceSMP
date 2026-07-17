@@ -22,16 +22,20 @@ public final class InvseeHolder implements InventoryHolder {
     private final ItemStack[] armorSnapshot;
     private final ItemStack offHandSnapshot;
     private final ItemStack[] enderSnapshot;
+    /** {@link System#currentTimeMillis()} at which this snapshot was captured (A55 — refresh button/age display). */
+    private final long snapshotAtMillis;
     private final View view;
     private Inventory inventory;
 
     public InvseeHolder(final String targetName, final ItemStack[] mainSnapshot, final ItemStack[] armorSnapshot,
-                        final ItemStack offHandSnapshot, final ItemStack[] enderSnapshot, final View view) {
+                        final ItemStack offHandSnapshot, final ItemStack[] enderSnapshot, final long snapshotAtMillis,
+                        final View view) {
         this.targetName = targetName;
         this.mainSnapshot = mainSnapshot;
         this.armorSnapshot = armorSnapshot;
         this.offHandSnapshot = offHandSnapshot;
         this.enderSnapshot = enderSnapshot;
+        this.snapshotAtMillis = snapshotAtMillis;
         this.view = view;
     }
 
@@ -53,6 +57,10 @@ public final class InvseeHolder implements InventoryHolder {
 
     public ItemStack[] getEnderSnapshot() {
         return enderSnapshot;
+    }
+
+    public long getSnapshotAtMillis() {
+        return snapshotAtMillis;
     }
 
     public View getView() {

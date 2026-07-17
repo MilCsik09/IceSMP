@@ -60,10 +60,15 @@ public final class CrateKeyFactory {
 
         final String keyName = configManager.getString(basePath + ".key-name", "&fLáda Kulcs");
         meta.displayName(SERIALIZER.deserialize(TextUtil.color(keyName)).decoration(TextDecoration.ITALIC, false));
-        meta.lore(List.of(
-                SERIALIZER.deserialize(TextUtil.color("&8Láda-kulcs")).decoration(TextDecoration.ITALIC, false),
-                SERIALIZER.deserialize(TextUtil.color("&7Jobb katt a ládán: &fkinyitás")).decoration(TextDecoration.ITALIC, false)
-        ));
+        // IDEAS A56: a kulcs lore-ja a láda nevét és a top-3 jutalmat mutatja esély-százalékkal —
+        // a kulcs "önmagát adja el" a piacon/tradeben is. A sorsolás mindig a friss configból megy,
+        // a lore csak tájékoztató (config-átírás után a régi kulcsok lore-ja elavulhat, ez kozmetikai).
+        final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+        lore.add(SERIALIZER.deserialize(TextUtil.color(
+                configManager.getString(basePath + ".display-name", "&8Láda") + " &8— kulcs")).decoration(TextDecoration.ITALIC, false));
+        lore.add(SERIALIZER.deserialize(TextUtil.color("&7Jobb katt a ládán: &fkinyitás")).decoration(TextDecoration.ITALIC, false));
+        lore.addAll(topRewardLore(basePath));
+        meta.lore(lore);
 
         final int customModelData = configManager.getInt(basePath + ".key-custom-model-data", 0);
         if (customModelData > 0) {
@@ -75,6 +80,56 @@ public final class CrateKeyFactory {
         meta.getPersistentDataContainer().set(crateKeyIdKey, PersistentDataType.STRING, crateId);
         itemStack.setItemMeta(meta);
         return itemStack;
+    }
+
+    /** IDEAS A56: a top-3 jutalom lore-sorai súly szerinti esély-százalékkal, plusz „…és további N". */
+    private List<net.kyori.adventure.text.Component> topRewardLore(final String basePath) {
+        final java.util.List<java.util.Map<?, ?>> rewards = configManager.getConfiguration() == null
+                ? List.of() : configManager.getConfiguration().getMapList(basePath + ".rewards");
+        if (rewards.isEmpty()) {
+            return List.of();
+        }
+        int totalWeight = 0;
+        for (final java.util.Map<?, ?> reward : rewards) {
+            totalWeight += rewardWeight(reward);
+        }
+        if (totalWeight <= 0) {
+            return List.of();
+        }
+        final java.util.List<java.util.Map<?, ?>> sorted = new java.util.ArrayList<>(rewards);
+        sorted.sort((a, b) -> Integer.compare(rewardWeight(b), rewardWeight(a)));
+
+        final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+        final int shown = Math.min(3, sorted.size());
+        for (int i = 0; i < shown; i++) {
+            final java.util.Map<?, ?> reward = sorted.get(i);
+            final long percent = Math.round(rewardWeight(reward) * 100.0D / totalWeight);
+            lore.add(SERIALIZER.deserialize(TextUtil.color(
+                            "&8◆ &7" + rewardLabel(reward) + " &8— &e" + percent + "%"))
+                    .decoration(TextDecoration.ITALIC, false));
+        }
+        if (sorted.size() > shown) {
+            lore.add(SERIALIZER.deserialize(TextUtil.color("&8…és további " + (sorted.size() - shown) + " jutalom"))
+                    .decoration(TextDecoration.ITALIC, false));
+        }
+        return lore;
+    }
+
+    private static int rewardWeight(final java.util.Map<?, ?> reward) {
+        final Object weight = reward.get("weight");
+        return weight instanceof Number number ? Math.max(0, number.intValue()) : 0;
+    }
+
+    private static String rewardLabel(final java.util.Map<?, ?> reward) {
+        final Object description = reward.get("description");
+        if (description instanceof String text && !text.isBlank()) {
+            return TextUtil.color(text);
+        }
+        final Object material = reward.get("material");
+        final Object amount = reward.get("amount");
+        final String name = material instanceof String materialName
+                ? materialName.toLowerCase(java.util.Locale.ROOT).replace('_', ' ') : "jutalom";
+        return name + (amount instanceof Number number && number.intValue() > 1 ? " ×" + number.intValue() : "");
     }
 
     /** Whether the item is any crate key. */

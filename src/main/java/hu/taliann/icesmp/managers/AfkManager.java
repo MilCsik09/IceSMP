@@ -66,6 +66,25 @@ public final class AfkManager implements PlayerStateCleanup {
             return;
         }
         lastActivity.put(playerId, System.currentTimeMillis());
+        // IDEAS A53: bármilyen aktivitás törli az önkéntes AFK-jelölést is.
+        manualAfk.remove(playerId);
+    }
+
+    /** IDEAS A53: önkéntes AFK-jelölések (/afk) — bármilyen aktivitás törli. */
+    private final java.util.Set<UUID> manualAfk = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * IDEAS A53: /afk — önkéntes AFK-váltás. Bekapcsolva azonnal él a ⌚-jelölés, a
+     * hátrasorolás és a jutalomkapu (A46); bármilyen aktivitás (mozgás/chat/parancs) törli.
+     *
+     * @return az ÚJ állapot (true = mostantól AFK)
+     */
+    public boolean toggleManualAfk(final UUID playerId) {
+        if (manualAfk.remove(playerId)) {
+            return false;
+        }
+        manualAfk.add(playerId);
+        return true;
     }
 
     /**
@@ -78,7 +97,7 @@ public final class AfkManager implements PlayerStateCleanup {
         if (playerId == null) {
             return false;
         }
-        if (currentZone.containsKey(playerId)) {
+        if (manualAfk.contains(playerId) || currentZone.containsKey(playerId)) {
             return true;
         }
         final Long last = lastActivity.get(playerId);
@@ -296,6 +315,7 @@ public final class AfkManager implements PlayerStateCleanup {
         zoneProgress.remove(playerId);
         zoneEnteredAt.remove(playerId);
         bossBars.remove(playerId);
+        manualAfk.remove(playerId);
     }
 
     /** One configured AFK-zone box (normalized min/max, inclusive block bounds). */

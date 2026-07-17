@@ -5,7 +5,7 @@
 Jelölés: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) • **Érték** (⭐–⭐⭐⭐) • `[TOP]` = ajánlott
 következő kör • `[KÉSZ]` = már implementálva.
 
-> A1–A16 ✅ implementálva (PLAYTEST.md).
+> A1–A16, A43–A62 ✅ implementálva (PLAYTEST.md).
 
 ---
 
@@ -608,7 +608,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 ---
 
-## Továbbfejlesztési kör a natív plugin-kiváltásokhoz (A43–A52)
+## Továbbfejlesztési kör a natív plugin-kiváltásokhoz (A43–A52) — ✅ IMPLEMENTÁLVA
 
 ### A43. Relációs tablist-színek (háború-tudatos nevek)
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
@@ -702,7 +702,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 ---
 
-## Újabb QoL-vadászat a friss rendszereken (A53–A62)
+## Újabb QoL-vadászat a friss rendszereken (A53–A62) — ✅ IMPLEMENTÁLVA
 
 ### A53. /afk parancs (önkéntes AFK-jelölés)
 **Munka:** 🟢 • **Érték:** ⭐⭐

@@ -83,8 +83,10 @@ public final class InvseeCommand implements BasicCommand {
             }
 
             final String targetName = target.getName();
+            final long snapshotAt = System.currentTimeMillis();
             viewer.getScheduler().run(plugin, viewerTask -> InvseeGUI.openMain(
-                    viewer, targetName, mainSnapshot, armorSnapshot, offHandSnapshot, enderSnapshot, messageManager
+                    viewer, targetName, mainSnapshot, armorSnapshot, offHandSnapshot, enderSnapshot,
+                    snapshotAt, messageManager
             ), null);
         }, null);
     }

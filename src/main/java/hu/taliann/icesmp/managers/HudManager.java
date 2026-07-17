@@ -280,7 +280,10 @@ public final class HudManager {
                     if (i < lines.size()) {
                         teams[i].prefix(lines.get(i));
                         if (objective != null && !objective.getScore(entry).isScoreSet()) {
-                            objective.getScore(entry).setScore(LINES - i);
+                            final org.bukkit.scoreboard.Score score = objective.getScore(entry);
+                            score.setScore(LINES - i);
+                            // IDEAS A60: a jobb szélső piros sor-számok elrejtése (1.20.3+ API).
+                            score.numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat.blank());
                         }
                     } else {
                         // Hide the unused row entirely (no empty sidebar line).

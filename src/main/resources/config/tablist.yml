@@ -43,6 +43,10 @@ tablist:
     war-colors: true
   playerlist-ping:
     enabled: true
+  # IDEAS A61: a {ping} token szín-küszöbei (ms): alatta zöld / sárga / fölötte piros.
+  ping-colors:
+    good: 80
+    ok: 150
   sorting:
     # LP primary-group sorrend a tablistában (elöl a lista eleje); ismeretlen csoport a végére kerül,
     # azonos csoporton belül név szerinti ABC.

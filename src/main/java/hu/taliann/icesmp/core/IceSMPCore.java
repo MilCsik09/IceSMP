@@ -377,7 +377,7 @@ public final class IceSMPCore {
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
-        this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager);
+        this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
         this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
         this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
         // IDEAS A48: a quest "rewards.crate-key" mezője setterrel kap CrateKeyFactory-t
@@ -821,6 +821,8 @@ public final class IceSMPCore {
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
+        // IDEAS A54: a tablist {event} tokenje a HUD-snapshotból olvas.
+        tablistManager.setHudManager(hudManager);
         // Natív tablist (TAB-kiváltás): saját, gyorsabb tick — a header/footer és a tab-nevek
         // diff-eltek, így a sűrűbb ütem csak valódi változáskor jelent csomagot.
         final long tablistTicks = Math.max(5L, configManager.getLong("tablist.refresh-ticks", 10L));
@@ -895,6 +897,7 @@ public final class IceSMPCore {
         plugin.registerCommand("hud", "HUD beállítások", List.of(), new hu.taliann.icesmp.commands.HudCommand(hudManager, messageManager));
         plugin.registerCommand("stats", "Statisztika-profil", List.of(), new hu.taliann.icesmp.commands.StatsCommand(statsManager, messageManager));
         plugin.registerCommand("sit", "Ülés (leül/feláll)", List.of(), new hu.taliann.icesmp.commands.SitCommand(sitManager, messageManager));
+        plugin.registerCommand("afk", "Önkéntes AFK-jelölés", List.of(), new hu.taliann.icesmp.commands.AfkCommand(afkManager, messageManager));
         plugin.registerCommand("crate", "Láda (crate) parancsok", List.of("ladak", "crates"),
                 new hu.taliann.icesmp.commands.CrateCommand(plugin, crateManager, crateKeyFactory, currencyManager, messageManager));
         plugin.registerCommand("report", "Játékos bejelentése (admin: /reports)", List.of("bejelent"),
@@ -993,6 +996,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatModerationListener(
                 configManager, moderationManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.InvseeGUIListener(messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ReportFeedbackListener(reportManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
@@ -1013,7 +1017,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
         // Plugin-leépítés: ICEsmpadditions + FarmProtect + MiniMOTD natív kiváltása
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldTweaksListener(configManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(configManager, bloodMoonManager, worldBossManager, seasonManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager, bloodMoonManager, worldBossManager, seasonManager), plugin);
         // IDEAS A3/A8/A9: harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StatsCombatListener(statsManager), plugin);
