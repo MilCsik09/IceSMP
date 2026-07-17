@@ -796,4 +796,80 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 ---
 
-**Összesen: 62 ötlet (A1–A62).**
+## QoL-vadászat, 3. kör (A63–A70)
+
+### A63. /ping parancs
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** `/ping [név]` — saját (vagy más) ping színkódolva, a tablist-küszöbökkel.
+**Hogyan működne:** Vékony parancs a TabInfo-snapshotból (a TablistManager már gyűjti a pinget) — más játékos entitását nem is kell érinteni. Ugyanazok a zöld/sárga/piros küszöbök (A61).
+**Miért jó:** A „lagolok?" kérdés önkiszolgáló válasza; a snapshot-infra ingyen adja.
+**Építőkövek:** TablistManager snapshotok, ping-colors config.
+**Buktatók:** —
+
+### A64. Animált oldalsáv-cím
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A sidebar címe ({@code hud.sidebar.title}) is lehet animáció: `{anim:<név>}` támogatás.
+**Hogyan működne:** A buildSidebar/update a címet a TextAnimator-on át rendereli, ha token van benne; diff-elt (csak frame-váltáskor íródik újra). Egy finom szín-hullámzó „Ice SMP" felirat a glyph mellett.
+**Miért jó:** A TAB-os szerverek jellegzetes „élő cím" hatása — nálunk pár sor.
+**Építőkövek:** TextAnimator, HudManager cím-kezelés.
+**Buktatók:** Gyors frame-ek cím-újraregisztrálást igényelnek (objective displayName-írás — olcsó, de 500 ms-nál ne gyorsabban).
+
+### A65. AFK-zóna vizuális perem
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** Az AFK-zónába belépéskor (és onnan 10 mp-enként) halvány részecske-perem mutatja a zóna határát.
+**Hogyan működne:** A claim `show` határ-kirajzoló mintája az AfkManager tick zóna-ágában: a zóna-doboz élei mentén ritkított partikelek, csak a bent állóknak (régió-lokális spawnParticle a játékos szálán).
+**Miért jó:** A játékos látja, meddig ér a jutalom-zóna — nem lép ki véletlenül fél blokkal.
+**Építőkövek:** AfkManager zóna-doboz, claim-határ partikel-minta.
+**Buktatók:** Partikel-mennyiség fékezése (nagy zónánál csak a játékoshoz közeli élek).
+
+### A66. Ritka crate-nyeremény broadcast
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** Ha valaki alacsony esélyű (pl. <10% súlyú) jutalmat húz, szerver-broadcast megy („✨ X kihúzta: Netherite-törmelék a Ritka Ládából!").
+**Hogyan működne:** A CrateManager sorsolása ismeri a húzott jutalom súly-arányát; küszöb alatt (crates-settings.broadcast-below-percent, default 10) broadcast a meglévő üzenet-infrán. Kapcsolható.
+**Miért jó:** A crate-hype fele a mások szerencséjének látványa — ingyen marketing a kulcs-sinknek.
+**Építőkövek:** CrateManager sorsolás, broadcast-minta.
+**Buktatók:** Spam-fék: játékosonként max 1 broadcast/perc.
+
+### A67. Kattintható stat-kártya a chatben
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** A /stats kimenet kap egy „megosztás" sort: kattintva a chatbe posztolható egy tömör, hover-rel bővülő stat-kártya.
+**Hogyan működne:** Adventure hover/click eventek: a kártya egy sor („⚔ X statjai — vidd fölé!"), hoverText a teljes statokkal; a megosztás egy rejtett parancson át megy (rate-limit 1/perc). A chat-formázó változatlan.
+**Miért jó:** A statisztika közösségi funkciót kap — flex és rivalizálás, ami a ranglistát is hajtja.
+**Építőkövek:** StatsCommand, Adventure hover/click API.
+**Buktatók:** A megosztó-parancs validálja, hogy a játékos a SAJÁT kártyáját posztolja.
+
+### A68. Halál-összegző hover-részletek
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A death recap sorai hover-re többet mondanak: a gyilkos játékos kaszt/szint/K-D adata, mob-forrásnál a mob-szint.
+**Hogyan működne:** A DeathRecapListener a rögzítéskor (a sértett szálán, ahol az adat elérhető) a bejegyzésbe teszi a plusz mezőket; a kiíráskor Component hoverText. Semmilyen új esemény-út.
+**Miért jó:** „Ki volt ez és mekkora?" — a bosszú-információ egy hoverre van, a chat mégsem lesz hosszabb.
+**Építőkövek:** DeathRecapListener ring-buffer, Adventure hover.
+**Buktatók:** A gyilkos adatainak olvasása a SÉRTETT szálán történik — csak a snapshotolható mezők (név/szint a kill-pillanatban).
+
+### A69. Egységes menü-hangnyelv
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** Közös hang-készlet minden GUI-ra: nyitás, lapozás, siker, hiba, vásárlás — ma GUI-nként ad-hoc (vagy néma).
+**Hogyan működne:** `GuiUtil.sound(player, GuiSound.OPEN|PAGE|SUCCESS|ERROR|BUY)` — egyetlen enum + a GUI-listenerek hívásainak egységesítése (mechanikus csere). A hangok configból felülírhatók (gui.sounds.*).
+**Miért jó:** A felület „egy kézből valónak" hangzik — apró, de az igényesség-érzet nagy része pont ez.
+**Építőkövek:** GuiUtil, meglévő GUI-listenerek.
+**Buktatók:** —
+
+### A70. Quest-teljesítés toast
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Quest teljesítésekor a jobb felső sarokban vanília advancement-toast is felugrik a chat-üzenet mellett.
+**Hogyan működne:** Paper toast-küldés (ideiglenes advancement adás/elvétel vagy a Paper API toast-supportja — ellenőrzendő, melyik érhető el 1.21.11-en tisztán); a quest display-neve + ikonja. A QuestManager complete()-jébe egy hívás.
+**Miért jó:** A teljesítés-pillanat ünnepibb — a vanília nyelvén szól, minden kliensen működik.
+**Építőkövek:** QuestManager.complete, Paper toast-út.
+**Buktatók:** Ha csak advancement-trükkel megy, a receptek/advancement-lista ne szennyeződjön (rejtett, azonnal visszavont advancement).
+
+---
+
+**Összesen: 70 ötlet (A1–A70).**
