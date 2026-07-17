@@ -67,6 +67,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final Map<UUID, Long> secondLastCastTime = new ConcurrentHashMap<>();
     // IDEAS A15: cast-számláló — a StatsManager a kézi DI-sorrendben később épül, ezért setter.
     private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
+    // IDEAS A51: kombó/lánc-befejező után rövid ideig kiemelt sebzés-szám (DamageIndicatorListener olvassa).
+    private final Map<UUID, Long> comboBoostUntil = new ConcurrentHashMap<>();
 
     public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
@@ -341,6 +343,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         // kombó után a HUD a lánc következő lépését, sima cast után a nyíló kombó-ablakot jelzi.
         final boolean chainFinisher = chainBonusPercent > 0.0D;
         final boolean combo = chainFinisher || isComboMatch(player, selected.getId(), now);
+        if (combo) {
+            // IDEAS A51: 3 mp-ig kiemelt (nagyobb, arany) sebzés-szám a kombó/lánc-befejező castjaira.
+            comboBoostUntil.put(player.getUniqueId(), now + 3000L);
+        }
         putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
         applyCooldownOverlay(player, selected, combo ? comboRefundMillis(player, selected) : 0L);
         playCastFlourish(player, combo);
@@ -719,6 +725,26 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         lastCastTime.remove(playerId);
         secondLastCastSpell.remove(playerId);
         secondLastCastTime.remove(playerId);
+        comboBoostUntil.remove(playerId);
+    }
+
+    /**
+     * IDEAS A51: igaz, ha a játékos legutóbbi castja kombó/lánc-befejező volt és a 3 mp-es
+     * kiemelés-ablak még nem járt le. Lejárt bejegyzést lustán eltávolítja.
+     */
+    public boolean hasComboBoost(final UUID playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        final Long until = comboBoostUntil.get(playerId);
+        if (until == null) {
+            return false;
+        }
+        if (System.currentTimeMillis() >= until) {
+            comboBoostUntil.remove(playerId);
+            return false;
+        }
+        return true;
     }
 
     public void clearPlayerState(final UUID playerId) {

@@ -387,6 +387,8 @@ public final class IceSMPCore {
                 meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
                 factionManager, textAnimator, afkManager);
+        // IDEAS A43: relációs háború-színek a tablistában (raid alatt az ellenség piros).
+        this.tablistManager.setRaidManager(raidManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
         this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
@@ -957,8 +959,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
-        pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager), plugin);
-        pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager), plugin);
+        pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager, afkManager), plugin);
+        pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager, afkManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, itemRarityService), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobLootListener(configManager, itemRarityService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog, uniqueMaterialFactory), plugin);
@@ -996,7 +998,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(plugin, sinManager, raidManager, factionManager, statsManager, currencyManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager), plugin);
+        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.OnboardingListener(configManager, questManager, messageManager), plugin);
@@ -1007,11 +1009,16 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
         // Plugin-leépítés: ICEsmpadditions + FarmProtect + MiniMOTD natív kiváltása
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldTweaksListener(configManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(configManager, bloodMoonManager, worldBossManager, seasonManager), plugin);
         // IDEAS A3/A8/A9: harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StatsCombatListener(statsManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager), plugin);
+        // IDEAS A45/A51: a sebzés-szám listener a kombó-boost jelzéshez a katalizátor-listenert,
+        // a HUD célpont-sora pedig ezt a listenert olvassa.
+        final hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators =
+                new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager, abilityCatalystListener);
+        pluginManager.registerEvents(damageIndicators, plugin);
+        hudManager.setDamageIndicators(damageIndicators);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DeathRecapListener(configManager, messageManager), plugin);
         if (relicManager.isEnabled()) {
             pluginManager.registerEvents(new RelicCraftSafetyListener(relicManager), plugin);

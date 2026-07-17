@@ -38,6 +38,9 @@ tablist:
     enabled: true
   nametags:
     enabled: true
+    # IDEAS A43: aktív raid alatt a szemben álló hadviselő fél tagjai PIROSAK a néző
+    # tablistájában és a fejük fölött (nézőnként relációs szín — a rendezést nem érinti).
+    war-colors: true
   playerlist-ping:
     enabled: true
   sorting:

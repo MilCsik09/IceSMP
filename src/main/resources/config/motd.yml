@@ -6,6 +6,19 @@ motd:
   rotation-seconds: 10
   # Max játékos-szám felülírása a szerverlistán (-1 = nincs felülírás, a valódi érték látszik).
   max-players-override: -1
+  # Esemény-tudatos variánsok (IDEAS A50): aktív esemény alatt EZEK írják felül a normál
+  # rotációt (elsőbbség: vérhold > világboss > szezonzáró-visszaszámláló).
+  event-variants:
+    blood-moon:
+      line1: "<dark_red><b>🌕 VÉRHOLD TOMBOL</b></dark_red> <gray>—</gray> <red>Ice SMP</red>"
+      line2: "<gray>A szörnyek megvadultak... mersz belépni?</gray>"
+    world-boss:
+      line1: "<dark_purple><b>☠ VILÁGBOSS ÉBREDT</b></dark_purple> <gray>—</gray> <gradient:#4FC3F7:#E1F5FE>Ice SMP</gradient>"
+      line2: "<gray>Gyülekező a boss ellen — {online} hős már harcol!</gray>"
+    season-end:
+      days-before: 3
+      line1: "<gold><b>⏳ SZEZONZÁRÁS KÖZELEG</b></gold> <gray>—</gray> <gradient:#4FC3F7:#E1F5FE>Ice SMP</gradient>"
+      line2: "<gray>Az utolsó napok — most dől el a liga!</gray>"
   variants:
     frost:
       line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"

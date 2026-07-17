@@ -7,6 +7,7 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.TextDisplay;
@@ -21,6 +22,7 @@ import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -47,13 +49,25 @@ public final class DamageIndicatorListener implements Listener {
     /** Safety valve: if the rate-limit map grows unbounded (many distinct mobs), wipe it rather than leak forever. */
     private static final int MAX_TRACKED_ENTITIES = 2000;
 
+    /** IDEAS A45: az utolsó célpont bejegyzés max ennyi ideig érvényes (a HUD ennyi ideig mutatja). */
+    private static final long LAST_TARGET_TTL_MILLIS = 10_000L;
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final AbilityCatalystListener catalystListener;
     private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();
+    // IDEAS A45: attacker UUID -> az utolsó célpontja (a HUD célpont-sorához).
+    private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();
 
-    public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager) {
+    /** IDEAS A45: egy játékos legutóbb megütött célpontjának pillanatképe. */
+    public record LastTarget(UUID targetId, String targetName, boolean player, long atMillis) {
+    }
+
+    public DamageIndicatorListener(final JavaPlugin plugin, final ConfigManager configManager,
+                                    final AbilityCatalystListener catalystListener) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.catalystListener = catalystListener;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -73,9 +87,51 @@ public final class DamageIndicatorListener implements Listener {
         }
 
         final Entity victim = event.getEntity();
+        // IDEAS A45: az onDamage a MEGÜTÖTT entitás (victim) régió-szálán fut, tehát a neve/típusa
+        // itt biztonságosan olvasható; a snapshotot csak later a HUD olvassa (lastTarget()).
+        recordLastTarget(attacker.getUniqueId(), victim);
         if (!isRateLimited(victim.getUniqueId())) {
             spawnIndicator(attacker, victim, damage);
         }
+    }
+
+    /** IDEAS A45: eltárolja az attacker utolsó megütött célpontját (HUD célpont-sor). */
+    private void recordLastTarget(final UUID attackerId, final Entity victim) {
+        final String name = victim instanceof Player victimPlayer ? victimPlayer.getName() : formatEntityType(victim.getType());
+        if (lastTargets.size() > MAX_TRACKED_ENTITIES) {
+            // Ugyanaz a leak-védelem, mint a lastShownAt-nál: nincs természetes cleanup-hook mobokra.
+            lastTargets.clear();
+        }
+        lastTargets.put(attackerId, new LastTarget(victim.getUniqueId(), name, victim instanceof Player, System.currentTimeMillis()));
+    }
+
+    /**
+     * IDEAS A45: az attacker legutóbb megütött célpontja, vagy null, ha nincs ilyen / a
+     * bejegyzés {@link #LAST_TARGET_TTL_MILLIS}-nél régebbi (a lejárt bejegyzést lustán törli).
+     */
+    public LastTarget lastTarget(final UUID attackerId) {
+        if (attackerId == null) {
+            return null;
+        }
+        final LastTarget target = lastTargets.get(attackerId);
+        if (target == null) {
+            return null;
+        }
+        if (System.currentTimeMillis() - target.atMillis() > LAST_TARGET_TTL_MILLIS) {
+            lastTargets.remove(attackerId);
+            return null;
+        }
+        return target;
+    }
+
+    /**
+     * Egyszerűsített, magyaros formázás a mob-típus nevéből (pl. {@code ZOMBIE_VILLAGER} ->
+     * {@code "Zombie villager"}); a {@link DeathRecapListener#translateEntityType} teljes
+     * fordítótáblájától szándékosan független, hogy ne kelljen tőle függeni.
+     */
+    private static String formatEntityType(final EntityType type) {
+        final String raw = type.name().toLowerCase(Locale.ROOT).replace('_', ' ');
+        return raw.isEmpty() ? raw : Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
     }
 
     /** The player behind a hit (direct melee or a fired projectile), else null. */
@@ -130,8 +186,13 @@ public final class DamageIndicatorListener implements Listener {
                 ThreadLocalRandom.current().nextDouble(-0.3D, 0.3D), bob,
                 ThreadLocalRandom.current().nextDouble(-0.3D, 0.3D));
 
-        final String text = String.format(Locale.ROOT, "%.1f", damage);
-        final NamedTextColor color = victim instanceof Player ? NamedTextColor.RED : NamedTextColor.YELLOW;
+        // IDEAS A51: kombó/lánc-befejező castok után 3 mp-ig kiemelt (nagyobb, arany) sebzés-szám.
+        final boolean comboBoosted = catalystListener != null && catalystListener.hasComboBoost(attacker.getUniqueId());
+        final String text = String.format(Locale.ROOT, "%.1f", damage) + (comboBoosted ? "!" : "");
+        final NamedTextColor color = comboBoosted
+                ? NamedTextColor.GOLD
+                : victim instanceof Player ? NamedTextColor.RED : NamedTextColor.YELLOW;
+        final float scale = comboBoosted ? 1.5F : 1.0F;
 
         final TextDisplay display = at.getWorld().spawn(at, TextDisplay.class, spawned -> {
             spawned.setBillboard(Display.Billboard.CENTER);
@@ -140,7 +201,7 @@ public final class DamageIndicatorListener implements Listener {
             spawned.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
             spawned.setShadowed(true);
             spawned.setTransformation(new Transformation(
-                    new Vector3f(), new AxisAngle4f(), new Vector3f(1.0F, 1.0F, 1.0F), new AxisAngle4f()));
+                    new Vector3f(), new AxisAngle4f(), new Vector3f(scale, scale, scale), new AxisAngle4f()));
             spawned.text(Component.text(text, color));
             if (attackerOnly) {
                 // A spawn-consumer még a világba kerülés ELŐTT fut, így a display soha,

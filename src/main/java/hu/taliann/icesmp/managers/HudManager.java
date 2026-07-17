@@ -74,6 +74,12 @@ public final class HudManager {
     private final hu.taliann.icesmp.utils.TextAnimator animator;
     private final SeasonManager seasonManager;
     private final DailyQuestManager dailyQuestManager;
+    /** IDEAS A45: a harc-fókusz célpont-sorának adatforrása (setterrel kötve, regisztrációkor). */
+    private volatile hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators;
+
+    public void setDamageIndicators(final hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators) {
+        this.damageIndicators = damageIndicators;
+    }
 
     private final BossBar raidBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
     private final BossBar bloodMoonBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
@@ -463,6 +469,31 @@ public final class HudManager {
                         List.of(SECTION_RESOURCE, SECTION_PARTY));
 
         final List<HudRow> rows = new ArrayList<>();
+        // IDEAS A45: harc-fókuszban a legutóbb megütött célpont neve (+ játékosnál élet-sáv).
+        if (combatFocus && damageIndicators != null) {
+            final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
+                    damageIndicators.lastTarget(player.getUniqueId());
+            if (target != null) {
+                Component line = Component.text("🎯 ", NamedTextColor.RED)
+                        .append(Component.text(target.targetName(), NamedTextColor.WHITE));
+                if (target.player()) {
+                    final Player targetPlayer = Bukkit.getPlayer(target.targetId());
+                    if (targetPlayer != null && targetPlayer.isOnline()) {
+                        try {
+                            // Cross-region mező-olvasás a party-frame try/catch mintájával.
+                            final org.bukkit.attribute.AttributeInstance maxAttr =
+                                    targetPlayer.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                            final double max = Math.max(1.0D, maxAttr == null ? 20.0D : maxAttr.getValue());
+                            line = line.append(Component.text(" "))
+                                    .append(healthBar(Math.max(0.0D, targetPlayer.getHealth()), max));
+                        } catch (final Exception ignored) {
+                            // Régió-átmenet — ezen a ticken a név magában is elég.
+                        }
+                    }
+                }
+                rows.add(new HudRow(SECTION_RESOURCE, line));
+            }
+        }
         if (visible(SECTION_FACTION, hidden, combatFocus, combatVisible)) {
             rows.add(new HudRow(SECTION_FACTION, row("ꜰʀᴀᴋᴄɪó", faction == null
                     ? Component.text("nincs", NamedTextColor.GRAY)

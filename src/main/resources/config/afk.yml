@@ -7,6 +7,9 @@ afk:
   # Ennyi másodperc inaktivitás (mozgás/nézés-változás, chat, parancs, blokk-interakció
   # nélkül) után számít a játékos AFK-nak — BÁRHOL a szerveren (nem csak a zónában).
   afk-after-seconds: 180
+  # IDEAS A46: AFK-jelölt játékos nem termel kaszt-XP-t, szakma-XP-t és lélekkő-dropot
+  # (auto-farm exploit-fék). Az AFK-zóna időzített jutalmát ez NEM érinti.
+  block-rewards: true
 
   # AFK-zónák (doboz): itt állva (akár mozogva a zónán belül) időzített jutalom jár,
   # függetlenül a fenti inaktivitás-időzítőtől.

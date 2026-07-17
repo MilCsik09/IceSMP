@@ -48,14 +48,23 @@ public final class ProfessionXpListener implements Listener {
     private final ConfigManager configManager;
     private final TalentManager talentManager;
 
+    private final hu.taliann.icesmp.managers.AfkManager afkManager;
+
     public ProfessionXpListener(final ProfessionManager professionManager, final ConfigManager configManager,
-                                final TalentManager talentManager) {
+                                final TalentManager talentManager,
+                                final hu.taliann.icesmp.managers.AfkManager afkManager) {
         this.professionManager = professionManager;
         this.configManager = configManager;
         this.talentManager = talentManager;
+        this.afkManager = afkManager;
     }
 
     private void awardXp(final Player player, final ProfessionType profession, final String configPath, final int fallback) {
+        // IDEAS A46: AFK-jelölt játékos nem termel szakma-XP-t (auto-farm exploit-fék).
+        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
+                && afkManager.isAfk(player.getUniqueId())) {
+            return;
+        }
         final int baseXp = Math.max(0, configManager.getInt(configPath, fallback));
         final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));

@@ -24,13 +24,17 @@ public final class ClassXpListener implements Listener {
     private final ConfigManager configManager;
     private final TalentManager talentManager;
 
+    private final hu.taliann.icesmp.managers.AfkManager afkManager;
+
     public ClassXpListener(final JavaPlugin plugin, final JobManager jobManager, final MobScalingManager mobScalingManager,
-                           final ConfigManager configManager, final TalentManager talentManager) {
+                           final ConfigManager configManager, final TalentManager talentManager,
+                           final hu.taliann.icesmp.managers.AfkManager afkManager) {
         this.plugin = plugin;
         this.jobManager = jobManager;
         this.mobScalingManager = mobScalingManager;
         this.configManager = configManager;
         this.talentManager = talentManager;
+        this.afkManager = afkManager;
     }
 
     @EventHandler
@@ -38,6 +42,11 @@ public final class ClassXpListener implements Listener {
         final LivingEntity entity = event.getEntity();
         final Player killer = entity.getKiller();
         if (killer == null || !jobManager.hasPrimaryJob(killer)) {
+            return;
+        }
+        // IDEAS A46: AFK-jelölt játékos nem termel kaszt-XP-t (auto-farm exploit-fék).
+        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
+                && afkManager.isAfk(killer.getUniqueId())) {
             return;
         }
 
