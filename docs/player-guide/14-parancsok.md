@@ -22,6 +22,7 @@ jelenti, hogy **elhagyható**.
 | `/stats [név]` | — | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, teljesített questek |
 | `/hud <szekció>` | — | HUD-oldalsáv szekciók ki-be kapcsolása (frakcio/kaszt/eroforras/esemeny/valuta/csapat/mind) |
 | `/sit` | — | Leülés, ahol állsz (újra `/sit` vagy sneak = felállás); lépcsőre/fél-lapra üres kézzel jobb-katt is leültet |
+| `/sit fekves` | — | Fekvő póz (LibsDisguises szükséges hozzá); újra kiadva vagy mozgásra felállsz |
 | `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése |
 | `/report <név> <ok>` | `bejelent` | Játékos bejelentése a moderátoroknak (percenként egyszer) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
@@ -92,7 +93,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/icesmp reload` | Konfiguráció újratöltése |
 | `/icesmp inspect <név>` | Teljes játékos-riport: kaszt/erőforrás/statok/bűn/claim/questek/cooldownok |
 | `/invsee <név>` | Inventory + ender-láda betekintés (pillanatkép, csak olvasás) |
-| `/mute <név> <perc> [ok]` / `/unmute <név>` | Némítás (0 = végtelen; chat + privát üzenetek), feloldás; `/mute list` |
+| `/mute <név> [perc] [ok]` / `/unmute <név>` | Némítás (0 = végtelen; perc kihagyva = automatikus eszkaláció a némítás-történet alapján; chat + privát üzenetek), feloldás; `/mute list` |
 | `/reports` / `/reports resolve <id>` | Játékos-bejelentések listája és lezárása |
 | `/class addxp\|setxp <játékos> <mennyiség>` | Kaszt-XP adása/beállítása |
 | `/class givecatalyst\|unlockspell <játékos> [spell]` | Katalizátor adása / spell feloldása |

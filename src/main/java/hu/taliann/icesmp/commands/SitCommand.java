@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.integration.LayPoseBridge;
 import hu.taliann.icesmp.managers.SitManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -16,12 +17,15 @@ import java.util.Locale;
 
 /**
  * /sit — leül a lába alatti blokkra, vagy ha már ül, feláll. {@code /sit fel} explicit felállás.
- * A tényleges ülés-logika a {@link SitManager}-ben van; a parancs a saját szálán fut, tehát a
- * manager-hívások itt régió-lokálisak (lásd SitManager Folia-jegyzete).
+ * {@code /sit fekves} (IDEAS A49) a fekvő pózba tesz/feláll belőle — reflexiós LibsDisguises-híd
+ * ({@link LayPoseBridge}), LD nélkül elérhetetlen. A tényleges ülés-logika a {@link SitManager}-ben
+ * van; a parancs a saját szálán fut, tehát a manager-hívások itt régió-lokálisak (lásd SitManager
+ * Folia-jegyzete).
  */
 public final class SitCommand implements BasicCommand {
 
     private static final String STAND_UP_ARG = "fel";
+    private static final String LAY_ARG = "fekves";
 
     private final SitManager sitManager;
     private final MessageManager messageManager;
@@ -36,6 +40,11 @@ public final class SitCommand implements BasicCommand {
         final CommandSender sender = commandSourceStack.getSender();
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+
+        if (args.length > 0 && LAY_ARG.equalsIgnoreCase(args[0])) {
+            handleLay(player);
             return;
         }
 
@@ -65,11 +74,50 @@ public final class SitCommand implements BasicCommand {
         }
     }
 
+    /**
+     * {@code /sit fekves} — toggle: ha már fekszik, feláll; egyébként (földön állva, nem ülve, nem
+     * járműben) lefekteti {@link LayPoseBridge}-dzsel. LD hiánya vagy egy sikertelen reflexió-hívás
+     * esetén a híd {@code false}-t ad vissza, ilyenkor csak a "LibsDisguises szükséges" üzenet megy ki
+     * — a fekvés PURELY cosmetic, nincs stat-only fallback (ellentétben pl. a Druid formákkal).
+     */
+    private void handleLay(final Player player) {
+        if (sitManager.isLaying(player.getUniqueId())) {
+            LayPoseBridge.clear(player);
+            sitManager.stopLaying(player.getUniqueId());
+            player.sendMessage(messageManager.get("sit-lay-up", "&b[Fekvés] &7Felálltál."));
+            return;
+        }
+
+        if (!LayPoseBridge.isAvailable()) {
+            player.sendMessage(messageManager.get("sit-lay-unavailable", "&7A fekvéshez a LibsDisguises szükséges."));
+            return;
+        }
+        if (sitManager.isSitting(player.getUniqueId())) {
+            player.sendMessage(messageManager.get("sit-lay-already-sitting", "&cÜlve nem tudsz lefeküdni — állj fel előbb (&f/sit fel&c)."));
+            return;
+        }
+        if (player.isInsideVehicle()) {
+            player.sendMessage(messageManager.get("sit-in-vehicle", "&cJárműben ülve nem tudsz leülni."));
+            return;
+        }
+        if (!player.isOnGround()) {
+            player.sendMessage(messageManager.get("sit-not-on-ground", "&cCsak szilárd talajon tudsz leülni."));
+            return;
+        }
+
+        if (LayPoseBridge.apply(player)) {
+            sitManager.startLaying(player.getUniqueId());
+            player.sendMessage(messageManager.get("sit-lay-down", "&b[Fekvés] &7Lefeküdtél."));
+        } else {
+            player.sendMessage(messageManager.get("sit-lay-unavailable", "&7A fekvéshez a LibsDisguises szükséges."));
+        }
+    }
+
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length == 1) {
             final String prefix = args[0].toLowerCase(Locale.ROOT);
-            return STAND_UP_ARG.startsWith(prefix) ? List.of(STAND_UP_ARG) : List.of();
+            return List.of(STAND_UP_ARG, LAY_ARG).stream().filter(option -> option.startsWith(prefix)).toList();
         }
         return List.of();
     }

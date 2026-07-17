@@ -669,6 +669,27 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         hibamentes (a riport a célpont szálán épül).
   - [ ] **Invsee** (InvSee++ helyett, csak olvasás): `/invsee <név>` → pillanatkép-GUI a fő
         inventoryról (páncél+offhand sorral) + ender-láda nézet gombbal; SEMMI nem vehető ki.
+- [ ] **QoL-kör (A43–A52, ÚJ):**
+  - [ ] **Relációs háború-szín:** raid alatt a szemben álló fél tagjai PIROSAK a tablistádban
+        és a fejük fölött — a raidben nem érintett harmadik frakciónak viszont NEM; a raid vége
+        után a frakció-színek visszaállnak; a tablist-sorrend eközben NEM ugrál.
+  - [ ] **AFK-jelzés/hátrasorolás:** ~3 perc tétlenség után „⌚ ᴀꜰᴋ" suffix + a játékos a rangján
+        belül a tablist aljára kerül; mozgásra azonnal vissza.
+  - [ ] **AFK-jutalomkapu:** AFK-jelölt játékos mob-ölése NEM ad kaszt-XP-t/lélekkövet (auto-farm
+        teszt: állj mob-farm mellé 3+ percig); az AFK-zóna időzített jutalma viszont jár.
+  - [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
+        az utolsó találat után ~10 mp-cel eltűnik.
+  - [ ] **Crate-rulett:** kulcs-nyitáskor pörgő GUI (~3,5 mp, lassul), a végén a tényleges
+        nyeremény áll meg; a GUI IDŐ ELŐTTI bezárása esetén is jár a nyeremény; kapcsoló:
+        crates-settings.spin-animation. Quest-jutalomból kulcs: az onboarding_gather ad 1 köznapi kulcsot.
+  - [ ] **Kombó-kiemelés:** kombó/lánc-finisher utáni 3 mp-ben a sebzés-szám nagyobb, arany, "!"-lel.
+  - [ ] **Fekvés:** `/sit fekves` (LibsDisguises-szel) fekvő póz; mozgásra/újra kiadva felállás;
+        LD nélkül udvarias hibaüzenet. ⚠️ GrimAC false-positive playtest kötelező!
+  - [ ] **Mute-eszkaláció:** `/mute <név>` perc NÉLKÜL → 1. alkalom 5 perc, majd 30/180/1440
+        (moderation.escalation-minutes); a blokkolt/cenzúrázott üzenetek a
+        logs/chat-moderation.log-ba kerülnek (5 MB-nál forgatás).
+  - [ ] **Esemény-MOTD:** vérhold indítása után a szerverlista MOTD-ja a vérhold-variánsra vált
+        (frissítsd a listát), utána vissza a normál rotációra.
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).

@@ -56,6 +56,13 @@ public final class SitManager implements PlayerStateCleanup {
     private final JavaPlugin plugin;
     private final NamespacedKey seatKey;
     private final Map<UUID, Seat> seatedPlayers = new ConcurrentHashMap<>();
+    /**
+     * IDEAS A49: standing "lay pose" (LibsDisguises-backed, see {@code LayPoseBridge}) — distinct
+     * from the ArmorStand seat above: a laying player is still standing on the ground, just visually
+     * disguised into the sleeping pose. Boolean value is unused (presence = laying); a
+     * {@link java.util.Set} would do too, but a map matches the rest of this class's bookkeeping.
+     */
+    private final Map<UUID, Boolean> layingPlayers = new ConcurrentHashMap<>();
 
     public SitManager(final JavaPlugin plugin) {
         this.plugin = plugin;
@@ -176,6 +183,22 @@ public final class SitManager implements PlayerStateCleanup {
         return null;
     }
 
+    // ===== IDEAS A49: fekvő póz (nincs ArmorStand, csak reflexiós LibsDisguises-póz) =====
+
+    public boolean isLaying(final UUID playerId) {
+        return layingPlayers.containsKey(playerId);
+    }
+
+    /** Registers the player as laying — the actual disguise pose is applied by the caller (SitCommand). */
+    public void startLaying(final UUID playerId) {
+        layingPlayers.put(playerId, Boolean.TRUE);
+    }
+
+    /** Only drops the bookkeeping entry — the caller is responsible for clearing the disguise itself. */
+    public void stopLaying(final UUID playerId) {
+        layingPlayers.remove(playerId);
+    }
+
     /**
      * Only drops the in-memory map entry. The seat ArmorStand itself must NOT be touched here:
      * this is invoked by {@code PlayerSessionCleanupListener} as a uniform cleanup pass and is not
@@ -186,5 +209,6 @@ public final class SitManager implements PlayerStateCleanup {
     @Override
     public void clearPlayerState(final UUID playerId) {
         seatedPlayers.remove(playerId);
+        layingPlayers.remove(playerId);
     }
 }

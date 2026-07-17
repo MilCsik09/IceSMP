@@ -54,19 +54,21 @@ public final class ChatModerationListener implements Listener {
             return;
         }
         final Player sender = event.getPlayer();
+        final String plain = PLAIN.serialize(event.message());
+
         final ModerationManager.MuteEntry mute = moderationManager.muteInfo(sender.getUniqueId());
         if (mute != null) {
             event.setCancelled(true);
             sender.sendMessage(muteMessage(mute));
+            moderationManager.logChatEvent("MUTED", sender, plain);
             return;
         }
-
-        final String plain = PLAIN.serialize(event.message());
 
         if (moderationManager.isSpam(sender.getUniqueId(), plain)) {
             event.setCancelled(true);
             sender.sendMessage(messageManager.get("moderation.spam-blocked",
                     "&cTúl gyorsan/ismételten küldesz üzenetet — várj egy kicsit."));
+            moderationManager.logChatEvent("SPAM", sender, plain);
             return;
         }
 
@@ -75,10 +77,12 @@ public final class ChatModerationListener implements Listener {
             event.setCancelled(true);
             sender.sendMessage(messageManager.get("moderation.filter-blocked",
                     "&cAz üzeneted tiltott szót tartalmazott, ezért nem lett elküldve."));
+            moderationManager.logChatEvent("BLOCK", sender, plain);
             return;
         }
         if (!filtered.equals(plain)) {
             event.message(Component.text(filtered));
+            moderationManager.logChatEvent("CENSOR", sender, plain);
         }
     }
 
