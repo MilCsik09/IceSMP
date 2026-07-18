@@ -897,6 +897,37 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 - **Entitás-költség:** egy határ-fal élenként 1 entity (4–12 db), nem blokkonkénti — a darabszámot a util kapja meg felső korlátként (`display-fx.max-per-player`, default ~24).
 - **Régi kliensek/ViaVersion:** 1.19.4 alatti kliensnek a display entity nem létezik — ha a szerver enged régebbi klienst, particle-fallback kell (a util `supportsDisplay(player)` ága).
 
+**Al-eset — aurora mint DisplayFx:** az `AmbientEventManager` aurora-ága ma égi particle-t szór magas y-offszettel; ez az egy ambient effekt, ami DisplayFx-szel érdemben szebb lenne. Egy áttetsző, színátmenetes BlockDisplay-lap (vagy néhány egymásra rétegzett, lassan interpolált skála/alfa-hullámmal) az égen folytonos fény-fátyol, nem pontfelhő. A többi ambient (szentjánosbogár, köd) per-nézős és olcsó particle-ként marad — ott a display-entity árva-takarítás költsége nem éri meg. Ez az A71 util első „nem-geometria" fogyasztója lenne.
+
 ---
 
-**Összesen: 71 ötlet (A1–A71).**
+### A72. Spell-VFX forma- és paletta-réteg (SpellVfx) `[TOP]`
+**Munka:** 🟡 • **Érték:** ⭐⭐⭐
+
+**Mi ez:** A ~390 spell látvány-identitása. Ma a `ConfiguredSpell.playFeedback` **egyetlen gömb-alakú particle-puffot** szór a célpont mellkasához (`focus + 1.0y`, `particleCount`, egy hang) — így a Jéglánc, a Lángrengés és a Lávakitörés fizikailag ugyanaz az effekt, csak más particle-színnel. Ez a tétel egy kis **forma-primitív könyvtárat** ad, hogy a spell ne `particle + count`-ot deklaráljon, hanem **formát + palettát**, és magától önmagának nézzen ki. A particle marad az eszköz — csak formázva, színezve, időzítve, rétegezve használjuk (ma a particle kb. 20%-át hozzuk ki). Független A71-től: nincs entitás-életciklus, tiszta particle.
+
+**Hogyan működne:**
+- **`utils/SpellVfx`** — időalapú forma-emitterek (mint a TextAnimator/ambient pulzus: `System.currentTimeMillis()` frame-választás, **nincs per-tick scheduler**), mind régió-lokális, a kasztoló szálán futva:
+  - `beam(from, to, palette)` — vonal-interpoláció a kasztolótól a célig (TARGET-spellek: a „lánc"/„sugár"/„nyaláb" tényleg a cél felé mutat).
+  - `ring(center, radius, palette)` + `expandingRing(center, r0→r1, seconds)` — AoE-k: a hatókör *látszik*, nem egy formátlan pötty.
+  - `helix(base, height, palette)` — SELF-buffok felfelé csavarodó kettős spirálja.
+  - `cone(origin, direction, angle, length)` — lehelet/kúp-spellek.
+  - `impactBurst(point, palette)` — becsapódás-csillag (a mostani puff kontrollált utódja).
+  - `arc(from, to)` — lövedék-csóva parabolán.
+- **Paletta = `DustOptions` / `DUST_COLOR_TRANSITION`:** minden spec kap egy 2–3 színű palettát (tűz narancs→vörös, fagy kék→fehér, romlás lila→fekete, szentség arany→fehér). A por mérete és szín-átmenete adja a „mágia-anyagérzetet", amit a nyers particle nem tud. Ez önmagában, forma nélkül is óriási identitás-nyereség.
+- **Retrofit a `ConfiguredSpell`-be:** a builder kap egy `vfx(Shape, Palette)` leírót; ha nincs megadva, a **`Targeting`-ből default** jön (`TARGET→beam+impact`, `AOE→expandingRing`, `SELF→helix`) — így egyetlen mező hozzáadásával mind a 390 spell azonnal kap formát, a kézzel hangolt kivételeket pedig felül lehet írni a `SpellCatalog` builderében.
+- **Hang-réteg (filléres bónusz):** a mostani egy hang helyett a paletta hordozhat egy 2–3 hangból álló „akkordot" különböző pitch-en — a spell hallhatóan is erősebbnek szól. Ugyanabba a `vfx` leíróba fér.
+
+**Miért jó:** Ez a legjobb érték/munka arányú lépés az egész látvány-fronton. Nem új tech (nincs entitás, nincs Folia-életciklus-kockázat), mégis a 390 spell egy csapásra **önmagának néz ki** — a forma a mechanikát tükrözi (lánc chainel, kitörés felfelé tör, AoE gyűrűként terül), a szín a spec-identitást. A default-a-Targetingből elv miatt a retrofit nem 390 kézi hangolás, hanem egy mező + a kiemelt spellek finomítása.
+
+**Építőkövek:** `ConfiguredSpell.playFeedback` (a becsatlakozási pont), `Targeting` enum (a default-forma forrása), `ParticleUtil.spawn` (a primitívek erre épülnek), TextAnimator idő-frame minta, `SpellCatalog` builder-hívások.
+
+**Buktatók:**
+- **Particle-mennyiség:** a formák pontszáma felső korláttal (a `beam`/`ring` hossz-arányos, de config-cap: `spell-vfx.max-points-per-shape`), különben nagy hatókörnél particle-vihar. A FLASH-diéta és confetti-szabályok (ARCHITECTURE §6) rájuk is vonatkoznak.
+- **Folia:** minden emitter a kasztoló régió-szálán fut, a `focus` helyi — cross-region nincs. AOE-nél a `center` a spell saját régiójában van, rendben.
+- **Retrofit-fegyelem:** a `Targeting`-default ne írja felül a már kézzel hangolt, állapotos spellek (külön osztályok) saját effektjeit — a `vfx` csak a deklaratív `ConfiguredSpell`-útra hat.
+- **Paletta-karbantartás:** 31 spec palettája a `SpellCatalog`-ban vagy a `classes.yml`-ben éljen egy helyen, ne szóródjon szét.
+
+---
+
+**Összesen: 72 ötlet (A1–A72).**
