@@ -56,6 +56,8 @@ public final class ConfiguredSpell extends BaseSpell {
     private final Sound sound;
     private final float soundVolume;
     private final float soundPitch;
+    private final hu.taliann.icesmp.utils.SpellVfx.Shape vfxShape;
+    private final hu.taliann.icesmp.utils.SpellVfx.Palette vfxPalette;
 
     private ConfiguredSpell(final Builder builder) {
         super(builder.messageManager, builder.id, builder.defaultName, builder.cooldown, builder.costType, builder.costAmount);
@@ -82,6 +84,8 @@ public final class ConfiguredSpell extends BaseSpell {
         this.sound = builder.sound;
         this.soundVolume = builder.soundVolume;
         this.soundPitch = builder.soundPitch;
+        this.vfxShape = builder.vfxShape;
+        this.vfxPalette = builder.vfxPalette;
     }
 
     public static Builder builder(final MessageManager messageManager, final String id, final String defaultName,
@@ -145,6 +149,8 @@ public final class ConfiguredSpell extends BaseSpell {
         b.sound = spell.sound;
         b.soundVolume = spell.soundVolume;
         b.soundPitch = spell.soundPitch;
+        b.vfxShape = spell.vfxShape;
+        b.vfxPalette = spell.vfxPalette;
 
         if (changes.isEmpty()) {
             return spell;
@@ -456,7 +462,14 @@ public final class ConfiguredSpell extends BaseSpell {
     }
 
     private void playFeedback(final Player player, final Location focus) {
-        if (particle != null) {
+        if (hu.taliann.icesmp.utils.SpellVfx.isEnabled()) {
+            final hu.taliann.icesmp.utils.SpellVfx.Shape shape = vfxShape != null ? vfxShape : defaultShape();
+            final Location origin = switch (shape) {
+                case BEAM, ARC, CONE, IMPACT -> player.getEyeLocation();
+                default -> player.getLocation();
+            };
+            hu.taliann.icesmp.utils.SpellVfx.render(shape, vfxPalette, origin, focus, liveRadius(), particle, particleCount);
+        } else if (particle != null) {
             final double spread = liveRadius();
             hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, focus.clone().add(0.0D, 1.0D, 0.0D),
                     particleCount, spread > 0.0D ? spread / 2.0D : 0.4D, 0.6D, spread > 0.0D ? spread / 2.0D : 0.4D, 0.02D);
@@ -465,6 +478,15 @@ public final class ConfiguredSpell extends BaseSpell {
         if (sound != null) {
             player.getWorld().playSound(focus, sound, soundVolume, soundPitch);
         }
+    }
+
+    /** A targeting-jellegből adódó alapforma, ha a spell nem ad explicit {@code vfx(...)}-et. */
+    private hu.taliann.icesmp.utils.SpellVfx.Shape defaultShape() {
+        return switch (targeting) {
+            case SELF -> hu.taliann.icesmp.utils.SpellVfx.Shape.HELIX;
+            case TARGET -> hu.taliann.icesmp.utils.SpellVfx.Shape.BEAM;
+            case AOE -> hu.taliann.icesmp.utils.SpellVfx.Shape.RING;
+        };
     }
 
     public static final class Builder {
@@ -499,6 +521,8 @@ public final class ConfiguredSpell extends BaseSpell {
         private Sound sound;
         private float soundVolume = 1.0F;
         private float soundPitch = 1.0F;
+        private hu.taliann.icesmp.utils.SpellVfx.Shape vfxShape;
+        private hu.taliann.icesmp.utils.SpellVfx.Palette vfxPalette;
 
         private Builder(final MessageManager messageManager, final String id, final String defaultName,
                         final int cooldown, final SpellCostType costType, final int costAmount) {
@@ -609,6 +633,18 @@ public final class ConfiguredSpell extends BaseSpell {
             this.sound = effectSound;
             this.soundVolume = volume;
             this.soundPitch = pitch;
+            return this;
+        }
+
+        /**
+         * Explicit spell-VFX forma és/vagy paletta. Bármelyik lehet null: a forma AUTO/null esetén
+         * a targeting-ből jön (SELF→hélix, TARGET→sugár, AOE→gyűrű), a paletta null esetén az
+         * accent-particle-ből származik.
+         */
+        public Builder vfx(final hu.taliann.icesmp.utils.SpellVfx.Shape shape,
+                           final hu.taliann.icesmp.utils.SpellVfx.Palette palette) {
+            this.vfxShape = shape == hu.taliann.icesmp.utils.SpellVfx.Shape.AUTO ? null : shape;
+            this.vfxPalette = palette;
             return this;
         }
 

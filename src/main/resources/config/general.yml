@@ -136,3 +136,21 @@ donation-chest:
   enabled: true
   max-items: 270          # a láda teljes kapacitása (élő tételek összesen)
   max-per-player: 27      # egy adományozó élő tételeinek plafonja (0 = korlátlan)
+
+# Spell-VFX: a spell-effektek formázott, palettázott változata (SpellVfx). A ~390 deklaratív spell
+# a formátlan gömb-puff helyett a targeting-jellegének megfelelő formát kap (SELF→hélix,
+# TARGET→sugár a cél felé, AOE→gyűrű), szín-átmenetes porral. A spell saját accent-particle-je a
+# gócponton megmarad. Kikapcsolva a régi puff-visszajelzés fut.
+spell-vfx:
+  enabled: true             # formázott spell-effektek (false = régi gömb-puff)
+  max-points: 48            # egy forma maximális pontszáma (particle-fék; kisebb = takarékosabb)
+
+# DisplayFx: display-entity (BlockDisplay/ItemDisplay) effekt-réteg a particle mellé, ahol az
+# effekt geometria/tartós/animált. Jelenleg a claim-fényfal használja: a /claim show a particle-
+# perem MELLÉ élenként egy megnyújtott, izzó, csak a kérőnek látszó falat állít (saját/trusted=zöld,
+# idegen=piros), ami a border.show-seconds letelte után eltűnik.
+display-fx:
+  claim-wall:
+    enabled: true                        # claim-fényfal a /claim show-nál
+    material: LIGHT_BLUE_STAINED_GLASS   # a fal blokk-anyaga (áttetsző üveg ajánlott)
+    height: 3                            # a fal magassága blokkban

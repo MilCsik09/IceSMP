@@ -21,6 +21,11 @@ a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
 
+> ✨ **Látvány:** a képességek most **formázott effektet** kapnak — a célzott spell **sugarat**
+> húz a célpontig, a körzeti spell **gyűrűt** rajzol a hatókör mentén, az önmagadra ható spell
+> **fölfelé csavarodó fényörvényt** — a szín pedig a spell jellegéhez illik (tűz narancs-vörös,
+> fagy kék-fehér, szentség arany…). Tisztán vizuális, a hatáson nem változtat.
+
 > ⚔️ **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász): a kezedben
 > tartott **kard vagy balta is katalizátorként működik** — nem kell tárgyat váltanod a harc közben!
 > Ugyanazok a mozdulatok érvényesek (jobb katt = cast, SHIFT+jobb katt = varázskönyv,

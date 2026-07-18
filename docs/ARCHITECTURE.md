@@ -315,6 +315,16 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
     (terep-követés + Folia-guard) — sose lebegjenek a néző derekán dombokon át.
   - Adat-igényes particle-ök (`FLASH`, `DUST`…) mindig a `ParticleUtil.spawn`-on át
     (default-adat feloldás, konzol-hiba helyett).
+- **Effekt-réteg megválasztása** (particle vs. display-entity):
+  - **Particle = átmeneti visszajelzés** (ütés, cast, ambient). A formázott spell-effektek a
+    `SpellVfx`-en át mennek: forma (BEAM/RING/HELIX/CONE/…) a targeting-jellegből + paletta
+    (`DUST_COLOR_TRANSITION`) + a spell accent-particle-je. Pontszám-plafon (`spell-vfx.max-points`),
+    minden pont `count=1` dust — a fenti particle-szabályok érvényesek rá.
+  - **DisplayFx (`DisplayFxUtil`) = geometria / tartós / kliens-oldalon animált** (claim-fényfal,
+    telegraph, kirakat). KÖTELEZŐ hármas: régió-száli spawn (`getRegionScheduler().run`) +
+    `setPersistent(false)` + `FX_TAG` (a `DisplayFxCleanupListener` söpri a maradékot); auto-despawn
+    az entitás SAJÁT schedulerén; per-nézőhöz `showOnlyTo`. Display-entitást SOSE spawnolj
+    frame-enként — egyszer spawnolj, és `animateTo`-val interpoláltass.
 
 ---
 

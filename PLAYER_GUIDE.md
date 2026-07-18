@@ -653,7 +653,9 @@ A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozz�
 claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza — vagy GUI-ból: `/menu` →
 Birtok → **„Megbízottak kezelése"** (felül a megbízottak: katt = visszavonás; alul a közeli
 játékosok: katt = megbízás). `/claim info` megmutatja, kié az
-adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel rajzolja ki a chunk-határt.
+adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel **és egy izzó fényfallal**
+rajzolja ki a közeli claimek határát — a fal a saját/megbízott birtokodnál zöld, idegennél piros,
+és csak te látod (pár másodperc után eltűnik).
 
 **Védett zónába** (főváros, védett város, védett frakcióterület) **nem lehet claimelni** — ott
 senki sem építhet. **Normál frakcióterületre viszont IGEN**: a saját birtokod a frakciód földjén

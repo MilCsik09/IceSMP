@@ -546,6 +546,10 @@ public final class IceSMPCore {
         hu.taliann.icesmp.spells.SpellTargetingUtil.initCombatContext(partyManager, factionManager, configManager);
         // Egységes GUI-hangnyelv config-forrása (gui.sounds.* felülbírálások).
         hu.taliann.icesmp.gui.GuiUtil.initSounds(configManager);
+        // Formázott spell-effektek kapcsolója + pontszám-plafon (spell-vfx.*).
+        hu.taliann.icesmp.utils.SpellVfx.configure(
+                configManager.getBoolean("spell-vfx.enabled", true),
+                configManager.getInt("spell-vfx.max-points", 48));
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
@@ -1014,6 +1018,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
         // Plugin-leépítés: ICEsmpadditions + FarmProtect + MiniMOTD natív kiváltása
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldTweaksListener(configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DisplayFxCleanupListener(), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager, bloodMoonManager, worldBossManager, seasonManager), plugin);
         // IDEAS A3/A8/A9: harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);

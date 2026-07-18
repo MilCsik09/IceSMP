@@ -870,7 +870,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 **Építőkövek:** QuestManager.complete, Paper toast-út.
 **Buktatók:** Ha csak advancement-trükkel megy, a receptek/advancement-lista ne szennyeződjön (rejtett, azonnal visszavont advancement).
 
-### A71. Display-entity effekt-réteg (DisplayFx) `[TOP]`
+### A71. Display-entity effekt-réteg (DisplayFx) `[KÉSZ — util + claim-fényfal pilot]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** Egy vékony, közös effekt-réteg a display entityk (BlockDisplay/ItemDisplay/TextDisplay) fölé, ami a particle-rendszer mellé (nem helyette!) belép mindenhova, ahol az effekt **geometria, tartós, vagy animált** — mert ott a particle csak drága, szaggatott pontfelhő tud lenni. Munkamegosztás: particle = átmeneti visszajelzés (ütés, cast, ambient), DisplayFx = vonal/sík/tárgy, ami áll, forog vagy simán mozog.
@@ -897,11 +897,13 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 - **Entitás-költség:** egy határ-fal élenként 1 entity (4–12 db), nem blokkonkénti — a darabszámot a util kapja meg felső korlátként (`display-fx.max-per-player`, default ~24).
 - **Régi kliensek/ViaVersion:** 1.19.4 alatti kliensnek a display entity nem létezik — ha a szerver enged régebbi klienst, particle-fallback kell (a util `supportsDisplay(player)` ága).
 
+**Állapot:** a `DisplayFxUtil` (spawn+tag+`setPersistent(false)`+auto-despawn+`showOnlyTo`+`animateTo`+`wallSegment`) és a `DisplayFxCleanupListener` (chunk-load söprés) kész; **Pilot 1 (claim-fényfal)** él a `/claim show`-ban (`display-fx.claim-wall.*`). Pilot 2 (crate-3D) és Pilot 3 (boss-telegraph) a kész rétegre építve következő kör.
+
 **Al-eset — aurora mint DisplayFx:** az `AmbientEventManager` aurora-ága ma égi particle-t szór magas y-offszettel; ez az egy ambient effekt, ami DisplayFx-szel érdemben szebb lenne. Egy áttetsző, színátmenetes BlockDisplay-lap (vagy néhány egymásra rétegzett, lassan interpolált skála/alfa-hullámmal) az égen folytonos fény-fátyol, nem pontfelhő. A többi ambient (szentjánosbogár, köd) per-nézős és olcsó particle-ként marad — ott a display-entity árva-takarítás költsége nem éri meg. Ez az A71 util első „nem-geometria" fogyasztója lenne.
 
 ---
 
-### A72. Spell-VFX forma- és paletta-réteg (SpellVfx) `[TOP]`
+### A72. Spell-VFX forma- és paletta-réteg (SpellVfx) `[KÉSZ]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A ~390 spell látvány-identitása. Ma a `ConfiguredSpell.playFeedback` **egyetlen gömb-alakú particle-puffot** szór a célpont mellkasához (`focus + 1.0y`, `particleCount`, egy hang) — így a Jéglánc, a Lángrengés és a Lávakitörés fizikailag ugyanaz az effekt, csak más particle-színnel. Ez a tétel egy kis **forma-primitív könyvtárat** ad, hogy a spell ne `particle + count`-ot deklaráljon, hanem **formát + palettát**, és magától önmagának nézzen ki. A particle marad az eszköz — csak formázva, színezve, időzítve, rétegezve használjuk (ma a particle kb. 20%-át hozzuk ki). Független A71-től: nincs entitás-életciklus, tiszta particle.
@@ -919,6 +921,8 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 - **Hang-réteg (filléres bónusz):** a mostani egy hang helyett a paletta hordozhat egy 2–3 hangból álló „akkordot" különböző pitch-en — a spell hallhatóan is erősebbnek szól. Ugyanabba a `vfx` leíróba fér.
 
 **Miért jó:** Ez a legjobb érték/munka arányú lépés az egész látvány-fronton. Nem új tech (nincs entitás, nincs Folia-életciklus-kockázat), mégis a 390 spell egy csapásra **önmagának néz ki** — a forma a mechanikát tükrözi (lánc chainel, kitörés felfelé tör, AoE gyűrűként terül), a szín a spec-identitást. A default-a-Targetingből elv miatt a retrofit nem 390 kézi hangolás, hanem egy mező + a kiemelt spellek finomítása.
+
+**Állapot:** kész — `SpellVfx` util (BEAM/ARC/IMPACT/RING/HELIX/CONE + 10 paletta + accent-particle-ből származtatott default) a `ConfiguredSpell.playFeedback`-be kötve; a forma a `Targeting`-ből jön, `spell-vfx.*` configgal kapcsolható. A ~390 deklaratív spell azonnal formát+színt kap; a paletta explicit `vfx(...)` builderrel felülírható (a hero-spellek kézi hangolása opcionális későbbi polish).
 
 **Építőkövek:** `ConfiguredSpell.playFeedback` (a becsatlakozási pont), `Targeting` enum (a default-forma forrása), `ParticleUtil.spawn` (a primitívek erre épülnek), TextAnimator idő-frame minta, `SpellCatalog` builder-hívások.
 

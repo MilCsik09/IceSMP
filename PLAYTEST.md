@@ -256,6 +256,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 ### 4.5 Spellek, kombó, mesterség ✅
 - [ ] Több reprezentatív spell elsül és a leírt hatást teszi (sebzés/effekt/teleport/idézés).
+- [ ] **Spell-VFX (ÚJ):** a spell-effekt FORMÁZOTT — célzott spell **sugarat** húz a célpontig,
+      AoE spell **gyűrűt** rajzol a hatókör mentén, önmagadra ható spell **hélixet** csavar fölfelé;
+      a szín a spell jellegéhez illik (tűz narancs-vörös, fagy kék-fehér…). `spell-vfx.enabled: false`
+      → visszaáll a régi gömb-puff. `spell-vfx.max-points` csökkentése ritkítja a formát.
+- [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen
+      megjelenik, nincs konzol-hiba.
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
 - [ ] **Shift+görgetés spell-váltás:** katalizátorral a kézben lopakodva görgetve a spell vált
       (előre/hátra), a hotbar-slot NEM vált el, és a katalizátor neve az épp kiválasztott
@@ -719,6 +725,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         a claim TELJES magasságát mutatják; barlangban (felszín alatt) a perem a játékos szintjén
         IS kirajzolódik. Ugyanez a /territory show ringre/körre. ⚠️ Folia: távoli (másik régiós)
         határpontnál nincs hiba (fallback a néző szintjére).
+  - [ ] **Claim-fényfal (DisplayFx, ÚJ):** a /claim show a particle-perem MELLÉ élenként egy
+        megnyújtott, IZZÓ üvegfalat állít (saját/trusted=zöld, idegen=piros), ami csak NEKED
+        látszik (más játékos nem látja), és a `border.show-seconds` letelte után magától eltűnik —
+        NEM marad blokk-szemét a világban (kilépés/relog/szerver-restart után sem). Kapcsoló:
+        `display-fx.claim-wall.enabled: false`; a fal anyaga/magassága configos. ⚠️ Folia: több
+        régiót átfedő nagy claimnél is hibamentesen spawnol.
   - [ ] **Kincs-fényoszlop:** a kincs-láda fölött magas, messziről látható END_ROD-oszlop áll
         (dombok mögül is kivehető), a láda-szintű csillogás mellett.
 - [ ] **Particle-polish (ÚJ):**

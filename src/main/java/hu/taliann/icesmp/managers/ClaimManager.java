@@ -663,6 +663,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
      */
     public void showBorder(final Player player) {
         final int seconds = Math.max(2, configManager.getInt("claims.border.show-seconds", 8));
+        if (configManager.getBoolean("display-fx.claim-wall.enabled", true)) {
+            showDisplayWalls(player, seconds);
+        }
         final int[] frames = {0};
         player.getScheduler().runAtFixedRate(plugin, task -> {
             if (frames[0]++ >= seconds || !player.isOnline()) {
@@ -671,6 +674,64 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             }
             drawBorderFrame(player);
         }, null, 1L, 20L);
+    }
+
+    /**
+     * DisplayFx-pilot: a közeli claimek köré EGYSZER (nem frame-enként) izzó fényfalat állít a
+     * BlockDisplay-rétegből — claim-élenként egy megnyújtott, per-nézős, {@code seconds} múlva
+     * eltűnő entitás (saját/trusted=zöld, idegen=piros). A particle-perem a terep-követő részlet,
+     * ez a folytonos, olvasható határ.
+     */
+    private void showDisplayWalls(final Player player, final int seconds) {
+        final Location location = player.getLocation();
+        final World world = location.getWorld();
+        if (world == null) {
+            return;
+        }
+        final String worldName = world.getName();
+        final int radius = Math.max(1, configManager.getInt("claims.border.radius", 2));
+        final int pcx = location.getBlockX() >> 4;
+        final int pcz = location.getBlockZ() >> 4;
+        final java.util.LinkedHashSet<Claim> nearby = new java.util.LinkedHashSet<>();
+        final Map<String, List<Claim>> index = chunkIndex;
+        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
+            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
+                final List<Claim> hits = index.get(chunkKey(worldName, cx, cz));
+                if (hits != null) {
+                    nearby.addAll(hits);
+                }
+            }
+        }
+        if (nearby.isEmpty()) {
+            return;
+        }
+        final int height = Math.max(1, configManager.getInt("display-fx.claim-wall.height", 3));
+        final int ticks = seconds * 20;
+        final org.bukkit.block.data.BlockData block = wallBlockData();
+        for (final Claim claim : nearby) {
+            final org.bukkit.Color glow = claim.isTrusted(player.getUniqueId())
+                    ? org.bukkit.Color.fromRGB(0x3BE24A) : org.bukkit.Color.fromRGB(0xE23B3B);
+            final float width = claim.maxX + 1 - claim.minX;
+            final float depth = claim.maxZ + 1 - claim.minZ;
+            final double baseY = hu.taliann.icesmp.utils.ParticleUtil.markerY(
+                    world, claim.minX + (int) (width / 2), claim.minZ + (int) (depth / 2), location.getY()) - 1.2D;
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.minX, baseY, claim.minZ), width, height, 0.1F, block, glow, ticks, player);
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.minX, baseY, claim.maxZ + 1), width, height, 0.1F, block, glow, ticks, player);
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.minX, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.maxX + 1, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
+        }
+    }
+
+    /** A fényfal blokk-anyaga configból (áttetsző üveg default), fail-safe fallbackkal. */
+    private org.bukkit.block.data.BlockData wallBlockData() {
+        final String name = configManager.getString("display-fx.claim-wall.material", "LIGHT_BLUE_STAINED_GLASS");
+        final org.bukkit.Material material = org.bukkit.Material.matchMaterial(name);
+        return (material != null && material.isBlock() ? material : org.bukkit.Material.LIGHT_BLUE_STAINED_GLASS)
+                .createBlockData();
     }
 
     private void drawBorderFrame(final Player player) {
