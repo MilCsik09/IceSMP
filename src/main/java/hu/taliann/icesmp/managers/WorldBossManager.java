@@ -439,6 +439,7 @@ public final class WorldBossManager {
                 final Location center = boss.getLocation().clone();
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
                 spawnTelegraphRing(world, archetype.particle, center, 5.0D);
+                telegraphFloor(center, 5.0D);
                 world.playSound(center, archetype.sound, 1.6F, 0.6F);
                 world.playSound(center, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.6F);
                 boss.getScheduler().runDelayed(plugin, t -> {
@@ -480,6 +481,7 @@ public final class WorldBossManager {
                 final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
                 spawnTelegraphRing(world, archetype.particle, spot, 3.0D);
+                telegraphFloor(spot, 3.0D);
                 world.playSound(spot, archetype.sound, 1.2F, 0.8F);
                 world.playSound(spot, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.8F);
                 boss.getScheduler().runDelayed(plugin, t -> {
@@ -554,6 +556,23 @@ public final class WorldBossManager {
             final Location point = center.clone().add(Math.cos(angle) * radius, 0.15D, Math.sin(angle) * radius);
             hu.taliann.icesmp.utils.ParticleUtil.spawn(world, particle, point, 1);
         }
+    }
+
+    /**
+     * DisplayFx-telegraph a particle-gyűrű mellé: a veszélyzóna talaján egy lapos, piros, izzó lap,
+     * amely a 30-tick figyelmeztetés alatt kicsiről a teljes sugárig nő — a becsapódásig kitölti a
+     * zónát, így a „lépj ki" pillanatok alatt olvasható. A boss régió-szálán hívjuk (a spawn a
+     * DisplayFxUtil-ban régió-schedulerre kerül, a lap nem-perzisztens + FX-tagelt).
+     */
+    private void telegraphFloor(final Location center, final double radius) {
+        if (!configManager.getBoolean("display-fx.boss-telegraph.enabled", true)) {
+            return;
+        }
+        final String name = configManager.getString("display-fx.boss-telegraph.material", "RED_STAINED_GLASS");
+        final org.bukkit.Material material = org.bukkit.Material.matchMaterial(name);
+        final org.bukkit.block.data.BlockData block =
+                (material != null && material.isBlock() ? material : org.bukkit.Material.RED_STAINED_GLASS).createBlockData();
+        hu.taliann.icesmp.utils.DisplayFxUtil.groundTelegraph(plugin, center, radius, 30, org.bukkit.Color.fromRGB(0xE23B3B), block);
     }
 
     /**

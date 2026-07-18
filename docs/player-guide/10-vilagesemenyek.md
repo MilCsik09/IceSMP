@@ -29,8 +29,9 @@ hogy könnyű észrevenni):
   **szignatúra-aurával** (a boss közelében a túlélők témába illő debuffot kapnak). Pl.
   A Gyűrűk Őre, Lávakohó Behemót, Fagyott Trón Királya, Csontkirály, Mélységi Rém…
 - A boss **~8 másodpercenként telegrafált különleges képességet** süt el (becsapódás / mérgező
-  zóna / add-idézés) — a veszélyzónát **részecske-gyűrű** rajzolja ki és külön **hangjelzés**
-  (Warden-morajlás, idézésnél Evoker-kántálás) kíséri: a jelzett helyről lépj el!
+  zóna / add-idézés) — a veszélyzónát **részecske-gyűrű** ÉS egy **növekvő, piros izzó padló-lap**
+  rajzolja ki (a lap a becsapódásig tölti ki a zónát), külön **hangjelzés**
+  (Warden-morajlás, idézésnél Evoker-kántálás) kíséri: amíg a lap nő, van időd ellépni a jelzett helyről!
 - **50% HP alatt feldühödik** (2. fázis): erősebb, gyorsabb csapások.
 - Aki **leüti**, annak a **frakciója kasszát + liga-pontot** kap; a **legyőző játékos** egy
   időleges **harci buffot** (Erő + Védelem) kap.

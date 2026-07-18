@@ -23,7 +23,7 @@ jelenti, hogy **elhagyható**.
 | `/hud <szekció>` | — | HUD-oldalsáv szekciók ki-be kapcsolása (frakcio/kaszt/eroforras/esemeny/valuta/csapat/mind) |
 | `/sit` | — | Leülés, ahol állsz (újra `/sit` vagy sneak = felállás); lépcsőre/fél-lapra üres kézzel jobb-katt is leültet |
 | `/sit fekves` | — | Fekvő póz (LibsDisguises szükséges hozzá); újra kiadva vagy mozgásra felállsz |
-| `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése |
+| `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése (kulccsal a ládára jobb-katt = nyitás; a nyereményt egy 3D-ikon tárja fel a láda fölött) |
 | `/report <név> <ok>` | `bejelent` | Játékos bejelentése a moderátoroknak (percenként egyszer) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
 | `/pet item\|summon\|dismiss\|name` | `tars`, `companion` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |

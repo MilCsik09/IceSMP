@@ -196,6 +196,15 @@ public final class CrateManager implements PersistentStore {
      * lands on the (already-decided) reward; otherwise it fires immediately, as before.
      */
     public boolean open(final Player player, final String crateId) {
+        return open(player, crateId, null);
+    }
+
+    /**
+     * Mint {@link #open(Player, String)}, de a fizikai láda-hellyel — ha megvan, a nyereményt egy
+     * 3D {@link ItemDisplay} tárja fel a láda fölött (DisplayFx-pilot): a lehetséges nyeremények
+     * pörögnek, majd a (már eldöntött) nyertesen áll meg és felnagyul. Tisztán kozmetikus.
+     */
+    public boolean open(final Player player, final String crateId, final Location crateLocation) {
         final List<RewardEntry> rewards = loadRewards(crateId);
         final double totalWeight = rewards.stream().mapToDouble(RewardEntry::weight).sum();
         if (rewards.isEmpty() || totalWeight <= 0.0D) {
@@ -204,6 +213,9 @@ public final class CrateManager implements PersistentStore {
 
         final RewardEntry picked = pickWeighted(rewards, totalWeight);
         grantReward(player, picked);
+        if (crateLocation != null) {
+            spawnCrateReveal(crateLocation, rewards, picked);
+        }
 
         final Runnable feedback = () -> {
             playFeedback(player);
@@ -255,6 +267,51 @@ public final class CrateManager implements PersistentStore {
     private void playFeedback(final Player player) {
         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D), 16, 0.4D, 0.5D, 0.4D, 0.1D);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
+    }
+
+    /**
+     * DisplayFx-pilot: a láda fölött egy 3D ItemDisplay ~12 cikluson át pörgeti a lehetséges
+     * nyeremény-ikonokat, majd a nyertesen megáll, felnagyul és felizzik. A pörgetés az entitás
+     * SAJÁT schedulerén fut (Folia-biztos), a display nem-perzisztens + FX-tagelt, és a végén
+     * auto-despawn — nem marad entitás-szemét.
+     */
+    private void spawnCrateReveal(final Location crateLocation, final List<RewardEntry> rewards, final RewardEntry picked) {
+        if (crateLocation.getWorld() == null || !configManager.getBoolean("display-fx.crate-reveal.enabled", true)) {
+            return;
+        }
+        final int cycles = 12;
+        final int cycleTicks = 3;
+        final int despawn = cycles * cycleTicks + 45;
+        final Location at = crateLocation.clone().add(0.5D, 1.4D, 0.5D);
+        hu.taliann.icesmp.utils.DisplayFxUtil.spawnItemDisplay(plugin, at, rewardIcon(rewards.get(0)), despawn, display -> {
+            display.setBillboard(org.bukkit.entity.Display.Billboard.VERTICAL);
+            display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(0.5F, 0.5F, 0.5F));
+            display.setViewRange(3.0F);
+            final int[] step = {0};
+            display.getScheduler().runAtFixedRate(plugin, task -> {
+                if (!display.isValid()) {
+                    task.cancel();
+                    return;
+                }
+                if (step[0] < cycles) {
+                    display.setItemStack(rewardIcon(rewards.get(ThreadLocalRandom.current().nextInt(rewards.size()))));
+                    step[0]++;
+                } else {
+                    task.cancel();
+                    display.setItemStack(rewardIcon(picked));
+                    display.setGlowing(true);
+                    display.setGlowColorOverride(org.bukkit.Color.fromRGB(0xFFD24A));
+                    hu.taliann.icesmp.utils.DisplayFxUtil.animateTo(plugin, display,
+                            hu.taliann.icesmp.utils.DisplayFxUtil.scale(0.95F, 0.95F, 0.95F), 8);
+                }
+            }, null, cycleTicks, cycleTicks);
+        });
+    }
+
+    /** A nyeremény ikonja a 3D-pörgetéshez (parancs-jutalomnál nether-csillag helyettesít). */
+    private ItemStack rewardIcon(final RewardEntry reward) {
+        final Material material = reward.material() != null ? reward.material() : Material.NETHER_STAR;
+        return new ItemStack(material, 1);
     }
 
     /** Human-readable label for a reward entry — also used by {@link CrateSpinGUI} for the reel icons. */

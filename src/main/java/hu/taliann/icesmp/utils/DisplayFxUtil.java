@@ -118,6 +118,35 @@ public final class DisplayFxUtil {
         return new Transformation(new Vector3f(0.0F, 0.0F, 0.0F), NO_ROT, new Vector3f(x, y, z), NO_ROT);
     }
 
+    /** Középre igazított, lapos skála-transzformáció: a blokk +XZ-nyúlását negatív fél-eltolással centrálja. */
+    public static Transformation flatCentered(final float sizeXZ, final float thickness) {
+        final float half = sizeXZ / 2.0F;
+        return new Transformation(new Vector3f(-half, 0.0F, -half), NO_ROT, new Vector3f(sizeXZ, thickness, sizeXZ), NO_ROT);
+    }
+
+    /**
+     * Boss-AoE padló-telegraph: a veszélyzóna talaján egy lapos, izzó korong/négyzet, amely
+     * {@code growTicks} alatt kicsiről a teljes sugárig NŐ (kliens-interpoláció), így a „lépj ki innen"
+     * sokkal olvashatóbb a particle-gyűrűnél. A becsapódás (growTicks) után rövid ráhagyással eltűnik.
+     */
+    public static void groundTelegraph(final Plugin plugin, final Location center, final double radius,
+                                       final int growTicks, final Color glow, final BlockData block) {
+        if (center == null) {
+            return;
+        }
+        final float full = (float) (radius * 2.0D);
+        spawnBlockDisplay(plugin, center.clone().add(0.0D, 0.05D, 0.0D), block, growTicks + 12, display -> {
+            display.setTransformation(flatCentered(0.2F, 0.12F));
+            display.setBrightness(new Display.Brightness(15, 15));
+            display.setViewRange(3.0F);
+            if (glow != null) {
+                display.setGlowing(true);
+                display.setGlowColorOverride(glow);
+            }
+            animateTo(plugin, display, flatCentered(full, 0.12F), growTicks);
+        });
+    }
+
     /**
      * Egyetlen megnyújtott, opcionálisan izzó fal-szegmens a {@code corner} saroktól +X/+Y/+Z
      * irányban ({@code sizeX×sizeY×sizeZ}), per-nézősen, auto-despawnnal. Egy claim-él = egy entitás.

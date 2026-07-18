@@ -870,7 +870,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 **Építőkövek:** QuestManager.complete, Paper toast-út.
 **Buktatók:** Ha csak advancement-trükkel megy, a receptek/advancement-lista ne szennyeződjön (rejtett, azonnal visszavont advancement).
 
-### A71. Display-entity effekt-réteg (DisplayFx) `[KÉSZ — util + claim-fényfal pilot]`
+### A71. Display-entity effekt-réteg (DisplayFx) `[KÉSZ — util + mindhárom pilot]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** Egy vékony, közös effekt-réteg a display entityk (BlockDisplay/ItemDisplay/TextDisplay) fölé, ami a particle-rendszer mellé (nem helyette!) belép mindenhova, ahol az effekt **geometria, tartós, vagy animált** — mert ott a particle csak drága, szaggatott pontfelhő tud lenni. Munkamegosztás: particle = átmeneti visszajelzés (ütés, cast, ambient), DisplayFx = vonal/sík/tárgy, ami áll, forog vagy simán mozog.
@@ -897,7 +897,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 - **Entitás-költség:** egy határ-fal élenként 1 entity (4–12 db), nem blokkonkénti — a darabszámot a util kapja meg felső korlátként (`display-fx.max-per-player`, default ~24).
 - **Régi kliensek/ViaVersion:** 1.19.4 alatti kliensnek a display entity nem létezik — ha a szerver enged régebbi klienst, particle-fallback kell (a util `supportsDisplay(player)` ága).
 
-**Állapot:** a `DisplayFxUtil` (spawn+tag+`setPersistent(false)`+auto-despawn+`showOnlyTo`+`animateTo`+`wallSegment`) és a `DisplayFxCleanupListener` (chunk-load söprés) kész; **Pilot 1 (claim-fényfal)** él a `/claim show`-ban (`display-fx.claim-wall.*`). Pilot 2 (crate-3D) és Pilot 3 (boss-telegraph) a kész rétegre építve következő kör.
+**Állapot:** a `DisplayFxUtil` (spawn+tag+`setPersistent(false)`+auto-despawn+`showOnlyTo`+`animateTo`+`wallSegment`+`groundTelegraph`) és a `DisplayFxCleanupListener` (chunk-load söprés) kész; **mindhárom pilot él:** Pilot 1 — claim-fényfal a `/claim show`-ban (`display-fx.claim-wall.*`); Pilot 2 — 3D crate-feltárás a láda fölött (`spawnItemDisplay` pörgetés → nyertesen megáll+felizzik, `display-fx.crate-reveal.*`); Pilot 3 — world-boss AoE növekvő padló-telegraph (`display-fx.boss-telegraph.*`, a SLAM/ZONE 30-tick figyelmeztetése alatt kitölti a zónát).
 
 **Al-eset — aurora mint DisplayFx:** az `AmbientEventManager` aurora-ága ma égi particle-t szór magas y-offszettel; ez az egy ambient effekt, ami DisplayFx-szel érdemben szebb lenne. Egy áttetsző, színátmenetes BlockDisplay-lap (vagy néhány egymásra rétegzett, lassan interpolált skála/alfa-hullámmal) az égen folytonos fény-fátyol, nem pontfelhő. A többi ambient (szentjánosbogár, köd) per-nézős és olcsó particle-ként marad — ott a display-entity árva-takarítás költsége nem éri meg. Ez az A71 util első „nem-geometria" fogyasztója lenne.
 

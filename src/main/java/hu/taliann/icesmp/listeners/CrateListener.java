@@ -68,7 +68,7 @@ public final class CrateListener implements Listener {
         }
 
         hand.setAmount(hand.getAmount() - 1);
-        if (!crateManager.open(player, crateId)) {
+        if (!crateManager.open(player, crateId, block.getLocation())) {
             // Extremely unlikely (config is broken between the click and the roll) — refund the key.
             player.getInventory().addItem(crateKeyFactory.createKey(crateId, 1));
             player.sendMessage(messageManager.get("crate-broken", "&cEnnek a ládának jelenleg nincs beállítva jutalom-táblája — a kulcsod visszakaptad."));

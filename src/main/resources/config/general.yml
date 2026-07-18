@@ -154,3 +154,8 @@ display-fx:
     enabled: true                        # claim-fényfal a /claim show-nál
     material: LIGHT_BLUE_STAINED_GLASS   # a fal blokk-anyaga (áttetsző üveg ajánlott)
     height: 3                            # a fal magassága blokkban
+  crate-reveal:
+    enabled: true                        # 3D nyeremény-feltárás a láda fölött (ItemDisplay pörgetés)
+  boss-telegraph:
+    enabled: true                        # world-boss AoE padló-telegraph (növekvő, izzó veszélylap)
+    material: RED_STAINED_GLASS          # a telegraph-lap blokk-anyaga (piros áttetsző ajánlott)

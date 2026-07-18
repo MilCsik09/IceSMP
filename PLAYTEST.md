@@ -554,6 +554,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ⚠️ A SUMMON-special által idézett add-ok egy idő után **eltűnnek** (nem maradnak ott örökre).
 - [ ] **Boss-telegraph (ÚJ):** a SLAM/ZONE special előtt **részecske-gyűrű** rajzolja ki a veszélyzónát
       (5, ill. 3 blokk sugár) + Warden-hang; a SUMMON előtt Evoker-idéző hang szól — kivédhetőbb a special.
+- [ ] **Boss-telegraph padló-lap (DisplayFx, ÚJ):** a gyűrű mellett egy lapos, piros, IZZÓ padló-lap
+      NŐ kicsiről a teljes zónáig a ~1,5 mp figyelmeztetés alatt, és a becsapódáskor eltűnik — sokkal
+      olvashatóbb „lépj ki innen". Nem marad blokk-szemét (a special után, relog/restart után sem).
+      Kapcsoló: `display-fx.boss-telegraph.enabled: false`; a lap anyaga configos. ⚠️ Folia: régióhatáron
+      spawnolt bossnál is hibamentes.
 - [ ] **`/events status` (ÚJ, mindenkinek):** „Mi történik most?" — kilistázza az összes épp aktív
       világeseményt (vérhold/boss/invázió/karaván/gyűjtögető/kincs/Vad Hajsza/bőség/kihívás/kíséret/meteor,
       hátralévő perccel) + a szezon-állást; üresen „nyugalom van" üzenet. A `/menu` → Események almenü
@@ -688,6 +693,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Crate-rulett:** kulcs-nyitáskor pörgő GUI (~3,5 mp, lassul), a végén a tényleges
         nyeremény áll meg; a GUI IDŐ ELŐTTI bezárása esetén is jár a nyeremény; kapcsoló:
         crates-settings.spin-animation. Quest-jutalomból kulcs: az onboarding_gather ad 1 köznapi kulcsot.
+  - [ ] **3D crate-feltárás (DisplayFx, ÚJ):** a láda-blokk FÖLÖTT egy lebegő tárgy-ikon **pörög**
+        a lehetséges nyeremények között (~1,5 mp), majd a tényleges nyereményen **megáll, felnagyul
+        és aranyszínnel felizzik**, aztán eltűnik — mások is látják a láda mellett. Nem marad
+        entitás-szemét (relog/restart után sem). Kapcsoló: `display-fx.crate-reveal.enabled: false`.
+        ⚠️ Folia: a pörgetés az ikon saját szálán fut, régióhatár-közeli ládánál is hibamentes.
   - [ ] **Kombó-kiemelés:** kombó/lánc-finisher utáni 3 mp-ben a sebzés-szám nagyobb, arany, "!"-lel.
   - [ ] **Fekvés:** `/sit fekves` (LibsDisguises-szel) fekvő póz; mozgásra/újra kiadva felállás;
         LD nélkül udvarias hibaüzenet. ⚠️ GrimAC false-positive playtest kötelező!
