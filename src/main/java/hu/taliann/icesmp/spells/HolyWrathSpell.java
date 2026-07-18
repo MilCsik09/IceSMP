@@ -109,7 +109,7 @@ public final class HolyWrathSpell extends BaseSpell {
             }
         }, null, balanceInt("duration-ticks", 40));
 
-        player.getWorld().spawnParticle(Particle.FLASH, player.getEyeLocation(), 2, 0.0D, 0.0D, 0.0D, 0.0D);
+        player.getWorld().spawnParticle(Particle.FLASH, player.getEyeLocation(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
         player.playSound(player.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.7F, 1.4F);
     }
 }

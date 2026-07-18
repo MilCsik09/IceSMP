@@ -253,7 +253,7 @@ public final class CrateManager implements PersistentStore {
     }
 
     private void playFeedback(final Player player) {
-        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.5D, 0.5D, 0.5D, 0.1D);
+        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, player.getLocation().add(0.0D, 1.0D, 0.0D), 16, 0.4D, 0.5D, 0.4D, 0.1D);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
     }
 

@@ -51,7 +51,7 @@ public final class HideSpell extends BaseSpell {
         final int speedAmplifier = balanceInt("speed-amplifier", 1);
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, speedAmplifier, false, true, true));
-        player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation(), 40, 0.5D, 0.5D, 0.5D, 0.01D);
+        player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation(), 24, 0.5D, 0.5D, 0.5D, 0.01D);
 
         final UUID playerId = player.getUniqueId();
         // Folia: schedule on the player's own region scheduler, not the (unsupported) global Bukkit scheduler.

@@ -372,7 +372,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
     private void playExpiryEffect(final Player player) {
         final Location effectLocation = player.getLocation().add(0.0D, 1.0D, 0.0D);
-        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, effectLocation, 40, 0.3D, 0.5D, 0.3D, 0.02D);
+        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, effectLocation, 24, 0.3D, 0.5D, 0.3D, 0.02D);
         player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXTINGUISH_FIRE, 1.0F, 0.8F);
     }
 

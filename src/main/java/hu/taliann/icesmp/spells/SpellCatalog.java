@@ -90,7 +90,7 @@ public final class SpellCatalog {
                 .selfEffect(PotionEffectType.RESISTANCE, 12 * 20, 0)
                 .selfEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
                 .selfEffect(PotionEffectType.ABSORPTION, 12 * 20, 1)
-                .particle(Particle.TOTEM_OF_UNDYING, 40).sound(Sound.ITEM_TOTEM_USE, 0.7F, 1.2F)
+                .particle(Particle.TOTEM_OF_UNDYING, 18).sound(Sound.ITEM_TOTEM_USE, 0.7F, 1.2F)
                 .build());
     }
 
@@ -311,7 +311,7 @@ public final class SpellCatalog {
                 Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.0F));
         registry.register(ConfiguredSpell.builder(mm, "elemental_overload", "Elemi Túltöltés", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).damage(5.0D).ignite(3 * 20).freeze(80).knockback(0.8D)
-                .particle(Particle.FLASH, 5).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.8F, 1.2F)
+                .particle(Particle.FLASH, 1).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.8F, 1.2F)
                 .build());
     }
 
@@ -493,7 +493,7 @@ public final class SpellCatalog {
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 0.9F));
         registry.register(ConfiguredSpell.builder(mm, "masterful_shot", "Mesterlövés", 300, SpellCostType.XP, 80)
                 .target(20.0D).damage(12.0D)
-                .particle(Particle.FLASH, 3).sound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.7F, 1.6F)
+                .particle(Particle.FLASH, 1).sound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.7F, 1.6F)
                 .build());
     }
 
@@ -728,7 +728,7 @@ public final class SpellCatalog {
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "celestial_alignment", "Égi Együttállás", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).damage(8.0D).selfEffect(PotionEffectType.REGENERATION, 10 * 20, 1)
-                .particle(Particle.FLASH, 5).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.7F, 1.4F)
+                .particle(Particle.FLASH, 1).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.7F, 1.4F)
                 .build());
     }
 
@@ -837,7 +837,7 @@ public final class SpellCatalog {
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "final_verdict", "Végső Ítélet", 300, SpellCostType.XP, 150)
                 .aoe(6.0D).damage(9.0D).knockback(1.0D)
-                .particle(Particle.FLASH, 5).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.7F, 1.5F)
+                .particle(Particle.FLASH, 1).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.7F, 1.5F)
                 .build());
     }
 
@@ -999,7 +999,7 @@ public final class SpellCatalog {
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "elemental_blast", "Elemi Robbanás", 45, SpellCostType.XP, 50)
                 .target(14.0D).damage(6.0D).freeze(40).ignite(2 * 20)
-                .particle(Particle.FLASH, 4).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.6F, 1.4F)
+                .particle(Particle.FLASH, 1).sound(Sound.ENTITY_GENERIC_EXPLODE, 0.6F, 1.4F)
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "stormkeeper", "Viharőrző", 75, SpellCostType.HUNGER, 5)
                 .selfEffect(PotionEffectType.STRENGTH, 10 * 20, 0)
@@ -1007,7 +1007,7 @@ public final class SpellCatalog {
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "ascendance_flame", "Felemelkedés", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).damage(8.0D).lightning().ignite(3 * 20)
-                .particle(Particle.FLASH, 5).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.8F, 1.2F)
+                .particle(Particle.FLASH, 1).sound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.8F, 1.2F)
                 .build());
     }
 

@@ -306,6 +306,15 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   default stringet a `get*` hívásban.
 - **Atomikus IO:** minden YAML-mentés `YamlStore.saveAtomic`-on át.
 - **Nincs párhuzamos minta:** ha van rá SPI/bázis/registry, azt használd.
+- **Particle-stílus** (a tulaj kérése: „sokat adnak hozzá, de ha nem szép, sokat rontanak"):
+  - `FLASH` mindig `count=1` — a képernyő-villanás nem halmozódik, a többlet csak csomag.
+  - Ünneplő konfetti (`TOTEM_OF_UNDYING`) legfeljebb ~16-18 darab, szűk terítéssel.
+  - Egyszeri burst ≤ ~30 darab; ami hosszabb hatás, az PULZÁLJON kis adagokban
+    (AmbientEventManager `pulse`-minta), ne egy nagy robbanás legyen.
+  - Talaj-közeli jelölők (határ, perem) a `ParticleUtil.markerY`-ról kapják a magasságot
+    (terep-követés + Folia-guard) — sose lebegjenek a néző derekán dombokon át.
+  - Adat-igényes particle-ök (`FLASH`, `DUST`…) mindig a `ParticleUtil.spawn`-on át
+    (default-adat feloldás, konzol-hiba helyett).
 
 ---
 

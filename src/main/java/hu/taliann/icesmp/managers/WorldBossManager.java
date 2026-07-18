@@ -317,7 +317,7 @@ public final class WorldBossManager {
             boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
         }
 
-        hu.taliann.icesmp.utils.ParticleUtil.spawn(spawnLocation.getWorld(), Particle.FLASH, spawnLocation, 3);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(spawnLocation.getWorld(), Particle.FLASH, spawnLocation, 1);
         spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
 
         startPhaseTick(boss, archetype);
@@ -369,7 +369,7 @@ public final class WorldBossManager {
                 enraged.set(true);
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 3);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 1);
                 boss.getWorld().playSound(boss.getLocation(), archetype.sound, 2.0F, 0.5F);
                 Bukkit.getServer().broadcast(messageManager.getMessage(
                         "world-boss-enraged",
@@ -445,7 +445,7 @@ public final class WorldBossManager {
                     if (!boss.isValid()) {
                         return;
                     }
-                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
+                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
                     // Folia: hit players region-safely — direct (with the boss as damager) when we own
                     // them, otherwise hopped to their scheduler (damager omitted cross-region).
                     for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {

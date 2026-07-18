@@ -721,6 +721,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         határpontnál nincs hiba (fallback a néző szintjére).
   - [ ] **Kincs-fényoszlop:** a kincs-láda fölött magas, messziről látható END_ROD-oszlop áll
         (dombok mögül is kivehető), a láda-szintű csillogás mellett.
+- [ ] **Particle-polish (ÚJ):**
+  - [ ] **Hangulat-effektek:** a szentjánosbogár/köd/lelkek/aurora ~24 mp-ig PULZÁL (2 mp-enként),
+        a flavour-höz illő helyen (bogarak bokor-magasságban, köd a talajon, aurora magasan az
+        égen) — NEM egyetlen villanás a fej fölött; kilépéskor a lánc leáll.
+  - [ ] **FLASH-diéta:** boss-spawn/enrage/SLAM, invázió-bajnok, rituálé és Szent Harag villanása
+        egyszeri, nem halmozott — közelről sem vakít el hosszan.
+  - [ ] **Konfetti mérséklés:** escort/vad hajsza/crate/kombó ünneplő-partikelei visszafogottak
+        (≤16-18 darab), a hatás megmaradt, a "particle-hányás" eltűnt.
 - [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
       szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
       sorozat-ütésnél nem spammel (250 ms limit/célpont).

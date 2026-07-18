@@ -264,7 +264,7 @@ public final class InvasionManager {
                 if (!champion.isValid()) {
                     return;
                 }
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 2);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
                 for (final Entity nearby : champion.getNearbyEntities(4.0D, 4.0D, 4.0D)) {
                     if (nearby instanceof Player player
                             && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {

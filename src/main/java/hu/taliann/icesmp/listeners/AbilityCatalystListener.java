@@ -579,7 +579,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     private void playCastFlourish(final Player player, final boolean combo) {
         player.getWorld().spawnParticle(combo ? Particle.TOTEM_OF_UNDYING : Particle.ENCHANT,
-                player.getLocation().add(0.0D, 1.1D, 0.0D), combo ? 24 : 12, 0.4D, 0.5D, 0.4D, combo ? 0.4D : 0.2D);
+                player.getLocation().add(0.0D, 1.1D, 0.0D), combo ? 14 : 10, 0.4D, 0.5D, 0.4D, combo ? 0.3D : 0.15D);
         player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, combo ? 1.6F : 1.2F);
     }
 

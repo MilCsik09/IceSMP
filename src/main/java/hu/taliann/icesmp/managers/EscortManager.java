@@ -386,7 +386,7 @@ public final class EscortManager {
             for (final ItemStack loot : LootTable.roll(configManager, "escort.reward-loot", rolls)) {
                 world.dropItemNaturally(where, loot);
             }
-            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 40, 0.8D, 0.8D, 0.8D, 0.1D);
+            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.6D, 0.7D, 0.6D, 0.1D);
             world.playSound(where, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
         }
         convoy.remove();

@@ -246,7 +246,7 @@ public final class AmbientEventManager {
             final World world = where.getWorld();
             if (world != null) {
                 final Location high = where.clone().add(0.0D, 18.0D, 0.0D);
-                world.spawnParticle(Particle.FIREWORK, high, 60, 4.0D, 6.0D, 4.0D, 0.05D);
+                world.spawnParticle(Particle.FIREWORK, high, 30, 4.0D, 6.0D, 4.0D, 0.05D);
                 world.spawnParticle(Particle.END_ROD, high, 30, 3.0D, 5.0D, 3.0D, 0.02D);
                 world.playSound(where, Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 1.0F, 1.4F);
             }
