@@ -144,6 +144,61 @@ donation-chest:
 spell-vfx:
   enabled: true             # formázott spell-effektek (false = régi gömb-puff)
   max-points: 48            # egy forma maximális pontszáma (particle-fék; kisebb = takarékosabb)
+  # Paletta = a spell-effekt szín-témája. Kaszt/spec szinten adjuk meg: a paletta a
+  # classes.<kaszt/spec>.spell-unlocks ÖSSZES spelljére ráterjed (nem kell 390 külön bejegyzés).
+  # Választható paletták: FIRE, FROST, HOLY, DECAY, NATURE, ARCANE, BLOOD, STORM, SHADOW, NEUTRAL.
+  # Amelyik spell egyik listában sincs, az az accent-particle-jéből kap ésszerű színt.
+  class-palettes:
+    # --- 13 kaszt (alap-spellek) ---
+    wizard: ARCANE
+    warrior: STORM
+    archer: NATURE
+    assassin: SHADOW
+    druid: NATURE
+    paladin: HOLY
+    death_knight: DECAY
+    shaman: STORM
+    monk: NATURE
+    priest: HOLY
+    warlock: DECAY
+    demon_hunter: DECAY
+    evoker: ARCANE
+    # --- 31 specializáció (spec-spellek felülírják a kaszt-palettát) ---
+    lunar: ARCANE
+    feral: NATURE
+    guardian: NATURE
+    restoration: NATURE
+    holy: HOLY
+    retribution: HOLY
+    protection: STORM
+    blood: BLOOD
+    frost: FROST
+    elemental: STORM
+    enhancement: STORM
+    tidal: FROST
+    windwalker: STORM
+    brewmaster: NATURE
+    mistweaver: NATURE
+    discipline: HOLY
+    shadow: SHADOW
+    affliction: DECAY
+    destruction: FIRE
+    havoc: DECAY
+    vengeance: DECAY
+    devastation: FIRE
+    preservation: NATURE
+    ironbark: NATURE
+    elementalist: STORM
+    necromancer: SHADOW
+    berserker: BLOOD
+    sharpshooter: NATURE
+    beast_master: NATURE
+    poisoner: DECAY
+    phantom: SHADOW
+  # Egyedi spell felülbírálás (a kaszt/spec-palettát írja felül) — pl. egy tűz-témájú harcos-spell:
+  # overrides:
+  #   heroic_leap: FIRE
+  overrides: {}
 
 # DisplayFx: display-entity (BlockDisplay/ItemDisplay) effekt-réteg a particle mellé, ahol az
 # effekt geometria/tartós/animált. Jelenleg a claim-fényfal használja: a /claim show a particle-

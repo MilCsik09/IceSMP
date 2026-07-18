@@ -74,11 +74,26 @@ public final class SpellVfx {
     // Load-időben állítjuk be (IceSMPCore); sok régió-szálról olvassuk, ezért volatile.
     private static volatile boolean enabled = true;
     private static volatile int maxPoints = 48;
+    // spell-id → paletta, a classes.yml spec/kaszt-csoportjaiból építve (IceSMPCore); csere-egészben.
+    private static volatile java.util.Map<String, Palette> spellPalettes = java.util.Map.of();
     private static final float DUST_SIZE = 1.1F;
 
     public static void configure(final boolean vfxEnabled, final int pointCap) {
         enabled = vfxEnabled;
         maxPoints = Math.max(4, pointCap);
+    }
+
+    public static void setSpellPalettes(final java.util.Map<String, Palette> palettes) {
+        spellPalettes = palettes != null ? java.util.Map.copyOf(palettes) : java.util.Map.of();
+    }
+
+    /**
+     * A spell palettája: előbb a spec/kaszt-térképből (spell-id szerint), különben az accent-
+     * particle-ből származtatva — így a nem-térképezett spellek is színhelyesek maradnak.
+     */
+    public static Palette paletteFor(final String spellId, final Particle accent) {
+        final Palette mapped = spellId != null ? spellPalettes.get(spellId) : null;
+        return mapped != null ? mapped : Palette.forParticle(accent);
     }
 
     public static boolean isEnabled() {

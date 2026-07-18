@@ -260,6 +260,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       AoE spell **gyűrűt** rajzol a hatókör mentén, önmagadra ható spell **hélixet** csavar fölfelé;
       a szín a spell jellegéhez illik (tűz narancs-vörös, fagy kék-fehér…). `spell-vfx.enabled: false`
       → visszaáll a régi gömb-puff. `spell-vfx.max-points` csökkentése ritkítja a formát.
+- [ ] **Paletta spec szerint:** a szín a kaszt/spec témáját követi — pl. a **Fagy** halállovag-spellek
+      (obliterate, frost_strike) kék-fehérek, a **Pusztítás** boszorkánymester (chaos_bolt, incinerate)
+      narancs-vörös, az **Árnyék** pap (mind_flay) sötét-lila. Config: `spell-vfx.class-palettes.<spec>`;
+      egyedi kivétel: `spell-vfx.overrides.<spell-id>`. Rossz/ismeretlen paletta-név → csendes fallback
+      (accent-particle szín), nincs hiba.
 - [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen
       megjelenik, nincs konzol-hiba.
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.

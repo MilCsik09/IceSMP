@@ -922,7 +922,7 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 **Miért jó:** Ez a legjobb érték/munka arányú lépés az egész látvány-fronton. Nem új tech (nincs entitás, nincs Folia-életciklus-kockázat), mégis a 390 spell egy csapásra **önmagának néz ki** — a forma a mechanikát tükrözi (lánc chainel, kitörés felfelé tör, AoE gyűrűként terül), a szín a spec-identitást. A default-a-Targetingből elv miatt a retrofit nem 390 kézi hangolás, hanem egy mező + a kiemelt spellek finomítása.
 
-**Állapot:** kész — `SpellVfx` util (BEAM/ARC/IMPACT/RING/HELIX/CONE + 10 paletta + accent-particle-ből származtatott default) a `ConfiguredSpell.playFeedback`-be kötve; a forma a `Targeting`-ből jön, `spell-vfx.*` configgal kapcsolható. A ~390 deklaratív spell azonnal formát+színt kap; a paletta explicit `vfx(...)` builderrel felülírható (a hero-spellek kézi hangolása opcionális későbbi polish).
+**Állapot:** kész — `SpellVfx` util (BEAM/ARC/IMPACT/RING/HELIX/CONE + 10 paletta) a `ConfiguredSpell.playFeedback`-be kötve; a forma a `Targeting`-ből jön, `spell-vfx.*` configgal kapcsolható. **Paletta-illesztés spec/kaszt szinten:** a `spell-vfx.class-palettes.<kaszt/spec>` hozzárendelés a `classes.yml` `spell-unlocks` kulcsain át ráterjed a spec MINDEN spelljére (~44 bejegyzés → ~390 spell), a spec felülírja a kasztot, a `spell-vfx.overrides.<spell-id>` pedig az egyedieket; ami egyik listában sincs, az az accent-particle-ből kap színt. Explicit `vfx(...)` builderrel is felülírható.
 
 **Építőkövek:** `ConfiguredSpell.playFeedback` (a becsatlakozási pont), `Targeting` enum (a default-forma forrása), `ParticleUtil.spawn` (a primitívek erre épülnek), TextAnimator idő-frame minta, `SpellCatalog` builder-hívások.
 

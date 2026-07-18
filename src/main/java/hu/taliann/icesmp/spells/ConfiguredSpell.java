@@ -464,11 +464,13 @@ public final class ConfiguredSpell extends BaseSpell {
     private void playFeedback(final Player player, final Location focus) {
         if (hu.taliann.icesmp.utils.SpellVfx.isEnabled()) {
             final hu.taliann.icesmp.utils.SpellVfx.Shape shape = vfxShape != null ? vfxShape : defaultShape();
+            final hu.taliann.icesmp.utils.SpellVfx.Palette palette = vfxPalette != null
+                    ? vfxPalette : hu.taliann.icesmp.utils.SpellVfx.paletteFor(getId(), particle);
             final Location origin = switch (shape) {
                 case BEAM, ARC, CONE, IMPACT -> player.getEyeLocation();
                 default -> player.getLocation();
             };
-            hu.taliann.icesmp.utils.SpellVfx.render(shape, vfxPalette, origin, focus, liveRadius(), particle, particleCount);
+            hu.taliann.icesmp.utils.SpellVfx.render(shape, palette, origin, focus, liveRadius(), particle, particleCount);
         } else if (particle != null) {
             final double spread = liveRadius();
             hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, focus.clone().add(0.0D, 1.0D, 0.0D),

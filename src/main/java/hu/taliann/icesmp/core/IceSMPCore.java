@@ -500,6 +500,56 @@ public final class IceSMPCore {
      * Also validates the {@code spell-balance} section's keys against the registry so a typo'd spell
      * id is reported at startup instead of silently doing nothing.
      */
+    /**
+     * Spell-VFX paletta-térkép: a {@code spell-vfx.class-palettes.<kaszt/spec>} hozzárendeléseket a
+     * {@code classes.<kaszt/spec>.spell-unlocks} kulcsaira terjeszti (egy paletta ráterjed a spec
+     * összes spelljére), majd a {@code spell-vfx.overrides.<spell-id>} felülírja az egyedieket.
+     */
+    private void configureSpellVfxPalettes() {
+        final org.bukkit.configuration.file.FileConfiguration cfg = configManager.getConfiguration();
+        if (cfg == null) {
+            return;
+        }
+        final java.util.Map<String, hu.taliann.icesmp.utils.SpellVfx.Palette> map = new java.util.HashMap<>();
+        final org.bukkit.configuration.ConfigurationSection classPalettes =
+                cfg.getConfigurationSection("spell-vfx.class-palettes");
+        if (classPalettes != null) {
+            for (final String section : classPalettes.getKeys(false)) {
+                final hu.taliann.icesmp.utils.SpellVfx.Palette palette = parsePalette(classPalettes.getString(section));
+                final org.bukkit.configuration.ConfigurationSection unlocks =
+                        cfg.getConfigurationSection("classes." + section + ".spell-unlocks");
+                if (palette == null || unlocks == null) {
+                    continue;
+                }
+                for (final String spellId : unlocks.getKeys(false)) {
+                    map.put(spellId, palette);
+                }
+            }
+        }
+        final org.bukkit.configuration.ConfigurationSection overrides =
+                cfg.getConfigurationSection("spell-vfx.overrides");
+        if (overrides != null) {
+            for (final String spellId : overrides.getKeys(false)) {
+                final hu.taliann.icesmp.utils.SpellVfx.Palette palette = parsePalette(overrides.getString(spellId));
+                if (palette != null) {
+                    map.put(spellId, palette);
+                }
+            }
+        }
+        hu.taliann.icesmp.utils.SpellVfx.setSpellPalettes(map);
+    }
+
+    private static hu.taliann.icesmp.utils.SpellVfx.Palette parsePalette(final String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        try {
+            return hu.taliann.icesmp.utils.SpellVfx.Palette.valueOf(name.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (final IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
     private void applySpellBalanceOverrides() {
         for (final Spell spell : List.copyOf(spellRegistry.getAll())) {
             if (spell instanceof ConfiguredSpell configuredSpell) {
@@ -550,6 +600,7 @@ public final class IceSMPCore {
         hu.taliann.icesmp.utils.SpellVfx.configure(
                 configManager.getBoolean("spell-vfx.enabled", true),
                 configManager.getInt("spell-vfx.max-points", 48));
+        configureSpellVfxPalettes();
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
