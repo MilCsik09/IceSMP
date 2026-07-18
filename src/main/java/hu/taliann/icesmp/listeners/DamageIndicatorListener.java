@@ -49,17 +49,17 @@ public final class DamageIndicatorListener implements Listener {
     /** Safety valve: if the rate-limit map grows unbounded (many distinct mobs), wipe it rather than leak forever. */
     private static final int MAX_TRACKED_ENTITIES = 2000;
 
-    /** IDEAS A45: az utolsó célpont bejegyzés max ennyi ideig érvényes (a HUD ennyi ideig mutatja). */
+    /** Az utolsó célpont bejegyzés max ennyi ideig érvényes (a HUD ennyi ideig mutatja). */
     private static final long LAST_TARGET_TTL_MILLIS = 10_000L;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final AbilityCatalystListener catalystListener;
     private final ConcurrentHashMap<UUID, Long> lastShownAt = new ConcurrentHashMap<>();
-    // IDEAS A45: attacker UUID -> az utolsó célpontja (a HUD célpont-sorához).
+    // Attacker UUID -> az utolsó célpontja (a HUD célpont-sorához).
     private final Map<UUID, LastTarget> lastTargets = new ConcurrentHashMap<>();
 
-    /** IDEAS A45: egy játékos legutóbb megütött célpontjának pillanatképe. */
+    /** Egy játékos legutóbb megütött célpontjának pillanatképe. */
     public record LastTarget(UUID targetId, String targetName, boolean player, long atMillis) {
     }
 
@@ -87,7 +87,7 @@ public final class DamageIndicatorListener implements Listener {
         }
 
         final Entity victim = event.getEntity();
-        // IDEAS A45: az onDamage a MEGÜTÖTT entitás (victim) régió-szálán fut, tehát a neve/típusa
+        // Az onDamage a MEGÜTÖTT entitás (victim) régió-szálán fut, tehát a neve/típusa
         // itt biztonságosan olvasható; a snapshotot csak later a HUD olvassa (lastTarget()).
         recordLastTarget(attacker.getUniqueId(), victim);
         if (!isRateLimited(victim.getUniqueId())) {
@@ -95,7 +95,7 @@ public final class DamageIndicatorListener implements Listener {
         }
     }
 
-    /** IDEAS A45: eltárolja az attacker utolsó megütött célpontját (HUD célpont-sor). */
+    /** Eltárolja az attacker utolsó megütött célpontját (HUD célpont-sor). */
     private void recordLastTarget(final UUID attackerId, final Entity victim) {
         final String name = victim instanceof Player victimPlayer ? victimPlayer.getName() : formatEntityType(victim.getType());
         if (lastTargets.size() > MAX_TRACKED_ENTITIES) {
@@ -106,7 +106,7 @@ public final class DamageIndicatorListener implements Listener {
     }
 
     /**
-     * IDEAS A45: az attacker legutóbb megütött célpontja, vagy null, ha nincs ilyen / a
+     * Az attacker legutóbb megütött célpontja, vagy null, ha nincs ilyen / a
      * bejegyzés {@link #LAST_TARGET_TTL_MILLIS}-nél régebbi (a lejárt bejegyzést lustán törli).
      */
     public LastTarget lastTarget(final UUID attackerId) {
@@ -186,7 +186,7 @@ public final class DamageIndicatorListener implements Listener {
                 ThreadLocalRandom.current().nextDouble(-0.3D, 0.3D), bob,
                 ThreadLocalRandom.current().nextDouble(-0.3D, 0.3D));
 
-        // IDEAS A51: kombó/lánc-befejező castok után 3 mp-ig kiemelt (nagyobb, arany) sebzés-szám.
+        // Kombó/lánc-befejező castok után 3 mp-ig kiemelt (nagyobb, arany) sebzés-szám.
         final boolean comboBoosted = catalystListener != null && catalystListener.hasComboBoost(attacker.getUniqueId());
         final String text = String.format(Locale.ROOT, "%.1f", damage) + (comboBoosted ? "!" : "");
         final NamedTextColor color = comboBoosted

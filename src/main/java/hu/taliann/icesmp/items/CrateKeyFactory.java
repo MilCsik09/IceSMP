@@ -15,8 +15,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 
 /**
- * Factory for crate-key items (native crate system, IDEAS B8 — replaces
- * CrazyCrates). A key is a config-themed item (material/name/custom-model-data
+ * Factory for crate-key items (native crate system, replaces CrazyCrates).
+ * A key is a config-themed item (material/name/custom-model-data
  * come from {@code config/crates.yml}) tagged with the {@code crate_key} PDC
  * key so {@link hu.taliann.icesmp.listeners.CrateListener} and
  * {@link hu.taliann.icesmp.managers.CrateManager} can identify which crate it
@@ -60,7 +60,7 @@ public final class CrateKeyFactory {
 
         final String keyName = configManager.getString(basePath + ".key-name", "&fLáda Kulcs");
         meta.displayName(SERIALIZER.deserialize(TextUtil.color(keyName)).decoration(TextDecoration.ITALIC, false));
-        // IDEAS A56: a kulcs lore-ja a láda nevét és a top-3 jutalmat mutatja esély-százalékkal —
+        // A kulcs lore-ja a láda nevét és a top-3 jutalmat mutatja esély-százalékkal —
         // a kulcs "önmagát adja el" a piacon/tradeben is. A sorsolás mindig a friss configból megy,
         // a lore csak tájékoztató (config-átírás után a régi kulcsok lore-ja elavulhat, ez kozmetikai).
         final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
@@ -82,7 +82,7 @@ public final class CrateKeyFactory {
         return itemStack;
     }
 
-    /** IDEAS A56: a top-3 jutalom lore-sorai súly szerinti esély-százalékkal, plusz „…és további N". */
+    /** A top-3 jutalom lore-sorai súly szerinti esély-százalékkal, plusz „…és további N". */
     private List<net.kyori.adventure.text.Component> topRewardLore(final String basePath) {
         final java.util.List<java.util.Map<?, ?>> rewards = configManager.getConfiguration() == null
                 ? List.of() : configManager.getConfiguration().getMapList(basePath + ".rewards");

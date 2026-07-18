@@ -8,8 +8,8 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
 /**
- * IDEAS A53: /afk — önkéntes AFK-jelölés. Azonnal él a tablist ⌚-jelölés, a rangon belüli
- * hátrasorolás és a jutalomkapu (A46); bármilyen aktivitás (mozgás/chat/parancs) törli.
+ * /afk — önkéntes AFK-jelölés. Azonnal él a tablist ⌚-jelölés, a rangon belüli
+ * hátrasorolás és a jutalomkapu; bármilyen aktivitás (mozgás/chat/parancs) törli.
  * (A parancs-kiadás maga is aktivitás-eseményt vált ki, de az ELŐBB fut le, mint a toggle,
  * így a bekapcsolás megmarad.)
  */

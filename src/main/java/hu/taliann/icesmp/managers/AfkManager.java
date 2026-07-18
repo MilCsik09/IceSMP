@@ -66,16 +66,15 @@ public final class AfkManager implements PlayerStateCleanup {
             return;
         }
         lastActivity.put(playerId, System.currentTimeMillis());
-        // IDEAS A53: bármilyen aktivitás törli az önkéntes AFK-jelölést is.
         manualAfk.remove(playerId);
     }
 
-    /** IDEAS A53: önkéntes AFK-jelölések (/afk) — bármilyen aktivitás törli. */
+    /** Önkéntes AFK-jelölések (/afk) — bármilyen aktivitás törli. */
     private final java.util.Set<UUID> manualAfk = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     /**
-     * IDEAS A53: /afk — önkéntes AFK-váltás. Bekapcsolva azonnal él a ⌚-jelölés, a
-     * hátrasorolás és a jutalomkapu (A46); bármilyen aktivitás (mozgás/chat/parancs) törli.
+     * /afk — önkéntes AFK-váltás. Bekapcsolva azonnal él a ⌚-jelölés, a hátrasorolás és a
+     * jutalomkapu; bármilyen aktivitás (mozgás/chat/parancs) törli.
      *
      * @return az ÚJ állapot (true = mostantól AFK)
      */

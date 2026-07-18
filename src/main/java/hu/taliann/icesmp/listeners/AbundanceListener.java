@@ -51,8 +51,7 @@ public final class AbundanceListener implements Listener {
                 || ThreadLocalRandom.current().nextDouble() >= chance) {
             return;
         }
-        // A twin: spawn another baby of the same type at the newborn's location.
-        // (entity Ageable#setBaby — distinct from the block-data Ageable used for crops above.)
+        // entity Ageable#setBaby — distinct from the block-data Ageable used for crops above.
         final Entity twin = baby.getWorld().spawnEntity(baby.getLocation(), baby.getType());
         if (twin instanceof org.bukkit.entity.Ageable ageable) {
             ageable.setBaby();

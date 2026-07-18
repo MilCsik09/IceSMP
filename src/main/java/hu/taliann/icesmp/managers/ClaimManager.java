@@ -711,8 +711,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     }
 
     /**
-     * TEREP-KÖVETŐ perem („földszinten, a blokkok felett") + TELJES magasságú sarok-oszlopok
-     * (tulaj kérése): a peremvonal minden pontja a saját oszlopának legfelső blokkja fölé kerül
+     * TEREP-KÖVETŐ perem („földszinten, a blokkok felett") + TELJES magasságú sarok-oszlopok:
+     * a peremvonal minden pontja a saját oszlopának legfelső blokkja fölé kerül
      * — dombon/völgyön átfutó határnál is a talajt követi; ha a néző jóval a felszín alatt jár
      * (barlang), a perem a néző szintjén IS kirajzolódik. A sarok-oszlopok a claim teljes
      * minY→maxY tartományát mutatják, ritkított mintavétellel.

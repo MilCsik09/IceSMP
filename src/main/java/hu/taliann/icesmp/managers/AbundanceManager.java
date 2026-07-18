@@ -40,7 +40,6 @@ public final class AbundanceManager {
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
 
-    /** Whether the abundance window is currently open (read by the listener). */
     public boolean isActive() {
         return active;
     }
@@ -118,7 +117,6 @@ public final class AbundanceManager {
                 "abundance-end", "&7🌱 A Bőség-idő elmúlt — a világ visszatér a rendes kerékvágásba."));
     }
 
-    /** A short, gentle regeneration for everyone online (a restorative night). */
     private void pulseHeal() {
         final int seconds = Math.max(3, configManager.getInt("abundance.regen-seconds", 8));
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {

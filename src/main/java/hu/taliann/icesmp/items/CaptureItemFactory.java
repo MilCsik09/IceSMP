@@ -13,8 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 
 /**
- * The capture items used to tame a companion (ROADMAP phase 12 extension):
- * the Beast Master's taming leash (any non-hostile animal) and the Necromancer's
+ * The capture items used to tame a companion: the Beast Master's taming leash (any non-hostile animal) and the Necromancer's
  * soul binder (any hostile mob / undead). Both are PDC-tagged and consumed on a
  * successful capture.
  */

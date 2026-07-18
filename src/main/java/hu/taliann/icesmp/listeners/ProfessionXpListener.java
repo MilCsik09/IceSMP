@@ -60,7 +60,7 @@ public final class ProfessionXpListener implements Listener {
     }
 
     private void awardXp(final Player player, final ProfessionType profession, final String configPath, final int fallback) {
-        // IDEAS A46: AFK-jelölt játékos nem termel szakma-XP-t (auto-farm exploit-fék).
+        // AFK-jelölt játékos nem termel szakma-XP-t (auto-farm exploit-fék).
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(player.getUniqueId())) {
             return;

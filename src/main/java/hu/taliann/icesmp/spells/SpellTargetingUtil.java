@@ -11,7 +11,7 @@ import org.bukkit.util.RayTraceResult;
 
 public final class SpellTargetingUtil {
 
-    // Party-tudatos célzás kontextusa (IDEAS A2): az IceSMPCore enable()-je tölti fel,
+    // Party-tudatos célzás kontextusa: az IceSMPCore enable()-je tölti fel,
     // volatile a régió-szálakról való biztonságos olvasáshoz (BaseSpell.balanceSource mintája).
     private static volatile PartyManager partyManager;
     private static volatile FactionManager factionManager;
@@ -104,7 +104,7 @@ public final class SpellTargetingUtil {
     }
 
     /**
-     * IDEAS A1 (CC-audit): a képernyő-zavaró effektek (vakság/sötétség/hányinger) CSAK játékosra
+     * A képernyő-zavaró effektek (vakság/sötétség/hányinger) CSAK játékosra
      * hatnak — mob-célponton ekvivalens, ténylegesen ható effektre fordítjuk őket, a méreg pedig
      * élőhalotton rothasztássá (wither) válik. Így egyetlen ponton javul az összes deklaratív
      * spell, és a bespoke spellek is ezt hívják.

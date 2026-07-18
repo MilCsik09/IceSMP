@@ -37,7 +37,7 @@ public final class ResourceManager implements PlayerStateCleanup {
     /** Epoch millis of the last time a player's resource was regenerated. */
     private final Map<UUID, Long> lastRegen = new ConcurrentHashMap<>();
     /**
-     * UUID → kaszt-id (kisbetűs JobType-név) cache a kasztonkénti profilokhoz (IDEAS A3). A
+     * UUID → kaszt-id (kisbetűs JobType-név) cache a kasztonkénti profilokhoz. A
      * {@code current(UUID)} lusta regen-útvonalán nincs Player-példány (a PDC-t nem olvashatnánk
      * biztonságosan idegen régió-szálról), ezért minden Player-t kapó publikus metódus frissíti a
      * cache-t a játékos SAJÁT régió-szálán (HUD-tick, cast) — a UUID-alapú olvasók ebből dolgoznak.
@@ -106,7 +106,7 @@ public final class ResourceManager implements PlayerStateCleanup {
     }
 
     /**
-     * Kasztonkénti profil-érték (IDEAS A3): {@code spells.resource.class.<kaszt-id>.<kulcs>},
+     * Kasztonkénti profil-érték: {@code spells.resource.class.<kaszt-id>.<kulcs>},
      * ha nincs beállítva (vagy a kaszt még ismeretlen), a globális default érvényes.
      */
     private double profile(final UUID id, final String key, final double globalDefault) {
@@ -131,7 +131,7 @@ public final class ResourceManager implements PlayerStateCleanup {
      * The player's current resource, after crediting the time elapsed since the last access.
      * Players start (and rejoin) at full so they can cast immediately.
      *
-     * <p>Kasztonkénti profilok (IDEAS A3): düh-típusú táraknál ({@code idle-decay-per-second > 0})
+     * <p>Kasztonkénti profilok: düh-típusú táraknál ({@code idle-decay-per-second > 0})
      * harcon kívül a tár NEM töltődik, hanem ürül; harcban (az utolsó ütéstől számított türelmi
      * időn belül) a normál regen fut.
      */

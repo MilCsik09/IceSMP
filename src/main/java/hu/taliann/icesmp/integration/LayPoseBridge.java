@@ -7,7 +7,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
- * Optional LibsDisguises bridge for IDEAS A49 (native {@code /sit fekves}) — <b>pure reflection</b>,
+ * Optional LibsDisguises bridge for the native {@code /sit fekves} command — <b>pure reflection</b>,
  * same pattern as {@link DruidDisguise}: IceSMP compiles and runs with no compile-time or hard
  * runtime dependency on LibsDisguises, and any API mismatch is swallowed rather than breaking the
  * caller. When the library is missing (or its API changed), {@link #isAvailable()} returns false and

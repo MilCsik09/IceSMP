@@ -52,12 +52,10 @@ public record Territory(
         return type == TerritoryType.CAPITAL;
     }
 
-    /** Whether this zone is described by a polygon boundary rather than a disc. */
     public boolean isPolygon() {
         return polygon != null && polygon.size() >= 3;
     }
 
-    /** Whether the zone is limited to a vertical band (vs. a full-height column). */
     public boolean hasYBounds() {
         return minY != NO_MIN_Y || maxY != NO_MAX_Y;
     }

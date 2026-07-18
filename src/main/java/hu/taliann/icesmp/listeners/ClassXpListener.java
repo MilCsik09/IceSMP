@@ -44,7 +44,7 @@ public final class ClassXpListener implements Listener {
         if (killer == null || !jobManager.hasPrimaryJob(killer)) {
             return;
         }
-        // IDEAS A46: AFK-jelölt játékos nem termel kaszt-XP-t (auto-farm exploit-fék).
+        // AFK-jelölt játékos nem termel kaszt-XP-t (auto-farm exploit-fék).
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(killer.getUniqueId())) {
             return;

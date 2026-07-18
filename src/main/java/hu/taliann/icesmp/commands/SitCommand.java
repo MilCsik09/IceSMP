@@ -17,7 +17,7 @@ import java.util.Locale;
 
 /**
  * /sit — leül a lába alatti blokkra, vagy ha már ül, feláll. {@code /sit fel} explicit felállás.
- * {@code /sit fekves} (IDEAS A49) a fekvő pózba tesz/feláll belőle — reflexiós LibsDisguises-híd
+ * {@code /sit fekves} a fekvő pózba tesz/feláll belőle — reflexiós LibsDisguises-híd
  * ({@link LayPoseBridge}), LD nélkül elérhetetlen. A tényleges ülés-logika a {@link SitManager}-ben
  * van; a parancs a saját szálán fut, tehát a manager-hívások itt régió-lokálisak (lásd SitManager
  * Folia-jegyzete).

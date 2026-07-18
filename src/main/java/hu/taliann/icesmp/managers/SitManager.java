@@ -57,7 +57,7 @@ public final class SitManager implements PlayerStateCleanup {
     private final NamespacedKey seatKey;
     private final Map<UUID, Seat> seatedPlayers = new ConcurrentHashMap<>();
     /**
-     * IDEAS A49: standing "lay pose" (LibsDisguises-backed, see {@code LayPoseBridge}) — distinct
+     * Standing "lay pose" (LibsDisguises-backed, see {@code LayPoseBridge}) — distinct
      * from the ArmorStand seat above: a laying player is still standing on the ground, just visually
      * disguised into the sleeping pose. Boolean value is unused (presence = laying); a
      * {@link java.util.Set} would do too, but a map matches the rest of this class's bookkeeping.
@@ -183,7 +183,7 @@ public final class SitManager implements PlayerStateCleanup {
         return null;
     }
 
-    // ===== IDEAS A49: fekvő póz (nincs ArmorStand, csak reflexiós LibsDisguises-póz) =====
+    // ===== Fekvő póz (nincs ArmorStand, csak reflexiós LibsDisguises-póz) =====
 
     public boolean isLaying(final UUID playerId) {
         return layingPlayers.containsKey(playerId);

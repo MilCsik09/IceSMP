@@ -559,7 +559,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     /**
      * Draws particle segments between consecutive vertices (closing the ring).
-     * TEREP-KÖVETŐ (tulaj kérése): minden pont a saját oszlopa legfelső blokkja fölé kerül
+     * TEREP-KÖVETŐ: minden pont a saját oszlopa legfelső blokkja fölé kerül
      * (dombon-völgyön át a talajt követi); a kapott {@code y} csak fallback, ha a pont chunkja
      * nem a hívó régiójáé (ParticleUtil.markerY Folia-guardja).
      */
@@ -739,7 +739,6 @@ public final class TerritoryCommand implements BasicCommand {
         if (args.length == 2 && List.of("remove", "rename", "resize", "settype", "sety", "tp", "show").contains(subcommand)) {
             return idSuggestions(prefixAt(args, 1));
         }
-        // settype <id> <type>
         if ("settype".equals(subcommand) && args.length == 3) {
             return TYPE_NAMES.stream().filter(name -> name.startsWith(prefixAt(args, 2))).toList();
         }

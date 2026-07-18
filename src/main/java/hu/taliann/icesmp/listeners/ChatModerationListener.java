@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Natív moderáció (a SModeration plugin chat-részének kiváltása, IDEAS C17): némítás + chat-szűrő
+ * Natív moderáció (a SModeration plugin chat-részének kiváltása): némítás + chat-szűrő
  * + spam-fék, egyetlen listenerben.
  *
  * <p>{@link AsyncChatEvent} a Paper ASYNC chat-szálán fut, NEM a régió-szálakon — itt kizárólag a

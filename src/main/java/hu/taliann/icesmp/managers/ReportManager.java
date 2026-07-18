@@ -243,7 +243,7 @@ public final class ReportManager implements PersistentStore {
         }
         reports.put(id, new Report(existing.id(), existing.reporterUuid(), existing.reporterName(),
                 existing.targetName(), existing.reason(), existing.createdAtMillis(), true, adminName));
-        // IDEAS A58: a bejelentő visszajelzést kap — online: azonnal (saját régió-szálán);
+        // A bejelentő visszajelzést kap — online: azonnal (saját régió-szálán);
         // offline: eltárolt üzenet, a következő belépéskor kézbesíti a ReportFeedbackListener.
         final String feedback = messageManager.get("report-feedback-resolved",
                 "&a✔ A bejelentésedet (&f%s&a) egy moderátor lezárta. Köszönjük!", existing.targetName());
@@ -258,11 +258,11 @@ public final class ReportManager implements PersistentStore {
         return true;
     }
 
-    /** IDEAS A58: kézbesítetlen visszajelzések (offline bejelentőknek) — a reports.yml-be perzisztálva. */
+    /** Kézbesítetlen visszajelzések (offline bejelentőknek) — a reports.yml-be perzisztálva. */
     private final Map<UUID, java.util.List<String>> pendingFeedback = new ConcurrentHashMap<>();
 
     /**
-     * IDEAS A58: a belépő játékos függő visszajelzéseinek kézbesítése (a join a játékos saját
+     * A belépő játékos függő visszajelzéseinek kézbesítése (a join a játékos saját
      * régió-szálán fut, a közvetlen sendMessage legális). Kézbesítés után törlés + mentés.
      */
     public void deliverPendingFeedback(final Player player) {
@@ -290,7 +290,6 @@ public final class ReportManager implements PersistentStore {
                             java.util.Collections.synchronizedList(new java.util.ArrayList<>(messages)));
                 }
             } catch (final IllegalArgumentException ignored) {
-                // Sérült kulcs — kihagyjuk.
             }
         }
     }

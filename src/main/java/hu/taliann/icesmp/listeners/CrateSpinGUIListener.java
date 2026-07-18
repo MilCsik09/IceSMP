@@ -8,7 +8,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
 /**
- * Drives the crate-spin reveal GUI (IDEAS A47 — {@link hu.taliann.icesmp.gui.CrateSpinGUI}).
+ * Drives the crate-spin reveal GUI ({@link hu.taliann.icesmp.gui.CrateSpinGUI}).
  * The GUI is purely cosmetic (the reward was already rolled and credited before it ever
  * opens), so there is nothing to click — every click/drag on it is just cancelled. The one
  * real job here is stopping the animation's {@code runDelayed} chain when the player closes

@@ -127,7 +127,6 @@ public final class SpellMasteryManager {
                     ranks.put(parts[0].trim().toLowerCase(Locale.ROOT), rank);
                 }
             } catch (final NumberFormatException ignored) {
-                // Skip malformed entries.
             }
         }
         return ranks;

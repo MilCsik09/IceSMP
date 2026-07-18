@@ -30,13 +30,7 @@ public final class ConfigValidator {
     private ConfigValidator() {
     }
 
-    /**
-     * Validates the loaded configuration and logs a warning per problem found,
-     * followed by a one-line summary.
-     *
-     * @param configManager the loaded config manager
-     * @param logger the plugin logger to report to
-     */
+    /** Validates the loaded configuration and logs a warning per problem found, followed by a one-line summary. */
     public static void validate(final ConfigManager configManager, final Logger logger) {
         final FileConfiguration config = configManager.getConfiguration();
         if (config == null) {

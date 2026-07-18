@@ -45,7 +45,6 @@ public final class PetCaptureListener implements Listener {
         // Block the vanilla interaction (e.g. leashing) regardless of outcome.
         event.setCancelled(true);
 
-        // Only the matching spec may use each item.
         if ((beast && !petManager.isBeastMaster(player)) || (necro && !petManager.isNecromancer(player))) {
             player.sendActionBar(messageManager.getMessage("pet-wrong-spec", "<red>Ezt az itemet nem a te specializációd használja.</red>"));
             return;

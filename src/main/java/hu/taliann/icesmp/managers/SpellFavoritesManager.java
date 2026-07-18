@@ -23,9 +23,6 @@ public final class SpellFavoritesManager {
         this.favoritesKey = new NamespacedKey(plugin, "favorite_spells");
     }
 
-    /**
-     * Whether the given spell is on the player's favorites list.
-     */
     public boolean isFavorite(final Player player, final String spellId) {
         return spellId != null && favorites(player).contains(spellId.toLowerCase(java.util.Locale.ROOT));
     }

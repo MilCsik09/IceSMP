@@ -41,7 +41,6 @@ public final class CaravanListener implements Listener {
             return;
         }
 
-        // Suppress the native wandering-trader trade GUI; open our caravan shop instead.
         event.setCancelled(true);
 
         final Player player = event.getPlayer();

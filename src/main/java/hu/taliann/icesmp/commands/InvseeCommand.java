@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * {@code /invsee <név>} (IDEAS C12) — read-only pillanatkép-betekintés egy ONLINE játékos fő
+ * {@code /invsee <név>} — read-only pillanatkép-betekintés egy ONLINE játékos fő
  * inventoryjáról, páncéljáról, off-handjéről és ender-ládájáról; az InvSee++ kiváltásának első
  * lépcsője. A snapshot ({@link ItemStack#clone()} minden slotra) a CÉLPONT saját régió-szálán
  * készül (Folia — idegen entitás inventoryját csak a saját szálán szabad olvasni), utána a NÉZŐ
@@ -58,8 +58,6 @@ public final class InvseeCommand implements BasicCommand {
             return;
         }
 
-        // Snapshot on the TARGET's own region thread (Folia — foreign inventory/PDC reads must
-        // happen there), then hop back to the VIEWER's own thread to actually open the GUI.
         target.getScheduler().run(plugin, task -> {
             final ItemStack[] mainSnapshot = new ItemStack[36];
             for (int i = 0; i < 36; i++) {

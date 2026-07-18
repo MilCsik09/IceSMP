@@ -12,9 +12,8 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import java.util.Map;
 
 /**
- * Pet command control (ideas.md "Pet parancsok"): sneak + right-click your own
- * minion to cycle its stance (ACTIVE → PASSIVE → STAY → ACTIVE), like the WoW
- * hunter pet bar.
+ * Pet command control: sneak + right-click your own minion to cycle its stance
+ * (ACTIVE → PASSIVE → STAY → ACTIVE), like the WoW hunter pet bar.
  */
 public final class PetCommandListener implements Listener {
 

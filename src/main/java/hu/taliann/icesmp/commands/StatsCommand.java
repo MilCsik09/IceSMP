@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * /stats — saját vagy más játékos statisztika-profilja (IDEAS A15): ölések,
+ * /stats — saját vagy más játékos statisztika-profilja: ölések,
  * halálok, K/D, mob-ölések, elsütött spellek, teljesített questek.
  *
  * <p>Másik játékos lekérdezésénél a célt kizárólag UUID/név alapján, a

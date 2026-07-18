@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * {@code /mute <név> [perc] [ok...]} (0 perc = végtelen; perc kihagyva = IDEAS A52 eszkalációs
+ * {@code /mute <név> [perc] [ok...]} (0 perc = végtelen; perc kihagyva = eszkalációs
  * lépcső a némítás-történet alapján, ld. {@link ModerationManager#escalationMinutes}) +
  * {@code /mute list} — aktív némítások. A feloldás külön {@link UnmuteCommand}-ban van, mert egy
  * {@link BasicCommand} egy parancs.
@@ -72,7 +72,7 @@ public final class MuteCommand implements BasicCommand {
             return;
         }
 
-        // IDEAS A52: a <perc> argumentum opcionális — ha hiányzik, vagy args[1] nem szám (tehát a
+        // A <perc> argumentum opcionális — ha hiányzik, vagy args[1] nem szám (tehát a
         // reason része), az eszkalációs lépcső adja az időt a némítás-történet alapján.
         final int minutes;
         final String reason;

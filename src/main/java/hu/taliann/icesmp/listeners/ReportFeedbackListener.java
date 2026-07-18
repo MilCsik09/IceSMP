@@ -6,7 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 /**
- * IDEAS A58: az offline bejelentőknek eltárolt report-visszajelzések kézbesítése belépéskor.
+ * Az offline bejelentőknek eltárolt report-visszajelzések kézbesítése belépéskor.
  * A join-event a játékos saját régió-szálán fut, így a közvetlen üzenetküldés Folia-safe.
  */
 public final class ReportFeedbackListener implements Listener {

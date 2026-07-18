@@ -127,20 +127,10 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         }
     }
 
-    /**
-     * Gets the default faction's currency type.
-     *
-     * @return the default faction type
-     */
     public FactionType getDefaultCurrencyType() {
         return defaultCurrencyType.toFactionType();
     }
 
-    /**
-     * Gets the default currency type.
-     *
-     * @return the default currency type
-     */
     public CurrencyType getDefaultCurrency() {
         return defaultCurrencyType;
     }
@@ -200,13 +190,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         return new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(amount);
     }
 
-    /**
-     * Gets the stored bank balance of a (possibly offline) player by UUID.
-     *
-     * @param playerId the player UUID
-     * @param currencyType the currency
-     * @return the stored balance
-     */
+    /** Stored bank balance of a (possibly offline) player by UUID. */
     public double getBalance(final UUID playerId, final CurrencyType currencyType) {
         if (playerId == null || currencyType == null) {
             return 0.0D;
@@ -218,11 +202,6 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     /**
      * Deducts an amount from a (possibly offline) player's bank balance if covered.
      * Used by the faction tax and other server-side sinks.
-     *
-     * @param playerId the player UUID
-     * @param currencyType the currency
-     * @param amount the amount to deduct
-     * @return true if the balance covered the amount and it was deducted
      */
     public boolean deductFromBalance(final UUID playerId, final CurrencyType currencyType, final double amount) {
         if (playerId == null || currencyType == null || amount <= 0.0D) {
@@ -236,13 +215,6 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         return true;
     }
 
-    /**
-     * Adds an amount to a (possibly offline) player's bank balance.
-     *
-     * @param playerId the player UUID
-     * @param currencyType the currency
-     * @param amount the amount to add
-     */
     public void addToBalance(final UUID playerId, final CurrencyType currencyType, final double amount) {
         if (playerId == null || currencyType == null || amount <= 0.0D) {
             return;
@@ -253,11 +225,8 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
     }
 
     /**
-     * Gets the total circulating supply of a currency across every stored wallet.
+     * Total circulating supply of a currency across every stored wallet.
      * Used by the dynamic exchange rate model: scarcer currencies become more valuable.
-     *
-     * @param currencyType the currency to sum
-     * @return the total banked amount of the currency on the server
      */
     public double getTotalSupply(final CurrencyType currencyType) {
         if (currencyType == null) {
@@ -449,8 +418,6 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
      * Atomically deducts {@code amount} only if the player's balance covers it,
      * eliminating the check-then-act race that let concurrent withdrawals/transfers
      * double-spend.
-     *
-     * @return true if the amount was fully deducted
      */
     private boolean tryDeduct(final UUID uuid, final CurrencyType currencyType, final double amount) {
         if (amount <= 0.0D) {

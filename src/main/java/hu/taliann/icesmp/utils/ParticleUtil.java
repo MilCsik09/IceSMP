@@ -23,7 +23,6 @@ public final class ParticleUtil {
     private ParticleUtil() {
     }
 
-    /** Count-only burst (offsets 0, extra 0) — the {@code spawnParticle(p, loc, n)} shape. */
     /**
      * Terep-követő jelölő-magasság: a legfelső blokk teteje + 1,2 („földszinten, a blokkok
      * felett") — a claim/territórium-határok és esemény-jelölők közös Y-forrása, hogy a perem

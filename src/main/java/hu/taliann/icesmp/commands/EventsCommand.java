@@ -106,7 +106,6 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleBloodMoon(final CommandSender sender, final String[] args) {
-        // /events bloodmoon [start|stop] — admin override; no arg = status.
         if (args.length >= 2) {
             if (!sender.hasPermission(ADMIN_PERMISSION)) {
                 sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
@@ -155,7 +154,6 @@ public final class EventsCommand implements BasicCommand {
     }
 
     private void handleCaravan(final CommandSender sender, final String[] args) {
-        // /events caravan [arrive|depart] — admin override; no arg = status.
         if (args.length >= 2) {
             if (!sender.hasPermission(ADMIN_PERMISSION)) {
                 sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
@@ -388,7 +386,6 @@ public final class EventsCommand implements BasicCommand {
         return lines;
     }
 
-    /** The buff's display icon for the "Mi történik most?" summary line. */
     private static String gatheringIcon(final GatheringBuffManager.GatheringBuff buff) {
         return switch (buff) {
             case MINING_RUSH -> "⛏";

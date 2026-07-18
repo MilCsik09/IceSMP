@@ -13,8 +13,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import java.util.Map;
 
 /**
- * Auto-starts the onboarding quest chain (IDEAS A5: "az új játékos első 10
- * perce vezetett") on a brand-new player's very first join. Only the first
+ * Auto-starts the onboarding quest chain ("az új játékos első 10 perce
+ * vezetett") on a brand-new player's very first join. Only the first
  * link ({@code onboarding.first-quest} in quests.yml, "Beszélj a hírnökkel"
  * by default) is accepted here; every follow-up link hands itself over via
  * {@link QuestManager}'s {@code next}-field auto-chain the moment the previous

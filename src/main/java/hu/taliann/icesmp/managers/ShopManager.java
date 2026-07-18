@@ -167,7 +167,6 @@ public final class ShopManager {
             return "shop-closed";
         }
 
-        // Optional faction restriction.
         final String shopFactionName = shop.getString("faction", "ALL");
         if (!shopFactionName.isBlank() && !"ALL".equalsIgnoreCase(shopFactionName)) {
             final FactionType shopFaction = FactionType.fromInput(shopFactionName);

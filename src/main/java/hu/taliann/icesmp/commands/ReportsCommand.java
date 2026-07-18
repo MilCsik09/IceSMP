@@ -12,13 +12,12 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * /reports — admin bejelentés-kezelés (IDEAS C29), {@code icesmp.admin.moderation} mögé kapuzva:
+ * /reports — admin bejelentés-kezelés, {@code icesmp.admin.moderation} mögé kapuzva:
  * (arg nélkül) nyitott bejelentések listája; {@code resolve <id>} lezárás; {@code all} az utolsó
  * 20 bejelentés (lezártak is). A játékos-oldal a {@link ReportCommand} ({@code /report}).
  */
 public final class ReportsCommand implements BasicCommand {
 
-    /** Kept as a literal (not a {@code Permissions} import) — see task hand-off notes. */
     private static final String PERMISSION = "icesmp.admin.moderation";
 
     private static final String RESOLVE = "resolve";

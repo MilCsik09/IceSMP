@@ -10,7 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * IDEAS A70: vanília advancement-toast felugratása tetszőleges címmel (quest-teljesítés
+ * Vanília advancement-toast felugratása tetszőleges címmel (quest-teljesítés
  * ünneplése a jobb felső sarokban). Nincs first-class toast API — a bevett plugin-trükköt
  * használjuk: egyszer használatos, rejtett advancement betöltése futásidőben, odaítélés,
  * majd visszavonás és eltávolítás.

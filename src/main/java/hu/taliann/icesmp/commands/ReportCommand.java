@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * /report &lt;név&gt; &lt;ok...&gt; — natív játékos-bejelentő (IDEAS C29). A célnak nem kell
+ * /report &lt;név&gt; &lt;ok...&gt; — natív játékos-bejelentő. A célnak nem kell
  * online lennie; az indoklásnak legalább 3 szóból kell állnia, hogy legyen tartalma. Az admin
  * oldal a {@link ReportsCommand} ({@code /reports}).
  */

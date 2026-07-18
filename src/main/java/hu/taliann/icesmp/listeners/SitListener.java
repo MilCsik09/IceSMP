@@ -29,7 +29,7 @@ import org.bukkit.inventory.EquipmentSlot;
  * thread, so every call into the manager here is already region-local (see {@link SitManager}
  * class javadoc for the Folia reasoning).
  *
- * <p>IDEAS A49: also owns the "lay pose" auto-stand-up-on-move rule ({@link #onMove}) — the seat
+ * <p>Also owns the "lay pose" auto-stand-up-on-move rule ({@link #onMove}) — the seat
  * system and the lay pose are two independent per-player states in {@link SitManager}, but both are
  * cleared here since {@code PlayerMoveEvent} always fires on the moving player's own region thread.
  */
@@ -117,7 +117,7 @@ public final class SitListener implements Listener {
     }
 
     /**
-     * IDEAS A49: mozgásra felkel a fekvő pózból. {@code PlayerMoveEvent} fej-forgatásra (csak
+     * Mozgásra felkel a fekvő pózból. {@code PlayerMoveEvent} fej-forgatásra (csak
      * yaw/pitch változás) is tüzel — csak akkor állunk fel, ha a tényleges koordináta is változott,
      * különben minden körülnézés lefektetne/felállítana.
      */

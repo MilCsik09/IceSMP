@@ -62,14 +62,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     // Combo tracking: the last spell each player cast and when.
     private final Map<UUID, String> lastCastSpell = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastCastTime = new ConcurrentHashMap<>();
-    // IDEAS A16: az utolsó ELŐTTI cast is kell a 3 lépéses kombó-láncok felismeréséhez.
+    // Az utolsó ELŐTTI cast is kell a 3 lépéses kombó-láncok felismeréséhez.
     private final Map<UUID, String> secondLastCastSpell = new ConcurrentHashMap<>();
     private final Map<UUID, Long> secondLastCastTime = new ConcurrentHashMap<>();
-    // IDEAS A15: cast-számláló — a StatsManager a kézi DI-sorrendben később épül, ezért setter.
+    // Cast-számláló — a StatsManager a kézi DI-sorrendben később épül, ezért setter.
     private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
-    // IDEAS A51: kombó/lánc-befejező után rövid ideig kiemelt sebzés-szám (DamageIndicatorListener olvassa).
+    // Kombó/lánc-befejező után rövid ideig kiemelt sebzés-szám (DamageIndicatorListener olvassa).
     private final Map<UUID, Long> comboBoostUntil = new ConcurrentHashMap<>();
-    // IDEAS A62: az aktív kombó-ablak hint-lánc indítási időbélyege — az újabb cast érvényteleníti.
+    // Az aktív kombó-ablak hint-lánc indítási időbélyege — az újabb cast érvényteleníti.
     private final Map<UUID, Long> hintStartedAt = new ConcurrentHashMap<>();
     private final JavaPlugin plugin;
 
@@ -149,7 +149,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
 
-        // Sneak + right-click opens the spellbook (browse / pick a spell) instead of casting.
         if (player.isSneaking()) {
             openSpellbook(player);
             return;
@@ -214,7 +213,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return;
         }
 
-        // IDEAS A4: ha a játékos jelölt kedvenceket a spellkönyvben, a görgetés CSAK azokat
+        // Ha a játékos jelölt kedvenceket a spellkönyvben, a görgetés CSAK azokat
         // lépkedi (üres kedvenc-lista = a teljes feloldott lista). A kiválasztás-index továbbra
         // is a TELJES feloldott listába mutat, így a kedvencek ki-be kapcsolása nem borítja el.
         final java.util.Set<String> favorites = spellFavoritesManager.favorites(player);
@@ -324,7 +323,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         // Spell-mastery power scales the offensive output (damage, self-heal, effect duration);
         // the dynamic layer adds a capped class-level + 'spell-power' talent bonus on top.
-        // IDEAS A16: a 3 lépéses kombó-lánc befejezője plusz erő-bónuszt kap.
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
         final double power = masteryManager.getPowerMultiplier(player, selected.getId())
                 * dynamicPowerMultiplier(player)
@@ -343,14 +341,13 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
 
         // A combo (configured spell pair cast in quick succession) flows faster (cooldown refund) + flair.
-        // IDEAS A16: a lánc-befejező is kombónak számít (visszatérítés), és külön üzenetet kap;
+        // A lánc-befejező is kombónak számít (visszatérítés), és külön üzenetet kap;
         // kombó után a HUD a lánc következő lépését, sima cast után a nyíló kombó-ablakot jelzi.
         final boolean chainFinisher = chainBonusPercent > 0.0D;
         final boolean combo = chainFinisher || isComboMatch(player, selected.getId(), now);
-        // IDEAS A62: az új cast érvényteleníti az előző kombó-hint láncot (a hint-ág újraindítja).
+        // Az új cast érvényteleníti az előző kombó-hint láncot (a hint-ág újraindítja).
         hintStartedAt.remove(player.getUniqueId());
         if (combo) {
-            // IDEAS A51: 3 mp-ig kiemelt (nagyobb, arany) sebzés-szám a kombó/lánc-befejező castjaira.
             comboBoostUntil.put(player.getUniqueId(), now + 3000L);
         }
         putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
@@ -436,7 +433,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     /**
-     * IDEAS A16: 3 lépéses kombó-lánc befejezőjének erő-bónusza. Ha az utolsó két cast (minden
+     * 3 lépéses kombó-lánc befejezőjének erő-bónusza. Ha az utolsó két cast (minden
      * lépésköz a kombó-ablakon belül) egy konfigurált lánc ({@code spells.combos.chains}) első
      * két lépése, és a mostani spell a harmadik, a finisher +X% erővel sül el.
      *
@@ -481,7 +478,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     /**
-     * IDEAS A16 (HUD-jelzés): sima (nem kombós) cast után kiírja az action barra, melyik spell
+     * Sima (nem kombós) cast után kiírja az action barra, melyik spell
      * nyitna kombót az időablakon belül — így a játékos tanulja a láncokat.
      */
     private void sendComboWindowHint(final Player player, final String justCastId) {
@@ -493,7 +490,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (next == null) {
             return;
         }
-        // IDEAS A62: nem egyszeri üzenet, hanem 500 ms-onként frissülő FOGYÓ CSÍK a hátralévő
+        // Nem egyszeri üzenet, hanem 500 ms-onként frissülő FOGYÓ CSÍK a hátralévő
         // kombó-ablakról — az időbélyeg az "aktív hint" azonosítója, egy újabb cast (új put vagy
         // remove) némán leállítja a régi láncot.
         final long windowMillis = Math.max(1L, configManager.getLong("spells.combos.window-seconds", 4L)) * 1000L;
@@ -502,7 +499,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         renderComboHint(player, next.getName(), startedAt, windowMillis);
     }
 
-    /** IDEAS A62: egy hint-lánc lépése — csak addig fut, amíg az időbélyege az aktuális. */
+    /** Egy hint-lánc lépése — csak addig fut, amíg az időbélyege az aktuális. */
     private void renderComboHint(final Player player, final String nextName, final long startedAt,
                                  final long windowMillis) {
         final Long current = hintStartedAt.get(player.getUniqueId());
@@ -620,7 +617,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return 0L;
         }
 
-        // Spell mastery lowers the effective cooldown.
         final long cooldownMs = (long) (Math.max(0, spell.getCooldown()) * 1000L
                 * masteryManager.getCooldownMultiplier(player, spell.getId()));
         final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
@@ -642,12 +638,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 .toList();
     }
 
-    /** Opens the spellbook GUI so the player can browse and pick a spell. */
     public void openSpellbook(final Player player) {
         openSpellbook(player, 0, false);
     }
 
-    /** Opens the spellbook GUI at the given page. */
     public void openSpellbook(final Player player, final int page) {
         openSpellbook(player, page, false);
     }
@@ -699,7 +693,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return getRemainingCooldown(player, spell, System.currentTimeMillis());
     }
 
-    /** Mastery rank the player has in the given spell. */
     public int getMasteryRank(final Player player, final String spellId) {
         return masteryManager.getRank(player, spellId);
     }
@@ -738,7 +731,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return result;
     }
 
-    /** IDEAS A15: cast-számláló bekötése (a StatsManager a DI-sorrendben később épül). */
+    /** Cast-számláló bekötése (a StatsManager a DI-sorrendben később épül). */
     public void setStatsManager(final hu.taliann.icesmp.managers.StatsManager statsManager) {
         this.statsManager = statsManager;
     }
@@ -760,7 +753,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     /**
-     * IDEAS A51: igaz, ha a játékos legutóbbi castja kombó/lánc-befejező volt és a 3 mp-es
+     * Igaz, ha a játékos legutóbbi castja kombó/lánc-befejező volt és a 3 mp-es
      * kiemelés-ablak még nem járt le. Lejárt bejegyzést lustán eltávolítja.
      */
     public boolean hasComboBoost(final UUID playerId) {

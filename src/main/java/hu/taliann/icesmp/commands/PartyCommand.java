@@ -60,7 +60,6 @@ public final class PartyCommand implements BasicCommand {
             case "list" -> sendList(player);
             case "chat", "c" -> handleChat(player, args, 1);
             case "help" -> sendHelp(player);
-            // Unknown first token: treat the whole line as a party-chat message (WoW-style /p).
             default -> handleChat(player, args, 0);
         }
     }

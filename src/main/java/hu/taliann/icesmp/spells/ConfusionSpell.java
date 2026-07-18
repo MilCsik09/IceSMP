@@ -64,13 +64,11 @@ public final class ConfusionSpell extends BaseSpell {
     /** Runs on the target's own region thread. */
     private void confuse(final LivingEntity target, final int durationTicks) {
         if (target instanceof Player) {
-            // Játékos: ténylegesen "rosszul lát célozni".
             target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, durationTicks, 0, false, true, true));
             target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, durationTicks, 0, false, true, true));
             return;
         }
 
-        // Mob: mechanikus zavarodás — lassabb, gyengébb, és folyamatosan elveszti a célpontját.
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, durationTicks, 0, false, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, durationTicks, 0, false, true, true));
         if (target instanceof Mob mob) {

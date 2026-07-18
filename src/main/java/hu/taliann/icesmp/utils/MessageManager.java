@@ -10,10 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.util.Map;
 
-/**
- * Manager for localized and configurable messages throughout the plugin.
- * Provides centralized access to all user-facing strings with configuration support.
- */
+/** Centralized access to all user-facing, configurable messages. */
 public final class MessageManager {
 
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
@@ -39,12 +36,6 @@ public final class MessageManager {
     /** volatile: reload() swaps it on one thread while region threads read it concurrently. */
     private volatile YamlConfiguration messagesConfiguration;
 
-    /**
-     * Constructs a new MessageManager.
-     *
-     * @param plugin the plugin instance
-     * @param configManager the configuration manager
-     */
     public MessageManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.messagesFile = new File(plugin.getDataFolder(), "messages.yml");
@@ -101,25 +92,10 @@ public final class MessageManager {
 
     // ===== GENERIC HELPER METHODS =====
 
-    /**
-     * Gets a message from configuration with a fallback default.
-     *
-     * @param key the message key (dot notation)
-     * @param defaultValue the fallback value if not found
-     * @return the message with fallback
-     */
     public String get(final String key, final String defaultValue) {
         return colorize(resolveMessage(key, defaultValue));
     }
 
-    /**
-     * Gets a message from configuration with multiple format arguments.
-     *
-     * @param key the message key
-     * @param defaultValue the fallback value
-     * @param args format arguments (%s substitutions)
-     * @return formatted message
-     */
     public String get(final String key, final String defaultValue, final Object... args) {
         final String template = resolveMessage(key, defaultValue);
         try {

@@ -44,7 +44,7 @@ public final class StatsManager implements PersistentStore {
         private int level;
         private double wealth;
         private int raidKills;
-        // /stats profile counters (IDEAS A15) — written from arbitrary region threads.
+        // /stats profile counters — written from arbitrary region threads.
         private final AtomicInteger kills = new AtomicInteger();
         private final AtomicInteger deaths = new AtomicInteger();
         private final AtomicInteger mobKills = new AtomicInteger();
@@ -93,7 +93,6 @@ public final class StatsManager implements PersistentStore {
                 stat.questsCompleted.set(section.getInt(key + ".quests-completed", 0));
                 stats.put(id, stat);
             } catch (final IllegalArgumentException ignored) {
-                // Skip malformed UUID keys.
             }
         }
     }
@@ -137,7 +136,6 @@ public final class StatsManager implements PersistentStore {
         return stat == null ? 0 : stat.raidKills;
     }
 
-    /** Increments the player's raid-kill counter. */
     public void recordRaidKill(final Player player) {
         if (player == null) {
             return;
@@ -147,7 +145,7 @@ public final class StatsManager implements PersistentStore {
         stat.raidKills++;
     }
 
-    // ===== /stats profil-számlálók (IDEAS A15) =====
+    // ===== /stats profil-számlálók =====
     //
     // Ezek a metódusok KIZÁRÓLAG konkurens (atomikus) map-műveletek — nem
     // olvasnak/írnak semmilyen entitást, ezért bármely régió-szálról hívhatók

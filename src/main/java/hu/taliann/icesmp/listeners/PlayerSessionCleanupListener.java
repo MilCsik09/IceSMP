@@ -71,8 +71,6 @@ public final class PlayerSessionCleanupListener implements Listener {
             owner.clearPlayerState(playerId);
         }
 
-        // Every registered spell clears its own per-player state (no-op for the stateless majority),
-        // so a new stateful spell is cleaned up automatically — no edit needed here.
         for (final Spell spell : spellRegistry.getAll()) {
             spell.clearPlayerState(playerId);
         }

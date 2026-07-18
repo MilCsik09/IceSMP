@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 
 /**
- * Native crate system (IDEAS B8 — replaces the CrazyCrates soft-dependency):
+ * Native crate system (replaces the CrazyCrates soft-dependency):
  * a crate is a real block location tagged with a crate-id from
  * {@code config/crates.yml}; a themed key item (see {@link CrateKeyFactory})
  * opens it for a weighted-random item reward. Keys are bought with a currency
@@ -189,7 +189,7 @@ public final class CrateManager implements PersistentStore {
      * particle feedback and a chat message. Returns false if the crate has no (valid)
      * reward table configured.
      *
-     * <p>IDEAS A47: the roll and the reward grant above always happen immediately and are
+     * <p>The roll and the reward grant above always happen immediately and are
      * unconditional — everything below this point is cosmetics only. When
      * {@code crates-settings.spin-animation} is on, the sound/particle/chat feedback is
      * handed to {@link CrateSpinGUI} as a callback and fires only once the reel animation
@@ -220,7 +220,7 @@ public final class CrateManager implements PersistentStore {
         return true;
     }
 
-    /** Global switch for the cosmetic reel-spin reveal (IDEAS A47) — config/crates.yml crates-settings.spin-animation. */
+    /** Global switch for the cosmetic reel-spin reveal — config/crates.yml crates-settings.spin-animation. */
     private boolean spinAnimationEnabled() {
         return configManager.getBoolean("crates-settings.spin-animation", true);
     }

@@ -51,7 +51,7 @@ public final class CommandMenuListener implements Listener {
             return;
         }
 
-        // IDEAS A69: egységes hangnyelv — menü-váltás lapozás-hangot, akció kattintás-hangot kap.
+        // Egységes hangnyelv — menü-váltás lapozás-hangot, akció kattintás-hangot kap.
         if (action.startsWith("MENU:")) {
             hu.taliann.icesmp.gui.GuiUtil.sound(player, hu.taliann.icesmp.gui.GuiUtil.GuiSound.PAGE);
         } else {

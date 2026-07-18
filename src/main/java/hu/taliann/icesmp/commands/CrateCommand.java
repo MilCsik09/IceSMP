@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * /crate — natív láda-rendszer (IDEAS B8, a CrazyCrates kiváltása): kulcsvásárlás
+ * /crate — natív láda-rendszer (a CrazyCrates kiváltása): kulcsvásárlás
  * valuta-sinkkel, láda-infó (jutalom-esélyek %-ban), admin láda-blokk kijelölés és
  * kulcs-adás. A tényleges kinyitás blokk-kattra történik ({@link hu.taliann.icesmp.listeners.CrateListener}).
  */

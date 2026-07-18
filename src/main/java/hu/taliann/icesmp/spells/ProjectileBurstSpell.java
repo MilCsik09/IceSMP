@@ -81,8 +81,6 @@ public final class ProjectileBurstSpell extends BaseSpell {
             if (projectile instanceof AbstractArrow arrow) {
                 arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
                 arrow.setCritical(true);
-                // Playtest-bug: az Átütő Lövedék sosem kapott pierce-szintet, így a nevével
-                // ellentétben megállt az első célpontban.
                 final int pierce = Math.max(0, balanceInt("pierce-level", pierceLevel));
                 if (pierce > 0) {
                     arrow.setPierceLevel(Math.min(127, pierce));

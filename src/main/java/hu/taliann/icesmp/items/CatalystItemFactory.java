@@ -141,12 +141,7 @@ public final class CatalystItemFactory {
         return MINI_MESSAGE.deserialize(resolveTheme(jobType).displayName());
     }
 
-    /**
-     * Gets the catalyst's display name as plain text for chat message placeholders.
-     *
-     * @param jobType the class
-     * @return the themed item name without formatting
-     */
+    /** The catalyst's display name as plain text for chat message placeholders. */
     public String getDisplayNamePlain(final JobType jobType) {
         return PlainTextComponentSerializer.plainText().serialize(getDisplayName(jobType));
     }
@@ -155,12 +150,6 @@ public final class CatalystItemFactory {
         return resolveTheme(jobType).material();
     }
 
-    /**
-     * Plays the class-themed spell-cycle sound to the player.
-     *
-     * @param player the player cycling spells
-     * @param jobType the player's primary class
-     */
     public void playCycleSound(final org.bukkit.entity.Player player, final JobType jobType) {
         final CatalystTheme theme = resolveTheme(jobType);
         player.playSound(player.getLocation(), theme.cycleSound(), theme.cycleVolume(), theme.cyclePitch());

@@ -385,7 +385,7 @@ public final class ConfiguredSpell extends BaseSpell {
         }
 
         for (final PotionEffect effect : targetEffects) {
-            // IDEAS A1: mob-célponton a képernyő-effektek ható megfelelőre fordulnak (CC-audit).
+            // Mob-célponton a képernyő-effektek ható megfelelőre fordulnak (lásd adaptForTarget).
             target.addPotionEffect(SpellTargetingUtil.adaptForTarget(target, scaledDuration(effect, power)));
         }
 

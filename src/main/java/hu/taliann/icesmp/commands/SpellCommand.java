@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * /spell — view and upgrade spell mastery (ROADMAP phase 3). Higher mastery
+ * /spell — view and upgrade spell mastery. Higher mastery
  * lowers a spell's cooldown; upgrades cost faction currency.
  */
 public final class SpellCommand implements BasicCommand {

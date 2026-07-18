@@ -128,7 +128,7 @@ public final class IceSMPCommand implements BasicCommand {
     }
 
     /**
-     * {@code /icesmp inspect <név>} (IDEAS C12): egy játékos-jelentés (kaszt, spec, erőforrás,
+     * {@code /icesmp inspect <név>}: egy játékos-jelentés (kaszt, spec, erőforrás,
      * egyenlegek, statok, bűnpontok, claimek, aktív questek, aktív cooldownok). Online célpontnál
      * a jelentés összeállítása a CÉLPONT saját régió-szálán történik (a Player-t kérő API-k —
      * JobManager, ResourceManager stb. — miatt), majd a kész, több soros szöveg a KÉRDEZŐ saját

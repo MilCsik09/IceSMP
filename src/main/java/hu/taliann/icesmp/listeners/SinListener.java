@@ -60,7 +60,7 @@ public final class SinListener implements Listener {
             return;
         }
 
-        // Raid rule (ROADMAP "Raid-mélyítés"): only kills between REGISTERED fighters on
+        // Raid rule: only kills between REGISTERED fighters on
         // opposite sides are sanctioned (no sin). On a territory-bound raid points are only
         // scored when the victim falls inside the raid zone — the death location is read
         // here on the victim's own region thread. Killer-side mutations (PDC sin/stats,
@@ -82,7 +82,7 @@ public final class SinListener implements Listener {
             return;
         }
 
-        // Bounty hunter rule (ROADMAP "Bűn-alapú fejvadász"): a high-sin victim carries a
+        // Bounty hunter rule: a high-sin victim carries a
         // bounty. Executing them is a justified kill — the hunter is PAID and gains NO sin,
         // and the criminal's bounty resets (they paid with their life). The sin count is
         // read on the victim's own region thread (this event runs there); the currency
@@ -114,8 +114,6 @@ public final class SinListener implements Listener {
             }
         }
 
-        // Betrayal (ROADMAP "Bűn-rendszer bővítés"): killing your own faction member weighs
-        // more than plain murder. Neutrals are a loose association, not an allegiance.
         final boolean betrayal = killerFaction == victimFaction && killerFaction != FactionType.NEUTRAL;
         final int weight;
         final String messageKey;

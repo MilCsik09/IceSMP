@@ -9,7 +9,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
 /**
- * IDEAS A15 — feeds the {@code /stats} profile counters from combat: player
+ * Feeds the {@code /stats} profile counters from combat: player
  * kills/deaths ({@link PlayerDeathEvent}) and mob kills ({@link EntityDeathEvent}
  * for non-player victims).
  *

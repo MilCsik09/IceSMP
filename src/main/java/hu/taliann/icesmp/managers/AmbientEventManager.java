@@ -85,7 +85,6 @@ public final class AmbientEventManager {
             return time >= windowStartTick && time <= windowEndTick;
         }
 
-        /** Whether this flavour's environmental gate currently passes for the given world. */
         boolean environmentAllows(final World world) {
             final boolean inWindow = inWindow(world.getTime());
             return switch (weatherGate) {
@@ -96,7 +95,6 @@ public final class AmbientEventManager {
         }
     }
 
-    /** Passive animals a migration herd is drawn from. */
     private static final EntityType[] HERD = {
             EntityType.COW, EntityType.SHEEP, EntityType.PIG, EntityType.CHICKEN, EntityType.HORSE
     };
@@ -255,7 +253,6 @@ public final class AmbientEventManager {
         }, null);
     }
 
-    /** Shared cosmetic sky/atmosphere effect: broadcast + per-player local particles and a soft sound. */
     /**
      * Elnyújtott hangulat-effekt: a korábbi egyszeri "particle-robbanás" helyett a hatás
      * ~2 másodpercenként pulzál a teljes effekt-időn át (ambient-events.effect-seconds,

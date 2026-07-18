@@ -10,7 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 /**
- * Harci erőforrás-töltés (IDEAS A3): minden bevitt ütés a {@link ResourceManager#onDamageDealt}
+ * Harci erőforrás-töltés: minden bevitt ütés a {@link ResourceManager#onDamageDealt}
  * felé jelez, ami a düh-típusú kaszt-profiloknál ({@code combat-gain-per-hit}) tölti a tárat és
  * frissíti a harc-időbélyeget (az {@code idle-decay} kapuja).
  *

@@ -273,11 +273,6 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask petTask;
 
-    /**
-     * Constructs a new IceSMPCore and initializes all managers.
-     *
-     * @param plugin the plugin instance
-     */
     public IceSMPCore(final JavaPlugin plugin) {
         this.plugin = plugin;
         this.configManager = new ConfigManager(plugin);
@@ -362,7 +357,7 @@ public final class IceSMPCore {
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
-        // IDEAS A15: a quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
+        // A quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
         // (mindkét célosztály a DI-sorrendben korábban épül).
         questManager.setStatsManager(statsManager);
         abilityCatalystListener.setStatsManager(statsManager);
@@ -380,7 +375,7 @@ public final class IceSMPCore {
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
         this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
         this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
-        // IDEAS A48: a quest "rewards.crate-key" mezője setterrel kap CrateKeyFactory-t
+        // A quest "rewards.crate-key" mezője setterrel kap CrateKeyFactory-t
         // (CrateKeyFactory a DI-sorrendben a QuestManager UTÁN épül).
         questManager.setCrateKeyFactory(crateKeyFactory);
         this.textAnimator = new hu.taliann.icesmp.utils.TextAnimator(configManager);
@@ -390,7 +385,7 @@ public final class IceSMPCore {
                 meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
                 factionManager, textAnimator, afkManager);
-        // IDEAS A43: relációs háború-színek a tablistában (raid alatt az ellenség piros).
+        // Relációs háború-színek a tablistában (raid alatt az ellenség piros).
         this.tablistManager.setRaidManager(raidManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
@@ -547,9 +542,9 @@ public final class IceSMPCore {
         // cast time (BaseSpell.balance + ConfiguredSpell live accessors), so /icesmp reload
         // applies changes immediately for every spell — no restart needed.
         hu.taliann.icesmp.spells.BaseSpell.setBalanceSource(configManager);
-        // Party-tudatos célzás (IDEAS A2): az ellenséges spellek kihagyják a szövetségest.
+        // Party-tudatos célzás: az ellenséges spellek kihagyják a szövetségest.
         hu.taliann.icesmp.spells.SpellTargetingUtil.initCombatContext(partyManager, factionManager, configManager);
-        // IDEAS A69: egységes GUI-hangnyelv config-forrása (gui.sounds.* felülbírálások).
+        // Egységes GUI-hangnyelv config-forrása (gui.sounds.* felülbírálások).
         hu.taliann.icesmp.gui.GuiUtil.initSounds(configManager);
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
