@@ -72,7 +72,6 @@ public final class ProfessionRecipeGUI {
             holder.map(i, recipe.id());
         }
 
-        // Navigation row.
         if (shownPage > 0) {
             inv.setItem(45, icon(Material.ARROW, Component.text("Előző oldal", NamedTextColor.YELLOW)
                     .decoration(TextDecoration.ITALIC, false), List.of()));

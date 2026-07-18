@@ -26,7 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Natív moderációs modul állapota (a SModeration plugin chat-részének kiváltása, IDEAS C17):
+ * Natív moderációs modul állapota (a SModeration plugin chat-részének kiváltása):
  * némítás-tár + chat-szűrő + spam-fék. Némítások {@code moderation-data.yml}-be perzisztálnak
  * ({@link YamlStore#saveAtomic}), restart-állóak és kilépéskor NEM törlődnek — csak a spam-fék
  * volatilis (per-session) állapota takarítódik {@link #clearPlayerState}-ben.
@@ -50,7 +50,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         }
     }
 
-    /** IDEAS A52 eszkalációs alapértelmezés, ha a {@code moderation.escalation-minutes} config-lista üres/hibás. */
+    /** Eszkalációs alapértelmezés, ha a {@code moderation.escalation-minutes} config-lista üres/hibás. */
     private static final List<Long> DEFAULT_ESCALATION_MINUTES = List.of(5L, 30L, 180L, 1440L);
     private static final long CHAT_LOG_MAX_BYTES = 5L * 1024 * 1024;
     private static final DateTimeFormatter LOG_TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -63,7 +63,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     private final File chatLogFile;
 
     private final Map<UUID, MuteEntry> mutes = new ConcurrentHashMap<>();
-    /** IDEAS A52: hányszor volt korábban némítva egy játékos — az eszkalációs lépcső ez alapján dönt. */
+    /** Hányszor volt korábban némítva egy játékos — az eszkalációs lépcső ez alapján dönt. */
     private final Map<UUID, Integer> muteHistory = new ConcurrentHashMap<>();
 
     // Spam-fék: kizárólag session-állapot (nem perzisztens) — az utolsó ENGEDÉLYEZETT üzenet
@@ -166,7 +166,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         save();
     }
 
-    // ===== IDEAS A52: eszkalációs lépcső =====
+    // ===== Eszkalációs lépcső =====
 
     /** Hányszor volt már némítva a játékos korábban (a folyamatban lévő mute-ot még NEM számolva). */
     public int muteHistoryCount(final UUID playerId) {
@@ -377,7 +377,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         return false;
     }
 
-    // ===== IDEAS A52: chat-napló =====
+    // ===== Chat-napló =====
 
     /**
      * Naplózza egy blokkolt/cenzúrázott/némított üzenetet a {@code logs/chat-moderation.log}-ba

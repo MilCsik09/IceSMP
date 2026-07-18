@@ -74,7 +74,7 @@ public final class HudManager {
     private final hu.taliann.icesmp.utils.TextAnimator animator;
     private final SeasonManager seasonManager;
     private final DailyQuestManager dailyQuestManager;
-    /** IDEAS A45: a harc-fókusz célpont-sorának adatforrása (setterrel kötve, regisztrációkor). */
+    /** A harc-fókusz célpont-sorának adatforrása; setterrel kötve, regisztrációkor. */
     private volatile hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators;
 
     public void setDamageIndicators(final hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators) {
@@ -282,7 +282,7 @@ public final class HudManager {
                         if (objective != null && !objective.getScore(entry).isScoreSet()) {
                             final org.bukkit.scoreboard.Score score = objective.getScore(entry);
                             score.setScore(LINES - i);
-                            // IDEAS A60: a jobb szélső piros sor-számok elrejtése (1.20.3+ API).
+                            // A jobb szélső piros sor-számok elrejtése (1.20.3+ API).
                             score.numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat.blank());
                         }
                     } else {
@@ -472,7 +472,7 @@ public final class HudManager {
                         List.of(SECTION_RESOURCE, SECTION_PARTY));
 
         final List<HudRow> rows = new ArrayList<>();
-        // IDEAS A45: harc-fókuszban a legutóbb megütött célpont neve (+ játékosnál élet-sáv).
+        // Harc-fókuszban a legutóbb megütött célpont neve (+ játékosnál élet-sáv).
         if (combatFocus && damageIndicators != null) {
             final hu.taliann.icesmp.listeners.DamageIndicatorListener.LastTarget target =
                     damageIndicators.lastTarget(player.getUniqueId());

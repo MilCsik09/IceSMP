@@ -248,12 +248,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
     }
 
-    /**
-     * Gets the persistent ownership record of a relic.
-     *
-     * @param relicId the relic identifier
-     * @return the ownership record, or null if the relic is unclaimed
-     */
+    /** @return the relic's persistent ownership record, or null if the relic is unclaimed */
     public RelicOwnership getOwnership(final String relicId) {
         if (relicId == null || relicId.isBlank()) {
             return null;

@@ -9,7 +9,6 @@ public final class IceSMPLoader implements PluginLoader {
 
     @Override
     public void classloader(final @NonNull PluginClasspathBuilder builder) {
-        // Add dynamically loaded libraries here
     }
 }
 

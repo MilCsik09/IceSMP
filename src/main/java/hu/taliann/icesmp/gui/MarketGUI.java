@@ -71,7 +71,6 @@ public final class MarketGUI {
             holder.mapSlot(i, listing.id());
         }
 
-        // Bottom navigation row.
         for (int slot = PER_PAGE; slot < SIZE; slot++) {
             inventory.setItem(slot, GuiUtil.filler());
         }

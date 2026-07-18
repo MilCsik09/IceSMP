@@ -60,12 +60,7 @@ public final class MinionManager {
         return getOwner(entity) != null;
     }
 
-    /**
-     * Gets the summoner of a minion.
-     *
-     * @param entity the entity to inspect
-     * @return the owner UUID, or null if the entity is not a minion
-     */
+    /** @return the owner UUID of the minion, or null if the entity is not a minion */
     public UUID getOwner(final Entity entity) {
         if (entity == null) {
             return null;

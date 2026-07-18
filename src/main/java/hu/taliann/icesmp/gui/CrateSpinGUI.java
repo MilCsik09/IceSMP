@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Purely cosmetic reward-reveal animation for native crates (IDEAS A47). By the time this
+ * Purely cosmetic reward-reveal animation for native crates. By the time this
  * GUI opens, {@link CrateManager#open} has ALREADY rolled and credited the reward — this
  * class never decides or grants anything, it only "spins" the middle row of a 27-slot
  * inventory through random reward icons for a few seconds (slowing down as it goes) before

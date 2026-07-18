@@ -106,7 +106,7 @@ public final class QuestManager implements PersistentStore {
     private volatile YamlConfiguration customQuests = new YamlConfiguration();
     // Bound after construction (manual-DI ordering) — see IceSMPCore#setStatsManager wiring.
     private volatile StatsManager statsManager;
-    // Bound after construction (manual-DI ordering, IDEAS A48) — see IceSMPCore#setCrateKeyFactory wiring.
+    // Bound after construction (manual-DI ordering) — see IceSMPCore#setCrateKeyFactory wiring.
     private volatile CrateKeyFactory crateKeyFactory;
     private volatile boolean warnedMissingCrateKeyFactory;
 
@@ -130,7 +130,7 @@ public final class QuestManager implements PersistentStore {
 
     /**
      * Binds the {@link StatsManager} used by {@code /stats} to count completed
-     * quests (IDEAS A15). Set after construction because of the manual-DI
+     * quests. Set after construction because of the manual-DI
      * ordering in {@code IceSMPCore} (StatsManager is built after QuestManager).
      */
     public void setStatsManager(final StatsManager statsManager) {
@@ -139,7 +139,7 @@ public final class QuestManager implements PersistentStore {
 
     /**
      * Binds the {@link CrateKeyFactory} used by the {@code rewards.crate-key} quest-reward
-     * field (IDEAS A48). Set after construction because of the manual-DI ordering in
+     * field. Set after construction because of the manual-DI ordering in
      * {@code IceSMPCore} (CrateKeyFactory is built after QuestManager).
      */
     public void setCrateKeyFactory(final CrateKeyFactory crateKeyFactory) {
@@ -1473,7 +1473,7 @@ public final class QuestManager implements PersistentStore {
                 "<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>",
                 Map.of("quest", getDisplayName(questId))
         ));
-        // IDEAS A70: vanília advancement-toast a jobb felső sarokban (a chat-üzenet mellett).
+        // Vanília advancement-toast a jobb felső sarokban (a chat-üzenet mellett).
         if (configManager.getBoolean("quest-toast.enabled", true)) {
             hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
                     "✔ " + stripColors(getDisplayName(questId)), "minecraft:writable_book");
@@ -1482,7 +1482,7 @@ public final class QuestManager implements PersistentStore {
         advanceChain(player, quest);
     }
 
-    /** IDEAS A70: a quest display-nevének lecsupaszítása a toast-JSON-hoz (§/& kódok nélkül). */
+    /** A quest display-nevének lecsupaszítása a toast-JSON-hoz (§/& kódok nélkül). */
     private static String stripColors(final String text) {
         if (text == null) {
             return "";
@@ -1561,7 +1561,7 @@ public final class QuestManager implements PersistentStore {
             jobManager.unlockSpell(player, unlockSpell);
         }
 
-        // Crate-key reward (IDEAS A48): "<crateId>:<darab>", pl. "koznapi:1".
+        // Crate-key reward: "<crateId>:<darab>", pl. "koznapi:1".
         final String crateKeyReward = quest.getString("rewards.crate-key");
         if (crateKeyReward != null && !crateKeyReward.isBlank()) {
             grantCrateKeyReward(player, crateKeyReward);
@@ -1574,7 +1574,7 @@ public final class QuestManager implements PersistentStore {
     }
 
     /**
-     * Grants a {@code "<crateId>:<darab>"} quest reward (IDEAS A48) via the injected
+     * Grants a {@code "<crateId>:<darab>"} quest reward via the injected
      * {@link CrateKeyFactory} — null-safe: if it was never bound (a server disabling the
      * native crate system, or a manual-DI ordering slip), this just warns once to the
      * console instead of throwing, and the rest of the quest's rewards still apply.

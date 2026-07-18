@@ -40,7 +40,6 @@ import java.time.Duration;
  */
 public final class MetelytepoRelicListener implements Listener {
 
-    // Ability configuration constants
     private static final double JUSTICE_DAMAGE = 12.0D;
     private static final double NON_SINNER_DAMAGE_MULTIPLIER = 0.5D;
     private static final double UNDEAD_DAMAGE_MULTIPLIER = 1.5D;
@@ -59,8 +58,6 @@ public final class MetelytepoRelicListener implements Listener {
     private final MessageManager messageManager;
 
     /**
-     * Constructs a new MetelytepoRelicListener.
-     *
      * @param plugin the owning plugin (for Folia cross-entity scheduling)
      * @param metelytepoManager the manager for Metelytepo-specific mechanics
      * @param sinManager the sin domain (sinner marks read for PvP relic transfer)
@@ -91,8 +88,6 @@ public final class MetelytepoRelicListener implements Listener {
     /**
      * Handles block breaking with the Metelytepo relic.
      * Properly drops items and plays sounds as if broken with a Diamond Pickaxe.
-     *
-     * @param event the block break event
      */
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
@@ -130,8 +125,6 @@ public final class MetelytepoRelicListener implements Listener {
      * Handles damage events when attacking with the Metelytepo relic.
      * Applies damage modifiers based on target type and sneaking state.
      * If sneaking, triggers the Justice ability.
-     *
-     * @param event the entity damage event
      */
     @EventHandler(ignoreCancelled = true)
     public void onRelicDamage(final EntityDamageByEntityEvent event) {
@@ -236,7 +229,6 @@ public final class MetelytepoRelicListener implements Listener {
             return;
         }
 
-        // Event mobs (world boss golem, invasion piglin) are fair game — no sin.
         if (isEventMob(victim)) {
             return;
         }
@@ -417,13 +409,7 @@ public final class MetelytepoRelicListener implements Listener {
     }
 
 
-    /**
-     * Creates a proxy diamond pickaxe with the same enchantments as the source weapon.
-     * Used for calculating proper block drops.
-     *
-     * @param sourceWeapon the weapon to copy enchantments from
-     * @return a new diamond pickaxe with copied enchantments
-     */
+    /** Proxy diamond pickaxe with the source weapon's enchantments, used to calculate proper block drops. */
     private ItemStack createProxyPickaxeForMining(final ItemStack sourceWeapon) {
         final ItemStack proxy = new ItemStack(Material.DIAMOND_PICKAXE);
         proxy.addUnsafeEnchantments(sourceWeapon.getEnchantments());

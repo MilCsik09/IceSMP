@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 /**
- * Read-only inventory-betekintő (IDEAS C12, InvSee++ kiváltás első lépcsője): a
+ * Read-only inventory-betekintő (InvSee++ kiváltás első lépcsője): a
  * {@code /invsee <név>} által a CÉLPONT szálán készített pillanatképet (36 fő + 4 páncél +
  * off-hand + 27 ender-láda) jeleníti meg a NÉZŐ szálán nyitott GUI-ban. MINDEN kattintás
  * cancel-elve ({@link hu.taliann.icesmp.listeners.InvseeGUIListener}) — ez kizárólag
@@ -28,7 +28,6 @@ public final class InvseeGUI {
 
     public static final int ENDER_BUTTON_SLOT = 49;
     public static final int BACK_SLOT = 31;
-    /** IDEAS A55: frissítő-gomb a fő nézet bal alsó sarkában. */
     public static final int REFRESH_SLOT = 45;
 
     private InvseeGUI() {
@@ -117,7 +116,7 @@ public final class InvseeGUI {
                 List.of(GuiUtil.grey("Pillanatkép — nem élő nézet")));
     }
 
-    /** IDEAS A55: a pillanatkép kora a címben („ — 12 mp-es kép"), friss képnél üres. */
+    /** A pillanatkép kora a címben („ — 12 mp-es kép"), friss képnél üres. */
     private static String ageSuffix(final long snapshotAtMillis) {
         final long ageSeconds = Math.max(0L, (System.currentTimeMillis() - snapshotAtMillis) / 1000L);
         return ageSeconds < 5L ? " — pillanatkép" : " — " + ageSeconds + " mp-es kép";

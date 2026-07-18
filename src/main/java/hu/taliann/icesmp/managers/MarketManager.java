@@ -289,11 +289,7 @@ public final class MarketManager implements PersistentStore {
         return listingId == null ? null : listings.get(listingId);
     }
 
-    /**
-     * Gets every listing, newest first.
-     *
-     * @return sorted listings
-     */
+    /** @return every listing, newest first */
     public List<Listing> getListingsSorted() {
         return listings.values().stream()
                 .sorted(Comparator.comparingLong(Listing::createdAt).reversed())

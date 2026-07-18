@@ -37,10 +37,8 @@ public final class ExchangeRateService {
     }
 
     /**
-     * Gets the current effective value index of a currency based on its circulating supply.
-     *
      * @param currencyType the currency
-     * @return the scarcity-adjusted value of one unit
+     * @return the scarcity-adjusted value of one unit, based on its circulating supply
      */
     public double getValue(final CurrencyType currencyType) {
         // Demand-shock events temporarily inflate one currency's base value.
@@ -83,12 +81,9 @@ public final class ExchangeRateService {
     }
 
     /**
-     * Gets the current exchange rate between two currencies:
-     * how many units of 'to' one unit of 'from' is worth right now.
-     *
      * @param from the source currency
      * @param to the target currency
-     * @return the dynamic exchange rate
+     * @return how many units of 'to' one unit of 'from' is worth right now
      */
     public double getRate(final CurrencyType from, final CurrencyType to) {
         if (from == null || to == null || from == to) {

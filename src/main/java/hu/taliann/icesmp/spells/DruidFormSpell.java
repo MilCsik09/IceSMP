@@ -106,7 +106,6 @@ public final class DruidFormSpell extends BaseSpell {
         final Form previous = ACTIVE_FORM.get(playerId);
         removeFormEffects(player, previous);
 
-        // Recasting the current form drops back to the formless stance.
         if (previous == form) {
             ACTIVE_FORM.remove(playerId);
             hu.taliann.icesmp.integration.DruidDisguise.clear(player);

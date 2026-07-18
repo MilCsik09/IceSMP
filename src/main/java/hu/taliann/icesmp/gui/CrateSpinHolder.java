@@ -7,7 +7,7 @@ import org.bukkit.inventory.InventoryHolder;
 import java.util.UUID;
 
 /**
- * Holder for the crate-spin reveal GUI (IDEAS A47). The animation itself lives in
+ * Holder for the crate-spin reveal GUI. The animation itself lives in
  * {@link CrateSpinGUI} as a chain of {@code runDelayed} calls on the opening player's
  * own entity scheduler; this holder just carries the owner-UUID (for the click-guard in
  * {@link hu.taliann.icesmp.listeners.CrateSpinGUIListener}) and the volatile

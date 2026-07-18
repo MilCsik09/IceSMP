@@ -23,7 +23,7 @@ public final class GuiUtil {
     private GuiUtil() {
     }
 
-    // ==================== IDEAS A69: egységes GUI-hangnyelv ====================
+    // ==================== Egységes GUI-hangnyelv ====================
 
     /** A közös GUI-hang-készlet: minden felület ugyanazt a hangnyelvet beszéli. */
     public enum GuiSound {

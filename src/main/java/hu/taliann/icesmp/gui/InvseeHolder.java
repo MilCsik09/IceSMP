@@ -6,7 +6,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Read-only {@code /invsee} snapshot holder (IDEAS C12, InvSee++ kiváltás első lépcsője): a
+ * Read-only {@code /invsee} snapshot holder (InvSee++ kiváltás első lépcsője): a
  * célpont fő inventoryjáról/páncéljáról/off-handjéről/ender-ládájáról a CÉLPONT szálán készült
  * {@link ItemStack#clone()} pillanatkép — NEM élő nézet, a GUI bezárása után eldobódik. A holder
  * hordozza mindkét aloldalhoz (fő nézet + ender-láda nézet) szükséges adatot, hogy a "vissza"/
@@ -22,7 +22,7 @@ public final class InvseeHolder implements InventoryHolder {
     private final ItemStack[] armorSnapshot;
     private final ItemStack offHandSnapshot;
     private final ItemStack[] enderSnapshot;
-    /** {@link System#currentTimeMillis()} at which this snapshot was captured (A55 — refresh button/age display). */
+    /** {@link System#currentTimeMillis()} at which this snapshot was captured (for the refresh button/age display). */
     private final long snapshotAtMillis;
     private final View view;
     private Inventory inventory;

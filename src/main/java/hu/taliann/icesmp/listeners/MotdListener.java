@@ -28,7 +28,7 @@ public final class MotdListener implements Listener {
     private final hu.taliann.icesmp.managers.SeasonManager seasonManager;
 
     /**
-     * IDEAS A59: a data-mappa {@code icons/*.png} fájljaiból betöltött szerverlista-ikonok
+     * A data-mappa {@code icons/*.png} fájljaiból betöltött szerverlista-ikonok
      * (64×64). Az IO/dekódolás egyszer, a konstruktorban (enable, fő szál) fut; a ping-event
      * async szálán már csak a cache-elt referencia állítódik.
      */
@@ -65,7 +65,7 @@ public final class MotdListener implements Listener {
         if (!configManager.getBoolean("motd.enabled", true)) {
             return;
         }
-        // IDEAS A50: aktív világesemény felülírja a normál rotációt (élő "kirakat").
+        // Aktív világesemény felülírja a normál rotációt (élő "kirakat").
         // Az esemény-getterek volatile állapot-olvasások (a HUD-tick is más szálról hívja őket),
         // így az async ping-szálról is biztonságosak.
         final ConfigurationSection eventVariant = activeEventVariant();
@@ -96,7 +96,7 @@ public final class MotdListener implements Listener {
         applyMaxPlayers(event);
     }
 
-    /** IDEAS A59: variánshoz rendelt ikon beállítása (icons/<név>.png), ha be van töltve. */
+    /** Variánshoz rendelt ikon beállítása (icons/<név>.png), ha be van töltve. */
     private void applyIcon(final PaperServerListPingEvent event, final String iconName) {
         if (iconName == null || iconName.isBlank()) {
             return;

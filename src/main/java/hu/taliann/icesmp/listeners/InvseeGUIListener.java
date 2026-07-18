@@ -11,7 +11,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
 /**
- * Drives the read-only {@code /invsee} GUI (IDEAS C12): every click is cancelled — this is a
+ * Drives the read-only {@code /invsee} GUI: every click is cancelled — this is a
  * pillanatkép-nézet, nem élő inventory —, the only interactive slots are the ender-chest button
  * (main view) and the back button (ender view), both of which just re-render the ALREADY-CAPTURED
  * snapshot stored on the holder. No further entity access happens here, so no Folia scheduler hop
@@ -43,7 +43,7 @@ public final class InvseeGUIListener implements Listener {
             hu.taliann.icesmp.gui.GuiUtil.sound(viewer, hu.taliann.icesmp.gui.GuiUtil.GuiSound.PAGE);
             InvseeGUI.openEnder(viewer, holder, messageManager);
         } else if (holder.getView() == InvseeHolder.View.MAIN && slot == InvseeGUI.REFRESH_SLOT) {
-            // IDEAS A55: új pillanatkép — a parancs-útvonal fut újra (jogosultság-ellenőrzéssel
+            // Új pillanatkép — a parancs-útvonal fut újra (jogosultság-ellenőrzéssel
             // és a célpont-száli snapshottal együtt); nézőnként 2 mp-es fék a hop-spam ellen.
             final long now = System.currentTimeMillis();
             final Long last = refreshDebounce.get(viewer.getUniqueId());
@@ -58,7 +58,7 @@ public final class InvseeGUIListener implements Listener {
         }
     }
 
-    /** IDEAS A55: frissítés-fék nézőnként (a performCommand célpont-száli hopot indít). */
+    /** Frissítés-fék nézőnként (a performCommand célpont-száli hopot indít). */
     private final java.util.concurrent.ConcurrentHashMap<java.util.UUID, Long> refreshDebounce =
             new java.util.concurrent.ConcurrentHashMap<>();
 
