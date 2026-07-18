@@ -537,6 +537,19 @@ public final class IceSMPCore {
             }
         }
         hu.taliann.icesmp.utils.SpellVfx.setSpellPalettes(map);
+
+        // Forma-override: per-spell explicit forma (a heurisztika/targeting-alapot írja felül).
+        final java.util.Map<String, hu.taliann.icesmp.utils.SpellVfx.Shape> shapeMap = new java.util.HashMap<>();
+        final org.bukkit.configuration.ConfigurationSection shapes = cfg.getConfigurationSection("spell-vfx.shapes");
+        if (shapes != null) {
+            for (final String spellId : shapes.getKeys(false)) {
+                final hu.taliann.icesmp.utils.SpellVfx.Shape shape = parseShape(shapes.getString(spellId));
+                if (shape != null) {
+                    shapeMap.put(spellId, shape);
+                }
+            }
+        }
+        hu.taliann.icesmp.utils.SpellVfx.setSpellShapes(shapeMap);
     }
 
     private static hu.taliann.icesmp.utils.SpellVfx.Palette parsePalette(final String name) {
@@ -545,6 +558,19 @@ public final class IceSMPCore {
         }
         try {
             return hu.taliann.icesmp.utils.SpellVfx.Palette.valueOf(name.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (final IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static hu.taliann.icesmp.utils.SpellVfx.Shape parseShape(final String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        try {
+            final hu.taliann.icesmp.utils.SpellVfx.Shape shape =
+                    hu.taliann.icesmp.utils.SpellVfx.Shape.valueOf(name.trim().toUpperCase(java.util.Locale.ROOT));
+            return shape == hu.taliann.icesmp.utils.SpellVfx.Shape.AUTO ? null : shape;
         } catch (final IllegalArgumentException ignored) {
             return null;
         }

@@ -463,14 +463,16 @@ public final class ConfiguredSpell extends BaseSpell {
 
     private void playFeedback(final Player player, final Location focus) {
         if (hu.taliann.icesmp.utils.SpellVfx.isEnabled()) {
-            final hu.taliann.icesmp.utils.SpellVfx.Shape shape = vfxShape != null ? vfxShape : defaultShape();
+            final hu.taliann.icesmp.utils.SpellVfx.Shape shape = resolveShape();
             final hu.taliann.icesmp.utils.SpellVfx.Palette palette = vfxPalette != null
                     ? vfxPalette : hu.taliann.icesmp.utils.SpellVfx.paletteFor(getId(), particle);
             final Location origin = switch (shape) {
                 case BEAM, ARC, CONE, IMPACT -> player.getEyeLocation();
                 default -> player.getLocation();
             };
-            hu.taliann.icesmp.utils.SpellVfx.render(shape, palette, origin, focus, liveRadius(), particle, particleCount);
+            // A CONE a néző irányába terül (nem a fókusz felé): to=null → a facing-et használja.
+            final Location target = shape == hu.taliann.icesmp.utils.SpellVfx.Shape.CONE ? null : focus;
+            hu.taliann.icesmp.utils.SpellVfx.render(shape, palette, origin, target, liveRadius(), particle, particleCount);
         } else if (particle != null) {
             final double spread = liveRadius();
             hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, focus.clone().add(0.0D, 1.0D, 0.0D),
@@ -482,7 +484,51 @@ public final class ConfiguredSpell extends BaseSpell {
         }
     }
 
-    /** A targeting-jellegből adódó alapforma, ha a spell nem ad explicit {@code vfx(...)}-et. */
+    /**
+     * A tényleges forma: explicit {@code vfx(...)} → config-override ({@code spell-vfx.shapes}) →
+     * konzervatív kulcsszó-heurisztika (a spell-id alapján) → {@link #defaultShape()} targeting-alap.
+     */
+    private hu.taliann.icesmp.utils.SpellVfx.Shape resolveShape() {
+        if (vfxShape != null) {
+            return vfxShape;
+        }
+        final hu.taliann.icesmp.utils.SpellVfx.Shape mapped = hu.taliann.icesmp.utils.SpellVfx.mappedShape(getId());
+        if (mapped != null) {
+            return mapped;
+        }
+        final String id = getId();
+        if (targeting == Targeting.TARGET) {
+            if (containsAny(id, MELEE_TOKENS)) {
+                return hu.taliann.icesmp.utils.SpellVfx.Shape.IMPACT;
+            }
+            if (containsAny(id, THROWN_TOKENS)) {
+                return hu.taliann.icesmp.utils.SpellVfx.Shape.ARC;
+            }
+        } else if (targeting == Targeting.AOE && containsAny(id, BREATH_TOKENS)) {
+            return hu.taliann.icesmp.utils.SpellVfx.Shape.CONE;
+        }
+        return defaultShape();
+    }
+
+    // Konzervatív, egyértelmű kulcsszavak a forma-heurisztikához (a spell-id snake_case angol tokenjei).
+    private static final String[] MELEE_TOKENS = {"strike", "smash", "slam", "punch", "kick", "crush",
+            "cleave", "rend", "bite", "gore", "maul", "chop", "hack"};
+    private static final String[] THROWN_TOKENS = {"throw", "toss", "dart", "javelin", "shuriken", "lob"};
+    private static final String[] BREATH_TOKENS = {"breath", "roar", "spray", "exhale"};
+
+    private static boolean containsAny(final String id, final String[] tokens) {
+        if (id == null) {
+            return false;
+        }
+        for (final String token : tokens) {
+            if (id.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A targeting-jellegből adódó alapforma, ha nincs explicit/config/heurisztikus forma. */
     private hu.taliann.icesmp.utils.SpellVfx.Shape defaultShape() {
         return switch (targeting) {
             case SELF -> hu.taliann.icesmp.utils.SpellVfx.Shape.HELIX;

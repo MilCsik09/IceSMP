@@ -265,6 +265,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       narancs-vörös, az **Árnyék** pap (mind_flay) sötét-lila. Config: `spell-vfx.class-palettes.<spec>`;
       egyedi kivétel: `spell-vfx.overrides.<spell-id>`. Rossz/ismeretlen paletta-név → csendes fallback
       (accent-particle szín), nincs hiba.
+- [ ] **Forma a spell jellegéhez:** közelharci csapás (**frost_strike, crusader_strike, blackout_kick,
+      keg_smash**) → **becsapódás-csillag** a célponton (nem sugár); lehelet (**fire_breath,
+      dream_breath, primal_roar**) → **kúp** a nézési irányban; dobott (**mana_dart, toxin_dart**) →
+      **ív**. A többi marad a célzás-alapon (célzott→sugár, körzet→gyűrű, önmagad→hélix). Per-spell
+      felülírás: `spell-vfx.shapes.<spell-id>`.
 - [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen
       megjelenik, nincs konzol-hiba.
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.

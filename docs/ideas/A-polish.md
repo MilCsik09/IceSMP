@@ -924,6 +924,8 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 
 **Állapot:** kész — `SpellVfx` util (BEAM/ARC/IMPACT/RING/HELIX/CONE + 10 paletta) a `ConfiguredSpell.playFeedback`-be kötve; a forma a `Targeting`-ből jön, `spell-vfx.*` configgal kapcsolható. **Paletta-illesztés spec/kaszt szinten:** a `spell-vfx.class-palettes.<kaszt/spec>` hozzárendelés a `classes.yml` `spell-unlocks` kulcsain át ráterjed a spec MINDEN spelljére (~44 bejegyzés → ~390 spell), a spec felülírja a kasztot, a `spell-vfx.overrides.<spell-id>` pedig az egyedieket; ami egyik listában sincs, az az accent-particle-ből kap színt. Explicit `vfx(...)` builderrel is felülírható.
 
+**Forma-illesztés:** a forma alapból a `Targeting`-ből jön (SELF→HELIX, TARGET→BEAM, AOE→RING), és egy óvatos, egyértelmű kulcsszó-heurisztika finomítja a spell-id alapján: közelharci csapás (`*_strike/_kick/_smash/_slam/_cleave/_rend…`) → IMPACT (becsapódás-csillag, nem sugár); dobott lövedék (`*_dart/_throw/_toss…`) → ARC (parabola); lehelet (`*_breath/_roar/_spray…`) → CONE (a néző irányába). Minden más marad a targeting-alapon. Per-spell felülírás: `spell-vfx.shapes.<spell-id>: BEAM|ARC|IMPACT|RING|HELIX|CONE`.
+
 **Építőkövek:** `ConfiguredSpell.playFeedback` (a becsatlakozási pont), `Targeting` enum (a default-forma forrása), `ParticleUtil.spawn` (a primitívek erre épülnek), TextAnimator idő-frame minta, `SpellCatalog` builder-hívások.
 
 **Buktatók:**

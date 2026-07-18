@@ -83,8 +83,20 @@ public final class SpellVfx {
         maxPoints = Math.max(4, pointCap);
     }
 
+    // spell-id → explicit forma (spell-vfx.shapes config); a heurisztika/targeting-alap fölött.
+    private static volatile java.util.Map<String, Shape> spellShapes = java.util.Map.of();
+
     public static void setSpellPalettes(final java.util.Map<String, Palette> palettes) {
         spellPalettes = palettes != null ? java.util.Map.copyOf(palettes) : java.util.Map.of();
+    }
+
+    public static void setSpellShapes(final java.util.Map<String, Shape> shapes) {
+        spellShapes = shapes != null ? java.util.Map.copyOf(shapes) : java.util.Map.of();
+    }
+
+    /** Config-ban rögzített explicit forma a spellhez, vagy null (ekkor jön a heurisztika/targeting). */
+    public static Shape mappedShape(final String spellId) {
+        return spellId != null ? spellShapes.get(spellId) : null;
     }
 
     /**

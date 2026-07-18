@@ -199,6 +199,14 @@ spell-vfx:
   # overrides:
   #   heroic_leap: FIRE
   overrides: {}
+  # Forma = az effekt geometriája. Alapból a célzásból jön (önmagad→HELIX, célzott→BEAM, körzet→RING),
+  # és egy óvatos kulcsszó-heurisztika finomítja: közelharci csapás (*_strike/_kick/_smash…)→IMPACT,
+  # dobott (*_dart/_throw…)→ARC, lehelet (*_breath/roar…)→CONE. Itt spell-id szerint felül lehet írni.
+  # Választható formák: BEAM, ARC, IMPACT, RING, HELIX, CONE (AUTO/üres = a fenti automatika).
+  # shapes:
+  #   gravity_well: RING
+  #   blink: ARC
+  shapes: {}
 
 # DisplayFx: display-entity (BlockDisplay/ItemDisplay) effekt-réteg a particle mellé, ahol az
 # effekt geometria/tartós/animált. Jelenleg a claim-fényfal használja: a /claim show a particle-
