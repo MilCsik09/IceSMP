@@ -870,6 +870,33 @@ almenük közti ugrálást, és a badge-ekkel (A28) párban proaktívan jelzi a 
 **Építőkövek:** QuestManager.complete, Paper toast-út.
 **Buktatók:** Ha csak advancement-trükkel megy, a receptek/advancement-lista ne szennyeződjön (rejtett, azonnal visszavont advancement).
 
+### A71. Display-entity effekt-réteg (DisplayFx) `[TOP]`
+**Munka:** 🟡 • **Érték:** ⭐⭐⭐
+
+**Mi ez:** Egy vékony, közös effekt-réteg a display entityk (BlockDisplay/ItemDisplay/TextDisplay) fölé, ami a particle-rendszer mellé (nem helyette!) belép mindenhova, ahol az effekt **geometria, tartós, vagy animált** — mert ott a particle csak drága, szaggatott pontfelhő tud lenni. Munkamegosztás: particle = átmeneti visszajelzés (ütés, cast, ambient), DisplayFx = vonal/sík/tárgy, ami áll, forog vagy simán mozog.
+
+**Hogyan működne:**
+- **`utils/DisplayFxUtil`** — a teljes életciklust egy helyen kezeli:
+  - `spawn(...)`: régió-szálon spawnol (`getRegionScheduler().run` a cél-lokációra), minden entityre `setPersistent(false)` + `icesmp_fx` scoreboard-tag + PDC-tag a birtokos rendszerrel (`fx-owner: claim|crate|boss|ritual`).
+  - `autoDespawn(entity, ticks)`: az entity saját schedulerén (`entity.getScheduler().runDelayed`) — Folia-tisztán, a régióval együtt él/hal.
+  - `animate(display, transformation, durationTicks)`: beállítja az interpolációs időt + cél-transzformációt — a kliens simán animál, a szerver **egyetlen** csomagot küld tickenkénti újraszórás helyett.
+  - `showOnlyTo(entity, player)`: spawn után minden más online játékosra `hideEntity` — per-nézős effekt (a claim show csak a kérőnek látszik).
+  - **Árva-takarítás:** chunk-load listener + induláskor world-scan az `icesmp_fx` tagre → azonnali remove. Crash/restart után sem marad szemét a világban.
+- **Pilot 1 — claim/territórium-határ „fényfal":** a mostani pontozott particle-perem helyett (mellett) élenként egy-egy megnyújtott, félig átlátszó üveg-BlockDisplay (skála-transzformációval nyújtva, glow-színnel a claim-státusz szerint: saját=zöld, idegen=piros). 15 mp után auto-despawn, csak a kérő látja. Configból: `display-fx.claim-wall.enabled|material|seconds`.
+- **Pilot 2 — crate-nyitás 3D:** a CrateSpin GUI mellé/helyett a láda fölött ItemDisplay pörgeti a lehetséges nyereményeket (interpolált forgatás + skála-pulzus), a nyertes itemnél megáll és felnagyul. A sorsolás-logika változatlan, csak a látvány rétege cserél.
+- **Pilot 3 — boss/AoE telegraph:** világesemény-bossok csapása előtt a veszélyzóna padlóján lapos, piros, pulzáló BlockDisplay-sík (skála 0→teljes az előjelzés ideje alatt) — a particle-gyűrűnél sokkal olvashatóbb „innen lépj ki" jelzés.
+- Későbbi fogyasztók ugyanerre a rétegre: rituálé-oltár aura, relikvia-lebegtetés, piactéri kirakat (ItemDisplay a bódé fölött), AFK-zóna perem (A65 ezzel szebb).
+
+**Miért jó:** A szerver ma tickenként particle-csomagokat szór, hogy egy határvonalat „tartson életben" — a display entity ugyanezt egy spawn + egy animációs csomagból oldja meg, szebben. A látvány folytonos (vonal, nem pontsor), a mozgás sima (kliens-oldali interpoláció), és per-nézős. Egyetlen util-rétegen múlik, hogy minden későbbi effekt-ötlet (aura, telegraph, kirakat) 5 sorból megvalósítható legyen.
+
+**Építőkövek:** Paper Display API (1.19.4+, interpoláció + transzformációk), meglévő per-nézős infrastruktúra (HudManager board-minta a glow-hoz), ClaimManager/TerritoryCommand határ-kirajzolók, CrateSpinGUI, világesemény-managerek.
+
+**Buktatók:**
+- **Folia:** a display entity valódi entitás — spawn/módosítás CSAK a cél-régió szálán; mozgó effektnél `teleportAsync`. A util minden belépési pontja régió-schedulerrel véd.
+- **Szemét-kockázat:** a `setPersistent(false)` + tag + kettős takarítás (chunk-load + induló scan) kötelező hármas — enélkül restart után display-szemét marad.
+- **Entitás-költség:** egy határ-fal élenként 1 entity (4–12 db), nem blokkonkénti — a darabszámot a util kapja meg felső korlátként (`display-fx.max-per-player`, default ~24).
+- **Régi kliensek/ViaVersion:** 1.19.4 alatti kliensnek a display entity nem létezik — ha a szerver enged régebbi klienst, particle-fallback kell (a util `supportsDisplay(player)` ága).
+
 ---
 
-**Összesen: 70 ötlet (A1–A70).**
+**Összesen: 71 ötlet (A1–A71).**
