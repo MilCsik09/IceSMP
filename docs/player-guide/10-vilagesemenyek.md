@@ -8,7 +8,7 @@ Időnként **különleges dolgok** történnek az egész szerveren. Ezekre figye
 A világ **kifelé egyre veszélyesebb**:
 - A spawntól távolodva a szörnyek **erősödnek**: **minden 1000 blokk = +1 mob-szint** (max 10).
 - A magasabb szintű szörny **több életű és erősebb**, de cserébe **több kaszt-XP-t** és nagyobb
-  eséllyel **lélekkövet (Sötét token)** ad.
+  eséllyel **lélekkövet (Csontveret)** ad.
 - A **spawner-ből / parancsból** érkező szörnyek **nem** skálázódnak — így a farmok
   biztonságosak maradnak.
 - A szint-névtábla (`[Lvl X]`) alapból **csak akkor látszik, ha ránézel** a szörnyre — így nem

@@ -44,20 +44,21 @@ currency:
   item:
     material: "PAPER"
     default-model-data: 1000
-    display-name: "&6%currency% Token"
+    # A %currency% a kanonikus valuta-név (Parázsló Parals / Hópihér-veret / Creutzér / Csontveret).
+    display-name: "&6%currency%"
     types:
       RED:
         model-data: 1001
-        display-name: "&cPiros Token"
+        display-name: "&cParázsló Parals"
       BLUE:
         model-data: 1002
-        display-name: "&9Kék Token"
+        display-name: "&9Hópihér-veret"
       NEUTRAL:
         model-data: 1003
-        display-name: "&5Semleges Token"
+        display-name: "&5Creutzér"
       DARK:
         model-data: 1004
-        display-name: "&8Sötét Token"
+        display-name: "&8Csontveret"
 
 # ===== Árfolyam-hologramok =====
 # A /exchangeboard place paranccsal lerakott TextDisplay táblák a valuták

@@ -1,13 +1,19 @@
 # IceSMP konfiguráció — factions (a ConfigManager az összes config/*.yml-t betölti)
+# A nevek KANONIKUSAK (docs/LORE.md): a rövid alak a HUD/tab-on, a teljes a /faction info-ban.
+# A tényleges forrás a FactionType enum — ez a blokk dokumentáció, tartsd szinkronban.
 factions:
   red:
-    display-name: "Piros"
+    display-name: "Láng"
+    full-name: "Perinfernicitas"
   blue:
-    display-name: "Kék"
+    display-name: "Fagy"
+    full-name: "Cryghaliris"
   neutral:
-    display-name: "Semleges"
+    display-name: "Menedék"
+    full-name: "Ryanora & Caldestera"
   dark:
-    display-name: "Sötét"
+    display-name: "Kitaszított"
+    full-name: "A Kitaszítottak"
   # ===== Frakcióváltás =====
   # Az ELSŐ csatlakozás (amikor a játékosnak még nincs frakciója) mindig ingyenes
   # és nincs rá cooldown. Ha a játékosnak MÁR van frakciója és másikba lép át

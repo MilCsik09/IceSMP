@@ -403,7 +403,7 @@ public final class AmbientEventManager {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());
             currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), rewardAmount);
             player.sendMessage(messageManager.getMessage(
-                    "ambient-reward", "&d✨ Az esemény megérintett: &f+{amount} token",
+                    "ambient-reward", "&d✨ Az esemény megérintett: &f+{amount} érme",
                     Map.of("amount", formatAmount(rewardAmount))));
         }
     }

@@ -104,7 +104,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 4201,
                 "Főnix-szárny",
                 "RED",
-                List.of("&7A Piros királyság lángoló ereklyéje.", "&7Viselőjét nem égeti tűz, és zuhanása", "&7lángviharban végződik.")
+                List.of("&7Perinfernicitas lángoló ereklyéje,", "&7Soleil főnixeinek tollából szőve.", "&7Viselőjét nem égeti tűz, és zuhanása", "&7lángviharban végződik.")
         );
         registerRelic(
                 "frost_wing",
@@ -112,7 +112,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 4202,
                 "Zúzmara-szárny",
                 "AQUA",
-                List.of("&7A Kék királyság jeges ereklyéje.", "&7Szárnyra kapva megfagyasztja", "&7a körülötte lévőket.")
+                List.of("&7Cryghaliris jeges ereklyéje, Kallan", "&7jégsárkányainak leheletével átitatva.", "&7Szárnyra kapva megfagyasztja", "&7a körülötte lévőket.")
         );
         registerRelic(
                 "wander_wind",
@@ -120,7 +120,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 4203,
                 "Vándorszél",
                 "WHITE",
-                List.of("&7A Semlegesek szabad szele.", "&7Gyorsabb sikló, és a föld", "&7sosem üti meg viselőjét.")
+                List.of("&7Ryanora & Caldestera szabad szele,", "&7Arkynn békés örökségének fuvallata.", "&7Gyorsabb sikló, és a föld", "&7sosem üti meg viselőjét.")
         );
         registerRelic(
                 "bone_wing",
@@ -128,7 +128,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 4204,
                 "Csontszárny",
                 "DARK_GRAY",
-                List.of("&7Az összeomlott királyság csontból", "&7szőtt szárnya. Éjjel a viselője", "&7maga is árnyékká válik.")
+                List.of("&7A Káoszkor csontból szőtt szárnya, a", "&7Néma Királynő élőhalottainak maradványa.", "&7Éjjel a viselője maga is", "&7árnyékká válik.")
         );
 
         plugin.getLogger().info("Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");

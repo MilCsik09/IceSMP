@@ -205,7 +205,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.1.1 Királyság-spawnok és váltás-kapu ✅
 - [ ] **Spawn-kijelölés:** `/territory setspawn <frakció>` a PONTOS álláspontot menti (magasság +
       nézésirány) — ellenőrizd egy fa alatt állva, hogy NEM a fa tetejére kerülsz.
-- [ ] **Első belépés:** vadonatúj fiók a Semleges Királyság spawnján jelenik meg (nem a világ-spawnon);
+- [ ] **K1 kánon-nevek:** a HUD/tab a rövid frakciónevet mutatja (Láng/Fagy/Menedék/Kitaszított),
+      a /menu és a Profil a hosszút (pl. Láng (Perinfernicitas)); a valuta-itemek neve Parázsló
+      Parals / Hópihér-veret / Creutzér / Csontveret; a `/faction join piros` (legacy név) is működik.
+- [ ] **Első belépés:** vadonatúj fiók a Menedék spawnján jelenik meg (nem a világ-spawnon);
       az intro-kamera utána lejátszódik.
 - [ ] **Választás-teleport:** `/faction join red` után a Piros Királyság spawnjára kerülsz
       („Üdvözöl a(z)…" üzenettel); `factions.spawn.teleport-on-join: false` → nincs teleport.
@@ -249,7 +252,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 ### 4.4 Specializációk ✅
 - [ ] 25. szinten `/spec choose <id>` (vagy a Specializáció menü) elérhető; a menü mutatja a feltételt.
-- [ ] **Nekromanta** csak Sötét frakcióval + bűnösként + a Sötét Beavatás után választható.
+- [ ] **Nekromanta** csak Kitaszítottként (Sötét frakció) + bűnösként + a Sötét Beavatás után választható.
 - [ ] A spec feloldja a 25–45. szintű spelleket; a szerep illik (tank/heal/dps/caster/ranged).
 - [ ] `/spec respec` visszavált valutáért; a spec-kötött talentpontok visszatérülnek.
 - [ ] Hibrid kasztok: pl. Holy paplovag gyógyít, Retribution sebez (eltérő spell-pool).

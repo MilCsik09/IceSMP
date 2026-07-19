@@ -55,37 +55,37 @@ Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van
 `/faction join <red|blue|neutral|dark>`, kilépés: `/faction leave`.
 
 Az **első csatlakozás ingyenes és időzítetlen**, és mindenki **Semlegesként kezd** — új
-játékosként a **Semleges Királyság spawnján** jelensz meg, és amikor királyságot választasz,
+játékosként a **Menedék spawnján** jelensz meg, és amikor királyságot választasz,
 a plugin **odateleportál az új királyságod spawnjára**. Ha nincs ágyad/respawn-horgonyod,
 halál után is a **saját királyságod spawnján** éledsz újra.
 
 A **Semlegesből bárhová ingyen** léphetsz át, és a **Sötétbe lépés is mindig ingyenes** (annak a
-bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék, illetve vissza a
+bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Láng↔Fagy, illetve vissza a
 Semlegesbe — a `/faction leave` is ide számít!) a jelenlegi frakciód valutájában **alapból
 500-ba** kerül, és utána **72 óráig** nem válthatsz újra (`factions.switch.cost` /
-`factions.switch.cooldown-hours`). **Frakciót váltani csak a Semleges Királyság fővárosában
+`factions.switch.cooldown-hours`). **Frakciót váltani csak a Menedék fővárosában (Caldestera)
 állva lehet** (ott, ahol a királyság-választó hírnök NPC is áll) — amíg a szerveren nincs
 kijelölt semleges főváros, ez a korlát nem él.
 
 | Frakció | Passzív bónusz |
 |---|---|
-| 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |
-| 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget (víz-mesterség — végtelen búvárkodás) |
-| ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
-| ⚫ **Sötét** | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
+| 🔴 **Láng** (Perinfernicitas) | Immunis a **tűz / láva / forró blokk** sebzésére (hő-mesterség — a Nether biztonságos) |
+| 🔵 **Fagy** (Cryghaliris) | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget (víz-mesterség — végtelen búvárkodás) |
+| ⚪ **Menedék** (Ryanora & Caldestera) | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** |
+| ⚫ **Kitaszított** (A Kitaszítottak) | Immunis a wither-sebzésre; az **élőhalottak nem támadják** (a legerősebb PvE-passzív — a sinner-jelölés az ára) |
 
 > A passzívok **egy szintre** vannak hangolva: mindegyik kb. egyformán hasznos, csak más
 > helyzetben (Piros a tűznél, Kék a víz alatt, Semleges esésnél és vándorlásnál, Sötét a szörnyek közt).
 
 A chatben a neved a **frakciód színében** jelenik meg (a rang-prefixszel együtt).
 
-**Fontos a Sötét frakcióról:**
+**Fontos a Kitaszítottakról (Sötét frakció):**
 - Csak az léphet be, akit **bűnössé (sinner)** bélyegeztek.
 - Belépéskor megköttetik a **sötét paktum** — onnantól a bűnös jelölést **soha nem lehet
   levenni** (még frakcióelhagyás után sem). Az egyetlen visszaút a **vezeklés-küldetéslánc**
   (lásd a Küldetéseknél).
 
-**Hogyan leszel bűnös?** **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök
+**Hogyan leszel bűnös?** **4 bűnnél** automatikusan **száműznek a Kitaszítottak közé** (örök
 paktummal). Bűnt háromféleképp követhetsz el:
 - **Gyilkosság:** megölsz egy másik játékost → **+1 bűn**.
 - **Árulás:** a **saját frakciótársadat** ölöd meg → **+2 bűn** (a Semlegesek laza közössége
@@ -158,7 +158,7 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
   a frakciókasszába (a Semlegesek mentesek). Ez csökkenti a forgalomban lévő pénzt.
 - **Kereslet-sokk** (heti gazdasági esemény): időnként egy véletlen valuta értéke **átmenetileg
   x1.2–1.6-ra ugrik** (broadcast jelzi) — kereskedési lehetőség.
-- **Lélekkő:** a magas szintű (Lvl 3+) skálázott szörnyek eséllyel **Sötét tokent** dobnak — a
+- **Lélekkő:** a magas szintű (Lvl 3+) skálázott szörnyek eséllyel **Csontveretet** dobnak — a
   veszélyes, spawntól távoli vidékek így gazdaságilag is megérik.
 - **Frakció-boltok:** a fővárosi **bolt-NPC-kre jobb-kattintva** fix áron vehetsz portékát a banki
   egyenlegedből — a pénz eltűnik (money sink).
@@ -285,7 +285,7 @@ A **spec határozza meg a szerepedet** — milyen stílusban a leghatékonyabb a
 Így **minden szerep lefedett**: van tank, gyógyító, caster, közel- és távharci DPS bőven, és sok
 kaszt több szerepre is alkalmas a specválasztással (pl. egy Paplovag lehet gyógyító, DPS vagy tank).
 
-- A **Nekromanta** különleges: csak **Sötét frakcióval + bűnös állapottal**, ÉS a **Sötét
+- A **Nekromanta** különleges: csak **Kitaszítottként (Sötét/dark frakció) + bűnös állapottal**, ÉS a **Sötét
   Beavatás** küldetés teljesítése után választható.
 - **Respec:** meggondolhatod magad — a Specializáció menü **Respec** gombjával (vagy
   `/spec respec <class|profession>`) a frakcióvalutádért (alapból 100) visszaváltod a speced;

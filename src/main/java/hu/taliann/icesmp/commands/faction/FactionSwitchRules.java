@@ -43,7 +43,7 @@ final class FactionSwitchRules {
         }
         player.sendMessage(messageManager.get(
                 "messages.faction-switch-only-in-neutral-capital",
-                "&cFrakciót váltani csak a Semleges Királyság fővárosában lehet (&f%s&c).",
+                "&cFrakciót váltani csak a Menedék fővárosában, Caldesterában lehet (&f%s&c).",
                 neutralCapital.name()));
         return false;
     }

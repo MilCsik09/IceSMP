@@ -96,7 +96,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             if (!sinManager.isSinner(player)) {
                 sender.sendMessage(messageManager.get(
                         "messages.faction-dark-sinners-only",
-                        "&5A Sötét frakcióba csak bűnösök léphetnek be."
+                        "&5A Kitaszítottak közé csak bűnösök léphetnek be."
                 ));
                 return true;
             }
@@ -120,7 +120,8 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         }
 
         factionManager.setFaction(uuid, factionType);
-        sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s", factionType.getDisplayName()));
+        sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s",
+                factionType.getDisplayName() + " (" + factionType.getFullName() + ")"));
         teleportToFactionSpawn(player, factionType);
         return true;
     }
@@ -143,7 +144,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                 player.sendMessage(messageManager.get(
                         "messages.faction-spawn-welcome",
                         "&aÜdvözöl a(z) &f%s&a! A királyság spawnjára kerültél.",
-                        factionType.getDisplayName()));
+                        factionType.getFullName()));
             }
         });
     }

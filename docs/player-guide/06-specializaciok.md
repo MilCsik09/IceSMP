@@ -30,7 +30,7 @@ Hogyan? `/profile` → **Specializáció** menü → kattints a választott irá
 ## Feltételek
 
 - **Szint 25** az elsődleges kasztban.
-- A **Nekromanta** különleges: csak **Sötét frakcióval + bűnös (sinner) állapottal**, ÉS a
+- A **Nekromanta** különleges: csak **Kitaszítottként (Sötét/dark frakció) + bűnös (sinner) állapottal**, ÉS a
   **Sötét Beavatás** küldetés teljesítése után választható.
 
 ## Respec (meggondolás)

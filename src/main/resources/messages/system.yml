@@ -52,13 +52,13 @@ messages:
           tip: '<dark_gray>Tipp: ezek élő műveletek, a /profile újranyitása frissíti az egyenleget.</dark_gray>'
           title: <gold><b>Bank műveletek</b></gold>
           withdraw-blue:
-            hover: Kék valuta kivételi parancs ajánlása.
+            hover: Hópihér-veret kivételi parancs ajánlása.
             label: WITHDRAW BLUE
           withdraw-neutral:
-            hover: Semleges valuta kivételi parancs ajánlása.
+            hover: Creutzér kivételi parancs ajánlása.
             label: WITHDRAW NEUTRAL
           withdraw-red:
-            hover: Piros valuta kivételi parancs ajánlása.
+            hover: Parázsló Parals kivételi parancs ajánlása.
             label: WITHDRAW RED
         character:
           balances: <gray>Egyenlegek:</gray>
@@ -66,11 +66,11 @@ messages:
           player: '<gray>Név: </gray><white>{player}</white>'
           title: <gold><b>Profil kártya</b></gold>
         faction:
-          blue: <blue>Kék</blue>
-          neutral: <dark_purple>Semleges</dark_purple>
+          blue: <blue>Fagy</blue>
+          neutral: <dark_purple>Menedék</dark_purple>
           none: <gray>Nincs</gray>
           none-text: Nincs
-          red: <red>Piros</red>
+          red: <red>Láng</red>
         stats:
           faction: '<gray>Frakció: </gray><white>{faction}</white>'
           level: '<gray>Szint: </gray><white>Nincs beállítva</white>'

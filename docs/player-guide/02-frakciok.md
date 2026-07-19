@@ -5,18 +5,21 @@ bónusza** (egy állandó képesség, amiért nem kell semmit csinálnod) van.
 
 Belépés: `/faction join <red|blue|neutral|dark>` • Kilépés: `/faction leave`
 
-Az **első csatlakozásod** teljesen **ingyenes és időzítetlen**, és mindenki **Semlegesként
-kezd** — új játékosként a **Semleges Királyság spawnján** jelensz meg. Amikor királyságot
+> 🏷️ **Kanonikus nevek:** a négy frakció a lore szerint **Láng** (*Perinfernicitas*, `red`),
+> **Fagy** (*Cryghaliris*, `blue`), **Menedék** (*Ryanora & Caldestera*, `neutral`) és
+> **Kitaszított** (*A Kitaszítottak*, `dark`). A parancs-azonosítók változatlanok.
+
+Az **első csatlakozásod** teljesen **ingyenes és időzítetlen**, és mindenki a **Menedékben (Semleges) kezd** — új játékosként a **Menedék spawnján** jelensz meg. Amikor királyságot
 választasz, a plugin **odateleportál az új királyságod spawnjára**, és ha nincs ágyad /
 respawn-horgonyod, halál után is a **saját királyságod spawnján** éledsz újra — így mindig
 tudod, hol a fővárosod.
 
-A **Semlegesből bárhová ingyen** válthatsz, és a **Sötétbe lépés is mindig ingyenes**
-(annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék,
-illetve vissza a Semlegesbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi
+A **Menedékből bárhová ingyen** válthatsz, és a **Kitaszítottak közé lépés is mindig ingyenes**
+(annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Láng↔Fagy,
+illetve vissza a Menedékbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi
 frakciód valutájában** kerül **alapból 500-ba**, és utána **72 óráig** nem válthatsz megint
 (`factions.switch.cost` / `factions.switch.cooldown-hours` a configban) — ez a
-frakció-hopping ellen véd. **Váltani csak a Semleges Királyság fővárosában állva lehet**
+frakció-hopping ellen véd. **Váltani csak a Menedék fővárosában, Caldesterában állva lehet**
 (ott, ahol a királyság-választó hírnök NPC is áll) — így a döntés mindig a semleges földön,
 „hivatalosan" születik meg.
 
@@ -25,17 +28,17 @@ helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyi
 
 | Frakció | Passzív bónusz | Mire jó |
 |---|---|---|
-| 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére | Hő-mesterség: a Nether és a láva veszélytelen |
-| 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget | Víz-mesterség: végtelen búvárkodás, hideg biómok, víz alatti építés/aknázás |
-| ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
-| ⚫ **Sötét** | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
+| 🔴 **Láng** (Perinfernicitas) | Immunis a **tűz / láva / forró blokk** sebzésére | Hő-mesterség: a Nether és a láva veszélytelen |
+| 🔵 **Fagy** (Cryghaliris) | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget | Víz-mesterség: végtelen búvárkodás, hideg biómok, víz alatti építés/aknázás |
+| ⚪ **Menedék** (Ryanora & Caldestera) | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
+| ⚫ **Kitaszított** (A Kitaszítottak) | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
 
 > 💬 A **chatben a neved a frakciód színében** jelenik meg (a rang-prefixszel együtt) — így
 > mindenki azonnal látja, ki melyik oldalon áll.
 
-## ⚫ A Sötét frakció — A Kitaszítottak
+## ⚫ A Kitaszítottak — a „Sötét" (dark) frakció
 
-A Sötét frakció nem egy „sima választás" — ez a **börtön a világ végén**, a **Kitaszítottak**
+A Kitaszítottak frakciója nem egy „sima választás" — ez a **börtön a világ végén**, a **Kitaszítottak**
 száműzetése, a Néma Királynő árnyéka. **Kétféleképpen** kerülsz ide:
 
 - **Bűnözőként:** akit **4 bűnnél (sinner)** a világ automatikusan ide **száműz** (lásd lentebb).
@@ -54,12 +57,12 @@ mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra
 ## Hogyan leszek bűnös (sinner)?
 
 - **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz.
-- **Árulás:** ha a **saját frakciótársadat** ölöd meg, az súlyosabb — **+2 bűn**. (A Semlegesek
+- **Árulás:** ha a **saját frakciótársadat** ölöd meg, az súlyosabb — **+2 bűn**. (A Menedék népe
   laza közösség: köztük az ölés sima gyilkosságnak számít.)
 - **Lopás:** ha egy **másik frakció területén** álló konténerből (láda, hordó, kemence,
   hopper…) tárgyat veszel ki, **+1 bűnt** kapsz. Egy fosztogatás-sorozat területenként
   egyszer számít (nem minden kattintás külön bűn).
-- **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök paktummal).
+- **4 bűnnél** automatikusan **száműznek a Kitaszítottak közé** (örök paktummal).
 - **Kivétel:** **raid** (frakcióháború) alatt a **jelentkezett harcosok** közti **ölés és az
   ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett
   (`/faction raid join`), arra raid alatt is a békeidős szabályok élnek. Lásd
@@ -71,7 +74,7 @@ mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra
 ## Fejvadászat (körözés) 💰
 
 Aki elér egy bizonyos bűnszámot (alapból **3 bűn**), az **körözötté** válik — a fejére
-**fejpénz** kerül (a bűnök száma × egy fix összeg, alapból Semleges tokenben). A `/bounty`
+**fejpénz** kerül (a bűnök száma × egy fix összeg, alapból Creutzérben). A `/bounty`
 paranccsal megnézheted a körözési listát: ki körözött és mennyit ér a feje.
 
 Ha **megölsz egy körözött bűnözőt**:
@@ -86,7 +89,7 @@ Ha **megölsz egy körözött bűnözőt**:
 > *Ez a rendszer még fejlesztés alatt áll — a lore már számol vele, a mechanika hamarosan érkezik.*
 
 A **Suttogók** (Az Éjszaka Gyermekei) nem külön frakció, hanem egy **titkos státusz**, amely a
-**látható frakciód fölé** rétegződik. Piros, Kék vagy Semleges maradsz mindenki szemében — miközben
+**látható frakciód fölé** rétegződik. Láng, Fagy vagy Menedék maradsz mindenki szemében — miközben
 titkon a Néma Királynő ügyét szolgálod, és **sötét-mágiájú tárgyakhoz** jutsz. A hovatartozásod
 kívülről **láthatatlan**: sötét mágia rejti.
 
@@ -101,7 +104,7 @@ derül ki.
 - ha a **gyanú** ellened gyűlik, míg át nem üt a bélyeg.
 
 **Mi történik ekkor?** A titkos Suttogóból egy csapásra **Kitaszított** lesz: **bűnössé** válsz, a
-világ **száműz a Sötét frakcióba**, és **azonnali vérdíj** kerül a fejedre — a többiek vadászni
+világ **száműz a Kitaszítottak közé**, és **azonnali vérdíj** kerül a fejedre — a többiek vadászni
 kezdenek rád. A leplet nem lehet visszaölteni; innen csak a **vezeklés** vezet vissza. *(A pontos
 mechanika-terv — rítus, gyanú-mérő, vizuális jelek — a fejlesztői ötlettár K9 tétele.)*
 

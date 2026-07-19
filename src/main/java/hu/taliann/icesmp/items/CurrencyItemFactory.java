@@ -96,10 +96,10 @@ public final class CurrencyItemFactory {
         }
 
         return switch (currencyType) {
-            case RED -> TextUtil.color("&cPiros Token");
-            case BLUE -> TextUtil.color("&9Kék Token");
-            case NEUTRAL -> TextUtil.color("&7Semleges Token");
-            case DARK -> TextUtil.color("&8Sötét Token");
+            case RED -> TextUtil.color("&cParázsló Parals");
+            case BLUE -> TextUtil.color("&9Hópihér-veret");
+            case NEUTRAL -> TextUtil.color("&5Creutzér");
+            case DARK -> TextUtil.color("&8Csontveret");
         };
     }
 }

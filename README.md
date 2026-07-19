@@ -179,7 +179,7 @@ bűnösöket). Szabályaik:
 
 ### 💰 Gazdaság — dinamikus árfolyammal
 
-Minden frakciónak saját valutája van (Piros / Kék / Semleges / Sötét token), amelyek fizikai
+Minden frakciónak saját valutája van (Piros / Kék / Semleges / Csontveret), amelyek fizikai
 itemként és banki egyenlegként is léteznek:
 
 - `/bank deposit` — a nálad lévő tokenek bankba helyezése; `/bank withdraw` — kivét itemként

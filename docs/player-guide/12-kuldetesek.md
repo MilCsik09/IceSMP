@@ -125,7 +125,7 @@ Más játékos nem látja a te jelzéseidet, te sem az övéit.
 
 ## Sötét Beavatás (a Nekromanta kapuja)
 
-- **Sötét Beavatás:** zarándokolj el a **Sötét romvárosba** (a Sötét frakció területére).
+- **Sötét Beavatás:** zarándokolj el **Mortengradba, a Holtak Városába** (a Kitaszítottak területére).
   Jutalom: **100 kaszt-XP**. **Ezt teljesítve nyílik meg a Nekromanta specializáció** (Sötét
   frakció + bűnös állapot is kell hozzá).
 
@@ -138,7 +138,7 @@ Három részből áll, sorban:
 |---|---|---|
 | **Vezeklés I — A Penge** | Pusztíts el **30 erős szörnyet** (min. Lvl 2) | 150 kaszt-XP |
 | **Vezeklés II — Az Alázat** | Fogj ki **20 halat** | 150 kaszt-XP |
-| **Vezeklés III — A Feloldozás** | Győzz le **50 elit szörnyet** (min. Lvl 4) | 400 kaszt-XP + 100 Semleges token + **a paktum megtörik!** |
+| **Vezeklés III — A Feloldozás** | Győzz le **50 elit szörnyet** (min. Lvl 4) | 400 kaszt-XP + 100 Creutzér + **a paktum megtörik!** |
 
 A harmadik rész végén **lekerül rólad a bűnös jelölés** — feloldozást nyersz, és újra szabad
 vagy.
