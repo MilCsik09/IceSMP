@@ -56,7 +56,7 @@ public final class AngryChickenSpell extends BaseSpell {
 
                 final double damage = balance("damage", 8.0D);
                 if (shooterInCurrentRegion) {
-                    living.damage(damage, shooter);
+                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage);
                 } else {
                     living.damage(damage);
                 }

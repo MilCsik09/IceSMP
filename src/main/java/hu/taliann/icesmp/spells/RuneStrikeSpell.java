@@ -72,7 +72,7 @@ public final class RuneStrikeSpell extends BaseSpell {
 
                 final Player caster = Bukkit.getPlayer(casterId);
                 if (caster != null && Bukkit.isOwnedByCurrentRegion(caster)) {
-                    living.damage(damage, caster);
+                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage);
                 } else {
                     living.damage(damage);
                 }

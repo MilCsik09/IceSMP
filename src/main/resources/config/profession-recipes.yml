@@ -1312,6 +1312,20 @@ profession-recipes:
     category: "Lángoló Birodalom (tervrajz)"
     result: { material: LEATHER_CHESTPLATE, amount: 1, affix-tier: crafted, signature: fonix_tollkopeny }
     ingredients: [ "LEATHER_CHESTPLATE:1", "FEATHER:32", "MAGMA_CREAM:8", "unique:arnyekpor:2" ]
+  # A Rúnavért a mágia-sebzés (spellek) ellenállás-enchantja: a tekercs enchantelt könyv,
+  # üllőn kerül a páncélra; két azonos szintű könyv üllőn szintet léphet (max 3).
+  runavert_tekercs:
+    profession: enchanter
+    level: 40
+    learn: blueprint
+    display-name: "Rúnavért-tekercs"
+    lore:
+      - "&7Caldestera rúnaírnokainak védőírása —"
+      - "&7a bőrbe rótt rúna elissza a mágiát."
+      - "&8Üllőn vihető páncélra."
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:runavert:1" }
+    ingredients: [ "BOOK:1", "AMETHYST_SHARD:8", "LAPIS_BLOCK:2", "unique:arnyekpor:1" ]
   # ===== K6 — frakció-ételek (a kódex "konyhái"; a fogyasztási kötelezettséget a
   # factions.food-duty vezérli — a hazai étel evése nullázza a honvágy-visszaszámlálót) =====
   fagyasztott_pisztrang:

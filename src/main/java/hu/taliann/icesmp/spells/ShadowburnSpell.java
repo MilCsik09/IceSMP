@@ -96,7 +96,7 @@ public final class ShadowburnSpell extends BaseSpell {
             }
 
             if (casterInRegion) {
-                living.damage(damage, caster);
+                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage);
             } else {
                 living.damage(damage);
             }

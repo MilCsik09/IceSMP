@@ -32,6 +32,19 @@ public final class IceSMPBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final @NonNull BootstrapContext context) {
+        // Saját damage-type a spelleknek: a varázslat-sebzés megkülönböztethető minden
+        // vanília forrástól (icesmp:magia), így lehet rá célzott ellenállást (Rúnavért
+        // enchant) és saját halál-üzenetet adni. A spellek a SpellDamageUtil-on át ütnek
+        // ezzel a típussal; a message-id kliens-oldalon nem fordul, ezért a magyar
+        // halál-üzenetet a SpellDamageListener írja felül.
+        context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.freeze().newHandler(event ->
+                event.registry().register(
+                        io.papermc.paper.registry.keys.DamageTypeKeys.create(net.kyori.adventure.key.Key.key("icesmp", "magia")),
+                        builder -> builder
+                                .messageId("death.attack.icesmp_magia")
+                                .damageScaling(org.bukkit.damage.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER)
+                                .exhaustion(0.1F))));
+
         context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> {
             // Kulcsok: hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE — a runtime
             // (ProfessionRecipeBookListener) ugyanezekkel a kulcsokkal keresi vissza őket.
@@ -49,6 +62,21 @@ public final class IceSMPBootstrap implements PluginBootstrap {
                     ItemTypeTagKeys.ENCHANTABLE_MINING, EquipmentSlotGroup.MAINHAND);
             register(event, "bokic_kegye", "Bokic Kegye", NamedTextColor.AQUA,
                     ItemTypeTagKeys.ENCHANTABLE_FISHING, EquipmentSlotGroup.MAINHAND);
+            // Rúnavért — a mágia-sebzés (icesmp:magia) countere: páncél-enchant, szintenként
+            // csökkenti a spell-sebzést (a számokat a SpellDamageListener + config adja).
+            // Megszerzés: rúnaírnok-recept (Rúnavért-tekercs, enchantelt könyv) + üllő;
+            // két azonos szintű könyv üllőn a vanília szabály szerint léphet szintet.
+            event.registry().register(
+                    EnchantmentKeys.create(net.kyori.adventure.key.Key.key("icesmp", "runavert")),
+                    builder -> builder
+                            .description(Component.text("Rúnavért", NamedTextColor.LIGHT_PURPLE))
+                            .supportedItems(event.getOrCreateTag(ItemTypeTagKeys.ENCHANTABLE_ARMOR))
+                            .anvilCost(4)
+                            .maxLevel(3)
+                            .weight(1)
+                            .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(15, 10))
+                            .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(45, 10))
+                            .activeSlots(EquipmentSlotGroup.ARMOR));
         }));
     }
 

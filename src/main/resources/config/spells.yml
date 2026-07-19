@@ -9,6 +9,12 @@ spells:
   # Halál-összegzés: halál után rövid lista a legutóbbi sebzés-forrásokról.
   death-recap:
     enabled: true
+  # Mágia-ellenállás (Rúnavért enchant vs az icesmp:magia damage-type):
+  # a viselt páncél Rúnavért-szintjeinek összege szintenként per-level arányban
+  # csökkenti a bejövő SPELL-sebzést, a max-reduction plafonig. Élőben olvasódik.
+  magic-resist:
+    per-level: 0.08
+    max-reduction: 0.6
   # ===== Baráti tűz (party-tudatos célzás) =====
   # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
   # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.

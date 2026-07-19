@@ -753,4 +753,12 @@ Ezek **nem a szintedből**, hanem az **aktív talentekből** oldódnak fel (lás
 
 ---
 
+### ✧ Mágia-sebzés és Rúnavért
+
+A varázslatok saját **mágia-sebzésként** ütnek — a vanília páncél mellett létezik ellenük egy
+külön védelem: a **Rúnavért** enchant. A rúnaírnokok (enchanter 40) **Rúnavért-tekercset**
+készítenek (enchantelt könyv), amit **üllőn** vihetsz a páncélodra; darabonként és szintenként
+csökkenti a bejövő spell-sebzést (max 3. szint — két azonos szintű könyv üllőn kombinálható).
+A vanília sebzés ellen nem véd — ez kifejezetten a mágia countere.
+
 ➡️ Tovább: [Specializációk](06-specializaciok.md) • [Vissza a tartalomhoz](README.md)

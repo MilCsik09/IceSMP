@@ -229,6 +229,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (unstable) Paper API — az ELSŐ gradle-build és szerverindulás kiemelt teszt: ha a konzol
       bootstrap-hibát dob, a `signature.custom-enchants: false` NEM elég, a Bootstrap-osztály
       regisztrációját kell javítani.
+- [ ] **Mágia damage-type + Rúnavért (ÚJ — bootstrap):** a spellek mostantól az `icesmp:magia`
+      damage-type-pal sebeznek (a kill-attribúció — bűn/raid/bounty — változatlan, a caster a
+      causing entity). **Rúnavért** páncél-enchant a counter: rúnaírnok 40 recept
+      (Rúnavért-tekercs, enchantelt könyv) → üllőn páncélra; szintenként −8% spell-sebzés
+      (max 3 szint, plafon 60% — `spells.magic-resist.*`); két azonos szintű könyv üllőn
+      szintet léphet (vanília szabály). Vanília sebzésre NEM hat. Spell-halálnál magyar
+      halál-üzenet megy (a kliens a saját type fordítási kulcsát nem ismerné).
+      ⚠️ Teszt: spell-sebzés Rúnavérttel/anélkül; kill-attribúció spell-öléssel (bűn jár-e);
+      action-bar jelzés a resistnél; első gradle-build/indulás (unstable registry-API).
 - [ ] **K6 frakció-ételek (ÚJ):** a 3 séf-recept frakció-kapus (Pisztráng BLUE 25 / Rántotta RED 25 /
       Sütemény NEUTRAL 35). A Pisztráng evése rövid felszívódás-pajzsot, a Rántotta tűz-ellenállást
       ad; a Sütemény „robban" (felfelé lökés + Speed II + tűzijáték-effekt, blokk-kár nélkül).

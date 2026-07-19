@@ -91,7 +91,7 @@ public final class WhirlwindSpell extends BaseSpell {
     private static void applySweep(final LivingEntity living, final Player caster, final Location center,
                                     final double damage, final double knockback) {
         if (Bukkit.isOwnedByCurrentRegion(caster)) {
-            living.damage(damage, caster);
+            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage);
         } else {
             living.damage(damage);
         }

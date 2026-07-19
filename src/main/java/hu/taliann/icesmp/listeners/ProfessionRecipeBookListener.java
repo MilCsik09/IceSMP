@@ -177,6 +177,35 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
             result.setItemMeta(sigMeta);
         }
+        // Recept-oldali enchant (result.enchant: "<kulcs>:<szint>", pl. "icesmp:runavert:1"):
+        // enchantelt könyvnél stored-enchantként, egyébként rendes enchantként kerül fel —
+        // így receptből adható a bootstrap-regisztrált enchantok könyv-formája (üllőhöz).
+        final String enchantSpec = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.enchant", "");
+        if (!enchantSpec.isBlank()) {
+            final int levelSplit = enchantSpec.lastIndexOf(':');
+            final String enchantKey = levelSplit > 0 ? enchantSpec.substring(0, levelSplit) : enchantSpec;
+            int enchantLevel = 1;
+            try {
+                enchantLevel = levelSplit > 0 ? Integer.parseInt(enchantSpec.substring(levelSplit + 1)) : 1;
+            } catch (final NumberFormatException ignored) {
+                // Hibás szint a configban — 1-es szinttel megyünk tovább.
+            }
+            final org.bukkit.enchantments.Enchantment enchant =
+                    io.papermc.paper.registry.RegistryAccess.registryAccess()
+                            .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                            .get(org.bukkit.NamespacedKey.fromString(enchantKey));
+            final ItemMeta enchMeta = result.getItemMeta();
+            if (enchant != null && enchMeta != null) {
+                if (enchMeta instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta storage) {
+                    storage.addStoredEnchant(enchant, enchantLevel, true);
+                } else {
+                    enchMeta.addEnchant(enchant, enchantLevel, true);
+                }
+                result.setItemMeta(enchMeta);
+            }
+        }
+
         // Roll a unique quality + affixes for single-item gear results (crafted tier). The roll keeps the
         // stamped display name (prefixing the rarity) and appends the affix lines below the lore.
         if (recipe.affixTier() != null && recipe.resultAmount() == 1) {
