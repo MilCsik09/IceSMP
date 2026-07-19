@@ -215,6 +215,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
+    private final hu.taliann.icesmp.managers.ChronicleManager chronicleManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
     private final EconomyEventManager economyEventManager;
@@ -377,6 +378,7 @@ public final class IceSMPCore {
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
+        this.chronicleManager = new hu.taliann.icesmp.managers.ChronicleManager(plugin, configManager, statsManager, seasonManager, messageManager);
         // A quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
         // (mindkét célosztály a DI-sorrendben korábban épül).
         questManager.setStatsManager(statsManager);
@@ -413,7 +415,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
-                moderationManager);
+                moderationManager, chronicleManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -904,6 +906,7 @@ public final class IceSMPCore {
                     meteorEventManager.tick();
                     factionFoodListener.tick();
                     whisperManager.tick();
+                    chronicleManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -1046,6 +1049,8 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.WhisperCommand(plugin, configManager, whisperManager, messageManager));
         plugin.registerCommand("lore", "A kódex lapjai — frakciók és helyek története", List.of("kodex"),
                 new hu.taliann.icesmp.commands.LoreCommand(messageManager));
+        plugin.registerCommand("kronika", "Az utolsó Heti Krónika visszaolvasása", List.of("chronicle"),
+                new hu.taliann.icesmp.commands.KronikaCommand(chronicleManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));

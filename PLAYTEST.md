@@ -555,6 +555,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       stb.) 5 sor kánon-szöveget ír chatbe; a szövegek messages-kulcsból felülírhatók
       (`faction-lore.<téma>.<sor>`). A fővárosi lore-pontok (tábla/NPC) admin-elhelyezésűek —
       ugyanezek a szövegek használhatók hozzájuk.
+- [ ] **B15 Heti Krónika (ÚJ — Tier S):** `chronicle.interval-days` (default 7) ütemben a
+      Bankárszövetség krónikája broadcastol: liga-állás + top3 szint/vagyon/raid-ölés, változatos
+      nyitó/záró sablonokkal; `/kronika` (alias /chronicle) bármikor visszaolvassa az utolsó
+      számot; restart-álló (chronicle.yml). Teszthez: `chronicle.interval-days: 0.001` NEM megy
+      (napokban egész) — állítsd 1-re és várd ki, vagy ellenőrizd reload után az első kiadást.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

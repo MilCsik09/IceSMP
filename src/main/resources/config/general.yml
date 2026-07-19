@@ -266,3 +266,11 @@ memory-shards:
     talent: 5         # szilánk-költség: +1 kaszt-talentpont
     spec: 8           # szilánk-költség: a spec-választás szint-kapujának feloldása
     lore: 1           # szilánk-költség: egy emlék-töredék (hangulat)
+
+# ===== B15 — Heti Krónika (a Bankárszövetség krónikásai) =====
+# Időszakos szerver-összefoglaló: liga-állás + toplisták, broadcast + /kronika.
+# Admin kézi kiadás a /events chronicle paranccsal (ha bekötött) vagy reload után
+# az időzítő szerint. Élőben olvasódik.
+chronicle:
+  enabled: true
+  interval-days: 7

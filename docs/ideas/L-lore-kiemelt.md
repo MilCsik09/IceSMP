@@ -373,7 +373,7 @@ generált világesemények mellett „igazi" dungeon-élményt ad.
 frakció-valuta sink.
 **Buktatók:** Nagy világépítési munka (nem plugin-kód); a heti lockout PDC-logikát csoportra
 (party) kell számolni, nem csak egyénre, különben a csapatból egy tag zárva marad.
-### B15. Heti krónika (auto-újság)
+### B15. Heti krónika (auto-újság) `[KÉSZ ✅]`
 
 > **Lore-horgony:** a kódexet a Bankárszövetség krónikásai írják — a heti újság ugyanez a hang, élőben (kódex VIII.)
 
