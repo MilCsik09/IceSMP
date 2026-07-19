@@ -63,7 +63,12 @@ public final class MobScalingManager {
         damagePerLevel = Math.max(0.0D, configManager.getDouble("mob-scaling.damage-per-level", 1.0D));
         hostileOnly = configManager.getBoolean("mob-scaling.hostile-only", true);
         nameEnabled = configManager.getBoolean("mob-scaling.name.enabled", true);
-        nameVisible = configManager.getBoolean("mob-scaling.name.visible", true);
+        // Egyértelmű név: always-visible (true = falakon át/messziről is látszik; false =
+        // csak ránézésre). A régi 'visible' kulcs legacy-fallbackként él tovább.
+        nameVisible = configManager.getConfiguration() != null
+                && configManager.getConfiguration().isSet("mob-scaling.name.always-visible")
+                ? configManager.getBoolean("mob-scaling.name.always-visible", true)
+                : configManager.getBoolean("mob-scaling.name.visible", true);
         namePrefix = configManager.getString("mob-scaling.name.prefix", "&7[Lvl %level%] ");
         nameColor = resolveColor(configManager.getString("mob-scaling.name.color", "WHITE"));
 

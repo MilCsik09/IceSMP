@@ -988,9 +988,16 @@ public final class IceSMPCore {
      * Registers all command handlers.
      */
     private void registerCommands() {
-        plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), new IceSMPCommand(plugin, configManager, messageManager,
+        final IceSMPCommand iceSMPCommand = new IceSMPCommand(plugin, configManager, messageManager,
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
-                statsManager, claimManager, questManager, abilityCatalystListener, sinManager));
+                statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
+        // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
+        // leggyakoribb kulcsokhoz — az override-fájlba ír, restart nélkül él.
+        final hu.taliann.icesmp.listeners.ConfigMenuGUIListener configMenuGUIListener =
+                new hu.taliann.icesmp.listeners.ConfigMenuGUIListener(plugin, configManager, messageManager);
+        plugin.getServer().getPluginManager().registerEvents(configMenuGUIListener, plugin);
+        iceSMPCommand.setConfigMenuOpener(configMenuGUIListener::open);
+        plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), iceSMPCommand);
         plugin.registerCommand("invsee", "Inventory-betekintés (admin, csak olvasás)", List.of(),
                 new hu.taliann.icesmp.commands.InvseeCommand(plugin, messageManager));
         plugin.registerCommand("hud", "HUD beállítások", List.of(), new hu.taliann.icesmp.commands.HudCommand(hudManager, messageManager));

@@ -7,6 +7,10 @@
 #   kézzelfogható példaként.
 # ===== Napi küldetések (ROADMAP 8.) =====
 daily-quests:
+  # Sorozat-bónusz: minden egymást követő napi teljesítés +streak-bonus-per-day jutalmat
+  # ad, legfeljebb streak-bonus-cap-days napig halmozva.
+  streak-bonus-per-day: 5
+  streak-bonus-cap-days: 7
   enabled: true
   daily_hunt:
     amount: 20

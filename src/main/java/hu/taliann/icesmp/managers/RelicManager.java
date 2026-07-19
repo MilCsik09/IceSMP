@@ -50,6 +50,12 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     private final RelicAbilityRegistry abilityRegistry;
     private final Map<String, EnumMap<RelicTrigger, RelicTriggerConfig>> triggerConfigs = new java.util.HashMap<>();
     private final Map<String, RelicOwnership> ownerships = new ConcurrentHashMap<>();
+    /**
+     * "Elveszett" passzív relikviák (halálkor a tárgy megsemmisül, de a tulajdon marad):
+     * relicId → az elvesztés időpontja. Amíg él, CSAK a tulajdonos idézheti újra az
+     * oltárnál; a rövidített lost-expiry után a relikvia mindenki számára felszabadul.
+     */
+    private final Map<String, Long> lostSince = new ConcurrentHashMap<>();
     private final File ownershipFile;
 
     private boolean enabled;
@@ -215,6 +221,10 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 final String basePath = "ownerships." + entry.getKey();
                 yaml.set(basePath + ".owner", entry.getValue().owner().toString());
                 yaml.set(basePath + ".last-seen", entry.getValue().lastSeenMillis());
+                final Long lost = lostSince.get(entry.getKey());
+                if (lost != null) {
+                    yaml.set(basePath + ".lost-since", lost);
+                }
             }
 
             YamlStore.saveAtomic(ownershipFile, yaml);
@@ -247,6 +257,10 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 try {
                     final UUID owner = UUID.fromString(rawOwner);
                     ownerships.put(relicId.toLowerCase(Locale.ROOT), new RelicOwnership(owner, lastSeenMillis));
+                    final long lost = ownershipSection.getLong(relicId + ".lost-since", 0L);
+                    if (lost > 0L) {
+                        lostSince.put(relicId.toLowerCase(Locale.ROOT), lost);
+                    }
                 } catch (final IllegalArgumentException exception) {
                     plugin.getLogger().warning("Invalid owner UUID in relics.yml for relic '" + relicId + "': " + rawOwner);
                 }
@@ -305,6 +319,40 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     }
 
     /**
+     * Id-tudatos lejárat: a normál inaktivitás MELLETT az "elveszett" (halálban
+     * megsemmisült) relikvia RÖVIDÍTETT lejáratát is nézi — ha a tulajdonos
+     * lost-expiry-days alatt nem idézi újra, a relikvia mindenkinek felszabadul.
+     */
+    private boolean isExpiredFor(final String relicId, final RelicOwnership ownership) {
+        if (isExpired(ownership)) {
+            return true;
+        }
+        final Long lost = relicId == null ? null : lostSince.get(relicId.toLowerCase(Locale.ROOT));
+        if (lost == null) {
+            return false;
+        }
+        final long lostExpiryMillis = Math.max(0L,
+                configManager.getLong("relics.inactivity.lost-expiry-days", 3L)) * 24L * 60L * 60L * 1000L;
+        return lostExpiryMillis > 0L && (System.currentTimeMillis() - lost) > lostExpiryMillis;
+    }
+
+    /** A relikvia "elveszett" állapotba kerül (halál reclaim-módban): a tárgy megsemmisült,
+     * a tulajdon marad — csak a tulaj idézheti újra, a rövidített lejáratig. */
+    public void markLost(final String relicId) {
+        if (relicId != null) {
+            lostSince.put(relicId.toLowerCase(Locale.ROOT), System.currentTimeMillis());
+            save();
+        }
+    }
+
+    /** Az elveszett-jelölés törlése (sikeres újraidézés / új tulajdonos). */
+    private void clearLost(final String relicId) {
+        if (relicId != null && lostSince.remove(relicId.toLowerCase(Locale.ROOT)) != null) {
+            save();
+        }
+    }
+
+    /**
      * Handles the join-time relic inactivity sweep:
      * expired relics are removed from the joining player's inventory with a smoke effect,
      * while active relics owned by the player get a refreshed last-seen timestamp.
@@ -334,10 +382,11 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             final String relicId = definition.id().toLowerCase(Locale.ROOT);
             final RelicOwnership ownership = ownerships.get(relicId);
 
-            if (isExpired(ownership)) {
+            if (isExpiredFor(relicId, ownership)) {
                 contents[slot] = null;
                 inventoryChanged = true;
                 ownerships.remove(relicId);
+                lostSince.remove(relicId);
                 ownershipChanged = true;
                 playExpiryEffect(player);
                 sendExpiryMessage(player, definition);
@@ -364,7 +413,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             // vagy MÁR EZÉ a játékosé — egy másik, aktív tulajdonos jogát egy régi (halott)
             // példány belépése nem írhatja felül (ownership-eltérítés).
             if ((itemOwner == null || itemOwner.equals(playerId))
-                    && (ownership == null || ownership.owner().equals(playerId) || isExpired(ownership))) {
+                    && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
                 ownerships.put(relicId, new RelicOwnership(playerId, now));
                 ownershipChanged = true;
             }
@@ -383,10 +432,11 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             }
             final String relicId = definition.id().toLowerCase(Locale.ROOT);
             final RelicOwnership ownership = ownerships.get(relicId);
-            if (isExpired(ownership)) {
+            if (isExpiredFor(relicId, ownership)) {
                 armor[slot] = null;
                 armorChanged = true;
                 ownerships.remove(relicId);
+                lostSince.remove(relicId);
                 ownershipChanged = true;
                 playExpiryEffect(player);
                 sendExpiryMessage(player, definition);
@@ -399,7 +449,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             }
             final UUID itemOwner = itemFactory.getOwner(itemStack);
             if ((itemOwner == null || itemOwner.equals(playerId))
-                    && (ownership == null || ownership.owner().equals(playerId) || isExpired(ownership))) {
+                    && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
                 ownerships.put(relicId, new RelicOwnership(playerId, now));
                 ownershipChanged = true;
             }
@@ -412,9 +462,10 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         if (offhandDefinition != null) {
             final String relicId = offhandDefinition.id().toLowerCase(Locale.ROOT);
             final RelicOwnership ownership = ownerships.get(relicId);
-            if (isExpired(ownership)) {
+            if (isExpiredFor(relicId, ownership)) {
                 inventory.setItemInOffHand(null);
                 ownerships.remove(relicId);
+                lostSince.remove(relicId);
                 ownershipChanged = true;
                 playExpiryEffect(player);
                 sendExpiryMessage(player, offhandDefinition);
@@ -423,7 +474,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             } else {
                 final UUID itemOwner = itemFactory.getOwner(offhand);
                 if ((itemOwner == null || itemOwner.equals(playerId))
-                        && (ownership == null || ownership.owner().equals(playerId) || isExpired(ownership))) {
+                        && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
                     ownerships.put(relicId, new RelicOwnership(playerId, now));
                     ownershipChanged = true;
                 }
@@ -493,13 +544,19 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
         final String normalizedId = definition.id().toLowerCase(Locale.ROOT);
         final RelicOwnership currentOwnership = ownerships.get(normalizedId);
-        if (!force && currentOwnership != null && !isExpired(currentOwnership)) {
+        // Reclaim-út: a halálban ELVESZETT relikviát a tulajdonosa a lost-expiry lejártáig
+        // újraidézheti (más nem); minden más aktív-tulajdonos eset tiltott (self-dup védelem).
+        final boolean ownerReclaim = currentOwnership != null
+                && currentOwnership.owner().equals(player.getUniqueId())
+                && lostSince.containsKey(normalizedId);
+        if (!force && !ownerReclaim && currentOwnership != null && !isExpiredFor(normalizedId, currentOwnership)) {
             // Singleton rule: while ANY active owner exists — the requester included — no new
             // copy may be minted. A self-re-summon would otherwise duplicate a usable relic
             // (audit: the old check only blocked FOREIGN owners). A destroyed/lost item is
-            // recovered via the inactivity expiry or an admin force-give.
+            // recovered via the reclaim ritual, the lost/inactivity expiry or an admin force-give.
             return false;
         }
+        clearLost(normalizedId);
 
         int remaining = amount;
         while (remaining > 0) {
@@ -545,8 +602,9 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         // longer the active owner — so it must not work, preventing two usable copies of one relic.
         final RelicDefinition definition = identify(itemStack);
         if (definition != null) {
-            final RelicOwnership ownership = ownerships.get(definition.id().toLowerCase(Locale.ROOT));
-            if (ownership != null && !ownership.owner().equals(player.getUniqueId()) && !isExpired(ownership)) {
+            final String relicId = definition.id().toLowerCase(Locale.ROOT);
+            final RelicOwnership ownership = ownerships.get(relicId);
+            if (ownership != null && !ownership.owner().equals(player.getUniqueId()) && !isExpiredFor(relicId, ownership)) {
                 return false;
             }
         }

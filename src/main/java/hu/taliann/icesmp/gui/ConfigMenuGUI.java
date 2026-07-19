@@ -1,0 +1,246 @@
+package hu.taliann.icesmp.gui;
+
+import hu.taliann.icesmp.managers.ConfigManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * Ingame admin config-menü (jog: {@code icesmp.admin.config}): kategóriákra osztott,
+ * kattintható felület a legfontosabb, élőben olvasott config-kulcsokhoz. A menü a
+ * meglévő override-mechanizmusra épül (a data-folder config.yml-be ír, amit a
+ * ConfigManager UTOLSÓKÉNT fésül be — így minden kulcsot felülír), tehát minden
+ * módosítás restart nélkül él. A teljes kulcskészlethez továbbra is a
+ * {@code /icesmp config set|get|find} a felület; ez a menü a kurátort listát adja.
+ *
+ * <p>Kezelés: BOOLEAN — katt = váltás; SZÁM — bal katt +lépés, jobb katt −lépés,
+ * SHIFT = ötszörös lépés; CYCLE — katt = következő opció.
+ */
+public final class ConfigMenuGUI {
+
+    /** Egy szerkeszthető kulcs a menüben. */
+    public record Entry(String key, String label, EntryType type, double step, double min, double max,
+                        List<String> options) {
+        static Entry toggle(final String key, final String label) {
+            return new Entry(key, label, EntryType.TOGGLE, 0, 0, 0, List.of());
+        }
+
+        static Entry number(final String key, final String label, final double step, final double min, final double max) {
+            return new Entry(key, label, EntryType.NUMBER, step, min, max, List.of());
+        }
+
+        static Entry integer(final String key, final String label, final int step, final int min, final int max) {
+            return new Entry(key, label, EntryType.INTEGER, step, min, max, List.of());
+        }
+
+        static Entry cycle(final String key, final String label, final List<String> options) {
+            return new Entry(key, label, EntryType.CYCLE, 0, 0, 0, options);
+        }
+    }
+
+    public enum EntryType { TOGGLE, NUMBER, INTEGER, CYCLE }
+
+    /** Egy kategória: cím, ikon és a kurátort kulcs-lista. */
+    public record Category(String id, String title, Material icon, List<Entry> entries) {
+    }
+
+    /** A kurátort katalógus — kategóriánként a leggyakrabban hangolt, élőben olvasott kulcsok. */
+    public static final Map<String, Category> CATEGORIES = buildCatalog();
+
+    private static Map<String, Category> buildCatalog() {
+        final Map<String, Category> categories = new LinkedHashMap<>();
+        categories.put("ado", new Category("ado", "Adó és gazdaság", Material.GOLD_INGOT, List.of(
+                Entry.toggle("factions.tax.enabled", "Adó bekapcsolva"),
+                Entry.number("factions.tax.rate-percent", "Adókulcs (%)", 0.5, 0, 100),
+                Entry.number("factions.tax.minimum-amount", "Fejadó (min. összeg)", 0.5, 0, 1000),
+                Entry.number("factions.tax.max-arrears", "Hátralék-plafon", 5, 0, 100000),
+                Entry.integer("factions.tax.evasion-strikes", "Adócsalás-strike küszöb", 1, 0, 50),
+                Entry.integer("factions.tax.interval-minutes", "Beszedés (perc)", 5, 1, 100000))));
+        categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
+                Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
+                Entry.toggle("world-events.blood-moon.enabled", "Vérhold"),
+                Entry.number("world-events.blood-moon.chance-percent", "Vérhold esély (%)", 5, 0, 100),
+                Entry.toggle("world-events.world-boss.enabled", "Világboss"),
+                Entry.number("world-events.world-boss.chance-percent", "Világboss esély (%)", 5, 0, 100),
+                Entry.toggle("world-events.invasion.enabled", "Invázió"),
+                Entry.toggle("wild-hunt.enabled", "Vad Hajsza"),
+                Entry.toggle("meteor.enabled", "Meteor"),
+                Entry.toggle("treasure-events.enabled", "Elrejtett kincs"),
+                Entry.toggle("ambient-events.enabled", "Hangulat-események"))));
+        categories.put("karhozat", new Category("karhozat", "Kárhozat-zóna és mob-szabályok", Material.WITHER_SKELETON_SKULL, List.of(
+                Entry.toggle("territory.doom-gate.sin-exempt", "Ölés nem bűn a zónában"),
+                Entry.integer("territory.doom-gate.entry-grace-seconds", "Belépő-védelem (mp)", 1, 0, 120),
+                Entry.integer("territory.mob-rules.doom-gate.bonus-levels", "Zóna mob-bónusz szint", 1, 0, 20),
+                Entry.toggle("territory.mob-rules.doom-gate.no-daylight-burn", "Mob nappal sem ég"),
+                Entry.toggle("territory.mob-rules.doom-gate.no-zombification", "Mob nem zombisodik"))));
+        categories.put("suttogok", new Category("suttogok", "Suttogók", Material.ECHO_SHARD, List.of(
+                Entry.toggle("factions.whisper.enabled", "Suttogó-rendszer"),
+                Entry.number("factions.whisper.suspicion-threshold", "Leleplezés-küszöb", 5, 1, 10000),
+                Entry.number("factions.whisper.betrayal-suspicion", "Árulás-gyanú", 5, 0, 1000),
+                Entry.number("factions.whisper.accuse-suspicion", "Tanú-vád gyanú", 5, 0, 1000),
+                Entry.integer("factions.whisper.decay-minutes", "Csillapodás (perc)", 1, 1, 100000),
+                Entry.integer("factions.whisper.exposure-sins", "Leleplezés bűn-terhe", 1, 1, 20),
+                Entry.toggle("factions.whisper.expose-broadcast", "Leleplezés-broadcast"))));
+        categories.put("etelek", new Category("etelek", "Frakció-ételek (honvágy)", Material.COOKED_SALMON, List.of(
+                Entry.toggle("factions.food-duty.enabled", "Honvágy-kötelezettség"),
+                Entry.integer("factions.food-duty.grace-hours", "Türelmi idő (óra)", 1, 1, 100000),
+                Entry.integer("factions.food-duty.check-minutes", "Ellenőrzés (perc)", 1, 1, 100000),
+                Entry.integer("factions.food-duty.debuff-seconds", "Debuff hossza (mp)", 1, 1, 600))));
+        categories.put("signature", new Category("signature", "Signature-perkek", Material.DIAMOND_PICKAXE, List.of(
+                Entry.number("signature.csakany.bonus-drop-chance", "Csákány bónusz-esély", 0.05, 0, 1),
+                Entry.number("signature.horgaszbot.bonus-drop-chance", "Horgászbot bónusz-esély", 0.05, 0, 1),
+                Entry.number("signature.bankbetet.value", "Bankbetét értéke", 5, 0, 100000),
+                Entry.integer("signature.szarvas.cooldown-seconds", "Szellemszarvas cooldown (mp)", 10, 0, 100000),
+                Entry.number("signature.agyar.damage-mult", "Agyar sebzés-szorzó", 0.05, 1, 5),
+                Entry.number("signature.jegvert.damage-mult", "Jégvért bejövő-szorzó", 0.05, 0, 1))));
+        categories.put("relikviak", new Category("relikviak", "Relikviák", Material.ELYTRA, List.of(
+                Entry.toggle("relics.enabled", "Relikvia-rendszer"),
+                Entry.integer("relics.inactivity.expiry-days", "Inaktivitás-lejárat (nap)", 1, 0, 3650),
+                Entry.integer("relics.inactivity.lost-expiry-days", "Elveszett-lejárat (nap)", 1, 0, 3650),
+                Entry.cycle("relics.passive-death.mode", "Passzív relikvia halálkor",
+                        List.of("reclaim", "keep", "drop")),
+                Entry.toggle("relics.wings.faction-locked-pickup", "Szárny frakció-zár (felvétel)"),
+                Entry.toggle("relics.pvp-transfer.enabled", "Fegyver-relikvia PvP-átvétel"))));
+        categories.put("emlek", new Category("emlek", "Emlékszilánkok", Material.AMETHYST_SHARD, List.of(
+                Entry.integer("memory-shards.xp-amount", "XP-csomag mérete", 50, 1, 1000000),
+                Entry.integer("memory-shards.costs.xp", "XP-beváltás ára (szilánk)", 1, 1, 100),
+                Entry.integer("memory-shards.costs.talent", "Talentpont ára", 1, 1, 100),
+                Entry.integer("memory-shards.costs.spec", "Spec-kapu ára", 1, 1, 100))));
+        return categories;
+    }
+
+    private ConfigMenuGUI() {
+    }
+
+    /** A főmenü (kategória-választó) megnyitása. */
+    public static void openRoot(final Player player) {
+        final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), null);
+        final Inventory inventory = Bukkit.createInventory(holder, 27,
+                Component.text("⚙ IceSMP Config", NamedTextColor.DARK_AQUA));
+        holder.setInventory(inventory);
+
+        int slot = 10;
+        for (final Category category : CATEGORIES.values()) {
+            inventory.setItem(slot, tile(category.icon(), "&b" + category.title(),
+                    List.of("&7" + category.entries().size() + " kulcs", "&eKattints a megnyitáshoz")));
+            holder.bind(slot, "CAT:" + category.id());
+            slot++;
+            if (slot == 17) {
+                slot = 19;
+            }
+        }
+        inventory.setItem(26, tile(Material.BARRIER, "&cBezárás", List.of()));
+        holder.bind(26, "CLOSE");
+        player.openInventory(inventory);
+    }
+
+    /** Egy kategória-lap megnyitása (a kulcsok aktuális értékével). */
+    public static void openCategory(final Player player, final String categoryId, final ConfigManager configManager) {
+        final Category category = CATEGORIES.get(categoryId);
+        if (category == null) {
+            openRoot(player);
+            return;
+        }
+        final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), categoryId);
+        final Inventory inventory = Bukkit.createInventory(holder, 36,
+                Component.text("⚙ " + category.title(), NamedTextColor.DARK_AQUA));
+        holder.setInventory(inventory);
+
+        int slot = 0;
+        for (final Entry entry : category.entries()) {
+            inventory.setItem(slot, entryTile(entry, configManager));
+            holder.bind(slot, switch (entry.type()) {
+                case TOGGLE -> "TOGGLE:" + entry.key();
+                case CYCLE -> "CYCLE:" + entry.key();
+                default -> "NUM:" + entry.key();
+            });
+            slot++;
+        }
+        inventory.setItem(31, tile(Material.ARROW, "&7Vissza", List.of()));
+        holder.bind(31, "BACK");
+        inventory.setItem(35, tile(Material.BARRIER, "&cBezárás", List.of()));
+        holder.bind(35, "CLOSE");
+        player.openInventory(inventory);
+    }
+
+    private static ItemStack entryTile(final Entry entry, final ConfigManager configManager) {
+        final List<String> lore = new ArrayList<>();
+        lore.add("&8" + entry.key());
+        switch (entry.type()) {
+            case TOGGLE -> {
+                final boolean value = configManager.getBoolean(entry.key(), false);
+                lore.add(value ? "&aBekapcsolva" : "&cKikapcsolva");
+                lore.add("&eKattints a váltáshoz");
+                return tile(value ? Material.LIME_DYE : Material.GRAY_DYE,
+                        (value ? "&a" : "&c") + entry.label(), lore);
+            }
+            case CYCLE -> {
+                final String value = configManager.getString(entry.key(), entry.options().isEmpty() ? "?" : entry.options().get(0));
+                lore.add("&fJelenleg: &b" + value);
+                lore.add("&7Opciók: &f" + String.join(" / ", entry.options()));
+                lore.add("&eKattints a következőhöz");
+                return tile(Material.COMPARATOR, "&b" + entry.label(), lore);
+            }
+            default -> {
+                final double value = configManager.getDouble(entry.key(), 0.0D);
+                lore.add("&fJelenleg: &b" + formatNumber(entry, value));
+                lore.add("&7Bal katt: &f+" + formatStep(entry) + " &7| Jobb katt: &f−" + formatStep(entry));
+                lore.add("&7SHIFT = ötszörös lépés");
+                return tile(Material.PAPER, "&b" + entry.label(), lore);
+            }
+        }
+    }
+
+    private static String formatNumber(final Entry entry, final double value) {
+        return entry.type() == EntryType.INTEGER
+                ? String.valueOf((long) value)
+                : String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static String formatStep(final Entry entry) {
+        return entry.type() == EntryType.INTEGER
+                ? String.valueOf((long) entry.step())
+                : String.format(Locale.ROOT, "%.2f", entry.step());
+    }
+
+    private static ItemStack tile(final Material material, final String name, final List<String> loreLines) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.displayName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand()
+                    .deserialize(name).decoration(TextDecoration.ITALIC, false));
+            final List<Component> lore = new ArrayList<>();
+            for (final String line : loreLines) {
+                lore.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand()
+                        .deserialize(line).colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            }
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    /** A kulcshoz tartozó katalógus-bejegyzés (a listener érték-léptetéséhez). */
+    public static Entry findEntry(final String key) {
+        for (final Category category : CATEGORIES.values()) {
+            for (final Entry entry : category.entries()) {
+                if (entry.key().equals(key)) {
+                    return entry;
+                }
+            }
+        }
+        return null;
+    }
+}

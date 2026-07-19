@@ -94,4 +94,13 @@ Megkövült, éjfekete csepp — a Néma Királynő első suttogása hozta létr
 presztízs- és lore-kincs, egy példányban létezik a szerveren. Rituálé-oltára (síró obszidián mag,
 feketekő szentély) **csak a Kitaszítottak (DARK) frakcióval** aktiválható.
 
+
+## Mi történik a relikviával, ha meghalsz? ⚰️
+
+- A **fegyver-relikvia** (pl. Mételytépő) PvP-halálnál a **gyilkosé** lesz (gazdát cserél).
+- A **passzív relikvia** (szárnyak, Eleftheria Könnye) **köddé válik** — nem esik le, senki sem
+  veheti fel. A kötés viszont él: **csak te idézheted újra** a rituálé-oltárnál (az áldozat újra
+  kell!). Ha **~3 napon belül** nem idézed újra, a relikvia **mindenkinek felszabadul** — siess.
+- Aktív tulajdonosként az oltár nem ad második példányt — egy relikvia, egy gazda, egy tárgy.
+
 ➡️ Tovább: [Világesemények](10-vilagesemenyek.md) • [Vissza a tartalomhoz](README.md)

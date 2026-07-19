@@ -6,6 +6,9 @@ relics:
   inactivity:
     enabled: true
     expiry-days: 14
+    # Halálban ELVESZETT (reclaim-módú) relikvia rövidített lejárata: ha a tulaj ennyi
+    # napon belül nem idézi újra az oltárnál, a relikvia MINDENKINEK felszabadul.
+    lost-expiry-days: 3
   # Fegyver-relikviák: PvP-ben gazdát cserélhetnek (a passzívak védettek).
   weapon-relics:
     - "metelytepo"
@@ -15,9 +18,15 @@ relics:
     faction-locked-pickup: true
   pvp-transfer:
     enabled: true
-  # Passzív (nem-fegyver) relikviák halálkor NEM esnek a földre — respawnkor visszakerülnek
-  # a gazdájukhoz (a fegyver-relikviák PvP-átvétele változatlan).
-  keep-passive-on-death: true
+  # Passzív (nem-fegyver) relikviák sorsa halálkor (a fegyver-relikviák PvP-átvétele
+  # változatlan). Módok:
+  #   reclaim - a tárgy MEGSEMMISÜL, de a tulajdon marad: csak a tulaj idézheti újra az
+  #             oltárnál (áldozattal), az inactivity.lost-expiry-days lejártáig — utána
+  #             a relikvia mindenkinek felszabadul (ez a default)
+  #   keep    - respawnkor visszakerül a tulajhoz
+  #   drop    - vanília: leesik a földre (idegen frakció így sem veheti fel)
+  passive-death:
+    mode: "reclaim"
   messages:
     cooldown: "&cA relikvia pihen: &f%seconds%s &cmaradék"
     expired: "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."

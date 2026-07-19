@@ -14,10 +14,15 @@ import java.util.List;
  */
 public final class ConfigManager {
 
-    /** Bundled per-subsystem config files under config/ (extracted on first run). */
+    /** Bundled per-subsystem config files under config/ (extracted on first run).
+     * AUDIT-JAVÍTÁS: a lista korábban 6 fájlt kihagyott (item-rarity, loot, motd,
+     * profession-materials, profession-recipes, tablist) — friss telepítésen ezek sosem
+     * csomagolódtak ki, így a rájuk épülő rendszerek némán a kód-defaultokra estek
+     * (pl. NULLA szakma-recept). Új fájl hozzáadásakor ide is fel KELL venni. */
     private static final String[] CONFIG_FILES = {
             "general", "economy", "factions", "classes", "spells", "spells-balance",
-            "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation"
+            "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation",
+            "item-rarity", "loot", "motd", "profession-materials", "profession-recipes", "tablist"
     };
 
     private final JavaPlugin plugin;

@@ -48,8 +48,28 @@ public final class RelicPvpTransferListener implements Listener {
     public void onPlayerDeath(final PlayerDeathEvent event) {
         final Player victim = event.getEntity();
 
-        // 1) Passzív relikviák megtartása (minden halálnál, killertől függetlenül).
-        if (configManager.getBoolean("relics.keep-passive-on-death", true)) {
+        // 1) Passzív relikviák sorsa halálkor (relics.passive-death.mode, élőben olvasva):
+        //    reclaim (default) — a tárgy MEGSEMMISÜL, a tulajdon marad: csak a tulaj idézheti
+        //                        újra az oltárnál, a rövidített lost-expiry lejártáig;
+        //    keep             — a tárgy respawnkor visszakerül a tulajhoz;
+        //    drop             — vanília viselkedés (leesik; idegen frakció így sem veheti fel).
+        final String mode = configManager.getString("relics.passive-death.mode", "reclaim")
+                .toLowerCase(java.util.Locale.ROOT);
+        if ("reclaim".equals(mode)) {
+            event.getDrops().removeIf(drop -> {
+                final RelicDefinition definition = relicManager.identify(drop);
+                if (definition == null || relicManager.isWeaponRelic(definition.id())) {
+                    return false;
+                }
+                relicManager.markLost(definition.id());
+                victim.sendMessage(messageManager.getMessage(
+                        "relic.death-lost",
+                        "<dark_purple>✦ A(z) <white>{relic}</white> köddé vált a halálodban — a kötés él: idézd újra az oltárnál, mielőtt végleg elhagyna ({days} nap).</dark_purple>",
+                        Map.of("relic", definition.displayName(),
+                                "days", String.valueOf(Math.max(0L, configManager.getLong("relics.inactivity.lost-expiry-days", 3L))))));
+                return true;
+            });
+        } else if ("keep".equals(mode)) {
             final List<ItemStack> kept = new ArrayList<>();
             event.getDrops().removeIf(drop -> {
                 final RelicDefinition definition = relicManager.identify(drop);

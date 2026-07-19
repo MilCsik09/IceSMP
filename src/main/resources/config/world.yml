@@ -16,11 +16,12 @@ mob-scaling:
     - "COMMAND"
   name:
     enabled: true
-    # A nevtabla mindig latszik-e? A vanilla "mindig lathato" nevtablak
-    # FALAKON AT es nagyon TAVOLROL is renderelodnek (zavaro lehet). Ha false,
-    # a szint-nevtabla csak akkor jelenik meg, amikor a jatekos RANEZ a mobra
-    # (kozelrol, takaras nelkul) - ez a vanilla "hover" viselkedes.
-    visible: false
+    # EGYÉRTELMŰ név: always-visible = a névtábla mindig látszik-e. A vanília "mindig
+    # látható" névtáblák FALAKON ÁT és nagyon TÁVOLRÓL is renderelődnek (zavaró lehet).
+    # false = a szint-névtábla csak akkor jelenik meg, amikor a játékos RÁNÉZ a mobra
+    # (közelről, takarás nélkül) — vanília "hover" viselkedés.
+    # (A régi 'visible' kulcs legacy-fallbackként még működik.)
+    always-visible: false
     prefix: "&7[Lvl %level%] "
     color: "WHITE"
 
@@ -36,7 +37,8 @@ world-events:
   check-interval-seconds: 60
   # Mester-kapcsoló: false = a lenti spawn-rules mátrix egyáltalán nem fut (mindenhova
   # spawnolhat minden). A kulcsok élőben olvasódnak — /icesmp reload után restart nélkül él.
-  avoid-territory: true
+  # (A régi, félrevezető nevű avoid-territory kulcs legacy-fallbackként még működik.)
+  spawn-rules-enabled: true
   # Esemény × védelem mátrix: melyik esemény hol NEM spawnolhat. Oszlopok:
   #   territory = claimelt frakció-territórium | claim = játékos-claim
   #   region    = WorldGuard-régió (városok/spawn) | water = víz-felszín

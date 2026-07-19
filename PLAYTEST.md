@@ -424,6 +424,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       az adócsalót → **+1 bűn** (üzenettel, online beszedéskor) — a bűn-küszöb elérése a meglévő
       száműzetést indítja (Kitaszítottak). A strike törlődik, amint a tartozás a plafon alá esik;
       restart-álló (treasury.yml: tax-evasion-strikes). 0 = kikapcsolva.
+- [ ] **Relikvia halál-viselkedés (ÚJ — reclaim):** passzív relikviával (pl. szárny) halj meg:
+      a tárgy KÖDDÉ VÁLIK (nem esik le, senki sem veheti fel), üzenet jelzi; a tulajdon marad —
+      CSAK te idézheted újra az oltárnál (áldozattal); más játékosnak az oltár elutasít. Ha
+      `relics.inactivity.lost-expiry-days` (default 3 nap) alatt nem idézed újra, a relikvia
+      MINDENKINEK felszabadul. Módok: `relics.passive-death.mode: reclaim|keep|drop`.
+- [ ] **Relikvia-dup javítások (ÚJ):** aktív tulajdonos NEM idézheti újra a meglévő relikviáját
+      (az oltár elutasít — kivéve, ha "elveszett"); admin pótlás: `/relic give` (force). Belépéskor
+      a VISELT szárny is része az inaktivitás-sweepnek és a dedupnak; halott másolat belépése nem
+      veszi el az aktív tulajdonos jogát.
+- [ ] **Ingame config-menü (ÚJ):** `/icesmp config menu` (jog: `icesmp.admin.config`) — kategóriák
+      (Adó / Világesemények / Kárhozat / Suttogók / Ételek / Signature / Relikviák / Emlék);
+      boolean: katt váltás; szám: bal +, jobb −, SHIFT ×5; mód-kulcs (pl. passive-death.mode):
+      katt = következő opció. Minden módosítás a config.yml override-ba íródik és AZONNAL él
+      (reload + validátor fut); a teljes kulcskészlet továbbra is `/icesmp config set|find`.
 - [ ] **Dinamikus árfolyam:** több valuta a szerveren → kevesebbet ér (`/currency rates`).
 - [ ] **Valutaváltó GUI** (`/menu` → Bank & Pénz → Valutaváltó): forrás-választó fent, cél-választó
       lent (a forrással azonos valuta szürke, nem választható), középen élő árfolyam + 64-es előnézet;
@@ -666,7 +680,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       városba és `/events worldboss|invasion|wild-hunt`: nem jelenik meg semmi (a következő
       intervallumban máshol próbálkozik). Config: `world-events.spawn-rules` esemény×védelem
       mátrix (world-boss/invasion/wild-hunt/treasure/meteor × territory/claim/region/water,
-      minden cella külön kapcsolható) + `world-events.avoid-territory` mester-kapcsoló; a
+      minden cella külön kapcsolható) + `world-events.spawn-rules-enabled` mester-kapcsoló (a régi avoid-territory fallbackként él); a
       kulcsok élőben olvasódnak → `/icesmp reload` után restart nélkül él. ⚠️ A régi
       `meteor.avoid-territory` kulcs megszűnt (a mátrix meteor-sora váltja).
 - [ ] **Esemény-mob keményítés (ÚJ):** a Pokoli Hadúr boss / Alvilági Roham piglinjei / Pokoli Behemót

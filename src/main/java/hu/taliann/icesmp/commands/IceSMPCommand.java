@@ -262,6 +262,13 @@ public final class IceSMPCommand implements BasicCommand {
         return String.format(Locale.ROOT, "%.1f", ratio);
     }
 
+    /** A GUI-s config-menü megnyitója (setterrel kötve — a listener a parancs UTÁN épül). */
+    private java.util.function.Consumer<Player> configMenuOpener;
+
+    public void setConfigMenuOpener(final java.util.function.Consumer<Player> configMenuOpener) {
+        this.configMenuOpener = configMenuOpener;
+    }
+
     private void handleConfig(final CommandSender sender, final String[] args) {
         final String action = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "";
         switch (action) {
@@ -270,6 +277,13 @@ public final class IceSMPCommand implements BasicCommand {
             case "unset" -> handleUnset(sender, args);
             case "list" -> handleList(sender);
             case "find" -> handleFind(sender, args);
+            case "menu" -> {
+                if (sender instanceof Player player && configMenuOpener != null) {
+                    configMenuOpener.accept(player);
+                } else {
+                    sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékos használhatja."));
+                }
+            }
             default -> sendHelp(sender);
         }
     }
@@ -407,6 +421,7 @@ public final class IceSMPCommand implements BasicCommand {
     private void sendHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("admin.icesmp.help-header", "&6/icesmp &7- admin parancsok:"));
         sender.sendMessage(messageManager.get("admin.icesmp.help-reload", "&e/icesmp reload &7- Config + üzenetek újratöltése."));
+        sender.sendMessage(messageManager.get("admin.icesmp.help-config-menu", "&e/icesmp config menu &7- Kattintható config-menü (kategóriákkal)."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-get", "&e/icesmp config get <kulcs> &7- Kulcs aktuális értéke."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-set", "&e/icesmp config set <kulcs> <érték> &7- Felülbírálás (azonnali reload)."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-unset", "&e/icesmp config unset <kulcs> &7- Felülbírálás törlése."));
@@ -448,7 +463,7 @@ public final class IceSMPCommand implements BasicCommand {
         }
         if (args.length == 2) {
             final String prefix = args[1].toLowerCase(Locale.ROOT);
-            return List.of("get", "set", "unset", "list", "find").stream().filter(option -> option.startsWith(prefix)).toList();
+            return List.of("menu", "get", "set", "unset", "list", "find").stream().filter(option -> option.startsWith(prefix)).toList();
         }
         if (args.length == 3) {
             final String action = args[1].toLowerCase(Locale.ROOT);

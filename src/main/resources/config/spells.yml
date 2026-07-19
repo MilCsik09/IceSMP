@@ -6,6 +6,9 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
+  # Halál-összegzés: halál után rövid lista a legutóbbi sebzés-forrásokról.
+  death-recap:
+    enabled: true
   # ===== Baráti tűz (party-tudatos célzás) =====
   # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
   # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.

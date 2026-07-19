@@ -43,7 +43,7 @@ public final class EventSpawnGuard {
      * @return true when a protection rule blocks the location
      */
     public boolean isBlocked(final String eventKey, final Location location) {
-        if (!configManager.getBoolean("world-events.avoid-territory", true)) {
+        if (!masterSwitch()) {
             return false;
         }
         if (rule(eventKey, "territory") && territoryManager.getTerritoryAt(location) != null) {
@@ -68,6 +68,19 @@ public final class EventSpawnGuard {
     /** One cell of the per-event spawn-rules matrix (default: every protection on). */
     private boolean rule(final String eventKey, final String protection) {
         return configManager.getBoolean("world-events.spawn-rules." + eventKey + "." + protection, true);
+    }
+
+    /**
+     * A mátrix mester-kapcsolója — az EGYÉRTELMŰ nevű {@code spawn-rules-enabled} kulcs nyer,
+     * a régi {@code avoid-territory} (ami valójában az egész mátrixot kapcsolta, nem csak a
+     * territóriumot) legacy-fallbackként él tovább.
+     */
+    private boolean masterSwitch() {
+        if (configManager.getConfiguration() != null
+                && configManager.getConfiguration().isSet("world-events.spawn-rules-enabled")) {
+            return configManager.getBoolean("world-events.spawn-rules-enabled", true);
+        }
+        return configManager.getBoolean("world-events.avoid-territory", true);
     }
 
     /**
