@@ -270,6 +270,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       dream_breath, primal_roar**) → **kúp** a nézési irányban; dobott (**mana_dart, toxin_dart**) →
       **ív**. A többi marad a célzás-alapon (célzott→sugár, körzet→gyűrű, önmagad→hélix). Per-spell
       felülírás: `spell-vfx.shapes.<spell-id>`.
+- [ ] **Hero-ultimate szín:** a 31 spec-csúcsspell (lvl 45) kiemelt palettát kap — pl. az
+      **ascendance_flame** (elemental sámán) TŰZ-színű a spec kék-fehér helyett, a **serenity**
+      (windwalker) ARANY. A színek a `spell-vfx.overrides`-ban hangolhatók.
 - [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen
       megjelenik, nincs konzol-hiba.
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
@@ -757,6 +760,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Hangulat-effektek:** a szentjánosbogár/köd/lelkek/aurora ~24 mp-ig PULZÁL (2 mp-enként),
         a flavour-höz illő helyen (bogarak bokor-magasságban, köd a talajon, aurora magasan az
         égen) — NEM egyetlen villanás a fej fölött; kilépéskor a lánc leáll.
+  - [ ] **Aurora fény-fátyol (DisplayFx, ÚJ):** az északi fénynél a particle mellé **két magasan
+        lebegő, áttetsző, lassan oldalra sodródó fény-lap** jelenik meg az égen (teal + lila),
+        CSAK neked látszik, és az effekt végén eltűnik — nem marad blokk-szemét (relog/restart után
+        sem). Kapcsoló: `display-fx.aurora.enabled: false`; anyag configos.
   - [ ] **FLASH-diéta:** boss-spawn/enrage/SLAM, invázió-bajnok, rituálé és Szent Harag villanása
         egyszeri, nem halmozott — közelről sem vakít el hosszan.
   - [ ] **Konfetti mérséklés:** escort/vad hajsza/crate/kombó ünneplő-partikelei visszafogottak

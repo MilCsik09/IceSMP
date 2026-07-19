@@ -118,6 +118,17 @@ public final class DisplayFxUtil {
         return new Transformation(new Vector3f(0.0F, 0.0F, 0.0F), NO_ROT, new Vector3f(x, y, z), NO_ROT);
     }
 
+    /**
+     * Lassú vízszintes sodródás: a skálát tartva a lapot {@code driftX/driftZ} blokkal odébb
+     * interpolálja {@code durationTicks} alatt (aurora-fátyol hullámzása) — egyetlen csomag.
+     */
+    public static void driftHorizontal(final Plugin plugin, final Display display, final float sizeXZ,
+                                       final float thickness, final float driftX, final float driftZ,
+                                       final int durationTicks) {
+        animateTo(plugin, display, new Transformation(new Vector3f(driftX, 0.0F, driftZ), NO_ROT,
+                new Vector3f(sizeXZ, thickness, sizeXZ), NO_ROT), durationTicks);
+    }
+
     /** Középre igazított, lapos skála-transzformáció: a blokk +XZ-nyúlását negatív fél-eltolással centrálja. */
     public static Transformation flatCentered(final float sizeXZ, final float thickness) {
         final float half = sizeXZ / 2.0F;

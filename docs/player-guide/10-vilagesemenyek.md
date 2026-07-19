@@ -110,7 +110,7 @@ kibányászol, a tiéd. A meteor **sosem csapódik claimelt területre vagy frak
 ## Hangulat-események ✦
 
 Időnként apró, **légköri események** teszik élőbbé a világot (nem befolyásolják a balanszot):
-**északi fény** (rövid éjjellátás + csillámló égbolt), **hulló csillag** (üzenet a becsapódás
+**északi fény** (rövid éjjellátás + magasan lebegő, sodródó fény-fátyol az égen), **hulló csillag** (üzenet a becsapódás
 irányával), **köd**, **bolyongó szellemek**, **szentjánosbogarak**, valamint **állat-vándorlás**
 (egy passzív állatcsorda vándorol a közeledbe — élelemforrás).
 

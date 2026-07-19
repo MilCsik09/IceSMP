@@ -195,10 +195,41 @@ spell-vfx:
     beast_master: NATURE
     poisoner: DECAY
     phantom: SHADOW
-  # Egyedi spell felülbírálás (a kaszt/spec-palettát írja felül) — pl. egy tűz-témájú harcos-spell:
-  # overrides:
-  #   heroic_leap: FIRE
-  overrides: {}
+  # Egyedi spell felülbírálás (a kaszt/spec-palettát írja felül). Itt a 31 spec-ULTIMATE (lvl 45)
+  # kézzel válogatott palettát kap, hogy a csúcs-spell ránézésre kitűnjön — a legtöbb megerősíti a
+  # spec-témát, néhány szándékosan eltér (pl. elemental=STORM, de ascendance_flame=FIRE).
+  overrides:
+    incarnation_bear: NATURE
+    dancing_rune_weapon: BLOOD
+    void_torrent: SHADOW
+    eternity_breath: FIRE
+    the_hunt: DECAY
+    doom_winds: STORM
+    rewind: ARCANE
+    soul_harvest: SHADOW
+    king_of_beasts: NATURE
+    breath_of_sindragosa: FROST
+    final_verdict: HOLY
+    fel_blade: DECAY
+    the_wild_hunt: NATURE
+    invoke_niuzao: NATURE
+    summon_infernal: FIRE
+    deathcap: DECAY
+    celestial_alignment: ARCANE
+    elemental_overload: STORM
+    masterful_shot: STORM
+    revival: HOLY
+    final_stand: HOLY
+    berserk: BLOOD
+    evangelism: HOLY
+    last_stand: NATURE
+    avenging_wrath: HOLY
+    ascendance_flame: FIRE
+    spirit_tide: FROST
+    spectre: SHADOW
+    darkglare: DECAY
+    flourish: NATURE
+    serenity: HOLY
   # Forma = az effekt geometriája. Alapból a célzásból jön (önmagad→HELIX, célzott→BEAM, körzet→RING),
   # és egy óvatos kulcsszó-heurisztika finomítja: közelharci csapás (*_strike/_kick/_smash…)→IMPACT,
   # dobott (*_dart/_throw…)→ARC, lehelet (*_breath/roar…)→CONE. Itt spell-id szerint felül lehet írni.
@@ -222,3 +253,6 @@ display-fx:
   boss-telegraph:
     enabled: true                        # world-boss AoE padló-telegraph (növekvő, izzó veszélylap)
     material: RED_STAINED_GLASS          # a telegraph-lap blokk-anyaga (piros áttetsző ajánlott)
+  aurora:
+    enabled: true                        # északi fény: magasan lebegő, sodródó fény-fátyol (per-nézős)
+    material: CYAN_STAINED_GLASS         # a fátyol blokk-anyaga (áttetsző, hideg szín ajánlott)

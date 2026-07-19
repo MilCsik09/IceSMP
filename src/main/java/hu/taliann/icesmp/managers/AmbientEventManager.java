@@ -213,6 +213,8 @@ public final class AmbientEventManager {
                 "ambient-aurora", "&b🌌 Északi fény ragyog fel az égen — a világ egy pillanatra elcsendesedik."));
         final int seconds = Math.max(5, configManager.getInt("ambient-events.aurora-nightvision-seconds", 45));
         final int pulses = Math.max(4, configManager.getInt("ambient-events.effect-seconds", 24) / 2);
+        final int veilTicks = Math.max(80, configManager.getInt("ambient-events.effect-seconds", 24) * 20);
+        final boolean veil = configManager.getBoolean("display-fx.aurora.enabled", true);
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
             player.getScheduler().run(plugin, task -> {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, seconds * 20, 0, true, false, true));
@@ -220,7 +222,42 @@ public final class AmbientEventManager {
                 // A fény MAGASAN az égen hullámzik végig az effekt-időn át, nem a fej fölött villan.
                 pulse(player, Particle.END_ROD, 18.0D, 12.0D, 3.0D, 25, 0.01D, pulses);
                 pulse(player, Particle.SOUL_FIRE_FLAME, 20.0D, 10.0D, 2.0D, 10, 0.0D, pulses);
+                if (veil) {
+                    spawnAuroraVeil(player, veilTicks);
+                }
             }, null);
+        }
+    }
+
+    /**
+     * Aurora DisplayFx-fátyol: két magasan lebegő, áttetsző, lassan oldalra sodródó fény-lap
+     * (BlockDisplay), csak a nézőnek — a pislákoló particle mellé folytonos égi fény-fátyol.
+     * Nem-perzisztens + FX-tagelt, az effekt végén auto-despawn. A hívó a játékos szálán fut.
+     */
+    private void spawnAuroraVeil(final Player player, final int durationTicks) {
+        final Location base = player.getLocation();
+        if (base.getWorld() == null) {
+            return;
+        }
+        final String matName = configManager.getString("display-fx.aurora.material", "CYAN_STAINED_GLASS");
+        final org.bukkit.Material mat = org.bukkit.Material.matchMaterial(matName);
+        final org.bukkit.block.data.BlockData block =
+                (mat != null && mat.isBlock() ? mat : org.bukkit.Material.CYAN_STAINED_GLASS).createBlockData();
+        final float size = 30.0F;
+        final int[] glow = {0x53F0C8, 0x8A6BFF};
+        for (int i = 0; i < 2; i++) {
+            final int band = i;
+            final Location at = base.clone().add(-size / 2.0D + band * 4.0D, 22.0D + band * 3.0D, -size / 2.0D);
+            hu.taliann.icesmp.utils.DisplayFxUtil.spawnBlockDisplay(plugin, at, block, durationTicks + 20, display -> {
+                display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(size, 0.2F, size));
+                display.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
+                display.setViewRange(4.0F);
+                display.setGlowing(true);
+                display.setGlowColorOverride(org.bukkit.Color.fromRGB(glow[band]));
+                hu.taliann.icesmp.utils.DisplayFxUtil.showOnlyTo(plugin, display, player);
+                hu.taliann.icesmp.utils.DisplayFxUtil.driftHorizontal(plugin, display, size, 0.2F,
+                        band == 0 ? 6.0F : -5.0F, 3.0F, durationTicks);
+            });
         }
     }
 
