@@ -538,6 +538,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         — pl. `dark:` — is megadható).
   - [ ] Építés/robbanás/tűz tiltott az arénában, ajtó/oltár interakció szabad; claim nem rakható.
   - [ ] Minden kulcs élőben olvasódik → `/icesmp reload` után restart nélkül él.
+- [ ] **K10 Feketepiac + Caldestera törvényei (ÚJ):** rakj ki `feketepiac` nevű bolt-NPC-t a
+      Botera-negyedbe → Csontveretért árulja a két csempész-árut. **Fegyvertilalom:** a NEUTRAL
+      fővárosban nyílt fegyverrel a kézben az őrség elrakatja (inventoryba kerül, action-bar);
+      a **Bokic-menti Sétapálca** (bot!) átcsúszik — közelharcban +5 flat sebzés
+      (`signature.setapalca.bonus-damage`). **Körözött-kapu:** vérdíjas játékost a határon
+      visszafordít; **Hamisított Menlevéllel** a zsebében beengedi. Kulcsok:
+      `territory.capital-law.*`; a bolt-áru name/lore/signature mezőit a ShopManager stampeli.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

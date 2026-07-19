@@ -1092,6 +1092,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpellDamageListener(configManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CapitalLawListener(plugin, configManager, territoryManager, sinManager, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);

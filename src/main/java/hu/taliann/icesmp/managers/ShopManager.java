@@ -193,7 +193,7 @@ public final class ShopManager {
 
         // The price is now burned (never credited) — this is the money sink.
         final int amount = getAmount(item);
-        final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(new ItemStack(material, amount));
+        final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(buildShopItem(item, material, amount));
         leftovers.values().forEach(left -> buyer.getWorld().dropItemNaturally(buyer.getLocation(), left));
 
         buyer.sendMessage(messageManager.get(
@@ -202,5 +202,47 @@ public final class ShopManager {
                 material.name(), amount, currencyManager.formatBalance(price), currency.getDisplayName()
         ));
         return null;
+    }
+
+    /**
+     * A megvásárolt tárgy felépítése: sima material, VAGY — ha a bolt-item configja kéri —
+     * nevesített/lore-os/signature-tagelt különleges áru (K10 feketepiac: Sétapálca, Menlevél).
+     * Config-mezők az item-szekción: name (legacy &-kódokkal), lore (lista), signature
+     * (PDC-id — a SignatureItemListener perk-kulcsa; ugyanaz a tag, mint a recept-motoré).
+     */
+    private ItemStack buildShopItem(final ConfigurationSection item, final Material material, final int amount) {
+        final ItemStack stack = new ItemStack(material, amount);
+        final String name = item.getString("name", "");
+        final java.util.List<String> lore = item.getStringList("lore");
+        final String signature = item.getString("signature", "");
+        if (name.isBlank() && lore.isEmpty() && signature.isBlank()) {
+            return stack;
+        }
+        final org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return stack;
+        }
+        final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacy =
+                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
+        if (!name.isBlank()) {
+            meta.displayName(legacy.deserialize(name)
+                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+        }
+        if (!lore.isEmpty()) {
+            final java.util.List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+            for (final String line : lore) {
+                lines.add(legacy.deserialize(line)
+                        .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            }
+            meta.lore(lines);
+        }
+        if (!signature.isBlank()) {
+            meta.getPersistentDataContainer().set(
+                    org.bukkit.NamespacedKey.fromString("icesmp:signature_item"),
+                    org.bukkit.persistence.PersistentDataType.STRING, signature);
+        }
+        stack.setItemMeta(meta);
+        return stack;
     }
 }

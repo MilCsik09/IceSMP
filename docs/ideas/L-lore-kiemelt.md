@@ -281,7 +281,7 @@ unique-itemek (K5).
 > csatorna + tanú-vád, gyanú-források (árulás/rítus/vád) + decay, leleplezés-dráma → bűnök → a
 > meglévő száműzetés-pipeline a Kitaszítottak közé visz. Minden kulcs: factions.whisper.*.
 
-### K10. Caldestera feketepiac — csempészet és rejtett fegyverek
+### K10. Caldestera feketepiac — csempészet és rejtett fegyverek `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐
 
 **Mi ez:** Caldesterában **tilos fegyvert viselni** (a semleges főváros szabálya) → a **Botera-negyed**
@@ -302,6 +302,11 @@ mintára), PDC-kivétel-tag, feketepiac-NPC/bolt (`ShopManager`), `CraftingRestr
 **Buktatók:** Előfeltétel a fegyver-elkobzó zóna léte (különben a „rejtett" nincs mihez képest);
 a kivétel-tag ne legyen általánosan másolható; a Menlevél ne kerülje meg a valódi bant, csak a
 lore-kaput.
+
+> **Megvalósítva:** CapitalLawListener — fegyvertilalom a NEUTRAL fővárosban (az őrség
+> elrakatja a nyílt fegyvert; a Sétapálca bot, átcsúszik, de +5 sebzést rejt) + körözött-kapu
+> (vérdíjast visszafordít, Menlevéllel nem); feketepiac-bolt (Csontveretért), a ShopManager
+> name/lore/signature-áru támogatással bővült. Kulcsok: territory.capital-law.*.
 
 ---
 

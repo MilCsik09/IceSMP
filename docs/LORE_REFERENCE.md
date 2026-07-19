@@ -78,8 +78,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 - **✅ K9 — Suttogók (KÉSZ):** rejtett státusz a látható frakció fölött — Sötét Rítus
   (Suttogás-meghívó, éjjel/sculk/egyedül/vér-ár), /suttogas titkos csatorna + tanú-vád,
   gyanú→leleplezés→bűn→száműzetés a meglévő pipeline-on (`factions.whisper.*`).
-- **🔜 K10 — Caldestera feketepiac:** rejtett fegyverek (Bokic-menti Sétapálca, Hamisított Menlevél);
-  előfeltétel a fegyver-elkobzó zóna a semleges fővárosban.
+- **✅ K10 — Caldestera feketepiac (KÉSZ):** fegyvertilalom + körözött-kapu a NEUTRAL
+  fővárosban (CapitalLawListener); Botera-negyed feketepiac-bolt Csontveretért — Bokic-menti
+  Sétapálca (rejtett penge) és Hamisított Menlevél (`territory.capital-law.*`).
 - **🔜 Mortengrad megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben
   magas-veszélyű PvE rom-zóna, K5-loot forrás és a K9 Suttogó-oltár helye.
 

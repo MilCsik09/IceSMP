@@ -94,6 +94,34 @@ market:
 # vagy egy frakció-név = csak annak tagjai.
 faction-shops:
   enabled: true
+  # K10 — a Botera-negyed feketepiaca (Caldestera alvilága). NPC-név: feketepiac.
+  # Csontveretben fizetsz (a Csontszámvevő pénze — a feketepiac az ő hálózata); az áru
+  # nevesített, signature-tagelt (a name/lore/signature mezőket a ShopManager stampeli).
+  feketepiac:
+    title: "Botera-negyed — Feketepiac"
+    faction: "ALL"
+    items:
+      1:
+        material: "STICK"
+        amount: 1
+        price: 400
+        currency: "DARK"
+        name: "&6Bokic-menti Sétapálca"
+        lore:
+          - "&7Úri bot a Bokic-part sétányairól."
+          - "&7Az őrség botot lát. A penge nem ért egyet."
+        signature: "botera_setapalca"
+      2:
+        material: "PAPER"
+        amount: 1
+        price: 600
+        currency: "DARK"
+        name: "&fHamisított Menlevél"
+        lore:
+          - "&7A Bankárszövetség pecsétje. Majdnem."
+          - "&7A kapuőr nem nézi meg kétszer."
+          - "&8Amíg nálad van, a körözött is beléphet Caldesterába."
+        signature: "hamisitott_menlevel"
   altalanos_bolt:
     title: "Általános Bolt"
     faction: "ALL"

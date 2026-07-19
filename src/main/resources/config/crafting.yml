@@ -92,6 +92,9 @@ signature:
     verszomj-heal-cap: 2.0       # …de ütésenként legfeljebb ennyi HP (1 szív)
     erc-erzek-xp: 2              # Érc-érzék: bónusz XP-gömb érc-törésnél
     bokic-luck-seconds: 30       # Bokic Kegye: fogáskor rövid Szerencse (jobb zsákmánytábla)
+  # K10 — Bokic-menti Sétapálca (feketepiac): a rejtett penge flat bónusz-sebzése.
+  setapalca:
+    bonus-damage: 5.0
   # Cryghaliris (BLUE)
   kallan:
     arrow-velocity-mult: 1.5   # a nyíl sebesség-szorzója

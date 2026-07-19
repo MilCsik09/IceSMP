@@ -145,7 +145,15 @@ public final class SignatureItemListener implements Listener {
         // Közelharc: a támadó és az áldozat ütés-távolságon belül van — Folián ez azonos régiót
         // jelent (a kereszt-régió kockázat a távolsági/projectile esetekre áll), a felszerelés-
         // olvasás itt biztonságos.
-        if (!AGYAR.equals(idOf(attacker.getInventory().getItemInMainHand()))) {
+        final String meleeSig = idOf(attacker.getInventory().getItemInMainHand());
+        // K10 — Bokic-menti Sétapálca: bot, amiben penge lakik. Caldestera fegyvertilalma a
+        // botot nem látja — a rejtett penge viszont fegyverként üt (flat bónusz a bot-alapra).
+        if (hu.taliann.icesmp.listeners.CapitalLawListener.SETAPALCA.equals(meleeSig)) {
+            final double bonus = Math.max(0.0D, configManager.getDouble("signature.setapalca.bonus-damage", 5.0D));
+            event.setDamage(event.getDamage() + bonus);
+            return;
+        }
+        if (!AGYAR.equals(meleeSig)) {
             return;
         }
         final boolean offhandAxe = attacker.getInventory().getItemInOffHand().getType().name().endsWith("_AXE");

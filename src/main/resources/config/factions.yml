@@ -259,6 +259,16 @@ territory:
     # Belépéskor ennyi másodperc PvP-védelem jár (spawn-kill ellen); aki maga támad,
     # azonnal elveszti. 0 = nincs belépő-védelem.
     entry-grace-seconds: 8
+  # ===== Caldestera városi törvényei (K10 — a NEUTRAL főváros zónájában) =====
+  # weapon-ban: nyílt fegyver (kard/balta/szigony/íj/számszeríj/buzogány) kézben tartása
+  # tilos — az őrség elrakatja (az inventoryba kerül, nem vész el). A Bokic-menti
+  # Sétapálca bot, a szabály nem látja — ez a feketepiac kiskapuja.
+  # wanted-ban: a körözött (vérdíjas) játékost a határon visszafordítja az őrség,
+  # hacsak nincs nála Hamisított Menlevél (feketepiac-áru). Élőben olvasódik.
+  capital-law:
+    enabled: true
+    weapon-ban: true
+    wanted-ban: true
   # ===== Zóna mob-szabályok (mob-rules) =====
   # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
   #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital
