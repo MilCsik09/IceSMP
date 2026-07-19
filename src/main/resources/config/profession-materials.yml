@@ -17,6 +17,15 @@
 #     custom-model-data: <egyedi CMD>
 #     lore: [ "<sor>", ... ]
 profession-materials:
+  # --- K9: Suttogás-meghívó (a Sötét Rítus kulcsa — éjjel, sculkon, magányosan, SHIFT+jobb katt) ---
+  suttogas_meghivo:
+    material: ECHO_SHARD
+    display-name: "&5Suttogás"
+    custom-model-data: 6015
+    lore:
+      - "&7Egy hang, amit csak te hallasz. Hívás,"
+      - "&7amit nem lehet visszautasítani — csak követni."
+      - "&8Éjjel, a mélység sötétjén (sculk), egyedül…"
   # --- K8: Emlékszilánk (a Felsők elveszett emlékei — beváltás: /emlek) ---
   emlekszilank:
     material: AMETHYST_SHARD

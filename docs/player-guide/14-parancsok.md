@@ -50,6 +50,8 @@ jelenti, hogy **elhagyható**.
 | `/spec list` / `/spec choose <id>` | `specialization`, `specializacio` | Specializációk |
 | `/spec respec <class\|profession>` | | Specializáció visszaváltása |
 | `/talent` / `/talent spend <class\|profession> <talent>` | `talents`, `talentfa` | Talentek |
+| `/emlek` / `/emlek xp\|talent\|spec\|lore` | `memory`, `emlekek` | Emlékszilánk-beváltás: kaszt-XP / talentpont / spec-kapu / emlék-töredék |
+| `/suttogas <üzenet>` / `/suttogas vad <játékos>` | `sutt` | A Suttogók titkos csatornája / tanú-vád (K9) |
 | `/profession join <szakma>` / `/profession info` | `prof`, `szakma` | Szakmák |
 | `/profession recipes` | `prof`, `szakma` | **Recept-könyv** — tanult/zárolt receptek, 1 kattintásos craft |
 | `/class givecatalyst` | `kaszt`, `job` | Elveszett Lélekkapocs pótlása |

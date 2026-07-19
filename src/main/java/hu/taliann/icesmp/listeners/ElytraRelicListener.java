@@ -80,10 +80,15 @@ public final class ElytraRelicListener implements Listener {
                 player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 25, 0.4D, 0.4D, 0.4D, 0.02D);
             }
             case "frost_wing" -> {
+                // Folia: a közeli entitás szomszéd régióé is lehet — csak birtokolt entitást
+                // érintünk közvetlenül, a többihez scheduler-hop (audit-javítás).
                 for (final Entity nearby : player.getWorld().getNearbyEntities(player.getLocation(), 6.0D, 6.0D, 6.0D)) {
                     if (nearby instanceof LivingEntity living && nearby != player) {
-                        living.setFreezeTicks(Math.max(living.getFreezeTicks(), 200));
-                        living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 4 * 20, 1, false, true, true));
+                        if (org.bukkit.Bukkit.isOwnedByCurrentRegion(living)) {
+                            freezeTarget(living);
+                        } else {
+                            living.getScheduler().run(plugin, task -> freezeTarget(living), null);
+                        }
                     }
                 }
                 player.getWorld().spawnParticle(Particle.SNOWFLAKE, player.getLocation(), 24, 2.5D, 0.8D, 2.5D, 0.02D);
@@ -150,9 +155,15 @@ public final class ElytraRelicListener implements Listener {
                 if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
                     event.setCancelled(true);
                     // Phoenix landing: a burst of flame ignites nearby enemies.
+                    // Folia: idegen régió entitásához scheduler-hop (audit-javítás).
                     for (final Entity nearby : player.getWorld().getNearbyEntities(player.getLocation(), 4.0D, 2.0D, 4.0D)) {
                         if (nearby instanceof LivingEntity living && nearby != player) {
-                            living.setFireTicks(Math.max(living.getFireTicks(), 60));
+                            if (org.bukkit.Bukkit.isOwnedByCurrentRegion(living)) {
+                                living.setFireTicks(Math.max(living.getFireTicks(), 60));
+                            } else {
+                                living.getScheduler().run(plugin, task ->
+                                        living.setFireTicks(Math.max(living.getFireTicks(), 60)), null);
+                            }
                         }
                     }
                     player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 30, 1.8D, 0.5D, 1.8D, 0.05D);
@@ -240,6 +251,39 @@ public final class ElytraRelicListener implements Listener {
         }
 
         return definition.id().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** A frost-nova cél-effektje (a cél SAJÁT régió-szálán fut). */
+    private static void freezeTarget(final LivingEntity living) {
+        living.setFreezeTicks(Math.max(living.getFreezeTicks(), 200));
+        living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 4 * 20, 1, false, true, true));
+    }
+
+    /**
+     * Audit-javítás: a szárny konténerből (láda/hopper) sem vehető ki idegen frakció által —
+     * a földi pickup-tiltás párja. A saját inventoryn belüli mozgatást nem érinti.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onContainerTake(final org.bukkit.event.inventory.InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)
+                || event.getClickedInventory() == null
+                || event.getClickedInventory() == player.getInventory()) {
+            return;
+        }
+        final RelicDefinition definition = relicManager.identify(event.getCurrentItem());
+        if (definition == null) {
+            return;
+        }
+        final FactionType wingFaction = WING_FACTIONS.get(definition.id().toLowerCase(java.util.Locale.ROOT));
+        if (wingFaction == null || factionManager.getFaction(player.getUniqueId()) == wingFaction
+                || !configManager.getBoolean("relics.wings.faction-locked-pickup", true)) {
+            return;
+        }
+        event.setCancelled(true);
+        player.sendActionBar(messageManager.getMessage(
+                "relic.wing-pickup-rejected",
+                "<red>A(z) {faction} szárnya megperzseli az idegen kezét — nem emelheted fel.</red>",
+                Map.of("faction", wingFaction.getDisplayName())));
     }
 
     private boolean isNight(final Player player) {

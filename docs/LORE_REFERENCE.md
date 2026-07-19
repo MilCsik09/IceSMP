@@ -75,9 +75,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 - **✅ K8 — Emlékszilánkok (KÉSZ):** Opálos Emlékszilánk (mob/boss-loot) + `/emlek` beváltó —
   kaszt-XP / +1 talentpont / spec szint-kapu feloldás / emlék-töredék. Class-váltás NINCS
   (a kaszt állandó — kánon); költségek: `memory-shards.*`.
-- **🔜 K9 — Suttogók (hibrid):** Suttogó = rejtett STÁTUSZ a látható frakció fölött; lelepleződés
-  (közterületi sötét mágia, rajtakapott rítus/árulás, tanú-vád) → átváltás a `DARK` Kitaszítottak közé
-  (bűn + vérdíj). Részletes terv: [ideas/L-lore-kiemelt.md → K9](ideas/L-lore-kiemelt.md).
+- **✅ K9 — Suttogók (KÉSZ):** rejtett státusz a látható frakció fölött — Sötét Rítus
+  (Suttogás-meghívó, éjjel/sculk/egyedül/vér-ár), /suttogas titkos csatorna + tanú-vád,
+  gyanú→leleplezés→bűn→száműzetés a meglévő pipeline-on (`factions.whisper.*`).
 - **🔜 K10 — Caldestera feketepiac:** rejtett fegyverek (Bokic-menti Sétapálca, Hamisított Menlevél);
   előfeltétel a fegyver-elkobzó zóna a semleges fővárosban.
 - **🔜 Mortengrad megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben

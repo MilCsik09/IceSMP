@@ -153,7 +153,8 @@ public final class RelicCommand implements BasicCommand {
 
         // Folia: giveRelic writes the target's inventory — run it on the target's region thread.
         target.getScheduler().run(plugin, task -> {
-            if (!relicManager.giveRelic(target, args[2], amount)) {
+            // Admin-give: force — a singleton-őr megkerülése (pl. lávában elveszett relikvia pótlása).
+            if (!relicManager.giveRelic(target, args[2], amount, true)) {
                 sender.sendMessage(messageManager.get("messages.relic-give-failed", "&cNem sikerült relikviát adni (talán már létezik egy aktív példány)."));
                 return;
             }

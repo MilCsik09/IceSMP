@@ -212,7 +212,7 @@ a szilánk-gazdaság inflálódhat; egyértelmű UI kell a „hány szilánk kel
 > szint-kapuja elesik, egyszeri), lore (1→emlék-töredék). Class-váltás NINCS (kánon szerint).
 > Költségek: `memory-shards.*` (general.yml), élőben olvasva.
 
-### K9. A Suttogók — a rejtett hálózat és a Kitaszítottak (hibrid)
+### K9. A Suttogók — a rejtett hálózat és a Kitaszítottak (hibrid) `[KÉSZ ✅]`
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A lore „titkos szekta" koncepciójának és a kód „bűnözői száműzetés" (`DARK`) mechanikájának
@@ -275,6 +275,11 @@ unique-itemek (K5).
 - **Anti-grief/moderáció:** a „Tanú"-vád ne legyen tömegesen hamisítható (cooldown, valódi látótáv, a
   vád csak gyanút ad, nem azonnali bant); a vérdíj/lebukás féken tartja a titkos előnyt.
 - **Config:** minden küszöb (gyanú-súlyok, HP-áldozat, grace, broadcast on/off) configból.
+
+> **Megvalósítva:** WhisperManager (PDC-flag + suspicion + Tanú-tokenek, PlayerStateCleanup) —
+> Sötét Rítus (meghívó-item, éjjel/sculk/egyedül/vér-ár, rajtakapva meghiúsul), /suttogas titkos
+> csatorna + tanú-vád, gyanú-források (árulás/rítus/vád) + decay, leleplezés-dráma → bűnök → a
+> meglévő száműzetés-pipeline a Kitaszítottak közé visz. Minden kulcs: factions.whisper.*.
 
 ### K10. Caldestera feketepiac — csempészet és rejtett fegyverek
 **Munka:** 🟡 • **Érték:** ⭐⭐

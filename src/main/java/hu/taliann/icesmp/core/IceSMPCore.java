@@ -214,6 +214,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
+    private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
     private final EconomyEventManager economyEventManager;
@@ -293,6 +294,7 @@ public final class IceSMPCore {
         this.spellMasteryManager = new SpellMasteryManager(plugin, configManager, currencyManager, factionManager);
         this.relicManager = new RelicManager(plugin, configManager);
         this.sinManager = new SinManager(plugin, configManager, messageManager, factionManager);
+        this.whisperManager = new hu.taliann.icesmp.managers.WhisperManager(plugin, configManager, factionManager, sinManager, messageManager);
         this.metelytepoManager = new MetelytepoManager(plugin, sinManager);
         this.minionManager = new MinionManager(plugin);
         this.totemManager = new hu.taliann.icesmp.managers.TotemManager(plugin, configManager);
@@ -437,6 +439,7 @@ public final class IceSMPCore {
                 afkManager,
                 sitManager,
                 moderationManager,
+                whisperManager,
                 spellRegistry
         );
 
@@ -898,6 +901,7 @@ public final class IceSMPCore {
                     escortManager.tick();
                     meteorEventManager.tick();
                     factionFoodListener.tick();
+                    whisperManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -1029,6 +1033,8 @@ public final class IceSMPCore {
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager));
         plugin.registerCommand("emlek", "Emlékszilánk-beváltás (visszaemlékezés)", List.of("memory", "emlekek"),
                 new hu.taliann.icesmp.commands.MemoryCommand(configManager, jobManager, talentManager, specializationManager, uniqueMaterialFactory, messageManager));
+        plugin.registerCommand("suttogas", "A Suttogók titkos csatornája és tanú-vád", List.of("sutt"),
+                new hu.taliann.icesmp.commands.WhisperCommand(plugin, configManager, whisperManager, messageManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -1075,6 +1081,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(factionFoodListener, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);

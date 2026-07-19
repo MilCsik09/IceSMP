@@ -360,9 +360,73 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             }
 
             final UUID itemOwner = itemFactory.getOwner(itemStack);
-            if (itemOwner == null || itemOwner.equals(playerId)) {
+            // Audit-javítás: a központi tulajdonjogot csak akkor frissítjük, ha az üres, lejárt,
+            // vagy MÁR EZÉ a játékosé — egy másik, aktív tulajdonos jogát egy régi (halott)
+            // példány belépése nem írhatja felül (ownership-eltérítés).
+            if ((itemOwner == null || itemOwner.equals(playerId))
+                    && (ownership == null || ownership.owner().equals(playerId) || isExpired(ownership))) {
                 ownerships.put(relicId, new RelicOwnership(playerId, now));
                 ownershipChanged = true;
+            }
+        }
+
+        // Audit-javítás: a VISELT páncél (a 6 relikviából 4 elytra!) és az offhand is része a
+        // sweepnek — korábban a getContents() csak a 36 fő slotot látta, így a viselt szárny
+        // sosem évült el, nem frissült és a dedup sem érte el.
+        final ItemStack[] armor = inventory.getArmorContents();
+        boolean armorChanged = false;
+        for (int slot = 0; slot < armor.length; slot++) {
+            final ItemStack itemStack = armor[slot];
+            final RelicDefinition definition = identify(itemStack);
+            if (definition == null) {
+                continue;
+            }
+            final String relicId = definition.id().toLowerCase(Locale.ROOT);
+            final RelicOwnership ownership = ownerships.get(relicId);
+            if (isExpired(ownership)) {
+                armor[slot] = null;
+                armorChanged = true;
+                ownerships.remove(relicId);
+                ownershipChanged = true;
+                playExpiryEffect(player);
+                sendExpiryMessage(player, definition);
+                continue;
+            }
+            if (!seenRelics.add(relicId)) {
+                armor[slot] = null;
+                armorChanged = true;
+                continue;
+            }
+            final UUID itemOwner = itemFactory.getOwner(itemStack);
+            if ((itemOwner == null || itemOwner.equals(playerId))
+                    && (ownership == null || ownership.owner().equals(playerId) || isExpired(ownership))) {
+                ownerships.put(relicId, new RelicOwnership(playerId, now));
+                ownershipChanged = true;
+            }
+        }
+        if (armorChanged) {
+            inventory.setArmorContents(armor);
+        }
+        final ItemStack offhand = inventory.getItemInOffHand();
+        final RelicDefinition offhandDefinition = identify(offhand);
+        if (offhandDefinition != null) {
+            final String relicId = offhandDefinition.id().toLowerCase(Locale.ROOT);
+            final RelicOwnership ownership = ownerships.get(relicId);
+            if (isExpired(ownership)) {
+                inventory.setItemInOffHand(null);
+                ownerships.remove(relicId);
+                ownershipChanged = true;
+                playExpiryEffect(player);
+                sendExpiryMessage(player, offhandDefinition);
+            } else if (!seenRelics.add(relicId)) {
+                inventory.setItemInOffHand(null);
+            } else {
+                final UUID itemOwner = itemFactory.getOwner(offhand);
+                if ((itemOwner == null || itemOwner.equals(playerId))
+                        && (ownership == null || ownership.owner().equals(playerId) || isExpired(ownership))) {
+                    ownerships.put(relicId, new RelicOwnership(playerId, now));
+                    ownershipChanged = true;
+                }
             }
         }
 
@@ -410,10 +474,14 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         return itemFactory.create(definition, owner);
     }
 
+    public synchronized boolean giveRelic(final Player player, final String relicId, final int amount) {
+        return giveRelic(player, relicId, amount, false);
+    }
+
     // synchronized: the singleton-ownership check and recordOwnership must be atomic, or two
     // concurrent grants (two altars / altar + admin give) could both pass the check and
     // duplicate a supposedly unique relic.
-    public synchronized boolean giveRelic(final Player player, final String relicId, final int amount) {
+    public synchronized boolean giveRelic(final Player player, final String relicId, final int amount, final boolean force) {
         if (!enabled || amount <= 0) {
             return false;
         }
@@ -425,8 +493,11 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
         final String normalizedId = definition.id().toLowerCase(Locale.ROOT);
         final RelicOwnership currentOwnership = ownerships.get(normalizedId);
-        if (currentOwnership != null && !currentOwnership.owner().equals(player.getUniqueId()) && !isExpired(currentOwnership)) {
-            // Singleton rule: only one instance of each relic may exist while its owner is active.
+        if (!force && currentOwnership != null && !isExpired(currentOwnership)) {
+            // Singleton rule: while ANY active owner exists — the requester included — no new
+            // copy may be minted. A self-re-summon would otherwise duplicate a usable relic
+            // (audit: the old check only blocked FOREIGN owners). A destroyed/lost item is
+            // recovered via the inactivity expiry or an admin force-give.
             return false;
         }
 
@@ -494,8 +565,12 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             return false;
         }
 
+        // Az explicit ÜRES lista tiszteletben tartva (= egyik relikvia sem cserél gazdát PvP-ben);
+        // a default csak akkor él, ha a kulcs egyáltalán nincs kiírva a configban.
         final List<String> configured = configManager.getStringList("relics.weapon-relics");
-        final List<String> effective = configured.isEmpty() ? List.of("metelytepo") : configured;
+        final boolean keySet = configManager.getConfiguration() != null
+                && configManager.getConfiguration().isSet("relics.weapon-relics");
+        final List<String> effective = configured.isEmpty() && !keySet ? List.of("metelytepo") : configured;
         return effective.stream().anyMatch(id -> id.equalsIgnoreCase(relicId));
     }
 
@@ -594,6 +669,27 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
         if (changed) {
             inventory.setContents(contents);
+        }
+
+        // Audit-javítás: a viselt páncél és az offhand relikviái is frissülnek (a szárnyak
+        // jellemzően a mellvért-slotban élnek — korábban sosem kaptak kozmetikai frissítést).
+        final ItemStack[] armor = inventory.getArmorContents();
+        boolean armorChanged = false;
+        for (final ItemStack itemStack : armor) {
+            final RelicDefinition definition = identify(itemStack);
+            if (definition != null) {
+                itemFactory.refresh(itemStack, definition);
+                armorChanged = true;
+            }
+        }
+        if (armorChanged) {
+            inventory.setArmorContents(armor);
+        }
+        final ItemStack offhand = inventory.getItemInOffHand();
+        final RelicDefinition offhandDefinition = identify(offhand);
+        if (offhandDefinition != null) {
+            itemFactory.refresh(offhand, offhandDefinition);
+            inventory.setItemInOffHand(offhand);
         }
     }
 
