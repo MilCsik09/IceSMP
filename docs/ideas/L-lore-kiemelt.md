@@ -103,7 +103,7 @@ tárgy-hordozott, kis állandó bónusz); a Bankbetét a bank/valuta-rendszerhez
 **Buktatók:** A +20% loot ne legyen stackelhető a gathering-buff eseménnyel korlátlanul (sapka);
 a Bankbetét ne legyen dupe-olható (PDC-egyediség + atomi beváltás).
 
-### K5. Káoszkor / Néma Királynő élőhalott-loot
+### K5. Káoszkor / Néma Királynő élőhalott-loot `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A frakció nélküli portyázó élőhalottak és ősi romok drop-katalógusa: **A Hetedik Vérháború

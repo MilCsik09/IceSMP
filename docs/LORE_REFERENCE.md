@@ -106,10 +106,10 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Asterlayna Gyümölcse | NEUTRAL | süti (K6) | robbanó csemege perk |
 | Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | bank-item, atomi beváltás |
 | Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | pet/hátas-rendszer |
-| Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | fegyver-drop |
+| Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |
 | Fekete Villám Szilánk | DARK/közös | crafting-alapanyag (K5) | ✅ implementálva: `profession-materials.osi_ereklyeszilank` display; magas-tier receptek hozzávalója |
-| Eleftheria Könnye | DARK/közös | relikvia (K5) | `RelicManager`, egy-példányos |
-| Megrontott Elit Páncél / Fekete Csont / A Néma Királynő suttogása | DARK/közös | mob-drop (K5) | drop-tábla tétel |
+| Eleftheria Könnye | DARK/közös | relikvia (K5) | ✅ implementálva: egy-példányos relikvia + DARK-kapus rituálé-oltár (relics.yml) |
+| Megrontott Elit Páncél / Fekete Csont / A Néma Királynő suttogása | DARK/közös | mob-drop (K5) | Elit Páncél ✅ (undead-only named drop); Fekete Csont / suttogása → későbbi drop-bővítés |
 | Csontveret | DARK | valuta | a DARK valuta display-neve (K1 reskin) |
 
 > **A Mélység Népe (törpök) — ✅ kanonizálva** (kódex I. fejezet): Asterlayna testének mélybe süllyedt

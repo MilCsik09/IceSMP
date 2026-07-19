@@ -12,7 +12,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +27,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * the {@code boss} tier, on par with profession crafts. Config: {@code loot} (loot.yml).
  */
 public final class MobLootListener implements Listener {
+
+    private static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY =
+            net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
 
     private final ConfigManager configManager;
     private final ItemRarityService affixService;
@@ -81,7 +86,7 @@ public final class MobLootListener implements Listener {
             return;
         }
 
-        final ItemStack drop = rollTable(path, tier);
+        final ItemStack drop = rollTable(path, tier, entity);
         if (drop != null) {
             event.getDrops().add(drop);
         }
@@ -94,9 +99,18 @@ public final class MobLootListener implements Listener {
      * material {@code id} — including mob-only ones that recipes need). Falls back to the gear-pool
      * when no table is configured.
      */
-    private ItemStack rollTable(final String path, final String tier) {
-        final List<Map<?, ?>> table = configManager.getConfiguration() == null
+    private ItemStack rollTable(final String path, final String tier, final LivingEntity source) {
+        final List<Map<?, ?>> raw = configManager.getConfiguration() == null
                 ? List.of() : configManager.getConfiguration().getMapList(path + ".table");
+        // K5: az 'undead-only: true' sorok csak élőhalott forrásból eshetnek (Káoszkor-loot).
+        final List<Map<?, ?>> table = new ArrayList<>();
+        for (final Map<?, ?> entry : raw) {
+            if (Boolean.parseBoolean(String.valueOf(entry.get("undead-only")))
+                    && !hu.taliann.icesmp.utils.UndeadUtil.isUndead(source)) {
+                continue;
+            }
+            table.add(entry);
+        }
         if (table.isEmpty()) {
             final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
             return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
@@ -133,6 +147,32 @@ public final class MobLootListener implements Listener {
                 final int max = Math.max(min, toInt(chosen.get("max"), min));
                 return uniqueMaterials.create(String.valueOf(chosen.get("id")),
                         min + ThreadLocalRandom.current().nextInt(max - min + 1));
+            }
+            // K5: nevesített Káoszkor-drop — tervezett név+lore, a rarity-motor a nevet megtartja
+            // (prefixeli a raritással) és affixeket ad rá.
+            case "named" -> {
+                final Material material = Material.matchMaterial(String.valueOf(chosen.get("item")).toUpperCase(Locale.ROOT));
+                if (material == null || material.isAir()) {
+                    return null;
+                }
+                final ItemStack item = new ItemStack(material);
+                final ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    meta.displayName(LEGACY.deserialize(String.valueOf(chosen.get("name")))
+                            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                    final Object loreObj = chosen.get("lore");
+                    if (loreObj instanceof List<?> lines) {
+                        final List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
+                        for (final Object line : lines) {
+                            lore.add(LEGACY.deserialize(String.valueOf(line))
+                                    .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                        }
+                        meta.lore(lore);
+                    }
+                    item.setItemMeta(meta);
+                }
+                return affixService.roll(item, tier, false);
             }
             default -> {
                 final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));

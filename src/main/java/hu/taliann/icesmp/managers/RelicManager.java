@@ -122,6 +122,16 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 "WHITE",
                 List.of("&7Ryanora & Caldestera szabad szele,", "&7Arkynn békés örökségének fuvallata.", "&7Gyorsabb sikló, és a föld", "&7sosem üti meg viselőjét.")
         );
+        // K5: Eleftheria Könnye — misztikus, egy-példányos gyűjtő-relikvia (nincs aktív képessége;
+        // a Néma Királynő-lore hordozója, rituálé/admin úton szerezhető).
+        registerRelic(
+                "eleftheria_konnye",
+                Material.HEART_OF_THE_SEA,
+                4205,
+                "Eleftheria Könnye",
+                "DARK_PURPLE",
+                List.of("&7Megkövült, éjfekete csepp; a Néma Királynő", "&7első suttogása hozta létre, magába zárva", "&7a Fa kínjait és a magányt.")
+        );
         registerRelic(
                 "bone_wing",
                 Material.ELYTRA,

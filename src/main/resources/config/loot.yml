@@ -40,6 +40,9 @@ loot:
       - { type: unique, weight: 18, id: vad_esszencia, min: 1, max: 2 }
       - { type: unique, weight: 8,  id: szorny_mag, min: 1, max: 1 }
       - { type: unique, weight: 5,  id: arnyekpor, min: 1, max: 2 }
+      # --- K5: Káoszkor-loot — CSAK élőhalott forrásból esik (undead-only) ---
+      - { type: named, weight: 5, undead-only: true, item: IRON_SWORD, name: "&8A Hetedik Vérháború Rozsdás Pengéje", lore: [ "&7Egykor I. Benedictus vagy I. Lineata seregéé;", "&7ma csak Eleftheria néma haragja hajtja." ] }
+      - { type: named, weight: 4, undead-only: true, item: CHAINMAIL_CHESTPLATE, name: "&8Megrontott Elit Páncél", lore: [ "&7Az eltűnt nemesek dicsőségének maradványa;", "&7a sötét mágia védi oszladozó viselőjét." ] }
   # Ritka tervrajz-drop: egy blueprint-recept (profession-recipes learn: blueprint) megtanulására.
   blueprint-drop:
     chance: 0.002       # sima szörny: 0.2%
@@ -53,3 +56,6 @@ loot:
       - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 3 }
       - { type: material, weight: 6, item: NETHERITE_SCRAP, min: 1, max: 2 }
       - { type: material, weight: 4, item: DIAMOND, min: 2, max: 5 }
+      # --- K5: Káoszkor-loot boss-szinten (élőhalott boss/event-mobból) ---
+      - { type: named, weight: 5, undead-only: true, item: IRON_SWORD, name: "&8A Hetedik Vérháború Rozsdás Pengéje", lore: [ "&7Egykor I. Benedictus vagy I. Lineata seregéé;", "&7ma csak Eleftheria néma haragja hajtja." ] }
+      - { type: named, weight: 4, undead-only: true, item: CHAINMAIL_CHESTPLATE, name: "&8Megrontott Elit Páncél", lore: [ "&7Az eltűnt nemesek dicsőségének maradványa;", "&7a sötét mágia védi oszladozó viselőjét." ] }

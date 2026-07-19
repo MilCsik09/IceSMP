@@ -53,6 +53,13 @@ relics:
         - "&7Arkynn békés örökségének fuvallata."
         - "&7Gyorsabb sikló, és a föld"
         - "&7sosem üti meg viselőjét."
+    eleftheria_konnye:
+      display-name: "Eleftheria Könnye"
+      display-color: "&5"
+      lore:
+        - "&7Megkövült, éjfekete csepp; a Néma Királynő"
+        - "&7első suttogása hozta létre, magába zárva"
+        - "&7a Fa kínjait és a magányt."
     bone_wing:
       display-name: "Csontszárny"
       display-color: "&8"
@@ -77,6 +84,47 @@ relics:
 # ('*_szentely') tematikus buffot adnak a saját kasztjuknak — másold/hangold őket kedvedre.
 # cooldown-seconds: az ismétlés korlátja (memóriában, újraindításkor nullázódik).
 rituals:
+  eleftheria_konnye:
+    altar-block: "CRYING_OBSIDIAN"
+    requires-faction: "DARK"
+    structure:
+      - "-2,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,0,-2:OBSIDIAN"
+      - "-2,1,-2:OBSIDIAN"
+      - "-2,0,2:OBSIDIAN"
+      - "-2,1,2:OBSIDIAN"
+      - "2,0,-2:OBSIDIAN"
+      - "2,1,-2:OBSIDIAN"
+      - "2,0,2:OBSIDIAN"
+      - "2,1,2:OBSIDIAN"
+    sacrifice:
+      - "ECHO_SHARD:8"
+      - "CRYING_OBSIDIAN:8"
+      - "DIAMOND_BLOCK:1"
   phoenix_wing:
     altar-block: "MAGMA_BLOCK"
     structure:

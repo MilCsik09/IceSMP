@@ -87,4 +87,11 @@ Minden kaszt kap egy **saját szentélyt**, ami csak neki ad tematikus, időlege
 
 ---
 
+
+### 💧 Eleftheria Könnye *(gyűjtő-relikvia)*
+
+Megkövült, éjfekete csepp — a Néma Királynő első suttogása hozta létre. **Nincs aktív képessége**:
+presztízs- és lore-kincs, egy példányban létezik a szerveren. Rituálé-oltára (síró obszidián mag,
+feketekő szentély) **csak a Kitaszítottak (DARK) frakcióval** aktiválható.
+
 ➡️ Tovább: [Világesemények](10-vilagesemenyek.md) • [Vissza a tartalomhoz](README.md)
