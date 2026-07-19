@@ -55,6 +55,7 @@ messages:
   faction-switch-insufficient: '&cA frakcióváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.'
   faction-switch-paid: '&aFrakcióváltás díja levonva: &f%s %s &7(új egyenleg: &f%s&7).'
   faction-tax-notice: '&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).'
+  faction-tax-arrears: '&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7 — a Számvevők a következő beszedéskor is behajtják.'
   faction-treasury-header: '&6Frakciókasszák:'
   faction-treasury-insufficient: '&cNincs ennyi a frakciókasszában.'
   faction-treasury-king-only: '&cA kasszából csak a frakció királya (vagy admin) vehet ki.'

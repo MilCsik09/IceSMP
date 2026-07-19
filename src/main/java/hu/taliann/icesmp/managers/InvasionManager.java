@@ -72,6 +72,8 @@ public final class InvasionManager {
     private volatile long nextAttemptAt;
     /** UUIDs of currently-spawned invasion mobs, pruned each wave; despawned on shutdown. */
     private final Set<UUID> activeMobs = ConcurrentHashMap.newKeySet();
+    /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
+    private volatile EventSpawnGuard spawnGuard;
 
     public InvasionManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final MessageManager messageManager) {
@@ -79,6 +81,11 @@ public final class InvasionManager {
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.messageManager = messageManager;
+    }
+
+    /** Wires the shared spawn-placement guard (built after this manager in the DI order). */
+    public void setSpawnGuard(final EventSpawnGuard spawnGuard) {
+        this.spawnGuard = spawnGuard;
     }
 
     /** Periodic attempt on the global world-events tick. */
@@ -172,6 +179,13 @@ public final class InvasionManager {
             return;
         }
 
+        // Never launch an invasion inside a town/claim/WG region — the anchor player may be
+        // standing in a protected city. Silent skip; the next interval picks a new anchor.
+        final EventSpawnGuard guard = spawnGuard;
+        if (guard != null && guard.isBlocked(center)) {
+            return;
+        }
+
         // Keep the tracked set bounded: drop UUIDs whose mobs are already dead/gone.
         activeMobs.removeIf(id -> {
             try {
@@ -231,7 +245,17 @@ public final class InvasionManager {
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             return null;
         }
+        // Per-spot rules: the wave ring can straddle a town border or reach over water — those
+        // members are simply skipped (the wave stays a wave, just thinner at the edge).
+        final EventSpawnGuard guard = spawnGuard;
+        if ((guard != null && guard.isBlocked(spot))
+                || EventSpawnGuard.isUnsafeSurface(spot.getWorld(), spot.getBlockX(), spot.getBlockZ())) {
+            return null;
+        }
         final Mob mob = (Mob) spot.getWorld().spawn(spot, entityClass.asSubclass(Mob.class));
+        // No overworld zombification (a conversion would spawn a NEW entity outside activeMobs,
+        // so killing it would wrongly count as sin) / no daylight burn for undead hordes.
+        EventSpawnGuard.prepare(mob);
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mobScalingManager.forceLevel(mob, level);
@@ -260,17 +284,40 @@ public final class InvasionManager {
                     return;
                 }
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
+                // Folia: a nearby player can belong to a neighbouring region — touch them directly
+                // only when we own them, otherwise hop to their scheduler (damager omitted
+                // cross-region). Same pattern as WorldBossManager.fireSpecial.
                 for (final Entity nearby : champion.getNearbyEntities(4.0D, 4.0D, 4.0D)) {
-                    if (nearby instanceof Player player
-                            && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
-                        player.damage(damage, champion);
-                        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
-                        if (kb.lengthSquared() > 0.0D) {
-                            player.setVelocity(kb.normalize().setY(0.5D).multiply(0.7D));
+                    if (nearby instanceof Player player) {
+                        if (Bukkit.isOwnedByCurrentRegion(player)) {
+                            if (isSurvivor(player)) {
+                                player.damage(damage, champion);
+                                applySlamKnockback(player, center);
+                            }
+                        } else {
+                            player.getScheduler().run(plugin, t2 -> {
+                                if (isSurvivor(player)) {
+                                    player.damage(damage);
+                                    applySlamKnockback(player, center);
+                                }
+                            }, null);
                         }
                     }
                 }
             }, null, 25L);
         }, null, 120L, 120L);
+    }
+
+    /** A survivor (survival/adventure) — never hit creative or spectator players. */
+    private static boolean isSurvivor(final Player player) {
+        return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+    }
+
+    /** Knocks the player away from the slam center (runs on the player's own region thread). */
+    private static void applySlamKnockback(final Player player, final Location center) {
+        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+        if (kb.lengthSquared() > 0.0D) {
+            player.setVelocity(kb.normalize().setY(0.5D).multiply(0.7D));
+        }
     }
 }

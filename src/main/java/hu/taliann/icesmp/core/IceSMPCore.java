@@ -331,6 +331,13 @@ public final class IceSMPCore {
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, territoryManager, claimManager, messageManager);
+        // Közös spawn-hely szabályok a mob-spawnoló világeseményekhez (város/claim/WG-elkerülés).
+        // Setter-injektálás, mert a ClaimManager a DI-sorrendben a három event-manager UTÁN épül.
+        final hu.taliann.icesmp.managers.EventSpawnGuard eventSpawnGuard =
+                new hu.taliann.icesmp.managers.EventSpawnGuard(configManager, territoryManager, claimManager);
+        worldBossManager.setSpawnGuard(eventSpawnGuard);
+        invasionManager.setSpawnGuard(eventSpawnGuard);
+        wildHuntManager.setSpawnGuard(eventSpawnGuard);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,

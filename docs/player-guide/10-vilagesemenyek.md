@@ -3,6 +3,11 @@
 Időnként **különleges dolgok** történnek az egész szerveren. Ezekre figyelj — extra jutalmat
 (vagy extra veszélyt!) hozhatnak.
 
+> **Hol jelenhetnek meg?** A mob-spawnoló események (világboss, invázió, vad hajsza) — akárcsak
+> a meteor és a kincs — **soha nem érkeznek városba**: claimelt frakció-territóriumba,
+> játékos-claimbe és védett régióba nem spawnolnak, és víz tetejére sem. Az esemény-szörnyek
+> **nem zombisodnak át** az overworldben (a pokolbéli fajták sem), és **nappal sem égnek el**.
+
 ## Mob-szintezés (a világ nehézsége) 🧟
 
 A világ **kifelé egyre veszélyesebb**:

@@ -111,6 +111,8 @@ public final class WorldBossManager {
     private volatile long activeBossUntil;
     private volatile long nextAttemptAt;
     private volatile java.util.UUID activeBossId;
+    /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
+    private volatile EventSpawnGuard spawnGuard;
     /** Current health fraction (0–1) of the active boss, driving the shared HUD boss-bar. */
     private volatile float bossHealthFraction = 1.0F;
 
@@ -125,6 +127,11 @@ public final class WorldBossManager {
         this.seasonManager = seasonManager;
         this.worldBossKey = new NamespacedKey(plugin, "world_boss");
         this.bossArchetypeKey = new NamespacedKey(plugin, "world_boss_archetype");
+    }
+
+    /** Wires the shared spawn-placement guard (built after this manager in the DI order). */
+    public void setSpawnGuard(final EventSpawnGuard spawnGuard) {
+        this.spawnGuard = spawnGuard;
     }
 
     public boolean isWorldBoss(final Entity entity) {
@@ -278,6 +285,15 @@ public final class WorldBossManager {
         final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
                 highestY + 1.0D, approx.getBlockZ() + 0.5D);
 
+        // Placement rules (same set as meteor/treasure): never inside a town/claim/WG region,
+        // never on a water surface. Skipping leaves activeBossUntil unset; the 10s spawn-grace
+        // self-heals and the next interval rolls a fresh spot elsewhere.
+        final EventSpawnGuard guard = spawnGuard;
+        if ((guard != null && guard.isBlocked(spawnLocation))
+                || EventSpawnGuard.isUnsafeSurface(approx.getWorld(), approx.getBlockX(), approx.getBlockZ())) {
+            return;
+        }
+
         // Pick a random archetype from the roster (variety/rotation).
         final BossArchetype archetype = BossArchetype.values()[ThreadLocalRandom.current().nextInt(BossArchetype.values().length)];
 
@@ -288,6 +304,8 @@ public final class WorldBossManager {
         }
 
         final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
+        // No overworld zombification (would orphan the PDC-tag) / no daylight burn.
+        EventSpawnGuard.prepare(boss);
         activeBossId = boss.getUniqueId();
         activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
@@ -522,6 +540,7 @@ public final class WorldBossManager {
                     final Location spot = at.clone().add(
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
                     final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
+                    EventSpawnGuard.prepare(add); // daytime SUMMON adds must not burn away instantly
                     add.setGlowing(true);
                     add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
                     // Bounded lifespan so summoned adds never accumulate / outlive the fight (on the add's own scheduler).

@@ -51,6 +51,12 @@ factions:
     rate-percent: 2.0
     # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
     max-rate-percent: 10.0
+    # Fejadó: beszedésenként LEGALÁBB ennyi jár, akkor is, ha a számla üres — az üresen
+    # tartott számla így nem adóelkerülés. 0 = csak a százalékos adó él.
+    minimum-amount: 2.0
+    # Amit a számla nem fedez, hátralékként gyűlik (treasury.yml: tax-arrears), és a
+    # következő beszedésekkor automatikusan törlesztődik. Ez a plafonja (0 = nincs hátralék).
+    max-arrears: 50.0
     exempt:
       - "NEUTRAL"
   # ===== Bűn-számláló és száműzetés =====

@@ -29,6 +29,11 @@ mob-scaling:
 # és a szezon-lejáratot; mindegyik a saját enabled kapcsolójával vezérelhető.
 world-events:
   check-interval-seconds: 60
+  # A mob-spawnoló események (világboss, invázió, vad hajsza) NEM spawnolhatnak claimelt
+  # frakció-territóriumba, játékos-claimbe vagy WorldGuard-régióba (városok/spawn), és víz
+  # tetejére sem — ugyanaz a szabályrendszer, mint a meteornál/kincsnél. A tiltott hely
+  # kimarad, az esemény a következő intervallumban máshol próbálkozik.
+  avoid-territory: true
   # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
   blood-moon:
     enabled: true

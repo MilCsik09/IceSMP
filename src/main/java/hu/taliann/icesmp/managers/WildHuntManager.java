@@ -58,6 +58,8 @@ public final class WildHuntManager {
     private volatile long nextAttemptAt;
     /** Reserves the "active" state while a spawn is still hopping region threads. */
     private volatile long spawnGraceUntil;
+    /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
+    private volatile EventSpawnGuard spawnGuard;
 
     public WildHuntManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final PartyManager partyManager,
@@ -68,6 +70,11 @@ public final class WildHuntManager {
         this.partyManager = partyManager;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
+    }
+
+    /** Wires the shared spawn-placement guard (built after this manager in the DI order). */
+    public void setSpawnGuard(final EventSpawnGuard spawnGuard) {
+        this.spawnGuard = spawnGuard;
     }
 
     /** Whether the given entity is the active wild-hunt beast (for the death listener). */
@@ -213,11 +220,21 @@ public final class WildHuntManager {
         final int z = center.getBlockZ();
         final Location spot = new Location(world, x + 0.5D, world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
 
+        // Placement rules (same set as meteor/treasure): never inside a town/claim/WG region,
+        // never on a water surface. The 10s spawn-grace self-heals; next interval rolls again.
+        final EventSpawnGuard guard = spawnGuard;
+        if ((guard != null && guard.isBlocked(spot)) || EventSpawnGuard.isUnsafeSurface(world, x, z)) {
+            return;
+        }
+
         final Class<? extends Entity> entityClass = beast.type.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             return;
         }
         final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
+        // No overworld zombification (a conversion would spawn a NEW entity with a new UUID, so
+        // the beast would count as "escaped" while its zombified body keeps roaming) / no burn.
+        EventSpawnGuard.prepare(mob);
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mob.setPersistent(false);

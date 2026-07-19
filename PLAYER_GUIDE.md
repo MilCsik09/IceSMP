@@ -154,8 +154,10 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
 értékét — „tőzsdei" kijelző, ami magától frissül. Ugyanezt mindig lekérheted `/currency rates`-szel is.
 
 ### Money sinkek és események
-- **Állampolgári adó:** óránként a frakciótagok a saját valuta-egyenlegük **2%-át** befizetik
-  a frakciókasszába (a Semlegesek mentesek). Ez csökkenti a forgalomban lévő pénzt.
+- **Állampolgári adó:** óránként a frakciótagok a saját valuta-egyenlegük **2%-át**, de
+  **legalább 2 érme fejadót** befizetnek a frakciókasszába (a Semlegesek mentesek). Az üresen
+  tartott számla sem kibúvó: amit a számla nem fedez, **hátralékként** gyűlik (legfeljebb 50
+  érméig), és a következő beszedésekkor automatikusan levonódik. Ez csökkenti a forgalomban lévő pénzt.
 - **Kereslet-sokk** (heti gazdasági esemény): időnként egy véletlen valuta értéke **átmenetileg
   x1.2–1.6-ra ugrik** (broadcast jelzi) — kereskedési lehetőség.
 - **Lélekkő:** a magas szintű (Lvl 3+) skálázott szörnyek eséllyel **Csontveretet** dobnak — a
@@ -534,6 +536,11 @@ skálázódnak — a farmok biztonságosak.) ⚠️ Kivétel: a **Sötét (Kitas
 **élő** szörnyből jön. A szint-névtábla alapból **csak akkor jelenik meg,
 amikor ránézel a mobra** (közelről, takarás nélkül), így nem zsúfolja tele a képernyőt
 falakon át vagy nagy távolságból.
+
+> **Hol jelenhetnek meg az események?** A mob-spawnoló események (világboss, invázió, vad
+> hajsza) — akárcsak a meteor és a kincs — **soha nem érkeznek városba**: claimelt
+> frakció-territóriumba, játékos-claimbe és védett régióba nem spawnolnak, és víz tetejére sem.
+> Az esemény-szörnyek **nem zombisodnak át** az overworldben, és **nappal sem égnek el**.
 
 ### Vérhold-éjszaka 🌕
 Ritkán egy éjszaka **vérholddá** változik (broadcast jelzi). Ilyenkor minden szörny **+2
