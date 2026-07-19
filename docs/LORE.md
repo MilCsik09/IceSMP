@@ -38,6 +38,17 @@ hely; nincs teste, csak türelme. Ott vár a világ minden repedésében, minden
 s aki sokáig hallgatja a csendet, annak egyszer visszasuttog. Nem véletlen — írja a krónikás —, hogy
 akit elsőként ragadott el, azt ma **Néma** Királynőnek hívja a világ.
 
+**A Mélység Népe.** Mert tudni kell: amikor Asterlayna alázuhant, nemcsak a lelke szilánkja maradt a
+világon. **Teste is ezer darabra tört**, s a még izzó csillag-szilánkok mélyre süllyedtek a kőben —
+oda, ahová a Fa fénye soha nem ért el. S a mélység válaszolt a fényre: az eltemetett szilánkok körül,
+a néma sziklából, lassan **egy nép ébredezett** — zömök, hallgatag mesterek, akiket a felszín népei
+később csak **törpöknek** neveztek. Ők voltak a világ első kovácsai: csillag-szilánkból és mélykőből
+olyan műveket alkottak, amilyeneket azóta sem látott a világ — köztük az ítélet-mágiával vert
+fejszét, amelyet a legendák **Mételytépőként** emlegetnek. Ám a Mélység Népe eltűnt, mielőtt az
+emberiség első városa felépült volna. Hogy hová lettek, senki sem tudja; a legmélyebb tárnák faláról
+csak ennyit betűztek ki a kutatók: *„túl mélyre ástunk, és a csend visszanézett."* Hagyatékuk —
+romjaik és ereklyéik — ma is ott hever a világ gyökerei közt, s várja, ki meri felhozni.
+
 ## II. A Hasadás (Hu. 1.)
 
 Az emberiség az Élet Fája tövében emelte fel dicsőséges első fővárosát, **Asterobourgh**-t. Ám a
@@ -131,6 +142,15 @@ A Fa oltalma azonban nem ér véget az ébredéssel. Amikor egy Felső elesik, t
 lelkét az **Élet Fája** — bár maga is megsebezve — makacsul visszahívja az élők közé: újra testet ölt
 a birodalma szentélyénél. Ez a Felsők **halhatatlanságának** titka, s egyben a világ reménye — mert
 amíg a Fa visszahívja kegyeltjeit, a Néma Királynő átka nem győzhet végleg.
+
+**Az elveszett emlékek.** És tudjátok meg azt is, Felsők: emlékeitek **nem semmisültek meg**. Amikor
+a Fa kimentett benneteket a pusztulásból, a lelketeket megtartotta — de az emlékek súlyát nem bírta el
+az út. Kihullottak belőletek, s ahol földet értek, **szilánkokká dermedtek**: opálosan derengő
+kövekké, amelyekben csatazaj, rég halott hangok és elfeledett arcok laknak. A nép **Emlékszilánknak**
+hívja őket; kazamaták mélyén, romok között hevernek, s nemegyszer szörnyek fészkelnek rájuk — mintha
+a Káoszkor maga sem akarná, hogy visszaemlékezzetek. Mert aki eleget összegyűjt belőlük, abban
+**megmozdul a múlt**: egy név, egy eskü, egy korona emléke. S ki tudja, mi lesz e világból, ha a
+Felsők egy napon mind visszaemlékeznek arra, kik is voltak valójában.
 
 **A Fa fényköre.** Aetrinita oltalma nem ér el a világ végéig: fénye a törzsétől távolodva
 **gyűrűnként halványul**, s ahol elfogy, ott a Káoszkor uralkodik hígítatlanul. A Fa közelében a
@@ -399,6 +419,10 @@ tudja, hány hever még belőlük a romok mélyén, s hány születik újjá a F
 - **Szellemszarvas-Bűbáj** — „Tölgyfa talizmán; megfújva a szellemléptű szarvasok segítenek."
 - **Asterlayna Gyümölcse** (tiltott kakaóbabos sütemény) — „Aetrinita átka; fogyasztása tilos —
   hacsak nem akarsz darabokban távozni a Városból."
+
+**A Mélység Népének hagyatéka:**
+- **Mételytépő** (harci fejsze) — a törpök ítélet-mágiával vert remeke, még a Fa gyermekeinek koránál
+  is vénebb. Lesújt a bűnösökre, s igazságot tesz ott, ahol a Káoszkor rendje rég szertefoszlott.
 
 **A Káoszkor hagyatéka:**
 - **A Hetedik Vérháború Rozsdás Pengéje** — „Egykor I. Benedictus vagy I. Lineata seregéé; ma csak

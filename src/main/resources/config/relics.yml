@@ -23,8 +23,8 @@ relics:
       material: "GOLDEN_AXE"
       custom-model-data: 4101
       lore:
-        - "&7A törpék rejtélyes, rég letűnt"
-        - "&7civilizációjának ősi relikviája."
+        - "&7A Mélység Népének — a rég letűnt törp"
+        - "&7civilizációnak — ősi relikviája."
         - ""
         - "&7Ősi ítélet-mágia lakik benne: e harci"
         - "&7fejsze lesújt a bűnösökre, s igazságot tesz"

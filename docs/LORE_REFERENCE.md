@@ -38,6 +38,8 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Belső erők (VI.) | kasztonkénti erőforrás-sávok (Mana/Düh/Fókusz/Energia/Csi/Lélekerő…); hibrid költségek: HP = vérmágia, XP = rituálé, éhség = nehéz testi spell |
 | Lélekkapocs (VI.) | a kaszt-témás Képesség Katalizátor item (`CatalystItemFactory`); jobb katt = cast, sneak+ütés = váltás; **nem dobható el** (`CatalystProtectionListener`: drop-cancel + halálkor megőrzés/respawn-visszaadás), craft/kohó-védett (`CatalystCraftSafetyListener`); elvesztéskor pótolható (Job GUI / `/job givecatalyst`) |
 | Az Első Csend (I./VII.) | szándékosan megfejtetlen misztérium — jövőbeli antagonista/quest-horgony; NE magyarázd meg tartalomban |
+| A Mélység Népe (I.) | Mételytépő relikvia (`relics.yml`); jövőbeli rom/dungeon/kazamata-horgony + ősi ereklyék forrása |
+| Az elveszett emlékek (V.) | 🔜 K8 Emlékszilánkok — a gyűjthető emlék-progresszió narratív alapja |
 | Lélekkő (VII.) | DARK-valuta drop magas-szintű mobokból; DARK-játékosnak élőhalottból NEM esik (`currency.soul-drop.dark-undead-drops`); Nekromanta lélek-szilánk csak élő szörnyből (`souls.shards-from-undead`) |
 | Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Mortengrad = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
@@ -63,9 +65,10 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
   bűn/vérdíj + `DARK`-száműzetés; valuta-slotok; király/raid/szezon; lélekkő-szabály; Lélekkapocs-védelem.
 - **🔜 K7 — Kárhozat Kapuja:** Nether-portál PvPvE-zóna a Senkiföldjén (legális PvP, fokozott
   mob-veszély, exkluzív loot: netherite, boss-drop, Fekete Villám Szilánk).
-- **🔜 K8 — Emlékszilánkok:** gyűjthető emlék-progresszió. Jutalom a meglévő rendszerekhez illesztve —
-  **NEM kaszt-váltás** (a kaszt állandó): XP/szint, talentpont, specializáció-feloldás, frakció-rang,
-  kozmetika, lore-feltárás. Az Opálos Emlékszilánk az Arany Liga / Szabad Városok korának emlékeit őrzi.
+- **🔜 K8 — Emlékszilánkok:** gyűjthető emlék-progresszió *(narratíva: kódex V. — „Az elveszett
+  emlékek")*. Jutalom a meglévő rendszerekhez illesztve — **NEM kaszt-váltás** (a kaszt állandó):
+  XP/szint, talentpont, specializáció-feloldás, frakció-rang, kozmetika, lore-feltárás. Az Opálos
+  Emlékszilánk az Arany Liga / Szabad Városok korának emlékeit őrzi.
 - **🔜 K9 — Suttogók (hibrid):** Suttogó = rejtett STÁTUSZ a látható frakció fölött; lelepleződés
   (közterületi sötét mágia, rajtakapott rítus/árulás, tanú-vád) → átváltás a `DARK` Kitaszítottak közé
   (bűn + vérdíj). Részletes terv: [ideas/K-lore.md → K9](ideas/K-lore.md).
@@ -104,9 +107,10 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Megrontott Elit Páncél / Fekete Csont / A Néma Királynő suttogása | DARK/közös | mob-drop (K5) | drop-tábla tétel |
 | Csontveret | DARK | valuta | a DARK valuta display-neve (K1 reskin) |
 
-> **Törpék** *(kiegészítés — nem az eredeti kódexből, a kódexben sem szerepel):* a Mételytépő-relikvia
-> lore-ja egy rég letűnt törp civilizációra hivatkozik — a Fa gyermekeinek koránál is régebbi nyom.
-> Megtartva relikvia-szintű háttérként; kánon-emelése a tulaj döntése.
+> **A Mélység Népe (törpök) — ✅ kanonizálva** (kódex I. fejezet): Asterlayna testének mélybe süllyedt
+> szilánkjai körül ébredt nép; a világ első kovácsai (Mételytépő); eltűnésük az Első Csendhez kötött
+> misztérium („túl mélyre ástunk, és a csend visszanézett"). Kész horgony jövőbeli rom/dungeon/
+> kazamata-tartalomhoz és ősi ereklyékhez.
 
 ---
 
