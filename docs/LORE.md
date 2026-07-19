@@ -339,6 +339,17 @@ ejtenek el; máskor Caldestera **vándorkaravánja** járja a veszélyes utakat 
 a Felsők becsülete. S amikor a Néma Királynő **hordái** törnek a világra, a birodalmak félreteszik a
 viszályt: a közös ellenség mindenkié.
 
+**Az Ünnepek.** A nép a Káoszkorban sem felejtett el emlékezni — sőt: akinek ennyi a vesztenivalója,
+az kétszer olyan erősen kapaszkodik az ünnepeibe. A **Hasadás Napján** a világ elnémul: e napon nem
+köttetik alku és nem emelkedik penge, csak mécsesek úsznak a Bokic vizén az elveszett Asterobourgh
+emlékére. Az **Ultimátum Napja** Caldestera legfényesebb ünnepe: a béke születésnapján a Menedék
+kapui szélesre tárulnak, vásár lepi el az utcákat, s e napon még a Jégmezők és a Vérszavanna követei
+is egy asztalhoz ülnek — fegyver nélkül. A **Vérhold-virrasztás** nem naptári ünnep, hanem szokás: ha
+vörösre vált az éj, a családok fáklyát gyújtanak a küszöbön, s hangosan mesélnek — mert a régiek
+szerint a Királynő álma elkerüli a házat, ahol szó és fény lakik. S a legfiatalabb ünnep az **Érkezés
+Napja**: annak évfordulója, hogy a Fa alá megérkeztek a Felsők — e napon a birodalmak a reményt
+ünneplik, s a krónikások felolvassák, mit tettetek hozzá az elmúlt évben a világ újjáépítéséhez.
+
 **A Fa Alatt Testvérek.** Akik együtt ébredtek a Fa alatt, azok közt van egy kötelék, amely erősebb a
 birodalmak határainál: a bajtársiasság. A Felsők kis **csapatokba** állhatnak össze zászlótól
 függetlenül — együtt osztoznak zsákmányon és dicsőségen, s egymás ellen kezet nem emelnek, míg a

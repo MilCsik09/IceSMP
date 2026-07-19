@@ -251,22 +251,8 @@ nem csak reaktív lehetősége, és a hosszú raidek nem válnak pusztán álló
 helyett — kis, kiegészítő hatásúnak kell maradnia.
 
 ### G16. Nagydöntő: top2 frakció szezon-hétvégéje `[TOP]`
-🟡 • ⭐⭐⭐
 
-**Mi ez:** A szezon utolsó hétvégéjén a liga-táblázat 1. és 2. helyezett frakciója egy
-kiemelt, dupla liga-pontos, extra jutalmú „nagydöntő" raid-sorozatot vív egymás ellen.
-**Hogyan működne:** `SeasonManager` szezonzáró-logikájának bővítése (a B33 „végítélet-hét"
-világesemény testvér-mechanikája): a záró hétvégén a top2 frakció között a `RaidManager`
-automatikusan feloldja a raid-hirdetést (a királyoknak csak el kell indítaniuk), a
-liga-pont-szorzó és a hadizsákmány dupla (`season.finale.point-multiplier`), broadcast +
-Discord-webhook (C5) jelzi szerver-szinten. A győztes kap egy exkluzív szezon-kozmetikát
-(B9/B22 cím) és bekerül a szezon-emlékműbe (D3).
-**Miért jó:** A szezonnak látványos, mindenki által követhető csúcspontot ad — még a
-nem résztvevő játékosok is nézőként/broadcast-fogyasztóként élik meg az „élő világ” érzést.
-**Építőkövek:** SeasonManager liga-tábla, RaidManager, B33 végítélet-hét, D3 szezon-emlékmű,
-C5 Discord-híd.
-**Buktatók:** ha a top2 rendszeresen ugyanaz a két frakció, ismétlődővé válhat — a G12
-felzárkóztató mechanika közvetve ezt is tompítja.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### G17. Raid-előrejelzés (barátkozás/riasztás)
 🟢 • ⭐⭐

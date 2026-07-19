@@ -108,21 +108,8 @@ HUD quest-tracker (A20) opcionálisan hátralévő időt is mutathat.
 késik, a játékos igazságtalannak érzi a lekésett bónuszt.
 
 ### J7. Rejtvény-küldetések (koordináta-nyomok / jelkép-keresés)
-🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** SEQUENCE-láncú küldetés, ahol az egyes lépések nem nyíltan adott koordinátát,
-hanem egy rejtvényt/nyomot mutatnak (dialógus-szöveg, tábla, jelkép-item), és a játékosnak
-kell kitalálnia a következő helyszínt.
-**Hogyan működne:** Nem igényel új objektíva-típust — a meglévő VISIT_TERRITORY/TALK_TO_NPC
-láncot SEQUENCE módban, `dialogue.give` szövegben rejtett nyommal ("a törött torony
-árnyékában, ahol a nap delelőn áll…") és opcionális `objective.description` felülírással,
-ami NEM árulja el a pontos célt (csak a HUD-on "???" jelenik meg, amíg oda nem érsz). Az
-admin quest-builder GUI-ba egy "rejtett leírás" checkbox kerülhet.
-**Miért jó:** A story-orientált játékosoknak felfedezés-élményt ad a világ tényleges
-bejárásával, nem csak a HUD-nyíl követésével — jól illik a titkos helyekhez (D8).
-**Építőkövek:** meglévő SEQUENCE-lánc + dialógus-mező, `QuestBuilderGUI`.
-**Buktatók:** Túl nehéz rejtvénynél a játékos elakad és feladja a láncot — legyen egy
-opcionális "súgás" fokozat (pl. 10 perc után a HUD mégis megmutatja a célt).
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### J8. Csoportos quest (party-közös progressz)
 🟡 • **Érték:** ⭐⭐⭐

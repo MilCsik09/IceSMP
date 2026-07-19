@@ -237,22 +237,8 @@ aktív játékos legyen jelen és figyeljen, nem csak a legerősebb DPS-esek vis
 a bossölésből teljesen).
 
 ### H14. Ritka spawn-variánsok (albínó/árnyék mobok)
-🟢 • ⭐⭐
 
-**Mi ez:** Kis eséllyel megjelenő, vizuálisan megkülönböztetett mob-variánsok, amik dupla
-XP-t adnak és külön bestiárium-bejegyzést nyitnak.
-**Hogyan működne:** MobScalingListener spawn-hookjában kis eséllyel (`rare-variant.chance`,
-config) egy normál mob „albínó" (fehér/csillogó) vagy „árnyék" (sötét partikel-aura)
-variánssá alakul — PDC-tag jelzi, a névtábla és a részecske-effekt megkülönbözteti (az A29
-elit-jelölés mintájára, de saját szín-kóddal). Ölésük dupla kaszt-XP-t és megnövelt
-lélekkő-esélyt ad, és a bestiárium (B21) a variánst ÖNÁLLÓ bejegyzésként számolja, nem a
-bázis-mob alatt.
-**Miért jó:** Minden hétköznapi farmolásba becsempész egy kis „mi volt ez a csillogás?"
-izgalmat, és a gyűjtögető-hajlamú játékosoknak (B21 célközönség) extra mérföldkövet ad.
-**Építőkövek:** MobScalingManager/Listener spawn-hook, B21 bestiárium, A29 vizuális jelölés.
-**Buktatók:** A variáns-eséllyel vigyázni kell farm-spawnereknél — azok alapból NEM
-skálázódnak (10. oldal), a rare-variant logika kövesse ugyanezt a kizárást, különben a
-farmok automata dupla-XP gépezetté válnának.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### H15. Éjszakai elit-járőrök a vadonban
 🟡 • ⭐⭐

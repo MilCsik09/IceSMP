@@ -4,7 +4,7 @@ Fejlesztési ötletek gyűjtője — **nincs elköteleződés**, ez a brainstorm
 zöld utat kap, az a [ROADMAP.md](../ROADMAP.md)-be kerül tervezett tételként; a technikai
 adósság külön él a [REFACTOR_CANDIDATES.md](REFACTOR_CANDIDATES.md)-ben.
 
-A tár **356 kidolgozott ötletet** tartalmaz 12 kategória-fájlban (`docs/ideas/`); ebből **33
+A tár **356 kidolgozott ötletet** tartalmaz 12 kategória-fájlban (`docs/ideas/`); ebből **39
 erősen lore-illeszkedő tétel** a kódex ([LORE.md](LORE.md)) alapján az **L-válogatásba** került
 át (a forrás-fájlban mutató maradt a helyükön).
 Minden tétel azonos sablonnal készült: **Mi ez / Hogyan működne / Miért jó /
@@ -31,7 +31,7 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 | **I) Szakmák, gyűjtögetés, készítés** | [ideas/I-szakmak.md](ideas/I-szakmak.md) | I1–I25 | Mestermű, érc-ér események, műhelyek, recept-láncok, szakma-presztízs |
 | **J) Questek, story, progresszió** | [ideas/J-quest.md](ideas/J-quest.md) | J1–J24 | Új objektíva-típusok, story-eszközök (döntés-flagek, fejezetek), NPC-emlékezet, quest-admin |
 | **K) Lore-integráció / világ-tartalom** | [ideas/K-lore.md](ideas/K-lore.md) | K1–K10 | A [LORE.md](LORE.md) beépítése: frakció/valuta-reskin, lore-hű unique-itemek a kész motorra, Nether-portál zóna, Emlékszilánkok, Suttogók-szekta, Caldestera feketepiac |
-| **L) Lore-kiemelt válogatás** | [ideas/L-lore-kiemelt.md](ideas/L-lore-kiemelt.md) | 33 tétel (A/B/D/E/F/G/H/I/J-ből) | A kódexhez legerősebben illeszkedő ötletek tier-bontásban (S: H2, B42, B3, B15, D18, I14 • A: 27 tétel), tételenkénti lore-horgonnyal |
+| **L) Lore-kiemelt válogatás** | [ideas/L-lore-kiemelt.md](ideas/L-lore-kiemelt.md) | 39 tétel (A/B/D/E/F/G/H/I/J-ből) | A kódexhez legerősebben illeszkedő ötletek tier-bontásban (S: 6 • A: 27 • B/határeset: 6), tételenkénti lore-horgonnyal |
 
 ---
 

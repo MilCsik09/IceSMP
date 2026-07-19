@@ -43,6 +43,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Ryanora (III.) | a NEUTRAL vidék/tartomány neve (a Bokic-mente); Caldestera = a fővárosa — territórium-elnevezésnél így használd |
 | A fél-álomban alvó Királynő (VII.) | a vérhold + horda/invázió/világboss események narratív tétje; a K9 Suttogók célja (teljes ébresztés); végjáték-horgony — a „harmadik mondat" apokalipszisa NEM implementálandó, narratív tét marad |
 | A gyógyuló Fa (V.) | a szezonok/progresszió/közösségi célok narratív tétje („minden rendbe tett darab gyógyítja a Fát"); jövőbeli horgony: a repedés állapota mint szerver-szintű mérce/esemény |
+| Az Ünnepek (VIII.) | 🔜 D1 szezonális ünnepek — Hasadás Napja (Hu. 1: gyász/PvP-szünet?), Ultimátum Napja (Hu. 547: caldesterai vásár-esemény), Vérhold-virrasztás (vérhold-kiegészítő), Érkezés Napja (Hu. 978: szezon-évforduló) |
 | Lélekkő (VII.) | DARK-valuta drop magas-szintű mobokból; DARK-játékosnak élőhalottból NEM esik (`currency.soul-drop.dark-undead-drops`); Nekromanta lélek-szilánk csak élő szörnyből (`souls.shards-from-undead`) |
 | Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Mortengrad = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |

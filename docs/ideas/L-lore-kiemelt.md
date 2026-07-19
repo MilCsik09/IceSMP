@@ -524,6 +524,112 @@ mindig a céljátékos saját régió-szálán fusson.
 **Építőkövek:** `ProfessionRecipeCatalog`, világboss/esemény loot-tábla, `ItemRarityService` (boss tier).
 **Buktatók:** Legyen elég recept ÉS elég gyakori a boss-esemény, hogy ne érezzék elérhetetlennek — a C1 spell-statisztika mintájára érdemes loot-drop számlálót is vezetni (mennyi tervrajz esett/hét).
 
+
+## Tier B — határesetek
+
+*Gyengébb, de valós kánon-kötés — akkor érdemesek, ha a kapcsolódó kánon-elem (ünnepek,
+Vámház-őrség, Korszak-finálé) tartalmat kap.*
+
+### D1. Szezonális ünnepek
+
+> **Lore-horgony:** az Időrend évfordulói kész ünnep-naptár — kánon: kódex VIII. „Az Ünnepek" (Hasadás Napja, Ultimátum Napja, Vérhold-virrasztás, Érkezés Napja)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Naptárhoz kötött vizuális/tartalmi skin a meglévő világeseményekre (október: tök-fejes invázió, december: ajándék-esemény).
+**Hogyan működne:** Config dátumtartomány (`seasonal-events.halloween.start: "10-25"` / `.end: "11-02"`), éjféli globális tick ellenőrzi az aktuális naptári dátumot, és ha aktív egy ablak, felülírja futásidőben az Invázió/Vérhold/Kincs-esemény paramétereit (mob-skin CMD-vel, vérhold broadcast-szöveg „rém-éj”-re, decemberi ajándék-láda loot-tábla) — ugyanaz az `AmbientEventManager`/`InvasionManager` hívási lánc, csak paraméterezve, nem új rendszer.
+**Miért jó:** A már ismert eseményeket (vérhold, invázió) új köntösben adja vissza — a valós naptárhoz igazodás azonnali „most van október!” él-a-világ érzetet kelt kis munkából.
+**Építőkövek:** `AmbientEventManager`, `InvasionManager`, CMD-skin infra (A33).
+**Buktatók:** Az időzóna-függő dátum-logika legyen konzisztens; a felülírás csak runtime-paraméter maradjon, ne írja át tartósan a configot.
+### D11. Járőröző városi őrség
+
+> **Lore-horgony:** a Vámház őrei kánon (kódex VII.) — a járőröző őrség csak megtestesíti
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** FancyNpcs-alapú őr-NPC-k, amik előre megadott útvonalon körbejárnak a fővárosban.
+**Hogyan működne:** Config-listában waypoint-koordináták NPC-nként (`city-guards.<id>.route`); periodikus (pl. 2 mp-enkénti) léptetés a következő ponthoz mindig az adott NPC-entitás SAJÁT régió-szálán (`entity.getScheduler().run(...)`), mert az útvonal több chunk-régiót is átszelhet. Éjjel/vérhold alatt sűrűbb léptetés + fáklya-tartás, nappal lassabb „őrjárat” tempó; közeli PvP-riasztás/raid esetén rövid figyelmeztető sor (D7 infra kiterjesztése).
+**Miért jó:** A fővárosban nem csak kereskedő- és quest-NPC-k állnak — az őrjárat mozgása azt sugallja, hogy a város él és véd, erősítve a frakciós hovatartozás-érzést.
+**Építőkövek:** `FancyNpcsQuestBridge`, D7 napszak-üzenet infra, entity-scheduler minta.
+**Buktatók:** A waypoint-lépés MINDIG az NPC saját régió-szálán fusson; sok NPC * sűrű tick teljesítmény-költség, throttle kell.
+### G16. Nagydöntő: top2 frakció szezon-hétvégéje `[TOP]`
+
+> **Lore-horgony:** „a korszak végén a krónikák ítélnek" — a Korszakok Könyve versenyfináléja (kódex VIII.)
+
+🟡 • ⭐⭐⭐
+
+**Mi ez:** A szezon utolsó hétvégéjén a liga-táblázat 1. és 2. helyezett frakciója egy
+kiemelt, dupla liga-pontos, extra jutalmú „nagydöntő" raid-sorozatot vív egymás ellen.
+**Hogyan működne:** `SeasonManager` szezonzáró-logikájának bővítése (a B33 „végítélet-hét"
+világesemény testvér-mechanikája): a záró hétvégén a top2 frakció között a `RaidManager`
+automatikusan feloldja a raid-hirdetést (a királyoknak csak el kell indítaniuk), a
+liga-pont-szorzó és a hadizsákmány dupla (`season.finale.point-multiplier`), broadcast +
+Discord-webhook (C5) jelzi szerver-szinten. A győztes kap egy exkluzív szezon-kozmetikát
+(B9/B22 cím) és bekerül a szezon-emlékműbe (D3).
+**Miért jó:** A szezonnak látványos, mindenki által követhető csúcspontot ad — még a
+nem résztvevő játékosok is nézőként/broadcast-fogyasztóként élik meg az „élő világ” érzést.
+**Építőkövek:** SeasonManager liga-tábla, RaidManager, B33 végítélet-hét, D3 szezon-emlékmű,
+C5 Discord-híd.
+**Buktatók:** ha a top2 rendszeresen ugyanaz a két frakció, ismétlődővé válhat — a G12
+felzárkóztató mechanika közvetve ezt is tompítja.
+### J7. Rejtvény-küldetések (koordináta-nyomok / jelkép-keresés)
+
+> **Lore-horgony:** a lore-nyomok természetes hordozója — Mélység Népe-feliratok, kódex-utalások (kódex I.)
+
+🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** SEQUENCE-láncú küldetés, ahol az egyes lépések nem nyíltan adott koordinátát,
+hanem egy rejtvényt/nyomot mutatnak (dialógus-szöveg, tábla, jelkép-item), és a játékosnak
+kell kitalálnia a következő helyszínt.
+**Hogyan működne:** Nem igényel új objektíva-típust — a meglévő VISIT_TERRITORY/TALK_TO_NPC
+láncot SEQUENCE módban, `dialogue.give` szövegben rejtett nyommal ("a törött torony
+árnyékában, ahol a nap delelőn áll…") és opcionális `objective.description` felülírással,
+ami NEM árulja el a pontos célt (csak a HUD-on "???" jelenik meg, amíg oda nem érsz). Az
+admin quest-builder GUI-ba egy "rejtett leírás" checkbox kerülhet.
+**Miért jó:** A story-orientált játékosoknak felfedezés-élményt ad a világ tényleges
+bejárásával, nem csak a HUD-nyíl követésével — jól illik a titkos helyekhez (D8).
+**Építőkövek:** meglévő SEQUENCE-lánc + dialógus-mező, `QuestBuilderGUI`.
+**Buktatók:** Túl nehéz rejtvénynél a játékos elakad és feladja a láncot — legyen egy
+opcionális "súgás" fokozat (pl. 10 perc után a HUD mégis megmutatja a célt).
+### F11. Ereklye-szilánk börze
+
+> **Lore-horgony:** a Fekete Villám Szilánk kereskedelme — kánon-áru a lélekkő mellett (kódex VII.)
+
+🟡 • ⭐⭐
+
+**Mi ez:** A relikvia-rendszer szilánk-alapanyagainak (B42 régészet, B47 expedíciók forrásai)
+külön, aukció-jellegű piaci csatornája, mivel ezek egyedi/ritka tételek, nem tömeges stack-áru.
+**Hogyan működne:** A meglévő `/market auction` gépezet külön „ereklye" kategóriával
+(configolt minimum-kikiáltási ár a spam ellen), a böngésző erre is szűrhető; a licitezés/
+buyout logika változatlan (bank-escrow, ELÉG-díj). Az egyetlen új elem a kategória-cimke és a
+GUI-szűrő.
+**Miért jó:** A relikvia-gazdaság (B20 reforge, B42 régészet) termékeinek végre lesz
+kereskedelmi csatornája — end-game gyűjtők közti kereskedelem, ami ma csak kézi
+chat-egyeztetéssel megy.
+**Építőkövek:** `MarketManager` aukció-infra (változatlan logika), GUI-kategorizálás.
+**Buktatók:** Rosszul hangolt minimum-ár elzárhatja a kispénzű vevőket — inkább figyelmeztetés
+legyen, ne kemény tiltás.
+### H14. Ritka spawn-variánsok (albínó/árnyék mobok)
+
+> **Lore-horgony:** az Első Csend-érintette lények — a misztérium ritka, néma hírnökei (kódex I.)
+
+🟢 • ⭐⭐
+
+**Mi ez:** Kis eséllyel megjelenő, vizuálisan megkülönböztetett mob-variánsok, amik dupla
+XP-t adnak és külön bestiárium-bejegyzést nyitnak.
+**Hogyan működne:** MobScalingListener spawn-hookjában kis eséllyel (`rare-variant.chance`,
+config) egy normál mob „albínó" (fehér/csillogó) vagy „árnyék" (sötét partikel-aura)
+variánssá alakul — PDC-tag jelzi, a névtábla és a részecske-effekt megkülönbözteti (az A29
+elit-jelölés mintájára, de saját szín-kóddal). Ölésük dupla kaszt-XP-t és megnövelt
+lélekkő-esélyt ad, és a bestiárium (B21) a variánst ÖNÁLLÓ bejegyzésként számolja, nem a
+bázis-mob alatt.
+**Miért jó:** Minden hétköznapi farmolásba becsempész egy kis „mi volt ez a csillogás?"
+izgalmat, és a gyűjtögető-hajlamú játékosoknak (B21 célközönség) extra mérföldkövet ad.
+**Építőkövek:** MobScalingManager/Listener spawn-hook, B21 bestiárium, A29 vizuális jelölés.
+**Buktatók:** A variáns-eséllyel vigyázni kell farm-spawnereknél — azok alapból NEM
+skálázódnak (10. oldal), a rare-variant logika kövesse ugyanezt a kizárást, különben a
+farmok automata dupla-XP gépezetté válnának.
+
 ---
 
-**Összesen: 33 tétel** (S: 6, A: 27). Ajánlott kezdés: **H2 + B42** (a gyógyuló Fa és a Mélység Népe azonnal játszhatóvá válik), majd **B15** (a krónikás-hang életben tartása).
+**Összesen: 39 tétel** (S: 6, A: 27, B: 6). Ajánlott kezdés: **H2 + B42** (a gyógyuló Fa és a Mélység Népe azonnal játszhatóvá válik), majd **B15** (a krónikás-hang életben tartása).
