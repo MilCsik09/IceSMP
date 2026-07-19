@@ -37,24 +37,8 @@ visszatérő ok a bejelentkezésre.
 gondos retired-callback kezelés nélkül „elveszett" boss marad a memóriában.
 
 ### H2. Terjedő korrupt zóna
-🔴 • ⭐⭐⭐
 
-**Mi ez:** Egy sötét energiával fertőzött terület, ami — ha hagyják — éjszakánként nő, és
-egyre veszélyesebb, egyre erősebb mobokat szül.
-**Hogyan működne:** Ritkán, a vadonban kijelölt magpontból induló zóna (kis sugár), ami
-`corruption.spread-rate` config szerint tick-enként (éjjelente) terjed, amíg el nem éri a
-`radius-cap`-et vagy meg nem tisztítják. A zónán belül a MobScalingManager egy „korrupt"
-mob-készletet szór (erősebb, sötét-token esély feljebb), a megtisztításhoz a korrupt mobok
-egy hányadát meg kell ölni ÉS egy központi „mag"-blokkot elpusztítani (TreasureEvent-szerű
-egyszeri interakció). Sikeres tisztítás jutalma nyersanyag + rövid buff a közeli játékosoknak.
-Folia: a terjedés csak a magpont régiójában fut (`getRegionScheduler`), chunk-határon átnyúló
-terjedésnél szomszéd-régióba hop, nem globális szkennelés.
-**Miért jó:** Passzív fenyegetés, ami cselekvésre kényszerít — ha senki nem törődik vele, a
-világ ténylegesen rosszabbodik, ami erős „élő világ" érzetet ad és csapatmunkára ösztönöz.
-**Építőkövek:** MobScalingManager mob-készlet felülbírálás, TreasureEvent-mintájú interakció,
-WorldGuard-bridge (ne terjedjen védett zónába).
-**Buktatók:** Kontroll nélkül a mob-entitásszám elszabadulhat egy régióban — kemény cap
-(max egyidejű korrupt mob) és a takarítás-figyelő (H24) kötelező párja.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### H3. Éjszakai ostrom a claimek ellen (opt-in)
 🟡 • ⭐⭐⭐

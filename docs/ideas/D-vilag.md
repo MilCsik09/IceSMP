@@ -77,13 +77,8 @@ Jelölés: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) • **Érték** (�
 **Buktatók:** A proximity-check ne fusson minden tick minden játékosra — throttle és kis sugár kötelező a teljesítmény miatt.
 
 ### D9. Énekmondó NPC (generált balladák)
-**Munka:** 🟢 • **Érték:** ⭐
 
-**Mi ez:** A fővárosi bárd hetente a top-játékosokról „énekel” a statisztikák alapján.
-**Hogyan működne:** Heti tick (a szezon-scheduler mintájára) lekérdezi a `StatsManager` top-3 kategóriáját (K/D, mob-ölés, quest — A15/A22), és sablon-szöveg-készletből (`messages.yml`, `{player}`/`{stat}` placeholder) összeállít 2-3 sort, amit a bárd NPC dialógusból (jobb-katt) vagy periodikus chat-buborékból megjelenít. A heti krónikával (B15) közös adatforrás, külön prezentáció.
-**Miért jó:** A száraz ranglista-számokból narratívát csinál — vicces, megosztható pillanat, gyakorlatilag ingyen alapanyagból.
-**Építőkövek:** `StatsManager` top-lekérdezés, `FancyNpcsQuestBridge` dialógus, B15 heti krónika.
-**Buktatók:** A sablon-szöveg ne ismétlődjön gépiesen — kategóriánként több variáns kell.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### D10. Szezon-ereklye vitrin
 **Munka:** 🟢 • **Érték:** ⭐
@@ -131,13 +126,8 @@ Jelölés: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) • **Érték** (�
 **Buktatók:** A számláló csak egy régió-szálon (egy zóna) él, nincs cross-thread szinkron-igény, de érdemes ellenőrizni nagy zónáknál.
 
 ### D15. Tábortűz-mesélés XP-vel
-**Munka:** 🟢 • **Érték:** ⭐
 
-**Mi ez:** Tábortűz mellé ülve (sneak+jobb-katt) rövid, ismétlődő „mesélés” mikro-esemény kevés XP-vel.
-**Hogyan működne:** A listener figyeli a tábortűz sneak+jobb-kattot; ha a játékos `campfire-story.hold-seconds` ideig `campfire-story.radius`-on belül marad (mozgás megszakítja), rövid partikel/hang-jelenet (`SOUL_FIRE_FLAME` + halk `AMBIENT_CAVE`) után kis XP-jutalom (`campfire-story.xp-reward`) és véletlen sztori-sor (config-lista, D18 frakció-lore-ból is meríthet). PDC cooldown (`cd_campfire_story`) az AFK-farm ellen.
-**Miért jó:** A dekoratív tábortűz köré harc nélküli, közösségi ritmust ad (több játékos üljön egy tűz köré) — alacsony tétű „élj a világban” tartalom.
-**Építőkövek:** `PlayerInteractListener` minta, PDC-cooldown minta (spell-cooldownok), D18 lore-szövegkészlet.
-**Buktatók:** Cooldown/hold-seconds nélkül AFK-bot-farmolható XP-forrás lenne — alacsony összeg, hosszú cooldown kötelező.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### D16. Csoportkép-pont
 **Munka:** 🟢 • **Érték:** ⭐
@@ -149,31 +139,16 @@ Jelölés: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) • **Érték** (�
 **Buktatók:** `min-players` nélkül soló-spam lenne — a közösségi jelleg a lényeg, egyfős trigger tiltandó.
 
 ### D17. Szezon-átvezető broadcast-történetek
-**Munka:** 🟢 • **Érték:** ⭐⭐
 
-**Mi ez:** Szezonváltáskor száraz statisztika helyett rövid, narratív hangvételű broadcast-sorozat vezeti fel az új szezont.
-**Hogyan működne:** A szezonzárás hookjához 3-5 üzenetből álló, késleltetett (`runDelayed` a globális scheduleren) szöveg-sorozat kötődik — az előző szezon eseményeiből (StatsManager top, B15 krónika, győztes frakció) sablon-szöveggel generált „korszakváltás” narratíva (`messages.yml` season-intro sablonok), a bemutató (intro) cím-szekvencia vizuális stílusával (title/subtitle + chat).
-**Miért jó:** A szezon-ciklus (ma csak pontszám-reset) valódi „fejezetváltásnak” érződik — történet-ívet ad egy visszaszámláló számnak.
-**Építőkövek:** Szezonzárás-hook, B15 heti krónika adatforrás, meglévő intro cím-szekvencia.
-**Buktatók:** Ne legyen blokkoló/hosszú (title-sorozat, nem kényszerített várakozás); több sablon-variáns kell az ismétlődés ellen.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### D18. A 4 frakció lore-jának ingame felszíne
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** A frakciók (RED/BLUE/NEUTRAL/DARK) háttértörténete ne csak a guide-ban létezzen, hanem apró, world-based nyomokban is felbukkanjon.
-**Hogyan működne:** Minden frakció fővárosában 2-3 admin-elhelyezett „lore-pont” (tábla-blokk, könyv-item egy polcon, vagy NPC dialógus-ág a FancyNpcs-hídon át) meséli a frakció eredetét/etikáját — a szöveg `messages.yml` dedikált `faction-lore.<faction>.<n>` kulcs-készletéből, amit az A31 frakció-infó oldal linkelhet. Kiegészítésként `/lore <frakció>` parancs ugyanezt chatbe írja azoknak, akik nem tudnak odautazni.
-**Miért jó:** A frakció-választás (ma inkább mechanikai: passzívák + szín) érzelmi/narratív súlyt kap.
-**Építőkövek:** A31 frakció-infó oldal, `MessageManager` kulcs-minta, `FancyNpcsQuestBridge` dialógus-ág.
-**Buktatók:** A fő munka tartalom-írás, nem kód; a 4 frakció lore-mennyisége maradjon kiegyensúlyozott.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### D19. Rejtélyes idegen NPC ritka felbukkanása
-**Munka:** 🟢 • **Érték:** ⭐⭐
 
-**Mi ez:** Egy név nélküli, kapucnis „Idegen” NPC, aki ritkán, véletlen helyen/időben feltűnik, mond egy talányos sort, majd eltűnik.
-**Hogyan működne:** Alacsony esély (`stranger-npc.chance-percent`, az `AmbientEventManager` esély-mintájával) triggerkor egy FancyNpcs-NPC spawnol véletlen, spawntól távoli, játékos-közeli koordinátán (a világboss spawn-választás mintájára), rövid, több-variánsos, talányos sort mond, majd `despawn-seconds` múlva particle-lel eltűnik. Nincs mechanikai jutalom — se kereskedő (B40), se questadó, tisztán atmoszférikus.
-**Miért jó:** A világ rejtélyt hordoz — a közösség „láttátok az Idegent?” beszélgetései admin-kontroll nélküli, szabad közösségi tartalmat generálnak.
-**Építőkövek:** `AmbientEventManager` esély/trigger-minta, `FancyNpcsQuestBridge` NPC-spawn, világboss spawn-választás.
-**Buktatók:** Mechanikai jutalom TILOS hozzá (elveszti a rejtély-jelleget); túl gyakori feltűnés lerontja a ritkaság-érzetet.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### D20. Szobor-oszlop saját statokkal
 **Munka:** 🟡 • **Érték:** ⭐⭐

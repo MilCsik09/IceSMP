@@ -41,22 +41,8 @@ mintája, `teleportAsync`.
 szabály kell; a tétet a duel közbeni disconnectnél is le kell zárni.
 
 ### B3. Kézzel épített dungeonök kulcs-itemmel
-**Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** Szerver-csapat által épített helyszínek, admin által kijelölve, kulcs-itemért
-belépve, bent skálázott mobokkal + boss-szal, heti lockouttal.
-**Hogyan működne:** `/territory` új `DUNGEON` típusa (nem claimelhető, belépés-ellenőrzéssel);
-belépéskor a `ClaimManager`/`TerritoryProtectionListener` mintájára egy `DungeonManager`
-ellenőrzi a kulcs-item PDC-tagjét (frakció-valutáért craftolható/vásárolható — sink) és a
-`PersistentDataContainer`-ben tárolt heti lockout-bélyeget. Bent a `MobScaling`
-nehézség-skálázás fixen a dungeon szintjére állítva (nem távolság-alapú), a boss a
-világboss-archetípus infrát (fázisok, telegraph, SLAM/ZONE speciál) újrahasznosítja.
-**Miért jó:** Kézzel tervezett, ismételhető PvE-tartalom heti ritmussal — a procedurálisan
-generált világesemények mellett „igazi" dungeon-élményt ad.
-**Építőkövek:** `TerritoryManager` zónatípus, `MobScaling`, világboss fázis/telegraph-infra,
-frakció-valuta sink.
-**Buktatók:** Nagy világépítési munka (nem plugin-kód); a heti lockout PDC-logikát csoportra
-(party) kell számolni, nem csak egyénre, különben a csapatból egy tag zárva marad.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B4. Pet-képességek
 **Munka:** 🟡 • **Érték:** ⭐⭐
@@ -226,18 +212,8 @@ tereli, és a frakció-tagok közti anyag-megosztást formalizálja.
 napi kivét-limit rang-onként ajánlott.
 
 ### B15. Heti krónika (auto-újság)
-**Munka:** 🟢 • **Érték:** ⭐
 
-**Mi ez:** Hét végén auto-generált könyv-item/chat-összefoglaló a hét eseményeiről.
-**Hogyan működne:** Vasárnap éjfélkor egy globális scheduler tick összeszedi a
-`StatsManager` heti top-adatait (raid-eredmény, szezon-állás, legnagyobb piaci üzlet,
-körözöttek) egy sablon-szövegbe, ami `written_book` itemként kerül a fővárosi hirdetőtáblára
-(D2) és broadcast chat-üzenetként is kimegy.
-**Miért jó:** A meglévő statokból szinte ingyen összerakható, és a szerver „élő világ"
-érzését erősíti — a játékosok visszaolvashatják, mi történt, míg ők offline voltak.
-**Építőkövek:** `StatsManager`, globális scheduler tick, `written_book` item, hirdetőtábla (D2).
-**Buktatók:** A sablon-szöveg gépi íze könnyen szárazra sikerülhet — pár változatos
-mondat-sablon kell a monotónia elkerülésére.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B16. Mentor-rendszer
 **Munka:** 🟡 • **Érték:** ⭐
@@ -388,20 +364,8 @@ beszél róla hétfőn.
 esély sok jeggyel), különben a gazdagabb frakció egyszerűen kivásárolja a sorsolást.
 
 ### B26. Rúna-kovácsolás (enchant-kiegészítő szakma-ág)
-**Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** Rúna-itemek craftolása ritka anyagokból, felhelyezés fegyverre/páncélra kis
-tematikus bónuszokkal.
-**Hogyan működne:** A rúna egy `ItemFactory`-mintás PDC-item (`RuneItemFactory`), a
-recept-katalógusba a Kovács/Varázsló ág 25+ szintű recepteként kerül; a „felhelyezés"
-egy anvil-szerű GUI-lépés, ami a célfegyver PDC-jébe ír egy `rune_effect` mezőt (a
-spell-effekt logika ezt olvassa cast/találat idején kis, additív szorzóként).
-**Miért jó:** A talent/mastery mellé egy harmadik, ITEM-oldali progressziós tengelyt ad —
-loot-izgalmat a raritás-rendszer fölé, mert a rúna FÜGGETLEN a fegyver raritásától.
-**Építőkövek:** `ItemFactory`-minta, recept-katalógus, spell-effekt hook-pontok.
-**Buktatók:** A rúna-hatásokat spellenként kell integrálni (nagy felületű változtatás) —
-érdemes egy szűk, közös hook-ponton (pl. `SpellCastContext` módosító lista) átvezetni,
-ne szórtan minden spell-osztályban.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B27. Dungeon-affixek (kihívás-módosítók)
 **Munka:** 🟡 • **Érték:** ⭐⭐
@@ -494,20 +458,8 @@ közösségi/kreatív esemény, ami a nem-harcias játékosokat is bevonja.
 minimum-playtime küszöb ajánlott.
 
 ### B33. Szezonzáró világesemény („végítélet-hét")
-**Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** A szezon utolsó hetében eszkalálódó modifikátorok, az utolsó napon szerver-boss
-a fővárosnál.
-**Hogyan működne:** A szezon-scheduler utolsó 7 napjában egy `SeasonFinaleManager` a
-meglévő esemény-managerek súlyait/gyakoriságát fokozatosan emeli (sűrűbb vérhold,
-erősebb invázió, dupla liga-pont — config-táblázat naponkénti eszkalációval); az utolsó
-napon egy egyszeri, globálisan broadcastolt szerver-boss spawn a fővárosnál (világboss-
-archetípus infra, egyedi loot-tábla).
-**Miért jó:** A szezonoknak drámai ívet ad — nem csak „lejár a liga", hanem érezhetően
-felfut a világ a záráshoz, ami a résztvevők számára emlékezetes pillanatot teremt.
-**Építőkövek:** Szezon-scheduler, esemény-managerek súly-rendszere, világboss-archetípus infra.
-**Buktatók:** Az eszkaláció ne váljon já(rha)tatlanná a gyengébb frakciónak — a boss-nehézség
-és a modifikátorok ne büntessék túl azt, aki lemaradt a szezonban.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B34. Lebomló sír (grave) halálkor
 **Munka:** 🟡 • **Érték:** ⭐⭐
@@ -527,19 +479,8 @@ lejáratot — érdemes a halott számára hosszabb kizárólagos ablakot adni, 
 gyilkosnak.
 
 ### B35. Céhek (frakción belüli kisközösségek)
-**Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** 5-15 fős céh saját névvel, kasszával, céh-questekkel és céh-szintlépéssel — a
-frakció (50+) és a party (5) közti köztes réteg.
-**Hogyan működne:** `GuildManager` a `PartyManager` perzisztens, kibővített testvére:
-`/guild create <név>` (frakción belül, tagok csak azonos frakcióból), saját `YamlStore`-
-perzisztált kassza (bank-infra), céh-szintű közösségi cél-questek (a meglévő közösségi
-cél-minta céh-scope-ra szűkítve), céh-szintlépés (tag-aktivitás összesítéséből XP).
-**Miért jó:** A közösségi kohézió legerősebb eszköze — az 50+ fős frakció túl nagy az
-igazi közösségérzethez, az 5 fős party túl kicsi a tartós szervezethez; a céh a kettő közt hidal.
-**Építőkövek:** `PartyManager` minta, közösségi cél-infra, bank/kassza-infra, `YamlStore`.
-**Buktatók:** Nagy munka (új manager + GUI + perzisztencia + rang-rendszer réteg) — érdemes
-a party-infra közvetlen kiterjesztéseként indulni, ne nulláról.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B36. Gyorsutazás-hálózat (útkövek)
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
@@ -634,19 +575,8 @@ elég strukturált — a bűn-rendszert nem érinti, tisztán sportszerű.
 eredményezhet — kis szerveren érdemes tágabb ELO-sávval indulni.
 
 ### B42. Régészet szakma-ág
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** Gyanús homok/kavics blokkok ecsettel áshatók: cserép-szilánkok → relikvia-
-szilánk/bestiárium-oldal/recept-lap.
-**Hogyan működne:** A vanília 1.20 archeológia-mechanika (gyanús blokk + ecset) rátölthető
-egy `ArcheologyManager`-rel: a blokk-spawn ritka, világ-szórt (a kincs-esemény
-elhelyezés-mintáját követve), a kiásott cserép-szilánk PDC-taggel jelöli, mi állítható
-össze belőle (relikvia-szilánk, bestiárium-oldal — B21, recept-lap).
-**Miért jó:** A vanília rendszerre épít (kevesebb saját munka), és felfedező-játékstílust
-szolgáló, csendes tartalmat ad, ami más rendszerekbe (bestiárium, relikvia) táplál be.
-**Építőkövek:** Vanília archeológia API, kincs-esemény elhelyezés-minta, bestiárium (B21).
-**Buktatók:** A vanília gyanús blokk loot-táblája felülírandó, hogy csak a szerver-saját
-tartalom (nem vanília pottery sherd) essen belőle — gondos config-munka kell.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B43. Pet-tenyésztés
 **Munka:** 🔴 • **Érték:** ⭐
@@ -835,21 +765,8 @@ játékos választhat: eladja a piacon (biztos, kis érték) vagy megkockáztatj
 fuzionál (a raritás-létra inflálódik); ha túl kegyetlen, senki nem használja.
 
 ### B54. Elátkozott felszerelés (kockázatos erő)
-**Munka:** 🟢 • **Érték:** ⭐⭐
 
-**Mi ez:** Ritka, erős tárgyak egy csoportja, amik felvétel után nem vehetők le szabadon
-(egy rituálé/quest kell a „megtöréshez"), cserébe komoly bónuszt adnak.
-**Hogyan működne:** A raritás-létra egy „Átkozott" al-kategóriája (a loot-tábla ritka
-ágán, mob-loot vagy világboss-forrásból); az item PDC-je egy `cursed: true` flaget hordoz,
-amit egy `PlayerArmorChangeEvent`/inventory-listener figyel — levételi kísérletnél
-visszahelyezi, hacsak a játékos nincs a rituálé-oltárnál (a meglévő Feloldozás-szolgáltatás
-mintájára egy „Átok-törés" opcióval).
-**Miért jó:** Tematikus, önkéntes kockázat-vállalás — a nagy erő ára az elköteleződés,
-ami izgalmas döntési helyzetet teremt anélkül, hogy PvP-t vagy gazdaságot érintene.
-**Építőkövek:** Raritás/loot-rendszer, rituálé-oltár Feloldozás-szolgáltatás mintája,
-inventory-listener.
-**Buktatók:** A kényszerített viselet UX-szempontból frusztráló lehet, ha a játékos nem
-érti előre a szabályt — egyértelmű lore-szöveg és felvétel előtti megerősítő GUI-prompt kötelező.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B55. Önkéntes nehézség-fogadalom (kockázat-mód)
 **Munka:** 🟢 • **Érték:** ⭐⭐

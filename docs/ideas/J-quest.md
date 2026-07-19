@@ -141,21 +141,8 @@ tagonként a saját régió-szálukra hop-olva (`target.getScheduler().run`).
 teljesítés-ellenőrzésnél mindig a SNAPSHOT-ot nézzük, ne az aktuális partyt.
 
 ### J9. Fejezet-rendszer (szezononkénti story-ív)
-🔴 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** A `next`-láncolást egy magasabb szintű "fejezet" fogalom fogja össze: minden
-szezon egy story-ívet nyit (a `SeasonManager` szezonváltásához kötve), amiben csak az adott
-szezon alatt elérhető quest-láncok futnak.
-**Hogyan működne:** `chapter: "szezon3"` mező a questeken; a `QuestManager` elfogadás-
-ellenőrzésébe egy `requires-chapter-active` szűrő kerül, ami a `SeasonManager.getCurrentSeasonId()`-
-del veti össze. Be nem fejezett fejezet-questek szezonváltáskor archiválódnak (a lezárt
-állapot PDC-ben marad, de új fejezet-questek nem nyílnak rájuk).
-**Miért jó:** A szezon-rendszernek (király, raid, liga) most nincs NARRATÍV íve — ez adja
-meg a "évad-történet" érzést, a heti krónikával (B15) és a szezonzáró eseménnyel (B33)
-összefűzve.
-**Építőkövek:** `SeasonManager`, `next`-láncolás, `QuestManager` requires-* keret.
-**Buktatók:** Nagy tartalom-munka (írás), és a szezonváltáskor futó láncoknál explicit
-kell dönteni: törlődik vagy átmenetileg befejezhető marad-e a félbehagyott quest.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### J10. Döntés-következmény flagek (elágazó dialógus emlékezik)
 🟡 • **Érték:** ⭐⭐⭐
