@@ -285,12 +285,12 @@ public final class WorldBossManager {
         final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
                 highestY + 1.0D, approx.getBlockZ() + 0.5D);
 
-        // Placement rules (same set as meteor/treasure): never inside a town/claim/WG region,
-        // never on a water surface. Skipping leaves activeBossUntil unset; the 10s spawn-grace
-        // self-heals and the next interval rolls a fresh spot elsewhere.
+        // Placement rules (config: world-events.spawn-rules.world-boss): never inside a
+        // town/claim/WG region, never on a water surface. Skipping leaves activeBossUntil
+        // unset; the 10s spawn-grace self-heals and the next interval rolls a fresh spot.
         final EventSpawnGuard guard = spawnGuard;
-        if ((guard != null && guard.isBlocked(spawnLocation))
-                || EventSpawnGuard.isUnsafeSurface(approx.getWorld(), approx.getBlockX(), approx.getBlockZ())) {
+        if (guard != null && (guard.isBlocked("world-boss", spawnLocation)
+                || guard.isUnsafeSurface("world-boss", approx.getWorld(), approx.getBlockX(), approx.getBlockZ()))) {
             return;
         }
 

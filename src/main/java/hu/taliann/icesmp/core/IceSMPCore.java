@@ -289,7 +289,7 @@ public final class IceSMPCore {
         this.metelytepoManager = new MetelytepoManager(plugin, sinManager);
         this.minionManager = new MinionManager(plugin);
         this.totemManager = new hu.taliann.icesmp.managers.TotemManager(plugin, configManager);
-        this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.factionTreasuryManager = new FactionTreasuryManager(plugin, configManager, currencyManager, factionManager, sinManager, messageManager);
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
@@ -325,18 +325,19 @@ public final class IceSMPCore {
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
         this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
-        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, claimManager, territoryManager, messageManager);
-        this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
-        this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
-        this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
-        this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
-        this.meteorEventManager = new MeteorEventManager(plugin, configManager, territoryManager, claimManager, messageManager);
-        // Közös spawn-hely szabályok a mob-spawnoló világeseményekhez (város/claim/WG-elkerülés).
-        // Setter-injektálás, mert a ClaimManager a DI-sorrendben a három event-manager UTÁN épül.
+        // Közös, esemény×védelem mátrixszal configolható spawn-hely szabályok (world-events.
+        // spawn-rules) minden világeseménynek. A világboss/invázió/vad hajsza setter-t kap,
+        // mert a DI-sorrendben a ClaimManager ELŐTT épülnek.
         final hu.taliann.icesmp.managers.EventSpawnGuard eventSpawnGuard =
                 new hu.taliann.icesmp.managers.EventSpawnGuard(configManager, territoryManager, claimManager);
         worldBossManager.setSpawnGuard(eventSpawnGuard);
         invasionManager.setSpawnGuard(eventSpawnGuard);
+        this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, eventSpawnGuard, messageManager);
+        this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
+        this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
+        this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
+        this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
+        this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);

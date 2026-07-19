@@ -57,6 +57,11 @@ factions:
     # Amit a számla nem fedez, hátralékként gyűlik (treasury.yml: tax-arrears), és a
     # következő beszedésekkor automatikusan törlesztődik. Ez a plafonja (0 = nincs hátralék).
     max-arrears: 50.0
+    # Adócsalás: ha a hátralék a plafonon ragad és a beszedés SEMMIT sem tud levonni, strike
+    # jár; ennyi egymást követő strike után a Számvevők feljelentik az adócsalót → +1 bűn
+    # (a bűn-küszöb elérése a meglévő száműzetés-mechanikát indítja — Kitaszítottak közé).
+    # A strike törlődik, amint a tartozás a plafon alá kerül. 0 = kikapcsolva.
+    evasion-strikes: 3
     exempt:
       - "NEUTRAL"
   # ===== Bűn-számláló és száműzetés =====

@@ -180,9 +180,10 @@ public final class InvasionManager {
         }
 
         // Never launch an invasion inside a town/claim/WG region — the anchor player may be
-        // standing in a protected city. Silent skip; the next interval picks a new anchor.
+        // standing in a protected city (config: world-events.spawn-rules.invasion). Silent
+        // skip; the next interval picks a new anchor.
         final EventSpawnGuard guard = spawnGuard;
-        if (guard != null && guard.isBlocked(center)) {
+        if (guard != null && guard.isBlocked("invasion", center)) {
             return;
         }
 
@@ -248,8 +249,8 @@ public final class InvasionManager {
         // Per-spot rules: the wave ring can straddle a town border or reach over water — those
         // members are simply skipped (the wave stays a wave, just thinner at the edge).
         final EventSpawnGuard guard = spawnGuard;
-        if ((guard != null && guard.isBlocked(spot))
-                || EventSpawnGuard.isUnsafeSurface(spot.getWorld(), spot.getBlockX(), spot.getBlockZ())) {
+        if (guard != null && (guard.isBlocked("invasion", spot)
+                || guard.isUnsafeSurface("invasion", spot.getWorld(), spot.getBlockX(), spot.getBlockZ()))) {
             return null;
         }
         final Mob mob = (Mob) spot.getWorld().spawn(spot, entityClass.asSubclass(Mob.class));

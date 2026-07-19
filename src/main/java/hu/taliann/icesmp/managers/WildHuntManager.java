@@ -220,10 +220,11 @@ public final class WildHuntManager {
         final int z = center.getBlockZ();
         final Location spot = new Location(world, x + 0.5D, world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
 
-        // Placement rules (same set as meteor/treasure): never inside a town/claim/WG region,
-        // never on a water surface. The 10s spawn-grace self-heals; next interval rolls again.
+        // Placement rules (config: world-events.spawn-rules.wild-hunt): never inside a
+        // town/claim/WG region, never on a water surface. The 10s spawn-grace self-heals;
+        // the next interval rolls again elsewhere.
         final EventSpawnGuard guard = spawnGuard;
-        if ((guard != null && guard.isBlocked(spot)) || EventSpawnGuard.isUnsafeSurface(world, x, z)) {
+        if (guard != null && (guard.isBlocked("wild-hunt", spot) || guard.isUnsafeSurface("wild-hunt", world, x, z))) {
             return;
         }
 

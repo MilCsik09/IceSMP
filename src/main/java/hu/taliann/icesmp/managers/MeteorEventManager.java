@@ -44,8 +44,7 @@ public final class MeteorEventManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final TerritoryManager territoryManager;
-    private final ClaimManager claimManager;
+    private final EventSpawnGuard spawnGuard;
     private final MessageManager messageManager;
 
     private volatile Location craterCenter;
@@ -61,12 +60,10 @@ public final class MeteorEventManager {
     private volatile long spawnGraceUntil;
 
     public MeteorEventManager(final JavaPlugin plugin, final ConfigManager configManager,
-                              final TerritoryManager territoryManager, final ClaimManager claimManager,
-                              final MessageManager messageManager) {
+                              final EventSpawnGuard spawnGuard, final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
-        this.territoryManager = territoryManager;
-        this.claimManager = claimManager;
+        this.spawnGuard = spawnGuard;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
@@ -152,12 +149,10 @@ public final class MeteorEventManager {
         final int surfaceY = world.getHighestBlockYAt(x, z);
         final Location center = new Location(world, x + 0.5D, surfaceY + 1, z + 0.5D);
 
-        // Terrain safety: never land inside a claimed faction territory, a player
-        // claim, nor a WorldGuard region (towns/spawn) — the WG bridge fails open.
-        if (configManager.getBoolean("meteor.avoid-territory", true)
-                && (territoryManager.getTerritoryAt(center) != null
-                        || claimManager.getClaimAt(center) != null
-                        || hu.taliann.icesmp.integration.ProtectionBridge.isProtected(center))) {
+        // Terrain safety: never land inside a claimed faction territory, a player claim, nor
+        // a WorldGuard region (config: world-events.spawn-rules.meteor — replaces the old
+        // meteor.avoid-territory key).
+        if (spawnGuard.isBlocked("meteor", center)) {
             return; // Try again next interval, elsewhere.
         }
 

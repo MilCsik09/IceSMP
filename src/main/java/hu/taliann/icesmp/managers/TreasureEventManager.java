@@ -32,8 +32,7 @@ public final class TreasureEventManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final PartyManager partyManager;
-    private final ClaimManager claimManager;
-    private final TerritoryManager territoryManager;
+    private final EventSpawnGuard spawnGuard;
     private final MessageManager messageManager;
 
     private volatile Location chest;
@@ -49,13 +48,12 @@ public final class TreasureEventManager {
     private volatile long nextAttemptAt;
 
     public TreasureEventManager(final JavaPlugin plugin, final ConfigManager configManager,
-                                final PartyManager partyManager, final ClaimManager claimManager,
-                                final TerritoryManager territoryManager, final MessageManager messageManager) {
+                                final PartyManager partyManager, final EventSpawnGuard spawnGuard,
+                                final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.partyManager = partyManager;
-        this.claimManager = claimManager;
-        this.territoryManager = territoryManager;
+        this.spawnGuard = spawnGuard;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
@@ -150,18 +148,11 @@ public final class TreasureEventManager {
     private void placeChest(final World world, final int x, final int z) {
         final int y = world.getHighestBlockYAt(x, z) + 1;
         final Location spot = new Location(world, x, y, z);
-        // Never place the chest inside a WorldGuard region (towns/spawn), a player claim,
-        // or claimed faction territory — protection would also block opening/breaking it
-        // (same rule set as MeteorEventManager.land). Retry next interval.
-        if (hu.taliann.icesmp.integration.ProtectionBridge.isProtected(spot)
-                || claimManager.getClaimAt(spot) != null
-                || territoryManager.getTerritoryAt(spot) != null) {
+        // Never place the chest inside a WG region (towns/spawn), a player claim, claimed
+        // faction territory, or over water — protection would also block opening/breaking it
+        // (config: world-events.spawn-rules.treasure). Retry next interval, elsewhere.
+        if (spawnGuard.isBlocked("treasure", spot) || spawnGuard.isUnsafeSurface("treasure", world, x, z)) {
             return;
-        }
-        // Terrain rule: don't hover over water, and remember whatever non-solid block
-        // (grass, snow layer, flower…) we replace so it is RESTORED, never AIR-ed.
-        if (world.getBlockAt(x, y - 1, z).isLiquid()) {
-            return; // Retry next interval, elsewhere.
         }
         final Block block = spot.getBlock();
         originalState = block.getState();

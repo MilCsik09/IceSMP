@@ -29,11 +29,21 @@ mob-scaling:
 # és a szezon-lejáratot; mindegyik a saját enabled kapcsolójával vezérelhető.
 world-events:
   check-interval-seconds: 60
-  # A mob-spawnoló események (világboss, invázió, vad hajsza) NEM spawnolhatnak claimelt
-  # frakció-territóriumba, játékos-claimbe vagy WorldGuard-régióba (városok/spawn), és víz
-  # tetejére sem — ugyanaz a szabályrendszer, mint a meteornál/kincsnél. A tiltott hely
-  # kimarad, az esemény a következő intervallumban máshol próbálkozik.
+  # Mester-kapcsoló: false = a lenti spawn-rules mátrix egyáltalán nem fut (mindenhova
+  # spawnolhat minden). A kulcsok élőben olvasódnak — /icesmp reload után restart nélkül él.
   avoid-territory: true
+  # Esemény × védelem mátrix: melyik esemény hol NEM spawnolhat. Oszlopok:
+  #   territory = claimelt frakció-territórium | claim = játékos-claim
+  #   region    = WorldGuard-régió (városok/spawn) | water = víz-felszín
+  # Minden cella alapból true (nem kiírt kulcs = true). A tiltott hely kimarad, az esemény
+  # a következő intervallumban máshol próbálkozik. (A meteor saját terep-szabálya —
+  # lombkorona/rönk-tető elkerülés — configtól függetlenül mindig él.)
+  spawn-rules:
+    world-boss: { territory: true, claim: true, region: true, water: true }
+    invasion:   { territory: true, claim: true, region: true, water: true }
+    wild-hunt:  { territory: true, claim: true, region: true, water: true }
+    treasure:   { territory: true, claim: true, region: true, water: true }
+    meteor:     { territory: true, claim: true, region: true }
   # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
   blood-moon:
     enabled: true
@@ -286,4 +296,5 @@ meteor:
   crater-radius: 3           # a kráter sugara (blokk) — kicsi, hogy gyors legyen a visszaállítás
   crater-depth: 2            # a kráter mélysége a közepén
   ore-chance: 0.45           # a kráter-közép blokkjai ekkora eséllyel érc (különben díszes bélés)
-  avoid-territory: true      # ne csapódjon be claimelt frakció-területre
+  # A becsapódás-hely védelme a world-events.spawn-rules.meteor mátrixba költözött
+  # (a régi meteor.avoid-territory kulcs megszűnt).

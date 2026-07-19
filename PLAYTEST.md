@@ -389,6 +389,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       gyűlik (üzenet jelzi), plafonig (`max-arrears`, default 50); pénz érkezése után a következő
       beszedés a hátralékot is levonja. Restart után a hátralék megmarad (treasury.yml: tax-arrears).
       A Semlegesek továbbra is mentesek.
+- [ ] **Adócsalás (ÚJ):** ha a hátralék a plafonon ragad és a beszedés semmit sem tud levonni,
+      strike jár (`factions.tax.evasion-strikes`, default 3); a küszöbnél a Számvevők feljelentik
+      az adócsalót → **+1 bűn** (üzenettel, online beszedéskor) — a bűn-küszöb elérése a meglévő
+      száműzetést indítja (Kitaszítottak). A strike törlődik, amint a tartozás a plafon alá esik;
+      restart-álló (treasury.yml: tax-evasion-strikes). 0 = kikapcsolva.
 - [ ] **Dinamikus árfolyam:** több valuta a szerveren → kevesebbet ér (`/currency rates`).
 - [ ] **Valutaváltó GUI** (`/menu` → Bank & Pénz → Valutaváltó): forrás-választó fent, cél-választó
       lent (a forrással azonos valuta szürke, nem választható), középen élő árfolyam + 64-es előnézet;
@@ -605,7 +610,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Esemény-spawn szabályok (ÚJ):** világboss / invázió / Vad Hajsza **NEM spawnol** claimelt
       frakció-territóriumba, játékos-claimbe, WG-régióba (városok), sem víz tetejére — állj be egy
       városba és `/events worldboss|invasion|wild-hunt`: nem jelenik meg semmi (a következő
-      intervallumban máshol próbálkozik). Kapcsoló: `world-events.avoid-territory`.
+      intervallumban máshol próbálkozik). Config: `world-events.spawn-rules` esemény×védelem
+      mátrix (world-boss/invasion/wild-hunt/treasure/meteor × territory/claim/region/water,
+      minden cella külön kapcsolható) + `world-events.avoid-territory` mester-kapcsoló; a
+      kulcsok élőben olvasódnak → `/icesmp reload` után restart nélkül él. ⚠️ A régi
+      `meteor.avoid-territory` kulcs megszűnt (a mátrix meteor-sora váltja).
 - [ ] **Esemény-mob keményítés (ÚJ):** a Pokoli Hadúr boss / Alvilági Roham piglinjei / Pokoli Behemót
       az overworldben **NEM zombisodnak át** (várj mellettük ~15 mp-et); az invázió csontváz/zombi
       mobjai és a boss SUMMON-addjai **nappal nem gyulladnak meg**. ⚠️ Zombisodás esetén korábban a

@@ -51,9 +51,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Tárgyak Lelke (VIII.) | tárgy-raritás létra (Ócska→Ereklye), affixek, nevesített craft |
 | Vér Emlékezete (VIII.) | talentpontok + talentfák (kaszt- és szakma-szintből) |
 | Hű Társak (VIII.) | Vadmester befogott állat-társa / Nekromanta élőholt companionja, pet-szintezés |
-| Égi Jelek (VIII.) | világesemények (vérhold, Bőség-idő, meteor/hulló csillag, északi fény, köd/szellemek, Vad Hajsza, karaván, kincs/gyűjtő-lázak, invázió/világboss, kollektív szerver-kihívás) — mind config-vezérelt |
+| Égi Jelek (VIII.) | világesemények (vérhold, Bőség-idő, meteor/hulló csillag, északi fény, köd/szellemek, Vad Hajsza, karaván, kincs/gyűjtő-lázak, invázió/világboss, kollektív szerver-kihívás) — mind config-vezérelt; a spawn-helyeket esemény×védelem mátrix szabályozza (world-events.spawn-rules: territórium/claim/WG-régió/víz), az esemény-mobok nem zombisodnak és nappal sem égnek |
 | Fa Alatt Testvérek (VIII.) | party-rendszer: frakció-független, osztott XP, personal loot, párton belüli PvP-tiltás |
-| Arany Áramlása (VIII.) | bank/piac/aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő, „nincs addolt pénz" elv; caldesterai ládák = crate-rendszer (kulcs-ár = valuta-nyelő) |
+| Arany Áramlása (VIII.) | bank/piac/aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő, „nincs addolt pénz" elv; caldesterai ládák = crate-rendszer (kulcs-ár = valuta-nyelő); **adó = 2% + fejadó**, a fedezetlen rész hátralék, a tartós nem-fizetést a Számvevők bűnként jelentik fel (bűn-küszöb → száműzetés a Kitaszítottak közé) |
 | Korszakok Könyve (VIII.) | szezonliga: frakció-pontverseny, szezon-végi jutalom |
 | Oltárok és Ereklyék (VIII.) | egy-példányos relikviák, PvP-átvétel, inaktivitás-elenyészés; multi-block rituálé-oltárok |
 | Hírnökök és Krónikák (VIII.) | quest-rendszer, NPC quest-adók, napi rotáció, frakció-közösségi célok, achievementek/ranglisták |

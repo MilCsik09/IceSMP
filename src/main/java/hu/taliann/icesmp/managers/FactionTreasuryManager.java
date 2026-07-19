@@ -43,14 +43,24 @@ public final class FactionTreasuryManager implements PersistentStore {
      * settled automatically at the next collections, capped so it can't grow unboundedly.
      */
     private final Map<UUID, Double> taxArrears = new ConcurrentHashMap<>();
+    /**
+     * Tax-evasion strikes (adócsalás): consecutive collections where the arrears sat at
+     * the cap and NOTHING could be deducted. At the configured threshold the Reckoners
+     * report the evader — +1 sin through SinManager (whose own threshold exiles to the
+     * Outcasts), then the counter resets. Cleared as soon as the debt drops below the cap.
+     */
+    private final Map<UUID, Integer> evasionStrikes = new ConcurrentHashMap<>();
+    /** Sin hook for the evasion report (SinManager is built earlier in the DI order). */
+    private final SinManager sinManager;
 
     public FactionTreasuryManager(final JavaPlugin plugin, final ConfigManager configManager,
                                   final CurrencyManager currencyManager, final FactionManager factionManager,
-                                  final MessageManager messageManager) {
+                                  final SinManager sinManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
+        this.sinManager = sinManager;
         this.messageManager = messageManager;
         this.storageFile = new File(plugin.getDataFolder(), "treasury.yml");
         plugin.getDataFolder().mkdirs();
@@ -105,6 +115,21 @@ public final class FactionTreasuryManager implements PersistentStore {
                 }
             }
 
+            evasionStrikes.clear();
+            final ConfigurationSection strikesSection = yaml.getConfigurationSection("tax-evasion-strikes");
+            if (strikesSection != null) {
+                for (final String key : strikesSection.getKeys(false)) {
+                    try {
+                        final int strikes = strikesSection.getInt(key, 0);
+                        if (strikes > 0) {
+                            evasionStrikes.put(UUID.fromString(key), strikes);
+                        }
+                    } catch (final IllegalArgumentException ignored) {
+                        plugin.getLogger().warning("Invalid UUID in treasury.yml tax-evasion-strikes: " + key);
+                    }
+                }
+            }
+
             plugin.getLogger().info("Loaded faction treasury balances.");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load faction treasury: " + exception.getMessage());
@@ -122,6 +147,11 @@ public final class FactionTreasuryManager implements PersistentStore {
         for (final Map.Entry<UUID, Double> entry : taxArrears.entrySet()) {
             if (entry.getValue() > 0.0D) {
                 yaml.set("tax-arrears." + entry.getKey(), entry.getValue());
+            }
+        }
+        for (final Map.Entry<UUID, Integer> entry : evasionStrikes.entrySet()) {
+            if (entry.getValue() > 0) {
+                yaml.set("tax-evasion-strikes." + entry.getKey(), entry.getValue());
             }
         }
 
@@ -271,6 +301,32 @@ public final class FactionTreasuryManager implements PersistentStore {
 
             if (paid > 0.0D) {
                 collected.merge(faction, paid, Double::sum);
+            }
+
+            // Adócsalás: strike, ha a hátralék a plafonon ragadt ÉS semmit sem sikerült levonni;
+            // törlődik, amint a tartozás a plafon alá kerül. A küszöbnél a Számvevők feljelentik
+            // az adócsalót (+1 bűn — a bűn-küszöb a meglévő száműzetés-mechanikát indítja).
+            final int evasionThreshold = Math.max(0, configManager.getInt("factions.tax.evasion-strikes", 3));
+            if (evasionThreshold > 0 && maxArrears > 0.0D && paid <= 0.0D && owedAfter >= maxArrears) {
+                final int strikes = evasionStrikes.merge(citizenId, 1, Integer::sum);
+                arrearsChanged = true;
+                if (strikes >= evasionThreshold) {
+                    final Player evader = Bukkit.getPlayer(citizenId);
+                    // A bűn PDC-be íródik és world-effektet játszik → csak online bűnösnél, a saját
+                    // régió-szálán (Folia). Offline adócsalónál a strike a küszöbön marad, és az
+                    // első online beszedéskor csapódik le.
+                    if (evader != null) {
+                        evasionStrikes.remove(citizenId);
+                        evader.getScheduler().run(plugin, task -> {
+                            sinManager.addSin(evader, 1);
+                            evader.sendMessage(messageManager.getMessage(
+                                    "faction-tax-evasion",
+                                    "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!"));
+                        }, null);
+                    }
+                }
+            } else if (owedAfter < maxArrears && evasionStrikes.remove(citizenId) != null) {
+                arrearsChanged = true;
             }
 
             final Player citizen = Bukkit.getPlayer(citizenId);

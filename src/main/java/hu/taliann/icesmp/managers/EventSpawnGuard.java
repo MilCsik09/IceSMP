@@ -5,17 +5,20 @@ import org.bukkit.World;
 import org.bukkit.entity.Mob;
 
 /**
- * Shared spawn-placement rules for the mob-spawning world events (world boss,
- * invasion, wild hunt) — the same "events never land in someone's town" rule set
- * the meteor and treasure events already enforce individually: no claimed faction
- * territory, no player claim, no WorldGuard region (towns/spawn; the bridge fails
- * open). Also carries the shared event-mob hardening (no overworld zombification,
- * no daylight burn), so an event mob never silently turns into an untracked
- * vanilla mob or burns away before players reach it.
+ * Shared spawn-placement rules for the world events: the "events never land in
+ * someone's town" rule set, configurable per event AND per protection type via
+ * the {@code world-events.spawn-rules.<event>.<protection>} matrix (all default
+ * true), under the {@code world-events.avoid-territory} master switch. The
+ * protection types: {@code territory} = claimed faction territory, {@code claim}
+ * = player claim, {@code region} = WorldGuard region (towns/spawn; the bridge
+ * fails open), {@code water} = liquid surface (would drown/strand a ground mob).
+ * Also carries the shared event-mob hardening (no overworld zombification, no
+ * daylight burn), so an event mob never silently turns into an untracked vanilla
+ * mob or burns away before players reach it.
  *
- * <p>Constructed AFTER ClaimManager in the DI order and setter-injected into the
- * three event managers (which are constructed earlier); each caller treats a
- * missing guard as "no restriction" so construction order can never NPE.
+ * <p>Constructed after ClaimManager in the DI order; the event managers built
+ * earlier receive it via setter and treat a missing guard as "no restriction"
+ * so construction order can never NPE.
  */
 public final class EventSpawnGuard {
 
@@ -31,29 +34,40 @@ public final class EventSpawnGuard {
     }
 
     /**
-     * Whether an event may NOT spawn at the location: claimed faction territory,
-     * player claim or protected (WorldGuard) region. Config-toggleable; reads are
-     * lock-free/concurrent structures, safe from any region thread.
+     * Whether the event may NOT spawn at the location per its protection rules
+     * (territory / claim / region). Reads are lock-free/concurrent structures,
+     * safe from any region thread.
      *
+     * @param eventKey the event's spawn-rules key (e.g. "world-boss", "invasion")
      * @param location the candidate spawn location
-     * @return true when the location is protected and the event must skip it
+     * @return true when a protection rule blocks the location
      */
-    public boolean isBlocked(final Location location) {
+    public boolean isBlocked(final String eventKey, final Location location) {
         if (!configManager.getBoolean("world-events.avoid-territory", true)) {
             return false;
         }
-        return territoryManager.getTerritoryAt(location) != null
-                || claimManager.getClaimAt(location) != null
-                || hu.taliann.icesmp.integration.ProtectionBridge.isProtected(location);
+        if (rule(eventKey, "territory") && territoryManager.getTerritoryAt(location) != null) {
+            return true;
+        }
+        if (rule(eventKey, "claim") && claimManager.getClaimAt(location) != null) {
+            return true;
+        }
+        return rule(eventKey, "region") && hu.taliann.icesmp.integration.ProtectionBridge.isProtected(location);
     }
 
     /**
-     * Whether the surface at the column is unfit for a ground-mob event spawn
-     * (liquid top — an ocean/lava surface would drown or strand the mob).
-     * Must be called on the region thread that owns the column.
+     * Whether the surface at the column is unfit for the event's ground spawn
+     * (liquid top; per-event {@code water} rule). Must be called on the region
+     * thread that owns the column.
      */
-    public static boolean isUnsafeSurface(final World world, final int x, final int z) {
-        return world.getBlockAt(x, world.getHighestBlockYAt(x, z), z).isLiquid();
+    public boolean isUnsafeSurface(final String eventKey, final World world, final int x, final int z) {
+        return rule(eventKey, "water")
+                && world.getBlockAt(x, world.getHighestBlockYAt(x, z), z).isLiquid();
+    }
+
+    /** One cell of the per-event spawn-rules matrix (default: every protection on). */
+    private boolean rule(final String eventKey, final String protection) {
+        return configManager.getBoolean("world-events.spawn-rules." + eventKey + "." + protection, true);
     }
 
     /**

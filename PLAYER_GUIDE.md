@@ -157,7 +157,9 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
 - **Állampolgári adó:** óránként a frakciótagok a saját valuta-egyenlegük **2%-át**, de
   **legalább 2 érme fejadót** befizetnek a frakciókasszába (a Semlegesek mentesek). Az üresen
   tartott számla sem kibúvó: amit a számla nem fedez, **hátralékként** gyűlik (legfeljebb 50
-  érméig), és a következő beszedésekkor automatikusan levonódik. Ez csökkenti a forgalomban lévő pénzt.
+  érméig), és a következő beszedésekkor automatikusan levonódik. Aki tartósan a plafonon ülő
+  hátralékkal, fizetés nélkül „csal", azt a **Számvevők feljelentik** — **bűnt** kap, és a bűnök
+  súlya a Kitaszítottak közé taszíthatja. Ez csökkenti a forgalomban lévő pénzt.
 - **Kereslet-sokk** (heti gazdasági esemény): időnként egy véletlen valuta értéke **átmenetileg
   x1.2–1.6-ra ugrik** (broadcast jelzi) — kereskedési lehetőség.
 - **Lélekkő:** a magas szintű (Lvl 3+) skálázott szörnyek eséllyel **Csontveretet** dobnak — a

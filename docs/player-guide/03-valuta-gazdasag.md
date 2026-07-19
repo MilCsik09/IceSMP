@@ -84,7 +84,9 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
 - **Állampolgári adó:** óránként a frakciótagok a saját valuta-egyenlegük **2%-át**, de
   **legalább 2 érme fejadót** befizetnek a frakciókasszába (a Semlegesek mentesek). Az üresen
   tartott számla sem kibúvó: amit a számla nem fedez, **hátralékként** gyűlik (legfeljebb 50
-  érméig), és a következő beszedésekkor automatikusan levonódik.
+  érméig), és a következő beszedésekkor automatikusan levonódik. Aki tartósan a plafonon ülő
+  hátralékkal, fizetés nélkül „csal", azt a **Számvevők feljelentik** — **bűnt** kap, és a
+  bűnök súlya a Kitaszítottak közé taszíthatja.
 - **Kereslet-sokk** (időnként): egy véletlen valuta értéke átmenetileg **megugrik** (x1,2–1,6) —
   ezt egy üzenet jelzi mindenkinek. Jó alkalom kereskedni!
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
