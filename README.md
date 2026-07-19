@@ -89,19 +89,19 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
 
 | Kaszt | Katalizátor |
 |---|---|
-| Varázsló | 📖 **Mágikus Kódex** (bűvölt könyv) |
-| Harcos | 📯 **Harci Kürt** (kecskekürt) |
-| Íjász | 🎒 **Vadásztarsoly** (nyúlbőr) |
-| Orgyilkos | 🪨 **Árnyékamulett** (kovakő) |
-| Druida | 🌱 **Vadon Talizmánja** (tölgycsemete) |
-| Paplovag | 🔔 **Szent Harang** (harang) |
-| Halállovag | 💀 **Rúnakovácsolt Koponya** (wither-koponya) |
-| Sámán | 🪬 **Ősök Totemje** (mentő totem) |
-| Szerzetes | 🎍 **Jáde Bot** (bambusz) |
-| Pap | 🕯️ **Szent Gyertya** (fehér gyertya) |
-| Boszorkánymester | 🏮 **Lélek Lámpás** (lélek-lámpás) |
-| Démonvadász | 👁️ **Démonszem** (ender-szem) |
-| Sárkányidéző | 🐲 **Sárkány Esszencia** (sárkánylehelet) |
+| Varázsló | 📖 **Caldesterai Rúnakódex** (bűvölt könyv) |
+| Harcos | 📯 **Sárkánykirály Kürtje** (kecskekürt) |
+| Íjász | 🎒 **Soleil Vadásztarsolya** (nyúlbőr) |
+| Orgyilkos | 🪨 **Homály-szilánk** (kovakő) |
+| Druida | 🌱 **Aetrinita Sarja** (tölgycsemete) |
+| Paplovag | 🔔 **Hajnaltűz Harangja** (harang) |
+| Halállovag | 💀 **Néma Rúnakoponya** (wither-koponya) |
+| Sámán | 🪬 **Ősvihar Totemje** (mentő totem) |
+| Szerzetes | 🎍 **Élet Ága** (bambusz) |
+| Pap | 🕯️ **Asterlayna Gyertyája** (fehér gyertya) |
+| Boszorkánymester | 🏮 **Kárhozat Lámpása** (lélek-lámpás) |
+| Démonvadász | 👁️ **Hasadék Szeme** (ender-szem) |
+| Sárkányidéző | 🐲 **Sárkányvér-fiola** (sárkánylehelet) |
 
 - **Jobb katt** — kiválasztott képesség elsütése
 - **Lopakodás + ütés (bal katt)** — váltás a feloldott képességek között, kaszt-specifikus

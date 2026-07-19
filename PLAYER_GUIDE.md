@@ -179,19 +179,19 @@ Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spell
 
 | Kaszt | Stílus | Katalizátor | Erőforrás |
 |---|---|---|---|
-| 🧙 **Varázsló** | Elemi és kontroll mágia, távolsági ráolvasások | 📖 Mágikus Kódex | Mana |
-| ⚔️ **Harcos** | Közelharci erő, kitartás, buffok | 📯 Harci Kürt | Düh |
-| 🏹 **Íjász** | Távolsági harc, mozgékonyság, csapdák | 🎒 Vadásztarsoly | Fókusz |
-| 🗡️ **Orgyilkos** | Lopakodás, gyors kitörések, gyengítés | 🪨 Árnyékamulett | Energia |
-| 🐻 **Druida** | Alakváltó természet-mágia (harc, kontroll, tank, gyógyítás) | 🌱 Vadon Talizmánja | Természeti Erő |
-| 🔆 **Paplovag** | Szent harc, védelem és gyógyítás | 🔔 Szent Harang | Szent Erő |
-| 💀 **Halállovag** | Rúna-mágia, vér és fagy, közelharci tank/DPS | 💀 Rúnakovácsolt Koponya | Runikus Erő |
-| 🌊 **Sámán** | Elemek, totemek, gyógyítás és erősítés | 🪬 Ősök Totemje | Mana |
-| ☯️ **Szerzetes** | Gyors közelharc, csi-energia, gyógyítás | 🎍 Jáde Bot | Csi |
-| ✝️ **Pap** | Szent és árny mágia, gyógyítás | 🕯️ Szent Gyertya | Mana |
-| 😈 **Boszorkánymester** | Átkok, démonok és pusztító tűz | 🏮 Lélek Lámpás | Lélekerő |
-| 👁️ **Démonvadász** | Mozgékony démoni harc és bosszú | 👁️ Démonszem | Fúria |
-| 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkány Esszencia | Eszencia |
+| 🧙 **Varázsló** | Elemi és kontroll mágia, távolsági ráolvasások | 📖 Caldesterai Rúnakódex | Mana |
+| ⚔️ **Harcos** | Közelharci erő, kitartás, buffok | 📯 Sárkánykirály Kürtje | Düh |
+| 🏹 **Íjász** | Távolsági harc, mozgékonyság, csapdák | 🎒 Soleil Vadásztarsolya | Fókusz |
+| 🗡️ **Orgyilkos** | Lopakodás, gyors kitörések, gyengítés | 🪨 Homály-szilánk | Energia |
+| 🐻 **Druida** | Alakváltó természet-mágia (harc, kontroll, tank, gyógyítás) | 🌱 Aetrinita Sarja | Természeti Erő |
+| 🔆 **Paplovag** | Szent harc, védelem és gyógyítás | 🔔 Hajnaltűz Harangja | Szent Erő |
+| 💀 **Halállovag** | Rúna-mágia, vér és fagy, közelharci tank/DPS | 💀 Néma Rúnakoponya | Runikus Erő |
+| 🌊 **Sámán** | Elemek, totemek, gyógyítás és erősítés | 🪬 Ősvihar Totemje | Mana |
+| ☯️ **Szerzetes** | Gyors közelharc, csi-energia, gyógyítás | 🎍 Élet Ága | Csi |
+| ✝️ **Pap** | Szent és árny mágia, gyógyítás | 🕯️ Asterlayna Gyertyája | Mana |
+| 😈 **Boszorkánymester** | Átkok, démonok és pusztító tűz | 🏮 Kárhozat Lámpása | Lélekerő |
+| 👁️ **Démonvadász** | Mozgékony démoni harc és bosszú | 👁️ Hasadék Szeme | Fúria |
+| 🐉 **Sárkányidéző** | Sárkány-eszencia: perzselő mágia és gyógyítás | 🐲 Sárkányvér-fiola | Eszencia |
 
 ### Szintezés
 - A kaszt **mob ölésből** kap XP-t: alap **10 XP / ölés**, plusz a szörny szintjéért **+3 XP /
