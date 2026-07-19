@@ -47,7 +47,9 @@ hajtott végre: szóra bírt egy ötszáz éve halott lelket. A **Lelki Béke Re
 pusztulásának okozójaként, és kegyetlen kínhalálra ítélte. Ahogy a kínzóeszközök a húsába martak, az
 **Élet Fája szívszaggató reccsenéssel megrepedt**. A törzs mélyéről éteri hang szólalt meg: Eleftheriát
 a **Holtak Országának** kapujához ragadta, az egymásnak acsarkodó emberiséget pedig a világ két
-ellentétes, élhetetlen sarkába száműzte. Ez volt a **Hasadás** — a régi kor vége s a frakciók születése.
+ellentétes, élhetetlen sarkába száműzte. Csak azok maradhattak a Fa árnyékában, akik nem emeltek kezet
+senkire — belőlük lett később a Menedék népe. Ez volt a **Hasadás** — a régi kor vége s a frakciók
+születése.
 
 ## III. A Három Birodalom (A Frakciók)
 
@@ -76,7 +78,7 @@ ellentétes, élhetetlen sarkába száműzte. Ez volt a **Hasadás** — a régi
 - **Item-hangulat:** itt pörög a **Creutzér**. Díszes nevek: „Smaragdkő Cédula", „Asterlayna Könnye",
   „Bankár-pecsét", „Bokic-menti relikvia".
 
-## IV. A Hetedik Vérháború és a Káosz Kora (A Jelen: Hu. 978)  `[DARK]`
+## IV. A Hetedik Vérháború és a Káosz Kora (A Jelen: Hu. 978)
 
 A Hasadás után a két száműzött birodalom — a tüzes **Perinfernicitas** és a jeges **Cryghaliris** —
 engesztelhetetlen gyűlölettel fordult egymás ellen. Haragjuk **hét vérháborúban** lángolt fel a
@@ -104,7 +106,10 @@ a Fa mentett meg, hogy új rendet hozzatok a káoszba.
 A **Királyok Átka** — amely a Néma Királynő szavára minden új uralkodót sírba vitt — a Fa kegyeltjeire,
 a **Felsőkre nem hat**. Egyedül ők emelhetnek új trónt, foglalhatnak vissza földet és vezethetik újra a
 birodalmakat: ezért a jelen minden **királya**, minden **területfoglalása**, minden **háborúja** a
-Felsők keze nyomán születik. A világ sorsa mostantól a ti kezetekben van.
+Felsők keze nyomán születik. Ám vérvonal nem maradt, amely trónt örökíthetne — a nemességet az átok
+egy szálig eltörölte —, ezért az új kor királyát nem a születés, hanem **a Felsők közös szava emeli**:
+a birodalom népe maga kiáltja ki, kit ültet a trónra, s kit taszít le róla. A világ sorsa mostantól a
+ti kezetekben van. *(Mechanika: király-választás frakciónkénti szavazással.)*
 
 ## V. A Felsők Ébredése — A Szent Zóna és a Zarándoklat
 
@@ -121,13 +126,23 @@ a birodalma szentélyénél. Ez a Felsők **halhatatlanságának** titka, s egyb
 amíg a Fa visszahívja kegyeltjeit, a Néma Királynő átka nem győzhet végleg. *(Ez a lore-magyarázata
 annak, miért éledsz újra a frakciód spawnján.)*
 
+**A Fa fényköre.** Aetrinita oltalma nem ér el a világ végéig: fénye a törzsétől távolodva
+**gyűrűnként halványul**, s ahol elfogy, ott a Káoszkor uralkodik hígítatlanul. A Fa közelében a
+rontott lények erőtlenek; ám minél messzebb merészkedik a Felső, annál mélyebb sötétségben járnak a
+szörnyek — nagyobbak, dühödtebbek, veszedelmesebbek. A bölcsek úgy tartják: a világ pereme felé haladni
+annyi, mint visszafelé utazni a Káoszkor legfeketébb éveibe. Ezért a legdúsabb zsákmány is ott vár —
+a lélekkő a mélység felől árad. *(Mechanika: táv-alapú mob-skálázás — 1000 blokkonként +1 mob-szint,
+több XP és lélekkő-esély; a spawner-mobok nem skálázódnak.)*
+
 > **Földrajzi tisztázás:** a **Szent Zóna** (a spawn az Élet Fája alatt) és **Caldestera** városa két
 > külön hely. Az előbbi a Fa érinthetetlen menedéke, ahonnan a Felsők elzarándokolnak; az utóbbi a
 > Menedék-frakció nyüzsgő fővárosa a Bokic-folyónál.
 >
 > *Mechanika: a „fegyvermentesség" itt **védett, PvP-tiltott zónát** jelent (a territórium-védelem
 > `pvp`-szabályával ez már megvalósítható). A szó szerinti **fegyver-elkobzás** a semleges városban
-> tervezett (K10 — lásd lentebb).*
+> tervezett (K10 — lásd lentebb). Világépítéskor a **Semleges kezdő-spawn a Szent Zónába** (a Fa alá)
+> kerül, a frakcióválasztó hírnök pedig Caldesterába, a semleges fővárosba — az út a kettő közt maga
+> a zarándoklat.*
 
 ## VI. A Mágia Forrásai — A Kasztok Eredete
 
@@ -176,11 +191,26 @@ leghatalmasabb mágiának más az ára: a **vérmágia** a varázsló saját él
 magát a testet sajtolják ki. *(Mechanika: kasztonkénti erőforrás-sávok — Mana/Düh/Fókusz/Energia/Csi/
 Lélekerő stb. —, valamint a hibrid költségek: HP = vérmágia, XP = rituálé, éhség = nehéz testi spell.)*
 
+**A Vezérlő Tárgy — a Katalizátor.** Amikor a Fa alatt egy Felső először nyúl a forrása felé, az erő
+**tárgyat választ magának**: a Fa egy fókuszt hagy a kezében, amelyen át a nyers áramlat mederbe
+terelhető. A varázslónak **kódex**, a harcosnak **kürt**, a papnak **gyertya**, a halállovagnak
+**rúnakovácsolt koponya** — ahány forrás, annyi forma, de a lényeg egy: a Katalizátor a Felső és a
+forrása közti **élő kapocs**, s nála marad, míg csak él. Aki elveszíti, annak a Fa újat ád — a kapocs
+a lélekben él, nem a tárgyban. *(Mechanika: a kaszt-témás Képesség Katalizátor item — jobb katt:
+képesség-használat, lopakodás+ütés: váltás; elvesztéskor pótolható.)*
+
+**Az Utolsó Mesterek.** A régi iskolák nem vesztek ki nyomtalanul: minden hivatásnak él még egy-egy
+**utolsó mestere**, aki átvészelte a Káoszkort, s most a Felsőket várja. De a mesterek nem tanítanak
+akárkit: **próbára tesznek** — ügyességet, kitartást, elszántságot mérnek —, s a mély titkaikat csak
+annak adják át, aki a próbát kiállta. *(Mechanika: kaszt-mester NPC-k + próbapályák — a mester-láncok
+TALK_TO_NPC + PARKOUR_TRIAL questjei; a kihelyezés a szerver-csapat világépítés-feladata.)*
+
 ## VII. A Világ Árnyékos Zugai
 
-**A Kárhozat Kapuja — a Nether-portál.** A Hetedik Vérháborút kirobbantó **óriás Nether-portál** pontosan
-a **Jégmezők (Cryghaliris)** és a **Vérszavanna (Perinfernicitas)** közötti **Senkiföldjén** hasadt fel —
-ott, ahol a két örök ellenség földje összeér. Amikor a Káoszkor elején eltűnt a nemesség, a kaput senki
+**A Kárhozat Kapuja — a Nether-portál.** A Hetedik Vérháborút kirobbantó **óriás Nether-portál** a
+**Jégmezők (Cryghaliris)** és a **Vérszavanna (Perinfernicitas)** közé terülő roppant **Senkiföldjén**
+hasadt fel — a gazdátlan vadonban, amely a világ két ellentétes sarkába száműzött birodalmakat
+elválasztja, s amelyen minden hadjáratuk átvonult. Amikor a Káoszkor elején eltűnt a nemesség, a kaput senki
 sem őrizte tovább; a két sereg maradványai az élőhalottakkal vívott harcban pusztultak el körülötte. Ma a
 portál instabil, a Nether energiája lassan a világba szivárog, megfertőzve a környező földeket. Ez a világ
 legveszélyesebb, frakció-semleges senkiföldje — a **„Kárhozat Kapuja"** vagy **„Az Őrület Hasadéka"** —,
@@ -304,9 +334,10 @@ beszedi.
 A negyedik pénzről a Szövetség hivatalosan **tudni sem akar**: a Kitaszítottak **Csontveretét** pecsétjük
 soha nem érintette, számlakönyveikben a neve le sincs írva. Ám Arkynn öröklött mérge — a kapzsiság —
 erősebb minden rendeletnél: a Botera-negyed hátsó pultjain a Csontveret **napi árfolyamon forog**, s a
-mérleg nem kérdezi, kriptából jött-e az ezüst. Hivatalosan soha — valójában mindig. A Szövetség kereskedőházai árulják a lepecsételt
-**caldesterai ládákat** is: ki tudja, a régi világ miféle kincse lapul bennük — a kulcsért fizetni kell,
-a kockázat a vevőé. *(Mechanika: bank, piac, aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő;
+mérleg nem kérdezi, kriptából jött-e az ezüst. Hivatalosan soha — valójában mindig.
+
+A Szövetség kereskedőházai árulják a lepecsételt **caldesterai ládákat** is: ki tudja, a régi világ
+miféle kincse lapul bennük — a kulcsért fizetni kell, a kockázat a vevőé. *(Mechanika: bank, piac, aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő;
 „nincs addolt pénz" elv; crate-rendszer kulcs-árral mint valuta-nyelő.)*
 
 ### A Korszakok Könyve — a szezonok
