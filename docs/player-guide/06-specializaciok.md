@@ -49,9 +49,9 @@ A **Vadmester** és a **Nekromanta** szintet lépő **társat** tarthat — és 
 mob** lehet, nem csak farkas vagy zombi!
 
 1. Írd be: `/pet item` — kapsz egy **befogó eszközt**:
-   - 🐺 **Vadmester → Szelídítő Póráz**: bármely **nem ellenséges** állatra/lényre jobb katt
+   - 🐺 **Vadmester → Ősi Kötés Póráza**: bármely **nem ellenséges** állatra/lényre jobb katt
      (pl. tehén, róka, ló, papagáj, delfin…).
-   - 💀 **Nekromanta → Lélekkötő Tekercs**: bármely **ellenséges / élőholt** mobra jobb katt
+   - 💀 **Nekromanta → Sötét Paktum-tekercs**: bármely **ellenséges / élőholt** mobra jobb katt
      (pl. zombi, csontváz, pók, creeper…).
 2. **Jobb katt** a kiszemelt lényen a befogó eszközzel — társaddá fogadod, az eszköz elhasználódik.
 3. `/pet name <név>` — adj nevet neki; `/pet summon` újra előhívja, `/pet dismiss` elküldi.

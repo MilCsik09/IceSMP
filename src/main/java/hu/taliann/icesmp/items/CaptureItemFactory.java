@@ -28,13 +28,13 @@ public final class CaptureItemFactory {
     }
 
     public ItemStack createBeastItem(final int amount) {
-        return create(amount, "beast", Material.LEAD, "<dark_green>Szelídítő Póráz</dark_green>",
-                "<gray>Jobb katt egy állaton: a társaddá fogadod.</gray>", "<gray>(Vadmester)</gray>");
+        return create(amount, "beast", Material.LEAD, "<dark_green>Ősi Kötés Póráza</dark_green>",
+                "<gray>Aetrinita és Kallan természet-kötése — jobb katt egy állaton: a társaddá fogadod.</gray>", "<gray>(Vadmester)</gray>");
     }
 
     public ItemStack createNecroItem(final int amount) {
-        return create(amount, "necro", Material.GHAST_TEAR, "<dark_purple>Lélekkötő Tekercs</dark_purple>",
-                "<gray>Jobb katt egy szörnyön: szolgáddá köti.</gray>", "<gray>(Nekromanta)</gray>");
+        return create(amount, "necro", Material.GHAST_TEAR, "<dark_purple>Sötét Paktum-tekercs</dark_purple>",
+                "<gray>Eleftheria mérgének paktuma — jobb katt egy szörnyön: szolgáddá köti.</gray>", "<gray>(Nekromanta)</gray>");
     }
 
     public boolean isBeastCapture(final ItemStack item) {

@@ -39,8 +39,8 @@ profession-materials:
     display-name: "&6Rezgő Rézötvözet"
     custom-model-data: 6002
     lore:
-      - "&7Halkan zúg, ha rúna simítja —"
-      - "&7a vezető fémek nyughatatlanja."
+      - "&7A Mélység Népe tárnáiból tanult ötvözet —"
+      - "&7halkan zúg, ha rúna simítja."
       - "&8Bányász köztes alapanyag"
   kemenyfa_gerenda:
     material: STRIPPED_OAK_WOOD
@@ -55,8 +55,8 @@ profession-materials:
     display-name: "&bRúnapor"
     custom-model-data: 6004
     lore:
-      - "&7Szétmorzsolt rúnakő csilláma —"
-      - "&7a varázslat nyers alapanyaga."
+      - "&7Szétmorzsolt rúnakő csilláma — az Akadémiák"
+      - "&7elveszett rúna-tudásának nyers pora."
       - "&8Bűvölő köztes alapanyag"
   # --- CSAK mobból eső egyedi alapanyagok (a szakma-receptek igénylik) ---
   vad_esszencia:
