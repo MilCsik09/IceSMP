@@ -7,12 +7,12 @@ A saját kasztodra mindig naprakész a játékbeli **Képesség-fa** menü is (`
 
 ## Hogyan működnek a képességek?
 
-A kasztod képességeit egy **Katalizátor** nevű tárggyal használod (a kasztodhoz illő tárgy, pl.
+A kasztod képességeit egy **Lélekkapocs** nevű tárggyal használod (a kasztodhoz illő tárgy, pl.
 a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás (SHIFT) + görgetés** = gyors váltás a képességeid között előre/hátra — a
-  hotbar nem vált el, és a katalizátor **neve az épp kiválasztott képességet** mutatja.
+  hotbar nem vált el, és a Lélekkapocs **neve az épp kiválasztott képességet** mutatja.
 - **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** egy feloldott képességen →
   kedvencnek jelölöd (★). Ha van legalább egy kedvenced, a shift+görgetés **csak a
   kedvenceket** lépkedi — 20+ képességnél így villámgyors a váltás. (Újra shift-katt: levétel;
@@ -27,7 +27,7 @@ a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 > fagy kék-fehér, szentség arany…). Tisztán vizuális, a hatáson nem változtat.
 
 > ⚔️ **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász): a kezedben
-> tartott **kard vagy balta is katalizátorként működik** — nem kell tárgyat váltanod a harc közben!
+> tartott **kard vagy balta is Lélekkapocsként működik** — nem kell tárgyat váltanod a harc közben!
 > Ugyanazok a mozdulatok érvényesek (jobb katt = cast, SHIFT+jobb katt = varázskönyv,
 > SHIFT+ütés = képesség-váltás).
 
@@ -745,7 +745,7 @@ a saját képességei.
 ## ★ Talent-képességek (aktív talentekből)
 
 Ezek **nem a szintedből**, hanem az **aktív talentekből** oldódnak fel (lásd
-[Talentek](07-talentek.md)), és **bármelyik kaszttal** használhatók a Katalizátorral:
+[Talentek](07-talentek.md)), és **bármelyik kaszttal** használhatók a Lélekkapocsral:
 
 | Képesség | Mit csinál | Költség | Várakozás | Honnan |
 |---|---|---|---|---|

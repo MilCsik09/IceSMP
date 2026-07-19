@@ -88,7 +88,7 @@ public final class JobGUI {
         if (primaryJob == null) {
             final ItemStack lockedButton = new ItemStack(Material.BARRIER);
             final ItemMeta lockedMeta = lockedButton.getItemMeta();
-            lockedMeta.displayName(messageManager.getComponent("messages.job-gui-catalyst-locked", "&cKépesség Katalizátor"));
+            lockedMeta.displayName(messageManager.getComponent("messages.job-gui-catalyst-locked", "&cLélekkapocs"));
             lockedMeta.lore(List.of(messageManager.getComponent("messages.job-gui-catalyst-locked-lore", "&7Előbb válassz elsődleges kasztot!")));
             lockedMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
             lockedButton.setItemMeta(lockedMeta);
@@ -99,7 +99,7 @@ public final class JobGUI {
         final ItemMeta meta = button.getItemMeta();
         meta.displayName(catalystItemFactory.getDisplayName(primaryJob));
         meta.lore(List.of(
-                messageManager.getComponent("messages.job-gui-catalyst-lore", "&7A kasztod Képesség Katalizátora."),
+                messageManager.getComponent("messages.job-gui-catalyst-lore", "&7A kasztod Lélekkapcsa."),
                 messageManager.getComponent("messages.job-gui-catalyst-claim", "&eKattints az igényléshez, ha elveszett!")
         ));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);

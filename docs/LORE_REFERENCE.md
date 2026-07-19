@@ -76,66 +76,37 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 
 ---
 
-## Unique-item tervkatalógus (lore + tervezett perk)
+## Unique-item tervtábla (technikai réteg)
 
-A jövőbeli egyedi tárgyak forrása; a zárójeles perk tervezett mechanika (nem végleges balansz).
+A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás Tárgyak Lajstroma](LORE.md))
+— itt csak a tervezett mechanika (nem végleges balansz) és az implementációs jegyzet áll.
 
-### ❄️ Cryghaliris
-- **Kallan Szeletelője** (Íj/Hosszúíj) — „Kallan első pikkelyeiből és ősi fenyőből faragva; a
-  jégsárkányok inaiból font húr a legvastagabb vértet is átvágja." *(+50% nyíl-sebesség, 15% páncéltörés)*
-- **Glatziendorfi Jégvért** (Nehéz mellvért) — „Oly nehéz és fagyos, hogy viselőjét sziklaként
-  rögzíti; teljes szettben az ellenség fegyverei tompán koppannak." *(Resistance I/II szett-perk)*
-- **Fagyasztott Tavi Pisztráng** (Hal/fogyóeszköz) — „A Fagyott Királyság mindennapi eledele;
-  nélküle a Jégmezők aurája a legkeményebb harcos vérét is megmérgezi." *(BLUE hal-fogyasztási kötelezettség)*
-- **Jégsárkány-Kantár** (Hátas-felszerelés) — „Kemény bőr és sötét mágia; csak ezzel tartható kordában egy vad sárkány."
-- **Glatziendorfi Jégtörő** (Balta) — „A Jégmezők sárkányainak pikkelyeivel megerősített fegyver."
-- **V. Miinus Haragja** (Fegyver) — a Sárkánykirály-örökös uralkodó nevét viselő, kíméletlen penge.
-- **Sárkánycsont Íj** (Íj) — a jégmezők megszelídített sárkányainak csontjából faragva.
-- **Sárkány-pörkölt** (Étel) — „A fagyhalál elleni egyetlen menedék."
+| Tárgy | Frakció | Típus/forrás | Tervezett perk / jegyzet |
+|---|---|---|---|
+| Kallan Szeletelője | BLUE | íj (K2) | +50% nyíl-sebesség, 15% páncéltörés |
+| Glatziendorfi Jégvért | BLUE | mellvért (K2) | Resistance I/II szett-perk |
+| Jégsárkány-Kantár | BLUE | hátas-felszerelés (K2) | — |
+| Glatziendorfi Jégtörő / V. Miinus Haragja / Sárkánycsont Íj | BLUE | fegyverek | később tervezendő |
+| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6) | BLUE hal-fogyasztási kötelezettség |
+| Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | +50% felhúzási/repülési sebesség |
+| A Vérszavanna Agyara | RED | kard/lándzsa (K3) | fegyver-kombó Strength I/II |
+| Főnix-Tollköpeny | RED | kiegészítő (K3) | tűz/láva-ellenállás |
+| I. Zhoris Lángnyelve / Napfogyatkozás | RED | fegyverek | később tervezendő |
+| Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | RED tojás-fogyasztási kötelezettség |
+| Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | +20% bányász-loot |
+| Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | +20% horgász-loot |
+| Asterlayna Gyümölcse | NEUTRAL | süti (K6) | robbanó csemege perk |
+| Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | bank-item, atomi beváltás |
+| Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | pet/hátas-rendszer |
+| Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | fegyver-drop |
+| Fekete Villám Szilánk | DARK/közös | crafting-alapanyag (K5) | ✅ implementálva: `profession-materials.osi_ereklyeszilank` display; magas-tier receptek hozzávalója |
+| Eleftheria Könnye | DARK/közös | relikvia (K5) | `RelicManager`, egy-példányos |
+| Megrontott Elit Páncél / Fekete Csont / A Néma Királynő suttogása | DARK/közös | mob-drop (K5) | drop-tábla tétel |
+| Csontveret | DARK | valuta | a DARK valuta display-neve (K1 reskin) |
 
-### 🔥 Perinfernicitas
-- **Pyralingradi Tűzköpő** (Számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi vihar
-  sebességével csapnak le." *(+50% felhúzási/repülési sebesség)*
-- **A Vérszavanna Agyara** (Kard/Lándzsa) — „Kovácsolásakor a lángok fekete füstöt okádtak; baltával
-  kiegészítve emberfeletti erő." *(fegyver-kombó Strength I/II perk)*
-- **Fűszeres Főnixtojás-Rántotta** (Tojásétel) — „Hamuban sült étel; tüze távol tartja a fagyos
-  vidék bénító gyengeségét." *(RED tojás-fogyasztási kötelezettség)*
-- **Főnix-Tollköpeny** (Kiegészítő) — „I. Zhoris lángmadarainak tollaiból szőve; óv a hőségtől és a
-  láva haragjától." *(tűz/láva-ellenállás)*
-- **I. Zhoris Lángnyelve** (Kard) — „Ezt a pengét a Hetedik Vérháború napján kovácsolták a Vérszavanna legmélyén."
-- **Napfogyatkozás** (Kard) — sötét lángpenge, a Lángoló Birodalom legendás fegyvere.
-- **Pyralingradi Ostrom-számszeríj** (Számszeríj) — Soleil papjai áldották meg a Vérszavanna szívében.
-
-### ⚖️ Ryanora & Caldestera
-- **A Vasművek Akadémiájának Csákánya** (Szerszám) — „Caldestera mestereinek műve, Asterlayna
-  áldásával; a sziklák mélyén gyakran váratlan kincs." *(+20% bányász-loot)*
-- **Bokic-menti Horgászbot** (Szerszám) — „A Bokic hordalékából; zsinórja a víz szellemeit is
-  felszínre vonzza." *(+20% horgász-loot)*
-- **Tiltott Kakaóbabos Sütemény** / **Asterlayna Gyümölcse** (Csokis süti) — „Aetrinita átka; fogyasztása
-  tilos — hacsak nem akarsz darabokban távozni a Városból." *(robbanó süti perk)*
-- **Smaragdkő Bankbetét** (Értékpapír) — „Caldestera Bankárszövetségének hamisíthatatlan pecsétjével;
-  többet ér ezer kardnál."
-- **Szellemszarvas-Bűbáj** (Hátas-hívó) — „Tölgyfa talizmán; megfújva a szellemléptű szarvasok segítenek."
-
-### 💀 A Káoszkor lényei / Néma Királynő
-- **A Hetedik Vérháború Rozsdás Pengéje** (Mob-drop/fegyver) — „Egykor I. Benedictus vagy I. Lineata
-  seregéé; ma csak Eleftheria néma haragja hajtja az élőhalottak kezében."
-- **Fekete Villám Szilánk** (Ritka crafting-alapanyag) — „Az a sötét energia pulzál benne, amely
-  Hu. 698-ban kettéhasította az eget és felébresztette a Holtak Úrnőjét." *(implementálva:
-  `profession-materials.osi_ereklyeszilank` display)*
-- **Eleftheria Könnye** (Misztikus relikvia) — „Megkövült, éjfekete csepp; a Néma Királynő első
-  suttogása hozta létre, magába zárva a Fa kínjait és a magányt."
-- **Megrontott Elit Páncél** (Mob-drop/vért) — „Az eltűnt nemesek dicsőségének maradványa; az acélt
-  átrágta az idő, de a sötét mágia védi oszladozó viselőjét."
-- **A Néma Királynő suttogása** (Mob-drop) — „Eleftheria első szavai hívták életre a Hu. 698. évben."
-- **Megrontott Fekete Csont** (Mob-drop) — az élőhalottak maradványa; ugyanaz a néma harag hajtja.
-- **Csontveret** (Érme) — „A Holtak Városának pénze; a Csontszámvevő vereti sírba szállt urak
-  koronáiból és megfeketült ezüstből — érintése hideg, akár a kripta." *(DARK valuta)*
-
-> **Törpék** *(kiegészítés — nem az eredeti kódexből):* az ősi romok és a legősibb ereklyék (pl. a
-> *Mételytépő* harci fejsze) egy rég letűnt, rejtélyes **törp** civilizáció hagyatéka — a Fa
-> gyermekeinek koránál is régebbi nyom a világban. *(A Mételytépő-relikvia lore-horgonyzása;
-> törölhető, ha nem kell.)*
+> **Törpék** *(kiegészítés — nem az eredeti kódexből, a kódexben sem szerepel):* a Mételytépő-relikvia
+> lore-ja egy rég letűnt törp civilizációra hivatkozik — a Fa gyermekeinek koránál is régebbi nyom.
+> Megtartva relikvia-szintű háttérként; kánon-emelése a tulaj döntése.
 
 ---
 

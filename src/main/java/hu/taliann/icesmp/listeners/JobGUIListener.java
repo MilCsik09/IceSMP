@@ -114,7 +114,7 @@ public final class JobGUIListener implements Listener {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.2F);
                 player.sendMessage(messageManager.getMessage(
                         "job-gui-catalyst-already-owned",
-                        "&eMár van katalizátorod: &f{catalyst}",
+                        "&eMár van Lélekkapcsod: &f{catalyst}",
                         Map.of("catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob))
                 ));
                 return;
@@ -130,7 +130,7 @@ public final class JobGUIListener implements Listener {
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
         player.sendMessage(messageManager.getMessage(
                 "job-gui-catalyst-claimed",
-                "&aKatalizátor átvéve: &e{catalyst}",
+                "&aLélekkapocs átvéve: &e{catalyst}",
                 Map.of("catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob))
         ));
     }

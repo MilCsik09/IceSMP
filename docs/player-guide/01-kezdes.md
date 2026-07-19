@@ -13,7 +13,7 @@ Most léptél be először? Semmi gond — kövesd ezt a pár lépést, és már
    Képesség-fa**.
 3. **Válassz kasztot** a Kaszt menüből — **13 kaszt** közül (Varázsló, Harcos, Íjász, Orgyilkos,
    Druida, Paplovag, Halállovag, Sámán, Szerzetes, Pap, Boszorkánymester, Démonvadász,
-   Sárkányidéző), majd **igényeld a Képesség Katalizátorodat** (egy gomb ugyanott). Ezzel
+   Sárkányidéző), majd **igényeld a Lélekkapocsodat** (egy gomb ugyanott). Ezzel
    használod a varázslataidat. (Minden kasztnak saját **Erő-csíkja** is van a HUD-on — a legtöbb
    spell ezt fogyasztja, és idővel visszatöltődik; a vér/rituálé/fizikai spellek HP/XP/éhséget
    kérnek. Lásd [Kasztok](04-kasztok.md).)
@@ -38,7 +38,7 @@ Első belépéskor egy rövid **bemutató cím-szekvencia** is lejátszódik —
 |---|---|
 | **Mindent egy helyen, kattintással** | **`/menu`** |
 | Megnézni az adataimat | `/profile` |
-| Képességet használni | tartsd kézben a Katalizátort → jobb katt |
+| Képességet használni | tartsd kézben a Lélekkapcsot → jobb katt |
 | Pénzt nézni / utalni | `/bank balance`, `/currency pay` |
 | Eladni valamit | `/market sell <ár>` |
 | Küldetést felvenni | `/quest list` |

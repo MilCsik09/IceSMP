@@ -87,7 +87,7 @@ public final class CommandMenus {
         put(inv, holder, 10, GuiUtil.playerHead(player, title("Karakterlap"),
                 List.of(grey("Kaszt, spec, szakma, talent, képesség-fa."), click())), "OPEN:profile");
         put(inv, holder, 11, GuiUtil.icon(Material.ENCHANTED_BOOK, title("Varázskönyv"),
-                List.of(grey("Feloldott spelljeid böngészése"), grey("és kiválasztása a Katalizátorra."), click())), "OPEN:spellbook");
+                List.of(grey("Feloldott spelljeid böngészése"), grey("és kiválasztása a Lélekkapocsra."), click())), "OPEN:spellbook");
         // Dinamikus menü: a Társ csak azoknak látszik, akiknek lehet társa.
         final SpecializationType spec = ctx.specializationManager().getClassSpecialization(player);
         if (spec == SpecializationType.BEAST_MASTER || spec == SpecializationType.NECROMANCER) {

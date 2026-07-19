@@ -52,13 +52,13 @@ jelenti, hogy **elhagyható**.
 | `/talent` / `/talent spend <class\|profession> <talent>` | `talents`, `talentfa` | Talentek |
 | `/profession join <szakma>` / `/profession info` | `prof`, `szakma` | Szakmák |
 | `/profession recipes` | `prof`, `szakma` | **Recept-könyv** — tanult/zárolt receptek, 1 kattintásos craft |
-| `/class givecatalyst` | `kaszt`, `job` | Elveszett Képesség Katalizátor pótlása |
+| `/class givecatalyst` | `kaszt`, `job` | Elveszett Lélekkapocs pótlása |
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
 | `/quest log` | `gui`, `naplo` | **Küldetésnapló GUI** — Aktív / Felvehető / Teljesített fülek, lapozható |
 | `/souls` / `/souls champion` | `soul`, `lelek` | Lélekszilánk (csak Nekromanta) |
 | `/bounty` | `fejvadasz`, `korozes` | Körözési lista: ki körözött és mennyit ér a feje |
 | `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: valutáért rövidebb cooldown ÉS erősebb hatás (sebzés, gyógyítás, effekt-időtartam) |
-| `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a katalizátoron* is megnyitja. |
+| `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a Lélekkapcson* is megnyitja. |
 | `/events status` | `event`, `esemeny` | „Mi történik most?" — minden aktív világesemény + szezon-állás egyben |
 | `/events season` / `/events blood-moon` / `/events caravan` | `event`, `esemeny` | Világesemények állása (szezon, vérhold, kereskedő-karaván) |
 | `/party invite\|accept\|decline\|leave\|list` | `p`, `parti` | **Party (csapat)**: meghívás, csatlakozás, kilépés, taglista (max 5 fő) |
@@ -96,7 +96,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/mute <név> [perc] [ok]` / `/unmute <név>` | Némítás (0 = végtelen; perc kihagyva = automatikus eszkaláció a némítás-történet alapján; chat + privát üzenetek), feloldás; `/mute list` |
 | `/reports` / `/reports resolve <id>` | Játékos-bejelentések listája és lezárása |
 | `/class addxp\|setxp <játékos> <mennyiség>` | Kaszt-XP adása/beállítása |
-| `/class givecatalyst\|unlockspell <játékos> [spell]` | Katalizátor adása / spell feloldása |
+| `/class givecatalyst\|unlockspell <játékos> [spell]` | Lélekkapocs adása / spell feloldása |
 | `/class admin <resetcd\|unlockallskills\|resetskills\|resetclass> <játékos>` | Cooldown-/spell-/**teljes kaszt-reset** egy játékosnak |
 | `/profession set\|clear\|addxp` | Szakma-adatok kezelése |
 | `/profession blueprint <játékos> <recept-id>` | Tervrajz (recept-feloldó) átadása egy játékosnak |

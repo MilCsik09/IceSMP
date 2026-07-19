@@ -2,7 +2,7 @@
 
 Az **IceSMP** egy Folia-alapú Minecraft plugin (1.21.11, Paper API kompatibilis), amely egy
 fantasy "királyságos" SMP szerver teljes játékmenet-rendszerét adja: frakciók, kasztok és
-specializációk, talentek, szakmák, katalizátor-alapú képességek, legendás relikviák,
+specializációk, talentek, szakmák, Lélekkapocs-alapú képességek, legendás relikviák,
 dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
 > 🎮 **Játékos tájékoztató:** [PLAYER_GUIDE.md](PLAYER_GUIDE.md) — mit hogyan használj a játékban
@@ -82,12 +82,12 @@ visszatérülnek):
 | Démonvadász | 💥 Tombolás • 🛡 Bosszú |
 | Sárkányidéző | 🔥 Perzselés • 💧 Megőrzés |
 
-### ✨ Képesség Katalizátor
+### ✨ Lélekkapocs
 
-Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a képességeit
+Minden kaszt a saját, tematikus **Lélekkapocsával** használja a képességeit
 (a kasztválasztó GUI-ból bármikor igényelhető, ha elveszett; admin: `/job givecatalyst`):
 
-| Kaszt | Katalizátor |
+| Kaszt | Lélekkapocs |
 |---|---|
 | Varázsló | 📖 **Caldesterai Rúnakódex** (bűvölt könyv) |
 | Harcos | 📯 **Sárkánykirály Kürtje** (kecskekürt) |
@@ -108,7 +108,7 @@ Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a k
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben tartott
-  **kard/balta is katalizátor** — nem kell tárgyat váltani harc közben.
+  **kard/balta is Lélekkapocs** — nem kell tárgyat váltani harc közben.
 
 Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. Több mint 390 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs

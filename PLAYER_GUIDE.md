@@ -41,7 +41,7 @@ talentek, a gazdaság és a világesemények. A végén külön listában megtal
    (frakció, kasztok + szintek, specializációk, szakmák + szintek, állapot, talentpontok,
    egyenlegek), és innen **gombokkal eléred az összes karakter-menüt**: Kaszt, Specializáció,
    Szakma, Talentek, Képesség-fa.
-3. **Válassz kasztot** a Kaszt menüből, majd **igényeld a Képesség Katalizátorodat** (ugyanitt egy gomb).
+3. **Válassz kasztot** a Kaszt menüből, majd **igényeld a Lélekkapocsodat** (ugyanitt egy gomb).
 4. **Ölj szörnyeket** a kaszt XP-ért, **bányássz/arass/horgássz** a szakma XP-ért.
 5. Vedd fel a kaszt-próba **küldetésedet** (`/quest list`).
 
@@ -174,10 +174,10 @@ A fővárosokban admin által lerakott **hologram-táblák** mutatják a valutá
 választod ki, és ez határozza meg a képességeidet és a specializációdat. (A kaszt választása
 végleges; ha új kasztot szeretnél, egy adminnak kell resetelnie: `/class admin resetclass`.)
 
-Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spellbook") és saját
+Minden kasztnak saját **stílusa**, saját **Lélekkapocs-tárgya** (a „spellbook") és saját
 **erőforrása** (az Erő-csík, lásd lentebb) van:
 
-| Kaszt | Stílus | Katalizátor | Erőforrás |
+| Kaszt | Stílus | Lélekkapocs | Erőforrás |
 |---|---|---|---|
 | 🧙 **Varázsló** | Elemi és kontroll mágia, távolsági ráolvasások | 📖 Caldesterai Rúnakódex | Mana |
 | ⚔️ **Harcos** | Közelharci erő, kitartás, buffok | 📯 Sárkánykirály Kürtje | Düh |
@@ -199,23 +199,23 @@ Minden kasztnak saját **stílusa**, saját **katalizátor-tárgya** (a „spell
 - **Progresszív szintgörbe:** az n. szintlépés ára `60 + (n-1)×10` XP — vagyis minél magasabb
   vagy, annál többet kell ölnöd a következő szintért. Max szint: **50**.
 
-### Képesség Katalizátor (a „spellbook")
-A kaszt képességeit egy **kaszt-tematikus tárggyal** használod (a fenti táblázat *Katalizátor*
-oszlopa mutatja, melyik kaszté melyik). A specializációd ugyanazt a katalizátort használja, mint
+### Lélekkapocs (a „spellbook")
+A kaszt képességeit egy **kaszt-tematikus tárggyal** használod (a fenti táblázat *Lélekkapocs*
+oszlopa mutatja, melyik kaszté melyik). A specializációd ugyanazt a Lélekkapcsot használja, mint
 az alapkasztod.
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás + bal katt (ütés)** = váltás a feloldott képességek között (kaszt-specifikus
   hanggal; az action bar mutatja a kiválasztott képességet + a költségét).
-- **Lopakodás + görgetés** (katalizátorral a kézben) = gyors spell-váltás előre/hátra — a
-  hotbar-slot nem vált, és a katalizátor **neve mindig az épp kiválasztott képességet** mutatja.
+- **Lopakodás + görgetés** (Lélekkapocsral a kézben) = gyors spell-váltás előre/hátra — a
+  hotbar-slot nem vált, és a Lélekkapocs **neve mindig az épp kiválasztott képességet** mutatja.
 - **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** kedvencnek jelöl egy feloldott
   képességet; ha van kedvenced, a görgetés **csak a kedvenceket lépkedi** (üres lista = mindent).
   A spellkönyv tölcsér-gombja a „csak feloldottak" szűrő.
 - Ha elveszne: a Kaszt menüből bármikor újra igényelheted (admin: `/job givecatalyst`).
-- A katalizátort **nem lehet** craftolásnál vagy kemencében elhasználni — védett.
+- A Lélekkapcsot **nem lehet** craftolásnál vagy kemencében elhasználni — védett.
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben
-  tartott **kard vagy balta is katalizátorként működik** — harc közben nem kell tárgyat váltani.
+  tartott **kard vagy balta is Lélekkapocsként működik** — harc közben nem kell tárgyat váltani.
 - **Dinamikus skálázás:** a képességek ereje a kaszt-szinttel nő (+0,5%/szint), és az
   **Arkán Hatalom** talent (+2%/rang) tovább növeli (a bónusz +50%-ig kúszhat).
 
@@ -789,7 +789,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/party`, `/p <üzenet>` | Party (csapat) + csapat-chat |
 | `/claim`, `/claim trust <név>` | Terület-claim (saját birtok) |
 | `/faction king tax <%>` | Király: adókulcs beállítása |
-| `/job givecatalyst` (admin) | Katalizátor pótlása |
+| `/job givecatalyst` (admin) | Lélekkapocs pótlása |
 | `/exchangeboard place/remove` (admin) | Árfolyamtábla kezelése |
 
 ---

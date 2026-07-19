@@ -359,6 +359,79 @@ A Néma Királynő átka a világ minden koronás főjét sírba vitte; nevük m
 - **I. Benedictus** és **I. Lineata** — a Hetedik Vérháború két hadvezér-uralkodója; egykor büszke
   seregük ma élőhalottként rója az utakat, kezükben **A Hetedik Vérháború Rozsdás Pengéivel**.
 
+## Függelék — A Legendás Tárgyak Lajstroma
+
+*A krónikások lajstroma azon nevezetes tárgyakról, amelyekről a birodalmak legendái szólnak — ki
+tudja, hány hever még belőlük a romok mélyén, s hány születik újjá a Felsők kezén.*
+
+**A Fagyott Királyság kincsei:**
+- **Kallan Szeletelője** (íj) — „Kallan első pikkelyeiből és ősi fenyőből faragva; a jégsárkányok
+  inaiból font húr a legvastagabb vértet is átvágja."
+- **Glatziendorfi Jégvért** (nehéz mellvért) — „Oly nehéz és fagyos, hogy viselőjét sziklaként
+  rögzíti; teljes vértezetben az ellenség fegyverei tompán koppannak."
+- **Glatziendorfi Jégtörő** (balta) — „A Jégmezők sárkányainak pikkelyeivel megerősített fegyver."
+- **V. Miinus Haragja** (penge) — a Sárkánykirály-örökös uralkodó kíméletlen haragja, acélba kovácsolva.
+- **Sárkánycsont Íj** — a jégmezők megszelídített sárkányainak csontjából faragva.
+- **Jégsárkány-Kantár** — „Kemény bőr és sötét mágia; csak ezzel tartható kordában egy vad sárkány."
+- **Fagyasztott Tavi Pisztráng** — „A Fagyott Királyság mindennapi eledele; nélküle a Jégmezők aurája
+  a legkeményebb harcos vérét is megmérgezi."
+- **Sárkány-pörkölt** — „A fagyhalál elleni egyetlen menedék."
+
+**A Lángoló Birodalom kincsei:**
+- **Pyralingradi Tűzköpő** (számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi vihar
+  sebességével csapnak le."
+- **A Vérszavanna Agyara** (kard) — „Kovácsolásakor a lángok fekete füstöt okádtak; baltával
+  kiegészítve emberfeletti erőt ád."
+- **I. Zhoris Lángnyelve** (kard) — „Ezt a pengét a Hetedik Vérháború napján kovácsolták a
+  Vérszavanna legmélyén."
+- **Napfogyatkozás** (kard) — sötét lángpenge, a Lángoló Birodalom legendás fegyvere.
+- **Pyralingradi Ostrom-számszeríj** — Soleil papjai áldották meg a Vérszavanna szívében.
+- **Főnix-Tollköpeny** — „I. Zhoris lángmadarainak tollaiból szőve; óv a hőségtől és a láva haragjától."
+- **Fűszeres Főnixtojás-Rántotta** — „Hamuban sült étel; tüze távol tartja a fagyos vidék bénító
+  gyengeségét."
+
+**A Menedék kincsei:**
+- **A Vasművek Akadémiájának Csákánya** — „Caldestera mestereinek műve, Asterlayna áldásával; a
+  sziklák mélyén gyakran váratlan kincs."
+- **Bokic-menti Horgászbot** — „A Bokic hordalékából; zsinórja a víz szellemeit is felszínre vonzza."
+- **Smaragdkő Bankbetét** — „Caldestera Bankárszövetségének hamisíthatatlan pecsétjével; többet ér
+  ezer kardnál."
+- **Szellemszarvas-Bűbáj** — „Tölgyfa talizmán; megfújva a szellemléptű szarvasok segítenek."
+- **Asterlayna Gyümölcse** (tiltott kakaóbabos sütemény) — „Aetrinita átka; fogyasztása tilos —
+  hacsak nem akarsz darabokban távozni a Városból."
+
+**A Káoszkor hagyatéka:**
+- **A Hetedik Vérháború Rozsdás Pengéje** — „Egykor I. Benedictus vagy I. Lineata seregéé; ma csak
+  Eleftheria néma haragja hajtja az élőhalottak kezében."
+- **Fekete Villám Szilánk** — „Az a sötét energia pulzál benne, amely Hu. 698-ban kettéhasította az
+  eget és felébresztette a Holtak Úrnőjét."
+- **Eleftheria Könnye** — „Megkövült, éjfekete csepp; a Néma Királynő első suttogása hozta létre,
+  magába zárva a Fa kínjait és a magányt."
+- **Megrontott Elit Páncél** — „Az eltűnt nemesek dicsőségének maradványa; az acélt átrágta az idő,
+  de a sötét mágia védi oszladozó viselőjét."
+- **A Néma Királynő suttogása** — „Eleftheria első szavai hívták életre a Hu. 698. évben."
+- **Megrontott Fekete Csont** — az élőhalottak maradványa; ugyanaz a néma harag hajtja.
+
+## Függelék — A Lélekkapocs Ismert Formái
+
+*Ahány forrás, annyi forma — a krónikások eddig e tizenhármat jegyezték fel.*
+
+| Hivatás | A Lélekkapocs formája |
+|---|---|
+| Varázsló | Caldesterai Rúnakódex |
+| Harcos | Sárkánykirály Kürtje |
+| Íjász | Soleil Vadásztarsolya |
+| Orgyilkos | Homály-szilánk |
+| Druida | Aetrinita Sarja |
+| Paplovag | Hajnaltűz Harangja |
+| Halállovag | Néma Rúnakoponya |
+| Sámán | Ősvihar Totemje |
+| Szerzetes | Élet Ága |
+| Pap | Asterlayna Gyertyája |
+| Boszorkánymester | Kárhozat Lámpása |
+| Démonvadász | Hasadék Szeme |
+| Sárkányidéző | Sárkányvér-fiola |
+
 ---
 
 > *Itt végződik a kódex. A technikai megfeleltetés — mely lore-elem mely szerver-rendszerre képződik

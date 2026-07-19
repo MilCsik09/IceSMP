@@ -65,7 +65,7 @@ egységes `icesmp.admin.<domain>` séma:
 | `icesmp.admin.reload` | `/icesmp reload` |
 | `icesmp.admin.config` | `/icesmp config get/set/unset/list/find` (ingame config-felülbírálás) |
 | `icesmp.admin.events` | világesemény-triggerek |
-| `icesmp.admin.job` | kaszt XP / katalizátor / spell-unlock / `/class admin` |
+| `icesmp.admin.job` | kaszt XP / Lélekkapocs / spell-unlock / `/class admin` |
 | `icesmp.admin.currency` | valuta-egyenleg beállítás |
 | `icesmp.admin.faction` | frakció-kényszerítés, király/kassza admin-műveletek |
 | `icesmp.admin.quest` | küldetés force-complete + a `/quest admin` szerkesztő |
@@ -91,7 +91,7 @@ Egy teszt-karakter beállítása másodpercek alatt (a `<j>` a játékos neve):
 /faction set <j> RED                 # frakció kényszerítése (RED/BLUE/NEUTRAL/DARK)
 /currency set <j> 5000 RED           # valuta a bankhoz/teszthez
 /class addxp <j> primary 100000      # gyors szintezés (max szint 50)
-/class givecatalyst <j>              # a kaszt katalizátora (spellbook-tárgy)
+/class givecatalyst <j>              # a kaszt Lélekkapcsa (spellbook-tárgy)
 /class unlockspell <j> <spell_id>    # konkrét spell azonnali feloldása
 /spec choose <id>                    # spec választása (25. szint kell hozzá)
 ```
@@ -143,11 +143,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 - **Frakciók** (4): Piros/Kék/Semleges/Sötét, passzív bónuszokkal és valutával.
 - **Kasztok** (13) + **specializációk** (31), egy kaszt/játékos (végleges, admin-reset van), 50-es max szint.
-- **Képességek** (390+): katalizátor-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
+- **Képességek** (390+): Lélekkapocs-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
   cooldown, kombók, spell-mesterség.
-- [ ] **Közelharci katalizátor**: melee kaszttal (pl. Harcos) a kézben tartott kard/balta is
-      katalizátor — jobb katt cast, SHIFT+jobb katt varázskönyv, SHIFT+ütés spell-váltás; a balta
-      jobb-katt fahántása NEM fut le; nem-melee kaszttal (pl. Varázsló) a kard NEM katalizátor.
+- [ ] **Közelharci Lélekkapocs**: melee kaszttal (pl. Harcos) a kézben tartott kard/balta is
+      Lélekkapocs — jobb katt cast, SHIFT+jobb katt varázskönyv, SHIFT+ütés spell-váltás; a balta
+      jobb-katt fahántása NEM fut le; nem-melee kaszttal (pl. Varázsló) a kard NEM Lélekkapocs.
 - [ ] **Dinamikus spell-skálázás**: magasabb kaszt-szinten mérhetően nagyobb spell-sebzés
       (+0,5%/szint), az Arkán Hatalom talent rangonként +2%-ot ad; a bónusz +50%-nál tetőzik.
 - **Erő-csík** (osztály-erőforrás): HUD-sáv, regenerálódó költség-pool.
@@ -216,12 +216,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       indítja a 72 órás cooldownt (a leave+join kerülőút megszűnt).
 - [ ] **Hírnök-NPC:** `/npcbind <npc> faction` után az NPC jobb-kattra a frakció-menüt nyitja.
 
-### 4.2 Kasztok, katalizátor, szintezés ✅
+### 4.2 Kasztok, Lélekkapocs, szintezés ✅
 - [ ] `/profile` → Kaszt menüből mind a **13 kaszt** választható; **egy kaszt** vehető fel, utána a
       menü „Már van kasztod" jelzést ad; `/class admin resetclass` után újra választható.
-- [ ] A katalizátor a kaszthoz illő tárgy (pl. Varázsló = bűvölt könyv); **jobb katt** = cast,
+- [ ] A Lélekkapocs a kaszthoz illő tárgy (pl. Varázsló = bűvölt könyv); **jobb katt** = cast,
       **lopakodás + ütés** = váltás a feloldott spellek közt (action bar mutatja a kiválasztottat + költséget).
-- [ ] A katalizátor craftnál/kemencében **nem használódik el** (védett).
+- [ ] A Lélekkapocs craftnál/kemencében **nem használódik el** (védett).
 - [ ] Mob-öléssel nő a kaszt-XP; magasabb mob-szintű mob több XP-t ad (alap 10 + 3/mob-szint).
 - [ ] ⚠️ **Folia:** ölj mobot egy **régióhatáron / messziről** → az XP/üzenet hibamentesen érkezik
       (figyeld a konzolt „region"/IllegalStateException-re).
@@ -276,9 +276,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen
       megjelenik, nincs konzol-hiba.
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
-- [ ] **Shift+görgetés spell-váltás:** katalizátorral a kézben lopakodva görgetve a spell vált
-      (előre/hátra), a hotbar-slot NEM vált el, és a katalizátor neve az épp kiválasztott
-      képességet mutatja; katalizátor nélkül a görgetés normál slot-váltás marad.
+- [ ] **Shift+görgetés spell-váltás:** Lélekkapocsral a kézben lopakodva görgetve a spell vált
+      (előre/hátra), a hotbar-slot NEM vált el, és a Lélekkapocs neve az épp kiválasztott
+      képességet mutatja; Lélekkapocs nélkül a görgetés normál slot-váltás marad.
 - [ ] **Spell-kedvencek (ÚJ):** a spellkönyvben **shift-katt** egy feloldott spellen → ★ jelölés
       (újra shift-katt: le); ha van legalább egy kedvenc, a shift+görgetés **csak a kedvenceket**
       lépkedi (action bar: „★1/3"); üres kedvenc-lista = a teljes feloldott lista. A spellkönyv

@@ -70,7 +70,7 @@ Minden kaszt kap egy **saját szentélyt**, ami csak neki ad tematikus, időlege
 | Varázsló | Varázsló-asztal | Sietség II + Regeneráció |
 | Harcos | Üllő | Erő II + Ellenállás |
 | Íjász | Nyílkészítő-asztal | Gyorsaság + Ugrás II |
-| Orgyilkos | Sculk-katalizátor | Láthatatlanság + Gyorsaság II |
+| Orgyilkos | Sculk-Lélekkapocs | Láthatatlanság + Gyorsaság II |
 | Druida | Virágzó azálea | Regeneráció + Ugrás + Vízlégzés |
 | Paplovag | Fényporkő (glowstone) | Ellenállás + Regeneráció + Tűzállóság |
 | Halállovag | Síró obszidián | Erő + Felszívás III |
