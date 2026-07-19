@@ -1271,3 +1271,44 @@ profession-recipes:
     category: "Fagyott Királyság (tervrajz)"
     result: { material: SADDLE, amount: 1, signature: jegsarkany_kantar }
     ingredients: [ "SADDLE:1", "LEATHER:8", "STRING:4", "unique:arnyekpor:2" ]
+
+  # =========================================================
+  # --- K3: Perinfernicitas signature itemek (tervrajz + RED frakció-kapu) ---
+  # =========================================================
+  pyralingradi_tuzkopo:
+    profession: armorer
+    level: 45
+    learn: blueprint
+    faction: RED
+    display-name: "Pyralingradi Tűzköpő"
+    lore:
+      - "&7Soleil papjai áldották meg; lövedékei"
+      - "&7a sivatagi vihar sebességével csapnak le."
+    category: "Lángoló Birodalom (tervrajz)"
+    result: { material: CROSSBOW, amount: 1, affix-tier: crafted, signature: pyralingradi_tuzkopo }
+    ingredients: [ "CROSSBOW:1", "BLAZE_ROD:4", "NETHERITE_INGOT:1", "unique:vad_esszencia:3" ]
+  verszavanna_agyara:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    faction: RED
+    display-name: "A Vérszavanna Agyara"
+    lore:
+      - "&7Kovácsolásakor a lángok fekete füstöt"
+      - "&7okádtak; baltával a másik kézben"
+      - "&7emberfeletti erőt ád."
+    category: "Lángoló Birodalom (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: verszavanna_agyara }
+    ingredients: [ "NETHERITE_SWORD:1", "BLAZE_POWDER:8", "unique:szorny_mag:3" ]
+  fonix_tollkopeny:
+    profession: armorer
+    level: 40
+    learn: blueprint
+    faction: RED
+    display-name: "Főnix-Tollköpeny"
+    lore:
+      - "&7I. Zhoris lángmadarainak tollaiból szőve;"
+      - "&7óv a hőségtől és a láva haragjától."
+    category: "Lángoló Birodalom (tervrajz)"
+    result: { material: LEATHER_CHESTPLATE, amount: 1, affix-tier: crafted, signature: fonix_tollkopeny }
+    ingredients: [ "LEATHER_CHESTPLATE:1", "FEATHER:32", "MAGMA_CREAM:8", "unique:arnyekpor:2" ]

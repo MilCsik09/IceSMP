@@ -161,7 +161,11 @@ A birodalmak **saját, vágyott végjáték-tárgyakat** kaptak — tervrajzból
 kötött** receptek (a recept-könyv ⚑ sora jelzi). Az első kör a **Fagyott Királyságé** (Fagy/BLUE,
 páncélkovács): **Kallan Szeletelője** (íj — gyorsabb, páncéltörő nyilak), **Glatziendorfi Jégvért**
 (mellvért — viselve tompítja a sebzést), **Jégsárkány-Kantár** (jobb katt egy hátason: tartós
-gyorsítás, a kantár elfogy). A perkek pontos számai configból hangolhatók (`signature.*`).
+gyorsítás, a kantár elfogy). A második kör a **Lángoló Birodalomé** (Láng/RED, páncélkovács):
+**Pyralingradi Tűzköpő** (számszeríj — Quick Charge + gyorsabb lövedék), **A Vérszavanna Agyara**
+(kard — bónusz-sebzés, baltával a másik kézben még nagyobb), **Főnix-Tollköpeny** (mellvért-slot —
+tűz/láva-immunitás viselve; a craft RED-kapus, de a köpeny kereskedhető). A perkek pontos számai
+configból hangolhatók (`signature.*`).
 
 ## Talentpontok a szakmákból
 

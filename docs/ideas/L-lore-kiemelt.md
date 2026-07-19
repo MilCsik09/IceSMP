@@ -65,7 +65,7 @@ páncél, páncéltörő nyíl" fantázia kézzelfoghatóvá válik, és a bluep
 **Buktatók:** Balansz — a perkek ne legyenek pay-to-win a frakció-passzív FÖLÖTT; a szett-bónusz
 csak teljes szettre; a páncéltörés vanília-limitek közt maradjon.
 
-### K3. Perinfernicitas signature unique-itemek
+### K3. Perinfernicitas signature unique-itemek `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A Lángoló Birodalom 3 tárgya: **Pyralingradi Tűzköpő** (számszeríj: +felhúzási/repülési

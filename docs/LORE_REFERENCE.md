@@ -96,9 +96,9 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Jégsárkány-Kantár | BLUE | hátas-felszerelés (K2) | ✅ implementálva: hátas +sebesség, egyszeri, elfogy (`signature.kantar.speed-add`) |
 | Glatziendorfi Jégtörő / V. Miinus Haragja / Sárkánycsont Íj | BLUE | fegyverek | később tervezendő |
 | Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6) | BLUE hal-fogyasztási kötelezettség |
-| Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | +50% felhúzási/repülési sebesség |
-| A Vérszavanna Agyara | RED | kard/lándzsa (K3) | fegyver-kombó Strength I/II |
-| Főnix-Tollköpeny | RED | kiegészítő (K3) | tűz/láva-ellenállás |
+| Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | ✅ Tűzköpő implementálva: Quick Charge II + lövedék ×1.5 (`signature.tuzkopo.*`) |
+| A Vérszavanna Agyara | RED | kard/lándzsa (K3) | ✅ implementálva: +15% sebzés, off-hand baltával +30% (`signature.agyar.*`) |
+| Főnix-Tollköpeny | RED | kiegészítő (K3) | ✅ implementálva: viselve tűz/láva/forró-blokk immunitás (`signature.tollkopeny.fire-immunity`) |
 | I. Zhoris Lángnyelve / Napfogyatkozás | RED | fegyverek | később tervezendő |
 | Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | RED tojás-fogyasztási kötelezettség |
 | Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | +20% bányász-loot |

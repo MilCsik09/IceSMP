@@ -209,6 +209,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       frakciónak hibaüzenet, a csempén ⚑ sor); Kallan Szeletelője nyila gyorsabb és többet sebez;
       a Jégvért viselve csökkenti a sebzést; a Kantár jobb kattra gyorsítja a hátast, elfogy, és
       ugyanarra a hátasra másodszor nem fogy el.
+- [ ] **K3 signature (RED):** a 3 Perinfernicitas-recept csak Láng-frakcióval craftolható; a
+      Tűzköpő Quick Charge-dzsal készül és lövedéke gyorsabb; az Agyar többet sebez (baltával az
+      off-handben még többet); a Tollköpeny viselve kioltja a tűz/láva/forró-blokk sebzést.
 - [ ] **K1 kánon-nevek:** a HUD/tab a rövid frakciónevet mutatja (Láng/Fagy/Menedék/Kitaszított),
       a /menu és a Profil a hosszút (pl. Láng (Perinfernicitas)); a valuta-itemek neve Parázsló
       Parals / Hópihér-veret / Creutzér / Csontveret; a `/faction join piros` (legacy név) is működik.

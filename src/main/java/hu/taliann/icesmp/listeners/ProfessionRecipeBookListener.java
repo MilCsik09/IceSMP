@@ -150,6 +150,13 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (recipe.signature() != null && result.getItemMeta() != null) {
             final ItemMeta sigMeta = result.getItemMeta();
             sigMeta.getPersistentDataContainer().set(signatureKey, PersistentDataType.STRING, recipe.signature());
+            // Tűzköpő: a „+felhúzási sebesség" fele a vanília Quick Charge-on át (K3).
+            if (SignatureItemListener.TUZKOPO.equals(recipe.signature())) {
+                final int level = Math.max(0, Math.min(3, 2));
+                if (level > 0) {
+                    sigMeta.addEnchant(org.bukkit.enchantments.Enchantment.QUICK_CHARGE, level, true);
+                }
+            }
             result.setItemMeta(sigMeta);
         }
         // Roll a unique quality + affixes for single-item gear results (crafted tier). The roll keeps the
