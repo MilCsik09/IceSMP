@@ -29,6 +29,11 @@ Soleil lángoló és Kallan viharos haragját. Az első háború tüze bejárta 
 maga **Aetrinita** vetett véget neki. Az Élet Fája megbüntette háborúzó gyermekeit, Eleftheria bűnbe
 hullott lelkét pedig átengedte a sötétségnek, hadd eméssze fel.
 
+> **A kódex nagy rejtélye:** hogy honnan jött a **sötét árnyék**, amely megmérgezte Eleftheria szívét —
+> egy elfeledett csillag haragja, a Fa gyökerei alatt szunnyadó ősi gonosz, vagy maga a sötétség
+> öntudatra ébredése — máig megfejtetlen. Sokan hiszik, hogy az árnyék még mindig a világban lappang,
+> s a Néma Királynő csak az első áldozata volt.
+
 ## II. A Hasadás (Hu. 1.)
 
 Az emberiség az Élet Fája tövében emelte fel dicsőséges első fővárosát, **Asterobourgh**-t. Ám a
@@ -73,9 +78,16 @@ ellentétes, élhetetlen sarkába száműzte. Ez volt a **Hasadás** — a régi
 
 ## IV. A Hetedik Vérháború és a Káosz Kora (A Jelen: Hu. 978)  `[DARK]`
 
-Hét vérháború perzselte a Hasadás utáni évszázadokat, de a **Hetedik Vérháború (Hu. 698)** mindent
-megváltoztatott. A **Jégmezők** és a **Vérszavanna** — a két örök ellenség birodalom — közötti
-**Senkiföldjén** egy napon **óriási Nether-portál** hasadt fel, s belőle a Kárhozat lehelete áradt.
+A Hasadás után a két száműzött birodalom — a tüzes **Perinfernicitas** és a jeges **Cryghaliris** —
+engesztelhetetlen gyűlölettel fordult egymás ellen. Haragjuk **hét vérháborúban** lángolt fel a
+századok során, s minden összecsapás vért és hamut hagyott a világ két sarkában. A hatodik háború
+pusztítása oly iszonyú volt, hogy Caldestera bölcsei kimondták az **Armageddon-ultimátumot (Hu. 547)**:
+a Menedék örökre lemondott a fegyverekről, semleges, fegyvermentes területté vált — hogy maradjon
+legalább egyetlen sarka a világnak, ahol nem folyik vér.
+
+De a béke törékenynek bizonyult. A **Hetedik Vérháború (Hu. 698)** mindent megváltoztatott. A
+**Jégmezők** és a **Vérszavanna** — a két örök ellenség birodalom — közötti **Senkiföldjén** egy napon
+**óriási Nether-portál** hasadt fel, s belőle a Kárhozat lehelete áradt.
 Perinfernicitas gyarmatosítani akarta a kaput és a mögötte rejlő hatalmat; Cryghaliris elvágta az
 útjukat — s a háború lángjai felébresztették álmából a Fa egykori, elveszettnek hitt gyermekét.
 
@@ -102,6 +114,12 @@ folyhat, s ahol az emlékvesztett vándor biztonságban tér magához. Ám a Fa 
 nem. Innen minden Felsőnek **zarándokútra** kell kelnie a legközelebbi élő város, **Caldestera** felé —
 a Menedék semleges kapui mögé —, hogy onnan válassza meg, melyik birodalom ügyét szolgálja, s hol
 kovácsolja ki új sorsát.
+
+A Fa oltalma azonban nem ér véget az ébredéssel. Amikor egy Felső elesik, teste porrá lesz, de a
+lelkét az **Élet Fája** — bár maga is megsebezve — makacsul visszahívja az élők közé: újra testet ölt
+a birodalma szentélyénél. Ez a Felsők **halhatatlanságának** titka, s egyben a világ reménye — mert
+amíg a Fa visszahívja kegyeltjeit, a Néma Királynő átka nem győzhet végleg. *(Ez a lore-magyarázata
+annak, miért éledsz újra a frakciód spawnján.)*
 
 > **Földrajzi tisztázás:** a **Szent Zóna** (a spawn az Élet Fája alatt) és **Caldestera** városa két
 > külön hely. Az előbbi a Fa érinthetetlen menedéke, ahonnan a Felsők elzarándokolnak; az utóbbi a
@@ -342,3 +360,29 @@ városi őrség (és a plugin-tiltás).
   természet = Aetrinita gyökerei/Kallan vihara, káosz = Kárhozat Kapuja, halál/árnyék = Eleftheria mérge.
 - **Valuta**: RED = Parázsló Parals, BLUE = Hópihér-veret, NEUTRAL = Creutzér/Smaragdkő,
   DARK = Csontveret.
+
+---
+
+## Függelék — Időrend (a világ kronológiája)
+
+| Év (Hu.) | Esemény |
+|---|---|
+| *a Teremtés hajnalán* | Asterlayna lezuhan; kikel az **Élet Fája (Aetrinita)**; megszületik a négy gyermek (Eleftheria, Soleil, Kallan, Arkynn); dúl az **Első Háború**. |
+| **1.** | A **Hasadás**: Asterobourgh elbukik, a Fa megreped, az emberiséget a világ két sarkába száműzik. |
+| **14.** | **Pyralingrad** alapítása — Perinfernicitas fővárosa. |
+| **117.** | **Glatziendorf** alapítása — Cryghaliris fővárosa. |
+| **547.** | Az **Armageddon-ultimátum** a hatodik vérháború után: Caldestera örökre semleges, fegyvermentes menedék. |
+| **698.** | A **Hetedik Vérháború**; felébred a **Néma Királynő**; élőhalottak és a nemesség eltörlése — kezdődik a **Káoszkor**. |
+| **978.** | A **Felsők** megérkezése az Élet Fája alá — **a jelen**. |
+
+## Függelék — Az Elveszett Uralkodók
+
+A Néma Királynő átka a világ minden koronás főjét sírba vitte; nevük ma már csak a legendás tárgyakon
+és a romok között kísért — ők a történelmi horgonyok a legendás itemek mögött.
+
+- **I. Zhoris** — Perinfernicitas lángmadár-ura; főnixeinek elhullott tollából szőtték a
+  **Főnix-Tollköpenyt**, s az ő nevét viseli a Vérszavanna legmélyén kovácsolt **Lángnyelve**.
+- **V. Miinus** — Cryghaliris sárkánykirály-örököse; kíméletlen haragja acélba kovácsolva ma is öl
+  (**V. Miinus Haragja**).
+- **I. Benedictus** és **I. Lineata** — a Hetedik Vérháború két hadvezér-uralkodója; egykor büszke
+  seregük ma élőhalottként rója az utakat, kezükben **A Hetedik Vérháború Rozsdás Pengéivel**.
