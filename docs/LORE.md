@@ -194,7 +194,7 @@ már illeszkednek** — nem kell hozzájuk nyúlni, csak a nevek/lore placeholde
 | `RED` | **Perinfernicitas** | tűz/láva-immunitás | Pyralingrad | **Parázsló Parals** | Soleil / Főnix |
 | `BLUE` | **Cryghaliris** | fagy + fulladás-immunitás | Glatziendorf | **Hópihér-veret** | Kallan / Sárkány |
 | `NEUTRAL` | **Ryanora & Caldestera** | zuhanás-immunitás, békés mobok, adómentes | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
-| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Mortengrad** (rom) | — | Eleftheria / Néma Királynő |
+| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Mortengrad** (rom) | **Csontveret** | Eleftheria / Néma Királynő |
 
 > A jelenlegi játékos-nevek (`factions.yml`: „Piros/Kék/Semleges/Sötét", `economy.yml`: „… Token")
 > **placeholderek** — a lore ezekre a tematikus nevekre cserélné őket (rövid + hosszú alak kell a
@@ -257,6 +257,8 @@ tervezett mechanika (nem végleges balansz).
   átrágta az idő, de a sötét mágia védi oszladozó viselőjét."
 - **A Néma Királynő suttogása** (Mob-drop) — „Eleftheria első szavai hívták életre a Hu. 698. évben."
 - **Megrontott Fekete Csont** (Mob-drop) — az élőhalottak maradványa; ugyanaz a néma harag hajtja.
+- **Csontveret** (Érme) — „A Holtak Városának pénze; sírba szállt urak koronáiból és megfeketült
+  ezüstből verve — érintése hideg, akár a kripta." *(DARK valuta)*
 
 > **Törpék** *(kiegészítés — nem az eredeti kódexből):* az ősi romok és a legősibb ereklyék (pl. a
 > *Mételytépő* harci fejsze) egy rég letűnt, rejtélyes **törp** civilizáció hagyatéka — a Fa
@@ -320,4 +322,5 @@ városi őrség (és a plugin-tiltás).
 - **Káoszkor-drop** = Eleftheria/Néma Királynő/suttogás/megrontott/fekete motívumok.
 - **Kaszt-fantázia** = a kaszt ereje a forrásához illeszkedjen (VI. fejezet): szent = Asterlayna/Soleil,
   természet = Aetrinita gyökerei/Kallan vihara, káosz = Kárhozat Kapuja, halál/árnyék = Eleftheria mérge.
-- **Valuta**: RED = Parázsló Parals, BLUE = Hópihér-veret, NEUTRAL = Creutzér/Smaragdkő.
+- **Valuta**: RED = Parázsló Parals, BLUE = Hópihér-veret, NEUTRAL = Creutzér/Smaragdkő,
+  DARK = Csontveret.
