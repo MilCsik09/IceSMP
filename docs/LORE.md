@@ -1,47 +1,55 @@
 # 📜 Kódex: Az Élet Fája és a Káosz Kora
 
-> A szerver **kanonikus lore-referenciája**. Minden új tartalom (unique itemek, ételek, valuta-
-> nevek, mob-drop, zóna, quest, esemény) ehhez illeszkedjen — nevekben, hangulatban, mechanikában.
-> A technikai megfeleltetés (`RED/BLUE/NEUTRAL/DARK` → frakciók) a [Frakció ↔ kód](#frakció--kód-megfeleltetés)
-> szakaszban. A jelen: **Hu. 978**.
+> A szerver **kanonikus kódexe** — a világ teremtésétől a jelen Káoszkoráig (**Hu. 978**). Minden
+> tartalomnak (unique itemek, ételek, valuta-nevek, mob-drop, zóna, quest, esemény, kaszt-fantázia)
+> ehhez kell illeszkednie: nevekben, hangulatban és mechanikában. A `RED/BLUE/NEUTRAL/DARK`
+> kód-azonosítók lore-megfelelése a [Frakció ↔ kód](#frakció--kód-megfeleltetés) szakaszban.
 
 ---
 
 ## I. A Teremtés és az Első Háború
 
-A kezdetekben csak a végtelen, csendes sötétség létezett, és a csillagok. Közülük a legragyogóbb,
-**Asterlayna**, megelégelte a magányt. Csillagfényből szőtt uszályában megbotolva lezuhant az égről,
-a világok repedései közé. Teste elpusztult, de lelkének utolsó szilánkját a legtermékenyebb földbe
-ültette, amiből **hetek múltán** kikelt az **Élet Fája: Aetrinita**.
+Kezdetben csak a végtelen, néma sötétség terült el, s benne a csillagok hideg szikrái. Közülük a
+legragyogóbb, **Asterlayna**, megelégelte a magányt. Csillagfényből szőtt uszályában lépdelt az egek
+peremén, ám egy napon megbotlott, és alázuhant az égről — egyenesen a világok közötti repedések közé.
+Teste a becsapódásban semmivé foszlott, de mielőtt kihunyt volna, lelkének utolsó, még izzó szilánkját
+a világ legtermékenyebb földjébe rejtette. Hetek múltán abból a szilánkból kikelt az **Élet Fája:
+Aetrinita** — s ágai alatt először támadt élet a sötétben.
 
-A Fa négy hatalmas gyermeket teremtett:
+A Fa négy hatalmas gyermeket bocsátott a világra, hogy színt és rendet vigyenek belé:
 
-- **Eleftheria** — a szabadság megtestesítője (barna haj = anyaföld). Később a **Néma Királynő**.
-- **Soleil** — lángoló vörös hajú fiú, a **Főnixek ura**.
-- **Kallan** — harsány, szókimondó harcos, a **Sárkányok királya**.
-- **Arkynn** — csendes, visszahúzódó fiú, az erejüktől megfosztottak királya.
+- **Eleftheria** — a szabadság megtestesítője, kinek gesztenyebarna haja magát az anyaföldet idézte.
+- **Soleil** — a lángoló, vörös hajú fiú, a **Főnixek Ura**.
+- **Kallan** — a harsány, szókimondó harcos, a **Sárkányok Királya**.
+- **Arkynn** — a csendes, visszahúzódó fiú, aki később az erejüktől megfosztottak királya lett.
 
-Eleftheriát megmérgezte egy sötét árnyék, és testvérei ellen fordult: megmérgezte Arkynnt és népét,
-kiváltva Soleil és Kallan haragját. A pusztító háborúnak **Aetrinita** vetett véget — megbüntette
-gyermekeit, Eleftheria lelkét pedig hagyta, hogy eleméssze a sötétség.
+A béke azonban törékenynek bizonyult. Egy **sötét árnyék** férkőzött Eleftheria szívébe, és megmérgezte
+azt: a szabadság gyermeke a testvérei ellen fordult. Előbb Arkynnt és népét mérgezte meg, kiváltva ezzel
+Soleil lángoló és Kallan viharos haragját. Az első háború tüze bejárta a fiatal világot — míg végül
+maga **Aetrinita** vetett véget neki. Az Élet Fája megbüntette háborúzó gyermekeit, Eleftheria bűnbe
+hullott lelkét pedig átengedte a sötétségnek, hadd eméssze fel.
 
 ## II. A Hasadás (Hu. 1.)
 
-Az emberiség az Élet Fája körül építette fel fővárosát, **Asterobourgh**-t. A hatalomvágy azonban
-két frakciót — a **Szabad Kereskedelmi Közösség (SZKK)** és a **Polgári Szabad Társadalom (PSZT)** —
-véres konfliktusba sodort.
+Az emberiség az Élet Fája tövében emelte fel dicsőséges első fővárosát, **Asterobourgh**-t. Ám a
+halandók szívét lassan megmérgezte a hatalomvágy, s a város két ősi hatalom közt szakadt ketté: **Az
+Arany Liga** — a kereskedő-házak és céhek aranyból font szövetsége — és **A Szabad Városok Szövetsége**
+— a polgári közösségek büszke uniója — véres viszályba rántották Asterobourgh-t. *(E két letűnt hatalom
+emlékét ma a világban szétszórt **Opálos Emlékszilánkok** őrzik.)*
 
-Ezzel egy időben egy novícius papnő — a reinkarnálódott **Eleftheria Flygadhor** — tiltott rítussal
-szóra bírt egy ötszáz éves halottat. A **Lelki Béke Rendje** őt tette felelőssé a káoszért, és
-kínhalálra ítélte. Ahogy a kínzóeszközök a húsába vágtak, az **Élet Fája megrepedt**. Egy éteri hang
-szólt: Eleftheriát a Holtak Országának kapujához vitte, az acsarkodó emberiséget pedig a világ két
-ellentétes, élhetetlen sarkába száműzte. Ez volt a **Hasadás**.
+Ugyanebben az órában egy novícius papnő — a reinkarnálódott **Eleftheria Flygadhor** — tiltott rítust
+hajtott végre: szóra bírt egy ötszáz éve halott lelket. A **Lelki Béke Rendje** őt kiáltotta ki a város
+pusztulásának okozójaként, és kegyetlen kínhalálra ítélte. Ahogy a kínzóeszközök a húsába martak, az
+**Élet Fája szívszaggató reccsenéssel megrepedt**. A törzs mélyéről éteri hang szólalt meg: Eleftheriát
+a **Holtak Országának** kapujához ragadta, az egymásnak acsarkodó emberiséget pedig a világ két
+ellentétes, élhetetlen sarkába száműzte. Ez volt a **Hasadás** — a régi kor vége s a frakciók születése.
 
 ## III. A Három Birodalom (A Frakciók)
 
 ### ❄️ Cryghaliris — A Fagyott Királyság  `[BLUE]`
-- **Történet:** a Fa a kegyetlen Jégmezőkig űzte őket; **Kallan**, a Sárkánykirály örökösei. Vérbeli
-  diplomaták és kíméletlen hódítók, akik megszelídítették a jégmezők apró, veszedelmes sárkányait.
+- **Történet:** a Fa a kegyetlen Jégmezőkig űzte őket; **Kallan**, a Sárkánykirály eszmei örökösei.
+  Vérbeli diplomaták és kíméletlen hódítók, akik megszelídítették a jégmezők apró, de veszedelmes
+  őshonos sárkányait.
 - **Főváros:** Glatziendorf (Hu. 117).
 - **Stílus:** fenyő, kő, gyapjú — fagyos, sötét, büszke.
 - **Item-hangulat:** „Kallan lehelete", „Jégbe zárt", „Északi pikkely", „Hópihér-veret". A fegyverek
@@ -49,33 +57,110 @@ ellentétes, élhetetlen sarkába száműzte. Ez volt a **Hasadás**.
 
 ### 🔥 Perinfernicitas — A Lángoló Birodalom  `[RED]`
 - **Történet:** a perzselő Vérszavannára száműzöttek; **Soleil**, a Főnixek urának hagyatéka.
-  Forrófejű, agresszív nemzet, lángoló madarak hátán uralják a sivatagi szeleket.
+  Forrófejű, agresszív nemzet, akik lángoló madarak hátán uralják a sivatagi szeleket.
 - **Főváros:** Pyralingrad (Hu. 14).
 - **Stílus:** akácia, homokkő, mélypala — tikkasztó, tüzes, egzotikus.
 - **Item-hangulat:** „Soleil hamuja", „Vérszavannai acél", „Parázsfészek", „Főnix-toll". Fegyvereik
   **gyorsak és halálosak** (számszeríjak, lándzsák).
 
 ### ⚖️ Ryanora & Caldestera — A Menedék  `[NEUTRAL]`
-- **Történet:** akik a Fa közelében, a **Bokic-folyónál** maradtak; **Arkynn** békés örökségének
-  őrzői. **Caldestera** a világ kereskedelmi és tudományos központja — az **Armageddon-ultimátum
-  (Hu. 547)** óta szigorúan **semleges és fegyvermentes** övezet. Misztikus, sebeslábú szarvasaikon
-  járnak.
+- **Történet:** akik a Fa közelében, a **Bokic-folyónál** maradtak; **Arkynn** békés örökségének őrzői.
+  **Caldestera** a világ kereskedelmi és tudományos központja — az **Armageddon-ultimátum (Hu. 547)**
+  óta szigorúan **semleges és fegyvermentes** övezet. Misztikus, sebeslábú szarvasaikon járnak.
 - **Stílus:** tölgy, tégla, kvarc — gazdag, polgári, letisztult, békés.
 - **Item-hangulat:** itt pörög a **Creutzér**. Díszes nevek: „Smaragdkő Cédula", „Asterlayna Könnye",
   „Bankár-pecsét", „Bokic-menti relikvia".
 
-## IV. A Káosz Kora és a Felsők (A Jelen: Hu. 978)  `[DARK]`
+## IV. A Hetedik Vérháború és a Káosz Kora (A Jelen: Hu. 978)  `[DARK]`
 
-A **Hetedik Vérháború (Hu. 698)** mindent megváltoztatott: Perinfernicitas gyarmatosítani akart egy
-rejtélyes **Nether-portált**, Cryghaliris elvágta az útjukat, és a háború lángjai felébresztették a
-**Néma Királynőt (Eleftheria)**. Két mondatával megteremtette az **élőhalottakat**
-(„…bár itt volnának azok, akik meghallgatnák szavaimat!"), és eltörölte a világ **nemességét és
-uralkodóit** („Hol vannak a vádlóim…?"). Beköszöntött a **Káoszkor**: a birodalmak széthullottak, az
-utakat élőhalottak rabolták ki, az átok minden új vezetőt sírba vitt.
+Hét vérháború perzselte a Hasadás utáni évszázadokat, de a **Hetedik Vérháború (Hu. 698)** mindent
+megváltoztatott. A **Jégmezők** és a **Vérszavanna** — a két örök ellenség birodalom — közötti
+**Senkiföldjén** egy napon **óriási Nether-portál** hasadt fel, s belőle a Kárhozat lehelete áradt.
+Perinfernicitas gyarmatosítani akarta a kaput és a mögötte rejlő hatalmat; Cryghaliris elvágta az
+útjukat — s a háború lángjai felébresztették álmából a Fa egykori, elveszettnek hitt gyermekét.
 
-**A fordulópont (Hu. 978):** az Élet Fája alá emlékek nélküli alakok érkeztek — **ti, a Felsők**. A
-legenda szerint az eltűnt királyok és főurak leszármazottai, akiket a Fa megmentett, hogy új rendet
-hozzanak.
+**A Néma Királynő (Eleftheria)** kigyógyult sebeiből, de szíve feketévé vált a gyűlölettől. Két mondattal
+írta át a világot. Az elsővel megteremtette az **élőhalottakat** — *„…bár itt volnának azok, akik
+meghallgatnák szavaimat!"* — a másodikkal pedig eltörölte a háborúzó királyságok **teljes nemességét és
+uralkodóit** — *„Hol vannak a vádlóim…?"*. Így köszöntött be a **Káoszkor**: a birodalmak fejük vesztve
+széthullottak, az utakat élőhalottak lepték el, s az átok minden új vezetőt sírba vitt.
+
+**A fordulópont (Hu. 978):** az Élet Fája alá emlékek nélküli, különös alakok érkeztek — **ti, a
+Felsők**. A legenda szerint az eltűnt királyok és főurak dicsőséges leszármazottai vagytok, akiket maga
+a Fa mentett meg, hogy új rendet hozzatok a káoszba.
+
+## V. A Felsők Ébredése — A Szent Zóna és a Zarándoklat
+
+A Felsők nem palotában, nem csatatéren ébrednek, hanem **az Élet Fája alatt** — a világ legszentebb,
+**érinthetetlen** pontján. Ez a hely a Fa oltalma alatt áll: **teljesen fegyvermentes**, ahol vér nem
+folyhat, s ahol az emlékvesztett vándor biztonságban tér magához. Ám a Fa csak a kezdetet adja; otthont
+nem. Innen minden Felsőnek **zarándokútra** kell kelnie a legközelebbi élő város, **Caldestera** felé —
+a Menedék semleges kapui mögé —, hogy onnan válassza meg, melyik birodalom ügyét szolgálja, s hol
+kovácsolja ki új sorsát.
+
+> **Földrajzi tisztázás:** a **Szent Zóna** (a spawn az Élet Fája alatt) és **Caldestera** városa két
+> külön hely. Az előbbi a Fa érinthetetlen, teljesen fegyvermentes menedéke, ahonnan a Felsők
+> elzarándokolnak; az utóbbi a Menedék-frakció nyüzsgő — és szintén fegyvermentes — fővárosa a
+> Bokic-folyónál.
+
+## VI. A Mágia Forrásai — A Kasztok Eredete
+
+A Felsők, bár emlékeiket vesztették, ösztönösen nyúlnak a világot átjáró ősi erők felé — a Fa
+gyermekeinek szétszóródott hatalmához. Ki-ki más áramlatból merít; ez adja a **tizenhárom kaszt** erejét.
+
+- **Asterlayna fénye és Soleil tüze — a Szent forrás.** A **Papok** és a **Paplovagok** ereje Asterlayna
+  hulló csillagfényéből és Soleil tisztító lángjából fakad: mágiájuk gyógyít és megtisztít, s árnyékot
+  űz ott, ahol a Káoszkor sötétje gyülekezik.
+- **Aetrinita életereje — a Test forrása.** A **Szerzetesek** magának az Élet Fájának lüktető életerejét,
+  a **Csi**-t áramoltatják át a testükön; öklük és lelkük az Aetrinita adta belső egyensúlyból meríti
+  gyorsaságát és gyógyító erejét.
+- **A megrepedt Fa gyökerei és Kallan vihara — a Természet forrása.** A **Druidák** a **megrepedt Élet
+  Fája (Aetrinita)** gyökereinek természet-mágiáját hívják — innen ered alakváltó hatalmuk. A **Sámánok**
+  ehhez **Kallan vihar-mágiáját** kötik: totemjeikben a Sárkánykirály égzengése és a Fa elemi ereje
+  egyszerre lakik.
+- **Kallan öröksége — a Sárkány és a Harc forrása.** A **Harcosok** a Sárkánykirály, **Kallan**
+  harcos-szellemének s a régi királyságok hadi hagyatékának örökösei — nyers erejük emlékiratok nélkül
+  is a hajdani hősöké. A **Sárkányidézők** ennél mélyebbre nyúlnak: a jégsárkányok vérének és Soleil
+  lángjának ötvözetét, a **sárkány-eszenciát** csapolják meg.
+- **Soleil vadászai — a Láng és a Vadászat forrása.** Az **Íjászok** Soleil lángmadár-lovasainak
+  vadász-fegyelmét viszik tovább: nyilaik a sivatagi szél pontosságával s a főnixek türelmével találnak
+  célt.
+- **A Kárhozat Kapuja — a Káosz forrása.** A **Boszorkánymesterek** és a **Démonvadászok** a **Kárhozat
+  Kapujából (a Nether-portálból)** átszivárgó sötét, kaotikus energiát csapolják meg. A Boszorkánymester
+  átkokká, démonokká és pusztító tűzzé formálja e nyers káoszt; a Démonvadász ugyanezt az erőt fordítja
+  maguk a démonok ellen — bosszúból és túlélésből.
+- **Eleftheria mérge és árnyéka — a Halál forrása.** A **Halállovagok** (és a nyomukban járó
+  **Nekromanták**) magának a **Néma Királynőnek, Eleftheriának a mérgéből** táplálkoznak: vér, fagy és
+  rúna-mágia szolgálja őket, a halál hidege a fegyverük. Az **Orgyilkosok** azt a **sötét árnyékot**
+  aknázzák ki, amely egykor Eleftheria szívét is megrontotta — a lopakodás és a méreg mestersége
+  ugyanabból a homályból ered, amelyből a Suttogók is merítenek.
+- **Asterlayna szőttese — az Arkánum forrása.** A **Varázslók** a világot átszövő nyers arkánumot idézik:
+  Asterlayna csillag-szőttesének maradékát s a **Caldestera Akadémiáin** őrzött, elveszett rúna-tudást —
+  elemi és kontroll-varázslataik e régi tudás felszikrázó szilánkjai.
+
+## VII. A Világ Árnyékos Zugai
+
+**A Kárhozat Kapuja — a Nether-portál.** A Hetedik Vérháborút kirobbantó **óriás Nether-portál** pontosan
+a **Jégmezők (Cryghaliris)** és a **Vérszavanna (Perinfernicitas)** közötti **Senkiföldjén** hasadt fel —
+ott, ahol a két örök ellenség földje összeér. Amikor a Káoszkor elején eltűnt a nemesség, a kaput senki
+sem őrizte tovább; a két sereg maradványai az élőhalottakkal vívott harcban pusztultak el körülötte. Ma a
+portál instabil, a Nether energiája lassan a világba szivárog, megfertőzve a környező földeket. Ez a világ
+legveszélyesebb, frakció-semleges senkiföldje — a **„Kárhozat Kapuja"** vagy **„Az Őrület Hasadéka"** —,
+ahová a Felsők a legjobb nyersanyagért járnak, s ahol a birodalmak legálisan összecsaphatnak.
+
+**Caldestera alvilága — Arkynn öröklött mérge.** Caldestera békés, semleges és gazdag főváros — ám a
+felszín alatt nem makulátlan. **Arkynn** egykori mérge, amely megrontotta őt és népét, nem tűnt el
+nyomtalanul: a Menedék népének lelkében **kapzsiság és korrupció** formájában él tovább. Bár a városban
+**szigorúan tilos fegyvert viselni**, a **Botera-negyed** sikátoraiban virágzik a feketepiac: a
+legügyesebb csempészek ártalmatlannak tűnő tárgyakba rejtett fegyvereket juttatnak a falak közé,
+kicselezve a Vámház őreit.
+
+**A Suttogók — az álca leple.** A **Suttogók** (más néven **Az Éjszaka Gyermekei**) titkos szektája azt
+vallja, hogy az emberiség bűnei miatt a birodalmaknak buknia kell, és a Néma Királynőnek igaza van.
+Tagjaikat **sötét mágia álcázza**: egy Suttogó megőrzi a látszólagos frakcióját és arcát, hovatartozása
+kívülről **láthatatlan** marad — így épülhetnek be észrevétlenül mind a három birodalomba. Kilétükre
+csakis a **tetteikből** — árulásból, sötét rítusból, egy lebukott merényletből — derülhet fény; s ha
+lelepleződnek, **vérdíj** kerül a fejükre.
 
 ---
 
@@ -131,7 +216,7 @@ tervezett mechanika (nem végleges balansz).
 - **Pyralingradi Ostrom-számszeríj** (Számszeríj) — Soleil papjai áldották meg a Vérszavanna szívében.
 
 ### ⚖️ Ryanora & Caldestera
-- **A Vasművek Akadémiájának Csákánya** (Szerszám) — „Cardestera mestereinek műve, Asterlayna
+- **A Vasművek Akadémiájának Csákánya** (Szerszám) — „Caldestera mestereinek műve, Asterlayna
   áldásával; a sziklák mélyén gyakran váratlan kincs." *(+20% bányász-loot)*
 - **Bokic-menti Horgászbot** (Szerszám) — „A Bokic hordalékából; zsinórja a víz szellemeit is
   felszínre vonzza." *(+20% horgász-loot)*
@@ -160,28 +245,33 @@ tervezett mechanika (nem végleges balansz).
 
 ---
 
-## Jövőbeli világ-rendszerek (tervezett)
+## Világ-rendszerek → szerver-mechanika
 
-### 1. A Nether-portál — „Kárhozat Kapuja" / „Az Őrület Hasadéka"
-A Hetedik Vérháborút kirobbantó **óriás Nether-portál** ma őrizetlen, instabil; amikor a Káoszkor
-elején eltűnt a nemesség, a két sereg maradványai itt pusztultak el az élőhalottakkal vívott harcban.
-A Nether energiája szivárog a világba, megfertőzve a földeket. **Senkiföldje / high-tier PvPvE-zóna:** a Felsők a
-legjobb nyersanyagért (netherite, boss-drop) járnak ide, és a két frakció **legálisan** összecsaphat.
+A narratíva (IV–VII. fejezet) világ-elemei így képződnek le a szerver rendszereire:
+
+### 1. A Kárhozat Kapuja — Nether-portál PvPvE-zóna
+A **Jégmezők és a Vérszavanna közötti Senkiföldjén** felhasadt óriás Nether-portál a szerver
+legveszélyesebb, frakció-semleges **high-tier PvPvE-zónája**. Fokozott mob-veszély (a Néma Királynő
+élőhalottai), exkluzív loot (netherite, boss-drop, **Fekete Villám Szilánk**), és **legális PvP** a két
+frakció közt. *(Lásd: VII. fejezet.)*
 
 ### 2. A Felsők emlékei — **Emlékszilánkok**
 A Felsők amnéziával érkeznek; emlékeik fizikai formát öltöttek. Kazamatákban, romokban, erős szörnyek
 őrzik. Elég szilánkból a játékos **„visszaemlékszik"** — szintet lép, új Class-t old fel (pl. lovag →
 sárkánylovas), vagy frakció-rangot vált ki.
 - **Opálos Emlékszilánk** — „Ha a füledhez emeled, csatazajt és egy rég halott király parancsait hallod."
+  *(Az **Arany Liga** és a **Szabad Városok Szövetsége** letűnt korának emlékét is ezek őrzik.)*
 
-### 3. A **Suttogók** (Az Éjszaka Gyermekei) — titkos szekta
-Élő emberek, akik a Néma Királynő igazát vallják, és a birodalmak bukását akarják. Mind a három
-frakcióba beépülnek. Bárki csatlakozhat (akár titokban): sötét-mágiájú itemeket kapnak, de ha
-lelepleződnek, **vérdíj** kerül a fejükre. (Kötődik a `DARK` frakcióhoz.) Nyomozós RP-mag.
+### 3. A **Suttogók** (Az Éjszaka Gyermekei) — titkos DARK-szekta
+Élő emberek, akiket **sötét mágia álcáz**: megtartják látszólagos frakciójukat, hovatartozásuk rejtve
+marad, s bárki csatlakozhat (akár titokban). Sötét-mágiájú itemeket kapnak, de ha a tetteik
+lelepleződnek, **vérdíj** kerül a fejükre. (Kötődik a `DARK` frakcióhoz.) Nyomozós RP-mag. *(Lásd: VII.
+fejezet.)*
 
 ### 4. Caldestera alvilága — csempészet és feketepiac
-Caldesterában **tilos fegyvert viselni** → a **Botera-negyed** feketepiaca virágzik: ártalmatlannak
-tűnő, rejtett fegyverek, amikkel kicselezhető a városi őrség (és a plugin-tiltás).
+Caldesterában **tilos fegyvert viselni** (Arkynn öröklött mérge: kapzsiság és korrupció) → a
+**Botera-negyed** feketepiaca virágzik: ártalmatlannak tűnő, rejtett fegyverek, amikkel kicselezhető a
+városi őrség (és a plugin-tiltás).
 - **Bokic-menti Sétapálca** (rejtett penge) — „Elegáns sétapálca a nemeseknek, de a markolatot
   megcsavarva halálos penge ugrik elő; a Vámház őrei nem veszik észre." *(fegyver, amit a kapu-plugin nem koboz el)*
 - **Hamisított Menlevél** — bűnözőknek, akik amúgy nem léphetnének a városba.
@@ -192,7 +282,10 @@ tűnő, rejtett fegyverek, amikkel kicselezhető a városi őrség (és a plugin
 
 - **Frakció-item** = a frakció hőse/fővárosa/motívuma a névben (Kallan/Glatziendorf/jég; Soleil/
   Pyralingrad/láng/főnix; Arkynn/Caldestera/Bokic/szarvas).
-- **Történelmi horgony**: az uralkodók (I. Zhoris, V. Miinus, I. Benedictus, I. Lineata) és az évszámok
-  (Hu. 698 = Hetedik Vérháború) hitelesítik a legendás tárgyakat.
+- **Történelmi horgony**: az uralkodók (I. Zhoris, V. Miinus, I. Benedictus, I. Lineata), a letűnt
+  hatalmak (Arany Liga, Szabad Városok Szövetsége) és az évszámok (Hu. 698 = Hetedik Vérháború)
+  hitelesítik a legendás tárgyakat.
 - **Káoszkor-drop** = Eleftheria/Néma Királynő/suttogás/megrontott/fekete motívumok.
+- **Kaszt-fantázia** = a kaszt ereje a forrásához illeszkedjen (VI. fejezet): szent = Asterlayna/Soleil,
+  természet = Aetrinita gyökerei/Kallan vihara, káosz = Kárhozat Kapuja, halál/árnyék = Eleftheria mérge.
 - **Valuta**: RED = Parázsló Parals, BLUE = Hópihér-veret, NEUTRAL = Creutzér/Smaragdkő.
