@@ -316,7 +316,7 @@ public final class IceSMPCore {
         this.blueprintItemFactory = new hu.taliann.icesmp.items.BlueprintItemFactory(plugin, professionRecipeCatalog);
         this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
-                professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager);
+                professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);

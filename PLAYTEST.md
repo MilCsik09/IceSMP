@@ -219,6 +219,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       elfogy és +25 Creutzért ír jóvá (dupe-teszt: gyors dupla-katt se duplázzon); a
       Szellemszarvas-Bűbáj jobb-kattra gyors, ideiglenes hátast idéz (~90 mp, ~120 mp cooldown,
       a bűbáj NEM fogy el). Kulcsok: `signature.*` a `crafting.yml`-ben.
+- [ ] **Signature-enchantok (ÚJ — bootstrap):** craftolj egy signature itemet → a tooltipben a
+      neve alatt VALÓDI enchant-sor jelenik meg magyar lore-névvel (Kallan-íj: „Jégfog", Tűzköpő:
+      „Vihartűz", Agyar: „Vérszomj", Jégvért: „Fagypáncél", Tollköpeny: „Főnixtoll", Csákány:
+      „Érc-érzék", Horgászbot: „Bokic Kegye") — kliens-mod és resource pack NÉLKÜL (data-driven
+      enchant-registry, a kliens szinkronizálja). Kapcsoló: `signature.custom-enchants`.
+      ⚠️ Enchant-asztalról NEM jöhetnek (weight=1); üllőn a két signature kombinálása vihet át
+      enchantot — ellenőrizd, hogy nem ad kihasználható előnyt. ⚠️ A bootstrap-regisztráció új
+      (unstable) Paper API — az ELSŐ gradle-build és szerverindulás kiemelt teszt: ha a konzol
+      bootstrap-hibát dob, a `signature.custom-enchants: false` NEM elég, a Bootstrap-osztály
+      regisztrációját kell javítani.
 - [ ] **K6 frakció-ételek (ÚJ):** a 3 séf-recept frakció-kapus (Pisztráng BLUE 25 / Rántotta RED 25 /
       Sütemény NEUTRAL 35). A Pisztráng evése rövid felszívódás-pajzsot, a Rántotta tűz-ellenállást
       ad; a Sütemény „robban" (felfelé lökés + Speed II + tűzijáték-effekt, blokk-kár nélkül).

@@ -67,6 +67,11 @@ crafting-restrictions:
 # ===== Signature-item perkek (K2/K3/K4 — frakció-kapus craftolt tárgyak) =====
 # Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
 signature:
+  # Bootstrap-regisztrált EGYEDI enchantok a signature itemeken (Jégfog, Vihartűz,
+  # Vérszomj, Fagypáncél, Főnixtoll, Érc-érzék, Bokic Kegye) — a magyar nevük valódi
+  # enchant-sorként jelenik meg a tooltipben (kliens-mod és resource pack nélkül).
+  # false = a craft nem stampeli rá (a már regisztrált enchantok megmaradnak a registryben).
+  custom-enchants: true
   # Cryghaliris (BLUE)
   kallan:
     arrow-velocity-mult: 1.5   # a nyíl sebesség-szorzója

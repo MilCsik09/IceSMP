@@ -169,7 +169,9 @@ tűz/láva-immunitás viselve; a craft RED-kapus, de a köpeny kereskedhető). A
 esemény alatt szünetel), **Bokic-menti Horgászbot** (horgász 40 — +20% eséllyel dupla fogás),
 **Smaragdkő Bankbetét** (rúnaírnok 35 — jobb-kattal Creutzérre váltható betétjegy), és a
 **Szellemszarvas-Bűbáj** (füvész 45 — jobb-katt: ideiglenes, gyors szellem-hátast idéz; nem fogy el,
-cooldownnal). A perkek pontos számai
+cooldownnal). Ráadásul minden signature
+tárgy saját, **egyedi enchantot** visel (pl. „Jégfog", „Vérszomj", „Főnixtoll") — a neve valódi
+enchant-sorként ragyog a tooltipben. A perkek pontos számai
 configból hangolhatók (`signature.*` a `crafting.yml`-ben).
 
 ## Talentpontok a szakmákból

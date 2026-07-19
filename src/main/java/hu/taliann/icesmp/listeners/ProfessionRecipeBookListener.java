@@ -45,6 +45,7 @@ public final class ProfessionRecipeBookListener implements Listener {
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
     /** PDC tag on crafted signature items (K2/K3) — the perk listener recognises items by this id. */
     private final NamespacedKey signatureKey;
 
@@ -52,13 +53,15 @@ public final class ProfessionRecipeBookListener implements Listener {
                                         final ProfessionManager professionManager, final ProfessionRecipeCatalog catalog,
                                         final ItemRarityService affixService,
                                         final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
-                                        final MessageManager messageManager, final FactionManager factionManager) {
+                                        final MessageManager messageManager, final FactionManager factionManager,
+                                        final hu.taliann.icesmp.managers.ConfigManager configManager) {
         this.professionManager = professionManager;
         this.catalog = catalog;
         this.affixService = affixService;
         this.uniqueMaterials = uniqueMaterials;
         this.messageManager = messageManager;
         this.factionManager = factionManager;
+        this.configManager = configManager;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
     }
 
@@ -155,6 +158,21 @@ public final class ProfessionRecipeBookListener implements Listener {
                 final int level = Math.max(0, Math.min(3, 2));
                 if (level > 0) {
                     sigMeta.addEnchant(org.bukkit.enchantments.Enchantment.QUICK_CHARGE, level, true);
+                }
+            }
+            // Bootstrap-regisztrált signature-enchant (IceSMPBootstrap): a lore-név valódi
+            // enchant-sorként jelenik meg a tooltipben. Registry-olvasás — fagyott, szál-biztos.
+            if (configManager.getBoolean("signature.custom-enchants", true)) {
+                final net.kyori.adventure.key.Key enchantKey =
+                        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.get(recipe.signature());
+                if (enchantKey != null) {
+                    final org.bukkit.enchantments.Enchantment enchant =
+                            io.papermc.paper.registry.RegistryAccess.registryAccess()
+                                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                                    .get(org.bukkit.NamespacedKey.fromString(enchantKey.asString()));
+                    if (enchant != null) {
+                        sigMeta.addEnchant(enchant, 1, true);
+                    }
                 }
             }
             result.setItemMeta(sigMeta);
