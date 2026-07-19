@@ -34,6 +34,9 @@ Jelölés: 🔴 érdemes hamarosan • 🟡 következő takarító körre • �
 | 15 | Escort-útpontok `getHighestBlockYAt` pontatlanság | Kozmetika (ROADMAP-örökség) | 🟢 |
 | 16 | Aukció: licit elérheti a buy-outot — GUI-tipp hiányos | Kozmetika (ROADMAP-örökség) | 🟢 |
 | 17 | `CharacterGUIListener` — GUI-ba duplikált respec-logika | Duplikáció / minta-sértés | 🟡 |
+| 18 | DisplayFx — nincs `max-per-player` entitás-plafon | Teljesítmény / robusztusság | 🟡 |
+| 19 | `DisplayFxUtil.showOnlyTo` — `hideEntity` kereszt-száli hívása | Folia-szigor | 🟢 |
+| 20 | Per-nézős fx-entitások skálázódása (aurora/claim-fal) | Teljesítmény | 🟢 |
 
 A dokumentum végén: **megvizsgált, de teendőt nem igénylő** esetek (hogy egy későbbi audit
 ne vizsgálja meg őket újra feleslegesen).
@@ -343,6 +346,66 @@ eredmény-objektumot ad), a parancs ÉS a GUI is ezt hívja; VAGY a GUI-gomb át
 `RUN:spec respec ...` delegálásra a menü-minta szerint.
 
 **Munka/kockázat:** ~1 óra, alacsony; respec kézi playtest (parancsból + menüből) kell.
+
+---
+
+## DisplayFx-réteg (a #17 PR-review leletei, 2026-07-19)
+
+Az új display-entity effekt-réteg (`utils/DisplayFxUtil`, claim-fényfal / crate-3D / boss-telegraph
+/ aurora-fátyol) code-review-ja során felmerült, **nem blokkoló** finomítások. A réteg alap-
+életciklusa (régió-száli spawn + `setPersistent(false)` + `FX_TAG` + chunk-load söprés + entitás-
+saját-scheduleres auto-despawn) rendben; ezek robusztussági/teljesítmény-tartalékok.
+
+### 18. 🟡 DisplayFx — nincs `max-per-player` entitás-plafon
+
+**Hely:** `managers/ClaimManager.java` → `showDisplayWalls`; `utils/DisplayFxUtil.java`.
+
+**Probléma:** a `/claim show` a közeli claimeket egy chunk-sugarú (`claims.border.radius`, default 2)
+scannel gyűjti, és **claimenként 4 fal-entitást** spawnol a nézőnek. Sok, egymáshoz közeli claim
+esetén (sűrűn beépített terület) ez egyszerre sok display-entitást hozhat létre. Az A71-ötlet
+kifejezetten említett egy `display-fx.max-per-player` (~24) plafont, ami a megvalósításból kimaradt.
+A gyakorlati kockázat alacsony (a scan-sugár kicsi, az entitások rövid életűek és auto-despawnolnak),
+de egy felső korlát olcsó biztosíték a patológiás esetekre.
+
+**Javasolt megoldás:** `display-fx.max-per-player` config-kulcs (default ~24); a `showDisplayWalls`
+számolja a már kihelyezett fal-entitásokat, és a plafon elérésekor hagyja abba a további claimek
+kirajzolását (a legközelebbieket előnyben részesítve). Alternatíva: a feldolgozott közeli-claim
+darabszám korlátozása. A crate-reveal (1 entitás) és a boss-telegraph (1 lap) nem érintett.
+
+**Munka/kockázat:** ~30 perc, alacsony; kézi teszt: sok szomszédos claim között `/claim show`.
+
+### 19. 🟢 `DisplayFxUtil.showOnlyTo` — `hideEntity` kereszt-száli hívása
+
+**Hely:** `utils/DisplayFxUtil.java` → `showOnlyTo`.
+
+**Probléma:** a per-nézős elrejtés az fx-entitás régió-szálán fut (a spawn-taskból hívva), de ott
+végigmegy a `Bukkit.getOnlinePlayers()`-en, és a *többi* játékosra hív `player.hideEntity(plugin, fx)`-et
+— ez más régió-szálakhoz tartozó játékosok érintése. A Paper `hideEntity` implementációja ezt
+jellemzően tolerálja (tracker-művelet + csomag), így a kockázat alacsony, de a szigorú Folia-szabály
+szerint más entitás érintése hopot igényelne.
+
+**Javasolt megoldás:** három út a kompromisszum szerint — (a) elfogadjuk és dokumentáljuk mint tolerált
+mintát (mint a #12-nél); (b) a `hideEntity`-t minden célpont saját schedulerére hopoljuk (biztosabb,
+de per-játékos hop-költség); (c) ha az API enged spawn-idejű néző-korlátozást, azt használjuk. A
+jelenlegi egyszerű „broadcast-then-hide" a legolcsóbb; a hop csak akkor indokolt, ha a gyakorlatban
+szál-hibát tapasztalunk.
+
+**Munka/kockázat:** ~1 óra, alacsony; Folia-szerveren tesztelendő (több online játékos, claim-show).
+
+### 20. 🟢 Per-nézős fx-entitások skálázódása (aurora / claim-fal)
+
+**Hely:** `managers/AmbientEventManager.java` → `spawnAuroraVeil` (2 lap/játékos);
+`managers/ClaimManager.java` → `showDisplayWalls` (4/claim/néző).
+
+**Probléma:** a per-nézős effektek entitás-száma a létszámmal skálázódik. Egy aurora-esemény minden
+online játékosnak 2 égi lapot spawnol egyszerre — nagy létszámnál pillanatnyi entitás-csúcs (2·N).
+Rövid életűek és auto-despawnolnak, így elfogadható, de mérésre érdemes szélsőséges létszámnál.
+
+**Javasolt megoldás:** az aurora esetén megfontolható **világ-szintű, közös fátyol** a per-játékos
+helyett (elveszik a per-nézős párosítás az éjjellátással, cserébe konstans entitás-szám); vagy egy
+globális egyidejű-fx plafon. Alacsony prioritás — előbb mérni kell, valóban gond-e nagy szerveren.
+
+**Munka/kockázat:** ~1–2 óra, alacsony; teljesítmény-mérés kell a döntéshez (ne optimalizáljunk vakon).
 
 ---
 
