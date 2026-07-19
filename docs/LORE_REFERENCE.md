@@ -40,6 +40,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Az Első Csend (I./VII.) | szándékosan megfejtetlen misztérium — jövőbeli antagonista/quest-horgony; NE magyarázd meg tartalomban |
 | A Mélység Népe (I.) | Mételytépő relikvia (`relics.yml`); jövőbeli rom/dungeon/kazamata-horgony + ősi ereklyék forrása |
 | Az elveszett emlékek (V.) | 🔜 K8 Emlékszilánkok — a gyűjthető emlék-progresszió narratív alapja |
+| Ryanora (III.) | a NEUTRAL vidék/tartomány neve (a Bokic-mente); Caldestera = a fővárosa — territórium-elnevezésnél így használd |
+| A fél-álomban alvó Királynő (VII.) | a vérhold + horda/invázió/világboss események narratív tétje; a K9 Suttogók célja (teljes ébresztés); végjáték-horgony — a „harmadik mondat" apokalipszisa NEM implementálandó, narratív tét marad |
+| A gyógyuló Fa (V.) | a szezonok/progresszió/közösségi célok narratív tétje („minden rendbe tett darab gyógyítja a Fát"); jövőbeli horgony: a repedés állapota mint szerver-szintű mérce/esemény |
 | Lélekkő (VII.) | DARK-valuta drop magas-szintű mobokból; DARK-játékosnak élőhalottból NEM esik (`currency.soul-drop.dark-undead-drops`); Nekromanta lélek-szilánk csak élő szörnyből (`souls.shards-from-undead`) |
 | Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Mortengrad = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
