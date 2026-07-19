@@ -25,17 +25,8 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 ---
 
 ### E1. Nekromanta: lélek-kovácsolás
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** A lélekszilánk-gyűjtés (`SoulShardManager`) kapjon tartós, presztízs-jellegű befektetési célt a Nekromanta minion-seregéhez.
-
-**Hogyan működne:** `/soulforge` GUI-ban 3 fejleszthető ág (Élet/Sebzés/Létszám), áganként 5 rang, rangonként növekvő lélekszilánk-ár (pl. 5→8→12→18→25), minden 3. Létszám-rang +1 minion-slot (max +3 az alap fölé). A rangok egy player-store-ban (a `MinionManager` mellett) tárolódnak; cast-kor a `SummonMinionsSpell` ebből olvassa a stat-szorzókat, a spawnolt minion attribútum-módosítóit a saját entity-scheduleren állítja be (Folia). Max rang elérésekor egyedi minion-CMD-skin (A33/B9 iránnyal összekötve).
-
-**Miért jó:** a Nekromanta végjáték-identitása lesz, hogy a serege fizikailag látszik nőni a szezonnal — a niche, unlock-feltételes (Sötét frakció + bűnös) úthoz így súlyos jutalom társul.
-
-**Építőkövek:** `SoulShardManager`, `MinionManager`, `SummonMinionsSpell` (minion-minta).
-
-**Buktatók:** a végtelenül skálázódó sereg PvP-ben balansztörő lehet — rang-cap és PvP-zónákban (arénák, B41 liga) minion-létszám-limit kell.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### E2. Druida: évszak-hangolódás
 **Munka:** 🟢 • **Érték:** ⭐
@@ -103,17 +94,8 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 **Buktatók:** automatikus raycast minden ticknél sok egyidejű sólyomnál terhelést okoz — ritkított intervallum (5 tick) és max 1 aktív sólyom/player szükséges.
 
 ### E7. Varázsló: rúnaíró affinitás
-**Munka:** 🟢 • **Érték:** ⭐⭐
 
-**Mi ez:** A B26 rúnakovácsolás Varázsló-kaszt-exkluzív bónusza — a kaszt „olvassa" a rúnákat.
-
-**Hogyan működne:** Ha egy Varázsló rúnázott fegyvert/páncélt visel, a rúna tematikus bónusza (pl. +2% spell-erő) rá nézve megduplázódik (equip-eventkor PDC-olvasás, ItemFactory rúna-tag alapján), más kaszt csak alap-értéken kapja. Cserébe a Varázsló recept-listájában (`professions.yml`) 1-2 kaszt-exkluzív rúna-recept nyílik (pl. „Mana-visszhang rúna": ritka esély ingyen újracastolásra), amit csak Varázsló olvashat fel sikeresen (recipe-gate a JobType-ra).
-
-**Miért jó:** a rúna-rendszer nem homogenizálja a kasztokat, hanem a Varázsló „mágia mestere" identitását item-oldalon is erősíti.
-
-**Építőkövek:** B26 rúnakovácsolás, ItemFactory PDC-minta, `professions.yml` recept-gate.
-
-**Buktatók:** kaszt-exkluzív item-bónusz könnyen „kötelező pick"-ké válhat — a hatás maradjon kis, additív jellegű.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### E8. Harcos: ostromtörő fegyelem
 **Munka:** 🟢 • **Érték:** ⭐⭐
@@ -337,17 +319,8 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 **Buktatók:** sok egyidejű Pap ugyanott (raidben) hang-kakofóniát okozhat — halkabb, rövidebb hang-mintákkal érdemes indulni.
 
 ### E25. Boszorkánymester: rituálé-oltár pakt
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** A Boszorkánymester Lélekerő-erőforrása közvetlen kapcsolatba kerül a relikvia-rendszer rituálé-oltárával.
-
-**Hogyan működne:** A rituálé-oltárnál (`relics.yml`) a Boszorkánymester egyszeri, kaszt-exkluzív „pakt"-ceremóniát végezhet: a maximális Lélekerő-poolja tartósan +20%-kal nő (talent max-attribútum mintájú PDC-módosító), cserébe az oltár egy ritka rituálé-alapanyagot fogyaszt, ami kizárólag B47 ereklye-expedíciókból szerezhető.
-
-**Miért jó:** a Lélekerő-rendszer (E5 kockázat/jutalom identitása) konkrét, ritka végjáték-célt kap, összekötve a Boszorkánymestert a rituálé-oltárral és a B47 expedíciós tartalommal.
-
-**Építőkövek:** relics.yml rituálé-oltár, B47 ereklye-expedíciók (alapanyag-forrás), talent max-attribútum minta.
-
-**Buktatók:** tartós, végleges pool-növelés balansz-kockázat — nem halmozható cap kell, és a ritka alapanyag miatt csak keveseknél lesz elérhető (tudatosan vállalt szűkösség végjáték-tartalomként).
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### E26. Orgyilkos/Boszorkánymester: rettegés-lánc
 **Munka:** 🟡 • **Érték:** ⭐⭐
@@ -428,18 +401,6 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 **Buktatók:** mozdulatlan, csatornázott ulti PvP-ben könnyen megszakítható és „büntető" spellé válhat — elsősorban PvE/raid-kontextusban hangolandó, PvP-ben opcionálisan kikapcsolható.
 
 ### E32. Sárkányidéző: sárkánytojás-relikvia
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** Kaszt-exkluzív relikvia-típus, ami az Eszencia-rendszerhez kötődik.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
-**Hogyan működne:** Egy ritka relikvia („Sárkánytojás-töredék", új `relics.yml` bejegyzés) csak Sárkányidéző birtokában aktiválva az Eszencia-skála (E30) mindkét szélső pólusát 10%-kal kiterjeszti (-110..+110), hosszabb ideig fenntartható extrém polaritás-bónuszt engedve. A relikvia birtoklása/aktiválása a meglévő relikvia-szabályokat (cooldown, esetleges PvP-rablás) követi, csak a hatás-branch kaszt-gate-elt (JobType-ellenőrzés a hatás-alkalmazásnál).
-
-**Miért jó:** a relikvia-rendszer konkrét, kaszt-tematikus ágat kap, összekötve az E30/E31 eszencia-identitást a szerver nagy presztízs-tárgyaival — kaszt-specifikus izgalmat ad a relikvia-vadászatnak.
-
-**Építőkövek:** relics.yml relikvia-rendszer, E30 Eszencia-polaritás, JobType-gate a relikvia-effekt-alkalmazásban.
-
-**Buktatók:** a kaszt-exkluzív hatás miatt más kaszt „értéktelennek" találhatja a relikviát, ha megszerzi — érdemes egy kaszt-független alap-hatást is adni neki, a Sárkányidéző-bónusz csak plusz réteg legyen.
-
----
-
-[← Ötlettár-index](../IDEAS.md)

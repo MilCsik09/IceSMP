@@ -216,50 +216,16 @@ admin-parancs.
 ritka, eseményszerű (pl. szezon-fordulóhoz kötött) időzítés ajánlott.
 
 ### F13. Piaci pánik esemény
-🟡 • ⭐⭐
 
-**Mi ez:** Ritka világesemény, ami egy véletlen valuta árfolyamát átmenetileg leveri — a
-meglévő kereslet-sokk (felfelé mozgás) tükörpárja.
-**Hogyan működne:** A kereslet-sokk (`ExchangeRateService`, x1,2–1,6 emelés) mellé egy
-szimmetrikus „pánik" ág (x0,6–0,8 szorzó) ugyanabból az esemény-ütemezőből, broadcast-
-üzenettel („Pánik tört ki a Kék piacon!"). Nincs közvetlen pénzmozgás — csak az árfolyam-
-számítás bemenete változik időlegesen, ugyanúgy, mint a meglévő sokknál.
-**Miért jó:** A jelenlegi rendszer csak felfelé lő ki — a lefelé mozgás hiánya hosszú távon
-csak inflál. A pánik szimmetrikus kockázatot ad, és a spekulánsoknak (F2) is izgalmasabb
-terepet teremt.
-**Építőkövek:** `ExchangeRateService` kereslet-sokk logikája (tükrözve).
-**Buktatók:** Túl gyakori/durva pánik random-frusztrálónak érződhet — kis valószínűség és jól
-látható broadcast kell, nehogy „láthatatlan büntetésként" éljék meg.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### F14. Konjunktúra esemény
-🟢 • ⭐
 
-**Mi ez:** A piaci pánik (F13) pozitív párja: időszakos „fellendülés", amikor egy valutában
-ideiglenesen csökken a piaci eladási díj (nem az árfolyam).
-**Hogyan működne:** Broadcast-vezérelt időablak (pl. 30 perc), amíg a `MarketManager` adott
-valutában kötött eladásainak díja a szokásos 10% helyett 5% — kevesebb pénz ég el, de a
-kereskedési kedv nő, mert olcsóbb kereskedni. Az esemény-ütemező (mint a többi világesemény)
-sorsolja, admin-beavatkozás nem kell.
-**Miért jó:** Aktív kereskedésre ösztönöz konkrét időablakban (mint a kereslet-sokk),
-közösségi zajt gerjeszt („most van a fellendülés, adj-vegyél!") — olcsó, tisztán pozitív
-hangulati elem.
-**Építőkövek:** `MarketManager` díjszámítás, esemény-ütemező minta.
-**Buktatók:** Az alacsonyabb díj rövid távon kevesebb sinket jelent — gyakoriságban szigorúan
-korlátozva kell tartani, hogy ne törje meg az inflációs egyensúlyt.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### F15. Szezonzáró árfolyam-sokk
-🟢 • ⭐⭐
 
-**Mi ez:** A szezon utolsó napjaiban (a B33 „végítélet-hét" gazdasági rétege) minden valuta
-árfolyama felgyorsult ütemben, láthatóan ingadozik.
-**Hogyan működne:** `season.closing-days` config alatt az `ExchangeRateService` kereslet-sokk
-gyakorisága/amplitúdója megszorzódik (pl. 3×), a fővárosi árfolyamtáblák (hologram) frissítési
-gyakorisága is nő. Nincs új pénzforrás — csak a meglévő sokk-mechanika idő-alapú felturbózása.
-**Miért jó:** A B33 szezonzáró világeseményhez illő gazdasági dráma-réteg — az utolsó napok
-kereskedése emlékezetesebb, aki figyeli a piacot, nagyot nyerhet/veszíthet, ami sztorikat
-generál.
-**Építőkövek:** `ExchangeRateService`, B33 szezonzáró esemény-ütemezés (előfeltétel).
-**Buktatók:** Csak B33 mellett teljes az élménye — önállóan is működik, de a hatás kisebb.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### F16. Kereskedő-céh hűségszint (F a B29-hez)
 🔴 • ⭐⭐

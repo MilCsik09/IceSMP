@@ -111,19 +111,8 @@ frakciókassza.
 és világos zóna-határ (pl. partikel-fal) kell.
 
 ### G6. Becsület-párbaj a bűn tisztítására
-🟡 • ⭐⭐
 
-**Mi ez:** A bűnös játékos felajánlhat egy „becsület-párbajt" — ha nyer az áldozat ellen (vagy
-annak frakciótársa ellen), egy bűnpontja letörlődik.
-**Hogyan működne:** `/duel <név> honor` — a B2 duel-infrára épülő új mód: tét helyett a
-győztes bűnszámlálója (`SinManager`) -1-et kap, ha a kihívó bűnös és az ellenfél a sértett fél
-(vagy annak nevezett képviselője). A kihívás csak akkor ajánlható fel, ha a kihívó bűnszáma
-> 0. A meccs maga beleegyezéses (bűnt nem termel, ahogy minden duel).
-**Miért jó:** Szimbolikus, RP-s út a bűn csökkentésére a vezeklés-küldetéslánc mellett — a
-sértett fél dönthet, elfogadja-e az „elégtételt", ahelyett hogy csak várna a fejvadászokra.
-**Építőkövek:** SinManager, B2 duel-infra (escrow nélkül).
-**Buktatók:** exploit-veszély, ha a bűnös a saját alt/haverja ellen "veszít" szándékosan
-bűntisztázásért — érdemes napi/heti limitet szabni rá.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### G7. PvP-jelzős zóna extra loottal
 🟡 • ⭐⭐
@@ -242,24 +231,8 @@ használhatja.
 alacsonyan kell tartani.
 
 ### G14. Kém-mechanika: álca a LibsDisguises-hídon
-🔴 • ⭐⭐
 
-**Mi ez:** Raid előtt egy speciális itemmel/spellel rövid időre másik frakció tagjának
-álcázhatod magad, hogy felderíts (korlátozott, kockázatos taktikai eszköz).
-**Hogyan működne:** `/spy disguise <célfrakció>` — a `DruidDisguise`-híd (integration/,
-LibsDisguises soft-depend) mintájára egy időkorlátos (pl. 60 mp) álca, ami az álcázott
-frakció-nevét/skin-jelzését mutatja MÁS játékosoknak, de a saját HUD-on/tablistán a valódi
-adat marad admin/rendszer-oldalon. Korlátok: nem használható aktív raid harci szakaszban
-(csak felkészülés/felderítés közben), és PvP-interakció (találat adása/kapása) azonnal
-lebuktatja (leveszi az álcát). Bűn-rendszer: az álca alatti kém-tevékenység (pl. területre
-belépés) a normál lopás/behatolás szabályai szerint minősül — az álca nem ment fel bűn alól.
-**Miért jó:** Roleplay-mély taktikai réteg a szervezett frakcióknak; a kemény korlátok
-(nincs harci előny, kill lebuktat) miatt nem lesz PvP-erőforrás, csak információs játék.
-**Építőkövek:** integration/DruidDisguise (LibsDisguises-híd), RaidManager fázis-ellenőrzés,
-SinManager.
-**Buktatók:** komoly félreértés-/panasz-potenciál („becsapott!”) — világos szabály és
-UI-jelzés kell, hogy ne érezzék tisztességtelennek; Folia-oldalon a disguise-frissítés
-mindig a céljátékos saját régió-szálán fusson.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### G15. Ellátmány-vonal raid alatt
 🟡 • ⭐⭐

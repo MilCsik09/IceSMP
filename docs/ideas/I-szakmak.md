@@ -67,13 +67,8 @@ A szakma-rendszer (2 fő szakma + Halász/Szakács mindenkinek, 25. szintű spec
 **Buktatók:** Blokk-generálás region-lokálisan és kis darabokban történjen (chunk-load-lag elkerülése); védett zónába (capital, protected) ne generálódjon.
 
 ### I7. Évszakos termények a Bőség-időhöz kötve
-**Munka:** 🟢 • **Érték:** ⭐⭐
 
-**Mi ez:** A Bőség-idő (a szezon-esemény infra hangulati ablaka) alatt a Gyógynövényész termény-betakarítása extra XP-t/hozamot ad, azon kívül visszaáll az alap ütem.
-**Hogyan működne:** A `ProfessionXpListener.onPlayerHarvestBlock`-ban egy config-szorzó (`professions.seasonal.abundance-multiplier`) az aktív világesemény-getterből olvasva (mintázat: E2 druida-hangolódás ugyanezt az eseményt olvassa spell-oldalról). Opcionálisan egy „téli szűkösség" ellentétes irányú szorzó is bevezethető, de a minimum verzió csak a bőség-bónusz.
-**Miért jó:** Olcsó „élő világ" réteg, ami a Gyógynövényész-t is bekapcsolja a szezon-ritmusba (eddig csak a druida spellek reagáltak rá) — a gyűjtögető ritmusa illeszkedik a világ ritmusához.
-**Építőkövek:** Világesemény-getterek (Bőség-idő állapot), `ProfessionXpListener`, `ConfigManager`.
-**Buktatók:** A szorzó csak a HARVEST eseményre hasson, ne a sima blokk-törésre (különben Favágó/Bányász is véletlenül bónuszt kapna).
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### I8. Fadöntés-fizika Favágónak
 **Munka:** 🟡 • **Érték:** ⭐⭐
@@ -134,13 +129,8 @@ A szakma-rendszer (2 fő szakma + Halász/Szakács mindenkinek, 25. szintű spec
 ## Szakma-gazdaság
 
 ### I14. Szakma-címke az itemen — „Készítette: X"
-**Munka:** 🟢 • **Érték:** ⭐⭐
 
-**Mi ez:** Minden szakma-craftolt tárgy PDC-ben és a lore-ban megkapja a készítő nevét (és opcionálisan a craftolás idejét).
-**Hogyan működne:** A `ProfessionRecipeManager` craft-végrehajtás végén egy `crafted_by`/`crafted_at` PDC-pár kerül az itemre, a lore-ba egy halvány szürke sor („Készítette: Anna"). A piacon (`MarketGUI`) ez a sor megmarad, tehát a hírneves craftolók neve „márkajelzésként" utazik a tárggyal.
-**Miért jó:** Presztízs-mechanika pénz-semlegesen: a jó hírű szakma-mesterek tárgyai felismerhetők és keresettebbek lesznek a piacon — szociális dimenziót ad a craftolásnak, ami eddig névtelen volt.
-**Építőkövek:** `ProfessionRecipeManager`, ItemFactory-minta (PDC+lore), `MarketManager` (megjelenítés).
-**Buktatók:** A régi (címke nélküli) tárgyakkal való visszamenőleges kompatibilitás — null-biztos lore-építés, ne dobjon hibát a hiányzó PDC-mezőn.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### I15. Megrendelő-tábla — a D2 hirdetőtáblához kötve
 **Munka:** 🟡 • **Érték:** ⭐⭐
@@ -152,13 +142,8 @@ A szakma-rendszer (2 fő szakma + Halász/Szakács mindenkinek, 25. szintű spec
 **Buktatók:** Az escrow-zárolt pénz visszajárjon, ha a hirdetés lejár teljesítetlenül — ugyanaz a csapda, mint a piaci licitzárolásnál, külön teszt kell rá.
 
 ### I16. Szakma-céh heti közös cél
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** Az azonos szakmát űzők (frakciótól függetlenül) egy heti, szakma-szintű közösségi célban vesznek részt („Bányászok együtt: 5000 érc egy hét alatt").
-**Hogyan működne:** A meglévő közösségi cél-infra (frakció-szintű mintára) egy GLOBÁLIS, szakma-szűrt számláló-változata: `ProfessionXpListener` minden releváns eseménynél hozzáad egy megosztott heti számlálóhoz, ha a játékos az adott szakmát űzi. Cél elérésekor mindenki, aki hozzájárult (min. küszöb felett), közös jutalmat kap (XP-bónusz-hét vagy kozmetika). Heti reset a szezon-scheduler mintájára.
-**Miért jó:** Frakció-semleges közösségi réteget ad a szakma-rendszerhez — a Bányászok mint „szakma-közösség" először kapnak közös identitást és célt a frakciós struktúra felett, ami a heti visszatérést erősíti (B1 párja szakma-oldalon).
-**Építőkövek:** Közösségi cél-infra, `ProfessionXpListener`, `ProfessionManager` (aktív szakma-szűrés).
-**Buktatók:** A globális számláló több régió-szálról is íródik — konkurrens/atomic számláló kell (a `QuestManager.customQuests` copy-on-write mintája vagy synchronized long).
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### I17. Fogyóeszköz szakma-buffok — köszörűkő, fenő olaj
 **Munka:** 🟢 • **Érték:** ⭐⭐
@@ -210,13 +195,8 @@ A szakma-rendszer (2 fő szakma + Halász/Szakács mindenkinek, 25. szintű spec
 **Buktatók:** A cap-et szigorúan kell tartani (ne legyen végtelenül összeadódó, kibillentő XP-szorzó); a recept-tudás megmaradása presztízselés után legyen egyértelmű, dokumentált szabály (javasolt: megmarad, csak a szint/XP nullázódik).
 
 ### I22. Ritka recept-lapok loot-forrásból
-**Munka:** 🟡 • **Érték:** ⭐⭐
 
-**Mi ez:** A meglévő tervrajz (Knowledge Book) rendszer bővítése: a legritkább recepteket KIZÁRÓLAG világboss/nehéz esemény loot adja, sosem NPC-bolt.
-**Hogyan működne:** A `ProfessionRecipeCatalog`-ban egy új `loot-only: true` mező a csúcs-recepteknél (pl. Ereklye-szintű mestermunkák), amit a világboss/esemény loot-tábla bővítése ad ki (a guide már említi az „Ősi Ereklyeszilánk" boss-only alapanyagot — ugyanez az elv, de magára a RECEPTRE). A recept-könyvben zárolt sorként látszik, lore: „Csak legendás ellenfelektől szerezhető".
-**Miért jó:** A világbossokat/nehéz eseményeket a szakma-progresszió szempontjából is tétre teszi (eddig csak felszerelés-loot forrás volt), és a legritkább recepteknek presztízs-értéket ad — nem lehet pénzért megvenni.
-**Építőkövek:** `ProfessionRecipeCatalog`, világboss/esemény loot-tábla, `ItemRarityService` (boss tier).
-**Buktatók:** Legyen elég recept ÉS elég gyakori a boss-esemény, hogy ne érezzék elérhetetlennek — a C1 spell-statisztika mintájára érdemes loot-drop számlálót is vezetni (mennyi tervrajz esett/hét).
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### I23. Szakma-mester NPC-k — edzés és felgyorsítás
 **Munka:** 🟢 • **Érték:** ⭐

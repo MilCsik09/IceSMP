@@ -78,21 +78,8 @@ region scheduler tick.
 különben vagy senki nem érdekelt, vagy állandó konfliktus-zóna lesz kezelhetetlenül.
 
 ### B6. Játékos-indított karaván (szállítmány-rablás)
-**Munka:** 🔴 • **Érték:** ⭐⭐
 
-**Mi ez:** A karaván-esemény player-verziója: frakció indít szállítmányt A→B kasszából
-finanszírozva, célba érve bónusz, útközben rabolható.
-**Hogyan működne:** `/faction caravan send <cél>` (király/megbízott jog) a meglévő karaván-
-esemény entitás-mozgás logikáját (escort-konvoj útpontjai) indítja frakció-kasszából fizetett
-áruval; más frakció tagjai a raid-jelentkezés mintájára „lesből" jelentkezhetnek egy
-rablás-ablakra. Sikeres védés = célba ér + kassza-bónusz, sikeres rablás = a rakomány a
-rabló frakció kasszájába megy.
-**Miért jó:** Kockázat/jutalom gazdasági minijáték, ami PvP-tartalmat termel frakciók között
-anélkül, hogy formális hadüzenet kellene hozzá.
-**Építőkövek:** Karaván-esemény konvoj-mozgás, raid-jelentkezés infra, `FactionManager` kassza.
-**Buktatók:** Az útvonal-számítás (pathfinding konvojnak) régió-lokálisan kis lépésekben
-menjen (Folia blokk-szkennelés szabály), és a rablás-ablak ne legyen kihasználható
-off-time időzítéssel (ld. B30 háború-ablak elve alkalmazható ide is).
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B7. Frakció-fejlesztési fa (kassza-sink)
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
@@ -260,18 +247,8 @@ sokat ad — Discord-ba is linkelhető (C5 híddal együtt még erősebb).
 triviális, és a claim-mennyiség nagy szerveren teljesítmény-kockázat a gyakori szinkronnál.
 
 ### B19. Évszakos világ-modifikátorok
-**Munka:** 🟢 • **Érték:** ⭐
 
-**Mi ez:** A szezonhoz kötött finom világ-hangolás: télen gyakoribb fagy-események, nyáron
-Bőség-idő gyakoribb.
-**Hogyan működne:** `config/season-modifiers.yml`: szezononként szorzó-táblázat az esemény-
-managerek véletlen-súlyaira (a meglévő esemény-súly rendszer olvassa ki egy plusz
-szezon-szorzót). Nincs új esemény, csak a meglévők gyakoriság-hangolása.
-**Miért jó:** Olcsó „élő világ" réteg — a szezon nemcsak liga-pontban, hanem a világ
-hangulatában is érezhető.
-**Építőkövek:** Esemény-managerek súlyozott sorsolása, szezonliga-scheduler.
-**Buktatók:** Csak finomhangolás, nem új tartalom — a hatás könnyen észrevehetetlen marad,
-ha a szorzók túl kicsik.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B20. Relikvia-reforge + presztízs/paragon
 **Munka:** 🔴 • **Érték:** ⭐⭐
@@ -289,19 +266,8 @@ ez az egyetlen dolog, ami tartja őket, önmagában komoly retention-eszköz.
 „kimaxolt" játékosréteg még nem létezik, a munka kárba veszne.
 
 ### B21. Bestiárium / gyűjtő-album
-**Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** Perzisztens album: megölt mob-típusok, elkészített receptek, felfedezett
-territóriumok, legyőzött boss-archetípusok pipálódnak.
-**Hogyan működne:** `/bestiary` GUI (statikus GUI-minta), a haladás `StatsManager`
-bővítéseként PDC-számlálók (mob-típusonként első kill dátuma, recept-katalógus első
-craft flag, territórium first-entry flag). Mérföldkő-jutalmak (10/50/100 faj) az
-achievement-infrán, broadcast + krónika-bejegyzés (B15) nagy mérföldköveknél.
-**Miért jó:** Gyűjtögető-hajlamú játékosnak hónapokra ad célt, és szinte az ÖSSZES
-meglévő rendszert (mob, szakma, territórium, boss) egyetlen progressziós UI-ba fűzi össze.
-**Építőkövek:** `StatsManager` PDC-számlálók, GUI-minta, achievement-infra, heti krónika (B15).
-**Buktatók:** Sok apró hook-pontot igényel (minden mob-típus, minden recept, minden
-territórium bejárása) — inkrementálisan, kategóriánként érdemes bevezetni.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### B22. Címek (title-ök)
 **Munka:** 🟡 • **Érték:** ⭐⭐

@@ -537,17 +537,8 @@ menükben.
 **Buktatók:** minden almenü-építőt egységesen kell módosítani — sok kis, ismétlődő szerkesztés.
 
 ### A38. Első belépés spawn-élmény polish
-🟢 • ⭐⭐
 
-**Mi ez:** Az onboarding-lánc (A5) mellé a tényleges spawn-pillanat vizuális/hangi csiszolása.
-**Hogyan működne:** Join-kor rövid title/subtitle üdvözlés + halk hangjel (nem broadcast-
-szintű), a semleges főváros látványos pontján spawnoltatva (`teleportAsync`); az üdvözlő
-üzenet configolható (`messages.yml` → `join-welcome-title`).
-**Miért jó:** Az MMO-szerverek első benyomása sokat számít — egy 2 másodperces title-élmény
-olcsó, de emlékezetes belépő.
-**Építőkövek:** join-listener, `teleportAsync`, `MessageManager`.
-**Buktatók:** ne ütközzön az onboarding-quest üzenetével — az időzítést egyeztetni kell, hogy
-ne torlódjon két üdvözlés egyszerre.
+→ **Átkerült a lore-kiemelt válogatásba:** [L-lore-kiemelt.md](L-lore-kiemelt.md)
 
 ### A39. Inventory-rendezés gomb katalizátor mellett
 🟢 • ⭐

@@ -1,7 +1,7 @@
 # L) Lore-kiemelt ötletek (válogatás)
 
 A kanonikus kódex ([docs/LORE.md](../LORE.md)) alapján **kiválogatott, erősen lore-illeszkedő
-tételek** a B/D/H/J kategóriákból — az eredeti azonosítók megtartva (a forrás-fájlban egysoros
+tételek** az A/B/D/E/F/G/H/I/J kategóriákból — az eredeti azonosítók megtartva (a forrás-fájlban egysoros
 mutató maradt a helyükön). Minden tétel elején a **lore-horgony**: melyik kódex-elem teszi
 különösen indokolttá.
 
@@ -96,6 +96,18 @@ mondat-sablon kell a monotónia elkerülésére.
 **Miért jó:** A frakció-választás (ma inkább mechanikai: passzívák + szín) érzelmi/narratív súlyt kap.
 **Építőkövek:** A31 frakció-infó oldal, `MessageManager` kulcs-minta, `FancyNpcsQuestBridge` dialógus-ág.
 **Buktatók:** A fő munka tartalom-írás, nem kód; a 4 frakció lore-mennyisége maradjon kiegyensúlyozott.
+
+### I14. Szakma-címke az itemen — „Készítette: X"
+
+> **Lore-horgony:** szó szerinti kánon-mondat: „a mester keze alól kikerülő mű a nevét is viseli" (kódex VIII. — A Tárgyak Lelke)
+
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** Minden szakma-craftolt tárgy PDC-ben és a lore-ban megkapja a készítő nevét (és opcionálisan a craftolás idejét).
+**Hogyan működne:** A `ProfessionRecipeManager` craft-végrehajtás végén egy `crafted_by`/`crafted_at` PDC-pár kerül az itemre, a lore-ba egy halvány szürke sor („Készítette: Anna"). A piacon (`MarketGUI`) ez a sor megmarad, tehát a hírneves craftolók neve „márkajelzésként" utazik a tárggyal.
+**Miért jó:** Presztízs-mechanika pénz-semlegesen: a jó hírű szakma-mesterek tárgyai felismerhetők és keresettebbek lesznek a piacon — szociális dimenziót ad a craftolásnak, ami eddig névtelen volt.
+**Építőkövek:** `ProfessionRecipeManager`, ItemFactory-minta (PDC+lore), `MarketManager` (megjelenítés).
+**Buktatók:** A régi (címke nélküli) tárgyakkal való visszamenőleges kompatibilitás — null-biztos lore-építés, ne dobjon hibát a hiányzó PDC-mezőn.
 
 ## Tier A — erős illeszkedés
 ### B33. Szezonzáró világesemény („végítélet-hét")
@@ -234,6 +246,284 @@ inventory-listener.
 **Buktatók:** A kényszerített viselet UX-szempontból frusztráló lehet, ha a játékos nem
 érti előre a szabályt — egyértelmű lore-szöveg és felvétel előtti megerősítő GUI-prompt kötelező.
 
+### A38. Első belépés spawn-élmény polish
+
+> **Lore-horgony:** a Szent Zóna-ébredés + a zarándoklat élménye (kódex V.)
+
+🟢 • ⭐⭐
+
+**Mi ez:** Az onboarding-lánc (A5) mellé a tényleges spawn-pillanat vizuális/hangi csiszolása.
+**Hogyan működne:** Join-kor rövid title/subtitle üdvözlés + halk hangjel (nem broadcast-
+szintű), a semleges főváros látványos pontján spawnoltatva (`teleportAsync`); az üdvözlő
+üzenet configolható (`messages.yml` → `join-welcome-title`).
+**Miért jó:** Az MMO-szerverek első benyomása sokat számít — egy 2 másodperces title-élmény
+olcsó, de emlékezetes belépő.
+**Építőkövek:** join-listener, `teleportAsync`, `MessageManager`.
+**Buktatók:** ne ütközzön az onboarding-quest üzenetével — az időzítést egyeztetni kell, hogy
+ne torlódjon két üdvözlés egyszerre.
+### B6. Játékos-indított karaván (szállítmány-rablás)
+
+> **Lore-horgony:** a vándorkaraván kánonja — „védelmük a Felsők becsülete" — játékos-karavánra kiterjesztve (kódex VIII.)
+
+**Munka:** 🔴 • **Érték:** ⭐⭐
+
+**Mi ez:** A karaván-esemény player-verziója: frakció indít szállítmányt A→B kasszából
+finanszírozva, célba érve bónusz, útközben rabolható.
+**Hogyan működne:** `/faction caravan send <cél>` (király/megbízott jog) a meglévő karaván-
+esemény entitás-mozgás logikáját (escort-konvoj útpontjai) indítja frakció-kasszából fizetett
+áruval; más frakció tagjai a raid-jelentkezés mintájára „lesből" jelentkezhetnek egy
+rablás-ablakra. Sikeres védés = célba ér + kassza-bónusz, sikeres rablás = a rakomány a
+rabló frakció kasszájába megy.
+**Miért jó:** Kockázat/jutalom gazdasági minijáték, ami PvP-tartalmat termel frakciók között
+anélkül, hogy formális hadüzenet kellene hozzá.
+**Építőkövek:** Karaván-esemény konvoj-mozgás, raid-jelentkezés infra, `FactionManager` kassza.
+**Buktatók:** Az útvonal-számítás (pathfinding konvojnak) régió-lokálisan kis lépésekben
+menjen (Folia blokk-szkennelés szabály), és a rablás-ablak ne legyen kihasználható
+off-time időzítéssel (ld. B30 háború-ablak elve alkalmazható ide is).
+### B19. Évszakos világ-modifikátorok
+
+> **Lore-horgony:** az Égi Jelek + a gyógyuló Fa / a Királynő álmának ciklusai évszak-modifikátorként (kódex V./VII./VIII.)
+
+**Munka:** 🟢 • **Érték:** ⭐
+
+**Mi ez:** A szezonhoz kötött finom világ-hangolás: télen gyakoribb fagy-események, nyáron
+Bőség-idő gyakoribb.
+**Hogyan működne:** `config/season-modifiers.yml`: szezononként szorzó-táblázat az esemény-
+managerek véletlen-súlyaira (a meglévő esemény-súly rendszer olvassa ki egy plusz
+szezon-szorzót). Nincs új esemény, csak a meglévők gyakoriság-hangolása.
+**Miért jó:** Olcsó „élő világ" réteg — a szezon nemcsak liga-pontban, hanem a világ
+hangulatában is érezhető.
+**Építőkövek:** Esemény-managerek súlyozott sorsolása, szezonliga-scheduler.
+**Buktatók:** Csak finomhangolás, nem új tartalom — a hatás könnyen észrevehetetlen marad,
+ha a szorzók túl kicsik.
+### B21. Bestiárium / gyűjtő-album
+
+> **Lore-horgony:** a krónikás-lajstrom műfaj (kódex-függelékek) bestiárium-formában
+
+**Munka:** 🟡 • **Érték:** ⭐⭐⭐
+
+**Mi ez:** Perzisztens album: megölt mob-típusok, elkészített receptek, felfedezett
+territóriumok, legyőzött boss-archetípusok pipálódnak.
+**Hogyan működne:** `/bestiary` GUI (statikus GUI-minta), a haladás `StatsManager`
+bővítéseként PDC-számlálók (mob-típusonként első kill dátuma, recept-katalógus első
+craft flag, territórium first-entry flag). Mérföldkő-jutalmak (10/50/100 faj) az
+achievement-infrán, broadcast + krónika-bejegyzés (B15) nagy mérföldköveknél.
+**Miért jó:** Gyűjtögető-hajlamú játékosnak hónapokra ad célt, és szinte az ÖSSZES
+meglévő rendszert (mob, szakma, territórium, boss) egyetlen progressziós UI-ba fűzi össze.
+**Építőkövek:** `StatsManager` PDC-számlálók, GUI-minta, achievement-infra, heti krónika (B15).
+**Buktatók:** Sok apró hook-pontot igényel (minden mob-típus, minden recept, minden
+territórium bejárása) — inkrementálisan, kategóriánként érdemes bevezetni.
+### D3. Szezon-emlékművek
+
+> **Lore-horgony:** a Korszakok Könyve fizikai emlékművei — „neve örökre bekerül" (kódex VIII.)
+
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** Szezonzáráskor a győztes frakció fizikai nyoma a fővárosban (zászló/szobor + névtábla).
+**Hogyan működne:** A szezonváltás-hookban (liga-lezárás) egy admin-előkészített koordinátán (`season-monument.location`) automatikusan cserélődik egy fej-blokk/banner a győztes frakció színére, mellé `TextDisplay`-hologram íródik a szezon számával és a `StatsManager` MVP-top 3 nevével. A korábbi emlékmű nem törlődik, a lista alul bővül (vagy a D10 vitrinbe kerül).
+**Miért jó:** A dicsőség fizikai, maradandó nyoma a világban — a következő szezon kezdetén mindenki látja, mit kell legyőznie.
+**Építőkövek:** `StatsManager` top-lekérdezés, `TextDisplay`-minta, szezon-lezárás hook.
+**Buktatók:** Az admin-előkészítés (helyszín + build) kézi munka; kódból csak a tábla-csere/hologram-frissítés megy.
+### D8. Felfedezhető titkos helyek
+
+> **Lore-horgony:** a Mélység Népe romjai + a világ rejtett zugai (kódex I.)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Admin-kijelölt rejtett pontok, amiket először megtaláló játékos felfedezés-jutalmat kap.
+**Hogyan működne:** Config-listában koordináta + sugár + jutalom (`hidden-spots.<id>.location/radius/reward`); alacsony gyakoriságú, throttle-olt proximity-check (player move eventen vagy periodikus, kis-sugarú scan a territórium chunk-index mintájára) észleli az első belépőt, PDC/YAML `discovered-by` zárja le (`hidden-spots.first-finder-only` configolható). Jutalom: token/XP + bestiárium-bejegyzés (B21), ritkán titkos kereskedő nyit (B40).
+**Miért jó:** A kézzel épített world-building végre játékmechanikai súlyt kap — a felfedezés önálló játékstílussá válik.
+**Építőkövek:** Territórium chunk-index minta, B21 bestiárium-infra, B40 titkos kereskedő.
+**Buktatók:** A proximity-check ne fusson minden tick minden játékosra — throttle és kis sugár kötelező a teljesítmény miatt.
+### E1. Nekromanta: lélek-kovácsolás
+
+> **Lore-horgony:** a lélek-kánon: a holtidéző az élők lelkét aratja (kódex VII.)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** A lélekszilánk-gyűjtés (`SoulShardManager`) kapjon tartós, presztízs-jellegű befektetési célt a Nekromanta minion-seregéhez.
+
+**Hogyan működne:** `/soulforge` GUI-ban 3 fejleszthető ág (Élet/Sebzés/Létszám), áganként 5 rang, rangonként növekvő lélekszilánk-ár (pl. 5→8→12→18→25), minden 3. Létszám-rang +1 minion-slot (max +3 az alap fölé). A rangok egy player-store-ban (a `MinionManager` mellett) tárolódnak; cast-kor a `SummonMinionsSpell` ebből olvassa a stat-szorzókat, a spawnolt minion attribútum-módosítóit a saját entity-scheduleren állítja be (Folia). Max rang elérésekor egyedi minion-CMD-skin (A33/B9 iránnyal összekötve).
+
+**Miért jó:** a Nekromanta végjáték-identitása lesz, hogy a serege fizikailag látszik nőni a szezonnal — a niche, unlock-feltételes (Sötét frakció + bűnös) úthoz így súlyos jutalom társul.
+
+**Építőkövek:** `SoulShardManager`, `MinionManager`, `SummonMinionsSpell` (minion-minta).
+
+**Buktatók:** a végtelenül skálázódó sereg PvP-ben balansztörő lehet — rang-cap és PvP-zónákban (arénák, B41 liga) minion-létszám-limit kell.
+### E7. Varázsló: rúnaíró affinitás
+
+> **Lore-horgony:** Caldestera elveszett rúna-tudása — a varázsló-forrás (kódex VI.)
+
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A B26 rúnakovácsolás Varázsló-kaszt-exkluzív bónusza — a kaszt „olvassa" a rúnákat.
+
+**Hogyan működne:** Ha egy Varázsló rúnázott fegyvert/páncélt visel, a rúna tematikus bónusza (pl. +2% spell-erő) rá nézve megduplázódik (equip-eventkor PDC-olvasás, ItemFactory rúna-tag alapján), más kaszt csak alap-értéken kapja. Cserébe a Varázsló recept-listájában (`professions.yml`) 1-2 kaszt-exkluzív rúna-recept nyílik (pl. „Mana-visszhang rúna": ritka esély ingyen újracastolásra), amit csak Varázsló olvashat fel sikeresen (recipe-gate a JobType-ra).
+
+**Miért jó:** a rúna-rendszer nem homogenizálja a kasztokat, hanem a Varázsló „mágia mestere" identitását item-oldalon is erősíti.
+
+**Építőkövek:** B26 rúnakovácsolás, ItemFactory PDC-minta, `professions.yml` recept-gate.
+
+**Buktatók:** kaszt-exkluzív item-bónusz könnyen „kötelező pick"-ké válhat — a hatás maradjon kis, additív jellegű.
+### E25. Boszorkánymester: rituálé-oltár pakt
+
+> **Lore-horgony:** a rituálé-oltárok törvénye + a Kárhozat-forrás pakt-fantáziája (kódex VI./VIII.)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** A Boszorkánymester Lélekerő-erőforrása közvetlen kapcsolatba kerül a relikvia-rendszer rituálé-oltárával.
+
+**Hogyan működne:** A rituálé-oltárnál (`relics.yml`) a Boszorkánymester egyszeri, kaszt-exkluzív „pakt"-ceremóniát végezhet: a maximális Lélekerő-poolja tartósan +20%-kal nő (talent max-attribútum mintájú PDC-módosító), cserébe az oltár egy ritka rituálé-alapanyagot fogyaszt, ami kizárólag B47 ereklye-expedíciókból szerezhető.
+
+**Miért jó:** a Lélekerő-rendszer (E5 kockázat/jutalom identitása) konkrét, ritka végjáték-célt kap, összekötve a Boszorkánymestert a rituálé-oltárral és a B47 expedíciós tartalommal.
+
+**Építőkövek:** relics.yml rituálé-oltár, B47 ereklye-expedíciók (alapanyag-forrás), talent max-attribútum minta.
+
+**Buktatók:** tartós, végleges pool-növelés balansz-kockázat — nem halmozható cap kell, és a ritka alapanyag miatt csak keveseknél lesz elérhető (tudatosan vállalt szűkösség végjáték-tartalomként).
+### E32. Sárkányidéző: sárkánytojás-relikvia
+
+> **Lore-horgony:** sárkány-eszencia + az Ereklyék Törvénye (kódex VI./VIII.)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Kaszt-exkluzív relikvia-típus, ami az Eszencia-rendszerhez kötődik.
+
+**Hogyan működne:** Egy ritka relikvia („Sárkánytojás-töredék", új `relics.yml` bejegyzés) csak Sárkányidéző birtokában aktiválva az Eszencia-skála (E30) mindkét szélső pólusát 10%-kal kiterjeszti (-110..+110), hosszabb ideig fenntartható extrém polaritás-bónuszt engedve. A relikvia birtoklása/aktiválása a meglévő relikvia-szabályokat (cooldown, esetleges PvP-rablás) követi, csak a hatás-branch kaszt-gate-elt (JobType-ellenőrzés a hatás-alkalmazásnál).
+
+**Miért jó:** a relikvia-rendszer konkrét, kaszt-tematikus ágat kap, összekötve az E30/E31 eszencia-identitást a szerver nagy presztízs-tárgyaival — kaszt-specifikus izgalmat ad a relikvia-vadászatnak.
+
+**Építőkövek:** relics.yml relikvia-rendszer, E30 Eszencia-polaritás, JobType-gate a relikvia-effekt-alkalmazásban.
+
+**Buktatók:** a kaszt-exkluzív hatás miatt más kaszt „értéktelennek" találhatja a relikviát, ha megszerzi — érdemes egy kaszt-független alap-hatást is adni neki, a Sárkányidéző-bónusz csak plusz réteg legyen.
+
 ---
 
-**Összesen: 14 tétel** (S: 5, A: 9). Ajánlott kezdés: **H2 + B42** (a gyógyuló Fa és a Mélység Népe azonnal játszhatóvá válik), majd **B15** (a krónikás-hang életben tartása).
+[← Ötlettár-index](../IDEAS.md)
+### F13. Piaci pánik esemény
+
+> **Lore-horgony:** „a pénz értéke a világ állapotát követi" — a pánik mint kánon-esemény (kódex VIII.)
+
+🟡 • ⭐⭐
+
+**Mi ez:** Ritka világesemény, ami egy véletlen valuta árfolyamát átmenetileg leveri — a
+meglévő kereslet-sokk (felfelé mozgás) tükörpárja.
+**Hogyan működne:** A kereslet-sokk (`ExchangeRateService`, x1,2–1,6 emelés) mellé egy
+szimmetrikus „pánik" ág (x0,6–0,8 szorzó) ugyanabból az esemény-ütemezőből, broadcast-
+üzenettel („Pánik tört ki a Kék piacon!"). Nincs közvetlen pénzmozgás — csak az árfolyam-
+számítás bemenete változik időlegesen, ugyanúgy, mint a meglévő sokknál.
+**Miért jó:** A jelenlegi rendszer csak felfelé lő ki — a lefelé mozgás hiánya hosszú távon
+csak inflál. A pánik szimmetrikus kockázatot ad, és a spekulánsoknak (F2) is izgalmasabb
+terepet teremt.
+**Építőkövek:** `ExchangeRateService` kereslet-sokk logikája (tükrözve).
+**Buktatók:** Túl gyakori/durva pánik random-frusztrálónak érződhet — kis valószínűség és jól
+látható broadcast kell, nehogy „láthatatlan büntetésként" éljék meg.
+### F14. Konjunktúra esemény
+
+> **Lore-horgony:** ugyanaz a kánon-mondat — a konjunktúra a jó idők lenyomata (kódex VIII.)
+
+🟢 • ⭐
+
+**Mi ez:** A piaci pánik (F13) pozitív párja: időszakos „fellendülés", amikor egy valutában
+ideiglenesen csökken a piaci eladási díj (nem az árfolyam).
+**Hogyan működne:** Broadcast-vezérelt időablak (pl. 30 perc), amíg a `MarketManager` adott
+valutában kötött eladásainak díja a szokásos 10% helyett 5% — kevesebb pénz ég el, de a
+kereskedési kedv nő, mert olcsóbb kereskedni. Az esemény-ütemező (mint a többi világesemény)
+sorsolja, admin-beavatkozás nem kell.
+**Miért jó:** Aktív kereskedésre ösztönöz konkrét időablakban (mint a kereslet-sokk),
+közösségi zajt gerjeszt („most van a fellendülés, adj-vegyél!") — olcsó, tisztán pozitív
+hangulati elem.
+**Építőkövek:** `MarketManager` díjszámítás, esemény-ütemező minta.
+**Buktatók:** Az alacsonyabb díj rövid távon kevesebb sinket jelent — gyakoriságban szigorúan
+korlátozva kell tartani, hogy ne törje meg az inflációs egyensúlyt.
+### F15. Szezonzáró árfolyam-sokk
+
+> **Lore-horgony:** a Korszakok lapfordulása az árfolyamban (kódex VIII.)
+
+🟢 • ⭐⭐
+
+**Mi ez:** A szezon utolsó napjaiban (a B33 „végítélet-hét" gazdasági rétege) minden valuta
+árfolyama felgyorsult ütemben, láthatóan ingadozik.
+**Hogyan működne:** `season.closing-days` config alatt az `ExchangeRateService` kereslet-sokk
+gyakorisága/amplitúdója megszorzódik (pl. 3×), a fővárosi árfolyamtáblák (hologram) frissítési
+gyakorisága is nő. Nincs új pénzforrás — csak a meglévő sokk-mechanika idő-alapú felturbózása.
+**Miért jó:** A B33 szezonzáró világeseményhez illő gazdasági dráma-réteg — az utolsó napok
+kereskedése emlékezetesebb, aki figyeli a piacot, nagyot nyerhet/veszíthet, ami sztorikat
+generál.
+**Építőkövek:** `ExchangeRateService`, B33 szezonzáró esemény-ütemezés (előfeltétel).
+**Buktatók:** Csak B33 mellett teljes az élménye — önállóan is működik, de a hatás kisebb.
+### G6. Becsület-párbaj a bűn tisztítására
+
+> **Lore-horgony:** a bűn/vezeklés-rendszer becsület-útja (kódex VII. — Kitaszítottak)
+
+🟡 • ⭐⭐
+
+**Mi ez:** A bűnös játékos felajánlhat egy „becsület-párbajt" — ha nyer az áldozat ellen (vagy
+annak frakciótársa ellen), egy bűnpontja letörlődik.
+**Hogyan működne:** `/duel <név> honor` — a B2 duel-infrára épülő új mód: tét helyett a
+győztes bűnszámlálója (`SinManager`) -1-et kap, ha a kihívó bűnös és az ellenfél a sértett fél
+(vagy annak nevezett képviselője). A kihívás csak akkor ajánlható fel, ha a kihívó bűnszáma
+> 0. A meccs maga beleegyezéses (bűnt nem termel, ahogy minden duel).
+**Miért jó:** Szimbolikus, RP-s út a bűn csökkentésére a vezeklés-küldetéslánc mellett — a
+sértett fél dönthet, elfogadja-e az „elégtételt", ahelyett hogy csak várna a fejvadászokra.
+**Építőkövek:** SinManager, B2 duel-infra (escrow nélkül).
+**Buktatók:** exploit-veszély, ha a bűnös a saját alt/haverja ellen "veszít" szándékosan
+bűntisztázásért — érdemes napi/heti limitet szabni rá.
+### G14. Kém-mechanika: álca a LibsDisguises-hídon
+
+> **Lore-horgony:** a Suttogók álca-motívuma nyílt kém-mechanikaként (kódex VII.)
+
+🔴 • ⭐⭐
+
+**Mi ez:** Raid előtt egy speciális itemmel/spellel rövid időre másik frakció tagjának
+álcázhatod magad, hogy felderíts (korlátozott, kockázatos taktikai eszköz).
+**Hogyan működne:** `/spy disguise <célfrakció>` — a `DruidDisguise`-híd (integration/,
+LibsDisguises soft-depend) mintájára egy időkorlátos (pl. 60 mp) álca, ami az álcázott
+frakció-nevét/skin-jelzését mutatja MÁS játékosoknak, de a saját HUD-on/tablistán a valódi
+adat marad admin/rendszer-oldalon. Korlátok: nem használható aktív raid harci szakaszban
+(csak felkészülés/felderítés közben), és PvP-interakció (találat adása/kapása) azonnal
+lebuktatja (leveszi az álcát). Bűn-rendszer: az álca alatti kém-tevékenység (pl. területre
+belépés) a normál lopás/behatolás szabályai szerint minősül — az álca nem ment fel bűn alól.
+**Miért jó:** Roleplay-mély taktikai réteg a szervezett frakcióknak; a kemény korlátok
+(nincs harci előny, kill lebuktat) miatt nem lesz PvP-erőforrás, csak információs játék.
+**Építőkövek:** integration/DruidDisguise (LibsDisguises-híd), RaidManager fázis-ellenőrzés,
+SinManager.
+**Buktatók:** komoly félreértés-/panasz-potenciál („becsapott!”) — világos szabály és
+UI-jelzés kell, hogy ne érezzék tisztességtelennek; Folia-oldalon a disguise-frissítés
+mindig a céljátékos saját régió-szálán fusson.
+### I7. Évszakos termények a Bőség-időhöz kötve
+
+> **Lore-horgony:** a Bőség ideje — a Fa gyógyuló lehelete a termésben (kódex VIII.)
+
+**Munka:** 🟢 • **Érték:** ⭐⭐
+
+**Mi ez:** A Bőség-idő (a szezon-esemény infra hangulati ablaka) alatt a Gyógynövényész termény-betakarítása extra XP-t/hozamot ad, azon kívül visszaáll az alap ütem.
+**Hogyan működne:** A `ProfessionXpListener.onPlayerHarvestBlock`-ban egy config-szorzó (`professions.seasonal.abundance-multiplier`) az aktív világesemény-getterből olvasva (mintázat: E2 druida-hangolódás ugyanezt az eseményt olvassa spell-oldalról). Opcionálisan egy „téli szűkösség" ellentétes irányú szorzó is bevezethető, de a minimum verzió csak a bőség-bónusz.
+**Miért jó:** Olcsó „élő világ" réteg, ami a Gyógynövényész-t is bekapcsolja a szezon-ritmusba (eddig csak a druida spellek reagáltak rá) — a gyűjtögető ritmusa illeszkedik a világ ritmusához.
+**Építőkövek:** Világesemény-getterek (Bőség-idő állapot), `ProfessionXpListener`, `ConfigManager`.
+**Buktatók:** A szorzó csak a HARVEST eseményre hasson, ne a sima blokk-törésre (különben Favágó/Bányász is véletlenül bónuszt kapna).
+### I16. Szakma-céh heti közös cél
+
+> **Lore-horgony:** a Céhek Öröksége — céh-közösségi célok (kódex VIII.)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** Az azonos szakmát űzők (frakciótól függetlenül) egy heti, szakma-szintű közösségi célban vesznek részt („Bányászok együtt: 5000 érc egy hét alatt").
+**Hogyan működne:** A meglévő közösségi cél-infra (frakció-szintű mintára) egy GLOBÁLIS, szakma-szűrt számláló-változata: `ProfessionXpListener` minden releváns eseménynél hozzáad egy megosztott heti számlálóhoz, ha a játékos az adott szakmát űzi. Cél elérésekor mindenki, aki hozzájárult (min. küszöb felett), közös jutalmat kap (XP-bónusz-hét vagy kozmetika). Heti reset a szezon-scheduler mintájára.
+**Miért jó:** Frakció-semleges közösségi réteget ad a szakma-rendszerhez — a Bányászok mint „szakma-közösség" először kapnak közös identitást és célt a frakciós struktúra felett, ami a heti visszatérést erősíti (B1 párja szakma-oldalon).
+**Építőkövek:** Közösségi cél-infra, `ProfessionXpListener`, `ProfessionManager` (aktív szakma-szűrés).
+**Buktatók:** A globális számláló több régió-szálról is íródik — konkurrens/atomic számláló kell (a `QuestManager.customQuests` copy-on-write mintája vagy synchronized long).
+### I22. Ritka recept-lapok loot-forrásból
+
+> **Lore-horgony:** „tervrajzokat ment ki a romok közül" — a kánon-mondat kiterjesztése recept-lapokra (kódex VIII.)
+
+**Munka:** 🟡 • **Érték:** ⭐⭐
+
+**Mi ez:** A meglévő tervrajz (Knowledge Book) rendszer bővítése: a legritkább recepteket KIZÁRÓLAG világboss/nehéz esemény loot adja, sosem NPC-bolt.
+**Hogyan működne:** A `ProfessionRecipeCatalog`-ban egy új `loot-only: true` mező a csúcs-recepteknél (pl. Ereklye-szintű mestermunkák), amit a világboss/esemény loot-tábla bővítése ad ki (a guide már említi az „Ősi Ereklyeszilánk" boss-only alapanyagot — ugyanez az elv, de magára a RECEPTRE). A recept-könyvben zárolt sorként látszik, lore: „Csak legendás ellenfelektől szerezhető".
+**Miért jó:** A világbossokat/nehéz eseményeket a szakma-progresszió szempontjából is tétre teszi (eddig csak felszerelés-loot forrás volt), és a legritkább recepteknek presztízs-értéket ad — nem lehet pénzért megvenni.
+**Építőkövek:** `ProfessionRecipeCatalog`, világboss/esemény loot-tábla, `ItemRarityService` (boss tier).
+**Buktatók:** Legyen elég recept ÉS elég gyakori a boss-esemény, hogy ne érezzék elérhetetlennek — a C1 spell-statisztika mintájára érdemes loot-drop számlálót is vezetni (mennyi tervrajz esett/hét).
+
+---
+
+**Összesen: 33 tétel** (S: 6, A: 27). Ajánlott kezdés: **H2 + B42** (a gyógyuló Fa és a Mélység Népe azonnal játszhatóvá válik), majd **B15** (a krónikás-hang életben tartása).
