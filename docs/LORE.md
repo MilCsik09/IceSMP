@@ -173,6 +173,15 @@ lelepleződött Suttogóból egyetlen szívdobbanás alatt **Kitaszított** lesz
 megbélyegzett, számkivetett szolgája, akinek fejére vérdíj kerül, s akit ettől fogva a világ minden
 becsületes pengéje vadászni kezd.
 
+**Mortengrad — a Holtak Városa.** Valaha büszke főváros állt a Káoszkor pusztításának útjában; ma csak
+**Mortengrad**, a **Holtak Városa** maradt belőle — düledező tornyok, benőtt sikátorok, a sírba szállt
+nemesség dicsőségének kővázai. Itt a legsűrűbb a Néma Királynő árnyéka: az élőhalottak úgy rótják a
+kihalt utcákat, mint egykor a polgárok, s a Fa fénye ide már nem ér el. Ez a **Kitaszítottak** egyetlen
+menedéke és fővárosa — a száműzöttek, a lelepleződött Suttogók és a bűnösök otthona. A világ minden
+becsületes kardja messze elkerüli e falakat; ám akit megjelölt a bélyeg, azt a holtak békén hagyják,
+s a Királynő szolgái közt sötét testvériségre lel. A romok mélyén, ahová csak a legelszántabbak
+merészkednek, ott lüktet a Suttogók legszentebb oltára.
+
 ---
 
 ## Frakció ↔ kód megfeleltetés
@@ -185,7 +194,7 @@ már illeszkednek** — nem kell hozzájuk nyúlni, csak a nevek/lore placeholde
 | `RED` | **Perinfernicitas** | tűz/láva-immunitás | Pyralingrad | **Parázsló Parals** | Soleil / Főnix |
 | `BLUE` | **Cryghaliris** | fagy + fulladás-immunitás | Glatziendorf | **Hópihér-veret** | Kallan / Sárkány |
 | `NEUTRAL` | **Ryanora & Caldestera** | zuhanás-immunitás, békés mobok, adómentes | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
-| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | — (száműzöttek) | — | Eleftheria / Néma Királynő |
+| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Mortengrad** (rom) | — | Eleftheria / Néma Királynő |
 
 > A jelenlegi játékos-nevek (`factions.yml`: „Piros/Kék/Semleges/Sötét", `economy.yml`: „… Token")
 > **placeholderek** — a lore ezekre a tematikus nevekre cserélné őket (rövid + hosszú alak kell a
@@ -283,6 +292,10 @@ kettősségét:
   ÉS a közönséges **bűnösök** (4 bűn) egyaránt — örök jelöléssel, fejükön vérdíjjal; visszaút csak a
   vezeklés-küldetéslánccal.
 - A kettőt a **lelepleződés** köti össze (sötét mágia közterületen, rajtakapott rítus/árulás).
+- **Főváros / spawn:** a Kitaszítottak fővárosa **Mortengrad, a Holtak Városa** — ide éled újra a
+  száműzött, s ez egyben magas-veszélyű PvE **rom-zóna** (élőhalott-fertőzött; a DARK-jelöltet a holtak
+  békén hagyják, másokat nem — így a passzív teszi „lakhatóvá" a városukat). A `/territory` főváros-zóna
+  DARK-hoz kötve; ideális K5 Káoszkor-loot forrás és a K9 Suttogó-oltár otthona.
 
 A csatlakozási rítus, a lelepleződés-triggerek és az Outlaw-átváltás részletes terve:
 [ideas/K-lore.md → K9](ideas/K-lore.md). *(Narratíva: VII. fejezet.)*

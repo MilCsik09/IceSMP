@@ -146,7 +146,8 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
-- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések,
+- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros — **Mortengrad, a Holtak Városa** (a
+  Kitaszítottak/DARK fővárosa) — megépítése; `/territory` kijelölések,
   majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
   hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.

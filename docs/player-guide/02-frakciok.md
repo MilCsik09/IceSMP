@@ -47,6 +47,10 @@ sem, ha elhagyod a frakciót. Az **egyetlen** visszaút a **vezeklés-küldetés
 [Küldetések](12-kuldetesek.md)). Cserébe tiéd a **legerősebb PvE-passzív**: az élőhalottak békén
 hagynak, s a wither sem árt — a Néma Királynő megjelöli, de meg is óvja a szolgáit.
 
+A Kitaszítottaknak is van otthonuk: **Mortengrad, a Holtak Városa** — egy élőhalottak lakta **rom-főváros**,
+ahová a száműzöttek újraélednek. Mivel rátok nem támadnak a holtak, ez a düledező város nektek menedék;
+mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra vár — lásd 🔜.)*
+
 ## Hogyan leszek bűnös (sinner)?
 
 - **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz.
