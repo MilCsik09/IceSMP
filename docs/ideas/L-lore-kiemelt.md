@@ -314,7 +314,7 @@ lore-kaput.
 (signature itemek a kész motorra) → **K7** (Nether-zóna) → a nagy RP-rendszerek (K8/K9).
 
 ## Tier S — a kódex szinte megköveteli
-### H2. Terjedő korrupt zóna
+### H2. Terjedő korrupt zóna `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Kárhozat Kapujából szivárgó rontás ↔ a gyógyuló Fa — a tisztítás lore-ból a Fát gyógyítja (kódex V./VII.)
 

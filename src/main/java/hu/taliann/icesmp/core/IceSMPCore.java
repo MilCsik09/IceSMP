@@ -216,6 +216,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
     private final hu.taliann.icesmp.managers.ChronicleManager chronicleManager;
+    private final hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
     private final EconomyEventManager economyEventManager;
@@ -352,6 +353,7 @@ public final class IceSMPCore {
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
+        this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
@@ -415,7 +417,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
-                moderationManager, chronicleManager);
+                moderationManager, chronicleManager, corruptionManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -857,6 +859,7 @@ public final class IceSMPCore {
         caravanManager.shutdown();
         treasureEventManager.shutdown();
         wildHuntManager.shutdown();
+        corruptionManager.shutdown();
         escortManager.shutdown();
         meteorEventManager.shutdown();
         serverChallengeManager.shutdown();
@@ -907,6 +910,7 @@ public final class IceSMPCore {
                     factionFoodListener.tick();
                     whisperManager.tick();
                     chronicleManager.tick();
+                    corruptionManager.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -1100,6 +1104,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpellDamageListener(configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CapitalLawListener(plugin, configManager, territoryManager, sinManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CorruptionListener(corruptionManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);

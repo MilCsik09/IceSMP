@@ -560,6 +560,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       nyitó/záró sablonokkal; `/kronika` (alias /chronicle) bármikor visszaolvassa az utolsó
       számot; restart-álló (chronicle.yml). Teszthez: `chronicle.interval-days: 0.001` NEM megy
       (napokban egész) — állítsd 1-re és várd ki, vagy ellenőrizd reload után az első kiadást.
+- [ ] **H2 Rontás-góc (ÚJ — Tier S):** ritkán (`corruption.*`) a vadonban SCULK_CATALYST mag
+      nyílik broadcast-tal; a zóna ÉJSZAKÁNKÉNT nő (+4 blokk, 64-ig), korrupt, glowing mobokat
+      szül (cap: 12 egyszerre — entitás-fék tesztje!); terepet NEM ír át (csak az 1 mag-blokk).
+      **Tisztítás:** ölj 15 korrupt fajzatot (számláló-üzenet a magnál), majd SHIFT+jobb katt a
+      magra → loot + 5 perc regeneráció + „a Fa fellélegzik" broadcast; a mag kézzel NEM
+      bányászható. Restart-teszt: a zóna corruption.yml-ből visszaáll. Spawn-hely: a
+      spawn-rules.corruption mátrix-sor szerint (városba nem nyílik).
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

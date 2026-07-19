@@ -51,6 +51,7 @@ world-events:
     wild-hunt:  { territory: true, claim: true, region: true, water: true }
     treasure:   { territory: true, claim: true, region: true, water: true }
     meteor:     { territory: true, claim: true, region: true }
+    corruption: { territory: true, claim: true, region: true, water: true }
   # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
   # A sorsolás az éj beállta (13000) és éjfél (18000) közt történik, éjszakánként egyszer.
   blood-moon:
@@ -312,3 +313,31 @@ meteor:
   ore-chance: 0.45           # a kráter-közép blokkjai ekkora eséllyel érc (különben díszes bélés)
   # A becsapódás-hely védelme a world-events.spawn-rules.meteor mátrixba költözött
   # (a régi meteor.avoid-territory kulcs megszűnt).
+
+# ===== H2 — Terjedő korrupt zóna (a Kapu rontása; tisztítása a Fát gyógyítja) =====
+# Ritkán rontás-góc nyílik a vadonban: SCULK_CATALYST mag + logikai sugarú zóna, amely
+# éjszakánként terjed a plafonig, és korrupt mobokat szül (kemény cap). Tisztítás:
+# purge-kills-required korrupt fajzat leölése, majd a mag SHIFT+jobb katt (jutalom-loot +
+# regeneráció). A spawn-hely a world-events.spawn-rules.corruption mátrix-sort követi.
+# Élőben olvasódik; a zóna restart-álló (corruption.yml).
+corruption:
+  enabled: true
+  interval-minutes: 120
+  chance-percent: 25
+  spawn-offset: 96           # a horgony-játékostól legfeljebb ennyire nyílik
+  initial-radius: 16.0
+  radius-cap: 64.0
+  spread-per-night: 4.0
+  mob-cap: 12                # egyszerre legfeljebb ennyi korrupt mob él (entitás-fék)
+  spawn-batch: 2
+  mob-level: 6
+  purge-kills-required: 15
+  reward-rolls: 4
+  reward-buff-minutes: 5
+  loot:
+    table:
+      - { type: material, weight: 30, item: SCULK, min: 4, max: 12 }
+      - { type: material, weight: 25, item: ECHO_SHARD, min: 1, max: 3 }
+      - { type: material, weight: 20, item: DIAMOND, min: 1, max: 3 }
+      - { type: material, weight: 15, item: EXPERIENCE_BOTTLE, min: 4, max: 8 }
+      - { type: material, weight: 10, item: NETHERITE_SCRAP, min: 1, max: 2 }
