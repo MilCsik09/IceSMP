@@ -225,6 +225,17 @@ akit a Királynő átka a számadásai mellett ért utol, s aki azóta is **kön
 Kitaszítottak minden vagyona: az elhullott urak koronáiból és megfeketült ezüstjéből **ő vereti a
 Csontveretet**, a száműzöttek pénzét, amelyet élő bank soha jegyezni nem fog — nyíltan legalábbis nem.
 
+**A lélekkő — a Királynő szavának ára.** A Káoszkor erős teremtményeiben ott ül a **Néma Királynő
+szavának maradéka** — az élőhalottban az ő igéje, a rontás-járta élő fenevadban az átszivárgott sötétség.
+Aki egy ilyen lényt levág, annak kezében e maradék **lélekkővé kristályosodik** — s a lélekkövet egyetlen
+pénzverde váltja be: a Csontszámvevőé. Ezért árad a Csontveret a világba a veszélyes vidékek felől. Ám a
+törvény kérlelhetetlen: **a bélyeg-jelöltnek az élőhalott nem fizet** — a szó visszaszáll a szóhoz, a
+Királynő nem jutalmazza, aki a saját szolgáit mészárolja. A Kitaszított csak az **élő** rontott lények
+lelkét arathatja; s ugyanígy a holtidéző sem húzhat szilánkot a holtból, mert **az élőhalottban nincs
+lélek — csak a Királynő két mondata visszhangzik benne**. *(Mechanika: lélekkő = DARK-valuta drop a
+magas-szintű mobokból; DARK-játékosnak élőhalottból nem esik; a Nekromanta lélek-szilánkja csak élő
+szörnyből jön — config: `currency.soul-drop.dark-undead-drops`, `souls.shards-from-undead`.)*
+
 ## VIII. A Felsők Kora — A Világ Élő Rendszerei
 
 *A Káoszkor romjain a Felsők nem csupán harcolnak: építenek, tanulnak, kereskednek — és a világ válaszol

@@ -920,6 +920,9 @@ rituals:
 # megerősített Wither-csontváz bajnokot idézhetnek (/souls champion).
 souls:
   shards-per-kill: 1
+  # Az élőhalottban nincs learatható lélek (a Néma Királynő szava mozgatja) — élőhalott
+  # ölésből NEM jár szilánk; a szilánk az ÉLŐ szörnyek lelkéből jön. true = régi viselkedés.
+  shards-from-undead: false
   champion-cost: 10
   champion-health: 60.0
   champion-lifespan-seconds: 60

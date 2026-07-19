@@ -566,6 +566,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Mob-szintezés:** a spawntól távolodva erősebb, `[Lvl X]` nevű mobok; a névtábla csak ránézésre
       jelenik meg; spawner/parancs-mob nem skálázódik.
 - [ ] **Vérhold** (`/events blood-moon start`): erősebb mobok + dupla lélekkő-esély; broadcast.
+- [ ] **Lélekkő élőhalott-kivétel:** DARK játékos zombi/csontváz-ölése NEM ad lélekkövet (élő
+      szörny — pl. creeper — igen); Nekromanta élőhalott-ölése NEM ad lélek-szilánkot, élő igen
+      (`currency.soul-drop.dark-undead-drops` / `souls.shards-from-undead`).
 - [ ] **Világboss** (`/events worldboss`): véletlen archetípus, név, aura-debuff a közelben; ~8 mp-enként
       telegrafált képesség; **50% HP alatt feldühödik**; legyőzve kassza+pont+buff.
       ⚠️ A SUMMON-special által idézett add-ok egy idő után **eltűnnek** (nem maradnak ott örökre).

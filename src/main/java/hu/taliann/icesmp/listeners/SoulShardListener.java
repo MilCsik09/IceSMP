@@ -36,6 +36,14 @@ public final class SoulShardListener implements Listener {
             return;
         }
 
+        // Az élőhalottban nincs learatható lélek — a Néma Királynő szava mozgatja, nem lélek (lore),
+        // és a nekromanta (DARK-kötött spec) a rá nem támadó élőhalottakból kockázat nélkül aratna
+        // (exploit-fék). A szilánk az ÉLŐ szörnyek lelkéből jön.
+        if (!configManager.getBoolean("souls.shards-from-undead", false)
+                && hu.taliann.icesmp.utils.UndeadUtil.isUndead(event.getEntity())) {
+            return;
+        }
+
         final Player killer = event.getEntity().getKiller();
         if (killer == null || specializationManager.getClassSpecialization(killer) != SpecializationType.NECROMANCER) {
             return;

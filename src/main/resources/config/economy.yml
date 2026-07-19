@@ -15,6 +15,11 @@ currency:
     min-mob-level: 3
     chance-percent: 25
     max-amount: 5
+    # „A Királynő nem fizet a testvérgyilkosságért": a DARK (Kitaszított) játékosnak az
+    # ÉLŐHALOTT mobokból (zombi/csontváz/phantom/zoglin/wither) NEM esik lélekkő — azok
+    # úgysem védekeznek ellene (frakció-passzív), így ez lore-szabály + auto-farm fék.
+    # true = a régi viselkedés (a DARK-nak is esik élőhalottból).
+    dark-undead-drops: false
   # ===== Heti gazdasági esemény: véletlen kereslet-sokk =====
   # Időnként egy véletlen valuta base-value-ja átmenetileg megugrik —
   # kereskedési lehetőség a figyelmes játékosoknak.

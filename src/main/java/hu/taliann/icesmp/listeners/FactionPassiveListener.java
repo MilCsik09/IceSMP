@@ -131,11 +131,7 @@ public final class FactionPassiveListener implements Listener {
     }
 
     private boolean isUndead(final Object entity) {
-        return entity instanceof Zombie
-                || entity instanceof AbstractSkeleton
-                || entity instanceof Phantom
-                || entity instanceof Zoglin
-                || entity instanceof Wither;
+        return hu.taliann.icesmp.utils.UndeadUtil.isUndead(entity);
     }
 
     private boolean isEnabled() {

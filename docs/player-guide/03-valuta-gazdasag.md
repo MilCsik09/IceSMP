@@ -100,6 +100,11 @@ A spawntól messze a szörnyek erősebbek. A **magas szintű (3+) szörnyek** es
 tokent** (lélekkövet) ejtenek — így a távoli, veszélyes helyeken kalandozni **gazdaságilag is
 megéri**.
 
+⚠️ **Kivétel — „a Királynő nem fizet a testvérgyilkosságért":** a **Sötét (Kitaszított)**
+játékosnak az **élőhalott** mobokból (zombi, csontváz, phantom, zoglin, wither) **nem esik
+lélekkő** — azok úgysem védekeznek ellene (frakció-passzív), így a kockázat nélküli farmolás
+nem terem pénzt. Az ÉLŐ szörnyek (creeper, pók, witch, Nether-mobok…) a Sötéteknek is fizetnek.
+
 ---
 
 ➡️ Tovább: [Kasztok](04-kasztok.md) • [Vissza a tartalomhoz](README.md)

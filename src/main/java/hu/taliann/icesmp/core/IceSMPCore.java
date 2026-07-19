@@ -1084,7 +1084,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(plugin, sinManager, raidManager, factionManager, statsManager, currencyManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, afkManager), plugin);
+        pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.OnboardingListener(configManager, questManager, messageManager), plugin);

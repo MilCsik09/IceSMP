@@ -528,7 +528,10 @@ A teljes lista áldozati költségekkel: [Relikviák oldal](docs/player-guide/09
 A spawntól távolodva a szörnyek **erősödnek**: minden **1000 blokk = +1 mob-szint**
 (`[Lvl X]` névvel, több élettel és sebzéssel), alapból **legfeljebb 10 szintig**. Cserébe a magasabb szintű mobok **több kaszt
 XP-t** és nagyobb eséllyel **lélekkövet** adnak. (A spawner-/parancs-spawnolt mobok nem
-skálázódnak — a farmok biztonságosak.) A szint-névtábla alapból **csak akkor jelenik meg,
+skálázódnak — a farmok biztonságosak.) ⚠️ Kivétel: a **Sötét (Kitaszított)** játékosnak az
+**élőhalott** mobokból nem esik lélekkő („a Királynő nem fizet a testvérgyilkosságért" — azok
+úgysem védekeznek ellene); élő szörnyekből nekik is. A **Nekromanta** lélek-szilánkja is csak
+**élő** szörnyből jön. A szint-névtábla alapból **csak akkor jelenik meg,
 amikor ránézel a mobra** (közelről, takarás nélkül), így nem zsúfolja tele a képernyőt
 falakon át vagy nagy távolságból.
 

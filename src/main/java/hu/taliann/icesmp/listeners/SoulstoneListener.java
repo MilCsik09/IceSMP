@@ -1,10 +1,13 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.utils.UndeadUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,16 +27,19 @@ public final class SoulstoneListener implements Listener {
     private final MobScalingManager mobScalingManager;
     private final BloodMoonManager bloodMoonManager;
     private final ConfigManager configManager;
+    private final FactionManager factionManager;
 
     private final hu.taliann.icesmp.managers.AfkManager afkManager;
 
     public SoulstoneListener(final CurrencyManager currencyManager, final MobScalingManager mobScalingManager,
                              final BloodMoonManager bloodMoonManager, final ConfigManager configManager,
+                             final FactionManager factionManager,
                              final hu.taliann.icesmp.managers.AfkManager afkManager) {
         this.currencyManager = currencyManager;
         this.mobScalingManager = mobScalingManager;
         this.bloodMoonManager = bloodMoonManager;
         this.configManager = configManager;
+        this.factionManager = factionManager;
         this.afkManager = afkManager;
     }
 
@@ -51,6 +57,16 @@ public final class SoulstoneListener implements Listener {
         // AFK-jelölt játékos nem kap lélekkő-dropot (auto-farm exploit-fék).
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(killer.getUniqueId())) {
+            return;
+        }
+
+        // „A Királynő nem fizet a testvérgyilkosságért": a DARK-jelölt kezén az élőhalottból nem
+        // kristályosodik lélekkő — az élőhalottak úgysem védekeznek ellene (frakció-passzív), így ez
+        // egyszerre lore-szabály és auto-farm exploit-fék. (A frakció-lekérdezés ConcurrentHashMap —
+        // Folia-biztos a mob régió-szálán is.)
+        if (!configManager.getBoolean("currency.soul-drop.dark-undead-drops", false)
+                && UndeadUtil.isUndead(entity)
+                && factionManager.getFaction(killer.getUniqueId()) == FactionType.DARK) {
             return;
         }
 
