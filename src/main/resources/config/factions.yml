@@ -236,6 +236,9 @@ territory:
     rantotta-buff-seconds: 60  # Főnixtojás-Rántotta: tűz-ellenállás
     suti-speed-seconds: 30     # Tiltott Kakaóbabos Sütemény: gyorsaság II
     suti-launch-y: 0.6         # a süti "robbanásának" felfelé lökése
+    # A DARK-nak van étele (Mortengradi Hamukenyér: éjjellátás-buff), de honvágy-
+    # kötelezettsége NINCS — a Kitaszítottaknak nincs otthonuk, amire honvágyuk lehetne.
+    hamukenyer-buff-seconds: 60
   # ===== Zóna mob-szabályok (mob-rules) =====
   # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
   #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital

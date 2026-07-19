@@ -1134,7 +1134,7 @@ public final class IceSMPCore {
             pluginManager.registerEvents(new RelicTriggerListener(relicManager), plugin);
             pluginManager.registerEvents(new MetelytepoRelicListener(plugin, metelytepoManager, sinManager,
                     worldBossManager, invasionManager, messageManager), plugin);
-            pluginManager.registerEvents(new ElytraRelicListener(relicManager, factionManager, messageManager), plugin);
+            pluginManager.registerEvents(new ElytraRelicListener(plugin, relicManager, factionManager, configManager, messageManager), plugin);
             pluginManager.registerEvents(new RelicPvpTransferListener(plugin, relicManager, configManager, messageManager), plugin);
         }
     }

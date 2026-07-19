@@ -106,6 +106,7 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | ✅ implementálva: érc-töréskor +20% extra drop, bányász-láz alatt szünetel (`signature.csakany.*`) |
 | Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | ✅ implementálva: +20% dupla fogás, halászati láz alatt szünetel (`signature.horgaszbot.*`) |
 | Asterlayna Gyümölcse (Tiltott Kakaóbabos Sütemény) | NEUTRAL | süti (K6) | ✅ implementálva: „robbanó csemege" — feldobás + Speed II + effekt |
+| Mortengradi Hamukenyér | DARK | étel (K6) | ✅ implementálva: éjjellátás-buff; a DARK-nak NINCS honvágy-kötelezettsége (nincs otthonuk) |
 | Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | ✅ implementálva: jobb-katt atomi beváltás Creutzérre (`signature.bankbetet.value`) |
 | Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | ✅ implementálva: cooldownos ideiglenes gyors hátas (`signature.szarvas.*`) |
 | Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |

@@ -38,6 +38,8 @@ public final class FactionFoodListener implements Listener {
     public static final String PISZTRANG = "fagyasztott_pisztrang";
     public static final String RANTOTTA = "fonixtojas_rantotta";
     public static final String SUTI = "kakaobabos_sutemeny";
+    /** DARK-étel: buffot ad, de a Kitaszítottakra NINCS honvágy-kötelezettség (nincs otthonuk). */
+    public static final String HAMUKENYER = "mortengradi_hamukenyer";
 
     /** Vanília ételek, amelyek teljesítik a BLUE hal-kötelezettségét. */
     private static final Set<Material> FISH_FOODS = Set.of(
@@ -92,6 +94,9 @@ public final class FactionFoodListener implements Listener {
         } else if (RANTOTTA.equals(sig)) {
             final int seconds = Math.max(1, configManager.getInt("factions.food-duty.rantotta-buff-seconds", 60));
             player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, seconds * 20, 0, true, true, true));
+        } else if (HAMUKENYER.equals(sig)) {
+            final int seconds = Math.max(1, configManager.getInt("factions.food-duty.hamukenyer-buff-seconds", 60));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, seconds * 20, 0, true, true, true));
         } else if (SUTI.equals(sig)) {
             // "Robbanó csemege": effekt-robbanás blokk-kár nélkül + felfelé lökés + gyorsaság.
             final int seconds = Math.max(1, configManager.getInt("factions.food-duty.suti-speed-seconds", 30));

@@ -46,14 +46,20 @@ public final class ElytraRelicListener implements Listener {
             EntityDamageEvent.DamageCause.HOT_FLOOR
     );
 
+    private final org.bukkit.plugin.java.JavaPlugin plugin;
     private final RelicManager relicManager;
     private final FactionManager factionManager;
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public ElytraRelicListener(final RelicManager relicManager, final FactionManager factionManager,
+    public ElytraRelicListener(final org.bukkit.plugin.java.JavaPlugin plugin,
+                               final RelicManager relicManager, final FactionManager factionManager,
+                               final hu.taliann.icesmp.managers.ConfigManager configManager,
                                final MessageManager messageManager) {
+        this.plugin = plugin;
         this.relicManager = relicManager;
         this.factionManager = factionManager;
+        this.configManager = configManager;
         this.messageManager = messageManager;
     }
 
@@ -90,14 +96,38 @@ public final class ElytraRelicListener implements Listener {
             }
             case "bone_wing" -> {
                 if (isNight(player)) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 10 * 20, 0, false, false, true));
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10 * 20, 0, false, false, true));
-                    player.getWorld().spawnParticle(Particle.SOUL, player.getLocation(), 30, 0.5D, 0.5D, 0.5D, 0.03D);
+                    startShadeLoop(player);
+                } else {
+                    // Lore-visszajelzés: a szárny csak az éj leple alatt változtat árnyékká.
+                    player.sendActionBar(messageManager.getMessage("relic.bone-wing-day",
+                            "<gray>☠ A Csontszárny nappal néma — az árnyék-forma az éj leple alatt ébred.</gray>"));
                 }
             }
             default -> {
             }
         }
+    }
+
+    /**
+     * Csontszárny árnyék-forma (lore: "Éjjel a viselője maga is árnyékká válik"): amíg a
+     * viselő ÉJJEL siklik, az árnyék-forma FOLYAMATOSAN fennáll — a korábbi, csak a
+     * felszállás pillanatában adott 10 mp helyett a hurok 2 mp-enként frissíti a
+     * láthatatlanság+gyorsaság effektet, és magától leáll, ha a repülés véget ér, felkel
+     * a nap, vagy a szárny lekerül. A játékos SAJÁT entity-schedulerén fut (Folia-safe).
+     */
+    private void startShadeLoop(final Player player) {
+        player.getWorld().spawnParticle(Particle.SOUL, player.getLocation(), 30, 0.5D, 0.5D, 0.5D, 0.03D);
+        player.playSound(player.getLocation(), Sound.ENTITY_PHANTOM_AMBIENT, 0.6F, 0.6F);
+        player.getScheduler().runAtFixedRate(plugin, task -> {
+            if (!player.isOnline() || !player.isGliding() || !isNight(player)
+                    || !"bone_wing".equals(resolveWornWing(player, false))) {
+                task.cancel();
+                return;
+            }
+            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 4 * 20, 0, false, false, true));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4 * 20, 0, false, false, true));
+            player.getWorld().spawnParticle(Particle.SOUL, player.getLocation(), 6, 0.4D, 0.4D, 0.4D, 0.02D);
+        }, null, 1L, 40L);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -150,6 +180,34 @@ public final class ElytraRelicListener implements Listener {
     }
 
     /**
+     * A frakció-szárnyat idegen frakció tagja fel sem veheti a földről (config-kapcsolható):
+     * a szárny "elutasítja" — a tárgy a helyén marad, az inaktivitás-szabály előbb-utóbb
+     * visszaveszi. A pickup-event a felvevő játékos régió-szálán fut (Folia-safe).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onPickup(final org.bukkit.event.entity.EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+        final RelicDefinition definition = relicManager.identify(event.getItem().getItemStack());
+        if (definition == null) {
+            return;
+        }
+        final FactionType wingFaction = WING_FACTIONS.get(definition.id().toLowerCase(java.util.Locale.ROOT));
+        if (wingFaction == null || factionManager.getFaction(player.getUniqueId()) == wingFaction) {
+            return;
+        }
+        if (!configManager.getBoolean("relics.wings.faction-locked-pickup", true)) {
+            return;
+        }
+        event.setCancelled(true);
+        player.sendActionBar(messageManager.getMessage(
+                "relic.wing-pickup-rejected",
+                "<red>A(z) {faction} szárnya megperzseli az idegen kezét — nem emelheted fel.</red>",
+                Map.of("faction", wingFaction.getDisplayName())));
+    }
+
+    /**
      * Identifies the worn elytra relic if (and only if) the wearer may benefit
      * from it: relic owner + matching faction.
      *
@@ -185,7 +243,10 @@ public final class ElytraRelicListener implements Listener {
     }
 
     private boolean isNight(final Player player) {
-        final long time = player.getWorld().getTime();
-        return time >= 13000L && time <= 23000L;
+        // A vanília nap-fogalmát követjük (a korábbi kézi 13000-23000 ablak a hajnal előtti
+        // órákat kihagyta — a lore "éjjel"-je a TELJES éjszaka). Nem-overworld dimenzióban
+        // (Nether/End) az idő áll: ott az árnyék-forma mindig él (örök félhomály).
+        final org.bukkit.World world = player.getWorld();
+        return world.getEnvironment() != org.bukkit.World.Environment.NORMAL || !world.isDayTime();
     }
 }

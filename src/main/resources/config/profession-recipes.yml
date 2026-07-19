@@ -1350,6 +1350,19 @@ profession-recipes:
     category: "Menedék (konyha)"
     result: { material: COOKIE, amount: 4, signature: kakaobabos_sutemeny }
     ingredients: [ "COCOA_BEANS:4", "WHEAT:4", "GUNPOWDER:1", "SUGAR:2" ]
+  mortengradi_hamukenyer:
+    profession: cook
+    level: 30
+    faction: DARK
+    display-name: "Mortengradi Hamukenyér"
+    lore:
+      - "&7A Kitaszítottak kenyere: hamuval sütik,"
+      - "&7hogy a Királynő szolgái ne érezzék az élet"
+      - "&7szagát. Fogyasztva rövid éjjellátást ad."
+      - "&8A Kitaszítottaknak nincs honvágyuk — nincs otthon."
+    category: "Kitaszítottak (konyha)"
+    result: { material: BREAD, amount: 3, signature: mortengradi_hamukenyer }
+    ingredients: [ "WHEAT:3", "BONE_MEAL:2", "CHARCOAL:1" ]
   # ===== K4 — Ryanora & Caldestera signature itemek (gyűjtő/gazdaság, NEUTRAL-kapus) =====
   vasmuvek_csakanya:
     profession: miner

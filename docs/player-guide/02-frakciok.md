@@ -46,6 +46,9 @@ A kódex szerint minden népnek megvan a maga konyhája — és a frakció-aura 
 - **Menedék:** a **Tiltott Kakaóbabos Sütemény** (a cukrászok Asterlayna Gyümölcsének hívják)
   fogyasztva **„robban"** — feldob, felgyorsít, csillagszóró-effekttel. A Bankárszövetség
   hivatalosan tiltja. Hivatalosan.
+- **Kitaszítottak (DARK):** a **Mortengradi Hamukenyér** a kenyerük (rövid éjjellátást ad) —
+  de honvágy-kötelezettségük **nincs**: a Kitaszítottaknak nincs otthonuk, amire honvágyuk
+  lehetne.
 
 A honvágy **puha** mechanika (config: `factions.food-duty`), új játékost és frissen váltót
 türelmi idő véd.

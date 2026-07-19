@@ -9,6 +9,10 @@ relics:
   # Fegyver-relikviák: PvP-ben gazdát cserélhetnek (a passzívak védettek).
   weapon-relics:
     - "metelytepo"
+  # Frakció-szárnyak: idegen frakció tagja a földről sem veheti fel őket (a szárny
+  # "elutasítja"); a rituáléjuk is frakció-kapus (requires-faction). Élőben olvasódik.
+  wings:
+    faction-locked-pickup: true
   pvp-transfer:
     enabled: true
   messages:
@@ -126,6 +130,8 @@ rituals:
       - "CRYING_OBSIDIAN:8"
       - "DIAMOND_BLOCK:1"
   phoenix_wing:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "RED"
     altar-block: "MAGMA_BLOCK"
     structure:
       - "-2,-1,-2:NETHER_BRICKS"
@@ -166,6 +172,8 @@ rituals:
       - "FIRE_CHARGE:16"
       - "GOLD_BLOCK:1"
   frost_wing:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "BLUE"
     altar-block: "BLUE_ICE"
     structure:
       - "-2,-1,-2:PACKED_ICE"
@@ -206,6 +214,8 @@ rituals:
       - "PRISMARINE_CRYSTALS:8"
       - "DIAMOND_BLOCK:1"
   wander_wind:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "NEUTRAL"
     altar-block: "AMETHYST_BLOCK"
     structure:
       - "-2,-1,-2:CUT_COPPER"
@@ -246,6 +256,8 @@ rituals:
       - "PHANTOM_MEMBRANE:8"
       - "EMERALD_BLOCK:1"
   bone_wing:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "DARK"
     altar-block: "SOUL_SOIL"
     structure:
       - "-2,-1,-2:SOUL_SAND"

@@ -225,6 +225,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       **Honvágy-teszt:** BLUE/RED játékos `factions.food-duty.grace-hours` (teszthez állítsd 0.01-re
       → reload) után `check-minutes`-enként rövid Éhséget + action-bar emlékeztetőt kap; bármely hal
       (BLUE) / tojás-étel (RED) evése nullázza. Új/frissen váltó játékos először türelmi időt kap.
+      A DARK a **Mortengradi Hamukenyeret** kapja (éjjellátás-buff), de honvágy-kötelezettsége
+      NINCS (nincs otthonuk); a NEUTRAL-nak sincs kötelezettsége.
 - [ ] **K5 Káoszkor-loot:** élőhalott mobból (zombi/csontváz) eshet a Rozsdás Penge / Megrontott
       Elit Páncél (nevesített, rarity-prefixszel + affixekkel); NEM-élőhalottból sosem esik;
       az Eleftheria Könnye rituálé csak DARK-frakcióval aktiválható (síró obszidián mag).
@@ -508,6 +510,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Mételytépő** megjelöli/bünteti a bűnösöket; **PvP-ben** ölésnél az új gazdája a gyilkos lehet.
 - [ ] **4 frakció-elytra** csak a tulajdonos + a megfelelő frakció tagja használja; a passzív szárnyak
       PvP-ben **nem** cserélnek gazdát.
+- [ ] **Szárny frakció-kapuk (ÚJ):** a 4 szárny-rituálé csak a SAJÁT frakcióval végezhető el
+      (requires-faction — RED-ként a Csontszárny oltára elutasít); idegen frakció tagja a szárnyat
+      a **földről sem veheti fel** (`relics.wings.faction-locked-pickup`, action-bar üzenettel).
+- [ ] **Csontszárny árnyék-forma (JAVÍTVA):** DARK-ként ÉJJEL siklás közben az árnyék-forma
+      (láthatatlanság + gyorsaság + lélek-particle) FOLYAMATOSAN fennmarad a repülés alatt (2 mp-es
+      frissítéssel), és leáll leszálláskor/napkeltekor. A teljes éjszaka számít (hajnal előtt is);
+      Netherben/Endben mindig él (örök félhomály). Nappali felszállásnál action-bar jelzi, miért
+      nincs effekt.
 - [ ] **Rituálé-oltár:** a megfelelő oltár-blokk + áldozati tárgyak + **SHIFT+jobb katt** → megidézi a szárnyat.
 - [ ] **Egy-példány szabály:** ha él a tulajdonos, nem idézhető/adható újra.
 - [ ] **Multi-block szentélyek (5×5):** hiányos szerkezettel (csak a mag-blokk áll) az oltár hibát
