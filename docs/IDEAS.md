@@ -4,7 +4,7 @@ Fejlesztési ötletek gyűjtője — **nincs elköteleződés**, ez a brainstorm
 zöld utat kap, az a [ROADMAP.md](../ROADMAP.md)-be kerül tervezett tételként; a technikai
 adósság külön él a [REFACTOR_CANDIDATES.md](REFACTOR_CANDIDATES.md)-ben.
 
-A tár **346 kidolgozott ötletet** tartalmaz 10 kategória-fájlban (`docs/ideas/`).
+A tár **356 kidolgozott ötletet** tartalmaz 11 kategória-fájlban (`docs/ideas/`).
 Minden tétel azonos sablonnal készült: **Mi ez / Hogyan működne / Miért jó /
 Építőkövek / Buktatók** — konkrét parancsokkal, config-kulcsokkal, a meglévő
 managerekre/mintákra hivatkozva, Folia-megjegyzésekkel ahol kell.
@@ -28,6 +28,7 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 | **H) PvE, világesemények, végjáték** | [ideas/H-pve.md](ideas/H-pve.md) | H1–H25 | Új esemény-típusok, boss-mélyítés, mob-öko, ko-op tartalom, végjáték-hurok |
 | **I) Szakmák, gyűjtögetés, készítés** | [ideas/I-szakmak.md](ideas/I-szakmak.md) | I1–I25 | Mestermű, érc-ér események, műhelyek, recept-láncok, szakma-presztízs |
 | **J) Questek, story, progresszió** | [ideas/J-quest.md](ideas/J-quest.md) | J1–J24 | Új objektíva-típusok, story-eszközök (döntés-flagek, fejezetek), NPC-emlékezet, quest-admin |
+| **K) Lore-integráció / világ-tartalom** | [ideas/K-lore.md](ideas/K-lore.md) | K1–K10 | A [LORE.md](LORE.md) beépítése: frakció/valuta-reskin, lore-hű unique-itemek a kész motorra, Nether-portál zóna, Emlékszilánkok, Suttogók-szekta, Caldestera feketepiac |
 
 ---
 
