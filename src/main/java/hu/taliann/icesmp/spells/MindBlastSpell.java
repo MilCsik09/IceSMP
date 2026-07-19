@@ -59,7 +59,7 @@ public final class MindBlastSpell extends BaseSpell {
             final boolean casterInCurrentRegion = caster != null && Bukkit.isOwnedByCurrentRegion(caster);
 
             if (casterInCurrentRegion) {
-                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, target, blastDamage);
+                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, target, blastDamage, getId());
             } else {
                 target.damage(blastDamage);
             }
@@ -72,7 +72,7 @@ public final class MindBlastSpell extends BaseSpell {
                 }
 
                 if (casterInCurrentRegion) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, splashDamage);
+                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, splashDamage, getId());
                 } else {
                     living.damage(splashDamage);
                 }

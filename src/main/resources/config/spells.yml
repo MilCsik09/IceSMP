@@ -9,12 +9,42 @@ spells:
   # Halál-összegzés: halál után rövid lista a legutóbbi sebzés-forrásokról.
   death-recap:
     enabled: true
-  # Mágia-ellenállás (Rúnavért enchant vs az icesmp:magia damage-type):
-  # a viselt páncél Rúnavért-szintjeinek összege szintenként per-level arányban
-  # csökkenti a bejövő SPELL-sebzést, a max-reduction plafonig. Élőben olvasódik.
+  # Mágia-ellenállás: a Rúnavért (generikus, MINDEN iskola ellen, per-level/szint) és
+  # az iskola-counter enchantok (Fagypáncél → fagymágia, Főnixtoll → tűzmágia,
+  # school-per-level/szint) összeadódnak, a közös max-reduction plafonig. Élőben olvasódik.
   magic-resist:
     per-level: 0.08
+    school-per-level: 0.10
     max-reduction: 0.6
+  # ===== Varázslat-iskolák (damage-type-besorolás) =====
+  # Minden spell a saját iskolája damage-type-jával sebez (icesmp:tuz_magia, fagy_magia,
+  # szent_magia, arnyek_magia, termeszet_magia, vihar_magia, kaosz_magia, magia=ősmágia).
+  # Feloldás: by-spell felülírás → a caster kasztjának by-class defaultja → ősmágia.
+  # ÍGY MINDEN SPELL EGYEDIVÉ HANGOLHATÓ: vedd fel a spell-id-t a by-spell alá.
+  # Érvényes értékek: tuz | fagy | szent | arnyek | termeszet | vihar | kaosz | osmagia.
+  spell-schools:
+    by-class:
+      wizard: osmagia
+      warrior: osmagia
+      archer: termeszet
+      assassin: arnyek
+      druid: termeszet
+      paladin: szent
+      death_knight: fagy
+      shaman: vihar
+      monk: szent
+      priest: szent
+      warlock: kaosz
+      demon_hunter: arnyek
+      evoker: tuz
+    # Kézi felülírások (spell-id → iskola) — bővítsd szabadon:
+    by-spell:
+      living_flame: tuz
+      frost_fever: fagy
+      holy_wrath: szent
+      shadowburn: arnyek
+      life_drain: arnyek
+      mind_blast: osmagia
   # ===== Baráti tűz (party-tudatos célzás) =====
   # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
   # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.

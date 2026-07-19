@@ -289,6 +289,8 @@ public final class IceSMPCore {
         this.factionManager = new FactionManager(plugin, configManager);
         this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
+        // Statikus bekötés a spell-iskola feloldáshoz (SpellDamageUtil — minta: ProtectionBridge).
+        hu.taliann.icesmp.utils.SpellDamageUtil.init(configManager, jobManager);
         this.catalystItemFactory = new CatalystItemFactory(plugin);
         this.captureItemFactory = new CaptureItemFactory(plugin);
         this.spellMasteryManager = new SpellMasteryManager(plugin, configManager, currencyManager, factionManager);

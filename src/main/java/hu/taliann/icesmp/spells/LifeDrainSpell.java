@@ -31,7 +31,7 @@ public final class LifeDrainSpell extends BaseSpell {
         }
 
         final double damage = balance("damage", DRAIN_AMOUNT);
-        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, target, damage);
+        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, target, damage, getId());
 
         final double heal = balance("heal", DRAIN_AMOUNT);
         final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);

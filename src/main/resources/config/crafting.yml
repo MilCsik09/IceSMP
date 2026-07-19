@@ -70,8 +70,19 @@ signature:
   # Bootstrap-regisztrált EGYEDI enchantok a signature itemeken (Jégfog, Vihartűz,
   # Vérszomj, Fagypáncél, Főnixtoll, Érc-érzék, Bokic Kegye) — a magyar nevük valódi
   # enchant-sorként jelenik meg a tooltipben (kliens-mod és resource pack nélkül).
-  # false = a craft nem stampeli rá (a már regisztrált enchantok megmaradnak a registryben).
-  custom-enchants: true
+  # A Fagypáncél és a Főnixtoll NEM csak dísz: iskola-counterek (fagymágia-, ill.
+  # tűzmágia-ellenállás — spells.magic-resist.school-per-level). Itemenként kapcsolható:
+  # items.<signature-id>: false = arra az itemre a craft nem stampeli rá.
+  custom-enchants:
+    enabled: true
+    items:
+      kallan_szeletelo: true
+      pyralingradi_tuzkopo: true
+      verszavanna_agyara: true
+      glatziendorfi_jegvert: true
+      fonix_tollkopeny: true
+      vasmuvek_csakanya: true
+      bokic_horgaszbot: true
   # Cryghaliris (BLUE)
   kallan:
     arrow-velocity-mult: 1.5   # a nyíl sebesség-szorzója

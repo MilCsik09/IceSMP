@@ -387,7 +387,7 @@ public final class ConfiguredSpell extends BaseSpell {
 
         final double liveDamage = liveDamage();
         if (liveDamage > 0.0D) {
-            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, target, liveDamage * power);
+            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, target, liveDamage * power, getId());
         }
 
         for (final PotionEffect effect : targetEffects) {

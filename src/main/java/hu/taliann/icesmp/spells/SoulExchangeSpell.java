@@ -72,7 +72,7 @@ public final class SoulExchangeSpell extends BaseSpell {
 
                 final double amount = living.getHealth() * exchangePercent;
                 if (shooterInCurrentRegion) {
-                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, amount);
+                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, amount, getId());
                 } else {
                     living.damage(amount);
                 }

@@ -34,7 +34,7 @@ public final class LivingFlameSpell extends BaseSpell {
 
         final double directDamage = balance("damage", 5.0D);
         final int directIgniteTicks = balanceInt("ignite-ticks", 3 * 20);
-        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, target, directDamage);
+        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, target, directDamage, getId());
         target.setFireTicks(Math.max(target.getFireTicks(), directIgniteTicks));
 
         final double splashRadius = balance("splash-radius", 2.5D);
@@ -48,7 +48,7 @@ public final class LivingFlameSpell extends BaseSpell {
                 continue;
             }
 
-            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, living, splashDamage);
+            hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, living, splashDamage, getId());
             living.setFireTicks(Math.max(living.getFireTicks(), splashIgniteTicks));
         }
 

@@ -761,4 +761,10 @@ készítenek (enchantelt könyv), amit **üllőn** vihetsz a páncélodra; darab
 csökkenti a bejövő spell-sebzést (max 3. szint — két azonos szintű könyv üllőn kombinálható).
 A vanília sebzés ellen nem véd — ez kifejezetten a mágia countere.
 
+**Iskolák:** minden varázslat egy **iskolához** tartozik (tűz, fagy, szent, árnyék, természet,
+vihar, káosz, ősmágia) — alapból a kaszt szabja meg (pl. a Paplovag szent, a Halállovag fagy,
+a Boszorkánymester káosz mágiával üt), de spellenként is testre szabható. A **Fagypáncél** és a
+**Főnixtoll** signature-vért nem csak dísz: a saját iskolájuk (fagy-, ill. tűzmágia) ellen
+külön ellenállást adnak, ami a Rúnavérttel összeadódik.
+
 ➡️ Tovább: [Specializációk](06-specializaciok.md) • [Vissza a tartalomhoz](README.md)

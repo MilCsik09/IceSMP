@@ -91,7 +91,7 @@ public final class HolyWrathSpell extends BaseSpell {
                 } else {
                     final double damage = living.getHealth() * damagePercent;
                     if (shooterInCurrentRegion) {
-                        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage);
+                        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage, getId());
                     } else {
                         living.damage(damage);
                     }

@@ -29,8 +29,6 @@ import java.util.Map;
  */
 public final class SpellDamageListener implements Listener {
 
-    private static final NamespacedKey RUNAVERT_KEY = NamespacedKey.fromString("icesmp:runavert");
-
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
@@ -41,59 +39,75 @@ public final class SpellDamageListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onMagicDamage(final EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof Player victim) || !SpellDamageUtil.isMagicDamage(event.getDamageSource())) {
+        if (!(event.getEntity() instanceof Player victim)) {
             return;
         }
-        final Enchantment runavert = resolveRunavert();
-        if (runavert == null) {
-            return;
-        }
-        int levels = 0;
-        for (final ItemStack armor : victim.getInventory().getArmorContents()) {
-            if (armor != null && armor.hasItemMeta()) {
-                levels += armor.getEnchantmentLevel(runavert);
-            }
-        }
-        if (levels <= 0) {
+        final hu.taliann.icesmp.data.SpellSchool school = SpellDamageUtil.schoolOf(event.getDamageSource());
+        if (school == null) {
             return;
         }
         final double perLevel = Math.max(0.0D, configManager.getDouble("spells.magic-resist.per-level", 0.08D));
+        final double schoolPerLevel = Math.max(0.0D, configManager.getDouble("spells.magic-resist.school-per-level", 0.10D));
         final double cap = Math.min(1.0D, Math.max(0.0D, configManager.getDouble("spells.magic-resist.max-reduction", 0.6D)));
-        final double reduction = Math.min(cap, levels * perLevel);
+
+        // Rúnavért: generikus, MINDEN iskola ellen; iskola-counter (pl. Fagypáncél a
+        // fagymágia, Főnixtoll a tűzmágia ellen): csak a találat iskolájára hat, de
+        // szintenként erősebb — a kettő összeadódik, a közös plafonig.
+        final Enchantment runavert = resolveEnchant("icesmp:runavert");
+        final Enchantment schoolCounter = school.resistEnchantId() == null
+                ? null : resolveEnchant("icesmp:" + school.resistEnchantId());
+        int genericLevels = 0;
+        int schoolLevels = 0;
+        for (final ItemStack armor : victim.getInventory().getArmorContents()) {
+            if (armor == null || !armor.hasItemMeta()) {
+                continue;
+            }
+            if (runavert != null) {
+                genericLevels += armor.getEnchantmentLevel(runavert);
+            }
+            if (schoolCounter != null) {
+                schoolLevels += armor.getEnchantmentLevel(schoolCounter);
+            }
+        }
+        final double reduction = Math.min(cap, genericLevels * perLevel + schoolLevels * schoolPerLevel);
         if (reduction <= 0.0D) {
             return;
         }
         event.setDamage(event.getDamage() * (1.0D - reduction));
         victim.sendActionBar(messageManager.getMessage("spell-resist-notice",
-                "<light_purple>✦ A Rúnavért elnyelte a mágia egy részét (−{percent}%).</light_purple>",
-                Map.of("percent", String.valueOf(Math.round(reduction * 100.0D)))));
+                "<light_purple>✦ A rúnáid elnyelték a {school} egy részét (−{percent}%).</light_purple>",
+                Map.of("school", school.getDisplayName(),
+                        "percent", String.valueOf(Math.round(reduction * 100.0D)))));
     }
 
     @EventHandler
     public void onMagicDeath(final PlayerDeathEvent event) {
         final EntityDamageEvent last = event.getEntity().getLastDamageCause();
-        if (last == null || !SpellDamageUtil.isMagicDamage(last.getDamageSource())) {
+        final hu.taliann.icesmp.data.SpellSchool school = last == null
+                ? null : SpellDamageUtil.schoolOf(last.getDamageSource());
+        if (school == null) {
             return;
         }
         // A saját damage-type message-id-jét a kliens nem tudná fordítani — magyar üzenet
-        // szerver-oldalról. Ha volt gyilkos, nevesítjük.
+        // szerver-oldalról, az ISKOLA nevével. Ha volt gyilkos, nevesítjük.
         final Player killer = event.getEntity().getKiller();
         final Component message = killer != null
                 ? messageManager.getMessage("spell-death-by-caster",
-                        "<gray>{victim} elemésztette {killer} mágiája.</gray>",
-                        Map.of("victim", event.getEntity().getName(), "killer", killer.getName()))
+                        "<gray>{victim} elemésztette {killer} {school}ja.</gray>",
+                        Map.of("victim", event.getEntity().getName(), "killer", killer.getName(),
+                                "school", school.getDisplayName()))
                 : messageManager.getMessage("spell-death",
-                        "<gray>{victim} elemésztette az ősmágia.</gray>",
-                        Map.of("victim", event.getEntity().getName()));
+                        "<gray>{victim} elemésztette a {school}.</gray>",
+                        Map.of("victim", event.getEntity().getName(), "school", school.getDisplayName()));
         event.deathMessage(message);
     }
 
-    /** A Rúnavért enchant a registryből (null, ha a bootstrap-regisztráció hiányzik). */
-    private static Enchantment resolveRunavert() {
+    /** Enchant a registryből kulcs alapján (null, ha a bootstrap-regisztráció hiányzik). */
+    private static Enchantment resolveEnchant(final String key) {
         try {
             return io.papermc.paper.registry.RegistryAccess.registryAccess()
                     .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
-                    .get(RUNAVERT_KEY);
+                    .get(NamespacedKey.fromString(key));
         } catch (final Exception exception) {
             return null;
         }

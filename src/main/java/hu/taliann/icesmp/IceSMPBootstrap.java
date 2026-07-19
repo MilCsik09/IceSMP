@@ -32,18 +32,23 @@ public final class IceSMPBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final @NonNull BootstrapContext context) {
-        // Saját damage-type a spelleknek: a varázslat-sebzés megkülönböztethető minden
-        // vanília forrástól (icesmp:magia), így lehet rá célzott ellenállást (Rúnavért
-        // enchant) és saját halál-üzenetet adni. A spellek a SpellDamageUtil-on át ütnek
-        // ezzel a típussal; a message-id kliens-oldalon nem fordul, ezért a magyar
+        // Saját damage-type MINDEN varázslat-iskolának (tűz/fagy/szent/árnyék/természet/
+        // vihar/káosz + ősmágia): a spell-sebzés iskolánként megkülönböztethető, ellenállás
+        // (Rúnavért generikus + iskola-counter enchantok) és saját halál-üzenet adható rá.
+        // A spell→iskola besorolás configból jön (spells.yml spell-schools) — a spellek a
+        // SpellDamageUtil-on át ütnek; a message-id kliens-oldalon nem fordul, a magyar
         // halál-üzenetet a SpellDamageListener írja felül.
-        context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.freeze().newHandler(event ->
+        context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.freeze().newHandler(event -> {
+            for (final hu.taliann.icesmp.data.SpellSchool school : hu.taliann.icesmp.data.SpellSchool.values()) {
                 event.registry().register(
-                        io.papermc.paper.registry.keys.DamageTypeKeys.create(net.kyori.adventure.key.Key.key("icesmp", "magia")),
+                        io.papermc.paper.registry.keys.DamageTypeKeys.create(
+                                net.kyori.adventure.key.Key.key("icesmp", school.getTypeId())),
                         builder -> builder
-                                .messageId("death.attack.icesmp_magia")
+                                .messageId("death.attack.icesmp_" + school.getTypeId())
                                 .damageScaling(org.bukkit.damage.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER)
-                                .exhaustion(0.1F))));
+                                .exhaustion(0.1F));
+            }
+        }));
 
         context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> {
             // Kulcsok: hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE — a runtime

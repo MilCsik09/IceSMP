@@ -62,7 +62,7 @@ public final class FrostFeverSpell extends BaseSpell {
                         || SpellTargetingUtil.isAlly(player, living) || !hit.add(living.getUniqueId())) {
                     continue;
                 }
-                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, living, damage);
+                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(player, living, damage, getId());
                 living.setFreezeTicks(Math.max(living.getFreezeTicks(), freezeTicks));
                 living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessTicks, slownessAmplifier, false, true, true));
             }

@@ -161,8 +161,10 @@ public final class ProfessionRecipeBookListener implements Listener {
                 }
             }
             // Bootstrap-regisztrált signature-enchant (IceSMPBootstrap): a lore-név valódi
-            // enchant-sorként jelenik meg a tooltipben. Registry-olvasás — fagyott, szál-biztos.
-            if (configManager.getBoolean("signature.custom-enchants", true)) {
+            // enchant-sorként jelenik meg a tooltipben; a Fagypáncél/Főnixtoll egyben
+            // iskola-counter is. Globális + itemenkénti kapcsoló (élőben olvasva).
+            if (configManager.getBoolean("signature.custom-enchants.enabled", true)
+                    && configManager.getBoolean("signature.custom-enchants.items." + recipe.signature(), true)) {
                 final net.kyori.adventure.key.Key enchantKey =
                         hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.get(recipe.signature());
                 if (enchantKey != null) {
