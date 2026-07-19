@@ -63,7 +63,7 @@ public final class SpellVfx {
                 case SCULK_SOUL, SCULK_CHARGE, SQUID_INK, ASH, SMOKE, LARGE_SMOKE -> SHADOW;
                 case HAPPY_VILLAGER, COMPOSTER, SPORE_BLOSSOM_AIR -> NATURE;
                 case WITCH, PORTAL, DRAGON_BREATH, REVERSE_PORTAL -> ARCANE;
-                case SOUL, SPELL_WITCH, ANGRY_VILLAGER -> DECAY;
+                case SOUL, ANGRY_VILLAGER -> DECAY;
                 case ELECTRIC_SPARK, FIREWORK, SWEEP_ATTACK -> STORM;
                 case HEART, DAMAGE_INDICATOR, CRIT -> BLOOD;
                 default -> NEUTRAL;
