@@ -33,14 +33,19 @@ helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyi
 > 💬 A **chatben a neved a frakciód színében** jelenik meg (a rang-prefixszel együtt) — így
 > mindenki azonnal látja, ki melyik oldalon áll.
 
-## A Sötét frakció — fontos tudnivalók ⚫
+## ⚫ A Sötét frakció — A Kitaszítottak
 
-A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.
+A Sötét frakció nem egy „sima választás" — ez a **börtön a világ végén**, a **Kitaszítottak**
+száműzetése, a Néma Királynő árnyéka. **Kétféleképpen** kerülsz ide:
 
-- **Csak az léphet be, akit bűnössé (sinner) bélyegeztek.**
-- Belépéskor megköttetik a **sötét paktum**: ettől kezdve a bűnös jelölést **soha nem lehet
-  levenni** — még akkor sem, ha elhagyod a frakciót. Az **egyetlen** visszaút a **vezeklés
-  küldetéslánc** (lásd [Küldetések](12-kuldetesek.md)).
+- **Bűnözőként:** akit **4 bűnnél (sinner)** a világ automatikusan ide **száműz** (lásd lentebb).
+- **Lelepleződött Suttogóként:** akit rajtakapnak, hogy titokban **a Suttogók** hálózatát szolgálja
+  (lásd 🔜 lentebb), azt egy csapásra ide veti a bélyeg.
+
+Belépéskor megköttetik a **sötét paktum**: a bűnös jelölést **soha nem lehet levenni** — még akkor
+sem, ha elhagyod a frakciót. Az **egyetlen** visszaút a **vezeklés-küldetéslánc** (lásd
+[Küldetések](12-kuldetesek.md)). Cserébe tiéd a **legerősebb PvE-passzív**: az élőhalottak békén
+hagynak, s a wither sem árt — a Néma Királynő megjelöli, de meg is óvja a szolgáit.
 
 ## Hogyan leszek bűnös (sinner)?
 
@@ -71,6 +76,30 @@ Ha **megölsz egy körözött bűnözőt**:
 - a bűnöző **bűnszámlálója nullázódik** (a bűnös-jelölése viszont megmarad).
 
 Így a bűnözés kockázatos: minél többet vétkezel, annál nagyobb célpont vagy a fejvadászoknak.
+
+## 🔜 A Suttogók — a rejtett hálózat *(tervezett)*
+
+> *Ez a rendszer még fejlesztés alatt áll — a lore már számol vele, a mechanika hamarosan érkezik.*
+
+A **Suttogók** (Az Éjszaka Gyermekei) nem külön frakció, hanem egy **titkos státusz**, amely a
+**látható frakciód fölé** rétegződik. Piros, Kék vagy Semleges maradsz mindenki szemében — miközben
+titkon a Néma Királynő ügyét szolgálod, és **sötét-mágiájú tárgyakhoz** jutsz. A hovatartozásod
+kívülről **láthatatlan**: sötét mágia rejti.
+
+**Hogyan csatlakozol?** Egy **titkos, éjszakai rítussal** — magányosan (más játékos nélkül a
+közeledben), egy elrejtett **Suttogó-oltárnál**, ahol felajánlod a hűségedet és egy áldozatot. A
+rítus helye és módja maga is rejtély: lore-nyomokból, egy titkos hírnöktől vagy egy ritka „meghívóból"
+derül ki.
+
+**Hogyan lepleződsz le?** A sötét erő nem tűri a napvilágot:
+- ha **közterületen, mások szeme láttára használsz sötét mágiát** (vagy Suttogó-tárgyat);
+- ha **rajtakapnak** egy rítuson vagy egy **áruláson** (frakciótárs hátbaszúrása);
+- ha a **gyanú** ellened gyűlik, míg át nem üt a bélyeg.
+
+**Mi történik ekkor?** A titkos Suttogóból egy csapásra **Kitaszított** lesz: **bűnössé** válsz, a
+világ **száműz a Sötét frakcióba**, és **azonnali vérdíj** kerül a fejedre — a többiek vadászni
+kezdenek rád. A leplet nem lehet visszaölteni; innen csak a **vezeklés** vezet vissza. *(A pontos
+mechanika-terv — rítus, gyanú-mérő, vizuális jelek — a fejlesztői ötlettár K9 tétele.)*
 
 ## Frakció-viszonyok (reputáció)
 

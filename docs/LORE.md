@@ -155,12 +155,23 @@ nyomtalanul: a Menedék népének lelkében **kapzsiság és korrupció** formá
 legügyesebb csempészek ártalmatlannak tűnő tárgyakba rejtett fegyvereket juttatnak a falak közé,
 kicselezve a Vámház őreit.
 
-**A Suttogók — az álca leple.** A **Suttogók** (más néven **Az Éjszaka Gyermekei**) titkos szektája azt
-vallja, hogy az emberiség bűnei miatt a birodalmaknak buknia kell, és a Néma Királynőnek igaza van.
-Tagjaikat **sötét mágia álcázza**: egy Suttogó megőrzi a látszólagos frakcióját és arcát, hovatartozása
-kívülről **láthatatlan** marad — így épülhetnek be észrevétlenül mind a három birodalomba. Kilétükre
-csakis a **tetteikből** — árulásból, sötét rítusból, egy lebukott merényletből — derülhet fény; s ha
-lelepleződnek, **vérdíj** kerül a fejükre.
+**A Suttogók — az ideológiai fertőzés.** A **Suttogók** (más néven **Az Éjszaka Gyermekei**) nem
+birodalom, nem vérvonal és nem hely — hanem **gondolat**, amely úgy terjed, mint a dögvész. A Néma
+Királynő első suttogása nem halt el a Hu. 698-as éjszakán; ott visszhangzik azóta is a világ minden
+repedésében, s halkan kérdi mindenkitől: *„Megérdemlik-e a birodalmak, hogy fennmaradjanak?"* Aki elég
+sokáig hallgatja, annak szívében gyökeret ver a meggyőződés, hogy Eleftheriának igaza van — s hogy a
+régi, rothadó rendnek buknia kell.
+
+Ez a fertőzés **nem válogat frakció szerint**. Megérintheti a perinfernicitasi légióst, a cryghalirisi
+diplomatát vagy a caldesterai kereskedőt egyaránt; a Suttogó megtartja arcát, színét és esküjét, s ott
+él tovább a szomszédja, a bajtársa, a királya mellett — miközben titkon a világ végét munkálja. A
+**sötét mágia** leple elrejti valódi hovatartozását: kívülről semmi sem árulja el, kin ütött ki a kór.
+
+Ám a homály ára a szüntelen rettegés. A sötét erő nem tűri sokáig a rejtőzést: aki **közterületen** nyúl
+hozzá, akit **rajtakapnak** egy tiltott rítuson vagy egy áruláson, azon **átüt a bélyeg**. A
+lelepleződött Suttogóból egyetlen szívdobbanás alatt **Kitaszított** lesz — a Néma Királynő
+megbélyegzett, számkivetett szolgája, akinek fejére vérdíj kerül, s akit ettől fogva a világ minden
+becsületes pengéje vadászni kezd.
 
 ---
 
@@ -174,7 +185,7 @@ már illeszkednek** — nem kell hozzájuk nyúlni, csak a nevek/lore placeholde
 | `RED` | **Perinfernicitas** | tűz/láva-immunitás | Pyralingrad | **Parázsló Parals** | Soleil / Főnix |
 | `BLUE` | **Cryghaliris** | fagy + fulladás-immunitás | Glatziendorf | **Hópihér-veret** | Kallan / Sárkány |
 | `NEUTRAL` | **Ryanora & Caldestera** | zuhanás-immunitás, békés mobok, adómentes | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
-| `DARK` | **A Suttogók / Néma Királynő** | wither-immunitás, élőhalottak békén hagyják | — (rejtett) | — | Eleftheria |
+| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | — (száműzöttek) | — | Eleftheria / Néma Királynő |
 
 > A jelenlegi játékos-nevek (`factions.yml`: „Piros/Kék/Semleges/Sötét", `economy.yml`: „… Token")
 > **placeholderek** — a lore ezekre a tematikus nevekre cserélné őket (rövid + hosszú alak kell a
@@ -262,11 +273,19 @@ sárkánylovas), vagy frakció-rangot vált ki.
 - **Opálos Emlékszilánk** — „Ha a füledhez emeled, csatazajt és egy rég halott király parancsait hallod."
   *(Az **Arany Liga** és a **Szabad Városok Szövetsége** letűnt korának emlékét is ezek őrzik.)*
 
-### 3. A **Suttogók** (Az Éjszaka Gyermekei) — titkos DARK-szekta
-Élő emberek, akiket **sötét mágia álcáz**: megtartják látszólagos frakciójukat, hovatartozásuk rejtve
-marad, s bárki csatlakozhat (akár titokban). Sötét-mágiájú itemeket kapnak, de ha a tetteik
-lelepleződnek, **vérdíj** kerül a fejükre. (Kötődik a `DARK` frakcióhoz.) Nyomozós RP-mag. *(Lásd: VII.
-fejezet.)*
+### 3. A Suttogók és a Kitaszítottak — a rejtett hálózat és a száműzetés (hibrid modell)
+**Két rétegű rendszer**, amely feloldja a lore „titkos szekta" és a kód „bűnözői száműzetés"
+kettősségét:
+- **Suttogó = rejtett STÁTUSZ (nem frakció):** a játékos **látható frakciója fölé** rétegződik — Piros,
+  Kék vagy Semleges maradsz, miközben titkon a hálózat tagja vagy, és sötét-mágiájú itemekhez jutsz.
+  Kívülről semmi sem árul el.
+- **`DARK` frakció = a Kitaszítottak fizikai száműzetése:** ide zuhannak a **lelepleződött Suttogók**
+  ÉS a közönséges **bűnösök** (4 bűn) egyaránt — örök jelöléssel, fejükön vérdíjjal; visszaút csak a
+  vezeklés-küldetéslánccal.
+- A kettőt a **lelepleződés** köti össze (sötét mágia közterületen, rajtakapott rítus/árulás).
+
+A csatlakozási rítus, a lelepleződés-triggerek és az Outlaw-átváltás részletes terve:
+[ideas/K-lore.md → K9](ideas/K-lore.md). *(Narratíva: VII. fejezet.)*
 
 ### 4. Caldestera alvilága — csempészet és feketepiac
 Caldesterában **tilos fegyvert viselni** (Arkynn öröklött mérge: kapzsiság és korrupció) → a

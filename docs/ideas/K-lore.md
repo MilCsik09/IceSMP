@@ -182,25 +182,69 @@ talent/rang-rendszer, quest/loot-forrás, `MobLootListener`.
 **Buktatók:** A class-váltás mély rendszer-érintés — óvatos horgony (ne törje a meglévő progressziót);
 a szilánk-gazdaság inflálódhat; egyértelmű UI kell a „hány szilánk kell még" állapothoz.
 
-## K9. A Suttogók — titkos DARK-szekta
+## K9. A Suttogók — a rejtett hálózat és a Kitaszítottak (hibrid)
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
-**Mi ez:** Élő emberek, akik a Néma Királynő igazát vallják, és a birodalmak bukását akarják; mind a
-három frakcióba beépülnek. Bárki csatlakozhat (akár **titokban**): sötét-mágiájú itemeket kapnak, de
-ha lelepleződnek, **vérdíj** kerül a fejükre. A `DARK` frakció „aktív" oldala.
+**Mi ez:** A lore „titkos szekta" koncepciójának és a kód „bűnözői száműzetés" (`DARK`) mechanikájának
+**összehangolása egy hibrid modellben**. A **Suttogó** egy REJTETT STÁTUSZ, amely bárki látható
+frakciója (RED/BLUE/NEUTRAL) fölé rétegződik — ideológiai „fertőzés", nem frakcióváltás. A `DARK`
+frakció marad a **Kitaszítottak fizikai száműzetése**: ide zuhannak a lelepleződött Suttogók ÉS a
+közönséges bűnösök. A kettőt a **lelepleződés** köti össze.
 
-**Hogyan működne:** a `DARK` frakció/bűn-rendszer kiterjesztése egy rejtett tagsággal — a Suttogó
-megtartja a látszólagos frakcióját, de titkos DARK-célokat/itemeket kap; leleplezéskor (áruló-akció,
-lebukás) a meglévő **bűn/vérdíj** mechanika lép be. Nyomozós RP-mag: a többiek gyanúsíthatnak.
+**Hogyan működne:**
 
-**Miért jó:** **Belső ellenség + RP-mélység** — árulás, gyanú, vérdíj-vadászat. A `DARK` frakció ma
-inkább „bűnös-jelölés"; ez ad neki **saját ágenciát és tartalmat**.
+*1) Rejtett státusz (a fertőzés):* egy `whisperer` PDC-flag + perzisztens állapot (új `WhisperManager`).
+A játékos megtartja látható frakcióját, HUD-ját, chat-színét — kívülről semmi sem árul el. Cserébe:
+- külön **titkos chat-csatorna** (`/w <üzenet>` — csak Suttogók látják), a Néma Királynő „suttogásaként";
+- hozzáférés a **sötét unique-itemekhez** (K5 / K-katalógus: Árnyékpor-vonal, Eleftheria Könnye);
+- opcionális titkos **hálózati célok** (heti „szabotázs"-quest: rontsd egy főváros közhangulatát).
 
-**Építőkövek:** `FactionManager` (`DARK`), bűn/vérdíj-rendszer, titkos-tagság állapot (PDC/perzisztens),
-sötét unique-itemek (K-katalógus), esetleg titkos chat/csatorna.
+*2) Csatlakozás — a Sötét Rítus:* a meglévő **rituálé-oltár rendszert** (relics.yml altar-blokk minta)
+újrahasznosítva. Egy rejtett **Suttogó-oltár** (pl. SOUL_FIRE + SCULK + CRYING_OBSIDIAN mag-struktúra),
+amit **éjjel, magányosan** (nincs másik játékos X blokkon belül — a titok feltétele) SHIFT+jobb kattal
+aktiválsz, kézben a **„Suttogás" meghívóval** (ritka drop / titkos NPC / lore-nyom). Az áldozat a
+meggyőződés ára: **saját vér** (HP-áldozat, a vérmágia-tónusban) + egy égetett tárgy/valuta (money
+sink). Sikerkor fekete köd lepi el a képernyőt, wither-suttogás szól, s a `whisperer` flag felkerül.
+(A rítus helye/receptje maga is felfedezendő — nyomozós RP.)
 
-**Buktatók:** Egyensúly és moderáció — a titkos szerep ne adjon tisztességtelen előnyt; a leleplezés
-feltételei legyenek világosak; ne váljon griefing-eszközzé (a vérdíj/lebukás fékez).
+*3) Lelepleződés — a gyanú-mérő:* rejtett, játékosonkénti **gyanú-pont** (suspicion), amely
+dark-akcióktól nő és lassan csökken:
+- **közterületen** (más nem-Suttogó játékos látótávján belül) **sötét mágia / Suttogó-tárgy használata**
+  → nagy gyanú-ugrás + azonnali kis „árulkodó jel" (fekete SMOKE/SOUL particle + halk suttogás a
+  közelállóknak);
+- **rajtakapott árulás** (frakciótárs megölése Suttogóként) → nagy ugrás;
+- **rajtakapott rítus** (más látja az oltár-aktiválást) → nagy ugrás;
+- **tett-alapú tanúzás:** aki LÁTTA a sötét mágiát, kap egy rövid életű **„Tanú" tokent**, amivel
+  `/whisper accuse <játékos>`; a vádak halmozódnak, elég tanú → leleplezés (ez a nyomozós mag);
+- *(RP-tell: a DARK-passzív miatt az élőhalottak békén hagyják — az éber megfigyelő gyanút foghat.)*
+
+*4) A leleplezés pillanata (vizuális dráma):* amikor a gyanú átüt a küszöbön, a világ „lerántja az
+álcát": a játékos körül **kialszik a fény**, fekete SOUL-particle-örvény tör fel, mély wither/raid-kürt
+szól, a **neve sötétlilára vált** minden közelállónak, fölé „💀 Kitaszított" jelölés kerül, és
+ominózus **szerver-broadcast**: *„A Suttogás lelepleződött: <név> a Néma Királynő szolgája!"*
+
+*5) Suttogóból Kitaszított:* a leleplezés a meglévő **bűn/száműzetés-mechanikára** csatlakozik: a
+játékos **bűnössé** válik, a rendszer **átteszi a `DARK` frakcióba** (a Kitaszítottak közé), a
+`whisperer` álca lehullik, és **azonnali, emelt vérdíj** kerül a fejére (áruló → magasabb fejpénz).
+Megtartja a sötét-item hozzáférést, de már mindenki vadássza. Visszaút: csak a **vezeklés-küldetéslánc**.
+
+**Miért jó:** feloldja a lore↔kód ellentmondást; **belső ellenség + nyomozós RP** (árulás, gyanú,
+tanúzás, vérdíj-vadászat); a `DARK` frakció puszta „bűnös-jelölésből" **kétforrású, drámai
+száműzetéssé** válik, saját tartalommal.
+
+**Építőkövek:** új `WhisperManager` (PDC `whisperer`-flag + suspicion, `PlayerStateCleanup`),
+rituálé-oltár minta (relics.yml altar), bűn/vérdíj-rendszer (átváltás Kitaszítottá), spell/item-használat
+hook a gyanú-növeléshez, particle/sound/broadcast a leleplezéshez, titkos chat-csatorna, sötét
+unique-itemek (K5).
+
+**Buktatók (Minecraft/Paper + Folia):**
+- **Folia:** a közeli-játékos-szkennelés régió-lokális és kicsi; a más játékosnak szóló jel/particle a
+  cél `getScheduler()`-én; a broadcast a `getGlobalRegionScheduler()`-en.
+- **Balansz:** a leleplezés VALÓS sötét tettet igényeljen (ne véletlen); a gyanú lassan csökkenjen; új
+  csatlakozónak grace; a Suttogó-perkek ne legyenek pay-to-win a frakció-passzív fölött.
+- **Anti-grief/moderáció:** a „Tanú"-vád ne legyen tömegesen hamisítható (cooldown, valódi látótáv, a
+  vád csak gyanút ad, nem azonnali bant); a vérdíj/lebukás féken tartja a titkos előnyt.
+- **Config:** minden küszöb (gyanú-súlyok, HP-áldozat, grace, broadcast on/off) configból.
 
 ## K10. Caldestera feketepiac — csempészet és rejtett fegyverek
 **Munka:** 🟡 • **Érték:** ⭐⭐
