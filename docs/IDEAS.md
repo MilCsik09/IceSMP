@@ -32,6 +32,7 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 | **J) Questek, story, progresszió** | [ideas/J-quest.md](ideas/J-quest.md) | J1–J24 | Új objektíva-típusok, story-eszközök (döntés-flagek, fejezetek), NPC-emlékezet, quest-admin |
 | **K) Lore-integráció / világ-tartalom** | [ideas/K-lore.md](ideas/K-lore.md) | K1–K10 → **L-be költözött** | A [LORE.md](LORE.md) beépítési terve — a teljes kategória az L-válogatás „A kódex beépítési terve" szakaszában él |
 | **L) Lore-kiemelt válogatás** | [ideas/L-lore-kiemelt.md](ideas/L-lore-kiemelt.md) | 49 tétel | A lore-vezérelt tartalmi ütemterv: a kódex beépítési terve (K1–K10) + a legerősebben illeszkedő ötletek (S: 6 • A: 27 • B/határeset: 6), lore-horgonnyal |
+| **M) Bootstrap / Loader** | [ideas/M-bootstrap.md](ideas/M-bootstrap.md) | 10 tétel | A Paper bootstrap/loader-szint kiaknázása: rúna-tekercsek, zóna-damage-type-ok, átok-enchant, RP-függő registry-ötletek (banner/festmény/zene/trim) |
 
 ---
 

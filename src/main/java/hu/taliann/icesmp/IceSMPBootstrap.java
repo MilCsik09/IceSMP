@@ -24,8 +24,10 @@ import org.jspecify.annotations.NonNull;
  * {@code signature.custom-enchants} kulcs kapcsolja (crafting.yml, élőben olvasva).
  *
  * <p>FIGYELEM: a bootstrap a config-rendszer előtt fut, ezért itt nincs config-kapu —
- * a regisztráció önmagában ártalmatlan (weight=1 mellett az enchant-asztalról
- * gyakorlatilag sosem jön, a megszerzés útja a signature craft; a stamp kapcsolható).
+ * a regisztráció önmagában ártalmatlan: a saját enchantok NINCSENEK a
+ * #minecraft:in_enchanting_table tagben, így az enchant-asztalról EGYÁLTALÁN nem
+ * jönnek — a megszerzés útja kizárólag a signature craft / a tekercs-receptek
+ * (a stamp itemenként kapcsolható).
  */
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class IceSMPBootstrap implements PluginBootstrap {
@@ -86,9 +88,9 @@ public final class IceSMPBootstrap implements PluginBootstrap {
     }
 
     /**
-     * Egy signature-enchant regisztrálása. Szándékosan enchant-asztal-idegen: weight=1
-     * (gyakorlatilag sosem sorsolódik), 1 a max szint, a megszerzés útja a signature
-     * craft. A leírás a magyar lore-név — ezt látja a játékos a tooltipben.
+     * Egy signature-enchant regisztrálása. Enchant-asztalról nem szerezhető (nem tagja
+     * az in_enchanting_table tagnek); a megszerzés útja a signature craft. A leírás a
+     * magyar lore-név — ezt látja a játékos a tooltipben.
      */
     private static void register(final io.papermc.paper.registry.event.RegistryFreezeEvent<org.bukkit.enchantments.Enchantment, EnchantmentRegistryEntry.Builder> event,
                                  final String id, final String displayName, final NamedTextColor color,

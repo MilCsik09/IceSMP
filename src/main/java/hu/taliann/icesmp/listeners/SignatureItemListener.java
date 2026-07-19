@@ -72,6 +72,29 @@ public final class SignatureItemListener implements Listener {
         this.kantarAppliedKey = new NamespacedKey(plugin, "sig_kantar");
         this.kantarSpeedKey = new NamespacedKey(plugin, "sig_kantar_speed");
         this.szarvasCooldownKey = new NamespacedKey(plugin, "sig_szarvas_cd");
+        this.slowArrowKey = new NamespacedKey(plugin, "sig_jegfog");
+        this.igniteArrowKey = new NamespacedKey(plugin, "sig_vihartuz");
+    }
+
+    /** Jégfog/Vihartűz lövedék-jelölők (a rider-effektek becsapódáskor olvassák). */
+    private final NamespacedKey slowArrowKey;
+    private final NamespacedKey igniteArrowKey;
+
+    /** Bootstrap-regisztrált enchant a registryből (null, ha a regisztráció hiányzik). */
+    private static org.bukkit.enchantments.Enchantment enchant(final String id) {
+        try {
+            return io.papermc.paper.registry.RegistryAccess.registryAccess()
+                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                    .get(org.bukkit.NamespacedKey.fromString("icesmp:" + id));
+        } catch (final Exception exception) {
+            return null;
+        }
+    }
+
+    /** Az item viseli-e a megadott icesmp-enchantot (a rider-effektek kapuja). */
+    private static boolean hasEnchant(final ItemStack item, final String id) {
+        final org.bukkit.enchantments.Enchantment ench = enchant(id);
+        return ench != null && item != null && item.containsEnchantment(ench);
     }
 
     /** The signature id of an item, or null. */
@@ -95,12 +118,20 @@ public final class SignatureItemListener implements Listener {
             if (pierce > 0.0D) {
                 projectile.getPersistentDataContainer().set(pierceKey, PersistentDataType.DOUBLE, pierce);
             }
+            // Jégfog rider: a jég harap — a nyíl rövid lassítást visz (enchant-kapus).
+            if (hasEnchant(event.getBow(), "jegfog")) {
+                projectile.getPersistentDataContainer().set(slowArrowKey, PersistentDataType.BYTE, (byte) 1);
+            }
         } else if (TUZKOPO.equals(sig)) {
             // A Tűzköpő lövedéke a „sivatagi vihar sebességével" repül; a felhúzási gyorsítást a
             // craftkor kapott Quick Charge adja (ProfessionRecipeBookListener).
             final double mult = Math.max(1.0D, configManager.getDouble("signature.tuzkopo.arrow-velocity-mult", 1.5D));
             final Entity projectile = event.getProjectile();
             projectile.setVelocity(projectile.getVelocity().multiply(mult));
+            // Vihartűz rider: a lövedék parazsat hord — becsapódáskor meggyújtja a célt.
+            if (hasEnchant(event.getBow(), "vihartuz")) {
+                projectile.getPersistentDataContainer().set(igniteArrowKey, PersistentDataType.BYTE, (byte) 1);
+            }
         }
     }
 
@@ -122,6 +153,17 @@ public final class SignatureItemListener implements Listener {
                 ? Math.max(1.0D, configManager.getDouble("signature.agyar.offhand-axe-mult", 1.3D))
                 : Math.max(1.0D, configManager.getDouble("signature.agyar.damage-mult", 1.15D));
         event.setDamage(event.getDamage() * mult);
+        // Vérszomj rider: a kiontott vér táplál — a bevitt sebzés kis része gyógyít
+        // (enchant-kapus; a támadó a saját szálán van, a heal biztonságos).
+        if (hasEnchant(attacker.getInventory().getItemInMainHand(), "verszomj")) {
+            final double ratio = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-lifesteal", 0.1D));
+            final double cap = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-heal-cap", 2.0D));
+            final double heal = Math.min(cap, event.getFinalDamage() * ratio);
+            final AttributeInstance maxHealth = attacker.getAttribute(Attribute.MAX_HEALTH);
+            if (heal > 0.0D && maxHealth != null) {
+                attacker.setHealth(Math.min(maxHealth.getValue(), attacker.getHealth() + heal));
+            }
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -129,6 +171,20 @@ public final class SignatureItemListener implements Listener {
         if (!(event.getDamager() instanceof AbstractArrow arrow)) {
             return;
         }
+        // Jégfog/Vihartűz rider-effektek a becsapódáskor (az áldozat az event entitása —
+        // a saját régió-szálán vagyunk, az érintés biztonságos).
+        if (event.getEntity() instanceof org.bukkit.entity.LivingEntity struck) {
+            if (arrow.getPersistentDataContainer().has(slowArrowKey, PersistentDataType.BYTE)) {
+                final int seconds = Math.max(1, configManager.getInt("signature.enchant-riders.jegfog-slow-seconds", 2));
+                struck.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.SLOWNESS, seconds * 20, 0, true, true, true));
+            }
+            if (arrow.getPersistentDataContainer().has(igniteArrowKey, PersistentDataType.BYTE)) {
+                final int fireTicks = Math.max(1, configManager.getInt("signature.enchant-riders.vihartuz-fire-ticks", 40));
+                struck.setFireTicks(Math.max(struck.getFireTicks(), fireTicks));
+            }
+        }
+
         final Double pierce = arrow.getPersistentDataContainer().get(pierceKey, PersistentDataType.DOUBLE);
         if (pierce == null || pierce <= 0.0D) {
             return;
@@ -241,6 +297,14 @@ public final class SignatureItemListener implements Listener {
         for (final ItemStack drop : block.getDrops(tool, player)) {
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5D, 0.5D, 0.5D), drop.clone());
         }
+        // Érc-érzék rider: a telér "énekel" — kis bónusz tapasztalat-gömb (enchant-kapus).
+        if (hasEnchant(tool, "erc_erzek")) {
+            final int xp = Math.max(0, configManager.getInt("signature.enchant-riders.erc-erzek-xp", 2));
+            if (xp > 0) {
+                block.getWorld().spawn(block.getLocation().add(0.5D, 0.5D, 0.5D),
+                        org.bukkit.entity.ExperienceOrb.class, orb -> orb.setExperience(xp));
+            }
+        }
     }
 
     // ==================== Bokic-menti Horgászbot (K4) ====================
@@ -274,6 +338,25 @@ public final class SignatureItemListener implements Listener {
         player.getWorld().dropItemNaturally(player.getLocation(), caughtItem.getItemStack().clone());
         player.sendActionBar(messageManager.getMessage("signature-horgaszbot-bonus",
                 "<aqua>🎣 A Bokic bősége — dupla fogás!</aqua>"));
+    }
+
+    /**
+     * Bokic Kegye rider: minden fogás rövid Szerencsét ad (a vanília horgász-zsákmánytáblát
+     * javítja) — enchant-kapus, a duplázó perctől függetlenül fut, hogy a láz-sapka ne érintse.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onFishLuck(final org.bukkit.event.player.PlayerFishEvent event) {
+        if (event.getState() != org.bukkit.event.player.PlayerFishEvent.State.CAUGHT_FISH) {
+            return;
+        }
+        final Player player = event.getPlayer();
+        if (!hasEnchant(player.getInventory().getItemInMainHand(), "bokic_kegye")
+                && !hasEnchant(player.getInventory().getItemInOffHand(), "bokic_kegye")) {
+            return;
+        }
+        final int seconds = Math.max(1, configManager.getInt("signature.enchant-riders.bokic-luck-seconds", 30));
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                org.bukkit.potion.PotionEffectType.LUCK, seconds * 20, 0, true, true, true));
     }
 
     // ==================== Smaragdkő Bankbetét + Szellemszarvas-Bűbáj (K4) ====================

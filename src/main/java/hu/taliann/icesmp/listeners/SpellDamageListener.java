@@ -73,11 +73,9 @@ public final class SpellDamageListener implements Listener {
         if (reduction <= 0.0D) {
             return;
         }
+        // Szándékosan NINCS kiírás: sok találatnál az action-bar spam zavaróbb, mint
+        // hasznos — a csökkentett sebzés-számok magukért beszélnek (damage indicator).
         event.setDamage(event.getDamage() * (1.0D - reduction));
-        victim.sendActionBar(messageManager.getMessage("spell-resist-notice",
-                "<light_purple>✦ A rúnáid elnyelték a {school} egy részét (−{percent}%).</light_purple>",
-                Map.of("school", school.getDisplayName(),
-                        "percent", String.valueOf(Math.round(reduction * 100.0D)))));
     }
 
     @EventHandler

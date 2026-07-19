@@ -83,6 +83,15 @@ signature:
       fonix_tollkopeny: true
       vasmuvek_csakanya: true
       bokic_horgaszbot: true
+  # Az enchantok RIDER-effektjei (audit: egyik enchant sem puszta dísz — mindnek
+  # lore-horgonyzott funkciója van; itt hangolhatók, 0 = az adott rider kikapcsol):
+  enchant-riders:
+    jegfog-slow-seconds: 2       # Jégfog: a nyíl-találat rövid lassítást harap
+    vihartuz-fire-ticks: 40      # Vihartűz: a lövedék parazsat hord (2 mp égés)
+    verszomj-lifesteal: 0.1      # Vérszomj: a bevitt sebzés ekkora része gyógyít…
+    verszomj-heal-cap: 2.0       # …de ütésenként legfeljebb ennyi HP (1 szív)
+    erc-erzek-xp: 2              # Érc-érzék: bónusz XP-gömb érc-törésnél
+    bokic-luck-seconds: 30       # Bokic Kegye: fogáskor rövid Szerencse (jobb zsákmánytábla)
   # Cryghaliris (BLUE)
   kallan:
     arrow-velocity-mult: 1.5   # a nyíl sebesség-szorzója

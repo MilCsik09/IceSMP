@@ -141,6 +141,27 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 
 ---
 
+## Bootstrap-enchantok és mágia-iskolák (audit: lore-horgony + funkció)
+
+Szabály: enchantot CSAK lore-horgonnyal és valódi funkcióval használunk — puszta dísz-enchant
+nincs. A damage-type iskolák (icesmp:tuz/fagy/szent/arnyek/termeszet/vihar/kaosz/magia) a
+kasztok mágia-eredetéhez kötődnek (kódex IV. — a kasztok mágiája); a besorolás configból
+hangolható (spells.spell-schools).
+
+| Enchant | Kánon-horgony | Funkció |
+|---|---|---|
+| Jégfog | Kallan jégsárkányainak harapása (kódex II.) | a Szeletelő nyila rövid lassítást harap |
+| Vihartűz | a Vérszavanna vihara + Pyralingrad kohói | a Tűzköpő lövedéke meggyújtja a célt |
+| Vérszomj | a Vérszavanna vére (kódex III.) | az Agyar sebzésének kis része gyógyít (életszívás) |
+| Fagypáncél | Glatziendorf jégvértje | fagymágia-ellenállás (iskola-counter) |
+| Főnixtoll | Soleil főnixei (kódex II.) | tűzmágia-ellenállás (iskola-counter) |
+| Érc-érzék | a Vasművek Akadémiájának tanítása | bónusz tapasztalat érc-törésnél |
+| Bokic Kegye | a Bokic folyó áldása (kódex III.) | fogáskor rövid Szerencse (jobb zsákmány) |
+| Rúnavért | Caldestera rúnaírnokai + a Mélység Népe rúna-öröksége (kódex I.) | generikus mágia-ellenállás (minden iskola) |
+
+Megszerzés: kizárólag signature-craft / tekercs-recept (a saját enchantok nincsenek az
+enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.yml).
+
 ## Elnevezési irányelvek
 
 - **Frakció-item** = a frakció hőse/fővárosa/motívuma a névben (Kallan/Glatziendorf/jég; Soleil/
