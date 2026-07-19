@@ -30,7 +30,8 @@ public final class ProfessionRecipeCatalog {
     public record Recipe(String id, ProfessionType profession, int level, boolean blueprint,
                          String displayName, String category, Material result, int resultAmount,
                          String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
-                         Map<String, Integer> uniqueIngredients, List<String> lore) {
+                         Map<String, Integer> uniqueIngredients, List<String> lore,
+                         String signature, hu.taliann.icesmp.data.FactionType faction) {
     }
 
     private final JavaPlugin plugin;
@@ -114,10 +115,15 @@ public final class ProfessionRecipeCatalog {
         // Optional lore lines: when present, the crafted item is stamped with the designed name + lore
         // (a "named" prestige item — gear/tome/special consumable); bulk results have no lore and stay vanilla.
         final List<String> lore = section.getStringList("lore");
+        // Signature items (K2/K3): a PDC id the perk listener recognises; optional faction gate.
+        final String signature = resultSection.getString("signature", null);
+        final hu.taliann.icesmp.data.FactionType faction =
+                hu.taliann.icesmp.data.FactionType.fromInput(section.getString("faction", null));
         return new Recipe(id, profession, level, blueprint, displayName, category, result, amount,
                 affixTier == null || affixTier.isBlank() ? null : affixTier.toLowerCase(Locale.ROOT),
                 uniqueResult == null || uniqueResult.isBlank() ? null : uniqueResult.toLowerCase(Locale.ROOT),
-                ingredients, uniqueIngredients, lore);
+                ingredients, uniqueIngredients, lore,
+                signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction);
     }
 
     public Recipe get(final String id) {

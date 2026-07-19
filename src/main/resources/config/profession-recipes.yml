@@ -1226,3 +1226,48 @@ profession-recipes:
     category: "Étel"
     result: { material: GOLDEN_CARROT, amount: 6 }
     ingredients: [ "CARROT:6", "GOLD_NUGGET:32", "unique:gyogy_kivonat:1" ]
+
+  # =========================================================
+  # --- K2: Cryghaliris signature itemek (tervrajz + BLUE frakció-kapu) ---
+  # A 'signature' PDC-id-t a SignatureItemListener ismeri fel (perk-viselkedés);
+  # a 'faction' kapu: csak az adott frakció mesterei craftolhatják.
+  # =========================================================
+  kallan_szeletelo:
+    profession: armorer
+    level: 45
+    learn: blueprint
+    faction: BLUE
+    display-name: "Kallan Szeletelője"
+    lore:
+      - "&7Kallan első pikkelyeiből és ősi fenyőből"
+      - "&7faragva; a jégsárkányok inaiból font húr"
+      - "&7a legvastagabb vértet is átvágja."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: BOW, amount: 1, affix-tier: crafted, signature: kallan_szeletelo }
+    ingredients: [ "BOW:1", "STRING:8", "NETHERITE_INGOT:1", "unique:vad_esszencia:3" ]
+  glatziendorfi_jegvert:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    faction: BLUE
+    display-name: "Glatziendorfi Jégvért"
+    lore:
+      - "&7Oly nehéz és fagyos, hogy viselőjét"
+      - "&7sziklaként rögzíti; az ellenség fegyverei"
+      - "&7tompán koppannak rajta."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegvert }
+    ingredients: [ "NETHERITE_CHESTPLATE:1", "PACKED_ICE:16", "IRON_BLOCK:2", "unique:osi_ereklyeszilank:1" ]
+  jegsarkany_kantar:
+    profession: armorer
+    level: 40
+    learn: blueprint
+    faction: BLUE
+    display-name: "Jégsárkány-Kantár"
+    lore:
+      - "&7Kemény bőr és sötét mágia; csak ezzel"
+      - "&7tartható kordában egy vad sárkány."
+      - "&7Jobb katt egy hátason: tartós gyorsítás."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: SADDLE, amount: 1, signature: jegsarkany_kantar }
+    ingredients: [ "SADDLE:1", "LEATHER:8", "STRING:4", "unique:arnyekpor:2" ]

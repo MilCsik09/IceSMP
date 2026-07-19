@@ -306,8 +306,8 @@ public final class IceSMPCore {
         this.professionRecipeCatalog = new hu.taliann.icesmp.managers.ProfessionRecipeCatalog(plugin, configManager);
         this.blueprintItemFactory = new hu.taliann.icesmp.items.BlueprintItemFactory(plugin, professionRecipeCatalog);
         this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
-        this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(
-                professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager);
+        this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
+                professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
@@ -1040,6 +1040,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CatalystProtectionListener(catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(plugin, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);

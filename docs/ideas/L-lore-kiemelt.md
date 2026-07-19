@@ -44,7 +44,7 @@ chat-, menü- és bolt-szöveg egyszerre kap identitást. Innen minden további 
 display-nevet is elfogadja, tehát a parancs-parsolás ne törjön a hosszú névtől; a `messages.yml`
 frakció-hivatkozásait végig kell nézni, hogy ne maradjon „Piros".
 
-### K2. Cryghaliris signature unique-itemek `[TOP]`
+### K2. Cryghaliris signature unique-itemek `[TOP]` `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A Fagyott Királyság 3 jellegzetes tárgya a meglévő unique-item + raritás + crafting-gate

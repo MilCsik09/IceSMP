@@ -109,6 +109,11 @@ public final class ProfessionRecipeGUI {
                     ? Component.text("✔ Recept megtanulva", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
                     : Component.text("✘ Tervrajz kell (NPC / mob-drop)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         }
+        if (recipe.faction() != null) {
+            lore.add(Component.text("⚑ Csak: " + recipe.faction().getDisplayName()
+                            + " (" + recipe.faction().getFullName() + ")", NamedTextColor.AQUA)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         lore.add(Component.empty());
         lore.add(grey("Hozzávalók:"));
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {

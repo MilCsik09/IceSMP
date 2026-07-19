@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.gui.ProfessionRecipeGUI;
 import hu.taliann.icesmp.gui.ProfessionRecipeHolder;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
@@ -11,6 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,6 +21,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,16 +44,22 @@ public final class ProfessionRecipeBookListener implements Listener {
     private final ItemRarityService affixService;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
     private final MessageManager messageManager;
+    private final FactionManager factionManager;
+    /** PDC tag on crafted signature items (K2/K3) — the perk listener recognises items by this id. */
+    private final NamespacedKey signatureKey;
 
-    public ProfessionRecipeBookListener(final ProfessionManager professionManager, final ProfessionRecipeCatalog catalog,
+    public ProfessionRecipeBookListener(final JavaPlugin plugin,
+                                        final ProfessionManager professionManager, final ProfessionRecipeCatalog catalog,
                                         final ItemRarityService affixService,
                                         final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
-                                        final MessageManager messageManager) {
+                                        final MessageManager messageManager, final FactionManager factionManager) {
         this.professionManager = professionManager;
         this.catalog = catalog;
         this.affixService = affixService;
         this.uniqueMaterials = uniqueMaterials;
         this.messageManager = messageManager;
+        this.factionManager = factionManager;
+        this.signatureKey = new NamespacedKey(plugin, "signature_item");
     }
 
     /** Opens the recipe book for a player at the first page. */
@@ -94,6 +104,14 @@ public final class ProfessionRecipeBookListener implements Listener {
             player.sendMessage(messageManager.get("profession-recipe-not-learned", "&cEhhez a recepthez előbb meg kell szerezned a tervrajzot."));
             return;
         }
+        // Signature (frakció-kötött) receptek: csak a megfelelő frakció mesterei készíthetik.
+        // ConcurrentHashMap-olvasás — szál-biztos a játékos régió-szálán.
+        if (recipe.faction() != null && factionManager.getFaction(player.getUniqueId()) != recipe.faction()) {
+            player.sendMessage(messageManager.get("profession-recipe-faction",
+                    "&cEzt a receptet csak a(z) &f%s&c frakció mesterei készíthetik.",
+                    recipe.faction().getDisplayName() + " (" + recipe.faction().getFullName() + ")"));
+            return;
+        }
         if (!hasIngredients(player, recipe)) {
             player.sendMessage(messageManager.get("profession-recipe-missing", "&cNincs meg minden hozzávaló ehhez a recepthez."));
             return;
@@ -126,6 +144,13 @@ public final class ProfessionRecipeBookListener implements Listener {
                 meta.lore(loreLines);
                 result.setItemMeta(meta);
             }
+        }
+        // Signature perk-tag (K2/K3): a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
+        // ELŐTT kerül fel, mert a roll klónja a PDC-t is viszi.
+        if (recipe.signature() != null && result.getItemMeta() != null) {
+            final ItemMeta sigMeta = result.getItemMeta();
+            sigMeta.getPersistentDataContainer().set(signatureKey, PersistentDataType.STRING, recipe.signature());
+            result.setItemMeta(sigMeta);
         }
         // Roll a unique quality + affixes for single-item gear results (crafted tier). The roll keeps the
         // stamped display name (prefixing the rarity) and appends the affix lines below the lore.

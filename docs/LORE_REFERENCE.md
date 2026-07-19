@@ -91,9 +91,9 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 
 | Tárgy | Frakció | Típus/forrás | Tervezett perk / jegyzet |
 |---|---|---|---|
-| Kallan Szeletelője | BLUE | íj (K2) | +50% nyíl-sebesség, 15% páncéltörés |
-| Glatziendorfi Jégvért | BLUE | mellvért (K2) | Resistance I/II szett-perk |
-| Jégsárkány-Kantár | BLUE | hátas-felszerelés (K2) | — |
+| Kallan Szeletelője | BLUE | íj (K2) | ✅ implementálva: +50% nyíl-sebesség, +15% bónusz-sebzés (`signature.kallan.*`) |
+| Glatziendorfi Jégvért | BLUE | mellvért (K2) | ✅ implementálva: viselve −20% sebzés (`signature.jegvert.damage-mult`) |
+| Jégsárkány-Kantár | BLUE | hátas-felszerelés (K2) | ✅ implementálva: hátas +sebesség, egyszeri, elfogy (`signature.kantar.speed-add`) |
 | Glatziendorfi Jégtörő / V. Miinus Haragja / Sárkánycsont Íj | BLUE | fegyverek | később tervezendő |
 | Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6) | BLUE hal-fogyasztási kötelezettség |
 | Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | +50% felhúzási/repülési sebesség |

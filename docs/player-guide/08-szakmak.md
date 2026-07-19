@@ -154,6 +154,15 @@ a bónuszok a leírásban látszanak (negatív affix pirossal).
 - 🐉 **Világboss / nehéz event loot:** magas raritások (Ritka→**Ereklye**) + boss-only egyedi
   alapanyag (*Fekete Villám Szilánk*, a legendás receptekhez) — a legjobb forrás.
 
+
+### ⚑ Frakció-signature receptek (tervrajz)
+
+A birodalmak **saját, vágyott végjáték-tárgyakat** kaptak — tervrajzból tanulható, **frakcióhoz
+kötött** receptek (a recept-könyv ⚑ sora jelzi). Az első kör a **Fagyott Királyságé** (Fagy/BLUE,
+páncélkovács): **Kallan Szeletelője** (íj — gyorsabb, páncéltörő nyilak), **Glatziendorfi Jégvért**
+(mellvért — viselve tompítja a sebzést), **Jégsárkány-Kantár** (jobb katt egy hátason: tartós
+gyorsítás, a kantár elfogy). A perkek pontos számai configból hangolhatók (`signature.*`).
+
 ## Talentpontok a szakmákból
 
 Az **összes szakmád szintje** együtt **talentpontot** termel a szakma-talentfádhoz: **minden

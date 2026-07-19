@@ -205,6 +205,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.1.1 Királyság-spawnok és váltás-kapu ✅
 - [ ] **Spawn-kijelölés:** `/territory setspawn <frakció>` a PONTOS álláspontot menti (magasság +
       nézésirány) — ellenőrizd egy fa alatt állva, hogy NEM a fa tetejére kerülsz.
+- [ ] **K2 signature (BLUE):** a 3 Cryghaliris-recept csak Fagy-frakcióval craftolható (más
+      frakciónak hibaüzenet, a csempén ⚑ sor); Kallan Szeletelője nyila gyorsabb és többet sebez;
+      a Jégvért viselve csökkenti a sebzést; a Kantár jobb kattra gyorsítja a hátast, elfogy, és
+      ugyanarra a hátasra másodszor nem fogy el.
 - [ ] **K1 kánon-nevek:** a HUD/tab a rövid frakciónevet mutatja (Láng/Fagy/Menedék/Kitaszított),
       a /menu és a Profil a hosszút (pl. Láng (Perinfernicitas)); a valuta-itemek neve Parázsló
       Parals / Hópihér-veret / Creutzér / Csontveret; a `/faction join piros` (legacy név) is működik.
