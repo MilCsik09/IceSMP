@@ -220,6 +220,11 @@ becsületes kardja messze elkerüli e falakat; ám akit megjelölt a bélyeg, az
 s a Királynő szolgái közt sötét testvériségre lel. A romok mélyén, ahová csak a legelszántabbak
 merészkednek, ott lüktet a Suttogók legszentebb oltára.
 
+A holt város kincstárában pedig ott ül a **Csontszámvevő** — a sírba szállt nemesség utolsó kincstartója,
+akit a Királynő átka a számadásai mellett ért utol, s aki azóta is **könyvel**. Az ő kezén megy át a
+Kitaszítottak minden vagyona: az elhullott urak koronáiból és megfeketült ezüstjéből **ő vereti a
+Csontveretet**, a száműzöttek pénzét, amelyet élő bank soha jegyezni nem fog — nyíltan legalábbis nem.
+
 ## VIII. A Felsők Kora — A Világ Élő Rendszerei
 
 *A Káoszkor romjain a Felsők nem csupán harcolnak: építenek, tanulnak, kereskednek — és a világ válaszol
@@ -278,11 +283,17 @@ szemmel nézik, de tűrik: tudják, hogy a Káoszkor ellen minden szövetség ke
 — frakció-független, osztott XP, personal loot, párton belüli PvP-tiltás.)*
 
 ### Az Arany Áramlása — a Bankárszövetség rendje
-A Káoszkorban egyetlen intézmény nem bukott el: **Caldestera Bankárszövetsége**. Az ő pecsétjük szavatolja
-a négy pénz értékét, az ő könyveik tartják számon a birodalmak vagyonát, s az ő váltóasztalaikon
-**napról napra mozog az árfolyam** — mert a pénz értéke a világ állapotát követi: háború, bőség, hiány
-mind belevésődik. A piactereken és az árveréseken a Felsők egymással kereskednek; a Szövetség csak a
-rendet tartja — s a maga részét mindig beszedi. A Szövetség kereskedőházai árulják a lepecsételt
+A Káoszkorban egyetlen intézmény nem bukott el: **Caldestera Bankárszövetsége**. Az ő pecsétjük
+szavatolja **három pénz** — a Parázsló Parals, a Hópihér-veret és a Creutzér — értékét, az ő könyveik
+tartják számon a birodalmak vagyonát, s az ő váltóasztalaikon **napról napra mozog az árfolyam** — mert
+a pénz értéke a világ állapotát követi: háború, bőség, hiány mind belevésődik. A piactereken és az
+árveréseken a Felsők egymással kereskednek; a Szövetség csak a rendet tartja — s a maga részét mindig
+beszedi.
+
+A negyedik pénzről a Szövetség hivatalosan **tudni sem akar**: a Kitaszítottak **Csontveretét** pecsétjük
+soha nem érintette, számlakönyveikben a neve le sincs írva. Ám Arkynn öröklött mérge — a kapzsiság —
+erősebb minden rendeletnél: a Botera-negyed hátsó pultjain a Csontveret **napi árfolyamon forog**, s a
+mérleg nem kérdezi, kriptából jött-e az ezüst. Hivatalosan soha — valójában mindig. A Szövetség kereskedőházai árulják a lepecsételt
 **caldesterai ládákat** is: ki tudja, a régi világ miféle kincse lapul bennük — a kulcsért fizetni kell,
 a kockázat a vevőé. *(Mechanika: bank, piac, aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő;
 „nincs addolt pénz" elv; crate-rendszer kulcs-árral mint valuta-nyelő.)*
@@ -384,8 +395,9 @@ tervezett mechanika (nem végleges balansz).
   átrágta az idő, de a sötét mágia védi oszladozó viselőjét."
 - **A Néma Királynő suttogása** (Mob-drop) — „Eleftheria első szavai hívták életre a Hu. 698. évben."
 - **Megrontott Fekete Csont** (Mob-drop) — az élőhalottak maradványa; ugyanaz a néma harag hajtja.
-- **Csontveret** (Érme) — „A Holtak Városának pénze; sírba szállt urak koronáiból és megfeketült
-  ezüstből verve — érintése hideg, akár a kripta." *(DARK valuta)*
+- **Csontveret** (Érme) — „A Holtak Városának pénze; a Csontszámvevő vereti sírba szállt urak
+  koronáiból és megfeketült ezüstből — érintése hideg, akár a kripta. Élő bank nyíltan nem jegyzi,
+  a Botera-negyed hátsó pultjain mégis napi árfolyama van." *(DARK valuta)*
 
 > **Törpék** *(kiegészítés — nem az eredeti kódexből):* az ősi romok és a legősibb ereklyék (pl. a
 > *Mételytépő* harci fejsze) egy rég letűnt, rejtélyes **törp** civilizáció hagyatéka — a Fa
@@ -435,6 +447,10 @@ kettősségét:
   száműzött, s ez egyben magas-veszélyű PvE **rom-zóna** (élőhalott-fertőzött; a DARK-jelöltet a holtak
   békén hagyják, másokat nem — így a passzív teszi „lakhatóvá" a városukat). A `/territory` főváros-zóna
   DARK-hoz kötve; ideális K5 Káoszkor-loot forrás és a K9 Suttogó-oltár otthona.
+- **Valuta-lore:** a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — lore-ban a Csontveretet
+  Mortengradban a **Csontszámvevő** jegyzi (a DARK főváros bank-kapuja), Caldesterában pedig csak a
+  Botera-negyed hátsó pultjai váltják (a Bankárszövetség hivatalosan nem — VIII. fejezet). A kód nem
+  változik, a magyarázat lore-szintű.
 
 A csatlakozási rítus, a lelepleződés-triggerek és az Outlaw-átváltás részletes terve:
 [ideas/K-lore.md → K9](ideas/K-lore.md). *(Narratíva: VII. fejezet.)*
