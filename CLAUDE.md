@@ -39,3 +39,4 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - Minden gameplay-változásnál frissítsd a docsot: `PLAYER_GUIDE.md` (+ a megfelelő `docs/player-guide/` oldal), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.
 - Commit-üzenet: magyar, tömör tárgysor + felsorolásos törzs; a repo-ban használt `Co-Authored-By` + `Claude-Session` trailerekkel zárul. Csak a kijelölt feature-branchre pusholj.
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).
+- **Lore/tartalom-referencia:** `docs/LORE.md` — a kanonikus világ-történet + a frakció↔kód megfeleltetés (`RED`=Perinfernicitas, `BLUE`=Cryghaliris, `NEUTRAL`=Ryanora/Caldestera, `DARK`=Suttogók) + unique-item katalógus. Minden új tartalom (item-nevek, ételek, valuta, mob-drop, zóna, quest) ehhez illeszkedjen.
