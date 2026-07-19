@@ -24,6 +24,14 @@ Parancsok:
 A haladásodat a képernyő alján (action bar) is követheted. Amikor teljesíted a feladatot, a
 jutalom **automatikusan** jár.
 
+## Kezdő küldetés-lánc (új játékosoknak) 🐣
+
+Az **első belépésedkor automatikusan** elindul egy rövid, vezetett lánc: **Beszélj a
+hírnökkel** (a semleges főváros hírnök-NPC-je — nála a királyság-választás is megnyílik) →
+**Első csata** (ölj 5 szörnyet) → **Első gyűjtögetés** (gyűjts 10 rönköt). Minden lépés
+teljesítésekor a **következő magától elindul**, és valutát (a végén csákányt + kenyeret is)
+kapsz. Nem kell semmit beírnod — csak kövesd az action bar jelzéseit.
+
 ## Több feladat egy questben 🎯
 
 Egy küldetés ma már **több feladatot** (objektívát) is tartalmazhat egyszerre — pl.

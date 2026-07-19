@@ -9,7 +9,6 @@ public final class IceSMPBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final @NonNull BootstrapContext context) {
-        // Plugin bootstrap logic
     }
 }
 

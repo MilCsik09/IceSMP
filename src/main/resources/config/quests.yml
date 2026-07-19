@@ -1,4 +1,10 @@
 # IceSMP konfiguráció — quests (a ConfigManager az összes config/*.yml-t betölti)
+#
+# Egy quest "rewards" blokkjában elérhető opcionális mező (IDEAS A48):
+#   crate-key: "<ládaId>:<darab>"  — pl. "koznapi:1" — a config/crates.yml-ben
+#   definiált ládához tartozó kulcs-itemet ad a játékosnak (CrateKeyFactory,
+#   tele inventorynál a lába elé esik). Lásd a lenti onboarding_gather questet
+#   kézzelfogható példaként.
 # ===== Napi küldetések (ROADMAP 8.) =====
 daily-quests:
   enabled: true
@@ -15,6 +21,21 @@ daily-quests:
 # ===== Elérések (ROADMAP 8.) =====
 achievements:
   enabled: true
+
+# ===== Onboarding-lánc (IDEAS A5): auto-induló bevezető küldetéssor =====
+# Egy vadonatúj játékos ELSŐ belépésekor (Player#hasPlayedBefore() == false)
+# automatikusan felkerül a "first-quest" — a többi láncszem a quests.<id>.next
+# mezőn keresztül magától követi, amint az előző teljesül. Kikapcsolható, ha a
+# szerver saját bevezetőt épít.
+# IDEAS A70: quest-teljesítéskor vanília advancement-toast a jobb felső sarokban
+# (a chat-üzenet mellett; rejtett, egyszer használatos advancementtel — nem szennyezi
+# az advancement-képernyőt).
+quest-toast:
+  enabled: true
+
+onboarding:
+  enabled: true
+  first-quest: "onboarding_herald"
 
 # ===== Közösségi célok (frakció-szintű, közös számláló) =====
 # Egy megosztott számláló, amibe egy frakció (vagy az egész szerver) minden
@@ -110,6 +131,11 @@ community-goals:
 # Ismétlődés: repeatable: true + cooldown-hours (pl. 24 = napi quest; 0 = azonnal).
 # Auto-indulás: auto-start-territory: <territory-id> — a területre lépve a quest
 # magától felkerül (ha a feltételek teljesülnek).
+# Lánc-automatika: next: <quest-id> — teljesítéskor a megnevezett küldetés
+# AZONNAL felkerül a játékosnak (NPC-kattintás vagy terület nélkül is), a
+# giver-npc-s átadáshoz hasonló hang/üzenet/dialógus kísérettel. Ott hasznos,
+# ahol a lánc lépései nem mind NPC-hez/területhez kötöttek (pl. az onboarding-lánc
+# alább: "beszélj a hírnökkel" -> "ölj 5 szörnyet" -> "gyűjts fát").
 # TÖBB OBJEKTÍVA egy questben: a sima "objective:" helyett "objectives:" alá
 # számozott feladatok (1, 2, ...), mindegyik saját type/count/materials/stb.
 # mezőkkel (opcionális "description" a HUD-címkéhez). Az "objectives-mode":
@@ -810,6 +836,73 @@ quests:
       currency:
         type: "OWN"
         amount: 40
+
+  # --- Onboarding-lánc (IDEAS A5): "az új játékos első 10 perce vezetett" ---
+  # Az "onboarding.first-quest" (lásd fent) állítja fel a láncot ELSŐ belépéskor;
+  # innentől a "next" mező viszi tovább automatikusan, lépésenként:
+  #   1) onboarding_herald  — beszélj a hírnökkel (a kattintás ugyanitt nyitja meg
+  #      a királyság-választó menüt is, ha a hírnök-NPC /npcbind <npc> faction-nel
+  #      be van kötve — nincs külön "válassz királyságot" objektíva-típus).
+  #   2) onboarding_hunt    — ölj 5 szörnyet (első harc-lecke).
+  #   3) onboarding_gather  — gyűjts 10 rönköt (első gyűjtögetés-lecke).
+  # A hírnök-NPC-t a szerver-csapat helyezi ki FancyNpcs-szel "hirnok" belső
+  # névvel (/npc create hirnok a semleges fővárosban, opcionálisan
+  # /npcbind hirnok faction a királyság-választáshoz) — amíg nincs kint, az 1.
+  # lépés egyszerűen nem halad, a lánc nem törik, csak vár.
+  onboarding_herald:
+    dialogue:
+      speaker: "Hírnök"
+      give:
+        - "Üdvözöllek a szigeten, vándor! Én vagyok a Hírnök."
+        - "Mielőtt utadra engednélek, ismerkedjünk meg — gyere közelebb!"
+      complete:
+        - "Örvendek! Mostantól itthon vagy — válaszd ki, melyik királysághoz csatlakozol."
+    display-name: "Beszélj a hírnökkel"
+    description: "Keresd fel a hírnököt a semleges fővárosban, és válaszd ki a királyságodat."
+    next: "onboarding_hunt"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 15
+  onboarding_hunt:
+    display-name: "Első csata"
+    description: "Bizonyítsd, hogy készen állsz: ölj meg 5 szörnyet."
+    requires-quest: "onboarding_herald"
+    next: "onboarding_gather"
+    objective:
+      type: "KILL_MOBS"
+      count: 5
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 20
+  onboarding_gather:
+    display-name: "Első gyűjtögetés"
+    description: "Vágj ki 10 rönköt — kezdő felszerelés vár érte."
+    requires-quest: "onboarding_hunt"
+    objective:
+      type: "COLLECT_ITEMS"
+      count: 10
+      materials:
+        - "OAK_LOG"
+        - "BIRCH_LOG"
+        - "SPRUCE_LOG"
+        - "JUNGLE_LOG"
+        - "ACACIA_LOG"
+        - "DARK_OAK_LOG"
+        - "MANGROVE_LOG"
+        - "CHERRY_LOG"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 25
+      crate-key: "koznapi:1"
+      items:
+        - "WOODEN_PICKAXE:1"
+        - "BREAD:8"
 
 # ===== Quest-NPC markerek =====
 # A quest-adó / quest-célpont NPC-k felett részecske-aura jelzi a teendőt —

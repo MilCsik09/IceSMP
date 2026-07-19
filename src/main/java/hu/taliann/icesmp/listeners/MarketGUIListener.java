@@ -80,11 +80,10 @@ public final class MarketGUIListener implements Listener {
             return;
         }
 
-        final double paid = listing == null ? 0.0D : marketManager.getEffectivePrice(player, listing);
-        final String errorKey = marketManager.buy(player, listingId);
-        if (errorKey != null) {
+        final MarketManager.BuyOutcome outcome = marketManager.buy(player, listingId);
+        if (outcome.errorKey() != null) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
-            player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey)));
+            player.sendMessage(messageManager.get(outcome.errorKey(), defaultErrorFor(outcome.errorKey())));
             MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
             return;
         }
@@ -94,7 +93,9 @@ public final class MarketGUIListener implements Listener {
                 "market-buy-success",
                 "&aMegvetted: &f{price} {currency} &7(a bankodból).",
                 Map.of(
-                        "price", currencyManager.formatBalance(paid),
+                        // The amount actually deducted at the moment of the sale (returned by
+                        // buy()), not a separately re-derived estimate — see MarketManager#buy.
+                        "price", currencyManager.formatBalance(outcome.amount()),
                         "currency", listing.currency().getDisplayName()
                 )
         ));

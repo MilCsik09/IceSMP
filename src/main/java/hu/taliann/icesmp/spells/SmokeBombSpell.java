@@ -30,11 +30,12 @@ public final class SmokeBombSpell extends BaseSpell {
         final int escapeSpeedAmplifier = balanceInt("escape-speed-amplifier", 1);
 
         for (final Entity entity : player.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity living) || entity == player) {
+            if (!(entity instanceof LivingEntity living) || entity == player || SpellTargetingUtil.isAlly(player, living)) {
                 continue;
             }
 
-            living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, false, true, true));
+            living.addPotionEffect(SpellTargetingUtil.adaptForTarget(living,
+                    new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, false, true, true)));
             living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, blindnessTicks, slownessAmplifier, false, true, true));
         }
 

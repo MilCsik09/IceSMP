@@ -49,10 +49,8 @@ public final class SunDanceSpell extends BaseSpell {
                     final Block block = center.getBlock().getRelative(x, y, z);
                     final Material type = block.getType();
 
-                    // 1. Gyors sz\u0171r\u00e9s: csak a kemence t\u00edpusok
                     if (type != Material.FURNACE && type != Material.SMOKER && type != Material.BLAST_FURNACE) continue;
 
-                    // 2. K\u00e9nyszer\u00edtett \u00e1llapot lek\u00e9r\u00e9s
                     if (!(block.getState() instanceof Furnace furnace)) continue;
 
                     final FurnaceInventory inv = furnace.getInventory();
@@ -60,31 +58,25 @@ public final class SunDanceSpell extends BaseSpell {
 
                     if (input == null || input.getType().isAir()) continue;
 
-                    // 3. Recept keres\u00e9se
                     final ItemStack resultTemplate = resolveResult(input, type);
                     if (resultTemplate == null) continue;
 
-                    // 4. Sz\u00e1m\u00edt\u00e1s
                     int inputAmount = input.getAmount();
                     int producedAmount = inputAmount * resultTemplate.getAmount();
 
-                    // 5. INVENTORY M\u00d3DOS\u00cdT\u00c1S (live inventory-n)
-                    inv.clear(0); // Input slot t\u00f6rl\u00e9se
+                    inv.clear(0);
 
                     ItemStack finalResult = resultTemplate.clone();
                     finalResult.setAmount(producedAmount);
 
                     injectToOutput(furnace, inv, finalResult);
 
-                    // 6. FRISS SNAPSHOT \u2013 m\u00e1r tartalmazza az inventory v\u00e1ltoz\u00e1sokat
                     if (!(block.getState() instanceof Furnace freshState)) continue;
 
-                    // 7. \u00c1llapot reset a friss snapshot-on
                     freshState.setBurnTime((short) 0);
                     freshState.setCookTime((short) 0);
                     freshState.setCookTimeTotal(0);
 
-                    // 8. K\u00c9NYSZER\u00cdTETT FRISS\u00cdT\u00c9S a friss snapshot-tal
                     if (freshState.update(true, true)) {
                         furnaceCount++;
                         totalItems += producedAmount;

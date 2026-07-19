@@ -6,11 +6,19 @@ bónusza** (egy állandó képesség, amiért nem kell semmit csinálnod) van.
 Belépés: `/faction join <red|blue|neutral|dark>` • Kilépés: `/faction leave`
 
 Az **első csatlakozásod** teljesen **ingyenes és időzítetlen**, és mindenki **Semlegesként
-kezd**. A **Semlegesből bárhová ingyen** válthatsz, és a **Sötétbe lépés is mindig ingyenes**
+kezd** — új játékosként a **Semleges Királyság spawnján** jelensz meg. Amikor királyságot
+választasz, a plugin **odateleportál az új királyságod spawnjára**, és ha nincs ágyad /
+respawn-horgonyod, halál után is a **saját királyságod spawnján** éledsz újra — így mindig
+tudod, hol a fővárosod.
+
+A **Semlegesből bárhová ingyen** válthatsz, és a **Sötétbe lépés is mindig ingyenes**
 (annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék,
-illetve vissza a Semlegesbe) a **jelenlegi frakciód valutájában** kerül **alapból 500-ba**,
-és utána **72 óráig** nem válthatsz megint (`factions.switch.cost` /
-`factions.switch.cooldown-hours` a configban) — ez a frakció-hopping ellen véd.
+illetve vissza a Semlegesbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi
+frakciód valutájában** kerül **alapból 500-ba**, és utána **72 óráig** nem válthatsz megint
+(`factions.switch.cost` / `factions.switch.cooldown-hours` a configban) — ez a
+frakció-hopping ellen véd. **Váltani csak a Semleges Királyság fővárosában állva lehet**
+(ott, ahol a királyság-választó hírnök NPC is áll) — így a döntés mindig a semleges földön,
+„hivatalosan" születik meg.
 
 A passzívok **egy szintre vannak hangolva** — mindegyik kb. egyformán hasznos, csak más
 helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyik a legjobb":

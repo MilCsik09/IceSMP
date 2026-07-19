@@ -1,0 +1,35 @@
+# IceSMP konfiguráció — afk (a ConfigManager az összes config/*.yml-t betölti)
+# Natív AFK-rendszer (AxAFKZone-kiváltás): globális inaktivitás-figyelés +
+# időzített AFK-zóna jutalom (kicsi "faucet" — gazdasági csap, ld. lent).
+afk:
+  enabled: true
+
+  # Ennyi másodperc inaktivitás (mozgás/nézés-változás, chat, parancs, blokk-interakció
+  # nélkül) után számít a játékos AFK-nak — BÁRHOL a szerveren (nem csak a zónában).
+  afk-after-seconds: 180
+  # IDEAS A46: AFK-jelölt játékos nem termel kaszt-XP-t, szakma-XP-t és lélekkő-dropot
+  # (auto-farm exploit-fék). Az AFK-zóna időzített jutalmát ez NEM érinti.
+  block-rewards: true
+
+  # AFK-zónák (doboz): itt állva (akár mozogva a zónán belül) időzített jutalom jár,
+  # függetlenül a fenti inaktivitás-időzítőtől.
+  zones:
+    fovaros-pihenokert:
+      world: world
+      min: {x: 0, y: 60, z: 0}
+      max: {x: 10, y: 70, z: 10}
+
+  reward:
+    # Ennyi zónában (megszakítás nélkül) töltött másodperc után jár egy jutalom-kör.
+    interval-seconds: 600
+    # CurrencyType neve (RED/BLUE/NEUTRAL/DARK).
+    currency: NEUTRAL
+    # SZÁNDÉKOSAN kicsi összeg — ez egy gazdasági csap ("faucet"), nem grind-forrás.
+    # A C3 gazdasági monitor figyeli az AFK-zóna kibocsátását; ha emelni kell, apránként.
+    amount: 2.0
+
+  bossbar:
+    enabled: true
+    # {perc} / {mp} — a következő jutalomig hátralévő idő (perc, illetve a perc utáni
+    # másodperc-maradék).
+    text: "⌚ ᴀꜰᴋ-ᴢóɴᴀ — köv. jutalom: {perc} perc {mp} mp"

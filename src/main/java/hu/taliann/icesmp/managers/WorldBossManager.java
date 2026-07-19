@@ -142,6 +142,11 @@ public final class WorldBossManager {
         return bossHealthFraction;
     }
 
+    /** Milliseconds left before the active world boss despawns, or -1 when none is active. */
+    public long getRemainingMillis() {
+        return isBossActive() ? Math.max(0L, activeBossUntil - System.currentTimeMillis()) : -1L;
+    }
+
     /**
      * Refreshes the shared boss-bar fraction right after the boss takes a hit, so players see their
      * damage register immediately (the phase tick only refreshes every ~2s). The {@link org.bukkit.event.entity.EntityDamageEvent}
@@ -312,7 +317,7 @@ public final class WorldBossManager {
             boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
         }
 
-        spawnLocation.getWorld().spawnParticle(Particle.FLASH, spawnLocation, 3);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(spawnLocation.getWorld(), Particle.FLASH, spawnLocation, 1);
         spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
 
         startPhaseTick(boss, archetype);
@@ -364,21 +369,32 @@ public final class WorldBossManager {
                 enraged.set(true);
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
-                boss.getWorld().spawnParticle(Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 3);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 1);
                 boss.getWorld().playSound(boss.getLocation(), archetype.sound, 2.0F, 0.5F);
                 Bukkit.getServer().broadcast(messageManager.getMessage(
                         "world-boss-enraged",
                         "<dark_red>👹 A világboss feldühödött — második fázis!</dark_red>"));
             }
 
-            // Signature aura: debuff nearby survivors (region-local, so Folia-safe on the boss thread).
+            // Signature aura: debuff nearby survivors. Folia: a nearby player can belong to a
+            // neighbouring region, so mutate it on its own scheduler unless we own it.
             for (final Entity nearby : boss.getNearbyEntities(radius, radius, radius)) {
-                if (nearby instanceof Player player
-                        && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
-                    player.addPotionEffect(new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true));
+                if (nearby instanceof Player player) {
+                    final PotionEffect aura = new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true);
+                    if (Bukkit.isOwnedByCurrentRegion(player)) {
+                        if (isSurvivor(player)) {
+                            player.addPotionEffect(aura);
+                        }
+                    } else {
+                        player.getScheduler().run(plugin, t -> {
+                            if (isSurvivor(player)) {
+                                player.addPotionEffect(aura);
+                            }
+                        }, null);
+                    }
                 }
             }
-            boss.getWorld().spawnParticle(archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
 
             // Every ~8s (every 4th tick) the boss uses its signature special — a telegraphed mechanic
             // players must react to, so it is more than a stat-buffed mob.
@@ -391,6 +407,20 @@ public final class WorldBossManager {
     /** A survivor (survival/adventure) — never debuff/hit creative or spectator players. */
     private static boolean isSurvivor(final Player player) {
         return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+    }
+
+    /** A survivor standing inside the 3-block telegraphed ZONE spot (checked on the player's thread). */
+    private static boolean isInZone(final Player player, final Location spot) {
+        return isSurvivor(player) && player.getWorld().equals(spot.getWorld())
+                && player.getLocation().distanceSquared(spot) <= 9.0D;
+    }
+
+    /** Knocks the player away from the SLAM center (runs on the player's own region thread). */
+    private static void applySlamKnockback(final Player player, final Location center) {
+        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+        if (kb.lengthSquared() > 0.0D) {
+            player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
+        }
     }
 
     /**
@@ -407,19 +437,32 @@ public final class WorldBossManager {
         switch (archetype.special) {
             case SLAM -> {
                 final Location center = boss.getLocation().clone();
-                world.spawnParticle(archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
+                spawnTelegraphRing(world, archetype.particle, center, 5.0D);
+                telegraphFloor(center, 5.0D);
                 world.playSound(center, archetype.sound, 1.6F, 0.6F);
+                world.playSound(center, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.6F);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
                     }
-                    world.spawnParticle(Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 4);
+                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
+                    // Folia: hit players region-safely — direct (with the boss as damager) when we own
+                    // them, otherwise hopped to their scheduler (damager omitted cross-region).
                     for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
-                        if (nearby instanceof Player player && isSurvivor(player)) {
-                            player.damage(damage, boss);
-                            final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
-                            if (kb.lengthSquared() > 0.0D) {
-                                player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
+                        if (nearby instanceof Player player) {
+                            if (Bukkit.isOwnedByCurrentRegion(player)) {
+                                if (isSurvivor(player)) {
+                                    player.damage(damage, boss);
+                                    applySlamKnockback(player, center);
+                                }
+                            } else {
+                                player.getScheduler().run(plugin, t2 -> {
+                                    if (isSurvivor(player)) {
+                                        player.damage(damage);
+                                        applySlamKnockback(player, center);
+                                    }
+                                }, null);
                             }
                         }
                     }
@@ -436,19 +479,34 @@ public final class WorldBossManager {
                     return;
                 }
                 final Location spot = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size())).getLocation().clone();
-                world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
+                spawnTelegraphRing(world, archetype.particle, spot, 3.0D);
+                telegraphFloor(spot, 3.0D);
                 world.playSound(spot, archetype.sound, 1.2F, 0.8F);
+                world.playSound(spot, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.8F);
                 boss.getScheduler().runDelayed(plugin, t -> {
                     if (!boss.isValid()) {
                         return;
                     }
-                    world.spawnParticle(archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
+                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
+                    // Folia: same region-safe hit pattern as SLAM; the zone check runs on the
+                    // target's own thread so its location read is always safe.
                     for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {
-                        if (nearby instanceof Player player && isSurvivor(player)
-                                && player.getWorld().equals(spot.getWorld())
-                                && player.getLocation().distanceSquared(spot) <= 9.0D) {
-                            player.damage(damage, boss);
-                            player.addPotionEffect(new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true));
+                        if (nearby instanceof Player player) {
+                            final PotionEffect zoneDebuff = new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true);
+                            if (Bukkit.isOwnedByCurrentRegion(player)) {
+                                if (isInZone(player, spot)) {
+                                    player.damage(damage, boss);
+                                    player.addPotionEffect(zoneDebuff);
+                                }
+                            } else {
+                                player.getScheduler().run(plugin, t2 -> {
+                                    if (isInZone(player, spot)) {
+                                        player.damage(damage);
+                                        player.addPotionEffect(zoneDebuff);
+                                    }
+                                }, null);
+                            }
                         }
                     }
                 }, null, 30L);
@@ -457,6 +515,9 @@ public final class WorldBossManager {
                 final Location at = boss.getLocation();
                 final int count = 2 + (enraged ? 1 : 0);
                 final long addLifespanTicks = Math.max(10L, configManager.getLong("world-events.world-boss.add-lifespan-seconds", 25L)) * 20L;
+                // Telegraph cue distinct from SLAM/ZONE's warning tone, so players learn to
+                // recognize "adds incoming" purely by ear.
+                world.playSound(at, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.5F, 1.0F);
                 for (int i = 0; i < count; i++) {
                     final Location spot = at.clone().add(
                             ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
@@ -473,6 +534,45 @@ public final class WorldBossManager {
                 world.playSound(at, archetype.sound, 1.5F, 0.8F);
             }
         }
+    }
+
+    /** Points evenly spaced around a telegraph ring's circumference (visual clarity of the "particle cloud" style). */
+    private static final int TELEGRAPH_RING_POINTS = 24;
+
+    /**
+     * Telegraphs an impending impact zone by tracing its EDGE with evenly-spaced particles
+     * (a crisp ring players can read at a glance) rather than only a scattered cloud over the
+     * whole area — the ring boundary is what tells a player "stand outside this" at a glance.
+     *
+     * @param world the boss's world (region-local; called only from the boss's own thread)
+     * @param particle the archetype's signature particle
+     * @param center the impact zone's center (boss location for SLAM, target spot for ZONE)
+     * @param radius the impact zone radius in blocks
+     */
+    private static void spawnTelegraphRing(final org.bukkit.World world, final Particle particle,
+                                           final Location center, final double radius) {
+        for (int i = 0; i < TELEGRAPH_RING_POINTS; i++) {
+            final double angle = (Math.PI * 2.0D * i) / TELEGRAPH_RING_POINTS;
+            final Location point = center.clone().add(Math.cos(angle) * radius, 0.15D, Math.sin(angle) * radius);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(world, particle, point, 1);
+        }
+    }
+
+    /**
+     * DisplayFx-telegraph a particle-gyűrű mellé: a veszélyzóna talaján egy lapos, piros, izzó lap,
+     * amely a 30-tick figyelmeztetés alatt kicsiről a teljes sugárig nő — a becsapódásig kitölti a
+     * zónát, így a „lépj ki" pillanatok alatt olvasható. A boss régió-szálán hívjuk (a spawn a
+     * DisplayFxUtil-ban régió-schedulerre kerül, a lap nem-perzisztens + FX-tagelt).
+     */
+    private void telegraphFloor(final Location center, final double radius) {
+        if (!configManager.getBoolean("display-fx.boss-telegraph.enabled", true)) {
+            return;
+        }
+        final String name = configManager.getString("display-fx.boss-telegraph.material", "RED_STAINED_GLASS");
+        final org.bukkit.Material material = org.bukkit.Material.matchMaterial(name);
+        final org.bukkit.block.data.BlockData block =
+                (material != null && material.isBlock() ? material : org.bukkit.Material.RED_STAINED_GLASS).createBlockData();
+        hu.taliann.icesmp.utils.DisplayFxUtil.groundTelegraph(plugin, center, radius, 30, org.bukkit.Color.fromRGB(0xE23B3B), block);
     }
 
     /**

@@ -54,11 +54,18 @@ Első belépéskor egy rövid **bevezető cím-szekvencia** is lejátszódik. �
 Négy frakció létezik, mindegyiknek saját valutája és passzív bónusza van. Belépés:
 `/faction join <red|blue|neutral|dark>`, kilépés: `/faction leave`.
 
-Az **első csatlakozás ingyenes és időzítetlen**, és mindenki **Semlegesként kezd**. A
-**Semlegesből bárhová ingyen** léphetsz át, és a **Sötétbe lépés is mindig ingyenes** (annak a
+Az **első csatlakozás ingyenes és időzítetlen**, és mindenki **Semlegesként kezd** — új
+játékosként a **Semleges Királyság spawnján** jelensz meg, és amikor királyságot választasz,
+a plugin **odateleportál az új királyságod spawnjára**. Ha nincs ágyad/respawn-horgonyod,
+halál után is a **saját királyságod spawnján** éledsz újra.
+
+A **Semlegesből bárhová ingyen** léphetsz át, és a **Sötétbe lépés is mindig ingyenes** (annak a
 bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék, illetve vissza a
-Semlegesbe) a jelenlegi frakciód valutájában **alapból 500-ba** kerül, és utána **72 óráig**
-nem válthatsz újra (`factions.switch.cost` / `factions.switch.cooldown-hours`).
+Semlegesbe — a `/faction leave` is ide számít!) a jelenlegi frakciód valutájában **alapból
+500-ba** kerül, és utána **72 óráig** nem válthatsz újra (`factions.switch.cost` /
+`factions.switch.cooldown-hours`). **Frakciót váltani csak a Semleges Királyság fővárosában
+állva lehet** (ott, ahol a királyság-választó hírnök NPC is áll) — amíg a szerveren nincs
+kijelölt semleges főváros, ez a korlát nem él.
 
 | Frakció | Passzív bónusz |
 |---|---|
@@ -200,6 +207,11 @@ az alapkasztod.
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás + bal katt (ütés)** = váltás a feloldott képességek között (kaszt-specifikus
   hanggal; az action bar mutatja a kiválasztott képességet + a költségét).
+- **Lopakodás + görgetés** (katalizátorral a kézben) = gyors spell-váltás előre/hátra — a
+  hotbar-slot nem vált, és a katalizátor **neve mindig az épp kiválasztott képességet** mutatja.
+- **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** kedvencnek jelöl egy feloldott
+  képességet; ha van kedvenced, a görgetés **csak a kedvenceket lépkedi** (üres lista = mindent).
+  A spellkönyv tölcsér-gombja a „csak feloldottak" szűrő.
 - Ha elveszne: a Kaszt menüből bármikor újra igényelheted (admin: `/job givecatalyst`).
 - A katalizátort **nem lehet** craftolásnál vagy kemencében elhasználni — védett.
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben
@@ -220,7 +232,12 @@ mutat. **Ez a képességeid fő „üzemanyaga" — a legtöbb spell ezt fogyasz
 **Hogyan működik?**
 1. **A legtöbb képesség ennyit fogyaszt** az Erő-csíkból. A költség a képesség erejétől függ:
    a gyors, pörgős alapképességek **olcsók** (~15–20), a nagy ultik **drágák** (~50).
-2. A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+2. A csík **magától visszatöltődik** idővel — de **kasztonként másképp viselkedik**:
+   - **Düh-típus** (Harcos, Halállovag, Démonvadász): harcon kívül lassan **ürül**, minden
+     **bevitt ütés tölti** (+8), harcban lassú regen is fut — a dühöt a harc termeli!
+   - **Energia-típus** (Orgyilkos, Szerzetes ~14/mp; Íjász ~11/mp): gyorsan visszapörög.
+   - **Mana-típus** (Varázsló, Sámán, Pap, Boszorkánymester, Evoker, Druida: 120-as tár;
+     Paplovag: 110): nagyobb készlet, lomhább (~7/mp) regen.
 3. Ha **nincs elég** erőforrásod egy képességhez, az **nem sül el** — az action bar jelzi
    (pl. „Nincs elég Mana!").
 
@@ -386,6 +403,11 @@ Lvl 25–45 közt feloldódó ulti-készlettel rendelkezik — a teljes listát 
 > rangsorolhatod** (max. **5 rang**), ami rangonként **−8% cooldownt** és **+5% erőt** ad —
 > tiszta, nem tolakodó „képesség-erősítés" a talentek és a kaszt-szint fölött.
 
+> **Kombók és kombó-láncok:** bizonyos képesség-párok gyors egymásutánban elsütve „⚡ Kombó!"-t
+> adnak (gyorsabb felépülés), a **3 lépéses láncok** befejezője pedig **+25% erővel** csap be
+> (pl. Varázsló: Fagyérintés → Arkán Lökés → Tűzgolyó). A cast után az action bar mutatja a
+> **nyíló kombó-ablakot** és a következő lépést — részletek: [Képességek oldal](docs/player-guide/05-kepessegek.md).
+
 ---
 
 ## 7. Talentek ✅
@@ -441,9 +463,22 @@ tanulsz és nézed a szintjeidet (vagy paranccsal: `/profession join <szakma>`, 
   Fegyverkovács / Páncélkovács, Főzetmester / Transzmutátor, Séf / Hentes).
 
 ### Craft-korlátozások
-Bizonyos tárgyakhoz **kaszt- vagy szakmaszint kell**. Az alap szabály: **netherite felszerelést
-csak a 25+ szintű Kovács** tud készíteni (craftolóasztalon és smithing asztalon is). Ha nem
-felelsz meg, a craft eredménye nem jön létre, és üzenetet kapsz.
+Bizonyos tárgyakhoz **kaszt- vagy szakmaszint kell** — ez teszi értékessé a szakmákat és a köztük
+lévő kereskedelmet. Ha nem felelsz meg, a craft eredménye nem jön létre, és üzenetet kapsz. A
+jelenlegi kapuk:
+
+| Tárgy | Kell hozzá |
+|---|---|
+| Netherite felszerelés (fegyver + páncél) | **Páncélkovács 25** |
+| Netherite-rúd (finomítás) | **Bányász 20** |
+| Számszeríj, pajzs | **Favágó 8** |
+| Főzőállvány | **Alkimista 5** |
+| Bűvölő-asztal | **Enchanter 5** |
+| Torta, sütőtökös pite, nyúlpörkölt | **Séf 6** |
+
+A nyers alapok (fapáncél, kőszerszám, íj, sült húsok) szabadok maradnak — a kapuk a **csúcs-
+kimenetet és a szakma-„állomásokat"** védik, nem a korai játékot. (Az alkimista főzés és az
+enchanter bűvölés érdemi kapuzása külön fejlesztés — lásd a tervet.)
 
 ---
 
@@ -507,7 +542,8 @@ koordináta). Spawnkor **véletlen archetípus** kerül kiválasztásra — saj�
 **szignatúra-aurával** (a túlélők a boss közelében témába illő debuffot kapnak) és jutalom-szorzóval
 (pl. A Gyűrűk Őre, Lávakohó Behemót, Fagyott Trón Királya, Csontkirály, Mélységi Rém…). A boss
 **~8 másodpercenként telegrafált különleges képességet** süt el (becsapódás / mérgező zóna /
-add-idézés), és **50% HP alatt feldühödik** (2. fázis, erősebb csapásokkal). Aki legyőzi: a
+add-idézés) — a veszélyzónát **részecske-gyűrű** rajzolja ki, külön **hangjelzéssel** —, és
+**50% HP alatt feldühödik** (2. fázis, erősebb csapásokkal). Aki legyőzi: a
 **frakciója kasszát és liga-pontot** kap, a győztes pedig **ideiglenes buffot** (erő + ellenállás).
 
 ### Inváziók 🧟
@@ -572,7 +608,8 @@ egy ideig marad, aztán **magától visszaáll az eredeti terep** — amit addig
 meteor **sosem csapódik claimelt frakció-területre**, és **nem rombolja maradandóan** a világot.
 
 ### Események megtekintése
-`/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
+**`/events status`** — „Mi történik most?": minden éppen aktív világesemény egy listában
+(hátralévő idővel) + a szezon-állás • `/events season` — szezon-állás • `/events blood-moon` — vérhold állapota • `/events caravan` —
 kereskedő-karaván állapota. (Admin: `/events caravan arrive|depart` • `/events ambient` • `/events
 gathering` • `/events treasure` • `/events wild-hunt` • `/events abundance` • `/events challenge` •
 `/events escort` • `/events meteor`.) A `/menu` → **Események** almenü mindezt egy helyen, **élő
@@ -596,6 +633,20 @@ név + **színkódolt élet-sáv** (zöld/sárga/piros) + szív-szám, a vezető
 így harc közben is látod, kinek kell segítség (WoW party-frame-módra). Ha nem vagy csapatban, a
 szekció el sem foglal helyet az oldalsávon.
 
+**Okos oldalsáv (HUD):** a képernyő jobb szélén lévő oldalsáv **magától alkalmazkodik**:
+harcban „kitisztul" — csak az **Erő-csík** és a **party-frame-ek** maradnak, majd pár
+másodperccel az utolsó találat után visszatér a teljes nézet. Az infósor **forog**:
+aktív események ↔ szezon-visszaszámláló ↔ a napi kihívás állása váltakozik rajta.
+A `/hud <szekció>` paranccsal bármely blokk (frakció/kaszt/erőforrás/esemény/valuta/csapat)
+egyenként ki-be kapcsolható, a `/hud mind` az egész oldalsávot rejti el — a beállításod
+kilépés után is megmarad.
+
+**Harc-visszajelzés:** minden ütésed fölött **lebegő sebzés-szám** jelenik meg a célponton
+(mobnál sárga, játékosnál piros — kézi és lövedékes találatra is; alapból **csak te látod**,
+a szerver configból mindenki számára láthatóra állíthatja vagy kikapcsolhatja), halálkor pedig a chatben
+**halál-összegzőt** kapsz: az utolsó 10 másodperc találatai (mennyi ❤, kitől/mitől, mikor) és
+az összesített sebzés — így mindig tudod, mi vitt el.
+
 ### Terület-claim (saját birtok) 🏠
 `/claim` egy **16×16 blokkos négyzetet** foglal le **körülötted** (a pozíciódra igazítva, **nem** a
 vanilla chunk-rácshoz). Az első **~768 oszlop (kb. 3 gyorsfoglalásnyi terület) ingyenes**, utána
@@ -606,12 +657,18 @@ tehát az `/claim unclaim`-nál sem jár vissza.
 **Mit véd a claim:** idegenek nem törhetnek/rakhatnak blokkot, nem nyithatnak konténert (láda,
 hordó, kemence…), nem üríthetnek vödröt, nem szedhetnek le kép-/festménykeretet a te birtokodon —
 és a **robbanás sem bontja** a claimelt blokkokat (a blokk-evő mobok, pl. enderman, szintén nem
-vihetnek el blokkot). **Fontos:** a claim a **PvP-t NEM tiltja** — ez háborús szerver, a claim csak
-az építést és a lopást védi.
+vihetnek el blokkot). A **tűz** nem gyullad meg, nem terjed és nem éget el claimelt blokkot, kívülről
+**folyadék** (víz/láva) nem folyhat be, és idegen **dugattyú** sem tolhat be/húzhat ki blokkot a
+birtokodról (a saját claimeden belüli gépeid persze működnek). **Fontos:** a claim a **PvP-t NEM
+tiltja** — ez háborús szerver, a claim csak az építést és a lopást védi.
 
 A tulajdonos `/claim trust <név>` paranccsal megbízottakat adhat (teljes hozzáférés minden
-claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza. `/claim info` megmutatja, kié az
-adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel rajzolja ki a chunk-határt.
+claimjéhez), `/claim untrust <név>` paranccsal vonhatja vissza — vagy GUI-ból: `/menu` →
+Birtok → **„Megbízottak kezelése"** (felül a megbízottak: katt = visszavonás; alul a közeli
+játékosok: katt = megbízás). `/claim info` megmutatja, kié az
+adott chunk (+ kirajzolja a határát), `/claim show` pedig részecskékkel **és egy izzó fényfallal**
+rajzolja ki a közeli claimek határát — a fal a saját/megbízott birtokodnál zöld, idegennél piros,
+és csak te látod (pár másodperc után eltűnik).
 
 **Védett zónába** (főváros, védett város, védett frakcióterület) **nem lehet claimelni** — ott
 senki sem építhet. **Normál frakcióterületre viszont IGEN**: a saját birtokod a frakciód földjén
@@ -661,6 +718,10 @@ buffot + tárgy-jutalmat + ünneplő tűzijátékot**; utána a pontok resetelne
 ---
 
 ## 12. Küldetések ✅
+
+**Új játékosként** az első belépésedkor automatikusan elindul egy rövid **kezdő
+küldetés-lánc** („Beszélj a hírnökkel" → „Első csata" → „Első gyűjtögetés") — minden lépés
+teljesítésekor a következő magától indul, jutalommal.
 
 `/quest list` (felvehető), `/quest info` (aktív + haladás), `/quest accept <id>`,
 `/quest abandon <id>`, `/quest log` (grafikus **küldetésnapló**: Aktív / Felvehető /
@@ -712,6 +773,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
 | `/profession recipes` | Recept-könyv (egy-kattintásos craftolás a tanult receptekből) |
 | `/daily` | Napi (naponta forgó) küldetések |
 | `/achievements` | Teljesítmények — mérföldkő-célok valuta-jutalommal |
+| `/stats [név]` | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, questek |
 | `/leaderboard` | Ranglisták (kaszt-szint, vagyon, raid-ölések) |
 | `/pet` | Társ-állat (Vadmester/Nekromanta): befogás, előhívás, szintlépés |
 | `/bank balance/deposit/withdraw` | Bank |

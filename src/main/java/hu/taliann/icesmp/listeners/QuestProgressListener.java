@@ -73,6 +73,12 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
+        // Creative farm-guard (same as GatheringBuffListener): creative/spectator breaks
+        // must not progress quests or community goals.
+        final org.bukkit.GameMode mode = event.getPlayer().getGameMode();
+        if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) {
+            return;
+        }
         questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
         communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS", event.getBlock().getType().name(), 1);
     }

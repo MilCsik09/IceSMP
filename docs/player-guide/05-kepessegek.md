@@ -11,8 +11,20 @@ A kasztod képességeit egy **Katalizátor** nevű tárggyal használod (a kaszt
 a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
+- **Lopakodás (SHIFT) + görgetés** = gyors váltás a képességeid között előre/hátra — a
+  hotbar nem vált el, és a katalizátor **neve az épp kiválasztott képességet** mutatja.
+- **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** egy feloldott képességen →
+  kedvencnek jelölöd (★). Ha van legalább egy kedvenced, a shift+görgetés **csak a
+  kedvenceket** lépkedi — 20+ képességnél így villámgyors a váltás. (Újra shift-katt: levétel;
+  üres kedvenc-lista = megint mindent görget.) A spellkönyv **tölcsér-gombjával** a „csak
+  feloldottak" nézetre szűrhetsz.
 - **Lopakodás (SHIFT) + bal katt (ütés)** = váltás a feloldott képességeid között. A képernyő
   alján (action bar) látod, melyik van kiválasztva és mennyibe kerül.
+
+> ✨ **Látvány:** a képességek most **formázott effektet** kapnak — a célzott spell **sugarat**
+> húz a célpontig, a körzeti spell **gyűrűt** rajzol a hatókör mentén, az önmagadra ható spell
+> **fölfelé csavarodó fényörvényt** — a szín pedig a spell jellegéhez illik (tűz narancs-vörös,
+> fagy kék-fehér, szentség arany…). Tisztán vizuális, a hatáson nem változtat.
 
 > ⚔️ **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász): a kezedben
 > tartott **kard vagy balta is katalizátorként működik** — nem kell tárgyat váltanod a harc közben!
@@ -29,7 +41,13 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
 
 - **A legtöbb képesség ennyit FOGYASZT** a csíkból (a gyors képességek olcsók ~15–20, az ultik
   drágák ~50).
-- A csík **magától visszatöltődik** idővel (alapból ~8 / másodperc).
+- A csík **magától visszatöltődik** idővel — de **kasztonként másképp viselkedik**:
+  - **Düh-típus** (Harcos, Halállovag, Démonvadász): harcon kívül lassan **ürül**, minden
+    **bevitt ütés tölti** (+8), harcban lassú visszatöltődés is fut — dühöt a harc termel!
+  - **Energia-típus** (Orgyilkos, Szerzetes ~14/mp; Íjász ~11/mp): kis szünetekkel is gyorsan
+    visszapörög — pörgős rotációra való.
+  - **Mana-típus** (Varázsló, Sámán, Pap, Boszorkánymester, Evoker, Druida: 120-as tár;
+    Paplovag: 110): nagyobb készlet, de lomhább (~7/mp) regen — a nagy leadást ki kell várni.
 - Ha **nincs elég** erőforrásod, a képesség **nem sül el** (az action bar jelzi).
 
 **Hibrid rendszer** — minden képesség a hozzá illő költséget kéri: a legtöbb az Erő-csíkot, de a
@@ -39,9 +57,11 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
 - **Mit csinál:** egyszerűen, mit tesz a képesség.
 - **Költség:** mennyit „fizetsz" érte. Lehet **⚡ Erő-csík** (osztály-erőforrás), **🍗 éhség**,
   **XP** vagy **❤ élet** — a spellkönyv (`/spellbook`) mindig kiírja, melyik képesség mit kér.
-  *(Az alábbi táblázatok „Költség" oszlopa a régi, fix 🍗/XP/❤ értékeket mutatja; a hétköznapi
-  spellek ma ehelyett az Erő-csíkot fogyasztják, csak a vér/rituálé/nehéz-fizikai spellek tartják
-  meg a 🍗/XP/❤ költséget.)*
+  *(Ahol ⚡ áll, ott kifejezetten hangolt Erő-csík ár van; a 🍗/XP jelölésű hétköznapi
+  spellek is az Erő-csíkot fogyasztják — a cooldown-sávjuk szerinti alapáron —, csak a
+  vér (❤), a rituálé/idézés (nagy XP) és a nehéz-fizikai (sok 🍗) spellek, valamint a
+  kifejezetten éhség-alapúra állított mozgás-spellek (Villanás, Hátraszökkenés, Dupla Ugrás)
+  fizetnek ténylegesen a jelölt költséggel. A `/spellbook` mindig a valós árat mutatja.)*
 - **Várakozás:** ennyi ideig kell várni, mire újra használható (cooldown).
 - **Szint:** a kasztod hányadik szintjén oldódik fel automatikusan.
 
@@ -62,6 +82,14 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
   sütsz el, a második **gyorsabban épül fel** (cooldown-visszatérítés) — és látványos „⚡ Kombó!"
   jelzést kapsz. Néhány alap kombó: Fagyérintés → Arkán Lökés • Ínmetszés → Fojtás •
   Csapdázás → Nyílzápor • Csatakiáltás → Forgószél • Toxinnyíl → Ragály.
+- **Kombó-láncok (3 lépés):** néhány kaszt teljes láncot fűzhet: ha mindhárom lépést az
+  időablakon belül sütöd el, a **befejező +25% erővel** csap be és gyorsabban is épül fel
+  („⚡ Kombó-lánc befejező!"). Láncok: Varázsló: Fagyérintés → Arkán Lökés → Tűzgolyó •
+  Halállovag: Jéglánc → Fagycsapás → Megsemmisítés • Sámán: Lángrengés → Lávakitörés →
+  Földrengés • Szerzetes: Felkelő Nap Rúgás → Düh Ökle → Sötét Rúgás • Pap: Szent Sújtás →
+  Elmerobbantás → Szent Nóva • Boszorkánymester: Romlás → Instabil Átok → Káoszlövedék.
+  A cast után az **action bar mutatja a nyíló kombó-ablakot** és a lánc következő lépését —
+  könnyű tanulni.
 
 ---
 
@@ -76,10 +104,10 @@ Távolsági mágia, lassítás, védelem. A költsége többnyire **XP**.
 | **Wisplight** | Egy fénygömböt lősz ki, ami 5 percre **bevilágítja** a sötétet, ahová becsapódik | 1 🍗 | nincs | 2 |
 | **Mana Nyíl** | Mágikus nyíl 14 blokkra, **3 sebzés** | 8 XP | 10 mp | 3 |
 | **Gyökerezés** | Helyben **gyökerezteti** a környező ellenfeleket | 8 🍗 | 5 perc | 5 |
-| **Fagyérintés** | A célpontot **megfagyasztja** és lelassítja (8 blokk) | 15 XP | 45 mp | 7 |
+| **Fagyérintés** | A célpontot **megfagyasztja** és lelassítja (8 blokk) | 40 ⚡ | 45 mp | 7 |
 | **Arkán Pajzs** | **Extra szíveket** (felszívódás) és sebzéscsökkentést ad magadnak | 30 XP | 90 mp | 9 |
-| **Megzavarás** | A környező ellenfeleket **összezavarja** (rosszul látnak/céloznak) | 160 XP | 20 perc | 10 |
-| **Villanás** | **8 blokkot előre teleportálsz**, amerre nézel | 25 XP | 30 mp | 12 |
+| **Megzavarás** | 15 blokkban **összezavar**: a játékosok megvakulnak, a mobok **elvesztik a célpontjukat** (10 mp-ig újra és újra), lelassulnak és gyengébben ütnek | 160 XP | 20 perc | 10 |
+| **Villanás** | **8 blokkot előre teleportálsz**, amerre nézel | 1,5 🍗 | 30 mp | 12 |
 | **Esőtánc** | **Esőt** hív a környékre | 352 XP | 60 perc | 15 |
 | **Arkán Lökés** | Körkörös **robbanás** (5 blokk): 3 sebzés + ellök | 40 XP | 90 mp | 18 |
 | **Gravitációs Örvény** | A körülötted lévőket **a levegőbe emeli** és lelassítja (6 blokk) | 60 XP | 150 mp | 21 |
@@ -97,7 +125,7 @@ Közelharci erő, buffok, kitartás. A költsége többnyire **éhség**.
 | **Belső Fókusz** | 5 mp-re **helyben megállsz**, cserébe majdnem sebezhetetlen + gyógyulsz | 20 🍗 | 8 perc | 10 |
 | **Második Lendület** | **3 szívet gyógyulsz** + regeneráció | 8 🍗 | 3 perc | 12 |
 | **Lökéshullám** | A magad előtti ellenfeleket **ellöki** | 30 XP | 60 mp | 15 |
-| **Forgószél** | Körbevágsz: 4 blokkban **4 sebzés** + ellök | 6 🍗 | 60 mp | 18 |
+| **Forgószél** | **5 mp-es pörgés-channel:** minden ütemben 2 sebzés + ellökés (4 blokk) | 6 🍗 | 150 mp | 18 |
 | **Vasbőr** | 10 mp-re **erős sebzéscsökkentés** | 8 🍗 | 150 mp | 20 |
 | **Megfélemlítés** | A környékbeli ellenfeleket **legyengíti és lelassítja** (6 blokk) | 6 🍗 | 120 mp | 22 |
 
@@ -109,11 +137,11 @@ Távolsági harc, mozgékonyság, csapdák. A költsége többnyire **éhség**.
 |---|---|---|---|---|
 | **Vadászjel** | A célpont **felragyog** (20 blokkról is látod) | 2 🍗 | 30 mp | 2 |
 | **Sasszem** | Élesebb látás + gyorsabb lépés | 4 🍗 | 90 mp | 3 |
-| **Hátraszökkenés** | **Hátraugrasz** a veszélyből | 3 🍗 | 20 mp | 5 |
+| **Hátraszökkenés** | **Hátraugrasz** a veszélyből | 1,5 🍗 | 15 mp | 5 |
 | **Sortűz** | Több nyilat lősz ki egyszerre | 5 🍗 | 45 mp | 8 |
-| **Átütő Lövedék** | Egy **gyors, átütő** szellem-nyíl | 25 XP | 35 mp | 10 |
+| **Átütő Lövedék** | Egy **gyors, átütő** szellem-nyíl, ami **3 célponton üt át** | 25 XP | 35 mp | 10 |
 | **Csapdázás** | A célpontot **helyhez köti** (erős lassítás, 14 blokk) | 4 🍗 | 45 mp | 12 |
-| **Dupla Ugrás** | A levegőben **még egyet ugorhatsz** | 3 🍗 | nincs | 15 |
+| **Dupla Ugrás** | A levegőben **még egyet ugorhatsz** | 1,5 🍗 | 5 mp | 15 |
 | **Álcázás** | 8 mp-re **láthatatlanná válsz** | 5 🍗 | 120 mp | 17 |
 | **Nyílzápor** | **7 nyíl** legyezőben, terülő sebzés | 60 XP | 90 mp | 20 |
 | **Szélléptek** | 20 mp-re **gyorsaság + magasabb ugrás** | 5 🍗 | 90 mp | 22 |
@@ -126,14 +154,14 @@ Lopakodás, gyors kitörések, gyengítés. A költsége **éhség**.
 |---|---|---|---|---|
 | **Tőrhajítás** | Gyors **tőrt dobsz** a célra | 2 🍗 | 15 mp | 2 |
 | **Adrenalin** | **Gyorsaság + bányászgyorsaság** 8 mp-re | 4 🍗 | 60 mp | 4 |
-| **Árnyéklépés** | A célpont **mögé teleportálsz** | 6 🍗 | 60 mp | 5 |
+| **Árnyéklépés** | A célpont **mögé teleportálsz** | 60 ⚡ | 1,5 perc | 5 |
 | **Ínmetszés** | 5 blokkon belül **2 sebzés** + erős lassítás | 4 🍗 | 35 mp | 8 |
 | **Elsötétítés** | A célpontot **megvakítja** és legyengíti (10 blokk) | 5 🍗 | 60 mp | 10 |
 | **Füstbomba** | Füstöt vetsz, hogy **eltűnj** a harcból | 6 🍗 | 120 mp | 12 |
 | **Kitérés** | Hátraugrasz + rövid **láthatatlanság** | 5 🍗 | 75 mp | 15 |
-| **Fojtás** | 3,5 blokkon belül **5 sebzés** + nagyon erős lassítás | 3 ❤ | 90 mp | 18 |
+| **Fojtás** | 3,5 blokkon belül **5 sebzés** + nagyon erős lassítás | 2,5 ❤ | 90 mp | 18 |
 | **Árnyéksuhanás** | **Hosszú előrelendülés** + rövid láthatatlanság | 5 🍗 | 60 mp | 20 |
-| **Haláljegy** | A célpont **felragyog + legyengül** 12 mp-re (15 blokk) | 3 ❤ | 120 mp | 24 |
+| **Haláljegy** | A célpont **felragyog + legyengül** 12 mp-re (15 blokk) | 60 ⚡ | 120 mp | 24 |
 
 ## 🌿 Druida — alap képességek
 
@@ -144,14 +172,14 @@ Természet-mágia + négy alakváltó forma (medve/párduc/hold/utazó).
 | **Sarjadás** | **3 szívet gyógyulsz** + regeneráció | 40 XP | 30 mp | 2 |
 | **Napperzselés** | 4 sebzés + **felgyújt** (12 blokk) | 35 XP | 25 mp | 3 |
 | **Töviscsapás** | 5 blokkon belül **4 sebzés** + méreg | 3 🍗 | 25 mp | 5 |
-| **Párducforma** | **Párduc-alak:** sebesség + erő a gyors lecsapásokhoz | 1 🍗 | 6 mp | 7 |
+| **Párducforma** | **Párduc-alak:** sebesség + erő a gyors lecsapásokhoz, de amíg aktív **4 szívvel csökken** a maximum életed | 50 ⚡ | 6 mp | 7 |
 | **Gyökérfonat** | A célpontot **helyhez köti** (nagyon erős lassítás, 8 blokk) | 4 🍗 | 45 mp | 9 |
-| **Kéregbőr** | 8 mp-re **erős sebzéscsökkentés** | 4 🍗 | 60 mp | 11 |
-| **Medveforma** | **Medve-alak:** ellenállás, felszívás és erő, kissé lassabban | 1 🍗 | 6 mp | 13 |
-| **Vadgomba** | Gyógyulás + regeneráció | 40 XP | 45 mp | 15 |
-| **Utazóforma** | **Utazó-alak:** jelentős sebesség a gyors helyváltáshoz | 1 🍗 | 6 mp | 17 |
+| **Kéregbőr** | 8 mp-re **erős sebzéscsökkentés** | 4 🍗 | 1,5 perc | 11 |
+| **Medveforma** | **Medve-alak:** ellenállás (I), felszívás és erő, kissé lassabban, de gyorsabban éhezel | 50 ⚡ | 6 mp | 13 |
+| **Vadgomba** | **Dobható gomba**, ami 3 mp múlva felrobban: 4 blokkos körben lassítás + méreg 4 mp-re | 40 XP | 60 mp | 15 |
+| **Utazóforma** | **Utazó-alak:** jelentős sebesség a gyors helyváltáshoz, de **gyengeség (II)** sújt | 50 ⚡ | 6 mp | 17 |
 | **Ciklon** | A célpontot **a levegőbe emeli** + lassítja (10 blokk) | 4 🍗 | 50 mp | 19 |
-| **Holdforma** | **Hold-alak:** regeneráció + tűzállóság a hold-mágiához | 1 🍗 | 6 mp | 21 |
+| **Holdforma** | **Hold-alak:** regeneráció + tűzállóság a hold-mágiához, de **erős bányászlassultság** sújt | 50 ⚡ | 6 mp | 21 |
 
 ## ✨ Paplovag — alap képességek
 
@@ -161,14 +189,14 @@ Szent harci mágia: sújtás, gyógyítás, áldás-aurák.
 |---|---|---|---|---|
 | **Sújtás** | Szent sújtás: **5 sebzés** (14 blokk) | 30 XP | 20 mp | 2 |
 | **Villámgyógyítás** | Gyorsan **2,5 szívet gyógyulsz** | 40 XP | 30 mp | 4 |
-| **Áhítat Aurája** | 10 mp-re **sebzéscsökkentés** | 4 🍗 | 60 mp | 6 |
+| **Áhítat Aurája** | 10 mp-re **sebzéscsökkentés** + tüske: aki megüt, **1 sebzést visszakap** | 4 🍗 | 60 mp | 6 |
 | **Igazság Pörölye** | 3 sebzés + **erős lassítás** (8 blokk) | 4 🍗 | 45 mp | 8 |
 | **Megszentelés** | Tüzes terület: 2 sebzés + **felgyújt** (5 blokk) | 5 🍗 | 60 mp | 11 |
 | **Erő Áldása** | Magadra **Erő** buff 15 mp-re | 5 🍗 | 120 mp | 13 |
-| **Szent Harag** | Körkörös 4 sebzés + ellök (6 blokk) | 60 XP | 90 mp | 15 |
+| **Szent Harag** | **Fény-lövedék:** a célpont jelenlegi életének **30%-át elveszíti** (bossra nem hat) | 60 XP | 90 mp | 15 |
 | **Isteni Védelem** | Erős sebzés- és **tűzvédelem** | 6 🍗 | 120 mp | 17 |
 | **Sugárzás** | A **csapattársaidat gyógyítja** a környéken (8 blokk) | 6 🍗 | 120 mp | 19 |
-| **Kézrátétel** | **5 szívet gyógyulsz** + erős regeneráció | 70 XP | 150 mp | 21 |
+| **Kézrátétel** | 30 mp-re **jóllakottságot** ad (a korábbi öngyógyítás helyett) | 70 XP | 150 mp | 21 |
 
 ## 💀 Halállovag — alap képességek
 
@@ -177,15 +205,15 @@ Rúnikus harc, fagy és vér; önfenntartás életszívással.
 | Képesség | Mit csinál | Költség | Várakozás | Szint |
 |---|---|---|---|---|
 | **Halálcsapás** | 6 sebzés + **öngyógyítás** (közelharc) | 3 🍗 | 20 mp | 2 |
-| **Rúnacsapás** | Közeli **7 sebzés** | 3 🍗 | 20 mp | 4 |
+| **Rúnacsapás** | **Dobható rúnakő:** az első hozzáérő ellenfélnek 7 sebzés + lassítás | 3 🍗 | 40 mp | 4 |
 | **Halálfonál** | 5 sebzés + **sorvadás** (14 blokk) | 35 XP | 30 mp | 6 |
-| **Jéglánc** | A célpontot **lelassítja** (12 blokk) | 3 🍗 | 30 mp | 8 |
+| **Jéglánc** | A célpontot + egy közeli ellenfelet (max 2 cél) **megfagyaszt + lelassít** (12 blokk) | 3 🍗 | 30 mp | 8 |
 | **Jeges Érintés** | 3 sebzés + **megfagyaszt** + lassít (10 blokk) | 35 XP | 35 mp | 11 |
 | **Csontpajzs** | Sebzéscsökkentés + **extra szív** | 5 🍗 | 60 mp | 13 |
 | **Vérforralás** | Körkörös 3 sebzés + sorvadás (5 blokk) | 4 🍗 | 45 mp | 15 |
 | **Mágiapajzs** | Sebzés- és **tűzvédelem** | 5 🍗 | 90 mp | 17 |
 | **Sötét Parancs** | A közeli ellenfeleket **lelassítja**, te védettebb leszel (6 blokk) | 4 🍗 | 60 mp | 19 |
-| **Fagyláz** | 2 sebzés + **megfagyaszt** + erős lassítás (12 blokk) | 40 XP | 45 mp | 21 |
+| **Fagysugár** | 2 blokk széles **fagysugarat** lősz előre, ami megfagyaszt mindenkit az útjában (12 blokk) | 40 XP | 90 mp | 21 |
 
 ## 🌩️ Sámán — alap képességek
 
@@ -195,7 +223,7 @@ Elemi mágia (villám/láva/jég) + totem-aurák.
 |---|---|---|---|---|
 | **Villámnyíl** | **Villám** a célpontra: 5 sebzés (16 blokk) | 30 XP | 20 mp | 2 |
 | **Gyógyár** | **3 szívet gyógyulsz** | 40 XP | 30 mp | 4 |
-| **Földrengés** | 5 sebzés + ellök (10 blokk) | 3 🍗 | 30 mp | 6 |
+| **Földrengés** | Körkörös **5 sebzés** + ellökés (5 blokk) | 3 🍗 | 30 mp | 6 |
 | **Lángrengés** | 4 sebzés + **felgyújt** (12 blokk) | 35 XP | 30 mp | 8 |
 | **Fagyrengés** | 4 sebzés + **megfagyaszt** + lassít (12 blokk) | 35 XP | 30 mp | 11 |
 | **Perzselő Totem** | Lerakott **támadó totem**, ami az ellenfeleket sebzi és felgyújtja | 50 XP | 75 mp | 15 |
@@ -212,14 +240,14 @@ Harcművészet: gyors kombók, mozgékonyság, csi-gyógyítás.
 |---|---|---|---|---|
 | **Tigristenyér** | Közeli **5 sebzés** | 2 🍗 | 15 mp | 2 |
 | **Gördülés** | Gyorsan **előregördülsz** | 2 🍗 | 20 mp | 4 |
-| **Sötét Rúgás** | 6 sebzés + kis ellökés (4 blokk) | 3 🍗 | 20 mp | 6 |
-| **Élénkítés** | **2,5 szívet gyógyulsz** | 40 XP | 30 mp | 8 |
-| **Pörgő Darurúgás** | Körkörös **4 sebzés** (4 blokk) | 4 🍗 | 30 mp | 11 |
-| **Csi Hullám** | 3 sebzés + **öngyógyítás** (12 blokk) | 35 XP | 30 mp | 13 |
+| **Sötét Rúgás** | 6 sebzés + **erős ellökés** (4 blokk) | 3 🍗 | 20 mp | 6 |
+| **Élénkítés** | **2,5 szívet gyógyulsz** + a 6 blokkos körben lévő ellenfeleket 7,5 mp-re **felfénylővé** teszi | 40 XP | 30 mp | 8 |
+| **Pörgő Darurúgás** | Körkörös **4 sebzés**, **két hullámban** (4 blokk) | 4 🍗 | 30 mp | 11 |
+| **Csi Hullám** | 10 blokkos körben az ellenfeleket **felfénylővé** teszi + **lelassítja** 5 mp-re | 35 XP | 30 mp | 13 |
 | **Provokálás** | A közeli ellenfeleket **lelassítja**, te védettebb leszel (6 blokk) | 3 🍗 | 45 mp | 15 |
-| **Repülő Kígyórúgás** | **Hosszú előrelendülés** + sebesség | 3 🍗 | 35 mp | 17 |
-| **Ártalom Kiűzése** | Körkörös 2 sebzés + **öngyógyítás** (4 blokk) | 45 XP | 45 mp | 19 |
-| **Lábseprés** | Körkörös **erős lassítás** + ellök (5 blokk) | 4 🍗 | 60 mp | 21 |
+| **Repülő Kígyórúgás** | **Hosszú előrelendülés**; becsapódáskor **+5 sebzés és ellökés** | 3 🍗 | 35 mp | 17 |
+| **Ártalom Kiűzése** | Körkörös 2 sebzés + **öngyógyítás** (4 blokk), 5 mp-re **Taszítás III** botot ad | 45 XP | 90 mp | 19 |
+| **Lábseprés** | Körkörös **gyengeség (II)** + ellök (5 blokk) | 4 🍗 | 60 mp | 21 |
 
 ## ⛪ Pap — alap képességek
 
@@ -227,12 +255,12 @@ Szent és árny mágia, gyógyítás.
 
 | Képesség | Mit csinál | Költség | Várakozás | Szint |
 |---|---|---|---|---|
-| **Szent Sújtás** | Szent sújtás: **5 sebzés** (14 blokk) | 30 XP | 20 mp | 2 |
+| **Szent Sújtás** | Szent sújtás: sebzés helyett **gyengeséget** (I) okoz (14 blokk) | 30 XP | 25 mp | 2 |
 | **Gyógyítás** | **3 szívet gyógyulsz** | 40 XP | 30 mp | 4 |
 | **Megújulás** | Magadra **regeneráció** | 30 XP | 30 mp | 6 |
-| **Erő Szava: Pajzs** | Magadra **extra szívek** (felszívódás) | 4 🍗 | 45 mp | 8 |
+| **Erő Szava: Pajzs** | Magadra **extra szívek** (felszívódás) + 5 mp-re **lelassulsz** | 4 🍗 | 45 mp | 8 |
 | **Árnyszó: Fájdalom** | A célpontra **sorvadás** (12 blokk) | 3 🍗 | 25 mp | 11 |
-| **Elmerobbantás** | **6 sebzés** (14 blokk) | 40 XP | 30 mp | 13 |
+| **Elmerobbantás** | Megjelölöd a célt; **3 mp múlva felrobban**: 6 sebzés + 5 splash sebzés (14 blokk) | 40 XP | 40 mp | 13 |
 | **Feloldozás** | Magadra **sebzéscsökkentés** | 4 🍗 | 60 mp | 15 |
 | **Szent Nóva** | A **csapattársaidat gyógyítja** a környéken (6 blokk) | 5 🍗 | 60 mp | 17 |
 | **Elhalványulás** | Rövid **láthatatlanság + gyorsaság** | 4 🍗 | 75 mp | 19 |
@@ -249,11 +277,11 @@ Szent és árny mágia, gyógyítás.
 | **Életszívás** | 3 sebzés + **magadat gyógyítod** (12 blokk) | 35 XP | 45 mp | 6 |
 | **Gyengeség Átka** | A célpontot **legyengíti** (12 blokk) | 3 🍗 | 30 mp | 8 |
 | **Felgyújtás** | 4 sebzés + **felgyújt** (14 blokk) | 35 XP | 30 mp | 11 |
-| **Árnyékégés** | 5 sebzés + **felgyújt** (12 blokk) | 35 XP | 30 mp | 13 |
+| **Átok Nyúl** | **3 mp-es nyúl-akna:** érintésre 3 szívnyi splash sebzés | 35 XP | 90 mp | 13 |
 | **Rettegés** | A célpontot **lelassítja + összezavarja** (10 blokk) | 4 🍗 | 60 mp | 15 |
 | **Gyötrelem Átka** | A célpontra **sorvadás + méreg** (12 blokk) | 2 ❤ | 45 mp | 17 |
 | **Démonpáncél** | Erős **sebzéscsökkentés** | 5 🍗 | 90 mp | 19 |
-| **Démoni Kör** | **Előrelendülés** + sebesség | 3 🍗 | 45 mp | 21 |
+| **Démoni Kör** | **Előrelendülés**; a lendület helyén só-csapdát hagysz — a felvevő 3 mp-re **mérgezést** kap | 3 🍗 | 45 mp | 21 |
 
 ## 😈 Démonvadász — alap képességek
 
@@ -263,14 +291,14 @@ Fel-mágia, mozgékony közelharc.
 |---|---|---|---|---|
 | **Démon Harapása** | Közeli **5 sebzés** | 2 🍗 | 15 mp | 2 |
 | **Fel Roham** | **Hosszú előrelendülés** + sebesség | 2 🍗 | 20 mp | 4 |
-| **Nyírás** | Közeli **5 sebzés** | 2 🍗 | 20 mp | 6 |
-| **Pengevetés** | **5 sebzés** (14 blokk) | 30 XP | 25 mp | 8 |
+| **Lélek Csere** | **Lövedék:** a célpont jelenlegi életének 25%-a rád száll át | 2 🍗 | 50 mp | 6 |
+| **Sarlóvetés** | **Bumeráng-sarló:** oda-vissza repülve mindkét irányban 5 sebzést okoz (14 blokk) | 30 XP | 40 mp | 8 |
 | **Lángaura** | Körkörös 3 sebzés + **felgyújt** (5 blokk) | 40 XP | 45 mp | 11 |
-| **Káoszcsapás** | Közeli **6 sebzés** | 3 🍗 | 25 mp | 13 |
+| **Káoszcsapás** | Közeli **6 sebzés** + **4 blokkal felütés** a levegőbe | 3 🍗 | 25 mp | 13 |
 | **Mágiafalás** | Magadra **sebzéscsökkentés** | 3 🍗 | 60 mp | 15 |
 | **Gyötrés** | A közeli ellenfeleket **legyengíti**, te védettebb leszel (6 blokk) | 3 🍗 | 45 mp | 17 |
 | **Siklás** | Magadra **magasabb ugrás + gyorsaság** | 2 🍗 | 45 mp | 19 |
-| **Szellemlátás** | Magadra **gyorsaság** buff | 3 🍗 | 75 mp | 21 |
+| **Szellemlátás** | 8 mp-ig **2 mp-enként váltakozó láthatatlanság** | 3 🍗 | 75 mp | 21 |
 
 ## 🐉 Sárkányidéző — alap képességek
 
@@ -278,16 +306,16 @@ Sárkány-mágia: tűz, szél, smaragd-gyógyítás.
 
 | Képesség | Mit csinál | Költség | Várakozás | Szint |
 |---|---|---|---|---|
-| **Élő Láng** | 5 sebzés + **felgyújt** (15 blokk) | 30 XP | 20 mp | 2 |
+| **Lánggolyó** | 5 sebzés + 3 mp **égés**, 2,5 blokkos **robbanással** (15 blokk) | 30 XP | 20 mp | 2 |
 | **Azúr Csapás** | **5 sebzés** (14 blokk) | 30 XP | 20 mp | 4 |
 | **Smaragd Virág** | Gyógyulás + regeneráció | 40 XP | 45 mp | 6 |
-| **Szárnycsapás** | A közeli ellenfeleket **ellöki** (5 blokk) | 3 🍗 | 30 mp | 8 |
+| **Szárnycsapás** | A közeli ellenfeleket **ellöki + lelassítja** (5 blokk) | 3 🍗 | 30 mp | 8 |
 | **Tűzlehelet** | Körkörös 5 sebzés + **felgyújt** (6 blokk) | 45 XP | 45 mp | 11 |
 | **Farokcsapás** | Körkörös 4 sebzés + ellök (5 blokk) | 3 🍗 | 30 mp | 13 |
-| **Lebegés** | Magadra **magasabb ugrás + gyorsaság** | 2 🍗 | 45 mp | 15 |
+| **Lebegés** | Magadra **magasabb ugrás + gyorsaság + lassú esés** | 2 🍗 | 45 mp | 15 |
 | **Obszidián Pikkelyek** | Sebzés- és **tűzvédelem** | 5 🍗 | 90 mp | 17 |
-| **Mély Lélegzet** | Körkörös 6 sebzés + **felgyújt** (6 blokk) | 60 XP | 90 mp | 19 |
-| **Zöldellő Ölelés** | **4 szívet gyógyulsz** + regeneráció | 50 XP | 60 mp | 21 |
+| **Mély Lélegzet** | **3,5 mp-es lángszórás-kúp:** sebez + felgyújt mindenkit, aki bele kerül (6 blokk) | 60 XP | 90 mp | 19 |
+| **Zöldellő Ölelés** | 5 blokkos körben az ellenfeleket **legyengíti**, téged **megerősít** (Erő) 6 mp-re | 50 XP | 60 mp | 21 |
 
 ---
 

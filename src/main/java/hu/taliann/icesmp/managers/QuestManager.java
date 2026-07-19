@@ -3,6 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -51,6 +52,12 @@ import java.util.Set;
  * requires-quest (chains). Rewards: class-xp, currency (type + amount),
  * unlock-spell, cleanse-sins.
  *
+ * <p>Linear auto-chains (no NPC/territory step needed between links, e.g. the
+ * first-join onboarding sequence): a quest's optional {@code next} field names
+ * the follow-up quest id, auto-accepted for the player the moment this quest
+ * completes (see {@link #complete}) — same accept + announce + dialogue flow
+ * as an NPC hand-out, just fired from completion instead of an interaction.</p>
+ *
  * <p>Besides the config-shipped quests, admins can build quests in-game
  * without touching code or files (<code>/quest admin create|set|delete</code>);
  * those live in custom-quests.yml under the plugin data folder (same schema)
@@ -70,7 +77,7 @@ public final class QuestManager implements PersistentStore {
 
     /** Fields the admin editor may set, in tab-complete order. */
     public static final List<String> EDITABLE_FIELDS = List.of(
-            "display-name", "description", "giver-npc",
+            "display-name", "description", "giver-npc", "next",
             "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
             "requires-job", "requires-faction", "requires-level", "requires-quest",
@@ -97,6 +104,11 @@ public final class QuestManager implements PersistentStore {
     private final NamespacedKey completedQuestsKey;
     private final File customQuestsFile;
     private volatile YamlConfiguration customQuests = new YamlConfiguration();
+    // Bound after construction (manual-DI ordering) — see IceSMPCore#setStatsManager wiring.
+    private volatile StatsManager statsManager;
+    // Bound after construction (manual-DI ordering) — see IceSMPCore#setCrateKeyFactory wiring.
+    private volatile CrateKeyFactory crateKeyFactory;
+    private volatile boolean warnedMissingCrateKeyFactory;
 
     public QuestManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final MessageManager messageManager, final JobManager jobManager,
@@ -114,6 +126,24 @@ public final class QuestManager implements PersistentStore {
         this.completedQuestsKey = new NamespacedKey(plugin, "quests_completed");
         this.customQuestsFile = new File(plugin.getDataFolder(), "custom-quests.yml");
         plugin.getDataFolder().mkdirs();
+    }
+
+    /**
+     * Binds the {@link StatsManager} used by {@code /stats} to count completed
+     * quests. Set after construction because of the manual-DI
+     * ordering in {@code IceSMPCore} (StatsManager is built after QuestManager).
+     */
+    public void setStatsManager(final StatsManager statsManager) {
+        this.statsManager = statsManager;
+    }
+
+    /**
+     * Binds the {@link CrateKeyFactory} used by the {@code rewards.crate-key} quest-reward
+     * field. Set after construction because of the manual-DI ordering in
+     * {@code IceSMPCore} (CrateKeyFactory is built after QuestManager).
+     */
+    public void setCrateKeyFactory(final CrateKeyFactory crateKeyFactory) {
+        this.crateKeyFactory = crateKeyFactory;
     }
 
     // ===== Admin-készítette questek (custom-quests.yml) =====
@@ -1429,6 +1459,9 @@ public final class QuestManager implements PersistentStore {
         }
         writeCsv(player, completedQuestsKey, completed);
         clearAllProgress(player, questId);
+        if (statsManager != null) {
+            statsManager.recordQuestComplete(player.getUniqueId());
+        }
         // Repeatable-cooldown anchor + seasonal anchor: when / in which season was it turned in.
         player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
         player.getPersistentDataContainer().set(seasonKey(questId), PersistentDataType.LONG, currentSeasonId());
@@ -1440,6 +1473,48 @@ public final class QuestManager implements PersistentStore {
                 "<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>",
                 Map.of("quest", getDisplayName(questId))
         ));
+        // Vanília advancement-toast a jobb felső sarokban (a chat-üzenet mellett).
+        if (configManager.getBoolean("quest-toast.enabled", true)) {
+            hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
+                    "✔ " + stripColors(getDisplayName(questId)), "minecraft:writable_book");
+        }
+
+        advanceChain(player, quest);
+    }
+
+    /** A quest display-nevének lecsupaszítása a toast-JSON-hoz (§/& kódok nélkül). */
+    private static String stripColors(final String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replaceAll("(?i)[§&][0-9a-fk-orx]", "");
+    }
+
+    /**
+     * Linear auto-chain: if the just-completed quest names a {@code next} quest
+     * id, it is accepted for the player right away (subject to the normal
+     * accept-blockers, so requirement mismatches or an already-active/completed
+     * next link simply skip silently). Used by story sequences that shouldn't
+     * need an NPC visit or territory crossing between every link — e.g. the
+     * first-join onboarding chain (ROADMAP A5).
+     */
+    private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
+        final String next = completedQuest.getString("next");
+        if (next == null || next.isBlank() || getAcceptBlocker(player, next) != null || !accept(player, next)) {
+            return;
+        }
+
+        final ConfigurationSection nextQuest = getQuestSection(next);
+        player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.2F);
+        player.sendMessage(messageManager.getMessage(
+                "quest.auto-started",
+                "<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>",
+                Map.of(
+                        "quest", getDisplayName(next),
+                        "description", nextQuest == null ? "" : nextQuest.getString("description", "")
+                )
+        ));
+        sendDialogue(player, next, "give", dialogueSpeakerFallback(nextQuest));
     }
 
     private void applyRewards(final Player player, final ConfigurationSection quest) {
@@ -1486,10 +1561,52 @@ public final class QuestManager implements PersistentStore {
             jobManager.unlockSpell(player, unlockSpell);
         }
 
+        // Crate-key reward: "<crateId>:<darab>", pl. "koznapi:1".
+        final String crateKeyReward = quest.getString("rewards.crate-key");
+        if (crateKeyReward != null && !crateKeyReward.isBlank()) {
+            grantCrateKeyReward(player, crateKeyReward);
+        }
+
         // The penance chain's final mercy: even the dark pact can be broken.
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
             sinManager.breakDarkPact(player);
         }
+    }
+
+    /**
+     * Grants a {@code "<crateId>:<darab>"} quest reward via the injected
+     * {@link CrateKeyFactory} — null-safe: if it was never bound (a server disabling the
+     * native crate system, or a manual-DI ordering slip), this just warns once to the
+     * console instead of throwing, and the rest of the quest's rewards still apply.
+     */
+    private void grantCrateKeyReward(final Player player, final String crateKeyReward) {
+        final CrateKeyFactory factory = crateKeyFactory;
+        if (factory == null) {
+            if (!warnedMissingCrateKeyFactory) {
+                warnedMissingCrateKeyFactory = true;
+                plugin.getLogger().warning("Quest 'rewards.crate-key' mező van beállítva, de a CrateKeyFactory "
+                        + "nincs bekötve (QuestManager#setCrateKeyFactory) — a kulcs-jutalom kimarad.");
+            }
+            return;
+        }
+
+        final String[] parts = crateKeyReward.split(":");
+        final String crateId = parts[0].trim();
+        int amount = 1;
+        if (parts.length >= 2) {
+            try {
+                amount = Math.max(1, Integer.parseInt(parts[1].trim()));
+            } catch (final NumberFormatException ignored) {
+                // Malformed amount: give one.
+            }
+        }
+
+        final org.bukkit.inventory.ItemStack key = factory.createKey(crateId, amount);
+        if (key.getType().isAir()) {
+            return; // Unknown crate id — config typo, skip rather than hand out a phantom item.
+        }
+        final Map<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(key);
+        leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
     }
 
     /** Whether the configured reward-currency type means "the player's own faction currency". */

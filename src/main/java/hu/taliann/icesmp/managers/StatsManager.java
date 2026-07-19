@@ -18,12 +18,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Persistent player stats for the leaderboards (ROADMAP phase 7): best class
  * level, total wealth and raid kills per player. Level/wealth are snapshotted on
  * a periodic tick (Folia-safe, on each player's region thread); raid kills are
  * incremented from the kill event. Stored in leaderboard.yml.
+ *
+ * <p>IDEAS A15 extends this with the {@code /stats} profile counters (kills,
+ * deaths, mob kills, spell casts, quests completed). Those counters are
+ * incremented from arbitrary region threads (e.g. a kill recorded from the
+ * victim's death-event thread), so they use {@link AtomicInteger} fields
+ * rather than plain {@code int}s.
  */
 public final class StatsManager implements PersistentStore {
 
@@ -37,6 +44,12 @@ public final class StatsManager implements PersistentStore {
         private int level;
         private double wealth;
         private int raidKills;
+        // /stats profile counters — written from arbitrary region threads.
+        private final AtomicInteger kills = new AtomicInteger();
+        private final AtomicInteger deaths = new AtomicInteger();
+        private final AtomicInteger mobKills = new AtomicInteger();
+        private final AtomicInteger spellCasts = new AtomicInteger();
+        private final AtomicInteger questsCompleted = new AtomicInteger();
     }
 
     private final JavaPlugin plugin;
@@ -73,9 +86,13 @@ public final class StatsManager implements PersistentStore {
                 stat.level = section.getInt(key + ".level", 0);
                 stat.wealth = section.getDouble(key + ".wealth", 0.0D);
                 stat.raidKills = section.getInt(key + ".raid-kills", 0);
+                stat.kills.set(section.getInt(key + ".kills", 0));
+                stat.deaths.set(section.getInt(key + ".deaths", 0));
+                stat.mobKills.set(section.getInt(key + ".mob-kills", 0));
+                stat.spellCasts.set(section.getInt(key + ".spell-casts", 0));
+                stat.questsCompleted.set(section.getInt(key + ".quests-completed", 0));
                 stats.put(id, stat);
             } catch (final IllegalArgumentException ignored) {
-                // Skip malformed UUID keys.
             }
         }
     }
@@ -90,6 +107,11 @@ public final class StatsManager implements PersistentStore {
                 yaml.set(base + ".level", stat.level);
                 yaml.set(base + ".wealth", stat.wealth);
                 yaml.set(base + ".raid-kills", stat.raidKills);
+                yaml.set(base + ".kills", stat.kills.get());
+                yaml.set(base + ".deaths", stat.deaths.get());
+                yaml.set(base + ".mob-kills", stat.mobKills.get());
+                yaml.set(base + ".spell-casts", stat.spellCasts.get());
+                yaml.set(base + ".quests-completed", stat.questsCompleted.get());
             }
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
@@ -114,7 +136,6 @@ public final class StatsManager implements PersistentStore {
         return stat == null ? 0 : stat.raidKills;
     }
 
-    /** Increments the player's raid-kill counter. */
     public void recordRaidKill(final Player player) {
         if (player == null) {
             return;
@@ -122,6 +143,105 @@ public final class StatsManager implements PersistentStore {
         final Stat stat = stats.computeIfAbsent(player.getUniqueId(), key -> new Stat());
         stat.name = player.getName();
         stat.raidKills++;
+    }
+
+    // ===== /stats profil-számlálók =====
+    //
+    // Ezek a metódusok KIZÁRÓLAG konkurens (atomikus) map-műveletek — nem
+    // olvasnak/írnak semmilyen entitást, ezért bármely régió-szálról hívhatók
+    // scheduler-hop nélkül (pl. az áldozat szálán a gyilkos UUID-jére).
+
+    /** Increments the player's (player-kill) counter. Hot-path-safe, no entity access. */
+    public void recordKill(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        stats.computeIfAbsent(playerId, key -> new Stat()).kills.incrementAndGet();
+    }
+
+    /** Increments the player's death counter. Hot-path-safe, no entity access. */
+    public void recordDeath(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        stats.computeIfAbsent(playerId, key -> new Stat()).deaths.incrementAndGet();
+    }
+
+    /** Increments the player's mob-kill counter. Hot-path-safe, no entity access. */
+    public void recordMobKill(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        stats.computeIfAbsent(playerId, key -> new Stat()).mobKills.incrementAndGet();
+    }
+
+    /** Increments the player's spell-cast counter. Hot-path-safe, no entity access. */
+    public void recordSpellCast(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        stats.computeIfAbsent(playerId, key -> new Stat()).spellCasts.incrementAndGet();
+    }
+
+    /** Increments the player's completed-quest counter. Hot-path-safe, no entity access. */
+    public void recordQuestComplete(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        stats.computeIfAbsent(playerId, key -> new Stat()).questsCompleted.incrementAndGet();
+    }
+
+    /** The player's recorded player-kill count (0 if none). */
+    public int getKills(final UUID playerId) {
+        final Stat stat = stats.get(playerId);
+        return stat == null ? 0 : stat.kills.get();
+    }
+
+    /** The player's recorded death count (0 if none). */
+    public int getDeaths(final UUID playerId) {
+        final Stat stat = stats.get(playerId);
+        return stat == null ? 0 : stat.deaths.get();
+    }
+
+    /** The player's recorded mob-kill count (0 if none). */
+    public int getMobKills(final UUID playerId) {
+        final Stat stat = stats.get(playerId);
+        return stat == null ? 0 : stat.mobKills.get();
+    }
+
+    /** The player's recorded spell-cast count (0 if none). */
+    public int getSpellCasts(final UUID playerId) {
+        final Stat stat = stats.get(playerId);
+        return stat == null ? 0 : stat.spellCasts.get();
+    }
+
+    /** The player's recorded completed-quest count (0 if none). */
+    public int getQuestsCompleted(final UUID playerId) {
+        final Stat stat = stats.get(playerId);
+        return stat == null ? 0 : stat.questsCompleted.get();
+    }
+
+    /**
+     * Resolves a stored player id by name for offline lookups (e.g. {@code /stats <név>}
+     * for a player who is not currently online). Case-insensitive; returns null if the
+     * name was never recorded in the leaderboard store.
+     */
+    public UUID findPlayerIdByName(final String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        for (final var entry : stats.entrySet()) {
+            if (entry.getValue().name.equalsIgnoreCase(name)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    /** The stored display name for a player, or {@code fallback} if none is recorded. */
+    public String getStoredName(final UUID playerId, final String fallback) {
+        final Stat stat = stats.get(playerId);
+        return stat == null || stat.name == null || "?".equals(stat.name) ? fallback : stat.name;
     }
 
     /** Periodic snapshot of every online player (each on its own region thread). */

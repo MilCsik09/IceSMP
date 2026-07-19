@@ -83,6 +83,11 @@ public final class EscortManager {
         return convoyId != null;
     }
 
+    /** Milliseconds left before the escort times out, or -1 when none is under way. */
+    public long getRemainingMillis() {
+        return isActive() ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
+    }
+
     /**
      * Atomically claims the right to settle the escort (success OR failure): only
      * the first caller wins — the convoy driver (region thread) and the timeout
@@ -381,7 +386,7 @@ public final class EscortManager {
             for (final ItemStack loot : LootTable.roll(configManager, "escort.reward-loot", rolls)) {
                 world.dropItemNaturally(where, loot);
             }
-            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 40, 0.8D, 0.8D, 0.8D, 0.1D);
+            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.6D, 0.7D, 0.6D, 0.1D);
             world.playSound(where, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
         }
         convoy.remove();

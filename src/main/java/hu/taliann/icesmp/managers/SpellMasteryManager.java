@@ -100,11 +100,10 @@ public final class SpellMasteryManager {
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
         final long cost = getUpgradeCost(player, normalized);
-        if (currencyManager.getBalance(player, currency) < cost) {
+        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
+        if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
             return UpgradeResult.INSUFFICIENT_FUNDS;
         }
-
-        currencyManager.setBalance(player, currency, currencyManager.getBalance(player, currency) - cost);
         final Map<String, Integer> ranks = getRanks(player);
         ranks.merge(normalized, 1, Integer::sum);
         saveRanks(player, ranks);
@@ -128,7 +127,6 @@ public final class SpellMasteryManager {
                     ranks.put(parts[0].trim().toLowerCase(Locale.ROOT), rank);
                 }
             } catch (final NumberFormatException ignored) {
-                // Skip malformed entries.
             }
         }
         return ranks;

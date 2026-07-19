@@ -80,7 +80,7 @@ public final class ElytraRelicListener implements Listener {
                         living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 4 * 20, 1, false, true, true));
                     }
                 }
-                player.getWorld().spawnParticle(Particle.SNOWFLAKE, player.getLocation(), 40, 3.0D, 1.0D, 3.0D, 0.02D);
+                player.getWorld().spawnParticle(Particle.SNOWFLAKE, player.getLocation(), 24, 2.5D, 0.8D, 2.5D, 0.02D);
                 player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 0.8F, 0.6F);
             }
             case "wander_wind" -> {
@@ -125,7 +125,7 @@ public final class ElytraRelicListener implements Listener {
                             living.setFireTicks(Math.max(living.getFireTicks(), 60));
                         }
                     }
-                    player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 60, 2.0D, 0.5D, 2.0D, 0.05D);
+                    player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 30, 1.8D, 0.5D, 1.8D, 0.05D);
                     player.getWorld().playSound(player.getLocation(), Sound.ITEM_FIRECHARGE_USE, 1.0F, 0.8F);
                 }
             }

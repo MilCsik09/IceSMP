@@ -18,6 +18,7 @@ public final class SpellbookHolder implements InventoryHolder {
     private final Map<Integer, String> slotSpells = new HashMap<>();
     private Inventory inventory;
     private int page;
+    private boolean onlyUnlocked;
 
     public SpellbookHolder(final UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
@@ -33,6 +34,14 @@ public final class SpellbookHolder implements InventoryHolder {
 
     public void setPage(final int page) {
         this.page = page;
+    }
+
+    public boolean isOnlyUnlocked() {
+        return onlyUnlocked;
+    }
+
+    public void setOnlyUnlocked(final boolean onlyUnlocked) {
+        this.onlyUnlocked = onlyUnlocked;
     }
 
     public void mapSlot(final int slot, final String spellId) {

@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * /menu — opens the central command hub, from which every system's GUI is one
- * click away. Makes the commands easy to use without typing.
+ * click away.
  */
 public final class MenuCommand implements BasicCommand {
 

@@ -135,14 +135,21 @@ public final class InvasionManager {
         }, null);
     }
 
-    /**
-     * Despawns any still-living invasion mobs on plugin disable so a wave does not
-     * survive a reload as orphaned, glowing, leveled mobs. Best-effort direct removal.
-     */
-
     /** Whether the entity is a live invasion-horde mob (killing one must never count as sin). */
     public boolean isInvasionMob(final UUID entityId) {
         return entityId != null && activeMobs.contains(entityId);
+    }
+
+    /**
+     * Whether an invasion wave is currently under way (any of its mobs are still
+     * tracked as alive). No expiry timestamp is kept for invasions — the wave simply
+     * lasts until its mobs are all killed — so only presence, not remaining time, is
+     * exposed here.
+     *
+     * @return true while at least one wave mob is tracked as alive
+     */
+    public boolean isActive() {
+        return !activeMobs.isEmpty();
     }
 
     public void shutdown() {
@@ -252,7 +259,7 @@ public final class InvasionManager {
                 if (!champion.isValid()) {
                     return;
                 }
-                world.spawnParticle(org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 2);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
                 for (final Entity nearby : champion.getNearbyEntities(4.0D, 4.0D, 4.0D)) {
                     if (nearby instanceof Player player
                             && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {

@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * PvP weapon-relic transfer (todo.md rule): when a player is slain, weapon
- * relics among their drops change owner to the killer — passive relics stay
- * protected and keep their owner.
+ * PvP weapon-relic transfer: when a player is slain, weapon relics among
+ * their drops change owner to the killer — passive relics stay protected
+ * and keep their owner.
  */
 public final class RelicPvpTransferListener implements Listener {
 

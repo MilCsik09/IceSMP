@@ -32,12 +32,6 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     /** PDC key storing the epoch-millis timestamp of the player's last PAID faction switch. */
     private final NamespacedKey lastSwitchKey;
 
-    /**
-     * Constructs a new FactionManager.
-     *
-     * @param plugin the plugin instance
-     * @param configManager the config manager (for the faction-switch cost/cooldown settings)
-     */
     public FactionManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
@@ -46,9 +40,6 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         plugin.getDataFolder().mkdirs();
     }
 
-    /**
-     * Loads faction data from YAML file.
-     */
     public void load() {
         playerFactions.clear();
 
@@ -76,9 +67,6 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         }
     }
 
-    /**
-     * Saves faction data to YAML file.
-     */
     public void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
@@ -94,12 +82,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         }
     }
 
-    /**
-     * Gets the faction for a player.
-     *
-     * @param uuid the player UUID
-     * @return the player's faction, or NEUTRAL if not found
-     */
+    /** @return the player's faction, or NEUTRAL if not found */
     public FactionType getFaction(final UUID uuid) {
         return playerFactions.getOrDefault(uuid, FactionType.NEUTRAL);
     }
@@ -114,12 +97,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         return Map.copyOf(playerFactions);
     }
 
-    /**
-     * Sets the faction for a player.
-     *
-     * @param uuid the player UUID
-     * @param factionType the faction to set (null defaults to NEUTRAL)
-     */
+    /** @param factionType the faction to set (null defaults to NEUTRAL) */
     public void setFaction(final UUID uuid, final FactionType factionType) {
         playerFactions.put(uuid, factionType == null ? FactionType.NEUTRAL : factionType);
         save();
@@ -156,11 +134,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         return configManager.getDouble("factions.switch.cooldown-hours", 72.0);
     }
 
-    /**
-     * Gets the switch cooldown in milliseconds.
-     *
-     * @return the cooldown in milliseconds (0 = no cooldown)
-     */
+    /** @return the cooldown in milliseconds (0 = no cooldown) */
     public long getSwitchCooldownMillis() {
         return Math.round(getSwitchCooldownHours() * 3_600_000.0D);
     }
@@ -201,11 +175,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         save();
     }
 
-    /**
-     * Gets a human-readable list of all available factions.
-     *
-     * @return comma-separated faction display names
-     */
+    /** @return comma-separated faction display names */
     public String describeAvailableFactions() {
         final StringBuilder builder = new StringBuilder();
         for (final FactionType factionType : FactionType.values()) {

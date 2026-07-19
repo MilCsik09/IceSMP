@@ -39,7 +39,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "pos", "undo", "clearpoints", "points", "create", "circle",
-            "setcapital", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
+            "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
     private static final List<String> TYPE_NAMES = List.of(
             "faction", "protected-faction", "protected-city", "capital");
 
@@ -75,6 +75,7 @@ public final class TerritoryCommand implements BasicCommand {
             case "create" -> handleCreatePolygon(sender, args);
             case "circle" -> handleCircle(sender, args);
             case "setcapital" -> handleSetCapital(sender, args);
+            case "setspawn" -> handleSetSpawn(sender, args);
             case "rename" -> handleRename(sender, args);
             case "resize" -> handleResize(sender, args);
             case "settype" -> handleSetType(sender, args);
@@ -268,6 +269,34 @@ public final class TerritoryCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("territory-setcapital-success",
                 "&aFőváros kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)",
                 territory.name(), faction.getDisplayName(), territory.radius(), territory.x(), territory.z()));
+    }
+
+    /**
+     * Sets a faction's kingdom spawn to the admin's EXACT standing position (full Y + view
+     * direction) — no highest-block guessing. Used by first-join placement, the faction-join
+     * teleport and the faction respawn.
+     */
+    private void handleSetSpawn(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messageManager.get("territory-setspawn-usage",
+                    "&cHasználat: /territory setspawn <frakció> — az aktuális pozíciód lesz a spawn."));
+            return;
+        }
+
+        final FactionType faction = parseFaction(sender, args[1]);
+        if (faction == null) {
+            return;
+        }
+
+        territoryManager.setFactionSpawn(faction, player.getLocation());
+        sender.sendMessage(messageManager.get("territory-setspawn-success",
+                "&aKirályság-spawn beállítva: &f%s &7(%s: %.1f, %.1f, %.1f)",
+                faction.getDisplayName(), player.getWorld().getName(),
+                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
     }
 
     // ==================== zone edits ====================
@@ -528,7 +557,12 @@ public final class TerritoryCommand implements BasicCommand {
                 "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…", zone.name(), zone.x(), zone.z()));
     }
 
-    /** Draws particle segments between consecutive vertices (closing the ring). */
+    /**
+     * Draws particle segments between consecutive vertices (closing the ring).
+     * TEREP-KÖVETŐ: minden pont a saját oszlopa legfelső blokkja fölé kerül
+     * (dombon-völgyön át a talajt követi); a kapott {@code y} csak fallback, ha a pont chunkja
+     * nem a hívó régiójáé (ParticleUtil.markerY Folia-guardja).
+     */
     private void drawRing(final Player player, final World world, final List<int[]> ring,
                           final double y, final Particle particle, final boolean marks) {
         final int count = ring.size();
@@ -536,7 +570,7 @@ public final class TerritoryCommand implements BasicCommand {
             final int[] a = ring.get(i);
             final int[] b = ring.get((i + 1) % count);
             if (count < 2) {
-                player.spawnParticle(particle, new Location(world, a[0] + 0.5D, y, a[1] + 0.5D), 1, 0, 0, 0, 0);
+                drawGroundPoint(player, world, a[0] + 0.5D, a[1] + 0.5D, y, particle);
                 continue;
             }
             final double dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -545,12 +579,15 @@ public final class TerritoryCommand implements BasicCommand {
                 final double t = (double) s / steps;
                 final double px = a[0] + (b[0] - a[0]) * t + 0.5D;
                 final double pz = a[1] + (b[1] - a[1]) * t + 0.5D;
-                player.spawnParticle(particle, new Location(world, px, y, pz), 1, 0, 0, 0, 0);
+                drawGroundPoint(player, world, px, pz, y, particle);
             }
         }
         if (marks) {
             for (final int[] point : ring) {
-                player.spawnParticle(Particle.END_ROD, new Location(world, point[0] + 0.5D, y + 0.5D, point[1] + 0.5D), 1, 0, 0, 0, 0);
+                final double markY = hu.taliann.icesmp.utils.ParticleUtil.markerY(
+                        world, point[0], point[1], y) + 0.5D;
+                player.spawnParticle(Particle.END_ROD,
+                        new Location(world, point[0] + 0.5D, markY, point[1] + 0.5D), 1, 0, 0, 0, 0);
             }
         }
     }
@@ -562,8 +599,16 @@ public final class TerritoryCommand implements BasicCommand {
             final double angle = 2 * Math.PI * i / segments;
             final double px = cx + Math.cos(angle) * radius + 0.5D;
             final double pz = cz + Math.sin(angle) * radius + 0.5D;
-            player.spawnParticle(particle, new Location(world, px, y, pz), 1, 0, 0, 0, 0);
+            drawGroundPoint(player, world, px, pz, y, particle);
         }
+    }
+
+    /** Egy terep-követő határ-pont (a közös ParticleUtil.markerY magasság-forrással). */
+    private void drawGroundPoint(final Player player, final World world, final double px, final double pz,
+                                 final double fallbackY, final Particle particle) {
+        final double gy = hu.taliann.icesmp.utils.ParticleUtil.markerY(
+                world, (int) Math.floor(px), (int) Math.floor(pz), fallbackY);
+        player.spawnParticle(particle, new Location(world, px, gy, pz), 1, 0, 0, 0, 0);
     }
 
     // ==================== parsing helpers ====================
@@ -654,6 +699,8 @@ public final class TerritoryCommand implements BasicCommand {
                 "&e/territory circle <típus> <frakció> <id> <sugár> [név...] &7- Kör-terület."));
         sender.sendMessage(messageManager.get("territory-help-setcapital",
                 "&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros (kör)."));
+        sender.sendMessage(messageManager.get("territory-help-setspawn",
+                "&e/territory setspawn <frakció> &7- Királyság-spawn az aktuális pozíciódra."));
         sender.sendMessage(messageManager.get("territory-help-edit",
                 "&e/territory rename|resize|settype|sety <id> ... &7- Meglévő zóna módosítása."));
         sender.sendMessage(messageManager.get("territory-help-remove", "&e/territory remove <id> &7- Terület törlése."));
@@ -685,14 +732,13 @@ public final class TerritoryCommand implements BasicCommand {
         if (("create".equals(subcommand) || "circle".equals(subcommand)) && args.length == 3) {
             return factionSuggestions(prefixAt(args, 2));
         }
-        if ("setcapital".equals(subcommand) && args.length == 2) {
+        if (("setcapital".equals(subcommand) || "setspawn".equals(subcommand)) && args.length == 2) {
             return factionSuggestions(prefixAt(args, 1));
         }
         // Edit/remove/tp/show commands take an existing zone id at arg1.
         if (args.length == 2 && List.of("remove", "rename", "resize", "settype", "sety", "tp", "show").contains(subcommand)) {
             return idSuggestions(prefixAt(args, 1));
         }
-        // settype <id> <type>
         if ("settype".equals(subcommand) && args.length == 3) {
             return TYPE_NAMES.stream().filter(name -> name.startsWith(prefixAt(args, 2))).toList();
         }

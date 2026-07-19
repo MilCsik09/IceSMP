@@ -43,6 +43,40 @@ public final class LootTable {
         return loot;
     }
 
+    /**
+     * Validates a loot-table entry and describes what is wrong with it, or returns
+     * null if the entry is well-formed. Used by {@link ConfigValidator} so admin
+     * typos ({@code min > max}, negative or non-numeric counts, unknown materials)
+     * surface as load-time warnings instead of being silently coerced at roll time.
+     */
+    public static String describeProblem(final String entry) {
+        final String[] parts = entry.split(":");
+        final Material material = Material.matchMaterial(parts[0].trim());
+        if (material == null || material.isAir()) {
+            return "ismeretlen Material: '" + parts[0].trim() + "'";
+        }
+        try {
+            if (parts.length == 2) {
+                final int count = Integer.parseInt(parts[1].trim());
+                if (count < 1) {
+                    return "a darabszám nem lehet " + count + " (minimum 1)";
+                }
+            } else if (parts.length >= 3) {
+                final int min = Integer.parseInt(parts[1].trim());
+                final int max = Integer.parseInt(parts[2].trim());
+                if (min < 1) {
+                    return "a MIN nem lehet " + min + " (minimum 1)";
+                }
+                if (min > max) {
+                    return "a MIN (" + min + ") nagyobb, mint a MAX (" + max + ")";
+                }
+            }
+        } catch (final NumberFormatException e) {
+            return "nem szám a darabszám: '" + entry + "'";
+        }
+        return null;
+    }
+
     /** Parses a {@code "MATERIAL"}, {@code "MATERIAL:COUNT"} or {@code "MATERIAL:MIN:MAX"} entry, or null if invalid. */
     public static ItemStack parseEntry(final String entry) {
         final String[] parts = entry.split(":");

@@ -153,7 +153,13 @@ public final class ExchangeBoardManager implements PersistentStore {
 
         final UUID removedId = nearest.getUniqueId();
         boards.removeIf(board -> board.entityId().equals(removedId));
-        nearest.remove();
+        // Folia: the found display can sit in a neighbouring region — remove it on its own scheduler.
+        final Entity found = nearest;
+        if (org.bukkit.Bukkit.isOwnedByCurrentRegion(found)) {
+            found.remove();
+        } else {
+            found.getScheduler().run(plugin, task -> found.remove(), null);
+        }
         save();
         return true;
     }

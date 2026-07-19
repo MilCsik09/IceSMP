@@ -14,9 +14,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 
 /**
- * Factory for the siege cannon (ideas.md "Ostromgépek"): a craftable,
- * PDC-tagged item that only works during a raid. Right-clicking it fires a
- * destructive blast at the target (SiegeWeaponListener).
+ * Factory for the siege cannon: a craftable, PDC-tagged item that only works
+ * during a raid. Right-clicking it fires a destructive blast at the target
+ * (SiegeWeaponListener).
  */
 @SuppressWarnings("deprecation")
 public final class SiegeWeaponFactory {

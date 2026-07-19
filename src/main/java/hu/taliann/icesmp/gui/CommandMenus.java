@@ -5,6 +5,7 @@ import static hu.taliann.icesmp.gui.GuiUtil.grey;
 import static hu.taliann.icesmp.gui.GuiUtil.label;
 
 import hu.taliann.icesmp.commands.ClaimCommand;
+import hu.taliann.icesmp.commands.EventsCommand;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
@@ -17,6 +18,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -445,6 +447,8 @@ public final class CommandMenus {
         final CommandMenuHolder holder = new CommandMenuHolder(CommandMenuHolder.Menu.EVENTS, player.getUniqueId());
         final Inventory inv = create(holder, 27, "<dark_aqua>» Események «</dark_aqua>", ctx);
 
+        put(inv, holder, 0, whatsHappeningNowTile(ctx), "RUN:events status");
+
         final List<Component> standings = new ArrayList<>();
         for (final FactionType type : FactionType.values()) {
             standings.add(label(type.getDisplayName(), Component.text(ctx.seasonManager().getPoints(type) + " pont", NamedTextColor.WHITE)));
@@ -519,6 +523,32 @@ public final class CommandMenus {
     /** "Állapot: AKTÍV/nyugalom" lore line for the event tiles. */
     private static Component statusLine(final boolean active, final NamedTextColor activeColor) {
         return label("Állapot", Component.text(active ? "AKTÍV" : "nyugalom", active ? activeColor : NamedTextColor.GRAY));
+    }
+
+    /**
+     * "Mi történik most?" info-ikon az Események almenü tetején: a lore élőben az
+     * aktív világeseményeket sorolja fel — ugyanazt a formázót hívja, mint az
+     * {@code /events status} parancs ({@link EventsCommand#activeEventLines}), hogy a
+     * két felület sose térjen el egymástól. A {@code CommandMenuContext} nem hordoz
+     * invasion/treasure/wild-hunt managert, ezért azokra null-t adunk át — a formázó
+     * ezeket egyszerűen kihagyja, a többi eseményt viszont ugyanúgy mutatja.
+     */
+    private static ItemStack whatsHappeningNowTile(final CommandMenuContext ctx) {
+        final List<String> lines = EventsCommand.activeEventLines(ctx.messageManager(),
+                ctx.bloodMoonManager(), ctx.worldBossManager(), null, ctx.caravanManager(),
+                ctx.gatheringBuffManager(), null, null, ctx.abundanceManager(),
+                ctx.serverChallengeManager(), ctx.escortManager(), ctx.meteorEventManager());
+
+        final List<Component> lore = new ArrayList<>();
+        if (lines.isEmpty()) {
+            lore.add(grey("Most éppen nyugalom van a vidéken."));
+        } else {
+            for (final String line : lines) {
+                lore.add(LegacyComponentSerializer.legacySection().deserialize(line));
+            }
+        }
+        lore.add(click());
+        return GuiUtil.icon(Material.CLOCK, accent("Mi történik most?"), lore, !lines.isEmpty());
     }
 
     // ===== RELIC =====
@@ -673,6 +703,8 @@ public final class CommandMenus {
                 List.of(grey("A claim tetejét emeli meg."), extendPrice, click())), "RUN:claim extend up");
         put(inv, holder, 20, GuiUtil.icon(Material.POINTED_DRIPSTONE, title("Mélyítés (+5 blokk)"),
                 List.of(grey("A claim alját viszi lejjebb."), extendPrice, click())), "RUN:claim extend down");
+        put(inv, holder, 21, GuiUtil.icon(Material.PLAYER_HEAD, title("Megbízottak kezelése"),
+                List.of(grey("Megbízottak listája + megbízás."), click())), "OPEN:claim trustgui");
 
         put(inv, holder, 22, backButton(), "MENU:MAIN");
         player.openInventory(inv);

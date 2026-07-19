@@ -82,31 +82,14 @@ public final class MetelytepoManager implements PlayerStateCleanup {
         return RELIC_ID.equalsIgnoreCase(relicId);
     }
 
-    /**
-     * Checks if a player is on the Justice ability cooldown.
-     *
-     * @param player the player to check
-     * @return true if on cooldown, false otherwise
-     */
     public boolean isOnJusticeCooldown(final Player player) {
         return isOnCooldown(player, ABILITY_JUSTICE);
     }
 
-    /**
-     * Gets the remaining cooldown time for Justice ability in milliseconds.
-     *
-     * @param player the player
-     * @return remaining milliseconds, or 0 if not on cooldown
-     */
     public long getJusticeRemainingMillis(final Player player) {
         return getRemainingMillis(player, ABILITY_JUSTICE);
     }
 
-    /**
-     * Triggers the Justice ability cooldown for a player.
-     *
-     * @param player the player
-     */
     public void triggerJusticeCooldown(final Player player) {
         startCooldown(player, ABILITY_JUSTICE, JUSTICE_COOLDOWN_MILLIS);
     }
@@ -120,31 +103,14 @@ public final class MetelytepoManager implements PlayerStateCleanup {
         return tryStartCooldown(player, ABILITY_JUSTICE, JUSTICE_COOLDOWN_MILLIS);
     }
 
-    /**
-     * Checks if a player is on the Honor Eye ability cooldown.
-     *
-     * @param player the player to check
-     * @return true if on cooldown, false otherwise
-     */
     public boolean isOnHonorEyeCooldown(final Player player) {
         return isOnCooldown(player, ABILITY_HONOR_EYE);
     }
 
-    /**
-     * Gets the remaining cooldown time for Honor Eye ability in milliseconds.
-     *
-     * @param player the player
-     * @return remaining milliseconds, or 0 if not on cooldown
-     */
     public long getHonorEyeRemainingMillis(final Player player) {
         return getRemainingMillis(player, ABILITY_HONOR_EYE);
     }
 
-    /**
-     * Triggers the Honor Eye ability cooldown for a player.
-     *
-     * @param player the player
-     */
     public void triggerHonorEyeCooldown(final Player player) {
         startCooldown(player, ABILITY_HONOR_EYE, HONOR_EYE_COOLDOWN_MILLIS);
     }

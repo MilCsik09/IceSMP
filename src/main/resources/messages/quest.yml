@@ -8,6 +8,7 @@ messages:
   quest:
     accepted-from-npc: '<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>'
     auto-started: '<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>'
+    onboarding-welcome: '<gold>✦ Üdv az IceSMP-n! Az első küldetésed: <white>{quest}</white> <gray>— {description}</gray></gold>'
     completed: '<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>'
     deliver-progress: '<gray>{quest}: <gold>{carried}</gold>/<gold>{target}</gold> nálad — hozd el mindet!</gray>'
     choose-prompt: '<gray>Válassz:</gray>'

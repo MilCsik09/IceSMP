@@ -12,8 +12,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Awards soul shards to necromancer-spec players for hostile kills
- * (ideas.md "Nekromanta lélek-erőforrás").
+ * Awards soul shards to necromancer-spec players for hostile kills.
  */
 public final class SoulShardListener implements Listener {
 

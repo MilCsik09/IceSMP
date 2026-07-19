@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.HudManager;
+import hu.taliann.icesmp.managers.TablistManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -13,9 +14,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public final class HudListener implements Listener {
 
     private final HudManager hudManager;
+    private final TablistManager tablistManager;
 
-    public HudListener(final HudManager hudManager) {
+    public HudListener(final HudManager hudManager, final TablistManager tablistManager) {
         this.hudManager = hudManager;
+        this.tablistManager = tablistManager;
     }
 
     @EventHandler
@@ -26,5 +29,6 @@ public final class HudListener implements Listener {
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
         hudManager.cleanup(event.getPlayer());
+        tablistManager.cleanup(event.getPlayer().getUniqueId());
     }
 }

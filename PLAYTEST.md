@@ -18,16 +18,19 @@ pipálni egy másolt példányban.
 - **Opcionális függőség:** **LibsDisguises** (soft-depend). Ha telepítve van, a **Druida formák**
   vizuálisan is átalakítják a játékost; nélküle a forma csak stat-szinten vált. Érdemes mindkét
   állapotot tesztelni (telepítve / nélküle).
-- **Scoreboard / TAB-koegzisztencia:** ha a szerveren **TAB** (vagy más scoreboard-plugin) fut,
-  állítsd `config/general.yml`-ben `hud.sidebar-enabled: false` és `hud.tablist-enabled: false`,
-  hogy az IceSMP ne ütközzön vele (a boss-barok maradnak). Az IceSMP adatait — köztük az
-  **Erő-csíkot** — a TAB **PlaceholderAPI**-n át jelenítheti meg ezekkel: `%icesmp_faction%`,
-  `%icesmp_class%`, `%icesmp_class_level%`, `%icesmp_balance%`, `%icesmp_resource%`,
-  `%icesmp_resource_max%`, `%icesmp_resource_percent%`, `%icesmp_resource_name%`,
-  `%icesmp_resource_bar%`. (A PlaceholderAPI-integráció magától bekapcsol, ha a PAPI fent van.)
+- **Scoreboard / tablist:** a teljes tablist-réteg (header/footer, nevek, nametag+rendezés,
+  ping-oszlop, oldalsáv) **natív** — TAB vagy más scoreboard-plugin NEM kell, sőt ütközik
+  (induláskor konzol-figyelmeztetés). Beállítások: `config/tablist.yml` + `general.yml` →
+  `hud.sidebar`. Ha mégis külső plugint használnál: `tablist.enabled: false` +
+  `hud.sidebar-enabled: false`, és az IceSMP-adatok `%icesmp_...%` placeholderekkel
+  érhetők el (PlaceholderAPI-val, lásd docs/SERVER_INTEGRATION.md).
 - **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
   szerkeszthető és `/icesmp reload`-dal (vagy újraindítással) frissíthető. Néhány érték a manager
   indulásakor töltődik be — ha egy config-változás nem üt át reload-ra, **indítsd újra** a szervert.
+- **Ingame config-vezérlés:** `/icesmp config set <kulcs> <érték>` bármely kulcsot felülbírál
+  játékon belülről (a `config.yml`-be íródik, azonnali reload + validátor); `get`/`find` a
+  kulcsok felderítéséhez (tab-complete a teljes kulcstérből), `unset`/`list` a felülbírálások
+  kezeléséhez. Spell-mana példa: `/icesmp config set spell-balance.hide.resource-cost 25`.
 - **FRISSÍTÉS régi jar-ról:** az éles szerveren futó `IceSMP-1.0-SNAPSHOT` (áprilisi, ~200 KiB) óta a
   plugin sokszorosára nőtt — az új jar feltöltése után az **új config/üzenet-fájlok maguktól
   kicsomagolódnak** első indításkor, a régiek megmaradnak (a hiányzó kulcsok biztonságos
@@ -38,7 +41,7 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 
 | Plugin | Mit kell tudni / beállítani |
 |---|---|
-| **TAB** | ⚠️ Állítsd be: `general.yml` → `hud.sidebar-enabled: false` és `hud.tablist-enabled: false` (induláskor a konzol figyelmeztet, ha nem). Az IceSMP-adatok a TAB-ban `%icesmp_...%` placeholderekkel jeleníthetők meg — a **party-HUD-hoz**: `%icesmp_party_size%` és `%icesmp_party_1%`…`%icesmp_party_5%` (soronként „👑 Név ▮▮▮░░ 6❤"). A boss-barok (raid/vérhold/boss/kihívás/escort) TAB mellett is mennek. |
+| **TAB** | ⚠️ **Kiváltva a natív tablist-réteggel** (`config/tablist.yml` + `hud.sidebar`) — header/footer, LP-prefixes tab-nevek, nametag+rendezés, ping-oszlop, animációk mind house-ban. **A TAB.jar törölhető**; ha fent marad, a konzol induláskor figyelmeztet és a két rendszer ütközik. (Visszaút: `tablist.enabled: false` + `hud.sidebar-enabled: false` → `%icesmp_...%` placeholderek, lásd docs/SERVER_INTEGRATION.md.) |
 | **WorldGuard** | ✅ Automatikus: a blokkot helyező események (**meteor, kincs**) reflexiós hídon át **kerülik a WG-régiókat** (spawn/városok). Induláskor a konzol jelzi, ha a híd él. WG-régióban a mob-spawn flag blokkolhatja az esemény-mobokat (invázió/hajsza) — ez nem hiba, az esemény kecsesen kezeli. |
 | **SimpleClaimSystem** | ⚠️ **Kiváltva a natív `/claim` rendszerrel** — az SCS ezután feleslegessé válik. **Migrálás:** a régi SCS-claimek **nem konvertálódnak automatikusan** — a játékosoknak újra kell claimelniük a területüket (vagy admin kézzel pótolja), utána az SCS jar **törölhető** a szerverről. |
 | **LuckPermsChatFormatterFolia** | ⚠️ **Kiváltva a natív chat-formázóval** (`chat.format-enabled` a `general.yml`-ben) — a jar **törölhető**. Amíg mindkettő fent van, kapcsold ki az egyiket, különben dupla formázás történik a chatben. |
@@ -51,22 +54,32 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 | LuckPerms, GSit, CrazyCrates, FancyHolograms, AuMenus, voicechat, SModeration, minimotd, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert ütközés. |
 
 ### Permissionök tesztelőknek
-A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan). Ha pontosabb jogosultság kell:
+A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan), vagy egyetlen sorral:
+**`icesmp.admin.all`** — regisztrált szülő-node, az ÖSSZES alábbi admin-node a gyereke
+(wildcard-támogatás nélküli permission-pluginnal is működik). Pontosabb jogosztáshoz az
+egységes `icesmp.admin.<domain>` séma:
 
 | Node | Mire |
 |---|---|
-| `icesmp.admin` | általános admin (sinner) |
+| `icesmp.admin.all` | **super-admin: az összes alábbi egyben** |
 | `icesmp.admin.reload` | `/icesmp reload` |
+| `icesmp.admin.config` | `/icesmp config get/set/unset/list/find` (ingame config-felülbírálás) |
 | `icesmp.admin.events` | világesemény-triggerek |
-| `icesmp.job.admin` | kaszt XP / katalizátor / spell-unlock |
-| `icesmp.currency.admin` | valuta-egyenleg beállítás |
-| `icesmp.faction.admin` | frakció-kényszerítés, király/kassza admin-műveletek |
+| `icesmp.admin.job` | kaszt XP / katalizátor / spell-unlock / `/class admin` |
+| `icesmp.admin.currency` | valuta-egyenleg beállítás |
+| `icesmp.admin.faction` | frakció-kényszerítés, király/kassza admin-műveletek |
 | `icesmp.admin.quest` | küldetés force-complete + a `/quest admin` szerkesztő |
-| `icesmp.relic.admin` | relikvia adása |
-| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés / zóna-védelem teljes megkerülése (build+interakció+PvP) |
-| `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) |
+| `icesmp.admin.relic` | relikvia adása |
+| `icesmp.admin.sinner` | `/sinner` bűn-kezelés |
+| `icesmp.admin.territory` / `icesmp.admin.territory.bypass` | területkezelés (+ királyság-spawnok) / zóna- és claim-védelem teljes megkerülése (build+interakció+PvP) |
+| `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) — szerep-node, NEM admin |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
-| `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz |
+| `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz/frakció-menühöz/parancshoz |
+
+> ♻️ **Visszafelé kompatibilis:** a régi nevek (`icesmp.admin`, `icesmp.job.admin`,
+> `icesmp.currency.admin`, `icesmp.faction.admin`, `icesmp.relic.admin`) alias-ként
+> regisztrálva maradnak — a meglévő LuckPerms-beállítás átírás nélkül tovább működik,
+> de új jogosztásnál már a kanonikus `icesmp.admin.<domain>` nevet használd.
 
 ---
 
@@ -189,6 +202,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       **nem támad** rád. (A láthatatlanság SZÁNDÉKOSAN megszűnt — ne teszteld hibaként.)
 - [ ] `factions.passives.enabled: false` → minden passzív kikapcsol.
 
+### 4.1.1 Királyság-spawnok és váltás-kapu ✅
+- [ ] **Spawn-kijelölés:** `/territory setspawn <frakció>` a PONTOS álláspontot menti (magasság +
+      nézésirány) — ellenőrizd egy fa alatt állva, hogy NEM a fa tetejére kerülsz.
+- [ ] **Első belépés:** vadonatúj fiók a Semleges Királyság spawnján jelenik meg (nem a világ-spawnon);
+      az intro-kamera utána lejátszódik.
+- [ ] **Választás-teleport:** `/faction join red` után a Piros Királyság spawnjára kerülsz
+      („Üdvözöl a(z)…" üzenettel); `factions.spawn.teleport-on-join: false` → nincs teleport.
+- [ ] **Respawn:** ágy/horgony nélkül meghalva a SAJÁT frakciód spawnján éledsz; ággyal az ágynál.
+- [ ] **Váltás-kapu:** kijelölt semleges főváros mellett frakciót váltani (join ÉS leave) csak a
+      semleges fővárosban állva lehet — máshol hibaüzenet; semleges főváros nélkül a kapu nem zár.
+- [ ] **Leave = fizetős váltás:** nem-semleges frakcióból `/faction leave` levonja az 500-at és
+      indítja a 72 órás cooldownt (a leave+join kerülőút megszűnt).
+- [ ] **Hírnök-NPC:** `/npcbind <npc> faction` után az NPC jobb-kattra a frakció-menüt nyitja.
+
 ### 4.2 Kasztok, katalizátor, szintezés ✅
 - [ ] `/profile` → Kaszt menüből mind a **13 kaszt** választható; **egy kaszt** vehető fel, utána a
       menü „Már van kasztod" jelzést ad; `/class admin resetclass` után újra választható.
@@ -209,6 +236,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **nehéz fizikai** (éhség ≥ 8: állások, Második Lélegzet, Pandaőrség) → **éhségbe** kerül.
   - [ ] minden más → az **Erő-csíkba**.
 - [ ] No-op cast (nincs célpont/társ) → a költség **visszatérül**, és nincs cooldown.
+- [ ] **Kaszt-profilok (ÚJ):** a tár kasztonként másképp viselkedik (`spells.resource.class.*`):
+  - [ ] **Düh-típus** (harcos/halállovag/démonvadász): harcon kívül a csík **lassan ürül** (2/mp),
+        ütésenként **+8** töltődik, harcban (5 mp-en belüli ütés) lassú regen (3/mp) fut.
+  - [ ] **Energia-típus** (orgyilkos/szerzetes 14/mp, íjász 11/mp): gyors visszatöltődés.
+  - [ ] **Mana-típus** (varázsló/sámán/pap/boszorkánymester/evoker/druida 120 max, paplovag 110):
+        nagyobb tár, lomhább (7/mp) regen — a HUD-sáv maximuma is a kaszt szerintit mutatja.
+  - [ ] Lövedékkel (íj) bevitt találat is számít harci ütésnek (düh-töltés + harc-időbélyeg).
 - [ ] `spells.resource.enabled: false` → minden spell a régi éhség/XP/HP költségre vált.
 - [ ] *(Ismert finomhangolandó: néhány határeset-spell — pl. Gyökerezés 8 éhségen — a küszöb miatt
       éhséget kér, pedig a Mana is illene rá. Jelezd, ha furcsát látsz.)*
@@ -222,13 +256,80 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 ### 4.5 Spellek, kombó, mesterség ✅
 - [ ] Több reprezentatív spell elsül és a leírt hatást teszi (sebzés/effekt/teleport/idézés).
+- [ ] **Spell-VFX (ÚJ):** a spell-effekt FORMÁZOTT — célzott spell **sugarat** húz a célpontig,
+      AoE spell **gyűrűt** rajzol a hatókör mentén, önmagadra ható spell **hélixet** csavar fölfelé;
+      a szín a spell jellegéhez illik (tűz narancs-vörös, fagy kék-fehér…). `spell-vfx.enabled: false`
+      → visszaáll a régi gömb-puff. `spell-vfx.max-points` csökkentése ritkítja a formát.
+- [ ] **Paletta spec szerint:** a szín a kaszt/spec témáját követi — pl. a **Fagy** halállovag-spellek
+      (obliterate, frost_strike) kék-fehérek, a **Pusztítás** boszorkánymester (chaos_bolt, incinerate)
+      narancs-vörös, az **Árnyék** pap (mind_flay) sötét-lila. Config: `spell-vfx.class-palettes.<spec>`;
+      egyedi kivétel: `spell-vfx.overrides.<spell-id>`. Rossz/ismeretlen paletta-név → csendes fallback
+      (accent-particle szín), nincs hiba.
+- [ ] **Forma a spell jellegéhez:** közelharci csapás (**frost_strike, crusader_strike, blackout_kick,
+      keg_smash**) → **becsapódás-csillag** a célponton (nem sugár); lehelet (**fire_breath,
+      dream_breath, primal_roar**) → **kúp** a nézési irányban; dobott (**mana_dart, toxin_dart**) →
+      **ív**. A többi marad a célzás-alapon (célzott→sugár, körzet→gyűrű, önmagad→hélix). Per-spell
+      felülírás: `spell-vfx.shapes.<spell-id>`.
+- [ ] **Hero-ultimate szín:** a 31 spec-csúcsspell (lvl 45) kiemelt palettát kap — pl. az
+      **ascendance_flame** (elemental sámán) TŰZ-színű a spec kék-fehér helyett, a **serenity**
+      (windwalker) ARANY. A színek a `spell-vfx.overrides`-ban hangolhatók.
+- [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen
+      megjelenik, nincs konzol-hiba.
 - [ ] Cooldown működik; a **60 mp feletti** cooldown kilépés után is megmarad.
+- [ ] **Shift+görgetés spell-váltás:** katalizátorral a kézben lopakodva görgetve a spell vált
+      (előre/hátra), a hotbar-slot NEM vált el, és a katalizátor neve az épp kiválasztott
+      képességet mutatja; katalizátor nélkül a görgetés normál slot-váltás marad.
+- [ ] **Spell-kedvencek (ÚJ):** a spellkönyvben **shift-katt** egy feloldott spellen → ★ jelölés
+      (újra shift-katt: le); ha van legalább egy kedvenc, a shift+görgetés **csak a kedvenceket**
+      lépkedi (action bar: „★1/3"); üres kedvenc-lista = a teljes feloldott lista. A spellkönyv
+      **tölcsér-gombja** a „csak feloldottak" szűrőt kapcsolja.
 - [ ] **Kombó:** egy konfigurált spell-pár (pl. Fagyérintés → Arkán Lökés) rövid időn belül →
       „⚡ Kombó!" + gyorsabb felépülés.
+- [ ] **Kombó-láncok (ÚJ, 3 lépés):** egy konfigurált lánc (pl. varázsló: Fagyérintés → Arkán
+      Lökés → Tűzgolyó; `spells.combos.chains`) mindhárom lépése az időablakon belül → a finisher
+      **+25% erővel** sül el („⚡ Kombó-lánc befejező!") + cooldown-visszatérítés; sima cast után
+      az action bar mutatja a **nyíló kombó-ablakot** („⏳ Kombó-ablak: <köv. spell>"), kombó után
+      a lánc következő lépését.
 - [ ] `/spell upgrade <id>` valutáért növeli a mesterség-rangot (max 5 rang): a cooldown csökken
       (-8%/rang) ÉS az erő nő (+5%/rang) — magasabb rangon egy sebző spell nagyobbat üt, egy
       buff/debuff spell effektje tovább tart, a self-heal többet gyógyít; a költség/self-damage nem nő.
 - [ ] Idézett társak (Nekromanta/Vadmester) **nem fordulnak ellened**, a célpontodra támadnak, idővel eltűnnek.
+- [ ] **Resource-cost override:** `/icesmp config set spell-balance.<id>.resource-cost <érték>` után a
+      Spellbook AZONNAL az új árat mutatja és a cast annyit von le (cooldown-módosítás nélkül);
+      `unset` után visszaáll a cooldown-sávos alapár.
+- [ ] **Élő spell-balansz:** deklaratív spellnél (pl. egy sima sebző spell)
+      `/icesmp config set spell-balance.<id>.damage <érték>` → a következő cast MÁR az új sebzést
+      viszi és a Spellbook-lore is az új számot mutatja, restart nélkül (range/radius/heal/ignite/
+      freeze/knockback ugyanígy).
+- [ ] **Üres AOE-cast visszatérítés:** Lökéshullám/Gyökerezés/Megzavarás/Csontfagy célpont nélkül
+      „Nincs célpont" üzenetet ad, a költség visszajár és NEM indul cooldown.
+- [ ] **Újracast-védelem:** Belső Fókusz lefagyás alatt, Elrejtőzés aktív invis alatt nem castolható
+      újra (a sebesség/páncél nem veszhet el).
+
+### 4.5.1 Playtest-balansz reworkök (Ice SMP 5 TEST doksi) ✅
+- [ ] **Dobható spellek:** Vadgomba (gomba 3mp után robban: slowness+poison), Rúnacsapás (kő —
+      hozzáérő ellenfél 7 sebzés), Démoni Kör (só-csapda poison), Átok Nyúl (nyúl-akna 3 szív splash) —
+      az itemek nem vehetők fel, a kaszterre nem hatnak.
+- [ ] **Lövedékek:** Szent Harag (meglévő élet 30%-a; világbosson/Wardenen HATÁSTALAN), Lélek Csere
+      (25% átszáll rád), Sarlóvetés (bumeráng oda-vissza sebez), Tűzgolyó (splash a cél körül),
+      Elmerobbantás (3mp múlva robban a jelölt cél).
+- [ ] **Channelek:** Mély Lélegzet (3.5mp lángszórás a nézésirányba, mozgás közben követi), Forgószél
+      (5mp pörgés, újracast tiltva közben), Szellemlátás (2mp-enként váltakozó invis 8mp-ig) — kilépésre
+      mind leáll (nincs beragadt állapot).
+- [ ] **Kiűzés Botja:** 5mp-re kapott Knockback 3 bot — nem dobható el, nem mozgatható, lejáratkor és
+      kilépéskor eltűnik.
+- [ ] **Áhítat Aurája:** 10mp-ig a támadók 1 visszavert sebzést kapnak; két aurás játékos egymást ütve
+      NEM kerül végtelen pingpongba (max 2 visszaverés/mp).
+- [ ] **Jéglánc:** pontosan max 2 célt fagyaszt (fő cél + legközelebbi 3 blokkon belül).
+- [ ] **Fagysugár (volt Fagyláz):** 2 blokk széles sugár, minden útba esőt fagyaszt. (A név-ütközések
+      feloldva: Halállovag = Fagysugár, Sárkányidéző = Lánggolyó — a spec-spellek neve változatlan.)
+- [ ] **Spell-item CMD-k:** a Vadgomba (6101), Rúnakő (6102), Démoni Só (6103) és Kiűzés Botja (6104)
+      custom model datát hordoz — resource packkel a textúrájuk cserélhető (RESOURCE_PACK_CMD.md).
+- [ ] **Megzavarás (rework):** mobokra is LÁTHATÓAN hat — a támadó mob leáll rólad (célpont-vesztés,
+      10 mp-ig ismételve), lassabb és gyengébb; játékos-ellenfél megvakul (vakság+sötétség).
+      A méreg-komponens kikerült (tiszta CC).
+- [ ] **Druida-formák:** Párducformában −4 szív max-élet (visszaváltáskor/relogkor visszaáll);
+      Medve: éhség-debuff; Hold: mining fatigue; Utazó: weakness.
 
 ### 4.6 Talentek ✅
 - [ ] `/profile` → Talentek: kaszt-ponttár (5 szintenként 1) és szakma-ponttár (10 szintenként 1).
@@ -238,8 +339,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.7 Szakmák ✅
 - [ ] `/profession join` 1 gyűjtögető + 1 készítő; Halász/Szakács alapból megvan.
 - [ ] A megfelelő tevékenység ad XP-t (bányászat/aratás/horgászat/sütés/craft).
+- [ ] **Creative-guard:** creative módú blokktörés NEM ad szakma-XP-t, és nem viszi a napi
+      küldetés / quest / közösségi cél számlálóit sem.
 - [ ] 25. szinten szakma-spec választható.
 - [ ] **Craft-korlát:** netherite felszerelést csak 25+ Kovács craftol (különben nem jön létre + üzenet).
+- [ ] **Craft-korlát bővítés (ÚJ):** netherite-rúd → Bányász 20; számszeríj/pajzs → Favágó 8;
+      főzőállvány → Alkimista 5; bűvölő-asztal → Enchanter 5; torta/sütőtökös pite/nyúlpörkölt →
+      Séf 6. Megfelelő szinttel elkészül, alatta NEM jön létre + kap üzenetet. A nyers alapok
+      (íj, sült húsok, kőszerszám) bárkinek szabadok. Kikapcsolható: `crafting-restrictions.enabled`.
 - [ ] **Recept-könyv** (`/profession recipes` vagy `/menu` → Recept-könyv): a szakmáid receptjei
       tanult (zöld) / zárolt (szürke) állapottal, hozzávaló megvan/hiányzik jelzéssel, lapozva;
       kattintásra craft (hozzávalók fogynak), `affix-tier`-es recept egyedi rolled tárgyat ad.
@@ -274,6 +381,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Frakció-bolt NPC:** rakj ki egy FancyNpcs NPC-t `altalanos_bolt` néven → jobb-katt megnyitja
       a vásárló GUI-t; kattintás vesz (bankból fizet, a pénz ELÉG — money sink), tele táska a földre
       dob. Elég fedezet híján hibaüzenet; `faction`-korlátozott boltban más frakciós tag nem vehet.
+- [ ] **Parancs-NPC:** `/npcbind <npc> command spellbook` után az NPC-re kattintva a JÁTÉKOS
+      futtatja a parancsot (a saját jogaival — pl. `command icesmp reload` sima játékosnak
+      jog-hibát ad, nem fut le); `/npcbind <npc> clear` visszaállítja.
 - [ ] **Kereskedő-karaván:** `/events caravan arrive` → broadcast + megjelenik a vándorkereskedő
       (WanderingTrader) a közeledben; jobb-katt megnyitja a ritka-portéka boltját (nem a natív
       trade-et!), vétel a bankból ELÉG. `/events caravan depart` → broadcast + eltűnik; utána a
@@ -365,6 +475,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 
 ### 4.11 Küldetések + bűn-rendszer + Sötét ✅
 - [ ] `/quest list|accept|info|abandon`; a haladás az action barban; teljesítéskor jutalom.
+- [ ] **Onboarding-lánc (ÚJ, első belépés):** vadonatúj játékos joinkor automatikusan megkapja a
+      „Beszélj a hírnökkel" questet (`onboarding_herald`, üdvözlő üzenettel); teljesítéskor
+      **auto-indul** a következő („Első csata": ölj 5 szörnyet → „Első gyűjtögetés": 10 rönk,
+      jutalom: valuta + csákány + kenyér). Előfeltétel a szerveren: `hirnok` nevű NPC a semleges
+      fővárosban (`/npcbind hirnok faction` ajánlott). Meglévő játékosnál NEM indul újra.
+      Kikapcsolás: `quests.yml` → `onboarding.enabled: false`. Quest-láncolás: a quest `next`
+      mezője (adminból is állítható: `/quest admin set <id> next <köv-id>`).
 - [ ] `/quest complete <j> <id>` (admin) azonnal teljesít.
 - [ ] **Bűn:** ölj meg egy másik játékost → +1 bűn; **4 bűnnél** automatikus száműzetés a Sötétbe (örök paktum).
       (Raid alatt a hadakozók közti ölés **nem** bűn.)
@@ -452,6 +569,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Világboss** (`/events worldboss`): véletlen archetípus, név, aura-debuff a közelben; ~8 mp-enként
       telegrafált képesség; **50% HP alatt feldühödik**; legyőzve kassza+pont+buff.
       ⚠️ A SUMMON-special által idézett add-ok egy idő után **eltűnnek** (nem maradnak ott örökre).
+- [ ] **Boss-telegraph (ÚJ):** a SLAM/ZONE special előtt **részecske-gyűrű** rajzolja ki a veszélyzónát
+      (5, ill. 3 blokk sugár) + Warden-hang; a SUMMON előtt Evoker-idéző hang szól — kivédhetőbb a special.
+- [ ] **Boss-telegraph padló-lap (DisplayFx, ÚJ):** a gyűrű mellett egy lapos, piros, IZZÓ padló-lap
+      NŐ kicsiről a teljes zónáig a ~1,5 mp figyelmeztetés alatt, és a becsapódáskor eltűnik — sokkal
+      olvashatóbb „lépj ki innen". Nem marad blokk-szemét (a special után, relog/restart után sem).
+      Kapcsoló: `display-fx.boss-telegraph.enabled: false`; a lap anyaga configos. ⚠️ Folia: régióhatáron
+      spawnolt bossnál is hibamentes.
+- [ ] **`/events status` (ÚJ, mindenkinek):** „Mi történik most?" — kilistázza az összes épp aktív
+      világeseményt (vérhold/boss/invázió/karaván/gyűjtögető/kincs/Vad Hajsza/bőség/kihívás/kíséret/meteor,
+      hátralévő perccel) + a szezon-állást; üresen „nyugalom van" üzenet. A `/menu` → Események almenü
+      tetején ugyanez **óra-ikonként** (kattintásra lefuttatja a parancsot).
 - [ ] **Invázió** (`/events invasion`): horda + megnevezett bajnok (telegrafált földcsapás); extra XP/lélekkő.
 - [ ] **Hangulat-események** (`/events ambient`): broadcast + kozmetikai effekt; az északi fény rövid
       éjjellátást ad, az állat-vándorlás passzív csordát idéz a közeledbe (balanszot nem érint).
@@ -483,10 +611,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Party-HUD:** csapatban a HUD-oldalsávon megjelenik a „— Csapat —" szekció (👑 vezető, tagnév +
       élet-sáv); a társ sebződésekor a sávja **sárgára/pirosra vált** (~1 mp-en belül frissül); a csapat
       feloszlása után a szekció **eltűnik és nem hagy üres sorokat** az oldalsávon.
+- [ ] **Megbízott-GUI (ÚJ):** `/menu` → Birtok → „Megbízottak kezelése" (vagy `/claim trustgui`):
+      felül a megbízottak fejei (katt = visszavonás), alul a 15 blokkon belüli játékosok (katt =
+      megbízás); a kattintás a `/claim trust|untrust` parancsot futtatja és a GUI frissül.
 - [ ] **Claim:** `/claim` lefoglal (részecske-határ); másik fiók NEM tud törni/rakni/ládát nyitni benne
       (action-bar üzenet); `trust` után igen; robbanás nem bont claimelt blokkot;
       frakció-territóriumban/WG-régióban a claim elutasítva; a 4. chunktól ár (bankból, ELÉG); `unclaim`
       nem ad vissza pénzt; admin: `/claim admin unclaim`.
+- [ ] **Claim terep-védelem:** kívülről gyújtott tűz nem terjed be claimre és claimelt blokk nem ég el;
+      claim-határon kívüli dugattyú nem tol be / nem húz ki blokkot (claimen BELÜLI saját gép működik);
+      kívülről víz/láva nem folyik be; idegen flint-and-steel gyújtás a claimen tiltva (action-bar).
 - [ ] **Chat-formázó:** a chatben `[LP-prefix] Név: üzenet` formátum, a név frakció-színnel; LuckPerms
       nélkül is működik (prefix nélkül). ⚠️ Ha a régi LuckPermsChatFormatterFolia plugin még fent van,
       kapcsold ki az egyiket (dupla formázás)!
@@ -494,6 +628,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
       a gombok működnek, a kattintások nem visznek ki tárgyat a menüből.
+- [ ] **`/stats [név]` (ÚJ):** kiírja a statisztika-profilt (játékos-ölések, halálok, K/D,
+      mob-ölések, elsütött spellek, teljesített questek); névvel másik (online vagy már látott)
+      játékosé; a számlálók ölés/halál/cast/quest-teljesítés után nőnek és restart után megmaradnak.
 - [ ] **Quest builder** (`/quest admin builder <id>`, admin): új id-vel a típus-választó nyílik →
       darabszám + név a chatben → szerkesztő; létező custom questtel rögtön a szerkesztő. Mező-csempe
       kattintás után a chatbe írt érték mentődik ('mégse' megszakít), a kapcsolók (ismételhető,
@@ -505,6 +642,146 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       NPC-kötések, quest admin lista) csak a megfelelő jogosultsággal látszik.
 - [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
+- [ ] **Natív tablist (ÚJ — TAB-kiváltás, a TAB.jar NÉLKÜL tesztelendő):**
+  - [ ] **Header/footer** megjelenik (glyph + animált ping/online sor, twitch/discord marquee);
+        az animáció halad, de a lista NEM villog (diff-elt küldés).
+  - [ ] **Tab-nevek:** LP-prefix + frakció-színes név + suffix; frakció-váltásnál a szín ~0,5
+        mp-en belül átvált, közben nincs villogás.
+  - [ ] **Rendezés:** a tablistában elöl a magasabb LP-rang (owner→admin→…→default), azonos
+        rangon ABC; a fej fölött is látszik a prefix + frakció-szín (nametag).
+  - [ ] **Ping-oszlop** a tablistában él és frissül.
+  - [ ] **Oldalsáv új dizájn:** animált elválasztó-vonalak, small-caps címkék (ꜰʀᴀᴋᴄɪó/ᴋᴀꜱᴢᴛ/
+        ᴇꜱᴇᴍéɴʏ/⭐ᴠᴀʟᴜᴛᴀ), cím a configból (`hud.sidebar.title`); `/hud` szekció-toggle továbbra
+        is működik, és a sidebar kikapcsolása NEM töri el a nametageket/pinget (a board marad).
+  - [ ] **Harc-fókusz (ÚJ):** találat adásakor VAGY kapásakor az oldalsáv „kitisztul" — csak az
+        Erő-csík (+ party-frame-ek) maradnak; az utolsó találat után ~8 mp-cel a teljes HUD
+        visszatér. Kikapcsolás: `hud.dynamic.combat-focus: false`; a látható szekciók a
+        `combat-visible-sections` listával hangolhatók.
+  - [ ] **Rotáló infósor (ÚJ):** az esemény-sor ~4 mp-enként váltakozik: aktív események ↔
+        „ꜱᴢᴇᴢᴏɴ: még ~N nap" ↔ „ɴᴀᴘɪ: x/y" (kész napi kihívásnál zöld ✔); nyugalomban az
+        esemény-frame kimarad a rotációból. Kikapcsolás: `hud.dynamic.rotating-line: false`
+        (fix esemény-sor).
+  - [ ] ⚠️ **Folia:** két játékos KÜLÖN régióban (messze egymástól) — mindkettő látja a másik
+        nevét/rangját/pingjét a tablistában, konzol-hiba nélkül.
+  - [ ] Ha a TAB.jar mégis fent van: induláskor konzol-figyelmeztetés jön az ütközésről.
+- [ ] **Plugin-kiváltások (ÚJ — a jarok NÉLKÜL tesztelendő):**
+  - [ ] **Warden-XP** (ICEsmpadditions helyett): Warden leölése 80–125 XP-t dob
+        (`world-tweaks.warden-death-xp`, configolható).
+  - [ ] **Termés-taposás** (FarmProtect helyett): szántóföldre ugrás (játékos ÉS mob) nem töri
+        fel a földet (`world-tweaks.crop-trample-protection`).
+  - [ ] **MOTD** (MiniMOTD helyett): a szerverlistában gradient-es Ice SMP MOTD, ami ~10 mp-enként
+        vált a variánsok közt (frissítsd a listát többször); `motd.yml`-ből szerkeszthető.
+  - [ ] **AFK-rendszer** (AxAFKZone helyett): állíts be zónát az `afk.yml`-ben → a zónába lépve
+        üzenet + bossbar-visszaszámláló; az intervallum leteltével (default 10 perc) kis
+        valuta-jutalom; kilépéskor a haladás NULLÁZÓDIK (nincs bankolás). 3 perc tétlenség
+        után (bárhol) a tablistában szürke „⌚ ᴀꜰᴋ" jelenik meg a név után, mozgásra eltűnik.
+  - [ ] **Crate-rendszer** (CrazyCrates helyett): admin: `/crate set koznapi` a nézett blokkra,
+        `/crate give <név> koznapi 3`; kulccsal jobb-katt → kulcs fogy + súlyozott jutalom
+        (hang+részecske+üzenet); kulcs nélkül info az árról; `/crate buy koznapi` levonja a
+        25 NEUTRAL-t (sink); `/crate info` esély-táblát mutat; a kulcs NEM craftolható be;
+        restart után a crate-blokkok megmaradnak. ⚠️ **Folia:** `/crate give` távoli (másik
+        régióban lévő) játékosnak is hibamentes.
+  - [ ] **Ülés** (GSit helyett): `/sit` a földön állva leültet (ArmorStand-ülés), újra `/sit`
+        vagy sneak = felállás; jobb-katt lépcsőre/fél-lapra ÜRES kézzel leültet; halál/teleport/
+        kilépés/blokk-törés alóla → korrekt felállás, nem marad árva ArmorStand.
+  - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5 teszt` → a némított nem tud
+        chatelni ÉS /msg-t sem küldeni (üzenetet kap a hátralévő idővel); restart után is él;
+        `/unmute` felold; `/mute list`; chat-szűrő: tiltott szó CENSOR-módban csillagozva,
+        BLOCK-módban elnyelve; spam: 1,5 mp-en belüli két üzenet / ismételt üzenet blokkolva.
+  - [ ] **Bejelentés:** `/report <név> <ok min 3 szó>` → az online moderátorok
+        (icesmp.admin.moderation) azonnal értesülnek; 60 mp-en belül második report
+        rate-limitbe fut; `/reports` lista → `/reports resolve <id>`; restart-álló.
+  - [ ] **Inspektor:** `/icesmp inspect <név>` (icesmp.admin.inspect) → teljes riport
+        (frakció/kaszt+XP/spec/erőforrás/egyenlegek/statok/bűn/claim/questek/cooldownok);
+        offline névre korlátozott riport. ⚠️ **Folia:** távoli (másik régiós) célpontra is
+        hibamentes (a riport a célpont szálán épül).
+  - [ ] **Invsee** (InvSee++ helyett, csak olvasás): `/invsee <név>` → pillanatkép-GUI a fő
+        inventoryról (páncél+offhand sorral) + ender-láda nézet gombbal; SEMMI nem vehető ki.
+- [ ] **QoL-kör (A43–A52, ÚJ):**
+  - [ ] **Relációs háború-szín:** raid alatt a szemben álló fél tagjai PIROSAK a tablistádban
+        és a fejük fölött — a raidben nem érintett harmadik frakciónak viszont NEM; a raid vége
+        után a frakció-színek visszaállnak; a tablist-sorrend eközben NEM ugrál.
+  - [ ] **AFK-jelzés/hátrasorolás:** ~3 perc tétlenség után „⌚ ᴀꜰᴋ" suffix + a játékos a rangján
+        belül a tablist aljára kerül; mozgásra azonnal vissza.
+  - [ ] **AFK-jutalomkapu:** AFK-jelölt játékos mob-ölése NEM ad kaszt-XP-t/lélekkövet (auto-farm
+        teszt: állj mob-farm mellé 3+ percig); az AFK-zóna időzített jutalma viszont jár.
+  - [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
+        az utolsó találat után ~10 mp-cel eltűnik.
+  - [ ] **Crate-rulett:** kulcs-nyitáskor pörgő GUI (~3,5 mp, lassul), a végén a tényleges
+        nyeremény áll meg; a GUI IDŐ ELŐTTI bezárása esetén is jár a nyeremény; kapcsoló:
+        crates-settings.spin-animation. Quest-jutalomból kulcs: az onboarding_gather ad 1 köznapi kulcsot.
+  - [ ] **3D crate-feltárás (DisplayFx, ÚJ):** a láda-blokk FÖLÖTT egy lebegő tárgy-ikon **pörög**
+        a lehetséges nyeremények között (~1,5 mp), majd a tényleges nyereményen **megáll, felnagyul
+        és aranyszínnel felizzik**, aztán eltűnik — mások is látják a láda mellett. Nem marad
+        entitás-szemét (relog/restart után sem). Kapcsoló: `display-fx.crate-reveal.enabled: false`.
+        ⚠️ Folia: a pörgetés az ikon saját szálán fut, régióhatár-közeli ládánál is hibamentes.
+  - [ ] **Kombó-kiemelés:** kombó/lánc-finisher utáni 3 mp-ben a sebzés-szám nagyobb, arany, "!"-lel.
+  - [ ] **Fekvés:** `/sit fekves` (LibsDisguises-szel) fekvő póz; mozgásra/újra kiadva felállás;
+        LD nélkül udvarias hibaüzenet. ⚠️ GrimAC false-positive playtest kötelező!
+  - [ ] **Mute-eszkaláció:** `/mute <név>` perc NÉLKÜL → 1. alkalom 5 perc, majd 30/180/1440
+        (moderation.escalation-minutes); a blokkolt/cenzúrázott üzenetek a
+        logs/chat-moderation.log-ba kerülnek (5 MB-nál forgatás).
+  - [ ] **Esemény-MOTD:** vérhold indítása után a szerverlista MOTD-ja a vérhold-variánsra vált
+        (frissítsd a listát), utána vissza a normál rotációra.
+- [ ] **QoL-kör 2 (A53–A62, ÚJ):**
+  - [ ] **`/afk`:** azonnali ⌚-jelölés + hátrasorolás + jutalomkapu; bármilyen mozgás/üzenet törli
+        (a parancs kiadása maga NEM törli — a toggle megmarad).
+  - [ ] **Sidebar-számok:** az oldalsáv jobb szélén NINCSENEK piros sor-számok (blank numberFormat).
+  - [ ] **{event}/{ping} tokenek:** a tablist headerben/footerben használható az {event} (aktív
+        események) és a {ping} mostantól színkódolt (zöld <80 / sárga <150 / piros).
+  - [ ] **Invsee-frissítés:** a 🔄 gombbal új pillanatkép (2 mp-es fék); a cím mutatja a kép korát.
+  - [ ] **Kulcs-lore:** a crate-kulcs lore-jában a láda neve + top-3 jutalom esély-%-kal.
+  - [ ] **Mute-lejárat:** a némítás lejártakor a játékos üzenetet kap (csak EGYSZER, akkor is, ha
+        chat-spammel próbálkozott közben).
+  - [ ] **Report-visszajelzés:** resolve után a bejelentő üzenetet kap — online azonnal, offline a
+        következő belépéskor (restart-álló).
+  - [ ] **Ikon-rotáció:** icons/*.png betöltés a konzol-logban; variánshoz kötött ikon váltáskor
+        a szerverlista-ikon is cserél (RP nélkül is működik — ez szerver-oldali).
+  - [ ] **Kombó-csík:** cast után az action baron fogyó ▰▰▰▱▱ csík mutatja a kombó-ablakot; új
+        cast megszakítja; lejáratkor csendben eltűnik (nem ír „lejárt"-at).
+- [ ] **QoL-kör 3 (A69–A70 + particle-fixek, ÚJ):**
+  - [ ] **Egységes menü-hangnyelv:** a /menu hubban almenü-váltás lapozás-hangot, akció
+        kattintás-hangot ad; az invsee nézet-váltása is; a hangok a gui.sounds.* kulcsokkal
+        felülírhatók (rossz hang-név = csend, nem hiba).
+  - [ ] **Quest-toast:** küldetés teljesítésekor a jobb felső sarokban vanília toast ugrik fel
+        a quest nevével (a chat-üzenet mellett); az advancement-képernyőn NEM jelenik meg
+        maradvány; kikapcsolás: quest-toast.enabled: false. Ha a szerver-implementáció nem
+        támogatja, egyszeri konzol-warn + a toast kimarad (a chat-üzenet marad).
+  - [ ] **Terep-követő határok:** a /claim show pereme dombon-völgyön át a TALAJT követi
+        („földszinten, a blokkok felett"), NEM a játékos derékmagasságában lebeg; a sarok-oszlopok
+        a claim TELJES magasságát mutatják; barlangban (felszín alatt) a perem a játékos szintjén
+        IS kirajzolódik. Ugyanez a /territory show ringre/körre. ⚠️ Folia: távoli (másik régiós)
+        határpontnál nincs hiba (fallback a néző szintjére).
+  - [ ] **Claim-fényfal (DisplayFx, ÚJ):** a /claim show a particle-perem MELLÉ élenként egy
+        megnyújtott, IZZÓ üvegfalat állít (saját/trusted=zöld, idegen=piros), ami csak NEKED
+        látszik (más játékos nem látja), és a `border.show-seconds` letelte után magától eltűnik —
+        NEM marad blokk-szemét a világban (kilépés/relog/szerver-restart után sem). Kapcsoló:
+        `display-fx.claim-wall.enabled: false`; a fal anyaga/magassága configos. ⚠️ Folia: több
+        régiót átfedő nagy claimnél is hibamentesen spawnol.
+  - [ ] **Kincs-fényoszlop:** a kincs-láda fölött magas, messziről látható END_ROD-oszlop áll
+        (dombok mögül is kivehető), a láda-szintű csillogás mellett.
+- [ ] **Particle-polish (ÚJ):**
+  - [ ] **Hangulat-effektek:** a szentjánosbogár/köd/lelkek/aurora ~24 mp-ig PULZÁL (2 mp-enként),
+        a flavour-höz illő helyen (bogarak bokor-magasságban, köd a talajon, aurora magasan az
+        égen) — NEM egyetlen villanás a fej fölött; kilépéskor a lánc leáll.
+  - [ ] **Aurora fény-fátyol (DisplayFx, ÚJ):** az északi fénynél a particle mellé **két magasan
+        lebegő, áttetsző, lassan oldalra sodródó fény-lap** jelenik meg az égen (teal + lila),
+        CSAK neked látszik, és az effekt végén eltűnik — nem marad blokk-szemét (relog/restart után
+        sem). Kapcsoló: `display-fx.aurora.enabled: false`; anyag configos.
+  - [ ] **FLASH-diéta:** boss-spawn/enrage/SLAM, invázió-bajnok, rituálé és Szent Harag villanása
+        egyszeri, nem halmozott — közelről sem vakít el hosszan.
+  - [ ] **Konfetti mérséklés:** escort/vad hajsza/crate/kombó ünneplő-partikelei visszafogottak
+        (≤16-18 darab), a hatás megmaradt, a "particle-hányás" eltűnt.
+- [ ] **Sebzés-számok (ÚJ):** játékos által (kézzel vagy lövedékkel) megütött entitás fölött lebegő
+      szám mutatja a bevitt sebzést (~1 mp-ig; játékos-áldozatnál piros, mobnál sárga); gyors
+      sorozat-ütésnél nem spammel (250 ms limit/célpont).
+  - [ ] **Láthatóság:** alapból (`visibility: attacker-only`) CSAK a sebző látja — egy közelben
+        álló harmadik játékosnak NEM jelenik meg; `spells.damage-indicators.visibility: everyone`
+        után mindenki látja; **lövedékes** (íj) találatnál is a lövő kapja meg a feliratot.
+  - [ ] **Teljes kikapcsolás:** `spells.damage-indicators.enabled: false` → semmilyen felirat.
+- [ ] **Halál-összegző (ÚJ):** halálkor a chatben az utolsó 10 mp sebzései (max 5 sor: „-2.5❤ Zombi
+      (3.2 mp-e)", lövedéknél a lövő zárójelben) + összesített sebzés. Kikapcsolás:
+      `spells.death-recap.enabled: false`. Ütés NEM számítódik duplán (entitás- vs. környezeti sebzés).
 
 ### 4.15 Druida formák + parkour ✅
 - [ ] Druida forma-spellek: LibsDisguises-szel vizuális átalakulás; nélküle stat-váltás (mindkettő teszt).

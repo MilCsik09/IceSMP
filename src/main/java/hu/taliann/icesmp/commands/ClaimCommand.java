@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import hu.taliann.icesmp.gui.ClaimTrustGUI;
 import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -57,6 +58,7 @@ public final class ClaimCommand implements BasicCommand {
             case "list" -> handleList(player);
             case "trust" -> handleTrust(player, args);
             case "untrust" -> handleUntrust(player, args);
+            case "trustgui" -> ClaimTrustGUI.open(player, claimManager, messageManager);
             case "show" -> handleShow(player);
             case "pos1" -> handleCorner(player, true);
             case "pos2" -> handleCorner(player, false);
@@ -275,7 +277,7 @@ public final class ClaimCommand implements BasicCommand {
         final CommandSender sender = commandSourceStack.getSender();
 
         final List<String> options = new ArrayList<>(
-                List.of("claim", "unclaim", "info", "list", "trust", "untrust", "show", "pos1", "pos2", "area", "extend", "help"));
+                List.of("claim", "unclaim", "info", "list", "trust", "trustgui", "untrust", "show", "pos1", "pos2", "area", "extend", "help"));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             options.add("admin");
         }

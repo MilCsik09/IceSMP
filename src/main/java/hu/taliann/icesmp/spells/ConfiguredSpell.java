@@ -56,6 +56,8 @@ public final class ConfiguredSpell extends BaseSpell {
     private final Sound sound;
     private final float soundVolume;
     private final float soundPitch;
+    private final hu.taliann.icesmp.utils.SpellVfx.Shape vfxShape;
+    private final hu.taliann.icesmp.utils.SpellVfx.Palette vfxPalette;
 
     private ConfiguredSpell(final Builder builder) {
         super(builder.messageManager, builder.id, builder.defaultName, builder.cooldown, builder.costType, builder.costAmount);
@@ -82,6 +84,8 @@ public final class ConfiguredSpell extends BaseSpell {
         this.sound = builder.sound;
         this.soundVolume = builder.soundVolume;
         this.soundPitch = builder.soundPitch;
+        this.vfxShape = builder.vfxShape;
+        this.vfxPalette = builder.vfxPalette;
     }
 
     public static Builder builder(final MessageManager messageManager, final String id, final String defaultName,
@@ -145,6 +149,8 @@ public final class ConfiguredSpell extends BaseSpell {
         b.sound = spell.sound;
         b.soundVolume = spell.soundVolume;
         b.soundPitch = spell.soundPitch;
+        b.vfxShape = spell.vfxShape;
+        b.vfxPalette = spell.vfxPalette;
 
         if (changes.isEmpty()) {
             return spell;
@@ -216,13 +222,55 @@ public final class ConfiguredSpell extends BaseSpell {
         };
     }
 
+    // ==================== live balansz-olvasás ====================
+    // A spell-balance.<id>.<kulcs> felülbírálások HASZNÁLAT idején olvasódnak (BaseSpell.balance
+    // a volatile ConfigManager-en át), így /icesmp reload vagy /icesmp config set restart nélkül,
+    // azonnal érvényes a deklaratív spelleknél is. A mezők a kódbeli defaultok maradnak; az
+    // indításkori withBalanceOverrides csak a startup-log + ismeretlen-id warning miatt él tovább.
+
+    private double liveRange() {
+        return balance("range", range);
+    }
+
+    private double liveRadius() {
+        return balance("radius", radius);
+    }
+
+    private double liveDamage() {
+        return balance("damage", damage);
+    }
+
+    private double liveSelfDamage() {
+        return balance("self-damage", selfDamage);
+    }
+
+    private double liveHealSelf() {
+        return balance("heal-self", healSelf);
+    }
+
+    private int liveFeedSelf() {
+        return balanceInt("feed-self", feedSelf);
+    }
+
+    private int liveIgniteTicks() {
+        return balanceInt("ignite-ticks", igniteTicks);
+    }
+
+    private int liveFreezeTicks() {
+        return balanceInt("freeze-ticks", freezeTicks);
+    }
+
+    private double liveKnockback() {
+        return balance("knockback", knockback);
+    }
+
     private void executeSelf(final Player player, final double power) {
         applySelf(player, power);
         playFeedback(player, player.getLocation());
     }
 
     private boolean executeTarget(final Player player, final double power) {
-        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, range);
+        final LivingEntity target = SpellTargetingUtil.rayTraceLivingEntity(player, liveRange());
         if (target == null) {
             player.sendMessage(resolveMessage("no-target", "&7Nincs célpont a látómeződben."));
             return false;
@@ -235,12 +283,19 @@ public final class ConfiguredSpell extends BaseSpell {
     }
 
     private void executeAoe(final Player player, final double power) {
-        for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
+        final double aoeRadius = liveRadius();
+        for (final Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), aoeRadius, aoeRadius, aoeRadius)) {
             if (!(entity instanceof LivingEntity living) || entity == player) {
                 continue;
             }
 
-            if (friendlyAoe && !(living instanceof Player)) {
+            if (friendlyAoe) {
+                // Baráti AoE (buff): CSAK szövetséges játékost érint — ellenség nem kapja meg a buffot.
+                if (!(living instanceof Player) || !SpellTargetingUtil.isAlly(player, living)) {
+                    continue;
+                }
+            } else if (SpellTargetingUtil.isAlly(player, living)) {
+                // Ellenséges AoE: a saját párttag (és configtól függően frakciótárs) védett.
                 continue;
             }
 
@@ -256,31 +311,31 @@ public final class ConfiguredSpell extends BaseSpell {
         final List<String> lines = new ArrayList<>();
         lines.add(switch (targeting) {
             case SELF -> "Cél: önmagad";
-            case TARGET -> "Cél: célzott lény (hatótáv " + trim(range) + ")";
-            case AOE -> "Cél: körzet (sugár " + trim(radius) + ")" + (friendlyAoe ? ", csak szövetségesek" : "");
+            case TARGET -> "Cél: célzott lény (hatótáv " + trim(liveRange()) + ")";
+            case AOE -> "Cél: körzet (sugár " + trim(liveRadius()) + ")" + (friendlyAoe ? ", csak szövetségesek" : "");
         });
-        if (damage > 0.0D) {
-            lines.add("Sebzés: " + trim(damage));
+        if (liveDamage() > 0.0D) {
+            lines.add("Sebzés: " + trim(liveDamage()));
         }
-        if (selfDamage > 0.0D) {
-            lines.add("Önsebzés: " + trim(selfDamage));
+        if (liveSelfDamage() > 0.0D) {
+            lines.add("Önsebzés: " + trim(liveSelfDamage()));
         }
-        if (healSelf > 0.0D) {
-            lines.add("Gyógyítás: " + trim(healSelf));
+        if (liveHealSelf() > 0.0D) {
+            lines.add("Gyógyítás: " + trim(liveHealSelf()));
         }
-        if (feedSelf > 0) {
-            lines.add("Jóllakottság: +" + feedSelf);
+        if (liveFeedSelf() > 0) {
+            lines.add("Jóllakottság: +" + liveFeedSelf());
         }
-        if (igniteTicks > 0) {
-            lines.add("Gyújtás: " + secondsOf(igniteTicks) + " mp");
+        if (liveIgniteTicks() > 0) {
+            lines.add("Gyújtás: " + secondsOf(liveIgniteTicks()) + " mp");
         }
-        if (freezeTicks > 0) {
-            lines.add("Fagyasztás: " + secondsOf(FREEZE_BASE_TICKS + freezeTicks) + " mp");
+        if (liveFreezeTicks() > 0) {
+            lines.add("Fagyasztás: " + secondsOf(FREEZE_BASE_TICKS + liveFreezeTicks()) + " mp");
         }
         if (lightning) {
             lines.add("Villámcsapás");
         }
-        if (knockback > 0.0D) {
+        if (liveKnockback() > 0.0D) {
             lines.add("Hátralökés");
         }
         if (launchUp > 0.0D) {
@@ -330,26 +385,31 @@ public final class ConfiguredSpell extends BaseSpell {
             target.getWorld().strikeLightningEffect(target.getLocation());
         }
 
-        if (damage > 0.0D) {
-            target.damage(damage * power, caster);
+        final double liveDamage = liveDamage();
+        if (liveDamage > 0.0D) {
+            target.damage(liveDamage * power, caster);
         }
 
         for (final PotionEffect effect : targetEffects) {
-            target.addPotionEffect(scaledDuration(effect, power));
+            // Mob-célponton a képernyő-effektek ható megfelelőre fordulnak (lásd adaptForTarget).
+            target.addPotionEffect(SpellTargetingUtil.adaptForTarget(target, scaledDuration(effect, power)));
         }
 
-        if (igniteTicks > 0) {
-            target.setFireTicks(Math.max(target.getFireTicks(), igniteTicks));
+        final int liveIgnite = liveIgniteTicks();
+        if (liveIgnite > 0) {
+            target.setFireTicks(Math.max(target.getFireTicks(), liveIgnite));
         }
 
-        if (freezeTicks > 0) {
-            target.setFreezeTicks(Math.max(target.getFreezeTicks(), FREEZE_BASE_TICKS + freezeTicks));
+        final int liveFreeze = liveFreezeTicks();
+        if (liveFreeze > 0) {
+            target.setFreezeTicks(Math.max(target.getFreezeTicks(), FREEZE_BASE_TICKS + liveFreeze));
         }
 
-        if (knockback > 0.0D) {
+        final double liveKnockback = liveKnockback();
+        if (liveKnockback > 0.0D) {
             final Vector away = target.getLocation().toVector().subtract(caster.getLocation().toVector()).setY(0.0D);
             if (away.lengthSquared() > 1.0E-4D) {
-                target.setVelocity(away.normalize().multiply(knockback).setY(0.3D));
+                target.setVelocity(away.normalize().multiply(liveKnockback).setY(0.3D));
             }
         }
 
@@ -371,19 +431,22 @@ public final class ConfiguredSpell extends BaseSpell {
         }
 
         // Self-damage is a cost, not offensive output — it stays at base regardless of mastery.
-        if (selfDamage > 0.0D) {
-            player.damage(selfDamage);
+        final double liveSelfDamage = liveSelfDamage();
+        if (liveSelfDamage > 0.0D) {
+            player.damage(liveSelfDamage);
         }
 
-        if (healSelf > 0.0D) {
+        final double liveHealSelf = liveHealSelf();
+        if (liveHealSelf > 0.0D) {
             final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) {
-                player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + (healSelf * power)));
+                player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + (liveHealSelf * power)));
             }
         }
 
-        if (feedSelf > 0) {
-            player.setFoodLevel(Math.min(20, player.getFoodLevel() + feedSelf));
+        final int liveFeedSelf = liveFeedSelf();
+        if (liveFeedSelf > 0) {
+            player.setFoodLevel(Math.min(20, player.getFoodLevel() + liveFeedSelf));
         }
 
         if (dashForward != 0.0D || dashUp != 0.0D) {
@@ -399,14 +462,79 @@ public final class ConfiguredSpell extends BaseSpell {
     }
 
     private void playFeedback(final Player player, final Location focus) {
-        if (particle != null) {
-            player.getWorld().spawnParticle(particle, focus.clone().add(0.0D, 1.0D, 0.0D),
-                    particleCount, radius > 0.0D ? radius / 2.0D : 0.4D, 0.6D, radius > 0.0D ? radius / 2.0D : 0.4D, 0.02D);
+        if (hu.taliann.icesmp.utils.SpellVfx.isEnabled()) {
+            final hu.taliann.icesmp.utils.SpellVfx.Shape shape = resolveShape();
+            final hu.taliann.icesmp.utils.SpellVfx.Palette palette = vfxPalette != null
+                    ? vfxPalette : hu.taliann.icesmp.utils.SpellVfx.paletteFor(getId(), particle);
+            final Location origin = switch (shape) {
+                case BEAM, ARC, CONE, IMPACT -> player.getEyeLocation();
+                default -> player.getLocation();
+            };
+            // A CONE a néző irányába terül (nem a fókusz felé): to=null → a facing-et használja.
+            final Location target = shape == hu.taliann.icesmp.utils.SpellVfx.Shape.CONE ? null : focus;
+            hu.taliann.icesmp.utils.SpellVfx.render(shape, palette, origin, target, liveRadius(), particle, particleCount);
+        } else if (particle != null) {
+            final double spread = liveRadius();
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), particle, focus.clone().add(0.0D, 1.0D, 0.0D),
+                    particleCount, spread > 0.0D ? spread / 2.0D : 0.4D, 0.6D, spread > 0.0D ? spread / 2.0D : 0.4D, 0.02D);
         }
 
         if (sound != null) {
             player.getWorld().playSound(focus, sound, soundVolume, soundPitch);
         }
+    }
+
+    /**
+     * A tényleges forma: explicit {@code vfx(...)} → config-override ({@code spell-vfx.shapes}) →
+     * konzervatív kulcsszó-heurisztika (a spell-id alapján) → {@link #defaultShape()} targeting-alap.
+     */
+    private hu.taliann.icesmp.utils.SpellVfx.Shape resolveShape() {
+        if (vfxShape != null) {
+            return vfxShape;
+        }
+        final hu.taliann.icesmp.utils.SpellVfx.Shape mapped = hu.taliann.icesmp.utils.SpellVfx.mappedShape(getId());
+        if (mapped != null) {
+            return mapped;
+        }
+        final String id = getId();
+        if (targeting == Targeting.TARGET) {
+            if (containsAny(id, MELEE_TOKENS)) {
+                return hu.taliann.icesmp.utils.SpellVfx.Shape.IMPACT;
+            }
+            if (containsAny(id, THROWN_TOKENS)) {
+                return hu.taliann.icesmp.utils.SpellVfx.Shape.ARC;
+            }
+        } else if (targeting == Targeting.AOE && containsAny(id, BREATH_TOKENS)) {
+            return hu.taliann.icesmp.utils.SpellVfx.Shape.CONE;
+        }
+        return defaultShape();
+    }
+
+    // Konzervatív, egyértelmű kulcsszavak a forma-heurisztikához (a spell-id snake_case angol tokenjei).
+    private static final String[] MELEE_TOKENS = {"strike", "smash", "slam", "punch", "kick", "crush",
+            "cleave", "rend", "bite", "gore", "maul", "chop", "hack"};
+    private static final String[] THROWN_TOKENS = {"throw", "toss", "dart", "javelin", "shuriken", "lob"};
+    private static final String[] BREATH_TOKENS = {"breath", "roar", "spray", "exhale"};
+
+    private static boolean containsAny(final String id, final String[] tokens) {
+        if (id == null) {
+            return false;
+        }
+        for (final String token : tokens) {
+            if (id.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A targeting-jellegből adódó alapforma, ha nincs explicit/config/heurisztikus forma. */
+    private hu.taliann.icesmp.utils.SpellVfx.Shape defaultShape() {
+        return switch (targeting) {
+            case SELF -> hu.taliann.icesmp.utils.SpellVfx.Shape.HELIX;
+            case TARGET -> hu.taliann.icesmp.utils.SpellVfx.Shape.BEAM;
+            case AOE -> hu.taliann.icesmp.utils.SpellVfx.Shape.RING;
+        };
     }
 
     public static final class Builder {
@@ -441,6 +569,8 @@ public final class ConfiguredSpell extends BaseSpell {
         private Sound sound;
         private float soundVolume = 1.0F;
         private float soundPitch = 1.0F;
+        private hu.taliann.icesmp.utils.SpellVfx.Shape vfxShape;
+        private hu.taliann.icesmp.utils.SpellVfx.Palette vfxPalette;
 
         private Builder(final MessageManager messageManager, final String id, final String defaultName,
                         final int cooldown, final SpellCostType costType, final int costAmount) {
@@ -551,6 +681,18 @@ public final class ConfiguredSpell extends BaseSpell {
             this.sound = effectSound;
             this.soundVolume = volume;
             this.soundPitch = pitch;
+            return this;
+        }
+
+        /**
+         * Explicit spell-VFX forma és/vagy paletta. Bármelyik lehet null: a forma AUTO/null esetén
+         * a targeting-ből jön (SELF→hélix, TARGET→sugár, AOE→gyűrű), a paletta null esetén az
+         * accent-particle-ből származik.
+         */
+        public Builder vfx(final hu.taliann.icesmp.utils.SpellVfx.Shape shape,
+                           final hu.taliann.icesmp.utils.SpellVfx.Palette palette) {
+            this.vfxShape = shape == hu.taliann.icesmp.utils.SpellVfx.Shape.AUTO ? null : shape;
+            this.vfxPalette = palette;
             return this;
         }
 

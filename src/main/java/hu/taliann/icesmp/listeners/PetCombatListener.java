@@ -27,7 +27,6 @@ public final class PetCombatListener implements Listener {
 
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
-        // If a companion dies, clear its combat state and notify its owner.
         petManager.handlePetDeath(event.getEntity());
     }
 

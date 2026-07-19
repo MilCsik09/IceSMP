@@ -29,6 +29,13 @@ public final class HideSpell extends BaseSpell {
     }
 
     @Override
+    public boolean canCast(final Player player) {
+        // Recast guard: while hidden, a second cast would stash the already-emptied armor slots
+        // as "original", and the restore would permanently destroy the real armor set.
+        return !HIDDEN_ARMOR.containsKey(player.getUniqueId());
+    }
+
+    @Override
     public void execute(final Player player) {
         final int teleportRadius = balanceInt("teleport-radius", 10);
         final Location origin = player.getLocation();
@@ -44,7 +51,7 @@ public final class HideSpell extends BaseSpell {
         final int speedAmplifier = balanceInt("speed-amplifier", 1);
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, durationTicks, 0, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationTicks, speedAmplifier, false, true, true));
-        player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation(), 40, 0.5D, 0.5D, 0.5D, 0.01D);
+        player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation(), 24, 0.5D, 0.5D, 0.5D, 0.01D);
 
         final UUID playerId = player.getUniqueId();
         // Folia: schedule on the player's own region scheduler, not the (unsupported) global Bukkit scheduler.

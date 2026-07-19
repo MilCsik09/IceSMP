@@ -9,6 +9,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
+import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
@@ -39,6 +40,7 @@ public final class SpellbookGUI {
     private static final int SIZE = 54;
     private static final int PER_PAGE = 45;
     public static final int PREV_SLOT = 45;
+    public static final int FILTER_SLOT = 47;
     public static final int PAGE_INFO_SLOT = 49;
     public static final int NEXT_SLOT = 53;
 
@@ -53,8 +55,12 @@ public final class SpellbookGUI {
                             final JobManager jobManager, final SpecializationManager specializationManager,
                             final SpellRegistry spellRegistry, final SpellMasteryManager masteryManager,
                             final ConfigManager configManager, final MessageManager messageManager,
-                            final ResourceManager resourceManager, final int page) {
-        final List<Entry> entries = collectEntries(viewer, jobManager, specializationManager, spellRegistry, configManager);
+                            final ResourceManager resourceManager, final SpellFavoritesManager favoritesManager,
+                            final int page, final boolean onlyUnlocked) {
+        List<Entry> entries = collectEntries(viewer, jobManager, specializationManager, spellRegistry, configManager);
+        if (onlyUnlocked) {
+            entries = entries.stream().filter(Entry::unlocked).toList();
+        }
         final String selectedId = catalyst.getSelectedSpellId(viewer);
 
         final int totalPages = Math.max(1, (int) Math.ceil(entries.size() / (double) PER_PAGE));
@@ -63,6 +69,7 @@ public final class SpellbookGUI {
         final Component title = messageManager.getComponent("messages.spellbook-title", "&5» Varázskönyv «");
         final SpellbookHolder holder = new SpellbookHolder(viewer.getUniqueId());
         holder.setPage(safePage);
+        holder.setOnlyUnlocked(onlyUnlocked);
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
 
@@ -70,7 +77,7 @@ public final class SpellbookGUI {
         for (int i = 0; i < PER_PAGE && start + i < entries.size(); i++) {
             final Entry entry = entries.get(start + i);
             final boolean selected = entry.unlocked() && entry.spell().getId().equalsIgnoreCase(selectedId);
-            inventory.setItem(i, icon(viewer, entry, selected, masteryManager, messageManager, resourceManager));
+            inventory.setItem(i, icon(viewer, entry, selected, masteryManager, messageManager, resourceManager, favoritesManager));
             if (entry.unlocked()) {
                 holder.mapSlot(i, entry.spell().getId());
             }
@@ -85,6 +92,8 @@ public final class SpellbookGUI {
         if (safePage < totalPages - 1) {
             inventory.setItem(NEXT_SLOT, nav(Material.ARROW, "Következő oldal »"));
         }
+        inventory.setItem(FILTER_SLOT, nav(Material.HOPPER,
+                "Csak feloldottak: " + (onlyUnlocked ? "BE" : "KI")));
         inventory.setItem(PAGE_INFO_SLOT, nav(Material.PAPER,
                 "Oldal " + (safePage + 1) + "/" + totalPages + " — sunyíts + jobb katt a könyvhöz"));
 
@@ -138,14 +147,15 @@ public final class SpellbookGUI {
 
     private static ItemStack icon(final Player viewer, final Entry entry, final boolean selected,
                                   final SpellMasteryManager masteryManager, final MessageManager messageManager,
-                                  final ResourceManager resourceManager) {
+                                  final ResourceManager resourceManager, final SpellFavoritesManager favoritesManager) {
         final Spell spell = entry.spell();
         final boolean unlocked = entry.unlocked();
         final int rank = masteryManager.getRank(viewer, spell.getId());
+        final boolean favorite = unlocked && favoritesManager != null && favoritesManager.isFavorite(viewer, spell.getId());
 
         final Component name = Component.text(
-                (selected ? "▶ " : "") + spell.getName() + (rank > 0 ? " ★" + rank : ""),
-                unlocked ? (selected ? NamedTextColor.GOLD : NamedTextColor.AQUA) : NamedTextColor.GRAY)
+                (selected ? "▶ " : "") + (favorite ? "★ " : "") + spell.getName() + (rank > 0 ? " ★" + rank : ""),
+                unlocked ? ((selected || favorite) ? NamedTextColor.GOLD : NamedTextColor.AQUA) : NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false);
 
         final List<Component> lore = new ArrayList<>();
@@ -166,7 +176,7 @@ public final class SpellbookGUI {
         lore.add(Component.empty());
         if (resourceManager != null && resourceManager.usesResource(spell)) {
             // Hybrid: this spell is paid from the class resource (Mana/Düh/Energia…), which regenerates.
-            lore.add(stat("Költség", spell.getResourceCost() + " " + resourceManager.resourceName(viewer)));
+            lore.add(stat("Költség", resourceManager.costOf(spell) + " " + resourceManager.resourceName(viewer)));
         } else if (spell.getCostAmount() > 0) {
             // Thematic cost kept: blood magic (HP), great rituals (XP), or heavy physical effort (hunger).
             lore.add(stat("Költség", spell.getCostAmount() + " " + resourceName(spell.getCostType())));
@@ -184,6 +194,15 @@ public final class SpellbookGUI {
             lore.add(Component.text("✔ Kiválasztva", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         } else {
             lore.add(Component.text("Kattints a kiválasztáshoz", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+        }
+        if (unlocked) {
+            if (favorite) {
+                lore.add(Component.text("★ Kedvenc — shift-katt: eltávolítás", NamedTextColor.GOLD)
+                        .decoration(TextDecoration.ITALIC, false));
+            } else {
+                lore.add(Component.text("Shift-katt: kedvencnek jelölés", NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
         }
 
         final Material material = unlocked ? Material.ENCHANTED_BOOK : Material.BOOK;

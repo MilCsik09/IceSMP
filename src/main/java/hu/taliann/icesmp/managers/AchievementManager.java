@@ -27,7 +27,6 @@ public final class AchievementManager {
 
     public enum Metric { CLASS_LEVEL, WEALTH, RAID_KILLS, PROFESSION_LEVEL, DAILY_STREAK }
 
-    /** A single milestone. */
     public record Achievement(String id, String name, String description, Metric metric, double threshold, long reward) { }
 
     private final JavaPlugin plugin;

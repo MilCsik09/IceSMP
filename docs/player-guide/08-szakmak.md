@@ -106,6 +106,23 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 
 > A receptek smaragd-alapanyaggal készülnek (hogy ne ütközzenek a vanilla receptekkel).
 
+### 🔒 Craft-korlátok (vanilla tárgyak)
+
+Néhány **erős vanilla tárgy** is szakmához kötött — ez teszi értékessé a szakmákat és a köztük
+lévő cserekereskedelmet. Ha nincs meg a szint, a craft eredménye nem jön létre, és üzenetet kapsz:
+
+| Tárgy | Kell hozzá |
+|---|---|
+| Netherite felszerelés | **Páncélkovács 25** |
+| Netherite-rúd (finomítás) | **Bányász 20** |
+| Számszeríj, pajzs | **Favágó 8** |
+| Főzőállvány | **Alkimista 5** |
+| Bűvölő-asztal | **Enchanter 5** |
+| Torta, sütőtökös pite, nyúlpörkölt | **Séf 6** |
+
+A korai alapok (íj, kőszerszám, sült húsok, fapáncél) bárkinek szabadok — a kapuk a csúcs-
+kimenetet és a szakma-„állomásokat" védik.
+
 ### ✨ Minőség és affixek (egyedi tárgyak)
 
 Minden mestermunka craftoláskor (és minden mob-loot tárgy) **véletlen raritást** és **random

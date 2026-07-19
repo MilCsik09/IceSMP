@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -146,6 +148,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     /** claim-id → claim. */
     private final Map<String, Claim> claims = new ConcurrentHashMap<>();
+    private final Object saveLock = new Object();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     /**
      * world;chunkX;chunkZ → claims overlapping that chunk. Rebuilt and swapped whole
      * on every (rare) mutation, so the hot-path lookup is a lock-free read of an
@@ -336,7 +340,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 player.getUniqueId(), player.getName(), System.currentTimeMillis());
         claims.put(claim.id, claim);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 
@@ -413,7 +417,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
         claims.remove(claim.id);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 
@@ -548,7 +552,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         extended.trusted.addAll(claim.trusted);
         claims.put(claim.id, extended);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 
@@ -572,7 +576,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
         claims.remove(claim.id);
         rebuildIndex();
-        save();
+        requestSave();
         return true;
     }
 
@@ -595,7 +599,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (!any) {
             return "claim-no-claims";
         }
-        save();
+        requestSave();
         return null;
     }
 
@@ -614,7 +618,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         if (!any) {
             return "claim-not-trusted";
         }
-        save();
+        requestSave();
         return null;
     }
 
@@ -633,6 +637,21 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return names;
     }
 
+    /**
+     * Read-only aggregate of every player trusted on ANY of the owner's claims
+     * (union across all their claim boxes). Used by {@code ClaimTrustGUI} to list
+     * the "revoke" tiles — does not mutate any trust state.
+     */
+    public synchronized Set<UUID> trustedPlayers(final UUID owner) {
+        final Set<UUID> result = new java.util.LinkedHashSet<>();
+        for (final Claim claim : claims.values()) {
+            if (claim.owner.equals(owner)) {
+                result.addAll(claim.trusted);
+            }
+        }
+        return result;
+    }
+
     // ==================== határ-megjelenítés + belépés-értesítés ====================
 
     /**
@@ -644,6 +663,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
      */
     public void showBorder(final Player player) {
         final int seconds = Math.max(2, configManager.getInt("claims.border.show-seconds", 8));
+        if (configManager.getBoolean("display-fx.claim-wall.enabled", true)) {
+            showDisplayWalls(player, seconds);
+        }
         final int[] frames = {0};
         player.getScheduler().runAtFixedRate(plugin, task -> {
             if (frames[0]++ >= seconds || !player.isOnline()) {
@@ -652,6 +674,64 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             }
             drawBorderFrame(player);
         }, null, 1L, 20L);
+    }
+
+    /**
+     * DisplayFx-pilot: a közeli claimek köré EGYSZER (nem frame-enként) izzó fényfalat állít a
+     * BlockDisplay-rétegből — claim-élenként egy megnyújtott, per-nézős, {@code seconds} múlva
+     * eltűnő entitás (saját/trusted=zöld, idegen=piros). A particle-perem a terep-követő részlet,
+     * ez a folytonos, olvasható határ.
+     */
+    private void showDisplayWalls(final Player player, final int seconds) {
+        final Location location = player.getLocation();
+        final World world = location.getWorld();
+        if (world == null) {
+            return;
+        }
+        final String worldName = world.getName();
+        final int radius = Math.max(1, configManager.getInt("claims.border.radius", 2));
+        final int pcx = location.getBlockX() >> 4;
+        final int pcz = location.getBlockZ() >> 4;
+        final java.util.LinkedHashSet<Claim> nearby = new java.util.LinkedHashSet<>();
+        final Map<String, List<Claim>> index = chunkIndex;
+        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
+            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
+                final List<Claim> hits = index.get(chunkKey(worldName, cx, cz));
+                if (hits != null) {
+                    nearby.addAll(hits);
+                }
+            }
+        }
+        if (nearby.isEmpty()) {
+            return;
+        }
+        final int height = Math.max(1, configManager.getInt("display-fx.claim-wall.height", 3));
+        final int ticks = seconds * 20;
+        final org.bukkit.block.data.BlockData block = wallBlockData();
+        for (final Claim claim : nearby) {
+            final org.bukkit.Color glow = claim.isTrusted(player.getUniqueId())
+                    ? org.bukkit.Color.fromRGB(0x3BE24A) : org.bukkit.Color.fromRGB(0xE23B3B);
+            final float width = claim.maxX + 1 - claim.minX;
+            final float depth = claim.maxZ + 1 - claim.minZ;
+            final double baseY = hu.taliann.icesmp.utils.ParticleUtil.markerY(
+                    world, claim.minX + (int) (width / 2), claim.minZ + (int) (depth / 2), location.getY()) - 1.2D;
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.minX, baseY, claim.minZ), width, height, 0.1F, block, glow, ticks, player);
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.minX, baseY, claim.maxZ + 1), width, height, 0.1F, block, glow, ticks, player);
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.minX, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
+            hu.taliann.icesmp.utils.DisplayFxUtil.wallSegment(plugin,
+                    new Location(world, claim.maxX + 1, baseY, claim.minZ), 0.1F, height, depth, block, glow, ticks, player);
+        }
+    }
+
+    /** A fényfal blokk-anyaga configból (áttetsző üveg default), fail-safe fallbackkal. */
+    private org.bukkit.block.data.BlockData wallBlockData() {
+        final String name = configManager.getString("display-fx.claim-wall.material", "LIGHT_BLUE_STAINED_GLASS");
+        final org.bukkit.Material material = org.bukkit.Material.matchMaterial(name);
+        return (material != null && material.isBlock() ? material : org.bukkit.Material.LIGHT_BLUE_STAINED_GLASS)
+                .createBlockData();
     }
 
     private void drawBorderFrame(final Player player) {
@@ -691,26 +771,41 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
     }
 
-    /** Perimeter at the viewer's (clamped) height + short corner posts marking the Y-extent. */
+    /**
+     * TEREP-KÖVETŐ perem („földszinten, a blokkok felett") + TELJES magasságú sarok-oszlopok:
+     * a peremvonal minden pontja a saját oszlopának legfelső blokkja fölé kerül
+     * — dombon/völgyön átfutó határnál is a talajt követi; ha a néző jóval a felszín alatt jár
+     * (barlang), a perem a néző szintjén IS kirajzolódik. A sarok-oszlopok a claim teljes
+     * minY→maxY tartományát mutatják, ritkított mintavétellel.
+     */
     private void drawBoxOutline(final Player player, final World world, final int minX, final int minZ,
                                 final int maxX, final int maxZ, final int minY, final int maxY,
                                 final int viewerY, final Particle particle) {
-        final double y = Math.max(minY, Math.min(maxY, viewerY)) + 1.2D;
         for (int x = minX; x <= maxX + 1; x += 2) {
-            player.spawnParticle(particle, new Location(world, x, y, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, x, y, maxZ + 1), 1, 0, 0, 0, 0);
+            drawEdgePoint(player, world, x, minZ, viewerY, particle);
+            drawEdgePoint(player, world, x, maxZ + 1, viewerY, particle);
         }
         for (int z = minZ; z <= maxZ + 1; z += 2) {
-            player.spawnParticle(particle, new Location(world, minX, y, z), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, y, z), 1, 0, 0, 0, 0);
+            drawEdgePoint(player, world, minX, z, viewerY, particle);
+            drawEdgePoint(player, world, maxX + 1, z, viewerY, particle);
         }
-        // Sarok-oszlopok: felfelé mutató jelzés a claim függőleges kiterjedéséről.
-        for (int dy = 0; dy <= 4; dy += 2) {
-            final double py = Math.min(maxY, Math.max(minY, viewerY) + dy) + 1.2D;
-            player.spawnParticle(particle, new Location(world, minX, py, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py, minZ), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, minX, py, maxZ + 1), 1, 0, 0, 0, 0);
-            player.spawnParticle(particle, new Location(world, maxX + 1, py, maxZ + 1), 1, 0, 0, 0, 0);
+        // Sarok-oszlopok a claim TELJES függőleges kiterjedésén (max ~13 pont oszloponként).
+        final int step = Math.max(3, (maxY - minY) / 12);
+        for (int py = minY; py <= maxY; py += step) {
+            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, minZ), 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, minZ), 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, new Location(world, minX, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, new Location(world, maxX + 1, py + 0.5D, maxZ + 1), 1, 0, 0, 0, 0);
+        }
+    }
+
+    /** Egy perem-pont: terepre igazítva; barlangban (néző jóval a felszín alatt) plusz pont a néző szintjén. */
+    private void drawEdgePoint(final Player player, final World world, final int x, final int z,
+                               final int viewerY, final Particle particle) {
+        final double groundY = hu.taliann.icesmp.utils.ParticleUtil.markerY(world, x, z, viewerY + 1.2D);
+        player.spawnParticle(particle, new Location(world, x, groundY, z), 1, 0, 0, 0, 0);
+        if (viewerY + 4.0D < groundY - 1.2D) {
+            player.spawnParticle(particle, new Location(world, x, viewerY + 1.2D, z), 1, 0, 0, 0, 0);
         }
     }
 
@@ -792,8 +887,38 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         rebuildIndex();
     }
 
+    /**
+     * Synchronously flushes claims to disk. Used on shutdown; gameplay mutations
+     * call {@link #requestSave()} instead, which debounces the full-file rewrite
+     * off the region threads (mirrors the CurrencyManager pattern).
+     */
     @Override
     public void save() {
+        flushToDisk();
+    }
+
+    /** Schedules a debounced asynchronous flush — many claim edits in a short window coalesce into one write. */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                flushToDisk();
+            }, 2L, TimeUnit.SECONDS);
+        }
+    }
+
+    private void flushToDisk() {
+        synchronized (saveLock) {
+            final YamlConfiguration yaml = buildYaml();
+            try {
+                YamlStore.saveAtomic(storageFile, yaml);
+            } catch (final IOException exception) {
+                plugin.getLogger().log(Level.SEVERE, "A claims.yml mentése nem sikerült", exception);
+            }
+        }
+    }
+
+    private YamlConfiguration buildYaml() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final Claim claim : claims.values()) {
             final String basePath = "claims." + claim.id;
@@ -811,11 +936,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 yaml.set(basePath + ".trusted", claim.trusted.stream().map(UUID::toString).toList());
             }
         }
-        try {
-            YamlStore.saveAtomic(storageFile, yaml);
-        } catch (final IOException exception) {
-            plugin.getLogger().log(Level.SEVERE, "A claims.yml mentése nem sikerült", exception);
-        }
+        return yaml;
     }
 
     // ==================== internals ====================

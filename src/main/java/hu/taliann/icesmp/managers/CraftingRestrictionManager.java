@@ -135,8 +135,6 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
     /**
      * Finds the rule that blocks the player from crafting the given material.
      *
-     * @param player the crafting player
-     * @param material the result material
      * @return the violated rule, or null if crafting is allowed
      */
     public CraftingRule findViolatedRule(final Player player, final Material material) {
@@ -158,10 +156,6 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
     /**
      * Checks whether the player fails the profession part of a rule
      * (used by the listener to pick the right feedback message).
-     *
-     * @param player the player
-     * @param rule the violated rule
-     * @return true if the profession requirement is present and unmet
      */
     public boolean failsProfessionRequirement(final Player player, final CraftingRule rule) {
         return rule.requiredProfession() != null && !meetsProfessionRequirement(player, rule);
@@ -198,9 +192,6 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
     /**
      * Checks whether the player should receive a restriction message now,
      * applying a short cooldown to avoid spamming during inventory interactions.
-     *
-     * @param playerId the player UUID
-     * @return true if a message should be sent
      */
     public boolean shouldNotify(final UUID playerId) {
         final long now = System.currentTimeMillis();

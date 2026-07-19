@@ -54,7 +54,7 @@ public final class ProfileGUI {
         }
 
         final Component title = ctx.messageManager().getMessage("system.profile.gui.title", "<dark_aqua>» Karakterlap «</dark_aqua>");
-        final ProfileHolder holder = new ProfileHolder();
+        final ProfileHolder holder = new ProfileHolder(viewer.getUniqueId());
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
 

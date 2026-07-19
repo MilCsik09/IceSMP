@@ -14,9 +14,9 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Soulstone drops (ideas.md "Sötét valuta = lélekkő"): high-level scaled mobs
- * have a chance to drop DARK currency tokens on player kills, making the
- * dangerous outer rings economically worthwhile.
+ * Soulstone drops: high-level scaled mobs have a chance to drop DARK currency
+ * tokens on player kills, making the dangerous outer rings economically
+ * worthwhile.
  */
 public final class SoulstoneListener implements Listener {
 
@@ -25,12 +25,16 @@ public final class SoulstoneListener implements Listener {
     private final BloodMoonManager bloodMoonManager;
     private final ConfigManager configManager;
 
+    private final hu.taliann.icesmp.managers.AfkManager afkManager;
+
     public SoulstoneListener(final CurrencyManager currencyManager, final MobScalingManager mobScalingManager,
-                             final BloodMoonManager bloodMoonManager, final ConfigManager configManager) {
+                             final BloodMoonManager bloodMoonManager, final ConfigManager configManager,
+                             final hu.taliann.icesmp.managers.AfkManager afkManager) {
         this.currencyManager = currencyManager;
         this.mobScalingManager = mobScalingManager;
         this.bloodMoonManager = bloodMoonManager;
         this.configManager = configManager;
+        this.afkManager = afkManager;
     }
 
     @EventHandler
@@ -42,6 +46,11 @@ public final class SoulstoneListener implements Listener {
         final LivingEntity entity = event.getEntity();
         final Player killer = entity.getKiller();
         if (killer == null) {
+            return;
+        }
+        // AFK-jelölt játékos nem kap lélekkő-dropot (auto-farm exploit-fék).
+        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
+                && afkManager.isAfk(killer.getUniqueId())) {
             return;
         }
 

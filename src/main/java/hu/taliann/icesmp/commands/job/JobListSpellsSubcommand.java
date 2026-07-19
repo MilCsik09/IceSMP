@@ -11,7 +11,7 @@ import java.util.StringJoiner;
 
 public final class JobListSpellsSubcommand implements JobSubcommand {
 
-    private static final String PERMISSION = "icesmp.job.admin";
+    private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.JOB;
 
     private final SpellRegistry spellRegistry;
     private final MessageManager messageManager;

@@ -149,12 +149,7 @@ public final class MobScalingManager {
         }
     }
 
-    /**
-     * Gets the stored level of a scaled mob.
-     *
-     * @param entity the entity to inspect
-     * @return the mob level, or 0 if the entity is not scaled
-     */
+    /** @return the mob's stored level, or 0 if the entity is not scaled */
     public int getLevel(final LivingEntity entity) {
         if (entity == null) {
             return 0;

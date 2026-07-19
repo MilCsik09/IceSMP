@@ -17,10 +17,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Player market (ideas.md "Piaci tábla / aukciósház"): sellers list the item
@@ -73,6 +79,37 @@ public final class MarketManager implements PersistentStore {
         }
     }
 
+    /**
+     * The result of a fixed-price purchase attempt: on failure only {@code errorKey}
+     * is set; on success it is null and {@code amount} is the price actually deducted
+     * from the buyer at the moment of the sale (faction-reputation adjusted), so callers
+     * report exactly what was charged instead of re-deriving a possibly stale estimate.
+     */
+    public record BuyOutcome(String errorKey, double amount) {
+
+        static BuyOutcome error(final String errorKey) {
+            return new BuyOutcome(errorKey, 0.0D);
+        }
+    }
+
+    /** A single completed sale kept for {@code /market stats} — not persisted. */
+    public record Transaction(Material itemType, double price, CurrencyType currency, long timestamp) {
+    }
+
+    /** How many recent transactions {@link #recentTransactions} keeps for {@code /market stats}. */
+    private static final int TRANSACTION_LOG_CAP = 50;
+
+    /**
+     * Summary snapshot for {@code /market stats}: current listing/auction counts, the
+     * most-listed item types, the average recent sale price per currency, and the
+     * single biggest recent sale.
+     */
+    public record MarketStats(int activeListings, int activeAuctions,
+                              List<Map.Entry<Material, Long>> topItemTypes,
+                              Map<CurrencyType, Double> averagePriceByCurrency,
+                              Transaction biggestRecentSale, int recentSaleCount) {
+    }
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
@@ -84,6 +121,10 @@ public final class MarketManager implements PersistentStore {
     // Items owed to (possibly offline) players: auction wins and unsold auction
     // returns. Delivered on the owner's own region thread (join / /market claim).
     private final Map<UUID, List<ItemStack>> pendingDeliveries = new ConcurrentHashMap<>();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
+    // In-memory sale log for /market stats (task-scoped, not persisted): capped deque of
+    // the last completed transactions, touched from multiple region threads (buy/bid/tickAuctions).
+    private final Deque<Transaction> recentTransactions = new ConcurrentLinkedDeque<>();
 
     public MarketManager(final JavaPlugin plugin, final ConfigManager configManager,
                          final CurrencyManager currencyManager, final FactionManager factionManager,
@@ -195,6 +236,21 @@ public final class MarketManager implements PersistentStore {
         }
     }
 
+    /**
+     * Debounced async flush for transaction paths: a busy market used to rewrite the whole
+     * market.yml synchronously on the region thread for every buy/bid/cancel — bursts now
+     * coalesce into one write ~2s later (CurrencyManager pattern). Shutdown still calls
+     * {@link #save()} directly for a final synchronous flush.
+     */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                save();
+            }, 2L, TimeUnit.SECONDS);
+        }
+    }
+
     public synchronized void save() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final Listing listing : listings.values()) {
@@ -233,11 +289,7 @@ public final class MarketManager implements PersistentStore {
         return listingId == null ? null : listings.get(listingId);
     }
 
-    /**
-     * Gets every listing, newest first.
-     *
-     * @return sorted listings
-     */
+    /** @return every listing, newest first */
     public List<Listing> getListingsSorted() {
         return listings.values().stream()
                 .sorted(Comparator.comparingLong(Listing::createdAt).reversed())
@@ -310,7 +362,7 @@ public final class MarketManager implements PersistentStore {
                 currency, held.clone(), now, auction, auction ? now + auctionDurationMillis : 0L,
                 0.0D, null, null, auction ? buyOut : 0.0D));
         seller.getInventory().setItemInMainHand(null);
-        save();
+        requestSave();
         return null;
     }
 
@@ -320,43 +372,55 @@ public final class MarketManager implements PersistentStore {
      *
      * @param buyer the buyer
      * @param listingId the listing to buy
-     * @return null on success, otherwise an error message key
+     * @return the outcome; {@link BuyOutcome#errorKey()} is null on success and
+     *         {@link BuyOutcome#amount()} is the price actually deducted from the buyer
      */
-    public synchronized String buy(final Player buyer, final UUID listingId) {
+    public synchronized BuyOutcome buy(final Player buyer, final UUID listingId) {
         final Listing listing = listings.get(listingId);
         if (listing == null) {
-            return "market-listing-gone";
+            return BuyOutcome.error("market-listing-gone");
         }
 
         if (listing.auction()) {
-            return "market-auction-use-bid";
+            return BuyOutcome.error("market-auction-use-bid");
         }
 
         if (listing.seller().equals(buyer.getUniqueId())) {
-            return "market-own-listing";
+            return BuyOutcome.error("market-own-listing");
         }
 
         // Faction reputation adjusts what the buyer pays; both fee and seller share are
         // derived from that same amount so the trade conserves currency (no minting/burning
-        // beyond the configured fee sink).
+        // beyond the configured fee sink). Computed once, right before the deduction, so the
+        // amount reported back to the caller always matches what was actually taken — even if
+        // the faction relation changes a moment later.
         final double buyerCost = getEffectivePrice(buyer, listing);
         if (!currencyManager.deductFromBalance(buyer.getUniqueId(), listing.currency(), buyerCost)) {
-            return "market-insufficient-balance";
+            return BuyOutcome.error("market-insufficient-balance");
         }
 
         // Claim the listing atomically; if it vanished (concurrent buy/cancel), refund the buyer.
         if (listings.remove(listingId) == null) {
             currencyManager.addToBalance(buyer.getUniqueId(), listing.currency(), buyerCost);
-            return "market-listing-gone";
+            return BuyOutcome.error("market-listing-gone");
         }
 
         creditSellerShare(listing.seller(), listing.currency(), buyerCost);
+        recordTransaction(listing.item(), buyerCost, listing.currency());
 
-        save();
+        requestSave();
 
         final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(listing.item());
         leftovers.values().forEach(item -> buyer.getWorld().dropItemNaturally(buyer.getLocation(), item));
-        return null;
+        return new BuyOutcome(null, buyerCost);
+    }
+
+    /** Appends a completed sale to the capped in-memory log used by {@code /market stats}. */
+    private void recordTransaction(final ItemStack item, final double price, final CurrencyType currency) {
+        recentTransactions.addLast(new Transaction(item.getType(), price, currency, System.currentTimeMillis()));
+        while (recentTransactions.size() > TRANSACTION_LOG_CAP) {
+            recentTransactions.pollFirst();
+        }
     }
 
     /** Credits the seller the sale amount minus the configured burn fee. */
@@ -467,15 +531,16 @@ public final class MarketManager implements PersistentStore {
             // Settle now: seller paid (minus fee), item delivered to the buyer.
             listings.remove(listingId);
             creditSellerShare(listing.seller(), listing.currency(), effective);
+            recordTransaction(listing.item(), effective, listing.currency());
             queueDelivery(bidder.getUniqueId(), listing.item());
-            save();
+            requestSave();
             return new BidOutcome(null, effective, previousBidder, previousBid, true);
         }
 
         listings.put(listingId, new Listing(listing.id(), listing.seller(), listing.sellerName(),
                 listing.price(), listing.currency(), listing.item(), listing.createdAt(),
                 true, listing.endsAt(), effective, bidder.getUniqueId(), bidder.getName(), listing.buyOut()));
-        save();
+        requestSave();
         return new BidOutcome(null, effective, previousBidder, previousBid, false);
     }
 
@@ -498,6 +563,7 @@ public final class MarketManager implements PersistentStore {
                 listings.remove(listing.id());
                 if (listing.hasBid()) {
                     creditSellerShare(listing.seller(), listing.currency(), listing.highestBid());
+                    recordTransaction(listing.item(), listing.highestBid(), listing.currency());
                     queueDelivery(listing.highestBidder(), listing.item());
                 } else {
                     queueDelivery(listing.seller(), listing.item());
@@ -505,7 +571,7 @@ public final class MarketManager implements PersistentStore {
                 settled.add(listing);
             }
             if (!settled.isEmpty()) {
-                save();
+                requestSave();
             }
         }
 
@@ -575,7 +641,7 @@ public final class MarketManager implements PersistentStore {
             final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
             leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
         }
-        save();
+        requestSave();
         return items.size();
     }
 
@@ -600,7 +666,7 @@ public final class MarketManager implements PersistentStore {
         }
 
         if (cancelled > 0) {
-            save();
+            requestSave();
         }
         return cancelled;
     }
@@ -612,5 +678,42 @@ public final class MarketManager implements PersistentStore {
     public boolean hasLockedAuction(final UUID seller) {
         return listings.values().stream()
                 .anyMatch(listing -> listing.seller().equals(seller) && listing.hasBid());
+    }
+
+    /**
+     * Builds a snapshot summary for {@code /market stats}: current listing/auction counts,
+     * the 3 most-listed item types, the average sale price per currency from the recent
+     * transaction log, and the single biggest recent sale.
+     *
+     * @return the stats snapshot
+     */
+    public MarketStats getStats() {
+        final List<Listing> listingSnapshot = List.copyOf(listings.values());
+        final int activeListings = listingSnapshot.size();
+        final int activeAuctions = (int) listingSnapshot.stream().filter(Listing::auction).count();
+
+        final Map<Material, Long> counts = listingSnapshot.stream()
+                .collect(Collectors.groupingBy(listing -> listing.item().getType(), Collectors.counting()));
+        final List<Map.Entry<Material, Long>> topItemTypes = counts.entrySet().stream()
+                .sorted(Map.Entry.<Material, Long>comparingByValue().reversed())
+                .limit(3)
+                .toList();
+
+        final List<Transaction> transactionSnapshot = List.copyOf(recentTransactions);
+        final Map<CurrencyType, double[]> sumAndCount = new EnumMap<>(CurrencyType.class);
+        Transaction biggest = null;
+        for (final Transaction transaction : transactionSnapshot) {
+            final double[] accumulator = sumAndCount.computeIfAbsent(transaction.currency(), key -> new double[2]);
+            accumulator[0] += transaction.price();
+            accumulator[1] += 1.0D;
+            if (biggest == null || transaction.price() > biggest.price()) {
+                biggest = transaction;
+            }
+        }
+        final Map<CurrencyType, Double> averagePriceByCurrency = new EnumMap<>(CurrencyType.class);
+        sumAndCount.forEach((currency, accumulator) -> averagePriceByCurrency.put(currency, accumulator[0] / accumulator[1]));
+
+        return new MarketStats(activeListings, activeAuctions, topItemTypes, averagePriceByCurrency,
+                biggest, transactionSnapshot.size());
     }
 }

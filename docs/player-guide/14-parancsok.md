@@ -19,6 +19,12 @@ jelenti, hogy **elhagyható**.
 | `/menu` | `hub`, `m` | **Központi kattintós menü** — innen minden elérhető |
 | `/leaderboard` | `lb`, `top`, `rangsor` | Ranglisták: leggazdagabb, legmagasabb szint, legtöbb raid-kill |
 | `/achievements` | `ach`, `eleresek` | Elérések (mérföldkövek + jutalmak) |
+| `/stats [név]` | — | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, teljesített questek |
+| `/hud <szekció>` | — | HUD-oldalsáv szekciók ki-be kapcsolása (frakcio/kaszt/eroforras/esemeny/valuta/csapat/mind) |
+| `/sit` | — | Leülés, ahol állsz (újra `/sit` vagy sneak = felállás); lépcsőre/fél-lapra üres kézzel jobb-katt is leültet |
+| `/sit fekves` | — | Fekvő póz (LibsDisguises szükséges hozzá); újra kiadva vagy mozgásra felállsz |
+| `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése (kulccsal a ládára jobb-katt = nyitás; a nyereményt egy 3D-ikon tárja fel a láda fölött) |
+| `/report <név> <ok>` | `bejelent` | Játékos bejelentése a moderátoroknak (percenként egyszer) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
 | `/pet item\|summon\|dismiss\|name` | `tars`, `companion` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
 | `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |
@@ -53,6 +59,7 @@ jelenti, hogy **elhagyható**.
 | `/bounty` | `fejvadasz`, `korozes` | Körözési lista: ki körözött és mennyit ér a feje |
 | `/spell` / `/spell upgrade <id>` | `mastery`, `mesterseg` | Spell-mesterség: valutáért rövidebb cooldown ÉS erősebb hatás (sebzés, gyógyítás, effekt-időtartam) |
 | `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a katalizátoron* is megnyitja. |
+| `/events status` | `event`, `esemeny` | „Mi történik most?" — minden aktív világesemény + szezon-állás egyben |
 | `/events season` / `/events blood-moon` / `/events caravan` | `event`, `esemeny` | Világesemények állása (szezon, vérhold, kereskedő-karaván) |
 | `/party invite\|accept\|decline\|leave\|list` | `p`, `parti` | **Party (csapat)**: meghívás, csatlakozás, kilépés, taglista (max 5 fő) |
 | `/party kick\|promote <név>` | | Csapatvezetői műveletek: kirúgás, vezetés átadása |
@@ -84,6 +91,10 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | Parancs | Mit csinál |
 |---|---|
 | `/icesmp reload` | Konfiguráció újratöltése |
+| `/icesmp inspect <név>` | Teljes játékos-riport: kaszt/erőforrás/statok/bűn/claim/questek/cooldownok |
+| `/invsee <név>` | Inventory + ender-láda betekintés (pillanatkép, csak olvasás) |
+| `/mute <név> [perc] [ok]` / `/unmute <név>` | Némítás (0 = végtelen; perc kihagyva = automatikus eszkaláció a némítás-történet alapján; chat + privát üzenetek), feloldás; `/mute list` |
+| `/reports` / `/reports resolve <id>` | Játékos-bejelentések listája és lezárása |
 | `/class addxp\|setxp <játékos> <mennyiség>` | Kaszt-XP adása/beállítása |
 | `/class givecatalyst\|unlockspell <játékos> [spell]` | Katalizátor adása / spell feloldása |
 | `/class admin <resetcd\|unlockallskills\|resetskills\|resetclass> <játékos>` | Cooldown-/spell-/**teljes kaszt-reset** egy játékosnak |

@@ -1,26 +1,30 @@
 # Spell-balansz — MINDEN regisztrált spell explicit entry-vel, a kódbeli alapértékekkel.
 # Az itt szereplő érték felülbírálja a kódbelit; ha megegyezik vele, nincs hatása (no-op).
 #
-# 1. DEKLARATÍV spellek (ConfiguredSpell, SpellCatalog): a felülbírálás szerverindításkor
-#    épül be — MÓDOSÍTÁS UTÁN SZERVER-ÚJRAINDÍTÁS KELL.
-# 2. STATEFUL (saját osztályú) spellek: cast-időben olvassák a fájlt, a /icesmp reload
-#    AZONNAL érvényesíti őket (cooldown és cost-amount ezeknél is állítható).
+# MINDEN felülbírálás CAST-IDŐBEN olvasódik (a deklaratív ConfiguredSpell-eknél és a
+# stateful saját-osztályú spelleknél is), tehát a /icesmp reload — vagy egy ingame
+# /icesmp config set spell-balance.<id>.<kulcs> <érték> — AZONNAL érvényesíti,
+# szerver-újraindítás NÉLKÜL.
 #
 # Felülbírálható kulcsok (deklaratív): cooldown, cost-amount, range, radius, damage,
 # self-damage, heal-self, feed-self, ignite-ticks, freeze-ticks, knockback.
 # A stateful spelleknél a saját mechanika-kulcsaik + cooldown + cost-amount állíthatók.
 #
 # --- ERŐFORRÁS (MANA, DÜH, ENERGIA...) ÁRAZÁS ---
-# Ha a resource rendszer aktív (spells.resource.enabled: true), a spellek ára
-# automatikusan a beállított COOLDOWN (újratöltési idő) alapján számolódik ki,
-# NEM a 'cost-amount' alapján:
+# Ha a resource rendszer aktív (spells.resource.enabled: true), a spell ára
+# alapértelmezésben a beállított COOLDOWN (újratöltési idő) alapján számolódik:
 #   • 0 (azonnali)       -> 15 erőforrás
 #   • 1 - 30 másodperc   -> 20 erőforrás
 #   • 31 - 90 másodperc  -> 30 erőforrás
 #   • 91 - 180 másodperc -> 40 erőforrás
 #   • 181+ másodperc     -> 50 erőforrás
-# (Tehát ha csökkenteni akarod egy képesség Mana-igényét, a cooldownját kell
-# alacsonyabbra állítanod, vagy ki kell kapcsolnod az erőforrás-rendszert.)
+# DE spellenként FELÜLBÍRÁLHATÓ a 'resource-cost' kulccsal — ilyenkor az ár
+# független a cooldowntól:
+#   <spell-id>:
+#     resource-cost: 25
+# A resource-cost CAST-IDŐBEN olvasódik, tehát /icesmp reload (vagy
+# /icesmp config set spell-balance.<id>.resource-cost <érték>) AZONNAL
+# érvényesíti — MINDEN spellnél, a deklaratívaknál is (nem kell restart).
 #
 # Ismeretlen spell id esetén a szerver indításkor WARNING-ot ír a logba.
 spell-balance:
@@ -41,6 +45,7 @@ spell-balance:
     cost-amount: 15  # XP
     range: 8
     freeze-ticks: 100
+    resource-cost: 40
   arcane_shield:
     cooldown: 90
     cost-amount: 30  # XP
@@ -72,11 +77,12 @@ spell-balance:
     cost-amount: 8  # HUNGER
     heal-self: 6
   whirlwind:
-    cooldown: 60
+    cooldown: 150
     cost-amount: 6  # HUNGER
     radius: 4
     damage: 4
     knockback: 0.7
+    resource-cost: 60
   iron_skin:
     cooldown: 150
     cost-amount: 8  # HUNGER
@@ -91,18 +97,21 @@ spell-balance:
     cost-amount: 2  # HUNGER
     range: 20
   disengage:
-    cooldown: 20
+    cooldown: 15
     cost-amount: 3  # HUNGER
+    use-resource: false
   snare:
-    cooldown: 45
+    cooldown: 60
     cost-amount: 4  # HUNGER
     range: 14
+    resource-cost: 45
   camouflage:
     cooldown: 120
     cost-amount: 5  # HUNGER
   swift_steps:
     cooldown: 90
     cost-amount: 5  # HUNGER
+    resource-cost: 60
 
   # ===== Assassin =====
   adrenaline:
@@ -117,21 +126,25 @@ spell-balance:
     cooldown: 60
     cost-amount: 5  # HUNGER
     range: 10
+    resource-cost: 40
   evasion:
-    cooldown: 75
+    cooldown: 90
     cost-amount: 5  # HUNGER
+    resource-cost: 40
   garrote:
     cooldown: 90
-    cost-amount: 3  # HEALTH
+    cost-amount: 5  # HEALTH
     range: 3.5
     damage: 5
   shadow_dash:
     cooldown: 60
     cost-amount: 5  # HUNGER
+    resource-cost: 35
   death_mark:
     cooldown: 120
-    cost-amount: 3  # HEALTH
+    cost-amount: 60  # XP (volt: HEALTH 3)
     range: 15
+    resource-cost: 60
 
   # ===== Elementalist =====
   frost_nova:
@@ -403,12 +416,14 @@ spell-balance:
     cost-amount: 40  # XP
     heal-self: 6
   barkskin:
-    cooldown: 60
+    cooldown: 90
     cost-amount: 4  # HUNGER
+    resource-cost: 40
   entangling_roots:
     cooldown: 45
     cost-amount: 4  # HUNGER
     range: 8
+    resource-cost: 40
   thornlash:
     cooldown: 25
     cost-amount: 3  # HUNGER
@@ -421,9 +436,10 @@ spell-balance:
     damage: 4
     ignite-ticks: 60
   wild_mushroom:
-    cooldown: 45
+    cooldown: 60
     cost-amount: 40  # XP
     heal-self: 5
+    resource-cost: 40
   cyclone:
     cooldown: 50
     cost-amount: 4  # HUNGER
@@ -523,9 +539,10 @@ spell-balance:
     range: 14
     damage: 5
   flash_heal:
-    cooldown: 30
+    cooldown: 15
     cost-amount: 40  # XP
     heal-self: 5
+    resource-cost: 30
   devotion_aura:
     cooldown: 60
     cost-amount: 4  # HUNGER
@@ -534,6 +551,7 @@ spell-balance:
     cost-amount: 4  # HUNGER
     range: 8
     damage: 3
+    resource-cost: 35
   consecration:
     cooldown: 60
     cost-amount: 5  # HUNGER
@@ -543,7 +561,6 @@ spell-balance:
   lay_on_hands:
     cooldown: 150
     cost-amount: 70  # XP
-    heal-self: 10
   blessing_of_might:
     cooldown: 120
     cost-amount: 5  # HUNGER
@@ -553,9 +570,11 @@ spell-balance:
     radius: 6
     damage: 4
     knockback: 0.8
+    resource-cost: 50
   divine_protection:
-    cooldown: 120
+    cooldown: 180
     cost-amount: 6  # HUNGER
+    resource-cost: 80
   radiance:
     cooldown: 120
     cost-amount: 6  # HUNGER
@@ -650,6 +669,7 @@ spell-balance:
     range: 4.5
     damage: 6
     heal-self: 3
+    resource-cost: 30
   death_coil:
     cooldown: 30
     cost-amount: 35  # XP
@@ -664,9 +684,11 @@ spell-balance:
     cost-amount: 4  # HUNGER
     radius: 5
     damage: 3
+    resource-cost: 40
   bone_shield:
     cooldown: 60
     cost-amount: 5  # HUNGER
+    resource-cost: 45
   icy_touch:
     cooldown: 35
     cost-amount: 35  # XP
@@ -674,10 +696,11 @@ spell-balance:
     damage: 3
     freeze-ticks: 60
   rune_strike:
-    cooldown: 20
+    cooldown: 40
     cost-amount: 3  # HUNGER
     range: 4.5
     damage: 7
+    resource-cost: 35
   anti_magic_shell:
     cooldown: 90
     cost-amount: 5  # HUNGER
@@ -685,12 +708,14 @@ spell-balance:
     cooldown: 60
     cost-amount: 4  # HUNGER
     radius: 6
+    resource-cost: 40
   frost_fever:
-    cooldown: 45
+    cooldown: 90
     cost-amount: 40  # XP
     range: 12
     damage: 2
     freeze-ticks: 80
+    resource-cost: 45
 
   # ===== Blood =====
   heart_strike:
@@ -788,9 +813,10 @@ spell-balance:
   earth_shock:
     cooldown: 30
     cost-amount: 3  # HUNGER
-    range: 10
     damage: 5
     knockback: 0.6
+    resource-cost: 30
+    radius: 5
   flame_shock:
     cooldown: 30
     cost-amount: 35  # XP
@@ -899,6 +925,7 @@ spell-balance:
     cost-amount: 2  # HUNGER
     range: 4.5
     damage: 5
+    resource-cost: 15
   roll:
     cooldown: 20
     cost-amount: 2  # HUNGER
@@ -907,7 +934,7 @@ spell-balance:
     cost-amount: 3  # HUNGER
     range: 4
     damage: 6
-    knockback: 0.5
+    knockback: 1.2
   provoke:
     cooldown: 45
     cost-amount: 3  # HUNGER
@@ -925,7 +952,7 @@ spell-balance:
     cooldown: 35
     cost-amount: 3  # HUNGER
   expel_harm:
-    cooldown: 45
+    cooldown: 90
     cost-amount: 45  # XP
     radius: 4
     damage: 2
@@ -938,9 +965,7 @@ spell-balance:
   chi_wave:
     cooldown: 30
     cost-amount: 35  # XP
-    range: 12
-    damage: 3
-    heal-self: 3
+    resource-cost: 30
 
   # ===== Windwalker =====
   rising_sun_kick:
@@ -1014,14 +1039,14 @@ spell-balance:
 
   # ===== Priest =====
   holy_smite:
-    cooldown: 20
+    cooldown: 25
     cost-amount: 30  # XP
     range: 14
-    damage: 5
   heal:
     cooldown: 30
     cost-amount: 40  # XP
     heal-self: 6
+    resource-cost: 50
   power_word_shield:
     cooldown: 45
     cost-amount: 4  # HUNGER
@@ -1029,10 +1054,11 @@ spell-balance:
     cooldown: 30
     cost-amount: 30  # XP
   mind_blast:
-    cooldown: 30
+    cooldown: 40
     cost-amount: 40  # XP
     range: 14
     damage: 6
+    resource-cost: 40
   shadow_word_pain:
     cooldown: 25
     cost-amount: 3  # HUNGER
@@ -1048,8 +1074,9 @@ spell-balance:
   fade:
     cooldown: 75
     cost-amount: 4  # HUNGER
+    resource-cost: 50
   levitate:
-    cooldown: 60
+    cooldown: 45
     cost-amount: 3  # HUNGER
 
   # ===== Discipline =====
@@ -1129,6 +1156,7 @@ spell-balance:
     cooldown: 25
     cost-amount: 3  # HUNGER
     range: 12
+    resource-cost: 25
   curse_of_weakness:
     cooldown: 30
     cost-amount: 3  # HUNGER
@@ -1149,18 +1177,21 @@ spell-balance:
     cooldown: 60
     cost-amount: 4  # HUNGER
     range: 10
+    resource-cost: 35
   demon_armor:
     cooldown: 90
     cost-amount: 5  # HUNGER
+    resource-cost: 40
   shadowburn:
-    cooldown: 30
+    cooldown: 90
     cost-amount: 35  # XP
     range: 12
     damage: 5
     ignite-ticks: 40
+    resource-cost: 60
   curse_of_agony:
     cooldown: 45
-    cost-amount: 2  # HEALTH
+    cost-amount: 3  # HEALTH
     range: 12
   demonic_circle:
     cooldown: 45
@@ -1255,10 +1286,11 @@ spell-balance:
     cooldown: 20
     cost-amount: 2  # HUNGER
   shear:
-    cooldown: 20
+    cooldown: 50
     cost-amount: 2  # HUNGER
     range: 4
     damage: 5
+    resource-cost: 40
   immolation_aura:
     cooldown: 45
     cost-amount: 40  # XP
@@ -1266,28 +1298,32 @@ spell-balance:
     damage: 3
     ignite-ticks: 60
   consume_magic:
-    cooldown: 60
+    cooldown: 45
     cost-amount: 3  # HUNGER
   spectral_sight:
     cooldown: 75
     cost-amount: 3  # HUNGER
+    resource-cost: 45
   torment:
-    cooldown: 45
+    cooldown: 90
     cost-amount: 3  # HUNGER
     radius: 6
+    resource-cost: 45
   glide:
     cooldown: 45
     cost-amount: 2  # HUNGER
+    resource-cost: 35
   chaos_strike:
     cooldown: 25
     cost-amount: 3  # HUNGER
     range: 4.5
     damage: 6
   throw_glaive:
-    cooldown: 25
+    cooldown: 40
     cost-amount: 30  # XP
     range: 14
     damage: 5
+    resource-cost: 35
 
   # ===== Havoc =====
   blade_dance:
@@ -1367,7 +1403,8 @@ spell-balance:
     cost-amount: 30  # XP
     range: 15
     damage: 5
-    ignite-ticks: 40
+    ignite-ticks: 60
+    resource-cost: 35
   azure_strike:
     cooldown: 20
     cost-amount: 30  # XP
@@ -1409,7 +1446,7 @@ spell-balance:
   verdant_embrace:
     cooldown: 60
     cost-amount: 50  # XP
-    heal-self: 8
+    resource-cost: 40
 
   # ===== Devastation =====
   pyre:
@@ -1667,6 +1704,7 @@ spell-balance:
     cooldown: 300
     cost-amount: 352  # XP
     duration-ticks: 2400
+    resource-cost: 80
   bee_swarm:
     cooldown: 180
     cost-amount: 6  # HUNGER
@@ -1691,13 +1729,15 @@ spell-balance:
     radius: 15.0
     duration-ticks: 200
   double_jump:
-    cooldown: 0
+    cooldown: 5
     cost-amount: 3  # HUNGER
     jump-velocity: 0.8
+    use-resource: false
   eagle_eye:
     cooldown: 90
     cost-amount: 4  # HUNGER
     duration-ticks: 600
+    resource-cost: 40
   feast:
     cooldown: 120
     cost-amount: 352  # XP
@@ -1763,11 +1803,12 @@ spell-balance:
     duration-ticks: 80
     slowness-amplifier: 10
   shadowstep:
-    cooldown: 60
+    cooldown: 90
     cost-amount: 6  # HUNGER
     range: 15.0
     distance: 1.5
     duration-ticks: 60
+    resource-cost: 60
   smoke_bomb:
     cooldown: 120
     cost-amount: 6  # HUNGER
@@ -1806,14 +1847,16 @@ spell-balance:
     fallback-scan-radius: 12.0
   blink:
     cooldown: 30
-    cost-amount: 25  # XP
+    cost-amount: 3  # HUNGER (volt: XP 25) — 1.5 éhség-ikon
     distance: 8.0
+    use-resource: false
   piercing_bolt:
     cooldown: 35
     cost-amount: 25  # XP
     count: 1
     spread: 0.0
     speed: 3.2
+    pierce-level: 3
   arrow_storm:
     cooldown: 90
     cost-amount: 60  # XP
@@ -1884,24 +1927,30 @@ spell-balance:
     cooldown: 6
     cost-amount: 1  # HUNGER
     duration-ticks: 36000
+    resource-cost: 50
   druid_cat_form:
     cooldown: 6
     cost-amount: 1  # HUNGER
     duration-ticks: 36000
+    resource-cost: 50
   druid_moonkin_form:
     cooldown: 6
     cost-amount: 1  # HUNGER
     duration-ticks: 36000
+    resource-cost: 50
   druid_travel_form:
     cooldown: 6
     cost-amount: 1  # HUNGER
     duration-ticks: 36000
+    resource-cost: 50
   healing_stream_totem:
     cooldown: 90
     cost-amount: 5  # HUNGER
+    resource-cost: 50
   searing_totem:
     cooldown: 75
     cost-amount: 50  # XP
+    resource-cost: 50
   windfury_totem:
     cooldown: 90
     cost-amount: 5  # HUNGER

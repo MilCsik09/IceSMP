@@ -16,6 +16,8 @@ import java.util.logging.Logger;
  * subsystem uniformly without a hand-maintained schema:
  * <ul>
  *   <li>{@code material} / {@code materials} → must resolve to a real {@link Material};</li>
+ *   <li>{@code loot} / keys ending in {@code -loot} (string lists) → each entry must be a valid
+ *       {@code MATERIAL[:COUNT|:MIN:MAX]} loot-table row (see {@link LootTable#describeProblem});</li>
  *   <li>{@code currency} → must be {@code OWN}/{@code FACTION}/{@code SAJAT} or a valid
  *       {@link CurrencyType};</li>
  *   <li>keys ending in {@code percent} → must be within 0–100;</li>
@@ -28,13 +30,7 @@ public final class ConfigValidator {
     private ConfigValidator() {
     }
 
-    /**
-     * Validates the loaded configuration and logs a warning per problem found,
-     * followed by a one-line summary.
-     *
-     * @param configManager the loaded config manager
-     * @param logger the plugin logger to report to
-     */
+    /** Validates the loaded configuration and logs a warning per problem found, followed by a one-line summary. */
     public static void validate(final ConfigManager configManager, final Logger logger) {
         final FileConfiguration config = configManager.getConfiguration();
         if (config == null) {
@@ -53,6 +49,10 @@ public final class ConfigValidator {
             } else if (leaf.equals("materials") && config.isList(key)) {
                 for (final String value : config.getStringList(key)) {
                     problems += checkMaterial(logger, key, value);
+                }
+            } else if ((leaf.equals("loot") || leaf.endsWith("-loot")) && config.isList(key)) {
+                for (final String value : config.getStringList(key)) {
+                    problems += checkLootEntry(logger, key, value);
                 }
             } else if (leaf.equals("currency")) {
                 problems += checkCurrency(logger, key, config.getString(key));
@@ -75,6 +75,16 @@ public final class ConfigValidator {
         if (value == null || value.isBlank() || Material.matchMaterial(value) == null) {
             logger.warning("Config: ismeretlen Material a(z) '" + key + "' kulcsnál: '" + value
                     + "' — ellenőrizd a nevet (pl. DIAMOND, ENCHANTED_GOLDEN_APPLE).");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int checkLootEntry(final Logger logger, final String key, final String value) {
+        final String problem = value == null ? "üres bejegyzés" : LootTable.describeProblem(value);
+        if (problem != null) {
+            logger.warning("Config: hibás loot-bejegyzés a(z) '" + key + "' listában ('" + value + "'): "
+                    + problem + " — formátum: MATERIAL, MATERIAL:DB vagy MATERIAL:MIN:MAX.");
             return 1;
         }
         return 0;

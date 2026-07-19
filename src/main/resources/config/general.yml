@@ -11,20 +11,54 @@ settings:
   # zavaró. Állítsd false-ra, ha meg akarod hagyni a vanilla viselkedést.
   disable-locator-bar: true
 
-hud:
-  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény),
-  # frakció-színes tab-lista, és boss-bar a raid / vérhold / világboss alatt.
+# Ülés (a GSit plugin kiváltása): /sit parancs + jobb-katt a lépcsőre/fél-lapra üres kézzel.
+sit:
   enabled: true
-  # FONTOS: az éles szerveren a TAB plugin kezeli a scoreboardot/tab-listát, ezért ez a
-  # kettő alapból KI van kapcsolva — bekapcsolva az IceSMP a belépéskor lecserélné a
-  # játékos scoreboardját (letörölve a TAB nametag-csapatait), és másodpercenként
-  # felülírná a tab-nevet (villogás). A boss-barokat az 'enabled' vezérli (azokat a TAB
-  # nem kezeli, így maradnak). Az IceSMP adatait — köztük az Erő-csíkot — PlaceholderAPI-n
-  # át a TAB jeleníti meg (%icesmp_...% placeholderek, lásd docs/SERVER_INTEGRATION.md).
-  # TAB nélküli szerveren kapcsold vissza mindkettőt true-ra.
-  sidebar-enabled: false    # IceSMP saját scoreboard-oldalsáv (TAB mellett: false)
-  tablist-enabled: false    # IceSMP frakció-színes tab-nevek (TAB mellett: false)
+  click-to-sit: true
+
+# Apró világ-szabályok (a leszedett mini-pluginok natív kiváltása).
+world-tweaks:
+  # Warden-halál XP-drop felülírása (ICEsmpadditions.jar kiváltása).
+  warden-death-xp:
+    enabled: true
+    min: 80
+    max: 125
+  # Termés-taposás védelem (FarmProtect.jar kiváltása): a szántóföld nem törik fel.
+  crop-trample-protection:
+    players: true
+    mobs: true
+
+hud:
+  # Élő játékos-HUD: oldalsáv (frakció, valuta, kaszt+szint, Erő-csík, esemény, party),
+  # és boss-bar a raid / vérhold / világboss alatt. A tab-listát (header/footer, nevek,
+  # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.
+  # A TAB plugin többé NEM szükséges — leszedhető; a teljes megjelenés house-ban van.
+  enabled: true
+  # Az IceSMP saját scoreboard-oldalsávja. Ha mégis külső scoreboard-plugint futtatsz
+  # (pl. TAB), kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
+  # IceSMP-adatok akkor a %icesmp_...% placeholderekkel jeleníthetők meg
+  # (docs/SERVER_INTEGRATION.md).
+  sidebar-enabled: true
+  sidebar:
+    # Az oldalsáv címe (legacy &-kódokkal; a ㍐ a resource pack glyph-je — RP nélkül
+    # cseréld pl. "&b&l✦ Ice SMP ✦"-re).
+    title: "㍐"
+  # Egyszerű frakció-színes tab-név FALLBACK — csak akkor él, ha a natív tablist
+  # (tablist.enabled) KI van kapcsolva; egyébként a TablistManager adja a teljes
+  # (LP-prefixes) nevet, és ez a kapcsoló hatástalan.
+  tablist-enabled: true
   refresh-ticks: 20
+  # ===== Dinamikus oldalsáv =====
+  dynamic:
+    # Harc-fókusz: harcban (adott VAGY kapott találat a türelmi időn belül) csak a felsorolt
+    # szekciók látszanak — a HUD kitisztul, az Erő-csík és a party-frame-ek maradnak.
+    combat-focus: true
+    combat-grace-seconds: 8
+    combat-visible-sections: [eroforras, csapat]
+    # Rotáló infósor az esemény-sor helyén: esemény-állapot ↔ szezon-visszaszámláló ↔ napi
+    # kihívás állása váltakozik; nyugalomban az esemény-frame kimarad.
+    rotating-line: true
+    rotation-seconds: 4
   profile:
     enabled: true
     update-interval-ticks: 5
@@ -74,6 +108,8 @@ claims:
   y-extend-cost-per-column: 0.1  # bővítés ára lépésenként: a claim oszlopai × ez az összeg
   protect-containers: true    # konténerek (láda, hordó, kemence…) védelme idegenektől
   protect-explosions: true    # robbanás sosem tör claimelt blokkot
+  protect-fire: true          # tűz nem gyullad/terjed/éget claimelt blokkon (játékos-gyújtás = build-szabály)
+  protect-terrain: true       # idegen dugattyú nem tolhat/húzhat blokkot a claimben; folyadék nem folyik be kívülről
   block-in-protected-zone: true    # VÉDETT zónában (főváros, védett város/frakcióterület) SOSEM lehet claimelni
   block-in-territory: false   # ha true: még a NORMÁL frakcióterületen sem lehet claimelni (alapból szabad — a claim mehet a territory rendszerrel)
   block-in-protected-region: true  # WorldGuard-régióban nem lehet claimelni
@@ -100,3 +136,123 @@ donation-chest:
   enabled: true
   max-items: 270          # a láda teljes kapacitása (élő tételek összesen)
   max-per-player: 27      # egy adományozó élő tételeinek plafonja (0 = korlátlan)
+
+# Spell-VFX: a spell-effektek formázott, palettázott változata (SpellVfx). A ~390 deklaratív spell
+# a formátlan gömb-puff helyett a targeting-jellegének megfelelő formát kap (SELF→hélix,
+# TARGET→sugár a cél felé, AOE→gyűrű), szín-átmenetes porral. A spell saját accent-particle-je a
+# gócponton megmarad. Kikapcsolva a régi puff-visszajelzés fut.
+spell-vfx:
+  enabled: true             # formázott spell-effektek (false = régi gömb-puff)
+  max-points: 48            # egy forma maximális pontszáma (particle-fék; kisebb = takarékosabb)
+  # Paletta = a spell-effekt szín-témája. Kaszt/spec szinten adjuk meg: a paletta a
+  # classes.<kaszt/spec>.spell-unlocks ÖSSZES spelljére ráterjed (nem kell 390 külön bejegyzés).
+  # Választható paletták: FIRE, FROST, HOLY, DECAY, NATURE, ARCANE, BLOOD, STORM, SHADOW, NEUTRAL.
+  # Amelyik spell egyik listában sincs, az az accent-particle-jéből kap ésszerű színt.
+  class-palettes:
+    # --- 13 kaszt (alap-spellek) ---
+    wizard: ARCANE
+    warrior: STORM
+    archer: NATURE
+    assassin: SHADOW
+    druid: NATURE
+    paladin: HOLY
+    death_knight: DECAY
+    shaman: STORM
+    monk: NATURE
+    priest: HOLY
+    warlock: DECAY
+    demon_hunter: DECAY
+    evoker: ARCANE
+    # --- 31 specializáció (spec-spellek felülírják a kaszt-palettát) ---
+    lunar: ARCANE
+    feral: NATURE
+    guardian: NATURE
+    restoration: NATURE
+    holy: HOLY
+    retribution: HOLY
+    protection: STORM
+    blood: BLOOD
+    frost: FROST
+    elemental: STORM
+    enhancement: STORM
+    tidal: FROST
+    windwalker: STORM
+    brewmaster: NATURE
+    mistweaver: NATURE
+    discipline: HOLY
+    shadow: SHADOW
+    affliction: DECAY
+    destruction: FIRE
+    havoc: DECAY
+    vengeance: DECAY
+    devastation: FIRE
+    preservation: NATURE
+    ironbark: NATURE
+    elementalist: STORM
+    necromancer: SHADOW
+    berserker: BLOOD
+    sharpshooter: NATURE
+    beast_master: NATURE
+    poisoner: DECAY
+    phantom: SHADOW
+  # Egyedi spell felülbírálás (a kaszt/spec-palettát írja felül). Itt a 31 spec-ULTIMATE (lvl 45)
+  # kézzel válogatott palettát kap, hogy a csúcs-spell ránézésre kitűnjön — a legtöbb megerősíti a
+  # spec-témát, néhány szándékosan eltér (pl. elemental=STORM, de ascendance_flame=FIRE).
+  overrides:
+    incarnation_bear: NATURE
+    dancing_rune_weapon: BLOOD
+    void_torrent: SHADOW
+    eternity_breath: FIRE
+    the_hunt: DECAY
+    doom_winds: STORM
+    rewind: ARCANE
+    soul_harvest: SHADOW
+    king_of_beasts: NATURE
+    breath_of_sindragosa: FROST
+    final_verdict: HOLY
+    fel_blade: DECAY
+    the_wild_hunt: NATURE
+    invoke_niuzao: NATURE
+    summon_infernal: FIRE
+    deathcap: DECAY
+    celestial_alignment: ARCANE
+    elemental_overload: STORM
+    masterful_shot: STORM
+    revival: HOLY
+    final_stand: HOLY
+    berserk: BLOOD
+    evangelism: HOLY
+    last_stand: NATURE
+    avenging_wrath: HOLY
+    ascendance_flame: FIRE
+    spirit_tide: FROST
+    spectre: SHADOW
+    darkglare: DECAY
+    flourish: NATURE
+    serenity: HOLY
+  # Forma = az effekt geometriája. Alapból a célzásból jön (önmagad→HELIX, célzott→BEAM, körzet→RING),
+  # és egy óvatos kulcsszó-heurisztika finomítja: közelharci csapás (*_strike/_kick/_smash…)→IMPACT,
+  # dobott (*_dart/_throw…)→ARC, lehelet (*_breath/roar…)→CONE. Itt spell-id szerint felül lehet írni.
+  # Választható formák: BEAM, ARC, IMPACT, RING, HELIX, CONE (AUTO/üres = a fenti automatika).
+  # shapes:
+  #   gravity_well: RING
+  #   blink: ARC
+  shapes: {}
+
+# DisplayFx: display-entity (BlockDisplay/ItemDisplay) effekt-réteg a particle mellé, ahol az
+# effekt geometria/tartós/animált. Jelenleg a claim-fényfal használja: a /claim show a particle-
+# perem MELLÉ élenként egy megnyújtott, izzó, csak a kérőnek látszó falat állít (saját/trusted=zöld,
+# idegen=piros), ami a border.show-seconds letelte után eltűnik.
+display-fx:
+  claim-wall:
+    enabled: true                        # claim-fényfal a /claim show-nál
+    material: LIGHT_BLUE_STAINED_GLASS   # a fal blokk-anyaga (áttetsző üveg ajánlott)
+    height: 3                            # a fal magassága blokkban
+  crate-reveal:
+    enabled: true                        # 3D nyeremény-feltárás a láda fölött (ItemDisplay pörgetés)
+  boss-telegraph:
+    enabled: true                        # world-boss AoE padló-telegraph (növekvő, izzó veszélylap)
+    material: RED_STAINED_GLASS          # a telegraph-lap blokk-anyaga (piros áttetsző ajánlott)
+  aurora:
+    enabled: true                        # északi fény: magasan lebegő, sodródó fény-fátyol (per-nézős)
+    material: CYAN_STAINED_GLASS         # a fátyol blokk-anyaga (áttetsző, hideg szín ajánlott)

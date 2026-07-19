@@ -17,7 +17,7 @@ public final class ConfigManager {
     /** Bundled per-subsystem config files under config/ (extracted on first run). */
     private static final String[] CONFIG_FILES = {
             "general", "economy", "factions", "classes", "spells", "spells-balance",
-            "professions", "quests", "world", "relics", "pets", "crafting"
+            "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation"
     };
 
     private final JavaPlugin plugin;
@@ -25,11 +25,6 @@ public final class ConfigManager {
     // every manager reads this reference from arbitrary region threads — publish the reload safely.
     private volatile FileConfiguration configuration;
 
-    /**
-     * Constructs a new ConfigManager.
-     *
-     * @param plugin the plugin instance
-     */
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
     }
@@ -80,22 +75,11 @@ public final class ConfigManager {
         load();
     }
 
-    /**
-     * Gets the raw configuration object.
-     *
-     * @return the FileConfiguration, or null if not loaded
-     */
+    /** Returns null if not yet loaded. */
     public FileConfiguration getConfiguration() {
         return configuration;
     }
 
-    /**
-     * Gets a string configuration value with fallback.
-     *
-     * @param path the configuration path
-     * @param fallback the fallback value if not found
-     * @return the configuration value or fallback
-     */
     public String getString(final String path, final String fallback) {
         if (configuration == null) {
             return fallback;
@@ -103,13 +87,6 @@ public final class ConfigManager {
         return configuration.getString(path, fallback);
     }
 
-    /**
-     * Gets an integer configuration value with fallback.
-     *
-     * @param path the configuration path
-     * @param fallback the fallback value if not found
-     * @return the configuration value or fallback
-     */
     public int getInt(final String path, final int fallback) {
         if (configuration == null) {
             return fallback;
@@ -117,13 +94,6 @@ public final class ConfigManager {
         return configuration.getInt(path, fallback);
     }
 
-    /**
-     * Gets a long configuration value with fallback.
-     *
-     * @param path the configuration path
-     * @param fallback the fallback value if not found
-     * @return the configuration value or fallback
-     */
     public long getLong(final String path, final long fallback) {
         if (configuration == null) {
             return fallback;
@@ -131,13 +101,6 @@ public final class ConfigManager {
         return configuration.getLong(path, fallback);
     }
 
-    /**
-     * Gets a double configuration value with fallback.
-     *
-     * @param path the configuration path
-     * @param fallback the fallback value if not found
-     * @return the configuration value or fallback
-     */
     public double getDouble(final String path, final double fallback) {
         if (configuration == null) {
             return fallback;
@@ -145,13 +108,6 @@ public final class ConfigManager {
         return configuration.getDouble(path, fallback);
     }
 
-    /**
-     * Gets a boolean configuration value with fallback.
-     *
-     * @param path the configuration path
-     * @param fallback the fallback value if not found
-     * @return the configuration value or fallback
-     */
     public boolean getBoolean(final String path, final boolean fallback) {
         if (configuration == null) {
             return fallback;
@@ -159,12 +115,6 @@ public final class ConfigManager {
         return configuration.getBoolean(path, fallback);
     }
 
-    /**
-     * Gets a list of strings from configuration.
-     *
-     * @param path the configuration path
-     * @return the string list, or empty list if not found
-     */
     public List<String> getStringList(final String path) {
         if (configuration == null) {
             return List.of();

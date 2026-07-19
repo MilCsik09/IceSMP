@@ -59,8 +59,9 @@ public final class ParkourCommand implements BasicCommand {
                 if (notAdmin(player) || requireId(player, args)) {
                     return;
                 }
-                final double radius = args.length >= 3 ? parseDouble(args[2], 2.5D) : 2.5D;
-                final long reward = args.length >= 4 ? parseLong(args[3], 100L) : 100L;
+                // Clamp: a negative/zero radius would make the finish untouchable, a negative reward would deduct.
+                final double radius = Math.max(0.5D, args.length >= 3 ? parseDouble(args[2], 2.5D) : 2.5D);
+                final long reward = Math.max(0L, args.length >= 4 ? parseLong(args[3], 100L) : 100L);
                 parkourManager.setFinish(args[1], player, radius, reward);
                 player.sendMessage(messageManager.get("parkour-setfinish", "&aCél beállítva: &f%s &7(sugár %s, jutalom %s)", args[1], radius, reward));
             }

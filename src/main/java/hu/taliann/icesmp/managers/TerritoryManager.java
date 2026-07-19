@@ -44,6 +44,8 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
     private final JavaPlugin plugin;
     private final File storageFile;
     private final Map<String, Territory> territories = new ConcurrentHashMap<>();
+    /** Admin-set kingdom spawn points per faction (first-join / faction-join / respawn target). */
+    private final Map<FactionType, FactionSpawn> factionSpawns = new ConcurrentHashMap<>();
     /**
      * world;chunkX;chunkZ → zones overlapping that chunk. Rebuilt and swapped whole
      * on every (rare) mutation, so the hot-path lookup is a lock-free read of an
@@ -65,8 +67,40 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         plugin.getDataFolder().mkdirs();
     }
 
+    /**
+     * One faction's admin-set spawn point (kingdom spawn): the EXACT standing position of the
+     * admin who set it — full Y and view direction included, so no highest-block guessing.
+     * Stored by world name and resolved lazily, because the world may not be loaded yet.
+     */
+    public record FactionSpawn(String world, double x, double y, double z, float yaw, float pitch) {
+
+        /** Resolves to a live Location, or null if the world is missing. */
+        public Location toLocation() {
+            final org.bukkit.World resolved = org.bukkit.Bukkit.getWorld(world);
+            return resolved == null ? null : new Location(resolved, x, y, z, yaw, pitch);
+        }
+    }
+
+    /** Sets a faction's kingdom spawn to the given exact position and persists it. */
+    public synchronized void setFactionSpawn(final FactionType faction, final Location location) {
+        if (faction == null || location == null || location.getWorld() == null) {
+            return;
+        }
+        factionSpawns.put(faction, new FactionSpawn(location.getWorld().getName(),
+                location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()));
+        save();
+    }
+
+    /** The faction's kingdom spawn as a live Location, or null if unset / world missing. */
+    public Location getFactionSpawn(final FactionType faction) {
+        final FactionSpawn spawn = faction == null ? null : factionSpawns.get(faction);
+        return spawn == null ? null : spawn.toLocation();
+    }
+
     public synchronized void load() {
         territories.clear();
+        factionSpawns.clear();
+        loadFactionSpawns();
 
         if (!storageFile.exists()) {
             rebuildIndex();
@@ -148,9 +182,43 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 }
             }
 
+            for (final Map.Entry<FactionType, FactionSpawn> entry : factionSpawns.entrySet()) {
+                final String basePath = "spawns." + entry.getKey().name();
+                final FactionSpawn spawn = entry.getValue();
+                yaml.set(basePath + ".world", spawn.world());
+                yaml.set(basePath + ".x", spawn.x());
+                yaml.set(basePath + ".y", spawn.y());
+                yaml.set(basePath + ".z", spawn.z());
+                yaml.set(basePath + ".yaw", spawn.yaw());
+                yaml.set(basePath + ".pitch", spawn.pitch());
+            }
+
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save territories: " + exception.getMessage());
+        }
+    }
+
+    /** Reads the per-faction kingdom spawns from territories.yml (own pass, runs before the zone early-returns). */
+    private void loadFactionSpawns() {
+        if (!storageFile.exists()) {
+            return;
+        }
+        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final ConfigurationSection section = yaml.getConfigurationSection("spawns");
+        if (section == null) {
+            return;
+        }
+        for (final String key : section.getKeys(false)) {
+            final FactionType faction = FactionType.fromInput(key);
+            final String world = section.getString(key + ".world", "");
+            if (faction == null || world.isBlank()) {
+                plugin.getLogger().warning("Hibás frakció-spawn bejegyzés kihagyva: " + key);
+                continue;
+            }
+            factionSpawns.put(faction, new FactionSpawn(world,
+                    section.getDouble(key + ".x"), section.getDouble(key + ".y"), section.getDouble(key + ".z"),
+                    (float) section.getDouble(key + ".yaw"), (float) section.getDouble(key + ".pitch")));
         }
     }
 

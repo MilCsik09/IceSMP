@@ -27,7 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Theft detection (ROADMAP "Bűn-rendszer bővítés"): taking items out of a
+ * Theft detection: taking items out of a
  * storage container that stands in ANOTHER faction's territory counts as a
  * sin. Wartime looting between the two warring factions is sanctioned (no
  * sin), mirroring the raid-kill rule, and admins with the territory bypass

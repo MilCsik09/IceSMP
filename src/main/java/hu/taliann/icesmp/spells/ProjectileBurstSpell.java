@@ -36,6 +36,7 @@ public final class ProjectileBurstSpell extends BaseSpell {
     private final int count;
     private final double spreadDegrees;
     private final double speed;
+    private final int pierceLevel;
     private final Sound sound;
     private final float soundVolume;
     private final float soundPitch;
@@ -44,11 +45,21 @@ public final class ProjectileBurstSpell extends BaseSpell {
                                 final int cooldown, final SpellCostType costType, final int costAmount,
                                 final ProjectileKind kind, final int count, final double spreadDegrees,
                                 final double speed, final Sound sound, final float soundVolume, final float soundPitch) {
+        this(messageManager, id, defaultName, cooldown, costType, costAmount, kind, count, spreadDegrees, speed,
+                0, sound, soundVolume, soundPitch);
+    }
+
+    public ProjectileBurstSpell(final MessageManager messageManager, final String id, final String defaultName,
+                                final int cooldown, final SpellCostType costType, final int costAmount,
+                                final ProjectileKind kind, final int count, final double spreadDegrees,
+                                final double speed, final int pierceLevel,
+                                final Sound sound, final float soundVolume, final float soundPitch) {
         super(messageManager, id, defaultName, cooldown, costType, costAmount);
         this.kind = kind;
         this.count = Math.max(1, count);
         this.spreadDegrees = spreadDegrees;
         this.speed = speed;
+        this.pierceLevel = Math.max(0, pierceLevel);
         this.sound = sound;
         this.soundVolume = soundVolume;
         this.soundPitch = soundPitch;
@@ -70,6 +81,10 @@ public final class ProjectileBurstSpell extends BaseSpell {
             if (projectile instanceof AbstractArrow arrow) {
                 arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
                 arrow.setCritical(true);
+                final int pierce = Math.max(0, balanceInt("pierce-level", pierceLevel));
+                if (pierce > 0) {
+                    arrow.setPierceLevel(Math.min(127, pierce));
+                }
             }
         }
 

@@ -46,6 +46,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `storage/` | 2 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 3 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `integration/` | 5 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
 
@@ -59,6 +60,16 @@ párhuzamos megoldást.
 olvassa a fő `config.yml`-t (override, ez nyer). A betöltött fájlokat a `CONFIG_FILES` tömb sorolja
 fel. Minden hívó a megszokott `getInt/getDouble/getString("alrendszer.kulcs", default)` API-t
 használja — a kulcs-útvonalak a fájlok között oszthatatlanok.
+
+A `config.yml`-t az **ingame config-vezérlés** is ezt a réteget írja: `/icesmp config
+get|set|unset|list|find` (node: `icesmp.admin.config`) bármely kulcsot lekér/felülbírál/töröl,
+set/unset után azonnali reload + `ConfigValidator` fut. Mivel a managerek túlnyomó része
+használat idején olvassa a configot, a legtöbb érték azonnal él. A `spell-balance.<id>.*`
+kulcsok (cooldown, cost-amount, resource-cost, damage, radius, range, self-damage, heal-self,
+feed-self, ignite-/freeze-ticks, knockback) kivétel nélkül CAST-időben olvasódnak
+(`BaseSpell.balance` + a `ConfiguredSpell` live-accessorai + `ResourceManager.costOf`), tehát
+a deklaratív spelleknél sem kell restart. Ami továbbra is indításkor dől el: a scheduler-tick
+periódusok, a parancs-/listener-regisztráció és a konstruktorban cache-elt értékek.
 
 Betöltés után a `ConfigValidator.validate(...)` **konvenció-alapú** ellenőrzést futtat a teljes
 kulcstéren (soha nem dob, csak a konzolra figyelmeztet): a `material`/`materials` kulcsok valós
@@ -88,6 +99,13 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 - **Egyrészes / implicit-default:** néhány parancs (Market, Pet, Soul, Spell, Events…) üres argra
   műveletet végez (nem helpet ad), vagy nem `args[0]`-ra diszpécsel. Ezek szándékosan külön
   `BasicCommand`-ok — a dispatch-bázis nem modellezi ezt a szemantikát.
+- **Permissionök:** kanonikus séma a `core/Permissions` osztályban (konstansok + `register()` az
+  `enable()` elején). Minden admin-node `icesmp.admin.<domain>` (default: OP), az
+  `icesmp.admin.all` regisztrált szülő-node az összeset megadja egyben; a régi nevek
+  (`icesmp.admin`, `icesmp.job.admin`, `icesmp.currency.admin`, `icesmp.faction.admin`,
+  `icesmp.relic.admin`) alias-Permissionként a kanonikus gyereküket adják — meglévő
+  LP-beállítás nem törik. Új admin-parancsnál: konstans a `Permissions`-be + a `register()`
+  canonical-map-jébe egy sor.
 
 ### 3.5 Spellek — registry + builder + katalógus
 - **`SpellRegistry`**: id → `Spell` map (`register`, `getById`, `getAll`).
@@ -117,8 +135,9 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.7 Player-state takarítás — registry-iterált
 A `PlayerSessionCleanupListener` kilépéskor/kickkor: (a) végigmegy a regisztrált
 `List<PlayerStateCleanup>`-on (managerek), és (b) a `SpellRegistry.getAll()`-on, minden spell
-`clearPlayerState(uuid)`-jét hívva. **Nincs hardkódolt lista** — új állapotos egység automatikusan
-bekerül (lásd 5.7 recept).
+`clearPlayerState(uuid)`-jét hívva. A spell-ágon **nincs hardkódolt lista** — új állapotos spell
+automatikusan bekerül; a manager-ág viszont kézzel karbantartott konstruktor-lista (lásd 5.7/5.8
+recept: új állapotos managert fel kell venni a `stateOwners` listába).
 
 ### 3.8 Kaszt-erőforrás (`ResourceManager`) — hibrid költség
 Per-kaszt „erő" 0–max meter, a HUD-oldalsávban megjelenítve (`HudManager.buildLines` hív egy
@@ -287,6 +306,25 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   default stringet a `get*` hívásban.
 - **Atomikus IO:** minden YAML-mentés `YamlStore.saveAtomic`-on át.
 - **Nincs párhuzamos minta:** ha van rá SPI/bázis/registry, azt használd.
+- **Particle-stílus** (a tulaj kérése: „sokat adnak hozzá, de ha nem szép, sokat rontanak"):
+  - `FLASH` mindig `count=1` — a képernyő-villanás nem halmozódik, a többlet csak csomag.
+  - Ünneplő konfetti (`TOTEM_OF_UNDYING`) legfeljebb ~16-18 darab, szűk terítéssel.
+  - Egyszeri burst ≤ ~30 darab; ami hosszabb hatás, az PULZÁLJON kis adagokban
+    (AmbientEventManager `pulse`-minta), ne egy nagy robbanás legyen.
+  - Talaj-közeli jelölők (határ, perem) a `ParticleUtil.markerY`-ról kapják a magasságot
+    (terep-követés + Folia-guard) — sose lebegjenek a néző derekán dombokon át.
+  - Adat-igényes particle-ök (`FLASH`, `DUST`…) mindig a `ParticleUtil.spawn`-on át
+    (default-adat feloldás, konzol-hiba helyett).
+- **Effekt-réteg megválasztása** (particle vs. display-entity):
+  - **Particle = átmeneti visszajelzés** (ütés, cast, ambient). A formázott spell-effektek a
+    `SpellVfx`-en át mennek: forma (BEAM/RING/HELIX/CONE/…) a targeting-jellegből + paletta
+    (`DUST_COLOR_TRANSITION`) + a spell accent-particle-je. Pontszám-plafon (`spell-vfx.max-points`),
+    minden pont `count=1` dust — a fenti particle-szabályok érvényesek rá.
+  - **DisplayFx (`DisplayFxUtil`) = geometria / tartós / kliens-oldalon animált** (claim-fényfal,
+    telegraph, kirakat). KÖTELEZŐ hármas: régió-száli spawn (`getRegionScheduler().run`) +
+    `setPersistent(false)` + `FX_TAG` (a `DisplayFxCleanupListener` söpri a maradékot); auto-despawn
+    az entitás SAJÁT schedulerén; per-nézőhöz `showOnlyTo`. Display-entitást SOSE spawnolj
+    frame-enként — egyszer spawnolj, és `animateTo`-val interpoláltass.
 
 ---
 

@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.ProfessionCategory;
 import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -20,7 +21,7 @@ import java.util.UUID;
  * in player PDC, and levels follow a progressive curve (each level costs more
  * XP than the previous one, configurable under 'professions.leveling').
  */
-public final class ProfessionManager {
+public final class ProfessionManager implements PlayerStateCleanup {
 
     public static final int MAX_PROFESSION_LEVEL = 50;
 
@@ -254,6 +255,7 @@ public final class ProfessionManager {
         // Profession data is persisted in PDC and must survive reconnects.
     }
 
+    @Override
     public void clearPlayerState(final UUID playerId) {
         cleanup(playerId);
     }

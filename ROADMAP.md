@@ -3,6 +3,10 @@
 Ez az **egyetlen előre néző terv-dokumentum**. A megvalósult állapotot a
 [README.md](README.md) és a [PLAYER_GUIDE.md](PLAYER_GUIDE.md) írja le, az architektúrát a
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a tesztelést a [PLAYTEST.md](PLAYTEST.md).
+A kötetlen ötlet-gyűjtő a [docs/IDEAS.md](docs/IDEAS.md) (index — 316 kidolgozott tétel
+10 kategória-fájlban a `docs/ideas/` alatt, munka/érték becsléssel),
+a technikai adósság a [docs/REFACTOR_CANDIDATES.md](docs/REFACTOR_CANDIDATES.md) — ami onnan
+zöld utat kap, ide kerül tervezett tételként.
 (A korábbi terv-doksik — ideas.md, todo.md, CONTENT-PLAN, DEPTH-ROADMAP, a fázis-napló —
 megvalósultak és törölve lettek; a még nyitott pontjaik itt élnek tovább.)
 
@@ -23,14 +27,27 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
     közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes.
   - `ClaimManager.save()` minden mutációnál a teljes claims.yml-t írja (sok ezer claimnél
     parancs-késleltetés) — dirty-flag + késleltetett mentés a megoldás.
-  - A LootTable a `MIN:MAX` elgépeléseket (min>max, negatív) csendben koercálja — log-figyelmeztetés
-    kellene; az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
-    lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem).
+  - Az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
+    lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem). (A LootTable `MIN:MAX`
+    elgépelései már betöltéskor log-figyelmeztetést adnak a ConfigValidatoron át — megoldva.)
   - Aukció: a minimum/nagy licit elérheti a buy-out árat és azonnal zár (eBay-szemantika —
     szándékos, de a GUI-tipp csak a shift-kattot említi); a vétel-üzenet ára elvben eltérhet a
     ténylegesen levonttól, ha a frakció-viszony épp a kattintás pillanatában vált.
 
 ### Játékmenet
+- 💡 **Ingame config-vezérlés — kész:** `/icesmp config get|set|unset|list|find` bármely
+  config-kulcsot játékon belülről lekér/felülbírál (config.yml-be perzisztálva, azonnali
+  reload + validátor, kulcs-tab-complete a teljes kulcstérből). A TELJES spell-balansz
+  (`spell-balance.<id>.*`: resource-cost, damage, radius, range, heal/feed, ignite/freeze,
+  knockback, cooldown, cost-amount) cast-időben olvasódik — a deklaratív spelleknél sem kell
+  restart, és az erőforrás-ár többé nem fixen a cooldown-sávból jön. További ötlet:
+  config-diff nézet (mi tér el a defaulttól), többsoros lista-szerkesztő. admin-kijelölt, PONTOS (magasság + nézésirány) spawn-pont
+  frakciónként (`/territory setspawn <frakció>`); új játékos a Semleges Királyság spawnján
+  jelenik meg, frakcióválasztáskor teleport az új királyság spawnjára, ágy/horgony nélkül a
+  saját frakció spawnján éledsz újra. **Frakciót váltani (join ÉS leave) csak a semleges
+  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` is teljes értékű
+  fizetős váltás (a leave+join ingyenes kerülőút megszűnt), és `/npcbind <npc> faction`
+  királyság-választó hírnök-NPC-t köt. További ötlet: váltás-megerősítő GUI a hírnöknél.
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
   bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),
   és mind a `/events <típus>` admin-triggerrel is kiváltható:
@@ -53,8 +70,8 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - 💡 **Natív claim + chat-formázó — kész:** chunk-alapú terület-claim (első 3 ingyen, utána égetett
   frakció-valuta ár — money sink; trust; robbanás-védelem; raid-lootable kapcsoló; a meteor/kincs
   események kerülik) a SimpleClaimSystem kiváltására, és natív chat-formázó (LP-prefix + frakció-színes
-  név) a LuckPermsChatFormatterFolia kiváltására. További ötlet: claim-GUI, claim-bérlés frakciótársnak,
-  piston/fire edge-case védelem.
+  név) a LuckPermsChatFormatterFolia kiváltására. A piston/tűz/folyadék edge-case védelem **kész**
+  (a TerritoryProtectionListener mintáját követi). További ötlet: claim-GUI, claim-bérlés frakciótársnak.
 - 💡 **Raid-variánsok:** a raid-mélyítés alapjai (jelentkezés + 10v10 korlát, területkötés,
   pont-tartás objektíva, terület-átvétel) **készek**; további ötlet: zászlófoglalás-mód,
   több egyidejű raid, védő-oldali erődítés-mechanika.
@@ -123,13 +140,15 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 5. **Világesemény-bővítések:** vihar / aranyláz-zóna / napfogyatkozás, heti/eseményhez kötött
    esemény-rotáció, karaván-készlet napi rotáció.
 6. **Party-extrák:** party-célpont jelölés, party-waypoint.
-7. **Claim-extrák:** claim-GUI, claim-bérlés frakciótársnak, piston/tűz edge-case védelem.
+7. **Claim-extrák:** claim-GUI, claim-bérlés frakciótársnak. (A piston/tűz/folyadék védelem kész.)
 8. **Raid-variánsok:** zászlófoglalás-mód, több egyidejű raid, védő-oldali erődítés.
 9. **Quest-extrák:** quest-lánc-térkép GUI, a maradék 9 kaszt mester-lánca (csak config).
 10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
-- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések.
+- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések,
+  majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
+  hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
 - ⬜ Kaszt-mester NPC-k (FancyNpcs: `harcos_mester`, `ijasz_mester`, `varazslo_mester`,
   `orgyilkos_mester`) és a mester-próbapályák (`harcos_proba`, `ijasz_proba`,

@@ -1,0 +1,31 @@
+# IceSMP konfiguráció — szerverlista-MOTD (a MiniMOTD plugin kiváltása)
+# MiniMessage-formázás (gradient/rainbow/hex), {online} és {max} tokenekkel.
+# A variánsok IDŐALAPON rotálódnak (rotation-seconds) — minden ping az aktuális frame-et kapja.
+# IKONOK (IDEAS A59): tegyél 64×64-es PNG-ket a plugins/IceSMP/icons/ mappába, és bármely
+# variánsnak (normál vagy event-variáns) adhatsz `icon: <fájlnév kiterjesztés nélkül>` mezőt —
+# az adott variánssal együtt a szerverlista-ikon is vált.
+motd:
+  enabled: true
+  rotation-seconds: 10
+  # Max játékos-szám felülírása a szerverlistán (-1 = nincs felülírás, a valódi érték látszik).
+  max-players-override: -1
+  # Esemény-tudatos variánsok (IDEAS A50): aktív esemény alatt EZEK írják felül a normál
+  # rotációt (elsőbbség: vérhold > világboss > szezonzáró-visszaszámláló).
+  event-variants:
+    blood-moon:
+      line1: "<dark_red><b>🌕 VÉRHOLD TOMBOL</b></dark_red> <gray>—</gray> <red>Ice SMP</red>"
+      line2: "<gray>A szörnyek megvadultak... mersz belépni?</gray>"
+    world-boss:
+      line1: "<dark_purple><b>☠ VILÁGBOSS ÉBREDT</b></dark_purple> <gray>—</gray> <gradient:#4FC3F7:#E1F5FE>Ice SMP</gradient>"
+      line2: "<gray>Gyülekező a boss ellen — {online} hős már harcol!</gray>"
+    season-end:
+      days-before: 3
+      line1: "<gold><b>⏳ SZEZONZÁRÁS KÖZELEG</b></gold> <gray>—</gray> <gradient:#4FC3F7:#E1F5FE>Ice SMP</gradient>"
+      line2: "<gray>Az utolsó napok — most dől el a liga!</gray>"
+  variants:
+    frost:
+      line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
+      line2: "<gray>13 kaszt • 4 királyság • háború és dicsőség</gray>"
+    war:
+      line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
+      line2: "<red>⚔</red> <gray>Melyik királyságért harcolsz?</gray> <dark_gray>({online} hős online)</dark_gray>"

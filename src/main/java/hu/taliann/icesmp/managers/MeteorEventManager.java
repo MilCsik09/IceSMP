@@ -76,6 +76,11 @@ public final class MeteorEventManager {
         return craterCenter != null;
     }
 
+    /** Milliseconds left before the crater fades, or -1 when none is active. */
+    public long getRemainingMillis() {
+        return isActive() ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
+    }
+
     /** Periodic driver on the global world-events tick. */
     public void tick() {
         if (!configManager.getBoolean("meteor.enabled", true)) {

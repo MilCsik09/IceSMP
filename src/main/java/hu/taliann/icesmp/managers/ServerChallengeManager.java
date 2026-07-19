@@ -69,6 +69,11 @@ public final class ServerChallengeManager {
         return active;
     }
 
+    /** Milliseconds left in the current challenge window, or -1 when none is running. */
+    public long getRemainingMillis() {
+        return active ? Math.max(0L, activeUntil - System.currentTimeMillis()) : -1L;
+    }
+
     /** Shows the boss bar to a (joining) player if a challenge is live. */
     public void showTo(final Player player) {
         if (active) {

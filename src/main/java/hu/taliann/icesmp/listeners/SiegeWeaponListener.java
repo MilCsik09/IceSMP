@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Fires the siege cannon (ideas.md "Ostromgépek"): right-clicking the tagged
- * item during an active raid consumes one and detonates a block-safe blast at
- * the aimed location. Outside raids it just warns the player. A short per-player
- * debounce prevents accidental double-fires.
+ * Fires the siege cannon: right-clicking the tagged item during an active raid
+ * consumes one and detonates a block-safe blast at the aimed location. Outside
+ * raids it just warns the player. A short per-player debounce prevents
+ * accidental double-fires.
  */
 public final class SiegeWeaponListener implements Listener {
 

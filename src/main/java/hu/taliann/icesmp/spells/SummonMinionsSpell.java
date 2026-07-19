@@ -79,7 +79,6 @@ public final class SummonMinionsSpell extends BaseSpell {
         final LivingEntity target = resolveTarget(player);
         final Location center = player.getLocation();
 
-        // Never summon more than the player's remaining slots allow.
         final int toSummon = Math.min(balanceInt("count", count), remainingSlots(player));
         final int lifespan = balanceInt("duration-ticks", lifespanTicks);
         // Class "max-health" talents also empower the owner's minions.

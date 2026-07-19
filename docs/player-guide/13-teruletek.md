@@ -88,7 +88,10 @@ A birtokodon (a claim dobozán belül) **idegenek**:
 - nem nyithatnak **konténert** (láda, hordó, kemence…);
 - nem üríthetnek vödröt, nem szedhetik le a kép-/festménykereteket;
 - a **robbanás sem bontja** a claimelt blokkokat, és a blokk-evő mobok (pl. enderman) sem
-  vihetnek el semmit.
+  vihetnek el semmit;
+- a **tűz** nem gyullad meg, nem terjed és nem éget claimelt blokkot;
+- kívülről **folyadék** (víz/láva) nem folyhat be, és idegen **dugattyú** sem tolhat be /
+  húzhat ki blokkot (a claimen belüli saját gépek működnek).
 
 > ⚔️ **Fontos:** a claim a **PvP-t NEM tiltja** — ez háborús szerver! A claim csak az
 > **építést és a lopást** védi, harcolni a birtokodon is lehet.
@@ -98,6 +101,8 @@ A birtokodon (a claim dobozán belül) **idegenek**:
 - `/claim trust <név>` — a megbízott **teljes hozzáférést** kap **minden** claimedhez
   (építhet, nyithat ládát).
 - `/claim untrust <név>` — megbízás visszavonása.
+- **GUI-ból is megy:** `/menu` → Birtok → **„Megbízottak kezelése"** — felül a megbízottaid
+  (kattintás = visszavonás), alul a közeledben álló játékosok (kattintás = megbízás).
 
 ### Hasznos claim-parancsok
 

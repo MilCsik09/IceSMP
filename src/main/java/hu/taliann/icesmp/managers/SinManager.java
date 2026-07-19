@@ -48,12 +48,6 @@ public final class SinManager {
         this.sinCountKey = new NamespacedKey(plugin, "sin_count");
     }
 
-    /**
-     * Gets the player's accumulated sin count.
-     *
-     * @param player the player
-     * @return the number of recorded sins
-     */
     public int getSinCount(final Player player) {
         return player == null ? 0
                 : player.getPersistentDataContainer().getOrDefault(sinCountKey, PersistentDataType.INTEGER, 0);
@@ -102,7 +96,6 @@ public final class SinManager {
         player.getWorld().spawnParticle(Particle.SQUID_INK, player.getLocation().add(0.0D, 1.0D, 0.0D), 40, 0.4D, 0.6D, 0.4D, 0.03D);
     }
 
-    /** Whether the player carries the sinner mark. */
     public boolean isSinner(final Player player) {
         return player != null
                 && player.getPersistentDataContainer().getOrDefault(sinnerKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;

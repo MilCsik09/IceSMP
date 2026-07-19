@@ -79,12 +79,10 @@ public final class UniqueMaterialFactory {
         return item.getItemMeta().getPersistentDataContainer().get(idKey, PersistentDataType.STRING);
     }
 
-    /** Whether the id refers to a defined unique material. */
     public boolean isDefined(final String uniqueId) {
         return configOf(uniqueId) != null;
     }
 
-    /** Parses a legacy '&'-coded string into a Component. */
     private static Component legacy(final String text) {
         return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().deserialize(text);
     }

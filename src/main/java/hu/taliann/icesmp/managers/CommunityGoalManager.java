@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Server-wide community goals (quest-package E): a shared counter every member
@@ -42,6 +44,7 @@ public final class CommunityGoalManager implements PersistentStore {
     private final MessageManager messageManager;
     private final File storageFile;
     private final Map<String, Long> progress = new ConcurrentHashMap<>();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     public CommunityGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
                                 final FactionManager factionManager, final FactionTreasuryManager treasuryManager,
@@ -78,6 +81,20 @@ public final class CommunityGoalManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save community-goals.yml: " + exception.getMessage());
+        }
+    }
+
+    /**
+     * Debounced async flush for the hot contribution path: every mob kill / block break on an
+     * active goal used to rewrite community-goals.yml synchronously on the region thread —
+     * many contributions in a short window now coalesce into one write (CurrencyManager pattern).
+     */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                save();
+            }, 2L, TimeUnit.SECONDS);
         }
     }
 
@@ -147,11 +164,11 @@ public final class CommunityGoalManager implements PersistentStore {
         final long current = getProgress(goalId) + amount;
         if (current < target) {
             progress.put(goalId, current);
-            save();
+            requestSave();
             return;
         }
 
-        // Completed: reset the shared counter and pay out.
+        // Completed: reset the shared counter and pay out (the payout is worth an immediate flush).
         progress.put(goalId, 0L);
         save();
         completeGoal(goal, serverWide, goalFaction);

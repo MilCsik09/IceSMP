@@ -248,12 +248,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
     }
 
-    /**
-     * Gets the persistent ownership record of a relic.
-     *
-     * @param relicId the relic identifier
-     * @return the ownership record, or null if the relic is unclaimed
-     */
+    /** @return the relic's persistent ownership record, or null if the relic is unclaimed */
     public RelicOwnership getOwnership(final String relicId) {
         if (relicId == null || relicId.isBlank()) {
             return null;
@@ -372,7 +367,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
 
     private void playExpiryEffect(final Player player) {
         final Location effectLocation = player.getLocation().add(0.0D, 1.0D, 0.0D);
-        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, effectLocation, 40, 0.3D, 0.5D, 0.3D, 0.02D);
+        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, effectLocation, 24, 0.3D, 0.5D, 0.3D, 0.02D);
         player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXTINGUISH_FIRE, 1.0F, 0.8F);
     }
 
@@ -405,7 +400,10 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         return itemFactory.create(definition, owner);
     }
 
-    public boolean giveRelic(final Player player, final String relicId, final int amount) {
+    // synchronized: the singleton-ownership check and recordOwnership must be atomic, or two
+    // concurrent grants (two altars / altar + admin give) could both pass the check and
+    // duplicate a supposedly unique relic.
+    public synchronized boolean giveRelic(final Player player, final String relicId, final int amount) {
         if (!enabled || amount <= 0) {
             return false;
         }

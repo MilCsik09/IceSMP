@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Seasonal league (ideas.md "Szezonális liga"): factions earn points from raid
@@ -40,6 +42,7 @@ public final class SeasonManager implements PersistentStore {
     private final FactionManager factionManager;
     private final File storageFile;
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
+    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     private volatile long seasonStart = System.currentTimeMillis();
 
@@ -117,7 +120,17 @@ public final class SeasonManager implements PersistentStore {
         }
 
         points.merge(faction, amount, Integer::sum);
-        save();
+        requestSave();
+    }
+
+    /** Debounced async flush: point awards can burst (raid payouts), one write covers them all. */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                save();
+            }, 2L, TimeUnit.SECONDS);
+        }
     }
 
     /** Periodic check on the global world-events tick: closes expired seasons. */

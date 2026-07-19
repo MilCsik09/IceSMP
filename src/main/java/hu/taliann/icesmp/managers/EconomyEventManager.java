@@ -86,10 +86,8 @@ public final class EconomyEventManager implements PersistentStore {
     }
 
     /**
-     * Gets the demand-shock multiplier applied to a currency's base value.
-     *
      * @param currencyType the currency
-     * @return the active multiplier, or 1.0 when no event affects it
+     * @return the active demand-shock multiplier, or 1.0 when no event affects it
      */
     public double getMultiplier(final CurrencyType currencyType) {
         return isActive() && currencyType == eventCurrency ? eventMultiplier : 1.0D;

@@ -21,7 +21,12 @@ Most léptél be először? Semmi gond — kövesd ezt a pár lépést, és már
    (pl. Kovács). A Halász és Szakács alapból a tiéd.
 5. **Kezdj el játszani!**
    - **Szörnyeket ölve** kapsz **kaszt-XP-t** (így szintezel és nyitsz új képességeket).
+   - Harcban minden találatod fölött **lebegő sebzés-szám** jelzi, mennyit ütöttél; ha meghalsz,
+     a chatben **halál-összegző** mutatja, mi vitt el (utolsó 10 mp találatai + összesített sebzés).
    - **Bányászva / aratva / horgászva / főzve** kapsz **szakma-XP-t**.
+   *(Az első belépésedkor automatikusan elindul egy rövid **kezdő küldetés-lánc** — „Beszélj a
+   hírnökkel" → „Első csata" → „Első gyűjtögetés" —, ami végigvezet a kezdésen, és minden
+   állomásért jutalmat ad. Lásd: [Küldetések](12-kuldetesek.md).)*
 6. **Vedd fel a kaszt-próbádat:** `/quest list`, majd `/quest accept <id>`. Ezzel jutalmat
    szerezhetsz. Részletek: [Küldetések](12-kuldetesek.md).
 

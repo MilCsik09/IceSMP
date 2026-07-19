@@ -1,0 +1,5 @@
+# IceSMP üzenetek — afk alrendszer (a MessageManager az összes messages/*.yml-t betölti)
+messages:
+  afk-zone-enter: '&b⌚ Beléptél egy &fAFK-zónába&b — időzítve jutalom jár, amíg bent maradsz.'
+  afk-zone-leave: '&7Elhagytad az AFK-zónát — az időzítő nullázódott.'
+  afk-reward-received: '&b⌚ AFK-jutalom: &f+%s &b%s'

@@ -8,6 +8,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 
 public final class CurrencyPaySubcommand implements CurrencySubcommand {
 
@@ -61,6 +65,11 @@ public final class CurrencyPaySubcommand implements CurrencySubcommand {
             sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem elérhető online."));
             return true;
         }
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            sender.sendMessage(messageManager.get("messages.currency-pay-self",
+                    "&cSaját magadnak nem utalhatsz."));
+            return true;
+        }
         final long amount;
         try {
             amount = Long.parseLong(args[1]);
@@ -101,6 +110,25 @@ public final class CurrencyPaySubcommand implements CurrencySubcommand {
         }
 
         return FactionType.fromInput(args[2]);
+    }
+
+    @Override
+    public List<String> tabComplete(final CommandSender sender, final String[] args) {
+        if (args.length <= 1) {
+            final String prefix = args.length > 0 ? args[0].toLowerCase(Locale.ROOT) : "";
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                    .toList();
+        }
+        if (args.length == 2 || args.length == 3) {
+            final String prefix = args.length > 2 ? args[2].toLowerCase(Locale.ROOT) : "";
+            return Arrays.stream(FactionType.values())
+                    .map(type -> type.name().toLowerCase(Locale.ROOT))
+                    .filter(name -> name.startsWith(prefix))
+                    .toList();
+        }
+        return List.of();
     }
 }
 

@@ -17,9 +17,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Triggers ritual altars (ideas.md "Rituálé-oltárok"): sneak-right-clicking a
- * configured altar block attempts to summon the matching relic by sacrificing
- * items. A short per-player debounce prevents accidental double-triggers.
+ * Triggers ritual altars: sneak-right-clicking a configured altar block
+ * attempts to summon the matching relic by sacrificing items. A short
+ * per-player debounce prevents accidental double-triggers.
  */
 public final class RitualListener implements Listener {
 

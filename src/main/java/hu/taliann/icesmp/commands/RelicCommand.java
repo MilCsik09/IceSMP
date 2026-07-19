@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 public final class RelicCommand implements BasicCommand {
 
-    private static final String ADMIN_PERMISSION = "icesmp.relic.admin";
+    private static final String ADMIN_PERMISSION = hu.taliann.icesmp.core.Permissions.RELIC;
 
     private final JavaPlugin plugin;
     private final RelicManager relicManager;

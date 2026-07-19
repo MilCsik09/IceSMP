@@ -75,6 +75,16 @@ public final class WildHuntManager {
         return entityId != null && entityId.equals(beastId);
     }
 
+    /** Whether the wild-hunt beast is currently roaming (for the "what's happening now" summary). */
+    public boolean isActive() {
+        return beastId != null;
+    }
+
+    /** Milliseconds left before the beast escapes, or -1 when none is active. */
+    public long getRemainingMillis() {
+        return beastId != null ? Math.max(0L, expiresAt - System.currentTimeMillis()) : -1L;
+    }
+
     /** Active (or a spawn is in flight): guards double-starts during the hop window. */
     private boolean isActiveOrSpawning() {
         return beastId != null || System.currentTimeMillis() < spawnGraceUntil;
@@ -155,7 +165,7 @@ public final class WildHuntManager {
                     world.dropItemNaturally(where, loot);
                 }
             }
-            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 40, 0.6D, 0.8D, 0.6D, 0.1D);
+            world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.5D, 0.7D, 0.5D, 0.1D);
             world.playSound(where, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5F, 1.5F);
         }
 

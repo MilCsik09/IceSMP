@@ -218,6 +218,15 @@ bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). Z
 csak a nem-tagok építését tiltja. Megkerülő jogok: `icesmp.admin.territory.bypass` (minden) és
 `icesmp.territory.builder` (építő-jog védett zónában is).
 
+### 📋 Natív HUD és tablist (TAB plugin nélkül)
+
+A teljes megjelenítő-réteg beépített: **scoreboard-oldalsáv** (frakció, kaszt, Erő-csík,
+esemény, valuta, party-frame-ek, animált elválasztókkal), **tablist header/footer**
+animációkkal, **LP-prefixes + frakció-színes tab-nevek**, **fej fölötti nametag +
+rang-alapú rendezés** és **ping-oszlop** — mind villogásmentes (csak változáskor megy ki
+csomag) és Folia-korrekt. Beállítás: `config/tablist.yml` + `general.yml` → `hud.*`;
+külső tablist-plugin (TAB) nem szükséges.
+
 ---
 
 ## Parancsok (gyorsreferencia)
@@ -243,6 +252,7 @@ csak a nem-tagok építését tiltja. Megkerülő jogok: `icesmp.admin.territory
 | `/sinner <játékos> set/clear/add/status` | — | Bűnös státusz kezelése (admin) |
 | `/territory …` | `terulet` | Területek kijelölése (admin) |
 | `/icesmp reload` | `ismp` | Konfiguráció újratöltése (admin) |
+| `/icesmp config get/set/unset/list/find` | `ismp config` | Bármely config-kulcs ingame lekérése/felülbírálása (admin) |
 
 A teljes parancs-referencia: [docs/player-guide/14-parancsok.md](docs/player-guide/14-parancsok.md);
 a jogosultság-node-ok listája a [PLAYTEST.md](PLAYTEST.md)-ben.

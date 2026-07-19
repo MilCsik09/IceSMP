@@ -15,7 +15,7 @@ import java.util.List;
 
 public final class SinnerCommand implements BasicCommand {
 
-    private static final String PERMISSION = "icesmp.admin";
+    private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.SINNER;
 
     private final JavaPlugin plugin;
     private final SinManager sinManager;

@@ -6,6 +6,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
+import hu.taliann.icesmp.managers.SpellFavoritesManager;
 import hu.taliann.icesmp.managers.SpellMasteryManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
@@ -22,6 +23,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerAnimationType;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -51,6 +53,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final hu.taliann.icesmp.managers.ResourceManager resourceManager;
     private final hu.taliann.icesmp.managers.TalentManager talentManager;
     private final MessageManager messageManager;
+    private final SpellFavoritesManager spellFavoritesManager;
     private final NamespacedKey selectedSpellIndexKey;
     private final Map<String, NamespacedKey> longCooldownKeys = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Long>> spellCooldowns = new ConcurrentHashMap<>();
@@ -59,6 +62,16 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     // Combo tracking: the last spell each player cast and when.
     private final Map<UUID, String> lastCastSpell = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastCastTime = new ConcurrentHashMap<>();
+    // Az utolsó ELŐTTI cast is kell a 3 lépéses kombó-láncok felismeréséhez.
+    private final Map<UUID, String> secondLastCastSpell = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> secondLastCastTime = new ConcurrentHashMap<>();
+    // Cast-számláló — a StatsManager a kézi DI-sorrendben később épül, ezért setter.
+    private volatile hu.taliann.icesmp.managers.StatsManager statsManager;
+    // Kombó/lánc-befejező után rövid ideig kiemelt sebzés-szám (DamageIndicatorListener olvassa).
+    private final Map<UUID, Long> comboBoostUntil = new ConcurrentHashMap<>();
+    // Az aktív kombó-ablak hint-lánc indítási időbélyege — az újabb cast érvényteleníti.
+    private final Map<UUID, Long> hintStartedAt = new ConcurrentHashMap<>();
+    private final JavaPlugin plugin;
 
     public AbilityCatalystListener(final JavaPlugin plugin, final JobManager jobManager,
                                    final SpellRegistry spellRegistry, final CatalystItemFactory catalystItemFactory,
@@ -66,7 +79,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                                    final SpecializationManager specializationManager,
                                    final hu.taliann.icesmp.managers.ResourceManager resourceManager,
                                    final hu.taliann.icesmp.managers.TalentManager talentManager,
-                                   final MessageManager messageManager) {
+                                   final MessageManager messageManager, final SpellFavoritesManager spellFavoritesManager) {
         this.jobManager = jobManager;
         this.spellRegistry = spellRegistry;
         this.catalystItemFactory = catalystItemFactory;
@@ -76,6 +89,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         this.resourceManager = resourceManager;
         this.talentManager = talentManager;
         this.messageManager = messageManager;
+        this.spellFavoritesManager = spellFavoritesManager;
+        this.plugin = plugin;
         this.selectedSpellIndexKey = new NamespacedKey(plugin, "selected_spell_index");
     }
 
@@ -134,7 +149,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
 
-        // Sneak + right-click opens the spellbook (browse / pick a spell) instead of casting.
         if (player.isSneaking()) {
             openSpellbook(player);
             return;
@@ -172,22 +186,55 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
 
         cycleDebounce.put(player.getUniqueId(), now);
-        cycleSpell(player);
+        cycleSpell(player, 1);
     }
 
-    private void cycleSpell(final Player player) {
+    /**
+     * Shift + görgetés a katalizátorral a kézben: gyors spell-váltás hotbar-váltás helyett.
+     * Lefelé görgetés = következő, felfelé = előző képesség; az event cancel-je megtartja
+     * az aktív hotbar-slotot. A kiválasztott spell neve az item nevére íródik.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onHotbarScroll(final PlayerItemHeldEvent event) {
+        final Player player = event.getPlayer();
+        if (!player.isSneaking() || !isUsableCatalyst(player, player.getInventory().getItemInMainHand())) {
+            return;
+        }
+        event.setCancelled(true);
+        // Kerekes irány a slot-lépésből (wrap-pel): 0->1..4 = előre, egyébként hátra.
+        final int step = ((event.getNewSlot() - event.getPreviousSlot() + 9) % 9) <= 4 ? 1 : -1;
+        cycleSpell(player, step);
+    }
+
+    private void cycleSpell(final Player player, final int step) {
         final List<String> unlocked = resolveUnlockedSpellIds(player);
         if (unlocked.isEmpty()) {
             player.sendActionBar(messageManager.getMessage("catalyst.no-spells", "<red>Nincs elérhető képesség.</red>"));
             return;
         }
 
+        // Ha a játékos jelölt kedvenceket a spellkönyvben, a görgetés CSAK azokat
+        // lépkedi (üres kedvenc-lista = a teljes feloldott lista). A kiválasztás-index továbbra
+        // is a TELJES feloldott listába mutat, így a kedvencek ki-be kapcsolása nem borítja el.
+        final java.util.Set<String> favorites = spellFavoritesManager.favorites(player);
+        List<String> cycle = unlocked;
+        if (!favorites.isEmpty()) {
+            final List<String> onlyFavorites = unlocked.stream().filter(favorites::contains).toList();
+            if (!onlyFavorites.isEmpty()) {
+                cycle = onlyFavorites;
+            }
+        }
+        final boolean favoritesOnly = cycle != unlocked;
+
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         final int currentIndex = pdc.getOrDefault(selectedSpellIndexKey, PersistentDataType.INTEGER, -1);
-        final int nextIndex = (currentIndex + 1) % unlocked.size();
+        final String currentId = currentIndex >= 0 && currentIndex < unlocked.size() ? unlocked.get(currentIndex) : null;
+        final int cyclePos = currentId == null ? -1 : cycle.indexOf(currentId);
+        final int nextCyclePos = ((cyclePos + step) % cycle.size() + cycle.size()) % cycle.size();
+        final int nextIndex = unlocked.indexOf(cycle.get(nextCyclePos));
         pdc.set(selectedSpellIndexKey, PersistentDataType.INTEGER, nextIndex);
 
-        final Spell selected = spellRegistry.getById(unlocked.get(nextIndex));
+        final Spell selected = spellRegistry.getById(cycle.get(nextCyclePos));
         if (selected == null) {
             player.sendActionBar(messageManager.getMessage("catalyst.current-spell-unknown", "<gray>Aktuális képesség: Ismeretlen</gray>"));
             return;
@@ -203,10 +250,23 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                         "mastery", mastery,
                         "cost", String.valueOf(displayedCost(selected)),
                         "resource", resolveResourceName(player, selected),
-                        "position", (nextIndex + 1) + "/" + unlocked.size()
+                        "position", (favoritesOnly ? "★" : "") + (nextCyclePos + 1) + "/" + cycle.size()
                 )
         ));
         catalystItemFactory.playCycleSound(player, jobManager.getPrimaryJob(player));
+        renameHeldCatalyst(player, selected);
+    }
+
+    /** A kézben tartott katalizátor neve a kiválasztott spellt mutatja (playtest-kérés). */
+    private void renameHeldCatalyst(final Player player, final Spell selected) {
+        final ItemStack held = player.getInventory().getItemInMainHand();
+        if (!catalystItemFactory.isCatalyst(held)) {
+            return;
+        }
+        held.editMeta(meta -> meta.displayName(
+                net.kyori.adventure.text.Component.text("⚡ " + selected.getName(),
+                                net.kyori.adventure.text.format.NamedTextColor.GOLD)
+                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)));
     }
 
     private void castSelectedSpell(final Player player) {
@@ -263,8 +323,10 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
         // Spell-mastery power scales the offensive output (damage, self-heal, effect duration);
         // the dynamic layer adds a capped class-level + 'spell-power' talent bonus on top.
+        final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
         final double power = masteryManager.getPowerMultiplier(player, selected.getId())
-                * dynamicPowerMultiplier(player);
+                * dynamicPowerMultiplier(player)
+                * (1.0D + chainBonusPercent / 100.0D);
         if (!selected.executeSpell(player, power)) {
             // No effect fired (no target, no companions, …) — refund the cost and skip the
             // cooldown so a missed cast costs the player nothing.
@@ -279,15 +341,65 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         }
 
         // A combo (configured spell pair cast in quick succession) flows faster (cooldown refund) + flair.
-        final boolean combo = isComboMatch(player, selected.getId(), now);
-        putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
-        playCastFlourish(player, combo);
+        // A lánc-befejező is kombónak számít (visszatérítés), és külön üzenetet kap;
+        // kombó után a HUD a lánc következő lépését, sima cast után a nyíló kombó-ablakot jelzi.
+        final boolean chainFinisher = chainBonusPercent > 0.0D;
+        final boolean combo = chainFinisher || isComboMatch(player, selected.getId(), now);
+        // Az új cast érvényteleníti az előző kombó-hint láncot (a hint-ág újraindítja).
+        hintStartedAt.remove(player.getUniqueId());
         if (combo) {
-            player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
+            comboBoostUntil.put(player.getUniqueId(), now + 3000L);
+        }
+        putCooldown(player, selected, combo ? now - comboRefundMillis(player, selected) : now);
+        applyCooldownOverlay(player, selected, combo ? comboRefundMillis(player, selected) : 0L);
+        playCastFlourish(player, combo);
+        if (chainFinisher) {
+            player.sendActionBar(messageManager.getMessage("catalyst.combo-finisher",
+                    "<gold>⚡ Kombó-lánc befejező! +{bonus}% erő és gyorsabb felépülés.</gold>",
+                    Map.of("bonus", String.valueOf((int) Math.round(chainBonusPercent)))));
+        } else if (combo) {
+            final String nextInChain = nextComboStep(player, selected.getId());
+            final Spell nextSpell = nextInChain == null ? null : spellRegistry.getById(nextInChain);
+            if (nextSpell != null) {
+                player.sendActionBar(messageManager.getMessage("catalyst.combo-next",
+                        "<gold>⚡ Kombó! Köv. a láncban: {next}</gold>", Map.of("next", nextSpell.getName())));
+            } else {
+                player.sendActionBar(messageManager.getMessage("catalyst.combo", "<gold>⚡ Kombó! Gyorsabb felépülés.</gold>"));
+            }
+        } else {
+            sendComboWindowHint(player, selected.getId());
         }
 
+        secondLastCastSpell.put(player.getUniqueId(), lastCastSpell.getOrDefault(player.getUniqueId(), ""));
+        secondLastCastTime.put(player.getUniqueId(), lastCastTime.getOrDefault(player.getUniqueId(), 0L));
         lastCastSpell.put(player.getUniqueId(), selected.getId());
         lastCastTime.put(player.getUniqueId(), now);
+
+        final hu.taliann.icesmp.managers.StatsManager stats = statsManager;
+        if (stats != null) {
+            stats.recordSpellCast(player.getUniqueId());
+        }
+    }
+
+    /**
+     * IDEAS A7: cast után a kézben tartott katalizátor anyagán elindítja a vanília szürke
+     * item-cooldown overlay-t — a hotbaron azonnal látszik, mikor castolhatsz újra.
+     * A vizuális réteg NEM kapuz semmit (a tényleges cooldownt a putCooldown-pipeline őrzi);
+     * a melee-katalizátoros kasztoknál a kard/balta ütés-képességét sem érinti.
+     */
+    private void applyCooldownOverlay(final Player player, final Spell spell, final long comboRefundMs) {
+        if (!configManager.getBoolean("spells.cooldown-overlay.enabled", true)) {
+            return;
+        }
+        final long cooldownTicks = (spell.getCooldown() * 20L) - (comboRefundMs / 50L);
+        if (cooldownTicks <= 0L) {
+            return;
+        }
+        final ItemStack held = player.getInventory().getItemInMainHand();
+        if (held == null || held.getType().isAir()) {
+            return;
+        }
+        player.setCooldown(held.getType(), (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
     }
 
     /** Whether the player's previous cast forms a configured combo with this one. */
@@ -320,6 +432,136 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return false;
     }
 
+    /**
+     * 3 lépéses kombó-lánc befejezőjének erő-bónusza. Ha az utolsó két cast (minden
+     * lépésköz a kombó-ablakon belül) egy konfigurált lánc ({@code spells.combos.chains}) első
+     * két lépése, és a mostani spell a harmadik, a finisher +X% erővel sül el.
+     *
+     * @return a bónusz százalék, vagy 0, ha ez a cast nem lánc-befejező
+     */
+    private double chainFinisherPercent(final Player player, final String currentSpellId, final long now) {
+        if (!configManager.getBoolean("spells.combos.enabled", true)) {
+            return 0.0D;
+        }
+        final UUID id = player.getUniqueId();
+        final String prev1 = lastCastSpell.get(id);
+        final String prev2 = secondLastCastSpell.get(id);
+        if (prev1 == null || prev2 == null || prev2.isEmpty()) {
+            return 0.0D;
+        }
+        final long windowMs = Math.max(1L, configManager.getLong("spells.combos.window-seconds", 4L)) * 1000L;
+        final long t1 = lastCastTime.getOrDefault(id, 0L);
+        final long t2 = secondLastCastTime.getOrDefault(id, 0L);
+        if (now - t1 > windowMs || t1 - t2 > windowMs) {
+            return 0.0D;
+        }
+        final ConfigurationSection chains = configManager.getConfiguration() == null
+                ? null : configManager.getConfiguration().getConfigurationSection("spells.combos.chains");
+        if (chains == null) {
+            return 0.0D;
+        }
+        for (final String key : chains.getKeys(false)) {
+            final ConfigurationSection chain = chains.getConfigurationSection(key);
+            if (chain == null) {
+                continue;
+            }
+            final List<String> steps = chain.getStringList("steps");
+            if (steps.size() == 3
+                    && prev2.equalsIgnoreCase(steps.get(0))
+                    && prev1.equalsIgnoreCase(steps.get(1))
+                    && currentSpellId.equalsIgnoreCase(steps.get(2))) {
+                return Math.max(0.0D, chain.getDouble("finisher-power-bonus-percent",
+                        configManager.getDouble("spells.combos.finisher-power-bonus-percent", 25.0D)));
+            }
+        }
+        return 0.0D;
+    }
+
+    /**
+     * Sima (nem kombós) cast után kiírja az action barra, melyik spell
+     * nyitna kombót az időablakon belül — így a játékos tanulja a láncokat.
+     */
+    private void sendComboWindowHint(final Player player, final String justCastId) {
+        if (!configManager.getBoolean("spells.combos.enabled", true)) {
+            return;
+        }
+        final String nextId = nextComboStep(player, justCastId);
+        final Spell next = nextId == null ? null : spellRegistry.getById(nextId);
+        if (next == null) {
+            return;
+        }
+        // Nem egyszeri üzenet, hanem 500 ms-onként frissülő FOGYÓ CSÍK a hátralévő
+        // kombó-ablakról — az időbélyeg az "aktív hint" azonosítója, egy újabb cast (új put vagy
+        // remove) némán leállítja a régi láncot.
+        final long windowMillis = Math.max(1L, configManager.getLong("spells.combos.window-seconds", 4L)) * 1000L;
+        final long startedAt = System.currentTimeMillis();
+        hintStartedAt.put(player.getUniqueId(), startedAt);
+        renderComboHint(player, next.getName(), startedAt, windowMillis);
+    }
+
+    /** Egy hint-lánc lépése — csak addig fut, amíg az időbélyege az aktuális. */
+    private void renderComboHint(final Player player, final String nextName, final long startedAt,
+                                 final long windowMillis) {
+        final Long current = hintStartedAt.get(player.getUniqueId());
+        if (current == null || current.longValue() != startedAt) {
+            return; // Újabb cast érvénytelenítette — a lánc némán leáll.
+        }
+        final long elapsed = System.currentTimeMillis() - startedAt;
+        if (elapsed >= windowMillis) {
+            hintStartedAt.remove(player.getUniqueId(), current);
+            return; // Lejárt — csend, nincs "lejárt" üzenet.
+        }
+        final int segments = 8;
+        final int filled = segments - (int) Math.min(segments, elapsed * segments / windowMillis);
+        player.sendActionBar(messageManager.getMessage("catalyst.combo-window",
+                "<gray>⏳ <gold>{bar}</gold><dark_gray>{empty}</dark_gray> Kombó: <gold>{next}</gold></gray>",
+                Map.of("bar", "▰".repeat(filled), "empty", "▱".repeat(segments - filled), "next", nextName)));
+        player.getScheduler().runDelayed(plugin,
+                task -> renderComboHint(player, nextName, startedAt, windowMillis), null, 10L);
+    }
+
+    /**
+     * A most elsütött spell utáni következő kombó-lépés (lánc-folytatás előnyben a párokkal
+     * szemben), vagy null. A hívás a cast-történet FRISSÍTÉSE ELŐTT történik, így a
+     * {@code lastCastSpell} még az eggyel korábbi castot tartalmazza.
+     */
+    private String nextComboStep(final Player player, final String justCastId) {
+        final var configuration = configManager.getConfiguration();
+        if (configuration == null) {
+            return null;
+        }
+        final ConfigurationSection chains = configuration.getConfigurationSection("spells.combos.chains");
+        if (chains != null) {
+            final String prev1 = lastCastSpell.get(player.getUniqueId());
+            for (final String key : chains.getKeys(false)) {
+                final ConfigurationSection chain = chains.getConfigurationSection(key);
+                if (chain == null) {
+                    continue;
+                }
+                final List<String> steps = chain.getStringList("steps");
+                if (steps.size() != 3) {
+                    continue;
+                }
+                if (prev1 != null && prev1.equalsIgnoreCase(steps.get(0)) && justCastId.equalsIgnoreCase(steps.get(1))) {
+                    return steps.get(2);
+                }
+                if (justCastId.equalsIgnoreCase(steps.get(0))) {
+                    return steps.get(1);
+                }
+            }
+        }
+        final ConfigurationSection pairs = configuration.getConfigurationSection("spells.combos.pairs");
+        if (pairs != null) {
+            for (final String key : pairs.getKeys(false)) {
+                final ConfigurationSection pair = pairs.getConfigurationSection(key);
+                if (pair != null && justCastId.equalsIgnoreCase(pair.getString("first"))) {
+                    return pair.getString("second");
+                }
+            }
+        }
+        return null;
+    }
+
     private long comboRefundMillis(final Player player, final Spell spell) {
         // Cap the configured refund at 80% so a combo can never fully erase a cooldown.
         final double percent = Math.max(0.0D, Math.min(80.0D,
@@ -337,13 +579,13 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     private void playCastFlourish(final Player player, final boolean combo) {
         player.getWorld().spawnParticle(combo ? Particle.TOTEM_OF_UNDYING : Particle.ENCHANT,
-                player.getLocation().add(0.0D, 1.1D, 0.0D), combo ? 24 : 12, 0.4D, 0.5D, 0.4D, combo ? 0.4D : 0.2D);
+                player.getLocation().add(0.0D, 1.1D, 0.0D), combo ? 14 : 10, 0.4D, 0.5D, 0.4D, combo ? 0.3D : 0.15D);
         player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, combo ? 1.6F : 1.2F);
     }
 
     /** The cost shown to the player: the class-resource cost for resource spells, else the thematic cost. */
     private int displayedCost(final Spell spell) {
-        return resourceManager.usesResource(spell) ? spell.getResourceCost() : spell.getCostAmount();
+        return resourceManager.usesResource(spell) ? resourceManager.costOf(spell) : spell.getCostAmount();
     }
 
     /** The resource name shown to the player: the class pool (Mana/Düh…) for resource spells, else the type. */
@@ -375,7 +617,6 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
             return 0L;
         }
 
-        // Spell mastery lowers the effective cooldown.
         final long cooldownMs = (long) (Math.max(0, spell.getCooldown()) * 1000L
                 * masteryManager.getCooldownMultiplier(player, spell.getId()));
         final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
@@ -397,15 +638,18 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                 .toList();
     }
 
-    /** Opens the spellbook GUI so the player can browse and pick a spell. */
     public void openSpellbook(final Player player) {
-        openSpellbook(player, 0);
+        openSpellbook(player, 0, false);
     }
 
-    /** Opens the spellbook GUI at the given page. */
     public void openSpellbook(final Player player, final int page) {
+        openSpellbook(player, page, false);
+    }
+
+    /** Opens the spellbook GUI at the given page with the "only unlocked" filter applied or not. */
+    public void openSpellbook(final Player player, final int page, final boolean onlyUnlocked) {
         SpellbookGUI.open(player, this, jobManager, specializationManager, spellRegistry,
-                masteryManager, configManager, messageManager, resourceManager, page);
+                masteryManager, configManager, messageManager, resourceManager, spellFavoritesManager, page, onlyUnlocked);
     }
 
     /** The player's currently unlocked, castable spell ids, in selection order. */
@@ -449,9 +693,47 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         return getRemainingCooldown(player, spell, System.currentTimeMillis());
     }
 
-    /** Mastery rank the player has in the given spell. */
     public int getMasteryRank(final Player player, final String spellId) {
         return masteryManager.getRank(player, spellId);
+    }
+
+    /**
+     * Read-only view of the player's currently active SHORT (&lt;60s, in-memory) spell
+     * cooldowns, spell id → remaining milliseconds, expired entries filtered out (IDEAS
+     * C12 inspector). UUID-based (no {@link Player} needed) so it is safe to call from any
+     * thread — it only reads the {@link #spellCooldowns} map, never touches an entity.
+     * Persistent (&gt;=60s, PDC-backed) cooldowns are NOT included here, since those require
+     * reading the target's own PDC on the target's region thread; callers that already hold
+     * the {@link Player} on its own thread should prefer {@link #getRemainingCooldownMs}.
+     *
+     * @param playerId the player to check
+     * @return spell id → remaining cooldown millis, only the not-yet-expired ones
+     */
+    public Map<String, Long> activeCooldowns(final UUID playerId) {
+        final Map<String, Long> bySpell = spellCooldowns.get(playerId);
+        if (bySpell == null || bySpell.isEmpty()) {
+            return Map.of();
+        }
+        final long now = System.currentTimeMillis();
+        final Map<String, Long> result = new java.util.LinkedHashMap<>();
+        for (final Map.Entry<String, Long> entry : bySpell.entrySet()) {
+            final Spell spell = spellRegistry.getById(entry.getKey());
+            if (spell == null) {
+                continue;
+            }
+            final long cooldownMs = Math.max(0, spell.getCooldown()) * 1000L;
+            final long delayMs = Math.max(0, spell.getCooldownDelay()) * 1000L;
+            final long remaining = (entry.getValue() + delayMs + cooldownMs) - now;
+            if (remaining > 0L) {
+                result.put(entry.getKey(), remaining);
+            }
+        }
+        return result;
+    }
+
+    /** Cast-számláló bekötése (a StatsManager a DI-sorrendben később épül). */
+    public void setStatsManager(final hu.taliann.icesmp.managers.StatsManager statsManager) {
+        this.statsManager = statsManager;
     }
 
     public void cleanup(final UUID playerId) {
@@ -464,6 +746,29 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         castDebounce.remove(playerId);
         lastCastSpell.remove(playerId);
         lastCastTime.remove(playerId);
+        secondLastCastSpell.remove(playerId);
+        secondLastCastTime.remove(playerId);
+        comboBoostUntil.remove(playerId);
+        hintStartedAt.remove(playerId);
+    }
+
+    /**
+     * Igaz, ha a játékos legutóbbi castja kombó/lánc-befejező volt és a 3 mp-es
+     * kiemelés-ablak még nem járt le. Lejárt bejegyzést lustán eltávolítja.
+     */
+    public boolean hasComboBoost(final UUID playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        final Long until = comboBoostUntil.get(playerId);
+        if (until == null) {
+            return false;
+        }
+        if (System.currentTimeMillis() >= until) {
+            comboBoostUntil.remove(playerId);
+            return false;
+        }
+        return true;
     }
 
     public void clearPlayerState(final UUID playerId) {

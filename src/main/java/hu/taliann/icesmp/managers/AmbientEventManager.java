@@ -85,7 +85,6 @@ public final class AmbientEventManager {
             return time >= windowStartTick && time <= windowEndTick;
         }
 
-        /** Whether this flavour's environmental gate currently passes for the given world. */
         boolean environmentAllows(final World world) {
             final boolean inWindow = inWindow(world.getTime());
             return switch (weatherGate) {
@@ -96,7 +95,6 @@ public final class AmbientEventManager {
         }
     }
 
-    /** Passive animals a migration herd is drawn from. */
     private static final EntityType[] HERD = {
             EntityType.COW, EntityType.SHEEP, EntityType.PIG, EntityType.CHICKEN, EntityType.HORSE
     };
@@ -196,9 +194,14 @@ public final class AmbientEventManager {
         switch (ambient) {
             case AURORA -> aurora();
             case FALLING_STAR -> fallingStar();
-            case FOG_ROLL -> skyEffect("ambient-fog", Particle.CLOUD, Sound.WEATHER_RAIN, 0.9F);
-            case SPECTRAL_WANDERERS -> skyEffect("ambient-spectral", Particle.SOUL, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.7F);
-            case FIREFLIES -> skyEffect("ambient-fireflies", Particle.END_ROD, Sound.BLOCK_BEEHIVE_WORK, 0.5F);
+            // Elnyújtott, ízléshez igazított effektek: a köd a talajon terül, a lelkek
+            // derékmagasságban sodródnak, a szentjánosbogarak bokor-magasságban pislákolnak.
+            case FOG_ROLL -> ambientEffect("ambient-fog", Particle.CLOUD, Sound.WEATHER_RAIN, 0.9F,
+                    0.3D, 9.0D, 0.4D, 14, 0.0D);
+            case SPECTRAL_WANDERERS -> ambientEffect("ambient-spectral", Particle.SOUL,
+                    Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.7F, 1.4D, 7.0D, 1.0D, 6, 0.01D);
+            case FIREFLIES -> ambientEffect("ambient-fireflies", Particle.END_ROD,
+                    Sound.BLOCK_BEEHIVE_WORK, 0.5F, 1.2D, 8.0D, 1.2D, 4, 0.0D);
             case ANIMAL_MIGRATION -> animalMigration();
         }
         rewardParticipants(ambient, world);
@@ -209,14 +212,52 @@ public final class AmbientEventManager {
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "ambient-aurora", "&b🌌 Északi fény ragyog fel az égen — a világ egy pillanatra elcsendesedik."));
         final int seconds = Math.max(5, configManager.getInt("ambient-events.aurora-nightvision-seconds", 45));
+        final int pulses = Math.max(4, configManager.getInt("ambient-events.effect-seconds", 24) / 2);
+        final int veilTicks = Math.max(80, configManager.getInt("ambient-events.effect-seconds", 24) * 20);
+        final boolean veil = configManager.getBoolean("display-fx.aurora.enabled", true);
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
             player.getScheduler().run(plugin, task -> {
-                final Location base = player.getLocation().clone().add(0.0D, 6.0D, 0.0D);
-                player.spawnParticle(Particle.END_ROD, base, 40, 6.0D, 2.0D, 6.0D, 0.01D);
-                player.spawnParticle(Particle.SOUL_FIRE_FLAME, base, 20, 6.0D, 2.0D, 6.0D, 0.0D);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, seconds * 20, 0, true, false, true));
                 player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.6F, 1.2F);
+                // A fény MAGASAN az égen hullámzik végig az effekt-időn át, nem a fej fölött villan.
+                pulse(player, Particle.END_ROD, 18.0D, 12.0D, 3.0D, 25, 0.01D, pulses);
+                pulse(player, Particle.SOUL_FIRE_FLAME, 20.0D, 10.0D, 2.0D, 10, 0.0D, pulses);
+                if (veil) {
+                    spawnAuroraVeil(player, veilTicks);
+                }
             }, null);
+        }
+    }
+
+    /**
+     * Aurora DisplayFx-fátyol: két magasan lebegő, áttetsző, lassan oldalra sodródó fény-lap
+     * (BlockDisplay), csak a nézőnek — a pislákoló particle mellé folytonos égi fény-fátyol.
+     * Nem-perzisztens + FX-tagelt, az effekt végén auto-despawn. A hívó a játékos szálán fut.
+     */
+    private void spawnAuroraVeil(final Player player, final int durationTicks) {
+        final Location base = player.getLocation();
+        if (base.getWorld() == null) {
+            return;
+        }
+        final String matName = configManager.getString("display-fx.aurora.material", "CYAN_STAINED_GLASS");
+        final org.bukkit.Material mat = org.bukkit.Material.matchMaterial(matName);
+        final org.bukkit.block.data.BlockData block =
+                (mat != null && mat.isBlock() ? mat : org.bukkit.Material.CYAN_STAINED_GLASS).createBlockData();
+        final float size = 30.0F;
+        final int[] glow = {0x53F0C8, 0x8A6BFF};
+        for (int i = 0; i < 2; i++) {
+            final int band = i;
+            final Location at = base.clone().add(-size / 2.0D + band * 4.0D, 22.0D + band * 3.0D, -size / 2.0D);
+            hu.taliann.icesmp.utils.DisplayFxUtil.spawnBlockDisplay(plugin, at, block, durationTicks + 20, display -> {
+                display.setTransformation(hu.taliann.icesmp.utils.DisplayFxUtil.scale(size, 0.2F, size));
+                display.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
+                display.setViewRange(4.0F);
+                display.setGlowing(true);
+                display.setGlowColorOverride(org.bukkit.Color.fromRGB(glow[band]));
+                hu.taliann.icesmp.utils.DisplayFxUtil.showOnlyTo(plugin, display, player);
+                hu.taliann.icesmp.utils.DisplayFxUtil.driftHorizontal(plugin, display, size, 0.2F,
+                        band == 0 ? 6.0F : -5.0F, 3.0F, durationTicks);
+            });
         }
     }
 
@@ -242,23 +283,47 @@ public final class AmbientEventManager {
             final World world = where.getWorld();
             if (world != null) {
                 final Location high = where.clone().add(0.0D, 18.0D, 0.0D);
-                world.spawnParticle(Particle.FIREWORK, high, 60, 4.0D, 6.0D, 4.0D, 0.05D);
+                world.spawnParticle(Particle.FIREWORK, high, 30, 4.0D, 6.0D, 4.0D, 0.05D);
                 world.spawnParticle(Particle.END_ROD, high, 30, 3.0D, 5.0D, 3.0D, 0.02D);
                 world.playSound(where, Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 1.0F, 1.4F);
             }
         }, null);
     }
 
-    /** Shared cosmetic sky/atmosphere effect: broadcast + per-player local particles and a soft sound. */
-    private void skyEffect(final String messageKey, final Particle particle, final Sound sound, final float volume) {
+    /**
+     * Elnyújtott hangulat-effekt: a korábbi egyszeri "particle-robbanás" helyett a hatás
+     * ~2 másodpercenként pulzál a teljes effekt-időn át (ambient-events.effect-seconds,
+     * default 24 mp), a flavour-höz illő magasságban/terítéssel a játékos KÖRÜL — a
+     * szentjánosbogár pislákol, a köd terül, nem egy villanás a fej fölött.
+     */
+    private void ambientEffect(final String messageKey, final Particle particle, final Sound sound,
+                               final float volume, final double yOffset, final double spreadXz,
+                               final double spreadY, final int perPulse, final double speed) {
         Bukkit.getServer().broadcast(messageManager.getMessage(messageKey, defaultFor(messageKey)));
+        final int pulses = Math.max(4, configManager.getInt("ambient-events.effect-seconds", 24) / 2);
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
             player.getScheduler().run(plugin, task -> {
-                final Location base = player.getLocation().clone().add(0.0D, 3.0D, 0.0D);
-                player.spawnParticle(particle, base, 30, 5.0D, 2.5D, 5.0D, 0.01D);
                 player.playSound(player.getLocation(), sound, volume, 1.0F);
+                pulse(player, particle, yOffset, spreadXz, spreadY, perPulse, speed, pulses);
             }, null);
         }
+    }
+
+    /**
+     * Egy effekt-pulzus + a következő ütemezése a játékos saját entity-schedulerén (40 tick).
+     * A lánc a pulzus-számláló lejártával, kilépéskor (isOnline) vagy a retired-callbackkel
+     * áll le — nincs örök task.
+     */
+    private void pulse(final Player player, final Particle particle, final double yOffset,
+                       final double spreadXz, final double spreadY, final int count,
+                       final double speed, final int remaining) {
+        if (remaining <= 0 || !player.isOnline()) {
+            return;
+        }
+        final Location base = player.getLocation().clone().add(0.0D, yOffset, 0.0D);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(player, particle, base, count, spreadXz, spreadY, spreadXz, speed);
+        player.getScheduler().runDelayed(plugin, task ->
+                pulse(player, particle, yOffset, spreadXz, spreadY, count, speed, remaining - 1), null, 40L);
     }
 
     /** Animal migration: a small herd of passive animals wanders in near a random player. */
