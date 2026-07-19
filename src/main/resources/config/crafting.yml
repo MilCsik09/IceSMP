@@ -7,6 +7,7 @@ crafting-restrictions:
   enabled: true
   notify-cooldown-seconds: 3
   rules:
+    # === ARMORER: a netherite-felszerelést a páncélkovács kovácsolja (csúcs-tier) ===
     netherite-gear:
       required-profession: "armorer"
       required-profession-level: 25
@@ -20,3 +21,45 @@ crafting-restrictions:
         - "NETHERITE_CHESTPLATE"
         - "NETHERITE_LEGGINGS"
         - "NETHERITE_BOOTS"
+
+    # === MINER: a netherite-rúd finomítása (a bányász olvaszt/kohósít; a kovács ebből forgat gear-t) ===
+    netherite-refining:
+      required-profession: "miner"
+      required-profession-level: 20
+      materials:
+        - "NETHERITE_INGOT"
+
+    # === LUMBERJACK: finom faipari termékek (számszeríj + pajzs); az ÍJat NEM kapuzzuk (íjász alap) ===
+    fine-woodwork:
+      required-profession: "lumberjack"
+      required-profession-level: 8
+      materials:
+        - "CROSSBOW"
+        - "SHIELD"
+
+    # === ALCHEMIST: a főzőállványt csak alkimista építi (alacsony szint = puha kölcsönös függés) ===
+    brewing-station:
+      required-profession: "alchemist"
+      required-profession-level: 5
+      materials:
+        - "BREWING_STAND"
+
+    # === ENCHANTER: az bűvölő-asztalt csak enchanter építi (alacsony szint) ===
+    enchanting-station:
+      required-profession: "enchanter"
+      required-profession-level: 5
+      materials:
+        - "ENCHANTING_TABLE"
+
+    # === COOK: összetett ételek (a nyers sültek szabadok maradnak) ===
+    fine-cooking:
+      required-profession: "cook"
+      required-profession-level: 6
+      materials:
+        - "CAKE"
+        - "PUMPKIN_PIE"
+        - "RABBIT_STEW"
+
+    # HERBALIST + FISHERMAN: ezeknek a craft-asztali kapuzás erőltetett lenne — az értékük a
+    # GYŰJTÉS és a főző-/alkimista-alapanyag-ellátás. Nekik a főzés-hook (brew) vagy egy gyűjtés-
+    # oldali mechanika illik jobban — lásd a tervet (ROADMAP/IDEAS), nem ebben a config-körben.

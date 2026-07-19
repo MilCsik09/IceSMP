@@ -343,6 +343,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       küldetés / quest / közösségi cél számlálóit sem.
 - [ ] 25. szinten szakma-spec választható.
 - [ ] **Craft-korlát:** netherite felszerelést csak 25+ Kovács craftol (különben nem jön létre + üzenet).
+- [ ] **Craft-korlát bővítés (ÚJ):** netherite-rúd → Bányász 20; számszeríj/pajzs → Favágó 8;
+      főzőállvány → Alkimista 5; bűvölő-asztal → Enchanter 5; torta/sütőtökös pite/nyúlpörkölt →
+      Séf 6. Megfelelő szinttel elkészül, alatta NEM jön létre + kap üzenetet. A nyers alapok
+      (íj, sült húsok, kőszerszám) bárkinek szabadok. Kikapcsolható: `crafting-restrictions.enabled`.
 - [ ] **Recept-könyv** (`/profession recipes` vagy `/menu` → Recept-könyv): a szakmáid receptjei
       tanult (zöld) / zárolt (szürke) állapottal, hozzávaló megvan/hiányzik jelzéssel, lapozva;
       kattintásra craft (hozzávalók fogynak), `affix-tier`-es recept egyedi rolled tárgyat ad.

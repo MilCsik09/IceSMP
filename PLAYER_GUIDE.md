@@ -463,9 +463,22 @@ tanulsz és nézed a szintjeidet (vagy paranccsal: `/profession join <szakma>`, 
   Fegyverkovács / Páncélkovács, Főzetmester / Transzmutátor, Séf / Hentes).
 
 ### Craft-korlátozások
-Bizonyos tárgyakhoz **kaszt- vagy szakmaszint kell**. Az alap szabály: **netherite felszerelést
-csak a 25+ szintű Kovács** tud készíteni (craftolóasztalon és smithing asztalon is). Ha nem
-felelsz meg, a craft eredménye nem jön létre, és üzenetet kapsz.
+Bizonyos tárgyakhoz **kaszt- vagy szakmaszint kell** — ez teszi értékessé a szakmákat és a köztük
+lévő kereskedelmet. Ha nem felelsz meg, a craft eredménye nem jön létre, és üzenetet kapsz. A
+jelenlegi kapuk:
+
+| Tárgy | Kell hozzá |
+|---|---|
+| Netherite felszerelés (fegyver + páncél) | **Páncélkovács 25** |
+| Netherite-rúd (finomítás) | **Bányász 20** |
+| Számszeríj, pajzs | **Favágó 8** |
+| Főzőállvány | **Alkimista 5** |
+| Bűvölő-asztal | **Enchanter 5** |
+| Torta, sütőtökös pite, nyúlpörkölt | **Séf 6** |
+
+A nyers alapok (fapáncél, kőszerszám, íj, sült húsok) szabadok maradnak — a kapuk a **csúcs-
+kimenetet és a szakma-„állomásokat"** védik, nem a korai játékot. (Az alkimista főzés és az
+enchanter bűvölés érdemi kapuzása külön fejlesztés — lásd a tervet.)
 
 ---
 
