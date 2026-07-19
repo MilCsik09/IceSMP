@@ -222,6 +222,20 @@ territory:
     # Belépéskor ennyi másodperc PvP-védelem jár (spawn-kill ellen); aki maga támad,
     # azonnal elveszti. 0 = nincs belépő-védelem.
     entry-grace-seconds: 8
+  # ===== Frakció-étel kötelezettség (K6 — "hazai konyha") =====
+  # A Fagy (BLUE) népe halon, a Láng (RED) népe tojás-ételen él: aki grace-hours óta nem
+  # evett ilyet, check-minutes ütemben PUHA honvágy-debuffot kap (rövid Éhség + action-bar
+  # emlékeztető). Új játékos / frissen váltó először türelmi időt kap. Minden kulcs élőben
+  # olvasódik. A K6 signature ételek kis buffot is adnak (lásd a kulcsokat lent).
+  food-duty:
+    enabled: true
+    grace-hours: 12            # ennyi valós óra hazai étel nélkül indul be a honvágy
+    check-minutes: 5           # ellenőrzés/debuff gyakorisága
+    debuff-seconds: 10         # a honvágy-Éhség hossza alkalmanként (puha!)
+    pisztrang-buff-seconds: 60 # Fagyasztott Tavi Pisztráng: felszívódás-pajzs
+    rantotta-buff-seconds: 60  # Főnixtojás-Rántotta: tűz-ellenállás
+    suti-speed-seconds: 30     # Tiltott Kakaóbabos Sütemény: gyorsaság II
+    suti-launch-y: 0.6         # a süti "robbanásának" felfelé lökése
   # ===== Zóna mob-szabályok (mob-rules) =====
   # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
   #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital

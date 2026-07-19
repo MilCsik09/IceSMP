@@ -131,7 +131,7 @@ felé (a unique-itemekhez ez kell).
 **Buktatók:** A relikvia egy-példányosságát a `RelicManager` már kezeli; a Szilánk drop-rátája
 gazdaság-érzékeny (túl sok → értéktelen unique-itemek).
 
-### K6. Frakció-ételek és fogyasztási kötelezettség
+### K6. Frakció-ételek és fogyasztási kötelezettség `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐
 
 **Mi ez:** A lore szerint a BLUE-nak halat, a RED-nek tojás-ételt kell ennie a frakció-aurája ellen;
@@ -151,6 +151,11 @@ Halász) frakció-specifikus keresletet kap.
 
 **Buktatók:** A kötelezettség-debuff LEGYEN puha és opcionális (config), különben büntető; a
 frakcióváltás/új játékos ne kapja azonnal; Folia: az aura-tick a játékos szálán.
+
+> **Megvalósítva:** 3 séf-recept (Pisztráng BLUE / Rántotta RED / Sütemény NEUTRAL, kis tematikus
+> buffokkal, a süti „robban"); honvágy-mechanika: `factions.food-duty` (12h grace, 5 percenként
+> rövid Éhség + action-bar, türelmi idő újaknak; a vanília hal/tojás-étel is számít). Folia: a
+> consume a játékos szálán, a tick játékosonként hopol.
 
 ### K7. Kárhozat Kapuja — Nether-portál PvPvE senkiföldje `[TOP]` `[KÉSZ ✅]`
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐

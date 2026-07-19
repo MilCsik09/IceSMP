@@ -1312,6 +1312,44 @@ profession-recipes:
     category: "Lángoló Birodalom (tervrajz)"
     result: { material: LEATHER_CHESTPLATE, amount: 1, affix-tier: crafted, signature: fonix_tollkopeny }
     ingredients: [ "LEATHER_CHESTPLATE:1", "FEATHER:32", "MAGMA_CREAM:8", "unique:arnyekpor:2" ]
+  # ===== K6 — frakció-ételek (a kódex "konyhái"; a fogyasztási kötelezettséget a
+  # factions.food-duty vezérli — a hazai étel evése nullázza a honvágy-visszaszámlálót) =====
+  fagyasztott_pisztrang:
+    profession: cook
+    level: 25
+    faction: BLUE
+    display-name: "Fagyasztott Tavi Pisztráng"
+    lore:
+      - "&7A glatziendorfi tavak jégbe zárt kincse —"
+      - "&7a Fagy népe ezen él. Fogyasztva rövid"
+      - "&7felszívódás-pajzsot ad."
+    category: "Fagyott Királyság (konyha)"
+    result: { material: COOKED_SALMON, amount: 3, signature: fagyasztott_pisztrang }
+    ingredients: [ "SALMON:3", "SNOWBALL:2", "SUGAR:1" ]
+  fonixtojas_rantotta:
+    profession: cook
+    level: 25
+    faction: RED
+    display-name: "Fűszeres Főnixtojás-Rántotta"
+    lore:
+      - "&7A Vérszavanna reggelije: tojás, parázs"
+      - "&7és bátorság. Fogyasztva rövid tűz-"
+      - "&7ellenállást ad."
+    category: "Lángoló Birodalom (konyha)"
+    result: { material: PUMPKIN_PIE, amount: 3, signature: fonixtojas_rantotta }
+    ingredients: [ "EGG:3", "BLAZE_POWDER:1", "SUGAR:2" ]
+  kakaobabos_sutemeny:
+    profession: cook
+    level: 35
+    faction: NEUTRAL
+    display-name: "Tiltott Kakaóbabos Sütemény"
+    lore:
+      - "&7Caldestera cukrászai Asterlayna Gyümölcsének"
+      - "&7hívják — a Bankárszövetség hivatalosan tiltja."
+      - "&7Fogyasztva… robban egy kicsit."
+    category: "Menedék (konyha)"
+    result: { material: COOKIE, amount: 4, signature: kakaobabos_sutemeny }
+    ingredients: [ "COCOA_BEANS:4", "WHEAT:4", "GUNPOWDER:1", "SUGAR:2" ]
   # ===== K4 — Ryanora & Caldestera signature itemek (gyűjtő/gazdaság, NEUTRAL-kapus) =====
   vasmuvek_csakanya:
     profession: miner

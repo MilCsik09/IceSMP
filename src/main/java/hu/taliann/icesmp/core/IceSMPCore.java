@@ -213,6 +213,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintItemFactory;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
+    private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
     private final EconomyEventManager economyEventManager;
@@ -314,6 +315,7 @@ public final class IceSMPCore {
         this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager);
+        this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
@@ -895,6 +897,7 @@ public final class IceSMPCore {
                     serverChallengeManager.tick();
                     escortManager.tick();
                     meteorEventManager.tick();
+                    factionFoodListener.tick();
                 },
                 intervalTicks,
                 intervalTicks
@@ -1069,6 +1072,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
+        pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);

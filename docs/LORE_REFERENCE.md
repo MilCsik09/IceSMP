@@ -97,15 +97,15 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Glatziendorfi Jégvért | BLUE | mellvért (K2) | ✅ implementálva: viselve −20% sebzés (`signature.jegvert.damage-mult`) |
 | Jégsárkány-Kantár | BLUE | hátas-felszerelés (K2) | ✅ implementálva: hátas +sebesség, egyszeri, elfogy (`signature.kantar.speed-add`) |
 | Glatziendorfi Jégtörő / V. Miinus Haragja / Sárkánycsont Íj | BLUE | fegyverek | később tervezendő |
-| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6) | BLUE hal-fogyasztási kötelezettség |
+| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6) | ✅ Pisztráng implementálva: séf-recept + felszívódás-buff; hal-kötelezettség él (`factions.food-duty`) |
 | Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | ✅ Tűzköpő implementálva: Quick Charge II + lövedék ×1.5 (`signature.tuzkopo.*`) |
 | A Vérszavanna Agyara | RED | kard/lándzsa (K3) | ✅ implementálva: +15% sebzés, off-hand baltával +30% (`signature.agyar.*`) |
 | Főnix-Tollköpeny | RED | kiegészítő (K3) | ✅ implementálva: viselve tűz/láva/forró-blokk immunitás (`signature.tollkopeny.fire-immunity`) |
 | I. Zhoris Lángnyelve / Napfogyatkozás | RED | fegyverek | később tervezendő |
-| Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | RED tojás-fogyasztási kötelezettség |
+| Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | ✅ implementálva: séf-recept + tűz-ellenállás; tojás-kötelezettség él (`factions.food-duty`) |
 | Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | ✅ implementálva: érc-töréskor +20% extra drop, bányász-láz alatt szünetel (`signature.csakany.*`) |
 | Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | ✅ implementálva: +20% dupla fogás, halászati láz alatt szünetel (`signature.horgaszbot.*`) |
-| Asterlayna Gyümölcse | NEUTRAL | süti (K6) | robbanó csemege perk |
+| Asterlayna Gyümölcse (Tiltott Kakaóbabos Sütemény) | NEUTRAL | süti (K6) | ✅ implementálva: „robbanó csemege" — feldobás + Speed II + effekt |
 | Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | ✅ implementálva: jobb-katt atomi beváltás Creutzérre (`signature.bankbetet.value`) |
 | Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | ✅ implementálva: cooldownos ideiglenes gyors hátas (`signature.szarvas.*`) |
 | Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |

@@ -219,6 +219,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       elfogy és +25 Creutzért ír jóvá (dupe-teszt: gyors dupla-katt se duplázzon); a
       Szellemszarvas-Bűbáj jobb-kattra gyors, ideiglenes hátast idéz (~90 mp, ~120 mp cooldown,
       a bűbáj NEM fogy el). Kulcsok: `signature.*` a `crafting.yml`-ben.
+- [ ] **K6 frakció-ételek (ÚJ):** a 3 séf-recept frakció-kapus (Pisztráng BLUE 25 / Rántotta RED 25 /
+      Sütemény NEUTRAL 35). A Pisztráng evése rövid felszívódás-pajzsot, a Rántotta tűz-ellenállást
+      ad; a Sütemény „robban" (felfelé lökés + Speed II + tűzijáték-effekt, blokk-kár nélkül).
+      **Honvágy-teszt:** BLUE/RED játékos `factions.food-duty.grace-hours` (teszthez állítsd 0.01-re
+      → reload) után `check-minutes`-enként rövid Éhséget + action-bar emlékeztetőt kap; bármely hal
+      (BLUE) / tojás-étel (RED) evése nullázza. Új/frissen váltó játékos először türelmi időt kap.
 - [ ] **K5 Káoszkor-loot:** élőhalott mobból (zombi/csontváz) eshet a Rozsdás Penge / Megrontott
       Elit Páncél (nevesített, rarity-prefixszel + affixekkel); NEM-élőhalottból sosem esik;
       az Eleftheria Könnye rituálé csak DARK-frakcióval aktiválható (síró obszidián mag).

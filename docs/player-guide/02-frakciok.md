@@ -33,6 +33,23 @@ helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyi
 | ⚪ **Menedék** (Ryanora & Caldestera) | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
 | ⚫ **Kitaszított** (A Kitaszítottak) | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
 
+
+### 🍲 A frakciók konyhája (K6)
+
+A kódex szerint minden népnek megvan a maga konyhája — és a frakció-aura ezt meg is követeli:
+
+- **Fagy (BLUE):** halon él — ha ~12 órán át nem eszel halat (bármely hal, vagy a séf
+  **Fagyasztott Tavi Pisztrángja**), enyhe honvágy tör rád (rövid Éhség + emlékeztető).
+  A Pisztráng rövid **felszívódás-pajzsot** is ad.
+- **Láng (RED):** tojás-ételen él — a **Fűszeres Főnixtojás-Rántotta** (vagy tökpite/torta)
+  nullázza a honvágyat; a Rántotta rövid **tűz-ellenállást** is ad.
+- **Menedék:** a **Tiltott Kakaóbabos Sütemény** (a cukrászok Asterlayna Gyümölcsének hívják)
+  fogyasztva **„robban"** — feldob, felgyorsít, csillagszóró-effekttel. A Bankárszövetség
+  hivatalosan tiltja. Hivatalosan.
+
+A honvágy **puha** mechanika (config: `factions.food-duty`), új játékost és frissen váltót
+türelmi idő véd.
+
 > 💬 A **chatben a neved a frakciód színében** jelenik meg (a rang-prefixszel együtt) — így
 > mindenki azonnal látja, ki melyik oldalon áll.
 
