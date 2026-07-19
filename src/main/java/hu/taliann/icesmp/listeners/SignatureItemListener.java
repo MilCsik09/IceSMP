@@ -41,24 +41,37 @@ public final class SignatureItemListener implements Listener {
     public static final String TUZKOPO = "pyralingradi_tuzkopo";
     public static final String AGYAR = "verszavanna_agyara";
     public static final String TOLLKOPENY = "fonix_tollkopeny";
+    // K4 — Ryanora & Caldestera (NEUTRAL) gyűjtő/gazdaság itemek:
+    public static final String CSAKANY = "vasmuvek_csakanya";
+    public static final String HORGASZBOT = "bokic_horgaszbot";
+    public static final String BANKBETET = "smaragdko_bankbetet";
+    public static final String SZARVASBUBAJ = "szellemszarvas_bubaj";
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.managers.GatheringBuffManager gatheringBuffManager;
+    private final hu.taliann.icesmp.managers.CurrencyManager currencyManager;
     private final NamespacedKey signatureKey;
     private final NamespacedKey pierceKey;
     private final NamespacedKey kantarAppliedKey;
     private final NamespacedKey kantarSpeedKey;
+    private final NamespacedKey szarvasCooldownKey;
 
     public SignatureItemListener(final JavaPlugin plugin, final ConfigManager configManager,
-                                 final MessageManager messageManager) {
+                                 final MessageManager messageManager,
+                                 final hu.taliann.icesmp.managers.GatheringBuffManager gatheringBuffManager,
+                                 final hu.taliann.icesmp.managers.CurrencyManager currencyManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.gatheringBuffManager = gatheringBuffManager;
+        this.currencyManager = currencyManager;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
         this.pierceKey = new NamespacedKey(plugin, "sig_pierce");
         this.kantarAppliedKey = new NamespacedKey(plugin, "sig_kantar");
         this.kantarSpeedKey = new NamespacedKey(plugin, "sig_kantar_speed");
+        this.szarvasCooldownKey = new NamespacedKey(plugin, "sig_szarvas_cd");
     }
 
     /** The signature id of an item, or null. */
@@ -196,5 +209,153 @@ public final class SignatureItemListener implements Listener {
                         "&b❄ A vad sárkányvér megszelídül — a hátasod léptei felgyorsultak."));
             }, null);
         }, null);
+    }
+
+    // ==================== Vasművek Akadémiájának Csákánya (K4) ====================
+
+    @EventHandler(ignoreCancelled = true)
+    public void onMine(final org.bukkit.event.block.BlockBreakEvent event) {
+        final Player player = event.getPlayer();
+        if (player.getGameMode() != org.bukkit.GameMode.SURVIVAL) {
+            return;
+        }
+        final ItemStack tool = player.getInventory().getItemInMainHand();
+        if (!CSAKANY.equals(idOf(tool))) {
+            return;
+        }
+        final org.bukkit.block.Block block = event.getBlock();
+        if (!(block.getType().name().endsWith("_ORE") || block.getType() == org.bukkit.Material.ANCIENT_DEBRIS)) {
+            return;
+        }
+        // Sapka (K4 buktató): bányász-láz esemény alatt a tárgy-perk alapból NEM stackel.
+        if (gatheringBuffManager.getActive() == hu.taliann.icesmp.managers.GatheringBuffManager.GatheringBuff.MINING_RUSH
+                && !configManager.getBoolean("signature.csakany.stack-with-event", false)) {
+            return;
+        }
+        final double chance = Math.min(1.0D, Math.max(0.0D,
+                configManager.getDouble("signature.csakany.bonus-drop-chance", 0.2D)));
+        if (java.util.concurrent.ThreadLocalRandom.current().nextDouble() >= chance) {
+            return;
+        }
+        // Bónusz: a blokk normál dropjainak egy extra példánya (régió-lokális, a törés szálán).
+        for (final ItemStack drop : block.getDrops(tool, player)) {
+            block.getWorld().dropItemNaturally(block.getLocation().add(0.5D, 0.5D, 0.5D), drop.clone());
+        }
+    }
+
+    // ==================== Bokic-menti Horgászbot (K4) ====================
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFish(final org.bukkit.event.player.PlayerFishEvent event) {
+        if (event.getState() != org.bukkit.event.player.PlayerFishEvent.State.CAUGHT_FISH) {
+            return;
+        }
+        final Player player = event.getPlayer();
+        final String main = idOf(player.getInventory().getItemInMainHand());
+        final String off = idOf(player.getInventory().getItemInOffHand());
+        if (!HORGASZBOT.equals(main) && !HORGASZBOT.equals(off)) {
+            return;
+        }
+        // Sapka: halászati láz esemény alatt a tárgy-perk alapból NEM stackel.
+        if (gatheringBuffManager.getActive() == hu.taliann.icesmp.managers.GatheringBuffManager.GatheringBuff.FISHING_FRENZY
+                && !configManager.getBoolean("signature.horgaszbot.stack-with-event", false)) {
+            return;
+        }
+        if (!(event.getCaught() instanceof org.bukkit.entity.Item caughtItem)
+                || !org.bukkit.Bukkit.isOwnedByCurrentRegion(caughtItem)) {
+            // Folia: a kifogott item-entitás ritkán szomszéd régióban úszhat — ilyenkor kimarad.
+            return;
+        }
+        final double chance = Math.min(1.0D, Math.max(0.0D,
+                configManager.getDouble("signature.horgaszbot.bonus-drop-chance", 0.2D)));
+        if (java.util.concurrent.ThreadLocalRandom.current().nextDouble() >= chance) {
+            return;
+        }
+        player.getWorld().dropItemNaturally(player.getLocation(), caughtItem.getItemStack().clone());
+        player.sendActionBar(messageManager.getMessage("signature-horgaszbot-bonus",
+                "<aqua>🎣 A Bokic bősége — dupla fogás!</aqua>"));
+    }
+
+    // ==================== Smaragdkő Bankbetét + Szellemszarvas-Bűbáj (K4) ====================
+
+    @EventHandler
+    public void onUse(final org.bukkit.event.player.PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND || !event.getAction().isRightClick()) {
+            return;
+        }
+        final Player player = event.getPlayer();
+        final ItemStack hand = player.getInventory().getItemInMainHand();
+        final String sig = idOf(hand);
+        if (BANKBETET.equals(sig)) {
+            event.setCancelled(true);
+            // Atomi beváltás a játékos SAJÁT régió-szálán: előbb fogy a papír, aztán a jóváírás
+            // (UUID-kulcsú, szál-biztos) — dupe nem lehetséges, mert a kettő közé nem fér esemény.
+            final double value = Math.max(0.0D, configManager.getDouble("signature.bankbetet.value", 25.0D));
+            hand.setAmount(hand.getAmount() - 1);
+            currencyManager.addToBalance(player.getUniqueId(),
+                    hu.taliann.icesmp.data.CurrencyType.fromFactionType(hu.taliann.icesmp.data.FactionType.NEUTRAL), value);
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.4F);
+            player.sendMessage(messageManager.get("signature-bankbetet-redeemed",
+                    "&a💠 A Bankárszövetség beváltotta a betétjegyet: &f+%s Creutzér&a a számládon.",
+                    currencyManager.formatBalance(value)));
+        } else if (SZARVASBUBAJ.equals(sig)) {
+            event.setCancelled(true);
+            summonSpiritStag(player);
+        }
+    }
+
+    /**
+     * Szellemszarvas-hívás: cooldown-kapuzott, ideiglenes gyors hátast idéz a játékos mellé.
+     * Minden érintett entitás régió-lokális (a hátas a játékos pozícióján spawnol, az ültetés
+     * ugyanazon a szálon történik); a hátas élettartamát a saját entity-schedulere zárja le.
+     */
+    private void summonSpiritStag(final Player player) {
+        final long now = System.currentTimeMillis();
+        final long cooldownMillis = Math.max(0L, configManager.getLong("signature.szarvas.cooldown-seconds", 120L)) * 1000L;
+        final Long lastUse = player.getPersistentDataContainer().get(szarvasCooldownKey, PersistentDataType.LONG);
+        if (lastUse != null && now - lastUse < cooldownMillis) {
+            final long left = (cooldownMillis - (now - lastUse) + 999L) / 1000L;
+            player.sendActionBar(messageManager.getMessage("signature-szarvas-cooldown",
+                    "<gray>🦌 A Szellemszarvas még pihen — {seconds} mp múlva hívhatod újra.</gray>",
+                    java.util.Map.of("seconds", String.valueOf(left))));
+            return;
+        }
+        player.getPersistentDataContainer().set(szarvasCooldownKey, PersistentDataType.LONG, now);
+
+        final org.bukkit.entity.Horse mount = player.getWorld().spawn(player.getLocation(), org.bukkit.entity.Horse.class);
+        mount.setTamed(true);
+        mount.setOwner(player);
+        mount.setColor(org.bukkit.entity.Horse.Color.WHITE);
+        mount.setStyle(org.bukkit.entity.Horse.Style.WHITE_DOTS);
+        mount.getInventory().setSaddle(new ItemStack(org.bukkit.Material.SADDLE));
+        mount.setGlowing(true);
+        mount.setPersistent(false);
+        mount.setRemoveWhenFarAway(false);
+        mount.customName(net.kyori.adventure.text.Component.text("Szellemszarvas",
+                net.kyori.adventure.text.format.NamedTextColor.AQUA));
+        mount.setCustomNameVisible(true);
+        final AttributeInstance speed = mount.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (speed != null) {
+            speed.setBaseValue(Math.max(0.1D, configManager.getDouble("signature.szarvas.speed", 0.3D)));
+        }
+        final AttributeInstance jump = mount.getAttribute(Attribute.JUMP_STRENGTH);
+        if (jump != null) {
+            jump.setBaseValue(Math.max(0.4D, configManager.getDouble("signature.szarvas.jump", 0.8D)));
+        }
+        mount.addPassenger(player);
+        player.getWorld().playSound(player.getLocation(), org.bukkit.Sound.ENTITY_HORSE_ANGRY, 0.8F, 1.5F);
+        hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), org.bukkit.Particle.END_ROD,
+                player.getLocation().add(0.0D, 1.0D, 0.0D), 24, 0.8D, 0.8D, 0.8D, 0.02D);
+
+        final long durationTicks = Math.max(10L, configManager.getLong("signature.szarvas.duration-seconds", 90L)) * 20L;
+        mount.getScheduler().runDelayed(plugin, task -> {
+            if (mount.isValid()) {
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(mount.getWorld(), org.bukkit.Particle.CLOUD,
+                        mount.getLocation().add(0.0D, 1.0D, 0.0D), 16, 0.5D, 0.5D, 0.5D, 0.02D);
+                mount.remove();
+            }
+        }, null, durationTicks);
+        player.sendMessage(messageManager.get("signature-szarvas-summoned",
+                "&b🦌 A Szellemszarvas előlép a ködből — vidd, ahová a Menedék útjai hívnak."));
     }
 }

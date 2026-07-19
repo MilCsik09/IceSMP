@@ -50,8 +50,9 @@ territórium rendszer együtt működik.
 
 ## Mi tiltható zónánként?
 
-Az adminok **zónatípusonként külön-külön** állíthatják, mi tiltott az adott zónában
-(`territory.protection.rules` a configban):
+Az adminok **zónatípusonként külön-külön** állíthatják, mi szabad az adott zónában
+(`territory.protection.rules` a configban, egyértelmű kulcsokkal: `allow-<szabály>: true` =
+szabad, `false` = tilos):
 
 | Szabály | Mit tilt le | Frakcióterület alapból | Védett zóna alapból |
 |---|---|---|---|
@@ -153,6 +154,8 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 - `/territory undo` / `clearpoints` / `points` — a határpont-puffer kezelése.
 - `/territory create <típus> <frakció> <id> [név...]` — poligon-zóna lezárása a pontokból.
 - `/territory circle <típus> <frakció> <id> <sugár> [név...]` — kör-zóna a pozíciódnál.
+- `/territory create doom-gate <id> [név...]` / `/territory circle doom-gate <id> <sugár> [név...]`
+  — a Kárhozat-zóna frakció-semleges, ezért ott a `<frakció>` argumentum elhagyható.
 - `/territory setcapital <frakció> <sugár> [név...]` — főváros (kör) gyorsan.
 - `/territory show [id]` — határrajz: a puffered + az aktuális zóna, vagy a megadott zóna.
 - `/territory tp <id>` — teleportálás a zóna középpontjához.

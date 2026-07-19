@@ -445,12 +445,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             tameable.setTamed(true);
             tameable.setOwner(player);
         }
-        if (mob instanceof Zombie zombie) {
-            zombie.setShouldBurnInDay(false);
-        }
-        if (mob instanceof AbstractSkeleton skeleton) {
-            skeleton.setShouldBurnInDay(false);
-        }
+        // A pet BÁRMILYEN mob lehet (Beast Master / Necromancer): a közös keményítés fedi a
+        // zombi/csontváz/phantom nappali égést ÉS a piglin/hoglin overworld-zombisodását is.
+        EventSpawnGuard.prepare(mob);
         applyBuffs(mob, getLevel(player), true);
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());

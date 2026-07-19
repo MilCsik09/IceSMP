@@ -83,7 +83,7 @@ sebesség), **A Vérszavanna Agyara** (kard/lándzsa: fegyver-kombó Strength-pe
 **Buktatók:** A Tűzköpő ne legyen strictly jobb a vanília számszeríjnál minden helyzetben (niche:
 sebesség vs. tartósság); a köpeny tűz-ellenállása ne duplázza a RED-passzívot végtelenre.
 
-### K4. Ryanora & Caldestera signature itemek (gyűjtő/gazdaság)
+### K4. Ryanora & Caldestera signature itemek (gyűjtő/gazdaság) `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐
 
 **Mi ez:** A Menedék tárgyai a béke/kereskedelem/tudás jegyében: **Vasművek Akadémiájának Csákánya**
@@ -102,6 +102,11 @@ tárgy-hordozott, kis állandó bónusz); a Bankbetét a bank/valuta-rendszerhez
 
 **Buktatók:** A +20% loot ne legyen stackelhető a gathering-buff eseménnyel korlátlanul (sapka);
 a Bankbetét ne legyen dupe-olható (PDC-egyediség + atomi beváltás).
+
+> **Megvalósítva:** 4 NEUTRAL-kapus signature recept (bányász/horgász/rúnaírnok/füvész) — Csákány
+> (+20% érc-drop, bányász-láz alatt szünetel), Horgászbot (+20% dupla fogás, láz alatt szünetel),
+> Bankbetét (jobb-katt: atomi beváltás Creutzérre a játékos saját régió-szálán), Szellemszarvas-
+> Bűbáj (cooldownos, ideiglenes gyors hátas). Kulcsok: `signature.*` (crafting.yml).
 
 ### K5. Káoszkor / Néma Királynő élőhalott-loot `[KÉSZ ✅]`
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐

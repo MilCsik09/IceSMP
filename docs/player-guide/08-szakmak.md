@@ -164,8 +164,13 @@ páncélkovács): **Kallan Szeletelője** (íj — gyorsabb, páncéltörő nyil
 gyorsítás, a kantár elfogy). A második kör a **Lángoló Birodalomé** (Láng/RED, páncélkovács):
 **Pyralingradi Tűzköpő** (számszeríj — Quick Charge + gyorsabb lövedék), **A Vérszavanna Agyara**
 (kard — bónusz-sebzés, baltával a másik kézben még nagyobb), **Főnix-Tollköpeny** (mellvért-slot —
-tűz/láva-immunitás viselve; a craft RED-kapus, de a köpeny kereskedhető). A perkek pontos számai
-configból hangolhatók (`signature.*`).
+tűz/láva-immunitás viselve; a craft RED-kapus, de a köpeny kereskedhető). A harmadik kör a **Menedéké** (NEUTRAL — gazdaság/kényelem):
+**Vasművek Akadémiájának Csákánya** (bányász 45 — érc-töréskor +20% eséllyel extra drop; bányász-láz
+esemény alatt szünetel), **Bokic-menti Horgászbot** (horgász 40 — +20% eséllyel dupla fogás),
+**Smaragdkő Bankbetét** (rúnaírnok 35 — jobb-kattal Creutzérre váltható betétjegy), és a
+**Szellemszarvas-Bűbáj** (füvész 45 — jobb-katt: ideiglenes, gyors szellem-hátast idéz; nem fogy el,
+cooldownnal). A perkek pontos számai
+configból hangolhatók (`signature.*` a `crafting.yml`-ben).
 
 ## Talentpontok a szakmákból
 

@@ -105,8 +105,9 @@ public final class MeteorEventManager {
         }
     }
 
-    /** Admin override: lands a meteor now near the anchor (or a random player). */
-    public boolean forceSpawn(final Player anchor) {
+    /** Admin override: lands a meteor now near the anchor (or a random player).
+     * synchronized: két egyidejű admin-hívás ne áshasson két krátert (grace-rés). */
+    public synchronized boolean forceSpawn(final Player anchor) {
         if (isActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }

@@ -212,6 +212,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **K3 signature (RED):** a 3 Perinfernicitas-recept csak Láng-frakcióval craftolható; a
       Tűzköpő Quick Charge-dzsal készül és lövedéke gyorsabb; az Agyar többet sebez (baltával az
       off-handben még többet); a Tollköpeny viselve kioltja a tűz/láva/forró-blokk sebzést.
+- [ ] **K4 signature (NEUTRAL, ÚJ):** a 4 Menedék-recept csak Menedék-frakcióval craftolható
+      (bányász 45 / horgász 40 / rúnaírnok 35 / füvész 45, tervrajzból). A Csákány érc-töréskor
+      ~20% eséllyel extra dropot ad (bányász-láz ALATT szünetel — nincs stack); a Horgászbot
+      ~20% eséllyel duplázza a fogást (halászati láz alatt szünetel); a Bankbetét jobb-kattra
+      elfogy és +25 Creutzért ír jóvá (dupe-teszt: gyors dupla-katt se duplázzon); a
+      Szellemszarvas-Bűbáj jobb-kattra gyors, ideiglenes hátast idéz (~90 mp, ~120 mp cooldown,
+      a bűbáj NEM fogy el). Kulcsok: `signature.*` a `crafting.yml`-ben.
 - [ ] **K5 Káoszkor-loot:** élőhalott mobból (zombi/csontváz) eshet a Rozsdás Penge / Megrontott
       Elit Páncél (nevesített, rarity-prefixszel + affixekkel); NEM-élőhalottból sosem esik;
       az Eleftheria Könnye rituálé csak DARK-frakcióval aktiválható (síró obszidián mag).
@@ -451,18 +458,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **pvp**: játékos↔játékos sebzés (közelharc ÉS nyíl/lövedék) blokkolva, a támadó action-bar üzenetet kap.
   - [ ] **explosions**: creeper/TNT nem tör blokkot a zónában.
   - [ ] **fire**: tűzcsiholó nem gyújt, a tűz nem terjed/nem éget a zónában.
-- [ ] **Kárhozat-zóna (doom-gate, ÚJ — K7):** jelölj ki egy zónát (`/territory circle doom-gate
-      <frakció> <id> <sugár> Kárhozat Kapuja`), majd:
+- [ ] **Kárhozat-zóna (doom-gate, ÚJ — K7):** jelölj ki egy zónát — frakció NEM kell:
+      `/territory circle doom-gate <id> <sugár> Kárhozat Kapuja` (a régi, frakciós forma is él), majd:
   - [ ] Belépéskor sötétvörös action bar („senkiföldje: itt nincs törvény"), baljós Nether-hang +
         hamu/lélek particle-örvény.
-  - [ ] **PvP legális** a zónában (a `pvp: false` szabály), de a frissen belépő ~8 mp
+  - [ ] **PvP legális** a zónában (`rules.doom-gate.allow-pvp: true`), de a frissen belépő ~8 mp
         **belépő-védelmet** kap (a támadó action-bar üzenetet lát); aki maga támad, azonnal
         elveszti a védelmét. Kilépéskor / kilépő játékosnál a grace törlődik.
   - [ ] **Ölés itt nem bűn**: PvP-kill után a killer „A Kárhozat Kapujánál nincs törvény" action
         bart kap, a bűn-számláló NEM nő (`territory.doom-gate.sin-exempt`). Raid-szentesített és
         bounty-ölés szabályai előrébb valók (azok változatlanok).
-  - [ ] **Mob-boost**: a zónában spawnoló mobok +3 szintet kapnak
-        (`territory.doom-gate.bonus-mob-levels`) — magasabb tier loot jár értük.
+  - [ ] **Mob-boost + keményítés**: a zónában spawnoló mobok +3 szintet kapnak, nappal sem
+        égnek, nem zombisodnak (`territory.mob-rules.doom-gate` — bonus-levels /
+        no-daylight-burn / no-zombification; BÁRMELY zóna-típusra vagy tulajdonos-frakcióra
+        — pl. `dark:` — is megadható).
   - [ ] Építés/robbanás/tűz tiltott az arénában, ajtó/oltár interakció szabad; claim nem rakható.
   - [ ] Minden kulcs élőben olvasódik → `/icesmp reload` után restart nélkül él.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/

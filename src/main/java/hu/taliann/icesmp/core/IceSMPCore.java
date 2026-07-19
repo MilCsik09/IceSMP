@@ -276,6 +276,12 @@ public final class IceSMPCore {
     public IceSMPCore(final JavaPlugin plugin) {
         this.plugin = plugin;
         this.configManager = new ConfigManager(plugin);
+        // A config MÁR A KONSTRUKTOR-LÁNC ELŐTT betöltődik: több world-event manager a saját
+        // konstruktorában számol első időablakot (nextAttemptAt) config-kulcsból — betöltés
+        // nélkül a kódbeli fallbackot kapnák a yml-ben beállított érték helyett (audit-hiba:
+        // az első ablak restart után rövidebb/hosszabb volt a beállítottnál). Az enable()
+        // load()-ja emiatt már csak frissítés (idempotens).
+        configManager.load();
         this.messageManager = new MessageManager(plugin, configManager);
         this.currencyManager = new CurrencyManager(plugin, configManager);
         this.factionManager = new FactionManager(plugin, configManager);
@@ -1048,7 +1054,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CatalystProtectionListener(catalystItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(plugin, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(plugin, configManager, messageManager, gatheringBuffManager, currencyManager), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);

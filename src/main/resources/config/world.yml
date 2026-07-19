@@ -25,8 +25,13 @@ mob-scaling:
     color: "WHITE"
 
 # ===== Világesemények (7. szekció) =====
-# Egy közös időzítő (check-interval-seconds) hajtja a vérholdat, a világbosst
-# és a szezon-lejáratot; mindegyik a saját enabled kapcsolójával vezérelhető.
+# FIGYELEM: a check-interval-seconds EGYETLEN közös időzítő, amely az ÖSSZES
+# időszakos rendszert hajtja — vérhold, világboss, invázió, karaván, hangulat-
+# esemény, gyűjtögető-buff, kincs, Vad Hajsza, Bőség-idő, szerver-kihívás,
+# kíséret, meteor, szezon-lejárat, továbbá az aukció-lejárat, árfolyam-tábla,
+# statisztika- és achievement-ellenőrzés ütemét is. Átállítása MINDET érinti.
+# Ne emeld 60 mp fölé ok nélkül; az egyes események a saját enabled
+# kapcsolójukkal és interval-* kulcsaikkal vezérelhetők.
 world-events:
   check-interval-seconds: 60
   # Mester-kapcsoló: false = a lenti spawn-rules mátrix egyáltalán nem fut (mindenhova
@@ -45,6 +50,7 @@ world-events:
     treasure:   { territory: true, claim: true, region: true, water: true }
     meteor:     { territory: true, claim: true, region: true }
   # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
+  # A sorsolás az éj beállta (13000) és éjfél (18000) közt történik, éjszakánként egyszer.
   blood-moon:
     enabled: true
     chance-percent: 15
@@ -56,8 +62,10 @@ world-events:
     # indulása amúgy is csak az éj beálltakor sorsolódik).
     force-night: true
   # Világboss: időnként egy boss-szörny spawnol egy véletlen játékos közelében.
-  # Spawnkor VÉLETLEN archetípus kerül kiválasztásra (A Gyűrűk Őre / Lávakohó Behemót /
-  # Fagyott Trón Királya / Csontkirály / Mélységi Rém) — saját entitással, névvel, stat-
+  # Spawnkor VÉLETLEN archetípus kerül kiválasztásra a 10-es rosterből (A Gyűrűk Őre /
+  # Lávakohó Behemót / Fagyott Trón Királya / Csontkirály / Mélységi Rém / Méreg
+  # Anyakirálynő / Vihar Hírnöke / Dögvész Titán / Vas Őrszem / Pokoli Hadúr) —
+  # saját entitással, névvel, stat-
   # szorzókkal, szignatúra-aurával és jutalom-szorzóval. A health/damage a KÖZÖS alap,
   # amit az archetípus szorzói módosítanak. 50% HP alatt a boss feldühödik (2. fázis).
   world-boss:
@@ -74,8 +82,10 @@ world-events:
     season-points: 10
     buff-minutes: 10
   # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).
-  # A horda-összetétel VÉLETLEN: Élőhalott Áradat / Csontlégió / Pókfészek / Káosz-horda —
-  # kevert mob-típusokkal, és minden hullámot egy skálázott, megnevezett mini-boss (bajnok)
+  # A horda-összetétel VÉLETLEN a 8-as rosterből: Élőhalott Áradat / Csontlégió /
+  # Pókfészek / Káosz-horda / Alvilági Roham / Zsivány Hadtest / Boszorkány Gyülekezet /
+  # Lángoló Sereg — kevert mob-típusokkal, és minden hullámot egy skálázott, megnevezett
+  # mini-boss (bajnok)
   # vezet. A szörnyek skálázottak (XP + lélekkő-eséllyel), admin: /events invasion.
   invasion:
     enabled: true
@@ -140,6 +150,7 @@ ambient-events:
   min-online-players: 1              # ennyi játékos legyen fenn, különben a kör kimarad
   reward-amount: 5.0                 # apró valuta-jutalom a szabad ég alatt lévőknek (0 = csak buff, valuta nélkül)
   aurora-nightvision-seconds: 45     # az északi fény rövid, kozmetikai éjjellátása (mindenkinek)
+  effect-seconds: 24                 # az elnyújtott hangulat-effektek (köd/lelkek/bogarak/aurora) hossza
   migration-herd-size: 5             # az állat-vándorlás csordamérete
   # Az egyes típusok külön ki/be kapcsolhatók:
   types:
@@ -285,7 +296,8 @@ escort:
 # kibányászható érc-blokkokkal, amiért a játékosok versengenek, míg el nem enyészik.
 # TEREP-VÉDELEM: a meteor NEM robban — LEHELYEZI a krátert, és MINDEN érintett blokk
 # eredeti állapotát elmenti, majd lejáratkor (és leálláskor) VISSZAÁLLÍTJA. Ráadásul
-# frakció-területen kívülre irányítja magát. Így csak az marad, amit a játékosok
+# a world-events.spawn-rules.meteor mátrix szerint territóriumon, játékos-claimen és
+# WorldGuard-régión kívülre irányítja magát. Így csak az marad, amit a játékosok
 # kibányásznak, mielőtt a kráter elenyészik.
 meteor:
   enabled: true

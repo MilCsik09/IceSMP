@@ -84,6 +84,8 @@ public final class SoulShardManager {
         spendShards(player, cost);
 
         final WitherSkeleton champion = player.getWorld().spawn(player.getLocation(), WitherSkeleton.class);
+        // Jövőbiztos keményítés (a wither skeleton ma sem ég nappal, de típus-csere ellen véd).
+        EventSpawnGuard.prepare(champion);
         champion.setPersistent(false);
         minionManager.tag(champion, player.getUniqueId());
         if (champion instanceof AbstractSkeleton skeleton) {

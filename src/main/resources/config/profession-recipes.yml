@@ -1312,3 +1312,53 @@ profession-recipes:
     category: "Lángoló Birodalom (tervrajz)"
     result: { material: LEATHER_CHESTPLATE, amount: 1, affix-tier: crafted, signature: fonix_tollkopeny }
     ingredients: [ "LEATHER_CHESTPLATE:1", "FEATHER:32", "MAGMA_CREAM:8", "unique:arnyekpor:2" ]
+  # ===== K4 — Ryanora & Caldestera signature itemek (gyűjtő/gazdaság, NEUTRAL-kapus) =====
+  vasmuvek_csakanya:
+    profession: miner
+    level: 45
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Vasművek Akadémiájának Csákánya"
+    lore:
+      - "&7A ryanorai Vasművek mestervizsga-darabja;"
+      - "&7éle megérzi az érc rejtett teléreit."
+    category: "Menedék (tervrajz)"
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, signature: vasmuvek_csakanya }
+    ingredients: [ "DIAMOND_PICKAXE:1", "IRON_BLOCK:4", "EMERALD:8", "unique:vad_esszencia:2" ]
+  bokic_horgaszbot:
+    profession: fisherman
+    level: 40
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Bokic-menti Horgászbot"
+    lore:
+      - "&7A Bokic halászai szerint a folyó annak ad"
+      - "&7kétszer, aki ismeri a vize énekét."
+    category: "Menedék (tervrajz)"
+    result: { material: FISHING_ROD, amount: 1, affix-tier: crafted, signature: bokic_horgaszbot }
+    ingredients: [ "FISHING_ROD:1", "STRING:16", "PRISMARINE_CRYSTALS:8", "unique:vad_esszencia:1" ]
+  smaragdko_bankbetet:
+    profession: enchanter
+    level: 35
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Smaragdkő Bankbetét"
+    lore:
+      - "&7A Bankárszövetség pecsétes betétjegye —"
+      - "&7jobb-kattal beváltható Creutzérre."
+    category: "Menedék (tervrajz)"
+    result: { material: PAPER, amount: 1, signature: smaragdko_bankbetet }
+    ingredients: [ "PAPER:1", "EMERALD_BLOCK:1" ]
+  szellemszarvas_bubaj:
+    profession: herbalist
+    level: 45
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Szellemszarvas-Bűbáj"
+    lore:
+      - "&7Arkynn ligeteinek ajándéka: hívó bűbáj,"
+      - "&7amely a ködből szólítja elő a Szellemszarvast."
+      - "&7Jobb-katt: hátas-hívás (nem fogy el)."
+    category: "Menedék (tervrajz)"
+    result: { material: RABBIT_FOOT, amount: 1, signature: szellemszarvas_bubaj }
+    ingredients: [ "RABBIT_FOOT:1", "GOLDEN_CARROT:8", "AMETHYST_SHARD:8", "unique:vad_esszencia:2" ]

@@ -79,14 +79,21 @@ public final class TerritoryProtectionService {
         return BUILD.equals(rule);
     }
 
-    /** Whether the given rule is active for the zone type (config with kill-switch + default). */
+    /**
+     * Whether the given rule is active for the zone type (config with kill-switch + default).
+     * Two config schemas are read: the CLEAR {@code allow-<szabály>} form (true = SZABAD,
+     * false = tiltva — this wins when set), and the legacy {@code <szabály>} form
+     * (true = tiltva) as fallback so old configs keep working.
+     */
     private boolean ruleEnabled(final TerritoryType type, final String rule) {
         if (type.isProtectedZone() && !configManager.getBoolean("territory.protection.protect-zones", true)) {
             return false;
         }
-        return configManager.getBoolean(
-                "territory.protection.rules." + typeKey(type) + "." + rule,
-                defaultRule(type, rule));
+        final String base = "territory.protection.rules." + typeKey(type) + ".";
+        if (configManager.getConfiguration().isSet(base + "allow-" + rule)) {
+            return !configManager.getBoolean(base + "allow-" + rule, !defaultRule(type, rule));
+        }
+        return configManager.getBoolean(base + rule, defaultRule(type, rule));
     }
 
     // ==================== player actions (build / interact) ====================

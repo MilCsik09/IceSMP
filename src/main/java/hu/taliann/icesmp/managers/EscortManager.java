@@ -361,6 +361,9 @@ public final class EscortManager {
                 continue;
             }
             final Mob mob = (Mob) world.spawn(topOf(world, x, z), entityClass.asSubclass(Mob.class));
+            // Nappali kíséret-hullám: a zombi/csontváz ne égjen el, mielőtt a játékosokhoz ér
+            // (+ jövőbiztos zombisodás-immunitás, ha a pool piglinnel bővül).
+            EventSpawnGuard.prepare(mob);
             mob.setRemoveWhenFarAway(false);
             mob.setPersistent(false);
             mobScalingManager.forceLevel(mob, level);

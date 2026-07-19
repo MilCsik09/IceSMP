@@ -18,7 +18,14 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class BloodMoonManager {
 
     private static final long NIGHT_START_TICK = 13000L;
-    private static final long ROLL_WINDOW_END_TICK = 14400L;
+    /**
+     * A roll-ablak vége éjfél (18000): a lastRolledDay-őr miatt éjszakánként úgyis csak
+     * egyszer sorsolunk, a széles ablak viszont garantálja, hogy a világesemény-tick
+     * (world-events.check-interval-seconds, akár többperces érték) sose ugorja át az
+     * ablakot — a korábbi 14400-as vég 70 mp-nél nagyobb intervallumnál kimaradó
+     * vérholdakat okozott (audit-hiba).
+     */
+    private static final long ROLL_WINDOW_END_TICK = 18000L;
     private static final long DAWN_TICK = 12500L;
 
     private final JavaPlugin plugin;

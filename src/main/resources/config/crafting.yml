@@ -63,3 +63,37 @@ crafting-restrictions:
     # HERBALIST + FISHERMAN: ezeknek a craft-asztali kapuzás erőltetett lenne — az értékük a
     # GYŰJTÉS és a főző-/alkimista-alapanyag-ellátás. Nekik a főzés-hook (brew) vagy egy gyűjtés-
     # oldali mechanika illik jobban — lásd a tervet (ROADMAP/IDEAS), nem ebben a config-körben.
+
+# ===== Signature-item perkek (K2/K3/K4 — frakció-kapus craftolt tárgyak) =====
+# Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
+signature:
+  # Cryghaliris (BLUE)
+  kallan:
+    arrow-velocity-mult: 1.5   # a nyíl sebesség-szorzója
+    armor-pierce: 0.15         # páncéltörés: végső sebzés +15%
+  jegvert:
+    damage-mult: 0.8           # bejövő sebzés-szorzó (0.8 = -20%)
+  kantar:
+    speed-add: 0.05            # a felkantározott hátas sebesség-bónusza
+  # Perinfernicitas (RED)
+  tuzkopo:
+    arrow-velocity-mult: 1.5
+  agyar:
+    damage-mult: 1.15          # közelharci sebzés-szorzó
+    offhand-axe-mult: 1.3      # ha a másik kézben balta van
+  tollkopeny:
+    fire-immunity: true        # tűz/láva/izzó blokk sebzés kioltása
+  # Ryanora & Caldestera (NEUTRAL) — K4
+  csakany:
+    bonus-drop-chance: 0.2     # érc-töréskor extra drop esélye (0-1)
+    stack-with-event: false    # false = bányász-láz esemény ALATT a perk szünetel (nincs stack)
+  horgaszbot:
+    bonus-drop-chance: 0.2     # fogáskor dupla zsákmány esélye (0-1)
+    stack-with-event: false    # false = halászati láz ALATT a perk szünetel
+  bankbetet:
+    value: 25.0                # beváltási érték Creutzérben (jobb-katt; a papír elfogy)
+  szarvas:
+    cooldown-seconds: 120      # Szellemszarvas-hívás visszatöltődése
+    duration-seconds: 90       # a hátas élettartama (utána köddé válik)
+    speed: 0.3                 # a hátas sebesség-attribútuma (vanília ló: ~0.1-0.34)
+    jump: 0.8                  # ugrás-erő

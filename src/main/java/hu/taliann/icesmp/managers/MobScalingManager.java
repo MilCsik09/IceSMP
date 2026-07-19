@@ -108,10 +108,12 @@ public final class MobScalingManager {
             return;
         }
 
-        // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and the
-        // Kárhozat-zóna (K7 PvPvE senkiföldje) adds its own danger bonus on top.
+        // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and a
+        // territórium mob-szabálya (territory.mob-rules — pl. Kárhozat-zóna, DARK-földek)
+        // adds its own danger bonus on top.
         final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
-                + doomZoneBonus(entity.getLocation());
+                + zoneBonusLevels(entity.getLocation());
+        applyZoneHardening(entity);
         if (level < 1) {
             return;
         }
@@ -163,16 +165,65 @@ public final class MobScalingManager {
     }
 
     /**
-     * Bonus mob levels inside the Kárhozat-zóna (DOOM_GATE territory) — the PvPvE
-     * no-man's land spawns visibly tougher monsters (config-driven, hot-reloadable).
-     * Lock-free concurrent zone lookup, safe on the spawning region thread.
+     * A territórium mob-szabályainak (territory.mob-rules.<szelektor>) kulcsai a spawn
+     * helyén. Két szelektor illeszkedhet egyszerre: a zóna TÍPUSA (pl. doom-gate,
+     * protected-city) és a zóna tulajdonos-FRAKCIÓJA (dark/red/blue/neutral) — így a
+     * „minden DARK-föld" és a „minden Kárhozat-zóna" is külön szabályozható. Lock-mentes
+     * zóna-lookup, a spawnoló régió-szálán biztonságos. Üres lista = nincs zóna.
      */
-    private int doomZoneBonus(final Location location) {
+    private java.util.List<String> zoneRuleSelectors(final Location location) {
         final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(location);
-        if (zone == null || zone.type() != hu.taliann.icesmp.data.TerritoryType.DOOM_GATE) {
-            return 0;
+        if (zone == null) {
+            return java.util.List.of();
         }
-        return Math.max(0, configManager.getInt("territory.doom-gate.bonus-mob-levels", 3));
+        return java.util.List.of(
+                zone.type().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'),
+                zone.faction().name().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * Bonus mob levels a spawn helyének territórium-szabályaiból (a legnagyobb illeszkedő
+     * érték számít, nem összeadás — kiszámítható marad a végszint). Doom-gate default: 3.
+     */
+    private int zoneBonusLevels(final Location location) {
+        int bonus = 0;
+        for (final String selector : zoneRuleSelectors(location)) {
+            final int fallback = "doom-gate".equals(selector) ? 3 : 0;
+            bonus = Math.max(bonus, Math.max(0,
+                    configManager.getInt("territory.mob-rules." + selector + ".bonus-levels", fallback)));
+        }
+        return bonus;
+    }
+
+    /**
+     * Zóna-alapú mob-keményítés a spawn pillanatában: no-daylight-burn = a zombi/csontváz/
+     * phantom típus nappal sem gyullad meg (pl. DARK-földek örök élőhalottjai), no-zombification
+     * = piglin/hoglin nem alakul át az overworldben. Doom-gate default: mindkettő igaz.
+     */
+    private void applyZoneHardening(final LivingEntity entity) {
+        boolean noBurn = false;
+        boolean noZombification = false;
+        for (final String selector : zoneRuleSelectors(entity.getLocation())) {
+            final boolean fallback = "doom-gate".equals(selector);
+            noBurn |= configManager.getBoolean("territory.mob-rules." + selector + ".no-daylight-burn", fallback);
+            noZombification |= configManager.getBoolean("territory.mob-rules." + selector + ".no-zombification", fallback);
+        }
+        if (noBurn) {
+            if (entity instanceof org.bukkit.entity.AbstractSkeleton skeleton) {
+                skeleton.setShouldBurnInDay(false);
+            } else if (entity instanceof org.bukkit.entity.Zombie zombie) {
+                zombie.setShouldBurnInDay(false);
+            } else if (entity instanceof org.bukkit.entity.Phantom phantom) {
+                phantom.setShouldBurnInDay(false);
+            }
+        }
+        if (noZombification) {
+            if (entity instanceof org.bukkit.entity.PiglinAbstract piglin) {
+                piglin.setImmuneToZombification(true);
+            } else if (entity instanceof org.bukkit.entity.Hoglin hoglin) {
+                hoglin.setImmuneToZombification(true);
+            }
+        }
     }
 
     /**

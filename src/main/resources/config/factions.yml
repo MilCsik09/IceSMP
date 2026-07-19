@@ -164,58 +164,76 @@ territory:
     # Fő kapcsoló a VÉDETT zónákra (protected-faction/protected-city/capital). Ha false, a védett
     # zónák MINDEN szabálya kikapcsol. (A normál frakcióterület szabályai külön, a rules alatt.)
     protect-zones: true
-    # Zónatípusonként állítható, mi TILTOTT (true = védve) az adott zónában:
+    # Zónatípusonként állítható, mi SZABAD az adott zónában — EGYÉRTELMŰ séma:
+    #   allow-<szabály>: true  = az adott dolog SZABAD (engedett)
+    #   allow-<szabály>: false = az adott dolog TILOS (a zóna védi)
+    # Szabályok:
     #   build       - blokk törése/rakása, vödör, kép-/festménykeret, armor stand
-    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik);
+    #                 (NORMÁL frakcióterületen a tiltás csak a NEM-tagokra vonatkozik);
     #                 VÉDETT zónában a mob-grief (enderman), folyadék-befolyás és
     #                 dugattyú-tolás is ehhez a szabályhoz kötött
     #   interact    - konténer/ajtó/gomb/kar/műhely jobbklikk
-    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik)
-    #   pvp         - játékos↔játékos sebzés a zónán belül (biztonságos zóna):
+    #                 (NORMÁL frakcióterületen a tiltás csak a NEM-tagokra vonatkozik)
+    #   pvp         - játékos↔játékos sebzés a zónán belül:
     #                 közelharc, nyíl/lövedék, háziállat, TNT és ártó/dobott bájital is
     #   explosions  - robbanás (creeper/TNT/kristály) blokk- ÉS dekoráció-kára
     #   fire        - tűz gyújtása/terjedése/égése
+    # (A régi, fordított jelentésű `build: true = tiltva` séma is működik még, de az
+    # allow-* kulcs nyer, ha ki van írva.)
     # Megkerülő jogok: icesmp.admin.territory.bypass (mindent + PvP),
     #                  icesmp.territory.builder (build + interact védett zónában is).
     rules:
-      faction:              # normál frakcióterület
-        build: true         # nem-tag nem építhet; a frakció tagjai igen
-        interact: false     # jobbklikk/konténer szabadon (állítsd true-ra zárt frakcióvárosokhoz)
-        pvp: false          # háborús szerver: a frakcióterületen szabad a harc
-        explosions: false
-        fire: false
-      protected-faction:    # védett frakcióterület (falak, műemlékek): senki nem építhet
-        build: true
-        interact: true
-        pvp: true
-        explosions: true
-        fire: true
-      protected-city:       # védett város (jellemzően semleges): senki nem építhet
-        build: true
-        interact: true
-        pvp: true
-        explosions: true
-        fire: true
-      capital:              # főváros (+ bank/valutaváltó): senki nem építhet
-        build: true
-        interact: true
-        pvp: true
-        explosions: true
-        fire: true
-      doom-gate:            # Kárhozat Kapuja — PvPvE senkiföldje (kódex: a Hetedik Vérháború portálja)
-        build: true         # az aréna nem építhető át / nem tornyozható be
-        interact: false     # ajtók/oltárok szabadon használhatók
-        pvp: false          # ⚔ a harc itt LEGÁLIS (false = nincs PvP-védelem!)
-        explosions: true    # robbanás nem rongálja a terepet
-        fire: true          # tűz nem terjed (a hangulat-tüzek admin-oldalról épülnek)
+      faction:                  # normál frakcióterület
+        allow-build: false      # nem-tag NEM építhet; a frakció tagjai igen
+        allow-interact: true    # jobbklikk/konténer szabad (false = zárt frakcióvárosok)
+        allow-pvp: true         # háborús szerver: a frakcióterületen szabad a harc
+        allow-explosions: true
+        allow-fire: true
+      protected-faction:        # védett frakcióterület (falak, műemlékek)
+        allow-build: false      # senki nem építhet
+        allow-interact: false
+        allow-pvp: false
+        allow-explosions: false
+        allow-fire: false
+      protected-city:           # védett város (jellemzően semleges)
+        allow-build: false
+        allow-interact: false
+        allow-pvp: false
+        allow-explosions: false
+        allow-fire: false
+      capital:                  # főváros (+ bank/valutaváltó)
+        allow-build: false
+        allow-interact: false
+        allow-pvp: false
+        allow-explosions: false
+        allow-fire: false
+      doom-gate:                # Kárhozat Kapuja — PvPvE senkiföldje
+        allow-build: false      # az aréna nem építhető át / nem tornyozható be
+        allow-interact: true    # ajtók/oltárok szabadon használhatók
+        allow-pvp: true         # ⚔ a harc itt LEGÁLIS
+        allow-explosions: false # robbanás nem rongálja a terepet
+        allow-fire: false       # tűz nem terjed (a hangulat-tüzek admin-oldalról épülnek)
   # ===== Kárhozat Kapuja (DOOM_GATE zóna) extra szabályai =====
-  # /territory ... doom-gate típussal jelölhető ki; minden kulcs élőben olvasódik
-  # (/icesmp reload után restart nélkül él).
+  # /territory circle doom-gate <id> <sugár> [név...] — frakció megadása NEM kell.
+  # Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
   doom-gate:
     # Az itteni játékos-ölés NEM számít bűnnek („a Kapunál nincs törvény").
     sin-exempt: true
-    # A zónában spawnoló mobok ennyi bónusz szintet kapnak (0 = nincs).
-    bonus-mob-levels: 3
     # Belépéskor ennyi másodperc PvP-védelem jár (spawn-kill ellen); aki maga támad,
     # azonnal elveszti. 0 = nincs belépő-védelem.
     entry-grace-seconds: 8
+  # ===== Zóna mob-szabályok (mob-rules) =====
+  # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
+  #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital
+  #   - a zóna tulajdonos-FRAKCIÓJA: dark, red, blue, neutral (pl. minden DARK-föld)
+  # Ha több szelektor illeszkedik, a bonus-levels-ből a NAGYOBB számít (nem adódik össze),
+  # a tiltás-kapcsolók pedig VAGY-kapcsolatban élnek. Élőben olvasódik.
+  mob-rules:
+    doom-gate:
+      bonus-levels: 3          # ennyi plusz szint a zónában spawnoló mobokon
+      no-daylight-burn: true   # true = a zombi/csontváz/phantom NAPPAL SEM ég el
+      no-zombification: true   # true = piglin/hoglin nem zombisodik az overworldben
+    # Példa: a Kitaszítottak földjein (Mortengrad környéke) éjjel-nappal kitartó élőhalottak:
+    # dark:
+    #   bonus-levels: 2
+    #   no-daylight-burn: true

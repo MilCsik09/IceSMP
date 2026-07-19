@@ -103,11 +103,11 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Főnix-Tollköpeny | RED | kiegészítő (K3) | ✅ implementálva: viselve tűz/láva/forró-blokk immunitás (`signature.tollkopeny.fire-immunity`) |
 | I. Zhoris Lángnyelve / Napfogyatkozás | RED | fegyverek | később tervezendő |
 | Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | RED tojás-fogyasztási kötelezettség |
-| Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | +20% bányász-loot |
-| Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | +20% horgász-loot |
+| Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | ✅ implementálva: érc-töréskor +20% extra drop, bányász-láz alatt szünetel (`signature.csakany.*`) |
+| Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | ✅ implementálva: +20% dupla fogás, halászati láz alatt szünetel (`signature.horgaszbot.*`) |
 | Asterlayna Gyümölcse | NEUTRAL | süti (K6) | robbanó csemege perk |
-| Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | bank-item, atomi beváltás |
-| Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | pet/hátas-rendszer |
+| Smaragdkő Bankbetét | NEUTRAL | értékpapír (K4) | ✅ implementálva: jobb-katt atomi beváltás Creutzérre (`signature.bankbetet.value`) |
+| Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | ✅ implementálva: cooldownos ideiglenes gyors hátas (`signature.szarvas.*`) |
 | Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |
 | Fekete Villám Szilánk | DARK/közös | crafting-alapanyag (K5) | ✅ implementálva: `profession-materials.osi_ereklyeszilank` display; magas-tier receptek hozzávalója |
 | Eleftheria Könnye | DARK/közös | relikvia (K5) | ✅ implementálva: egy-példányos relikvia + DARK-kapus rituálé-oltár (relics.yml) |

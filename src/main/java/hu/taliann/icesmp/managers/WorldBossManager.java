@@ -242,7 +242,9 @@ public final class WorldBossManager {
      * @param anchor preferred anchor player (may be null)
      * @return true if a boss spawn was scheduled (false if one is already active or nobody is online)
      */
-    public boolean forceSpawn(final Player anchor) {
+    public synchronized boolean forceSpawn(final Player anchor) {
+        // synchronized: két egyidejű admin-hívás ne juthasson át együtt az active/grace
+        // ellenőrzésen (dupla boss) — ugyanaz a minta, mint WildHunt/Treasure forceStart.
         if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }

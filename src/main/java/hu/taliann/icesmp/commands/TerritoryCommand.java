@@ -153,9 +153,9 @@ public final class TerritoryCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (args.length < 4) {
+        if (args.length < 3) {
             sender.sendMessage(messageManager.get("territory-create-usage",
-                    "&cHasználat: /territory create <típus> <frakció> <azonosító> [név...]"));
+                    "&cHasználat: /territory create <típus> <frakció> <azonosító> [név...] &7(doom-gate: a frakció elhagyható)"));
             return;
         }
 
@@ -163,9 +163,24 @@ public final class TerritoryCommand implements BasicCommand {
         if (type == null) {
             return;
         }
-        final FactionType faction = parseFaction(sender, args[2]);
-        if (faction == null) {
-            return;
+        // Kárhozat-zóna: frakció-semleges senkiföldje — a <frakció> argumentum elhagyható
+        // (/territory create doom-gate <id> [név...]); belső tulajdonosként NEUTRAL-t jegyzünk.
+        final FactionType faction;
+        final int idIndex;
+        if (type == TerritoryType.DOOM_GATE && FactionType.fromInput(args[2]) == null) {
+            faction = FactionType.NEUTRAL;
+            idIndex = 2;
+        } else {
+            if (args.length < 4) {
+                sender.sendMessage(messageManager.get("territory-create-usage",
+                        "&cHasználat: /territory create <típus> <frakció> <azonosító> [név...] &7(doom-gate: a frakció elhagyható)"));
+                return;
+            }
+            faction = parseFaction(sender, args[2]);
+            if (faction == null) {
+                return;
+            }
+            idIndex = 3;
         }
 
         final List<int[]> points = territoryManager.getPoints(player.getUniqueId());
@@ -191,10 +206,10 @@ public final class TerritoryCommand implements BasicCommand {
             return;
         }
 
-        final String name = args.length > 4
-                ? String.join(" ", Arrays.copyOfRange(args, 4, args.length))
+        final String name = args.length > idIndex + 1
+                ? String.join(" ", Arrays.copyOfRange(args, idIndex + 1, args.length))
                 : type.getDisplayName();
-        final Territory territory = territoryManager.definePolygon(args[3], faction, name, type, world, points);
+        final Territory territory = territoryManager.definePolygon(args[idIndex], faction, name, type, world, points);
         if (territory == null) {
             sender.sendMessage(messageManager.get("territory-create-failed", "&cA terület létrehozása nem sikerült."));
             return;
@@ -211,9 +226,9 @@ public final class TerritoryCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (args.length < 5) {
+        if (args.length < 4) {
             sender.sendMessage(messageManager.get("territory-circle-usage",
-                    "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...]"));
+                    "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...] &7(doom-gate: a frakció elhagyható)"));
             return;
         }
 
@@ -221,19 +236,39 @@ public final class TerritoryCommand implements BasicCommand {
         if (type == null) {
             return;
         }
-        final FactionType faction = parseFaction(sender, args[2]);
-        if (faction == null) {
+        // Kárhozat-zóna: frakció-semleges — a <frakció> elhagyható
+        // (/territory circle doom-gate <id> <sugár> [név...]).
+        final FactionType faction;
+        final int idIndex;
+        if (type == TerritoryType.DOOM_GATE && FactionType.fromInput(args[2]) == null) {
+            faction = FactionType.NEUTRAL;
+            idIndex = 2;
+        } else {
+            if (args.length < 5) {
+                sender.sendMessage(messageManager.get("territory-circle-usage",
+                        "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...] &7(doom-gate: a frakció elhagyható)"));
+                return;
+            }
+            faction = parseFaction(sender, args[2]);
+            if (faction == null) {
+                return;
+            }
+            idIndex = 3;
+        }
+        if (args.length < idIndex + 2) {
+            sender.sendMessage(messageManager.get("territory-circle-usage",
+                    "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...] &7(doom-gate: a frakció elhagyható)"));
             return;
         }
-        final Integer radius = parseRadius(sender, args[4]);
+        final Integer radius = parseRadius(sender, args[idIndex + 1]);
         if (radius == null) {
             return;
         }
 
-        final String name = args.length > 5
-                ? String.join(" ", Arrays.copyOfRange(args, 5, args.length))
-                : args[3];
-        final Territory territory = territoryManager.define(args[3], faction, name, type, player.getLocation(), radius);
+        final String name = args.length > idIndex + 2
+                ? String.join(" ", Arrays.copyOfRange(args, idIndex + 2, args.length))
+                : args[idIndex];
+        final Territory territory = territoryManager.define(args[idIndex], faction, name, type, player.getLocation(), radius);
         sender.sendMessage(messageManager.get("territory-circle-success",
                 "&aKör-terület kijelölve: &f%s &7(%s, %s, sugár: %s, középpont: %s, %s)",
                 territory.name(), type.getDisplayName(), faction.getDisplayName(),
