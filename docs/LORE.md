@@ -133,6 +133,10 @@ annak, miért éledsz újra a frakciód spawnján.)*
 
 A Felsők, bár emlékeiket vesztették, ösztönösen nyúlnak a világot átjáró ősi erők felé — a Fa
 gyermekeinek szétszóródott hatalmához. Ki-ki más áramlatból merít; ez adja a **tizenhárom kaszt** erejét.
+A forrás megválasztása **végleges** — amelyik áramlat egyszer megjelölte a Felsőt, az el nem engedi
+többé. Ám a forráson belül minden kaszt előtt **utak** nyílnak: ahogy a Felső mélyebbre hatol az
+erejében, **hivatást** választ — a maga forrásának egy-egy régi mesteri iskoláját. *(Mechanika: a kaszt
+állandó; a 31 specializáció = a kasztok „iskolái".)*
 
 - **Asterlayna fénye és Soleil tüze — a Szent forrás.** A **Papok** és a **Paplovagok** ereje Asterlayna
   hulló csillagfényéből és Soleil tisztító lángjából fakad: mágiájuk gyógyít és megtisztít, s árnyékot
@@ -163,6 +167,14 @@ gyermekeinek szétszóródott hatalmához. Ki-ki más áramlatból merít; ez ad
 - **Asterlayna szőttese — az Arkánum forrása.** A **Varázslók** a világot átszövő nyers arkánumot idézik:
   Asterlayna csillag-szőttesének maradékát s a **Caldestera Akadémiáin** őrzött, elveszett rúna-tudást —
   elemi és kontroll-varázslataik e régi tudás felszikrázó szilánkjai.
+
+Ahány forrás, annyi **belső erő**: a varázsló elméje a **Manát** szövi, a harcos a **Dühöt** kovácsolja
+fegyverré, az íjász a **Fókuszt** feszíti húrrá, a szerzetes a **Csi**-t áramoltatja — mindegyik kaszt a
+maga forrásának nyelvén beszél, s ez az erő a kimerülés után lassan, magától tér vissza. Ám a
+leghatalmasabb mágiának más az ára: a **vérmágia** a varázsló saját életéből táplálkozik, a nagy
+**rítusok** a megszerzett tapasztalat-esszenciát emésztik fel, a legsúlyosabb testi erőmutatványok pedig
+magát a testet sajtolják ki. *(Mechanika: kasztonkénti erőforrás-sávok — Mana/Düh/Fókusz/Energia/Csi/
+Lélekerő stb. —, valamint a hibrid költségek: HP = vérmágia, XP = rituálé, éhség = nehéz testi spell.)*
 
 ## VII. A Világ Árnyékos Zugai
 
@@ -207,6 +219,95 @@ menedéke és fővárosa — a száműzöttek, a lelepleződött Suttogók és a
 becsületes kardja messze elkerüli e falakat; ám akit megjelölt a bélyeg, azt a holtak békén hagyják,
 s a Királynő szolgái közt sötét testvériségre lel. A romok mélyén, ahová csak a legelszántabbak
 merészkednek, ott lüktet a Suttogók legszentebb oltára.
+
+## VIII. A Felsők Kora — A Világ Élő Rendszerei
+
+*A Káoszkor romjain a Felsők nem csupán harcolnak: építenek, tanulnak, kereskednek — és a világ válaszol
+nekik. E fejezet a mindennapok rendjét írja le: mindaz, ami itt áll, ma is így működik a világban.*
+
+### A Céhek Öröksége — a szakmák
+A Hasadás előtti világ tudását a **céhek** őrizték: a **Vasművek Akadémiájának** kovácsai és bányászai,
+a Bokic-parti halász- és favágócéhek, Caldestera alkimistái, bűvölői és mesterszakácsai, s a vándorló
+gyógynövényészek rendje. A Káoszkor csaknem mindent elpusztított — ám a céhek tudása a Felsők kezében
+újjáéled. Minden Felső, aki szakmát tanul, egy **letűnt céh örökségét** veszi fel: recepteket kutat fel,
+tervrajzokat ment ki a romok közül, s mesterről mesterre emelkedik — mert a birodalmakat nemcsak
+karddal, hanem kalapáccsal, hálóval és üsttel is újjá kell építeni. *(Mechanika: a 8 szakma,
+szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk.)*
+
+### A Tárgyak Lelke — a mesterség rangja
+A világban nincs két egyforma penge. A régiek úgy tartották: minden tárgyba **belekovácsolódik a kora**
+— a Hasadás rozsdája, a céhek gondossága vagy a letűnt királyok dicsősége. Ezért van, hogy a romok közt
+talált fegyver lehet szánalmas roncs vagy egy korszak kincse; s ezért igaz, hogy a mester keze alól
+kikerülő mű a nevét is viseli. A leghatalmasabb tárgyak — az **Ereklyék** — még a Fa gyermekeinek
+korából valók. *(Mechanika: a tárgy-raritás létra Ócskától Ereklyéig, affixek, nevesített craft.)*
+
+### A Vér Emlékezete — a talentek
+A Felsők emlékei odavesztek, de a **vérük emlékezik**. Az eltűnt királyok és főurak öröksége ott
+szunnyad bennük, s minden megvívott csatával, minden megtanult fogással egy-egy szilánkja tér vissza:
+egy őse kardfogása, egy rég halott mester fortélya, egy elfeledett tudás. A bölcsek ezt hívják a **Vér
+Emlékezetének** — a Felső nem tanul, hanem **visszaemlékszik** arra, aki mindig is volt. *(Mechanika:
+talentpontok és talentfák — a kaszt- és szakma-fejlődés jutalma.)*
+
+### A Hű Társak — kötések és paktumok
+Nem minden szövetséges ember. A vadon mélyén a Felső **kötést** teremthet egy fenevaddal — ez
+**Aetrinita és Kallan ősi természet-kötése**, amellyel a vad a vadász mellé szegődik. A sötétebb úton
+járók viszont **paktumot** kötnek: Eleftheria mérgének tudományával a holtat is szolgálatra bírják.
+Kötés vagy paktum — a társ hűsége ugyanaz: együtt nő a gazdájával, s vele harcol a végsőkig.
+*(Mechanika: a Vadmester befogott állat-társa, a Nekromanta élőholt companionja, pet-szintezés.)*
+
+### Az Égi Jelek — a világ eseményei
+A megsebzett világ nem néma: **jelekben beszél**, s a bölcsek megtanulták olvasni őket.
+- **Vérhold** — a Néma Királynő ereje tetőzik: a holtak megvadulnak, s az éj vörösre vált.
+- **Bőség-ideje** — a Fa gyógyuló lehelete végigfut a földeken: dúsabb termés, szelídebb éjszaka.
+- **Hulló csillag s a meteor** — Asterlayna bukásának visszhangja; ahol lehull, csillag-ércet hagy.
+- **Északi fény** — Kallan sárkányainak égi tánca a Jégmezők felett.
+- **Köd és kósza szellemek** — a Káoszkor fátyla vékonyodik: a holtak világa átdereng a miénkbe.
+- **A Vad Hajsza** — a Káoszkorban elszabadult ős-fenevad, melyet csak a legbátrabbak ejtenek el.
+- **A vándorkaraván** — Caldestera kereskedői járják a veszélyes utakat; portékájuk ritka, védelmük
+  a Felsők becsülete.
+- **Kincs, érc-láz, halászati láz** — a régi világ elveszett gazdagsága újra meg újra felszínre tör.
+- **Inváziók és a világ szörnyei** — a Néma Királynő próbára teszi az új rendet; ilyenkor a
+  birodalmak félreteszik a viszályt, mert a közös ellenség mindenkié. *(Mechanika: a világesemények —
+  mind config-vezérelt; a kollektív szerver-kihívás = a közös ellenség elve.)*
+
+### A Fa Alatt Testvérek — a csapat
+Akik együtt ébredtek a Fa alatt, azok közt van egy kötelék, amely **erősebb a birodalmak határainál**:
+a bajtársiasság. A Felsők kis **csapatokba** állhatnak össze frakciótól függetlenül — együtt osztoznak
+zsákmányon és dicsőségen, s egymás ellen kezet nem emelnek, míg a kötelék áll. A birodalmak rossz
+szemmel nézik, de tűrik: tudják, hogy a Káoszkor ellen minden szövetség kell. *(Mechanika: party-rendszer
+— frakció-független, osztott XP, personal loot, párton belüli PvP-tiltás.)*
+
+### Az Arany Áramlása — a Bankárszövetség rendje
+A Káoszkorban egyetlen intézmény nem bukott el: **Caldestera Bankárszövetsége**. Az ő pecsétjük szavatolja
+a négy pénz értékét, az ő könyveik tartják számon a birodalmak vagyonát, s az ő váltóasztalaikon
+**napról napra mozog az árfolyam** — mert a pénz értéke a világ állapotát követi: háború, bőség, hiány
+mind belevésődik. A piactereken és az árveréseken a Felsők egymással kereskednek; a Szövetség csak a
+rendet tartja — s a maga részét mindig beszedi. A Szövetség kereskedőházai árulják a lepecsételt
+**caldesterai ládákat** is: ki tudja, a régi világ miféle kincse lapul bennük — a kulcsért fizetni kell,
+a kockázat a vevőé. *(Mechanika: bank, piac, aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő;
+„nincs addolt pénz" elv; crate-rendszer kulcs-árral mint valuta-nyelő.)*
+
+### A Korszakok Könyve — a szezonok
+A Bankárszövetség krónikásai a Felsők korát **korszakokra** osztják. Minden korszak egy fejezet a világ
+újjáépítésének könyvében: a birodalmak versengenek dicsőségben, hódításban és gazdagságban, s a korszak
+végén a krónikák ítélnek — a leghatalmasabb frakció neve **örökre bekerül a Korszakok Könyvébe**, és
+jutalma legendás. Aztán a lap fordul, s minden verseny újrakezdődik: a Káoszkorban semmi sem végleges.
+*(Mechanika: szezonliga — frakció-pontverseny, szezon-végi jutalom, új szezon.)*
+
+### Az Oltárok és az Ereklyék Törvénye
+A világban kevés **valódi Ereklye** maradt — a Fa gyermekeinek korából való, egyetlen példányban létező
+hatalmak. Az Ereklye **nem tűr osztozást**: egyszerre csak egy kézben lakhat, s ha gazdája méltatlanná
+válik rá — vagy elhull —, az Ereklye új hordozót keres. A **rituálé-oltárok** — a régi hit kőbe rakott
+szentélyei — pedig azoknak nyílnak meg, akik ismerik a helyes áldozatot: rajtuk keresztül szól a világ
+a Felsőkhöz. *(Mechanika: egy-példányos relikviák, PvP-átvétel, inaktivitás-elenyészés; multi-block
+rituálé-oltárok.)*
+
+### A Hírnökök és a Krónikák — a küldetések
+A Káoszkorban a hír lassan jár, ezért minden városban ott állnak a **hírnökök**: ők osztják a nép
+kéréseit, a birodalom parancsait s a krónikások feljegyzésre méltó feladatait. Aki teljesíti őket, nevet
+szerez — s a nagy **közösségi célok** idején az egész frakció egy emberként húz: mert a krónikák csak a
+győzteseket jegyzik fel. *(Mechanika: quest-rendszer, NPC quest-adók, napi rotáció, frakció-közösségi
+célok.)*
 
 ---
 
