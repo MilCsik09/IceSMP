@@ -545,6 +545,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (`signature.setapalca.bonus-damage`). **Körözött-kapu:** vérdíjas játékost a határon
       visszafordít; **Hamisított Menlevéllel** a zsebében beengedi. Kulcsok:
       `territory.capital-law.*`; a bolt-áru name/lore/signature mezőit a ShopManager stampeli.
+- [ ] **I14 „Készítette: X" (ÚJ — Tier S):** craftolj NEVES/gear receptet → a lore alján halvány
+      dőlt sor „Készítette: <név>" + PDC (crafted_by/crafted_at); a piacra téve is megmarad
+      (márkajelzés). Bulk (stackelhető) eredményen NINCS (stack-törés ellen). Kapcsoló:
+      `crafted-by.enabled` (profession-recipes.yml). Régi, címke nélküli itemek hibátlanul
+      működnek tovább.
+- [ ] **D18 `/lore` kódex-parancs (ÚJ — Tier S):** `/lore` felsorolja a témákat;
+      `/lore lang|fagy|menedek|kitaszitottak|fa|kapu|suttogok` (aliasok: red/blue/neutral/dark
+      stb.) 5 sor kánon-szöveget ír chatbe; a szövegek messages-kulcsból felülírhatók
+      (`faction-lore.<téma>.<sor>`). A fővárosi lore-pontok (tábla/NPC) admin-elhelyezésűek —
+      ugyanezek a szövegek használhatók hozzájuk.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

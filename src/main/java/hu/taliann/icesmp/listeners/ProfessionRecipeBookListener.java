@@ -48,6 +48,9 @@ public final class ProfessionRecipeBookListener implements Listener {
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
     /** PDC tag on crafted signature items (K2/K3) — the perk listener recognises items by this id. */
     private final NamespacedKey signatureKey;
+    /** I14 — „a mester keze alól kikerülő mű a nevét is viseli" (kódex VIII.): készítő + időpont. */
+    private final NamespacedKey craftedByKey;
+    private final NamespacedKey craftedAtKey;
 
     public ProfessionRecipeBookListener(final JavaPlugin plugin,
                                         final ProfessionManager professionManager, final ProfessionRecipeCatalog catalog,
@@ -63,6 +66,8 @@ public final class ProfessionRecipeBookListener implements Listener {
         this.factionManager = factionManager;
         this.configManager = configManager;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
+        this.craftedByKey = new NamespacedKey(plugin, "crafted_by");
+        this.craftedAtKey = new NamespacedKey(plugin, "crafted_at");
     }
 
     /** Opens the recipe book for a player at the first page. */
@@ -205,6 +210,26 @@ public final class ProfessionRecipeBookListener implements Listener {
                     enchMeta.addEnchant(enchant, enchantLevel, true);
                 }
                 result.setItemMeta(enchMeta);
+            }
+        }
+
+        // I14 — „Készítette: X" (kódex VIII.: a mester keze alól kikerülő mű a nevét is viseli):
+        // a NEVES/gear eredmények PDC-ben és lore-sorban viszik a készítő nevét — a piacon is
+        // megmarad, márkajelzésként. Bulk (lore nélküli, stackelhető) eredményre nem kerül,
+        // hogy a stackelést ne törje. A roll ELŐTT fut (a roll a lore alá fűzi az affixokat).
+        if (configManager.getBoolean("crafted-by.enabled", true)
+                && (recipe.affixTier() != null || (recipe.lore() != null && !recipe.lore().isEmpty()))) {
+            final ItemMeta craftedMeta = result.getItemMeta();
+            if (craftedMeta != null) {
+                craftedMeta.getPersistentDataContainer().set(craftedByKey, PersistentDataType.STRING, player.getName());
+                craftedMeta.getPersistentDataContainer().set(craftedAtKey, PersistentDataType.LONG, System.currentTimeMillis());
+                final List<Component> craftedLore = craftedMeta.lore() == null
+                        ? new ArrayList<>() : new ArrayList<>(craftedMeta.lore());
+                craftedLore.add(Component.text("Készítette: " + player.getName(),
+                                net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, true));
+                craftedMeta.lore(craftedLore);
+                result.setItemMeta(craftedMeta);
             }
         }
 

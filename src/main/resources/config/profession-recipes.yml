@@ -1427,3 +1427,10 @@ profession-recipes:
     category: "Menedék (tervrajz)"
     result: { material: RABBIT_FOOT, amount: 1, signature: szellemszarvas_bubaj }
     ingredients: [ "RABBIT_FOOT:1", "GOLDEN_CARROT:8", "AMETHYST_SHARD:8", "unique:vad_esszencia:2" ]
+
+# ===== I14 — „Készítette: X" címke (kódex VIII.: a mester keze alól kikerülő mű
+# a nevét is viseli). A NEVES/gear recept-eredmények PDC-ben (crafted_by/crafted_at)
+# és halvány lore-sorban viszik a készítő nevét — a piacon is megmarad. A bulk
+# (stackelhető) eredményekre nem kerül. Élőben olvasódik.
+crafted-by:
+  enabled: true
