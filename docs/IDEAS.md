@@ -4,8 +4,8 @@ Fejlesztési ötletek gyűjtője — **nincs elköteleződés**, ez a brainstorm
 zöld utat kap, az a [ROADMAP.md](../ROADMAP.md)-be kerül tervezett tételként; a technikai
 adósság külön él a [REFACTOR_CANDIDATES.md](REFACTOR_CANDIDATES.md)-ben.
 
-A tár **356 kidolgozott ötletet** tartalmaz 12 kategória-fájlban (`docs/ideas/`); ebből **39
-erősen lore-illeszkedő tétel** a kódex ([LORE.md](LORE.md)) alapján az **L-válogatásba** került
+A tár **356 kidolgozott ötletet** tartalmaz 12 kategória-fájlban (`docs/ideas/`); ebből **49
+lore-vezérelt tétel** a kódex ([LORE.md](LORE.md)) alapján az **L-válogatásba** került
 át (a forrás-fájlban mutató maradt a helyükön).
 Minden tétel azonos sablonnal készült: **Mi ez / Hogyan működne / Miért jó /
 Építőkövek / Buktatók** — konkrét parancsokkal, config-kulcsokkal, a meglévő
@@ -30,8 +30,8 @@ Jelölés minden tételnél: **Munka** (🟢 kicsi / 🟡 közepes / 🔴 nagy) 
 | **H) PvE, világesemények, végjáték** | [ideas/H-pve.md](ideas/H-pve.md) | H1–H25 | Új esemény-típusok, boss-mélyítés, mob-öko, ko-op tartalom, végjáték-hurok |
 | **I) Szakmák, gyűjtögetés, készítés** | [ideas/I-szakmak.md](ideas/I-szakmak.md) | I1–I25 | Mestermű, érc-ér események, műhelyek, recept-láncok, szakma-presztízs |
 | **J) Questek, story, progresszió** | [ideas/J-quest.md](ideas/J-quest.md) | J1–J24 | Új objektíva-típusok, story-eszközök (döntés-flagek, fejezetek), NPC-emlékezet, quest-admin |
-| **K) Lore-integráció / világ-tartalom** | [ideas/K-lore.md](ideas/K-lore.md) | K1–K10 | A [LORE.md](LORE.md) beépítése: frakció/valuta-reskin, lore-hű unique-itemek a kész motorra, Nether-portál zóna, Emlékszilánkok, Suttogók-szekta, Caldestera feketepiac |
-| **L) Lore-kiemelt válogatás** | [ideas/L-lore-kiemelt.md](ideas/L-lore-kiemelt.md) | 39 tétel (A/B/D/E/F/G/H/I/J-ből) | A kódexhez legerősebben illeszkedő ötletek tier-bontásban (S: 6 • A: 27 • B/határeset: 6), tételenkénti lore-horgonnyal |
+| **K) Lore-integráció / világ-tartalom** | [ideas/K-lore.md](ideas/K-lore.md) | K1–K10 → **L-be költözött** | A [LORE.md](LORE.md) beépítési terve — a teljes kategória az L-válogatás „A kódex beépítési terve" szakaszában él |
+| **L) Lore-kiemelt válogatás** | [ideas/L-lore-kiemelt.md](ideas/L-lore-kiemelt.md) | 49 tétel | A lore-vezérelt tartalmi ütemterv: a kódex beépítési terve (K1–K10) + a legerősebben illeszkedő ötletek (S: 6 • A: 27 • B/határeset: 6), lore-horgonnyal |
 
 ---
 

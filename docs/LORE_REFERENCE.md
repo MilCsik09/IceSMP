@@ -75,7 +75,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
   Emlékszilánk az Arany Liga / Szabad Városok korának emlékeit őrzi.
 - **🔜 K9 — Suttogók (hibrid):** Suttogó = rejtett STÁTUSZ a látható frakció fölött; lelepleződés
   (közterületi sötét mágia, rajtakapott rítus/árulás, tanú-vád) → átváltás a `DARK` Kitaszítottak közé
-  (bűn + vérdíj). Részletes terv: [ideas/K-lore.md → K9](ideas/K-lore.md).
+  (bűn + vérdíj). Részletes terv: [ideas/L-lore-kiemelt.md → K9](ideas/L-lore-kiemelt.md).
 - **🔜 K10 — Caldestera feketepiac:** rejtett fegyverek (Bokic-menti Sétapálca, Hamisított Menlevél);
   előfeltétel a fegyver-elkobzó zóna a semleges fővárosban.
 - **🔜 Mortengrad megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben
