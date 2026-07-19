@@ -17,6 +17,15 @@
 #     custom-model-data: <egyedi CMD>
 #     lore: [ "<sor>", ... ]
 profession-materials:
+  # --- K8: Emlékszilánk (a Felsők elveszett emlékei — beváltás: /emlek) ---
+  emlekszilank:
+    material: AMETHYST_SHARD
+    display-name: "&dOpálos Emlékszilánk"
+    custom-model-data: 6014
+    lore:
+      - "&7Egy Felső elveszett emlékének kristálya —"
+      - "&7romok mélyén, erős szörnyeknél rejtőzik."
+      - "&8Beváltás: /emlek (visszaemlékezés)"
   # --- Szakma által gyártott köztes alapanyagok ---
   tiszta_vasesszencia:
     material: IRON_NUGGET

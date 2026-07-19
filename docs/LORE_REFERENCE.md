@@ -72,10 +72,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
   a támadó elveszti), ölés nem bűn, +3 mob-szint (jobb loot-tier), aréna-védelem (build/robbanás/
   tűz tiltva), belépő-hangulat; minden kulcs élőben olvasódik (`territory.doom-gate.*`,
   `territory.protection.rules.doom-gate`).
-- **🔜 K8 — Emlékszilánkok:** gyűjthető emlék-progresszió *(narratíva: kódex V. — „Az elveszett
-  emlékek")*. Jutalom a meglévő rendszerekhez illesztve — **NEM kaszt-váltás** (a kaszt állandó):
-  XP/szint, talentpont, specializáció-feloldás, frakció-rang, kozmetika, lore-feltárás. Az Opálos
-  Emlékszilánk az Arany Liga / Szabad Városok korának emlékeit őrzi.
+- **✅ K8 — Emlékszilánkok (KÉSZ):** Opálos Emlékszilánk (mob/boss-loot) + `/emlek` beváltó —
+  kaszt-XP / +1 talentpont / spec szint-kapu feloldás / emlék-töredék. Class-váltás NINCS
+  (a kaszt állandó — kánon); költségek: `memory-shards.*`.
 - **🔜 K9 — Suttogók (hibrid):** Suttogó = rejtett STÁTUSZ a látható frakció fölött; lelepleződés
   (közterületi sötét mágia, rajtakapott rítus/árulás, tanú-vád) → átváltás a `DARK` Kitaszítottak közé
   (bűn + vérdíj). Részletes terv: [ideas/L-lore-kiemelt.md → K9](ideas/L-lore-kiemelt.md).

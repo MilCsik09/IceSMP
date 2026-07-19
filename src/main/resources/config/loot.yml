@@ -40,6 +40,8 @@ loot:
       - { type: unique, weight: 18, id: vad_esszencia, min: 1, max: 2 }
       - { type: unique, weight: 8,  id: szorny_mag, min: 1, max: 1 }
       - { type: unique, weight: 5,  id: arnyekpor, min: 1, max: 2 }
+      # --- K8: Emlékszilánk — a Felsők elveszett emlékei (ritka; beváltás: /emlek) ---
+      - { type: unique, weight: 3,  id: emlekszilank, min: 1, max: 1 }
       # --- K5: Káoszkor-loot — CSAK élőhalott forrásból esik (undead-only) ---
       - { type: named, weight: 5, undead-only: true, item: IRON_SWORD, name: "&8A Hetedik Vérháború Rozsdás Pengéje", lore: [ "&7Egykor I. Benedictus vagy I. Lineata seregéé;", "&7ma csak Eleftheria néma haragja hajtja." ] }
       - { type: named, weight: 4, undead-only: true, item: CHAINMAIL_CHESTPLATE, name: "&8Megrontott Elit Páncél", lore: [ "&7Az eltűnt nemesek dicsőségének maradványa;", "&7a sötét mágia védi oszladozó viselőjét." ] }
@@ -54,6 +56,8 @@ loot:
       - { type: gear, weight: 55 }
       - { type: unique, weight: 25, id: osi_ereklyeszilank, min: 1, max: 2 }
       - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 3 }
+      # --- K8: Emlékszilánk boss-szinten (biztosabb forrás) ---
+      - { type: unique, weight: 8,  id: emlekszilank, min: 1, max: 2 }
       - { type: material, weight: 6, item: NETHERITE_SCRAP, min: 1, max: 2 }
       - { type: material, weight: 4, item: DIAMOND, min: 2, max: 5 }
       # --- K5: Káoszkor-loot boss-szinten (élőhalott boss/event-mobból) ---

@@ -256,3 +256,14 @@ display-fx:
   aurora:
     enabled: true                        # északi fény: magasan lebegő, sodródó fény-fátyol (per-nézős)
     material: CYAN_STAINED_GLASS         # a fátyol blokk-anyaga (áttetsző, hideg szín ajánlott)
+
+# ===== K8 — Emlékszilánkok (visszaemlékezés, /emlek) =====
+# A Felsők amnéziával érkeztek; az Opálos Emlékszilánk (mob/boss-loot, ritka) emlék-
+# töredékekre váltható. Minden kulcs élőben olvasódik (/icesmp reload).
+memory-shards:
+  xp-amount: 500      # a /emlek xp jóváírt kaszt-XP-je
+  costs:
+    xp: 3             # szilánk-költség: kaszt-XP csomag
+    talent: 5         # szilánk-költség: +1 kaszt-talentpont
+    spec: 8           # szilánk-költség: a spec-választás szint-kapujának feloldása
+    lore: 1           # szilánk-költség: egy emlék-töredék (hangulat)

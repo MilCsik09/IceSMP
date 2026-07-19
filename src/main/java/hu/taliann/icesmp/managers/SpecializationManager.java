@@ -33,6 +33,7 @@ public final class SpecializationManager {
     private final QuestManager questManager;
     private final NamespacedKey classSpecKey;
     private final NamespacedKey professionSpecKey;
+    private final NamespacedKey memorySpecUnlockKey;
 
     public SpecializationManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager, final JobManager jobManager,
@@ -47,6 +48,18 @@ public final class SpecializationManager {
         this.questManager = questManager;
         this.classSpecKey = new NamespacedKey(plugin, "class_spec");
         this.professionSpecKey = new NamespacedKey(plugin, "profession_spec");
+        this.memorySpecUnlockKey = new NamespacedKey(plugin, "memory_spec_unlock");
+    }
+
+    /** K8: a játékos "visszaemlékezett" — a spec-választás szint-kapuja feloldva (PDC-flag). */
+    public boolean hasMemorySpecUnlock(final Player player) {
+        return player.getPersistentDataContainer().getOrDefault(
+                memorySpecUnlockKey, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /** K8: Emlékszilánk-beváltás — a szint-kapu feloldása (a játékos saját szálán hívandó). */
+    public void grantMemorySpecUnlock(final Player player) {
+        player.getPersistentDataContainer().set(memorySpecUnlockKey, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
     }
 
     public int getRequiredClassLevel() {
@@ -82,8 +95,12 @@ public final class SpecializationManager {
             return false;
         }
 
-        if (jobManager.getPrimaryJob(player) != specialization.getParentJob()
-                || jobManager.getPrimaryLevel(player) < getRequiredClassLevel()) {
+        // K8 Emlékszilánk: a "visszaemlékezett" játékosnál a szint-kapu elesik (a kaszt-egyezés
+        // és a többi kapu — frakció/bűnös/quest — továbbra is kötelező).
+        if (jobManager.getPrimaryJob(player) != specialization.getParentJob()) {
+            return false;
+        }
+        if (jobManager.getPrimaryLevel(player) < getRequiredClassLevel() && !hasMemorySpecUnlock(player)) {
             return false;
         }
 

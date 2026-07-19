@@ -184,7 +184,7 @@ Folia: a zóna-szkennelés/PvP-hook régió-lokális; a spawn-kill elleni védel
 > 8 mp belépő-grace (a támadó elveszti), aréna-védelem (build/explosions/fire), belépéskor
 > baljós hang + hamu-örvény. Minden kulcs élőben olvasódik (restart nélkül hangolható).
 
-### K8. Emlékszilánkok — a Felsők emlék-progressziója
+### K8. Emlékszilánkok — a Felsők emlék-progressziója `[KÉSZ ✅]`
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A Felsők (játékosok) amnéziával érkeznek; emlékeik fizikai **Emlékszilánkokként** rejtőznek
@@ -206,6 +206,11 @@ talent/rang-rendszer, quest/loot-forrás, `MobLootListener`.
 
 **Buktatók:** A class-váltás mély rendszer-érintés — óvatos horgony (ne törje a meglévő progressziót);
 a szilánk-gazdaság inflálódhat; egyértelmű UI kell a „hány szilánk kell még" állapothoz.
+
+> **Megvalósítva:** Opálos Emlékszilánk (unique material, mob/boss-loot) + `/emlek` beváltó:
+> xp (3→500 kaszt-XP), talent (5→+1 kaszt-talentpont, PDC-additív), spec (8→a spec-választás
+> szint-kapuja elesik, egyszeri), lore (1→emlék-töredék). Class-váltás NINCS (kánon szerint).
+> Költségek: `memory-shards.*` (general.yml), élőben olvasva.
 
 ### K9. A Suttogók — a rejtett hálózat és a Kitaszítottak (hibrid)
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐

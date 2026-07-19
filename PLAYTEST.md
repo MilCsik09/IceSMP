@@ -227,6 +227,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (BLUE) / tojás-étel (RED) evése nullázza. Új/frissen váltó játékos először türelmi időt kap.
       A DARK a **Mortengradi Hamukenyeret** kapja (éjjellátás-buff), de honvágy-kötelezettsége
       NINCS (nincs otthonuk); a NEUTRAL-nak sincs kötelezettsége.
+- [ ] **K8 Emlékszilánkok (ÚJ):** az Opálos Emlékszilánk ritkán esik skálázott moboktól (unique-sor,
+      3-as súly), boss/event-mobtól biztosabban (8-as súly). `/emlek` mutatja az egyenleget és az
+      árakat; `/emlek xp` (3 szilánk → 500 kaszt-XP), `/emlek talent` (5 → +1 kaszt-talentpont, a
+      /talent pool beszámítja), `/emlek spec` (8 → a spec-választás SZINT-kapuja elesik — a kaszt/
+      frakció/bűnös/quest kapuk maradnak; másodszor nem váltható be), `/emlek lore` (1 → véletlen
+      emlék-töredék). A levonás atomi (nincs dupe); kulcsok: `memory-shards.*` (general.yml).
 - [ ] **K5 Káoszkor-loot:** élőhalott mobból (zombi/csontváz) eshet a Rozsdás Penge / Megrontott
       Elit Páncél (nevesített, rarity-prefixszel + affixekkel); NEM-élőhalottból sosem esik;
       az Eleftheria Könnye rituálé csak DARK-frakcióval aktiválható (síró obszidián mag).
