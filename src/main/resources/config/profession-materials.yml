@@ -23,7 +23,7 @@ profession-materials:
     display-name: "&fTiszta Vasesszencia"
     custom-model-data: 6000
     lore:
-      - "&7A kohó szívében sűrűsödött,"
+      - "&7A Vasművek Akadémiájának titka:"
       - "&7ezerszer hajtogatott vas lelke."
       - "&8Kovács köztes alapanyag"
   gyogy_kivonat:
@@ -31,8 +31,8 @@ profession-materials:
     display-name: "&aGyógy-kivonat"
     custom-model-data: 6001
     lore:
-      - "&7Hajnalban szedett gyógyfüvek"
-      - "&7cseppfolyós, ragyogó párlata."
+      - "&7A Bokic partján, hajnalban szedett"
+      - "&7gyógyfüvek ragyogó párlata."
       - "&8Gyógynövényész köztes alapanyag"
   rezgo_rez_otvozet:
     material: COPPER_INGOT
@@ -47,8 +47,8 @@ profession-materials:
     display-name: "&eKeményfa Gerenda"
     custom-model-data: 6003
     lore:
-      - "&7Évszázados tölgy magja,"
-      - "&7melyet fejsze el nem repeszt."
+      - "&7A Bokic menti ősvadonban nőtt,"
+      - "&7évszázados tölgy magja."
       - "&8Favágó köztes alapanyag"
   runapor:
     material: GLOWSTONE_DUST
@@ -64,30 +64,32 @@ profession-materials:
     display-name: "&2Vad Esszencia"
     custom-model-data: 6010
     lore:
-      - "&7A vadon dühe, mely a legyőzött"
-      - "&7fenevad testéből száll el."
+      - "&7A Káoszkor elvadult fenevadjának"
+      - "&7dühe, mely legyőzött testéből száll el."
       - "&cCsak szörnyekből esik"
   szorny_mag:
     material: ECHO_SHARD
     display-name: "&5Szörny Mag"
     custom-model-data: 6011
     lore:
-      - "&7Egy szörny lüktető, sötét szíve —"
-      - "&7még kihűlve is hatalmat rejt."
+      - "&7Egy káoszkori szörny lüktető, sötét"
+      - "&7szíve — még kihűlve is hatalmat rejt."
       - "&cCsak erősebb szörnyekből esik"
   arnyekpor:
     material: SCULK_VEIN
     display-name: "&8Árnyékpor"
     custom-model-data: 6012
     lore:
-      - "&7Tapadós, éjfekete por, mely"
+      - "&7A Néma Királynő suttogásának"
+      - "&7megülepedett, éjfekete pora —"
       - "&7elnyeli a fényt és a hangot."
       - "&cCsak szörnyekből esik"
   osi_ereklyeszilank:
     material: NETHER_STAR
-    display-name: "&cŐsi Ereklyeszilánk"
+    display-name: "&cFekete Villám Szilánk"
     custom-model-data: 6013
     lore:
-      - "&7Egy réges-rég széttört ereklye"
-      - "&7szilánkja — legendák csírája."
+      - "&7Az a sötét energia pulzál benne, amely"
+      - "&7Hu. 698-ban kettéhasította az eget,"
+      - "&7s felébresztette a Holtak Úrnőjét."
       - "&4Csak világbossból / nehéz eventből esik"

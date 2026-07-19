@@ -30,7 +30,7 @@ public final class ProfessionRecipeCatalog {
     public record Recipe(String id, ProfessionType profession, int level, boolean blueprint,
                          String displayName, String category, Material result, int resultAmount,
                          String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
-                         Map<String, Integer> uniqueIngredients) {
+                         Map<String, Integer> uniqueIngredients, List<String> lore) {
     }
 
     private final JavaPlugin plugin;
@@ -111,10 +111,13 @@ public final class ProfessionRecipeCatalog {
         final String category = section.getString("category", "Egyéb");
         final int amount = Math.max(1, resultSection.getInt("amount", 1));
         final String affixTier = resultSection.getString("affix-tier", null);
+        // Optional lore lines: when present, the crafted item is stamped with the designed name + lore
+        // (a "named" prestige item — gear/tome/special consumable); bulk results have no lore and stay vanilla.
+        final List<String> lore = section.getStringList("lore");
         return new Recipe(id, profession, level, blueprint, displayName, category, result, amount,
                 affixTier == null || affixTier.isBlank() ? null : affixTier.toLowerCase(Locale.ROOT),
                 uniqueResult == null || uniqueResult.isBlank() ? null : uniqueResult.toLowerCase(Locale.ROOT),
-                ingredients, uniqueIngredients);
+                ingredients, uniqueIngredients, lore);
     }
 
     public Recipe get(final String id) {

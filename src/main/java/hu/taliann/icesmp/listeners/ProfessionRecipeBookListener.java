@@ -6,6 +6,10 @@ import hu.taliann.icesmp.managers.ItemRarityService;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.utils.MessageManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -14,7 +18,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,6 +32,8 @@ import java.util.Map;
  * touches are on the clicking player's own region thread (Folia-safe).
  */
 public final class ProfessionRecipeBookListener implements Listener {
+
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private final ProfessionManager professionManager;
     private final ProfessionRecipeCatalog catalog;
@@ -101,7 +110,25 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (result == null) {
             return;
         }
-        // Roll a unique quality + affixes for single-item gear results (crafted tier).
+        // Named prestige items (gear / tome / special consumable): stamp the designed name + lore so the
+        // crafted item matches the recipe book and the mob-loot naming model. Bulk results carry no lore
+        // and stay vanilla + stackable. Unique materials already carry their own name/lore from the factory.
+        if (recipe.uniqueResult() == null && recipe.lore() != null && !recipe.lore().isEmpty()) {
+            final ItemMeta meta = result.getItemMeta();
+            if (meta != null) {
+                meta.displayName(LEGACY.deserialize(recipe.displayName())
+                        .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                final List<Component> loreLines = new ArrayList<>();
+                for (final String line : recipe.lore()) {
+                    loreLines.add(LEGACY.deserialize(line)
+                            .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                }
+                meta.lore(loreLines);
+                result.setItemMeta(meta);
+            }
+        }
+        // Roll a unique quality + affixes for single-item gear results (crafted tier). The roll keeps the
+        // stamped display name (prefixing the rarity) and appends the affix lines below the lore.
         if (recipe.affixTier() != null && recipe.resultAmount() == 1) {
             result = affixService.roll(result, recipe.affixTier());
         }

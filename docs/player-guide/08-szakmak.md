@@ -152,7 +152,7 @@ a bónuszok a leírásban látszanak (negatív affix pirossal).
   és **csak-mobból-eső egyedi alapanyagokat** (*Vad Esszencia*, *Szörny Mag*, *Árnyékpor*), amiket a
   szakma-receptek igényelnek. A szakma által craftolt (nevesített) tárgyak **soha nem esnek mobból**.
 - 🐉 **Világboss / nehéz event loot:** magas raritások (Ritka→**Ereklye**) + boss-only egyedi
-  alapanyag (*Ősi Ereklyeszilánk*, a legendás receptekhez) — a legjobb forrás.
+  alapanyag (*Fekete Villám Szilánk*, a legendás receptekhez) — a legjobb forrás.
 
 ## Talentpontok a szakmákból
 

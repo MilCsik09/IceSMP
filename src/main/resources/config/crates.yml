@@ -26,8 +26,8 @@ crates-settings:
 crates:
 
   koznapi:
-    display-name: "Köznapi Láda"
-    key-name: "&fKöznapi Kulcs"
+    display-name: "Caldesterai Kereskedőláda"
+    key-name: "&fKereskedő Kulcs"
     key-material: TRIPWIRE_HOOK
     key-custom-model-data: 6201
     # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
@@ -42,8 +42,8 @@ crates:
       - {weight: 5, material: DIAMOND_BLOCK, amount: 1, description: "&bDiamond blokk"}
 
   ritka:
-    display-name: "&5Ritka Láda"
-    key-name: "&5Ritka Kulcs"
+    display-name: "&5Caldesterai Kincsesláda"
+    key-name: "&5Kincses Kulcs"
     key-material: TRIPWIRE_HOOK
     key-custom-model-data: 6202
     # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.

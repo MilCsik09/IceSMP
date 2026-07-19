@@ -163,7 +163,7 @@ WoW-ban / Terraria reforge-ban. A raritás a nevet, a színt, az affixek számá
 - 👹 **Mob-loot:** súlyozott loot-tábláról sokféle tárgy — rolled felszerelés (random névvel, akár
   átkos), nyersanyagok, és **csak-mobból-eső egyedi alapanyagok** (*Vad Esszencia*, *Szörny Mag*…),
   amiket a szakma-receptek igényelnek. Szakma-craftolt tárgy sosem esik mobból.
-- 🐉 **Világboss / nehéz event loot:** a legmagasabb raritások + boss-only *Ősi Ereklyeszilánk*.
+- 🐉 **Világboss / nehéz event loot:** a legmagasabb raritások + boss-only *Fekete Villám Szilánk*.
 
 ### 🗡 Relikviák és rituálé-oltárok
 

@@ -12,7 +12,7 @@
 A kezdetekben csak a végtelen, csendes sötétség létezett, és a csillagok. Közülük a legragyogóbb,
 **Asterlayna**, megelégelte a magányt. Csillagfényből szőtt uszályában megbotolva lezuhant az égről,
 a világok repedései közé. Teste elpusztult, de lelkének utolsó szilánkját a legtermékenyebb földbe
-ültette, amiből kikelt az **Élet Fája: Aetrinita**.
+ültette, amiből **hetek múltán** kikelt az **Élet Fája: Aetrinita**.
 
 A Fa négy hatalmas gyermeket teremtett:
 
@@ -111,6 +111,10 @@ tervezett mechanika (nem végleges balansz).
   nélküle a Jégmezők aurája a legkeményebb harcos vérét is megmérgezi." *(BLUE hal-fogyasztási kötelezettség)*
 - **Hópihér-veret** (Érme) — „Tiszta jégből és ezüstből vert; csak a leghidegebb erszényekben nem olvad el." *(BLUE valuta)*
 - **Jégsárkány-Kantár** (Hátas-felszerelés) — „Kemény bőr és sötét mágia; csak ezzel tartható kordában egy vad sárkány."
+- **Glatziendorfi Jégtörő** (Balta) — „A Jégmezők sárkányainak pikkelyeivel megerősített fegyver."
+- **V. Miinus Haragja** (Fegyver) — a Sárkánykirály-örökös uralkodó nevét viselő, kíméletlen penge.
+- **Sárkánycsont Íj** (Íj) — a jégmezők megszelídített sárkányainak csontjából faragva.
+- **Sárkány-pörkölt** (Étel) — „A fagyhalál elleni egyetlen menedék."
 
 ### 🔥 Perinfernicitas
 - **Pyralingradi Tűzköpő** (Számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi vihar
@@ -122,14 +126,17 @@ tervezett mechanika (nem végleges balansz).
 - **Parázsló Parals** (Érme) — „A birodalom vörösréz valutája; érintésre mindig enyhén meleg." *(RED valuta)*
 - **Főnix-Tollköpeny** (Kiegészítő) — „I. Zhoris lángmadarainak tollaiból szőve; óv a hőségtől és a
   láva haragjától." *(tűz/láva-ellenállás)*
+- **I. Zhoris Lángnyelve** (Kard) — „Ezt a pengét a Hetedik Vérháború napján kovácsolták a Vérszavanna legmélyén."
+- **Napfogyatkozás** (Kard) — sötét lángpenge, a Lángoló Birodalom legendás fegyvere.
+- **Pyralingradi Ostrom-számszeríj** (Számszeríj) — Soleil papjai áldották meg a Vérszavanna szívében.
 
 ### ⚖️ Ryanora & Caldestera
 - **A Vasművek Akadémiájának Csákánya** (Szerszám) — „Cardestera mestereinek műve, Asterlayna
   áldásával; a sziklák mélyén gyakran váratlan kincs." *(+20% bányász-loot)*
 - **Bokic-menti Horgászbot** (Szerszám) — „A Bokic hordalékából; zsinórja a víz szellemeit is
   felszínre vonzza." *(+20% horgász-loot)*
-- **Tiltott Kakaóbabos Sütemény** (Csokis süti) — „Aetrinita átka; fogyasztása tilos — hacsak nem
-  akarsz darabokban távozni a Városból." *(robbanó süti perk)*
+- **Tiltott Kakaóbabos Sütemény** / **Asterlayna Gyümölcse** (Csokis süti) — „Aetrinita átka; fogyasztása
+  tilos — hacsak nem akarsz darabokban távozni a Városból." *(robbanó süti perk)*
 - **Smaragdkő Bankbetét** (Értékpapír) — „Caldestera Bankárszövetségének hamisíthatatlan pecsétjével;
   többet ér ezer kardnál."
 - **Szellemszarvas-Bűbáj** (Hátas-hívó) — „Tölgyfa talizmán; megfújva a szellemléptű szarvasok segítenek."
@@ -143,14 +150,22 @@ tervezett mechanika (nem végleges balansz).
   suttogása hozta létre, magába zárva a Fa kínjait és a magányt."
 - **Megrontott Elit Páncél** (Mob-drop/vért) — „Az eltűnt nemesek dicsőségének maradványa; az acélt
   átrágta az idő, de a sötét mágia védi oszladozó viselőjét."
+- **A Néma Királynő suttogása** (Mob-drop) — „Eleftheria első szavai hívták életre a Hu. 698. évben."
+- **Megrontott Fekete Csont** (Mob-drop) — az élőhalottak maradványa; ugyanaz a néma harag hajtja.
+
+> **Törpék** *(kiegészítés — nem az eredeti kódexből):* az ősi romok és a legősibb ereklyék (pl. a
+> *Mételytépő* harci fejsze) egy rég letűnt, rejtélyes **törp** civilizáció hagyatéka — a Fa
+> gyermekeinek koránál is régebbi nyom a világban. *(A meglévő Mételytépő-relikvia lore-jának
+> meghorgonyzására; törölhető, ha nem kell.)*
 
 ---
 
 ## Jövőbeli világ-rendszerek (tervezett)
 
 ### 1. A Nether-portál — „Kárhozat Kapuja" / „Az Őrület Hasadéka"
-A Hetedik Vérháborút kirobbantó **óriás Nether-portál** ma őrizetlen, instabil; a Nether energiája
-szivárog a világba, megfertőzve a földeket. **Senkiföldje / high-tier PvPvE-zóna:** a Felsők a
+A Hetedik Vérháborút kirobbantó **óriás Nether-portál** ma őrizetlen, instabil; amikor a Káoszkor
+elején eltűnt a nemesség, a két sereg maradványai itt pusztultak el az élőhalottakkal vívott harcban.
+A Nether energiája szivárog a világba, megfertőzve a földeket. **Senkiföldje / high-tier PvPvE-zóna:** a Felsők a
 legjobb nyersanyagért (netherite, boss-drop) járnak ide, és a két frakció **legálisan** összecsaphat.
 
 ### 2. A Felsők emlékei — **Emlékszilánkok**

@@ -57,42 +57,42 @@ public final class ProfessionRecipeManager {
         recipes.clear();
 
         define("tarnasz_csakany", ProfessionType.MINER, 15,
-                tool(Material.DIAMOND_PICKAXE, "<aqua>Tárnász Csákány</aqua>", "<gray>A bányászmesterek szerszáma.</gray>",
+                tool(Material.DIAMOND_PICKAXE, "<aqua>Tárnász Csákány</aqua>", "<gray>A Vasművek Akadémiáján edzett szerszám.</gray>",
                         new Enchantment[]{Enchantment.EFFICIENCY, Enchantment.UNBREAKING}, new int[]{4, 3}),
                 new String[]{"GDG", "DSD", " S "}, java.util.Map.of('G', Material.EMERALD, 'D', Material.DIAMOND, 'S', Material.STICK));
 
         define("favago_fejsze", ProfessionType.LUMBERJACK, 15,
-                tool(Material.DIAMOND_AXE, "<dark_green>Favágó Fejsze</dark_green>", "<gray>Egyetlen csapásra dönt fát.</gray>",
+                tool(Material.DIAMOND_AXE, "<dark_green>Favágó Fejsze</dark_green>", "<gray>A Bokic menti favágócéhek remeke.</gray>",
                         new Enchantment[]{Enchantment.EFFICIENCY, Enchantment.UNBREAKING}, new int[]{4, 2}),
                 new String[]{"GD ", "DS ", " S "}, java.util.Map.of('G', Material.EMERALD, 'D', Material.DIAMOND, 'S', Material.STICK));
 
         define("bastya_pajzs", ProfessionType.ARMORER, 15,
-                tool(Material.SHIELD, "<gold>Bástya Pajzs</gold>", "<gray>A kovácsmesterek remeke.</gray>",
+                tool(Material.SHIELD, "<gold>Bástya Pajzs</gold>", "<gray>Caldestera kovácsmestereinek remeke.</gray>",
                         new Enchantment[]{Enchantment.UNBREAKING}, new int[]{5}),
                 new String[]{"GIG", "III", " I "}, java.util.Map.of('G', Material.EMERALD, 'I', Material.IRON_INGOT));
 
         define("bolcs_konyve", ProfessionType.ENCHANTER, 15,
-                storedBook("<dark_aqua>Bölcs Könyve</dark_aqua>", "<gray>Örök javítás a tárgyaidnak.</gray>", Enchantment.MENDING),
+                storedBook("<dark_aqua>Bölcs Könyve</dark_aqua>", "<gray>Caldestera Akadémiájának örök bölcsessége.</gray>", Enchantment.MENDING),
                 new String[]{"GLG", "LBL", "GLG"}, java.util.Map.of('G', Material.EMERALD, 'L', Material.LAPIS_LAZULI, 'B', Material.BOOK));
 
         // 2. szintű mestermunkák (30. szint) — netherit-alapú, erősebb változatok.
         define("osveny_csakany", ProfessionType.MINER, 30,
-                tool(Material.NETHERITE_PICKAXE, "<aqua>Ősvény Csákány</aqua>", "<gray>A mélységek mesterszerszáma.</gray>",
+                tool(Material.NETHERITE_PICKAXE, "<aqua>Ősvény Csákány</aqua>", "<gray>A Kárhozat Kapuja netheritjéből kovácsolva.</gray>",
                         new Enchantment[]{Enchantment.EFFICIENCY, Enchantment.UNBREAKING}, new int[]{5, 5}),
                 new String[]{"NEN", "NSN", " S "}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'E', Material.EMERALD_BLOCK, 'S', Material.STICK));
 
         define("rengeteg_fejsze", ProfessionType.LUMBERJACK, 30,
-                tool(Material.NETHERITE_AXE, "<dark_green>Rengeteg Fejsze</dark_green>", "<gray>Egész ligeteket dönt ki.</gray>",
+                tool(Material.NETHERITE_AXE, "<dark_green>Rengeteg Fejsze</dark_green>", "<gray>A Kárhozat Kapuja netheritje — ligeteket dönt.</gray>",
                         new Enchantment[]{Enchantment.EFFICIENCY, Enchantment.UNBREAKING}, new int[]{5, 4}),
                 new String[]{"NE ", "NS ", " S "}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'E', Material.EMERALD_BLOCK, 'S', Material.STICK));
 
         define("sarkany_vert", ProfessionType.ARMORER, 30,
-                tool(Material.NETHERITE_CHESTPLATE, "<gold>Sárkányvért</gold>", "<gray>A kovácsmesterek hadi remeke.</gray>",
+                tool(Material.NETHERITE_CHESTPLATE, "<gold>Sárkányvért</gold>", "<gray>Kallan sárkányainak pikkelye ihlette.</gray>",
                         new Enchantment[]{Enchantment.UNBREAKING}, new int[]{8}),
                 new String[]{"N N", "NEN", "NNN"}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'E', Material.EMERALD_BLOCK));
 
         define("mester_tomusz", ProfessionType.ENCHANTER, 30,
-                storedBook("<dark_aqua>Mester Tomusz</dark_aqua>", "<gray>A megszállottság hatékonysága.</gray>", Enchantment.EFFICIENCY, 5),
+                storedBook("<dark_aqua>Mester Tomusz</dark_aqua>", "<gray>Caldestera Akadémiájának legmélyebb tudása.</gray>", Enchantment.EFFICIENCY, 5),
                 new String[]{"NLN", "LBL", "NLN"}, java.util.Map.of('N', Material.NETHERITE_INGOT, 'L', Material.LAPIS_LAZULI, 'B', Material.BOOK));
 
         for (final Recipe recipe : recipes) {

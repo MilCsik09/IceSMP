@@ -66,6 +66,9 @@ profession-recipes:
     level: 15
     learn: level
     display-name: "Tárnász Csákány"
+    lore:
+      - "&7A Vasművek Akadémiájának mesterei szerint"
+      - "&7még a legmélyebb tárna is megnyílik előtte."
     category: "Szerszám"
     result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:3", "EMERALD:2", "STICK:2" ]
@@ -98,6 +101,9 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Mélybányász Netherit Csákány"
+    lore:
+      - "&7A Kárhozat Kapujából szüremlő netherit"
+      - "&7fejezi be ezt a mélybányász szerszámot."
     category: "Szerszám (tervrajz)"
     result: { material: NETHERITE_PICKAXE, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:3", "STICK:2" ]
@@ -226,6 +232,9 @@ profession-recipes:
     level: 10
     learn: level
     display-name: "Kővésett Fejsze"
+    lore:
+      - "&7Caldestera kovácsinasainak első próbája:"
+      - "&7durva kő, de biztos kézzel faragva."
     category: "Szerszám"
     result: { material: STONE_AXE, amount: 1, affix-tier: crafted }
     ingredients: [ "COBBLESTONE:3", "STICK:2" ]
@@ -250,6 +259,9 @@ profession-recipes:
     level: 20
     learn: level
     display-name: "Vasfejsze"
+    lore:
+      - "&7A kovácscéhek szabvány szerint edzik,"
+      - "&7hogy egyetlen favágó se álljon meg tőle."
     category: "Szerszám"
     result: { material: IRON_AXE, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:3", "STICK:2" ]
@@ -274,6 +286,9 @@ profession-recipes:
     level: 36
     learn: level
     display-name: "Gyémántfejsze"
+    lore:
+      - "&7Csiszolt gyémántél, mely a Vasművek"
+      - "&7Akadémiájának büszkesége az erdőkben."
     category: "Szerszám"
     result: { material: DIAMOND_AXE, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:3", "STICK:2" ]
@@ -290,6 +305,9 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Erdőirtó Netherit Fejsze"
+    lore:
+      - "&7A Kárhozat Kapujának netheritjével edzve,"
+      - "&7egyetlen fatörzs sem áll ellen neki."
     category: "Szerszám (tervrajz)"
     result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:3", "STICK:2" ]
@@ -302,6 +320,9 @@ profession-recipes:
     level: 8
     learn: level
     display-name: "Vaskard"
+    lore:
+      - "&7Egyszerű, de megbízható penge —"
+      - "&7a caldesterai kovácsműhelyek alapja."
     category: "Fegyver"
     result: { material: IRON_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:2", "STICK:1" ]
@@ -310,6 +331,9 @@ profession-recipes:
     level: 10
     learn: level
     display-name: "Vassisak"
+    lore:
+      - "&7Vastag vaslemez, mely a kovácscéhek"
+      - "&7műhelyeiben nyeri el végső formáját."
     category: "Páncél"
     result: { material: IRON_HELMET, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:5" ]
@@ -318,6 +342,9 @@ profession-recipes:
     level: 10
     learn: level
     display-name: "Vascsizma"
+    lore:
+      - "&7Szilárd talp és pántok, hogy a viselője"
+      - "&7bármely tárnában biztosan álljon lábán."
     category: "Páncél"
     result: { material: IRON_BOOTS, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:4" ]
@@ -326,6 +353,9 @@ profession-recipes:
     level: 12
     learn: level
     display-name: "Vas Lábvért"
+    lore:
+      - "&7A Vasművek Akadémiájának szabott mintája,"
+      - "&7mely minden csatában szolgálatot tesz."
     category: "Páncél"
     result: { material: IRON_LEGGINGS, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:7" ]
@@ -334,6 +364,9 @@ profession-recipes:
     level: 15
     learn: level
     display-name: "Bástya Pajzs"
+    lore:
+      - "&7Vasborítás és smaragd-veret — a kovácscéhek"
+      - "&7bástyaként állítják a viselő elé."
     category: "Páncél"
     result: { material: SHIELD, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:6", "EMERALD:2" ]
@@ -342,6 +375,9 @@ profession-recipes:
     level: 22
     learn: level
     display-name: "Gyémántkard"
+    lore:
+      - "&7A legkeményebb kő élesíti, a kovácsmesterek"
+      - "&7keze formálja tökéletes egyensúlyúvá."
     category: "Fegyver"
     result: { material: DIAMOND_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:2", "STICK:1" ]
@@ -350,6 +386,9 @@ profession-recipes:
     level: 24
     learn: level
     display-name: "Gyémántsisak"
+    lore:
+      - "&7Csiszolt gyémántlemezek, melyeket csak a"
+      - "&7Vasművek Akadémiájának mesterei értenek."
     category: "Páncél"
     result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:5" ]
@@ -358,6 +397,9 @@ profession-recipes:
     level: 26
     learn: level
     display-name: "Gyémánt Mellvért"
+    lore:
+      - "&7A kovácscéhek legdrágább rendelése:"
+      - "&7tömör gyémánt, mely visszaveri a pengét."
     category: "Páncél"
     result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:8" ]
@@ -366,6 +408,9 @@ profession-recipes:
     level: 30
     learn: level
     display-name: "Háromágú Szigony"
+    lore:
+      - "&7A Bokic mélyéről merített erő,"
+      - "&7mit csak a víz szellemei adnak kölcsön."
     category: "Fegyver"
     result: { material: TRIDENT, amount: 1, affix-tier: crafted }
     ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2" ]
@@ -374,6 +419,9 @@ profession-recipes:
     level: 40
     learn: blueprint
     display-name: "Sárkányvért"
+    lore:
+      - "&7Kallan jégsárkányainak pikkelye ihlette"
+      - "&7hadi vért, a kovácscéhek büszkesége."
     category: "Páncél (tervrajz)"
     result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:4", "EMERALD_BLOCK:1" ]
@@ -382,6 +430,9 @@ profession-recipes:
     level: 42
     learn: blueprint
     display-name: "Netherit Pallos"
+    lore:
+      - "&7A Kárhozat Kapuja körül gyűjtött netherit"
+      - "&7adja e pallos törhetetlen élét."
     category: "Fegyver (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:2", "STICK:1" ]
@@ -390,6 +441,9 @@ profession-recipes:
     level: 45
     learn: blueprint
     display-name: "Netherit Csatasisak"
+    lore:
+      - "&7A Nether-portál sötét fémjéből kovácsolva,"
+      - "&7hogy viselője a csata hevében is álljon."
     category: "Páncél (tervrajz)"
     result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:3", "DIAMOND:5" ]
@@ -482,6 +536,9 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Bajnok Elixírje"
+    lore:
+      - "&7Aetrinita áldása száll benne,"
+      - "&7hogy a bajnokok sose hátráljanak."
     category: "Ital (tervrajz)"
     result: { material: POTION, amount: 1 }
     ingredients: [ "PHANTOM_MEMBRANE:2", "GHAST_TEAR:2", "GOLDEN_APPLE:1" ]
@@ -494,6 +551,9 @@ profession-recipes:
     level: 8
     learn: level
     display-name: "Tartósság Tomus"
+    lore:
+      - "&7Caldestera Akadémiájának elveszett rúnái,"
+      - "&7melyek örök tartást kölcsönöznek a fegyvernek."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "IRON_INGOT:1" ]
@@ -502,6 +562,9 @@ profession-recipes:
     level: 12
     learn: level
     display-name: "Hatékonyság Tomus"
+    lore:
+      - "&7Rúnaírás az Akadémia mélyéről —"
+      - "&7a kéz mozdulatait gyorsítja meg örökre."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "REDSTONE:2" ]
@@ -510,6 +573,9 @@ profession-recipes:
     level: 15
     learn: level
     display-name: "Élesség Tomus"
+    lore:
+      - "&7Ősi rúnatudás élesíti a pengét,"
+      - "&7melyet Caldestera bölcsei jegyeztek le."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "DIAMOND:1" ]
@@ -518,6 +584,9 @@ profession-recipes:
     level: 16
     learn: level
     display-name: "Zuhanáscsökkentés Tomus"
+    lore:
+      - "&7Elfeledett rúnák, melyek könnyűvé"
+      - "&7teszik a legmagasabb zuhanást is."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "FEATHER:4" ]
@@ -526,6 +595,9 @@ profession-recipes:
     level: 18
     learn: level
     display-name: "Védelem Tomus"
+    lore:
+      - "&7Az Akadémia rúnatára őrizte évszázadokon át,"
+      - "&7hogy pajzsként vonja be viselőjét."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "OBSIDIAN:1" ]
@@ -534,6 +606,9 @@ profession-recipes:
     level: 20
     learn: level
     display-name: "Csali Tomus"
+    lore:
+      - "&7Caldestera vízi rúnái, melyek a legmélyebb"
+      - "&7vizek lakóit is a felszínre csábítják."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "PRISMARINE_CRYSTALS:2" ]
@@ -542,6 +617,9 @@ profession-recipes:
     level: 26
     learn: level
     display-name: "Fosztogatás Tomus"
+    lore:
+      - "&7Az elveszett rúnatudás egy szilánkja,"
+      - "&7mely bőségesebb zsákmányt ígér."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "GOLD_INGOT:2" ]
@@ -550,6 +628,9 @@ profession-recipes:
     level: 30
     learn: level
     display-name: "Szerencse Tomus"
+    lore:
+      - "&7Az Akadémia legritkább rúnája — állítólag"
+      - "&7Asterlayna csillagfényéből őrződött meg."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:4", "EMERALD:2" ]
@@ -558,6 +639,9 @@ profession-recipes:
     level: 40
     learn: blueprint
     display-name: "Javítás Tomus"
+    lore:
+      - "&7Rúnaírás, mely a tapasztalat erejét"
+      - "&7a legkopottabb pengébe is visszaönti."
     category: "Bűvölés (tervrajz)"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:6", "PHANTOM_MEMBRANE:3", "EXPERIENCE_BOTTLE:5" ]
@@ -566,6 +650,9 @@ profession-recipes:
     level: 45
     learn: blueprint
     display-name: "Örvénylő Pusztítás Tomus"
+    lore:
+      - "&7Netherit-porral kevert ősi rúna,"
+      - "&7mely pusztító örvényt zár a fegyverbe."
     category: "Bűvölés (tervrajz)"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:8", "NETHERITE_SCRAP:1", "DIAMOND:4" ]
@@ -574,6 +661,9 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Selyemérintés Tomus"
+    lore:
+      - "&7Az Akadémia legfinomabb rúnaírása,"
+      - "&7mely a kéz érintését selyemmé szelídíti."
     category: "Bűvölés (tervrajz)"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:8", "ENDER_PEARL:4", "EXPERIENCE_BOTTLE:8" ]
@@ -586,6 +676,9 @@ profession-recipes:
     level: 5
     learn: level
     display-name: "Egyszerű Horgászbot"
+    lore:
+      - "&7Egyszerű bot a Bokic partjáról,"
+      - "&7de a víz szellemei így is figyelnek rá."
     category: "Szerszám"
     result: { material: FISHING_ROD, amount: 1 }
     ingredients: [ "STICK:3", "STRING:2" ]
@@ -610,6 +703,9 @@ profession-recipes:
     level: 20
     learn: level
     display-name: "Tartós Horgászbot"
+    lore:
+      - "&7Gyémánttal erősített nyél, mely a Bokic"
+      - "&7legmélyebb sodrásában sem törik el."
     category: "Szerszám"
     result: { material: FISHING_ROD, amount: 1 }
     ingredients: [ "STICK:3", "STRING:2", "DIAMOND:1" ]
@@ -642,6 +738,9 @@ profession-recipes:
     level: 35
     learn: level
     display-name: "Mesteri Horgászbot"
+    lore:
+      - "&7Arannyal és smaragddal díszített mesterbot —"
+      - "&7a Bokic vizének szellemei is elismerik."
     category: "Szerszám"
     result: { material: FISHING_ROD, amount: 1 }
     ingredients: [ "STICK:3", "STRING:2", "GOLD_INGOT:2", "EMERALD:1" ]
@@ -650,6 +749,9 @@ profession-recipes:
     level: 45
     learn: blueprint
     display-name: "Legendás Horgászbot"
+    lore:
+      - "&7Netherittel edzett zsinór, mely a Bokic"
+      - "&7legrégebbi, legvadabb lakóit is kifogja."
     category: "Szerszám (tervrajz)"
     result: { material: FISHING_ROD, amount: 1 }
     ingredients: [ "STICK:3", "STRING:4", "NETHERITE_INGOT:1", "PRISMARINE_CRYSTALS:4" ]
@@ -658,6 +760,9 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Tengeristen Amulettje"
+    lore:
+      - "&7A tenger mélyének szíve dobog benne,"
+      - "&7egy elfeledett isten hagyatéka."
     category: "Alapanyag (tervrajz)"
     result: { material: CONDUIT, amount: 1 }
     ingredients: [ "HEART_OF_THE_SEA:1", "NAUTILUS_SHELL:8", "PRISMARINE:8" ]
@@ -750,6 +855,9 @@ profession-recipes:
     level: 45
     learn: blueprint
     display-name: "Aranyalma Lakoma"
+    lore:
+      - "&7Ünnepi lakoma, melyben a Fa áldása"
+      - "&7és az arany fénye egyaránt megcsillan."
     category: "Étel (tervrajz)"
     result: { material: GOLDEN_APPLE, amount: 2 }
     ingredients: [ "APPLE:2", "GOLD_INGOT:16" ]
@@ -758,6 +866,9 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Legendás Lakoma"
+    lore:
+      - "&7Aetrinita áldásával sütött lakoma,"
+      - "&7méltó egy legenda asztalára."
     category: "Étel (tervrajz)"
     result: { material: ENCHANTED_GOLDEN_APPLE, amount: 1 }
     ingredients: [ "GOLDEN_APPLE:4", "NETHER_STAR:1" ]
@@ -813,6 +924,9 @@ profession-recipes:
     level: 35
     learn: level
     display-name: "Esszenciált Vasvért"
+    lore:
+      - "&7Tiszta Vasesszenciával itatott lemezek,"
+      - "&7melyek szinte élővé teszik a páncélt."
     category: "Páncél"
     result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:6", "unique:tiszta_vasesszencia:3" ]
@@ -821,6 +935,9 @@ profession-recipes:
     level: 44
     learn: blueprint
     display-name: "Rúnakovácsolt Penge"
+    lore:
+      - "&7Rúnaporral kovácsolt penge, mely"
+      - "&7az Akadémia elveszett tudását őrzi."
     category: "Fegyver (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:1", "unique:tiszta_vasesszencia:2", "unique:runapor:2" ]
@@ -835,6 +952,9 @@ profession-recipes:
     level: 28
     learn: level
     display-name: "Vadbőr Vért"
+    lore:
+      - "&7Egy káoszkori fenevad esszenciája"
+      - "&7ivódott bele, vadságot kölcsönözve."
     category: "Páncél"
     result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:5", "unique:vad_esszencia:3" ]
@@ -851,6 +971,9 @@ profession-recipes:
     level: 38
     learn: blueprint
     display-name: "Árnyékméreg"
+    lore:
+      - "&7A Suttogók receptje: Árnyékporból lepárolt"
+      - "&7méreg, mely elnyeli a fényt és az életet."
     category: "Ital (tervrajz)"
     result: { material: SPLASH_POTION, amount: 1 }
     ingredients: [ "GLASS_BOTTLE:1", "unique:arnyekpor:2", "SPIDER_EYE:1" ]
@@ -859,6 +982,9 @@ profession-recipes:
     level: 40
     learn: blueprint
     display-name: "Szörnymag Talizmán"
+    lore:
+      - "&7Egy Szörny Mag lüktet a talizmán szívében,"
+      - "&7sötét energiát kölcsönözve viselőjének."
     category: "Bűvölés (tervrajz)"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "unique:szorny_mag:2", "unique:runapor:2" ]
@@ -866,7 +992,10 @@ profession-recipes:
     profession: armorer
     level: 50
     learn: blueprint
-    display-name: "Ereklyepenge"
+    display-name: "Villámszilánk Pengéje"
+    lore:
+      - "&7Fekete Villám Szilánkkal kovácsolva —"
+      - "&7a Hu. 698-as ég hasadékának ereje él benne."
     category: "Fegyver (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:2", "unique:osi_ereklyeszilank:1", "unique:szorny_mag:3" ]
@@ -925,6 +1054,9 @@ profession-recipes:
     level: 32
     learn: level
     display-name: "Rúnafényes Bányászcsákány"
+    lore:
+      - "&7Rúnapor fénye vezeti a csákány élét"
+      - "&7a legmélyebb tárnák sötétjében is."
     category: "Szerszám"
     result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:3", "STICK:2", "unique:runapor:2" ]
@@ -932,7 +1064,10 @@ profession-recipes:
     profession: miner
     level: 50
     learn: blueprint
-    display-name: "Ereklyeszilánkos Bányászsisak"
+    display-name: "Villámszilánkos Bányászsisak"
+    lore:
+      - "&7Fekete Villám Szilánk izzik a sisak mélyén,"
+      - "&7megvilágítva a legsötétebb járatokat."
     category: "Páncél (tervrajz)"
     result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:5", "NETHERITE_INGOT:1", "unique:osi_ereklyeszilank:1" ]
@@ -973,6 +1108,9 @@ profession-recipes:
     level: 30
     learn: level
     display-name: "Vasesszenciás Pajzs"
+    lore:
+      - "&7Tiszta Vasesszenciával átitatott vaslemez,"
+      - "&7mely szinte magától állja a csapásokat."
     category: "Páncél"
     result: { material: SHIELD, amount: 1, affix-tier: crafted }
     ingredients: [ "IRON_INGOT:4", "unique:tiszta_vasesszencia:2" ]
@@ -981,6 +1119,9 @@ profession-recipes:
     level: 33
     learn: level
     display-name: "Rézvértezet Lábvért"
+    lore:
+      - "&7Rezgő Rézötvözettel erősített lábvért,"
+      - "&7mely sosem veszti fényét a csatában."
     category: "Páncél"
     result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:6", "unique:rezgo_rez_otvozet:3" ]
@@ -989,6 +1130,9 @@ profession-recipes:
     level: 32
     learn: level
     display-name: "Vadölő Csizma"
+    lore:
+      - "&7Vad Esszenciával itatott talp, mely"
+      - "&7néma léptekkel követi a fenevadak nyomát."
     category: "Páncél"
     result: { material: DIAMOND_BOOTS, amount: 1, affix-tier: crafted }
     ingredients: [ "DIAMOND:4", "unique:vad_esszencia:2" ]
@@ -997,6 +1141,9 @@ profession-recipes:
     level: 46
     learn: blueprint
     display-name: "Szörnyvért Mellvény"
+    lore:
+      - "&7Egy Szörny Mag sötét ereje dobog"
+      - "&7e mellvény netherit-lemezei alatt."
     category: "Páncél (tervrajz)"
     result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
     ingredients: [ "NETHERITE_INGOT:3", "unique:szorny_mag:3" ]
@@ -1020,7 +1167,10 @@ profession-recipes:
     profession: alchemist
     level: 49
     learn: blueprint
-    display-name: "Ereklyeelixír"
+    display-name: "Villámszilánk Elixírje"
+    lore:
+      - "&7Fekete Villám Szilánk cseppjei oldódtak"
+      - "&7ebbe az elixírbe, a Hu. 698 emlékeként."
     category: "Ital (tervrajz)"
     result: { material: POTION, amount: 1 }
     ingredients: [ "GLASS_BOTTLE:1", "GOLDEN_APPLE:1", "unique:osi_ereklyeszilank:1" ]
@@ -1029,6 +1179,9 @@ profession-recipes:
     level: 30
     learn: level
     display-name: "Vasesszenciás Páncéltörés Tomus"
+    lore:
+      - "&7Tiszta Vasesszenciával írt rúna,"
+      - "&7mely a legkeményebb páncélt is megtöri."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "unique:tiszta_vasesszencia:2" ]
@@ -1037,6 +1190,9 @@ profession-recipes:
     level: 27
     learn: level
     display-name: "Keményfa Íjkeret Tomus"
+    lore:
+      - "&7Keményfa Gerenda erezetébe vésett rúna,"
+      - "&7mely az íjkeretet acélos hajlékonnyá teszi."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1 }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "unique:kemenyfa_gerenda:2" ]
@@ -1045,6 +1201,9 @@ profession-recipes:
     level: 26
     learn: level
     display-name: "Rézhorgony Horgászbot"
+    lore:
+      - "&7Rezgő Rézötvözet horgonyzza le e botot"
+      - "&7a Bokic legerősebb sodrásában is."
     category: "Szerszám"
     result: { material: FISHING_ROD, amount: 1 }
     ingredients: [ "STICK:3", "STRING:2", "unique:rezgo_rez_otvozet:2" ]
@@ -1052,7 +1211,10 @@ profession-recipes:
     profession: fisherman
     level: 47
     learn: blueprint
-    display-name: "Mélytengeri Ereklyeszigony"
+    display-name: "Mélytengeri Villámszigony"
+    lore:
+      - "&7Fekete Villám Szilánk pulzál a szigony hegyén,"
+      - "&7mit a mélytenger sötétjéből hoztak fel."
     category: "Fegyver (tervrajz)"
     result: { material: TRIDENT, amount: 1, affix-tier: crafted }
     ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2", "unique:osi_ereklyeszilank:1" ]

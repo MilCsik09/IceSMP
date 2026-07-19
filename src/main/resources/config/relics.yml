@@ -23,40 +23,44 @@ relics:
       material: "GOLDEN_AXE"
       custom-model-data: 4101
       lore:
-        - "&7A Mételytépő a törpék rejtélyes"
+        - "&7A törpék rejtélyes, rég letűnt"
         - "&7civilizációjának ősi relikviája."
         - ""
-        - "&7Ősi mágia övezi, melynek segítségével"
-        - "&7ez a harci fejsze lesújt a bűnösökre,"
-        - "&7igazságot szolgáltatva a világnak."
+        - "&7Ősi ítélet-mágia lakik benne: e harci"
+        - "&7fejsze lesújt a bűnösökre, s igazságot tesz"
+        - "&7ott, ahol a Káoszkor rendje szertefoszlott."
     phoenix_wing:
       display-name: "Főnix-szárny"
       display-color: "&c"
       lore:
-        - "&7A Piros királyság lángoló ereklyéje."
+        - "&7Perinfernicitas lángoló ereklyéje,"
+        - "&7Soleil főnixeinek tollából szőve."
         - "&7Viselőjét nem égeti tűz, és zuhanása"
         - "&7lángviharban végződik."
     frost_wing:
       display-name: "Zúzmara-szárny"
       display-color: "&b"
       lore:
-        - "&7A Kék királyság jeges ereklyéje."
+        - "&7Cryghaliris jeges ereklyéje, Kallan"
+        - "&7jégsárkányainak leheletével átitatva."
         - "&7Szárnyra kapva megfagyasztja"
         - "&7a körülötte lévőket."
     wander_wind:
       display-name: "Vándorszél"
       display-color: "&f"
       lore:
-        - "&7A Semlegesek szabad szele."
+        - "&7Ryanora & Caldestera szabad szele,"
+        - "&7Arkynn békés örökségének fuvallata."
         - "&7Gyorsabb sikló, és a föld"
         - "&7sosem üti meg viselőjét."
     bone_wing:
       display-name: "Csontszárny"
       display-color: "&8"
       lore:
-        - "&7Az összeomlott királyság csontból"
-        - "&7szőtt szárnya. Éjjel a viselője"
-        - "&7maga is árnyékká válik."
+        - "&7A Káoszkor csontból szőtt szárnya, a"
+        - "&7Néma Királynő élőhalottainak maradványa."
+        - "&7Éjjel a viselője maga is"
+        - "&7árnyékká válik."
 
 # ===== Rituálé-oltárok (multi-block szentélyek) =====
 # Egy oltár egy MAG-BLOKK (altar-block), amit SHIFT+jobb kattal aktiválsz. A 'structure' a mag

@@ -359,10 +359,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **WoW-mob loot (loot-tábla):** sima szörnyek `loot.mob-drop.chance` eséllyel dobnak egy
       táblasort: rolled `drop`-tier felszerelést (random névvel, akár Ócska/negatív affix), sokféle
       nyersanyagot/értéket, vagy **csak-mobból-eső egyedi alapanyagot** (Vad Esszencia / Szörny Mag
-      / Árnyékpor). Boss/event-mob garantáltan `boss`-tier tárgyat + boss-only Ősi Ereklyeszilánkot.
+      / Árnyékpor). Boss/event-mob garantáltan `boss`-tier tárgyat + boss-only Fekete Villám Szilánkot.
       Szakma-craftolt nevesített tárgy SOHA nem esik mobból.
 - [ ] **Mob-only alapanyag receptekben:** a mob-only egyedi alapanyagokat igénylő receptek
-      (pl. Vadbőr Vért, Ereklyepenge) csak akkor craftolhatók, ha begyűjtötted a mobból-eső anyagot;
+      (pl. Vadbőr Vért, Villámszilánk Pengéje) csak akkor craftolhatók, ha begyűjtötted a mobból-eső anyagot;
       a recept-könyv kékkel jelzi a hiányt.
 - [ ] **Egyedi alapanyag védelem:** az egyedi szakma-alapanyagok (pl. Vasesszencia = IRON_NUGGET,
       Gyógy-kivonat = ehető GLOW_BERRIES) NEM használhatók normál módon: nem craftolhatók be,
