@@ -1079,7 +1079,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
         pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new PetCombatListener(petManager), plugin);
+        pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         pluginManager.registerEvents(new SinListener(plugin, sinManager, raidManager, factionManager, statsManager, currencyManager, configManager, messageManager), plugin);

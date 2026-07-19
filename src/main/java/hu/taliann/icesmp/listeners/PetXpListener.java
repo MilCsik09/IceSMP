@@ -30,13 +30,17 @@ public final class PetXpListener implements Listener {
             return;
         }
         final Player killer = event.getEntity().getKiller();
-        // Both pet-owning specs (Beast Master AND Necromancer) earn companion XP from kills.
-        if (killer == null || !petManager.canOwnPet(killer)) {
+        if (killer == null) {
             return;
         }
-        // Folia: the death event runs on the mob's region thread; addXp mutates the killer (sends
-        // messages, writes PDC, touches the pet). Hop onto the killer's own scheduler first.
-        killer.getScheduler().run(plugin,
-                task -> petManager.addXp(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2))), null);
+        // Folia: the death event runs on the mob's region thread; the killer is a DIFFERENT entity —
+        // even the canOwnPet spec check reads its PDC. Hop first, then check + award on the killer's
+        // thread. (Both pet-owning specs — Beast Master AND Necromancer — earn companion XP.)
+        killer.getScheduler().run(plugin, task -> {
+            if (!petManager.canOwnPet(killer)) {
+                return;
+            }
+            petManager.addXp(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2)));
+        }, null);
     }
 }

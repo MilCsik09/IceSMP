@@ -45,13 +45,17 @@ public final class SoulShardListener implements Listener {
         }
 
         final Player killer = event.getEntity().getKiller();
-        if (killer == null || specializationManager.getClassSpecialization(killer) != SpecializationType.NECROMANCER) {
+        if (killer == null) {
             return;
         }
 
-        // Folia: the death event runs on the mob's region thread; addShards mutates the killer.
-        // Hop onto the killer's own scheduler first.
-        killer.getScheduler().run(plugin,
-                task -> soulShardManager.addShards(killer, Math.max(0, configManager.getInt("souls.shards-per-kill", 1))), null);
+        // Folia: the death event runs on the mob's region thread; the killer is a DIFFERENT entity —
+        // even the spec check reads its PDC. Hop first, then check + award on the killer's thread.
+        killer.getScheduler().run(plugin, task -> {
+            if (specializationManager.getClassSpecialization(killer) != SpecializationType.NECROMANCER) {
+                return;
+            }
+            soulShardManager.addShards(killer, Math.max(0, configManager.getInt("souls.shards-per-kill", 1)));
+        }, null);
     }
 }

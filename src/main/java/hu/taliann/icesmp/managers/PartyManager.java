@@ -100,7 +100,14 @@ public final class PartyManager implements PlayerStateCleanup {
         }
         final double radius = getShareRadius();
         final double radiusSq = radius * radius;
-        final Location center = source.getLocation();
+        final Location center;
+        try {
+            center = source.getLocation();
+        } catch (final Exception ignored) {
+            // Folia: a hívó régió-szála nem éri el a source pozícióját (pl. Wild Hunt — a fenevad
+            // szálán fut) — kezeld úgy, mintha nem lenne közeli tag; a normál jutalom-út él tovább.
+            return List.of();
+        }
         final List<Player> nearby = new ArrayList<>();
         for (final UUID memberId : party.members) {
             if (memberId.equals(source.getUniqueId())) {

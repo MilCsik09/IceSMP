@@ -235,26 +235,34 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     /**
-     * Records a combat target for the owner's active pet (assist when the owner
-     * strikes a mob, or defend when the owner is struck). Ignored if the target is
-     * the owner or one of the owner's own minions, so a pet never turns on its allies.
+     * Owner-side gate of the combat-target flow: the owner has a pet-owning spec AND a live
+     * companion. Reads the OWNER's PDC — must run on the owner's region thread (Folia).
      */
-    public void setCombatTarget(final Player owner, final LivingEntity target) {
-        if (owner == null || target == null || target.isDead() || !target.isValid()) {
-            return;
+    public boolean canReceiveCombatTarget(final Player owner) {
+        return owner != null && canOwnPet(owner) && activePet(owner) != null;
+    }
+
+    /**
+     * Target-side filter of the combat-target flow: the target is alive, not the owner and not
+     * one of the owner's own minions (a pet never turns on its allies). Reads the TARGET's
+     * state/PDC — must run on the target's region thread (Folia).
+     */
+    public boolean isEligibleCombatTarget(final UUID ownerId, final LivingEntity target) {
+        return ownerId != null && target != null && !target.isDead() && target.isValid()
+                && !target.getUniqueId().equals(ownerId)
+                && !minionManager.isOwnedBy(target, ownerId);
+    }
+
+    /**
+     * Records a validated combat target for the owner's pet (assist/defend). Concurrent-map
+     * write — safe from any region thread once both sides were validated on their own threads
+     * ({@link #canReceiveCombatTarget} / {@link #isEligibleCombatTarget}); the pet controller
+     * {@link #tick()} re-validates the target anyway.
+     */
+    public void putCombatTarget(final UUID ownerId, final UUID targetId) {
+        if (ownerId != null && targetId != null) {
+            combatTargets.put(ownerId, targetId);
         }
-        // Cheap early-out: this fires on every PvE/PvP damage event, but only the two pet-owning
-        // specs can have a companion — skip the PDC/entity lookup for everyone else.
-        if (!canOwnPet(owner)) {
-            return;
-        }
-        if (target.getUniqueId().equals(owner.getUniqueId()) || minionManager.isOwnedBy(target, owner.getUniqueId())) {
-            return;
-        }
-        if (activePet(owner) == null) {
-            return;
-        }
-        combatTargets.put(owner.getUniqueId(), target.getUniqueId());
     }
 
     /**

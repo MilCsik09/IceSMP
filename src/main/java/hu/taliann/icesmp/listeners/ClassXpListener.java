@@ -41,10 +41,10 @@ public final class ClassXpListener implements Listener {
     public void onEntityDeath(final EntityDeathEvent event) {
         final LivingEntity entity = event.getEntity();
         final Player killer = entity.getKiller();
-        if (killer == null || !jobManager.hasPrimaryJob(killer)) {
+        if (killer == null) {
             return;
         }
-        // AFK-jelölt játékos nem termel kaszt-XP-t (auto-farm exploit-fék).
+        // AFK-jelölt játékos nem termel kaszt-XP-t (auto-farm exploit-fék). (Map-olvasás — szál-biztos.)
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(killer.getUniqueId())) {
             return;
@@ -56,10 +56,13 @@ public final class ClassXpListener implements Listener {
 
         final int mobLevel = mobScalingManager.getLevel(entity);
 
-        // Folia: a death event fires on the dying mob's region thread, but awarding XP mutates the
-        // killer (a different entity — sends messages, writes its PDC). Hop onto the killer's own
-        // scheduler so every player-facing mutation happens on the killer's region thread.
+        // Folia: a death event fires on the dying mob's region thread, but the killer is a DIFFERENT
+        // entity — even the hasPrimaryJob eligibility check reads its PDC. Hop first, so EVERY
+        // killer touch (check + award) happens on the killer's own region thread.
         killer.getScheduler().run(plugin, task -> {
+            if (!jobManager.hasPrimaryJob(killer)) {
+                return;
+            }
             final int baseXp = Math.max(0, configManager.getInt("classes.xp.per-kill", 5));
             final int perLevelXp = Math.max(0, configManager.getInt("classes.xp.per-mob-level", 2));
             final double xpBonusPercent = Math.max(0.0D, talentManager.getEffectTotal(killer, "class-xp-bonus"));

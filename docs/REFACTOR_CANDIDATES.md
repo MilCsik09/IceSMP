@@ -431,3 +431,32 @@ rögzítjük őket, hogy egy későbbi audit ne költsön rájuk újra időt.
 - **Kill-reward listener-család** (ClassXp/PetXp/SoulShard/Soulstone/WorldBoss/WildHunt/
   Escort/Party/MobLoot/ServerChallenge): mind MÁS jutalmat ad ugyanarra a halál-eventre —
   nincs dupla-jóváírás.
+
+## 2026-07-19-i audit-kör (kijavítva + új jelöltek)
+
+### Kijavítva ebben a körben ✅
+- **PetCombatListener** — minden sebzés-eventnél az áldozat szálán, hop nélkül olvasta a
+  támadó PDC-jét. Megoldás: a `setCombatTarget` szétbontva szál-helyes felekre
+  (`isEligibleCombatTarget` a cél szálán, `canReceiveCombatTarget` a gazda szálán,
+  `putCombatTarget` concurrent-map írás) + kétirányú hop a listenerben.
+- **ClassXp/SoulShard/PetXp listener** — az eligibility-ellenőrzés (killer-PDC-olvasás) a mob
+  szálán futott a hop ELŐTT; mindhárom teljes check+award a killer hopján belülre került.
+- **PartyManager.getNearbyMembers** — a `source.getLocation()` védetlen kereszt-régió olvasása
+  (Wild Hunt: a fenevad szálán) try/catch mögé, üres listával visszaesve (ground-drop marad).
+- **AfkManager.cleanup** — a `manualAfk` a normál kilépés-útvonalon sosem ürült (a
+  `clearPlayerState` online ága korán tért vissza); a cleanup törli.
+
+### Megvizsgálva — teendő NINCS
+- **WorldBossManager.handleBossDeath** — `getFaction` ConcurrentHashMap-olvasás, a potion-buff
+  hoppal, a `killer.getName()` immutábilis profil-adat: szál-biztos.
+
+### 21. 🟡 `AbilityCatalystListener` — felelősség-szétbontás
+774 sor, 9 UUID-kulcsú map egy osztályban (cooldown, kombó-követés, cast-history, UI-hintek).
+Bontás javasolt: cooldown-kezelő / kombó-detektor / hint-réteg.
+
+### 22. 🟢 `MobLootListener.rollTable` — duplikált gear-fallback
+Az üres-tábla ág és a switch default ága szó szerint ugyanazt a
+`pickGear + affixService.roll(..., true)` párost ismétli — egy privát metódusba emelhető.
+
+### 23. 🟢 `CrateManager.persist()` — szinkron teljes-YAML írás minden mutációnál
+Ugyanaz a minta, mint a #9 (DonationChestManager) — a debounce-javítással együtt kezelendő.

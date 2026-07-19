@@ -9,19 +9,29 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.projectiles.ProjectileSource;
+
+import java.util.UUID;
 
 /**
  * Feeds the companion a combat target so it fights like a real pet regardless of
  * its native AI: when the owner strikes a mob the pet assists, and when the owner
- * is struck the pet defends. {@link PetManager#setCombatTarget} filters out the
- * owner and the owner's own minions, so a pet never turns on its allies.
+ * is struck the pet defends.
+ *
+ * <p>Folia: the damage event runs on the VICTIM's region thread. Each side of the
+ * check runs on its own entity's thread — the target-side filter
+ * ({@link PetManager#isEligibleCombatTarget}) where that entity is local, the
+ * owner-side gate ({@link PetManager#canReceiveCombatTarget}, PDC read) on the
+ * owner's scheduler — and the final registration is a concurrent-map write.</p>
  */
 public final class PetCombatListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final PetManager petManager;
 
-    public PetCombatListener(final PetManager petManager) {
+    public PetCombatListener(final JavaPlugin plugin, final PetManager petManager) {
+        this.plugin = plugin;
         this.petManager = petManager;
     }
 
@@ -34,17 +44,30 @@ public final class PetCombatListener implements Listener {
     public void onDamage(final EntityDamageByEntityEvent event) {
         final Entity victim = event.getEntity();
 
-        // Owner attacks a creature → the pet assists on that creature.
+        // Owner attacks a creature → the pet assists on that creature. The victim is local:
+        // validate the target side here, then hop to the attacker for the PDC-backed owner gate.
         final Player attacker = resolvePlayer(event.getDamager());
-        if (attacker != null && victim instanceof LivingEntity living) {
-            petManager.setCombatTarget(attacker, living);
+        if (attacker != null && victim instanceof LivingEntity living
+                && petManager.isEligibleCombatTarget(attacker.getUniqueId(), living)) {
+            final UUID targetId = living.getUniqueId();
+            attacker.getScheduler().run(plugin, task -> {
+                if (petManager.canReceiveCombatTarget(attacker)) {
+                    petManager.putCombatTarget(attacker.getUniqueId(), targetId);
+                }
+            }, null);
         }
 
-        // Owner is attacked → the pet retaliates against the attacker.
-        if (victim instanceof Player defender) {
+        // Owner is attacked → the pet retaliates. The defender IS the event entity (local), so
+        // the owner gate is safe here; the foe is foreign — validate it on its own scheduler.
+        if (victim instanceof Player defender && petManager.canReceiveCombatTarget(defender)) {
             final LivingEntity foe = resolveAttacker(event.getDamager());
             if (foe != null) {
-                petManager.setCombatTarget(defender, foe);
+                final UUID defenderId = defender.getUniqueId();
+                foe.getScheduler().run(plugin, task -> {
+                    if (petManager.isEligibleCombatTarget(defenderId, foe)) {
+                        petManager.putCombatTarget(defenderId, foe.getUniqueId());
+                    }
+                }, null);
             }
         }
     }
