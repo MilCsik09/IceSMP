@@ -22,10 +22,27 @@ A térkép védelme több **zónatípusra** épül:
 | **Védett frakcióterület** | **Senki** (a frakció magja: falak, műemlékek) | ❌ Nem |
 | **Védett város** | **Senki** (jellemzően semleges városok) | ❌ Nem |
 | **Főváros** | **Senki** (egyben a bank/valutaváltó helyszíne) | ❌ Nem |
+| **Kárhozat-zóna** ☠ | **Senki** (PvPvE senkiföldje — lásd lent) | ❌ Nem |
 
 > ⛨ A **védett zónák** (védett város/frakcióterület és a főváros) a térkép **pajzsa**: ott
 > alapból **senki** sem építhet/bonthat, nincs interakció, **nincs PvP**, robbanás és tűz sem
 > tesz kárt, és **claimelni sem lehet**. Csak az admin/builder jogok kerülik meg.
+
+### ☠ Kárhozat Kapuja — a PvPvE senkiföldje
+
+A kódex szerint a Hetedik Vérháborút kirobbantó **óriás Nether-portál** környéke a szerver
+legveszélyesebb zónája. Itt minden másképp működik:
+
+- **A PvP legális** — a zónában bárki megtámadhat bárkit, és az ölés **nem számít bűnnek**
+  („a Kapunál nincs törvény"). A frakciók itt nyíltan összecsaphatnak.
+- **Belépő-védelem:** a zónába lépve pár másodperc PvP-védelmet kapsz (spawn-kill ellen) —
+  de aki maga támad, azonnal elveszti.
+- **A szörnyek erősebbek**: a zónában spawnoló mobok bónusz szinteket kapnak — cserébe a
+  magasabb szint jobb lootot ér (a Néma Királynő élőhalottaitól a nevesített relikvia-drop is
+  eshet).
+- Az aréna maga védett: **építeni nem lehet**, robbanás és tűz nem rongálja — de ajtók,
+  oltárok szabadon használhatók.
+- Belépéskor baljós hang és hamu-örvény jelzi, hogy a Kapu árnyékába értél.
 
 **Frakcióterületen** csak az adott frakció tagjai építhetnek (mások nem), viszont ide a
 játékosok **saját birtokot (`/claim`) is foglalhatnak** — így a claim rendszer és a
@@ -149,7 +166,8 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 - `/claim admin unclaim` — idegen claim törlése admin-jogon (a claimben állva).
 
 > **Típusok:** `faction` (csak tagok építhetnek), `protected-faction` / `protected-city`
-> (senki), `capital` (főváros). A városfal mentén így pontosan kijelölhető a terület: járd
+> (senki), `capital` (főváros), `doom-gate` (Kárhozat-zóna: PvPvE senkiföldje).
+> A városfal mentén így pontosan kijelölhető a terület: járd
 > körbe a falat, minden saroknál `/territory pos`, végül `/territory create protected-city ...`.
 > A rendszer figyelmeztet, ha a határvonal **önmagát keresztezné** (összegabalyodott fal).
 

@@ -451,6 +451,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **pvp**: játékos↔játékos sebzés (közelharc ÉS nyíl/lövedék) blokkolva, a támadó action-bar üzenetet kap.
   - [ ] **explosions**: creeper/TNT nem tör blokkot a zónában.
   - [ ] **fire**: tűzcsiholó nem gyújt, a tűz nem terjed/nem éget a zónában.
+- [ ] **Kárhozat-zóna (doom-gate, ÚJ — K7):** jelölj ki egy zónát (`/territory circle doom-gate
+      <frakció> <id> <sugár> Kárhozat Kapuja`), majd:
+  - [ ] Belépéskor sötétvörös action bar („senkiföldje: itt nincs törvény"), baljós Nether-hang +
+        hamu/lélek particle-örvény.
+  - [ ] **PvP legális** a zónában (a `pvp: false` szabály), de a frissen belépő ~8 mp
+        **belépő-védelmet** kap (a támadó action-bar üzenetet lát); aki maga támad, azonnal
+        elveszti a védelmét. Kilépéskor / kilépő játékosnál a grace törlődik.
+  - [ ] **Ölés itt nem bűn**: PvP-kill után a killer „A Kárhozat Kapujánál nincs törvény" action
+        bart kap, a bűn-számláló NEM nő (`territory.doom-gate.sin-exempt`). Raid-szentesített és
+        bounty-ölés szabályai előrébb valók (azok változatlanok).
+  - [ ] **Mob-boost**: a zónában spawnoló mobok +3 szintet kapnak
+        (`territory.doom-gate.bonus-mob-levels`) — magasabb tier loot jár értük.
+  - [ ] Építés/robbanás/tűz tiltott az arénában, ajtó/oltár interakció szabad; claim nem rakható.
+  - [ ] Minden kulcs élőben olvasódik → `/icesmp reload` után restart nélkül él.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

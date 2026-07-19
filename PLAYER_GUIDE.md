@@ -689,6 +689,13 @@ elrejtett kincs esemény is elkerüli a claimelt területet. Raid alatt a claim 
 szerver-beállítástól függően a jelentkezett támadók a claim-ládákat hadizsákmányként
 **kinyithatják** (nem lebonthatják). A zónatípusokról bővebben: [Frakcióterületek](docs/player-guide/13-teruletek.md).
 
+**☠ Kárhozat Kapuja (Kárhozat-zóna):** a kódex Nether-portáljának környéke a szerver
+**PvPvE senkiföldje** — itt a **PvP legális** és az ölés **nem számít bűnnek** („a Kapunál nincs
+törvény"), a belépőt pár másodperces védelem óvja a spawn-killtől (aki maga támad, elveszti), a
+szörnyek pedig **bónusz szintekkel** spawnolnak, cserébe jobb lootot adnak. Az aréna maga védett
+(építés/robbanás/tűz tiltva), claimelni nem lehet. Belépéskor baljós hang és hamu-örvény jelzi a
+határt.
+
 ---
 
 ## 11. Királyság, raid és háború ✅

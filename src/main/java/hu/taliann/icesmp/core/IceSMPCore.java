@@ -298,7 +298,7 @@ public final class IceSMPCore {
         this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, territoryManager, messageManager);
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
         this.introManager = new IntroManager(plugin, configManager);
-        this.mobScalingManager = new MobScalingManager(plugin, configManager, bloodMoonManager);
+        this.mobScalingManager = new MobScalingManager(plugin, configManager, bloodMoonManager, territoryManager);
         this.invasionManager = new InvasionManager(plugin, configManager, mobScalingManager, messageManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.professionRecipeManager = new ProfessionRecipeManager(plugin, configManager);
@@ -1064,7 +1064,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
-        pluginManager.registerEvents(new TerritoryListener(territoryManager, configManager, questManager, messageManager), plugin);
+        pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
@@ -1092,7 +1092,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
-        pluginManager.registerEvents(new SinListener(plugin, sinManager, raidManager, factionManager, statsManager, currencyManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

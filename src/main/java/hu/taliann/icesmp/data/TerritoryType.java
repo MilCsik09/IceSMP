@@ -16,6 +16,11 @@ import java.util.Locale;
  *   <li>{@link #CAPITAL} — the faction seat: NOBODY may build and claiming is
  *       forbidden; additionally it is the banking/exchange gate
  *       ({@code TerritoryManager.isInCapital}).</li>
+ *   <li>{@link #DOOM_GATE} — the Kárhozat Kapuja PvPvE no-man's land (lore: the
+ *       giant Nether portal of the Seventh Blood War): the arena itself is
+ *       protected (no build, no explosions/fire damage) but PvP is LEGAL by
+ *       default and kills here carry no sin; mobs spawn with bonus levels and
+ *       entering grants a short PvP grace. Claiming is forbidden.</li>
  * </ul>
  *
  * <p>"Protected" zones are the map's shield: their build ban is always in force
@@ -28,7 +33,8 @@ public enum TerritoryType {
     FACTION("Frakcióterület", false, true),
     PROTECTED_FACTION("Védett frakcióterület", true, false),
     PROTECTED_CITY("Védett város", true, false),
-    CAPITAL("Főváros", true, false);
+    CAPITAL("Főváros", true, false),
+    DOOM_GATE("Kárhozat-zóna", true, false);
 
     private final String displayName;
     private final boolean protectedZone;
@@ -74,6 +80,7 @@ public enum TerritoryType {
             case "protected", "vedett", "vedett_frakcio", "vedett_frakcioterulet" -> PROTECTED_FACTION;
             case "capital", "fovaros" -> CAPITAL;
             case "frakcio", "frakcioterulet", "normal" -> FACTION;
+            case "doom", "doomgate", "karhozat", "karhozat_kapuja", "hasadek" -> DOOM_GATE;
             default -> null;
         };
     }

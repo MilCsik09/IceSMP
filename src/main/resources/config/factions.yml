@@ -202,3 +202,20 @@ territory:
         pvp: true
         explosions: true
         fire: true
+      doom-gate:            # Kárhozat Kapuja — PvPvE senkiföldje (kódex: a Hetedik Vérháború portálja)
+        build: true         # az aréna nem építhető át / nem tornyozható be
+        interact: false     # ajtók/oltárok szabadon használhatók
+        pvp: false          # ⚔ a harc itt LEGÁLIS (false = nincs PvP-védelem!)
+        explosions: true    # robbanás nem rongálja a terepet
+        fire: true          # tűz nem terjed (a hangulat-tüzek admin-oldalról épülnek)
+  # ===== Kárhozat Kapuja (DOOM_GATE zóna) extra szabályai =====
+  # /territory ... doom-gate típussal jelölhető ki; minden kulcs élőben olvasódik
+  # (/icesmp reload után restart nélkül él).
+  doom-gate:
+    # Az itteni játékos-ölés NEM számít bűnnek („a Kapunál nincs törvény").
+    sin-exempt: true
+    # A zónában spawnoló mobok ennyi bónusz szintet kapnak (0 = nincs).
+    bonus-mob-levels: 3
+    # Belépéskor ennyi másodperc PvP-védelem jár (spawn-kill ellen); aki maga támad,
+    # azonnal elveszti. 0 = nincs belépő-védelem.
+    entry-grace-seconds: 8

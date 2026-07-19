@@ -67,6 +67,11 @@ public final class TerritoryProtectionService {
 
     /** Baked-in default for a rule (true = protected). Faction land only guards building by default. */
     private static boolean defaultRule(final TerritoryType type, final String rule) {
+        if (type == TerritoryType.DOOM_GATE) {
+            // PvPvE no-man's land: fighting is LEGAL and interaction free by default;
+            // the arena itself stays protected (build/explosions/fire).
+            return !(PVP.equals(rule) || INTERACT.equals(rule));
+        }
         if (type.isProtectedZone()) {
             return true;
         }
@@ -146,11 +151,61 @@ public final class TerritoryProtectionService {
     // ==================== PvP ====================
 
     /**
+     * Entry-grace timestamps for the DOOM_GATE zone (spawn-kill protection): a
+     * player crossing INTO the zone is PvP-immune for a few seconds, and loses
+     * the grace early the moment they attack someone themselves. UUID-keyed
+     * concurrent map, marked by TerritoryListener, cleared on quit/kick.
+     */
+    private final java.util.Map<java.util.UUID, Long> doomGraceUntil = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Marks a player's DOOM_GATE entry (starts the PvP grace window). */
+    public void markDoomEntry(final java.util.UUID playerId) {
+        final long seconds = Math.max(0L, configManager.getLong("territory.doom-gate.entry-grace-seconds", 8L));
+        if (seconds > 0L && playerId != null) {
+            doomGraceUntil.put(playerId, System.currentTimeMillis() + seconds * 1000L);
+        }
+    }
+
+    /** Clears a player's doom-grace state (zone exit, quit/kick session cleanup). */
+    public void clearDoomGrace(final java.util.UUID playerId) {
+        if (playerId != null) {
+            doomGraceUntil.remove(playerId);
+        }
+    }
+
+    /** Whether the player is inside their DOOM_GATE entry-grace window. */
+    private boolean hasDoomGrace(final java.util.UUID playerId) {
+        final Long until = doomGraceUntil.get(playerId);
+        if (until == null) {
+            return false;
+        }
+        if (until <= System.currentTimeMillis()) {
+            doomGraceUntil.remove(playerId);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Whether player-vs-player damage is denied at the victim's location. The
      * denial notice is sent to the attacker on the attacker's own scheduler
      * (Folia cross-entity touch). The admin bypass lets staff fight anywhere.
+     * In the DOOM_GATE zone PvP is legal, but a freshly entered victim is
+     * covered by a short entry grace — and an attacker forfeits their own
+     * grace the moment they swing first.
      */
     public boolean denyPvp(final Player victim, final Player attacker) {
+        final Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
+        if (zone != null && zone.type() == TerritoryType.DOOM_GATE) {
+            // Attacking voids the attacker's own protection (no grace-abuse ganking).
+            clearDoomGrace(attacker.getUniqueId());
+            if (hasDoomGrace(victim.getUniqueId())) {
+                attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(
+                        "territory-doom-grace",
+                        "<gray>⚔ A belépő még a Kapu árnyékának védelme alatt áll — pár pillanat, és szabad a préda.</gray>")), null);
+                return true;
+            }
+        }
         return denyCombat(victim.getLocation(), attacker, true);
     }
 

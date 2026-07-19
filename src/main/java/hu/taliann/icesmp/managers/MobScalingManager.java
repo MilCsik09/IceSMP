@@ -31,6 +31,7 @@ public final class MobScalingManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final BloodMoonManager bloodMoonManager;
+    private final TerritoryManager territoryManager;
     private final NamespacedKey mobLevelKey;
     private final Set<SpawnReason> ignoredSpawnReasons = EnumSet.noneOf(SpawnReason.class);
 
@@ -46,10 +47,11 @@ public final class MobScalingManager {
     private NamedTextColor nameColor;
 
     public MobScalingManager(final JavaPlugin plugin, final ConfigManager configManager,
-                             final BloodMoonManager bloodMoonManager) {
+                             final BloodMoonManager bloodMoonManager, final TerritoryManager territoryManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.bloodMoonManager = bloodMoonManager;
+        this.territoryManager = territoryManager;
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
     }
 
@@ -106,8 +108,10 @@ public final class MobScalingManager {
             return;
         }
 
-        // Blood moon nights spawn every mob with bonus levels (may exceed max-level).
-        final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels();
+        // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and the
+        // Kárhozat-zóna (K7 PvPvE senkiföldje) adds its own danger bonus on top.
+        final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
+                + doomZoneBonus(entity.getLocation());
         if (level < 1) {
             return;
         }
@@ -156,6 +160,19 @@ public final class MobScalingManager {
         }
 
         return entity.getPersistentDataContainer().getOrDefault(mobLevelKey, PersistentDataType.INTEGER, 0);
+    }
+
+    /**
+     * Bonus mob levels inside the Kárhozat-zóna (DOOM_GATE territory) — the PvPvE
+     * no-man's land spawns visibly tougher monsters (config-driven, hot-reloadable).
+     * Lock-free concurrent zone lookup, safe on the spawning region thread.
+     */
+    private int doomZoneBonus(final Location location) {
+        final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(location);
+        if (zone == null || zone.type() != hu.taliann.icesmp.data.TerritoryType.DOOM_GATE) {
+            return 0;
+        }
+        return Math.max(0, configManager.getInt("territory.doom-gate.bonus-mob-levels", 3));
     }
 
     /**

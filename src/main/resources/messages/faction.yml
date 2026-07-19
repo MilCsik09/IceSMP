@@ -67,6 +67,7 @@ messages:
   sinner-marked: '&5A Mételytépő igazságot látott: &cBűnös lettél!'
   sinner.add-success: '<green>Bűn rögzítve: <white>{player}</white> <gray>(bűnök: <white>{count}</white>)</gray></green>'
   sinner.betrayal-recorded: '<dark_purple>Bűnt követtél el: árulás — a saját frakciótársadat ölted meg. <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
+  sinner.doom-gate-kill: '<dark_red>☠ A Kárhozat Kapujánál nincs törvény — az ölés itt nem bűn.</dark_red>'
   sinner.cleansed: <green><i>Megtisztultál bűneid súlyától...</i></green>
   sinner.clear-blocked-dark-pact: '<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>'
   sinner.clear-success: '<green>A játékos megtisztult a bűneitől: <white>{player}</white></green>'

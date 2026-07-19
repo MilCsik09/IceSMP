@@ -33,19 +33,23 @@ public final class SinListener implements Listener {
     private final SinManager sinManager;
     private final RaidManager raidManager;
     private final FactionManager factionManager;
+    private final hu.taliann.icesmp.managers.TerritoryManager territoryManager;
     private final StatsManager statsManager;
     private final CurrencyManager currencyManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
     public SinListener(final JavaPlugin plugin, final SinManager sinManager, final RaidManager raidManager,
-                       final FactionManager factionManager, final StatsManager statsManager,
+                       final FactionManager factionManager,
+                       final hu.taliann.icesmp.managers.TerritoryManager territoryManager,
+                       final StatsManager statsManager,
                        final CurrencyManager currencyManager, final ConfigManager configManager,
                        final MessageManager messageManager) {
         this.plugin = plugin;
         this.sinManager = sinManager;
         this.raidManager = raidManager;
         this.factionManager = factionManager;
+        this.territoryManager = territoryManager;
         this.statsManager = statsManager;
         this.currencyManager = currencyManager;
         this.configManager = configManager;
@@ -110,6 +114,18 @@ public final class SinListener implements Listener {
                                 "currency", currency == null ? "?" : currency.getDisplayName()
                         )
                 ));
+                return;
+            }
+        }
+
+        // Kárhozat-zóna (K7): a senkiföldjén nincs törvény — az ottani ölés nem bűn. A halál
+        // helyét a VICTIM régió-szálán olvassuk (az event ott fut); a zóna-lookup lock-mentes.
+        if (configManager.getBoolean("territory.doom-gate.sin-exempt", true)) {
+            final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
+            if (zone != null && zone.type() == hu.taliann.icesmp.data.TerritoryType.DOOM_GATE) {
+                killer.getScheduler().run(plugin, task -> killer.sendActionBar(messageManager.getMessage(
+                        "sinner.doom-gate-kill",
+                        "<dark_red>☠ A Kárhozat Kapujánál nincs törvény — az ölés itt nem bűn.</dark_red>")), null);
                 return;
             }
         }

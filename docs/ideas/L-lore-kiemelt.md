@@ -147,7 +147,7 @@ Halász) frakció-specifikus keresletet kap.
 **Buktatók:** A kötelezettség-debuff LEGYEN puha és opcionális (config), különben büntető; a
 frakcióváltás/új játékos ne kapja azonnal; Folia: az aura-tick a játékos szálán.
 
-### K7. Kárhozat Kapuja — Nether-portál PvPvE senkiföldje `[TOP]`
+### K7. Kárhozat Kapuja — Nether-portál PvPvE senkiföldje `[TOP]` `[KÉSZ ✅]`
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐
 
 **Mi ez:** A Hetedik Vérháborút kirobbantó **óriás Nether-portál** mint a szerver legveszélyesebb,
@@ -168,6 +168,11 @@ tereli, a gazdaságot a veszélyes zóna hajtja, és a lore központi konfliktus
 
 **Buktatók:** Balansz — a zóna jutalma érje meg a kockázatot, de ne legyen az EGYETLEN netherite-forrás;
 Folia: a zóna-szkennelés/PvP-hook régió-lokális; a spawn-kill elleni védelem (belépő grace).
+
+> **Megvalósítva:** `DOOM_GATE` territórium-típus (`/territory ... doom-gate`) — PvP legális
+> (rules.doom-gate.pvp=false), ölés nem bűn (sin-exempt), +3 mob-szint (bonus-mob-levels),
+> 8 mp belépő-grace (a támadó elveszti), aréna-védelem (build/explosions/fire), belépéskor
+> baljós hang + hamu-örvény. Minden kulcs élőben olvasódik (restart nélkül hangolható).
 
 ### K8. Emlékszilánkok — a Felsők emlék-progressziója
 **Munka:** 🔴 • **Érték:** ⭐⭐⭐

@@ -68,8 +68,10 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 
 - **✅ Már a lore szerint él:** frakció-passzívák; territórium/claim (fővárosok, védett zónák);
   bűn/vérdíj + `DARK`-száműzetés; valuta-slotok; király/raid/szezon; lélekkő-szabály; Lélekkapocs-védelem.
-- **🔜 K7 — Kárhozat Kapuja:** Nether-portál PvPvE-zóna a Senkiföldjén (legális PvP, fokozott
-  mob-veszély, exkluzív loot: netherite, boss-drop, Fekete Villám Szilánk).
+- **✅ K7 — Kárhozat Kapuja (KÉSZ):** `DOOM_GATE` territórium-típus — legális PvP (belépő-grace,
+  a támadó elveszti), ölés nem bűn, +3 mob-szint (jobb loot-tier), aréna-védelem (build/robbanás/
+  tűz tiltva), belépő-hangulat; minden kulcs élőben olvasódik (`territory.doom-gate.*`,
+  `territory.protection.rules.doom-gate`).
 - **🔜 K8 — Emlékszilánkok:** gyűjthető emlék-progresszió *(narratíva: kódex V. — „Az elveszett
   emlékek")*. Jutalom a meglévő rendszerekhez illesztve — **NEM kaszt-váltás** (a kaszt állandó):
   XP/szint, talentpont, specializáció-feloldás, frakció-rang, kozmetika, lore-feltárás. Az Opálos
