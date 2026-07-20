@@ -82,12 +82,23 @@ public final class BestiaryManager {
     private void checkMilestone(final Player player, final Category category, final int size) {
         final String base = "bestiary.milestones." + category.name().toLowerCase(Locale.ROOT);
         for (final String row : configManager.getStringList(base)) {
-            // formátum: "<darab>:<veret-jutalom>[:broadcast]"
+            // formátum: "<darab>:<veret-jutalom>[:broadcast]" — hibás sor kihagyva,
+            // különben minden killnél kivétel dőlne a listener-láncra.
             final String[] parts = row.split(":");
-            if (parts.length < 2 || Integer.parseInt(parts[0].trim()) != size) {
+            final int threshold;
+            final long reward;
+            try {
+                if (parts.length < 2) {
+                    continue;
+                }
+                threshold = Integer.parseInt(parts[0].trim());
+                reward = Long.parseLong(parts[1].trim());
+            } catch (final NumberFormatException ignored) {
                 continue;
             }
-            final long reward = Long.parseLong(parts[1].trim());
+            if (threshold != size) {
+                continue;
+            }
             if (reward > 0) {
                 currencyManager.payOutTokens(player,
                         CurrencyType.fromFactionType(factionManager.getFaction(player.getUniqueId())), reward);

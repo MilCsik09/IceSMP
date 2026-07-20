@@ -35,6 +35,9 @@ public final class MoneyPouchListener implements Listener {
         this.messageManager = messageManager;
     }
 
+    // Szándékosan NINCS ignoreCancelled: a RIGHT_CLICK_AIR eseményt a Bukkit
+    // "cancelled" (useInteractedBlock=DENY) állapottal löki — az annotáció a
+    // levegőbe-kattintós erszény-nyitást némítaná el.
     @EventHandler
     public void onUse(final PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND

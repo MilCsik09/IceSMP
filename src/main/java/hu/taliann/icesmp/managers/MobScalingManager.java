@@ -122,7 +122,6 @@ public final class MobScalingManager {
         if (entity.getPersistentDataContainer().has(mobLevelKey, PersistentDataType.INTEGER)) {
             return;
         }
-        maybeMakeRareVariant(entity);
 
         // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and a
         // territórium mob-szabálya (territory.mob-rules — pl. Kárhozat-zóna, DARK-földek)

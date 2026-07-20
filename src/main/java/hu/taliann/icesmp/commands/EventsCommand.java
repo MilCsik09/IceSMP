@@ -58,6 +58,18 @@ public final class EventsCommand implements BasicCommand {
         this.strangerNpcManager = strangerNpcManager;
     }
 
+    /** H2/B42: setterrel kötve (a managerek a parancsnál később épülnek a DI-sorrendben). */
+    private hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
+    private hu.taliann.icesmp.managers.ArcheologyManager archeologyManager;
+
+    public void setCorruptionManager(final hu.taliann.icesmp.managers.CorruptionManager corruptionManager) {
+        this.corruptionManager = corruptionManager;
+    }
+
+    public void setArcheologyManager(final hu.taliann.icesmp.managers.ArcheologyManager archeologyManager) {
+        this.archeologyManager = archeologyManager;
+    }
+
     public EventsCommand(final SeasonManager seasonManager, final BloodMoonManager bloodMoonManager,
                          final WorldBossManager worldBossManager, final InvasionManager invasionManager,
                          final CaravanManager caravanManager, final AmbientEventManager ambientEventManager,
@@ -107,6 +119,8 @@ public final class EventsCommand implements BasicCommand {
             case "escort", "kiseret" -> handleEscort(sender);
             case "meteor" -> handleMeteor(sender);
             case "stranger", "idegen" -> handleStranger(sender);
+            case "corruption", "rontas" -> handleCorruption(sender);
+            case "archeology", "regeszet" -> handleArcheology(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -275,6 +289,26 @@ public final class EventsCommand implements BasicCommand {
         sender.sendMessage(meteorEventManager.forceSpawn(anchor)
                 ? messageManager.get("events-meteor-spawned", "&cMeteor becsapódott a közeledben!")
                 : messageManager.get("events-meteor-failed", "&7Nem sikerült (már van kráter, vagy nincs online játékos)."));
+    }
+
+    private void handleCorruption(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(corruptionManager != null && corruptionManager.forceSpawn(anchor)
+                ? messageManager.get("events-corruption-spawned", "&5Rontás-góc nyílik a közeledben!")
+                : messageManager.get("events-corruption-failed", "&7Nem sikerült (már van aktív góc, vagy nincs online játékos)."));
+    }
+
+    private void handleArcheology(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(archeologyManager != null && archeologyManager.forceSpawn(anchor)
+                ? messageManager.get("events-archeology-spawned", "&eGyanús lelőhely bukkant fel a közeledben!")
+                : messageManager.get("events-archeology-failed", "&7Nem sikerült (már van aktív lelőhely, vagy nincs online játékos)."));
     }
 
     /** One admin gate for every admin-only subcommand: messages and returns false when denied. */
@@ -448,7 +482,7 @@ public final class EventsCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "intro")
+                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "corruption", "archeology", "intro")
                 : List.of("status", "season", "blood-moon", "caravan");
         final String first = prefixAt(args, 0);
         final boolean firstComplete = options.contains(first);

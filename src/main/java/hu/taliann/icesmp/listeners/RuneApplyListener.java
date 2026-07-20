@@ -83,7 +83,11 @@ public final class RuneApplyListener implements Listener {
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(lore);
         target.setItemMeta(meta);
+        // A kurzor-fogyasztást explicit setCursor-ral rögzítjük: a cancel-elt event után a
+        // kliens a szerver-oldali kurzort kapja vissza — az in-place mutáció önmagában nem
+        // minden Paper-verzión propagál (végtelen rúna-dupe lenne).
         cursor.setAmount(cursor.getAmount() - 1);
+        event.getView().setCursor(cursor.getAmount() <= 0 ? null : cursor);
         player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.9F, 1.2F);
         player.sendMessage(messageManager.getMessage("rune-applied",
                 "<aqua>◆ A rúna a tárgyba égett: <white>{rune}</white> — a Mélység Népe bólint.</aqua>",

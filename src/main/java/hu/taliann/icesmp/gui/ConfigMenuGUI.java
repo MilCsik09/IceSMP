@@ -118,6 +118,58 @@ public final class ConfigMenuGUI {
                 Entry.integer("memory-shards.costs.xp", "XP-beváltás ára (szilánk)", 1, 1, 100),
                 Entry.integer("memory-shards.costs.talent", "Talentpont ára", 1, 1, 100),
                 Entry.integer("memory-shards.costs.spec", "Spec-kapu ára", 1, 1, 100))));
+        categories.put("liga", new Category("liga", "Szezon-liga (aszimmetrikus)", Material.GOLDEN_HELMET, List.of(
+                Entry.toggle("world-events.season.enabled", "Szezon-liga"),
+                Entry.integer("world-events.season.length-days", "Szezon hossza (nap)", 5, 1, 3650),
+                Entry.integer("world-events.season-finale.top2-window-hours", "Nagydöntő-ablak (óra)", 6, 1, 720),
+                Entry.number("world-events.season-finale.top2-point-multiplier", "Nagydöntő pont-szorzó", 0.25, 1, 10),
+                Entry.integer("community-goals.season-points", "Közösségi cél pontja", 1, 0, 1000),
+                Entry.integer("corruption.season-points", "Rontás-tisztítás pontja", 1, 0, 1000),
+                Entry.integer("honor-duel.season-points", "Párbaj-győzelem pontja", 1, 0, 1000),
+                Entry.integer("spy.season-points", "Kém-küldetés pontja", 1, 0, 1000))));
+        categories.put("rontas", new Category("rontas", "Rontás-zóna", Material.SCULK_CATALYST, List.of(
+                Entry.toggle("corruption.enabled", "Rontás-góc"),
+                Entry.integer("corruption.interval-minutes", "Sorsolás-időköz (perc)", 10, 1, 100000),
+                Entry.number("corruption.chance-percent", "Nyílás-esély (%)", 5, 0, 100),
+                Entry.integer("corruption.mob-cap", "Korrupt mob-plafon", 1, 1, 100),
+                Entry.integer("corruption.purge-kills-required", "Tisztításhoz kell (kill)", 1, 1, 1000),
+                Entry.number("corruption.dark-bias.chance-percent", "DARK-perem esély (%)", 5, 0, 100),
+                Entry.integer("corruption.dark-bias.min-edge-distance", "DARK-perem min. táv", 4, 4, 1000),
+                Entry.integer("corruption.dark-bias.max-edge-distance", "DARK-perem max. táv", 8, 4, 2000))));
+        categories.put("darknep", new Category("darknep", "DARK-népesség és ritka variánsok", Material.ZOMBIE_HEAD, List.of(
+                Entry.toggle("dark-undead.enabled", "DARK undead-népesség"),
+                Entry.cycle("dark-undead.scope", "Hatókör", List.of("capital", "all")),
+                Entry.integer("dark-undead.max-population", "Populáció-plafon", 2, 1, 200),
+                Entry.integer("dark-undead.spawn-interval-seconds", "Pótlás-időköz (mp)", 5, 5, 3600),
+                Entry.integer("dark-undead.min-level", "Min. szint", 1, 1, 50),
+                Entry.integer("dark-undead.max-level", "Max. szint", 1, 1, 50),
+                Entry.integer("dark-undead.lifespan-seconds", "Élettartam (mp)", 60, 60, 86400),
+                Entry.number("rare-variant.chance-percent", "Ritka variáns esély (%)", 0.25, 0, 100),
+                Entry.number("rare-variant.xp-multiplier", "Variáns XP-szorzó", 0.25, 1, 10),
+                Entry.number("rare-variant.soul-chance-multiplier", "Variáns lélekkő-szorzó", 0.25, 1, 10))));
+        categories.put("cehek", new Category("cehek", "Céhek és szakma-hét", Material.WHITE_BANNER, List.of(
+                Entry.toggle("guilds.enabled", "Céh-rendszer"),
+                Entry.number("guilds.create-cost", "Alapítás ára", 25, 0, 100000),
+                Entry.integer("guilds.base-max-members", "Alap-taglétszám", 1, 1, 100),
+                Entry.integer("guilds.max-members-cap", "Taglétszám-plafon", 1, 1, 200),
+                Entry.integer("guilds.xp-per-quest", "Céh-XP questenként", 1, 0, 1000),
+                Entry.toggle("profession-weekly.enabled", "Szakma-céh heti cél"),
+                Entry.integer("profession-weekly.reward-xp", "Heti cél jutalom-XP", 25, 0, 100000),
+                Entry.integer("profession-weekly.min-contribution", "Jutalom-küszöb (egység)", 25, 1, 1000000))));
+        categories.put("parbajkem", new Category("parbajkem", "Párbaj és kém-álca", Material.IRON_SWORD, List.of(
+                Entry.toggle("honor-duel.enabled", "Becsület-párbaj"),
+                Entry.integer("honor-duel.window-seconds", "Párbaj-ablak (mp)", 30, 30, 3600),
+                Entry.integer("honor-duel.weekly-limit", "Heti párbaj-limit", 1, 1, 50),
+                Entry.toggle("spy.enabled", "Kém-álca"),
+                Entry.integer("spy.duration-seconds", "Álca hossza (mp)", 10, 10, 3600),
+                Entry.integer("spy.cooldown-minutes", "Álca cooldown (perc)", 1, 1, 100000))));
+        categories.put("borze", new Category("borze", "Börze és városi őrség", Material.EMERALD, List.of(
+                Entry.toggle("market.allow-relic-listing", "Relikvia listázható (börze)"),
+                Entry.number("market.relic-auction.recommended-min-bid", "Börze ajánlott minimuma", 25, 0, 1000000),
+                Entry.toggle("city-guards.enabled", "Városi őrség"),
+                Entry.integer("city-guards.step-seconds", "Őr-léptetés (mp)", 1, 1, 60),
+                Entry.number("city-guards.day-step-blocks", "Nappali lépés (blokk)", 0.5, 0.5, 16),
+                Entry.number("city-guards.night-step-blocks", "Éjjeli lépés (blokk)", 0.5, 0.5, 16))));
         return categories;
     }
 

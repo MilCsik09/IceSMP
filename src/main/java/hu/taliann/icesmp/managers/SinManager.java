@@ -118,7 +118,7 @@ public final class SinManager {
     public int reduceSin(final Player player, final int amount) {
         final int current = getSinCount(player);
         final int reduced = Math.max(0, current - Math.max(0, amount));
-        player.getPersistentDataContainer().set(sinKey, org.bukkit.persistence.PersistentDataType.INTEGER, reduced);
+        player.getPersistentDataContainer().set(sinCountKey, org.bukkit.persistence.PersistentDataType.INTEGER, reduced);
         return reduced;
     }
 

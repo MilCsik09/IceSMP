@@ -52,6 +52,8 @@ public final class CommandMenus {
     private static final String ADMIN_EXCHANGEBOARD_PERMISSION = "icesmp.admin.exchangeboard";
     private static final String ADMIN_NPC_PERMISSION = "icesmp.admin.npc";
     private static final String ADMIN_QUEST_PERMISSION = "icesmp.admin.quest";
+    private static final String ADMIN_CONFIG_PERMISSION = "icesmp.admin.config";
+    private static final String ADMIN_ITEM_PERMISSION = "icesmp.admin.item";
 
     private CommandMenus() {
     }
@@ -132,6 +134,12 @@ public final class CommandMenus {
         put(inv, holder, 31, GuiUtil.icon(Material.CRAFTING_TABLE, title("Recept-könyv"),
                 List.of(grey("Szakma-receptek: tanult/zárolt lista,"),
                         grey("egyedi (rolled) craftok egy kattintással."), click())), "OPEN:profession recipes");
+        put(inv, holder, 32, GuiUtil.icon(Material.CHISELED_BOOKSHELF, title("Bestiárium"),
+                List.of(grey("A krónikás-lajstromod: fajok, receptek,"),
+                        grey("territóriumok, bossok — mérföldkövekkel."), click())), "OPEN:bestiarium");
+        put(inv, holder, 33, GuiUtil.icon(Material.SMITHING_TABLE, title("Szakma-céh heti cél"),
+                List.of(grey("A szakmád közös heti számlálója"),
+                        grey("és jutalma — infó chatben."), click())), "OPEN:szakmacel");
         if (hasAnyAdminAccess(player)) {
             put(inv, holder, 34, GuiUtil.icon(Material.COMMAND_BLOCK, title("Admin"),
                     List.of(grey("Admin gyors-parancsok."), click())), "MENU:ADMIN");
@@ -215,6 +223,15 @@ public final class CommandMenus {
                             List.of(grey("Király: háború hirdetése."), click())), "RUN:faction raid " + target.name().toLowerCase());
                 }
             }
+            put(inv, holder, 19, GuiUtil.icon(Material.WHITE_BANNER, title("Céh"),
+                    List.of(grey("Frakción belüli kisközösség:"),
+                            grey("állapot és parancsok chatben."), click())), "OPEN:ceh");
+            put(inv, holder, 28, GuiUtil.icon(Material.SPYGLASS, title("Kém-álca"),
+                    List.of(grey("Rövid felderítő álca: /kem <célfrakció>"),
+                            grey("— egy ütés (adott/kapott) lebuktat."), click())), "OPEN:kem");
+            put(inv, holder, 29, GuiUtil.icon(Material.CHEST_MINECART, title("Karaván-indítás: 100"),
+                    List.of(grey("100 érme rakomány a kasszából útnak"),
+                            grey("indítva — kísérd el, siker esetén +25%!"), click())), "RUN:faction caravan send 100");
             put(inv, holder, 30, GuiUtil.icon(Material.BARRIER, Component.text("Kilépés a frakcióból", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
                     List.of(grey("Elhagyod a jelenlegi frakciót."), click())), "RUN:faction leave");
         }
@@ -309,6 +326,9 @@ public final class CommandMenus {
                 List.of(grey("Interaktív váltó: válaszd ki a forrás- és cél-"),
                         grey("valutát, és az élő árfolyamon válts (díjjal)."), capitalNote, click())),
                 "MENU:EXCHANGE");
+        put(inv, holder, 24, GuiUtil.icon(Material.AMETHYST_SHARD, title("Ereklye-börze"),
+                List.of(grey("A piac szilánk/unique-anyag szűrője —"),
+                        grey("licitálható ritkaságok (relikvia nem!)."), click())), "OPEN:market ereklye");
 
         put(inv, holder, 31, backButton(), "MENU:MAIN");
         player.openInventory(inv);
@@ -585,6 +605,9 @@ public final class CommandMenus {
             put(inv, holder, 11, GuiUtil.icon(Material.SOUL_LANTERN, accent("Lélekszilánkjaid"),
                     List.of(label("Mennyiség", Component.text(String.valueOf(ctx.soulShardManager().getShards(player)), NamedTextColor.WHITE)),
                             grey("Ellenség-ölésenként gyűlik."))), null);
+            put(inv, holder, 13, GuiUtil.icon(Material.SMITHING_TABLE, title("Lélek-kovács"),
+                    List.of(grey("Minion-fejlesztési ágak szilánkért:"),
+                            grey("/soulforge — állapot chatben."), click())), "OPEN:soulforge");
             put(inv, holder, 15, GuiUtil.icon(Material.WITHER_SKELETON_SKULL, title("Bajnok idézése"),
                     List.of(grey("Megerősített Wither-csontváz bajnok."), click())), "RUN:souls champion");
         } else {
@@ -727,6 +750,9 @@ public final class CommandMenus {
         put(inv, holder, 4, GuiUtil.icon(Material.CROSSBOW, accent("Körözési lista"),
                 List.of(grey("Bűnös játékosok fejpénzzel —"),
                         grey("aki levadássza őket, jutalmat kap."))), null);
+        put(inv, holder, 18, GuiUtil.icon(Material.IRON_SWORD, title("Becsület-párbaj"),
+                List.of(grey("Bűnösként elégtétel: /parbaj kihiv <név>"),
+                        grey("— győzelemért egy bűnpont törlődik."), click())), "OPEN:parbaj");
 
         // Same discovery rule as /bounty: online players at/above the sin threshold.
         final List<Player> wanted = new ArrayList<>();
@@ -780,6 +806,16 @@ public final class CommandMenus {
             put(inv, holder, 10, GuiUtil.icon(Material.COMMAND_BLOCK, title("Config újratöltés"),
                     List.of(grey("/icesmp reload"), click())), "RUN:icesmp reload");
         }
+        if (player.hasPermission(ADMIN_CONFIG_PERMISSION)) {
+            put(inv, holder, 11, GuiUtil.icon(Material.REPEATER, title("Config-menü"),
+                    List.of(grey("Kattintható élő-config szerkesztő."),
+                            grey("/icesmp config menu"), click())), "OPEN:icesmp config menu");
+        }
+        if (player.hasPermission(ADMIN_ITEM_PERMISSION)) {
+            put(inv, holder, 14, GuiUtil.icon(Material.BUNDLE, title("Item-adás"),
+                    List.of(grey("Unique/recept/relikvia/tervrajz/erszény."),
+                            grey("/iceitem — használat chatben."), click())), "OPEN:iceitem");
+        }
         if (player.hasPermission(ADMIN_EXCHANGEBOARD_PERMISSION)) {
             put(inv, holder, 12, GuiUtil.icon(Material.ITEM_FRAME, title("Árfolyamtábla lerakása"),
                     List.of(grey("/exchangeboard place"), click())), "RUN:exchangeboard place");
@@ -818,6 +854,10 @@ public final class CommandMenus {
                     List.of(grey("/events escort"), click())), "RUN:events escort");
             put(inv, holder, 34, GuiUtil.icon(Material.FIREWORK_STAR, title("Hangulat-esemény"),
                     List.of(grey("/events ambient"), click())), "RUN:events ambient");
+            put(inv, holder, 26, GuiUtil.icon(Material.SCULK_CATALYST, title("Rontás-góc nyitása"),
+                    List.of(grey("/events corruption"), click())), "RUN:events corruption");
+            put(inv, holder, 35, GuiUtil.icon(Material.BRUSH, title("Régészeti lelőhely"),
+                    List.of(grey("/events archeology"), click())), "RUN:events archeology");
         }
         // Kezelő-sor: pozíció-/lista-alapú admin műveletek, saját node-jaikra kapuzva.
         if (player.hasPermission(ClaimCommand.ADMIN_PERMISSION)) {
@@ -845,7 +885,9 @@ public final class CommandMenus {
                 || player.hasPermission(ADMIN_EVENTS_PERMISSION)
                 || player.hasPermission(ClaimCommand.ADMIN_PERMISSION)
                 || player.hasPermission(ADMIN_NPC_PERMISSION)
-                || player.hasPermission(ADMIN_QUEST_PERMISSION);
+                || player.hasPermission(ADMIN_QUEST_PERMISSION)
+                || player.hasPermission(ADMIN_CONFIG_PERMISSION)
+                || player.hasPermission(ADMIN_ITEM_PERMISSION);
     }
 
     // ===== LEADERBOARD =====

@@ -90,6 +90,14 @@ exchange-board:
 market:
   max-listings-per-player: 5
   fee-percent: 10
+  # F11 — Ereklye-börze: /market ereklye = a böngésző PDC-tages (unique anyag)
+  # tételekre szűrve; aukciónál ajánlott minimum-kikiáltás (figyelmeztetés, nem
+  # tiltás). VALÓDI relikvia (relic_id) NEM listázható: a relikvia több-lépcsős
+  # kihívással szerzett, egyedi-tulajdonú tárgy — a börze a szilánkoké.
+  # (allow-relic-listing: true visszakapcsolja, ha mégis kellene.)
+  allow-relic-listing: false
+  relic-auction:
+    recommended-min-bid: 100.0
   # Aukciók: /market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]. A licit a
   # bankból zárolódik; túllicitálásnál automatikusan visszajár. Lejáratkor a nyertes
   # licit (fee-percent levonása után) az eladóé, a tárgy a nyertesé — offline
@@ -616,14 +624,3 @@ mob-money-drop:
   min-amount: 1.0
   max-amount: 4.0
   per-level-bonus: 0.5
-
-# ===== F11 — Ereklye-börze: a szilánk-kereskedelem külön csatornája =====
-# /market ereklye = a böngésző PDC-tages (unique anyag) tételekre szűrve;
-# aukciónál ajánlott minimum-kikiáltás (figyelmeztetés, nem tiltás).
-# VALÓDI relikvia (relic_id) NEM listázható: a relikvia több-lépcsős kihívással
-# szerzett, egyedi-tulajdonú tárgy — a börze a szilánkoké. (allow-relic-listing:
-# true visszakapcsolja, ha mégis kellene.)
-market:
-  allow-relic-listing: false
-  relic-auction:
-    recommended-min-bid: 100.0

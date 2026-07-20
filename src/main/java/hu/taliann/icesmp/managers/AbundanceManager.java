@@ -88,8 +88,8 @@ public final class AbundanceManager {
             // B19: évszak-szorzó (nyáron bőségesebb — season-modifiers.<evszak>.abundance).
             final SeasonalModifierService seasonalRef = seasonalModifiers;
             final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("abundance");
-            final double chance = Math.min(100.0D,
-                    clampChance(configManager.getDouble("abundance.chance-percent", 45.0D)) * 100.0D * seasonalMult);
+            final double chance = Math.max(0.0D, Math.min(100.0D,
+                    clampChance(configManager.getDouble("abundance.chance-percent", 45.0D)) * 100.0D * seasonalMult));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 start();
             }

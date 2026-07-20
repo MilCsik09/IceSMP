@@ -170,7 +170,9 @@ public final class SeasonFinaleManager implements PersistentStore {
         if (day <= 0) {
             return;
         }
-        final long seasonStart = seasonManager.getSeasonEndMillis(); // szezon-azonosítóként a VÉGE bélyeg is jó
+        // Szezon-azonosító a KEZDŐ bélyeg: a length-days élő átírása a vég-bélyeget
+        // elmozdítaná, és az egyszeri boss-spawn/nap-broadcast újra elsülne.
+        final long seasonStart = seasonManager.getSeasonStart();
         if (announcedSeasonStart != seasonStart || lastAnnouncedDay != day) {
             announcedSeasonStart = seasonStart;
             lastAnnouncedDay = day;

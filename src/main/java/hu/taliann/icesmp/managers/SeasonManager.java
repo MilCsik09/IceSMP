@@ -152,6 +152,11 @@ public final class SeasonManager implements PersistentStore {
         return seasonNumber;
     }
 
+    /** A futó szezon kezdő-bélyege — stabil szezon-azonosító (a hossz élő átírása sem mozdítja). */
+    public long getSeasonStart() {
+        return seasonStart;
+    }
+
     public long getSeasonEndMillis() {
         final long lengthDays = Math.max(1L, configManager.getLong("world-events.season.length-days", 60L));
         return seasonStart + (lengthDays * 24L * 60L * 60L * 1000L);

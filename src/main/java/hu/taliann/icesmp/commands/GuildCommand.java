@@ -92,7 +92,16 @@ public final class GuildCommand implements BasicCommand {
                     player.sendMessage(messageManager.get("guild-usage-kick", "&cHasználat: /ceh kirug <játékos>"));
                     return;
                 }
-                final org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
+                // Soha Bukkit.getOfflinePlayer(név): ismeretlen névre blokkoló Mojang-hívást
+                // indítana a régió-szálon. Online pontos név, különben csak a helyi cache.
+                final Player online = Bukkit.getPlayerExact(args[1]);
+                final org.bukkit.OfflinePlayer target = online != null ? online
+                        : Bukkit.getOfflinePlayerIfCached(args[1]);
+                if (target == null) {
+                    player.sendMessage(messageManager.get("guild-kick-unknown",
+                            "&cNincs ilyen nevű (ismert) játékos."));
+                    return;
+                }
                 reply(player, guildManager.kick(player, target.getUniqueId()), "guild-kicked",
                         "<gray>⚜ Kirúgva a céhből: <white>{name}</white>.</gray>", Map.of("name", args[1]));
             }

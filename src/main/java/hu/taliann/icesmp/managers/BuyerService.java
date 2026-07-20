@@ -104,15 +104,7 @@ public final class BuyerService {
         hand.setAmount(hand.getAmount() - sellable);
         final CurrencyType currency = CurrencyType.fromFactionType(
                 factionManager.getFaction(player.getUniqueId()));
-        long left = value;
-        while (left > 0L) {
-            final long batch = Math.min(64L, left);
-            left -= batch;
-            final org.bukkit.inventory.ItemStack tokens = currencyManager.createCurrencyItem(currency, batch);
-            for (final org.bukkit.inventory.ItemStack overflow : player.getInventory().addItem(tokens).values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), overflow);
-            }
-        }
+        currencyManager.payOutTokens(player, currency, value);
         player.getPersistentDataContainer().set(soldDayKey, PersistentDataType.LONG, today);
         player.getPersistentDataContainer().set(soldValueKey, PersistentDataType.DOUBLE, soldToday + value);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_TRADE, 0.8F, 1.1F);

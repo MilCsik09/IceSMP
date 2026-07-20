@@ -362,7 +362,7 @@ public final class MarketCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("browse", "sell", "auction", "claim", "cancel", "search", "stats").stream()
+            return List.of("browse", "sell", "auction", "claim", "cancel", "search", "stats", "ereklye").stream()
                     .filter(option -> option.startsWith(prefix)).toList();
         }
 

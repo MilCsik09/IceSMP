@@ -32,6 +32,9 @@ public final class ResourceBonusService implements Listener {
     private final RelicManager relicManager;
     private final NamespacedKey paktKey;
     private final Map<UUID, Double> paktCache = new ConcurrentHashMap<>();
+    /** Utolsó ismert „Sárkányidéző-e” flag — a PDC-t CSAK a játékos saját régió-szálán
+     * olvassuk (isOwnedByCurrentRegion), idegen szálról ez a cache válaszol. */
+    private final Map<UUID, Boolean> evokerCache = new ConcurrentHashMap<>();
 
     public ResourceBonusService(final JavaPlugin plugin, final ConfigManager configManager,
                                 final JobManager jobManager, final RelicManager relicManager) {
@@ -46,14 +49,27 @@ public final class ResourceBonusService implements Listener {
         double multiplier = paktCache.getOrDefault(playerId, 1.0D);
         final String relicId = configManager.getString("pakt.dragon-relic-id", "sarkany_tojas");
         final RelicManager.RelicOwnership ownership = relicManager.getOwnership(relicId);
-        if (ownership != null && playerId.equals(ownership.owner())) {
-            final Player online = org.bukkit.Bukkit.getPlayer(playerId);
-            if (online != null && jobManager.getPrimaryJob(online) == JobType.EVOKER) {
-                multiplier *= 1.0D + Math.max(0.0D,
-                        configManager.getDouble("pakt.dragon-essence-bonus-percent", 10.0D)) / 100.0D;
-            }
+        if (ownership != null && playerId.equals(ownership.owner()) && isEvoker(playerId)) {
+            multiplier *= 1.0D + Math.max(0.0D,
+                    configManager.getDouble("pakt.dragon-essence-bonus-percent", 10.0D)) / 100.0D;
         }
         return multiplier;
+    }
+
+    /**
+     * Folia-biztos kaszt-lekérdezés: a max() bármely régió-szálról hívható (pl. a
+     * sebzett fél szálán, projectile-harcban), a MÁSIK játékos PDC-jét ott tilos
+     * olvasni. Saját régión élőben olvasunk és frissítjük a cache-t; idegenről az
+     * utolsó ismert érték megy (a következő saját-szálas hívás úgyis frissíti).
+     */
+    private boolean isEvoker(final UUID playerId) {
+        final Player online = org.bukkit.Bukkit.getPlayer(playerId);
+        if (online != null && org.bukkit.Bukkit.isOwnedByCurrentRegion(online)) {
+            final boolean evoker = jobManager.getPrimaryJob(online) == JobType.EVOKER;
+            evokerCache.put(playerId, evoker);
+            return evoker;
+        }
+        return evokerCache.getOrDefault(playerId, Boolean.FALSE);
     }
 
     /** Megvan-e már a pakt (nem halmozható). */
@@ -76,10 +92,14 @@ public final class ResourceBonusService implements Listener {
         if (stored != null) {
             paktCache.put(event.getPlayer().getUniqueId(), stored);
         }
+        // A join a játékos saját régió-szálán fut — a kaszt-cache itt biztonsággal töltődik.
+        evokerCache.put(event.getPlayer().getUniqueId(),
+                jobManager.getPrimaryJob(event.getPlayer()) == JobType.EVOKER);
     }
 
     @EventHandler
     public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
         paktCache.remove(event.getPlayer().getUniqueId());
+        evokerCache.remove(event.getPlayer().getUniqueId());
     }
 }

@@ -1204,6 +1204,38 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] Ellenőrzés: NEUTRAL játékossal rontás-tisztítás → 9 pont (6×1.5); DARK
         párbaj-győzelem → 3 pont (2×1.5); raid-győzelem NEUTRAL-ként → 2-3 pont (5×0.5);
         súly 0-ra állítva a forrás semmit nem ír jóvá. `/events season` mutatja az állást.
+- [ ] **Review-kör 2 (Tier A/B utólagos átvizsgálás) — javítás-ellenőrzések:**
+  - [ ] KRITIKUS-javítás: a plugin egyáltalán ELINDUL (korábban a konstruktor-sorrend
+        miatt onEnable-crash lett volna: soulforge/resource/ritual huzalozás a mezők
+        felépülte ELŐTT futott); `/parbaj` győzelem után a bűnpont TÉNYLEG csökken
+        (SinManager.reduceSin elírt PDC-kulcsa javítva).
+  - [ ] economy.yml: a `market:` blokk EGYszer szerepel (a dupla kulcs a piac/aukció
+        beállításokat némán elnyelte volna) — `/icesmp config get market.fee-percent`
+        a fájlbeli értéket mutatja.
+  - [ ] `/ceh kirug <ismeretlen név>` nem fagyaszt (nincs blokkoló Mojang-lookup),
+        ismeretlen névre hibaüzenet. `/market <TAB>` felajánlja az `ereklye`-t.
+  - [ ] Rúna-felrakásnál a rúna a kurzorról TÉNYLEG elfogy (explicit setCursor);
+        erszény levegőbe-kattintva továbbra is nyílik.
+  - [ ] Kilépéskor takarul a párbaj- és kém-állapot (PlayerSessionCleanup-regisztráció);
+        projectile-PvP két régió közt nem olvas idegen PDC-t (Sárkánytojás-bónusz
+        cache-ből, isOwnedByCurrentRegion-kapuval).
+  - [ ] Bestiárium-mérföldkő hibás config-sora (nem szám) csak kimarad, nem dob;
+        ritka variáns csak TÉNYLEGESEN szintezett mobra kerül; játékos-karaván
+        kifizetése nem duplázódhat (tick szinkronizálva); szezon-hossz élő átírása
+        NEM ismétli meg a nagydöntő-boss spawnját (szezon-azonosító = kezdő-bélyeg).
+- [ ] **Menü/config/admin integráció (teljessé tétel):**
+  - [ ] Főmenü: új „Bestiárium” (GUI) és „Szakma-céh heti cél” csempe; Frakció-almenü:
+        „Céh”, „Kém-álca”, „Karaván-indítás: 100” (király-parancsra fut); Körözési
+        lista: „Becsület-párbaj” csempe; Lélekszilánk-almenü: „Lélek-kovács” (csak
+        Nekromanta); Bank-almenü: „Ereklye-börze”.
+  - [ ] Admin-menü: „Config-menü” gomb (icesmp.admin.config node-ra kapuzva),
+        „Item-adás” (icesmp.admin.item), „Rontás-góc nyitása” és „Régészeti lelőhely”
+        esemény-trigger; a hasAnyAdminAccess a két új node-ot is nézi.
+  - [ ] `/events corruption` + `/events archeology` (rontas/regeszet alias, admin-node,
+        tab-complete) — a CorruptionManager.forceSpawn eddig sehonnan nem volt hívható.
+  - [ ] Config-GUI (`/icesmp config menu`): 6 ÚJ kategória — Szezon-liga (pontok,
+        nagydöntő), Rontás-zóna (dark-bias-szal), DARK-népesség + ritka variánsok,
+        Céhek + szakma-hét, Párbaj + kém, Börze + városi őrség — mind élő kulcsokra.
 - [ ] **G6 — Becsület-párbaj (ÚJ):**
   - [ ] `/parbaj kihiv <név>` (CSAK bűnös ajánlhat) → `/parbaj elfogad|elutasit`; elfogadáskor
         3 perces ablak; a párbaj-kill NEM termel bűnt és NEM fizet vérdíjat (SinListener-kizárás

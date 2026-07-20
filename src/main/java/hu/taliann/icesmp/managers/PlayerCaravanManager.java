@@ -135,7 +135,7 @@ public final class PlayerCaravanManager {
     }
 
     /** A world-events tick hívja: ablak-lejárat = sikeres célba érés. */
-    public void tick() {
+    public synchronized void tick() {
         if (!isActive() || System.currentTimeMillis() < windowEndMillis) {
             return;
         }

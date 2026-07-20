@@ -343,7 +343,6 @@ public final class IceSMPCore {
         this.guildManager = new hu.taliann.icesmp.managers.GuildManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.playerCaravanManager = new hu.taliann.icesmp.managers.PlayerCaravanManager(plugin, configManager, factionTreasuryManager, factionManager, eventSpawnGuard, messageManager);
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
-        this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
         this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(plugin, configManager, jobManager, relicManager);
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager, factionManager, seasonManager);
         this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager, factionManager, seasonManager);
@@ -351,9 +350,6 @@ public final class IceSMPCore {
         this.holidayService = new hu.taliann.icesmp.managers.HolidayService(configManager, messageManager);
         this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
         this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager);
-        resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // E25/E32 — pool-bónuszok
-        ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // E25 — pakt-oltár
-        hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // E1 — statikus híd
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
@@ -441,6 +437,12 @@ public final class IceSMPCore {
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
         this.ritualManager = new RitualManager(plugin, configManager, relicManager, sinManager, factionManager,
                 territoryManager, jobManager, messageManager);
+        // E1/E25/E32 — CSAK ide, a resourceManager/soulShardManager/ritualManager felépülte
+        // UTÁN köthető (korábbi hívásuk null-mezőn robbant volna a konstruktorban).
+        this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
+        resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // E25/E32 — pool-bónuszok
+        ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // E25 — pakt-oltár
+        hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // E1 — statikus híd
         this.exchangeBoardManager = new ExchangeBoardManager(plugin, configManager, exchangeRateService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
@@ -534,6 +536,8 @@ public final class IceSMPCore {
                 moderationManager,
                 whisperManager,
                 guildManager,
+                honorDuelManager,
+                spyManager,
                 spellRegistry
         );
 
@@ -1172,6 +1176,8 @@ public final class IceSMPCore {
         plugin.registerCommand("claim", "Terület-claim parancsok", List.of("birtok"), new hu.taliann.icesmp.commands.ClaimCommand(claimManager, currencyManager, messageManager));
         final EventsCommand eventsCommand = new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager);
         eventsCommand.setStrangerNpcManager(strangerNpcManager);
+        eventsCommand.setCorruptionManager(corruptionManager);
+        eventsCommand.setArcheologyManager(archeologyManager);
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), eventsCommand);
         plugin.registerCommand("emlek", "Emlékszilánk-beváltás (visszaemlékezés)", List.of("memory", "emlekek"),
                 new hu.taliann.icesmp.commands.MemoryCommand(configManager, jobManager, talentManager, specializationManager, uniqueMaterialFactory, messageManager));

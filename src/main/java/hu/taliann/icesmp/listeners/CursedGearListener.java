@@ -83,6 +83,8 @@ public final class CursedGearListener implements Listener {
             return;
         }
         final long now = System.currentTimeMillis();
+        // Lejárt (soha meg nem erősített) bejegyzések söprése — a map nem szivároghat.
+        equipConfirmUntil.values().removeIf(until -> until < now);
         final Long confirmedUntil = equipConfirmUntil.get(player.getUniqueId());
         if (confirmedUntil != null && confirmedUntil > now) {
             equipConfirmUntil.remove(player.getUniqueId());
