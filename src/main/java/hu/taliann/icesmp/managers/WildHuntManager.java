@@ -132,12 +132,22 @@ public final class WildHuntManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
+            // B19: évszak-szorzó (télen vadabb a Hajsza — season-modifiers.<evszak>.wild-hunt).
+            final SeasonalModifierService seasonalRef = seasonalModifiers;
+            final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("wild-hunt");
             final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("wild-hunt.chance-percent", 30.0D)));
+                    configManager.getDouble("wild-hunt.chance-percent", 30.0D) * seasonalMult));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 spawn(null);
             }
         }
+    }
+
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
     }
 
     /** Admin override: unleashes the hunt now near the anchor (or a random player). */

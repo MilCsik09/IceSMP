@@ -177,6 +177,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             case "cleanse" -> tryCleanse(player);
             case "buff" -> tryBuff(player, ritual);
             case "home" -> tryHome(player);
+            case "uncurse" -> tryUncurse(player);
             default -> tryRelic(player, ritualId, ritual);
         };
         if (!success) {
@@ -205,6 +206,45 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         player.sendMessage(messageManager.getMessage(
                 "ritual-success",
                 "<gold>A rituálé sikeres — a relikvia testet öltött a kezedben!</gold>"
+        ));
+        return true;
+    }
+
+    /** B54: setter-injected átok-szolgáltatás (a service a manager után épül a DI-sorrendben). */
+    private volatile CursedGearService cursedGearService;
+
+    public void setCursedGearService(final CursedGearService cursedGearService) {
+        this.cursedGearService = cursedGearService;
+    }
+
+    /**
+     * B54 — Átok-törés ({@code uncurse} rituálé-típus): a rituálézó VISELT páncéljáról és
+     * a két kezében tartott tárgyról leszedi az Első Csend átkát — a levételi zár és a
+     * bónusz megszűnik, a tárgy megmarad. A játékos saját régió-szálán futunk.
+     */
+    private boolean tryUncurse(final Player player) {
+        final CursedGearService serviceRef = cursedGearService;
+        if (serviceRef == null) {
+            return false;
+        }
+        boolean broken = false;
+        final org.bukkit.inventory.ItemStack[] armor = player.getInventory().getArmorContents();
+        for (final org.bukkit.inventory.ItemStack piece : armor) {
+            broken |= serviceRef.breakCurse(piece);
+        }
+        player.getInventory().setArmorContents(armor);
+        broken |= serviceRef.breakCurse(player.getInventory().getItemInMainHand());
+        broken |= serviceRef.breakCurse(player.getInventory().getItemInOffHand());
+        if (!broken) {
+            player.sendMessage(messageManager.getMessage(
+                    "ritual-uncurse-nothing",
+                    "<gray>Nincs rajtad átkozott tárgy — az oltárnak nincs mit megtörnie.</gray>"
+            ));
+            return false;
+        }
+        player.sendMessage(messageManager.getMessage(
+                "ritual-uncurse-success",
+                "<gold>Az oltár megtörte az átkot — az Első Csend elengedett. A tárgy a tiéd marad, de már nem köt.</gold>"
         ));
         return true;
     }

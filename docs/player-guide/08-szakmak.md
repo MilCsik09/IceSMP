@@ -145,6 +145,13 @@ Az affixek attribútumok: **Szívósság** (+élet), **Vértezet**, **Keménysé
 elé a raritás kerül a hozzá illő jelzővel (pl. `[Legendás] Isteni Penge` vagy `[Ócska] Rozsdás Vért`),
 a bónuszok a leírásban látszanak (negatív affix pirossal).
 
+> ☠ **Átkozott tárgyak:** a boss-zsákmány ritkán az **Első Csend érintését** hordozza
+> (sötétvörös lore-sor). Az átkozott darab **erőt ad** (darabonként +10% sebzés, legfeljebb
+> +40%), de **felvéve nem ereszt** — a páncél nem vehető le szabadon! Felvételkor a játék
+> kétszer is megkérdez (első kattintás figyelmeztet, a gyors második erősít meg). Az átkot
+> csak az **Átok-törés oltára** oldja (síró obszidián mag, obszidián talapzat; áldozat:
+> ametiszt + ghast-könny) — a tárgy megmarad, csak az átok (és a bónusz) tűnik el.
+
 **Balansz — a forrás dönti el, MELY raritások eshetnek:**
 - 🧑‍🏭 **Szakma-craft:** nincs Ócska, kiegyensúlyozott (Közönséges→Legendás), **megtervezett névvel**.
 - 👹 **Mob-drop:** a szörnyek **sokféle** tárgyat ejtenek egy súlyozott loot-tábláról: egyedi

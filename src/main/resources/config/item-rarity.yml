@@ -484,3 +484,14 @@ item-rarity:
       weights: { kozonseges: 30, nem_mindennapi: 32, ritka: 25, epikus: 10, legendas: 3 }
     boss:
       weights: { ritka: 30, epikus: 40, legendas: 25, ereklye: 5 }
+
+  # B54 — Átkozott felszerelés (az Ócska-átok / Első Csend-érintés): BOSS-forrású gear-loot
+  # chance eséllyel Átkozott — darabonként damage-bonus-per-piece kimenő sebzés-bónusz
+  # (plafon: damage-bonus-cap), cserébe a páncél FELVÉVE NEM VEHETŐ LE — csak a rituálé-oltár
+  # Átok-törése (relics.yml: atok_tores, type: uncurse) oldja. A felvétel kétlépcsős
+  # megerősítéshez kötött (első katt figyelmeztet, gyors második erősít meg). Élőben olvasódik.
+  cursed:
+    enabled: true
+    chance: 0.08
+    damage-bonus-per-piece: 0.1
+    damage-bonus-cap: 0.4

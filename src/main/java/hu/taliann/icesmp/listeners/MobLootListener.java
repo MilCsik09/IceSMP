@@ -97,8 +97,18 @@ public final class MobLootListener implements Listener {
 
         final ItemStack drop = rollTable(path, tier, entity);
         if (drop != null) {
-            event.getDrops().add(drop);
+            // B54: boss-forrású gear ritkán Átkozott (erő + elköteleződés) — a curse-sorsolás
+            // csak a boss-ágon fut, a sima mob-loot sosem átkozott.
+            event.getDrops().add(bossTier && cursedGearService != null
+                    ? cursedGearService.maybeCurse(drop) : drop);
         }
+    }
+
+    /** B54: setterrel kötve (a service a listener után épül a DI-sorrendben); null = nincs átok. */
+    private hu.taliann.icesmp.managers.CursedGearService cursedGearService;
+
+    public void setCursedGearService(final hu.taliann.icesmp.managers.CursedGearService cursedGearService) {
+        this.cursedGearService = cursedGearService;
     }
 
     /**

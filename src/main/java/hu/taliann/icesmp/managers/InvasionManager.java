@@ -84,6 +84,13 @@ public final class InvasionManager {
         this.seasonFinale = seasonFinale;
     }
 
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
+    }
+
     public InvasionManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final MessageManager messageManager) {
         this.plugin = plugin;
@@ -110,11 +117,14 @@ public final class InvasionManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.invasion.check-interval-minutes", 75L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
-        // B33: a végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció).
+        // B33: a végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció);
+        // B19: évszak-szorzó (season-modifiers.<evszak>.invasion).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
+        final SeasonalModifierService seasonalRef = seasonalModifiers;
+        final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("invasion");
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.invasion.chance-percent", 30.0D) * finaleMult));
+                configManager.getDouble("world-events.invasion.chance-percent", 30.0D) * finaleMult * seasonalMult));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }

@@ -220,6 +220,8 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.SeasonFinaleManager seasonFinaleManager;
     private final hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager;
     private final hu.taliann.icesmp.managers.BardManager bardManager;
+    private final hu.taliann.icesmp.managers.SeasonMonumentManager seasonMonumentManager;
+    private final hu.taliann.icesmp.managers.CursedGearService cursedGearService;
     private final hu.taliann.icesmp.managers.ArcheologyManager archeologyManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
@@ -364,6 +366,15 @@ public final class IceSMPCore {
         // D19 — a Rejtélyes Idegen (tisztán atmoszférikus, ritka felbukkanás).
         this.strangerNpcManager = new hu.taliann.icesmp.managers.StrangerNpcManager(plugin, configManager, messageManager);
         strangerNpcManager.setSpawnGuard(eventSpawnGuard);
+        // B19 — évszakos világ-modifikátorok: a valós évszak finom esély-szorzói.
+        final hu.taliann.icesmp.managers.SeasonalModifierService seasonalModifiers =
+                new hu.taliann.icesmp.managers.SeasonalModifierService(configManager);
+        bloodMoonManager.setSeasonalModifiers(seasonalModifiers);
+        worldBossManager.setSeasonalModifiers(seasonalModifiers);
+        invasionManager.setSeasonalModifiers(seasonalModifiers);
+        wildHuntManager.setSeasonalModifiers(seasonalModifiers);
+        abundanceManager.setSeasonalModifiers(seasonalModifiers);
+        gatheringBuffManager.setSeasonalModifiers(seasonalModifiers);
         // B33 — szezonzáró finálé: a fogyasztók (season/boss/vérhold/invázió) setterrel kapják,
         // mert a finálé-manager náluk később épül (kölcsönös hivatkozás a DI-sorrendben).
         this.seasonFinaleManager = new hu.taliann.icesmp.managers.SeasonFinaleManager(plugin, configManager,
@@ -404,6 +415,12 @@ public final class IceSMPCore {
                 plugin, configManager, statsManager, messageManager));
         // D9 — Énekmondó: a heti balladát a FancyNpcs interact-hook (registerNpcQuestBridge) köti a bárd-NPC-re.
         this.bardManager = new hu.taliann.icesmp.managers.BardManager(configManager, statsManager, messageManager);
+        // D3 — Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
+        this.seasonMonumentManager = new hu.taliann.icesmp.managers.SeasonMonumentManager(plugin, configManager, statsManager);
+        seasonManager.setMonumentManager(seasonMonumentManager);
+        // B54 — Átkozott felszerelés: curse-stamp a boss-lootra + Átok-törés az oltárnál.
+        this.cursedGearService = new hu.taliann.icesmp.managers.CursedGearService(plugin, configManager);
+        ritualManager.setCursedGearService(cursedGearService);
         // A quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
         // (mindkét célosztály a DI-sorrendben korábban épül).
         questManager.setStatsManager(statsManager);
@@ -440,7 +457,8 @@ public final class IceSMPCore {
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
-                moderationManager, chronicleManager, corruptionManager, seasonFinaleManager);
+                moderationManager, chronicleManager, corruptionManager, seasonFinaleManager,
+                seasonMonumentManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -1135,7 +1153,11 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager, afkManager), plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, itemRarityService), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobLootListener(configManager, itemRarityService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog, uniqueMaterialFactory), plugin);
+        final hu.taliann.icesmp.listeners.MobLootListener mobLootListener =
+                new hu.taliann.icesmp.listeners.MobLootListener(configManager, itemRarityService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog, uniqueMaterialFactory);
+        mobLootListener.setCursedGearService(cursedGearService);
+        pluginManager.registerEvents(mobLootListener, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CursedGearListener(cursedGearService, messageManager), plugin);
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);

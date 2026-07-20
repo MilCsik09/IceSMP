@@ -148,6 +148,13 @@ vadabb lesz:
 A napváltásokat és a boss érkezését a krónikás-hangú kihirdetések jelzik — az utolsó napokban
 érdemes együtt mozogni a frakcióddal: itt dőlhet el a bajnoki cím.
 
+A szezon zárásakor a krónikások **rövid átvezető történettel** búcsúztatják a korszakot, a
+bajnok frakció pedig **kőbe vésve** marad meg: a főváros emlékművén („A Korszakok Könyve")
+korszakról korszakra bővül a bajnokok és hőseik listája.
+
+> 🍂 **Évszakok:** a világ a valós évszakokra is rezonál — télen sűrűbb a vérhold és a Vad
+> Hajsza, nyáron gyakoribb a Bőség-idő és a gyűjtögető-láz. Figyeld a naptárat!
+
 ## A világ hangjai 🕯
 
 - **Korszakváltás:** szezonzáráskor a krónikások **rövid történetben** búcsúztatják a letűnt

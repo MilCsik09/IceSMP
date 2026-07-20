@@ -1020,6 +1020,26 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ülők „X mesél a tűznél…" action bart látnak); elsétálva megszakad, nincs jutalom;
       cooldown 60 perc (PDC `cd_campfire_story` — csak SIKERES mesélés indítja). Kulcsok:
       `campfire-story.*` (general.yml), saját sztori-lista a `stories` kulccsal.
+- [ ] **A38 Spawn-élmény (ÚJ — Tier A):** állíts be `world-events.intro.first-join-spawn`-t
+      ("world,x,y,z[,yaw,pitch]") → az ELSŐ belépő oda teleportál, és csak utána indul az
+      intro; visszatérő belépésnél rövid, halk üdvözlő title + csengő hang
+      (`intro.join-welcome.*` — nem torlódik az intróval, mert első belépéskor az intro fut).
+- [ ] **B19 Évszakos modifikátorok (ÚJ — Tier A):** a VALÓS évszak szorzói
+      (`world-events.season-modifiers.<tel|tavasz|nyar|osz>.<esemény>`) a vérhold/világboss/
+      invázió/hajsza/bőség/gyűjtögető-láz sorsolási esélyén (télen vérhold ×1.4, nyáron
+      bőség ×1.4 stb.); `enabled: false` mindet kikapcsolja; a B33-finálé szorzójával összeszorzódik.
+- [ ] **D3 Szezon-emlékmű (ÚJ — Tier A):** állíts be `season-monument.location`-t
+      ("world,x,y,z") → szezonzáráskor a blokk a bajnok banner-színére vált, fölötte hologram
+      („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
+      (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
+      szezon nem kerül kőbe.
+- [ ] **B54 Átkozott felszerelés (ÚJ — Tier A):** világboss/event-boss loot ~8%-a Átkozott
+      (sötétvörös lore-sor): viselve darabonként +10% kimenő sebzés (cap +40%), de a
+      páncél-slotból NEM vehető ki („Az átok nem ereszt…"). Felvételkor az első kattintás
+      figyelmeztet, csak az 5 mp-en belüli második erősít meg. Levétel: építs Átok-törés
+      oltárt (CRYING_OBSIDIAN mag + 3×3 obszidián talp, áldozat: 8 ametiszt + 1 ghast-könny)
+      → SHIFT+jobb-katt → minden viselt/kézben tartott átok megtörik, a tárgy megmarad.
+      Kulcsok: `item-rarity.cursed.*`, rituálé: `rituals.atok_tores`.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

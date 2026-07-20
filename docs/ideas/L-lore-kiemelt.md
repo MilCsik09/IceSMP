@@ -556,11 +556,16 @@ igazi közösségérzethez, az 5 fős party túl kicsi a tartós szervezethez; a
 **Építőkövek:** `PartyManager` minta, közösségi cél-infra, bank/kassza-infra, `YamlStore`.
 **Buktatók:** Nagy munka (új manager + GUI + perzisztencia + rang-rendszer réteg) — érdemes
 a party-infra közvetlen kiterjesztéseként indulni, ne nulláról.
-### B54. Elátkozott felszerelés (kockázatos erő)
+### B54. Elátkozott felszerelés (kockázatos erő) `[KÉSZ ✅]`
 
 > **Lore-horgony:** az Ócska-átok és az Első Csend-érintette tárgyak motívuma (kódex I. + item-rarity)
 
 **Munka:** 🟢 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** `CursedGearService` + `CursedGearListener` — boss-loot gear ~8%
+> eséllyel Átkozott (PDC-flag + lore): darabonként +10% kimenő sebzés (cap 40%), a
+> páncél levétele zárolt; felvétel kétlépcsős megerősítéssel. Átok-törés: `atok_tores`
+> rituálé (`type: uncurse`, RitualManager). Config: `item-rarity.cursed.*`.
 
 **Mi ez:** Ritka, erős tárgyak egy csoportja, amik felvétel után nem vehetők le szabadon
 (egy rituálé/quest kell a „megtöréshez"), cserébe komoly bónuszt adnak.
@@ -576,11 +581,14 @@ inventory-listener.
 **Buktatók:** A kényszerített viselet UX-szempontból frusztráló lehet, ha a játékos nem
 érti előre a szabályt — egyértelmű lore-szöveg és felvétel előtti megerősítő GUI-prompt kötelező.
 
-### A38. Első belépés spawn-élmény polish
+### A38. Első belépés spawn-élmény polish `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Szent Zóna-ébredés + a zarándoklat élménye (kódex V.)
 
 🟢 • ⭐⭐
+
+> **Megvalósítva:** IntroManager — `intro.first-join-spawn` teleportAsync az intro
+> előtt; visszatérő belépésnél halk üdvözlő title+hang (`intro.join-welcome.*`).
 
 **Mi ez:** Az onboarding-lánc (A5) mellé a tényleges spawn-pillanat vizuális/hangi csiszolása.
 **Hogyan működne:** Join-kor rövid title/subtitle üdvözlés + halk hangjel (nem broadcast-
@@ -610,11 +618,15 @@ anélkül, hogy formális hadüzenet kellene hozzá.
 **Buktatók:** Az útvonal-számítás (pathfinding konvojnak) régió-lokálisan kis lépésekben
 menjen (Folia blokk-szkennelés szabály), és a rablás-ablak ne legyen kihasználható
 off-time időzítéssel (ld. B30 háború-ablak elve alkalmazható ide is).
-### B19. Évszakos világ-modifikátorok
+### B19. Évszakos világ-modifikátorok `[KÉSZ ✅]`
 
 > **Lore-horgony:** az Égi Jelek + a gyógyuló Fa / a Királynő álmának ciklusai évszak-modifikátorként (kódex V./VII./VIII.)
 
 **Munka:** 🟢 • **Érték:** ⭐
+
+> **Megvalósítva:** `SeasonalModifierService` — valós évszak szerinti esély-szorzók
+> (`world-events.season-modifiers.<evszak>.<esemény>`) a vérhold/világboss/invázió/
+> hajsza/bőség/gyűjtögető sorsolásán; a B33-finálé szorzóval kombinálódik.
 
 **Mi ez:** A szezonhoz kötött finom világ-hangolás: télen gyakoribb fagy-események, nyáron
 Bőség-idő gyakoribb.
@@ -643,11 +655,15 @@ meglévő rendszert (mob, szakma, territórium, boss) egyetlen progressziós UI-
 **Építőkövek:** `StatsManager` PDC-számlálók, GUI-minta, achievement-infra, heti krónika (B15).
 **Buktatók:** Sok apró hook-pontot igényel (minden mob-típus, minden recept, minden
 territórium bejárása) — inkrementálisan, kategóriánként érdemes bevezetni.
-### D3. Szezon-emlékművek
+### D3. Szezon-emlékművek `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Korszakok Könyve fizikai emlékművei — „neve örökre bekerül" (kódex VIII.)
 
 **Munka:** 🟢 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** `SeasonMonumentManager` (PersistentStore, monument.yml) — a
+> szezonzárás-hookon banner-csere + „A Korszakok Könyve” TextDisplay-hologram
+> (sorszám + bajnok + top-3 hős, bővülő lista). Config: `season-monument.*`.
 
 **Mi ez:** Szezonzáráskor a győztes frakció fizikai nyoma a fővárosban (zászló/szobor + névtábla).
 **Hogyan működne:** A szezonváltás-hookban (liga-lezárás) egy admin-előkészített koordinátán (`season-monument.location`) automatikusan cserélődik egy fej-blokk/banner a győztes frakció színére, mellé `TextDisplay`-hologram íródik a szezon számával és a `StatsManager` MVP-top 3 nevével. A korábbi emlékmű nem törlődik, a lista alul bővül (vagy a D10 vitrinbe kerül).

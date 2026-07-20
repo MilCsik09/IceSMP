@@ -351,6 +351,26 @@ rituals:
       - "GOLD_BLOCK:3"
       - "GHAST_TEAR:2"
       - "TOTEM_OF_UNDYING:1"
+  # B54 — Átok-törés: a viselt/kézben tartott Átkozott tárgyakról leszedi az Első Csend
+  # átkát (a tárgy megmarad, a levételi zár és a bónusz megszűnik). A Feloldozás-oltár
+  # mintája: SOUL_LANTERN mag, kvarc-gyűrű nélkül is működik kisebb struktúrával.
+  atok_tores:
+    type: "uncurse"
+    altar-block: "CRYING_OBSIDIAN"
+    cooldown-seconds: 600
+    structure:
+      - "-1,-1,-1:OBSIDIAN"
+      - "0,-1,-1:OBSIDIAN"
+      - "1,-1,-1:OBSIDIAN"
+      - "-1,-1,0:OBSIDIAN"
+      - "0,-1,0:OBSIDIAN"
+      - "1,-1,0:OBSIDIAN"
+      - "-1,-1,1:OBSIDIAN"
+      - "0,-1,1:OBSIDIAN"
+      - "1,-1,1:OBSIDIAN"
+    sacrifice:
+      - "AMETHYST_SHARD:8"
+      - "GHAST_TEAR:1"
   hazateres:
     type: "home"
     altar-block: "LODESTONE"

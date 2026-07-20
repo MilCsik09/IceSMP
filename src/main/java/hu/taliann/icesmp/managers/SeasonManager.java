@@ -142,6 +142,13 @@ public final class SeasonManager implements PersistentStore {
         this.storyTeller = storyTeller;
     }
 
+    /** D3: setter-injected emlékmű-vésnök. */
+    private volatile SeasonMonumentManager monumentManager;
+
+    public void setMonumentManager(final SeasonMonumentManager monumentManager) {
+        this.monumentManager = monumentManager;
+    }
+
     /** Debounced async flush: point awards can burst (raid payouts), one write covers them all. */
     private void requestSave() {
         if (saveScheduled.compareAndSet(false, true)) {
@@ -203,6 +210,11 @@ public final class SeasonManager implements PersistentStore {
             awardChampionMembers(champion);
             if (storyRef != null) {
                 storyRef.tellTransition(champion);
+            }
+            // D3: a bajnok kőbe vésve — a pont-reset ELŐTT (a hős-toplista még érvényes).
+            final SeasonMonumentManager monumentRef = monumentManager;
+            if (monumentRef != null) {
+                monumentRef.recordSeason(champion);
             }
         }
 

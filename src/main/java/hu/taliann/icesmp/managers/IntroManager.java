@@ -52,11 +52,66 @@ public final class IntroManager {
      */
     public void playOnFirstJoin(final Player player) {
         if (!configManager.getBoolean("world-events.intro.enabled", true) || hasSeenIntro(player)) {
+            // A38 — visszatérő játékos: rövid, halk üdvözlő title (nem torlódik az intróval,
+            // mert az első belépést a fenti ág viszi el).
+            playReturningWelcome(player);
             return;
         }
 
         player.getPersistentDataContainer().set(introSeenKey, PersistentDataType.BYTE, (byte) 1);
+        // A38 — első belépés: a zarándok a főváros látványos pontján ébred (ha be van állítva),
+        // és CSAK a teleport után indul az intro-szekvencia (a cím a helyhez tartozik).
+        final Location firstSpawn = parseFirstJoinSpawn();
+        if (firstSpawn != null) {
+            player.teleportAsync(firstSpawn).thenRun(() ->
+                    player.getScheduler().run(plugin, task -> play(player), null));
+            return;
+        }
         play(player);
+    }
+
+    /** A38 — "world,x,y,z[,yaw,pitch]" formátumú első-belépés spawn-pont (üres = kikapcsolva). */
+    private Location parseFirstJoinSpawn() {
+        final String raw = configManager.getString("world-events.intro.first-join-spawn", "");
+        if (raw.isBlank()) {
+            return null;
+        }
+        final String[] parts = raw.split(",");
+        if (parts.length < 4) {
+            return null;
+        }
+        final org.bukkit.World world = org.bukkit.Bukkit.getWorld(parts[0].trim());
+        if (world == null) {
+            return null;
+        }
+        try {
+            final Location location = new Location(world, Double.parseDouble(parts[1].trim()),
+                    Double.parseDouble(parts[2].trim()), Double.parseDouble(parts[3].trim()));
+            if (parts.length >= 6) {
+                location.setYaw(Float.parseFloat(parts[4].trim()));
+                location.setPitch(Float.parseFloat(parts[5].trim()));
+            }
+            return location;
+        } catch (final NumberFormatException exception) {
+            plugin.getLogger().warning("Hibás intro.first-join-spawn formátum: " + raw);
+            return null;
+        }
+    }
+
+    /** A38 — halk visszatérő-üdvözlés: rövid title + hangjel (nem broadcast). */
+    private void playReturningWelcome(final Player player) {
+        if (!configManager.getBoolean("world-events.intro.join-welcome.enabled", true)) {
+            return;
+        }
+        final net.kyori.adventure.title.Title title = net.kyori.adventure.title.Title.title(
+                net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                        configManager.getString("world-events.intro.join-welcome.title", "<aqua>❄ IceSMP</aqua>")),
+                net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                        configManager.getString("world-events.intro.join-welcome.subtitle", "<gray>Üdv újra a fagyott királyságok földjén!</gray>")),
+                net.kyori.adventure.title.Title.Times.times(
+                        java.time.Duration.ofMillis(400), java.time.Duration.ofMillis(1600), java.time.Duration.ofMillis(600)));
+        player.showTitle(title);
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5F, 1.2F);
     }
 
     /**

@@ -85,11 +85,22 @@ public final class AbundanceManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
-            final double chance = clampChance(configManager.getDouble("abundance.chance-percent", 45.0D)) * 100.0D;
+            // B19: évszak-szorzó (nyáron bőségesebb — season-modifiers.<evszak>.abundance).
+            final SeasonalModifierService seasonalRef = seasonalModifiers;
+            final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("abundance");
+            final double chance = Math.min(100.0D,
+                    clampChance(configManager.getDouble("abundance.chance-percent", 45.0D)) * 100.0D * seasonalMult);
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 start();
             }
         }
+    }
+
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
     }
 
     /** Admin override: opens the abundance window now. Returns false if one is already open. */

@@ -54,6 +54,27 @@ world-events:
     corruption: { territory: true, claim: true, region: true, water: true }
     archeology: { territory: true, claim: true, region: true, water: true }
     stranger:   { territory: true, claim: true, region: true, water: true }
+  # B19 — Évszakos világ-modifikátorok: a VALÓS naptári évszak finom esély-szorzói a
+  # világesemények sorsolására (1.0 = nincs módosítás; a plafon mindig 100%). Évszakok:
+  # tel (dec-feb) / tavasz (már-máj) / nyar (jún-aug) / osz (szept-nov). Események:
+  # blood-moon, world-boss, invasion, wild-hunt, abundance, gathering. Élőben olvasódik.
+  season-modifiers:
+    enabled: true
+    tel:
+      blood-moon: 1.4
+      wild-hunt: 1.4
+      abundance: 0.8
+      gathering: 0.9
+    tavasz:
+      abundance: 1.2
+      gathering: 1.1
+    nyar:
+      abundance: 1.4
+      gathering: 1.3
+      blood-moon: 0.8
+    osz:
+      world-boss: 1.2
+      invasion: 1.2
   # D19 — a Rejtélyes Idegen: ritkán, véletlen helyen feltűnő, csuklyás alak (néma,
   # sérthetetlen vándor-sziluett). Mond egy talányos sort a whisper-radius-on belül
   # állóknak, majd despawn-seconds után lélek-köddel eltűnik. SZÁNDÉKOSAN nincs
@@ -164,8 +185,16 @@ world-events:
         - "unique:emlekszilank:2"
         - "unique:runapor:3"
   # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
+  # A38 — spawn-élmény: first-join-spawn = "world,x,y,z[,yaw,pitch]" — az első belépő ide
+  # teleportál (teleportAsync), és CSAK utána indul az intro (üres = nincs teleport).
+  # join-welcome = visszatérő játékos rövid, halk üdvözlő title-je + hangja (nem broadcast).
   intro:
     enabled: true
+    first-join-spawn: ""
+    join-welcome:
+      enabled: true
+      title: "<aqua>❄ IceSMP</aqua>"
+      subtitle: "<gray>Üdv újra a fagyott királyságok földjén!</gray>"
     stagger-seconds: 4
     lines:
       - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
@@ -411,3 +440,14 @@ archeology:
     - "EMERALD:2:5"
     - "GOLD_INGOT:2:4"
     - "BONE:4:8"
+
+# ===== D3 — Szezon-emlékmű (a Korszakok Könyve kőben) =====
+# Szezonzáráskor a bajnok frakció banner-blokkja + hologram-lista kerül az admin által
+# kijelölt pontra: location = "world,x,y,z" (üres = nincs fizikai emlékmű, de a sorok
+# gyűlnek a monument.yml-ben). A hologram a legutóbbi max-lines lezárt korszakot sorolja
+# (sorszám + bajnok + a korszak top-3 hőse). Élőben olvasódik.
+season-monument:
+  enabled: true
+  location: ""
+  max-lines: 12
+  header: "<gold>📖 A Korszakok Könyve</gold>"

@@ -44,6 +44,13 @@ public final class BloodMoonManager {
         this.seasonFinale = seasonFinale;
     }
 
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
+    }
+
     public BloodMoonManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager) {
         this.plugin = plugin;
@@ -119,11 +126,14 @@ public final class BloodMoonManager {
         }
 
         lastRolledDay = day;
-        // B33: a végítélet-hét alatt sűrűbb a vérhold (napi eszkalációs szorzó).
+        // B33: a végítélet-hét alatt sűrűbb a vérhold (napi eszkalációs szorzó);
+        // B19: télen (évszak-szorzó) amúgy is gyakoribb.
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
+        final SeasonalModifierService seasonalRef = seasonalModifiers;
+        final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("blood-moon");
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D) * finaleMult));
+                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D) * finaleMult * seasonalMult));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }

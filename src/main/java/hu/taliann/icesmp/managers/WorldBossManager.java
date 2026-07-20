@@ -144,6 +144,13 @@ public final class WorldBossManager {
         this.seasonFinale = seasonFinale;
     }
 
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
+    }
+
     public boolean isWorldBoss(final Entity entity) {
         return entity != null
                 && entity.getPersistentDataContainer().getOrDefault(worldBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
@@ -230,11 +237,14 @@ public final class WorldBossManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.check-interval-minutes", 90L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
-        // B33: a végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció).
+        // B33: a végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció);
+        // B19: a valós évszak finom szorzója (season-modifiers.<evszak>.world-boss).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
+        final SeasonalModifierService seasonalRef = seasonalModifiers;
+        final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("world-boss");
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.world-boss.chance-percent", 35.0D) * finaleMult));
+                configManager.getDouble("world-events.world-boss.chance-percent", 35.0D) * finaleMult * seasonalMult));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
