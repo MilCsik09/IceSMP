@@ -168,7 +168,13 @@ def main():
     for mat, cmd, tex in entries:
         tex_path = os.path.join(OUT, 'assets/icesmp/textures/item', tex + '.png')
         os.makedirs(os.path.dirname(tex_path), exist_ok=True)
-        render_texture(tex, cmd, tex_path)
+        # Kézi/importált textúra (tools/textures_override) MINDIG felülüti a generáltat —
+        # a textúrás kész munkáit az import_texture_sheet.py teszi ide.
+        override = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'textures_override', tex + '.png')
+        if os.path.isfile(override):
+            shutil.copyfile(override, tex_path)
+        else:
+            render_texture(tex, cmd, tex_path)
         model = {'parent': 'minecraft:item/generated', 'textures': {'layer0': 'icesmp:item/' + tex}}
         mp = os.path.join(OUT, 'assets/icesmp/models/item', tex + '.json')
         os.makedirs(os.path.dirname(mp), exist_ok=True)

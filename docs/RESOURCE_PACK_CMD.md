@@ -10,6 +10,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Fájlnév és hely:** a kész PNG a plugin-repo `resourcepack/assets/icesmp/textures/item/<fájlnév>` útvonalára kerül — a JSON-bekötés (modellek, CMD-kapcsolók) már kész, CSAK a PNG-ket kell cserélni. A mostani textúrák generált placeholderek.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik, ha a CMD egyezik — a vanilla textúrája jó kiindulási referencia a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjfekete-lila, és a jellegzetes HIDEG TÜRKIZ derengés — mint a lich-szem: a Néma Királynő élőhalott-fénye a szemekben, rúnákban, élek mentén).
+- **Leadás sprite-lapként:** a kész textúrák egyetlen képen is leadhatók (kockás/fehér háttér mehet) — a `python3 tools/import_texture_sheet.py <kép> <nev1,nev2,...>` kivágja, háttértől megtisztítja és beteszi őket a packba (olvasási sorrend: sorok fentről, balról jobbra; a nevek a fenti fájlnevek `.png` nélkül). Az importált textúra végleg felülüti a generált placeholdert.
 - Újragenerálás (leírások frissítése configból): `python3 tools/build_cmd_artdoc.py`
 
 ## Pénz-tárgyak (1001–1010)
