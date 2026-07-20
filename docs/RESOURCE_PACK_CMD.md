@@ -9,11 +9,12 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Méret:** 16×16 px, átlátszó háttérrel (PNG) — vanilla-konzisztens pixel-art.
 - **Fájlnév és hely:** a kész PNG a plugin-repo `resourcepack/assets/icesmp/textures/item/<fájlnév>` útvonalára kerül — a JSON-bekötés (modellek, CMD-kapcsolók) már kész, CSAK a PNG-ket kell cserélni. A mostani textúrák generált placeholderek.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik, ha a CMD egyezik — a vanilla textúrája jó kiindulási referencia a sziluetthez/érzethez.
+- **Jelenlegi állapot:** MINDEN mostani textúra ideiglenes (generált placeholder, illetve az 5 pénz-item egy PRÓBA-lapról bevágva) — a végleges készletet a textúra-készítő adja; semmi sincs kőbe vésve.
 - **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjfekete-lila, és a jellegzetes HIDEG TÜRKIZ derengés — mint a lich-szem: a Néma Királynő élőhalott-fénye a szemekben, rúnákban, élek mentén).
 ## Stílus-szabályok (vanilla-konzisztencia)
 
-1. **Egységes felbontás:** minden custom textúra AZONOS méretű — 32×32 (a vanilla 16×16 mellett ez még harmonikus; vegyes felbontás tilos).
-2. **Margó:** a tárgy ne érjen a vászon széléig — 32-esnél ~3-4 px üres perem, középre igazítva (a vanilla a vászon ~80%-át tölti ki).
+1. **Egységes felbontás:** a felbontást a textúra-készítő választja meg (vanilla-hű 16×16 vagy részletesebb 32×32) — de a TELJES pack egységesen ugyanazt használja, vegyes felbontás tilos. Az import-szkript bármelyikre méretez (`--size`).
+2. **Margó:** a tárgy ne érjen a vászon széléig — a vászon ~80%-át töltse ki, középre igazítva (16-osnál ~1-2 px, 32-esnél ~3-4 px üres perem).
 3. **Sziluett-olvashatóság:** az item egy vanilla tárgy helyén jelenik meg — első ránézésre ugyanannak a tárgy-osztálynak tűnjön (bot=bot, sisak=sisak). Kard/szerszám 45°-ban átlósan: markolat balra-le, hegy jobbra-fel.
 4. **Kontúr:** 1 px sötét körvonal a külső élen, de NEM tiszta fekete — az anyagszín legmélyebb árnyalata; a belső vonalak még lágyabbak.
 5. **Paletta-fegyelem:** anyagonként 4-8 tónus, kemény pixel-átmenetek — semmi blur, anti-aliasing vagy színátmenet; dither csak nagyon indokoltan.
