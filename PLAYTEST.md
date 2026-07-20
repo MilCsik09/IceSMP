@@ -1047,6 +1047,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       az eladás-jóváírásnál); **finálé-tőzsdeláz**: a Végítélet-hét alatt a sokkok esélye ×3,
       kilengése ×1.5, hossza ÷4. Kulcsok: `currency.economy-event.panic-*` / `finale-*`,
       `currency.market-boom.*`. A szezonzárás továbbra sem wipe — csak a liga-pontok nullázódnak.
+- [ ] **I7 Évszakos termés (ÚJ — Tier A):** Bőség-idő alatt (`/events abundance` kényszerítheti)
+      a Gyógynövényész betakarítás-XP-je ×1.5 (`professions.seasonal.abundance-multiplier`);
+      CSAK virág/érett termény/harvest — érc/rönk-törés XP-je változatlan.
+- [ ] **I22 Loot-only receptek (ÚJ — Tier A):** a három csúcs-netherit tervrajz (Mélybányász
+      Netherit Csákány, Erdőirtó Netherit Fejsze, Sárkányvért) tervrajza CSAK világboss/
+      event-boss lootból eshet (sima mob-drop poolból kikerült); a recept-könyvben lila
+      „Csak legendás ellenfelektől szerezhető tervrajz" zárolt sor. Új recept-mező:
+      `loot-only: true` (profession-recipes.yml).
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

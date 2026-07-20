@@ -59,13 +59,41 @@ public final class ProfessionXpListener implements Listener {
         this.afkManager = afkManager;
     }
 
+    /** I7: setterrel kötve — Bőség-idő alatt a Gyógynövényész BETAKARÍTÁS extra XP-t ad. */
+    private volatile hu.taliann.icesmp.managers.AbundanceManager abundanceManager;
+
+    public void setAbundanceManager(final hu.taliann.icesmp.managers.AbundanceManager abundanceManager) {
+        this.abundanceManager = abundanceManager;
+    }
+
+    /**
+     * I7 — évszakos termés: a HERBALIST betakarítás-XP a Bőség-idő ablakában
+     * config-szorzót kap (professions.seasonal.abundance-multiplier, default 1.5) —
+     * CSAK a harvest-utakra, a sima blokk-törés (bányász/favágó) érintetlen.
+     */
+    private void awardHarvestXp(final Player player, final String configPath, final int fallback) {
+        final hu.taliann.icesmp.managers.AbundanceManager abundanceRef = abundanceManager;
+        final double mult = abundanceRef != null && abundanceRef.isActive()
+                ? Math.max(1.0D, configManager.getDouble("professions.seasonal.abundance-multiplier", 1.5D))
+                : 1.0D;
+        final int base = Math.max(0, configManager.getInt(configPath, fallback));
+        awardXpAmount(player, ProfessionType.HERBALIST, (int) Math.round(base * mult));
+    }
+
     private void awardXp(final Player player, final ProfessionType profession, final String configPath, final int fallback) {
         // AFK-jelölt játékos nem termel szakma-XP-t (auto-farm exploit-fék).
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(player.getUniqueId())) {
             return;
         }
-        final int baseXp = Math.max(0, configManager.getInt(configPath, fallback));
+        awardXpAmount(player, profession, Math.max(0, configManager.getInt(configPath, fallback)));
+    }
+
+    private void awardXpAmount(final Player player, final ProfessionType profession, final int baseXp) {
+        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
+                && afkManager.isAfk(player.getUniqueId())) {
+            return;
+        }
         final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
         professionManager.addXpFor(player, profession, totalXp);
@@ -93,13 +121,13 @@ public final class ProfessionXpListener implements Listener {
         }
 
         if (Tag.FLOWERS.isTagged(material)) {
-            awardXp(player, ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3);
             return;
         }
 
         if (CROPS.contains(material) && block.getBlockData() instanceof Ageable ageable
                 && ageable.getAge() >= ageable.getMaximumAge()) {
-            awardXp(player, ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3);
         }
     }
 
@@ -108,7 +136,7 @@ public final class ProfessionXpListener implements Listener {
         if (!isSurvival(event.getPlayer())) {
             return;
         }
-        awardXp(event.getPlayer(), ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+        awardHarvestXp(event.getPlayer(), "professions.xp.herbalism-harvest", 3);
     }
 
     private static boolean isSurvival(final Player player) {

@@ -846,11 +846,15 @@ SinManager.
 **Buktatók:** komoly félreértés-/panasz-potenciál („becsapott!”) — világos szabály és
 UI-jelzés kell, hogy ne érezzék tisztességtelennek; Folia-oldalon a disguise-frissítés
 mindig a céljátékos saját régió-szálán fusson.
-### I7. Évszakos termények a Bőség-időhöz kötve
+### I7. Évszakos termények a Bőség-időhöz kötve `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Bőség ideje — a Fa gyógyuló lehelete a termésben (kódex VIII.)
 
 **Munka:** 🟢 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** ProfessionXpListener.awardHarvestXp — a HERBALIST harvest-XP a
+> Bőség-idő alatt `professions.seasonal.abundance-multiplier` (1.5) szorzót kap;
+> a sima blokk-törés (bányász/favágó) érintetlen.
 
 **Mi ez:** A Bőség-idő (a szezon-esemény infra hangulati ablaka) alatt a Gyógynövényész termény-betakarítása extra XP-t/hozamot ad, azon kívül visszaáll az alap ütem.
 **Hogyan működne:** A `ProfessionXpListener.onPlayerHarvestBlock`-ban egy config-szorzó (`professions.seasonal.abundance-multiplier`) az aktív világesemény-getterből olvasva (mintázat: E2 druida-hangolódás ugyanezt az eseményt olvassa spell-oldalról). Opcionálisan egy „téli szűkösség" ellentétes irányú szorzó is bevezethető, de a minimum verzió csak a bőség-bónusz.
@@ -868,11 +872,15 @@ mindig a céljátékos saját régió-szálán fusson.
 **Miért jó:** Frakció-semleges közösségi réteget ad a szakma-rendszerhez — a Bányászok mint „szakma-közösség" először kapnak közös identitást és célt a frakciós struktúra felett, ami a heti visszatérést erősíti (B1 párja szakma-oldalon).
 **Építőkövek:** Közösségi cél-infra, `ProfessionXpListener`, `ProfessionManager` (aktív szakma-szűrés).
 **Buktatók:** A globális számláló több régió-szálról is íródik — konkurrens/atomic számláló kell (a `QuestManager.customQuests` copy-on-write mintája vagy synchronized long).
-### I22. Ritka recept-lapok loot-forrásból
+### I22. Ritka recept-lapok loot-forrásból `[KÉSZ ✅]`
 
 > **Lore-horgony:** „tervrajzokat ment ki a romok közül" — a kánon-mondat kiterjesztése recept-lapokra (kódex VIII.)
 
 **Munka:** 🟡 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** Recipe `loot-only` mező + `blueprintDropPool(bossSource)` — a
+> loot-only tervrajz csak boss-forrásból eshet; GUI: lila zárolt sor. Alap: a 3
+> csúcs-netherit tervrajz (csákány/fejsze/Sárkányvért).
 
 **Mi ez:** A meglévő tervrajz (Knowledge Book) rendszer bővítése: a legritkább recepteket KIZÁRÓLAG világboss/nehéz esemény loot adja, sosem NPC-bolt.
 **Hogyan működne:** A `ProfessionRecipeCatalog`-ban egy új `loot-only: true` mező a csúcs-recepteknél (pl. Ereklye-szintű mestermunkák), amit a világboss/esemény loot-tábla bővítése ad ki (a guide már említi az „Ősi Ereklyeszilánk" boss-only alapanyagot — ugyanez az elv, de magára a RECEPTRE). A recept-könyvben zárolt sorként látszik, lore: „Csak legendás ellenfelektől szerezhető".

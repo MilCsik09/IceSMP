@@ -1153,7 +1153,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(new JobCraftRestrictionListener(craftingRestrictionManager, messageManager), plugin);
         pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager, afkManager), plugin);
-        pluginManager.registerEvents(new ProfessionXpListener(professionManager, configManager, talentManager, afkManager), plugin);
+        final ProfessionXpListener professionXpListener = new ProfessionXpListener(professionManager, configManager, talentManager, afkManager);
+        professionXpListener.setAbundanceManager(abundanceManager);
+        pluginManager.registerEvents(professionXpListener, plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, itemRarityService), plugin);
         final hu.taliann.icesmp.listeners.MobLootListener mobLootListener =

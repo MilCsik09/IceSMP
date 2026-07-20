@@ -19,6 +19,10 @@ professions:
       required-level: 15
     bolcs_konyve:
       required-level: 15
+  # I7 — Évszakos termés: a Bőség-idő ablakában a Gyógynövényész BETAKARÍTÁS-XP-je
+  # (virág/érett termény/harvest) ezzel szorzódik — a bányász/favágó blokk-törést nem érinti.
+  seasonal:
+    abundance-multiplier: 1.5
   xp:
     mining-ore: 5
     herbalism-harvest: 3

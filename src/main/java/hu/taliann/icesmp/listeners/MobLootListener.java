@@ -217,7 +217,8 @@ public final class MobLootListener implements Listener {
         if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble() >= chance) {
             return;
         }
-        final List<String> ids = recipeCatalog.blueprintRecipeIds();
+        // I22: a loot-only (csúcs-)receptek tervrajza CSAK boss-forrásból eshet.
+        final List<String> ids = recipeCatalog.blueprintDropPool(bossTier);
         if (ids.isEmpty()) {
             return;
         }

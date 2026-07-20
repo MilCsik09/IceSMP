@@ -145,6 +145,15 @@ Az affixek attribútumok: **Szívósság** (+élet), **Vértezet**, **Keménysé
 elé a raritás kerül a hozzá illő jelzővel (pl. `[Legendás] Isteni Penge` vagy `[Ócska] Rozsdás Vért`),
 a bónuszok a leírásban látszanak (negatív affix pirossal).
 
+> 🌾 **Bőség-idő bónusz:** amíg a Bőség-idő világesemény tart, a **Gyógynövényész**
+> betakarítása (virág, érett termény) **másfélszeres szakma-XP-t** ad — érdemes az
+> ablakra időzíteni az aratást.
+
+> 📜 **Loot-only tervrajzok:** a legerősebb mestermunkák (pl. a netherit csúcs-szerszámok
+> és a *Sárkányvért*) tervrajza **kizárólag világbossoktól és nehéz eseményektől** eshet —
+> boltban nem kapható. A recept-könyvben lila sor jelzi: „Csak legendás ellenfelektől
+> szerezhető tervrajz".
+
 > ☠ **Átkozott tárgyak:** a boss-zsákmány ritkán az **Első Csend érintését** hordozza
 > (sötétvörös lore-sor). Az átkozott darab **erőt ad** (darabonként +10% sebzés, legfeljebb
 > +40%), de **felvéve nem ereszt** — a páncél nem vehető le szabadon! Felvételkor a játék
