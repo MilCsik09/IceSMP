@@ -57,6 +57,13 @@
       territórium pereméN TÚL történik (`min/max-edge-distance`, 24..96 blokk), külön
       „a Kitaszítottak földjének pereméről szivárgott ki" broadcast-tal; a territórium
       belsejét a spawn-rules továbbra is védi, fallback a horgony-játékos út.
+- [x] **N18 — Gameplay-balansz kör `[KÉSZ ✅]`:** teljes-diff gameplay-review (4 mélyvizsgálat)
+      javításai — bank-only zárás (kassza-kivét veretben + napi keret; vagyon-elérés XP-t
+      fizet), vérdíj per-victim cooldown, kém-pont csak ellenséges földön + napi limit,
+      párbaj-pont csak frakciók közt + felkérés-lejárat, B33×G16 nem szorzódik, raid-pont
+      10 + raid-cooldown, mob-pénz/horgász napi sapka, váltási díj 3%, H14 variáns-hívás
+      visszakötve, mob-szint hard-cap 15, dark-undead spawn-rules sor, rontás dark-bias 50%,
+      rejtvény-jutalmak vágva + fejezet-XP.
 - [x] **N17 — Aszimmetrikus szezon-liga `[KÉSZ ✅]`:** a tulaj felvetésére (2+1+1 frakció —
       tiszta hadi-ligaként sántít) minden liga-pont-jóváírás forrás-címkés, és a
       `world-events.season.source-weights` mátrix frakciónként súlyozza: RED/BLUE/DARK a

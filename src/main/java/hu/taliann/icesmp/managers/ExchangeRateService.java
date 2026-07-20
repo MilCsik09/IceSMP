@@ -94,6 +94,6 @@ public final class ExchangeRateService {
     }
 
     public double getFeePercent() {
-        return Math.max(0.0D, configManager.getDouble("currency.exchange-fee-percent", 0.0D));
+        return Math.max(0.0D, configManager.getDouble("currency.exchange-fee-percent", 3.0D));
     }
 }

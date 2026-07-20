@@ -30,7 +30,7 @@ public final class FactionCommand extends AbstractDispatchCommand {
         register(new FactionJoinSubcommand(factionManager, sinManager, currencyManager, territoryManager, configManager, messageManager));
         register(new FactionLeaveSubcommand(factionManager, currencyManager, territoryManager, configManager, messageManager));
         register(new FactionSetSubcommand(plugin, factionManager, sinManager, messageManager));
-        register(new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager));
+        register(new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager, configManager));
         register(new FactionDonateSubcommand(treasuryManager, factionManager, currencyManager, messageManager));
         register(new FactionKingSubcommand(kingManager, factionManager, treasuryManager, messageManager));
         register(new FactionRaidSubcommand(raidManager, kingManager, factionManager, territoryManager, messageManager));

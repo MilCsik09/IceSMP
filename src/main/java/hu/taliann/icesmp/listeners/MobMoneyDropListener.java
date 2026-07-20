@@ -76,6 +76,32 @@ public final class MobMoneyDropListener implements Listener {
         final int mobLevel = mobScalingManager == null ? 1 : Math.max(1, mobScalingManager.getLevel(entity));
         final long amount = Math.max(1L, Math.round(min + ThreadLocalRandom.current().nextDouble() * (max - min)
                 + (mobLevel - 1) * perLevel));
+        if (!tryConsumeDailyBudget(killer.getUniqueId(), amount)) {
+            return; // A napi mob-pénz keret elfogyott — a természetes farmok fékje.
+        }
         event.getDrops().add(pouchFactory.createRandom(amount));
+    }
+
+    /** játékos -> (nap, mai összeg) — memóriában él (restartkor nullázódik, a capnek elég). */
+    private final java.util.Map<java.util.UUID, long[]> dailyEarned = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Napi keret (mob-money-drop.daily-cap, 0 = korlátlan): a spawner-fék a darkroom-
+     * farmokat nem fogja (NATURAL spawn), ezért ez a plafon zárja a végtelen csapot.
+     * Konkurrens map (a kill bármely régió-szálán futhat); a más-napi bejegyzések
+     * túlcsordulásnál söprődnek.
+     */
+    private boolean tryConsumeDailyBudget(final java.util.UUID playerId, final long amount) {
+        final double cap = configManager.getDouble("mob-money-drop.daily-cap", 300.0D);
+        if (cap <= 0.0D) {
+            return true;
+        }
+        final long today = System.currentTimeMillis() / 86_400_000L;
+        if (dailyEarned.size() > 512) {
+            dailyEarned.values().removeIf(entry -> entry[0] != today);
+        }
+        final long[] entry = dailyEarned.compute(playerId, (key, old) ->
+                old == null || old[0] != today ? new long[]{today, amount} : new long[]{today, old[1] + amount});
+        return entry[1] <= (long) cap;
     }
 }

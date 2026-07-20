@@ -203,8 +203,11 @@ public final class CommunityGoalManager implements PersistentStore {
         final int seasonPoints = Math.max(0, configManager.getInt("community-goals.season-points", 8));
         if (seasonPoints > 0) {
             if (serverWide) {
+                // Szerver-cél: MINDENKI kap, de SÚLYOZATLANUL ("community-server" forrás,
+                // nincs súly-sor → 1.0) — a NEUTRAL 1.5-ös bónusza csak a SAJÁT frakció-
+                // céljaira jár, ne kapjon prémiumot mások közös munkájáért.
                 for (final FactionType faction : FactionType.values()) {
-                    seasonManager.addPoints(faction, seasonPoints, "community");
+                    seasonManager.addPoints(faction, seasonPoints, "community-server");
                 }
             } else {
                 seasonManager.addPoints(goalFaction, seasonPoints, "community");

@@ -103,7 +103,7 @@ Aki elér egy bizonyos bűnszámot (alapból **3 bűn**), az **körözötté** v
 paranccsal megnézheted a körözési listát: ki körözött és mennyit ér a feje.
 
 Ha **megölsz egy körözött bűnözőt**:
-- **megkapod a fejpénzt** (a bankodba);
+- **megkapod a fejpénzt** (veretben, a kezedbe — ugyanarra a fejre fél naponta csak egyszer fizet a Bankárszövetség);
 - **nem kapsz érte bűnt** — ez igazságos kivégzés, nem gyilkosság;
 - a bűnöző **bűnszámlálója nullázódik** (a bűnös-jelölése viszont megmarad).
 

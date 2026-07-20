@@ -56,6 +56,8 @@ public final class RaidManager {
     private final Map<UUID, FactionType> participants = new ConcurrentHashMap<>();
 
     private volatile ActiveRaid activeRaid;
+    /** Az utolsó raid lezárásának bélyege — a lánc-raid cooldown alapja (memóriában él). */
+    private volatile long lastRaidEndedAt;
     private ScheduledTask combatStartTask;
     private ScheduledTask captureTask;
     private ScheduledTask endTask;
@@ -161,6 +163,13 @@ public final class RaidManager {
                                          final String requestedTerritoryId) {
         if (isRaidActive()) {
             return "faction-raid-already-active";
+        }
+
+        // Lánc-raid fék: két hirdetés közt kötelező szünet (élő kulcs, 0 = kikapcsolva).
+        final long cooldownMillis = Math.max(0L,
+                configManager.getLong("factions.raid.cooldown-minutes", 60L)) * 60_000L;
+        if (cooldownMillis > 0L && System.currentTimeMillis() - lastRaidEndedAt < cooldownMillis) {
+            return "faction-raid-cooldown";
         }
 
         if (attacker == null || defender == null || attacker == defender) {
@@ -405,6 +414,7 @@ public final class RaidManager {
             return;
         }
 
+        lastRaidEndedAt = System.currentTimeMillis();
         activeRaid = null;
         cancelTasks();
 

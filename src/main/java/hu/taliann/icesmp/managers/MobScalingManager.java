@@ -128,13 +128,20 @@ public final class MobScalingManager {
         // adds its own danger bonus on top.
         // Egyetlen zóna-lookup spawnonként — a szelektor-listát mindkét fogyasztó megkapja.
         final java.util.List<String> zoneSelectors = zoneRuleSelectors(entity.getLocation());
-        final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
-                + zoneBonusLevels(zoneSelectors);
+        // A vérhold/zóna-bónusz átlépheti a max-level-t, de az abszolút plafon fogja:
+        // a "max 10" invariánst a bónuszok legfeljebb hard-cap-level-ig (15) tolhatják.
+        final int level = Math.min(
+                Math.max(1, configManager.getInt("mob-scaling.hard-cap-level", 15)),
+                resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
+                        + zoneBonusLevels(zoneSelectors));
         applyZoneHardening(entity, zoneSelectors);
         if (level < 1) {
             return;
         }
 
+        // H14 — ritka variáns sorsolása CSAK ténylegesen szintezett mobra (a szint-kapu
+        // után, hogy a jelöletlen mob ne kapjon variáns-tageket).
+        maybeMakeRareVariant(entity);
         applyLevel(entity, level);
     }
 

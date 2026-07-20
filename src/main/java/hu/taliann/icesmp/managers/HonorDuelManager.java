@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -27,6 +28,8 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     private final SeasonManager seasonManager;
     /** kihívott -> kihívó (függő felkérés). */
     private final Map<UUID, UUID> pending = new ConcurrentHashMap<>();
+    /** kihívott -> a felkérés lejárata (a spam/néma-felülírás fékje). */
+    private final Map<UUID, Long> pendingExpiry = new ConcurrentHashMap<>();
     /** résztvevő -> ellenfél (mindkét irányban felvéve). */
     private final Map<UUID, UUID> active = new ConcurrentHashMap<>();
     private final Map<UUID, Long> endsAt = new ConcurrentHashMap<>();
@@ -66,15 +69,24 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         if (used >= Math.max(1, configManager.getInt("honor-duel.weekly-limit", 2))) {
             return "duel-limit";
         }
+        // Élő, még le nem járt felkérést nem írunk felül némán (spam-fék).
+        final long now = System.currentTimeMillis();
+        final Long existing = pendingExpiry.get(target.getUniqueId());
+        if (existing != null && existing > now) {
+            return "duel-pending";
+        }
         pending.put(target.getUniqueId(), challenger.getUniqueId());
+        pendingExpiry.put(target.getUniqueId(), now
+                + Math.max(10, configManager.getInt("honor-duel.challenge-expiry-seconds", 60)) * 1000L);
         return null;
     }
 
     /** Elfogadás; hibakulcs vagy null. Indul a párbaj-ablak. */
     public String accept(final Player target) {
         final UUID challengerId = pending.remove(target.getUniqueId());
+        final Long expiry = pendingExpiry.remove(target.getUniqueId());
         final Player challenger = challengerId == null ? null : Bukkit.getPlayer(challengerId);
-        if (challenger == null) {
+        if (challenger == null || expiry == null || expiry < System.currentTimeMillis()) {
             return "duel-no-challenge";
         }
         final long week = System.currentTimeMillis() / (7L * 86_400_000L);
@@ -118,10 +130,15 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         if (sinManager.getSinCount(killer) > 0) {
             sinManager.reduceSin(killer, 1);
         }
-        // Aszimmetrikus liga: a párbaj-győzelem liga-pontot ér ("duel" forrás — a
-        // kitaszított becsület-visszaszerzés a DARK identitás-útja a súlymátrixban).
-        seasonManager.addPoints(factionManager.getFaction(killer.getUniqueId()),
-                Math.max(0, configManager.getInt("honor-duel.season-points", 2)), "duel");
+        // Aszimmetrikus liga: a párbaj-győzelem liga-pontot ér ("duel" forrás), de CSAK
+        // KÜLÖNBÖZŐ frakciójú felek közt — az azonos-frakciós "baráti bemutató"
+        // (megrendezett pont-farm) nem ér pontot, a bűn-törlés viszont ott is jár.
+        final FactionType killerFaction = factionManager.getFaction(killer.getUniqueId());
+        final FactionType victimFaction = factionManager.getFaction(victim.getUniqueId());
+        if (killerFaction != null && killerFaction != victimFaction) {
+            seasonManager.addPoints(killerFaction,
+                    Math.max(0, configManager.getInt("honor-duel.season-points", 2)), "duel");
+        }
         return true;
     }
 
@@ -137,6 +154,7 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     @Override
     public void clearPlayerState(final UUID playerId) {
         pending.remove(playerId);
+        pendingExpiry.remove(playerId);
         pending.values().remove(playerId);
         clearPair(playerId);
     }

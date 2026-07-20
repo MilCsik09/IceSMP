@@ -117,28 +117,49 @@ public final class SinListener implements Listener {
             final int victimSins = sinManager.getSinCount(victim);
             final int minSins = Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
             if (victimSins >= minSins) {
-                final double reward = victimSins
+                // Pénznyomda-fék: ugyanarra az áldozatra csak per-victim-cooldown-hours
+                // (12) óránként jár kifizetés — a megrendezett "3 gyilkosság → kivégzés →
+                // vérdíj" kör így nem skálázható. A bűn-törlés cooldown alatt is jár
+                // (az áldozat az életével fizetett), csak a veret marad el.
+                final org.bukkit.NamespacedKey paidAtKey =
+                        org.bukkit.NamespacedKey.fromString("icesmp:bounty_paid_at");
+                final long cooldownMillis = Math.max(0L, configManager.getLong(
+                        "factions.sins.bounty.per-victim-cooldown-hours", 12L)) * 3_600_000L;
+                final long paidAt = victim.getPersistentDataContainer()
+                        .getOrDefault(paidAtKey, org.bukkit.persistence.PersistentDataType.LONG, 0L);
+                final boolean onCooldown = cooldownMillis > 0L
+                        && System.currentTimeMillis() - paidAt < cooldownMillis;
+                final double reward = onCooldown ? 0.0D : victimSins
                         * Math.max(0.0D, configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D));
                 final CurrencyType currency = resolveBountyCurrency();
                 if (configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
                     sinManager.resetSinCount(victim);
                 }
                 if (reward > 0.0D && currency != null) {
+                    victim.getPersistentDataContainer().set(paidAtKey,
+                            org.bukkit.persistence.PersistentDataType.LONG, System.currentTimeMillis());
                     // Fizikai veret-kifizetés a killer SAJÁT régió-szálán (Folia-hop).
                     final long rewardTokens = Math.round(reward);
                     killer.getScheduler().run(plugin, task ->
                             currencyManager.payOutTokens(killer, currency, rewardTokens), null);
                 }
-                Bukkit.getServer().broadcast(messageManager.getMessage(
-                        "bounty-claimed",
-                        "<gold>💰 {hunter} beváltotta a fejpénzt {target} fejére: {reward} {currency}!</gold>",
-                        Map.of(
-                                "hunter", killer.getName(),
-                                "target", victim.getName(),
-                                "reward", currencyManager.formatBalance(reward),
-                                "currency", currency == null ? "?" : currency.getDisplayName()
-                        )
-                ));
+                if (reward > 0.0D) {
+                    Bukkit.getServer().broadcast(messageManager.getMessage(
+                            "bounty-claimed",
+                            "<gold>💰 {hunter} beváltotta a fejpénzt {target} fejére: {reward} {currency}!</gold>",
+                            Map.of(
+                                    "hunter", killer.getName(),
+                                    "target", victim.getName(),
+                                    "reward", currencyManager.formatBalance(reward),
+                                    "currency", currency == null ? "?" : currency.getDisplayName()
+                            )
+                    ));
+                } else {
+                    // Cooldown alatt: az ítélet megvolt, de a Bankárszövetség nem fizet kétszer.
+                    killer.getScheduler().run(plugin, task -> killer.sendMessage(messageManager.getMessage(
+                            "bounty-cooldown",
+                            "<gray>💰 Az ítélet lesújtott, de erre a fejre nemrég már fizettek — a vérdíj most elmarad.</gray>")), null);
+                }
                 return;
             }
         }

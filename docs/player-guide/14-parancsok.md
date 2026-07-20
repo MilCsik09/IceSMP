@@ -86,7 +86,7 @@ jelenti, hogy **elhagyható**.
 
 | Parancs | Mit csinál |
 |---|---|
-| `/faction treasury withdraw <összeg>` | Kivétel a frakciókasszából |
+| `/faction treasury withdraw <összeg>` | Kivétel a frakciókasszából (veretben a kézbe, napi kerettel) |
 | `/faction king tax <százalék>` | Frakció adókulcs beállítása |
 | `/faction raid <célfrakció> [terület]` | Háború (raid) hirdetése — alapból a védő fővárosáért |
 | `/faction caravan send <összeg>` | **Játékos-karaván**: rakomány indítása a kasszából — sikeres kíséretnél +25% érkezik vissza |

@@ -196,16 +196,16 @@ public final class SeasonManager implements PersistentStore {
             return;
         }
 
-        // B33: a végítélet-hét alatt minden pont-jóváírás lineárisan skálázódik a
-        // finálé-maximumig (alapból dupláig az utolsó napon).
+        // B33 + G16: a két idő-szorzó NEM szorzódik össze (×4-es hógolyó lenne a záró
+        // 48 órában) — a NAGYOBBIK érvényesül: végítélet-hét max ×2 VAGY top2-nagydöntő
+        // ×2, együtt is legfeljebb ×2 (a forrás-súllyal együtt max ×3).
         final SeasonFinaleManager finaleRef = seasonFinale;
-        int scaled = finaleRef == null ? weighted
-                : Math.max(weighted, (int) Math.round(weighted * finaleRef.leaguePointMultiplier()));
-        // G16 — nagydöntő-hétvége: a top2 frakció pontjai TOVÁBB szorzódnak (alap: ×2).
+        double timeMultiplier = finaleRef == null ? 1.0D : Math.max(1.0D, finaleRef.leaguePointMultiplier());
         if (isGrandFinaleWindow() && topTwo().contains(faction)) {
-            scaled = (int) Math.round(scaled * Math.max(1.0D,
+            timeMultiplier = Math.max(timeMultiplier, Math.max(1.0D,
                     configManager.getDouble("world-events.season-finale.top2-point-multiplier", 2.0D)));
         }
+        final int scaled = Math.max(weighted, (int) Math.round(weighted * timeMultiplier));
         points.merge(faction, scaled, Integer::sum);
         requestSave();
     }

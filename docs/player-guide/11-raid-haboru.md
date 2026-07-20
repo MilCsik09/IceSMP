@@ -13,7 +13,8 @@ Minden harcos frakció (Piros / Kék / Sötét — a Semleges kivételével) **k
 - `/faction king` — megmutatja a jelenlegi királyt és a szavazatokat.
 
 **A király jogai:**
-- Kivehet a **frakciókasszából** (`/faction treasury withdraw <összeg>`).
+- Kivehet a **frakciókasszából** (`/faction treasury withdraw <összeg>`) — a pénz **veretben,
+  a kezébe** érkezik (a bankba magának kell befizetnie), és **napi keret** korlátozza.
 - **Beállíthatja a frakció adókulcsát** (`/faction king tax <százalék>`).
 - **Raidet (háborút) hirdethet** egy másik frakció ellen.
 

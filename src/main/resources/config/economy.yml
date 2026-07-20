@@ -5,7 +5,9 @@ currency:
   default-balance: 0
   # Fix árfolyam, csak akkor érvényes, ha a dynamic-exchange ki van kapcsolva.
   exchange-rate: 1.0
-  exchange-fee-percent: 0.0
+  # Váltási díj — dinamikus árfolyamnál IS levonódik (spekulációs oda-vissza
+  # váltás féke; 0 = díjmentes, nem ajánlott).
+  exchange-fee-percent: 3.0
   # ===== Dinamikus, kínálat-alapú árfolyam =====
   # Egy valuta értéke: base-value * clamp((reference-supply / kínálat)^elasticity, min, max).
   # Minél több van egy valutából a szerveren, annál kevesebbet ér a többihez képest.
@@ -614,6 +616,7 @@ fishing-windfall:
   chance-percent: 4.0
   min-amount: 5.0
   max-amount: 15.0
+  daily-cap: 150.0   # napi keret játékosonként (0 = korlátlan — auto-klikk farm ellen)
 
 # WoW-stílusú mob pénz-drop: ellenséges mob halálakor (játékos-öléssel) eséllyel
 # Kopott erszény esik — az összeg a mob szintjével nő, a valuta véletlen.
@@ -624,3 +627,6 @@ mob-money-drop:
   min-amount: 1.0
   max-amount: 4.0
   per-level-bonus: 0.5
+  # Napi keret játékosonként (0 = korlátlan): a spawner-fék a NATURAL-spawnos
+  # darkroom-farmokat nem fogja — ez a plafon zárja a végtelen csapot.
+  daily-cap: 300.0

@@ -144,6 +144,7 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
     private String defaultErrorFor(final String errorKey) {
         return switch (errorKey) {
             case "faction-raid-already-active" -> "&cMár zajlik egy raid.";
+            case "faction-raid-cooldown" -> "&cA hadak pihennek — két raid közt kötelező a szünet.";
             case "faction-raid-invalid-target" -> "&cÉrvénytelen célpont.";
             case "faction-raid-protected-target" -> "&cEz a frakció védett, nem raidelhető.";
             case "faction-raid-no-funds" -> "&cNincs elég pénz a frakciókasszában a nevezési díjhoz.";

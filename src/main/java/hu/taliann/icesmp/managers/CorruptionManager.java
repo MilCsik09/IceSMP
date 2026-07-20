@@ -277,7 +277,7 @@ public final class CorruptionManager implements PersistentStore {
      */
     private boolean tryDarkEdgeSpawn() {
         final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("corruption.dark-bias.chance-percent", 65.0D)));
+                configManager.getDouble("corruption.dark-bias.chance-percent", 50.0D)));
         if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
             return false;
         }

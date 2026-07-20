@@ -52,6 +52,9 @@ world-events:
     treasure:   { territory: true, claim: true, region: true, water: true }
     meteor:     { territory: true, claim: true, region: true }
     corruption: { territory: true, claim: true, region: true, water: true }
+    # DARK undead-ambiencia: a territórium BELSEJE szándékosan engedett (ott él a nép),
+    # de claim/WG-régió/víz védve.
+    dark-undead: { territory: false, claim: true, region: true, water: true }
     archeology: { territory: true, claim: true, region: true, water: true }
     stranger:   { territory: true, claim: true, region: true, water: true }
     player-caravan: { territory: false, claim: false, region: false, water: false }
@@ -445,7 +448,7 @@ corruption:
   # min..max blokkra, tehát a territóriumon KÍVÜL — a belsejét a spawn-rules amúgy is
   # védi). Ha nincs DARK territórium, vagy a sorsolás nem talál, marad a vadon-út.
   dark-bias:
-    chance-percent: 65
+    chance-percent: 50
     min-edge-distance: 24
     max-edge-distance: 96
   # LootTable-formátum: "MATERIAL" | "MATERIAL:DB" | "MATERIAL:MIN:MAX" (soronként egy tétel).

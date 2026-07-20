@@ -1142,7 +1142,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] `riddle: true` quest-mező: a napló/haladás-sor MINDIG "??? — a nyomot a leírás
         rejti"-t mutat — a cél sosem tárul fel, a megfejtés a játékosé/közösségé
         (az időzített súgás-fokozat kivezetve, nincs hint-minutes kulcs).
-  - [ ] 16 rejtvény-quest él (rejtvenyi_elso_nyom + rejtveny_* — gyűjtés, vadászat,
+  - [ ] 16 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
         olvasztás, biom, horgászat, NPC-keresés versbe rejtve); admin-szerkesztés:
         `/quest admin set <id> riddle true`.
   - [ ] Ellenőrzés: rejtvény-quest felvéve → a /quest info és a napló SOHA nem írja ki
@@ -1202,7 +1202,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         DARK 1.5); sikeres kém-küldetés (lebukás nélküli lejárat) → `spy`
         (factions.yml `spy.season-points` 2; DARK 1.5, mások 0.75).
   - [ ] Ellenőrzés: NEUTRAL játékossal rontás-tisztítás → 9 pont (6×1.5); DARK
-        párbaj-győzelem → 3 pont (2×1.5); raid-győzelem NEUTRAL-ként → 2-3 pont (5×0.5);
+        párbaj-győzelem → 3 pont (2×1.5); raid-győzelem NEUTRAL-ként → 5 pont (10×0.5);
         súly 0-ra állítva a forrás semmit nem ír jóvá. `/events season` mutatja az állást.
 - [ ] **Review-kör 2 (Tier A/B utólagos átvizsgálás) — javítás-ellenőrzések:**
   - [ ] KRITIKUS-javítás: a plugin egyáltalán ELINDUL (korábban a konstruktor-sorrend
@@ -1223,6 +1223,32 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         ritka variáns csak TÉNYLEGESEN szintezett mobra kerül; játékos-karaván
         kifizetése nem duplázódhat (tick szinkronizálva); szezon-hossz élő átírása
         NEM ismétli meg a nagydöntő-boss spawnját (szezon-azonosító = kezdő-bélyeg).
+- [ ] **Gameplay-review kör (teljes diff, 4 mélyvizsgálat) — balansz-javítások:**
+  - [ ] BANK-ONLY zárás: a király kassza-kivéte FIZIKAI veretben érkezik + napi keret
+        (`factions.treasury.withdraw-daily-cap` 1000); a VAGYON-elérések kaszt-XP-t
+        fizetnek veret helyett (a kölcsön-token exploit halott).
+  - [ ] Vérdíj-pénznyomda fék: ugyanarra az áldozatra csak
+        `factions.sins.bounty.per-victim-cooldown-hours` (12) óránként jár kifizetés
+        (a bűn-törlés jár, a broadcast elmarad, a vadász csendes üzenetet kap).
+  - [ ] Kém-küldetés: liga-pont CSAK ha az álca IDEGEN frakció territóriumában jár le
+        (saját bázison AFK = semmi), és naponta max `spy.points-daily-limit` (2) siker
+        pontoz. Párbaj: liga-pont csak KÜLÖNBÖZŐ frakciójú felek közt; a felkérés
+        60 mp után lejár és élő felkérés nem írható felül némán.
+  - [ ] Liga-hangolás: raid `season-points` 5→10; B33×G16 NEM szorzódik össze (a
+        nagyobbik él, max ×2 idő-szorzó); szerver-szintű közösségi cél súlyozatlanul
+        fizet (community-server forrás — a NEUTRAL 1.5 csak a saját céljaira jár).
+  - [ ] Pénz-csapok sapkája: mob-pénz `mob-money-drop.daily-cap` (300/nap/játékos —
+        a natural-spawn darkroom-farm fékje), horgász-lelet `fishing-windfall.daily-cap`
+        (150/nap); valutaváltási díj default 3% (oda-vissza spekuláció fékje).
+  - [ ] H14 ÚJRA ÉL: a maybeMakeRareVariant hívás visszakötve az applyScaling-be (a
+        2. review-kör sorrend-javítása kivette — a variáns-rendszer halott kód volt);
+        mob-szint kemény plafon: `mob-scaling.hard-cap-level` (15) a vérhold/zóna-bónusz
+        UTÁN is fog. DARK undead-spawn mostantól spawn-rules mátrix-soron megy
+        (`dark-undead`: territórium engedett, claim/WG/víz tiltott).
+  - [ ] Rontás dark-bias 65%→50%; rejtvény-quest pénz-jutalmak ~40%-kal vágva (a
+        fejezet-questek kaszt-XP-t kaptak — a nehezebb story ne fizessen rosszabbul);
+        rejtvenyi_elso_nyom → rejtveny_elso_nyom átnevezve.
+  - [ ] Raid lánc-fék: `factions.raid.cooldown-minutes` (60) két hirdetés közt.
 - [ ] **Menü/config/admin integráció (teljessé tétel):**
   - [ ] Főmenü: új „Bestiárium” (GUI) és „Szakma-céh heti cél” csempe; Frakció-almenü:
         „Céh”, „Kém-álca”, „Karaván-indítás: 100” (király-parancsra fut); Körözési
@@ -1319,7 +1345,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] 1. fejezet demo-lánc: „A Kapu Árnyéka” (suttogások → bizonyíték → krónikás, 3 quest,
         next-láncolva); admin-szerkesztés: `/quest admin set <id> chapter <N>`.
 - [ ] **Profession-mélyítés (ÚJ):**
-  - [ ] **50 recept/szakma (össz. 400):** minden szakma szintlétrája az 1. szinttől az 50.-ig
+  - [ ] **~50 recept/szakma (össz. 407 — armorer 53, enchanter 54):** minden szakma szintlétrája az 1. szinttől az 50.-ig
         kitöltve; a magas szintű receptek kelléket + ritka unique anyagot kérnek; az 50-es
         céh-mesterművek (A Mélység Szíve / A Világfa Magja / Az Erdő Szíve / A Céhmester
         Üllője / A Bölcsek Köve / A Végtelen Kódex / A Bokic Áldása / A Kapu Lakomája)
@@ -1330,7 +1356,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Fokozatok:** Inas (1–9) → Segéd → Legény → Mester → Nagymester → Legendás Mester (50);
         a szakma-GUI a szint mellett a fokozatot is mutatja.
   - [ ] **CMD-regiszter:** MINDEN nevesített (lore-os) recept-eredmény CustomModelData-t visel
-        (6300–6425, 126 tárgy — a végtermék-eszközök is), a Kopott erszény 1010 — teljes lista: `docs/RESOURCE_PACK_CMD.md`
+        (6300–6438, 139 tárgy — a végtermék-eszközök is), a Kopott erszény 1010 — teljes lista: `docs/RESOURCE_PACK_CMD.md`
         (resource pack készítéshez). Új custom item = új CMD + új sor a regiszterben!
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]` — tab-complete

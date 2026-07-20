@@ -26,15 +26,22 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     private final CurrencyManager currencyManager;
     private final KingManager kingManager;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
+    private final org.bukkit.NamespacedKey withdrawDayKey =
+            org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_day");
+    private final org.bukkit.NamespacedKey withdrawSumKey =
+            org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_sum");
 
     public FactionTreasurySubcommand(final FactionTreasuryManager treasuryManager, final FactionManager factionManager,
                                      final CurrencyManager currencyManager, final KingManager kingManager,
-                                     final MessageManager messageManager) {
+                                     final MessageManager messageManager,
+                                     final hu.taliann.icesmp.managers.ConfigManager configManager) {
         this.treasuryManager = treasuryManager;
         this.factionManager = factionManager;
         this.currencyManager = currencyManager;
         this.kingManager = kingManager;
         this.messageManager = messageManager;
+        this.configManager = configManager;
     }
 
     @Override
@@ -107,15 +114,35 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         }
 
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
+
+        // Bank-only szabály: a kassza-kivét FIZIKAI veretben érkezik a király kezébe
+        // (számlára pénz csak bankbefizetéssel kerülhet) — és napi limit fékezi, hogy
+        // egy király ne üríthesse egy mozdulattal a kasszát (élő kulcs, 0 = korlátlan).
+        final double dailyCap = configManager.getDouble("factions.treasury.withdraw-daily-cap", 1000.0D);
+        final long today = System.currentTimeMillis() / 86_400_000L;
+        final long storedDay = player.getPersistentDataContainer()
+                .getOrDefault(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);
+        final double takenToday = storedDay == today ? player.getPersistentDataContainer()
+                .getOrDefault(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D) : 0.0D;
+        if (dailyCap > 0.0D && takenToday + amount > dailyCap) {
+            player.sendMessage(messageManager.get(
+                    "messages.faction-treasury-daily-cap",
+                    "&cA mai kassza-kivét kereted elfogyott (&f%s&c/nap). Holnap folytathatod.",
+                    currencyManager.formatBalance(dailyCap)));
+            return true;
+        }
+
         if (!treasuryManager.withdraw(faction, amount)) {
             player.sendMessage(messageManager.get("messages.faction-treasury-insufficient", "&cNincs ennyi a frakciókasszában."));
             return true;
         }
 
-        currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), amount);
+        player.getPersistentDataContainer().set(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, today);
+        player.getPersistentDataContainer().set(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, takenToday + amount);
+        currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), (long) Math.floor(amount));
         player.sendMessage(messageManager.get(
                 "messages.faction-treasury-withdraw-success",
-                "&aKivét a kasszából: &f%s %s &7(a bankodba került).",
+                "&aKivét a kasszából: &f%s %s &7(veretben, a kezedbe).",
                 currencyManager.formatBalance(amount),
                 faction.getDisplayName()
         ));

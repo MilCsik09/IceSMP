@@ -38,6 +38,7 @@ public final class DarkUndeadAmbienceManager {
     private final ConfigManager configManager;
     private final TerritoryManager territoryManager;
     private final MobScalingManager mobScalingManager;
+    private final EventSpawnGuard spawnGuard;
     private final org.bukkit.NamespacedKey markKey;
     /** spawnolt undead -> várható lejárat (élettartam-alapú prune, régió-érintés nélkül). */
     private final Map<UUID, Long> population = new ConcurrentHashMap<>();
@@ -45,11 +46,13 @@ public final class DarkUndeadAmbienceManager {
 
     public DarkUndeadAmbienceManager(final JavaPlugin plugin, final ConfigManager configManager,
                                    final TerritoryManager territoryManager,
-                                   final MobScalingManager mobScalingManager) {
+                                   final MobScalingManager mobScalingManager,
+                                   final EventSpawnGuard spawnGuard) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.territoryManager = territoryManager;
         this.mobScalingManager = mobScalingManager;
+        this.spawnGuard = spawnGuard;
         this.markKey = new org.bukkit.NamespacedKey(plugin, "dark_undead");
     }
 
@@ -117,6 +120,12 @@ public final class DarkUndeadAmbienceManager {
             world.getRegionScheduler().run(plugin, target, task -> {
                 final int y = world.getHighestBlockYAt(x, z) + 1;
                 target.setY(y);
+                // Spawn-rules mátrix: a DARK territórium maga NEM tiltott (ez a lényeg),
+                // de a claimek/WG-régiók belseje és a víz védve — mint minden spawnernél.
+                if (spawnGuard.isBlocked("dark-undead", target)
+                        || spawnGuard.isUnsafeSurface("dark-undead", world, x, z)) {
+                    return;
+                }
                 final org.bukkit.entity.Entity spawned = world.spawnEntity(target, type);
                 if (!(spawned instanceof Mob mob)) {
                     spawned.remove();

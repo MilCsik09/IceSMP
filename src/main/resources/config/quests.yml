@@ -186,7 +186,7 @@ quests:
   # A `chapter: N` questek csak az N. szezon-fejezet alatt vehetők fel (SeasonManager
   # sorszáma; szezonváltáskor nő). A már felvett fejezet-quest kegyelemből befejezhető,
   # de a next-lánc új tagja a lezárt fejezetben már nem nyílik meg.
-  rejtvenyi_elso_nyom:
+  rejtveny_elso_nyom:
     riddle: true
     display-name: "Rejtvény: Az első nyom"
     description: "„Ahol minden út összefut, és a kikiáltó hangja messzebb ér, mint a harangszó — ott vár, aki a neveket jegyzi.” A cél rejtve marad: fejtsd meg a sorokat!"
@@ -196,7 +196,7 @@ quests:
     rewards:
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_zold_arany:
     riddle: true
     display-name: "Rejtvény: A zöld arany"
@@ -210,7 +210,7 @@ quests:
       class-xp: 80
       currency:
         type: "OWN"
-        amount: 40
+        amount: 25
   rejtveny_nyolc_lab:
     riddle: true
     display-name: "Rejtvény: A szövőmester"
@@ -223,7 +223,7 @@ quests:
       class-xp: 100
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_csontzenesz:
     riddle: true
     display-name: "Rejtvény: A csontzenész"
@@ -236,7 +236,7 @@ quests:
       class-xp: 100
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_ko_konnye:
     riddle: true
     display-name: "Rejtvény: A kő könnye"
@@ -250,7 +250,7 @@ quests:
       class-xp: 120
       currency:
         type: "OWN"
-        amount: 60
+        amount: 40
   rejtveny_rozsaszin_ho:
     riddle: true
     display-name: "Rejtvény: A rózsaszín hó"
@@ -262,7 +262,7 @@ quests:
       class-xp: 100
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_ezust_sziv:
     riddle: true
     display-name: "Rejtvény: Az ezüst szív"
@@ -274,7 +274,7 @@ quests:
       class-xp: 100
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_morgo_vad:
     riddle: true
     display-name: "Rejtvény: A morgó vad"
@@ -288,7 +288,7 @@ quests:
       class-xp: 80
       currency:
         type: "OWN"
-        amount: 40
+        amount: 25
   rejtveny_csillag_konnye:
     riddle: true
     display-name: "Rejtvény: A csillagok könnye"
@@ -302,7 +302,7 @@ quests:
       class-xp: 150
       currency:
         type: "OWN"
-        amount: 80
+        amount: 50
   rejtveny_ket_vilag:
     riddle: true
     display-name: "Rejtvény: A két világ vándora"
@@ -315,7 +315,7 @@ quests:
       class-xp: 150
       currency:
         type: "OWN"
-        amount: 80
+        amount: 50
   rejtveny_pasztor_mosolya:
     riddle: true
     display-name: "Rejtvény: A pásztor mosolya"
@@ -327,7 +327,7 @@ quests:
       class-xp: 100
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_tenyernyi_jovo:
     riddle: true
     display-name: "Rejtvény: A tenyérnyi jövő"
@@ -343,7 +343,7 @@ quests:
       class-xp: 80
       currency:
         type: "OWN"
-        amount: 40
+        amount: 25
   rejtveny_orrhangu_kalmar:
     riddle: true
     display-name: "Rejtvény: Az orrhangú kalmár"
@@ -355,7 +355,7 @@ quests:
       class-xp: 100
       currency:
         type: "OWN"
-        amount: 50
+        amount: 30
   rejtveny_zold_banat:
     riddle: true
     display-name: "Rejtvény: A zöld bánat"
@@ -368,7 +368,7 @@ quests:
       class-xp: 120
       currency:
         type: "OWN"
-        amount: 60
+        amount: 40
   rejtveny_zsakos_vandor:
     riddle: true
     display-name: "Rejtvény: A zsákos vándor"
@@ -380,7 +380,7 @@ quests:
       class-xp: 80
       currency:
         type: "OWN"
-        amount: 40
+        amount: 25
   rejtveny_gyokerek_bolcse:
     riddle: true
     display-name: "Rejtvény: A gyökerek bölcse"
@@ -392,7 +392,7 @@ quests:
       class-xp: 80
       currency:
         type: "OWN"
-        amount: 40
+        amount: 25
   fejezet1_suttogasok:
     chapter: 1
     display-name: "1. fejezet: Suttogások a Kapunál"
@@ -403,6 +403,7 @@ quests:
       count: 10
       min-mob-level: 3
     rewards:
+      class-xp: 100
       currency:
         type: "OWN"
         amount: 40
@@ -416,6 +417,7 @@ quests:
       materials: [ "GUNPOWDER" ]
       count: 24
     rewards:
+      class-xp: 120
       currency:
         type: "OWN"
         amount: 60
@@ -427,6 +429,7 @@ quests:
       type: "TALK_TO_NPC"
       npc: "hirnok"
     rewards:
+      class-xp: 150
       currency:
         type: "OWN"
         amount: 120

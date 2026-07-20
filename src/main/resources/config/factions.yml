@@ -45,6 +45,10 @@ factions:
   # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
   # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
   # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  treasury:
+    # A király kassza-kivéte FIZIKAI veretben érkezik (bank-only szabály), és
+    # naponta legfeljebb ennyit vehet ki (0 = korlátlan — nem ajánlott).
+    withdraw-daily-cap: 1000.0
   tax:
     enabled: true
     interval-minutes: 60
@@ -135,6 +139,10 @@ factions:
       reward-per-sin: 25.0
       currency: "NEUTRAL"
       clear-sins-on-death: true
+      # Ugyanarra az áldozatra csak ennyi óránként jár vérdíj-kifizetés (a
+      # megrendezett gyilkosság→kivégzés pénznyomda féke; a bűn-törlés ettől
+      # függetlenül jár). 0 = nincs fék (nem ajánlott).
+      per-victim-cooldown-hours: 12
   # ===== Királyok és választás =====
   # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
   # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.
@@ -166,7 +174,11 @@ factions:
     territory-takeover: true
     entry-cost: 200
     spoils-percent: 20
-    season-points: 5
+    # Emelt liga-pont (balansz-döntés): a háború a legkockázatosabb pont-út, ne
+    # maradjon le a közösségi/identitás-utak mögött.
+    season-points: 10
+    # Két raid-hirdetés közti kötelező szünet (a lánc-grief féke; 0 = nincs).
+    cooldown-minutes: 60
     # Győztes-buff a győztes frakció online tagjainak (0 perc = kikapcsolva).
     winner-buff-minutes: 30
     winner-buff-strength: 0
@@ -338,14 +350,21 @@ honor-duel:
   enabled: true
   window-seconds: 180
   weekly-limit: 2
-  season-points: 2   # liga-pont a győztes frakciójának ("duel" forrás, DARK-erős súly)
+  challenge-expiry-seconds: 60   # ennyi ideig él egy felkérés; élő felkérés nem írható felül
+  # Liga-pont a győztes frakciójának ("duel" forrás, DARK-erős súly) — CSAK
+  # különböző frakciójú felek közt (az azonos-frakciós bemutató nem ér pontot).
+  season-points: 2
 
 # ===== G14 — Kém-álca (LibsDisguises soft-depend): információs játék, nem harci előny =====
 spy:
   enabled: true
   duration-seconds: 60
   cooldown-minutes: 15
-  season-points: 2   # liga-pont sikeres (lebukás nélküli) küldetésért ("spy" forrás, DARK-erős)
+  # Liga-pont CSAK valódi beszivárgásért: az álcának IDEGEN frakció territóriumában
+  # kell lejárnia (a saját bázison AFK-zás nem küldetés), és naponta legfeljebb
+  # points-daily-limit sikeres küldetés ér pontot (0 = korlátlan — nem ajánlott).
+  season-points: 2
+  points-daily-limit: 2
   fake-names:
     red: "Parazstestvér"
     blue: "Hófivér"
