@@ -1195,6 +1195,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CampfireStoryListener(plugin, configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneApplyListener(uniqueMaterialFactory, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneEffectListener(configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobMoneyDropListener(plugin, configManager, mobScalingManager, moneyPouchItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);

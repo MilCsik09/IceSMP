@@ -3743,5 +3743,55 @@ profession-recipes:
     result: { material: CHARCOAL, amount: 8 }
     ingredients: [ "COAL:4", "unique:szuropapir:1" ]
 
+  # --- B26: rúna-kovácsolás (Kovács + Bűvölő magas szintű receptek) ---
+  runa_elek_kovacsolas:
+    profession: armorer
+    level: 26
+    learn: level
+    display-name: "Él Rúnája"
+    category: "Rúna"
+    result: { unique: runa_elek }
+    ingredients: [ "IRON_INGOT:4", "unique:runapor:1", "unique:obszidian_szilank:1", "unique:runakreta:1" ]
+  runa_zapor_irasa:
+    profession: enchanter
+    level: 28
+    learn: level
+    display-name: "Zápor Rúnája"
+    category: "Rúna"
+    result: { unique: runa_zapor }
+    ingredients: [ "FEATHER:8", "unique:runapor:1", "unique:viharkvarc:1", "unique:runakreta:1" ]
+  runa_bastya_kovacsolas:
+    profession: armorer
+    level: 32
+    learn: level
+    display-name: "Bástya Rúnája"
+    category: "Rúna"
+    result: { unique: runa_bastya }
+    ingredients: [ "IRON_BLOCK:1", "unique:runapor:1", "unique:tiszta_vasesszencia:1", "unique:runakreta:1" ]
+  runa_lang_irasa:
+    profession: enchanter
+    level: 34
+    learn: level
+    display-name: "Láng Rúnája"
+    category: "Rúna"
+    result: { unique: runa_lang }
+    ingredients: [ "BLAZE_POWDER:4", "unique:runapor:1", "unique:parazsmag:1", "unique:runakreta:1" ]
+  runa_fagy_irasa:
+    profession: enchanter
+    level: 38
+    learn: level
+    display-name: "Fagy Rúnája"
+    category: "Rúna"
+    result: { unique: runa_fagy }
+    ingredients: [ "PACKED_ICE:4", "unique:runapor:1", "unique:jegviragpor:1", "unique:runakreta:1" ]
+  runa_moho_kovacsolas:
+    profession: armorer
+    level: 42
+    learn: level
+    display-name: "Mohóság Rúnája"
+    category: "Rúna"
+    result: { unique: runa_moho }
+    ingredients: [ "GOLD_BLOCK:1", "unique:runapor:1", "unique:aranyfust_lemez:1", "unique:runakreta:1" ]
+
 crafted-by:
   enabled: true

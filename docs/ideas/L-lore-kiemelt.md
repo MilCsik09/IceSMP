@@ -525,7 +525,7 @@ kell dönteni: törlődik vagy átmenetileg befejezhető marad-e a félbehagyott
 **Miért jó:** A dekoratív tábortűz köré harc nélküli, közösségi ritmust ad (több játékos üljön egy tűz köré) — alacsony tétű „élj a világban” tartalom.
 **Építőkövek:** `PlayerInteractListener` minta, PDC-cooldown minta (spell-cooldownok), D18 lore-szövegkészlet.
 **Buktatók:** Cooldown/hold-seconds nélkül AFK-bot-farmolható XP-forrás lenne — alacsony összeg, hosszú cooldown kötelező.
-### B26. Rúna-kovácsolás (enchant-kiegészítő szakma-ág)
+### B26. Rúna-kovácsolás (enchant-kiegészítő szakma-ág) `[KÉSZ ✅]`
 
 > **Lore-horgony:** Caldestera elveszett rúna-tudása + a Mélység Népe, a világ első kovácsai (kódex I./VI.)
 
@@ -543,6 +543,10 @@ loot-izgalmat a raritás-rendszer fölé, mert a rúna FÜGGETLEN a fegyver rari
 **Buktatók:** A rúna-hatásokat spellenként kell integrálni (nagy felületű változtatás) —
 érdemes egy szűk, közös hook-ponton (pl. `SpellCastContext` módosító lista) átvezetni,
 ne szórtan minden spell-osztályban.
+> **Implementáció:** rúna = unique material (factory/recept/CMD-infra újrahasznosítva);
+> felhelyezés kurzor-kattintással (RuneApplyListener, PDC `rune_effect` + lore); hatások
+> 3 szűk hookon (RuneEffectListener: melee/lövedék/kapott sebzés) + Mohóság a
+> MobMoneyDropListenerben. GUI-lépés helyett kattintós UX — kisebb felület, ugyanaz az érzet.
 ### B35. Céhek (frakción belüli kisközösségek)
 
 > **Lore-horgony:** a VIII. fejezet Céh-öröksége — a Felsők újraélesztik a letűnt céheket

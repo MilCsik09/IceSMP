@@ -615,3 +615,53 @@ profession-materials:
       - "&7A Bokic-parti tanyák köpült vaja —"
       - "&7amin ez megolvad, az már ünnep."
       - "&eSzakács kellék (csak boltból)"
+
+  # ===== B26 — Rúnák (felhelyezhető: kurzorral kattintsd a fegyverre/páncélra) =====
+  runa_elek:
+    material: AMETHYST_SHARD
+    display-name: "&bÉl Rúnája"
+    custom-model-data: 6140
+    lore:
+      - "&7A Mélység Népének első kovács-jele."
+      - "&7Fegyverre helyezve: +közelharci sebzés."
+      - "&eKattintsd a rúnát a fegyverre a táskádban!"
+  runa_zapor:
+    material: AMETHYST_SHARD
+    display-name: "&bZápor Rúnája"
+    custom-model-data: 6141
+    lore:
+      - "&7Nyílzáport suttog a húrba."
+      - "&7Íjra/számszeríjra: +lövedék-sebzés."
+      - "&eKattintsd a rúnát az íjra a táskádban!"
+  runa_bastya:
+    material: AMETHYST_SHARD
+    display-name: "&bBástya Rúnája"
+    custom-model-data: 6142
+    lore:
+      - "&7Caldestera falainak emléke."
+      - "&7Mellvértre: -kapott sebzés."
+      - "&eKattintsd a rúnát a mellvértre a táskádban!"
+  runa_lang:
+    material: AMETHYST_SHARD
+    display-name: "&cLáng Rúnája"
+    custom-model-data: 6143
+    lore:
+      - "&7Soleil főnixeinek szikrája."
+      - "&7Fegyverre: találatkor eséllyel meggyújt."
+      - "&eKattintsd a rúnát a fegyverre a táskádban!"
+  runa_fagy:
+    material: AMETHYST_SHARD
+    display-name: "&bFagy Rúnája"
+    custom-model-data: 6144
+    lore:
+      - "&7Kallan jégsárkányainak lehelete."
+      - "&7Fegyverre: találatkor eséllyel lelassít."
+      - "&eKattintsd a rúnát a fegyverre a táskádban!"
+  runa_moho:
+    material: AMETHYST_SHARD
+    display-name: "&6Mohóság Rúnája"
+    custom-model-data: 6145
+    lore:
+      - "&7A Bankárszövetség titkos vésete."
+      - "&7Fegyverre: a szörnyek gyakrabban ejtenek erszényt."
+      - "&eKattintsd a rúnát a fegyverre a táskádban!"

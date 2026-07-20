@@ -1126,6 +1126,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **B26 — Rúna-kovácsolás (ÚJ):**
+  - [ ] 6 rúna unique-materialként (CMD 6140-6145), Kovács/Bűvölő 26-42. szintű receptek
+        (runapor + tematikus unique + Rúnakréta kellék): Él (+közelharci sebzés%), Zápor
+        (+lövedék-sebzés%, a nyíl örökli az íj rúnáját), Bástya (mellvért, -kapott sebzés%),
+        Láng (gyújtás-esély), Fagy (lassítás-esély), Mohóság (erszény-drop esély bónusz).
+  - [ ] Felhelyezés: a KURZORON tartott rúnát kattintsd a cél-tárgyra a táskában — PDC
+        `rune_effect` + lore-sor; tárgyanként EGY rúna, nem cserélhető; cél-típus a
+        `runes.<id>.applies` szerint (weapon/bow/chest). Élő kulcsok: crafting.yml `runes.*`.
 - [ ] **J9 — Fejezet-rendszer (szezon story-ív, ÚJ):**
   - [ ] A szezonnak perzisztens **fejezet-sorszáma** van (`season.number` a season.yml-ben,
         `SeasonManager.getSeasonNumber()`); szezonváltáskor nő + „Új fejezet nyílik” broadcast.

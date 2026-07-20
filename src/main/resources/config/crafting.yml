@@ -146,3 +146,34 @@ signature:
     duration-seconds: 90       # a hátas élettartama (utána köddé válik)
     speed: 0.3                 # a hátas sebesség-attribútuma (vanília ló: ~0.1-0.34)
     jump: 0.8                  # ugrás-erő
+
+# ===== B26 — Rúna-kovácsolás: hatás-értékek (élő kulcsok, /icesmp reload) =====
+# A rúna unique-materialként készül (profession-materials + recept), felhelyezés:
+# a kurzoron tartott rúnát kattintsd a cél-tárgyra. Tárgyanként EGY rúna, nem cserélhető.
+runes:
+  runa_elek:
+    display: "Él Rúnája"
+    applies: [ "weapon" ]
+    melee-damage-percent: 5.0
+  runa_zapor:
+    display: "Zápor Rúnája"
+    applies: [ "bow" ]
+    projectile-damage-percent: 7.0
+  runa_bastya:
+    display: "Bástya Rúnája"
+    applies: [ "chest" ]
+    damage-reduction-percent: 4.0
+  runa_lang:
+    display: "Láng Rúnája"
+    applies: [ "weapon" ]
+    chance: 0.10
+    fire-ticks: 40
+  runa_fagy:
+    display: "Fagy Rúnája"
+    applies: [ "weapon" ]
+    chance: 0.10
+    slow-ticks: 40
+  runa_moho:
+    display: "Mohóság Rúnája"
+    applies: [ "weapon" ]
+    money-drop-bonus-percent: 5.0

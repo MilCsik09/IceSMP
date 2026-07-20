@@ -212,3 +212,12 @@ szintezni — még a másodlagosakat is!
 ---
 
 ➡️ Tovább: [Relikviák és rituálék](09-relikviak.md) • [Vissza a tartalomhoz](README.md)
+
+## Rúna-kovácsolás ◆
+
+A magas szintű Kovácsok és Bűvölők (26+) **rúnákat** készíthetnek — ritka anyagokból
+(Rúnapor, tematikus unique anyag, bolti Rúnakréta). A rúnát **fogd a kurzorodra, és
+kattintsd rá** a fegyverre/íjra/mellvértre a táskádban: a véset a tárgyba ég, és kis
+állandó bónuszt ad (pl. +sebzés, gyújtás-esély, sebzés-csillapítás, több erszény-drop).
+**Egy tárgy — egy rúna**, és a véset nem cserélhető: gondold meg, mire teszed! A rúna a
+tárgy ritkaságától FÜGGETLEN — a legendás pengére is ér, meg a kezdő vaskardra is.

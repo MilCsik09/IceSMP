@@ -197,7 +197,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** szénfekete-szürke; akcent: sötétebb, kékes acél
 - **Hangulat / lore:** Ostromágyú — a Hét Vérháború öröksége; csak raid alatt szólal meg.
 
-## Unique szakma-anyagok (6000–6138)
+## Unique szakma-anyagok (6000–6145)
 
 ### 6000 — Tiszta Vasesszencia
 - **Fájl:** `u_tiszta_vasesszencia.png` &nbsp;|&nbsp; **Alap-item:** `IRON_NUGGET`
@@ -636,6 +636,42 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Ábrázolás:** nagy, nehéz csepp-forma
 - **Színvilág:** mézarany; akcent: borostyánsárga
 - **Hangulat / lore:** A Bokic-parti tanyák köpült vaja — amin ez megolvad, az már ünnep. Szakács kellék (csak boltból)
+
+### 6140 — Él Rúnája
+- **Fájl:** `u_runa_elek.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** kőtábla vésett rúnajellel
+- **Színvilág:** sötétebb, kékes acél; akcent: királylila
+- **Hangulat / lore:** A Mélység Népének első kovács-jele. Fegyverre helyezve: +közelharci sebzés. Kattintsd a rúnát a fegyverre a táskádban!
+
+### 6141 — Zápor Rúnája
+- **Fájl:** `u_runa_zapor.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** kőtábla vésett rúnajellel
+- **Színvilág:** sötétebb, kékes acél; akcent: királylila
+- **Hangulat / lore:** Nyílzáport suttog a húrba. Íjra/számszeríjra: +lövedék-sebzés. Kattintsd a rúnát az íjra a táskádban!
+
+### 6142 — Bástya Rúnája
+- **Fájl:** `u_runa_bastya.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** kőtábla vésett rúnajellel
+- **Színvilág:** sötétebb, kékes acél; akcent: királylila
+- **Hangulat / lore:** Caldestera falainak emléke. Mellvértre: -kapott sebzés. Kattintsd a rúnát a mellvértre a táskádban!
+
+### 6143 — Láng Rúnája
+- **Fájl:** `u_runa_lang.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** izzó parázsdarab, felcsapó lángnyelvekkel
+- **Színvilág:** izzó narancsvörös; akcent: meleg arany, sárga csillanásokkal
+- **Hangulat / lore:** Soleil főnixeinek szikrája. Fegyverre: találatkor eséllyel meggyújt. Kattintsd a rúnát a fegyverre a táskádban!
+
+### 6144 — Fagy Rúnája
+- **Fájl:** `u_runa_fagy.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** hatágú hópehely / jégkristály
+- **Színvilág:** jeges világoskék; akcent: világító cián
+- **Hangulat / lore:** Kallan jégsárkányainak lehelete. Fegyverre: találatkor eséllyel lelassít. Kattintsd a rúnát a fegyverre a táskádban!
+
+### 6145 — Mohóság Rúnája
+- **Fájl:** `u_runa_moho.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** kőtábla vésett rúnajellel
+- **Színvilág:** sötétebb, kékes acél; akcent: királylila
+- **Hangulat / lore:** A Bankárszövetség titkos vésete. Fegyverre: a szörnyek gyakrabban ejtenek erszényt. Kattintsd a rúnát a fegyverre a táskádban!
 
 ## Kulcsok és tervrajz (6201–6210)
 

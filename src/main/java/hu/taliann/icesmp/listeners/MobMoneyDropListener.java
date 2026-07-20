@@ -60,8 +60,13 @@ public final class MobMoneyDropListener implements Listener {
         if (killer == null || killer.getGameMode() != GameMode.SURVIVAL) {
             return;
         }
-        final double chance = Math.max(0.0D, Math.min(100.0D,
+        double chance = Math.max(0.0D, Math.min(100.0D,
                 configManager.getDouble("mob-money-drop.chance-percent", 20.0D)));
+        // B26 — Mohóság Rúnája a gyilkos fegyverén: drop-esély bónusz (százalékPONT).
+        if ("runa_moho".equals(RuneEffectListener.runeOf(killer.getInventory().getItemInMainHand()))) {
+            chance = Math.min(100.0D, chance
+                    + Math.max(0.0D, configManager.getDouble("runes.runa_moho.money-drop-bonus-percent", 5.0D)));
+        }
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
             return;
         }
