@@ -274,3 +274,23 @@ memory-shards:
 chronicle:
   enabled: true
   interval-days: 7
+
+# ===== D15 — Tábortűz-mesélés (a kódex szájhagyomány-felülete) =====
+# Tábortűz mellett SNEAK+jobb-katt: hold-seconds kitartás után egy véletlen sztori-sor
+# + kevés vanília-XP. AFK-farm ellen: PDC-cooldown, a jutalom csak sikeres kitartás után.
+# A stories lista (MiniMessage) felülírja a beépített 6 variánst; üresen a beépítettek élnek.
+campfire-story:
+  enabled: true
+  hold-seconds: 6
+  radius: 3.5
+  xp-reward: 8
+  cooldown-minutes: 60
+  stories: []
+
+# ===== D9 — Énekmondó (heti ballada a top-játékosokról) =====
+# A bárd egy FancyNpcs-NPC: nevezd el npc-name szerint (vagy írd át a kulcsot a meglévő
+# NPC nevére) — jobb-kattra a heti balladát énekli (StatsManager top-1 szint/vagyon/raid,
+# heti fix variánsokkal; messages-kulcsokkal felülírható: bard-*). FancyNpcs nélkül nem elérhető.
+bard:
+  enabled: true
+  npc-name: "enekmondo"

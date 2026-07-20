@@ -51,6 +51,12 @@ public final class EventsCommand implements BasicCommand {
     private final MeteorEventManager meteorEventManager;
     private final IntroManager introManager;
     private final MessageManager messageManager;
+    /** D19: setterrel kötve (a manager a parancsnál később épül a DI-sorrendben). */
+    private hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager;
+
+    public void setStrangerNpcManager(final hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager) {
+        this.strangerNpcManager = strangerNpcManager;
+    }
 
     public EventsCommand(final SeasonManager seasonManager, final BloodMoonManager bloodMoonManager,
                          final WorldBossManager worldBossManager, final InvasionManager invasionManager,
@@ -100,6 +106,7 @@ public final class EventsCommand implements BasicCommand {
             case "challenge", "kihivas" -> handleChallenge(sender);
             case "escort", "kiseret" -> handleEscort(sender);
             case "meteor" -> handleMeteor(sender);
+            case "stranger", "idegen" -> handleStranger(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -129,6 +136,20 @@ public final class EventsCommand implements BasicCommand {
         sender.sendMessage(messageManager.get(
                 bloodMoonManager.isActive() ? "events-bloodmoon-active" : "events-bloodmoon-inactive",
                 bloodMoonManager.isActive() ? "&cVérhold tombol!" : "&7Jelenleg nincs vérhold."));
+    }
+
+    /** D19 — az Idegen kézi megidézése (atmoszféra-teszthez). */
+    private void handleStranger(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        if (strangerNpcManager == null) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(strangerNpcManager.forceSpawn(anchor)
+                ? messageManager.get("events-stranger-spawned", "&8Az Idegen… valahol a közelben jár.")
+                : messageManager.get("events-stranger-failed", "&7Nincs online játékos, aki mellett feltűnhetne."));
     }
 
     private void handleWorldBoss(final CommandSender sender) {
@@ -427,7 +448,7 @@ public final class EventsCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
+                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "intro")
                 : List.of("status", "season", "blood-moon", "caravan");
         final String first = prefixAt(args, 0);
         final boolean firstComplete = options.contains(first);

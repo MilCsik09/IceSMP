@@ -53,6 +53,19 @@ world-events:
     meteor:     { territory: true, claim: true, region: true }
     corruption: { territory: true, claim: true, region: true, water: true }
     archeology: { territory: true, claim: true, region: true, water: true }
+    stranger:   { territory: true, claim: true, region: true, water: true }
+  # D19 — a Rejtélyes Idegen: ritkán, véletlen helyen feltűnő, csuklyás alak (néma,
+  # sérthetetlen vándor-sziluett). Mond egy talányos sort a whisper-radius-on belül
+  # állóknak, majd despawn-seconds után lélek-köddel eltűnik. SZÁNDÉKOSAN nincs
+  # mechanikai jutalma (se bolt, se quest) — tisztán atmoszféra. Admin: /events stranger.
+  stranger-npc:
+    enabled: true
+    check-interval-minutes: 90
+    chance-percent: 6
+    min-distance: 16
+    max-distance: 40
+    whisper-radius: 24
+    despawn-seconds: 45
   # Vérhold-éjszaka: ritka éjjel a mobok erősebbek, a lélekkő-drop felszorzódik.
   # A sorsolás az éj beállta (13000) és éjfél (18000) közt történik, éjszakánként egyszer.
   blood-moon:
@@ -113,6 +126,13 @@ world-events:
     champion-reward-items:
       - "DIAMOND:8"
       - "GOLDEN_APPLE:4"
+    # D17 — Korszakváltás-narratíva: szezonzáráskor rövid, krónikás-hangú, késleltetett
+    # broadcast-sorozat (title + 4-6 chat-sor: nyitány-variáns, az előző szezon hősei a
+    # StatsManager top-1 adataiból, a bajnok megidézése, zárás-variáns). A sorok
+    # messages-kulcsokkal felülírhatók (season-story-*).
+    transition-story:
+      enabled: true
+      line-delay-seconds: 4
   # B33 — Szezonzáró "végítélet-hét" (lore: a Korszakok Könyve lapfordulása). A szezon
   # utolsó `days` napjában napi eszkaláció: a vérhold/világboss/invázió esély-kulcsa
   # (1 + nap × chance-mult-per-day) szorzót kap, az invázió mob-szintje bónuszt

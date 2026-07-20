@@ -148,6 +148,18 @@ vadabb lesz:
 A napváltásokat és a boss érkezését a krónikás-hangú kihirdetések jelzik — az utolsó napokban
 érdemes együtt mozogni a frakcióddal: itt dőlhet el a bajnoki cím.
 
+## A világ hangjai 🕯
+
+- **Korszakváltás:** szezonzáráskor a krónikások **rövid történetben** búcsúztatják a letűnt
+  korszakot — az előző szezon hőseinek nevével. Figyeld a „Lapforduló" címet!
+- **Az Énekmondó:** a fővárosi **bárd** minden héten **balladát** költ a szerver legnagyobbjairól
+  (szint, vagyon, háborús hírnév). Kattints rá jobb gombbal, és hallgasd meg — hétfőnként új dal.
+- **Tábortűz-mesélés:** ülj le egy **tábortűz** mellé (**sneak + jobb-katt**), és maradj ott pár
+  másodpercet — a tűz mesél neked a régi időkről, és egy kevés tapasztalatot is ad. (Óránként
+  egyszer; a körülötted ülők látják, hogy mesélsz.)
+- **Az Idegen:** néha, valahol… feltűnik egy **csuklyás alak**. Akik közel állnak, hallanak tőle
+  egy mondatot. Mire odaérsz — általában már nincs sehol. Hogy ki ő? A kódex hallgat róla.
+
 ## Bemutató (intro)
 
 Amikor **először** lépsz be, lejátszódik egy rövid, hangulatos **cím-szekvencia**. Ez csak

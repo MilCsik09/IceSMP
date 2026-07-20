@@ -135,6 +135,13 @@ public final class SeasonManager implements PersistentStore {
         this.seasonFinale = seasonFinale;
     }
 
+    /** D17: setter-injected korszakváltás-narrátor (a StatsManager később épül a DI-sorrendben). */
+    private volatile SeasonStoryTeller storyTeller;
+
+    public void setStoryTeller(final SeasonStoryTeller storyTeller) {
+        this.storyTeller = storyTeller;
+    }
+
     /** Debounced async flush: point awards can burst (raid payouts), one write covers them all. */
     private void requestSave() {
         if (saveScheduled.compareAndSet(false, true)) {
@@ -165,11 +172,16 @@ public final class SeasonManager implements PersistentStore {
             }
         }
 
+        // D17: a korszakváltás-narratíva a pont-reset ELŐTT gyűjti a statisztikát.
+        final SeasonStoryTeller storyRef = storyTeller;
         if (champion == null || tie || best <= 0) {
             Bukkit.getServer().broadcast(messageManager.getMessage(
                     "season-ended-no-champion",
                     "<gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>"
             ));
+            if (storyRef != null) {
+                storyRef.tellTransition(null);
+            }
         } else {
             final double reward = Math.max(0.0D, configManager.getDouble("world-events.season.treasury-reward", 1000.0D));
             if (reward > 0.0D) {
@@ -189,6 +201,9 @@ public final class SeasonManager implements PersistentStore {
             // Member-facing spoils: the champion faction's online members get a victory buff,
             // configured item rewards and a celebratory firework — each on their own region thread.
             awardChampionMembers(champion);
+            if (storyRef != null) {
+                storyRef.tellTransition(champion);
+            }
         }
 
         points.clear();

@@ -459,44 +459,62 @@ meg a "évad-történet" érzést, a heti krónikával (B15) és a szezonzáró 
 **Építőkövek:** `SeasonManager`, `next`-láncolás, `QuestManager` requires-* keret.
 **Buktatók:** Nagy tartalom-munka (írás), és a szezonváltáskor futó láncoknál explicit
 kell dönteni: törlődik vagy átmenetileg befejezhető marad-e a félbehagyott quest.
-### D17. Szezon-átvezető broadcast-történetek
+### D17. Szezon-átvezető broadcast-történetek `[KÉSZ ✅]`
 
 > **Lore-horgony:** a korszak-átmenetek krónikás-hangú narrálása (kódex VIII.)
 
 **Munka:** 🟢 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** `SeasonStoryTeller` — a SeasonManager szezonzárás-hookja title
+> (Lapforduló) + 4-6 késleltetett, variánsos krónikás-sort hirdet (StatsManager top-1
+> hősök, bajnok-sor); config: `world-events.season.transition-story.*`, messages-kulcsok:
+> `season-story-*`.
 
 **Mi ez:** Szezonváltáskor száraz statisztika helyett rövid, narratív hangvételű broadcast-sorozat vezeti fel az új szezont.
 **Hogyan működne:** A szezonzárás hookjához 3-5 üzenetből álló, késleltetett (`runDelayed` a globális scheduleren) szöveg-sorozat kötődik — az előző szezon eseményeiből (StatsManager top, B15 krónika, győztes frakció) sablon-szöveggel generált „korszakváltás” narratíva (`messages.yml` season-intro sablonok), a bemutató (intro) cím-szekvencia vizuális stílusával (title/subtitle + chat).
 **Miért jó:** A szezon-ciklus (ma csak pontszám-reset) valódi „fejezetváltásnak” érződik — történet-ívet ad egy visszaszámláló számnak.
 **Építőkövek:** Szezonzárás-hook, B15 heti krónika adatforrás, meglévő intro cím-szekvencia.
 **Buktatók:** Ne legyen blokkoló/hosszú (title-sorozat, nem kényszerített várakozás); több sablon-variáns kell az ismétlődés ellen.
-### D19. Rejtélyes idegen NPC ritka felbukkanása
+### D19. Rejtélyes idegen NPC ritka felbukkanása `[KÉSZ ✅]`
 
 > **Lore-horgony:** kész K9-horgony: a Suttogók toborzója vagy az Első Csend hírnöke (kódex VII.)
 
 **Munka:** 🟢 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** `StrangerNpcManager` + `StrangerListener` — néma/sérthetetlen
+> WANDERING_TRADER („Az Idegen”), talányos sor a közelieknek, lélek-köddel despawn;
+> jutalom nélkül (szándékosan). Admin: `/events stranger`; config:
+> `world-events.stranger-npc.*`; spawn-rules mátrix-sor: `stranger`.
 
 **Mi ez:** Egy név nélküli, kapucnis „Idegen” NPC, aki ritkán, véletlen helyen/időben feltűnik, mond egy talányos sort, majd eltűnik.
 **Hogyan működne:** Alacsony esély (`stranger-npc.chance-percent`, az `AmbientEventManager` esély-mintájával) triggerkor egy FancyNpcs-NPC spawnol véletlen, spawntól távoli, játékos-közeli koordinátán (a világboss spawn-választás mintájára), rövid, több-variánsos, talányos sort mond, majd `despawn-seconds` múlva particle-lel eltűnik. Nincs mechanikai jutalom — se kereskedő (B40), se questadó, tisztán atmoszférikus.
 **Miért jó:** A világ rejtélyt hordoz — a közösség „láttátok az Idegent?” beszélgetései admin-kontroll nélküli, szabad közösségi tartalmat generálnak.
 **Építőkövek:** `AmbientEventManager` esély/trigger-minta, `FancyNpcsQuestBridge` NPC-spawn, világboss spawn-választás.
 **Buktatók:** Mechanikai jutalom TILOS hozzá (elveszti a rejtély-jelleget); túl gyakori feltűnés lerontja a ritkaság-érzetet.
-### D9. Énekmondó NPC (generált balladák)
+### D9. Énekmondó NPC (generált balladák) `[KÉSZ ✅]`
 
 > **Lore-horgony:** balladák az Elveszett Uralkodókról és a Vérháborúkról (kódex-függelékek)
 
 **Munka:** 🟢 • **Érték:** ⭐
+
+> **Megvalósítva:** `BardManager` — a FancyNpcs interact-hook a `bard.npc-name` NPC-re
+> jobb-kattkor heti balladát énekel (StatsManager top-1 szint/vagyon/raid, epoch-hét
+> alapján determinisztikus variánsok); messages-kulcsok: `bard-*`.
 
 **Mi ez:** A fővárosi bárd hetente a top-játékosokról „énekel” a statisztikák alapján.
 **Hogyan működne:** Heti tick (a szezon-scheduler mintájára) lekérdezi a `StatsManager` top-3 kategóriáját (K/D, mob-ölés, quest — A15/A22), és sablon-szöveg-készletből (`messages.yml`, `{player}`/`{stat}` placeholder) összeállít 2-3 sort, amit a bárd NPC dialógusból (jobb-katt) vagy periodikus chat-buborékból megjelenít. A heti krónikával (B15) közös adatforrás, külön prezentáció.
 **Miért jó:** A száraz ranglista-számokból narratívát csinál — vicces, megosztható pillanat, gyakorlatilag ingyen alapanyagból.
 **Építőkövek:** `StatsManager` top-lekérdezés, `FancyNpcsQuestBridge` dialógus, B15 heti krónika.
 **Buktatók:** A sablon-szöveg ne ismétlődjön gépiesen — kategóriánként több variáns kell.
-### D15. Tábortűz-mesélés XP-vel
+### D15. Tábortűz-mesélés XP-vel `[KÉSZ ✅]`
 
 > **Lore-horgony:** a kódex szájhagyomány-felülete — tábortűz melletti mesélés
 
 **Munka:** 🟢 • **Érték:** ⭐
+
+> **Megvalósítva:** `CampfireStoryListener` — SNEAK+jobb-katt, hold-seconds kitartás a
+> radius-on belül → sztori-sor (6 beépített variáns / `stories` lista) + xp-reward + FX;
+> PDC-cooldown csak sikernél. Config: `campfire-story.*` (general.yml).
 
 **Mi ez:** Tábortűz mellé ülve (sneak+jobb-katt) rövid, ismétlődő „mesélés” mikro-esemény kevés XP-vel.
 **Hogyan működne:** A listener figyeli a tábortűz sneak+jobb-kattot; ha a játékos `campfire-story.hold-seconds` ideig `campfire-story.radius`-on belül marad (mozgás megszakítja), rövid partikel/hang-jelenet (`SOUL_FIRE_FLAME` + halk `AMBIENT_CAVE`) után kis XP-jutalom (`campfire-story.xp-reward`) és véletlen sztori-sor (config-lista, D18 frakció-lore-ból is meríthet). PDC cooldown (`cd_campfire_story`) az AFK-farm ellen.

@@ -1001,6 +1001,25 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       tábla gurul (unique-sorok is: `unique:<id>[:db]` — LootTable-bővítés) + extra liga-pont +
       saját broadcast. Restart után NEM duplázódik (season-finale.yml jelző); főváros-zóna
       nélkül sima világboss-útra esik vissza. Kulcsok: `world-events.season-finale.*`.
+- [ ] **D17 Korszakváltás-narratíva (ÚJ — Tier A):** szezonzáráskor a bajnok-broadcast után
+      title („Lapforduló") + 4-6 késleltetett, krónikás-hangú chat-sor (nyitány-variáns, az
+      előző szezon top-1 hősei szint/vagyon/raid szerint, bajnok-sor VAGY „üres korona",
+      zárás-variáns; `line-delay-seconds` ütem). Kikapcsolás:
+      `world-events.season.transition-story.enabled: false`. Variánsok messages-kulcsokból
+      (`season-story-*`) felülírhatók.
+- [ ] **D19 A Rejtélyes Idegen (ÚJ — Tier A):** `/events stranger` → néma, sérthetetlen,
+      csuklyás alak („Az Idegen") spawnol 16-40 blokkra; a 24 blokkon belül állók egy talányos
+      sort kapnak; jobb-katt NEM nyit kereskedést (elnyelve); 45 mp után lélek-köddel eltűnik.
+      Természetes felbukkanás ritka (`stranger-npc.chance-percent` 6%/90 perc); spawn-rules
+      mátrix-sor: `stranger`. NINCS semmilyen jutalom — ez szándékos.
+- [ ] **D9 Énekmondó (ÚJ — Tier A):** nevezz el egy FancyNpcs-NPC-t `enekmondo`-nak (vagy írd
+      át a `bard.npc-name`-et) → jobb-kattra a HETI ballada (top-1 szint/vagyon/raid sablon-
+      variánsokkal; egész héten ugyanaz a dal, hétfőnként fordul). FancyNpcs nélkül nem elérhető.
+- [ ] **D15 Tábortűz-mesélés (ÚJ — Tier A):** tábortűznél SNEAK+jobb-katt → „Leülsz a tűzhöz…"
+      action bar; 6 mp helyben maradás után sztori-sor + 8 XP + lélekláng-particle (a közelben
+      ülők „X mesél a tűznél…" action bart látnak); elsétálva megszakad, nincs jutalom;
+      cooldown 60 perc (PDC `cd_campfire_story` — csak SIKERES mesélés indítja). Kulcsok:
+      `campfire-story.*` (general.yml), saját sztori-lista a `stories` kulccsal.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,
