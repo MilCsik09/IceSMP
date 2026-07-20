@@ -177,3 +177,10 @@ runes:
     display: "Mohóság Rúnája"
     applies: [ "weapon" ]
     money-drop-bonus-percent: 5.0
+  # E7 — Varázsló-exkluzív rúna + affinitás-szorzó (a Varázsló minden rúnát erősebben olvas)
+  wizard-affinity-multiplier: 2.0
+  runa_visszhang:
+    display: "Visszhang Rúnája"
+    applies: [ "weapon" ]
+    chance: 0.08
+    echo-damage-percent: 30.0

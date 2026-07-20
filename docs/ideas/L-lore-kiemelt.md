@@ -693,7 +693,7 @@ territórium bejárása) — inkrementálisan, kategóriánként érdemes beveze
 **Miért jó:** A kézzel épített world-building végre játékmechanikai súlyt kap — a felfedezés önálló játékstílussá válik.
 **Építőkövek:** Territórium chunk-index minta, B21 bestiárium-infra, B40 titkos kereskedő.
 **Buktatók:** A proximity-check ne fusson minden tick minden játékosra — throttle és kis sugár kötelező a teljesítmény miatt.
-### E1. Nekromanta: lélek-kovácsolás
+### E1. Nekromanta: lélek-kovácsolás `[KÉSZ ✅]`
 
 > **Lore-horgony:** a lélek-kánon: a holtidéző az élők lelkét aratja (kódex VII.)
 
@@ -708,7 +708,7 @@ territórium bejárása) — inkrementálisan, kategóriánként érdemes beveze
 **Építőkövek:** `SoulShardManager`, `MinionManager`, `SummonMinionsSpell` (minion-minta).
 
 **Buktatók:** a végtelenül skálázódó sereg PvP-ben balansztörő lehet — rang-cap és PvP-zónákban (arénák, B41 liga) minion-létszám-limit kell.
-### E7. Varázsló: rúnaíró affinitás
+### E7. Varázsló: rúnaíró affinitás `[KÉSZ ✅]`
 
 > **Lore-horgony:** Caldestera elveszett rúna-tudása — a varázsló-forrás (kódex VI.)
 

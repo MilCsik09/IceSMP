@@ -768,3 +768,12 @@ a Boszorkánymester káosz mágiával üt), de spellenként is testre szabható.
 külön ellenállást adnak, ami a Rúnavérttel összeadódik.
 
 ➡️ Tovább: [Specializációk](06-specializaciok.md) • [Vissza a tartalomhoz](README.md)
+
+## Lélek-kovács és rúna-affinitás ☠◆
+
+- **Nekromanta — `/soulforge`:** a lélekszilánkjaidat tartósan a sereged erejébe fektetheted:
+  Élet, Sebzés és Létszám ág, áganként 5 rang. A magas Létszám-rang extra idézés-slotot ad —
+  a sereged szó szerint nő a szezonnal!
+- **Varázsló — rúnaíró affinitás:** a Varázsló „olvassa" a rúnákat: minden rúna-hatás
+  **duplán** érvényesül nála, és csak ő készítheti el a **Visszhang Rúnáját** (találatkor
+  eséllyel visszhang-csapás).

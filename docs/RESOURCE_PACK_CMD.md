@@ -197,7 +197,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** szénfekete-szürke; akcent: sötétebb, kékes acél
 - **Hangulat / lore:** Ostromágyú — a Hét Vérháború öröksége; csak raid alatt szólal meg.
 
-## Unique szakma-anyagok (6000–6145)
+## Unique szakma-anyagok (6000–6146)
 
 ### 6000 — Tiszta Vasesszencia
 - **Fájl:** `u_tiszta_vasesszencia.png` &nbsp;|&nbsp; **Alap-item:** `IRON_NUGGET`
@@ -672,6 +672,12 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Ábrázolás:** kőtábla vésett rúnajellel
 - **Színvilág:** sötétebb, kékes acél; akcent: királylila
 - **Hangulat / lore:** A Bankárszövetség titkos vésete. Fegyverre: a szörnyek gyakrabban ejtenek erszényt. Kattintsd a rúnát a fegyverre a táskádban!
+
+### 6146 — Visszhang Rúnája
+- **Fájl:** `u_runa_visszhang.png` &nbsp;|&nbsp; **Alap-item:** `AMETHYST_SHARD`
+- **Ábrázolás:** hosszúkás kristályszilánk, éles törésfelületekkel
+- **Színvilág:** világító cián; akcent: éjkék
+- **Hangulat / lore:** Caldestera elveszett rúna-tudása — csak a Varázsló olvassa hangosan. Fegyverre: eséllyel visszhang-csapás. Kattintsd a rúnát a fegyverre a táskádban!
 
 ## Kulcsok és tervrajz (6201–6210)
 

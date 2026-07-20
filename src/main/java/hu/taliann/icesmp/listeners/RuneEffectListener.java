@@ -32,9 +32,24 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class RuneEffectListener implements Listener {
 
     private final ConfigManager configManager;
+    /** E7 — setter-injektált: Varázsló rúnaíró affinitás (dupla rúna-hatás). */
+    private volatile hu.taliann.icesmp.managers.JobManager jobManager;
 
     public RuneEffectListener(final ConfigManager configManager) {
         this.configManager = configManager;
+    }
+
+    public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
+        this.jobManager = jobManager;
+    }
+
+    /** E7 — a Varázsló „olvassa” a rúnákat: hatás-szorzó (alap 2.0, élő config). */
+    private double affinity(final Player player) {
+        final hu.taliann.icesmp.managers.JobManager jobRef = jobManager;
+        if (jobRef != null && jobRef.getPrimaryJob(player) == hu.taliann.icesmp.data.JobType.WIZARD) {
+            return Math.max(1.0D, configManager.getDouble("runes.wizard-affinity-multiplier", 2.0D));
+        }
+        return 1.0D;
     }
 
     /** A tárgyra vésett rúna id-ja (null, ha nincs). */
@@ -51,7 +66,7 @@ public final class RuneEffectListener implements Listener {
         if (event.getDamager() instanceof Player attacker) {
             final String rune = runeOf(attacker.getInventory().getItemInMainHand());
             if (rune != null && event.getEntity() instanceof LivingEntity victim) {
-                applyWeaponRune(rune, event, victim);
+                applyWeaponRune(rune, event, victim, affinity(attacker));
             }
         } else if (event.getDamager() instanceof Projectile projectile) {
             final String rune = projectile.getPersistentDataContainer()
@@ -65,27 +80,36 @@ public final class RuneEffectListener implements Listener {
         if (event.getEntity() instanceof Player victim) {
             final String rune = runeOf(victim.getInventory().getChestplate());
             if ("runa_bastya".equals(rune)) {
-                final double reduction = pct("runes.runa_bastya.damage-reduction-percent", 4.0D);
+                final double reduction = pct("runes.runa_bastya.damage-reduction-percent", 4.0D) * affinity(victim);
                 event.setDamage(Math.max(0.0D, event.getDamage() * (1.0D - reduction / 100.0D)));
             }
         }
     }
 
     private void applyWeaponRune(final String rune, final EntityDamageByEntityEvent event,
-                                 final LivingEntity victim) {
+                                 final LivingEntity victim, final double affinity) {
         switch (rune) {
             case "runa_elek" -> {
-                final double bonus = pct("runes.runa_elek.melee-damage-percent", 5.0D);
+                final double bonus = pct("runes.runa_elek.melee-damage-percent", 5.0D) * affinity;
                 event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));
             }
+            case "runa_visszhang" -> {
+                // E7 — Varázsló-exkluzív rúna: kis esély visszhang-csapásra (bónusz-sebzés).
+                if (roll("runes.runa_visszhang.chance", 0.08D * (affinity > 1.0D ? 1.5D : 1.0D))) {
+                    final double bonus = pct("runes.runa_visszhang.echo-damage-percent", 30.0D);
+                    event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));
+                    victim.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT,
+                            victim.getLocation().clone().add(0.0D, 1.0D, 0.0D), 20, 0.4D, 0.6D, 0.4D, 0.05D);
+                }
+            }
             case "runa_lang" -> {
-                if (roll("runes.runa_lang.chance", 0.10D)) {
+                if (roll("runes.runa_lang.chance", 0.10D * affinity)) {
                     victim.setFireTicks(Math.max(victim.getFireTicks(),
                             configManager.getInt("runes.runa_lang.fire-ticks", 40)));
                 }
             }
             case "runa_fagy" -> {
-                if (roll("runes.runa_fagy.chance", 0.10D)) {
+                if (roll("runes.runa_fagy.chance", 0.10D * affinity)) {
                     victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
                             configManager.getInt("runes.runa_fagy.slow-ticks", 40), 0, false, true));
                 }

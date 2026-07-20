@@ -40,6 +40,13 @@ public final class ProfessionRecipeBookListener implements Listener {
     /** B21 — setter-injektált: az első craft bestiárium-bejegyzése. */
     private volatile hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
 
+    /** E7 — setter-injektált: kaszt-zárt receptek (job:) ellenőrzése. */
+    private volatile hu.taliann.icesmp.managers.JobManager jobManager;
+
+    public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
+        this.jobManager = jobManager;
+    }
+
     public void setBestiaryManager(final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager) {
         this.bestiaryManager = bestiaryManager;
     }
@@ -126,6 +133,16 @@ public final class ProfessionRecipeBookListener implements Listener {
                     "&cEzt a receptet csak a(z) &f%s&c frakció mesterei készíthetik.",
                     recipe.faction().getDisplayName() + " (" + recipe.faction().getFullName() + ")"));
             return;
+        }
+        // E7 — kaszt-zárt recept (job:): csak a megadott kaszt olvashatja fel sikerrel.
+        final hu.taliann.icesmp.managers.JobManager jobRef = jobManager;
+        if (recipe.job() != null && jobRef != null) {
+            final hu.taliann.icesmp.data.JobType required = hu.taliann.icesmp.data.JobType.fromId(recipe.job());
+            if (required != null && jobRef.getPrimaryJob(player) != required) {
+                player.sendMessage(messageManager.get("profession-recipe-job",
+                        "&cEzt a receptet csak a(z) &f%s&c kaszt mesterei készíthetik.", recipe.job()));
+                return;
+            }
         }
         if (!hasIngredients(player, recipe)) {
             player.sendMessage(messageManager.get("profession-recipe-missing", "&cNincs meg minden hozzávaló ehhez a recepthez."));

@@ -1152,3 +1152,10 @@ talents:
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 2
+
+# ===== E1 — Lélek-kovács (Nekromanta): lélekszilánk-befektetés a minion-seregbe =====
+soulforge:
+  enabled: true
+  rank-costs: [ 5, 8, 12, 18, 25 ]
+  health-per-rank: 0.08
+  damage-per-rank: 0.06

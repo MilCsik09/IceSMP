@@ -62,6 +62,13 @@
      "type": "minecraft:model",
      "model": "icesmp:item/u_runa_moho"
     }
+   },
+   {
+    "threshold": 6146,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_runa_visszhang"
+    }
    }
   ]
  }

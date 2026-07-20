@@ -1126,6 +1126,18 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **E1 — Lélek-kovács (Nekromanta, ÚJ):**
+  - [ ] `/soulforge` (alias /lelekkovacs): 3 ág (Élet/Sebzés/Létszám), áganként 5 rang,
+        növekvő szilánk-ár (5/8/12/18/25 — classes.yml `soulforge.rank-costs`); rangok
+        player-PDC-ben.
+  - [ ] Cast-kor a SummonMinionsSpell a rangokból olvas (statikus híd): minion-HP ×(1+8%/rang),
+        sebzés ×(1+6%/rang), Létszám-ág extra idézés-slot ([0,0,1,1,2,3] — max +3).
+- [ ] **E7 — Varázsló rúnaíró affinitás (ÚJ):**
+  - [ ] A Varázsló minden rúna-hatást DUPLÁN olvas (`runes.wizard-affinity-multiplier` 2.0):
+        él/bástya-százalék és láng/fagy-esély szorzódik.
+  - [ ] Visszhang Rúnája (CMD 6146, Varázsló-ZÁRT recept — új `job:` recept-mező +
+        JobManager-ellenőrzés a craftban): találatkor eséllyel visszhang-csapás
+        (+30% bónusz-sebzés, ENCHANT-partikel). Kulcsok: crafting.yml `runes.runa_visszhang.*`.
 - [ ] **B21 — Bestiárium / gyűjtő-album (ÚJ):**
   - [ ] `/bestiarium` (alias /bestiary, /lajstrom): csak olvasható áttekintő GUI — 4 kategória
         (Szörnyek/Receptek/Territóriumok/Világbossok) számlálóval; a haladás player-PDC-ben

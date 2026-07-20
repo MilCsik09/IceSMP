@@ -3793,5 +3793,15 @@ profession-recipes:
     result: { unique: runa_moho }
     ingredients: [ "GOLD_BLOCK:1", "unique:runapor:1", "unique:aranyfust_lemez:1", "unique:runakreta:1" ]
 
+  runa_visszhang_irasa:
+    profession: enchanter
+    level: 40
+    learn: level
+    job: wizard
+    display-name: "Visszhang Rúnája"
+    category: "Rúna"
+    result: { unique: runa_visszhang }
+    ingredients: [ "AMETHYST_SHARD:4", "unique:runapor:2", "unique:nema_kristaly:1", "unique:runakreta:1" ]
+
 crafted-by:
   enabled: true

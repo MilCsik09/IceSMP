@@ -665,3 +665,12 @@ profession-materials:
       - "&7A Bankárszövetség titkos vésete."
       - "&7Fegyverre: a szörnyek gyakrabban ejtenek erszényt."
       - "&eKattintsd a rúnát a fegyverre a táskádban!"
+  runa_visszhang:
+    material: AMETHYST_SHARD
+    display-name: "&dVisszhang Rúnája"
+    custom-model-data: 6146
+    lore:
+      - "&7Caldestera elveszett rúna-tudása —"
+      - "&7csak a Varázsló olvassa hangosan."
+      - "&7Fegyverre: eséllyel visszhang-csapás."
+      - "&eKattintsd a rúnát a fegyverre a táskádban!"

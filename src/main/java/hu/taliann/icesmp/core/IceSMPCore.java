@@ -216,6 +216,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
+    private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -335,6 +336,8 @@ public final class IceSMPCore {
         this.guildManager = new hu.taliann.icesmp.managers.GuildManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.playerCaravanManager = new hu.taliann.icesmp.managers.PlayerCaravanManager(plugin, configManager, factionTreasuryManager, factionManager, eventSpawnGuard, messageManager);
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
+        hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // E1 — statikus híd
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
@@ -376,6 +379,7 @@ public final class IceSMPCore {
         professionManager.setMessageManager(messageManager); // szintlépés/fokozat üzenetek
         questManager.setGuildManager(guildManager); // B35 — quest-teljesítés céh-XP
         professionRecipeBookListener.setBestiaryManager(bestiaryManager); // B21 — recept-lajstrom
+        professionRecipeBookListener.setJobManager(jobManager); // E7 — kaszt-zárt receptek
         // Vendor-only unique anyagok a boltokban (economy.yml `unique:` bolt-item mező).
         shopManager.setUniqueMaterialFactory(uniqueMaterialFactory);
         // D19 — a Rejtélyes Idegen (tisztán atmoszférikus, ritka felbukkanás).
@@ -1135,6 +1139,8 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.GuildCommand(plugin, guildManager, messageManager));
         plugin.registerCommand("bestiarium", "Bestiárium — a krónikás-lajstromod", List.of("bestiary", "lajstrom"),
                 new hu.taliann.icesmp.commands.BestiaryCommand(bestiaryManager, professionRecipeCatalog, territoryManager, messageManager));
+        plugin.registerCommand("soulforge", "Lélek-kovács — a Nekromanta minion-fejlesztései", List.of("lelekkovacs"),
+                new hu.taliann.icesmp.commands.SoulforgeCommand(soulforgeManager, soulShardManager, messageManager));
         plugin.registerCommand("claim", "Terület-claim parancsok", List.of("birtok"), new hu.taliann.icesmp.commands.ClaimCommand(claimManager, currencyManager, messageManager));
         final EventsCommand eventsCommand = new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager);
         eventsCommand.setStrangerNpcManager(strangerNpcManager);
@@ -1212,7 +1218,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneApplyListener(uniqueMaterialFactory, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneEffectListener(configManager), plugin);
+        final hu.taliann.icesmp.listeners.RuneEffectListener runeEffectListener = new hu.taliann.icesmp.listeners.RuneEffectListener(configManager);
+        runeEffectListener.setJobManager(jobManager); // E7 — Varázsló rúna-affinitás
+        pluginManager.registerEvents(runeEffectListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager), plugin);
         pluginManager.registerEvents(new org.bukkit.event.Listener() {
             // B6 — a szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
