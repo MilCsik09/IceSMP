@@ -1018,3 +1018,27 @@ souls:
   champion-cost: 10
   champion-health: 60.0
   champion-lifespan-seconds: 60
+
+  # ===== E25 — Pakt-oltár (Boszorkánymester): tartós +20% max Lélekerő =====
+  # Ára: 1× Első Csend Szilánkja a táskából (pakt.material) — nem halmozható.
+  pakt_oltar:
+    type: "pakt"
+    altar-block: "SOUL_LANTERN"
+    cooldown-seconds: 600
+    structure:
+      - "-1,-1,-1:OBSIDIAN"
+      - "0,-1,-1:OBSIDIAN"
+      - "1,-1,-1:OBSIDIAN"
+      - "-1,-1,0:OBSIDIAN"
+      - "0,-1,0:CRYING_OBSIDIAN"
+      - "1,-1,0:OBSIDIAN"
+      - "-1,-1,1:OBSIDIAN"
+      - "0,-1,1:OBSIDIAN"
+      - "1,-1,1:OBSIDIAN"
+
+# ===== E25/E32 — kaszt-erőforrás pool-bónuszok (élő kulcsok) =====
+pakt:
+  bonus-percent: 20.0
+  material: "elso_csend_szilankja"
+  dragon-relic-id: "sarkany_tojas"
+  dragon-essence-bonus-percent: 10.0

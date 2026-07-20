@@ -723,7 +723,7 @@ territórium bejárása) — inkrementálisan, kategóriánként érdemes beveze
 **Építőkövek:** B26 rúnakovácsolás, ItemFactory PDC-minta, `professions.yml` recept-gate.
 
 **Buktatók:** kaszt-exkluzív item-bónusz könnyen „kötelező pick"-ké válhat — a hatás maradjon kis, additív jellegű.
-### E25. Boszorkánymester: rituálé-oltár pakt
+### E25. Boszorkánymester: rituálé-oltár pakt `[KÉSZ ✅]`
 
 > **Lore-horgony:** a rituálé-oltárok törvénye + a Kárhozat-forrás pakt-fantáziája (kódex VI./VIII.)
 
@@ -738,7 +738,7 @@ territórium bejárása) — inkrementálisan, kategóriánként érdemes beveze
 **Építőkövek:** relics.yml rituálé-oltár, B47 ereklye-expedíciók (alapanyag-forrás), talent max-attribútum minta.
 
 **Buktatók:** tartós, végleges pool-növelés balansz-kockázat — nem halmozható cap kell, és a ritka alapanyag miatt csak keveseknél lesz elérhető (tudatosan vállalt szűkösség végjáték-tartalomként).
-### E32. Sárkányidéző: sárkánytojás-relikvia
+### E32. Sárkányidéző: sárkánytojás-relikvia `[KÉSZ ✅]`
 
 > **Lore-horgony:** sárkány-eszencia + az Ereklyék Törvénye (kódex VI./VIII.)
 

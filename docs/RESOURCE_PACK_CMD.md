@@ -59,7 +59,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** cserzett bőrbarna; akcent: földbarna
 - **Hangulat / lore:** Talált pénz: mob-drop és horgász-lelet. Viseltes, útszéli hangulat — valaki elvesztette.
 
-## Relikviák (4101–4205)
+## Relikviák (4101–4206)
 
 ### 4101 — A Mételytépő
 - **Fájl:** `relic_metelytepo.png` &nbsp;|&nbsp; **Alap-item:** `GOLDEN_AXE`
@@ -96,6 +96,11 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Ábrázolás:** éjfekete, megkövült könnycsepp, belsejében halvány TÜRKIZ fénymaggal (lich-fény)
 - **Színvilág:** éjkék; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Eleftheria Könnye — a Néma Királynő első suttogása kővé dermedve.
+
+### 4206 — Sárkánytojás-töredék
+- **Fájl:** `relic_sarkany_tojas.png` &nbsp;|&nbsp; **Alap-item:** `DRAGON_EGG`
+- **Ábrázolás:** kőtábla vésett rúnajellel
+- **Színvilág:** izzó narancsvörös; akcent: hűvös ezüstszürke
 
 ## Kaszt-katalizátorok (5201–5213)
 

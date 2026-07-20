@@ -777,3 +777,11 @@ külön ellenállást adnak, ami a Rúnavérttel összeadódik.
 - **Varázsló — rúnaíró affinitás:** a Varázsló „olvassa" a rúnákat: minden rúna-hatás
   **duplán** érvényesül nála, és csak ő készítheti el a **Visszhang Rúnáját** (találatkor
   eséllyel visszhang-csapás).
+
+## Pakt és Sárkánytojás — kaszt-végjáték 🐉
+
+- **Boszorkánymester — Pakt-oltár:** építs pakt-oltárt (SOUL_LANTERN mag), és az Első Csend
+  Szilánkjáért cserébe a max Lélekerőd **tartósan +20%**. Egyszeri és visszavonhatatlan —
+  a Kárhozat nem alkuszik kétszer.
+- **Sárkányidéző — Sárkánytojás-töredék:** új relikvia; amíg a tiéd ÉS Sárkányidéző vagy,
+  az Eszencia-medred +10%-kal tágabb. Másnak csak hideg kő — neked végjáték-cél.

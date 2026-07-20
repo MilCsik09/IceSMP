@@ -1126,6 +1126,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **E25 — Pakt-oltár (Boszorkánymester, ÚJ):**
+  - [ ] Új rituálé-típus: `pakt` (relics.yml `pakt_oltar` — SOUL_LANTERN mag, obszidián-alap);
+        csak WARLOCK kaszt, NEM halmozható; ára 1× Első Csend Szilánkja a táskából.
+  - [ ] Hatás: tartós +20% max Lélekerő (player-PDC + join-kor töltött concurrent cache —
+        a ResourceManager.max() szál-biztos szorzó-lookupon át olvassa). Kulcsok: `pakt.*`.
+- [ ] **E32 — Sárkánytojás-töredék (Sárkányidéző, ÚJ):**
+  - [ ] Új relikvia: `sarkany_tojas` (DRAGON_EGG, CMD 4206); amíg a tulajdonosa Sárkányidéző
+        (EVOKER), az Eszencia-poolja +10% (`pakt.dragon-essence-bonus-percent`) — másnak
+        csak presztízs-tárgy. A relikvia-szabályok (tulajdon, rablás) változatlanok.
 - [ ] **E1 — Lélek-kovács (Nekromanta, ÚJ):**
   - [ ] `/soulforge` (alias /lelekkovacs): 3 ág (Élet/Sebzés/Létszám), áganként 5 rang,
         növekvő szilánk-ár (5/8/12/18/25 — classes.yml `soulforge.rank-costs`); rangok

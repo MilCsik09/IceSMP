@@ -147,6 +147,15 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 List.of("&7A Káoszkor csontból szőtt szárnya, a", "&7Néma Királynő élőhalottainak maradványa.", "&7Éjjel a viselője maga is", "&7árnyékká válik.")
         );
 
+        // E32 — kaszt-tematikus relikvia: a hatását a ResourceBonusService kapuzza Sárkányidézőre.
+        registerRelic(
+                "sarkany_tojas",
+                Material.DRAGON_EGG,
+                4206,
+                "Sárkánytojás-töredék",
+                "LIGHT_PURPLE",
+                List.of("&7Egy sosem kelt sárkány álma, kőbe zárva.", "&7A Sárkányidéző kezében az Eszencia", "&7medre kitágul — másnak csak hideg kő.")
+        );
         plugin.getLogger().info("Loaded " + registry.all().size() + " hardcoded relic definition(s). Cosmetics/triggers loaded from config when available.");
     }
 
