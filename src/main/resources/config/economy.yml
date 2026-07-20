@@ -181,6 +181,267 @@ faction-shops:
         price: 50
         currency: "OWN"
 
+  # --- Szakmai Kellékbolt: MINDEN vendor-only szakma-kellék egy helyen. Ez is sima
+  # konfigurálható bolt: nevezz el egy NPC-t "kellekbolt"-nak (vagy másold a sorokat
+  # bármely bolt items-listájába) — a boltok kínálata TELJESEN configból jön, soronként
+  # törölhető/árazható/bővíthető. A `unique:` mező a valódi PDC-s anyagot adja. ---
+  kellekbolt:
+    title: "Szakmai Kellékbolt"
+    faction: "ALL"
+    items:
+      1:
+        material: "GUNPOWDER"
+        unique: "robbantopor"
+        amount: 1
+        price: 30
+        currency: "OWN"
+      2:
+        material: "IRON_NUGGET"
+        unique: "tarnatamasz_szegecs"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      3:
+        material: "SLIME_BALL"
+        unique: "csillekenocs"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      4:
+        material: "GLASS_BOTTLE"
+        unique: "ercmoso_lug"
+        amount: 1
+        price: 25
+        currency: "OWN"
+      5:
+        material: "COMPASS"
+        unique: "melysegi_iranytu"
+        amount: 1
+        price: 45
+        currency: "OWN"
+      6:
+        material: "GLASS_BOTTLE"
+        unique: "uvegfiola_keszlet"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      7:
+        material: "COBWEB"
+        unique: "aszalohalo"
+        amount: 1
+        price: 25
+        currency: "OWN"
+      8:
+        material: "HONEYCOMB"
+        unique: "oltoviasz"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      9:
+        material: "PACKED_MUD"
+        unique: "tozegkocka"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      10:
+        material: "BUCKET"
+        unique: "permetezo_kanna"
+        amount: 1
+        price: 40
+        currency: "OWN"
+      11:
+        material: "SMOOTH_STONE"
+        unique: "fenoko"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      12:
+        material: "HONEY_BOTTLE"
+        unique: "gyantaoldo"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      13:
+        material: "IRON_NUGGET"
+        unique: "acskapocs"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      14:
+        material: "STRING"
+        unique: "merozsinor"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      15:
+        material: "INK_SAC"
+        unique: "favedo_pac"
+        amount: 1
+        price: 25
+        currency: "OWN"
+      16:
+        material: "MAGMA_CREAM"
+        unique: "edzoolaj"
+        amount: 1
+        price: 35
+        currency: "OWN"
+      17:
+        material: "SUGAR"
+        unique: "polirpaszta"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      18:
+        material: "LEATHER"
+        unique: "nyelbor"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      19:
+        material: "RABBIT_HIDE"
+        unique: "fujtatobor"
+        amount: 1
+        price: 30
+        currency: "OWN"
+      20:
+        material: "BLAZE_POWDER"
+        unique: "folyositoszer"
+        amount: 1
+        price: 80
+        currency: "OWN"
+      21:
+        material: "GLASS_BOTTLE"
+        unique: "desztillalt_esoviz"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      22:
+        material: "PAPER"
+        unique: "szuropapir"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      23:
+        material: "GLOWSTONE_DUST"
+        unique: "katalizator_so"
+        amount: 1
+        price: 35
+        currency: "OWN"
+      24:
+        material: "IRON_NUGGET"
+        unique: "olomdugo"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      25:
+        material: "CHARCOAL"
+        unique: "lombik_szen"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      26:
+        material: "INK_SAC"
+        unique: "irnok_tinta"
+        amount: 1
+        price: 25
+        currency: "OWN"
+      27:
+        material: "BONE"
+        unique: "pergamen_simito"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      28:
+        material: "FEATHER"
+        unique: "ezust_toll"
+        amount: 1
+        price: 30
+        currency: "OWN"
+      29:
+        material: "CLAY_BALL"
+        unique: "runakreta"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      30:
+        material: "CANDLE"
+        unique: "viaszgyertya"
+        amount: 1
+        price: 25
+        currency: "OWN"
+      31:
+        material: "TRIPWIRE_HOOK"
+        unique: "horogkeszlet"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      32:
+        material: "SLIME_BALL"
+        unique: "csalizsir"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      33:
+        material: "STRING"
+        unique: "halofonal"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      34:
+        material: "OAK_BUTTON"
+        unique: "parafa_uszo"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      35:
+        material: "DRIED_KELP"
+        unique: "sozott_csali"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      36:
+        material: "SUGAR"
+        unique: "koso"
+        amount: 1
+        price: 10
+        currency: "OWN"
+      37:
+        material: "PAPER"
+        unique: "sutopergamen"
+        amount: 1
+        price: 15
+        currency: "OWN"
+      38:
+        material: "HONEY_BOTTLE"
+        unique: "ecet_eszencia"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      39:
+        material: "STICK"
+        unique: "fustoloforgacs"
+        amount: 1
+        price: 10
+        currency: "OWN"
+      40:
+        material: "HONEYCOMB"
+        unique: "vaj"
+        amount: 1
+        price: 20
+        currency: "OWN"
+      41:
+        material: "GLOW_INK_SAC"
+        unique: "lampaolaj"
+        amount: 1
+        price: 35
+        currency: "OWN"
+      42:
+        material: "HONEYCOMB"
+        unique: "viaszpecset"
+        amount: 1
+        price: 50
+        currency: "OWN"
+
 # ===== Kereskedő-karaván (időszakos világesemény + money sink) =====
 # Egy vándorkereskedő időnként felbukkan egy stop-helyszínen (vagy ha nincs stop
 # megadva, egy véletlen online játékos közelében), egy ideig marad, majd
@@ -200,6 +461,12 @@ caravan:
   stops: []
   # Példa stop:
   #   - {world: world, x: 100, y: 64, z: -200}
+  # ROTÁLÓ KÍNÁLAT: minden érkezéskor a lenti teljes poolból stock-size darab
+  # sorsolódik ("ma épp ezt hozta a karaván") — a látogatás alatt stabil, a
+  # következő érkezéskor fordul. false = a régi, teljes-lista viselkedés.
+  rotation:
+    enabled: true
+    stock-size: 5
   items:
     1:
       material: "ENCHANTED_GOLDEN_APPLE"
@@ -220,6 +487,56 @@ caravan:
       material: "EXPERIENCE_BOTTLE"
       amount: 16
       price: 350
+      currency: "OWN"
+    # --- Ritka szakma-alapanyagok a poolban (drágán — alternatív forrás a
+    # mob/boss-drop mellett; a `unique:` mező a valódi PDC-s anyagot adja) ---
+    5:
+      material: "AMETHYST_SHARD"
+      unique: "emlekszilank"
+      amount: 1
+      price: 900
+      currency: "OWN"
+    6:
+      material: "BONE"
+      unique: "sarkanycsont_szilank"
+      amount: 1
+      price: 1100
+      currency: "OWN"
+    7:
+      material: "FEATHER"
+      unique: "fonixpihe"
+      amount: 2
+      price: 500
+      currency: "OWN"
+    8:
+      material: "AMETHYST_SHARD"
+      unique: "nema_kristaly"
+      amount: 1
+      price: 700
+      currency: "OWN"
+    9:
+      material: "RAW_GOLD"
+      unique: "melysegi_borostyan"
+      amount: 1
+      price: 800
+      currency: "OWN"
+    10:
+      material: "QUARTZ"
+      unique: "viharkvarc"
+      amount: 2
+      price: 450
+      currency: "OWN"
+    11:
+      material: "GHAST_TEAR"
+      unique: "dermedt_konnycsepp"
+      amount: 1
+      price: 1000
+      currency: "OWN"
+    12:
+      material: "FIRE_CHARGE"
+      unique: "karhozat_parazs"
+      amount: 1
+      price: 1300
       currency: "OWN"
   # Bónusz-készlet: csak akkor árulja, ha a legutóbbi karaván-kíséret (escort)
   # sikerrel célba ért (world.yml: escort.bonus-stock-minutes ideig).
@@ -246,3 +563,54 @@ caravan:
 banking:
   capital-only: true    # bank be-/kivét és valutaváltás CSAK a fővárosokban
   pay-enabled: false    # /currency pay (közvetlen számla-utalás) — a KP-világban tiltott
+
+# ===== Felvásárló NPC (jövedelem-csap, napi kerettel) =====
+# Nevezz el egy FancyNpcs NPC-t "felvasarlo"-nak: a játékos a KÉZBEN tartott terményt/
+# nyersanyagot jobb-kattal eladja az itteni fix egységáron (a saját frakció-valutájában
+# jóváírva). NAPI KERET (daily-cap) fékezi a farm-inflációt; egyedi (PDC-s) tárgyat nem
+# vesz meg. A prices lista szabadon bővíthető/árazható — élőben olvasódik.
+buyer:
+  enabled: true
+  npc-name: "felvasarlo"
+  daily-cap: 250.0
+  prices:
+    WHEAT: 0.5
+    CARROT: 0.4
+    POTATO: 0.4
+    BEETROOT: 0.4
+    SWEET_BERRIES: 0.3
+    COD: 1.0
+    SALMON: 1.2
+    IRON_INGOT: 2.5
+    GOLD_INGOT: 3.0
+    COPPER_INGOT: 0.6
+    COAL: 0.8
+    LEATHER: 1.5
+    BONE: 0.5
+    STRING: 0.5
+    GUNPOWDER: 1.2
+    SPIDER_EYE: 0.6
+    ROTTEN_FLESH: 0.2
+    HONEY_BOTTLE: 2.0
+    EMERALD: 6.0
+
+# ===== Horgász-szerencse (kis passzív jövedelem-csap) =====
+# Kis eséllyel a fogás mellé egy "iszapba veszett erszény" is akad: közvetlen
+# valuta-jóváírás. AFK-jelölt játékosnak nem jár. Élőben olvasódik.
+# Horgász-szerencse: kis eséllyel Kopott erszény (fizikai pénz-tárgy, véletlen
+# valutával) akad a horogra a fogás mellé. Beváltás: jobb-katt az erszénnyel.
+fishing-windfall:
+  enabled: true
+  chance-percent: 4.0
+  min-amount: 5.0
+  max-amount: 15.0
+
+# WoW-stílusú mob pénz-drop: ellenséges mob halálakor (játékos-öléssel) eséllyel
+# Kopott erszény esik — az összeg a mob szintjével nő, a valuta véletlen.
+# Spawner-mob SOSEM dob (farm-fék). Élő kulcsok (/icesmp reload).
+mob-money-drop:
+  enabled: true
+  chance-percent: 20.0
+  min-amount: 1.0
+  max-amount: 4.0
+  per-level-bonus: 0.5

@@ -1450,7 +1450,7 @@ profession-recipes:
     display-name: "Parázsmag kinyerése"
     category: "Alapanyag"
     result: { unique: parazsmag, amount: 2 }
-    ingredients: [ "BLAZE_POWDER:2", "MAGMA_CREAM:1", "COAL_BLOCK:1" ]
+    ingredients: [ "BLAZE_POWDER:2", "MAGMA_CREAM:1", "unique:lombik_szen:1" ]
   viharkvarc_fejtes:
     profession: miner
     level: 22
@@ -1464,7 +1464,7 @@ profession-recipes:
     display-name: "Mélységi Borostyán tisztítása"
     category: "Alapanyag"
     result: { unique: melysegi_borostyan, amount: 1 }
-    ingredients: [ "RAW_GOLD:2", "HONEYCOMB:2", "unique:rezgo_rez_otvozet:1" ]
+    ingredients: [ "RAW_GOLD:2", "HONEYCOMB:2", "unique:rezgo_rez_otvozet:1", "unique:ercmoso_lug:1" ]
   # --- BLUE signature fegyverek (tervtábla: Jégtörő / V. Miinus Haragja / Sárkánycsont Íj) ---
   glatziendorfi_jegtoro:
     profession: armorer
@@ -1545,7 +1545,7 @@ profession-recipes:
       - "&7tűzhely ereje egy tálban."
     category: "Étel"
     result: { material: RABBIT_STEW, amount: 1, signature: sarkany_porkolt }
-    ingredients: [ "COOKED_COD:2", "COOKED_SALMON:1", "BOWL:1", "unique:jegviragpor:1" ]
+    ingredients: [ "COOKED_COD:2", "COOKED_SALMON:1", "BOWL:1", "unique:jegviragpor:1", "unique:koso:1" ]
   vandor_uti_kenyer:
     profession: cook
     level: 12
@@ -1565,7 +1565,7 @@ profession-recipes:
       - "&7partjáról — átmelegít és tisztán tart."
     category: "Ital"
     result: { material: HONEY_BOTTLE, amount: 1 }
-    ingredients: [ "unique:gyogy_kivonat:1", "GLASS_BOTTLE:1", "SUGAR:1" ]
+    ingredients: [ "unique:gyogy_kivonat:1", "unique:uvegfiola_keszlet:1", "SUGAR:1" ]
   sarkanycsont_pajzs:
     profession: armorer
     level: 40
@@ -1576,7 +1576,7 @@ profession-recipes:
       - "&7ami nekicsapódik, megdermed egy szívverésre."
     category: "Páncél"
     result: { material: SHIELD, amount: 1, affix-tier: crafted }
-    ingredients: [ "SHIELD:1", "unique:sarkanycsont_szilank:1", "IRON_INGOT:4" ]
+    ingredients: [ "SHIELD:1", "unique:sarkanycsont_szilank:1", "IRON_INGOT:4", "unique:nyelbor:1" ]
   viharuveg_lampas:
     profession: enchanter
     level: 28
@@ -1598,7 +1598,7 @@ profession-recipes:
       - "&7írva — üllőnél páncélra vihető."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fagypancel:1" }
-    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:jegviragpor:2" ]
+    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:jegviragpor:2", "unique:irnok_tinta:1" ]
   fonixtoll_tekercs:
     profession: enchanter
     level: 35
@@ -1608,7 +1608,7 @@ profession-recipes:
       - "&7üllőnél páncélra vihető tűz-oltalom."
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fonixtoll:1" }
-    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:fonixpihe:2" ]
+    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:fonixpihe:2", "unique:irnok_tinta:1" ]
 
   # =========================================================
   # --- Tartalombővítés (3. hullám): anyag-receptek, ünnepi ételek minden
@@ -1634,7 +1634,7 @@ profession-recipes:
     display-name: "Sarkfény-cseppkő fejtése"
     category: "Alapanyag"
     result: { unique: sarkfeny_cseppko, amount: 1 }
-    ingredients: [ "PRISMARINE_CRYSTALS:2", "AMETHYST_SHARD:2", "ICE:2" ]
+    ingredients: [ "PRISMARINE_CRYSTALS:2", "AMETHYST_SHARD:2", "ICE:2", "unique:ercmoso_lug:1" ]
   szavannafu_sodras:
     profession: lumberjack
     level: 24
@@ -1655,28 +1655,28 @@ profession-recipes:
     display-name: "Árnygomba szedése"
     category: "Alapanyag"
     result: { unique: arnygomba, amount: 2 }
-    ingredients: [ "CRIMSON_FUNGUS:2", "BROWN_MUSHROOM:2", "BONE_MEAL:1" ]
+    ingredients: [ "CRIMSON_FUNGUS:2", "BROWN_MUSHROOM:2", "unique:tozegkocka:1" ]
   lelekhamu_kinyeres:
     profession: alchemist
     level: 30
     display-name: "Lélekhamu kinyerése"
     category: "Alapanyag"
     result: { unique: lelekhamu, amount: 2 }
-    ingredients: [ "SOUL_SAND:2", "GUNPOWDER:2", "GHAST_TEAR:1" ]
+    ingredients: [ "SOUL_SAND:2", "GUNPOWDER:2", "unique:katalizator_so:1" ]
   aranyfust_veres:
     profession: armorer
     level: 24
     display-name: "Aranyfüst-lemez verése"
     category: "Alapanyag"
     result: { unique: aranyfust_lemez, amount: 2 }
-    ingredients: [ "GOLD_INGOT:3", "unique:tiszta_vasesszencia:1" ]
+    ingredients: [ "GOLD_INGOT:3", "unique:tiszta_vasesszencia:1", "unique:polirpaszta:1" ]
   gyongyhaz_fejtes:
     profession: fisherman
     level: 20
     display-name: "Gyöngyház-pikkely fejtése"
     category: "Alapanyag"
     result: { unique: gyongyhaz_pikkely, amount: 1 }
-    ingredients: [ "SALMON:2", "PRISMARINE_SHARD:1", "SAND:2" ]
+    ingredients: [ "SALMON:2", "PRISMARINE_SHARD:1", "unique:sozott_csali:1" ]
   vandorfuszer_keveres:
     profession: cook
     level: 22
@@ -1695,7 +1695,7 @@ profession-recipes:
       - "&7I. Zhoris vadászai ették győzelem után."
     category: "Étel"
     result: { material: COOKED_BEEF, amount: 1, signature: vadlakoma }
-    ingredients: [ "BEEF:2", "unique:vandorfuszer:1", "unique:parazsmag:1" ]
+    ingredients: [ "BEEF:2", "unique:vandorfuszer:1", "unique:parazsmag:1", "unique:fustoloforgacs:1" ]
   vandorunnep_lepenye:
     profession: cook
     level: 30
@@ -1706,7 +1706,7 @@ profession-recipes:
       - "&7egy szelet szerencse minden vándornak."
     category: "Étel"
     result: { material: PUMPKIN_PIE, amount: 1, signature: vandorunnep_lepenye }
-    ingredients: [ "PUMPKIN:1", "EGG:1", "SUGAR:2", "unique:vandorfuszer:1" ]
+    ingredients: [ "PUMPKIN:1", "EGG:1", "unique:vaj:1", "unique:sutopergamen:1", "unique:vandorfuszer:1" ]
   hamvak_lakomaja:
     profession: cook
     level: 30
@@ -1789,7 +1789,7 @@ profession-recipes:
       - "&7íjkar — a Mélység Népe így készítette."
     category: "Fegyver"
     result: { material: BOW, amount: 1, affix-tier: crafted }
-    ingredients: [ "BOW:1", "unique:csontenyv:2", "unique:szavannafu_kotel:2" ]
+    ingredients: [ "BOW:1", "unique:csontenyv:2", "unique:szavannafu_kotel:2", "unique:favedo_pac:1" ]
   gyongyhaz_talizman:
     profession: fisherman
     level: 32
@@ -1799,7 +1799,7 @@ profession-recipes:
       - "&7a Bokic halászainak szerencsehozója."
     category: "Különleges"
     result: { material: NAUTILUS_SHELL, amount: 1 }
-    ingredients: [ "NAUTILUS_SHELL:1", "unique:gyongyhaz_pikkely:3", "STRING:2" ]
+    ingredients: [ "NAUTILUS_SHELL:1", "unique:gyongyhaz_pikkely:3", "unique:halofonal:1" ]
   fuszeres_vandorhus:
     profession: cook
     level: 28

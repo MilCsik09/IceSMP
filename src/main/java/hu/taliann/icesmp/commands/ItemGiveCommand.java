@@ -30,14 +30,14 @@ import java.util.Locale;
  *   <li><b>relikvia:</b> RelicManager.giveRelic force-móddal (tulajdon-átírással);</li>
  *   <li><b>tervrajz:</b> a recept tervrajz-itemje ({@code BlueprintItemFactory}).</li>
  * </ul>
- * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]} —
+ * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]} —
  * játékos nélkül a kiadó kapja. Jog: {@code icesmp.admin.item}. Folia: másik játékosnak
  * adáskor a CÉL saját régió-schedulerén fut az inventory-írás.
  */
 public final class ItemGiveCommand implements BasicCommand {
 
     public static final String PERMISSION = "icesmp.admin.item";
-    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz");
+    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz", "erszeny");
 
     private final JavaPlugin plugin;
     private final UniqueMaterialFactory uniqueMaterials;
@@ -46,12 +46,14 @@ public final class ItemGiveCommand implements BasicCommand {
     private final RelicManager relicManager;
     private final BlueprintItemFactory blueprintFactory;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory;
 
     public ItemGiveCommand(final JavaPlugin plugin, final UniqueMaterialFactory uniqueMaterials,
                            final ProfessionRecipeCatalog catalog,
                            final ProfessionRecipeBookListener recipeBookListener,
                            final RelicManager relicManager, final BlueprintItemFactory blueprintFactory,
-                           final MessageManager messageManager) {
+                           final MessageManager messageManager,
+                           final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory) {
         this.plugin = plugin;
         this.uniqueMaterials = uniqueMaterials;
         this.catalog = catalog;
@@ -59,6 +61,7 @@ public final class ItemGiveCommand implements BasicCommand {
         this.relicManager = relicManager;
         this.blueprintFactory = blueprintFactory;
         this.messageManager = messageManager;
+        this.moneyPouchFactory = moneyPouchFactory;
     }
 
     @Override
@@ -70,7 +73,7 @@ public final class ItemGiveCommand implements BasicCommand {
         }
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]"));
             return;
         }
         final String type = args[0].toLowerCase(Locale.ROOT);
@@ -116,6 +119,29 @@ public final class ItemGiveCommand implements BasicCommand {
                         giveStack(target, stack);
                         confirm(sender, target, uniqueMaterials.displayName(id), give);
                     }
+                }, null);
+            }
+            case "erszeny" -> {
+                // Kopott erszény: az <id> itt az ÖSSZEG, a [darab] az erszények száma,
+                // a valuta erszényenként véletlen (a mob-drop/horgász-lelet útjával azonos).
+                final double value;
+                try {
+                    value = Double.parseDouble(id);
+                } catch (final NumberFormatException exception) {
+                    sender.sendMessage(messageManager.get("admin.iceitem.bad-amount",
+                            "&cÉrvénytelen összeg: &f%s", id));
+                    return;
+                }
+                if (value <= 0.0D || moneyPouchFactory == null) {
+                    sender.sendMessage(messageManager.get("admin.iceitem.bad-amount",
+                            "&cÉrvénytelen összeg: &f%s", id));
+                    return;
+                }
+                target.getScheduler().run(plugin, task -> {
+                    for (int i = 0; i < Math.min(give, 64); i++) {
+                        giveStack(target, moneyPouchFactory.createRandom(value));
+                    }
+                    confirm(sender, target, "Kopott erszény (" + id + ")", Math.min(give, 64));
                 }, null);
             }
             case "recept" -> {
@@ -172,7 +198,7 @@ public final class ItemGiveCommand implements BasicCommand {
                 }, null);
             }
             default -> sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]"));
         }
     }
 
@@ -201,6 +227,7 @@ public final class ItemGiveCommand implements BasicCommand {
             final String type = args[0].toLowerCase(Locale.ROOT);
             return switch (type) {
                 case "unique" -> filter(uniqueMaterials.allIds(), args[1]);
+                case "erszeny" -> filter(List.of("10", "25", "50", "100"), args[1]);
                 case "recept", "tervrajz" -> filter(catalog.allIds(), args[1]);
                 case "relikvia" -> filter(relicManager.getDefinitions().stream()
                         .map(definition -> definition.id().toLowerCase(Locale.ROOT)).toList(), args[1]);

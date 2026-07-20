@@ -77,6 +77,22 @@ Ez **nem piac** — nincs ár, nincs valuta, tiszta ajándékozás. Egy szerver-
 **Reputáció-ár:** a vételár attól is függ, milyen viszonyban van a frakciód az eladóéval:
 **ellenségtől drágább (+25%)**, **szövetségestől olcsóbb (−10%)**.
 
+## Honnan jön a pénz? (jövedelem-források) 🪙
+
+- **Kopott erszény (mob-drop):** az ellenséges szörnyek legyőzésekor eséllyel egy **erszény**
+  esik — fizikai tárgy, benne **véletlen frakció-valutával** (az összeg a szörny szintjével nő).
+  **Jobb-katt** az erszénnyel, és a tartalma a számládra kerül. Spawner-szörny sosem dob!
+- **Horgász-szerencse:** horgászat közben kis eséllyel egy **iszapba veszett erszény** is a
+  horogra akad — ugyanúgy jobb-kattal váltod be. (AFK-horgásznak nem jár.)
+- **Felvásárló NPC:** a fővárosi **Felvásárlónál** a kézben tartott nyersanyagot (termény, hal,
+  érc, bőr…) **fix áron eladhatod** — ez a biztos alapjövedelem, de **napi kerete** van, és
+  egyedi/különleges tárgyat nem vesz meg. A jobb árat mindig a játékos-piac adja!
+- **Küldetések és napi feladatok:** a questek, napi kihívások, közösségi célok és
+  mérföldkövek valuta-jutalmat is adnak.
+- **Lélekkő:** a magas szintű szörnyek Sötét tokent ejtenek (részletek lentebb).
+- **Vérdíj és parkour:** a fejvadász-rendszer és a parkour-próbák szintén fizetnek.
+- **Piac és aukció:** amit megtermelsz/kicraftolsz, a piacon másik játékosnak adhatod el.
+
 ## Hová „tűnik" a pénz? (money sinkek)
 
 Hogy a pénz értékes maradjon, több helyen is „elszívódik":
@@ -97,17 +113,22 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
 - **Szezonzáró tőzsdeláz:** a szezon utolsó hetében (Végítélet-hét) a sokkok **sűrűbbek,
   hevesebbek és rövidebbek** — aki figyeli a piacot, nagyot nyerhet (vagy veszíthet).
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
-- **Vendor-only szakma-anyagok:** három egyedi alapanyag (**Számvevő-pecsétviasz**,
-  **Finomított Lámpaolaj**, **Kovács-folyósítószer**) **kizárólag boltban kapható** — a
-  magas szintű receptek (köztük a legendás fegyverek/páncélok) hozzávalóként kérik őket,
-  így a szakma-progresszió folyamatosan pénzt „éget” (money sink).
+- **Vendor-only szakma-kellékek:** a **Szakmai Kellékbolt** (és más boltok) több tucat,
+  **kizárólag boltban kapható** kelléket árulnak (Kősó, Írnok-tinta, Edzőolaj, Sózott csali,
+  Számvevő-pecsétviasz, Lámpaolaj, Kovács-folyósítószer…) — szakmánként legalább 5-féle.
+  A magasabb szintű receptek hozzávalóként kérik őket, így a szakma-progresszió folyamatosan
+  pénzt „éget” (money sink). A boltok kínálata teljesen config-vezérelt: az admin szabja meg,
+  melyik NPC mit áruljon.
 - **Frakció-boltok:** a fővárosokban álló **bolt-NPC-kre jobb-kattintva** egy vásárló felület
   nyílik — fix áron vehetsz alapanyagot/fogyóeszközt a banki egyenlegedből. A kifizetett pénz
   **eltűnik** a gazdaságból (money sink). Egyes boltok csak a saját frakciód tagjainak árulnak.
 - **Kereskedő-karaván:** időnként egy **vándorkereskedő** bukkan fel a világban (egy üzenet jelzi,
   merre) — csak **korlátozott ideig** marad. Amíg itt van, **jobb-kattints a karaván-NPC-re**, és
-  ritka portékákat (pl. arany alma, gyémánttömb, névcímke) vehetsz a banki egyenlegedből. A kifizetett
-  pénz szintén **eltűnik** (money sink). Ha lekésed, legközelebb máshol tűnik fel — érdemes odasietni!
+  ritka portékákat vehetsz a banki egyenlegedből — köztük **ritka szakma-alapanyagokat**
+  (Emlékszilánk, Sárkánycsont-szilánk, Főnixpihe, Néma Kristály…), amikhez máshol alig jutsz hozzá.
+  A kínálat **érkezésenként rotálódik**: a karaván a teljes áru-listájából mindig csak néhány
+  tételt hoz („ma épp ezt”), úgyhogy minden látogatás más! A kifizetett pénz szintén **eltűnik**
+  (money sink). Ha lekésed, legközelebb máshol tűnik fel — érdemes odasietni!
 
 ## Lélekkő — a veszélyes vidékek jutalma
 

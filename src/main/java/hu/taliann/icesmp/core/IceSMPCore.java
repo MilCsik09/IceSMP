@@ -212,6 +212,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.ProfessionRecipeCatalog professionRecipeCatalog;
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintItemFactory;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
+    private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -220,6 +221,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.SeasonFinaleManager seasonFinaleManager;
     private final hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager;
     private final hu.taliann.icesmp.managers.BardManager bardManager;
+    private final hu.taliann.icesmp.managers.BuyerService buyerService;
     private final hu.taliann.icesmp.managers.SeasonMonumentManager seasonMonumentManager;
     private final hu.taliann.icesmp.managers.CursedGearService cursedGearService;
     private final hu.taliann.icesmp.managers.HiddenSpotManager hiddenSpotManager;
@@ -326,6 +328,7 @@ public final class IceSMPCore {
         this.professionRecipeCatalog = new hu.taliann.icesmp.managers.ProfessionRecipeCatalog(plugin, configManager);
         this.blueprintItemFactory = new hu.taliann.icesmp.items.BlueprintItemFactory(plugin, professionRecipeCatalog);
         this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
+        this.moneyPouchItemFactory = new hu.taliann.icesmp.items.MoneyPouchItemFactory(plugin);
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
@@ -391,6 +394,8 @@ public final class IceSMPCore {
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
         // buyable only while the merchant is in town.
         this.shopManager.setCaravanActiveCheck(caravanManager::isActive);
+        // Rotáló karaván-készlet: a látogatás sorsolási magját a CaravanManager adja.
+        this.shopManager.setCaravanStockSeed(caravanManager::getStockSeed);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
@@ -418,6 +423,8 @@ public final class IceSMPCore {
                 plugin, configManager, statsManager, messageManager));
         // D9 — Énekmondó: a heti balladát a FancyNpcs interact-hook (registerNpcQuestBridge) köti a bárd-NPC-re.
         this.bardManager = new hu.taliann.icesmp.managers.BardManager(configManager, statsManager, messageManager);
+        // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
+        this.buyerService = new hu.taliann.icesmp.managers.BuyerService(plugin, configManager, currencyManager, factionManager, messageManager);
         // D3 — Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
         this.seasonMonumentManager = new hu.taliann.icesmp.managers.SeasonMonumentManager(plugin, configManager, statsManager);
         seasonManager.setMonumentManager(seasonMonumentManager);
@@ -803,6 +810,11 @@ public final class IceSMPCore {
                 // (a hook a játékos saját régió-szálán fut, a küldés biztonságos).
                 if (shopName != null && shopName.toLowerCase(java.util.Locale.ROOT).equals(bardManager.npcName())) {
                     bardManager.sing(player);
+                    return;
+                }
+                // Felvásárló NPC: a kézben tartott nyersanyag napi keretes eladása.
+                if (shopName != null && shopName.toLowerCase(java.util.Locale.ROOT).equals(buyerService.npcName())) {
+                    buyerService.handle(player);
                 }
             });
             // /npcbind <npc> bank|exchange: both open the existing bank menu — the deposit/withdraw/
@@ -1118,10 +1130,10 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.LoreCommand(messageManager));
         plugin.registerCommand("kronika", "Az utolsó Heti Krónika visszaolvasása", List.of("chronicle"),
                 new hu.taliann.icesmp.commands.KronikaCommand(chronicleManager, messageManager));
-        plugin.registerCommand("iceitem", "Plugin-item kiadása (admin): unique/recept/relikvia/tervrajz",
+        plugin.registerCommand("iceitem", "Plugin-item kiadása (admin): unique/recept/relikvia/tervrajz/erszeny",
                 List.of("iitem", "icegive"),
                 new hu.taliann.icesmp.commands.ItemGiveCommand(plugin, uniqueMaterialFactory, professionRecipeCatalog,
-                        professionRecipeBookListener, relicManager, blueprintItemFactory, messageManager));
+                        professionRecipeBookListener, relicManager, blueprintItemFactory, messageManager, moneyPouchItemFactory));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -1180,6 +1192,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CorruptionListener(corruptionManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StrangerListener(strangerNpcManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CampfireStoryListener(plugin, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobMoneyDropListener(plugin, configManager, mobScalingManager, moneyPouchItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);

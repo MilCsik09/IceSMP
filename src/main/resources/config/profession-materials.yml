@@ -302,3 +302,316 @@ profession-materials:
       - "&7azt, hogy amikor a kezedbe veszed,"
       - "&7a világ egy pillanatra elhallgat."
       - "&4A legritkább kincs — csak világbossból"
+  # --- 4. hullám: VENDOR-ONLY szakma-kellékek (szakmánként 5 — csak boltból) ---
+  robbantopor:
+    material: GUNPOWDER
+    display-name: "&cRobbantópor"
+    custom-model-data: 6100
+    lore:
+      - "&7A Vasművek engedélyezett keveréke —"
+      - "&7tárnát nyit, nem sírgödröt."
+      - "&eBányász kellék (csak boltból)"
+  tarnatamasz_szegecs:
+    material: IRON_NUGGET
+    display-name: "&fTárnatámasz-szegecs"
+    custom-model-data: 6101
+    lore:
+      - "&7Szabvány szegecs a Mélység Népe"
+      - "&7méretei szerint. Sosem enged."
+      - "&eBányász kellék (csak boltból)"
+  csillekenocs:
+    material: SLIME_BALL
+    display-name: "&aCsillekenőcs"
+    custom-model-data: 6102
+    lore:
+      - "&7Ettől fut a csille hang nélkül —"
+      - "&7a tárna tisztelete csendet kíván."
+      - "&eBányász kellék (csak boltból)"
+  ercmoso_lug:
+    material: GLASS_BOTTLE
+    display-name: "&eÉrcmosó-lúg"
+    custom-model-data: 6103
+    lore:
+      - "&7Leoldja a meddőt az ércről,"
+      - "&7és a kézről a tárnák szagát."
+      - "&eBányász kellék (csak boltból)"
+  melysegi_iranytu:
+    material: COMPASS
+    display-name: "&bMélységi Iránytű-tű"
+    custom-model-data: 6104
+    lore:
+      - "&7A mélyben nem észak felé mutat —"
+      - "&7hazafelé. Az többet ér."
+      - "&eBányász kellék (csak boltból)"
+  uvegfiola_keszlet:
+    material: GLASS_BOTTLE
+    display-name: "&fÜvegfiola-készlet"
+    custom-model-data: 6105
+    lore:
+      - "&7Tucatnyi apró fiola — a kivonat"
+      - "&7annyit ér, amennyit az üveg megőriz."
+      - "&eGyógynövényész kellék (csak boltból)"
+  aszalohalo:
+    material: COBWEB
+    display-name: "&eAszalóháló"
+    custom-model-data: 6106
+    lore:
+      - "&7Finom szövésű háló a füvek"
+      - "&7árnyékban szárításához."
+      - "&eGyógynövényész kellék (csak boltból)"
+  oltoviasz:
+    material: HONEYCOMB
+    display-name: "&6Oltóviasz"
+    custom-model-data: 6107
+    lore:
+      - "&7A metszés sebét zárja — a kert"
+      - "&7is gyógyul, nemcsak a beteg."
+      - "&eGyógynövényész kellék (csak boltból)"
+  tozegkocka:
+    material: PACKED_MUD
+    display-name: "&8Tőzegkocka"
+    custom-model-data: 6108
+    lore:
+      - "&7A Bokic-láp fekete aranya —"
+      - "&7ebben minden mag kicsírázik."
+      - "&eGyógynövényész kellék (csak boltból)"
+  permetezo_kanna:
+    material: BUCKET
+    display-name: "&7Permetező-kanna"
+    custom-model-data: 6109
+    lore:
+      - "&7Rézfejű kanna finom permethez —"
+      - "&7a harmatot utánozza, nem az esőt."
+      - "&eGyógynövényész kellék (csak boltból)"
+  fenoko:
+    material: SMOOTH_STONE
+    display-name: "&7Fenőkő"
+    custom-model-data: 6110
+    lore:
+      - "&7Vízköszörült kő a Bokic partjáról —"
+      - "&7az él tőle tanul énekelni."
+      - "&eFavágó kellék (csak boltból)"
+  gyantaoldo:
+    material: HONEY_BOTTLE
+    display-name: "&eGyantaoldó"
+    custom-model-data: 6111
+    lore:
+      - "&7Leoldja a gyantát a fűrészről"
+      - "&7és az alkut a kézfogásról."
+      - "&eFavágó kellék (csak boltból)"
+  acskapocs:
+    material: IRON_NUGGET
+    display-name: "&fÁcskapocs"
+    custom-model-data: 6112
+    lore:
+      - "&7Kovácsolt kapocs — gerendát fog"
+      - "&7össze, és tetőt tart, ha kell."
+      - "&eFavágó kellék (csak boltból)"
+  merozsinor:
+    material: STRING
+    display-name: "&aMérőzsinór"
+    custom-model-data: 6113
+    lore:
+      - "&7Krétázott zsinór — az egyenes"
+      - "&7vonal a mesterség fele."
+      - "&eFavágó kellék (csak boltból)"
+  favedo_pac:
+    material: INK_SAC
+    display-name: "&8Favédő pác"
+    custom-model-data: 6114
+    lore:
+      - "&7Sötét pác, mit az ácsok kevernek —"
+      - "&7a fa tőle éli túl a telet."
+      - "&eFavágó kellék (csak boltból)"
+  edzoolaj:
+    material: MAGMA_CREAM
+    display-name: "&6Edzőolaj"
+    custom-model-data: 6115
+    lore:
+      - "&7Ebbe mártva sziszeg a penge —"
+      - "&7a Vasművek előírása szerint."
+      - "&eKovács kellék (csak boltból)"
+  polirpaszta:
+    material: SUGAR
+    display-name: "&fPolírpaszta"
+    custom-model-data: 6116
+    lore:
+      - "&7Finom csiszolópor — a tükörfény"
+      - "&7nem hiúság, hanem minőségjelzés."
+      - "&eKovács kellék (csak boltból)"
+  nyelbor:
+    material: LEATHER
+    display-name: "&6Nyélbőr"
+    custom-model-data: 6117
+    lore:
+      - "&7Cserzett szíj markolat-tekeréshez —"
+      - "&7a fegyver ott kezdődik, ahol a kéz."
+      - "&eKovács kellék (csak boltból)"
+  fujtatobor:
+    material: RABBIT_HIDE
+    display-name: "&eFújtatóbőr"
+    custom-model-data: 6118
+    lore:
+      - "&7A kohó tüdeje — szakadt fújtatóval"
+      - "&7nincs se láng, se legenda."
+      - "&eKovács kellék (csak boltból)"
+  desztillalt_esoviz:
+    material: GLASS_BOTTLE
+    display-name: "&bDesztillált Esővíz"
+    custom-model-data: 6119
+    lore:
+      - "&7Háromszor párolt tavaszi eső —"
+      - "&7a főzet lelke a tiszta víz."
+      - "&eAlkimista kellék (csak boltból)"
+  szuropapir:
+    material: PAPER
+    display-name: "&fSzűrőpapír"
+    custom-model-data: 6120
+    lore:
+      - "&7A zagyból ez választja ki az"
+      - "&7esszenciát. És az igazságot."
+      - "&eAlkimista kellék (csak boltból)"
+  katalizator_so:
+    material: GLOWSTONE_DUST
+    display-name: "&eKatalizátor-só"
+    custom-model-data: 6121
+    lore:
+      - "&7Egy csipet, és a főzet felgyorsul —"
+      - "&7két csipet, és új laborod lesz."
+      - "&eAlkimista kellék (csak boltból)"
+  olomdugo:
+    material: IRON_NUGGET
+    display-name: "&7Ólomdugó"
+    custom-model-data: 6122
+    lore:
+      - "&7Nehéz dugó illékony esszenciákhoz —"
+      - "&7ami bent van, bent is marad."
+      - "&eAlkimista kellék (csak boltból)"
+  lombik_szen:
+    material: CHARCOAL
+    display-name: "&8Lombik-szén"
+    custom-model-data: 6123
+    lore:
+      - "&7Egyenletes lángot ad a lombik alá —"
+      - "&7a türelem tüzelője."
+      - "&eAlkimista kellék (csak boltból)"
+  irnok_tinta:
+    material: INK_SAC
+    display-name: "&0Írnok-tinta"
+    custom-model-data: 6124
+    lore:
+      - "&7A Számvevők receptje szerint kevert"
+      - "&7tinta — nem fakul, nem hazudik."
+      - "&eBűvölő kellék (csak boltból)"
+  pergamen_simito:
+    material: BONE
+    display-name: "&fPergamen-simító"
+    custom-model-data: 6125
+    lore:
+      - "&7Csontsimító a pergamenhez — rúna"
+      - "&7csak sima lapra ül meg."
+      - "&eBűvölő kellék (csak boltból)"
+  ezust_toll:
+    material: FEATHER
+    display-name: "&7Ezüst-toll"
+    custom-model-data: 6126
+    lore:
+      - "&7Ezüsthegyű toll — a fontos szavakat"
+      - "&7nem bízzuk lúdtollra."
+      - "&eBűvölő kellék (csak boltból)"
+  runakreta:
+    material: CLAY_BALL
+    display-name: "&bRúnakréta"
+    custom-model-data: 6127
+    lore:
+      - "&7Előrajzoló kréta rúnákhoz — a hiba"
+      - "&7itt még letörölhető. Utána nem."
+      - "&eBűvölő kellék (csak boltból)"
+  viaszgyertya:
+    material: CANDLE
+    display-name: "&eViasz-gyertya"
+    custom-model-data: 6128
+    lore:
+      - "&7Méhviasz gyertya éjszakai munkához —"
+      - "&7a rúna fénynél születik, de sötétben ég."
+      - "&eBűvölő kellék (csak boltból)"
+  horogkeszlet:
+    material: TRIPWIRE_HOOK
+    display-name: "&7Horogkészlet"
+    custom-model-data: 6129
+    lore:
+      - "&7Tucatnyi kovácsolt horog — a Bokic"
+      - "&7pontya válogatós."
+      - "&eHalász kellék (csak boltból)"
+  csalizsir:
+    material: SLIME_BALL
+    display-name: "&eCsalizsír"
+    custom-model-data: 6130
+    lore:
+      - "&7Illatos zsír a csalira — a titkos"
+      - "&7összetevőt a halak sem tudják."
+      - "&eHalász kellék (csak boltból)"
+  halofonal:
+    material: STRING
+    display-name: "&fHálófonal"
+    custom-model-data: 6131
+    lore:
+      - "&7Viaszolt fonal hálókötéshez —"
+      - "&7nem rohad, nem szakad, nem felejt."
+      - "&eHalász kellék (csak boltból)"
+  parafa_uszo:
+    material: OAK_BUTTON
+    display-name: "&6Parafa-úszó"
+    custom-model-data: 6132
+    lore:
+      - "&7Festett úszó — ha megbillen,"
+      - "&7a víz alatt eldőlt valami."
+      - "&eHalász kellék (csak boltból)"
+  sozott_csali:
+    material: DRIED_KELP
+    display-name: "&aSózott csali"
+    custom-model-data: 6133
+    lore:
+      - "&7Hordóban érlelt csali — messziről"
+      - "&7érzik. A halak szerint finom."
+      - "&eHalász kellék (csak boltból)"
+  koso:
+    material: SUGAR
+    display-name: "&fKősó"
+    custom-model-data: 6134
+    lore:
+      - "&7A Menedék sóbányáiból — étel"
+      - "&7nélküle csak takarmány."
+      - "&eSzakács kellék (csak boltból)"
+  sutopergamen:
+    material: PAPER
+    display-name: "&eSütőpergamen"
+    custom-model-data: 6135
+    lore:
+      - "&7Viaszolt lap a kemencébe — a lepény"
+      - "&7alja is megérdemli a tiszteletet."
+      - "&eSzakács kellék (csak boltból)"
+  ecet_eszencia:
+    material: HONEY_BOTTLE
+    display-name: "&6Ecet-eszencia"
+    custom-model-data: 6136
+    lore:
+      - "&7Hétszer erjesztett eszencia —"
+      - "&7egy csepp tartósít, kettő büntet."
+      - "&eSzakács kellék (csak boltból)"
+  fustoloforgacs:
+    material: STICK
+    display-name: "&8Füstölőforgács"
+    custom-model-data: 6137
+    lore:
+      - "&7Válogatott keményfa-forgács —"
+      - "&7a füst a láthatatlan fűszer."
+      - "&eSzakács kellék (csak boltból)"
+  vaj:
+    material: HONEYCOMB
+    display-name: "&eFriss Vaj"
+    custom-model-data: 6138
+    lore:
+      - "&7A Bokic-parti tanyák köpült vaja —"
+      - "&7amin ez megolvad, az már ünnep."
+      - "&eSzakács kellék (csak boltból)"

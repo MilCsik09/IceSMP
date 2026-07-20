@@ -40,6 +40,12 @@ public final class ShopManager {
      * {@link EscortManager} is constructed. Null = escort feature not wired.
      */
     private java.util.function.BooleanSupplier escortBonusCheck;
+    /** A karaván-látogatás készlet-sorsolási magja (rotáló kínálat — CaravanManager adja). */
+    private java.util.function.LongSupplier caravanStockSeed;
+
+    public void setCaravanStockSeed(final java.util.function.LongSupplier caravanStockSeed) {
+        this.caravanStockSeed = caravanStockSeed;
+    }
 
     public ShopManager(final ConfigManager configManager, final CurrencyManager currencyManager,
                        final FactionManager factionManager, final MessageManager messageManager) {
@@ -100,11 +106,24 @@ public final class ShopManager {
         final java.util.List<ConfigurationSection> entries =
                 new java.util.ArrayList<>(sectionsOf(shop.getConfigurationSection("items")));
 
-        // Escort-success perk: while the bonus window is open, the caravan also
-        // sells its bonus-items entries (appended after the regular stock).
-        if (CaravanManager.SHOP_NAME.equalsIgnoreCase(npcName)
-                && escortBonusCheck != null && escortBonusCheck.getAsBoolean()) {
-            entries.addAll(sectionsOf(shop.getConfigurationSection("bonus-items")));
+        if (CaravanManager.SHOP_NAME.equalsIgnoreCase(npcName)) {
+            // Rotáló karaván-készlet: érkezésenként a teljes áru-poolból stock-size darab
+            // sorsolódik (a látogatás stockSeed-jével determinisztikusan — a bolt a
+            // tartózkodás ALATT stabil, a következő érkezéskor fordul).
+            if (configManager.getBoolean("caravan.rotation.enabled", true)
+                    && caravanStockSeed != null) {
+                final int stockSize = Math.max(1, configManager.getInt("caravan.rotation.stock-size", 4));
+                if (entries.size() > stockSize) {
+                    java.util.Collections.shuffle(entries,
+                            new java.util.Random(caravanStockSeed.getAsLong()));
+                    entries.subList(stockSize, entries.size()).clear();
+                }
+            }
+            // Escort-success perk: while the bonus window is open, the caravan also
+            // sells its bonus-items entries (appended after the regular stock).
+            if (escortBonusCheck != null && escortBonusCheck.getAsBoolean()) {
+                entries.addAll(sectionsOf(shop.getConfigurationSection("bonus-items")));
+            }
         }
         return List.copyOf(entries);
     }

@@ -118,6 +118,13 @@ public final class CaravanManager {
         return true;
     }
 
+    /** A jelenlegi látogatás készlet-sorsolási magja (érkezésenként újrasorsolva). */
+    private volatile long stockSeed = System.currentTimeMillis();
+
+    public long getStockSeed() {
+        return stockSeed;
+    }
+
     /** Removes the merchant on plugin disable so it does not survive as an orphan. */
     public void shutdown() {
         removeMerchant();
@@ -133,6 +140,9 @@ public final class CaravanManager {
         final long now = System.currentTimeMillis();
         // Reschedule the NEXT arrival up front so a failed spawn still retries later.
         nextArrivalAt = now + intervalMillis();
+        // Rotáló készlet: minden érkezéskor új sorsolási mag — a ShopManager ebből
+        // válogatja ki, hogy MOST épp mit árul a karaván (caravan.rotation.*).
+        stockSeed = java.util.concurrent.ThreadLocalRandom.current().nextLong();
 
         final Location stop = nextStop();
         if (stop != null) {

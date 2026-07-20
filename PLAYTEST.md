@@ -1097,9 +1097,32 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         Lámpás: vendor-anyag igény).
   - [ ] **Storytelling ~kétszerezve:** tábortűz 15→29, Idegen 12→23, bárd 25→40, krónika
         12→19, szezon-átvezető 10→16 variáns.
+- [ ] **Tartalombővítés 4. hullám — vendor-gazdaság + jövedelem-csapok (ÚJ):**
+  - [ ] **39 új vendor-only szakma-kellék** (szakmánként 5 — össz. 73 unique anyag): a
+        **Szakmai Kellékbolt** (`/npc create kellekbolt`) mind a 42 vendor-árut árulja;
+        a boltok kínálata TELJESEN configból jön (economy.yml faction-shops — sorok
+        törölhetők/árazhatók/másolhatók bármely NPC-boltba). 16 recept mostantól kelléket
+        (is) kér (Kősó, Írnok-tinta, Edzőolaj, Sózott csali…).
+  - [ ] **Rotálódó karaván:** a karaván áru-poolja 12 tételes (4 régi + 8 RITKA alapanyag:
+        Emlékszilánk, Sárkánycsont-szilánk, Főnixpihe, Néma Kristály, Borostyán, Viharkvarc,
+        Könnycsepp, Kapu Parazsa — drágán); érkezésenként `stock-size` (5) darab sorsolódik
+        ("ma épp ezt hozta"), a látogatás alatt stabil. Kulcsok: `caravan.rotation.*`.
+  - [ ] **Felvásárló NPC** (`/npc create felvasarlo`): a kézben tartott nyersanyag jobb-kattra
+        eladva a `buyer.prices` fix árain, NAPI kerettel (`daily-cap` 250, PDC-ben követve,
+        éjfélkor nullázódik); PDC-s (egyedi) tárgyat nem vesz; a jóváírás a saját
+        frakció-valutában. Üzenet mutatja a maradék keretet.
+  - [ ] **Kopott erszény (fizikai pénz-tárgy, WoW-stílus):** a talált pénz TÁRGYKÉNT
+        érkezik — bőr-item, PDC-ben összeg + VÉLETLEN frakció-valuta; jobb-katt váltja be
+        a számlára (üzenet + hang). Admin-adás: `/iceitem erszeny <összeg> [darab] [játékos]`.
+  - [ ] **Mob pénz-drop:** ellenséges mob játékos-ölésekor ~20% eséllyel Kopott erszény
+        esik (1-4 + mob-szintenként +0,5); spawner-mob SOSEM dob (entitás-PDC jelölés,
+        restartot is túléli). Kulcsok: `mob-money-drop.*`.
+  - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
+        akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
+        `fishing-windfall.*`.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
-      `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
-      mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,
+      `/iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]` — tab-complete
+      mind az öt típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,
       custom enchant, „Készítette", affix-roll — bitre azonos a craftolttal); a `relikvia`
       force-móddal ír tulajdont; másik játékosnak adva a cél régió-szálán landol a tárgy.
 
