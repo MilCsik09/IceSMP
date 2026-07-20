@@ -489,3 +489,12 @@ player-caravan:
   convoy-hp: 120.0
   site-radius: 300
   cooldown-minutes: 90
+
+# ===== B21 — Bestiárium: mérföldkövek (formátum: "<darab>:<veret>[:broadcast]") =====
+bestiary:
+  enabled: true
+  milestones:
+    mobs: [ "10:25", "25:60", "50:150:broadcast" ]
+    recipes: [ "10:25", "50:100", "100:250:broadcast" ]
+    territories: [ "5:30", "10:80:broadcast" ]
+    bosses: [ "1:50", "3:150:broadcast" ]

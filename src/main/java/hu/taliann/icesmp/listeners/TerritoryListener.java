@@ -23,6 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class TerritoryListener implements Listener {
 
+    /** B21 — setter-injektált: első határátlépés bestiárium-bejegyzése. */
+    private volatile hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
+
+    public void setBestiaryManager(final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager) {
+        this.bestiaryManager = bestiaryManager;
+    }
+
     private final TerritoryManager territoryManager;
     private final hu.taliann.icesmp.managers.TerritoryProtectionService protectionService;
     private final ConfigManager configManager;
@@ -73,6 +80,11 @@ public final class TerritoryListener implements Listener {
 
         // VISIT_TERRITORY quest objectives complete on border crossing.
         questManager.handleTerritoryEnter(player, territory.id());
+        // B21 — az első belépés lajstrom-bejegyzés.
+        final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
+        if (bestiaryRef != null) {
+            bestiaryRef.record(player, hu.taliann.icesmp.managers.BestiaryManager.Category.TERRITORIES, territory.id());
+        }
 
         // Kárhozat-zóna: belépéskor PvP-grace indul (spawn-kill védelem), kilépéskor törlődik.
         if (territory.type() == hu.taliann.icesmp.data.TerritoryType.DOOM_GATE) {

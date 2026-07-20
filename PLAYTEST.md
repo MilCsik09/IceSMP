@@ -1126,6 +1126,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **B21 — Bestiárium / gyűjtő-album (ÚJ):**
+  - [ ] `/bestiarium` (alias /bestiary, /lajstrom): csak olvasható áttekintő GUI — 4 kategória
+        (Szörnyek/Receptek/Territóriumok/Világbossok) számlálóval; a haladás player-PDC-ben
+        (CSV-halmazok), nincs külön store.
+  - [ ] Hookok: mob-faj első elejtése (MONITOR), boss-archetípus (WorldBossManager.isWorldBoss),
+        recept első craftja (ProfessionRecipeBookListener setter-hook), territórium első
+        belépés (TerritoryListener setter-hook).
+  - [ ] Mérföldkövek: world.yml `bestiary.milestones.*` ("darab:veret[:broadcast]") — a jutalom
+        FIZIKAI veretben érkezik; a nagy mérföldkő broadcastol.
 - [ ] **B6 — Játékos-indított karaván (ÚJ):**
   - [ ] `/faction caravan send <összeg>` (csak KIRÁLY): a kasszából rakomány indul; sorsolt
         őrzőpont a vadonban (EventSpawnGuard `player-caravan` mátrix-sor: territórium/claim/

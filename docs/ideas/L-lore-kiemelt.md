@@ -646,7 +646,7 @@ hangulatában is érezhető.
 **Építőkövek:** Esemény-managerek súlyozott sorsolása, szezonliga-scheduler.
 **Buktatók:** Csak finomhangolás, nem új tartalom — a hatás könnyen észrevehetetlen marad,
 ha a szorzók túl kicsik.
-### B21. Bestiárium / gyűjtő-album
+### B21. Bestiárium / gyűjtő-album `[KÉSZ ✅]`
 
 > **Lore-horgony:** a krónikás-lajstrom műfaj (kódex-függelékek) bestiárium-formában
 

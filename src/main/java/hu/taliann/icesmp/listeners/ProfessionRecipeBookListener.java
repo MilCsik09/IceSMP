@@ -37,6 +37,13 @@ import java.util.Map;
  */
 public final class ProfessionRecipeBookListener implements Listener {
 
+    /** B21 — setter-injektált: az első craft bestiárium-bejegyzése. */
+    private volatile hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
+
+    public void setBestiaryManager(final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager) {
+        this.bestiaryManager = bestiaryManager;
+    }
+
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private final ProfessionManager professionManager;
@@ -152,6 +159,11 @@ public final class ProfessionRecipeBookListener implements Listener {
         }
         if (craftXp > 0) {
             professionManager.addXpFor(player, recipe.profession(), craftXp);
+        }
+        // B21 — a recept első elkészítése lajstrom-bejegyzés.
+        final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
+        if (bestiaryRef != null) {
+            bestiaryRef.record(player, hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id());
         }
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.6F, 1.2F);
         player.sendMessage(messageManager.get("profession-recipe-crafted", "&aElkészítetted: &e%s", recipe.displayName()));

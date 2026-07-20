@@ -153,3 +153,10 @@ Néhány küldetés egy-egy **fejezethez** (szezonhoz) kötődik: csak az adott 
 vehetők fel, és a történetük a szezon ívét meséli. Szezonváltáskor a krónika **továbblapoz**:
 a régi fejezet küldetései lezárulnak (amit már felvettél, azt még befejezheted!), és új
 fejezet-küldetések nyílnak. Figyeld a „📖 Új fejezet nyílik” üzenetet!
+
+## Bestiárium — a krónikás-lajstromod 📜
+
+A `/bestiarium` paranccsal megnyílik a **lajstromod**: a krónikások számon tartják, hány
+szörny-FAJT ejtettél el, hány receptet készítettél el először, hány territóriumot jártál be,
+és hány világboss-archetípust győztél le. A **mérföldkövek** (pl. 10/25/50 faj) veret-jutalmat
+adnak a kezedbe, a nagy mérföldköveknél az egész szerver értesül. Hónapokra ad gyűjtögető-célt!
