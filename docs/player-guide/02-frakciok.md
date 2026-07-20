@@ -42,7 +42,8 @@ A kódex szerint minden népnek megvan a maga konyhája — és a frakció-aura 
   **Fagyasztott Tavi Pisztrángja**), enyhe honvágy tör rád (rövid Éhség + emlékeztető).
   A Pisztráng rövid **felszívódás-pajzsot** is ad.
 - **Láng (RED):** tojás-ételen él — a **Fűszeres Főnixtojás-Rántotta** (vagy tökpite/torta)
-  nullázza a honvágyat; a Rántotta rövid **tűz-ellenállást** is ad.
+  nullázza a honvágyat; a Rántotta rövid **tűz-ellenállást** is ad. A Fagy népének ünnepi
+  étke, a **Sárkány-pörkölt** szintén hazai étel — és rövid **Erőt** ad.
 - **Menedék:** a **Tiltott Kakaóbabos Sütemény** (a cukrászok Asterlayna Gyümölcsének hívják)
   fogyasztva **„robban"** — feldob, felgyorsít, csillagszóró-effekttel. A Bankárszövetség
   hivatalosan tiltja. Hivatalosan.

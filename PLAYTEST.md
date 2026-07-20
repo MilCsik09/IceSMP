@@ -1061,6 +1061,25 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       jutalmat (repeat-reward-ratio) és a felfedező nevét látják; `first-finder-only: true`
       esetén csak az első kap bármit. A jelölés PDC-s (relog után sem duplázható); a check
       30 mp-enként, a játékos saját szálán fut. Kulcsok: `hidden-spots.*` (world.yml).
+- [ ] **Tartalombővítés 2. hullám (ÚJ):**
+  - [ ] **6 új unique anyag** (`/iceitem unique …`): jegviragpor, parazsmag, viharkvarc,
+        melysegi_borostyan (régészeti leletként is!), sarkanycsont_szilank (boss-only drop),
+        fonixpihe (mob-drop). Craft-védelem (nem rakható le/ehető/olvasztható) él rájuk.
+  - [ ] **16 új recept**, köztük az 5 új signature fegyver: Glatziendorfi Jégtörő (lassított
+        célon +25%), V. Miinus Haragja (LOOT-ONLY tervrajz; <35% HP-n +20%), Sárkánycsont Íj
+        (pierce +2), I. Zhoris Lángnyelve (LOOT-ONLY; gyújtás + égő célon +15%), Napfogyatkozás
+        (éjjel gyorsabb + erősebb nyíl) — kulcsok: `signature.jegtoro/miinus/sarkanycsont/
+        langnyelv/napfogyatkozas.*`. Plusz: Sárkány-pörkölt (BLUE étel: hal-kötelezettség +
+        rövid Erő), Sárkánycsont Pajzs, Viharüveg Lámpás, Vándor Úti Kenyere, Bokic-parti
+        Gyógytea, Fagypáncél/Főnixtoll Tekercse (üllőre vihető iskola-counter könyvek).
+  - [ ] **Új loot-sorok:** Fekete Csont (undead named), A Néma Királynő Suttogása (undead
+        BOSS-only named, nagyon ritka), Főnixpihe (mob), Sárkánycsont-szilánk (boss).
+  - [ ] **+3 /lore téma:** `melyseg` (Mélység Népe), `korszakok` (a Könyv), `bokic` (a folyó).
+  - [ ] **Storytelling-poolok nőttek:** tábortűz 6→15, Idegen 6→12, bárd 15→25, krónika 8→12,
+        szezon-átvezető 6→10 variáns; +2 MOTD-variáns (konyv, suttogas).
+  - [ ] **+10 quest** (jegvirag_szuret, parazs_gyujtes, borostyan_kutatas, fonixpihe_vadaszat,
+        sarkanycsont_kutato, porkolt_lakoma, uti_kenyer, viharkvarc_fejto, korrupt_irtas,
+        karhozat_zarandoklat — az utóbbi territory-id-ját igazítsd a szerveredhez!).
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

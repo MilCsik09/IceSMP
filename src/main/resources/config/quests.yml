@@ -841,6 +841,151 @@ quests:
         type: "OWN"
         amount: 40
 
+  # --- Tartalombővítés (2. hullám): az új anyagokhoz/ételekhez kötött questek ---
+  jegvirag_szuret:
+    display-name: "Jégvirág-szüret"
+    description: "Gyűjts 12 búzavirágot a Jégvirág-por őrléséhez."
+    requires-faction: "BLUE"
+    repeatable: true
+    cooldown-hours: 24
+    objective:
+      type: "COLLECT_ITEMS"
+      materials:
+        - "CORNFLOWER"
+      count: 12
+    rewards:
+      class-xp: 60
+      currency:
+        type: "OWN"
+        amount: 25
+  parazs_gyujtes:
+    display-name: "Parázs a kohóknak"
+    description: "Szerezz 8 lángrúd-port a Parázsmag kinyeréséhez."
+    requires-faction: "RED"
+    repeatable: true
+    cooldown-hours: 24
+    objective:
+      type: "COLLECT_ITEMS"
+      materials:
+        - "BLAZE_POWDER"
+      count: 8
+    rewards:
+      class-xp: 70
+      currency:
+        type: "OWN"
+        amount: 30
+  borostyan_kutatas:
+    display-name: "Borostyán a mélyből"
+    description: "Hozz fel 6 nyers aranyat a Mélységi Borostyán tisztításához."
+    repeatable: true
+    cooldown-hours: 48
+    objective:
+      type: "COLLECT_ITEMS"
+      materials:
+        - "RAW_GOLD"
+      count: 6
+    rewards:
+      class-xp: 60
+      currency:
+        type: "OWN"
+        amount: 25
+  fonixpihe_vadaszat:
+    display-name: "Főnixpihe-vadászat"
+    description: "Ejts el 10 lángőrt (blaze) — pihéik a Napfogyatkozás íjához kellenek."
+    requires-faction: "RED"
+    objective:
+      type: "KILL_MOBS"
+      count: 10
+      entity-type: "BLAZE"
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 45
+  sarkanycsont_kutato:
+    display-name: "Sárkánycsont-kutató"
+    description: "Terítsd le a vidék erősebb szörnyeit — a csontjaik közt sárkánycsont lapulhat."
+    requires-faction: "BLUE"
+    objective:
+      type: "KILL_MOBS"
+      count: 8
+      min-mob-level: 5
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 50
+  porkolt_lakoma:
+    display-name: "Ünnepi lakoma"
+    description: "Fogyassz el egy tál pörköltet — Glatziendorf ünnepi étke erőt ad."
+    requires-faction: "BLUE"
+    repeatable: true
+    cooldown-hours: 72
+    objective:
+      type: "CONSUME_ITEMS"
+      materials:
+        - "RABBIT_STEW"
+      count: 1
+    rewards:
+      class-xp: 50
+      items:
+        - "COOKED_SALMON:4"
+  uti_kenyer:
+    display-name: "A vándor konyhája"
+    description: "Süss 6 kenyeret — a karavánok úti kenyérként viszik magukkal."
+    repeatable: true
+    cooldown-hours: 24
+    objective:
+      type: "CRAFT_ITEMS"
+      materials:
+        - "BREAD"
+      count: 6
+    rewards:
+      class-xp: 40
+      currency:
+        type: "OWN"
+        amount: 15
+  viharkvarc_fejto:
+    display-name: "A vihar kövei"
+    description: "Gyűjts 24 kvarcot a Viharkvarc fejtéséhez."
+    repeatable: true
+    cooldown-hours: 48
+    objective:
+      type: "COLLECT_ITEMS"
+      materials:
+        - "QUARTZ"
+      count: 24
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 35
+  korrupt_irtas:
+    display-name: "A rontás ellen"
+    description: "Irtsd a vadon fajzatait — a Fa minden leölt szörnnyel könnyebben lélegzik."
+    repeatable: true
+    cooldown-hours: 24
+    objective:
+      type: "KILL_MOBS"
+      count: 20
+    rewards:
+      class-xp: 90
+      currency:
+        type: "OWN"
+        amount: 30
+  # A zóna-id-t igazítsd a saját Kárhozat-zónád /territory id-jához!
+  karhozat_zarandoklat:
+    display-name: "Zarándoklat a Kapuhoz"
+    description: "Járj a Kárhozat Kapujánál — és gyere vissza élve."
+    objective:
+      type: "VISIT_TERRITORY"
+      territory: "karhozat-kapuja"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 60
+
   # --- Onboarding-lánc (IDEAS A5): "az új játékos első 10 perce vezetett" ---
   # Az "onboarding.first-quest" (lásd fent) állítja fel a láncot ELSŐ belépéskor;
   # innentől a "next" mező viszi tovább automatikusan, lépésenként:

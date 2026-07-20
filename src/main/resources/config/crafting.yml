@@ -108,6 +108,21 @@ signature:
     damage-mult: 0.8           # bejövő sebzés-szorzó (0.8 = -20%)
   kantar:
     speed-add: 0.05            # a felkantározott hátas sebesség-bónusza
+  # --- 2. hullám signature fegyverek (LORE_REFERENCE tervtábla) ---
+  jegtoro:
+    slowed-bonus: 0.25         # Jégtörő: lassított célon +25% sebzés
+  miinus:
+    low-health-threshold: 0.35 # V. Miinus Haragja: e HP-arány ALATT él a bónusz…
+    low-health-bonus: 0.2      # …+20% sebzés (a megfagyott király haragja)
+  sarkanycsont:
+    pierce-add: 2              # Sárkánycsont Íj: a nyíl pierce-szintje +2 (átüti a sorfalat)
+  langnyelv:
+    ignite-chance: 0.2         # Lángnyelv: gyújtás-esély találatkor
+    ignite-ticks: 40           # …2 mp égés
+    burning-bonus: 0.15        # égő célon +15% sebzés
+  napfogyatkozas:
+    night-velocity-mult: 1.15  # Napfogyatkozás: éjjel gyorsabb lövedék…
+    night-damage-bonus: 0.25   # …és +25% sebzés a becsapódáskor
   # Perinfernicitas (RED)
   tuzkopo:
     arrow-velocity-mult: 1.5

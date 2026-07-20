@@ -87,7 +87,7 @@ ha minden feltétel megvan (a hozzávalók a táskádból fogynak).
   megtanulod a receptet (utána már a recept-könyvből craftolható, ha megvan hozzá a szint).
 
 **Egyedi köztes alapanyagok:** egyes szakmák **egyedi alapanyagot** gyártanak (pl. *Tiszta
-Vasesszencia*, *Rúnapor*), amit a magasabb receptek hozzávalóként kérnek — ezek nem sima itemek,
+Vasesszencia*, *Rúnapor*, *Jégvirág-por*, *Parázsmag*, *Viharkvarc*, *Mélységi Borostyán*), amit a magasabb receptek hozzávalóként kérnek — ezek nem sima itemek,
 hanem szakma-specifikus félkész anyagok (mint WoW-ban a „Spirit Dust"). A recept-könyv jelzi, ha
 egy recepthez egyedi alapanyag kell (kék színnel).
 
@@ -149,8 +149,8 @@ a bónuszok a leírásban látszanak (negatív affix pirossal).
 > betakarítása (virág, érett termény) **másfélszeres szakma-XP-t** ad — érdemes az
 > ablakra időzíteni az aratást.
 
-> 📜 **Loot-only tervrajzok:** a legerősebb mestermunkák (pl. a netherit csúcs-szerszámok
-> és a *Sárkányvért*) tervrajza **kizárólag világbossoktól és nehéz eseményektől** eshet —
+> 📜 **Loot-only tervrajzok:** a legerősebb mestermunkák (pl. a netherit csúcs-szerszámok,
+> a *Sárkányvért*, a *V. Miinus Haragja* és az *I. Zhoris Lángnyelve*) tervrajza **kizárólag világbossoktól és nehéz eseményektől** eshet —
 > boltban nem kapható. A recept-könyvben lila sor jelzi: „Csak legendás ellenfelektől
 > szerezhető tervrajz".
 

@@ -81,6 +81,8 @@ factions:
     # A DARK-nak van étele (Mortengradi Hamukenyér: éjjellátás-buff), de honvágy-
     # kötelezettsége NINCS — a Kitaszítottaknak nincs otthonuk, amire honvágyuk lehetne.
     hamukenyer-buff-seconds: 60
+    # 2. hullám — Sárkány-pörkölt (BLUE ünnepi étel): hal-kötelezettséget teljesít + rövid Erő.
+    porkolt-buff-seconds: 45
   # ===== A Suttogók (K9 — rejtett státusz + lelepleződés) =====
   # A Suttogó rejtett státusz a látható frakció fölött (titkos /suttogas csatorna). A Sötét
   # Rítus: Suttogás-meghívóval (élőhalott-drop), éjjel, sculkon állva, egyedül, SHIFT+jobb

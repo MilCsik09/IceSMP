@@ -40,6 +40,8 @@ public final class FactionFoodListener implements Listener {
     public static final String SUTI = "kakaobabos_sutemeny";
     /** DARK-étel: buffot ad, de a Kitaszítottakra NINCS honvágy-kötelezettség (nincs otthonuk). */
     public static final String HAMUKENYER = "mortengradi_hamukenyer";
+    /** 2. hullám — BLUE ünnepi étel (a tervtábla Sárkány-pörköltje): hal-kötelezettség + rövid Erő. */
+    public static final String PORKOLT = "sarkany_porkolt";
 
     /** Vanília ételek, amelyek teljesítik a BLUE hal-kötelezettségét. */
     private static final Set<Material> FISH_FOODS = Set.of(
@@ -83,7 +85,7 @@ public final class FactionFoodListener implements Listener {
         // A kötelezettség teljesítése: a frakcióhoz illő (vanília vagy signature) étel frissíti
         // az időbélyeget — a honvágy-debuff visszaszámlálója újraindul.
         final boolean homeFood = switch (faction) {
-            case BLUE -> FISH_FOODS.contains(item.getType()) || PISZTRANG.equals(sig);
+            case BLUE -> FISH_FOODS.contains(item.getType()) || PISZTRANG.equals(sig) || PORKOLT.equals(sig);
             case RED -> EGG_FOODS.contains(item.getType()) || RANTOTTA.equals(sig);
             default -> false;
         };
@@ -99,6 +101,9 @@ public final class FactionFoodListener implements Listener {
         } else if (RANTOTTA.equals(sig)) {
             final int seconds = Math.max(1, configManager.getInt("factions.food-duty.rantotta-buff-seconds", 60));
             player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, seconds * 20, 0, true, true, true));
+        } else if (PORKOLT.equals(sig)) {
+            final int seconds = Math.max(1, configManager.getInt("factions.food-duty.porkolt-buff-seconds", 45));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, seconds * 20, 0, true, true, true));
         } else if (HAMUKENYER.equals(sig)) {
             final int seconds = Math.max(1, configManager.getInt("factions.food-duty.hamukenyer-buff-seconds", 60));
             player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, seconds * 20, 0, true, true, true));

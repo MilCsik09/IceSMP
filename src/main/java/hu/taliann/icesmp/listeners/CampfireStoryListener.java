@@ -43,7 +43,15 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „Bokic vize sosem fagy be. Azt mondják, a folyó egy alvó szív ere.”</gray>",
             "<gray>🔥 „A Kapun túlról nem jött vissza senki. Csak a hamu — az minden tavasszal visszajön.”</gray>",
             "<gray>🔥 „A Számvevők mindent felírnak. De a tábortűz meséit sosem — azok a miénk.”</gray>",
-            "<gray>🔥 „A Néma Királynő nem gonosz, fiam. Csak nagyon-nagyon régóta vár valakire.”</gray>"
+            "<gray>🔥 „A Néma Királynő nem gonosz, fiam. Csak nagyon-nagyon régóta vár valakire.”</gray>",
+            "<gray>🔥 „I. Zhoris lángmadarai? Á, azok nem madarak voltak. De ezt itt ne mondd hangosan.”</gray>",
+            "<gray>🔥 „Glatziendorf falait nem kő tartja. Emlék tartja. Ezért nem dőlnek le soha.”</gray>",
+            "<gray>🔥 „A Mélység Népe nem tűnt el, fiam. Csak elhallgatott. Az nem ugyanaz.”</gray>",
+            "<gray>🔥 „Régen a két nép egy nyelvet beszélt. A szavak maradtak — csak a hangsúly lett fegyver.”</gray>",
+            "<gray>🔥 „Az Idegen? Láttam egyszer. Vagy ő látott engem. Azóta se tudom, melyik a rosszabb.”</gray>",
+            "<gray>🔥 „A Számvevők mindent tudnak a pénzedről. De hogy MIÉRT gyűjtöd — azt csak a tűz.”</gray>",
+            "<gray>🔥 „Minden korszak úgy kezdődik, hogy valaki tüzet rak. Így, mint mi most.”</gray>",
+            "<gray>🔥 „A sculk alatt nem üresség van. Fülek vannak. Ezért suttogunk a tűznél is.”</gray>"
     };
 
     public CampfireStoryListener(final JavaPlugin plugin, final ConfigManager configManager,

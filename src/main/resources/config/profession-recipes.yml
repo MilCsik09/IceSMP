@@ -1433,6 +1433,183 @@ profession-recipes:
     result: { material: RABBIT_FOOT, amount: 1, signature: szellemszarvas_bubaj }
     ingredients: [ "RABBIT_FOOT:1", "GOLDEN_CARROT:8", "AMETHYST_SHARD:8", "unique:vad_esszencia:2" ]
 
+  # =========================================================
+  # --- Tartalombővítés (2. hullám): köztes anyagok, signature fegyverek,
+  # --- ételek, tekercsek. A lore-kötések: docs/LORE_REFERENCE.md tervtábla.
+  # =========================================================
+  jegviragpor_orles:
+    profession: herbalist
+    level: 18
+    display-name: "Jégvirág-por őrlése"
+    category: "Alapanyag"
+    result: { unique: jegviragpor, amount: 2 }
+    ingredients: [ "CORNFLOWER:3", "SUGAR:2", "ICE:1" ]
+  parazsmag_kinyeres:
+    profession: alchemist
+    level: 20
+    display-name: "Parázsmag kinyerése"
+    category: "Alapanyag"
+    result: { unique: parazsmag, amount: 2 }
+    ingredients: [ "BLAZE_POWDER:2", "MAGMA_CREAM:1", "COAL_BLOCK:1" ]
+  viharkvarc_fejtes:
+    profession: miner
+    level: 22
+    display-name: "Viharkvarc fejtése"
+    category: "Alapanyag"
+    result: { unique: viharkvarc, amount: 2 }
+    ingredients: [ "QUARTZ:4", "REDSTONE:8", "COPPER_INGOT:2" ]
+  melysegi_borostyan_tisztitas:
+    profession: miner
+    level: 30
+    display-name: "Mélységi Borostyán tisztítása"
+    category: "Alapanyag"
+    result: { unique: melysegi_borostyan, amount: 1 }
+    ingredients: [ "RAW_GOLD:2", "HONEYCOMB:2", "unique:rezgo_rez_otvozet:1" ]
+  # --- BLUE signature fegyverek (tervtábla: Jégtörő / V. Miinus Haragja / Sárkánycsont Íj) ---
+  glatziendorfi_jegtoro:
+    profession: armorer
+    level: 46
+    learn: blueprint
+    faction: BLUE
+    display-name: "Glatziendorfi Jégtörő"
+    lore:
+      - "&7A kikötő jégtörőinek mintájára kovácsolt"
+      - "&7csatabárd — ami egyszer megdermedt,"
+      - "&7azt ez a fejsze megtöri."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegtoro }
+    ingredients: [ "DIAMOND_AXE:1", "NETHERITE_INGOT:1", "unique:jegviragpor:3", "unique:sarkanycsont_szilank:1" ]
+  miinus_haragja:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    faction: BLUE
+    display-name: "V. Miinus Haragja"
+    lore:
+      - "&7A megfagyott király pengéje: minél mélyebb"
+      - "&7a viselő sebe, annál hidegebben üt vissza."
+      - "&8„A tél nem kegyelmez — emlékezik.”"
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: miinus_haragja }
+    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:2", "unique:sarkanycsont_szilank:2", "unique:osi_ereklyeszilank:1" ]
+  sarkanycsont_ij:
+    profession: armorer
+    level: 44
+    learn: blueprint
+    faction: BLUE
+    display-name: "Sárkánycsont Íj"
+    lore:
+      - "&7Kallan elhullott sárkányainak csontjából"
+      - "&7hajlított íj — nyila átüti a sorfalat."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: BOW, amount: 1, affix-tier: crafted, signature: sarkanycsont_ij }
+    ingredients: [ "BOW:1", "unique:sarkanycsont_szilank:2", "STRING:6", "unique:vad_esszencia:2" ]
+  # --- RED signature fegyverek (tervtábla: I. Zhoris Lángnyelve / Napfogyatkozás) ---
+  zhoris_langnyelve:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    faction: RED
+    display-name: "I. Zhoris Lángnyelve"
+    lore:
+      - "&7Az első lángkirály kardja — a penge éle"
+      - "&7sosem hűl ki, s a sebek, amiket ejt,"
+      - "&7parázslanak, mint az emléke."
+    category: "Vérszavanna (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: zhoris_langnyelve }
+    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:2", "unique:parazsmag:3", "unique:osi_ereklyeszilank:1" ]
+  napfogyatkozas:
+    profession: armorer
+    level: 46
+    learn: blueprint
+    faction: RED
+    display-name: "Napfogyatkozás"
+    lore:
+      - "&7Fekete obszidián-íj, amely akkor a"
+      - "&7legerősebb, amikor a nap lehunyja szemét —"
+      - "&7éjjel a nyila árnyékból csap le."
+    category: "Vérszavanna (tervrajz)"
+    result: { material: BOW, amount: 1, affix-tier: crafted, signature: napfogyatkozas }
+    ingredients: [ "BOW:1", "unique:fonixpihe:3", "OBSIDIAN:4", "unique:parazsmag:2" ]
+  # --- Ételek + neves darabok ---
+  sarkany_porkolt:
+    profession: cook
+    level: 30
+    faction: BLUE
+    display-name: "Sárkány-pörkölt"
+    lore:
+      - "&7Glatziendorf ünnepi étke: lassan fő,"
+      - "&7gyorsan melegít — a tenger íze és a"
+      - "&7tűzhely ereje egy tálban."
+    category: "Étel"
+    result: { material: RABBIT_STEW, amount: 1, signature: sarkany_porkolt }
+    ingredients: [ "COOKED_COD:2", "COOKED_SALMON:1", "BOWL:1", "unique:jegviragpor:1" ]
+  vandor_uti_kenyer:
+    profession: cook
+    level: 12
+    display-name: "Vándor Úti Kenyere"
+    lore:
+      - "&7Kétszer sütött, mézzel kent úti kenyér —"
+      - "&7a karavánok esküsznek rá."
+    category: "Étel"
+    result: { material: BREAD, amount: 3 }
+    ingredients: [ "WHEAT:6", "HONEY_BOTTLE:1" ]
+  bokic_gyogytea:
+    profession: herbalist
+    level: 24
+    display-name: "Bokic-parti Gyógytea"
+    lore:
+      - "&7Hajnali szedésű füvek forrázata a Bokic"
+      - "&7partjáról — átmelegít és tisztán tart."
+    category: "Ital"
+    result: { material: HONEY_BOTTLE, amount: 1 }
+    ingredients: [ "unique:gyogy_kivonat:1", "GLASS_BOTTLE:1", "SUGAR:1" ]
+  sarkanycsont_pajzs:
+    profession: armorer
+    level: 40
+    faction: BLUE
+    display-name: "Sárkánycsont Pajzs"
+    lore:
+      - "&7Sárkánycsont-lemezekkel erősített pajzs —"
+      - "&7ami nekicsapódik, megdermed egy szívverésre."
+    category: "Páncél"
+    result: { material: SHIELD, amount: 1, affix-tier: crafted }
+    ingredients: [ "SHIELD:1", "unique:sarkanycsont_szilank:1", "IRON_INGOT:4" ]
+  viharuveg_lampas:
+    profession: enchanter
+    level: 28
+    display-name: "Viharüveg Lámpás"
+    lore:
+      - "&7Viharkvarc-szilánk ég az üveg mögött —"
+      - "&7a fénye nem alszik ki, mert a vihar"
+      - "&7sosem fárad el."
+    category: "Különleges"
+    result: { material: LANTERN, amount: 1 }
+    ingredients: [ "LANTERN:1", "unique:viharkvarc:2", "GLASS:4" ]
+  # --- Bűvölő iskola-counter tekercsek (Fagypáncél / Főnixtoll könyv-formában, üllőhöz) ---
+  fagypancel_tekercs:
+    profession: enchanter
+    level: 35
+    display-name: "Fagypáncél Tekercse"
+    lore:
+      - "&7Glatziendorf jégvértjének rúnája könyvbe"
+      - "&7írva — üllőnél páncélra vihető."
+    category: "Bűvölés"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fagypancel:1" }
+    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:jegviragpor:2" ]
+  fonixtoll_tekercs:
+    profession: enchanter
+    level: 35
+    display-name: "Főnixtoll Tekercse"
+    lore:
+      - "&7Soleil főnixeinek pihéjével írt rúna —"
+      - "&7üllőnél páncélra vihető tűz-oltalom."
+    category: "Bűvölés"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fonixtoll:1" }
+    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:fonixpihe:2" ]
+
 # ===== I14 — „Készítette: X" címke (kódex VIII.: a mester keze alól kikerülő mű
 # a nevét is viseli). A NEVES/gear recept-eredmények PDC-ben (crafted_by/crafted_at)
 # és halvány lore-sorban viszik a készítő nevét — a piacon is megmarad. A bulk

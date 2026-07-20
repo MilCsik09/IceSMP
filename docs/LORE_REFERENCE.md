@@ -96,12 +96,15 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Kallan Szeletelője | BLUE | íj (K2) | ✅ implementálva: +50% nyíl-sebesség, +15% bónusz-sebzés (`signature.kallan.*`) |
 | Glatziendorfi Jégvért | BLUE | mellvért (K2) | ✅ implementálva: viselve −20% sebzés (`signature.jegvert.damage-mult`) |
 | Jégsárkány-Kantár | BLUE | hátas-felszerelés (K2) | ✅ implementálva: hátas +sebesség, egyszeri, elfogy (`signature.kantar.speed-add`) |
-| Glatziendorfi Jégtörő / V. Miinus Haragja / Sárkánycsont Íj | BLUE | fegyverek | később tervezendő |
-| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6) | ✅ Pisztráng implementálva: séf-recept + felszívódás-buff; hal-kötelezettség él (`factions.food-duty`) |
+| Glatziendorfi Jégtörő | BLUE | csatabárd (2. hullám) | ✅ implementálva: lassított célon +25% sebzés (`signature.jegtoro.slowed-bonus`) |
+| V. Miinus Haragja | BLUE | kard (2. hullám, loot-only tervrajz) | ✅ implementálva: a viselő alacsony HP-ján +20% sebzés (`signature.miinus.*`) |
+| Sárkánycsont Íj | BLUE | íj (2. hullám) | ✅ implementálva: a nyíl pierce-szintje +2 (`signature.sarkanycsont.pierce-add`) |
+| Fagyasztott Tavi Pisztráng / Sárkány-pörkölt | BLUE | étel (K6 + 2. hullám) | ✅ mindkettő implementálva: Pisztráng = felszívódás; Pörkölt = rövid Erő; mindkettő hal-kötelezettséget teljesít |
 | Pyralingradi Tűzköpő / Ostrom-számszeríj | RED | számszeríj (K3) | ✅ Tűzköpő implementálva: Quick Charge II + lövedék ×1.5 (`signature.tuzkopo.*`) |
 | A Vérszavanna Agyara | RED | kard/lándzsa (K3) | ✅ implementálva: +15% sebzés, off-hand baltával +30% (`signature.agyar.*`) |
 | Főnix-Tollköpeny | RED | kiegészítő (K3) | ✅ implementálva: viselve tűz/láva/forró-blokk immunitás (`signature.tollkopeny.fire-immunity`) |
-| I. Zhoris Lángnyelve / Napfogyatkozás | RED | fegyverek | később tervezendő |
+| I. Zhoris Lángnyelve | RED | kard (2. hullám, loot-only tervrajz) | ✅ implementálva: gyújtás-esély + égő célon +15% (`signature.langnyelv.*`) |
+| Napfogyatkozás | RED | íj (2. hullám) | ✅ implementálva: éjjel gyorsabb lövedék + +25% sebzés (`signature.napfogyatkozas.*`) |
 | Fűszeres Főnixtojás-Rántotta | RED | étel (K6) | ✅ implementálva: séf-recept + tűz-ellenállás; tojás-kötelezettség él (`factions.food-duty`) |
 | Vasművek Akadémiájának Csákánya | NEUTRAL | szerszám (K4) | ✅ implementálva: érc-töréskor +20% extra drop, bányász-láz alatt szünetel (`signature.csakany.*`) |
 | Bokic-menti Horgászbot | NEUTRAL | szerszám (K4) | ✅ implementálva: +20% dupla fogás, halászati láz alatt szünetel (`signature.horgaszbot.*`) |
@@ -111,8 +114,10 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | ✅ implementálva: cooldownos ideiglenes gyors hátas (`signature.szarvas.*`) |
 | Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |
 | Fekete Villám Szilánk | DARK/közös | crafting-alapanyag (K5) | ✅ implementálva: `profession-materials.osi_ereklyeszilank` display; magas-tier receptek hozzávalója |
+| Jégvirág-por / Parázsmag / Viharkvarc / Mélységi Borostyán | vegyes | köztes anyagok (2. hullám) | ✅ profession-materials (CMD 6005-6008); borostyán régészeti lelet is |
+| Sárkánycsont-szilánk / Főnixpihe | BLUE/RED | mob/boss-drop anyagok (2. hullám) | ✅ loot.yml sorok (szilánk boss-only); a 2. hullám fegyver-receptjeinek hozzávalói |
 | Eleftheria Könnye | DARK/közös | relikvia (K5) | ✅ implementálva: egy-példányos relikvia + DARK-kapus rituálé-oltár (relics.yml) |
-| Megrontott Elit Páncél / Fekete Csont / A Néma Királynő suttogása | DARK/közös | mob-drop (K5) | Elit Páncél ✅ (undead-only named drop); Fekete Csont / suttogása → későbbi drop-bővítés |
+| Megrontott Elit Páncél / Fekete Csont / A Néma Királynő Suttogása | DARK/közös | mob-drop (K5 + 2. hullám) | ✅ mindhárom implementálva: undead-only named drop sorok (a Suttogása boss-only, nagyon ritka) |
 | Csontveret | DARK | valuta | a DARK valuta display-neve (K1 reskin) |
 
 > **A Mélység Népe (törpök) — ✅ kanonizálva** (kódex I. fejezet): Asterlayna testének mélybe süllyedt

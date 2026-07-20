@@ -46,6 +46,12 @@ public final class SignatureItemListener implements Listener {
     public static final String HORGASZBOT = "bokic_horgaszbot";
     public static final String BANKBETET = "smaragdko_bankbetet";
     public static final String SZARVASBUBAJ = "szellemszarvas_bubaj";
+    // 2. hullám — a LORE_REFERENCE tervtábla "később tervezendő" fegyverei:
+    public static final String JEGTORO = "glatziendorfi_jegtoro";
+    public static final String MIINUS_KARD = "miinus_haragja";
+    public static final String SARKANYCSONT_IJ = "sarkanycsont_ij";
+    public static final String LANGNYELV = "zhoris_langnyelve";
+    public static final String NAPFOGYATKOZAS = "napfogyatkozas";
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -77,11 +83,14 @@ public final class SignatureItemListener implements Listener {
         this.szarvasCooldownKey = new NamespacedKey(plugin, "sig_szarvas_cd");
         this.slowArrowKey = new NamespacedKey(plugin, "sig_jegfog");
         this.igniteArrowKey = new NamespacedKey(plugin, "sig_vihartuz");
+        this.eclipseArrowKey = new NamespacedKey(plugin, "sig_napfogyatkozas");
     }
 
     /** Jégfog/Vihartűz lövedék-jelölők (a rider-effektek becsapódáskor olvassák). */
     private final NamespacedKey slowArrowKey;
     private final NamespacedKey igniteArrowKey;
+    /** Napfogyatkozás: éjjeli lövedék-jelölő (becsapódáskor bónusz-sebzés). */
+    private final NamespacedKey eclipseArrowKey;
 
     /** A signature-PDC kulcs megosztott alakja (ShopManager/DungeonGate/CapitalLaw is ezt írja/olvassa). */
     public static final NamespacedKey SIGNATURE_PDC_KEY = NamespacedKey.fromString("icesmp:signature_item");
@@ -140,6 +149,21 @@ public final class SignatureItemListener implements Listener {
             if (hasEnchant(event.getBow(), "jegfog")) {
                 projectile.getPersistentDataContainer().set(slowArrowKey, PersistentDataType.BYTE, (byte) 1);
             }
+        } else if (SARKANYCSONT_IJ.equals(sig)) {
+            // Sárkánycsont Íj: a nyíl átüti a sorfalat — pierce-szint a lövedéken.
+            if (event.getProjectile() instanceof AbstractArrow arrow) {
+                arrow.setPierceLevel(Math.min(127, arrow.getPierceLevel()
+                        + Math.max(0, configManager.getInt("signature.sarkanycsont.pierce-add", 2))));
+            }
+        } else if (NAPFOGYATKOZAS.equals(sig)) {
+            // Napfogyatkozás: éjjel az árnyékból csap le — gyorsabb és erősebb lövedék.
+            final org.bukkit.World world = event.getEntity().getWorld();
+            final boolean night = world.getEnvironment() != org.bukkit.World.Environment.NORMAL || !world.isDayTime();
+            if (night) {
+                final double mult = Math.max(1.0D, configManager.getDouble("signature.napfogyatkozas.night-velocity-mult", 1.15D));
+                event.getProjectile().setVelocity(event.getProjectile().getVelocity().multiply(mult));
+                event.getProjectile().getPersistentDataContainer().set(eclipseArrowKey, PersistentDataType.BYTE, (byte) 1);
+            }
         } else if (TUZKOPO.equals(sig)) {
             // A Tűzköpő lövedéke a „sivatagi vihar sebességével" repül; a felhúzási gyorsítást a
             // craftkor kapott Quick Charge adja (ProfessionRecipeBookListener).
@@ -175,6 +199,40 @@ public final class SignatureItemListener implements Listener {
             }
             final double bonus = Math.max(0.0D, configManager.getDouble("signature.setapalca.bonus-damage", 5.0D));
             event.setDamage(event.getDamage() + bonus);
+            return;
+        }
+        // Glatziendorfi Jégtörő: ami megdermedt, azt megtöri — lassított célon bónusz-sebzés.
+        if (JEGTORO.equals(meleeSig)) {
+            if (event.getEntity() instanceof org.bukkit.entity.LivingEntity struck
+                    && struck.hasPotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS)) {
+                final double bonus = Math.max(0.0D, configManager.getDouble("signature.jegtoro.slowed-bonus", 0.25D));
+                event.setDamage(event.getDamage() * (1.0D + bonus));
+            }
+            return;
+        }
+        // V. Miinus Haragja: minél mélyebb a viselő sebe, annál hidegebben üt vissza.
+        if (MIINUS_KARD.equals(meleeSig)) {
+            final org.bukkit.attribute.AttributeInstance max = attacker.getAttribute(Attribute.MAX_HEALTH);
+            final double threshold = Math.max(0.05D, Math.min(1.0D,
+                    configManager.getDouble("signature.miinus.low-health-threshold", 0.35D)));
+            if (max != null && attacker.getHealth() / max.getValue() <= threshold) {
+                final double bonus = Math.max(0.0D, configManager.getDouble("signature.miinus.low-health-bonus", 0.2D));
+                event.setDamage(event.getDamage() * (1.0D + bonus));
+            }
+            return;
+        }
+        // I. Zhoris Lángnyelve: a penge sosem hűl ki — eséllyel gyújt; égő célon többet üt.
+        if (LANGNYELV.equals(meleeSig)) {
+            if (event.getEntity() instanceof org.bukkit.entity.LivingEntity struck) {
+                if (struck.getFireTicks() > 0) {
+                    final double bonus = Math.max(0.0D, configManager.getDouble("signature.langnyelv.burning-bonus", 0.15D));
+                    event.setDamage(event.getDamage() * (1.0D + bonus));
+                } else if (java.util.concurrent.ThreadLocalRandom.current().nextDouble()
+                        < Math.max(0.0D, Math.min(1.0D, configManager.getDouble("signature.langnyelv.ignite-chance", 0.2D)))) {
+                    struck.setFireTicks(Math.max(struck.getFireTicks(),
+                            Math.max(1, configManager.getInt("signature.langnyelv.ignite-ticks", 40))));
+                }
+            }
             return;
         }
         if (!AGYAR.equals(meleeSig)) {
@@ -234,6 +292,12 @@ public final class SignatureItemListener implements Listener {
                 final int fireTicks = Math.max(1, configManager.getInt("signature.enchant-riders.vihartuz-fire-ticks", 40));
                 struck.setFireTicks(Math.max(struck.getFireTicks(), fireTicks));
             }
+        }
+
+        // Napfogyatkozás: az éjjeli lövedék az árnyékból csap le (bónusz a végső sebzésre).
+        if (arrow.getPersistentDataContainer().has(eclipseArrowKey, PersistentDataType.BYTE)) {
+            final double bonus = Math.max(0.0D, configManager.getDouble("signature.napfogyatkozas.night-damage-bonus", 0.25D));
+            event.setDamage(event.getDamage() * (1.0D + bonus));
         }
 
         final Double pierce = arrow.getPersistentDataContainer().get(pierceKey, PersistentDataType.DOUBLE);

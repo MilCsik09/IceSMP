@@ -40,6 +40,8 @@ loot:
       - { type: unique, weight: 18, id: vad_esszencia, min: 1, max: 2 }
       - { type: unique, weight: 8,  id: szorny_mag, min: 1, max: 1 }
       - { type: unique, weight: 5,  id: arnyekpor, min: 1, max: 2 }
+      # --- 2. hullám: Főnixpihe — Soleil főnixeinek nyoma (ritka, bármely szörnyből) ---
+      - { type: unique, weight: 6,  id: fonixpihe, min: 1, max: 2 }
       # --- K8: Emlékszilánk — a Felsők elveszett emlékei (ritka; beváltás: /emlek) ---
       - { type: unique, weight: 3,  id: emlekszilank, min: 1, max: 1 }
       # --- K9: Suttogás-meghívó — a Királynő hívása, csak élőhalott hozza (nagyon ritka) ---
@@ -47,6 +49,8 @@ loot:
       # --- K5: Káoszkor-loot — CSAK élőhalott forrásból esik (undead-only) ---
       - { type: named, weight: 5, undead-only: true, item: IRON_SWORD, name: "&8A Hetedik Vérháború Rozsdás Pengéje", lore: [ "&7Egykor I. Benedictus vagy I. Lineata seregéé;", "&7ma csak Eleftheria néma haragja hajtja." ] }
       - { type: named, weight: 4, undead-only: true, item: CHAINMAIL_CHESTPLATE, name: "&8Megrontott Elit Páncél", lore: [ "&7Az eltűnt nemesek dicsőségének maradványa;", "&7a sötét mágia védi oszladozó viselőjét." ] }
+      # --- 2. hullám: további Káoszkor-drop (undead-only) ---
+      - { type: named, weight: 3, undead-only: true, item: BONE, name: "&8Fekete Csont", lore: [ "&7Nem ég el, nem törik, nem felejt.", "&7A Káoszkor éjjelén minden csont", "&7megjegyezte, kié volt egykor." ] }
   # Ritka tervrajz-drop: egy blueprint-recept (profession-recipes learn: blueprint) megtanulására.
   blueprint-drop:
     chance: 0.002       # sima szörny: 0.2%
@@ -58,6 +62,8 @@ loot:
       - { type: gear, weight: 55 }
       - { type: unique, weight: 25, id: osi_ereklyeszilank, min: 1, max: 2 }
       - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 3 }
+      # --- 2. hullám: Sárkánycsont-szilánk — Kallan sárkányainak öröksége (boss-only) ---
+      - { type: unique, weight: 12, id: sarkanycsont_szilank, min: 1, max: 2 }
       # --- K8: Emlékszilánk boss-szinten (biztosabb forrás) ---
       - { type: unique, weight: 8,  id: emlekszilank, min: 1, max: 2 }
       # --- K9: Suttogás-meghívó boss-szinten (élőhalott boss/event-mobból) ---
@@ -67,3 +73,5 @@ loot:
       # --- K5: Káoszkor-loot boss-szinten (élőhalott boss/event-mobból) ---
       - { type: named, weight: 5, undead-only: true, item: IRON_SWORD, name: "&8A Hetedik Vérháború Rozsdás Pengéje", lore: [ "&7Egykor I. Benedictus vagy I. Lineata seregéé;", "&7ma csak Eleftheria néma haragja hajtja." ] }
       - { type: named, weight: 4, undead-only: true, item: CHAINMAIL_CHESTPLATE, name: "&8Megrontott Elit Páncél", lore: [ "&7Az eltűnt nemesek dicsőségének maradványa;", "&7a sötét mágia védi oszladozó viselőjét." ] }
+      # --- 2. hullám: A Néma Királynő Suttogása (nagyon ritka, undead boss-only) ---
+      - { type: named, weight: 2, undead-only: true, item: NETHERITE_SWORD, name: "&5A Néma Királynő Suttogása", lore: [ "&7Nem penge — ígéret. Aki forgatja,", "&7hallja, mit súg Eleftheria a fél-álom", "&7peremén… és egyszer válaszolni fog." ] }

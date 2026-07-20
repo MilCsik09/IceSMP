@@ -111,3 +111,54 @@ profession-materials:
       - "&7Hu. 698-ban kettéhasította az eget,"
       - "&7s felébresztette a Holtak Úrnőjét."
       - "&4Csak világbossból / nehéz eventből esik"
+  # --- Tartalombővítés (2. hullám): szakma-köztes anyagok ---
+  jegviragpor:
+    material: SUGAR
+    display-name: "&bJégvirág-por"
+    custom-model-data: 6005
+    lore:
+      - "&7A Jégmezők peremén nyíló jégvirág"
+      - "&7szirma, mozsárban holdfénnyel törve."
+      - "&8Gyógynövényész köztes alapanyag"
+  parazsmag:
+    material: BLAZE_POWDER
+    display-name: "&6Parázsmag"
+    custom-model-data: 6006
+    lore:
+      - "&7A Vérszavanna kihunyt tábortüzeiből"
+      - "&7kikapart, még mindig lüktető szikra."
+      - "&8Alkimista köztes alapanyag"
+  viharkvarc:
+    material: QUARTZ
+    display-name: "&eViharkvarc"
+    custom-model-data: 6007
+    lore:
+      - "&7Villámsújtotta sziklából fejtett kvarc —"
+      - "&7a belsejében még ott remeg a vihar."
+      - "&8Bányász köztes alapanyag"
+  melysegi_borostyan:
+    material: RAW_GOLD
+    display-name: "&6Mélységi Borostyán"
+    custom-model-data: 6008
+    lore:
+      - "&7A Mélység Népe tárnáinak gyantája,"
+      - "&7kővé dermedt idő — néha egy-egy"
+      - "&7elveszett rúna is belefagyott."
+      - "&8Régészeti lelet / bányász-finomítás"
+  # --- CSAK mobból / bossból eső anyagok (2. hullám) ---
+  sarkanycsont_szilank:
+    material: BONE
+    display-name: "&fSárkánycsont-szilánk"
+    custom-model-data: 6016
+    lore:
+      - "&7Kallan elhullott jégsárkányainak"
+      - "&7csontja — hidegebb, mint a jég maga."
+      - "&4Csak világbossból / nehéz eventből esik"
+  fonixpihe:
+    material: FEATHER
+    display-name: "&cFőnixpihe"
+    custom-model-data: 6017
+    lore:
+      - "&7Soleil főnixeinek pihéje — a hamu"
+      - "&7nem fogja, a láng nem emészti."
+      - "&cCsak szörnyekből esik"

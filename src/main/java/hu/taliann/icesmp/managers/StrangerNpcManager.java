@@ -51,7 +51,13 @@ public final class StrangerNpcManager {
             "<dark_gray>„Két tűz közt jársz, vándor. A harmadik benned ég.”</dark_gray>",
             "<dark_gray>„A lapok fordulnak. Volt, aki a margóra írt — és a Könyv visszaírt neki.”</dark_gray>",
             "<dark_gray>„A Kapu nem nyílik. A Kapu emlékszik.”</dark_gray>",
-            "<dark_gray>„Nem engem kerestél. De lehet, hogy én kerestelek téged.”</dark_gray>"
+            "<dark_gray>„Nem engem kerestél. De lehet, hogy én kerestelek téged.”</dark_gray>",
+            "<dark_gray>„A Mélység Népe nem halt ki. Számol. És mindjárt végez.”</dark_gray>",
+            "<dark_gray>„Minden tűz kialszik egyszer. A tiéd is. Az övé nem.”</dark_gray>",
+            "<dark_gray>„Láttam a nevedet a Könyvben. Két helyen. Az egyik át van húzva.”</dark_gray>",
+            "<dark_gray>„Amit a jég megőriz, azt a láng irigyli. Te melyiké vagy?”</dark_gray>",
+            "<dark_gray>„A Fa gyógyul. Kérdezd meg magadtól: minek örül ennyire a Kapu?”</dark_gray>",
+            "<dark_gray>„Nem minden szárny visz haza. Némelyik csak messzebb visz.”</dark_gray>"
     };
 
     public StrangerNpcManager(final JavaPlugin plugin, final ConfigManager configManager,

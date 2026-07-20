@@ -435,6 +435,7 @@ archeology:
   finds:
     - "unique:emlekszilank:1"
     - "unique:osi_ereklyeszilank:1"
+    - "unique:melysegi_borostyan:1"
     - "AMETHYST_SHARD:2:4"
     - "ECHO_SHARD:1:2"
     - "EMERALD:2:5"
