@@ -41,7 +41,7 @@ public final class TerritoryCommand implements BasicCommand {
             "pos", "undo", "clearpoints", "points", "create", "circle",
             "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
     private static final List<String> TYPE_NAMES = List.of(
-            "faction", "protected-faction", "protected-city", "capital", "doom-gate");
+            "faction", "protected-faction", "protected-city", "capital", "doom-gate", "dungeon");
 
     private final JavaPlugin plugin;
     private final TerritoryManager territoryManager;
@@ -652,7 +652,7 @@ public final class TerritoryCommand implements BasicCommand {
         final TerritoryType type = TerritoryType.fromInput(raw);
         if (type == null) {
             sender.sendMessage(messageManager.get("territory-type-unknown",
-                    "&cIsmeretlen típus: &f%s &7(faction, protected-faction, protected-city, capital, doom-gate)", raw));
+                    "&cIsmeretlen típus: &f%s &7(faction, protected-faction, protected-city, capital, doom-gate, dungeon)", raw));
         }
         return type;
     }
@@ -744,7 +744,7 @@ public final class TerritoryCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("territory-help-show", "&e/territory show [id] &7- Határrajz (puffer / aktuális / megadott zóna)."));
         sender.sendMessage(messageManager.get("territory-help-tp", "&e/territory tp <id> &7- Teleportálás a zóna középpontjához."));
         sender.sendMessage(messageManager.get("territory-help-types",
-                "&7Típusok: &ffaction &7(csak tagok), &fprotected-faction&7/&fprotected-city &7(senki), &fcapital &7(főváros), &fdoom-gate &7(PvPvE senkiföldje)."));
+                "&7Típusok: &ffaction &7(csak tagok), &fprotected-faction&7/&fprotected-city &7(senki), &fcapital &7(főváros), &fdoom-gate &7(PvPvE senkiföldje), &fdungeon &7(kazamata, kulcs+lockout)."));
     }
 
     @Override

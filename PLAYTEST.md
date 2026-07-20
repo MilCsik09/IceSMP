@@ -572,6 +572,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (Emlékszilánk / Ősi Ereklyeszilánk / anyagok — sosem vanília cserép); 20 perc után a
       terep nyomtalanul visszaáll (ki nem ásott lelőhelynél is). Spawn-hely: a
       spawn-rules.archeology mátrix-sor szerint. Restartnál a lelőhely-blokk visszaáll.
+- [ ] **B3 Kazamaták (ÚJ — Tier S, plugin-oldal):** jelölj ki DUNGEON zónát
+      (`/territory circle dungeon <frakció> <id> <sugár> [név]`) → belépni csak kulccsal lehet
+      (signature: `dungeonkulcs_<zóna-id>` — bolt/recept adja, minta a factions.yml-ben).
+      Belépéskor a kulcs ELFOGY: 2 órás futam-passz (ki-be járás szabad) + 7 napos pecsét
+      (új futam tiltva, action-bar a hátralévő napokkal). Admin-bypass: territory bypass jog.
+      A bent spawnoló mobok +5 szintet kapnak (mob-rules.dungeon), nappal sem égnek;
+      zóna-védelem: allow-séma dungeon-sor (építés/robbanás tiltva, interakció/PvP szabad).
+      A pálya megépítése + boss-telepítés admin-munka. Kulcsok: `territory.dungeon.*`.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

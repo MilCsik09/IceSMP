@@ -23,6 +23,7 @@ A térkép védelme több **zónatípusra** épül:
 | **Védett város** | **Senki** (jellemzően semleges városok) | ❌ Nem |
 | **Főváros** | **Senki** (egyben a bank/valutaváltó helyszíne) | ❌ Nem |
 | **Kárhozat-zóna** ☠ | **Senki** (PvPvE senkiföldje — lásd lent) | ❌ Nem |
+| **Kazamata** 🗝 | **Senki** (kulccsal járható dungeon: 2 órás futam, 7 napos pecsét) | ❌ Nem |
 
 > ⛨ A **védett zónák** (védett város/frakcióterület és a főváros) a térkép **pajzsa**: ott
 > alapból **senki** sem építhet/bonthat, nincs interakció, **nincs PvP**, robbanás és tűz sem

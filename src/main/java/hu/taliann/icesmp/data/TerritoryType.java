@@ -34,7 +34,8 @@ public enum TerritoryType {
     PROTECTED_FACTION("Védett frakcióterület", true, false),
     PROTECTED_CITY("Védett város", true, false),
     CAPITAL("Főváros", true, false),
-    DOOM_GATE("Kárhozat-zóna", true, false);
+    DOOM_GATE("Kárhozat-zóna", true, false),
+    DUNGEON("Kazamata", true, false);
 
     private final String displayName;
     private final boolean protectedZone;
@@ -81,6 +82,7 @@ public enum TerritoryType {
             case "capital", "fovaros" -> CAPITAL;
             case "frakcio", "frakcioterulet", "normal" -> FACTION;
             case "doom", "doomgate", "karhozat", "karhozat_kapuja", "hasadek" -> DOOM_GATE;
+            case "kazamata", "dung" -> DUNGEON;
             default -> null;
         };
     }

@@ -244,6 +244,12 @@ territory:
         allow-pvp: false
         allow-explosions: false
         allow-fire: false
+      dungeon:                  # Kazamata (B3): az épített dungeon védelme
+        allow-build: false      # a dungeon nem bontható/építhető át
+        allow-interact: true    # ajtók/ládák/mechanizmusok használhatók
+        allow-pvp: true         # bent a harc szabad (a futam kockázata)
+        allow-explosions: false
+        allow-fire: false
       doom-gate:                # Kárhozat Kapuja — PvPvE senkiföldje
         allow-build: false      # az aréna nem építhető át / nem tornyozható be
         allow-interact: true    # ajtók/oltárok szabadon használhatók
@@ -269,6 +275,25 @@ territory:
     enabled: true
     weapon-ban: true
     wanted-ban: true
+  # ===== Kazamaták (B3 — DUNGEON zóna: kulcs-kapu + heti pecsét) =====
+  # /territory create|circle dungeon <frakció> <id> ... — belépni csak kulccsal lehet:
+  # a kulcs signature-tagelt tárgy (signature: "dungeonkulcs_<zóna-id>"), boltból vagy
+  # receptből adható (minta lent). Belépéskor a kulcs ELFOGY: pass-hours órás futam-passz
+  # + lockout-days napos pecsét kerül a játékosra (játékosonként — a party minden tagja
+  # saját kulccsal lép). A bent lévő mobok erejét a mob-rules.dungeon sor adja; boss:
+  # admin-eszközökkel telepíthető. Élőben olvasódik.
+  # Kulcs-recept minta (profession-recipes.yml alá):
+  #   melyseg_kulcsa:
+  #     profession: enchanter
+  #     level: 30
+  #     display-name: "A Mélység Kulcsa"
+  #     category: "Kazamata-kulcs"
+  #     result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_<zóna-id> }
+  #     ingredients: [ "ECHO_SHARD:4", "IRON_INGOT:8" ]
+  dungeon:
+    enabled: true
+    pass-hours: 2
+    lockout-days: 7
   # ===== Zóna mob-szabályok (mob-rules) =====
   # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
   #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital
@@ -280,6 +305,10 @@ territory:
       bonus-levels: 3          # ennyi plusz szint a zónában spawnoló mobokon
       no-daylight-burn: true   # true = a zombi/csontváz/phantom NAPPAL SEM ég el
       no-zombification: true   # true = piglin/hoglin nem zombisodik az overworldben
+    dungeon:
+      bonus-levels: 5          # a kazamaták fix, kemény szint-bónusza
+      no-daylight-burn: true
+      no-zombification: true
     # Példa: a Kitaszítottak földjein (Mortengrad környéke) éjjel-nappal kitartó élőhalottak:
     # dark:
     #   bonus-levels: 2

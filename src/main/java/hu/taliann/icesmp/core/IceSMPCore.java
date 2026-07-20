@@ -1109,6 +1109,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpellDamageListener(configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CapitalLawListener(plugin, configManager, territoryManager, sinManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CorruptionListener(corruptionManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         pluginManager.registerEvents(new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);

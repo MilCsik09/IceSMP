@@ -353,7 +353,7 @@ szolgáló, csendes tartalmat ad, ami más rendszerekbe (bestiárium, relikvia) 
 **Építőkövek:** Vanília archeológia API, kincs-esemény elhelyezés-minta, bestiárium (B21).
 **Buktatók:** A vanília gyanús blokk loot-táblája felülírandó, hogy csak a szerver-saját
 tartalom (nem vanília pottery sherd) essen belőle — gondos config-munka kell.
-### B3. Kézzel épített dungeonök kulcs-itemmel
+### B3. Kézzel épített dungeonök kulcs-itemmel `[KÉSZ ✅ — plugin-oldal]`
 
 > **Lore-horgony:** törp-kazamaták és Káoszkor-romok — a Mélység Népe eltűnése kész dungeon-narratíva (kódex I.)
 
