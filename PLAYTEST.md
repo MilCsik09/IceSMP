@@ -1126,6 +1126,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **Profession-mélyítés (ÚJ):**
+  - [ ] **50 recept/szakma (össz. 400):** minden szakma szintlétrája az 1. szinttől az 50.-ig
+        kitöltve; a magas szintű receptek kelléket + ritka unique anyagot kérnek; az 50-es
+        céh-mesterművek (A Mélység Szíve / A Világfa Magja / Az Erdő Szíve / A Céhmester
+        Üllője / A Bölcsek Köve / A Végtelen Kódex / A Bokic Áldása / A Kapu Lakomája)
+        Első Csend Szilánkját is.
+  - [ ] **Craft-XP (skill-up):** recept-könyvi craft szakma-XP-t ad (`professions.xp.recipe-craft-*`;
+        base 8 + szint×2); a szinted felett 10+ szinttel járó recept fél, 20+ felett 0 XP
+        („szürke recept”). Szintlépéskor üzenet + hang, fokozatváltásnál külön üzenet.
+  - [ ] **Fokozatok:** Inas (1–9) → Segéd → Legény → Mester → Nagymester → Legendás Mester (50);
+        a szakma-GUI a szint mellett a fokozatot is mutatja.
+  - [ ] **CMD-regiszter:** MINDEN nevesített (lore-os) recept-eredmény CustomModelData-t visel
+        (6300–6414), a Kopott erszény 1010 — teljes lista: `docs/RESOURCE_PACK_CMD.md`
+        (resource pack készítéshez). Új custom item = új CMD + új sor a regiszterben!
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]` — tab-complete
       mind az öt típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

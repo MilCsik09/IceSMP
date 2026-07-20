@@ -103,7 +103,9 @@ public final class ProfessionGUI {
         lore.add(grey("Típus: " + profession.getCategory().getDisplayName()));
         if (active) {
             lore.add(Component.text("✔ Aktív szakma", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-            lore.add(label("Szint", Component.text(String.valueOf(ctx.professionManager().getLevel(player, profession)), NamedTextColor.WHITE)));
+            lore.add(label("Szint", Component.text(ctx.professionManager().getLevel(player, profession)
+                    + " — " + hu.taliann.icesmp.managers.ProfessionManager.getRankName(
+                            ctx.professionManager().getLevel(player, profession)), NamedTextColor.WHITE)));
             lore.add(label("XP", Component.text(String.valueOf(ctx.professionManager().getXp(player, profession)), NamedTextColor.WHITE)));
         } else if (slotTaken) {
             lore.add(Component.text("A(z) " + profession.getCategory().getDisplayName() + " helyed foglalt", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
@@ -118,7 +120,9 @@ public final class ProfessionGUI {
     private static ItemStack createSecondaryItem(final Player player, final CharacterMenuContext ctx, final ProfessionType profession) {
         final List<Component> lore = List.of(
                 grey("Típus: másodlagos (mindenki ismeri)"),
-                label("Szint", Component.text(String.valueOf(ctx.professionManager().getLevel(player, profession)), NamedTextColor.WHITE)),
+                label("Szint", Component.text(ctx.professionManager().getLevel(player, profession)
+                        + " — " + hu.taliann.icesmp.managers.ProfessionManager.getRankName(
+                                ctx.professionManager().getLevel(player, profession)), NamedTextColor.WHITE)),
                 label("XP", Component.text(String.valueOf(ctx.professionManager().getXp(player, profession)), NamedTextColor.WHITE))
         );
         return GuiUtil.icon(materialFor(profession), name(profession.getDisplayName()), lore, true);

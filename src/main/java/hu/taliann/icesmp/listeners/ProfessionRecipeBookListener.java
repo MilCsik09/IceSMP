@@ -137,6 +137,22 @@ public final class ProfessionRecipeBookListener implements Listener {
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), overflow);
         }
+        // WoW-stílusú skill-up: a craft szakma-XP-t ad — a szintedhez közeli recept a teljes
+        // értéket, a rég kinőtt („szürke”) recept semmit (fele-út: fél XP). Élő kulcsok.
+        final int playerLevel = professionManager.getLevel(player, recipe.profession());
+        final int craftBase = Math.max(0, configManager.getInt("professions.xp.recipe-craft-base", 8));
+        final int craftPerLevel = Math.max(0, configManager.getInt("professions.xp.recipe-craft-per-level", 2));
+        final int greyAfter = Math.max(2, configManager.getInt("professions.xp.recipe-craft-grey-after", 20));
+        int craftXp = craftBase + recipe.level() * craftPerLevel;
+        final int levelDiff = playerLevel - recipe.level();
+        if (levelDiff >= greyAfter) {
+            craftXp = 0;
+        } else if (levelDiff >= greyAfter / 2) {
+            craftXp /= 2;
+        }
+        if (craftXp > 0) {
+            professionManager.addXpFor(player, recipe.profession(), craftXp);
+        }
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.6F, 1.2F);
         player.sendMessage(messageManager.get("profession-recipe-crafted", "&aElkészítetted: &e%s", recipe.displayName()));
         // Refresh so the ingredient counts / craftable states update.
@@ -231,6 +247,9 @@ public final class ProfessionRecipeBookListener implements Listener {
                             .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 }
                 meta.lore(loreLines);
+                if (recipe.customModelData() > 0) {
+                    meta.setCustomModelData(recipe.customModelData());
+                }
                 result.setItemMeta(meta);
             }
         }

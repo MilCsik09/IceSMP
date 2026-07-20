@@ -24,6 +24,12 @@ professions:
   seasonal:
     abundance-multiplier: 1.5
   xp:
+    # WoW-stílusú skill-up: a recept-könyvi craft XP-je = base + recept-szint × per-level;
+    # ha a szakma-szinted (grey-after/2)-vel a recept felett jár → fél XP,
+    # grey-after-rel felette → 0 („szürke recept”).
+    recipe-craft-base: 8
+    recipe-craft-per-level: 2
+    recipe-craft-grey-after: 20
     mining-ore: 5
     herbalism-harvest: 3
     logging: 2

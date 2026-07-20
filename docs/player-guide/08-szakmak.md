@@ -16,6 +16,9 @@ többet csinálod őket, annál magasabb szintre érsz bennük.
   - 1 → 2 szint: **100 XP**
   - 2 → 3 szint: **115 XP**
   - 3 → 4 szint: **130 XP** … és így tovább. **Max szint: 50.**
+- **Fokozatok:** a szinted egyben céh-fokozat is — **Inas** (1–9), **Segéd** (10–19),
+  **Legény** (20–29), **Mester** (30–39), **Nagymester** (40–49), **Legendás Mester** (50).
+  A fokozatod a szakma-menüben is látszik, és szint-/fokozatlépéskor üzenet + hang jelzi.
 - **Szakmaváltáskor a szinted megmarad** (külön tárolódik szakmánként), így később vissza is
   tanulhatod ott, ahol abbahagytad.
 
@@ -79,6 +82,16 @@ paranccsal (vagy `/menu` → **Recept-könyv**): egy lapozható könyvben látod
 receptjét — a **tanultakat zölddel**, a **zároltakat szürkén** (odaírja, mi kell: szint vagy
 tervrajz), és minden recepthez a **hozzávalókat** (megvan/hiányzik). Egy kattintással **craftolsz**,
 ha minden feltétel megvan (a hozzávalók a táskádból fogynak).
+
+**Craftolni = fejlődni (WoW-módra):** a recept-könyvi craft **szakma-XP-t is ad** — minél
+magasabb szintű a recept, annál többet. De vigyázz: a **rég kinőtt receptek „kiszürkülnek”** —
+ha a szinted 10+ szinttel a recept felett jár, már csak fél XP-t, 20+ felett semmit sem ad.
+Mindig a szintedhez közeli recepteket készítsd a leggyorsabb fejlődésért!
+
+**Szintlétra:** minden szakmának **50 receptje** van, az 1. szinttől az 50.-ig elosztva —
+mindig van mit megnyitni. A magasabb receptek bolti kellékeket és ritka unique anyagokat
+kérnek, az 50. szintű **céh-mesterművek** (pl. *A Mélység Szíve*, *A Bokic Áldása*, *A Kapu
+Lakomája*, *Az Erdő Szíve*) pedig az *Első Csend Szilánkját* is.
 
 **Kétféleképp tanulsz receptet:**
 - 📈 **Szintre:** a receptek nagy része a szakma adott szintjén magától megnyílik.
