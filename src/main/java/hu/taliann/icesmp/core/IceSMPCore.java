@@ -221,6 +221,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
     private final hu.taliann.icesmp.managers.SpyManager spyManager;
     private final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager professionWeeklyGoalManager;
+    private final hu.taliann.icesmp.managers.MortengradUndeadManager mortengradUndeadManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -345,6 +346,7 @@ public final class IceSMPCore {
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager);
         this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager);
         this.professionWeeklyGoalManager = new hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager(plugin, configManager, professionManager, messageManager);
+        this.mortengradUndeadManager = new hu.taliann.icesmp.managers.MortengradUndeadManager(plugin, configManager, territoryManager, mobScalingManager);
         resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // E25/E32 — pool-bónuszok
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // E25 — pakt-oltár
         hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // E1 — statikus híd
@@ -1011,6 +1013,7 @@ public final class IceSMPCore {
                     seasonFinaleManager.tick();
             playerCaravanManager.tick();
             professionWeeklyGoalManager.tick();
+            mortengradUndeadManager.tick();
                     strangerNpcManager.tick();
                     hiddenSpotManager.tick();
                 },
@@ -1250,6 +1253,10 @@ public final class IceSMPCore {
             public void onConvoyDeath(final org.bukkit.event.entity.EntityDeathEvent event) {
                 if (playerCaravanManager.isConvoy(event.getEntity().getUniqueId())) {
                     playerCaravanManager.onConvoyKilled(event.getEntity().getKiller());
+                }
+                // Mortengrad-népesség könyvelése (a jelölt undead kiesett).
+                if (mortengradUndeadManager.isMarked(event.getEntity())) {
+                    mortengradUndeadManager.onDeath(event.getEntity().getUniqueId());
                 }
             }
         }, plugin);

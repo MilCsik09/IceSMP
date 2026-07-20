@@ -178,3 +178,10 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 ---
 
 ➡️ Tovább: [Parancsok listája](14-parancsok.md) • [Vissza a tartalomhoz](README.md)
+
+## Mortengrad — a holtak fővárosa 💀
+
+A Kitaszítottak fővárosa a lore szerint is az élőholtaké: a territóriumban **folyamatosan
+magas szintű undead-horda** kóborol, akik **nappal sem égnek el**. A Kitaszítottakat a Néma
+Királynő népe békén hagyja — mindenki más csak saját felelősségére lépjen be. A látvány
+(és a loot) megéri… ha túléled.

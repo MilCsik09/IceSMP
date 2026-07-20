@@ -498,3 +498,18 @@ bestiary:
     recipes: [ "10:25", "50:100", "100:250:broadcast" ]
     territories: [ "5:30", "10:80:broadcast" ]
     bosses: [ "1:50", "3:150:broadcast" ]
+
+# ===== Mortengrad-népesség: a DARK főváros élőholtai (lore-ambiencia) =====
+# A DARK capital-territóriumban magas szintű undead-populáció él, akik a napon
+# SEM égnek el (EventSpawnGuard.prepare). A DARK játékosokat a frakció-passzíva
+# miatt békén hagyják — a betolakodónak Mortengrad maga a rémálom. Élő kulcsok.
+mortengrad-undead:
+  enabled: true
+  territory-id: ""            # üres = az első DARK capital-territórium automatikusan
+  max-population: 24
+  spawn-batch: 4
+  spawn-interval-seconds: 30
+  min-level: 4
+  max-level: 7
+  lifespan-seconds: 600
+  types: [ "ZOMBIE", "SKELETON", "HUSK", "STRAY", "WITHER_SKELETON" ]
