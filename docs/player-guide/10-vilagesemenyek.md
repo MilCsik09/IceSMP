@@ -134,8 +134,20 @@ irányával), **köd**, **bolyongó szellemek**, **szentjánosbogarak**, valamin
 
 ## Szezonális liga 🏆
 
-A frakciók **pontot gyűjtenek** a **raid-** és **világboss-győzelmekből**. A szezon végén
-(alapból 60 nap) a **vezető frakció** győz:
+A frakciók **pontot gyűjtenek** — de nem csak háborúból! A liga **aszimmetrikus**: minden
+frakció a **saját identitás-útján** pontoz a legerősebben, így mind a négynek van legitim
+útja a bajnoki címhez:
+
+| Pontforrás | Kinek éri meg leginkább? |
+|---|---|
+| ⚔ Raid-győzelem | a hadviselőknek (Perinfernicitas, Cryghaliris, Kitaszítottak) — a semleges népeknek fél-súlyú |
+| 👹 Világboss-ölés | mindenkinek egyformán |
+| 🏛 Közösségi cél teljesítése | a semleges népeknek (a virágzás az ő győzelmük — másfélszeres súly) |
+| 🌿 Rontás-góc megtisztítása | a semleges népeknek (a Fa gyógyítása); a Kitaszítottaknak fél-súlyú |
+| 🤺 Becsület-párbaj győzelem | a Kitaszítottaknak (másfélszeres súly) |
+| 🕵 Sikeres kém-küldetés | a Kitaszítottaknak (a Suttogók útja — másfélszeres súly) |
+
+A szezon végén (alapból 60 nap) a **vezető frakció** győz:
 - a **frakciókassza** nagy jutalmat kap;
 - a győztes frakció **online tagjai** győzelmi **buffot** (Erő + Regeneráció + Falu Hőse) és
   **tárgy-jutalmat** (alapból gyémánt + aranyalma) kapnak, egy ünneplő **tűzijátékkal**;

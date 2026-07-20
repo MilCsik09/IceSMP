@@ -683,7 +683,7 @@ public final class WorldBossManager {
             treasuryManager.deposit(faction, reward);
         }
 
-        seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)));
+        seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
 
         // B33 — szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
         // régió-szálán fut, a drop ott biztonságos) + extra liga-pont + saját broadcast.
@@ -694,7 +694,7 @@ public final class WorldBossManager {
                 boss.getWorld().dropItemNaturally(boss.getLocation(), loot);
             }
             seasonManager.addPoints(faction, Math.max(0,
-                    configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)));
+                    configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)), "world-boss");
             Bukkit.getServer().broadcast(messageManager.getMessage(
                     "season-finale-boss-slain",
                     "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",

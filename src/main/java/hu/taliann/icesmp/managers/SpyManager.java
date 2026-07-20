@@ -29,15 +29,20 @@ public final class SpyManager implements PlayerStateCleanup {
     private final ConfigManager configManager;
     private final RaidManager raidManager;
     private final MessageManager messageManager;
+    private final FactionManager factionManager;
+    private final SeasonManager seasonManager;
     private final NamespacedKey cooldownKey;
     private final Map<UUID, Long> activeUntil = new ConcurrentHashMap<>();
 
     public SpyManager(final JavaPlugin plugin, final ConfigManager configManager,
-                      final RaidManager raidManager, final MessageManager messageManager) {
+                      final RaidManager raidManager, final MessageManager messageManager,
+                      final FactionManager factionManager, final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.raidManager = raidManager;
         this.messageManager = messageManager;
+        this.factionManager = factionManager;
+        this.seasonManager = seasonManager;
         this.cooldownKey = new NamespacedKey(plugin, "spy_cooldown");
     }
 
@@ -82,6 +87,10 @@ public final class SpyManager implements PlayerStateCleanup {
         // Időzített lejárat a játékos SAJÁT schedulerén (halál/kilépésnél magától nyugdíjazódik).
         player.getScheduler().runDelayed(plugin, task -> {
             if (isSpying(player.getUniqueId())) {
+                // Sikeres küldetés (az álca lebukás nélkül járt le): liga-pont a kém
+                // frakciójának ("spy" forrás — a Suttogók útja a DARK súlymátrixban).
+                seasonManager.addPoints(factionManager.getFaction(player.getUniqueId()),
+                        Math.max(0, configManager.getInt("spy.season-points", 2)), "spy");
                 reveal(player, "spy-expired", "<gray>🕵 Az álca lefoszlott — az idő lejárt.</gray>");
             }
         }, null, seconds * 20L);

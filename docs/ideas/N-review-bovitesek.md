@@ -57,3 +57,9 @@
       territórium pereméN TÚL történik (`min/max-edge-distance`, 24..96 blokk), külön
       „a Kitaszítottak földjének pereméről szivárgott ki" broadcast-tal; a territórium
       belsejét a spawn-rules továbbra is védi, fallback a horgony-játékos út.
+- [x] **N17 — Aszimmetrikus szezon-liga `[KÉSZ ✅]`:** a tulaj felvetésére (2+1+1 frakció —
+      tiszta hadi-ligaként sántít) minden liga-pont-jóváírás forrás-címkés, és a
+      `world-events.season.source-weights` mátrix frakciónként súlyozza: RED/BLUE/DARK a
+      háborúból (raid), a NEUTRAL a közösségi célból + rontás-tisztításból (1.5×), a DARK a
+      párbajból + kém-küldetésből (1.5×) pontoz erősebben. Új források: community (8),
+      cleanse (6), duel (2), spy (2) — mindegyik élő configból.

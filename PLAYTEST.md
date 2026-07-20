@@ -1187,6 +1187,23 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         `corruption.dark-bias.*`. Ellenőrzés: definiálj DARK territóriumot, állítsd a
         chance-t 100-ra, várd ki (vagy admin-indítsd) a gócot → a mag a zóna szélén túl,
         de annak közelében nyílik.
+- [ ] **Aszimmetrikus szezon-liga (ÚJ — tulaj-döntés a 2+1+1 felállás miatt):**
+  - [ ] Forrás-súlymátrix: minden liga-pont-jóváírás forrás-címkével megy
+        (`SeasonManager.addPoints(faction, amount, source)`), és a
+        `world-events.season.source-weights.<forrás>.<frakció>` súly skálázza a NYERS
+        pontot (a B33/G16 idő-szorzók UTÁNA); hiányzó kulcs = 1.0, 0 = nem ér pontot.
+  - [ ] Meglévő források címkézve: raid-győzelem → `raid` (NEUTRAL 0.5), világboss +
+        szezonzáró boss → `world-boss` (mind 1.0).
+  - [ ] ÚJ pontforrások: közösségi cél teljesítése → `community`
+        (quests.yml `community-goals.season-points` 8; NEUTRAL 1.5, DARK 0.75;
+        szerver-célnál minden frakció kap); rontás-tisztítás → `cleanse`
+        (world.yml `corruption.season-points` 6; NEUTRAL 1.5, DARK 0.5);
+        becsület-párbaj győzelem → `duel` (factions.yml `honor-duel.season-points` 2;
+        DARK 1.5); sikeres kém-küldetés (lebukás nélküli lejárat) → `spy`
+        (factions.yml `spy.season-points` 2; DARK 1.5, mások 0.75).
+  - [ ] Ellenőrzés: NEUTRAL játékossal rontás-tisztítás → 9 pont (6×1.5); DARK
+        párbaj-győzelem → 3 pont (2×1.5); raid-győzelem NEUTRAL-ként → 2-3 pont (5×0.5);
+        súly 0-ra állítva a forrás semmit nem ír jóvá. `/events season` mutatja az állást.
 - [ ] **G6 — Becsület-párbaj (ÚJ):**
   - [ ] `/parbaj kihiv <név>` (CSAK bűnös ajánlhat) → `/parbaj elfogad|elutasit`; elfogadáskor
         3 perces ablak; a párbaj-kill NEM termel bűnt és NEM fizet vérdíjat (SinListener-kizárás

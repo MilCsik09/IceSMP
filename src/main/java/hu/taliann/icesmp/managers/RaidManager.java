@@ -437,7 +437,7 @@ public final class RaidManager {
         }
 
         // Raid victory feeds the seasonal league standings.
-        seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)));
+        seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)), "raid");
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
         applyWinnerBuff(winner);

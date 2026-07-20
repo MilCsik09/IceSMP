@@ -144,6 +144,25 @@ world-events:
     treasury-reward: 1000.0
     champion-buff-minutes: 30
     champion-firework: true
+    # ===== Aszimmetrikus liga (tulaj-döntés) — a 2+1+1 frakció-felállás miatt =====
+    # Nem csak hadi-liga: minden frakció a SAJÁT identitás-útján pontoz erősebben.
+    # A súly a nyers pontra hat (a B33/G16 idő-szorzók utána), 0 = a forrás nem ér
+    # pontot annak a frakciónak. Hiányzó kulcs = 1.0. Források:
+    #   raid       — raid-győzelem (háború: RED/BLUE/DARK útja, a NEUTRAL fél-súlyú)
+    #   world-boss — világboss + szezonzáró boss (univerzális PvE)
+    #   community  — közösségi cél teljesítése (a NEUTRAL virágzás-útja)
+    #   cleanse    — rontás-góc megtisztítása (a Fa gyógyítása — NEUTRAL-út; a
+    #                DARK-nak fél-súlyú: a rontás az övék)
+    #   duel       — becsület-párbaj győzelem (a kitaszított-út: DARK-erős)
+    #   spy        — sikeres (lebukás nélküli) kém-küldetés (a Suttogók útja: DARK-erős)
+    #   other      — forrás-címke nélküli jóváírás (admin/parancs)
+    source-weights:
+      raid:       { red: 1.0,  blue: 1.0,  neutral: 0.5,  dark: 1.0 }
+      world-boss: { red: 1.0,  blue: 1.0,  neutral: 1.0,  dark: 1.0 }
+      community:  { red: 1.0,  blue: 1.0,  neutral: 1.5,  dark: 0.75 }
+      cleanse:    { red: 1.0,  blue: 1.0,  neutral: 1.5,  dark: 0.5 }
+      duel:       { red: 1.0,  blue: 1.0,  neutral: 1.0,  dark: 1.5 }
+      spy:        { red: 0.75, blue: 0.75, neutral: 0.75, dark: 1.5 }
     # Tárgy-jutalom a bajnok frakció online tagjainak: "MATERIAL:DARAB" lista.
     champion-reward-items:
       - "DIAMOND:8"
@@ -420,6 +439,7 @@ corruption:
   purge-kills-required: 15
   reward-rolls: 4
   reward-buff-minutes: 5
+  season-points: 6   # liga-pont a tisztító frakciójának ("cleanse" forrás, NEUTRAL-erős súly)
   # A rontás előszeretettel a Kitaszítottak földje felől szivárog: chance-percent
   # eséllyel a góc egy véletlen DARK territórium PEREMÉN TÚL nyílik (a zóna szélétől
   # min..max blokkra, tehát a territóriumon KÍVÜL — a belsejét a spawn-rules amúgy is

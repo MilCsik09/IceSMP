@@ -53,6 +53,7 @@ onboarding:
 # KILL_MOBS, COLLECT_ITEMS, BREAK_BLOCKS, KILL_PLAYERS, KILL_WORLDBOSS, WIN_RAID.
 community-goals:
   enabled: true
+  season-points: 8   # liga-pont a cél teljesítésekor ("community" forrás, NEUTRAL-erős súly)
   red_iron_drive:
     faction: "RED"
     display-name: "Vas-gyűjtő Hadjárat"

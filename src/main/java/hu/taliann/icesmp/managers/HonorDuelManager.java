@@ -23,6 +23,8 @@ public final class HonorDuelManager implements PlayerStateCleanup {
 
     private final ConfigManager configManager;
     private final SinManager sinManager;
+    private final FactionManager factionManager;
+    private final SeasonManager seasonManager;
     /** kihívott -> kihívó (függő felkérés). */
     private final Map<UUID, UUID> pending = new ConcurrentHashMap<>();
     /** résztvevő -> ellenfél (mindkét irányban felvéve). */
@@ -32,9 +34,12 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     private final NamespacedKey countKey;
 
     public HonorDuelManager(final JavaPlugin plugin, final ConfigManager configManager,
-                            final SinManager sinManager) {
+                            final SinManager sinManager, final FactionManager factionManager,
+                            final SeasonManager seasonManager) {
         this.configManager = configManager;
         this.sinManager = sinManager;
+        this.factionManager = factionManager;
+        this.seasonManager = seasonManager;
         this.weekKey = new NamespacedKey(plugin, "honor_duel_week");
         this.countKey = new NamespacedKey(plugin, "honor_duel_count");
     }
@@ -113,6 +118,10 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         if (sinManager.getSinCount(killer) > 0) {
             sinManager.reduceSin(killer, 1);
         }
+        // Aszimmetrikus liga: a párbaj-győzelem liga-pontot ér ("duel" forrás — a
+        // kitaszított becsület-visszaszerzés a DARK identitás-útja a súlymátrixban).
+        seasonManager.addPoints(factionManager.getFaction(killer.getUniqueId()),
+                Math.max(0, configManager.getInt("honor-duel.season-points", 2)), "duel");
         return true;
     }
 

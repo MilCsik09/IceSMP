@@ -53,6 +53,8 @@ public final class CorruptionManager implements PersistentStore {
     private final EventSpawnGuard spawnGuard;
     private final MessageManager messageManager;
     private final TerritoryManager territoryManager;
+    private final FactionManager factionManager;
+    private final SeasonManager seasonManager;
     private final File storageFile;
 
     private volatile String worldName;
@@ -72,13 +74,16 @@ public final class CorruptionManager implements PersistentStore {
 
     public CorruptionManager(final JavaPlugin plugin, final ConfigManager configManager,
                              final MobScalingManager mobScalingManager, final EventSpawnGuard spawnGuard,
-                             final MessageManager messageManager, final TerritoryManager territoryManager) {
+                             final MessageManager messageManager, final TerritoryManager territoryManager,
+                             final FactionManager factionManager, final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.spawnGuard = spawnGuard;
         this.messageManager = messageManager;
         this.territoryManager = territoryManager;
+        this.factionManager = factionManager;
+        this.seasonManager = seasonManager;
         this.storageFile = new File(plugin.getDataFolder(), "corruption.yml");
         plugin.getDataFolder().mkdirs();
     }
@@ -451,6 +456,10 @@ public final class CorruptionManager implements PersistentStore {
             }
         }
         corruptMobs.clear();
+        // Aszimmetrikus liga: a tisztítás liga-pontot ér a tisztító frakciójának
+        // ("cleanse" forrás — a Fa gyógyítása a NEUTRAL identitás-útja a súlymátrixban).
+        seasonManager.addPoints(factionManager.getFaction(cleanser.getUniqueId()),
+                Math.max(0, configManager.getInt("corruption.season-points", 6)), "cleanse");
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "corruption-cleansed",
                 "<green>🌿 {player} megtörte a rontás magját — a góc szertefoszlik, és valahol messze a Fa fellélegzik.</green>",

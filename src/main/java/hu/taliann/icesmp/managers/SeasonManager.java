@@ -164,16 +164,38 @@ public final class SeasonManager implements PersistentStore {
      * @param amount the points
      */
     public void addPoints(final FactionType faction, final int amount) {
+        addPoints(faction, amount, "other");
+    }
+
+    /**
+     * Awards league points from a named source. A tulaj-döntés szerinti aszimmetrikus
+     * liga: a 2+1+1 frakció-felállásban mindenki a SAJÁT identitás-útján pontoz
+     * erősebben — a forrás-súlyt a world-events.season.source-weights.&lt;forrás&gt;.&lt;frakció&gt;
+     * mátrix adja (default 1.0; 0 = a forrás nem ér pontot annak a frakciónak).
+     * A súly a NYERS pontra hat, a B33/G16 idő-szorzók UTÁNA jönnek.
+     *
+     * @param faction the scoring faction
+     * @param amount the raw points
+     * @param source the point source key (raid, world-boss, community, cleanse, duel, spy…)
+     */
+    public void addPoints(final FactionType faction, final int amount, final String source) {
         if (faction == null || amount <= 0
                 || !configManager.getBoolean("world-events.season.enabled", true)) {
+            return;
+        }
+        final double weight = Math.max(0.0D, configManager.getDouble(
+                "world-events.season.source-weights." + source + "."
+                        + faction.name().toLowerCase(java.util.Locale.ROOT), 1.0D));
+        final int weighted = (int) Math.round(amount * weight);
+        if (weighted <= 0) {
             return;
         }
 
         // B33: a végítélet-hét alatt minden pont-jóváírás lineárisan skálázódik a
         // finálé-maximumig (alapból dupláig az utolsó napon).
         final SeasonFinaleManager finaleRef = seasonFinale;
-        int scaled = finaleRef == null ? amount
-                : Math.max(amount, (int) Math.round(amount * finaleRef.leaguePointMultiplier()));
+        int scaled = finaleRef == null ? weighted
+                : Math.max(weighted, (int) Math.round(weighted * finaleRef.leaguePointMultiplier()));
         // G16 — nagydöntő-hétvége: a top2 frakció pontjai TOVÁBB szorzódnak (alap: ×2).
         if (isGrandFinaleWindow() && topTwo().contains(faction)) {
             scaled = (int) Math.round(scaled * Math.max(1.0D,
