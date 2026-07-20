@@ -567,6 +567,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       magra → loot + 5 perc regeneráció + „a Fa fellélegzik" broadcast; a mag kézzel NEM
       bányászható. Restart-teszt: a zóna corruption.yml-ből visszaáll. Spawn-hely: a
       spawn-rules.corruption mátrix-sor szerint (városba nem nyílik).
+- [ ] **B42 Régészet (ÚJ — Tier S):** időnként gyanús homok/kavics lelőhely bukkan fel
+      (broadcast + koordináta, `archeology.*`); ECSETTEL kiásva SZERVER-SAJÁT lelet esik
+      (Emlékszilánk / Ősi Ereklyeszilánk / anyagok — sosem vanília cserép); 20 perc után a
+      terep nyomtalanul visszaáll (ki nem ásott lelőhelynél is). Spawn-hely: a
+      spawn-rules.archeology mátrix-sor szerint. Restartnál a lelőhely-blokk visszaáll.
 - [ ] **Frakcióterület** (`faction`): `build` csak a NEM-tagot tiltja (tag épít), `interact/pvp/
       explosions/fire` alapból szabad — a `rules.faction.*` kapcsolókkal külön állítható.
 - [ ] **Bypass:** `icesmp.admin.territory.bypass` mindent megkerül (PvP is);

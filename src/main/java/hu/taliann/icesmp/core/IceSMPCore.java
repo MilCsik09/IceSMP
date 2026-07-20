@@ -217,6 +217,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
     private final hu.taliann.icesmp.managers.ChronicleManager chronicleManager;
     private final hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
+    private final hu.taliann.icesmp.managers.ArcheologyManager archeologyManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
     private final EconomyEventManager economyEventManager;
@@ -354,6 +355,7 @@ public final class IceSMPCore {
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager);
+        this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
@@ -860,6 +862,7 @@ public final class IceSMPCore {
         treasureEventManager.shutdown();
         wildHuntManager.shutdown();
         corruptionManager.shutdown();
+        archeologyManager.shutdown();
         escortManager.shutdown();
         meteorEventManager.shutdown();
         serverChallengeManager.shutdown();
@@ -911,6 +914,7 @@ public final class IceSMPCore {
                     whisperManager.tick();
                     chronicleManager.tick();
                     corruptionManager.tick();
+                    archeologyManager.tick();
                 },
                 intervalTicks,
                 intervalTicks

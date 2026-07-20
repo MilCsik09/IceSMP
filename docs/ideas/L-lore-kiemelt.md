@@ -336,7 +336,7 @@ világ ténylegesen rosszabbodik, ami erős „élő világ" érzetet ad és csa
 WorldGuard-bridge (ne terjedjen védett zónába).
 **Buktatók:** Kontroll nélkül a mob-entitásszám elszabadulhat egy régióban — kemény cap
 (max egyidejű korrupt mob) és a takarítás-figyelő (H24) kötelező párja.
-### B42. Régészet szakma-ág
+### B42. Régészet szakma-ág `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Mélység Népe romjainak és az Emlékszilánkoknak a kiásása (kódex I./V.)
 
