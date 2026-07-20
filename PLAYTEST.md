@@ -1126,14 +1126,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
-- [ ] **Mortengrad-népesség (ÚJ, lore-ambiencia):**
-  - [ ] A DARK capital-territóriumban folyamatos, magas szintű undead-populáció
-        (alap: 24 fő, 30 mp-enként 4-es rajokban pótolva; szint 4-7, MobScaling.forceLevel);
-        a mobok a napon SEM égnek el (EventSpawnGuard.prepare) és nem zombisodnak.
+- [ ] **DARK undead-népesség (ÚJ, lore-ambiencia):**
+  - [ ] A DARK territóriumokban folyamatos, magas szintű undead-populáció — hatókör
+        configból: `scope: capital` (csak a főváros) vagy `all` (minden DARK territórium),
+        `territory-id` felülbírálással; alap: 24 fő, 30 mp-enként 4-es rajokban pótolva,
+        szint 4-7 (MobScaling.forceLevel); a mobok a napon SEM égnek el
+        (EventSpawnGuard.prepare) és nem zombisodnak.
   - [ ] Élettartam-korlát (600 mp, a mob saját schedulerén) + halál-könyvelés — a populáció
         sosem nő a plafon fölé; spawn a helyszín régió-schedulerén. A DARK játékosokat a
-        frakció-passzíva védi. MINDEN kulcs élő: world.yml `mortengrad-undead.*`
-        (territory-id felülbírálással).
+        frakció-passzíva védi. MINDEN kulcs élő: world.yml `dark-undead.*`.
+        (Osztály-név generikus: DarkUndeadAmbienceManager — a lore-név csak szövegben él.)
 - [ ] **G6 — Becsület-párbaj (ÚJ):**
   - [ ] `/parbaj kihiv <név>` (CSAK bűnös ajánlhat) → `/parbaj elfogad|elutasit`; elfogadáskor
         3 perces ablak; a párbaj-kill NEM termel bűnt és NEM fizet vérdíjat (SinListener-kizárás

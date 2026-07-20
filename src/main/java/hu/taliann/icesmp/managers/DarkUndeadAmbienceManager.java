@@ -18,19 +18,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Lore-ambiencia: Mortengrad, a DARK főváros tele van élőholtakkal — a Néma
- * Királynő népe otthon jár. A manager a DARK capital-territóriumban tart fenn
- * egy magas szintű undead-populációt: a mobok NEM égnek el a napon
+ * Lore-ambiencia: a Kitaszítottak földje tele van élőholtakkal — a Néma
+ * Királynő népe otthon jár. A manager a DARK territóriumokban tart fenn egy
+ * magas szintű undead-populációt (hatókör configból: csak a capital VAGY az
+ * összes DARK territórium): a mobok NEM égnek el a napon
  * (EventSpawnGuard.prepare), szinttel spawnolnak (MobScalingManager.forceLevel),
  * és korlátos élettartamúak — a populáció a tick-ből töltődik újra.
+ * (A lore-név — pl. Mortengrad — csak configban/szövegben él, kódban nem.)
  *
  * <p>A DARK játékosokat a meglévő frakció-passzíva miatt békén hagyják — a
  * betolakodónak viszont Mortengrad maga a rémálom. Minden kulcs élő config
- * (mortengrad-undead.*). Folia: a spawn a cél-helyszín régió-schedulerén fut;
+ * (dark-undead.*). Folia: a spawn a cél-helyszín régió-schedulerén fut;
  * a populáció-követés konkurrens map (uuid -> lejárat), a halál-listener és a
  * lifespan-remove is takarít.
  */
-public final class MortengradUndeadManager {
+public final class DarkUndeadAmbienceManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -41,14 +43,14 @@ public final class MortengradUndeadManager {
     private final Map<UUID, Long> population = new ConcurrentHashMap<>();
     private volatile long nextSpawnAt;
 
-    public MortengradUndeadManager(final JavaPlugin plugin, final ConfigManager configManager,
+    public DarkUndeadAmbienceManager(final JavaPlugin plugin, final ConfigManager configManager,
                                    final TerritoryManager territoryManager,
                                    final MobScalingManager mobScalingManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.territoryManager = territoryManager;
         this.mobScalingManager = mobScalingManager;
-        this.markKey = new org.bukkit.NamespacedKey(plugin, "mortengrad_undead");
+        this.markKey = new org.bukkit.NamespacedKey(plugin, "dark_undead");
     }
 
     public boolean isMarked(final org.bukkit.entity.Entity entity) {
@@ -63,45 +65,47 @@ public final class MortengradUndeadManager {
 
     /** A world-events tick hívja (global scheduler). */
     public void tick() {
-        if (!configManager.getBoolean("mortengrad-undead.enabled", true)) {
+        if (!configManager.getBoolean("dark-undead.enabled", true)) {
             return;
         }
         final long now = System.currentTimeMillis();
         if (now < nextSpawnAt) {
             return;
         }
-        nextSpawnAt = now + Math.max(5, configManager.getInt("mortengrad-undead.spawn-interval-seconds", 30)) * 1000L;
+        nextSpawnAt = now + Math.max(5, configManager.getInt("dark-undead.spawn-interval-seconds", 30)) * 1000L;
         // Lejárt (élettartamuk végén magától eltűnő) példányok kivezetése a számlálóból.
         population.entrySet().removeIf(entry -> entry.getValue() < now);
 
-        final Territory capital = findDarkCapital();
-        if (capital == null) {
+        final java.util.List<Territory> targets = targetTerritories();
+        if (targets.isEmpty()) {
             return;
         }
-        final World world = Bukkit.getWorld(capital.world());
-        if (world == null) {
-            return;
-        }
-        final int maxPopulation = Math.max(1, configManager.getInt("mortengrad-undead.max-population", 24));
+        final int maxPopulation = Math.max(1, configManager.getInt("dark-undead.max-population", 24));
         final int batch = Math.min(
-                Math.max(1, configManager.getInt("mortengrad-undead.spawn-batch", 4)),
+                Math.max(1, configManager.getInt("dark-undead.spawn-batch", 4)),
                 maxPopulation - population.size());
         if (batch <= 0) {
             return;
         }
-        final List<String> types = configManager.getStringList("mortengrad-undead.types");
+        final List<String> types = configManager.getStringList("dark-undead.types");
         final List<String> pool = types.isEmpty()
                 ? List.of("ZOMBIE", "SKELETON", "HUSK", "STRAY", "WITHER_SKELETON") : types;
-        final int minLevel = Math.max(1, configManager.getInt("mortengrad-undead.min-level", 4));
-        final int maxLevel = Math.max(minLevel, configManager.getInt("mortengrad-undead.max-level", 7));
-        final long lifespanMillis = Math.max(60, configManager.getInt("mortengrad-undead.lifespan-seconds", 600)) * 1000L;
+        final int minLevel = Math.max(1, configManager.getInt("dark-undead.min-level", 4));
+        final int maxLevel = Math.max(minLevel, configManager.getInt("dark-undead.max-level", 7));
+        final long lifespanMillis = Math.max(60, configManager.getInt("dark-undead.lifespan-seconds", 600)) * 1000L;
 
         for (int index = 0; index < batch; index++) {
-            // Véletlen pont a capital-körön belül (a spawn a helyszín régió-szálán fut).
+            // Cél-territórium sorsolása, majd véletlen pont a körén belül
+            // (a spawn a helyszín régió-szálán fut).
+            final Territory territory = targets.get(ThreadLocalRandom.current().nextInt(targets.size()));
+            final World world = Bukkit.getWorld(territory.world());
+            if (world == null) {
+                continue;
+            }
             final double angle = ThreadLocalRandom.current().nextDouble(2.0D * Math.PI);
-            final double distance = ThreadLocalRandom.current().nextDouble() * Math.max(4, capital.radius() - 4);
-            final int x = capital.x() + (int) Math.round(Math.cos(angle) * distance);
-            final int z = capital.z() + (int) Math.round(Math.sin(angle) * distance);
+            final double distance = ThreadLocalRandom.current().nextDouble() * Math.max(4, territory.radius() - 4);
+            final int x = territory.x() + (int) Math.round(Math.cos(angle) * distance);
+            final int z = territory.z() + (int) Math.round(Math.sin(angle) * distance);
             final EntityType type;
             try {
                 type = EntityType.valueOf(pool.get(ThreadLocalRandom.current().nextInt(pool.size()))
@@ -136,19 +140,23 @@ public final class MortengradUndeadManager {
         }
     }
 
-    private Territory findDarkCapital() {
-        final String override = configManager.getString("mortengrad-undead.territory-id", "");
+    /** A hatókör territóriumai: territory-id felülbírálás > scope (capital|all). */
+    private java.util.List<Territory> targetTerritories() {
+        final String override = configManager.getString("dark-undead.territory-id", "");
+        final boolean all = "all".equalsIgnoreCase(configManager.getString("dark-undead.scope", "capital"));
+        final java.util.List<Territory> out = new java.util.ArrayList<>();
         for (final Territory territory : territoryManager.all()) {
             if (!override.isBlank()) {
                 if (territory.id().equalsIgnoreCase(override)) {
-                    return territory;
+                    out.add(territory);
                 }
                 continue;
             }
-            if (territory.faction() == FactionType.DARK && territory.type() == TerritoryType.CAPITAL) {
-                return territory;
+            if (territory.faction() == FactionType.DARK
+                    && (all || territory.type() == TerritoryType.CAPITAL)) {
+                out.add(territory);
             }
         }
-        return null;
+        return out;
     }
 }
