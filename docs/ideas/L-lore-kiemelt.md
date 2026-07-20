@@ -670,11 +670,15 @@ territórium bejárása) — inkrementálisan, kategóriánként érdemes beveze
 **Miért jó:** A dicsőség fizikai, maradandó nyoma a világban — a következő szezon kezdetén mindenki látja, mit kell legyőznie.
 **Építőkövek:** `StatsManager` top-lekérdezés, `TextDisplay`-minta, szezon-lezárás hook.
 **Buktatók:** Az admin-előkészítés (helyszín + build) kézi munka; kódból csak a tábla-csere/hologram-frissítés megy.
-### D8. Felfedezhető titkos helyek
+### D8. Felfedezhető titkos helyek `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Mélység Népe romjai + a világ rejtett zugai (kódex I.)
 
 **Munka:** 🟡 • **Érték:** ⭐⭐
+
+> **Megvalósítva:** `HiddenSpotManager` (PersistentStore, hidden-spots.yml) — throttle-olt
+> proximity-check a játékos saját szálán; első-felfedező broadcast + jutalom, továbbiaknak
+> fél-értékű egyszeri jutalom (PDC-jelölés). Config: `hidden-spots.*` (world.yml).
 
 **Mi ez:** Admin-kijelölt rejtett pontok, amiket először megtaláló játékos felfedezés-jutalmat kap.
 **Hogyan működne:** Config-listában koordináta + sugár + jutalom (`hidden-spots.<id>.location/radius/reward`); alacsony gyakoriságú, throttle-olt proximity-check (player move eventen vagy periodikus, kis-sugarú scan a territórium chunk-index mintájára) észleli az első belépőt, PDC/YAML `discovered-by` zárja le (`hidden-spots.first-finder-only` configolható). Jutalom: token/XP + bestiárium-bejegyzés (B21), ritkán titkos kereskedő nyit (B40).

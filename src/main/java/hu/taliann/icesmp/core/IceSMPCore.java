@@ -222,6 +222,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.BardManager bardManager;
     private final hu.taliann.icesmp.managers.SeasonMonumentManager seasonMonumentManager;
     private final hu.taliann.icesmp.managers.CursedGearService cursedGearService;
+    private final hu.taliann.icesmp.managers.HiddenSpotManager hiddenSpotManager;
     private final hu.taliann.icesmp.managers.ArcheologyManager archeologyManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
@@ -424,6 +425,8 @@ public final class IceSMPCore {
         // F13/F14/F15 — gazdasági események: pánik-ág + konjunktúra díj-ablak + finálé-sokkok.
         marketManager.setEconomyEventManager(economyEventManager);
         economyEventManager.setSeasonFinale(seasonFinaleManager);
+        // D8 — felfedezhető titkos helyek (admin-kijelölt pontok, első-felfedező jutalom).
+        this.hiddenSpotManager = new hu.taliann.icesmp.managers.HiddenSpotManager(plugin, configManager, messageManager);
         // A quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
         // (mindkét célosztály a DI-sorrendben korábban épül).
         questManager.setStatsManager(statsManager);
@@ -461,7 +464,7 @@ public final class IceSMPCore {
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
                 moderationManager, chronicleManager, corruptionManager, seasonFinaleManager,
-                seasonMonumentManager);
+                seasonMonumentManager, hiddenSpotManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -966,6 +969,7 @@ public final class IceSMPCore {
                     archeologyManager.tick();
                     seasonFinaleManager.tick();
                     strangerNpcManager.tick();
+                    hiddenSpotManager.tick();
                 },
                 intervalTicks,
                 intervalTicks

@@ -171,6 +171,13 @@ korszakról korszakra bővül a bajnokok és hőseik listája.
 - **Az Idegen:** néha, valahol… feltűnik egy **csuklyás alak**. Akik közel állnak, hallanak tőle
   egy mondatot. Mire odaérsz — általában már nincs sehol. Hogy ki ő? A kódex hallgat róla.
 
+## Titkos helyek 🧭
+
+A világban **rejtett pontok** lapulnak (egy kilátó, egy barlangmélyi szentély…). Aki **elsőként**
+talál rá egyre, **jutalmat kap, és a nevét az egész szerver megismeri** — „bekerül a térképekbe".
+A későbbi felfedezők is kapnak egyszeri, kisebb jutalmat. Hogy hol vannak? Azt senki sem árulja
+el — járd a világot nyitott szemmel!
+
 ## Bemutató (intro)
 
 Amikor **először** lépsz be, lejátszódik egy rövid, hangulatos **cím-szekvencia**. Ez csak

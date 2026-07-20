@@ -1055,6 +1055,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       event-boss lootból eshet (sima mob-drop poolból kikerült); a recept-könyvben lila
       „Csak legendás ellenfelektől szerezhető tervrajz" zárolt sor. Új recept-mező:
       `loot-only: true` (profession-recipes.yml).
+- [ ] **D8 Titkos helyek (ÚJ — Tier A):** vegyél fel egy spotot a configba
+      (`hidden-spots.spots.<id>`: name/location/radius/xp/rewards) → aki elsőként odaér,
+      jutalmat kap + „🧭 X ELSŐKÉNT fedezte fel…" broadcast; a többiek egyszeri, fél-értékű
+      jutalmat (repeat-reward-ratio) és a felfedező nevét látják; `first-finder-only: true`
+      esetén csak az első kap bármit. A jelölés PDC-s (relog után sem duplázható); a check
+      30 mp-enként, a játékos saját szálán fut. Kulcsok: `hidden-spots.*` (world.yml).
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

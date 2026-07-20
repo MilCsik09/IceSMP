@@ -451,3 +451,25 @@ season-monument:
   location: ""
   max-lines: 12
   header: "<gold>📖 A Korszakok Könyve</gold>"
+
+# ===== D8 — Felfedezhető titkos helyek =====
+# Admin-kijelölt rejtett pontok: aki ELSŐKÉNT ér oda, jutalmat kap és broadcast hirdeti;
+# a többiek egyszeri, fél-értékű jutalmat kapnak (repeat-reward-ratio), VAGY
+# first-finder-only: true esetén csak a "már felfedezett" üzenetet. A rewards sorok
+# LootTable-formátumúak ("MATERIAL[:MIN[:MAX]]" / "unique:<id>[:db]"). Élőben olvasódik.
+hidden-spots:
+  enabled: true
+  check-seconds: 30
+  first-finder-only: false
+  repeat-reward-ratio: 0.5
+  spots: {}
+  # Példa:
+  # spots:
+  #   elveszett-kilato:
+  #     name: "Az Elveszett Kilátó"
+  #     location: "world,120,84,-560"
+  #     radius: 5
+  #     xp: 30
+  #     rewards:
+  #       - "DIAMOND:2"
+  #       - "unique:emlekszilank:1"
