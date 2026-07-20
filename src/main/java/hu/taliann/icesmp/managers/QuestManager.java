@@ -66,6 +66,13 @@ import java.util.Set;
  */
 public final class QuestManager implements PersistentStore {
 
+    /** B35 — setter-injektált (konstruktor-sorrend): quest-teljesítés céh-XP-je. */
+    private volatile GuildManager guildManager;
+
+    public void setGuildManager(final GuildManager guildManager) {
+        this.guildManager = guildManager;
+    }
+
     /** Objective types the framework understands (admin create validates against this). */
     public static final Set<String> OBJECTIVE_TYPES = Set.of(
             "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
@@ -1473,6 +1480,11 @@ public final class QuestManager implements PersistentStore {
         clearAllProgress(player, questId);
         if (statsManager != null) {
             statsManager.recordQuestComplete(player.getUniqueId());
+        }
+        // B35 — céh-XP a tag-aktivitásból: minden quest-teljesítés a céhet is építi.
+        final GuildManager guildRef = guildManager;
+        if (guildRef != null) {
+            guildRef.addActivityXp(player, Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));
         }
         // Repeatable-cooldown anchor + seasonal anchor: when / in which season was it turned in.
         player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());

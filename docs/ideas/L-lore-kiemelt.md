@@ -547,7 +547,7 @@ ne szórtan minden spell-osztályban.
 > felhelyezés kurzor-kattintással (RuneApplyListener, PDC `rune_effect` + lore); hatások
 > 3 szűk hookon (RuneEffectListener: melee/lövedék/kapott sebzés) + Mohóság a
 > MobMoneyDropListenerben. GUI-lépés helyett kattintós UX — kisebb felület, ugyanaz az érzet.
-### B35. Céhek (frakción belüli kisközösségek)
+### B35. Céhek (frakción belüli kisközösségek) `[KÉSZ ✅]`
 
 > **Lore-horgony:** a VIII. fejezet Céh-öröksége — a Felsők újraélesztik a letűnt céheket
 

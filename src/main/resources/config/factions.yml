@@ -320,3 +320,15 @@ territory:
     # dark:
     #   bonus-levels: 2
     #   no-daylight-burn: true
+
+# ===== B35 — Céhek: frakción belüli 5-15 fős kisközösségek =====
+# /ceh letrehoz|meghiv|elfogad|elhagy|kirug|befizet|info|lista — élő kulcsok.
+guilds:
+  enabled: true
+  create-cost: 250.0
+  base-max-members: 10
+  levels-per-extra-member: 3
+  max-members-cap: 15
+  xp-per-quest: 10
+  level-base-xp: 500
+  level-increment: 250

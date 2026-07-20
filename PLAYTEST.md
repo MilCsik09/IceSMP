@@ -1126,6 +1126,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **B35 — Céhek (ÚJ):**
+  - [ ] `/ceh letrehoz <név>` (alapítás 250 saját valutáért a számláról — sink); csak azonos
+        frakcióból hívható tag (`/ceh meghiv` → `/ceh elfogad`); vezető-átadás kilépéskor,
+        egyedül maradva feloszlik. Perzisztencia: guilds.yml (YamlStore).
+  - [ ] Céh-szint: quest-teljesítésenként +10 céh-XP (`guilds.xp-per-quest`); szintlépéskor
+        tag-broadcast; a taglétszám-plafon 10-ről 3 szintenként +1-gyel nő (max 15).
+  - [ ] `/ceh befizet <összeg>` — a tag számlájáról a céh-kasszába (bankon belüli átvezetés);
+        `/ceh info` (szint/XP/tagok/kassza), `/ceh lista` (top 10 XP szerint).
+  - [ ] Függő meghívás kilépéskor takarítva (PlayerStateCleanup). Élő kulcsok: factions.yml `guilds.*`.
 - [ ] **B26 — Rúna-kovácsolás (ÚJ):**
   - [ ] 6 rúna unique-materialként (CMD 6140-6145), Kovács/Bűvölő 26-42. szintű receptek
         (runapor + tematikus unique + Rúnakréta kellék): Él (+közelharci sebzés%), Zápor
