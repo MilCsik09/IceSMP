@@ -162,3 +162,143 @@ profession-materials:
       - "&7Soleil főnixeinek pihéje — a hamu"
       - "&7nem fogja, a láng nem emészti."
       - "&cCsak szörnyekből esik"
+  # --- Tartalombővítés (3. hullám): szakma-gyártott köztes anyagok ---
+  holdezust_huzal:
+    material: CHAIN
+    display-name: "&fHoldezüst Huzal"
+    custom-model-data: 6018
+    lore:
+      - "&7Újhold éjjelén húzott ezüstszál —"
+      - "&7csak akkor fénylik, ha senki sem nézi."
+      - "&8Bűvölő köztes alapanyag"
+  csontenyv:
+    material: BONE_MEAL
+    display-name: "&eCsontenyv"
+    custom-model-data: 6019
+    lore:
+      - "&7A Mélység Népe régi receptje: lassan"
+      - "&7főzött enyv, ami követ is köt fához."
+      - "&8Szakács köztes alapanyag"
+  sarkfeny_cseppko:
+    material: PRISMARINE_CRYSTALS
+    display-name: "&bSarkfény-cseppkő"
+    custom-model-data: 6021
+    lore:
+      - "&7Az északi fény egy cseppje, ami barlang"
+      - "&7mélyén kővé dermedt — még mindig táncol."
+      - "&8Bányász köztes alapanyag"
+  szavannafu_kotel:
+    material: VINE
+    display-name: "&2Szavannafű-kötél"
+    custom-model-data: 6022
+    lore:
+      - "&7A Vérszavanna szívós füvéből sodort kötél —"
+      - "&7a pásztorok szerint sárkányt is tartott már."
+      - "&8Favágó köztes alapanyag"
+  obszidian_szilank:
+    material: FLINT
+    display-name: "&8Obszidián-szilánk"
+    custom-model-data: 6023
+    lore:
+      - "&7A Kapu körüli mezőkről pattintott"
+      - "&7fekete üveg — a napfényt is elnyeli."
+      - "&8Bányász köztes alapanyag"
+  arnygomba:
+    material: CRIMSON_FUNGUS
+    display-name: "&5Mortengradi Árnygomba"
+    custom-model-data: 6024
+    lore:
+      - "&7Csak romok pincéiben nő, fény sosem"
+      - "&7érte — a Kitaszítottak kenyérpótlója."
+      - "&8Gyógynövényész köztes alapanyag"
+  lelekhamu:
+    material: GUNPOWDER
+    display-name: "&7Lélekhamu"
+    custom-model-data: 6025
+    lore:
+      - "&7Kihunyt lélektűz maradéka. Hideg,"
+      - "&7szürke — és mégis, néha megmoccan."
+      - "&8Alkimista köztes alapanyag"
+  aranyfust_lemez:
+    material: GOLD_NUGGET
+    display-name: "&6Aranyfüst-lemez"
+    custom-model-data: 6026
+    lore:
+      - "&7Leheletvékonyra vert arany, a caldesterai"
+      - "&7ötvösnegyed büszkesége."
+      - "&8Kovács köztes alapanyag"
+  gyongyhaz_pikkely:
+    material: PRISMARINE_SHARD
+    display-name: "&bGyöngyház-pikkely"
+    custom-model-data: 6027
+    lore:
+      - "&7A Bokic vén pontyainak pikkelye —"
+      - "&7a fény hét színére törik rajta."
+      - "&8Halász köztes alapanyag"
+  vandorfuszer:
+    material: COCOA_BEANS
+    display-name: "&6Vándorfűszer"
+    custom-model-data: 6028
+    lore:
+      - "&7Hét út pora, hét piac illata egy"
+      - "&7zacskóban — a karavánok kincse."
+      - "&8Szakács köztes alapanyag"
+  # --- CSAK boltból vehető (vendor-only) anyagok: pénz-nyelő + recept-kereslet ---
+  viaszpecset:
+    material: HONEYCOMB
+    display-name: "&6Számvevő-pecsétviasz"
+    custom-model-data: 6020
+    lore:
+      - "&7A Bankárszövetség hivatalos viasza —"
+      - "&7amit ez pecsétel, az megmásíthatatlan."
+      - "&eCsak boltból vehető (Bankárszövetség)"
+  lampaolaj:
+    material: GLOW_INK_SAC
+    display-name: "&eFinomított Lámpaolaj"
+    custom-model-data: 6033
+    lore:
+      - "&7A caldesterai lámpagyújtogatók titkos"
+      - "&7keveréke — tisztán, kormozás nélkül ég."
+      - "&eCsak boltból vehető"
+  folyositoszer:
+    material: BLAZE_POWDER
+    display-name: "&cKovács-folyósítószer"
+    custom-model-data: 6034
+    lore:
+      - "&7A Vasművek Akadémiájának adalékszere:"
+      - "&7nélküle a netherit nem veszi fel a rúnát."
+      - "&eCsak boltból vehető"
+  # --- CSAK mobból / bossból eső anyagok (3. hullám) ---
+  dermedt_konnycsepp:
+    material: GHAST_TEAR
+    display-name: "&bDermedt Könnycsepp"
+    custom-model-data: 6029
+    lore:
+      - "&7Azt mondják, Eleftheria sírt, mielőtt"
+      - "&7elhallgatott. Ez itt bizonyíték."
+      - "&cCsak élőhalottakból esik"
+  karhozat_parazs:
+    material: FIRE_CHARGE
+    display-name: "&4A Kapu Parazsa"
+    custom-model-data: 6030
+    lore:
+      - "&7A Kárhozat Kapujából kisodródott parázs —"
+      - "&7nem ég, nem alszik ki. Csak vár."
+      - "&4Csak világbossból / nehéz eventből esik"
+  nema_kristaly:
+    material: AMETHYST_SHARD
+    display-name: "&5Néma Kristály"
+    custom-model-data: 6031
+    lore:
+      - "&7Sculk-erek közt nőtt kristály. Ha a füledhez"
+      - "&7tartod, hallod, hogy NEM szól semmit."
+      - "&cCsak szörnyekből esik"
+  elso_csend_szilankja:
+    material: ECHO_SHARD
+    display-name: "&0Az Első Csend Szilánkja"
+    custom-model-data: 6032
+    lore:
+      - "&7Nem tudni, mi ez, sem honnan való. Csak"
+      - "&7azt, hogy amikor a kezedbe veszed,"
+      - "&7a világ egy pillanatra elhallgat."
+      - "&4A legritkább kincs — csak világbossból"

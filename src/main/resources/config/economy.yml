@@ -159,6 +159,27 @@ faction-shops:
         amount: 8
         price: 60
         currency: "OWN"
+      # --- Vendor-only szakma-anyagok (a `unique:` mező a UniqueMaterialFactory tárgyát
+      # adja — a bolt az EGYETLEN forrásuk; a magas receptek hozzávalóként kérik őket,
+      # így a szakma-progresszió folyamatos pénz-nyelő kereslete lesz). ---
+      4:
+        material: "GLOW_INK_SAC"
+        unique: "lampaolaj"
+        amount: 1
+        price: 35
+        currency: "OWN"
+      5:
+        material: "BLAZE_POWDER"
+        unique: "folyositoszer"
+        amount: 1
+        price: 80
+        currency: "OWN"
+      6:
+        material: "HONEYCOMB"
+        unique: "viaszpecset"
+        amount: 1
+        price: 50
+        currency: "OWN"
 
 # ===== Kereskedő-karaván (időszakos világesemény + money sink) =====
 # Egy vándorkereskedő időnként felbukkan egy stop-helyszínen (vagy ha nincs stop

@@ -1080,6 +1080,23 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **+10 quest** (jegvirag_szuret, parazs_gyujtes, borostyan_kutatas, fonixpihe_vadaszat,
         sarkanycsont_kutato, porkolt_lakoma, uti_kenyer, viharkvarc_fejto, korrupt_irtas,
         karhozat_zarandoklat — az utóbbi territory-id-ját igazítsd a szerveredhez!).
+- [ ] **Tartalombővítés 3. hullám (ÚJ):**
+  - [ ] **34 unique anyag** (17 új): 10 szakma-gyártott (Holdezüst Huzal, Csontenyv,
+        Sarkfény-cseppkő, Szavannafű-kötél, Obszidián-szilánk, Árnygomba, Lélekhamu,
+        Aranyfüst-lemez, Gyöngyház-pikkely, Vándorfűszer), 3 VENDOR-ONLY (Számvevő-pecsétviasz,
+        Finomított Lámpaolaj, Kovács-folyósítószer — CSAK az Általános Boltban kaphatók, a
+        bolt-item `unique:` mezője a valódi PDC-s anyagot adja), 4 mob/boss-drop (Dermedt
+        Könnycsepp undead, A Kapu Parazsa boss, Néma Kristály mob, Az Első Csend Szilánkja —
+        a legritkább, weight 2 boss-only).
+  - [ ] **176 recept** (+21): 10 anyag-recept, ünnepi étel MIND A 4 frakciónak (RED
+        Vadlakoma: Gyorsaság+Tűzáll; NEUTRAL Vándorünnep Lepénye: Szerencse+Gyorsaság;
+        DARK Hamvak Lakomája: Felszívódás+Éjjellátás; a BLUE pörkölt mellé), 3 új LEGENDÁS
+        loot-only darab (A Mélység Népe Koronája, Viharjáró Csizma, Eleftheria Fátyla — mind
+        Első Csend Szilánkját + vendor-anyagot + netheritet kér), és a meglévő legendások
+        MEGDRÁGÍTVA (Miinus/Lángnyelv: +Szilánk/Parázs + folyósítószer; Jégtörő/Napfogyatkozás/
+        Lámpás: vendor-anyag igény).
+  - [ ] **Storytelling ~kétszerezve:** tábortűz 15→29, Idegen 12→23, bárd 25→40, krónika
+        12→19, szezon-átvezető 10→16 variáns.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

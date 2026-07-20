@@ -30,14 +30,21 @@ public final class ChronicleManager implements PersistentStore {
             "&6&l— A Bankárszövetség Krónikája —&r &7Új lap fordul a Korszakok Könyvében:",
             "&6&l— A Bankárszövetség Krónikája —&r &7Amit a Creutzér látott, azt mi lejegyeztük:",
             "&6&l— A Bankárszövetség Krónikája —&r &7Tinta, vér és kamat — e héten is volt mindhárom:",
-            "&6&l— A Bankárszövetség Krónikája —&r &7A Fa gyűrűt nő, a Könyv lapot — mi pedig írunk:");
+            "&6&l— A Bankárszövetség Krónikája —&r &7A Fa gyűrűt nő, a Könyv lapot — mi pedig írunk:",
+            "&6&l— A Bankárszövetség Krónikája —&r &7Hét nap hírei, három tollvonásban:",
+            "&6&l— A Bankárszövetség Krónikája —&r &7Ki emelkedett, ki bukott — a tinta tudja:",
+            "&6&l— A Bankárszövetség Krónikája —&r &7A karaván port kavar, a hír megmarad:",
+            "&6&l— A Bankárszövetség Krónikája —&r &7Olvasd figyelmesen — rólad is szólhat:");
     private static final List<String> CLOSERS = List.of(
             "&8A krónika hiteléért a Számvevők felelnek. Többnyire.",
             "&8Aki nevét e lapon látja, tartozik nekünk egy itallal.",
             "&8A következő lapig — vigyázz a lelkedre és a számládra.",
             "&8Feljegyezve Caldesterában, a Botera-negyed árnyékában.",
             "&8Ha tévedtünk volna: a helyesbítés díja három Creutzér.",
-            "&8A Könyv emlékezik. Mi csak körmölünk.");
+            "&8A Könyv emlékezik. Mi csak körmölünk.",
+            "&8E lapot az Idegen is olvassa. Legalábbis reméljük, hogy csak olvassa.",
+            "&8A jövő heti számot a jelen tettei írják. Rajta.",
+            "&8Sajtóhibáért felelősséget a Néma Királynő vállal.");
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;

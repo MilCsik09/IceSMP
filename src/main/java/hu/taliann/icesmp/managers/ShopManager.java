@@ -210,7 +210,25 @@ public final class ShopManager {
      * Config-mezők az item-szekción: name (legacy &-kódokkal), lore (lista), signature
      * (PDC-id — a SignatureItemListener perk-kulcsa; ugyanaz a tag, mint a recept-motoré).
      */
+    /** Vendor-only unique anyagok támogatása: setterrel kötve (a factory később épülhet). */
+    private volatile hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
+
+    public void setUniqueMaterialFactory(final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory) {
+        this.uniqueMaterialFactory = uniqueMaterialFactory;
+    }
+
     private ItemStack buildShopItem(final ConfigurationSection item, final Material material, final int amount) {
+        // Vendor-only unique anyag (`unique: <id>` a bolt-item configon): a valódi
+        // UniqueMaterialFactory-tárgy kerül a kosárba (PDC-taggel) — a recept-motor
+        // így ismeri fel; a bolt az EGYETLEN forrása (pénz-nyelő + recept-kereslet).
+        final String uniqueId = item.getString("unique", "");
+        final hu.taliann.icesmp.items.UniqueMaterialFactory factoryRef = uniqueMaterialFactory;
+        if (!uniqueId.isBlank() && factoryRef != null) {
+            final ItemStack uniqueStack = factoryRef.create(uniqueId, amount);
+            if (uniqueStack != null) {
+                return uniqueStack;
+            }
+        }
         final ItemStack stack = new ItemStack(material, amount);
         final String name = item.getString("name", "");
         final java.util.List<String> lore = item.getStringList("lore");

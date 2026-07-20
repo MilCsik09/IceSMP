@@ -45,7 +45,10 @@ public final class SeasonStoryTeller {
             "<dark_aqua>📖 A Fa gyűrűt növesztett — egy korszak a múlté, s a tinta még nedves az új lapon.</dark_aqua>",
             "<dark_aqua>📖 Elhalt a régi szezon utolsó kürtszava. A Számvevők lezárták a könyveket.</dark_aqua>",
             "<dark_aqua>📖 A Lapforduló Őre elhagyta a falakat — a korszak, amit őrzött, a múlté.</dark_aqua>",
-            "<dark_aqua>📖 A tinta megszáradt. Ami történt, megtörtént — a Könyv pedig sosem felejt.</dark_aqua>"
+            "<dark_aqua>📖 A tinta megszáradt. Ami történt, megtörtént — a Könyv pedig sosem felejt.</dark_aqua>",
+            "<dark_aqua>📖 Egy korszaknyi kürtszó, kalapácsütés és suttogás ült el most egyetlen sóhajban.</dark_aqua>",
+            "<dark_aqua>📖 A krónikások homokot szórtak a friss tintára. Ez a lap kész. A világ lapozott.</dark_aqua>",
+            "<dark_aqua>📖 Így ér véget minden korszak: nem robajjal — egy lap halk zizzenésével.</dark_aqua>"
     };
 
     /** Zárás-variánsok (messages-kulcs: season-story-closer-1..3). */
@@ -54,7 +57,10 @@ public final class SeasonStoryTeller {
             "<gold>📖 A Királynő álma tovább gomolyog… de az új lap fehér. Ki mer elsőként írni rá?</gold>",
             "<gold>📖 Minden korszak azzal kezdődik, hogy valaki lépni mer. Az új szezon megnyílt!</gold>",
             "<gold>📖 A krónikások új tollat faragnak — vajon kinek a nevét koptatja majd el?</gold>",
-            "<gold>📖 Hallod? A Könyv új lapja zizeg. Azt kérdezi: na és te, mit teszel ma?</gold>"
+            "<gold>📖 Hallod? A Könyv új lapja zizeg. Azt kérdezi: na és te, mit teszel ma?</gold>",
+            "<gold>📖 Az új lap első szava mindig ugyanaz: „Egyszer…” — a többit ti írjátok.</gold>",
+            "<gold>📖 Kovácsok, halászok, hadvezérek — a Könyv nem válogat. Csak a tétlent hagyja ki.</gold>",
+            "<gold>📖 A Fa új gyűrűt kezd. Nőjetek vele!</gold>"
     };
 
     /**

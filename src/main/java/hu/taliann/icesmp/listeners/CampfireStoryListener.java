@@ -51,7 +51,22 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „Az Idegen? Láttam egyszer. Vagy ő látott engem. Azóta se tudom, melyik a rosszabb.”</gray>",
             "<gray>🔥 „A Számvevők mindent tudnak a pénzedről. De hogy MIÉRT gyűjtöd — azt csak a tűz.”</gray>",
             "<gray>🔥 „Minden korszak úgy kezdődik, hogy valaki tüzet rak. Így, mint mi most.”</gray>",
-            "<gray>🔥 „A sculk alatt nem üresség van. Fülek vannak. Ezért suttogunk a tűznél is.”</gray>"
+            "<gray>🔥 „A sculk alatt nem üresség van. Fülek vannak. Ezért suttogunk a tűznél is.”</gray>",
+            "<gray>🔥 „Nagyapám látta a Hetedik Vérháborút. Sosem beszélt róla. CSAK a tűznek, halkan.”</gray>",
+            "<gray>🔥 „A Bokic egyszer kiöntött, és egy egész falut odébb rakott. Senki se halt meg. A folyó válogat.”</gray>",
+            "<gray>🔥 „Az Arany Liga? Volt. Nincs. A Számvevők átvették a könyveiket, és a nevüket is kifizették.”</gray>",
+            "<gray>🔥 „A jégsárkányok nem haltak ki, fiam. Alszanak. És Kallan tudja, hol.”</gray>",
+            "<gray>🔥 „Mortengradban éjjel ne fütyülj. Nem babona. Csak udvariasság — valaki mindig hallgatózik.”</gray>",
+            "<gray>🔥 „A Vándorünnep lepénye? Az igazi receptjét csak három szakács tudja, és nem beszélnek egymással.”</gray>",
+            "<gray>🔥 „Volt egy uralkodó, I. Lineata, aki sosem vesztett csatát. Aztán egyszer nem jött vissza. A Könyvben üres a lapja.”</gray>",
+            "<gray>🔥 „A meteorvas jó vas. De ha éjjel kovácsolod, néha visszakalapál.”</gray>",
+            "<gray>🔥 „A Lapforduló Őre nem szörny. Őr. Az a kérdés, MITŐL őrzi a lapot… vagy KITŐL.”</gray>",
+            "<gray>🔥 „A Kitaszítottak közt több a becsület, mint a fővárosban. Csak ott senki se írja fel.”</gray>",
+            "<gray>🔥 „Az Első Csendről nem mesélünk. Ez a mese. Vége.”</gray>",
+            "<gray>🔥 „A Fa egyik gyökere állítólag a tábortüzek alatt fut. Ezért melegszik át a történet is.”</gray>",
+            "<gray>🔥 „Pyralingrad kohói sosem hűlnek ki. Egyszer kihűltek. Arról az évről nincs krónika.”</gray>",
+            "<gray>🔥 „A Szellemszarvas nem hátas. Vendéglátó. Sose sarkantyúzd.”</gray>",
+            "<gray>🔥 „Minden térképen van egy fehér folt. Nem azért, mert nem jártak ott. Azért, mert visszajöttek, és nem rajzolták be.”</gray>"
     };
 
     public CampfireStoryListener(final JavaPlugin plugin, final ConfigManager configManager,

@@ -97,6 +97,10 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
 - **Szezonzáró tőzsdeláz:** a szezon utolsó hetében (Végítélet-hét) a sokkok **sűrűbbek,
   hevesebbek és rövidebbek** — aki figyeli a piacot, nagyot nyerhet (vagy veszíthet).
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
+- **Vendor-only szakma-anyagok:** három egyedi alapanyag (**Számvevő-pecsétviasz**,
+  **Finomított Lámpaolaj**, **Kovács-folyósítószer**) **kizárólag boltban kapható** — a
+  magas szintű receptek (köztük a legendás fegyverek/páncélok) hozzávalóként kérik őket,
+  így a szakma-progresszió folyamatosan pénzt „éget” (money sink).
 - **Frakció-boltok:** a fővárosokban álló **bolt-NPC-kre jobb-kattintva** egy vásárló felület
   nyílik — fix áron vehetsz alapanyagot/fogyóeszközt a banki egyenlegedből. A kifizetett pénz
   **eltűnik** a gazdaságból (money sink). Egyes boltok csak a saját frakciód tagjainak árulnak.

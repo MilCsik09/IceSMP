@@ -33,7 +33,10 @@ public final class BardManager {
             "<light_purple>🎵 „Régi húrok, friss nevek — íme a hét éneke!”</light_purple>",
             "<light_purple>🎵 „A fogadó füstjén át is fénylik e dal — hallgassátok!”</light_purple>",
             "<light_purple>🎵 „Pénzért énekelek, de ez a dal ingyen van — annyira igaz!”</light_purple>",
-            "<light_purple>🎵 „Csend legyen ott hátul! A hét hősei ma este arcot kapnak!”</light_purple>"
+            "<light_purple>🎵 „Csend legyen ott hátul! A hét hősei ma este arcot kapnak!”</light_purple>",
+            "<light_purple>🎵 „Az Idegen tanított egy dalt egyszer… de azt nem ma. Ma ezt halljátok!”</light_purple>",
+            "<light_purple>🎵 „Hét nap, hét hír, egy húr — kezdjük!”</light_purple>",
+            "<light_purple>🎵 „A Számvevők számolnak, én mesélek. Ők pontosabbak. Én igazabb.”</light_purple>"
     };
     /** Szint-hős variánsok ({player}/{value}). */
     private static final String[] LEVEL_VERSES = {
@@ -41,7 +44,10 @@ public final class BardManager {
             "<aqua>🎵 „Ki ér fel hozzá? Senki ma még — {player}, a {value}. szint vándora!”</aqua>",
             "<aqua>🎵 „Volt egyszer egy vándor, ki nem állt meg soha… {player} a neve, s {value} szint a nyoma.”</aqua>",
             "<aqua>🎵 „A Fa lombja közt új név zizeg: {player}, a {value}. szint vándora!”</aqua>",
-            "<aqua>🎵 „Hegyet mászik, mélybe száll — {player} a {value}. szinten jár!”</aqua>"
+            "<aqua>🎵 „Hegyet mászik, mélybe száll — {player} a {value}. szinten jár!”</aqua>",
+            "<aqua>🎵 „Kérdezték a hegyet: ki a legnagyobb? A hegy csak ennyit szólt: {player}. ({value}. szint!)”</aqua>",
+            "<aqua>🎵 „A Könyv lapján friss tinta ragyog — {player} a {value}. szintre hágott!”</aqua>",
+            "<aqua>🎵 „Se jég, se láng nem állította meg — {player}, a {value}. szint ura, íme!”</aqua>"
     };
     /** Vagyon-hős variánsok. */
     private static final String[] WEALTH_VERSES = {
@@ -49,7 +55,10 @@ public final class BardManager {
             "<green>🎵 „A Bankárszövetség kedvence, {player} — {value} fénylik a könyvekben a neve mellett!”</green>",
             "<green>🎵 „Ócska garas nem hull nyomában — {player} kincse {value}, így szól a fáma!”</green>",
             "<green>🎵 „Caldestera kapuja aranytól ragyog — {player} számláján {value} csillog!”</green>",
-            "<green>🎵 „Kérdezd a Számvevőt, ki a leggazdagabb — {player}, súgja, és {value}-t mutat!”</green>"
+            "<green>🎵 „Kérdezd a Számvevőt, ki a leggazdagabb — {player}, súgja, és {value}-t mutat!”</green>",
+            "<green>🎵 „A Creutzér oda gurul, ahol szeretik — {player}hoz gurult {value}-nyi belőle!”</green>",
+            "<green>🎵 „Van, ki kincset ás, van, ki kincset ír — {player} számláján {value} a hír!”</green>",
+            "<green>🎵 „A piac zaja közt egy név zeng tisztán: {player} — és {value} csengő érme!”</green>"
     };
     /** Raid-hős variánsok. */
     private static final String[] RAID_VERSES = {
@@ -57,7 +66,10 @@ public final class BardManager {
             "<red>🎵 „A Vérháborúk visszhangja él: {player} kardján {value} győzelem fénye ég!”</red>",
             "<red>🎵 „Ne állj útjába, ha kürt rivall — {player} mögött {value} elesett rivális!”</red>",
             "<red>🎵 „Dob se kell, hogy féljenek tőle — {player} nevét {value} csata őrzi!”</red>",
-            "<red>🎵 „A Vérszavanna pora issza a hírt: {player} már {value} győzelmet írt!”</red>"
+            "<red>🎵 „A Vérszavanna pora issza a hírt: {player} már {value} győzelmet írt!”</red>",
+            "<red>🎵 „Pajzsok törnek, kürtök szólnak — {player} {value} diadalt számol!”</red>",
+            "<red>🎵 „A hadszíntér tudja a nevét jól: {player} — {value} győzelem szól!”</red>",
+            "<red>🎵 „Nem a kard teszi a hőst, hanem a kéz — {player} keze {value} csatát idéz!”</red>"
     };
     /** Zárás-variánsok. */
     private static final String[] CLOSERS = {
@@ -65,7 +77,10 @@ public final class BardManager {
             "<light_purple>🎵 „Ennyi a dal — a többit írjátok ti, odakint!”</light_purple>",
             "<light_purple>🎵 „A húr elpattan, a hír marad. Jó utat, vándor!”</light_purple>",
             "<light_purple>🎵 „S ha egyszer rólad szól a dal — ne feledd, ki énekelte először!”</light_purple>",
-            "<light_purple>🎵 „A Könyv lapjai közt egy dallam is elfér. Ez volt az.”</light_purple>"
+            "<light_purple>🎵 „A Könyv lapjai közt egy dallam is elfér. Ez volt az.”</light_purple>",
+            "<light_purple>🎵 „Ha nem tetszett, a panaszt a Számvevőknél lehet leadni. Három Creutzér.”</light_purple>",
+            "<light_purple>🎵 „A dal elszáll. A tett marad. Menjetek, tegyetek!”</light_purple>",
+            "<light_purple>🎵 „…és ha az Idegen kérdezi, ki énekelt: nem tudjátok. Higgyétek el, így jobb.”</light_purple>"
     };
 
     public BardManager(final ConfigManager configManager, final StatsManager statsManager,

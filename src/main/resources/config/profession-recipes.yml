@@ -1478,7 +1478,7 @@ profession-recipes:
       - "&7azt ez a fejsze megtöri."
     category: "Fagyott Királyság (tervrajz)"
     result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegtoro }
-    ingredients: [ "DIAMOND_AXE:1", "NETHERITE_INGOT:1", "unique:jegviragpor:3", "unique:sarkanycsont_szilank:1" ]
+    ingredients: [ "DIAMOND_AXE:1", "NETHERITE_INGOT:2", "unique:jegviragpor:3", "unique:sarkanycsont_szilank:2", "unique:folyositoszer:1" ]
   miinus_haragja:
     profession: armorer
     level: 50
@@ -1492,7 +1492,7 @@ profession-recipes:
       - "&8„A tél nem kegyelmez — emlékezik.”"
     category: "Fagyott Királyság (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: miinus_haragja }
-    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:2", "unique:sarkanycsont_szilank:2", "unique:osi_ereklyeszilank:1" ]
+    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:3", "unique:sarkanycsont_szilank:3", "unique:osi_ereklyeszilank:1", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2" ]
   sarkanycsont_ij:
     profession: armorer
     level: 44
@@ -1519,7 +1519,7 @@ profession-recipes:
       - "&7parázslanak, mint az emléke."
     category: "Vérszavanna (tervrajz)"
     result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: zhoris_langnyelve }
-    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:2", "unique:parazsmag:3", "unique:osi_ereklyeszilank:1" ]
+    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:3", "unique:parazsmag:3", "unique:osi_ereklyeszilank:1", "unique:karhozat_parazs:2", "unique:folyositoszer:2" ]
   napfogyatkozas:
     profession: armorer
     level: 46
@@ -1532,7 +1532,7 @@ profession-recipes:
       - "&7éjjel a nyila árnyékból csap le."
     category: "Vérszavanna (tervrajz)"
     result: { material: BOW, amount: 1, affix-tier: crafted, signature: napfogyatkozas }
-    ingredients: [ "BOW:1", "unique:fonixpihe:3", "OBSIDIAN:4", "unique:parazsmag:2" ]
+    ingredients: [ "BOW:1", "unique:fonixpihe:3", "unique:obszidian_szilank:3", "unique:parazsmag:2", "unique:folyositoszer:1" ]
   # --- Ételek + neves darabok ---
   sarkany_porkolt:
     profession: cook
@@ -1587,7 +1587,7 @@ profession-recipes:
       - "&7sosem fárad el."
     category: "Különleges"
     result: { material: LANTERN, amount: 1 }
-    ingredients: [ "LANTERN:1", "unique:viharkvarc:2", "GLASS:4" ]
+    ingredients: [ "LANTERN:1", "unique:viharkvarc:2", "GLASS:4", "unique:lampaolaj:1" ]
   # --- Bűvölő iskola-counter tekercsek (Fagypáncél / Főnixtoll könyv-formában, üllőhöz) ---
   fagypancel_tekercs:
     profession: enchanter
@@ -1609,6 +1609,207 @@ profession-recipes:
     category: "Bűvölés"
     result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fonixtoll:1" }
     ingredients: [ "BOOK:1", "unique:runapor:3", "unique:fonixpihe:2" ]
+
+  # =========================================================
+  # --- Tartalombővítés (3. hullám): anyag-receptek, ünnepi ételek minden
+  # --- frakciónak, legendás (drága, loot-only) darabok, vendor-anyag felhasználók.
+  # =========================================================
+  holdezust_huzas:
+    profession: enchanter
+    level: 26
+    display-name: "Holdezüst húzása"
+    category: "Alapanyag"
+    result: { unique: holdezust_huzal, amount: 1 }
+    ingredients: [ "IRON_INGOT:2", "AMETHYST_SHARD:1", "unique:runapor:1" ]
+  csontenyv_fozes:
+    profession: cook
+    level: 20
+    display-name: "Csontenyv főzése"
+    category: "Alapanyag"
+    result: { unique: csontenyv, amount: 2 }
+    ingredients: [ "BONE:4", "SUGAR:1" ]
+  sarkfeny_gyujtes:
+    profession: miner
+    level: 26
+    display-name: "Sarkfény-cseppkő fejtése"
+    category: "Alapanyag"
+    result: { unique: sarkfeny_cseppko, amount: 1 }
+    ingredients: [ "PRISMARINE_CRYSTALS:2", "AMETHYST_SHARD:2", "ICE:2" ]
+  szavannafu_sodras:
+    profession: lumberjack
+    level: 24
+    display-name: "Szavannafű-kötél sodrása"
+    category: "Alapanyag"
+    result: { unique: szavannafu_kotel, amount: 2 }
+    ingredients: [ "VINE:4", "STRING:4" ]
+  obszidian_pattintas:
+    profession: miner
+    level: 18
+    display-name: "Obszidián-szilánk pattintása"
+    category: "Alapanyag"
+    result: { unique: obszidian_szilank, amount: 2 }
+    ingredients: [ "OBSIDIAN:2", "FLINT:2" ]
+  arnygomba_szedes:
+    profession: herbalist
+    level: 28
+    display-name: "Árnygomba szedése"
+    category: "Alapanyag"
+    result: { unique: arnygomba, amount: 2 }
+    ingredients: [ "CRIMSON_FUNGUS:2", "BROWN_MUSHROOM:2", "BONE_MEAL:1" ]
+  lelekhamu_kinyeres:
+    profession: alchemist
+    level: 30
+    display-name: "Lélekhamu kinyerése"
+    category: "Alapanyag"
+    result: { unique: lelekhamu, amount: 2 }
+    ingredients: [ "SOUL_SAND:2", "GUNPOWDER:2", "GHAST_TEAR:1" ]
+  aranyfust_veres:
+    profession: armorer
+    level: 24
+    display-name: "Aranyfüst-lemez verése"
+    category: "Alapanyag"
+    result: { unique: aranyfust_lemez, amount: 2 }
+    ingredients: [ "GOLD_INGOT:3", "unique:tiszta_vasesszencia:1" ]
+  gyongyhaz_fejtes:
+    profession: fisherman
+    level: 20
+    display-name: "Gyöngyház-pikkely fejtése"
+    category: "Alapanyag"
+    result: { unique: gyongyhaz_pikkely, amount: 1 }
+    ingredients: [ "SALMON:2", "PRISMARINE_SHARD:1", "SAND:2" ]
+  vandorfuszer_keveres:
+    profession: cook
+    level: 22
+    display-name: "Vándorfűszer keverése"
+    category: "Alapanyag"
+    result: { unique: vandorfuszer, amount: 2 }
+    ingredients: [ "COCOA_BEANS:2", "SUGAR:1", "RED_MUSHROOM:1", "DRIED_KELP:1" ]
+  # --- Ünnepi ételek: minden frakciónak a magáé (a BLUE Sárkány-pörkölt párjai) ---
+  vadlakoma:
+    profession: cook
+    level: 30
+    faction: RED
+    display-name: "Vérszavannai Vadlakoma"
+    lore:
+      - "&7Nyílt tűzön, egészben sült vad, ahogy"
+      - "&7I. Zhoris vadászai ették győzelem után."
+    category: "Étel"
+    result: { material: COOKED_BEEF, amount: 1, signature: vadlakoma }
+    ingredients: [ "BEEF:2", "unique:vandorfuszer:1", "unique:parazsmag:1" ]
+  vandorunnep_lepenye:
+    profession: cook
+    level: 30
+    faction: NEUTRAL
+    display-name: "Vándorünnep Lepénye"
+    lore:
+      - "&7A Bokic-parti aratóünnep édes lepénye —"
+      - "&7egy szelet szerencse minden vándornak."
+    category: "Étel"
+    result: { material: PUMPKIN_PIE, amount: 1, signature: vandorunnep_lepenye }
+    ingredients: [ "PUMPKIN:1", "EGG:1", "SUGAR:2", "unique:vandorfuszer:1" ]
+  hamvak_lakomaja:
+    profession: cook
+    level: 30
+    faction: DARK
+    display-name: "Hamvak Lakomája"
+    lore:
+      - "&7A Kitaszítottak ünnepi tála: kevés, keserű,"
+      - "&7de aki megosztja, az már nem idegen."
+    category: "Étel"
+    result: { material: BEETROOT_SOUP, amount: 1, signature: hamvak_lakomaja }
+    ingredients: [ "BEETROOT:4", "BOWL:1", "unique:arnygomba:1" ]
+  # --- Legendás (drága) darabok: vendor-only + boss-anyag + loot-only tervrajz ---
+  melysegi_korona:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    display-name: "A Mélység Népe Koronája"
+    lore:
+      - "&7Borostyánba dermedt idő és néma kristály"
+      - "&7egy koronában — az utolsó kovácsmű,"
+      - "&7amit a Mélység Népe hátrahagyott."
+    category: "Legendás (tervrajz)"
+    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted }
+    ingredients: [ "unique:melysegi_borostyan:3", "unique:nema_kristaly:2", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2", "GOLD_BLOCK:4", "NETHERITE_INGOT:2" ]
+  viharjaro_csizma:
+    profession: armorer
+    level: 48
+    learn: blueprint
+    loot-only: true
+    display-name: "Viharjáró Csizma"
+    lore:
+      - "&7Aki viseli, a vihar előtt jár egy"
+      - "&7lépéssel — és a vihar ezt tiszteli."
+    category: "Legendás (tervrajz)"
+    result: { material: NETHERITE_BOOTS, amount: 1, affix-tier: crafted }
+    ingredients: [ "unique:viharkvarc:4", "unique:fonixpihe:2", "unique:folyositoszer:1", "NETHERITE_INGOT:2", "DIAMOND_BLOCK:1" ]
+  eleftheria_fatyla:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    faction: DARK
+    display-name: "Eleftheria Fátyla"
+    lore:
+      - "&7Lélekhamuból szőtt, könnyekkel hímzett"
+      - "&7vért — a Néma Királynő gyásza, páncéllá"
+      - "&7kovácsolva. Viselni kegy. És teher."
+    category: "Legendás (tervrajz)"
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
+    ingredients: [ "unique:lelekhamu:4", "unique:dermedt_konnycsepp:2", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2", "NETHERITE_INGOT:3" ]
+  # --- Vendor-anyag felhasználó kézműves darabok ---
+  pecsetes_szerzodes:
+    profession: enchanter
+    level: 30
+    display-name: "Pecsétes Szerződés"
+    lore:
+      - "&7A Bankárszövetség viaszával hitelesített"
+      - "&7üres szerződés — két fél, egy pecsét,"
+      - "&7és nincs többé vita."
+    category: "Különleges"
+    result: { material: PAPER, amount: 1 }
+    ingredients: [ "PAPER:2", "unique:viaszpecset:1" ]
+  sarkfeny_prizma:
+    profession: enchanter
+    level: 38
+    display-name: "Sarkfény-prizma"
+    lore:
+      - "&7Cseppkőbe zárt északi fény — a szoba,"
+      - "&7ahol áll, sosem lesz igazán sötét."
+    category: "Különleges"
+    result: { material: SEA_LANTERN, amount: 1 }
+    ingredients: [ "unique:sarkfeny_cseppko:3", "GLASS:4", "unique:lampaolaj:1" ]
+  csontenyves_ijkar:
+    profession: lumberjack
+    level: 34
+    display-name: "Csontenyves Íjkar"
+    lore:
+      - "&7Csontenyvvel rétegelt, kötéllel erősített"
+      - "&7íjkar — a Mélység Népe így készítette."
+    category: "Fegyver"
+    result: { material: BOW, amount: 1, affix-tier: crafted }
+    ingredients: [ "BOW:1", "unique:csontenyv:2", "unique:szavannafu_kotel:2" ]
+  gyongyhaz_talizman:
+    profession: fisherman
+    level: 32
+    display-name: "Gyöngyház Talizmán"
+    lore:
+      - "&7Hét pikkely, hét szín, egy kagylóházban —"
+      - "&7a Bokic halászainak szerencsehozója."
+    category: "Különleges"
+    result: { material: NAUTILUS_SHELL, amount: 1 }
+    ingredients: [ "NAUTILUS_SHELL:1", "unique:gyongyhaz_pikkely:3", "STRING:2" ]
+  fuszeres_vandorhus:
+    profession: cook
+    level: 28
+    display-name: "Fűszeres Vándorhús"
+    lore:
+      - "&7Vándorfűszerrel érlelt, füstölt hús —"
+      - "&7hetekig eláll a nyeregtáskában."
+    category: "Étel"
+    result: { material: COOKED_MUTTON, amount: 3 }
+    ingredients: [ "MUTTON:3", "unique:vandorfuszer:1" ]
 
 # ===== I14 — „Készítette: X" címke (kódex VIII.: a mester keze alól kikerülő mű
 # a nevét is viseli). A NEVES/gear recept-eredmények PDC-ben (crafted_by/crafted_at)

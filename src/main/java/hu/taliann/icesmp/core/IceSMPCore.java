@@ -364,6 +364,8 @@ public final class IceSMPCore {
         this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
+        // Vendor-only unique anyagok a boltokban (economy.yml `unique:` bolt-item mező).
+        shopManager.setUniqueMaterialFactory(uniqueMaterialFactory);
         // D19 — a Rejtélyes Idegen (tisztán atmoszférikus, ritka felbukkanás).
         this.strangerNpcManager = new hu.taliann.icesmp.managers.StrangerNpcManager(plugin, configManager, messageManager);
         strangerNpcManager.setSpawnGuard(eventSpawnGuard);

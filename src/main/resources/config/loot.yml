@@ -42,6 +42,9 @@ loot:
       - { type: unique, weight: 5,  id: arnyekpor, min: 1, max: 2 }
       # --- 2. hullám: Főnixpihe — Soleil főnixeinek nyoma (ritka, bármely szörnyből) ---
       - { type: unique, weight: 6,  id: fonixpihe, min: 1, max: 2 }
+      # --- 3. hullám: Néma Kristály (mob) + Dermedt Könnycsepp (undead-only, ritka) ---
+      - { type: unique, weight: 5,  id: nema_kristaly, min: 1, max: 1 }
+      - { type: unique, weight: 3,  undead-only: true, id: dermedt_konnycsepp, min: 1, max: 1 }
       # --- K8: Emlékszilánk — a Felsők elveszett emlékei (ritka; beváltás: /emlek) ---
       - { type: unique, weight: 3,  id: emlekszilank, min: 1, max: 1 }
       # --- K9: Suttogás-meghívó — a Királynő hívása, csak élőhalott hozza (nagyon ritka) ---
@@ -64,6 +67,9 @@ loot:
       - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 3 }
       # --- 2. hullám: Sárkánycsont-szilánk — Kallan sárkányainak öröksége (boss-only) ---
       - { type: unique, weight: 12, id: sarkanycsont_szilank, min: 1, max: 2 }
+      # --- 3. hullám: A Kapu Parazsa (boss) + Az Első Csend Szilánkja (a legritkább) ---
+      - { type: unique, weight: 9,  id: karhozat_parazs, min: 1, max: 2 }
+      - { type: unique, weight: 2,  id: elso_csend_szilankja, min: 1, max: 1 }
       # --- K8: Emlékszilánk boss-szinten (biztosabb forrás) ---
       - { type: unique, weight: 8,  id: emlekszilank, min: 1, max: 2 }
       # --- K9: Suttogás-meghívó boss-szinten (élőhalott boss/event-mobból) ---

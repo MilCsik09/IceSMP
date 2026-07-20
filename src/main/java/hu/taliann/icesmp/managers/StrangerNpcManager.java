@@ -57,7 +57,18 @@ public final class StrangerNpcManager {
             "<dark_gray>„Láttam a nevedet a Könyvben. Két helyen. Az egyik át van húzva.”</dark_gray>",
             "<dark_gray>„Amit a jég megőriz, azt a láng irigyli. Te melyiké vagy?”</dark_gray>",
             "<dark_gray>„A Fa gyógyul. Kérdezd meg magadtól: minek örül ennyire a Kapu?”</dark_gray>",
-            "<dark_gray>„Nem minden szárny visz haza. Némelyik csak messzebb visz.”</dark_gray>"
+            "<dark_gray>„Nem minden szárny visz haza. Némelyik csak messzebb visz.”</dark_gray>",
+            "<dark_gray>„Számoltad már, hány lépés a fővárostól a Kapuig? Ő számolta. Kétszer.”</dark_gray>",
+            "<dark_gray>„A pénzed csörög. A bűneid nem. Mégis az utóbbit hallani messzebbre.”</dark_gray>",
+            "<dark_gray>„Egy korszak múlva senki sem emlékszik rád. Kivéve, ha Ő emlékszik.”</dark_gray>",
+            "<dark_gray>„A tábortüzeknél rólam mesélnek. Kíváncsi vagyok, melyik igaz. Én már elfelejtettem.”</dark_gray>",
+            "<dark_gray>„A jég alatt is folyik a víz. A csend alatt is szól a hang. Csak füle kell.”</dark_gray>",
+            "<dark_gray>„Nem árnyék vagyok. Az árnyékhoz fény kell. Én régebbi vagyok annál.”</dark_gray>",
+            "<dark_gray>„A Bankárszövetség egyszer nekem is számlát nyitott. Még mindig nyitva van. Üresen.”</dark_gray>",
+            "<dark_gray>„Kérdezd meg a bárdot, ki tanította az első dalt. Nézd meg, elsápad-e.”</dark_gray>",
+            "<dark_gray>„A Kárhozat Kapuja nem bejárat, vándor. Kijárat. Ezt kevesen értik.”</dark_gray>",
+            "<dark_gray>„Ma jó napod lesz. Ezt nem jóslatként mondom. Bocsánatkérésként.”</dark_gray>",
+            "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>"
     };
 
     public StrangerNpcManager(final JavaPlugin plugin, final ConfigManager configManager,
