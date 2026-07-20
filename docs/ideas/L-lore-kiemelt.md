@@ -414,11 +414,19 @@ mondat-sablon kell a monotónia elkerülésére.
 **Buktatók:** A régi (címke nélküli) tárgyakkal való visszamenőleges kompatibilitás — null-biztos lore-építés, ne dobjon hibát a hiányzó PDC-mezőn.
 
 ## Tier A — erős illeszkedés
-### B33. Szezonzáró világesemény („végítélet-hét")
+### B33. Szezonzáró világesemény („végítélet-hét") `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Korszakok Könyve lapfordulása + a fél-álom Királynő nyugtalansága (kódex VII./VIII.)
 
 **Munka:** 🟡 • **Érték:** ⭐⭐⭐
+
+> **Megvalósítva:** `SeasonFinaleManager` (PersistentStore, season-finale.yml) — a szezon
+> utolsó `days` (7) napjában napi eszkaláció: esély-szorzó a vérhold/világboss/invázió
+> chance-kulcsára, invázió mob-szint bónusz, liga-pont szorzó lineárisan ×2-ig; napváltás
+> lore-broadcast. Utolsó nap: egyszeri Szezonboss („A Lapforduló Őre") a NEUTRAL főváros
+> pereménél (WorldBossManager.forceFinaleSpawn — guard-bypass, emelt élet, finálé-PDC),
+> halálakor egyedi loot-tábla (LootTable `unique:` sor-támogatással) + extra liga-pont.
+> Config: `world-events.season-finale.*` (élőben olvasva).
 
 **Mi ez:** A szezon utolsó hetében eszkalálódó modifikátorok, az utolsó napon szerver-boss
 a fővárosnál.

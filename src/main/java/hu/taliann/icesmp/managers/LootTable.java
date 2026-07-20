@@ -20,6 +20,18 @@ public final class LootTable {
     }
 
     /**
+     * Opcionális unique-material híd: ha be van kötve (IceSMPCore, induláskor), a
+     * loot-táblák {@code "unique:<id>"} / {@code "unique:<id>:DARAB"} sorokat is
+     * elfogadnak — a tárgyat a UniqueMaterialFactory építi (PDC-taggel). Nélküle a
+     * unique-sorok némán kimaradnak a sorsolásból.
+     */
+    private static volatile hu.taliann.icesmp.items.UniqueMaterialFactory uniqueFactory;
+
+    public static void setUniqueFactory(final hu.taliann.icesmp.items.UniqueMaterialFactory factory) {
+        uniqueFactory = factory;
+    }
+
+    /**
      * Rolls {@code rolls} random entries from the loot table at {@code path}.
      *
      * @param configManager the config source
@@ -51,6 +63,12 @@ public final class LootTable {
      */
     public static String describeProblem(final String entry) {
         final String[] parts = entry.split(":");
+        if ("unique".equalsIgnoreCase(parts[0].trim())) {
+            // A unique-id létezését a factory csak futásidőben (config-betöltés után) tudja
+            // igazolni — formailag az "unique:<id>[:db]" alak az elvárás.
+            return parts.length >= 2 && !parts[1].trim().isEmpty()
+                    ? null : "hiányzó unique-azonosító: '" + entry + "'";
+        }
         final Material material = Material.matchMaterial(parts[0].trim());
         if (material == null || material.isAir()) {
             return "ismeretlen Material: '" + parts[0].trim() + "'";
@@ -77,9 +95,25 @@ public final class LootTable {
         return null;
     }
 
-    /** Parses a {@code "MATERIAL"}, {@code "MATERIAL:COUNT"} or {@code "MATERIAL:MIN:MAX"} entry, or null if invalid. */
+    /** Parses a {@code "MATERIAL"}, {@code "MATERIAL:COUNT"}, {@code "MATERIAL:MIN:MAX"} or
+     * {@code "unique:<id>[:COUNT]"} entry, or null if invalid. */
     public static ItemStack parseEntry(final String entry) {
         final String[] parts = entry.split(":");
+        if ("unique".equalsIgnoreCase(parts[0].trim())) {
+            final hu.taliann.icesmp.items.UniqueMaterialFactory factory = uniqueFactory;
+            if (factory == null || parts.length < 2) {
+                return null;
+            }
+            int uniqueAmount = 1;
+            if (parts.length >= 3) {
+                try {
+                    uniqueAmount = Math.max(1, Integer.parseInt(parts[2].trim()));
+                } catch (final NumberFormatException ignored) {
+                    // Hibás darabszám — 1 darabbal megyünk tovább.
+                }
+            }
+            return factory.create(parts[1].trim(), uniqueAmount);
+        }
         final Material material = Material.matchMaterial(parts[0].trim());
         if (material == null || material.isAir()) {
             return null;

@@ -76,6 +76,13 @@ public final class InvasionManager {
     private final Set<UUID> activeMobs = ConcurrentHashMap.newKeySet();
     /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
     private volatile EventSpawnGuard spawnGuard;
+    /** B33: setter-injected finálé-eszkaláció (null = nincs finálé-bónusz). */
+    private volatile SeasonFinaleManager seasonFinale;
+
+    /** B33: a szezonzáró-eszkaláció bekötése (a finálé-manager később épül a DI-sorrendben). */
+    public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
+        this.seasonFinale = seasonFinale;
+    }
 
     public InvasionManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final MessageManager messageManager) {
@@ -103,8 +110,11 @@ public final class InvasionManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.invasion.check-interval-minutes", 75L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
+        // B33: a végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.invasion.chance-percent", 30.0D)));
+                configManager.getDouble("world-events.invasion.chance-percent", 30.0D) * finaleMult));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
@@ -231,7 +241,10 @@ public final class InvasionManager {
         // Pick a random horde composition for this wave (variety).
         final Horde horde = Horde.values()[ThreadLocalRandom.current().nextInt(Horde.values().length)];
         final int count = Math.max(1, configManager.getInt("world-events.invasion.mob-count", 8));
-        final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4));
+        // B33: a végítélet-hét napi mob-szint bónusza (0, ha nincs finálé).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final int finaleBonus = finaleRef == null ? 0 : finaleRef.bonusMobLevels();
+        final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4)) + finaleBonus;
         final double radius = Math.max(2.0D, configManager.getDouble("world-events.invasion.radius", 8.0D));
 
         // Folia: a gyűrű szélső tagjai (radius ~8 blokk) régióhatár közelében MÁSIK régió

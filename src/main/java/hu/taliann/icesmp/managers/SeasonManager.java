@@ -119,8 +119,20 @@ public final class SeasonManager implements PersistentStore {
             return;
         }
 
-        points.merge(faction, amount, Integer::sum);
+        // B33: a végítélet-hét alatt minden pont-jóváírás lineárisan skálázódik a
+        // finálé-maximumig (alapból dupláig az utolsó napon).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final int scaled = finaleRef == null ? amount
+                : Math.max(amount, (int) Math.round(amount * finaleRef.leaguePointMultiplier()));
+        points.merge(faction, scaled, Integer::sum);
         requestSave();
+    }
+
+    /** B33: setter-injected finálé-eszkaláció (a finálé-manager később épül a DI-sorrendben). */
+    private volatile SeasonFinaleManager seasonFinale;
+
+    public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
+        this.seasonFinale = seasonFinale;
     }
 
     /** Debounced async flush: point awards can burst (raid payouts), one write covers them all. */

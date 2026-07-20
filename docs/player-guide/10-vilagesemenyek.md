@@ -133,6 +133,21 @@ A frakciók **pontot gyűjtenek** a **raid-** és **világboss-győzelmekből**.
 
 majd a pontok lenullázódnak — kezdődik az új szezon. Az aktuális állást a `/events season` mutatja.
 
+### Végítélet-hét — a szezon zárása 📖
+
+A szezon **utolsó hetében** a Korszakok Könyvének lapja fordulni kezd, és a világ napról napra
+vadabb lesz:
+
+- **sűrűbb vérhold, gyakoribb világboss és invázió** — az esélyek naponta nőnek;
+- az inváziós hordák **erősebbek** (napi mob-szint bónusz);
+- **minden liga-pont többet ér** — a szorzó naponta nő, az utolsó napon **dupla pont** jár;
+- az **utolsó napon** megjelenik a **Szezonboss** (alapból *A Lapforduló Őre*) a semleges
+  főváros **falai előtt** — emelt élettel, és a legyőzése **egyedi zsákmányt** (ritka anyagok,
+  emlékszilánk) + **extra liga-pontot** ad a leütő frakciójának.
+
+A napváltásokat és a boss érkezését a krónikás-hangú kihirdetések jelzik — az utolsó napokban
+érdemes együtt mozogni a frakcióddal: itt dőlhet el a bajnoki cím.
+
 ## Bemutató (intro)
 
 Amikor **először** lépsz be, lejátszódik egy rövid, hangulatos **cím-szekvencia**. Ez csak

@@ -46,6 +46,8 @@ public final class WorldBossManager {
     private final SeasonManager seasonManager;
     private final NamespacedKey worldBossKey;
     private final NamespacedKey bossArchetypeKey;
+    /** B33: a szezonzáró boss jelölője (halálakor egyedi loot-tábla gurul). */
+    private final NamespacedKey finaleBossKey;
 
     /**
      * The boss roster. Each archetype is a distinct mob with its own theme, stat
@@ -113,6 +115,8 @@ public final class WorldBossManager {
     private volatile java.util.UUID activeBossId;
     /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
     private volatile EventSpawnGuard spawnGuard;
+    /** B33: setter-injected finálé-eszkaláció (null = nincs finálé-szorzó). */
+    private volatile SeasonFinaleManager seasonFinale;
     /** Current health fraction (0–1) of the active boss, driving the shared HUD boss-bar. */
     private volatile float bossHealthFraction = 1.0F;
 
@@ -127,11 +131,17 @@ public final class WorldBossManager {
         this.seasonManager = seasonManager;
         this.worldBossKey = new NamespacedKey(plugin, "world_boss");
         this.bossArchetypeKey = new NamespacedKey(plugin, "world_boss_archetype");
+        this.finaleBossKey = new NamespacedKey(plugin, "finale_boss");
     }
 
     /** Wires the shared spawn-placement guard (built after this manager in the DI order). */
     public void setSpawnGuard(final EventSpawnGuard spawnGuard) {
         this.spawnGuard = spawnGuard;
+    }
+
+    /** B33: a szezonzáró-eszkaláció bekötése (a finálé-manager később épül a DI-sorrendben). */
+    public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
+        this.seasonFinale = seasonFinale;
     }
 
     public boolean isWorldBoss(final Entity entity) {
@@ -220,8 +230,11 @@ public final class WorldBossManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.check-interval-minutes", 90L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
+        // B33: a végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.world-boss.chance-percent", 35.0D)));
+                configManager.getDouble("world-events.world-boss.chance-percent", 35.0D) * finaleMult));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
@@ -262,6 +275,23 @@ public final class WorldBossManager {
         return true;
     }
 
+    /**
+     * B33 — a szezonzáró boss spawnja egy KONKRÉT (főváros melletti) ponton: a spawn-guard
+     * kihagyásával (a finálé-boss szándékosan a városfalaknál jelenik meg), emelt élettel
+     * és finálé-jelölővel (halálakor egyedi loot-tábla). A SeasonFinaleManager hívja.
+     *
+     * @return true, ha a spawn ütemezve lett (nincs élő boss / spawn-grace)
+     */
+    public synchronized boolean forceFinaleSpawn(final Location approx, final long lifetimeMinutes) {
+        if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
+            return false;
+        }
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
+        plugin.getServer().getRegionScheduler().run(plugin, approx,
+                spawnTask -> spawnBoss(approx, lifetimeMinutes, true));
+        return true;
+    }
+
     private synchronized void triggerSpawnNear(final Player anchor) {
         // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick és
         // egy egyidejű admin-hívás közül csak az első juthat át.
@@ -285,6 +315,10 @@ public final class WorldBossManager {
     }
 
     private void spawnBoss(final Location approx, final long lifetimeMinutes) {
+        spawnBoss(approx, lifetimeMinutes, false);
+    }
+
+    private void spawnBoss(final Location approx, final long lifetimeMinutes, final boolean finale) {
         if (approx.getWorld() == null) {
             return;
         }
@@ -295,8 +329,9 @@ public final class WorldBossManager {
         // Placement rules (config: world-events.spawn-rules.world-boss): never inside a
         // town/claim/WG region, never on a water surface. Skipping leaves activeBossUntil
         // unset; the 10s spawn-grace self-heals and the next interval rolls a fresh spot.
+        // Finálé-mód (B33): a guard KIMARAD — a szezonboss szándékosan a főváros falainál áll.
         final EventSpawnGuard guard = spawnGuard;
-        if (guard != null && (guard.isBlocked("world-boss", spawnLocation)
+        if (!finale && guard != null && (guard.isBlocked("world-boss", spawnLocation)
                 || guard.isUnsafeSurface("world-boss", approx.getWorld(), approx.getBlockX(), approx.getBlockZ()))) {
             return;
         }
@@ -317,13 +352,21 @@ public final class WorldBossManager {
         activeBossUntil = System.currentTimeMillis() + (lifetimeMinutes * 60_000L);
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
         boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
+        if (finale) {
+            boss.getPersistentDataContainer().set(finaleBossKey, PersistentDataType.BYTE, (byte) 1);
+        }
         boss.setPersistent(true);
         boss.setRemoveWhenFarAway(false);
         boss.setGlowing(true);
-        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(archetype.displayName)));
+        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(
+                finale ? "&5&l📖 " + configManager.getString("world-events.season-finale.boss.name",
+                        "A Lapforduló Őre") + " &c[Szezonboss]" : archetype.displayName)));
         boss.setCustomNameVisible(true);
 
-        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D)) * archetype.healthMult;
+        final double finaleHealthMult = finale
+                ? Math.max(1.0D, configManager.getDouble("world-events.season-finale.boss.health-mult", 1.5D)) : 1.0D;
+        final double health = Math.max(20.0D, configManager.getDouble("world-events.world-boss.health", 300.0D))
+                * archetype.healthMult * finaleHealthMult;
         final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(health);
@@ -348,8 +391,10 @@ public final class WorldBossManager {
         startPhaseTick(boss, archetype);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
-                "world-boss-spawned",
-                "<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén — {minutes} perc múlva elvonul! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>",
+                finale ? "season-finale-boss-spawned" : "world-boss-spawned",
+                finale
+                        ? "<dark_purple>📖 A Korszakok Könyvének lapja fordul — a SZEZONBOSS a főváros falainál áll (<white>{x}, {z}</white>)! {minutes} perc, mielőtt a lap végleg átfordul. Az egész szerver kincse a tét!</dark_purple>"
+                        : "<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén — {minutes} perc múlva elvonul! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>",
                 Map.of(
                         "x", String.valueOf(spawnLocation.getBlockX()),
                         "z", String.valueOf(spawnLocation.getBlockZ()),
@@ -629,6 +674,22 @@ public final class WorldBossManager {
         }
 
         seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)));
+
+        // B33 — szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
+        // régió-szálán fut, a drop ott biztonságos) + extra liga-pont + saját broadcast.
+        if (boss.getPersistentDataContainer().getOrDefault(finaleBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1) {
+            final int rolls = Math.max(1, configManager.getInt("world-events.season-finale.boss.loot-rolls", 6));
+            for (final org.bukkit.inventory.ItemStack loot
+                    : LootTable.roll(configManager, "world-events.season-finale.boss.loot", rolls)) {
+                boss.getWorld().dropItemNaturally(boss.getLocation(), loot);
+            }
+            seasonManager.addPoints(faction, Math.max(0,
+                    configManager.getInt("world-events.season-finale.boss.bonus-season-points", 15)));
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "season-finale-boss-slain",
+                    "<dark_purple>📖 {player} ledöntötte a Lapforduló Őrét — a Korszakok Könyve új fejezetet nyit! A(z) {faction} extra liga-pontot nyert a záráshoz.</dark_purple>",
+                    Map.of("player", killer.getName(), "faction", faction.getDisplayName())));
+        }
 
         final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
         // Folia: the death event runs on the boss's region; buff the killer on their own region thread.

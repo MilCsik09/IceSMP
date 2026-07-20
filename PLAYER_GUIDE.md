@@ -734,6 +734,11 @@ A frakciók **raid- és világboss-győzelmekből pontot** gyűjtenek. A szezon 
 a vezető frakció **kasszája jutalmat kap**, a győztes frakció **online tagjai** pedig **győzelmi
 buffot + tárgy-jutalmat + ünneplő tűzijátékot**; utána a pontok resetelnek. Állás: `/events season`.
 
+A szezon **utolsó hete a Végítélet-hét**: naponta sűrűbb vérhold/világboss/invázió, erősebb
+hordák és növekvő liga-pont szorzó (utolsó nap: **dupla**); az utolsó napon a **Szezonboss**
+(*A Lapforduló Őre*) jelenik meg a semleges főváros falai előtt — egyedi zsákmánnyal és extra
+liga-ponttal a legyőzőjének.
+
 ---
 
 ## 12. Küldetések ✅

@@ -991,6 +991,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       kevesebbet gyógyít, mint páncélozatlanon).
 - [ ] **Crafted-by stackelés:** két külön craftban készült, lore-os stackelhető étel
       összestackel (crafted_at időbélyeg csak nem-stackelhető gearre kerül).
+- [ ] **B33 Végítélet-hét (ÚJ — Tier A):** állítsd a szezont úgy, hogy 7 napon belül járjon le
+      (pl. `/icesmp config set world-events.season.length-days <kicsi>` — a season.yml `start`
+      bélyegéhez képest számol) → napváltáskor lore-hangú broadcast (nap + pont-szorzó);
+      a vérhold/világboss/invázió esély-kulcsa naponta nő (`chance-mult-per-day`), az invázió
+      mob-szintje bónuszt kap; liga-pont jóváírás emelt (utolsó nap ×2 — `/events season`).
+      **Utolsó nap:** EGYSZERI Szezonboss („A Lapforduló Őre") a NEUTRAL főváros pereme mellett
+      (wall-offset; guard-bypass szándékos), emelt élettel; halálakor a `season-finale.boss.loot`
+      tábla gurul (unique-sorok is: `unique:<id>[:db]` — LootTable-bővítés) + extra liga-pont +
+      saját broadcast. Restart után NEM duplázódik (season-finale.yml jelző); főváros-zóna
+      nélkül sima világboss-útra esik vissza. Kulcsok: `world-events.season-finale.*`.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

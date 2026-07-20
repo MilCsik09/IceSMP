@@ -217,6 +217,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
     private final hu.taliann.icesmp.managers.ChronicleManager chronicleManager;
     private final hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
+    private final hu.taliann.icesmp.managers.SeasonFinaleManager seasonFinaleManager;
     private final hu.taliann.icesmp.managers.ArcheologyManager archeologyManager;
     private final CraftingRestrictionManager craftingRestrictionManager;
     private final ExchangeRateService exchangeRateService;
@@ -356,6 +357,16 @@ public final class IceSMPCore {
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager);
         this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
+        // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
+        hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
+        // B33 — szezonzáró finálé: a fogyasztók (season/boss/vérhold/invázió) setterrel kapják,
+        // mert a finálé-manager náluk később épül (kölcsönös hivatkozás a DI-sorrendben).
+        this.seasonFinaleManager = new hu.taliann.icesmp.managers.SeasonFinaleManager(plugin, configManager,
+                seasonManager, worldBossManager, territoryManager, messageManager);
+        seasonManager.setSeasonFinale(seasonFinaleManager);
+        worldBossManager.setSeasonFinale(seasonFinaleManager);
+        bloodMoonManager.setSeasonFinale(seasonFinaleManager);
+        invasionManager.setSeasonFinale(seasonFinaleManager);
         // Escort-success perk: the caravan shop sells its bonus stock while the window is open.
         this.shopManager.setEscortBonusCheck(escortManager::isBonusStockActive);
         // The caravan's stock is served through ShopManager under the reserved "caravan" name,
@@ -419,7 +430,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
-                moderationManager, chronicleManager, corruptionManager);
+                moderationManager, chronicleManager, corruptionManager, seasonFinaleManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -915,6 +926,7 @@ public final class IceSMPCore {
                     chronicleManager.tick();
                     corruptionManager.tick();
                     archeologyManager.tick();
+                    seasonFinaleManager.tick();
                 },
                 intervalTicks,
                 intervalTicks

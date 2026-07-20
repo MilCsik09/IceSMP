@@ -113,6 +113,36 @@ world-events:
     champion-reward-items:
       - "DIAMOND:8"
       - "GOLDEN_APPLE:4"
+  # B33 — Szezonzáró "végítélet-hét" (lore: a Korszakok Könyve lapfordulása). A szezon
+  # utolsó `days` napjában napi eszkaláció: a vérhold/világboss/invázió esély-kulcsa
+  # (1 + nap × chance-mult-per-day) szorzót kap, az invázió mob-szintje bónuszt
+  # (floor(nap × mob-level-bonus-per-day)), a liga-pontok lineárisan futnak fel a
+  # league-point-mult-max-ig (utolsó nap = max, alapból dupla). Az utolsó napon EGYSZERI
+  # szezonboss spawnol a NEUTRAL főváros falai MELLETT (wall-offset blokkal a zóna-perem
+  # után; guard-bypass — szándékosan a városnál áll), emelt élettel; halálakor a boss.loot
+  # tábla gurul (loot-rolls-szor) + bonus-season-points liga-pont. Minden kulcs élőben
+  # olvasódik. Főváros-zóna híján a boss a sima (guard-os) világboss-úton esik vissza.
+  season-finale:
+    enabled: true
+    days: 7
+    chance-mult-per-day: 0.15
+    mob-level-bonus-per-day: 0.5
+    league-point-mult-max: 2.0
+    boss:
+      enabled: true
+      name: "A Lapforduló Őre"
+      lifetime-minutes: 30
+      wall-offset: 16
+      health-mult: 1.5
+      bonus-season-points: 15
+      loot-rolls: 6
+      # Loot-sorok: "MATERIAL[:MIN[:MAX]]" vagy "unique:<id>[:db]" (LootTable-formátum).
+      loot:
+        - "DIAMOND:2:5"
+        - "NETHERITE_SCRAP:1:2"
+        - "GOLDEN_APPLE:1:3"
+        - "unique:emlekszilank:2"
+        - "unique:runapor:3"
   # Első belépéses bevezető (cím-szekvencia). Sorok: "Cím||Alcím".
   intro:
     enabled: true

@@ -36,6 +36,13 @@ public final class BloodMoonManager {
     private volatile long lastRolledDay = -1L;
     // > 0 while an admin-forced blood moon is running; it ends on a timer rather than at dawn.
     private volatile long forcedEndAtMillis = 0L;
+    /** B33: setter-injected finálé-eszkaláció (null = nincs finálé-szorzó). */
+    private volatile SeasonFinaleManager seasonFinale;
+
+    /** B33: a szezonzáró-eszkaláció bekötése (a finálé-manager később épül a DI-sorrendben). */
+    public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
+        this.seasonFinale = seasonFinale;
+    }
 
     public BloodMoonManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager) {
@@ -112,8 +119,11 @@ public final class BloodMoonManager {
         }
 
         lastRolledDay = day;
+        // B33: a végítélet-hét alatt sűrűbb a vérhold (napi eszkalációs szorzó).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D)));
+                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D) * finaleMult));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
