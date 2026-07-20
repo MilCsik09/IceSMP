@@ -48,3 +48,12 @@
       lépésenként többször számolja ugyanazt a zóna-lookupot — egy megosztott, lépésenként
       egyszer számított "aktuális zóna" átadása csökkentené a redundanciát. (A lookup olcsó,
       ez tisztán szépészeti/skálázási tétel — csak nagy játékosszámnál éri meg.)
+
+## Világesemények
+
+- [x] **N16 — Rontás-góc DARK-perem sorsolás `[KÉSZ ✅]`:** a tulaj által elfogadott irány
+      („a korrupt zóna dark territory felőli terjedése tetszik!") — a természetes góc-nyílás
+      configolt eséllyel (`corruption.dark-bias.chance-percent`, 65) egy véletlen DARK
+      territórium pereméN TÚL történik (`min/max-edge-distance`, 24..96 blokk), külön
+      „a Kitaszítottak földjének pereméről szivárgott ki" broadcast-tal; a territórium
+      belsejét a spawn-rules továbbra is védi, fallback a horgony-játékos út.

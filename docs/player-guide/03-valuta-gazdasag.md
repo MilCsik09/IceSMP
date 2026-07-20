@@ -61,6 +61,8 @@ A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktu
   nyertes (vagy licit nélküli aukciónál az eladó) épp nincs fenn, **belépéskor** vagy
   `/market claim`-mel veszi át a tárgyat.
 - Élő licites aukció **nem vonható vissza**; licit nélkülit a `/market cancel` visszaad.
+- **Relikvia nem listázható!** A relikviák több-lépcsős kihívással szerzett, egyedi tárgyak —
+  piacra/aukcióra csak a **szilánkok és unique anyagok** kerülhetnek (`/market ereklye` szűrő).
 
 **Eladási díj:** minden eladásból kb. **10% eltűnik** a gazdaságból — ez tartja kordában az
 inflációt (a pénz „elértéktelenedését").

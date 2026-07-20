@@ -967,6 +967,9 @@ bejárásával, nem csak a HUD-nyíl követésével — jól illik a titkos hely
 **Építőkövek:** meglévő SEQUENCE-lánc + dialógus-mező, `QuestBuilderGUI`.
 **Buktatók:** Túl nehéz rejtvénynél a játékos elakad és feladja a láncot — legyen egy
 opcionális "súgás" fokozat (pl. 10 perc után a HUD mégis megmutatja a célt).
+> **Tulaj-döntés (2026-07-20):** a súgás-fokozat KIVEZETVE — a rejtvény célja SOSEM tárul
+> fel; ha a játékos nem jön rá, idővel rájön, vagy más játékos mondja el neki. 16 rejtvény-
+> quest él (rejtveny_* a quests.yml-ben).
 ### F11. Ereklye-szilánk börze `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Fekete Villám Szilánk kereskedelme — kánon-áru a lélekkő mellett (kódex VII.)
@@ -985,6 +988,9 @@ chat-egyeztetéssel megy.
 **Építőkövek:** `MarketManager` aukció-infra (változatlan logika), GUI-kategorizálás.
 **Buktatók:** Rosszul hangolt minimum-ár elzárhatja a kispénzű vevőket — inkább figyelmeztetés
 legyen, ne kemény tiltás.
+> **Tulaj-döntés (2026-07-20):** VALÓDI relikvia (relic_id) nem bocsátható piacra/aukcióra —
+> a relikvia több-lépcsős kihívással szerzett, egyedi-tulajdonú tárgy. A börze a szilánkoké
+> és az unique anyagoké marad (`market.allow-relic-listing: false` a kemény kapcsoló).
 ### H14. Ritka spawn-variánsok (albínó/árnyék mobok) `[KÉSZ ✅]`
 
 > **Lore-horgony:** az Első Csend-érintette lények — a misztérium ritka, néma hírnökei (kódex I.)

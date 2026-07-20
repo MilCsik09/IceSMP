@@ -154,6 +154,13 @@ vehetők fel, és a történetük a szezon ívét meséli. Szezonváltáskor a k
 a régi fejezet küldetései lezárulnak (amit már felvettél, azt még befejezheted!), és új
 fejezet-küldetések nyílnak. Figyeld a „📖 Új fejezet nyílik” üzenetet!
 
+## Rejtvény-küldetések — a cél rejtve marad 🧩
+
+Néhány küldetés **rejtvény**: a leírás egy versbe/találós kérdésbe rejti, mit kell tenned —
+a napló és a haladás-sor **soha nem árulja el a célt** (csak „???” látszik). Ha megfejted és
+megteszed, a küldetés magától teljesül. Ha elakadsz: gondolkodj, járj utána, vagy kérdezz
+más játékosokat — a közös fejtörés a játék része. Jelenleg 16 rejtvény vár megfejtőre.
+
 ## Bestiárium — a krónikás-lajstromod 📜
 
 A `/bestiarium` paranccsal megnyílik a **lajstromod**: a krónikások számon tartják, hány

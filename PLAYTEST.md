@@ -1138,17 +1138,23 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (kis teleportAsync-lépések, több-régiós útvonalon is); éjjel gyorsabb tempó.
   - [ ] Restart-újraspawn, shutdown-takarítás; példa-route kikommentelve. Kulcsok:
         world.yml `city-guards.*` (guards.<id>.name/world/route).
-- [ ] **J7 — Rejtvény-küldetések (ÚJ):**
-  - [ ] `riddle: true` quest-mező: a napló/haladás-sor "??? — a nyomot a leírás rejti"-t
-        mutat; a felvétel időbélyege PDC-ben (q_accept_<id>); `quests-riddle.hint-minutes`
-        (10) után a napló mégis megsúgja a célt (elakadás-védelem, a spec súgás-fokozata).
-  - [ ] Demo: "Rejtvény: Az első nyom" (TALK_TO_NPC, versbe rejtett cél); admin-szerkesztés:
+- [ ] **J7 — Rejtvény-küldetések (ÚJ; tulaj-döntés: SOSINCS súgás):**
+  - [ ] `riddle: true` quest-mező: a napló/haladás-sor MINDIG "??? — a nyomot a leírás
+        rejti"-t mutat — a cél sosem tárul fel, a megfejtés a játékosé/közösségé
+        (az időzített súgás-fokozat kivezetve, nincs hint-minutes kulcs).
+  - [ ] 16 rejtvény-quest él (rejtvenyi_elso_nyom + rejtveny_* — gyűjtés, vadászat,
+        olvasztás, biom, horgászat, NPC-keresés versbe rejtve); admin-szerkesztés:
         `/quest admin set <id> riddle true`.
-- [ ] **F11 — Ereklye-börze (ÚJ):**
-  - [ ] `/market ereklye`: a böngésző a PDC-tages tételekre (unique anyag / relikvia) szűrve
+  - [ ] Ellenőrzés: rejtvény-quest felvéve → a /quest info és a napló SOHA nem írja ki
+        a konkrét célt, de a teljesítés a megfejtett cselekvésre magától bekövetkezik.
+- [ ] **F11 — Ereklye-börze (ÚJ; tulaj-döntés: valódi relikvia NEM listázható):**
+  - [ ] `/market ereklye`: a böngésző a PDC-tages tételekre (unique anyag) szűrve
         nyílik (`@ereklye` belső szűrő a MarketGUI-ban); a kereső-infra változatlan.
-  - [ ] Aukció-indításnál ereklye-tételre ajánlott minimum-kikiáltás figyelmeztetés
-        (NEM tiltás — a spec döntése): economy.yml `market.relic-auction.recommended-min-bid`.
+  - [ ] VALÓDI relikvia (relic_id PDC) listázása/aukcióba adása TILOS (hibaüzenettel) —
+        a relikvia több-lépcsős kihívással szerzett, egyedi-tulajdonú tárgy, a börze a
+        szilánkoké. Kapcsoló: economy.yml `market.allow-relic-listing` (default false).
+  - [ ] Aukció-indításnál unique-tételre ajánlott minimum-kikiáltás figyelmeztetés
+        (NEM tiltás): economy.yml `market.relic-auction.recommended-min-bid`.
 - [ ] **G16 — Nagydöntő (Tier B TOP, ÚJ):**
   - [ ] A szezon utolsó 48 órájában (`season-finale.top2-window-hours`) a liga-tábla top2
         frakciójának MINDEN pont-jóváírása ×2 (`top2-point-multiplier`, a B33-szorzó UTÁN);
@@ -1170,6 +1176,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         sosem nő a plafon fölé; spawn a helyszín régió-schedulerén. A DARK játékosokat a
         frakció-passzíva védi. MINDEN kulcs élő: world.yml `dark-undead.*`.
         (Osztály-név generikus: DarkUndeadAmbienceManager — a lore-név csak szövegben él.)
+- [ ] **Rontás-góc DARK-perem sorsolás (ÚJ — elfogadott irány):**
+  - [ ] A természetes góc-nyílás `corruption.dark-bias.chance-percent` (65) eséllyel egy
+        véletlen DARK territórium PEREMÉN TÚL történik (a zóna szélétől
+        `min-edge-distance`..`max-edge-distance` [24..96] blokkra — a territórium
+        BELSEJÉT a spawn-rules amúgy is védi); ilyenkor külön broadcast szól
+        („a Kitaszítottak földjének pereméről szivárgott ki”).
+  - [ ] Ha nincs DARK territórium / a sorsolás nem talál / admin `forceSpawn`: marad a
+        régi horgony-játékos út a régi üzenettel. Élő kulcsok: world.yml
+        `corruption.dark-bias.*`. Ellenőrzés: definiálj DARK territóriumot, állítsd a
+        chance-t 100-ra, várd ki (vagy admin-indítsd) a gócot → a mag a zóna szélén túl,
+        de annak közelében nyílik.
 - [ ] **G6 — Becsület-párbaj (ÚJ):**
   - [ ] `/parbaj kihiv <név>` (CSAK bűnös ajánlhat) → `/parbaj elfogad|elutasit`; elfogadáskor
         3 perces ablak; a párbaj-kill NEM termel bűnt és NEM fizet vérdíjat (SinListener-kizárás

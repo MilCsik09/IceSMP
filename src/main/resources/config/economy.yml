@@ -618,8 +618,12 @@ mob-money-drop:
   per-level-bonus: 0.5
 
 # ===== F11 — Ereklye-börze: a szilánk-kereskedelem külön csatornája =====
-# /market ereklye = a böngésző PDC-tages (unique anyag/relikvia) tételekre szűrve;
+# /market ereklye = a böngésző PDC-tages (unique anyag) tételekre szűrve;
 # aukciónál ajánlott minimum-kikiáltás (figyelmeztetés, nem tiltás).
+# VALÓDI relikvia (relic_id) NEM listázható: a relikvia több-lépcsős kihívással
+# szerzett, egyedi-tulajdonú tárgy — a börze a szilánkoké. (allow-relic-listing:
+# true visszakapcsolja, ha mégis kellene.)
 market:
+  allow-relic-listing: false
   relic-auction:
     recommended-min-bid: 100.0

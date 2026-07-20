@@ -420,6 +420,14 @@ corruption:
   purge-kills-required: 15
   reward-rolls: 4
   reward-buff-minutes: 5
+  # A rontás előszeretettel a Kitaszítottak földje felől szivárog: chance-percent
+  # eséllyel a góc egy véletlen DARK territórium PEREMÉN TÚL nyílik (a zóna szélétől
+  # min..max blokkra, tehát a territóriumon KÍVÜL — a belsejét a spawn-rules amúgy is
+  # védi). Ha nincs DARK territórium, vagy a sorsolás nem talál, marad a vadon-út.
+  dark-bias:
+    chance-percent: 65
+    min-edge-distance: 24
+    max-edge-distance: 96
   # LootTable-formátum: "MATERIAL" | "MATERIAL:DB" | "MATERIAL:MIN:MAX" (soronként egy tétel).
   loot:
     - "SCULK:4:12"

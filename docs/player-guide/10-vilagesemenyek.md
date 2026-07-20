@@ -112,6 +112,15 @@ Siess: a kráter csak egy ideig marad, aztán **magától visszaáll az eredeti 
 kibányászol, a tiéd. A meteor **sosem csapódik claimelt területre vagy frakció-territóriumba**,
 és **nem rombolja maradandóan** a világot.
 
+## Rontás-góc 🕸
+
+Időnként egy **rontás-góc** nyílik a vadonban (broadcast megadja a helyét): közepén egy
+**sculk-mag**, körülötte a zóna **éjszakánként terjed**, és **korrupt, világító fajzatokat**
+szül. A rontás **leggyakrabban a Kitaszítottak földjének pereméről szivárog ki** — a DARK
+territóriumok környékén számíts rá leginkább! **Tisztítás:** ölj le elég korrupt fajzatot,
+majd a magot **SHIFT + jobb kattintással** törd meg → loot, rövid regeneráció, és „a Fa
+fellélegzik”. Ha senki nem tisztítja, a zóna a plafonjáig nő, és onnan ontja a szörnyeket.
+
 ## Hangulat-események ✦
 
 Időnként apró, **légköri események** teszik élőbbé a világot (nem befolyásolják a balanszot):

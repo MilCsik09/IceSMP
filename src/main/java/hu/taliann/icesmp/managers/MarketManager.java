@@ -346,6 +346,17 @@ public final class MarketManager implements PersistentStore {
             return "market-no-item";
         }
 
+        // Valódi relikvia (relic_id PDC) NEM listázható: a relikvia több-lépcsős
+        // kihívással szerzett, egyedi-tulajdonú tárgy — a börze a SZILÁNKOKÉ és az
+        // unique anyagoké (F11). Kapcsoló: market.allow-relic-listing (default: tilos).
+        if (!configManager.getBoolean("market.allow-relic-listing", false)
+                && held.hasItemMeta()
+                && held.getItemMeta().getPersistentDataContainer().has(
+                        org.bukkit.NamespacedKey.fromString("icesmp:relic_id"),
+                        org.bukkit.persistence.PersistentDataType.STRING)) {
+            return "market-relic-not-tradeable";
+        }
+
         if (!Double.isFinite(price) || price <= 0.0D) {
             return "amount-must-be-positive";
         }

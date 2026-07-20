@@ -37,10 +37,8 @@ achievements:
 quest-toast:
   enabled: true
 
-# J7 — rejtvény-questek: a riddle: true quest célja a naplóban "???"-ként jelenik
-# meg; ennyi perc után a napló mégis megsúgja (elakadás-védelem).
-quests-riddle:
-  hint-minutes: 10
+# J7 — rejtvény-questek: a riddle: true quest célja a naplóban MINDIG "???"-ként
+# jelenik meg — a megfejtés a játékosé (vagy a közösségé), a napló sosem súg.
 
 onboarding:
   enabled: true
@@ -190,7 +188,7 @@ quests:
   rejtvenyi_elso_nyom:
     riddle: true
     display-name: "Rejtvény: Az első nyom"
-    description: "„Ahol minden út összefut, és a kikiáltó hangja messzebb ér, mint a harangszó — ott vár, aki a neveket jegyzi.” A cél rejtve marad: fejtsd meg a sorokat! (10 perc után a napló megsúgja.)"
+    description: "„Ahol minden út összefut, és a kikiáltó hangja messzebb ér, mint a harangszó — ott vár, aki a neveket jegyzi.” A cél rejtve marad: fejtsd meg a sorokat!"
     objective:
       type: "TALK_TO_NPC"
       npc: "hirnok"
@@ -198,6 +196,202 @@ quests:
       currency:
         type: "OWN"
         amount: 50
+  rejtveny_zold_arany:
+    riddle: true
+    display-name: "Rejtvény: A zöld arany"
+    description: "„Aranyat aratsz, de nem csillog; szélben ring, míg sarló nem éri, s kenyérré lesz, mire elhallgat. Gyűjts belőle egy kosárnyit.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      count: 32
+      materials:
+        - "WHEAT"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 40
+  rejtveny_nyolc_lab:
+    riddle: true
+    display-name: "Rejtvény: A szövőmester"
+    description: "„Nyolc lábon jár, hálót sző, de sosem halász; a sötét zugok takácsa ő. Fizesd ki tízszer a szövőbérét.”"
+    objective:
+      type: "KILL_MOBS"
+      count: 10
+      entity-type: "SPIDER"
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_csontzenesz:
+    riddle: true
+    display-name: "Rejtvény: A csontzenész"
+    description: "„Húrt penget, de nem zenész; szárazon zörög, ha táncba kezd, s nyílvesszővel köszönt. Némíts el egy tucatot a zenekarából.”"
+    objective:
+      type: "KILL_MOBS"
+      count: 12
+      entity-type: "SKELETON"
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_ko_konnye:
+    riddle: true
+    display-name: "Rejtvény: A kő könnye"
+    description: "„Tűzben sír a kő, és könnye keményebb, mint ő maga volt. Gyűjtsd össze tizenhat cseppjét a láng túloldalán.”"
+    objective:
+      type: "SMELT_ITEMS"
+      count: 16
+      materials:
+        - "IRON_INGOT"
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 60
+  rejtveny_rozsaszin_ho:
+    riddle: true
+    display-name: "Rejtvény: A rózsaszín hó"
+    description: "„Hó hull, de nem tél van; szirom száll, de nem hervad a táj. Állj meg ott, ahol a fák elpirulnak.”"
+    objective:
+      type: "EXPLORE_BIOME"
+      biome: "cherry_grove"
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_ezust_sziv:
+    riddle: true
+    display-name: "Rejtvény: Az ezüst szív"
+    description: "„A sötét tükör alatt ezüst szív dobog; türelmed a fonál, a várakozás a fegyvered. Emelj ki tízet a mélység ajándékából.”"
+    objective:
+      type: "CATCH_FISH"
+      count: 10
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_morgo_vad:
+    riddle: true
+    display-name: "Rejtvény: A morgó vad"
+    description: "„Benned lakik egy vad, mely naponta morog, s csak az hallgattatja el, mi a zöld aranyból született. Csitítsd el ötször.”"
+    objective:
+      type: "CONSUME_ITEMS"
+      count: 5
+      materials:
+        - "BREAD"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 40
+  rejtveny_csillag_konnye:
+    riddle: true
+    display-name: "Rejtvény: A csillagok könnye"
+    description: "„A mélység őrzi a csillagok könnyét: fényük jégbe fagyott, s csak a legmohóbb csákány éri el. Hozz fel hármat.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      count: 3
+      materials:
+        - "DIAMOND"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 80
+  rejtveny_ket_vilag:
+    riddle: true
+    display-name: "Rejtvény: A két világ vándora"
+    description: "„Ne nézz a szemébe annak, ki két világ közt jár: hosszú árnya köveket cipel, s haragja egy pillantásba fér. Küldj haza hármat közülük.”"
+    objective:
+      type: "KILL_MOBS"
+      count: 3
+      entity-type: "ENDERMAN"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 80
+  rejtveny_pasztor_mosolya:
+    riddle: true
+    display-name: "Rejtvény: A pásztor mosolya"
+    description: "„Ahol kettőből három lesz, ott a pásztor mosolyog. Legyen okod ötször mosolyogni.”"
+    objective:
+      type: "BREED_ANIMALS"
+      count: 5
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_tenyernyi_jovo:
+    riddle: true
+    display-name: "Rejtvény: A tenyérnyi jövő"
+    description: "„Ami ma tenyerednyi, holnap az eget tartja. Ültess nyolc jövőt a földbe.”"
+    objective:
+      type: "PLACE_BLOCKS"
+      count: 8
+      materials:
+        - "OAK_SAPLING"
+        - "BIRCH_SAPLING"
+        - "SPRUCE_SAPLING"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 40
+  rejtveny_orrhangu_kalmar:
+    riddle: true
+    display-name: "Rejtvény: Az orrhangú kalmár"
+    description: "„Se kardja, se címere, mégis minden faluban úr; bólint, ha zöld kő csörren a pulton. Köss vele háromszor alkut.”"
+    objective:
+      type: "TRADE_WITH_VILLAGER"
+      count: 3
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_zold_banat:
+    riddle: true
+    display-name: "Rejtvény: A zöld bánat"
+    description: "„Zöld bánat oson mögéd hangtalan, s ölelése a végső búcsú. Előzd meg nyolcszor a búcsút.”"
+    objective:
+      type: "KILL_MOBS"
+      count: 8
+      entity-type: "CREEPER"
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 60
+  rejtveny_zsakos_vandor:
+    riddle: true
+    display-name: "Rejtvény: A zsákos vándor"
+    description: "„Mindenhol jár, mégsem lakik sehol; zsákjában messzi földek illata, nyelvén ezer piac zaja. Keresd meg, és hallgasd meg.”"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "vandor_kereskedo"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 40
+  rejtveny_gyokerek_bolcse:
+    riddle: true
+    display-name: "Rejtvény: A gyökerek bölcse"
+    description: "„A gyökerek közt ül, ki többet látott, mint a fák évgyűrűi; szava lassú, mint a moha növése. Ülj le mellé.”"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "erdei_venek"
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 40
   fejezet1_suttogasok:
     chapter: 1
     display-name: "1. fejezet: Suttogások a Kapunál"

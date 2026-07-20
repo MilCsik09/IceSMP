@@ -388,7 +388,7 @@ public final class IceSMPCore {
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
-        this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager);
+        this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager);
         this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);

@@ -32,6 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * (kemény darabszám-cappal). Tisztítás: elég korrupt lényt kell leölni, MAJD a magot
  * SHIFT+jobb kattal megtörni — jutalom: loot + rövid regeneráció, és „a Fa fellélegzik".
  *
+ * <p>A góc előszeretettel a DARK territóriumok pereme felől nyílik (corruption.dark-bias.*
+ * — a rontás a Kitaszítottak földjéből szivárog; a zóna BELSEJÉT a spawn-rules védi).
+ *
  * <p>Terep-barát: a zóna nem ír át blokkokat (csak az 1 mag-blokk, snapshot-tal);
  * a fenyegetés a mob-nyomás. Folia: a tick a globális schedulerről fut, minden
  * blokk/entitás-művelet a hely/entitás saját régió-schedulerére hopol; a mob-készlet
@@ -49,6 +52,7 @@ public final class CorruptionManager implements PersistentStore {
     private final MobScalingManager mobScalingManager;
     private final EventSpawnGuard spawnGuard;
     private final MessageManager messageManager;
+    private final TerritoryManager territoryManager;
     private final File storageFile;
 
     private volatile String worldName;
@@ -68,12 +72,13 @@ public final class CorruptionManager implements PersistentStore {
 
     public CorruptionManager(final JavaPlugin plugin, final ConfigManager configManager,
                              final MobScalingManager mobScalingManager, final EventSpawnGuard spawnGuard,
-                             final MessageManager messageManager) {
+                             final MessageManager messageManager, final TerritoryManager territoryManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.spawnGuard = spawnGuard;
         this.messageManager = messageManager;
+        this.territoryManager = territoryManager;
         this.storageFile = new File(plugin.getDataFolder(), "corruption.yml");
         plugin.getDataFolder().mkdirs();
     }
@@ -232,6 +237,12 @@ public final class CorruptionManager implements PersistentStore {
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
+            // Elfogadott irány: a rontás előszeretettel a DARK territóriumok PEREME
+            // felől szivárog ("Mortengrad lehelete") — configolható eséllyel a góc egy
+            // DARK zóna szélén túl nyílik, a horgony-játékos helyett.
+            if (tryDarkEdgeSpawn()) {
+                return true;
+            }
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
                 return false;
@@ -249,13 +260,51 @@ public final class CorruptionManager implements PersistentStore {
                 return;
             }
             plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z),
-                    place -> placeCore(world, x, z));
+                    place -> placeCore(world, x, z, false));
         }, null);
         return true;
     }
 
+    /**
+     * DARK-perem sorsolás: configolt eséllyel egy véletlen DARK territórium szélén TÚL
+     * (min/max perem-távolságra, tehát a zónán KÍVÜL — a spawn-rules mátrix a territórium
+     * belsejét amúgy is tiltja) nyílik a góc. false = essen vissza a horgony-játékos útra.
+     */
+    private boolean tryDarkEdgeSpawn() {
+        final double chance = Math.max(0.0D, Math.min(100.0D,
+                configManager.getDouble("corruption.dark-bias.chance-percent", 65.0D)));
+        if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
+            return false;
+        }
+        final java.util.List<hu.taliann.icesmp.data.Territory> darks = new java.util.ArrayList<>();
+        for (final hu.taliann.icesmp.data.Territory territory : territoryManager.all()) {
+            if (territory.faction() == hu.taliann.icesmp.data.FactionType.DARK) {
+                darks.add(territory);
+            }
+        }
+        if (darks.isEmpty()) {
+            return false;
+        }
+        final hu.taliann.icesmp.data.Territory source =
+                darks.get(ThreadLocalRandom.current().nextInt(darks.size()));
+        final World world = Bukkit.getWorld(source.world());
+        if (world == null) {
+            return false;
+        }
+        final int minEdge = Math.max(4, configManager.getInt("corruption.dark-bias.min-edge-distance", 24));
+        final int maxEdge = Math.max(minEdge, configManager.getInt("corruption.dark-bias.max-edge-distance", 96));
+        final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+        final double dist = source.radius()
+                + ThreadLocalRandom.current().nextDouble(minEdge, maxEdge + 1.0D);
+        final int x = source.x() + (int) Math.round(Math.cos(angle) * dist);
+        final int z = source.z() + (int) Math.round(Math.sin(angle) * dist);
+        plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z),
+                place -> placeCore(world, x, z, true));
+        return true;
+    }
+
     /** A mag lehelyezése (a cél régió-szálán): spawn-rules + víz-ellenőrzés, 1 blokk-csere. */
-    private void placeCore(final World world, final int x, final int z) {
+    private void placeCore(final World world, final int x, final int z, final boolean fromDarkEdge) {
         final int y = world.getHighestBlockYAt(x, z);
         final Location core = new Location(world, x, y + 1, z);
         if (spawnGuard.isBlocked("corruption", core) || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
@@ -274,6 +323,14 @@ public final class CorruptionManager implements PersistentStore {
         save();
         world.playSound(core, org.bukkit.Sound.ENTITY_WARDEN_EMERGE, 1.5F, 0.5F);
         hu.taliann.icesmp.utils.ParticleUtil.spawn(world, org.bukkit.Particle.SCULK_SOUL, core, 40, 2.0D, 1.0D, 2.0D, 0.05D);
+        if (fromDarkEdge) {
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "corruption-spawned-dark",
+                    "<dark_purple>🕸 RONTÁS-GÓC szivárgott ki a Kitaszítottak földjének pereméről ({world}: {x}, {z})! A rontás éjszakánként terjed — irtsd a fajzatait ({kills} kell), majd törd meg a magját (SHIFT+jobb katt), különben nő tovább!</dark_purple>",
+                    Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z),
+                            "kills", String.valueOf(getRequiredPurgeKills()))));
+            return;
+        }
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "corruption-spawned",
                 "<dark_purple>🕸 RONTÁS-GÓC nyílt a vadonban ({world}: {x}, {z})! A Kapu rontása éjszakánként terjed — irtsd a fajzatait ({kills} kell), majd törd meg a magját (SHIFT+jobb katt), különben nő tovább!</dark_purple>",
