@@ -607,7 +607,7 @@ olcsó, de emlékezetes belépő.
 **Építőkövek:** join-listener, `teleportAsync`, `MessageManager`.
 **Buktatók:** ne ütközzön az onboarding-quest üzenetével — az időzítést egyeztetni kell, hogy
 ne torlódjon két üdvözlés egyszerre.
-### B6. Játékos-indított karaván (szállítmány-rablás)
+### B6. Játékos-indított karaván (szállítmány-rablás) `[KÉSZ ✅ — v1 őrzőponttal]`
 
 > **Lore-horgony:** a vándorkaraván kánonja — „védelmük a Felsők becsülete" — játékos-karavánra kiterjesztve (kódex VIII.)
 

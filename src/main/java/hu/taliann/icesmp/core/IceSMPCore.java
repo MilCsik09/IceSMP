@@ -214,6 +214,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
+    private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -331,6 +332,7 @@ public final class IceSMPCore {
         this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
         this.moneyPouchItemFactory = new hu.taliann.icesmp.items.MoneyPouchItemFactory(plugin);
         this.guildManager = new hu.taliann.icesmp.managers.GuildManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.playerCaravanManager = new hu.taliann.icesmp.managers.PlayerCaravanManager(plugin, configManager, factionTreasuryManager, factionManager, eventSpawnGuard, messageManager);
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
@@ -936,6 +938,7 @@ public final class IceSMPCore {
         archeologyManager.shutdown();
         strangerNpcManager.shutdown();
         escortManager.shutdown();
+        playerCaravanManager.shutdown();
         meteorEventManager.shutdown();
         serverChallengeManager.shutdown();
         totemManager.shutdown();
@@ -988,6 +991,7 @@ public final class IceSMPCore {
                     corruptionManager.tick();
                     archeologyManager.tick();
                     seasonFinaleManager.tick();
+            playerCaravanManager.tick();
                     strangerNpcManager.tick();
                     hiddenSpotManager.tick();
                 },
@@ -1104,7 +1108,7 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.UnmuteCommand(plugin, moderationManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
-        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, messageManager));
+        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, messageManager));
         plugin.registerCommand("class", "Kaszt (class): szint, Lélekkapocs, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, specializationManager, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
@@ -1204,6 +1208,15 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneApplyListener(uniqueMaterialFactory, configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneEffectListener(configManager), plugin);
+        pluginManager.registerEvents(new org.bukkit.event.Listener() {
+            // B6 — a szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
+            @org.bukkit.event.EventHandler
+            public void onConvoyDeath(final org.bukkit.event.entity.EntityDeathEvent event) {
+                if (playerCaravanManager.isConvoy(event.getEntity().getUniqueId())) {
+                    playerCaravanManager.onConvoyKilled(event.getEntity().getKiller());
+                }
+            }
+        }, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobMoneyDropListener(plugin, configManager, mobScalingManager, moneyPouchItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);

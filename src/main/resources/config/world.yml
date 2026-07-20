@@ -54,6 +54,7 @@ world-events:
     corruption: { territory: true, claim: true, region: true, water: true }
     archeology: { territory: true, claim: true, region: true, water: true }
     stranger:   { territory: true, claim: true, region: true, water: true }
+    player-caravan: { territory: false, claim: false, region: false, water: false }
   # B19 — Évszakos világ-modifikátorok: a VALÓS naptári évszak finom esély-szorzói a
   # világesemények sorsolására (1.0 = nincs módosítás; a plafon mindig 100%). Évszakok:
   # tel (dec-feb) / tavasz (már-máj) / nyar (jún-aug) / osz (szept-nov). Események:
@@ -474,3 +475,17 @@ hidden-spots:
   #     rewards:
   #       - "DIAMOND:2"
   #       - "unique:emlekszilank:1"
+
+# ===== B6 — Játékos-indított karaván (szállítmány-rablás) =====
+# /faction caravan send <összeg> (király): a kasszából rakomány indul egy kihirdetett
+# őrzőpontra; window-seconds-ig védhető/rabolható. Túléli -> kassza × success-multiplier;
+# ellenség leöli -> a rabló frakció kasszájáé; saját ölés -> elvész. Élő kulcsok.
+player-caravan:
+  enabled: true
+  min-cargo: 100.0
+  max-cargo: 1000.0
+  window-seconds: 300
+  success-multiplier: 1.25
+  convoy-hp: 120.0
+  site-radius: 300
+  cooldown-minutes: 90

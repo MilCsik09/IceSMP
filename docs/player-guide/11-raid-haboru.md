@@ -69,3 +69,14 @@ Ha **Nekromanta-specet** játszol, minden megölt ellenség után **lélekszilá
 ---
 
 ➡️ Tovább: [Küldetések](12-kuldetesek.md) • [Vissza a tartalomhoz](README.md)
+
+## Frakció-szállítmány — védd vagy rabold! 🐫
+
+A király a kasszából **szállítmányt indíthat**: `/faction caravan send <összeg>`. A rakomány
+egy kihirdetett **őrzőpontra** kerül (mindenki látja a koordinátákat!), és pár percig ott áll:
+
+- Ha a szállítmány **túléli az ablakot**, a kassza a rakományt **nyereséggel** kapja vissza.
+- Ha egy **ellenséges frakció** játékosa leöli a konvojt, a rakomány **az övék**.
+- Saját frakciós „baleset" esetén a rakomány **elvész** — ne álljatok a saját karaván útjába!
+
+Kockázat és jutalom: minél nagyobb a rakomány, annál édesebb célpont. Gyűjtsd a védőket!

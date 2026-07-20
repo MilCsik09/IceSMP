@@ -1126,6 +1126,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **B6 — Játékos-indított karaván (ÚJ):**
+  - [ ] `/faction caravan send <összeg>` (csak KIRÁLY): a kasszából rakomány indul; sorsolt
+        őrzőpont a vadonban (EventSpawnGuard `player-caravan` mátrix-sor: territórium/claim/
+        régió/víz tiltva), broadcast a koordinátákkal — 5 percig védhető VAGY rabolható.
+  - [ ] Túléli az ablakot → a kassza a rakomány ×1,25-ét kapja (profit); ellenséges játékos
+        leöli a konvojt → a rakomány a RABLÓ frakció kasszájáé; saját frakciós ölés → elvész.
+  - [ ] Frakciónként cooldown (90 perc); restart/leállás közben aktív szállítmány
+        visszatérítődik. Élő kulcsok: world.yml `player-caravan.*`.
 - [ ] **B35 — Céhek (ÚJ):**
   - [ ] `/ceh letrehoz <név>` (alapítás 250 saját valutáért a számláról — sink); csak azonos
         frakcióból hívható tag (`/ceh meghiv` → `/ceh elfogad`); vezető-átadás kilépéskor,
