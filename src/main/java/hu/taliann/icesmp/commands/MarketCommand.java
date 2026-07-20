@@ -30,11 +30,16 @@ public final class MarketCommand implements BasicCommand {
     private final FactionManager factionManager;
     private final MessageManager messageManager;
 
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
+
     public MarketCommand(final MarketManager marketManager, final CurrencyManager currencyManager,
-                         final FactionManager factionManager, final MessageManager messageManager) {
+                         final FactionManager factionManager,
+                         final hu.taliann.icesmp.managers.ConfigManager configManager,
+                         final MessageManager messageManager) {
         this.marketManager = marketManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
+        this.configManager = configManager;
         this.messageManager = messageManager;
     }
 
@@ -54,6 +59,7 @@ public final class MarketCommand implements BasicCommand {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "sell" -> handleSell(player, args);
             case "auction" -> handleAuction(player, args);
+            case "ereklye" -> MarketGUI.open(player, marketManager, currencyManager, messageManager, 0, "@ereklye");
             case "claim" -> handleClaim(player);
             case "cancel" -> handleCancel(player);
             case "search" -> handleSearch(player, args);
@@ -105,6 +111,7 @@ public final class MarketCommand implements BasicCommand {
     }
 
     private void handleAuction(final Player player, final String[] args) {
+        // F11 — ereklye-tételnél ajánlott minimum-kikiáltás (figyelmeztetés, NEM tiltás).
         if (args.length < 2) {
             player.sendMessage(messageManager.get("market-auction-usage",
                     "&cHasználat: /market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]"));
@@ -133,6 +140,30 @@ public final class MarketCommand implements BasicCommand {
                 continue;
             }
             positional[positionalCount++] = args[i];
+        }
+
+        // F11 — ereklye-börze: PDC-tages (unique/relikvia) tételnél ajánlott
+        // minimum-kikiáltás — figyelmeztetés, NEM tiltás (a spec döntése szerint).
+        final org.bukkit.inventory.ItemStack auctionHand = player.getInventory().getItemInMainHand();
+        if (auctionHand.hasItemMeta()) {
+            final org.bukkit.persistence.PersistentDataContainer handPdc =
+                    auctionHand.getItemMeta().getPersistentDataContainer();
+            final boolean relicTier = handPdc.has(
+                    org.bukkit.NamespacedKey.fromString("icesmp:unique_material"),
+                    org.bukkit.persistence.PersistentDataType.STRING)
+                    || handPdc.has(org.bukkit.NamespacedKey.fromString("icesmp:relic_id"),
+                    org.bukkit.persistence.PersistentDataType.STRING);
+            final double recommendedMin = configManager.getDouble("market.relic-auction.recommended-min-bid", 100.0D);
+            double startBid = 0.0D;
+            try {
+                startBid = Double.parseDouble(positional[1]);
+            } catch (final NumberFormatException | ArrayIndexOutOfBoundsException ignored) {
+                // az ár-hibát a normál út kezeli lentebb
+            }
+            if (relicTier && startBid > 0.0D && startBid < recommendedMin) {
+                player.sendMessage(messageManager.get("market-relic-min-warn",
+                        "&e⚖ Ereklye-tételhez a börze ajánlott minimuma &f%s&e — ennél olcsóbban indítod, biztos vagy benne?", recommendedMin));
+            }
         }
 
         if (positionalCount < 2) {

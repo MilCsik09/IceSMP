@@ -616,3 +616,10 @@ mob-money-drop:
   min-amount: 1.0
   max-amount: 4.0
   per-level-bonus: 0.5
+
+# ===== F11 — Ereklye-börze: a szilánk-kereskedelem külön csatornája =====
+# /market ereklye = a böngésző PDC-tages (unique anyag/relikvia) tételekre szűrve;
+# aukciónál ajánlott minimum-kikiáltás (figyelmeztetés, nem tiltás).
+market:
+  relic-auction:
+    recommended-min-bid: 100.0

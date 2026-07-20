@@ -1126,6 +1126,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **F11 — Ereklye-börze (ÚJ):**
+  - [ ] `/market ereklye`: a böngésző a PDC-tages tételekre (unique anyag / relikvia) szűrve
+        nyílik (`@ereklye` belső szűrő a MarketGUI-ban); a kereső-infra változatlan.
+  - [ ] Aukció-indításnál ereklye-tételre ajánlott minimum-kikiáltás figyelmeztetés
+        (NEM tiltás — a spec döntése): economy.yml `market.relic-auction.recommended-min-bid`.
 - [ ] **G16 — Nagydöntő (Tier B TOP, ÚJ):**
   - [ ] A szezon utolsó 48 órájában (`season-finale.top2-window-hours`) a liga-tábla top2
         frakciójának MINDEN pont-jóváírása ×2 (`top2-point-multiplier`, a B33-szorzó UTÁN);

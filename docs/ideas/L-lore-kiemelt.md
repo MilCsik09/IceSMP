@@ -967,7 +967,7 @@ bejárásával, nem csak a HUD-nyíl követésével — jól illik a titkos hely
 **Építőkövek:** meglévő SEQUENCE-lánc + dialógus-mező, `QuestBuilderGUI`.
 **Buktatók:** Túl nehéz rejtvénynél a játékos elakad és feladja a láncot — legyen egy
 opcionális "súgás" fokozat (pl. 10 perc után a HUD mégis megmutatja a célt).
-### F11. Ereklye-szilánk börze
+### F11. Ereklye-szilánk börze `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Fekete Villám Szilánk kereskedelme — kánon-áru a lélekkő mellett (kódex VII.)
 
