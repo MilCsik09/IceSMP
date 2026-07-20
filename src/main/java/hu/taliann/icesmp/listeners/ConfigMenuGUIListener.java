@@ -103,11 +103,9 @@ public final class ConfigMenuGUIListener implements Listener {
         ConfigMenuGUI.openCategory(player, holder.getCategory(), configManager);
     }
 
-    /** Az override kiírása + reload — ugyanaz az út, mint a /icesmp config set. */
+    /** Az override kiírása + reload — ugyanaz a szerializált út, mint a /icesmp config set. */
     private void applyOverride(final Player player, final String key, final Object value) {
-        plugin.getConfig().set(key, value);
-        plugin.saveConfig();
-        configManager.reload();
+        configManager.applyOverride(key, value);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
         player.sendMessage(messageManager.get("admin.icesmp.config.set-success-short",

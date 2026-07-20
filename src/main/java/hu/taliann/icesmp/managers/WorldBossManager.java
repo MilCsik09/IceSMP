@@ -262,7 +262,12 @@ public final class WorldBossManager {
         return true;
     }
 
-    private void triggerSpawnNear(final Player anchor) {
+    private synchronized void triggerSpawnNear(final Player anchor) {
+        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick és
+        // egy egyidejű admin-hívás közül csak az első juthat át.
+        if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
+            return;
+        }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         // Folia: read the anchor's location on its OWN region thread first (it may be in a
         // different region than the caller), then hop to the spawn location's region.

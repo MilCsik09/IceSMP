@@ -52,6 +52,9 @@ public final class FactionTreasuryManager implements PersistentStore {
     private final Map<UUID, Integer> evasionStrikes = new ConcurrentHashMap<>();
     /** Sin hook for the evasion report (SinManager is built earlier in the DI order). */
     private final SinManager sinManager;
+    /** Debounce-kapu a lemezíráshoz (CurrencyManager.requestSave mintája). */
+    private final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public FactionTreasuryManager(final JavaPlugin plugin, final ConfigManager configManager,
                                   final CurrencyManager currencyManager, final FactionManager factionManager,
@@ -136,6 +139,21 @@ public final class FactionTreasuryManager implements PersistentStore {
         }
     }
 
+    /**
+     * Debounce-olt aszinkron mentés a játékos-szálas hívóknak (donate/withdraw/tax-rate):
+     * a rövid ablakon belüli sok módosítás egyetlen atomi írássá olvad össze — a
+     * régió-szálakon nincs blokkoló I/O (CurrencyManager.requestSave mintája). A
+     * disable-kori PersistentStore.save() továbbra is szinkron zár le.
+     */
+    public void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                save();
+            }, 2L, java.util.concurrent.TimeUnit.SECONDS);
+        }
+    }
+
     public synchronized void save() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final Map.Entry<FactionType, Double> entry : balances.entrySet()) {
@@ -192,7 +210,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         final double applied = Math.max(0.0D, Math.min(max, safeRate));
         if (faction != null) {
             taxRates.put(faction, applied);
-            save();
+            requestSave();
         }
         return applied;
     }
@@ -203,7 +221,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         }
 
         balances.merge(faction, amount, Double::sum);
-        save();
+        requestSave();
     }
 
     /**
@@ -231,7 +249,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         if (!withdrawn[0]) {
             return false;
         }
-        save();
+        requestSave();
         return true;
     }
 
@@ -288,9 +306,19 @@ public final class FactionTreasuryManager implements PersistentStore {
             }
 
             // Pay what the wallet covers; the shortfall becomes (capped) arrears.
-            final double payable = Math.floor(Math.min(due, balance) * 100.0D) / 100.0D;
-            final double paid = payable > 0.0D && currencyManager.deductFromBalance(citizenId, currency, payable)
-                    ? payable : 0.0D;
+            // A levonás előtt FRISS egyenleget olvasunk (a játékos a saját szálán közben
+            // kereshetett/költhetett): ha nőtt, a teljes esedékest szedjük be; ha csökkent és
+            // az atomi tryDeduct emiatt elutasít, egyszer újrapróbáljuk a még frissebb értékkel.
+            double payable = 0.0D;
+            double paid = 0.0D;
+            for (int attempt = 0; attempt < 2 && paid <= 0.0D; attempt++) {
+                final double fresh = currencyManager.getBalance(citizenId, currency);
+                payable = Math.floor(Math.min(due, fresh) * 100.0D) / 100.0D;
+                if (payable <= 0.0D) {
+                    break;
+                }
+                paid = currencyManager.deductFromBalance(citizenId, currency, payable) ? payable : 0.0D;
+            }
             final double owedAfter = Math.min(maxArrears, Math.round((due - paid) * 100.0D) / 100.0D);
             if (owedAfter > 0.0D) {
                 taxArrears.put(citizenId, owedAfter);
@@ -308,7 +336,9 @@ public final class FactionTreasuryManager implements PersistentStore {
             // az adócsalót (+1 bűn — a bűn-küszöb a meglévő száműzetés-mechanikát indítja).
             final int evasionThreshold = Math.max(0, configManager.getInt("factions.tax.evasion-strikes", 3));
             if (evasionThreshold > 0 && maxArrears > 0.0D && paid <= 0.0D && owedAfter >= maxArrears) {
-                final int strikes = evasionStrikes.merge(citizenId, 1, Integer::sum);
+                // Plafon a küszöbnél: tartósan offline adócsalónál a számláló ne nőjön korlátlanul.
+                final int strikes = evasionStrikes.merge(citizenId, 1,
+                        (current, one) -> Math.min(evasionThreshold, current + one));
                 arrearsChanged = true;
                 if (strikes >= evasionThreshold) {
                     final Player evader = Bukkit.getPlayer(citizenId);
@@ -346,6 +376,13 @@ public final class FactionTreasuryManager implements PersistentStore {
                 citizen.getScheduler().run(plugin, task -> citizen.sendMessage(notice), null);
             }
         }
+
+        // Takarítás: a frakció-nyilvántartásból eltűnt (törölt/ismeretlen) játékosok
+        // hátralék/strike-bejegyzései ne hizlalják örökre a treasury.yml-t. (Exempt frakcióba
+        // váltónál a hátralék MEGMARAD — különben a váltás adósság-törlő kiskapu lenne.)
+        final java.util.Set<UUID> known = factionManager.getFactionAssignments().keySet();
+        arrearsChanged |= taxArrears.keySet().removeIf(id -> !known.contains(id));
+        arrearsChanged |= evasionStrikes.keySet().removeIf(id -> !known.contains(id));
 
         if (collected.isEmpty() && !arrearsChanged) {
             return;

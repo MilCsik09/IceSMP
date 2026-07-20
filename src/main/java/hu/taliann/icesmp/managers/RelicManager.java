@@ -306,7 +306,11 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             return;
         }
 
-        if (ownerships.remove(relicId.toLowerCase(Locale.ROOT)) != null) {
+        // Az elveszett-jelölés a tulajdonnal együtt jár — felszabadításkor az is törlendő,
+        // különben a következő tulajdonos öröklött "lost" állapotot kapna.
+        final boolean removedOwnership = ownerships.remove(relicId.toLowerCase(Locale.ROOT)) != null;
+        final boolean removedLost = lostSince.remove(relicId.toLowerCase(Locale.ROOT)) != null;
+        if (removedOwnership || removedLost) {
             save();
         }
     }

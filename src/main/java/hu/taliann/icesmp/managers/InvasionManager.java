@@ -70,6 +70,8 @@ public final class InvasionManager {
     private final MessageManager messageManager;
 
     private volatile long nextAttemptAt;
+    /** Rövid indítási türelem: két egyidejű indítás (tick + admin) nem torlódhat egymásra. */
+    private volatile long launchGraceUntil;
     /** UUIDs of currently-spawned invasion mobs, pruned each wave; despawned on shutdown. */
     private final Set<UUID> activeMobs = ConcurrentHashMap.newKeySet();
     /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
@@ -107,10 +109,7 @@ public final class InvasionManager {
             return;
         }
 
-        final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
-        if (!online.isEmpty()) {
-            triggerNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
-        }
+        launch(null);
     }
 
     /**
@@ -121,6 +120,18 @@ public final class InvasionManager {
      * @return true if an invasion was launched
      */
     public boolean forceStart(final Player anchor) {
+        return launch(anchor);
+    }
+
+    /**
+     * Az egyetlen indítási út (tick + admin): synchronized + indítási türelem, hogy két
+     * egyidejű hívás (vagy egy még élő hullám mellett érkező) ne torlódhasson egymásra.
+     */
+    private synchronized boolean launch(final Player anchor) {
+        final long now = System.currentTimeMillis();
+        if (now < launchGraceUntil || isActive()) {
+            return false;
+        }
         Player target = anchor;
         if (target == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -129,6 +140,7 @@ public final class InvasionManager {
             }
             target = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
+        launchGraceUntil = now + 15_000L;
         triggerNear(target);
         return true;
     }
@@ -147,15 +159,34 @@ public final class InvasionManager {
         return entityId != null && activeMobs.contains(entityId);
     }
 
+    /** A horda-mob halálakor hívandó (MobLootListener) — az aktív-jelzés így nem ragad be. */
+    public void handleMobDeath(final UUID entityId) {
+        if (entityId != null) {
+            activeMobs.remove(entityId);
+        }
+    }
+
     /**
      * Whether an invasion wave is currently under way (any of its mobs are still
      * tracked as alive). No expiry timestamp is kept for invasions — the wave simply
      * lasts until its mobs are all killed — so only presence, not remaining time, is
-     * exposed here.
+     * exposed here. A halott/eltűnt (pl. despawnolt vagy /kill-elt) mobokat lekérdezéskor
+     * is kiszórjuk, hogy az állapot ne mutasson hamisan aktív inváziót.
      *
      * @return true while at least one wave mob is tracked as alive
      */
     public boolean isActive() {
+        if (activeMobs.isEmpty()) {
+            return false;
+        }
+        activeMobs.removeIf(id -> {
+            try {
+                final Entity existing = Bukkit.getEntity(id);
+                return existing == null || !existing.isValid();
+            } catch (final Exception exception) {
+                return false; // Régió nem elérhető erről a szálról — döntsön a következő hívás.
+            }
+        });
         return !activeMobs.isEmpty();
     }
 
@@ -203,19 +234,23 @@ public final class InvasionManager {
         final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4));
         final double radius = Math.max(2.0D, configManager.getDouble("world-events.invasion.radius", 8.0D));
 
-        int spawned = 0;
+        // Folia: a gyűrű szélső tagjai (radius ~8 blokk) régióhatár közelében MÁSIK régió
+        // chunkjaira eshetnek — minden gyűrű-pont a SAJÁT hely-régió-schedulerén spawnol
+        // (a getHighestBlockYAt is csak ott biztonságos). Minta: CorruptionManager.spreadAndSpawn.
+        final org.bukkit.World world = center.getWorld();
         for (int i = 0; i < count; i++) {
             final double angle = (Math.PI * 2.0D / count) * i;
             final int x = center.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
             final int z = center.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
-            if (spawnAt(topOf(center.getWorld(), x, z), horde.randomMob(), level) != null) {
-                spawned++;
-            }
+            final EntityType member = horde.randomMob();
+            plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z),
+                    task -> spawnAt(topOf(world, x, z), member, level));
         }
 
         // The horde's champion: a tougher, named mini-boss at the centre (final-wave feel).
+        // A center régió-szálán vagyunk — a bajnok spawnja itt közvetlen.
         final int bossBonus = Math.max(0, configManager.getInt("world-events.invasion.mini-boss-level-bonus", 6));
-        final Mob champion = spawnAt(topOf(center.getWorld(), center.getBlockX(), center.getBlockZ()),
+        final Mob champion = spawnAt(topOf(world, center.getBlockX(), center.getBlockZ()),
                 horde.miniBoss, level + bossBonus);
         if (champion != null) {
             champion.customName(net.kyori.adventure.text.Component.text(
@@ -225,13 +260,13 @@ public final class InvasionManager {
             startChampionTick(champion);
         }
 
-        if (spawned > 0 || champion != null) {
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "invasion-started",
-                    "<dark_red>⚔ INVÁZIÓ — {horde}! Egy szörnyhorda tört be a vidékre, élükön egy bajnokkal — vigyázz!</dark_red>",
-                    Map.of("horde", horde.displayName)
-            ));
-        }
+        // A hullám elindult (a gyűrű-tagok aszinkron érkeznek; a per-pont guard legfeljebb
+        // ritkítja a szélét) — a kihirdetés a top-szintű guard-on átjutott indításhoz kötött.
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                "invasion-started",
+                "<dark_red>⚔ INVÁZIÓ — {horde}! Egy szörnyhorda tört be a vidékre, élükön egy bajnokkal — vigyázz!</dark_red>",
+                Map.of("horde", horde.displayName)
+        ));
     }
 
     /** Highest safe spawn spot above the given column. */

@@ -119,7 +119,12 @@ public final class MeteorEventManager {
         restoreCrater(false);
     }
 
-    private boolean spawn(final Player preferredAnchor) {
+    private synchronized boolean spawn(final Player preferredAnchor) {
+        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick
+        // és egy egyidejű admin-hívás közül csak az első juthat át.
+        if (System.currentTimeMillis() < spawnGraceUntil) {
+            return false;
+        }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {

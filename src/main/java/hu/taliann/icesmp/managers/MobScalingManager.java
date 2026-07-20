@@ -116,9 +116,11 @@ public final class MobScalingManager {
         // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and a
         // territórium mob-szabálya (territory.mob-rules — pl. Kárhozat-zóna, DARK-földek)
         // adds its own danger bonus on top.
+        // Egyetlen zóna-lookup spawnonként — a szelektor-listát mindkét fogyasztó megkapja.
+        final java.util.List<String> zoneSelectors = zoneRuleSelectors(entity.getLocation());
         final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
-                + zoneBonusLevels(entity.getLocation());
-        applyZoneHardening(entity);
+                + zoneBonusLevels(zoneSelectors);
+        applyZoneHardening(entity, zoneSelectors);
         if (level < 1) {
             return;
         }
@@ -190,9 +192,9 @@ public final class MobScalingManager {
      * Bonus mob levels a spawn helyének territórium-szabályaiból (a legnagyobb illeszkedő
      * érték számít, nem összeadás — kiszámítható marad a végszint). Doom-gate default: 3.
      */
-    private int zoneBonusLevels(final Location location) {
+    private int zoneBonusLevels(final java.util.List<String> selectors) {
         int bonus = 0;
-        for (final String selector : zoneRuleSelectors(location)) {
+        for (final String selector : selectors) {
             final int fallback = "doom-gate".equals(selector) ? 3 : 0;
             bonus = Math.max(bonus, Math.max(0,
                     configManager.getInt("territory.mob-rules." + selector + ".bonus-levels", fallback)));
@@ -205,10 +207,10 @@ public final class MobScalingManager {
      * phantom típus nappal sem gyullad meg (pl. DARK-földek örök élőhalottjai), no-zombification
      * = piglin/hoglin nem alakul át az overworldben. Doom-gate default: mindkettő igaz.
      */
-    private void applyZoneHardening(final LivingEntity entity) {
+    private void applyZoneHardening(final LivingEntity entity, final java.util.List<String> selectors) {
         boolean noBurn = false;
         boolean noZombification = false;
-        for (final String selector : zoneRuleSelectors(entity.getLocation())) {
+        for (final String selector : selectors) {
             final boolean fallback = "doom-gate".equals(selector);
             noBurn |= configManager.getBoolean("territory.mob-rules." + selector + ".no-daylight-burn", fallback);
             noZombification |= configManager.getBoolean("territory.mob-rules." + selector + ".no-zombification", fallback);

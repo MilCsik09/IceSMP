@@ -1,0 +1,50 @@
+# N — A teljes kód-review bővítési ötletei (backlog)
+
+> Forrás: a 2026-07-20-i teljes review (3 párhuzamos mélyvizsgálat: világesemények+zónák,
+> frakció-rendszerek, itemek+enchantok+spellek). A review HIBA- és OPTIMALIZÁLÁS-találatai
+> már javítva; ez a fájl a felmerült BŐVÍTÉS-ötleteket gyűjti, olcsóbbtól a nagyobb felé.
+
+## Világesemények / zónák
+
+- [ ] **N1 — `/events spawncheck` debug-parancs:** adott koordinátára meghívja az
+      EventSpawnGuard `isBlocked`/`isUnsafeSurface` metódusait eventenként — az admin azonnal
+      látja, MIÉRT nem spawnol ott egy esemény. (A meglévő API-t közvetlenül kiszolgálja.)
+- [ ] **N2 — Archeológia: több egyidejű lelőhely** (`archeology.max-sites`), a jelenlegi
+      egyetlen site-mező listává generalizálva.
+- [ ] **N3 — Archeológia "pity timer":** ha N kiásásból nem esett unique lelet, a következő
+      garantált (a `finds` tábla meglévő `unique:` szintaxisára építve).
+- [ ] **N4 — Purge-kill toplista:** a rontás-irtás StatsManager-kategória, amit a Heti Krónika
+      is felhasznál ("A rontás legnagyobb ellenségei").
+- [ ] **N5 — Krónika-archívum:** az utolsó N (pl. 4) szám tárolása, `/kronika <szám>`
+      paraméterrel; a heti world-boss/invázió/hajsza-számok felvétele a krónikába.
+
+## Frakció-rendszerek
+
+- [ ] **N6 — `/faction tax arrears` + `/faction tax payoff`:** saját hátralék megtekintése és
+      önkéntes azonnali törlesztés (a meglévő taxArrears/currencyManager API-ra épül).
+- [ ] **N7 — Signature-étel buff-cooldown:** az abszorpció/tűzállóság újraevéssel jelenleg
+      korlátlanul frissíthető — rövid per-étel cooldown configból.
+- [ ] **N8 — `/suttogas allapot`:** a Suttogó lássa a saját gyanú-szintjét (mennyire közel a
+      lelepleződés); admin-oldalon "hány Suttogó aktív" statisztika a cache-ből.
+- [ ] **N9 — Zóna-belépési üzenet cooldown:** gyors oda-vissza határmozgásnál ne villogjon az
+      action-bar (rövid per-játékos cooldown a TerritoryListenerben).
+- [ ] **N10 — `territory.mob-rules.<szelektor>.max-level`** zónánkénti felülbírálás; boss/
+      esemény-mobok kizárása a zóna-bónuszból (ne kapjanak dupla szintet).
+- [ ] **N11 — Memória-szilánk: profession-pool bónuszpont** beváltás (a talent-út mintájára);
+      napi/heti limit a bónuszpont-grind ellen.
+
+## Itemek / enchantok / spellek
+
+- [ ] **N12 — Iskola-tekercsek** (M1 [TOP] az M-bootstrap.md-ben): fogyasztható tekercs, ami
+      rövid időre iskola-ellenállást ad — a Rúnavért/counter-enchant rendszer kiterjesztése.
+- [ ] **N13 — Páncél-enchant riderek:** a Rúnavért mellé 1-2 páncél-enchant aktív mellékhatással
+      (pl. lassulás-tisztítás fagy-iskola találatnál, kis visszacsapás káosz ellen).
+- [ ] **N14 — Rúnavért VFX:** finom rúna-particle a sikeres iskola-ellenálláskor (az eltávolított
+      action-bar helyett vizuális, nem tolakodó visszajelzés).
+
+## Mozgás-esemény infrastruktúra (nagyobb)
+
+- [ ] **N15 — Közös PlayerMoveEvent-diszpécser:** 9 listener figyeli külön a move-eventet, és
+      lépésenként többször számolja ugyanazt a zóna-lookupot — egy megosztott, lépésenként
+      egyszer számított "aktuális zóna" átadása csökkentené a redundanciát. (A lookup olcsó,
+      ez tisztán szépészeti/skálázási tétel — csak nagy játékosszámnál éri meg.)

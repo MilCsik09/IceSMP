@@ -116,9 +116,14 @@ public final class TreasureEventManager {
         return spawn(anchor);
     }
 
-    private boolean spawn(final Player preferredAnchor) {
+    private synchronized boolean spawn(final Player preferredAnchor) {
         // Reserve the active state while the spawn hops threads (self-heals after 10s),
         // so a second chest can never be placed and orphan the first.
+        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick
+        // és egy egyidejű admin-hívás közül csak az első juthat át.
+        if (System.currentTimeMillis() < spawnGraceUntil) {
+            return false;
+        }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {

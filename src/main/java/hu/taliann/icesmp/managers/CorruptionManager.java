@@ -63,6 +63,8 @@ public final class CorruptionManager implements PersistentStore {
     private final Set<UUID> corruptMobs = ConcurrentHashMap.newKeySet();
     /** Az utolsó terjedés napja (world full-day), hogy éjszakánként csak egyszer nőjön. */
     private volatile long lastSpreadDay = -1L;
+    /** Mentésre váró változás (purge-kill számláló) — a globális tick írja ki, nem a kill-szál. */
+    private volatile boolean dirty;
 
     public CorruptionManager(final JavaPlugin plugin, final ConfigManager configManager,
                              final MobScalingManager mobScalingManager, final EventSpawnGuard spawnGuard,
@@ -123,10 +125,13 @@ public final class CorruptionManager implements PersistentStore {
         return entityId != null && corruptMobs.contains(entityId);
     }
 
-    /** A tisztítás-számláló növelése (a korrupt mob halál-listenere hívja). */
+    /** A tisztítás-számláló növelése (a korrupt mob halál-listenere hívja).
+     * A lemezírás DEBOUNCE-olt: a régió-szálon nem blokkolunk minden killnél
+     * (tömeges farmolásnál tick-lassulást okozna) — a következő globális tick menti.
+     * Restart-vesztés legfeljebb pár kill, nem kritikus. */
     public void recordPurgeKill() {
         purgeKills.incrementAndGet();
-        save();
+        dirty = true;
     }
 
     public int getPurgeKills() {
@@ -147,7 +152,16 @@ public final class CorruptionManager implements PersistentStore {
     /** Periodikus driver a world-events tickről. */
     public void tick() {
         if (!configManager.getBoolean("corruption.enabled", true)) {
+            // Kikapcsoláskor az aktív zóna nem maradhat "befagyva" (mag + mobok örökre):
+            // a magot eltüntetjük, a fajzatokat despawnoljuk (ArcheologyManager-minta).
+            if (active) {
+                deactivate();
+            }
             return;
+        }
+        if (dirty) {
+            dirty = false;
+            save();
         }
         final long now = System.currentTimeMillis();
         if (active) {
@@ -173,7 +187,48 @@ public final class CorruptionManager implements PersistentStore {
         return trySpawn(anchor);
     }
 
-    private boolean trySpawn(final Player preferredAnchor) {
+    /**
+     * Admin/kapcsoló-oldali leállítás: a mag-blokk visszaállítása (régió-hoppal), a
+     * fajzatok despawnja, a zóna-állapot törlése. A tick hívja, ha corruption.enabled
+     * kikapcsolt állapotban aktív zónát talál.
+     */
+    private synchronized void deactivate() {
+        if (!active) {
+            return;
+        }
+        active = false;
+        final World world = Bukkit.getWorld(worldName == null ? "" : worldName);
+        if (world != null) {
+            final int x = centerX;
+            final int y = centerY;
+            final int z = centerZ;
+            plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, y, z), task -> {
+                if (world.getBlockAt(x, y, z).getType() == Material.SCULK_CATALYST) {
+                    world.getBlockAt(x, y, z).setType(Material.AIR, false);
+                }
+            });
+        }
+        for (final UUID id : corruptMobs) {
+            try {
+                final Entity entity = Bukkit.getEntity(id);
+                if (entity != null && entity.isValid()) {
+                    entity.getScheduler().run(plugin, task -> entity.remove(), null);
+                }
+            } catch (final Exception ignored) {
+                // Régió nem elérhető — kósza mob marad, a takarítás-szabály kezeli.
+            }
+        }
+        corruptMobs.clear();
+        save();
+        plugin.getLogger().info("Corruption zone deactivated (corruption.enabled=false).");
+    }
+
+    private synchronized boolean trySpawn(final Player preferredAnchor) {
+        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick és
+        // egy egyidejű admin-hívás közül csak az első juthat át.
+        if (active || System.currentTimeMillis() < spawnGraceUntil) {
+            return false;
+        }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
@@ -270,7 +325,10 @@ public final class CorruptionManager implements PersistentStore {
             plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z), task -> {
                 final int y = world.getHighestBlockYAt(x, z) + 1;
                 final Location spot = new Location(world, x + 0.5D, y, z + 0.5D);
-                if (world.getBlockAt(x, y - 1, z).isLiquid()) {
+                // A mob-utánpótlás is a spawn-rules mátrixot követi (territory/claim/region/víz):
+                // a góc mellé később épült claim/város belsejébe sem szivárog fajzat.
+                if (spawnGuard.isBlocked("corruption", spot)
+                        || spawnGuard.isUnsafeSurface("corruption", world, x, z)) {
                     return;
                 }
                 final EntityType type = POOL[ThreadLocalRandom.current().nextInt(POOL.length)];

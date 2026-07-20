@@ -189,9 +189,14 @@ public final class WildHuntManager {
         beastId = null;
     }
 
-    private boolean spawn(final Player preferredAnchor) {
+    private synchronized boolean spawn(final Player preferredAnchor) {
         // Reserve the active state while the spawn hops threads (self-healing after 10s
         // if the chain dies, e.g. the world unloads), so no second beast can start.
+        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick
+        // és egy egyidejű admin-hívás közül csak az első juthat át.
+        if (System.currentTimeMillis() < spawnGraceUntil) {
+            return false;
+        }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {

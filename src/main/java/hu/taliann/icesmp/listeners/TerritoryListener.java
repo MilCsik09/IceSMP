@@ -115,6 +115,16 @@ public final class TerritoryListener implements Listener {
                 Map.of("name", territory.name(), "faction", territory.faction().getDisplayName())));
     }
 
+    /**
+     * Enderpearl/portál/plugin-teleport is zóna-váltás — a teleport KÜLÖN handler-lista,
+     * e nélkül a Kárhozat-zónába becsapódó játékos nem kapná meg a belépési PvP-grace-t
+     * (és a zóna-címke sem frissülne).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
+        onPlayerMove(event);
+    }
+
     @EventHandler
     public void onPlayerQuit(final PlayerQuitEvent event) {
         lastTerritoryIds.remove(event.getPlayer().getUniqueId());

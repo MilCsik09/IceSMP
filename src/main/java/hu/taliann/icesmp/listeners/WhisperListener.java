@@ -62,6 +62,12 @@ public final class WhisperListener implements Listener {
 
     // ==================== A Sötét Rítus ====================
 
+    /** Join a játékos saját régió-szálán fut — a Suttogó-cache itt töltődik (PDC-olvasás). */
+    @EventHandler
+    public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
+        whisperManager.handleJoin(event.getPlayer());
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onRite(final PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND || !event.getAction().isRightClick()) {

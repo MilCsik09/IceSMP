@@ -52,6 +52,7 @@ public final class SignatureItemListener implements Listener {
     private final MessageManager messageManager;
     private final hu.taliann.icesmp.managers.GatheringBuffManager gatheringBuffManager;
     private final hu.taliann.icesmp.managers.CurrencyManager currencyManager;
+    private final hu.taliann.icesmp.managers.TerritoryManager territoryManager;
     private final NamespacedKey signatureKey;
     private final NamespacedKey pierceKey;
     private final NamespacedKey kantarAppliedKey;
@@ -61,12 +62,14 @@ public final class SignatureItemListener implements Listener {
     public SignatureItemListener(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager,
                                  final hu.taliann.icesmp.managers.GatheringBuffManager gatheringBuffManager,
-                                 final hu.taliann.icesmp.managers.CurrencyManager currencyManager) {
+                                 final hu.taliann.icesmp.managers.CurrencyManager currencyManager,
+                                 final hu.taliann.icesmp.managers.TerritoryManager territoryManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.gatheringBuffManager = gatheringBuffManager;
         this.currencyManager = currencyManager;
+        this.territoryManager = territoryManager;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
         this.pierceKey = new NamespacedKey(plugin, "sig_pierce");
         this.kantarAppliedKey = new NamespacedKey(plugin, "sig_kantar");
@@ -80,12 +83,27 @@ public final class SignatureItemListener implements Listener {
     private final NamespacedKey slowArrowKey;
     private final NamespacedKey igniteArrowKey;
 
+    /** A signature-PDC kulcs megosztott alakja (ShopManager/DungeonGate/CapitalLaw is ezt írja/olvassa). */
+    public static final NamespacedKey SIGNATURE_PDC_KEY = NamespacedKey.fromString("icesmp:signature_item");
+
+    /** Registry-lookup cache: a bootstrap-freeze után az enchant-készlet változatlan. */
+    private static final java.util.concurrent.ConcurrentHashMap<String, org.bukkit.enchantments.Enchantment> ENCHANT_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     /** Bootstrap-regisztrált enchant a registryből (null, ha a regisztráció hiányzik). */
     private static org.bukkit.enchantments.Enchantment enchant(final String id) {
+        final org.bukkit.enchantments.Enchantment cached = ENCHANT_CACHE.get(id);
+        if (cached != null) {
+            return cached;
+        }
         try {
-            return io.papermc.paper.registry.RegistryAccess.registryAccess()
+            final org.bukkit.enchantments.Enchantment found = io.papermc.paper.registry.RegistryAccess.registryAccess()
                     .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
                     .get(org.bukkit.NamespacedKey.fromString("icesmp:" + id));
+            if (found != null) {
+                ENCHANT_CACHE.put(id, found);
+            }
+            return found;
         } catch (final Exception exception) {
             return null;
         }
@@ -148,7 +166,13 @@ public final class SignatureItemListener implements Listener {
         final String meleeSig = idOf(attacker.getInventory().getItemInMainHand());
         // K10 — Bokic-menti Sétapálca: bot, amiben penge lakik. Caldestera fegyvertilalma a
         // botot nem látja — a rejtett penge viszont fegyverként üt (flat bónusz a bot-alapra).
+        // A penge CSAK a fővárosban ér valamit (capital-only, default igaz) — különben egy
+        // 400 DARK-os bot mindenhol felülütné a rendes fegyvereket.
         if (hu.taliann.icesmp.listeners.CapitalLawListener.SETAPALCA.equals(meleeSig)) {
+            if (configManager.getBoolean("signature.setapalca.capital-only", true)
+                    && !isNeutralCapital(attacker.getLocation())) {
+                return;
+            }
             final double bonus = Math.max(0.0D, configManager.getDouble("signature.setapalca.bonus-damage", 5.0D));
             event.setDamage(event.getDamage() + bonus);
             return;
@@ -161,17 +185,36 @@ public final class SignatureItemListener implements Listener {
                 ? Math.max(1.0D, configManager.getDouble("signature.agyar.offhand-axe-mult", 1.3D))
                 : Math.max(1.0D, configManager.getDouble("signature.agyar.damage-mult", 1.15D));
         event.setDamage(event.getDamage() * mult);
-        // Vérszomj rider: a kiontott vér táplál — a bevitt sebzés kis része gyógyít
-        // (enchant-kapus; a támadó a saját szálán van, a heal biztonságos).
-        if (hasEnchant(attacker.getInventory().getItemInMainHand(), "verszomj")) {
-            final double ratio = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-lifesteal", 0.1D));
-            final double cap = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-heal-cap", 2.0D));
-            final double heal = Math.min(cap, event.getFinalDamage() * ratio);
-            final AttributeInstance maxHealth = attacker.getAttribute(Attribute.MAX_HEALTH);
-            if (heal > 0.0D && maxHealth != null) {
-                attacker.setHealth(Math.min(maxHealth.getValue(), attacker.getHealth() + heal));
-            }
+    }
+
+    /**
+     * Vérszomj rider MONITOR-prioritáson: a kiontott vér táplál — a VÉGSŐ (minden más
+     * handler — pl. az áldozat Jégvértje — utáni) sebzés kis része gyógyít. Az eseményt
+     * itt már nem módosítjuk; a támadó a saját szálán van, a heal biztonságos.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMeleeLifesteal(final EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player attacker)) {
+            return;
         }
+        final ItemStack weapon = attacker.getInventory().getItemInMainHand();
+        if (!AGYAR.equals(idOf(weapon)) || !hasEnchant(weapon, "verszomj")) {
+            return;
+        }
+        final double ratio = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-lifesteal", 0.1D));
+        final double cap = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-heal-cap", 2.0D));
+        final double heal = Math.min(cap, event.getFinalDamage() * ratio);
+        final AttributeInstance maxHealth = attacker.getAttribute(Attribute.MAX_HEALTH);
+        if (heal > 0.0D && maxHealth != null) {
+            attacker.setHealth(Math.min(maxHealth.getValue(), attacker.getHealth() + heal));
+        }
+    }
+
+    /** A támadás helye a NEUTRAL főváros zónája-e (a Sétapálca-penge kapuja). */
+    private boolean isNeutralCapital(final org.bukkit.Location location) {
+        final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(location);
+        return zone != null && zone.type() == hu.taliann.icesmp.data.TerritoryType.CAPITAL
+                && zone.faction() == hu.taliann.icesmp.data.FactionType.NEUTRAL;
     }
 
     @EventHandler(ignoreCancelled = true)

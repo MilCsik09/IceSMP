@@ -317,9 +317,9 @@ public final class IceSMPCommand implements BasicCommand {
         final String raw = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
         final Object parsed = parseValue(key, raw);
 
-        plugin.getConfig().set(key, parsed);
-        plugin.saveConfig();
-        configManager.reload();
+        // Szerializált override-út (ConfigManager.applyOverride): két admin egyidejű írása
+        // (parancs + GUI bármely kombinációban) nem veszíthet el módosítást.
+        configManager.applyOverride(key, parsed);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
 
@@ -334,14 +334,11 @@ public final class IceSMPCommand implements BasicCommand {
             return;
         }
         final String key = args[2];
-        if (!plugin.getConfig().isSet(key)) {
+        if (!configManager.applyOverride(key, null)) {
             sender.sendMessage(messageManager.get("admin.icesmp.config.unset-missing",
                     "&eNincs ilyen ingame felülbírálás: &f%s &7(csak a config.yml-ben tárolt kulcsok törölhetők innen).", key));
             return;
         }
-        plugin.getConfig().set(key, null);
-        plugin.saveConfig();
-        configManager.reload();
         messageManager.reload();
         sender.sendMessage(messageManager.get("admin.icesmp.config.unset-success",
                 "&aFelülbírálás törölve: &6%s &7— újra a config-fájlok/kódbeli default él.", key));

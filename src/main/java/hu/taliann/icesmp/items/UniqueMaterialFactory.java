@@ -83,6 +83,16 @@ public final class UniqueMaterialFactory {
         return configOf(uniqueId) != null;
     }
 
+    /** Minden definiált unique-material id (admin item-adó parancs tab-complete-je). */
+    public List<String> allIds() {
+        if (configManager.getConfiguration() == null) {
+            return List.of();
+        }
+        final ConfigurationSection root = configManager.getConfiguration()
+                .getConfigurationSection("profession-materials");
+        return root == null ? List.of() : List.copyOf(root.getKeys(false));
+    }
+
     private static Component legacy(final String text) {
         return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().deserialize(text);
     }

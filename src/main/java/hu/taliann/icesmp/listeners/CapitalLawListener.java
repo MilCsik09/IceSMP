@@ -36,7 +36,7 @@ import java.util.Locale;
  */
 public final class CapitalLawListener implements Listener {
 
-    private static final NamespacedKey SIGNATURE_KEY = NamespacedKey.fromString("icesmp:signature_item");
+    private static final NamespacedKey SIGNATURE_KEY = SignatureItemListener.SIGNATURE_PDC_KEY;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -56,6 +56,59 @@ public final class CapitalLawListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
+        handleBorderCross(event);
+    }
+
+    /** Enderpearl/portál/plugin-teleport is határátlépés — a teleport KÜLÖN handler-lista. */
+    @EventHandler(ignoreCancelled = true)
+    public void onTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
+        handleBorderCross(event);
+    }
+
+    /** Jármű-utas nem vált ki PlayerMoveEvent-et — a körözött utast a kapunál kiszállítjuk. */
+    @EventHandler
+    public void onVehicleMove(final org.bukkit.event.vehicle.VehicleMoveEvent event) {
+        final Location from = event.getFrom();
+        final Location to = event.getTo();
+        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+            return;
+        }
+        if (!configManager.getBoolean("territory.capital-law.enabled", true)
+                || !configManager.getBoolean("territory.capital-law.wanted-ban", true)
+                || !isNeutralCapital(to) || isNeutralCapital(from)) {
+            return;
+        }
+        for (final org.bukkit.entity.Entity passenger : event.getVehicle().getPassengers()) {
+            if (passenger instanceof Player player && isWanted(player) && !hasMenlevel(player)) {
+                event.getVehicle().eject();
+                player.teleportAsync(from);
+                player.sendActionBar(messageManager.getMessage("capital-law-wanted",
+                        "<red>⛨ Az őrség felismert — körözötteknek tilos a belépés Caldesterába. <gray>(Egy menlevél… segíthetne.)</gray></red>"));
+            }
+        }
+    }
+
+    /** Bejelentkezéskor is érvényt szerzünk a fegyvertilalomnak, ha a játékos a zónában áll. */
+    @EventHandler
+    public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+        if (configManager.getBoolean("territory.capital-law.enabled", true)
+                && isNeutralCapital(player.getLocation())) {
+            enforceWeaponBan(player);
+        }
+    }
+
+    /** Láda-zárás után: shift-kattal az aktív slotba került fegyvert is elrakatja az őrség. */
+    @EventHandler
+    public void onInventoryClose(final org.bukkit.event.inventory.InventoryCloseEvent event) {
+        if (event.getPlayer() instanceof Player player
+                && configManager.getBoolean("territory.capital-law.enabled", true)
+                && isNeutralCapital(player.getLocation())) {
+            player.getScheduler().run(plugin, task -> enforceWeaponBan(player), null);
+        }
+    }
+
+    private void handleBorderCross(final PlayerMoveEvent event) {
         final Location from = event.getFrom();
         final Location to = event.getTo();
         if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {

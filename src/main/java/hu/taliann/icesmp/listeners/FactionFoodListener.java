@@ -54,6 +54,9 @@ public final class FactionFoodListener implements Listener {
     private final NamespacedKey signatureKey;
     /** Az utolsó "hazai étel" fogyasztás időbélyege (player-PDC — nem szivárgó map). */
     private final NamespacedKey lastHomeFoodKey;
+    /** Melyik frakció konyhájához tartozik az időbélyeg — frakcióváltásnál a régi bélyeg
+     * érvénytelen (különben a váltó azonnali debuffot VAGY jogtalan kedvezményt kapna). */
+    private final NamespacedKey foodFactionKey;
 
     private volatile long nextCheckAt;
 
@@ -65,6 +68,7 @@ public final class FactionFoodListener implements Listener {
         this.messageManager = messageManager;
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
         this.lastHomeFoodKey = new NamespacedKey(plugin, "faction_food_ts");
+        this.foodFactionKey = new NamespacedKey(plugin, "faction_food_faction");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -85,6 +89,7 @@ public final class FactionFoodListener implements Listener {
         };
         if (homeFood) {
             player.getPersistentDataContainer().set(lastHomeFoodKey, PersistentDataType.LONG, System.currentTimeMillis());
+            player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());
         }
 
         // Signature étel-buffok (kicsik, tematikusak; a consume a játékos saját szálán fut).
@@ -135,9 +140,12 @@ public final class FactionFoodListener implements Listener {
             }
             player.getScheduler().run(plugin, task -> {
                 final Long last = player.getPersistentDataContainer().get(lastHomeFoodKey, PersistentDataType.LONG);
-                if (last == null) {
-                    // Türelmi idő indul — először csak jegyezzük az időt.
+                final String tsFaction = player.getPersistentDataContainer().get(foodFactionKey, PersistentDataType.STRING);
+                if (last == null || !faction.name().equals(tsFaction)) {
+                    // Új játékos VAGY frissen váltó (a bélyeg a régi frakció konyhájáé):
+                    // türelmi idő indul — először csak jegyezzük az időt, debuff nélkül.
                     player.getPersistentDataContainer().set(lastHomeFoodKey, PersistentDataType.LONG, System.currentTimeMillis());
+                    player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());
                     return;
                 }
                 if (System.currentTimeMillis() - last < graceMillis) {

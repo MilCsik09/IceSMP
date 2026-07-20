@@ -130,113 +130,9 @@ public final class ProfessionRecipeBookListener implements Listener {
         }
         consumeUnique(player, recipe);
 
-        ItemStack result = recipe.uniqueResult() != null
-                ? uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount())
-                : new ItemStack(recipe.result(), recipe.resultAmount());
+        final ItemStack result = buildResult(player, recipe);
         if (result == null) {
             return;
-        }
-        // Named prestige items (gear / tome / special consumable): stamp the designed name + lore so the
-        // crafted item matches the recipe book and the mob-loot naming model. Bulk results carry no lore
-        // and stay vanilla + stackable. Unique materials already carry their own name/lore from the factory.
-        if (recipe.uniqueResult() == null && recipe.lore() != null && !recipe.lore().isEmpty()) {
-            final ItemMeta meta = result.getItemMeta();
-            if (meta != null) {
-                meta.displayName(LEGACY.deserialize(recipe.displayName())
-                        .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                final List<Component> loreLines = new ArrayList<>();
-                for (final String line : recipe.lore()) {
-                    loreLines.add(LEGACY.deserialize(line)
-                            .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                }
-                meta.lore(loreLines);
-                result.setItemMeta(meta);
-            }
-        }
-        // Signature perk-tag (K2/K3): a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
-        // ELŐTT kerül fel, mert a roll klónja a PDC-t is viszi.
-        if (recipe.signature() != null && result.getItemMeta() != null) {
-            final ItemMeta sigMeta = result.getItemMeta();
-            sigMeta.getPersistentDataContainer().set(signatureKey, PersistentDataType.STRING, recipe.signature());
-            // Tűzköpő: a „+felhúzási sebesség" fele a vanília Quick Charge-on át (K3).
-            if (SignatureItemListener.TUZKOPO.equals(recipe.signature())) {
-                final int level = Math.max(0, Math.min(3, 2));
-                if (level > 0) {
-                    sigMeta.addEnchant(org.bukkit.enchantments.Enchantment.QUICK_CHARGE, level, true);
-                }
-            }
-            // Bootstrap-regisztrált signature-enchant (IceSMPBootstrap): a lore-név valódi
-            // enchant-sorként jelenik meg a tooltipben; a Fagypáncél/Főnixtoll egyben
-            // iskola-counter is. Globális + itemenkénti kapcsoló (élőben olvasva).
-            if (configManager.getBoolean("signature.custom-enchants.enabled", true)
-                    && configManager.getBoolean("signature.custom-enchants.items." + recipe.signature(), true)) {
-                final net.kyori.adventure.key.Key enchantKey =
-                        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.get(recipe.signature());
-                if (enchantKey != null) {
-                    final org.bukkit.enchantments.Enchantment enchant =
-                            io.papermc.paper.registry.RegistryAccess.registryAccess()
-                                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
-                                    .get(org.bukkit.NamespacedKey.fromString(enchantKey.asString()));
-                    if (enchant != null) {
-                        sigMeta.addEnchant(enchant, 1, true);
-                    }
-                }
-            }
-            result.setItemMeta(sigMeta);
-        }
-        // Recept-oldali enchant (result.enchant: "<kulcs>:<szint>", pl. "icesmp:runavert:1"):
-        // enchantelt könyvnél stored-enchantként, egyébként rendes enchantként kerül fel —
-        // így receptből adható a bootstrap-regisztrált enchantok könyv-formája (üllőhöz).
-        final String enchantSpec = configManager.getString(
-                "profession-recipes." + recipe.id() + ".result.enchant", "");
-        if (!enchantSpec.isBlank()) {
-            final int levelSplit = enchantSpec.lastIndexOf(':');
-            final String enchantKey = levelSplit > 0 ? enchantSpec.substring(0, levelSplit) : enchantSpec;
-            int enchantLevel = 1;
-            try {
-                enchantLevel = levelSplit > 0 ? Integer.parseInt(enchantSpec.substring(levelSplit + 1)) : 1;
-            } catch (final NumberFormatException ignored) {
-                // Hibás szint a configban — 1-es szinttel megyünk tovább.
-            }
-            final org.bukkit.enchantments.Enchantment enchant =
-                    io.papermc.paper.registry.RegistryAccess.registryAccess()
-                            .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
-                            .get(org.bukkit.NamespacedKey.fromString(enchantKey));
-            final ItemMeta enchMeta = result.getItemMeta();
-            if (enchant != null && enchMeta != null) {
-                if (enchMeta instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta storage) {
-                    storage.addStoredEnchant(enchant, enchantLevel, true);
-                } else {
-                    enchMeta.addEnchant(enchant, enchantLevel, true);
-                }
-                result.setItemMeta(enchMeta);
-            }
-        }
-
-        // I14 — „Készítette: X" (kódex VIII.: a mester keze alól kikerülő mű a nevét is viseli):
-        // a NEVES/gear eredmények PDC-ben és lore-sorban viszik a készítő nevét — a piacon is
-        // megmarad, márkajelzésként. Bulk (lore nélküli, stackelhető) eredményre nem kerül,
-        // hogy a stackelést ne törje. A roll ELŐTT fut (a roll a lore alá fűzi az affixokat).
-        if (configManager.getBoolean("crafted-by.enabled", true)
-                && (recipe.affixTier() != null || (recipe.lore() != null && !recipe.lore().isEmpty()))) {
-            final ItemMeta craftedMeta = result.getItemMeta();
-            if (craftedMeta != null) {
-                craftedMeta.getPersistentDataContainer().set(craftedByKey, PersistentDataType.STRING, player.getName());
-                craftedMeta.getPersistentDataContainer().set(craftedAtKey, PersistentDataType.LONG, System.currentTimeMillis());
-                final List<Component> craftedLore = craftedMeta.lore() == null
-                        ? new ArrayList<>() : new ArrayList<>(craftedMeta.lore());
-                craftedLore.add(Component.text("Készítette: " + player.getName(),
-                                net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY)
-                        .decoration(TextDecoration.ITALIC, true));
-                craftedMeta.lore(craftedLore);
-                result.setItemMeta(craftedMeta);
-            }
-        }
-
-        // Roll a unique quality + affixes for single-item gear results (crafted tier). The roll keeps the
-        // stamped display name (prefixing the rarity) and appends the affix lines below the lore.
-        if (recipe.affixTier() != null && recipe.resultAmount() == 1) {
-            result = affixService.roll(result, recipe.affixTier());
         }
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), overflow);
@@ -303,5 +199,140 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (event.getView().getTopInventory().getHolder() instanceof ProfessionRecipeHolder) {
             event.setCancelled(true);
         }
+    }
+
+    /**
+     * A recept EREDMÉNY-tárgyának felépítése a teljes stamp-lánccal (név/lore →
+     * signature-PDC + Quick Charge + custom enchant → result.enchant → crafted-by →
+     * affix-roll). A craft-út mellett az admin item-adó parancs (/iceitem) is ezt
+     * hívja, így a parancsból adott tárgy bitre azonos a craftolttal.
+     * A hívó szála a cél-játékos szála legyen (a crafted-by a nevét bélyegzi).
+     *
+     * @return a kész tárgy, vagy null (ismeretlen unique-eredmény)
+     */
+    public ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
+        ItemStack result = recipe.uniqueResult() != null
+                ? uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount())
+                : new ItemStack(recipe.result(), recipe.resultAmount());
+        if (result == null) {
+            return null;
+        }
+        // Named prestige items (gear / tome / special consumable): stamp the designed name + lore so the
+        // crafted item matches the recipe book and the mob-loot naming model. Bulk results carry no lore
+        // and stay vanilla + stackable. Unique materials already carry their own name/lore from the factory.
+        if (recipe.uniqueResult() == null && recipe.lore() != null && !recipe.lore().isEmpty()) {
+            final ItemMeta meta = result.getItemMeta();
+            if (meta != null) {
+                meta.displayName(LEGACY.deserialize(recipe.displayName())
+                        .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                final List<Component> loreLines = new ArrayList<>();
+                for (final String line : recipe.lore()) {
+                    loreLines.add(LEGACY.deserialize(line)
+                            .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                }
+                meta.lore(loreLines);
+                result.setItemMeta(meta);
+            }
+        }
+        // Signature perk-tag (K2/K3): a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
+        // ELŐTT kerül fel, mert a roll klónja a PDC-t is viszi.
+        if (recipe.signature() != null && result.getItemMeta() != null) {
+            final ItemMeta sigMeta = result.getItemMeta();
+            sigMeta.getPersistentDataContainer().set(signatureKey, PersistentDataType.STRING, recipe.signature());
+            // Tűzköpő: a „+felhúzási sebesség" fele a vanília Quick Charge-on át (K3).
+            if (SignatureItemListener.TUZKOPO.equals(recipe.signature())) {
+                final int level = Math.max(0, Math.min(3,
+                        configManager.getInt("signature.tuzkopo.quick-charge-level", 2)));
+                if (level > 0) {
+                    sigMeta.addEnchant(org.bukkit.enchantments.Enchantment.QUICK_CHARGE, level, true);
+                }
+            }
+            // Bootstrap-regisztrált signature-enchant (IceSMPBootstrap): a lore-név valódi
+            // enchant-sorként jelenik meg a tooltipben; a Fagypáncél/Főnixtoll egyben
+            // iskola-counter is. Globális + itemenkénti kapcsoló (élőben olvasva).
+            if (configManager.getBoolean("signature.custom-enchants.enabled", true)
+                    && configManager.getBoolean("signature.custom-enchants.items." + recipe.signature(), true)) {
+                final net.kyori.adventure.key.Key enchantKey =
+                        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.get(recipe.signature());
+                if (enchantKey != null) {
+                    final org.bukkit.enchantments.Enchantment enchant =
+                            io.papermc.paper.registry.RegistryAccess.registryAccess()
+                                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                                    .get(org.bukkit.NamespacedKey.fromString(enchantKey.asString()));
+                    if (enchant != null) {
+                        sigMeta.addEnchant(enchant, 1, true);
+                    }
+                }
+            }
+            result.setItemMeta(sigMeta);
+        }
+        // Recept-oldali enchant (result.enchant: "<kulcs>:<szint>", pl. "icesmp:runavert:1"):
+        // enchantelt könyvnél stored-enchantként, egyébként rendes enchantként kerül fel —
+        // így receptből adható a bootstrap-regisztrált enchantok könyv-formája (üllőhöz).
+        final String enchantSpec = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.enchant", "");
+        if (!enchantSpec.isBlank()) {
+            final int levelSplit = enchantSpec.lastIndexOf(':');
+            final String enchantKey = levelSplit > 0 ? enchantSpec.substring(0, levelSplit) : enchantSpec;
+            int enchantLevel = 1;
+            try {
+                enchantLevel = levelSplit > 0 ? Integer.parseInt(enchantSpec.substring(levelSplit + 1)) : 1;
+            } catch (final NumberFormatException ignored) {
+                // Hibás szint a configban — 1-es szinttel megyünk tovább.
+            }
+            // Hibás kulcs a configban (rossz formátum/ismeretlen enchant) nem törheti a craftot.
+            org.bukkit.enchantments.Enchantment enchant = null;
+            try {
+                final org.bukkit.NamespacedKey parsedKey = org.bukkit.NamespacedKey.fromString(enchantKey);
+                if (parsedKey != null) {
+                    enchant = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                            .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                            .get(parsedKey);
+                }
+            } catch (final Exception exception) {
+                // Ismeretlen/érvénytelen enchant-kulcs — enchant nélkül megy tovább a craft.
+            }
+            final ItemMeta enchMeta = result.getItemMeta();
+            if (enchant != null && enchMeta != null) {
+                if (enchMeta instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta storage) {
+                    storage.addStoredEnchant(enchant, enchantLevel, true);
+                } else {
+                    enchMeta.addEnchant(enchant, enchantLevel, true);
+                }
+                result.setItemMeta(enchMeta);
+            }
+        }
+
+        // I14 — „Készítette: X" (kódex VIII.: a mester keze alól kikerülő mű a nevét is viseli):
+        // a NEVES/gear eredmények PDC-ben és lore-sorban viszik a készítő nevét — a piacon is
+        // megmarad, márkajelzésként. Bulk (lore nélküli, stackelhető) eredményre nem kerül,
+        // hogy a stackelést ne törje. A roll ELŐTT fut (a roll a lore alá fűzi az affixokat).
+        if (configManager.getBoolean("crafted-by.enabled", true)
+                && (recipe.affixTier() != null || (recipe.lore() != null && !recipe.lore().isEmpty()))) {
+            final ItemMeta craftedMeta = result.getItemMeta();
+            if (craftedMeta != null) {
+                craftedMeta.getPersistentDataContainer().set(craftedByKey, PersistentDataType.STRING, player.getName());
+                // Időbélyeg CSAK nem-stackelhető (gear) eredményre: a milliszekundumos crafted_at
+                // a stackelhető (pl. lore-os étel) tételek külön craft-adagjait örökre
+                // összeférhetetlenné tenné — a név (crafted_by) stackelés-barát, az marad.
+                if (result.getMaxStackSize() == 1) {
+                    craftedMeta.getPersistentDataContainer().set(craftedAtKey, PersistentDataType.LONG, System.currentTimeMillis());
+                }
+                final List<Component> craftedLore = craftedMeta.lore() == null
+                        ? new ArrayList<>() : new ArrayList<>(craftedMeta.lore());
+                craftedLore.add(Component.text("Készítette: " + player.getName(),
+                                net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, true));
+                craftedMeta.lore(craftedLore);
+                result.setItemMeta(craftedMeta);
+            }
+        }
+
+        // Roll a unique quality + affixes for single-item gear results (crafted tier). The roll keeps the
+        // stamped display name (prefixing the rarity) and appends the affix lines below the lore.
+        if (recipe.affixTier() != null && recipe.resultAmount() == 1) {
+            result = affixService.roll(result, recipe.affixTier());
+        }
+        return result;
     }
 }

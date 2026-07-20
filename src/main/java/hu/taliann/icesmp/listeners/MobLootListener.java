@@ -56,6 +56,15 @@ public final class MobLootListener implements Listener {
         this.uniqueMaterials = uniqueMaterials;
     }
 
+    /**
+     * MONITOR: a horda-nyilvántartásból halálkor azonnal kikerül a mob (az isActive nem
+     * ragadhat be) — a loot-ág (normál prioritás) előbb fut, így az invázió-jelölést még látja.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInvasionMobDeath(final EntityDeathEvent event) {
+        invasionManager.handleMobDeath(event.getEntity().getUniqueId());
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
         if (!configManager.getBoolean("loot.enabled", true) || !affixService.isEnabled()) {

@@ -134,12 +134,15 @@ public final class ChronicleManager implements PersistentStore {
         lastIssue = List.copyOf(lines);
         save();
 
+        // Egyetlen többsoros komponensben megy ki (7 külön broadcast-csomag helyett).
+        net.kyori.adventure.text.Component issue = net.kyori.adventure.text.Component.empty();
         for (final String line : lines) {
-            Bukkit.getServer().broadcast(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                    .legacyAmpersand().deserialize(line));
+            issue = issue.append(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+                    .legacyAmpersand().deserialize(line)).append(net.kyori.adventure.text.Component.newline());
         }
-        Bukkit.getServer().broadcast(messageManager.getMessage("chronicle-footer",
+        issue = issue.append(messageManager.getMessage("chronicle-footer",
                 "<gray>(Visszaolvasható bármikor: <white>/kronika</white>)</gray>"));
+        Bukkit.getServer().broadcast(issue);
     }
 
     private void appendTop(final List<String> lines, final StatsManager.Category category, final String prefix) {

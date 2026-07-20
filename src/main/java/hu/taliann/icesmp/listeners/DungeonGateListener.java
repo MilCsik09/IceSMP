@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public final class DungeonGateListener implements Listener {
 
-    private static final NamespacedKey SIGNATURE_KEY = NamespacedKey.fromString("icesmp:signature_item");
+    private static final NamespacedKey SIGNATURE_KEY = SignatureItemListener.SIGNATURE_PDC_KEY;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -53,6 +53,26 @@ public final class DungeonGateListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
+        handleBorderCross(event);
+    }
+
+    /**
+     * Enderpearl / chorus / portál / plugin-teleport is határátlépés — a PlayerTeleportEvent
+     * KÜLÖN handler-lista, a sima move-handler nem kapja meg, ezért itt is őrködünk
+     * (a PlayerPortalEvent a teleport-listán fut, így azt is lefedi).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
+        handleBorderCross(event);
+    }
+
+    /**
+     * Jármű (csónak/csille) nem vált ki PlayerMoveEvent-et az utasnál — a kapu itt is zár:
+     * a kulcs nélküli utast kiszállítjuk és visszatesszük a határ elé (a VehicleMoveEvent
+     * nem cancellable). A jármű régió-szálán futunk; az utas ugyanabban a régióban van.
+     */
+    @EventHandler
+    public void onVehicleMove(final org.bukkit.event.vehicle.VehicleMoveEvent event) {
         final Location from = event.getFrom();
         final Location to = event.getTo();
         if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
@@ -61,17 +81,45 @@ public final class DungeonGateListener implements Listener {
         if (!configManager.getBoolean("territory.dungeon.enabled", true)) {
             return;
         }
+        for (final org.bukkit.entity.Entity passenger : event.getVehicle().getPassengers()) {
+            if (passenger instanceof Player player && !mayCross(player, from, to)) {
+                event.getVehicle().eject();
+                player.teleportAsync(from);
+            }
+        }
+    }
+
+    private void handleBorderCross(final PlayerMoveEvent event) {
+        final Location from = event.getFrom();
+        final Location to = event.getTo();
+        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+            return;
+        }
+        if (!configManager.getBoolean("territory.dungeon.enabled", true)) {
+            return;
+        }
+        if (!mayCross(event.getPlayer(), from, to)) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * A kapu-logika közös magja (move/teleport/jármű): true = szabad az út (nem kazamata,
+     * bent mozgás, admin, élő passz, vagy sikeres kulcs-beváltás), false = a határ zárva.
+     * A kulcs-fogyasztás és az üzenetek mellékhatásként itt történnek — a játékos saját
+     * (vagy vele azonos) régió-szálán futunk.
+     */
+    private boolean mayCross(final Player player, final Location from, final Location to) {
         final Territory target = territoryManager.getTerritoryAt(to);
         if (target == null || target.type() != TerritoryType.DUNGEON) {
-            return;
+            return true;
         }
         final Territory previous = territoryManager.getTerritoryAt(from);
         if (previous != null && previous.id().equals(target.id())) {
-            return; // Bent mozgás — a kapu csak a határon őrködik.
+            return true; // Bent mozgás — a kapu csak a határon őrködik.
         }
-        final Player player = event.getPlayer();
         if (player.hasPermission(hu.taliann.icesmp.managers.TerritoryProtectionService.ADMIN_BYPASS)) {
-            return;
+            return true;
         }
         final String zoneId = target.id().toLowerCase(Locale.ROOT);
         final NamespacedKey passKey = new NamespacedKey(plugin, "dungeon_pass_" + zoneId);
@@ -81,26 +129,24 @@ public final class DungeonGateListener implements Listener {
         // 1) Aktív passz: a futam alatt szabad a ki-be járás.
         final Long passUntil = player.getPersistentDataContainer().get(passKey, PersistentDataType.LONG);
         if (passUntil != null && passUntil > now) {
-            return;
+            return true;
         }
         // 2) Heti pecsét: amíg él, új futam nem kezdhető.
         final Long lockUntil = player.getPersistentDataContainer().get(lockKey, PersistentDataType.LONG);
         if (lockUntil != null && lockUntil > now) {
-            event.setCancelled(true);
             final long daysLeft = Math.max(1L, (lockUntil - now + 86_399_999L) / 86_400_000L);
             player.sendActionBar(messageManager.getMessage("dungeon-locked",
                     "<red>⛨ {name} pecsétje még friss rajtad — {days} nap múlva térhetsz vissza.</red>",
                     Map.of("name", target.name(), "days", String.valueOf(daysLeft))));
-            return;
+            return false;
         }
         // 3) Kulcs: elfogy, passz + pecsét kerül fel.
         final ItemStack key = findKey(player, zoneId);
         if (key == null) {
-            event.setCancelled(true);
             player.sendActionBar(messageManager.getMessage("dungeon-no-key",
                     "<red>⛨ {name} kapuja zárva — a Mélység Népe csarnokába kulcs kell.</red>",
                     Map.of("name", target.name())));
-            return;
+            return false;
         }
         key.setAmount(key.getAmount() - 1);
         final long passHours = Math.max(1L, configManager.getLong("territory.dungeon.pass-hours", 2L));
@@ -113,6 +159,7 @@ public final class DungeonGateListener implements Listener {
         player.sendMessage(messageManager.getMessage("dungeon-entered",
                 "<gold>🗝 A kulcs porrá omlik a zárban — {name} megnyílt előtted ({hours} órád van; a pecsét {days} napig tart).</gold>",
                 Map.of("name", target.name(), "hours", String.valueOf(passHours), "days", String.valueOf(lockDays))));
+        return true;
     }
 
     /** A zóna kulcsa a játékosnál: signature == dungeonkulcs_<zóna-id>. */

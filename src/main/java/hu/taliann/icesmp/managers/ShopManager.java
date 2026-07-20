@@ -239,7 +239,7 @@ public final class ShopManager {
         }
         if (!signature.isBlank()) {
             meta.getPersistentDataContainer().set(
-                    org.bukkit.NamespacedKey.fromString("icesmp:signature_item"),
+                    hu.taliann.icesmp.listeners.SignatureItemListener.SIGNATURE_PDC_KEY,
                     org.bukkit.persistence.PersistentDataType.STRING, signature);
         }
         stack.setItemMeta(meta);

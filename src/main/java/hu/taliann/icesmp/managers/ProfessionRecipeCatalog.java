@@ -126,6 +126,11 @@ public final class ProfessionRecipeCatalog {
                 signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction);
     }
 
+    /** Minden recept-id betöltési sorrendben (admin item-adó parancs tab-complete-je). */
+    public List<String> allIds() {
+        return List.copyOf(byId.keySet());
+    }
+
     public Recipe get(final String id) {
         return id == null ? null : byId.get(id.toLowerCase(Locale.ROOT));
     }

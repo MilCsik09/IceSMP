@@ -541,8 +541,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **K10 Feketepiac + Caldestera törvényei (ÚJ):** rakj ki `feketepiac` nevű bolt-NPC-t a
       Botera-negyedbe → Csontveretért árulja a két csempész-árut. **Fegyvertilalom:** a NEUTRAL
       fővárosban nyílt fegyverrel a kézben az őrség elrakatja (inventoryba kerül, action-bar);
-      a **Bokic-menti Sétapálca** (bot!) átcsúszik — közelharcban +5 flat sebzés
-      (`signature.setapalca.bonus-damage`). **Körözött-kapu:** vérdíjas játékost a határon
+      a **Bokic-menti Sétapálca** (bot!) átcsúszik — közelharcban +5 flat sebzés, de CSAK a
+      főváros zónáján belül (`signature.setapalca.bonus-damage` + `capital-only: true` —
+      a városon kívül a bot csak bot). **Körözött-kapu:** vérdíjas játékost a határon
       visszafordít; **Hamisított Menlevéllel** a zsebében beengedi. Kulcsok:
       `territory.capital-law.*`; a bolt-áru name/lore/signature mezőit a ShopManager stampeli.
 - [ ] **I14 „Készítette: X" (ÚJ — Tier S):** craftolj NEVES/gear receptet → a lore alján halvány
@@ -963,6 +964,38 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.15 Druida formák + parkour ✅
 - [ ] Druida forma-spellek: LibsDisguises-szel vizuális átalakulás; nélküle stat-váltás (mindkettő teszt).
 - [ ] `/parkour start <id>` futás; admin: `/parkour setstart|setfinish|remove`.
+
+### 4.19 Teljes-review javítások (ÚJ) + /iceitem
+- [ ] **Kapu-bypass zárva (KRITIKUS):** enderpearl/chorus/portál/plugin-teleporttal SEM lehet
+      kulcs nélkül DUNGEON-zónába jutni, körözöttként Caldesterába lépni, vagy a Kárhozat-zóna
+      belépési grace-ét kihagyni (mindhárom listener PlayerTeleportEvent-et is figyel).
+      Csónakban/csillében ülve átkelve a kapu kiszállít és visszatesz a határ elé.
+- [ ] **Fegyvertilalom-rések:** fővárosban bejelentkezve fegyverrel a kézben, ill. ládából
+      shift-kattal az aktív slotba vett fegyvernél is elrakat az őrség (join + láda-zárás check).
+- [ ] **Invázió Folia-biztos:** a horda-gyűrű tagjai régióhatár közelében is hibátlanul
+      spawnolnak (pontonkénti régió-hop); `/events` státusz nem mutat "tomboló inváziót"
+      azután, hogy minden mob elhullott (halál-esemény takarít); dupla `/events invasion`
+      hívás nem indít torlódó hullámokat (15 mp indítási türelem).
+- [ ] **Rontás-zóna:** a mob-utánpótlás sem spawnol claim/város/WG-régió belsejébe (a
+      spawn-rules mátrix a terjedésre is érvényes); `corruption.enabled: false` reload után az
+      aktív góc magja eltűnik, fajzatai despawnolnak; tömeges korrupt-farmolás nem okoz
+      tick-lassulást (a purge-kill számláló mentése a globális tickre gyűjtve).
+- [ ] **Config-írás verseny:** két admin egyszerre kattint a config-menüben / ad ki
+      `/icesmp config set`-et → mindkét módosítás megmarad (szerializált override-út).
+- [ ] **Frakció-étel váltásnál:** frakcióváltás után NEM jön azonnali honvágy-debuff — új
+      türelmi idő indul (az időbélyeg frakcióhoz kötött).
+- [ ] **Adó:** a levonás friss egyenleggel számol (a beszedés pillanatában kapott pénz is
+      adózik); az adócsalás-strike a küszöbnél plafonoz; a nyilvántartásból törölt játékosok
+      hátralék-sorai kitakarodnak a treasury.yml-ből.
+- [ ] **Vérszomj sorrend:** a lifesteal a VÉGSŐ sebzés után számol (Jégvértes áldozaton
+      kevesebbet gyógyít, mint páncélozatlanon).
+- [ ] **Crafted-by stackelés:** két külön craftban készült, lore-os stackelhető étel
+      összestackel (crafted_at időbélyeg csak nem-stackelhető gearre kerül).
+- [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
+      `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
+      mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,
+      custom enchant, „Készítette", affix-roll — bitre azonos a craftolttal); a `relikvia`
+      force-móddal ír tulajdont; másik játékosnak adva a cél régió-szálán landol a tárgy.
 
 ---
 

@@ -40,6 +40,13 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
     private final NamespacedKey suspicionKey;
     /** Rövid életű Tanú-tokenek: UUID → lejárat (millis). */
     private final Map<UUID, Long> witnessUntil = new ConcurrentHashMap<>();
+    /**
+     * Online Suttogók cache-e (a PDC-t csak a játékos szálán olvashatjuk — a decay-tick és
+     * a suttogás-kézbesítés e nélkül MINDEN online játékosra hopolna, csak hogy kiderüljön,
+     * nem Suttogó). Join-kor töltődik (a join a játékos szálán fut), quit-kor ürül; a
+     * rítus/leleplezés naprakészen tartja. A forrás az igazság mindig a PDC marad.
+     */
+    private final java.util.Set<UUID> whispererCache = ConcurrentHashMap.newKeySet();
 
     private volatile long nextDecayAt;
 
@@ -68,6 +75,14 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
     public void makeWhisperer(final Player player) {
         player.getPersistentDataContainer().set(whispererKey, PersistentDataType.BYTE, (byte) 1);
         player.getPersistentDataContainer().set(suspicionKey, PersistentDataType.DOUBLE, 0.0D);
+        whispererCache.add(player.getUniqueId());
+    }
+
+    /** Join-kor hívandó (a játékos SAJÁT szálán — a WhisperListener köti be): cache-frissítés. */
+    public void handleJoin(final Player player) {
+        if (isWhisperer(player)) {
+            whispererCache.add(player.getUniqueId());
+        }
     }
 
     public double getSuspicion(final Player player) {
@@ -128,6 +143,7 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
         }
         player.getPersistentDataContainer().remove(whispererKey);
         player.getPersistentDataContainer().remove(suspicionKey);
+        whispererCache.remove(player.getUniqueId());
 
         // Dráma: sötét örvény + kürt + vakság-pillanat.
         player.getWorld().spawnParticle(Particle.SOUL, player.getLocation().add(0.0D, 1.0D, 0.0D), 60, 0.6D, 1.0D, 0.6D, 0.05D);
@@ -159,7 +175,12 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
                 "whisper-chat-line",
                 "<dark_purple>✧ Suttogás</dark_purple> <gray>{sender}:</gray> <light_purple>{message}</light_purple>",
                 Map.of("sender", sender.getName(), "message", message));
+        // Csak a cache szerinti Suttogókra (+ a feladóra) hopolunk — a többség kimarad.
         for (final Player online : List.copyOf(Bukkit.getOnlinePlayers())) {
+            if (!whispererCache.contains(online.getUniqueId())
+                    && !online.getUniqueId().equals(sender.getUniqueId())) {
+                continue;
+            }
             online.getScheduler().run(plugin, task -> {
                 if (isWhisperer(online) || online.getUniqueId().equals(sender.getUniqueId())) {
                     online.sendMessage(line);
@@ -188,6 +209,9 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
             return;
         }
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            if (!whispererCache.contains(player.getUniqueId())) {
+                continue; // Nem Suttogó (cache) — felesleges lenne a régió-hop.
+            }
             player.getScheduler().run(plugin, task -> {
                 if (!isWhisperer(player)) {
                     return;
@@ -209,5 +233,6 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
     @Override
     public void clearPlayerState(final UUID playerId) {
         witnessUntil.remove(playerId);
+        whispererCache.remove(playerId);
     }
 }
