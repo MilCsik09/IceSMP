@@ -43,6 +43,7 @@ BASE = {
     'night':  (58, 66, 114),   'coal':   (74, 74, 80),    'honey':  (226, 162, 42),
     'wood':   (120, 84, 48),   'salt':   (234, 234, 226), 'wine':   (134, 52, 76),
     'moss':   (92, 128, 60),   'sky':    (150, 200, 235), 'blush':  (214, 120, 130),
+    'lich':   (72, 216, 214),
 }
 RAMPS = {k: ramp(v) for k, v in BASE.items()}
 
@@ -642,25 +643,25 @@ OVERRIDES = {
     'coin_red': (lambda c: h_coin(c, 'flame'), 'gold', 'fire'),
     'coin_blue': (lambda c: h_coin(c, 'snow'), 'silver', 'ice'),
     'coin_neutral': (lambda c: h_coin(c, 'scale'), 'gold', 'amber'),
-    'coin_dark': (lambda c: h_coin(c, 'skull'), 'steel', 'bone'),
+    'coin_dark': (lambda c: h_coin(c, 'skull'), 'steel', 'lich'),
     'relic_metelytepo': (h_relic_axe, 'gold', 'wood'),
     'relic_phoenix_wing': (h_wing, 'fire', 'gold'),
     'relic_frost_wing': (h_wing, 'ice', 'crystal'),
     'relic_wander_wind': (h_wing, 'sky', 'salt'),
-    'relic_bone_wing': (h_wing, 'bone', 'coal'),
-    'relic_eleftheria_konnye': (h_tear, 'night', 'royal'),
+    'relic_bone_wing': (h_wing, 'bone', 'lich'),
+    'relic_eleftheria_konnye': (h_tear, 'night', 'lich'),
     'key_koznapi': (lambda c: h_key(c, False), 'iron', 'silver'),
     'key_ritka': (lambda c: h_key(c, True), 'gold', 'royal'),
     'blueprint': (h_blueprint, 'water', 'salt'),
     'capture_beast': (h_capture_beast, 'leather', 'nature'),
-    'capture_necro': (h_capture_necro, 'shadow', 'bone'),
+    'capture_necro': (h_capture_necro, 'shadow', 'lich'),
     'siege_cannon': (h_siege, 'coal', 'steel'),
     'shop_6450': (lambda c: (m_chalk(c),), 'wood', 'gold'),        # Sétapálca
     'shop_6451': (m_scroll, 'paper', 'wine'),                      # Menlevél
     'loot_6460': (m_sword, 'steel', 'earth'),                      # Rozsdás Penge
-    'loot_6461': (m_armor, 'steel', 'shadow'),                     # Megrontott Páncél
-    'loot_6462': (m_chalk, 'coal', 'shadow'),                      # Fekete Csont
-    'loot_6463': (m_sword, 'shadow', 'royal'),                     # Néma Királynő Suttogása
+    'loot_6461': (m_armor, 'steel', 'lich'),                       # Megrontott Páncél
+    'loot_6462': (m_chalk, 'coal', 'lich'),                        # Fekete Csont
+    'loot_6463': (m_sword, 'night', 'lich'),                       # Néma Királynő Suttogása
 }
 
 CATALYST_STYLE = {  # CMD 5201.. sorrendben
@@ -688,7 +689,7 @@ RULES = [
     ('kristaly|kvarc|cseppko|katalizator$', m_crystals, 'crystal', 'royal'),
     ('szilank|visszhang', m_shard, 'crystal', 'night'),
     ('arnygomba|gomba', m_mushroom, 'earth', 'bone'),
-    ('arny|sotet|lelekhamu|hamu', m_powder, 'shadow', 'night'),
+    ('arny|sotet|lelekhamu|hamu', m_powder, 'shadow', 'lich'),
     ('aranyfust', m_plate, 'gold', 'amber'),
     ('gyongyhaz|pikkely', m_glowink, 'pearl', 'sky'),
     ('fuszer|vandorfuszer', m_powder, 'blood', 'amber'),
@@ -722,7 +723,7 @@ RULES = [
     ('runa', m_rune_tablet, 'steel', 'royal'),
     ('emlek', m_shard, 'royal', 'pearl'),
     ('ereklye|kiemeles', m_brush, 'copper', 'paper'),
-    ('csend', m_orb, 'night', 'silver'),
+    ('csend', m_orb, 'night', 'lich'),
     ('meghivo|suttogas', m_scroll, 'shadow', 'royal'),
     ('szorny', m_orb, 'blood', 'coal'),
     ('vasesszencia|vas$|vasracs|vaslanc|otvozet|ontveny|tormelek|rud|lemez', m_ingot, 'iron', 'steel'),

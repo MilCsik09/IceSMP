@@ -19,6 +19,10 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | `NEUTRAL` | **Ryanora & Caldestera** | zuhanás-immunitás, békés mobok, adómentes | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
 | `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Mortengrad** (rom) | **Csontveret** | Eleftheria / Néma Királynő |
 
+> **DARK vizuális azonosító (textúra/art irányelv):** csont-törtfehér + éjfekete-lila alap,
+> és a jellegzetes **hideg türkiz derengés** („lich-fény”) a szemekben, rúnákban, pengeélek
+> mentén — a Néma Királynő élőhalott-fénye. Minden DARK-kötésű item ezt az akcentet viselje.
+
 > **✅ K1 reskin KÉSZ:** a kánon-nevek élnek a kódban — `FactionType` rövid+hosszú alak
 > (HUD/tab = rövid, /faction info + menük = hosszú), `CurrencyType` = Parázsló Parals /
 > Hópihér-veret / Creutzér / Csontveret. A parsolás a régi neveket (Piros/Kék/Semleges/Sötét)

@@ -33,7 +33,7 @@ PALETTE_HU = {
     'paper': 'krémszínű pergamen', 'crystal': 'világító cián', 'night': 'éjkék',
     'coal': 'szénfekete-szürke', 'honey': 'mézarany', 'wood': 'meleg fabarna',
     'salt': 'törtfehér', 'wine': 'bordó', 'moss': 'mohazöld', 'sky': 'égszínkék',
-    'blush': 'rózsás pír',
+    'blush': 'rózsás pír', 'lich': 'hideg türkiz derengés (lich-fény)',
 }
 
 MOTIF_HU = {
@@ -108,8 +108,8 @@ HERO = {
                   'Cryghaliris valutája, a Hópihér-veret — hideg, tiszta, ezüstös csillogás.'),
     'coin_neutral': ('kerek, vert érme, közepén dombornyomott KERESKEDŐ-MÉRLEG címer',
                      'Ryanora–Caldestera valutája, a Creutzér — a Bankárszövetség megbízható aranya.'),
-    'coin_dark': ('kopott, sötét érme, közepén dombornyomott KOPONYA-címer, szélein csorbulások',
-                  'A Kitaszítottak Csontverete — akit ezzel fizetnek, nem kérdez.'),
+    'coin_dark': ('kopott, sötét érme, közepén dombornyomott KOPONYA-címer, a koponya szemüregeiben apró TÜRKIZ izzással, szélein csorbulások',
+                  'A Kitaszítottak Csontverete — akit ezzel fizetnek, nem kérdez. A türkiz szempár a Néma Királynő jele.'),
     'money_pouch': ('zsinórral összehúzott, kopott bőrerszény; a nyakánál kikandikáló 2-3 aranyérme',
                     'Talált pénz: mob-drop és horgász-lelet. Viseltes, útszéli hangulat — valaki elvesztette.'),
     'relic_metelytepo': ('arany harci balta, a feje körül halvány lila derengéssel; ősi, idegen mintázatú nyél',
@@ -120,9 +120,9 @@ HERO = {
                          'Zúzmara-szárny — Cryghaliris elytra-relikviája, jégsárkány-lehelettel átitatva.'),
     'relic_wander_wind': ('könnyű, világos szárny, lebegő, áttetsző tollakkal',
                           'Vándorszél — Ryanora & Caldestera szabad szele, Arkynn békés öröksége.'),
-    'relic_bone_wing': ('csontokból szőtt, szakadozott szárny, sötét hártyával',
+    'relic_bone_wing': ('csontokból szőtt, szakadozott szárny sötét hártyával, az ízületeknél hideg türkiz izzás-pontokkal',
                         'Csontszárny — a Káoszkor élőhalott-relikviája; éjjel viselője árnyékká válik.'),
-    'relic_eleftheria_konnye': ('éjfekete, megkövült könnycsepp, belsejében halvány lila fénymaggal',
+    'relic_eleftheria_konnye': ('éjfekete, megkövült könnycsepp, belsejében halvány TÜRKIZ fénymaggal (lich-fény)',
                                 'Eleftheria Könnye — a Néma Királynő első suttogása kővé dermedve.'),
     'key_koznapi': ('egyszerű vas kulcs, karikás fejjel',
                     'Kereskedő Kulcs — a Caldesterai Kereskedőláda nyitja. Hétköznapi, strapabíró darab.'),
@@ -132,7 +132,7 @@ HERO = {
                   'Recept-tervrajz — ebből tanulják a mesterek a ritka recepteket.'),
     'capture_beast': ('feltekert pányva/lasszó, zöld természet-szimbólummal a közepén',
                       'Ősi Kötés Póráza — a Vadmester ezzel fogadja társává az állatokat (Aetrinita és Kallan kötése).'),
-    'capture_necro': ('sötét pergamentekercs lila koponya-pecséttel',
+    'capture_necro': ('sötét pergamentekercs koponya-pecséttel, a koponya szemeiben türkiz izzással',
                       'Sötét Paktum-tekercs — a Nekromanta ezzel köti szolgájává a szörnyet (Eleftheria mérge).'),
     'siege_cannon': ('zömök, fekete ostromágyú-cső kerekes talpon, a csőtorkolatnál szikrával',
                      'Ostromágyú — a Hét Vérháború öröksége; csak raid alatt szólal meg.'),
@@ -142,11 +142,11 @@ HERO = {
                   'Hamisított Menlevél: a Bankárszövetség pecsétje… majdnem.'),
     'loot_6460': ('rozsdamarta, csorba hosszúkard, régi vér sötét foltjaival',
                   'A Hetedik Vérháború Rozsdás Pengéje — egykor hadsereg-fegyver, ma néma harag.'),
-    'loot_6461': ('szakadozott láncvért, sötét, beteg lila derengéssel a láncszemek közt',
+    'loot_6461': ('szakadozott láncvért, a láncszemek közt hideg türkiz derengéssel',
                   'Megrontott Elit Páncél — az eltűnt nemesek dicsőségének maradványa.'),
-    'loot_6462': ('koromfekete csontdarab, matt, fényt elnyelő felülettel',
+    'loot_6462': ('koromfekete csontdarab, matt felülettel, hajszálvékony türkiz erezettel',
                   'Fekete Csont — nem ég el, nem törik, nem felejt.'),
-    'loot_6463': ('éjsötét pengéjű kard, az él mentén vékony lila suttogás-fénnyel',
+    'loot_6463': ('éjsötét pengéjű kard, az él mentén vékony TÜRKIZ suttogás-fénnyel (lich-él)',
                   'A Néma Királynő Suttogása — nem penge: ígéret.'),
 }
 
@@ -229,7 +229,7 @@ def main():
     out.append('- **Méret:** 16×16 px, átlátszó háttérrel (PNG) — vanilla-konzisztens pixel-art.')
     out.append('- **Fájlnév és hely:** a kész PNG a plugin-repo `resourcepack/assets/icesmp/textures/item/<fájlnév>` útvonalára kerül — a JSON-bekötés (modellek, CMD-kapcsolók) már kész, CSAK a PNG-ket kell cserélni. A mostani textúrák generált placeholderek.')
     out.append('- **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik, ha a CMD egyezik — a vanilla textúrája jó kiindulási referencia a sziluetthez/érzethez.')
-    out.append('- **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjlila-fekete).')
+    out.append('- **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjfekete-lila, és a jellegzetes HIDEG TÜRKIZ derengés — mint a lich-szem: a Néma Királynő élőhalott-fénye a szemekben, rúnákban, élek mentén).')
     out.append('- Újragenerálás (leírások frissítése configból): `python3 tools/build_cmd_artdoc.py`')
     out.append('')
 

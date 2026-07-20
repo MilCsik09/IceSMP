@@ -9,7 +9,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Méret:** 16×16 px, átlátszó háttérrel (PNG) — vanilla-konzisztens pixel-art.
 - **Fájlnév és hely:** a kész PNG a plugin-repo `resourcepack/assets/icesmp/textures/item/<fájlnév>` útvonalára kerül — a JSON-bekötés (modellek, CMD-kapcsolók) már kész, CSAK a PNG-ket kell cserélni. A mostani textúrák generált placeholderek.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik, ha a CMD egyezik — a vanilla textúrája jó kiindulási referencia a sziluetthez/érzethez.
-- **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjlila-fekete).
+- **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjfekete-lila, és a jellegzetes HIDEG TÜRKIZ derengés — mint a lich-szem: a Néma Királynő élőhalott-fénye a szemekben, rúnákban, élek mentén).
 - Újragenerálás (leírások frissítése configból): `python3 tools/build_cmd_artdoc.py`
 
 ## Pénz-tárgyak (1001–1010)
@@ -34,9 +34,9 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 
 ### 1004 — Csontveret
 - **Fájl:** `coin_dark.png` &nbsp;|&nbsp; **Alap-item:** `PAPER`
-- **Ábrázolás:** kopott, sötét érme, közepén dombornyomott KOPONYA-címer, szélein csorbulások
-- **Színvilág:** sötétebb, kékes acél; akcent: törtfehér csontszín
-- **Hangulat / lore:** A Kitaszítottak Csontverete — akit ezzel fizetnek, nem kérdez.
+- **Ábrázolás:** kopott, sötét érme, közepén dombornyomott KOPONYA-címer, a koponya szemüregeiben apró TÜRKIZ izzással, szélein csorbulások
+- **Színvilág:** sötétebb, kékes acél; akcent: hideg türkiz derengés (lich-fény)
+- **Hangulat / lore:** A Kitaszítottak Csontverete — akit ezzel fizetnek, nem kérdez. A türkiz szempár a Néma Királynő jele.
 
 ### 1010 — Kopott erszény
 - **Fájl:** `money_pouch.png` &nbsp;|&nbsp; **Alap-item:** `LEATHER`
@@ -72,14 +72,14 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 
 ### 4204 — Csontszárny
 - **Fájl:** `relic_bone_wing.png` &nbsp;|&nbsp; **Alap-item:** `ELYTRA`
-- **Ábrázolás:** csontokból szőtt, szakadozott szárny, sötét hártyával
-- **Színvilág:** törtfehér csontszín; akcent: szénfekete-szürke
+- **Ábrázolás:** csontokból szőtt, szakadozott szárny sötét hártyával, az ízületeknél hideg türkiz izzás-pontokkal
+- **Színvilág:** törtfehér csontszín; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Csontszárny — a Káoszkor élőhalott-relikviája; éjjel viselője árnyékká válik.
 
 ### 4205 — Eleftheria Könnye
 - **Fájl:** `relic_eleftheria_konnye.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
-- **Ábrázolás:** éjfekete, megkövült könnycsepp, belsejében halvány lila fénymaggal
-- **Színvilág:** éjkék; akcent: királylila
+- **Ábrázolás:** éjfekete, megkövült könnycsepp, belsejében halvány TÜRKIZ fénymaggal (lich-fény)
+- **Színvilág:** éjkék; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Eleftheria Könnye — a Néma Királynő első suttogása kővé dermedve.
 
 ## Kaszt-katalizátorok (5201–5213)
@@ -172,8 +172,8 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 
 ### 5302 — Sötét Paktum-tekercs
 - **Fájl:** `capture_necro.png` &nbsp;|&nbsp; **Alap-item:** `GHAST_TEAR`
-- **Ábrázolás:** sötét pergamentekercs lila koponya-pecséttel
-- **Színvilág:** mély ibolyalila; akcent: törtfehér csontszín
+- **Ábrázolás:** sötét pergamentekercs koponya-pecséttel, a koponya szemeiben türkiz izzással
+- **Színvilág:** mély ibolyalila; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Sötét Paktum-tekercs — a Nekromanta ezzel köti szolgájává a szörnyet (Eleftheria mérge).
 
 ### 5401 — Ostromágyú
@@ -253,7 +253,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6012 — Árnyékpor
 - **Fájl:** `u_arnyekpor.png` &nbsp;|&nbsp; **Alap-item:** `SCULK_VEIN`
 - **Ábrázolás:** kupacba szórt finom por, pár csillanó szemcsével
-- **Színvilág:** mély ibolyalila; akcent: éjkék
+- **Színvilág:** mély ibolyalila; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** A Néma Királynő suttogásának megülepedett, éjfekete pora — elnyeli a fényt és a hangot. Csak szörnyekből esik
 
 ### 6013 — Fekete Villám Szilánk
@@ -331,7 +331,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6025 — Lélekhamu
 - **Fájl:** `u_lelekhamu.png` &nbsp;|&nbsp; **Alap-item:** `GUNPOWDER`
 - **Ábrázolás:** kupacba szórt finom por, pár csillanó szemcsével
-- **Színvilág:** mély ibolyalila; akcent: éjkék
+- **Színvilág:** mély ibolyalila; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Kihunyt lélektűz maradéka. Hideg, szürke — és mégis, néha megmoccan. Alkimista köztes alapanyag
 
 ### 6026 — Aranyfüst-lemez
@@ -439,13 +439,13 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6108 — Tőzegkocka
 - **Fájl:** `u_tozegkocka.png` &nbsp;|&nbsp; **Alap-item:** `PACKED_MUD`
 - **Ábrázolás:** kőtábla vésett rúnajellel
-- **Színvilág:** meleg fabarna; akcent: hűvös ezüstszürke
+- **Színvilág:** világító cián; akcent: hűvös ezüstszürke
 - **Hangulat / lore:** A Bokic-láp fekete aranya — ebben minden mag kicsírázik. Gyógynövényész kellék (csak boltból)
 
 ### 6109 — Permetező-kanna
 - **Fájl:** `u_permetezo_kanna.png` &nbsp;|&nbsp; **Alap-item:** `BUCKET`
 - **Ábrázolás:** kőtábla vésett rúnajellel
-- **Színvilág:** gyöngyházas, rózsás fehér; akcent: hűvös ezüstszürke
+- **Színvilág:** szénfekete-szürke; akcent: hűvös ezüstszürke
 - **Hangulat / lore:** Rézfejű kanna finom permethez — a harmatot utánozza, nem az esőt. Gyógynövényész kellék (csak boltból)
 
 ### 6110 — Fenőkő
@@ -517,7 +517,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6121 — Katalizátor-só
 - **Fájl:** `u_katalizator_so.png` &nbsp;|&nbsp; **Alap-item:** `GLOWSTONE_DUST`
 - **Ábrázolás:** kőtábla vésett rúnajellel
-- **Színvilág:** törtfehér csontszín; akcent: hűvös ezüstszürke
+- **Színvilág:** mézarany; akcent: hűvös ezüstszürke
 - **Hangulat / lore:** Egy csipet, és a főzet felgyorsul — két csipet, és új laborod lesz. Alkimista kellék (csak boltból)
 
 ### 6122 — Ólomdugó
@@ -725,7 +725,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6313 — Csendülő Harang
 - **Fájl:** `r_csendulo_harang.png` &nbsp;|&nbsp; **Alap-item:** `BELL`
 - **Ábrázolás:** öntött harang, misztikus derengéssel
-- **Színvilág:** éjkék; akcent: hűvös ezüstszürke
+- **Színvilág:** éjkék; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Hangja messzire száll a fagyban. A Suttogók megállnak, ha megkondul. Bűvölő-recept eredménye (Ritkaság kategória, 27. szint).
 
 ### 6314 — Emlékek Könyve
@@ -1025,7 +1025,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6363 — Árnyékméreg
 - **Fájl:** `r_arnyekmereg.png` &nbsp;|&nbsp; **Alap-item:** `SPLASH_POTION`
 - **Ábrázolás:** kupacba szórt finom por, pár csillanó szemcsével
-- **Színvilág:** mély ibolyalila; akcent: éjkék
+- **Színvilág:** mély ibolyalila; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** A Suttogók receptje: Árnyékporból lepárolt méreg, mely elnyeli a fényt és az életet. Alkimista-recept eredménye (Ital (tervrajz) kategória, 38. szint).
 
 ### 6364 — Szörnymag Talizmán
@@ -1187,7 +1187,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6390 — Smaragdkő Bankbetét
 - **Fájl:** `r_smaragdko_bankbetet.png` &nbsp;|&nbsp; **Alap-item:** `PAPER`
 - **Ábrázolás:** kőtábla vésett rúnajellel
-- **Színvilág:** borostyánsárga; akcent: hűvös ezüstszürke
+- **Színvilág:** élénk levélzöld; akcent: hűvös ezüstszürke
 - **Hangulat / lore:** A Bankárszövetség pecsétes betétjegye — jobb-kattal beváltható Creutzérre. Bűvölő-recept eredménye (Menedék (tervrajz) kategória, 35. szint).
 
 ### 6391 — Szellemszarvas-Bűbáj
@@ -1241,7 +1241,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6399 — Bokic-parti Gyógytea
 - **Fájl:** `r_bokic_gyogytea.png` &nbsp;|&nbsp; **Alap-item:** `HONEY_BOTTLE`
 - **Ábrázolás:** kőtábla vésett rúnajellel
-- **Színvilág:** cserzett bőrbarna; akcent: hűvös ezüstszürke
+- **Színvilág:** meleg arany, sárga csillanásokkal; akcent: hűvös ezüstszürke
 - **Hangulat / lore:** Hajnali szedésű füvek forrázata a Bokic partjáról — átmelegít és tisztán tart. Gyógynövényész-recept eredménye (Ital kategória, 24. szint).
 
 ### 6400 — Sárkánycsont Pajzs
@@ -1313,7 +1313,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 ### 6411 — Sarkfény-prizma
 - **Fájl:** `r_sarkfeny_prizma.png` &nbsp;|&nbsp; **Alap-item:** `SEA_LANTERN`
 - **Ábrázolás:** kőtábla vésett rúnajellel
-- **Színvilág:** hűvös ezüstszürke; akcent: hűvös ezüstszürke
+- **Színvilág:** sötét méregzöld; akcent: hűvös ezüstszürke
 - **Hangulat / lore:** Cseppkőbe zárt északi fény — a szoba, ahol áll, sosem lesz igazán sötét. Bűvölő-recept eredménye (Különleges kategória, 38. szint).
 
 ### 6412 — Csontenyves Íjkar
@@ -1500,20 +1500,20 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 
 ### 6461 — Megrontott Elit Páncél
 - **Fájl:** `loot_6461.png` &nbsp;|&nbsp; **Alap-item:** `CHAINMAIL_CHESTPLATE`
-- **Ábrázolás:** szakadozott láncvért, sötét, beteg lila derengéssel a láncszemek közt
-- **Színvilág:** sötétebb, kékes acél; akcent: mély ibolyalila
+- **Ábrázolás:** szakadozott láncvért, a láncszemek közt hideg türkiz derengéssel
+- **Színvilág:** sötétebb, kékes acél; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** Megrontott Elit Páncél — az eltűnt nemesek dicsőségének maradványa.
 
 ### 6462 — Fekete Csont
 - **Fájl:** `loot_6462.png` &nbsp;|&nbsp; **Alap-item:** `BONE`
-- **Ábrázolás:** koromfekete csontdarab, matt, fényt elnyelő felülettel
+- **Ábrázolás:** koromfekete csontdarab, matt felülettel, hajszálvékony türkiz erezettel
 - **Színvilág:** a hangulat-sorhoz/frakcióhoz illő színvilág — művészi döntés
 - **Hangulat / lore:** Fekete Csont — nem ég el, nem törik, nem felejt.
 
 ### 6463 — A Néma Királynő Suttogása
 - **Fájl:** `loot_6463.png` &nbsp;|&nbsp; **Alap-item:** `NETHERITE_SWORD`
-- **Ábrázolás:** éjsötét pengéjű kard, az él mentén vékony lila suttogás-fénnyel
-- **Színvilág:** mély ibolyalila; akcent: királylila
+- **Ábrázolás:** éjsötét pengéjű kard, az él mentén vékony TÜRKIZ suttogás-fénnyel (lich-él)
+- **Színvilág:** éjkék; akcent: hideg türkiz derengés (lich-fény)
 - **Hangulat / lore:** A Néma Királynő Suttogása — nem penge: ígéret.
 
 ## Szándékosan CMD NÉLKÜL (nem kell textúra)
