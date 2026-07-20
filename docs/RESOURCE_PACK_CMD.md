@@ -10,6 +10,19 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Fájlnév és hely:** a kész PNG a plugin-repo `resourcepack/assets/icesmp/textures/item/<fájlnév>` útvonalára kerül — a JSON-bekötés (modellek, CMD-kapcsolók) már kész, CSAK a PNG-ket kell cserélni. A mostani textúrák generált placeholderek.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik, ha a CMD egyezik — a vanilla textúrája jó kiindulási referencia a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED=Perinfernicitas (láng, vörös-arany), BLUE=Cryghaliris (jég, kék-ezüst), NEUTRAL=Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK=Kitaszítottak (csont, éjfekete-lila, és a jellegzetes HIDEG TÜRKIZ derengés — mint a lich-szem: a Néma Királynő élőhalott-fénye a szemekben, rúnákban, élek mentén).
+## Stílus-szabályok (vanilla-konzisztencia)
+
+1. **Egységes felbontás:** minden custom textúra AZONOS méretű — 32×32 (a vanilla 16×16 mellett ez még harmonikus; vegyes felbontás tilos).
+2. **Margó:** a tárgy ne érjen a vászon széléig — 32-esnél ~3-4 px üres perem, középre igazítva (a vanilla a vászon ~80%-át tölti ki).
+3. **Sziluett-olvashatóság:** az item egy vanilla tárgy helyén jelenik meg — első ránézésre ugyanannak a tárgy-osztálynak tűnjön (bot=bot, sisak=sisak). Kard/szerszám 45°-ban átlósan: markolat balra-le, hegy jobbra-fel.
+4. **Kontúr:** 1 px sötét körvonal a külső élen, de NEM tiszta fekete — az anyagszín legmélyebb árnyalata; a belső vonalak még lágyabbak.
+5. **Paletta-fegyelem:** anyagonként 4-8 tónus, kemény pixel-átmenetek — semmi blur, anti-aliasing vagy színátmenet; dither csak nagyon indokoltan.
+6. **Fényirány:** mindig bal-felső fényforrás (világos él fent/balra, mély tónus lent/jobbra); vetett árnyék a sziluetten kívül nincs.
+7. **Alfa igen/nem:** minden pixel vagy teljesen fedő, vagy teljesen átlátszó — félig átlátszó élpixel TILOS (a játékban csúnya szegély lesz belőle).
+8. **Telítettség:** a vanilla visszafogott, földes paletta mellett a neon kiabál — izzó akcent (lich-türkiz, láng) csak kevés pixelen (2-6 fénypont).
+9. **Kicsiben is működjön:** az inventoryban ~16-32 képernyő-pixel látszik — a 2 px-nél kisebb részlet eltűnik; minden darabot kicsinyítve is ellenőrizz.
+10. **Perspektíva:** lapos sprite szemből (vagy 45°-os szerszám) — nem izometrikus/3D nézet.
+
 - **Leadás sprite-lapként:** a kész textúrák egyetlen képen is leadhatók (kockás/fehér háttér mehet) — a `python3 tools/import_texture_sheet.py <kép> <nev1,nev2,...>` kivágja, háttértől megtisztítja és beteszi őket a packba (olvasási sorrend: sorok fentről, balról jobbra; a nevek a fenti fájlnevek `.png` nélkül). Az importált textúra végleg felülüti a generált placeholdert.
 - Újragenerálás (leírások frissítése configból): `python3 tools/build_cmd_artdoc.py`
 
