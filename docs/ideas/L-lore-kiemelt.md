@@ -928,7 +928,7 @@ Vámház-őrség, Korszak-finálé) tartalmat kap.*
 **Miért jó:** A fővárosban nem csak kereskedő- és quest-NPC-k állnak — az őrjárat mozgása azt sugallja, hogy a város él és véd, erősítve a frakciós hovatartozás-érzést.
 **Építőkövek:** `FancyNpcsQuestBridge`, D7 napszak-üzenet infra, entity-scheduler minta.
 **Buktatók:** A waypoint-lépés MINDIG az NPC saját régió-szálán fusson; sok NPC * sűrű tick teljesítmény-költség, throttle kell.
-### G16. Nagydöntő: top2 frakció szezon-hétvégéje `[TOP]`
+### G16. Nagydöntő: top2 frakció szezon-hétvégéje `[TOP]` `[KÉSZ ✅]`
 
 > **Lore-horgony:** „a korszak végén a krónikák ítélnek" — a Korszakok Könyve versenyfináléja (kódex VIII.)
 
@@ -985,7 +985,7 @@ chat-egyeztetéssel megy.
 **Építőkövek:** `MarketManager` aukció-infra (változatlan logika), GUI-kategorizálás.
 **Buktatók:** Rosszul hangolt minimum-ár elzárhatja a kispénzű vevőket — inkább figyelmeztetés
 legyen, ne kemény tiltás.
-### H14. Ritka spawn-variánsok (albínó/árnyék mobok)
+### H14. Ritka spawn-variánsok (albínó/árnyék mobok) `[KÉSZ ✅]`
 
 > **Lore-horgony:** az Első Csend-érintette lények — a misztérium ritka, néma hírnökei (kódex I.)
 

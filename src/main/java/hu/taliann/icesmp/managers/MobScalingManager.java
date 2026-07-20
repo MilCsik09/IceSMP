@@ -26,6 +26,16 @@ import java.util.Set;
  */
 public final class MobScalingManager {
 
+    /** H14 — ritka variáns PDC-kulcsa (albino|arnyek); a kill-oldali bónuszok erre szűrnek. */
+    public static final org.bukkit.NamespacedKey RARE_VARIANT_KEY =
+            org.bukkit.NamespacedKey.fromString("icesmp:rare_variant");
+
+    /** A mob ritka variáns-címkéje (null, ha sima). */
+    public static String rareVariantOf(final org.bukkit.entity.Entity entity) {
+        return entity.getPersistentDataContainer().get(RARE_VARIANT_KEY,
+                org.bukkit.persistence.PersistentDataType.STRING);
+    }
+
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
 
     private final JavaPlugin plugin;
@@ -112,6 +122,7 @@ public final class MobScalingManager {
         if (entity.getPersistentDataContainer().has(mobLevelKey, PersistentDataType.INTEGER)) {
             return;
         }
+        maybeMakeRareVariant(entity);
 
         // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and a
         // territórium mob-szabálya (territory.mob-rules — pl. Kárhozat-zóna, DARK-földek)
@@ -266,5 +277,36 @@ public final class MobScalingManager {
 
         final NamedTextColor color = NamedTextColor.NAMES.value(rawColor.trim().toLowerCase(Locale.ROOT));
         return color == null ? NamedTextColor.WHITE : color;
+    }
+
+    /**
+     * H14 — ritka spawn-variáns: kis eséllyel a mob „Albínó” (fehér, derengő) vagy
+     * „Árnyék” (sötét, fürge) változat lesz — PDC-tag + névtábla; a kill-oldal
+     * (kaszt-XP dupla, lélekkő-esély emelt, önálló bestiárium-bejegyzés) erre szűr.
+     * A spawn-event a mob régió-szálán fut — az effekt-adás biztonságos.
+     */
+    private void maybeMakeRareVariant(final LivingEntity entity) {
+        final double chance = Math.max(0.0D, Math.min(100.0D,
+                configManager.getDouble("rare-variant.chance-percent", 1.5D)));
+        if (chance <= 0.0D
+                || java.util.concurrent.ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
+            return;
+        }
+        final boolean albino = java.util.concurrent.ThreadLocalRandom.current().nextBoolean();
+        entity.getPersistentDataContainer().set(RARE_VARIANT_KEY,
+                org.bukkit.persistence.PersistentDataType.STRING, albino ? "albino" : "arnyek");
+        final String base = entity.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        entity.customName(net.kyori.adventure.text.Component.text(
+                (albino ? "✦ Albínó " : "☽ Árnyék-") + base,
+                albino ? net.kyori.adventure.text.format.NamedTextColor.WHITE
+                        : net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
+        entity.setCustomNameVisible(true);
+        if (albino) {
+            entity.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                    org.bukkit.potion.PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, false, false));
+        } else {
+            entity.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                    org.bukkit.potion.PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false));
+        }
     }
 }

@@ -44,6 +44,8 @@ public final class SeasonManager implements PersistentStore {
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
     /** J9 — fejezet-sorszám: a szezon = story-fejezet; váltáskor nő, perzisztens. */
     private volatile int seasonNumber = 1;
+    /** G16 — nagydöntő-hétvége: bejelentés-flag (szezononként egyszer, volatilis). */
+    private volatile boolean grandFinaleAnnounced;
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     private volatile long seasonStart = System.currentTimeMillis();
@@ -106,6 +108,45 @@ public final class SeasonManager implements PersistentStore {
         return faction == null ? 0 : points.getOrDefault(faction, 0);
     }
 
+    /**
+     * G16 — a nagydöntő-ablak: a szezon utolsó `top2-window-hours` órája (alap 48 —
+     * a záró hétvége). Ekkor a top2 frakció pont-jóváírásai duplán számítanak.
+     */
+    public boolean isGrandFinaleWindow() {
+        if (!configManager.getBoolean("world-events.season-finale.top2-enabled", true)) {
+            return false;
+        }
+        final long windowMillis = Math.max(1, configManager.getInt(
+                "world-events.season-finale.top2-window-hours", 48)) * 3_600_000L;
+        final long remaining = getSeasonEndMillis() - System.currentTimeMillis();
+        return remaining > 0 && remaining <= windowMillis;
+    }
+
+    /** A liga-tábla első két helyezettje (pont szerint csökkenő). */
+    public java.util.List<FactionType> topTwo() {
+        return points.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+                .limit(2)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    /** G16 — az ablak nyíltakor egyszeri szerver-broadcast a párosítással. */
+    private void announceGrandFinale() {
+        if (grandFinaleAnnounced || !isGrandFinaleWindow()) {
+            return;
+        }
+        grandFinaleAnnounced = true;
+        final java.util.List<FactionType> top = topTwo();
+        if (top.size() < 2) {
+            return;
+        }
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                "season-grand-finale",
+                "<gold>🏟 NAGYDÖNTŐ! A krónikák ítélnek: <white>{first}</white> ⚔ <white>{second}</white> — a záró hétvégén a két éllovas minden liga-pontja DUPLÁN számít! Királyok, hirdessetek raidet!</gold>",
+                Map.of("first", top.get(0).getDisplayName(), "second", top.get(1).getDisplayName())));
+    }
+
     /** J9 — az aktuális fejezet (szezon) sorszáma; a quest `chapter:` mező erre szűr. */
     public int getSeasonNumber() {
         return seasonNumber;
@@ -131,8 +172,13 @@ public final class SeasonManager implements PersistentStore {
         // B33: a végítélet-hét alatt minden pont-jóváírás lineárisan skálázódik a
         // finálé-maximumig (alapból dupláig az utolsó napon).
         final SeasonFinaleManager finaleRef = seasonFinale;
-        final int scaled = finaleRef == null ? amount
+        int scaled = finaleRef == null ? amount
                 : Math.max(amount, (int) Math.round(amount * finaleRef.leaguePointMultiplier()));
+        // G16 — nagydöntő-hétvége: a top2 frakció pontjai TOVÁBB szorzódnak (alap: ×2).
+        if (isGrandFinaleWindow() && topTwo().contains(faction)) {
+            scaled = (int) Math.round(scaled * Math.max(1.0D,
+                    configManager.getDouble("world-events.season-finale.top2-point-multiplier", 2.0D)));
+        }
         points.merge(faction, scaled, Integer::sum);
         requestSave();
     }
@@ -170,8 +216,11 @@ public final class SeasonManager implements PersistentStore {
 
     /** Periodic check on the global world-events tick: closes expired seasons. */
     public void tick() {
-        if (!configManager.getBoolean("world-events.season.enabled", true)
-                || System.currentTimeMillis() < getSeasonEndMillis()) {
+        if (!configManager.getBoolean("world-events.season.enabled", true)) {
+            return;
+        }
+        announceGrandFinale();
+        if (System.currentTimeMillis() < getSeasonEndMillis()) {
             return;
         }
 
@@ -231,6 +280,7 @@ public final class SeasonManager implements PersistentStore {
         seasonStart = System.currentTimeMillis();
         // J9 — új fejezet nyílik: a fejezet-questek (chapter: N) ehhez a sorszámhoz kötődnek.
         seasonNumber++;
+        grandFinaleAnnounced = false; // G16 — az új szezon nagydöntője újra hirdethető
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-chapter-opened",
                 "<gold>📖 Új fejezet nyílik a krónikában: <white>{chapter}. fejezet</white> — a régi fejezet küldetései lezárultak, újak várnak!</gold>",

@@ -168,6 +168,11 @@ world-events:
     enabled: true
     days: 7
     chance-mult-per-day: 0.15
+    # G16 — nagydöntő: a szezon utolsó óráiban (záró hétvége) a top2 frakció
+    # minden liga-pontja tovább szorzódik; egyszeri broadcast hirdeti a párosítást.
+    top2-enabled: true
+    top2-window-hours: 48
+    top2-point-multiplier: 2.0
     mob-level-bonus-per-day: 0.5
     league-point-mult-max: 2.0
     boss:
@@ -514,3 +519,11 @@ dark-undead:
   max-level: 7
   lifespan-seconds: 600
   types: [ "ZOMBIE", "SKELETON", "HUSK", "STRAY", "WITHER_SKELETON" ]
+
+# ===== H14 — Ritka spawn-variánsok (Albínó / Árnyék) =====
+# Kis eséllyel a spawnoló szörny variánssá válik: névtábla + effekt jelzi;
+# dupla kaszt-XP, emelt lélekkő-esély, önálló bestiárium-bejegyzés. Élő kulcsok.
+rare-variant:
+  chance-percent: 1.5
+  xp-multiplier: 2.0
+  soul-chance-multiplier: 2.0

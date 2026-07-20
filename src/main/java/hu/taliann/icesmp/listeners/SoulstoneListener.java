@@ -77,9 +77,14 @@ public final class SoulstoneListener implements Listener {
         }
 
         // Blood moon nights multiply the soulstone drop chance.
-        final double chancePercent = Math.max(0.0D, Math.min(100.0D,
+        double chancePercent = Math.max(0.0D, Math.min(100.0D,
                 configManager.getDouble("currency.soul-drop.chance-percent", 25.0D)
                         * bloodMoonManager.getSoulDropMultiplier()));
+        // H14 — ritka variáns: emelt lélekkő-esély (rare-variant.soul-chance-multiplier).
+        if (hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(event.getEntity()) != null) {
+            chancePercent = Math.min(100.0D, chancePercent * Math.max(1.0D,
+                    configManager.getDouble("rare-variant.soul-chance-multiplier", 2.0D)));
+        }
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }

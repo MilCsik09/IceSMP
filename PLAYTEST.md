@@ -1126,6 +1126,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **G16 — Nagydöntő (Tier B TOP, ÚJ):**
+  - [ ] A szezon utolsó 48 órájában (`season-finale.top2-window-hours`) a liga-tábla top2
+        frakciójának MINDEN pont-jóváírása ×2 (`top2-point-multiplier`, a B33-szorzó UTÁN);
+        az ablak nyíltakor egyszeri „NAGYDÖNTŐ!” broadcast a párosítással; szezonváltáskor
+        a flag újraáll. Kulcsok: world.yml `world-events.season-finale.top2-*`.
+- [ ] **H14 — Ritka spawn-variánsok (ÚJ):**
+  - [ ] Spawn-kor ~1,5% eséllyel „✦ Albínó” (fehér, GLOWING) vagy „☽ Árnyék-” (lila,
+        SPEED) variáns — PDC-tag + látható névtábla (MobScalingManager.maybeMakeRareVariant).
+  - [ ] Kill-bónuszok: dupla kaszt-XP (ClassXpListener), emelt lélekkő-esély (Soulstone),
+        és ÖNÁLLÓ bestiárium-bejegyzés (albino_/arnyek_ prefix). Kulcsok: world.yml
+        `rare-variant.*`.
 - [ ] **DARK undead-népesség (ÚJ, lore-ambiencia):**
   - [ ] A DARK territóriumokban folyamatos, magas szintű undead-populáció — hatókör
         configból: `scope: capital` (csak a főváros) vagy `all` (minden DARK territórium),
