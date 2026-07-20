@@ -80,7 +80,7 @@ public final class QuestManager implements PersistentStore {
             "display-name", "description", "giver-npc", "next",
             "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
-            "requires-job", "requires-faction", "requires-level", "requires-quest",
+            "requires-job", "requires-faction", "requires-level", "requires-quest", "chapter",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
@@ -579,6 +579,18 @@ public final class QuestManager implements PersistentStore {
                         && System.currentTimeMillis() - getLastCompletedAt(player, questId) < cooldownMillis) {
                     return "quest-on-cooldown";
                 }
+            }
+        }
+
+        // J9 — fejezet-szűrő: a `chapter: N` quest csak az N. szezon-fejezet alatt vehető
+        // fel. A már FELVETT fejezet-quest szezonváltás után is befejezhető (kegyelmi
+        // szabály), de új felvétel és a next-lánc folytatása már nem nyílik meg.
+        final int chapter = quest.getInt("chapter", 0);
+        if (chapter > 0) {
+            final SeasonManager seasonRef = seasonManager;
+            final int current = seasonRef == null ? 0 : seasonRef.getSeasonNumber();
+            if (current > 0 && current != chapter) {
+                return current > chapter ? "quest-chapter-closed" : "quest-chapter-future";
             }
         }
 

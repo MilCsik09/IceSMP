@@ -1542,3 +1542,53 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - Névtábla (a nevesített névtábla a saját nevét adná a mobokra) és a napi
   frakció-ételek (material alapján számítanak, bármely forrásból).
 
+## AI-generálási prompt-sablon
+
+Ha a textúrákat képgenerátorral készíted (a próba-érme lap is így készült), ez a
+sablon jó kiindulás. **Tippek:** egyszerre csak 4-6 itemet kérj egy lapra (úgy
+tartja a stílust); sima FEHÉR hátteret kérj (az importáló leszedi); NE kérj
+szöveget a képre; az itemek leírását a fenti lista **Ábrázolás + Színvilág +
+Hangulat** soraiból másold be. A kész lapot az import-szkript vágja be a packba.
+
+```
+Pixel art sprite sheet of [N] fantasy RPG item icons for a Minecraft-style game,
+arranged in a single row on a plain white background, with clear spacing between items.
+
+Items:
+1. [első item: Ábrázolás + Színvilág sora, angolra fordítva vagy magyarul]
+2. [második item…]
+...
+
+Style: chunky 16-bit pixel art, limited palette (4-8 tones per material),
+1px dark outline in the material's own darkest shade (not pure black),
+light source from the top-left, crisp hard pixels, no anti-aliasing,
+no gradients, no drop shadows, flat 2D sprite view (no isometric perspective),
+each item centered with a small margin, consistent style across all icons,
+cohesive fantasy RPG game asset set, high quality pixel art.
+```
+
+**Kitöltött példa (a pénz-lap):**
+
+```
+Pixel art sprite sheet of 5 fantasy RPG item icons for a Minecraft-style game,
+arranged in a single row on a plain white background, with clear spacing between items.
+
+Items:
+1. A round gold coin with a ridged rim and an embossed FLAME emblem in the center, warm gold with orange accents.
+2. A round silver coin with a ridged rim and an embossed SNOWFLAKE emblem, cool silver with icy light-blue accents.
+3. A round gold coin with an embossed MERCHANT SCALES emblem, warm gold with amber accents.
+4. A worn dark-steel coin with an embossed SKULL emblem, tiny cold TURQUOISE glow in the skull's eye sockets, chipped edges.
+5. A worn leather coin pouch tied with a drawstring, 2-3 gold coins peeking out at the neck, warm leather brown.
+
+Style: chunky 16-bit pixel art, limited palette (4-8 tones per material),
+1px dark outline in the material's own darkest shade (not pure black),
+light source from the top-left, crisp hard pixels, no anti-aliasing,
+no gradients, no drop shadows, flat 2D sprite view (no isometric perspective),
+each item centered with a small margin, consistent style across all icons,
+cohesive fantasy RPG game asset set, high quality pixel art.
+```
+
+A frakció-akcentek angol fordítása a prompthoz: RED=„glowing ember orange-red”,
+BLUE=„icy light blue and silver”, NEUTRAL=„merchant gold and amber”,
+DARK=„bone white, pitch black, with cold turquoise lich-glow accents”.
+

@@ -146,3 +146,10 @@ vagy.
 ---
 
 ➡️ Tovább: [Frakcióterületek](13-teruletek.md) • [Vissza a tartalomhoz](README.md)
+
+## Fejezetek — a szezon története 📖
+
+Néhány küldetés egy-egy **fejezethez** (szezonhoz) kötődik: csak az adott szezon alatt
+vehetők fel, és a történetük a szezon ívét meséli. Szezonváltáskor a krónika **továbblapoz**:
+a régi fejezet küldetései lezárulnak (amit már felvettél, azt még befejezheted!), és új
+fejezet-küldetések nyílnak. Figyeld a „📖 Új fejezet nyílik” üzenetet!

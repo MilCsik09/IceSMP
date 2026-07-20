@@ -178,6 +178,47 @@ community-goals:
 # és a lentiekkel együtt töltődnek be (azonos id-nél a configbeli nyer). A
 # párbeszéd parancsból: /quest admin set <id> dialogue.give Első sor|Második sor
 quests:
+  # ===== J9 — 1. fejezet: „A Kapu Árnyéka” (szezon-fejezet story-lánc) =====
+  # A `chapter: N` questek csak az N. szezon-fejezet alatt vehetők fel (SeasonManager
+  # sorszáma; szezonváltáskor nő). A már felvett fejezet-quest kegyelemből befejezhető,
+  # de a next-lánc új tagja a lezárt fejezetben már nem nyílik meg.
+  fejezet1_suttogasok:
+    chapter: 1
+    display-name: "1. fejezet: Suttogások a Kapunál"
+    description: "A Kárhozat Kapuja felől furcsa hírek érkeznek. Győzd le a Kapu kisodorta szörnyeket (10 db, 3+ szintű)."
+    next: "fejezet1_bizonyitek"
+    objective:
+      type: "KILL_MOBS"
+      count: 10
+      min-mob-level: 3
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 40
+  fejezet1_bizonyitek:
+    chapter: 1
+    display-name: "1. fejezet: Bizonyíték a mélyből"
+    description: "A céhek bizonyítékot kérnek: gyűjts 24 lőport a Kapu kisodorta szörnyekből — a robbanás-szag a Kapu jele."
+    next: "fejezet1_kronikas"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "GUNPOWDER" ]
+      count: 24
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 60
+  fejezet1_kronikas:
+    chapter: 1
+    display-name: "1. fejezet: A Krónikás pecsétje"
+    description: "Vidd a híreket a fővárosba: beszélj a hírnökkel, hogy a krónikába kerüljön, amit láttál. A fejezet zárása gazdagon fizet."
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 120
   # --- Kaszt-próbák (bevezető questek) ---
   warrior_trial:
     display-name: "A Harcos Próbája"

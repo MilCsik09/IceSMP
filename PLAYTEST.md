@@ -1126,6 +1126,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **J9 — Fejezet-rendszer (szezon story-ív, ÚJ):**
+  - [ ] A szezonnak perzisztens **fejezet-sorszáma** van (`season.number` a season.yml-ben,
+        `SeasonManager.getSeasonNumber()`); szezonváltáskor nő + „Új fejezet nyílik” broadcast.
+  - [ ] `chapter: N` mező a questeken: csak az N. fejezet alatt vehető fel — lezárt fejezetnél
+        „a krónika továbblapozott”, jövőbelinél „még nem nyílt meg” üzenet; a MÁR FELVETT
+        fejezet-quest kegyelemből befejezhető, de a next-lánc új tagja már nem nyílik.
+  - [ ] 1. fejezet demo-lánc: „A Kapu Árnyéka” (suttogások → bizonyíték → krónikás, 3 quest,
+        next-láncolva); admin-szerkesztés: `/quest admin set <id> chapter <N>`.
 - [ ] **Profession-mélyítés (ÚJ):**
   - [ ] **50 recept/szakma (össz. 400):** minden szakma szintlétrája az 1. szinttől az 50.-ig
         kitöltve; a magas szintű receptek kelléket + ritka unique anyagot kérnek; az 50-es

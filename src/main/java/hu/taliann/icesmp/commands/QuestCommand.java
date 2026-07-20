@@ -401,6 +401,8 @@ public final class QuestCommand implements BasicCommand {
             case "quest-on-cooldown" -> "&cEz a küldetés még pihen — nézz vissza később.";
             case "quest-not-offered-today" -> "&cEz a küldetés ma nem elérhető — nézz vissza egy másik napon.";
             case "quest-season-locked" -> "&cEzt a szezont már teljesítetted — az új szezonban újra elérhető lesz.";
+            case "quest-chapter-closed" -> "&cEz a fejezet már lezárult — a krónika továbblapozott.";
+            case "quest-chapter-future" -> "&cEz a fejezet még nem nyílt meg — várd ki a krónika következő lapját.";
             default -> "&cA küldetés nem vehető fel.";
         };
     }

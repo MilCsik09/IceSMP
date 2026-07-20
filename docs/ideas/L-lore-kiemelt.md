@@ -440,7 +440,7 @@ felfut a világ a záráshoz, ami a résztvevők számára emlékezetes pillanat
 **Építőkövek:** Szezon-scheduler, esemény-managerek súly-rendszere, világboss-archetípus infra.
 **Buktatók:** Az eszkaláció ne váljon já(rha)tatlanná a gyengébb frakciónak — a boss-nehézség
 és a modifikátorok ne büntessék túl azt, aki lemaradt a szezonban.
-### J9. Fejezet-rendszer (szezononkénti story-ív)
+### J9. Fejezet-rendszer (szezononkénti story-ív) `[KÉSZ ✅]`
 
 > **Lore-horgony:** a korszakok = fejezetek — a szezon-story-ív kánonja készen áll (kódex VIII.)
 
@@ -459,6 +459,10 @@ meg a "évad-történet" érzést, a heti krónikával (B15) és a szezonzáró 
 **Építőkövek:** `SeasonManager`, `next`-láncolás, `QuestManager` requires-* keret.
 **Buktatók:** Nagy tartalom-munka (írás), és a szezonváltáskor futó láncoknál explicit
 kell dönteni: törlődik vagy átmenetileg befejezhető marad-e a félbehagyott quest.
+> **Implementáció:** `chapter: N` mező + fejezet-szűrő a QuestManager elfogadás-ellenőrzésében;
+> SeasonManager perzisztens `season.number` (váltáskor nő + fejezet-broadcast). Kegyelmi szabály:
+> a felvett fejezet-quest befejezhető, de a next-lánc lezárt fejezetben nem folytatódik.
+> Demo: „A Kapu Árnyéka” 3 questes 1. fejezet-lánc a quests.yml-ben.
 ### D17. Szezon-átvezető broadcast-történetek `[KÉSZ ✅]`
 
 > **Lore-horgony:** a korszak-átmenetek krónikás-hangú narrálása (kódex VIII.)

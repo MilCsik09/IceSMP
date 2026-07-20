@@ -42,6 +42,8 @@ public final class SeasonManager implements PersistentStore {
     private final FactionManager factionManager;
     private final File storageFile;
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
+    /** J9 — fejezet-sorszám: a szezon = story-fejezet; váltáskor nő, perzisztens. */
+    private volatile int seasonNumber = 1;
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     private volatile long seasonStart = System.currentTimeMillis();
@@ -70,6 +72,7 @@ public final class SeasonManager implements PersistentStore {
         try {
             final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
             seasonStart = yaml.getLong("season.start", System.currentTimeMillis());
+            seasonNumber = Math.max(1, yaml.getInt("season.number", 1));
             final ConfigurationSection pointsSection = yaml.getConfigurationSection("season.points");
             if (pointsSection != null) {
                 for (final String factionKey : pointsSection.getKeys(false)) {
@@ -88,6 +91,7 @@ public final class SeasonManager implements PersistentStore {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("season.start", seasonStart);
+            yaml.set("season.number", seasonNumber);
             for (final Map.Entry<FactionType, Integer> entry : points.entrySet()) {
                 yaml.set("season.points." + entry.getKey().name(), entry.getValue());
             }
@@ -100,6 +104,11 @@ public final class SeasonManager implements PersistentStore {
 
     public int getPoints(final FactionType faction) {
         return faction == null ? 0 : points.getOrDefault(faction, 0);
+    }
+
+    /** J9 — az aktuális fejezet (szezon) sorszáma; a quest `chapter:` mező erre szűr. */
+    public int getSeasonNumber() {
+        return seasonNumber;
     }
 
     public long getSeasonEndMillis() {
@@ -220,6 +229,12 @@ public final class SeasonManager implements PersistentStore {
 
         points.clear();
         seasonStart = System.currentTimeMillis();
+        // J9 — új fejezet nyílik: a fejezet-questek (chapter: N) ehhez a sorszámhoz kötődnek.
+        seasonNumber++;
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                "season-chapter-opened",
+                "<gold>📖 Új fejezet nyílik a krónikában: <white>{chapter}. fejezet</white> — a régi fejezet küldetései lezárultak, újak várnak!</gold>",
+                Map.of("chapter", String.valueOf(seasonNumber))));
         save();
     }
 
