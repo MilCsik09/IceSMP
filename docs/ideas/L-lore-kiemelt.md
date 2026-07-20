@@ -948,7 +948,7 @@ nem résztvevő játékosok is nézőként/broadcast-fogyasztóként élik meg a
 C5 Discord-híd.
 **Buktatók:** ha a top2 rendszeresen ugyanaz a két frakció, ismétlődővé válhat — a G12
 felzárkóztató mechanika közvetve ezt is tompítja.
-### J7. Rejtvény-küldetések (koordináta-nyomok / jelkép-keresés)
+### J7. Rejtvény-küldetések (koordináta-nyomok / jelkép-keresés) `[KÉSZ ✅]`
 
 > **Lore-horgony:** a lore-nyomok természetes hordozója — Mélység Népe-feliratok, kódex-utalások (kódex I.)
 

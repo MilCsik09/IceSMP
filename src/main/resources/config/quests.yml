@@ -37,6 +37,11 @@ achievements:
 quest-toast:
   enabled: true
 
+# J7 — rejtvény-questek: a riddle: true quest célja a naplóban "???"-ként jelenik
+# meg; ennyi perc után a napló mégis megsúgja (elakadás-védelem).
+quests-riddle:
+  hint-minutes: 10
+
 onboarding:
   enabled: true
   first-quest: "onboarding_herald"
@@ -182,6 +187,17 @@ quests:
   # A `chapter: N` questek csak az N. szezon-fejezet alatt vehetők fel (SeasonManager
   # sorszáma; szezonváltáskor nő). A már felvett fejezet-quest kegyelemből befejezhető,
   # de a next-lánc új tagja a lezárt fejezetben már nem nyílik meg.
+  rejtvenyi_elso_nyom:
+    riddle: true
+    display-name: "Rejtvény: Az első nyom"
+    description: "„Ahol minden út összefut, és a kikiáltó hangja messzebb ér, mint a harangszó — ott vár, aki a neveket jegyzi.” A cél rejtve marad: fejtsd meg a sorokat! (10 perc után a napló megsúgja.)"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 50
   fejezet1_suttogasok:
     chapter: 1
     display-name: "1. fejezet: Suttogások a Kapunál"

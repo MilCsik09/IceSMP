@@ -1126,6 +1126,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **J7 — Rejtvény-küldetések (ÚJ):**
+  - [ ] `riddle: true` quest-mező: a napló/haladás-sor "??? — a nyomot a leírás rejti"-t
+        mutat; a felvétel időbélyege PDC-ben (q_accept_<id>); `quests-riddle.hint-minutes`
+        (10) után a napló mégis megsúgja a célt (elakadás-védelem, a spec súgás-fokozata).
+  - [ ] Demo: "Rejtvény: Az első nyom" (TALK_TO_NPC, versbe rejtett cél); admin-szerkesztés:
+        `/quest admin set <id> riddle true`.
 - [ ] **F11 — Ereklye-börze (ÚJ):**
   - [ ] `/market ereklye`: a böngésző a PDC-tages tételekre (unique anyag / relikvia) szűrve
         nyílik (`@ereklye` belső szűrő a MarketGUI-ban); a kereső-infra változatlan.

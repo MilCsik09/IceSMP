@@ -87,7 +87,7 @@ public final class QuestManager implements PersistentStore {
             "display-name", "description", "giver-npc", "next",
             "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
-            "requires-job", "requires-faction", "requires-level", "requires-quest", "chapter",
+            "requires-job", "requires-faction", "requires-level", "requires-quest", "chapter", "riddle",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
@@ -628,10 +628,17 @@ public final class QuestManager implements PersistentStore {
         return null;
     }
 
+    /** J7 — a felvétel időbélyege (a rejtvény-súgás türelmi órája ettől indul). */
+    private NamespacedKey acceptAtKey(final String questId) {
+        return new NamespacedKey(plugin, "q_accept_" + questId.toLowerCase(Locale.ROOT));
+    }
+
     public boolean accept(final Player player, final String questId) {
         if (getAcceptBlocker(player, questId) != null) {
             return false;
         }
+        player.getPersistentDataContainer().set(acceptAtKey(questId), PersistentDataType.LONG,
+                System.currentTimeMillis());
 
         final List<String> active = new ArrayList<>(getActiveQuests(player));
         active.add(questId.toLowerCase(Locale.ROOT));
@@ -1426,6 +1433,18 @@ public final class QuestManager implements PersistentStore {
      * the quest menu (e.g. "Szörnyek 4/10 • Gyűjtés 2/5").
      */
     public String describeProgress(final Player player, final String questId) {
+        // J7 — rejtvény-quest: a cél NEM jelenik meg (a nyom a leírásban van), amíg a
+        // súgás-türelem (riddle-hint-minutes) le nem telik a felvételtől számítva.
+        final ConfigurationSection riddleQuest = getQuestSection(questId);
+        if (riddleQuest != null && riddleQuest.getBoolean("riddle", false)) {
+            final long acceptedAt = player.getPersistentDataContainer().getOrDefault(
+                    acceptAtKey(questId), PersistentDataType.LONG, 0L);
+            final long hintAfterMillis = Math.max(1, configManager.getInt(
+                    "quests-riddle.hint-minutes", 10)) * 60_000L;
+            if (acceptedAt > 0L && System.currentTimeMillis() - acceptedAt < hintAfterMillis) {
+                return "??? — a nyomot a leírás rejti";
+            }
+        }
         final List<ConfigurationSection> objectives = getObjectiveSections(getQuestSection(questId));
         if (objectives.isEmpty()) {
             return getProgress(player, questId) + "/" + getObjectiveCount(questId);
