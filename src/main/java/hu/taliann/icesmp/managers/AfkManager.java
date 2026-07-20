@@ -202,7 +202,7 @@ public final class AfkManager implements PlayerStateCleanup {
         if (amount <= 0.0D) {
             return;
         }
-        currencyManager.addToBalance(player.getUniqueId(), currencyType, amount);
+        currencyManager.payOutTokens(player, currencyType, Math.round(amount));
         player.sendMessage(messageManager.get("afk-reward-received",
                 "&b⌚ AFK-jutalom: &f+%s &b%s",
                 currencyManager.formatBalance(amount), currencyType.getDisplayName()));

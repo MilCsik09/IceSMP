@@ -69,8 +69,8 @@ public final class MobMoneyDropListener implements Listener {
         final double max = Math.max(min, configManager.getDouble("mob-money-drop.max-amount", 4.0D));
         final double perLevel = Math.max(0.0D, configManager.getDouble("mob-money-drop.per-level-bonus", 0.5D));
         final int mobLevel = mobScalingManager == null ? 1 : Math.max(1, mobScalingManager.getLevel(entity));
-        final double amount = min + ThreadLocalRandom.current().nextDouble() * (max - min)
-                + (mobLevel - 1) * perLevel;
+        final long amount = Math.max(1L, Math.round(min + ThreadLocalRandom.current().nextDouble() * (max - min)
+                + (mobLevel - 1) * perLevel));
         event.getDrops().add(pouchFactory.createRandom(amount));
     }
 }

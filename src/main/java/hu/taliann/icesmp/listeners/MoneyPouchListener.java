@@ -17,8 +17,9 @@ import java.util.Map;
 
 /**
  * Kopott erszény beváltása: jobb-katt a kézben tartott erszénnyel → egy darab elfogy,
- * a PDC-ben hordozott összeg a PDC-ben hordozott valutában a számlára kerül. Folia: az
- * interact a játékos saját régió-szálán fut, a bank-írás szál-biztos (CurrencyManager).
+ * és a PDC-ben hordozott darabszámú FIZIKAI veret (token-item) kerül a játékoshoz.
+ * A SZÁMLÁRA pénz kizárólag banki befizetéssel kerülhet — az erszény ezért itemet ad,
+ * nem egyenleget! Folia: az interact a játékos saját régió-szálán fut.
  */
 public final class MoneyPouchListener implements Listener {
 
@@ -46,17 +47,26 @@ public final class MoneyPouchListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        final double value = pouchFactory.getValue(hand);
+        final long value = pouchFactory.getValue(hand);
         final CurrencyType currency = pouchFactory.getCurrency(hand);
-        if (value <= 0.0D || currency == null) {
+        if (value <= 0L || currency == null) {
             return;
         }
         hand.setAmount(hand.getAmount() - 1);
-        currencyManager.addToBalance(player.getUniqueId(), currency, value);
+        // Fizikai veretek a kézbe (64-es kötegekben); ami nem fér, a földre esik.
+        long left = value;
+        while (left > 0L) {
+            final long batch = Math.min(64L, left);
+            left -= batch;
+            final ItemStack tokens = currencyManager.createCurrencyItem(currency, batch);
+            for (final ItemStack overflow : player.getInventory().addItem(tokens).values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+            }
+        }
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8F, 0.7F);
         player.sendMessage(messageManager.getMessage("money-pouch-redeem",
-                "<gold>💰 Kioldottad az erszény zsinórját: <white>+{amount} {currency}</white> a számládon.</gold>",
-                Map.of("amount", currencyManager.formatBalance(value),
+                "<gold>💰 Kioldottad az erszény zsinórját: <white>{amount}× {currency}</white> hullott a kezedbe. <gray>(A bankban tudod befizetni.)</gray></gold>",
+                Map.of("amount", String.valueOf(value),
                         "currency", currency.getDisplayName())));
     }
 }

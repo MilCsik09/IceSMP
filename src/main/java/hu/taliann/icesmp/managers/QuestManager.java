@@ -1532,7 +1532,7 @@ public final class QuestManager implements PersistentStore {
                     : CurrencyType.fromInput(typeRaw);
             final double amount = currencyReward.getDouble("amount", 0.0D);
             if (currencyType != null && amount > 0.0D) {
-                currencyManager.addToBalance(player.getUniqueId(), currencyType, amount);
+                currencyManager.payOutTokens(player, currencyType, Math.round(amount));
             }
         }
 

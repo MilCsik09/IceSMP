@@ -490,11 +490,11 @@ public final class SignatureItemListener implements Listener {
             // (UUID-kulcsú, szál-biztos) — dupe nem lehetséges, mert a kettő közé nem fér esemény.
             final double value = Math.max(0.0D, configManager.getDouble("signature.bankbetet.value", 25.0D));
             hand.setAmount(hand.getAmount() - 1);
-            currencyManager.addToBalance(player.getUniqueId(),
-                    hu.taliann.icesmp.data.CurrencyType.fromFactionType(hu.taliann.icesmp.data.FactionType.NEUTRAL), value);
+            currencyManager.payOutTokens(player,
+                    hu.taliann.icesmp.data.CurrencyType.fromFactionType(hu.taliann.icesmp.data.FactionType.NEUTRAL), Math.round(value));
             player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.4F);
             player.sendMessage(messageManager.get("signature-bankbetet-redeemed",
-                    "&a💠 A Bankárszövetség beváltotta a betétjegyet: &f+%s Creutzér&a a számládon.",
+                    "&a💠 A Bankárszövetség beváltotta a betétjegyet: &f+%s Creutzér&a a kezedbe számolva.",
                     currencyManager.formatBalance(value)));
         } else if (SZARVASBUBAJ.equals(sig)) {
             event.setCancelled(true);

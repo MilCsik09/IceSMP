@@ -152,7 +152,7 @@ public final class AchievementManager {
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final CurrencyType currency = CurrencyType.fromFactionType(faction);
         if (achievement.reward() > 0) {
-            currencyManager.addToBalance(player.getUniqueId(), currency, achievement.reward());
+            currencyManager.payOutTokens(player, currency, achievement.reward());
         }
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
         player.sendMessage(messageManager.getMessage(

@@ -147,6 +147,24 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         return itemFactory.isCurrencyItem(itemStack);
     }
 
+    /**
+     * Fizikai veret-kifizetés a játékos kezébe (64-es kötegekben; ami nem fér, a földre
+     * esik). A SZÁMLÁRA pénz KIZÁRÓLAG banki befizetéssel kerülhet — ezért minden
+     * jutalom-kifizetés ezen az úton, token-itemként történik. Folia: a hívó
+     * felelőssége, hogy a játékos SAJÁT régió-szálán fusson.
+     */
+    public void payOutTokens(final org.bukkit.entity.Player player, final CurrencyType currencyType, final long amount) {
+        final CurrencyType currency = currencyType == null ? defaultCurrencyType : currencyType;
+        long left = Math.max(0L, amount);
+        while (left > 0L) {
+            final long batch = Math.min(64L, left);
+            left -= batch;
+            for (final ItemStack overflow : player.getInventory().addItem(itemFactory.create(currency, batch)).values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+            }
+        }
+    }
+
 
     public CurrencyType getCurrencyType(final ItemStack itemStack) {
         return itemFactory.getCurrencyType(itemStack);

@@ -185,7 +185,7 @@ public final class DailyQuestManager {
 
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         if (totalReward > 0) {
-            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), totalReward);
+            currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), totalReward);
         }
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.2F);
         player.sendMessage(messageManager.getMessage(
@@ -225,7 +225,7 @@ public final class DailyQuestManager {
         player.getPersistentDataContainer().set(weekDoneKey, PersistentDataType.BYTE, (byte) 1);
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         if (weekly.reward() > 0) {
-            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), weekly.reward());
+            currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), weekly.reward());
         }
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 0.8F);
         player.sendMessage(messageManager.getMessage(

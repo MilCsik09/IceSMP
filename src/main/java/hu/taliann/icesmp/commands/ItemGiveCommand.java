@@ -124,15 +124,15 @@ public final class ItemGiveCommand implements BasicCommand {
             case "erszeny" -> {
                 // Kopott erszény: az <id> itt az ÖSSZEG, a [darab] az erszények száma,
                 // a valuta erszényenként véletlen (a mob-drop/horgász-lelet útjával azonos).
-                final double value;
+                final long value;
                 try {
-                    value = Double.parseDouble(id);
+                    value = Long.parseLong(id);
                 } catch (final NumberFormatException exception) {
                     sender.sendMessage(messageManager.get("admin.iceitem.bad-amount",
                             "&cÉrvénytelen összeg: &f%s", id));
                     return;
                 }
-                if (value <= 0.0D || moneyPouchFactory == null) {
+                if (value <= 0L || moneyPouchFactory == null) {
                     sender.sendMessage(messageManager.get("admin.iceitem.bad-amount",
                             "&cÉrvénytelen összeg: &f%s", id));
                     return;

@@ -14,10 +14,11 @@ import java.util.Map;
 /**
  * Felvásárló NPC ("felvasarlo") — kiszámítható, NAPI KERETES jövedelem-csap: a játékos a
  * KÉZBEN tartott terményt/nyersanyagot jobb-kattal eladja fix, alacsony egységáron
- * (economy.yml {@code buyer.prices.<MATERIAL>}). A napi keret ({@code buyer.daily-cap},
- * player-PDC-ben követve) fékezi az auto-farm inflációt — a piac (játékos-játékos)
- * marad a jobb ár, a Felvásárló a biztos alap. Egyedi (PDC-s) tárgyat SOSEM vesz meg,
- * hogy unique anyag/signature item ne váljon pénzzé nyomott áron.
+ * (economy.yml {@code buyer.prices.<MATERIAL>}). A fizetség FIZIKAI veret (token-item)
+ * a kézbe — a SZÁMLÁRA pénz kizárólag banki befizetéssel kerülhet! A napi keret
+ * ({@code buyer.daily-cap}, player-PDC-ben követve) fékezi az auto-farm inflációt — a
+ * piac (játékos-játékos) marad a jobb ár, a Felvásárló a biztos alap. Egyedi (PDC-s)
+ * tárgyat SOSEM vesz meg, hogy unique anyag/signature item ne váljon pénzzé nyomott áron.
  *
  * <p>Folia: a FancyNpcs interact-hook a játékos saját régió-szálán hívja — az
  * inventory-írás és a PDC ott biztonságos. Minden kulcs élőben olvasódik (buyer.*).
@@ -91,20 +92,35 @@ public final class BuyerService {
                     "<gray>🪙 „Mára kimerült a kasszám feléd — gyere vissza holnap!”</gray>"));
             return;
         }
+        // Egész veretben fizetünk (a fizetség fizikai token-item): annyi darabot veszünk
+        // meg, amennyiért legalább 1 veret jár, és lefelé kerekítünk — a Felvásárló fukar.
         final int sellable = Math.min(hand.getAmount(), (int) Math.floor(remaining / unitPrice));
-        final double value = Math.floor(sellable * unitPrice * 100.0D) / 100.0D;
+        final long value = (long) Math.floor(sellable * unitPrice);
+        if (value < 1L) {
+            player.sendMessage(messageManager.getMessage("buyer-too-few",
+                    "<gray>🪙 „Ennyiért egy veretet sem adhatok — hozz belőle többet egyszerre!”</gray>"));
+            return;
+        }
         hand.setAmount(hand.getAmount() - sellable);
         final CurrencyType currency = CurrencyType.fromFactionType(
                 factionManager.getFaction(player.getUniqueId()));
-        currencyManager.addToBalance(player.getUniqueId(), currency, value);
+        long left = value;
+        while (left > 0L) {
+            final long batch = Math.min(64L, left);
+            left -= batch;
+            final org.bukkit.inventory.ItemStack tokens = currencyManager.createCurrencyItem(currency, batch);
+            for (final org.bukkit.inventory.ItemStack overflow : player.getInventory().addItem(tokens).values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+            }
+        }
         player.getPersistentDataContainer().set(soldDayKey, PersistentDataType.LONG, today);
         player.getPersistentDataContainer().set(soldValueKey, PersistentDataType.DOUBLE, soldToday + value);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_TRADE, 0.8F, 1.1F);
         player.sendMessage(messageManager.getMessage("buyer-sold",
-                "<gold>🪙 Eladva: <white>{amount}× {item}</white> — <white>+{value}</white> a számládon. <gray>(Mai keretedből maradt: {left})</gray></gold>",
+                "<gold>🪙 Eladva: <white>{amount}× {item}</white> — <white>{value}× veret</white> a kezedbe. <gray>(Mai keretedből maradt: {left})</gray></gold>",
                 Map.of("amount", String.valueOf(sellable),
                         "item", hand.getType().name().toLowerCase(Locale.ROOT).replace('_', ' '),
-                        "value", currencyManager.formatBalance(value),
+                        "value", String.valueOf(value),
                         "left", currencyManager.formatBalance(Math.max(0.0D, remaining - value)))));
     }
 }

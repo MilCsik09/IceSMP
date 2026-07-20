@@ -102,7 +102,10 @@ public final class SinListener implements Listener {
                     sinManager.resetSinCount(victim);
                 }
                 if (reward > 0.0D && currency != null) {
-                    currencyManager.addToBalance(killer.getUniqueId(), currency, reward);
+                    // Fizikai veret-kifizetés a killer SAJÁT régió-szálán (Folia-hop).
+                    final long rewardTokens = Math.round(reward);
+                    killer.getScheduler().run(plugin, task ->
+                            currencyManager.payOutTokens(killer, currency, rewardTokens), null);
                 }
                 Bukkit.getServer().broadcast(messageManager.getMessage(
                         "bounty-claimed",

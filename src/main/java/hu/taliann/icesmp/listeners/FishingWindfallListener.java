@@ -55,7 +55,7 @@ public final class FishingWindfallListener implements Listener {
         }
         final double min = Math.max(0.01D, configManager.getDouble("fishing-windfall.min-amount", 5.0D));
         final double max = Math.max(min, configManager.getDouble("fishing-windfall.max-amount", 15.0D));
-        final double amount = min + ThreadLocalRandom.current().nextDouble() * (max - min);
+        final long amount = Math.max(1L, Math.round(min + ThreadLocalRandom.current().nextDouble() * (max - min)));
         final ItemStack pouch = pouchFactory.createRandom(amount);
         for (final ItemStack overflow : player.getInventory().addItem(pouch).values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), overflow);

@@ -173,7 +173,7 @@ public final class ParkourManager implements PersistentStore {
         final double seconds = (System.currentTimeMillis() - run.startMillis()) / 1000.0D;
         if (course.reward > 0) {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());
-            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), course.reward);
+            currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), Math.round(course.reward));
         }
         // Quest bridge (PARKOUR_TRIAL objectives) — runs on the player's own thread.
         if (finishHook != null) {

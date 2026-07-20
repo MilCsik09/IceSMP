@@ -79,19 +79,25 @@ Ez **nem piac** — nincs ár, nincs valuta, tiszta ajándékozás. Egy szerver-
 
 ## Honnan jön a pénz? (jövedelem-források) 🪙
 
+> 🏦 **Aranyszabály: a számládra pénz KIZÁRÓLAG a banki befizetésen át kerülhet!** Minden
+> jutalom és talált pénz **fizikai veretben** (token-itemben) érkezik a kezedbe — ha a
+> bankszámládon akarod tudni, vidd be a fővárosi bankba (`/bank deposit`).
+
 - **Kopott erszény (mob-drop):** az ellenséges szörnyek legyőzésekor eséllyel egy **erszény**
   esik — fizikai tárgy, benne **véletlen frakció-valutával** (az összeg a szörny szintjével nő).
-  **Jobb-katt** az erszénnyel, és a tartalma a számládra kerül. Spawner-szörny sosem dob!
+  **Jobb-katt** az erszénnyel, és a veretek a kezedbe hullanak. Spawner-szörny sosem dob!
 - **Horgász-szerencse:** horgászat közben kis eséllyel egy **iszapba veszett erszény** is a
-  horogra akad — ugyanúgy jobb-kattal váltod be. (AFK-horgásznak nem jár.)
+  horogra akad — ugyanúgy jobb-kattal nyitod ki. (AFK-horgásznak nem jár.)
 - **Felvásárló NPC:** a fővárosi **Felvásárlónál** a kézben tartott nyersanyagot (termény, hal,
-  érc, bőr…) **fix áron eladhatod** — ez a biztos alapjövedelem, de **napi kerete** van, és
-  egyedi/különleges tárgyat nem vesz meg. A jobb árat mindig a játékos-piac adja!
+  érc, bőr…) **fix áron eladhatod** — **veretben fizet, egyenesen a kezedbe**. Ez a biztos
+  alapjövedelem, de **napi kerete** van, és egyedi/különleges tárgyat nem vesz meg. A jobb
+  árat mindig a játékos-piac adja!
 - **Küldetések és napi feladatok:** a questek, napi kihívások, közösségi célok és
-  mérföldkövek valuta-jutalmat is adnak.
+  mérföldkövek jutalma is **veretben** érkezik a kezedbe.
 - **Lélekkő:** a magas szintű szörnyek Sötét tokent ejtenek (részletek lentebb).
-- **Vérdíj és parkour:** a fejvadász-rendszer és a parkour-próbák szintén fizetnek.
-- **Piac és aukció:** amit megtermelsz/kicraftolsz, a piacon másik játékosnak adhatod el.
+- **Vérdíj és parkour:** a fejvadász-rendszer és a parkour-próbák szintén veretben fizetnek.
+- **Piac és aukció:** amit megtermelsz/kicraftolsz, a piacon másik játékosnak adhatod el —
+  a piaci bevétel a **bankszámládra** érkezik (a piac a bankon keresztül köt üzletet).
 
 ## Hová „tűnik" a pénz? (money sinkek)
 

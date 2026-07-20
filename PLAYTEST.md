@@ -1109,11 +1109,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         ("ma épp ezt hozta"), a látogatás alatt stabil. Kulcsok: `caravan.rotation.*`.
   - [ ] **Felvásárló NPC** (`/npc create felvasarlo`): a kézben tartott nyersanyag jobb-kattra
         eladva a `buyer.prices` fix árain, NAPI kerettel (`daily-cap` 250, PDC-ben követve,
-        éjfélkor nullázódik); PDC-s (egyedi) tárgyat nem vesz; a jóváírás a saját
-        frakció-valutában. Üzenet mutatja a maradék keretet.
+        éjfélkor nullázódik); PDC-s (egyedi) tárgyat nem vesz; a fizetség FIZIKAI veret a
+        kézbe, egészre lefelé kerekítve (1 veret alatt nem vesz). Üzenet mutatja a maradék keretet.
   - [ ] **Kopott erszény (fizikai pénz-tárgy, WoW-stílus):** a talált pénz TÁRGYKÉNT
-        érkezik — bőr-item, PDC-ben összeg + VÉLETLEN frakció-valuta; jobb-katt váltja be
-        a számlára (üzenet + hang). Admin-adás: `/iceitem erszeny <összeg> [darab] [játékos]`.
+        érkezik — bőr-item, PDC-ben darabszám + VÉLETLEN frakció-valuta; jobb-katt FIZIKAI
+        veretekre (token-item) bontja a kézbe (üzenet + hang). Admin-adás:
+        `/iceitem erszeny <összeg> [darab] [játékos]`.
+  - [ ] **„Számlára csak a bankból” szabály:** MINDEN jutalom-kifizetés (quest, napi/heti
+        kihívás, mérföldkő, parkour, ambient-esemény, AFK-jutalom, vérdíj, Felvásárló,
+        Bankbetét-jegy) fizikai veretet ad a kézbe — addToBalance jutalom-úton NINCS;
+        a számlára kizárólag `/bank deposit` tesz pénzt. A piac/aukció/kincstár bankon
+        belüli átvezetés marad.
   - [ ] **Mob pénz-drop:** ellenséges mob játékos-ölésekor ~20% eséllyel Kopott erszény
         esik (1-4 + mob-szintenként +0,5); spawner-mob SOSEM dob (entitás-PDC jelölés,
         restartot is túléli). Kulcsok: `mob-money-drop.*`.
