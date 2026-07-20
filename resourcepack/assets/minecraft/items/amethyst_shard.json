@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/amethyst_shard"
+  },
+  "entries": [
+   {
+    "threshold": 6014,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_emlekszilank"
+    }
+   },
+   {
+    "threshold": 6031,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_nema_kristaly"
+    }
+   }
+  ]
+ }
+}

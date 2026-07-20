@@ -1,0 +1,138 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/enchanted_book"
+  },
+  "entries": [
+   {
+    "threshold": 5201,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/catalyst_wizard"
+    }
+   },
+   {
+    "threshold": 6342,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_tartossag_tomus"
+    }
+   },
+   {
+    "threshold": 6343,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_hatekonysag_tomus"
+    }
+   },
+   {
+    "threshold": 6344,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_eles_tomus"
+    }
+   },
+   {
+    "threshold": 6345,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_zuhanascsokkentes_tomus"
+    }
+   },
+   {
+    "threshold": 6346,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_vedelem_tomus"
+    }
+   },
+   {
+    "threshold": 6347,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_csali_tomus"
+    }
+   },
+   {
+    "threshold": 6348,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_fosztogatas_tomus"
+    }
+   },
+   {
+    "threshold": 6349,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_szerencse_tomus"
+    }
+   },
+   {
+    "threshold": 6350,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_javitas_tomus"
+    }
+   },
+   {
+    "threshold": 6351,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_orvenylo_pusztitas_tomus"
+    }
+   },
+   {
+    "threshold": 6352,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_selyemerintes_tomus"
+    }
+   },
+   {
+    "threshold": 6364,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_szornymag_talizman"
+    }
+   },
+   {
+    "threshold": 6373,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_vasesszencias_paloscsapas_tomus"
+    }
+   },
+   {
+    "threshold": 6374,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_kemenyfa_ijkeret_tomus"
+    }
+   },
+   {
+    "threshold": 6383,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_runavert_tekercs"
+    }
+   },
+   {
+    "threshold": 6402,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_fagypancel_tekercs"
+    }
+   },
+   {
+    "threshold": 6403,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_fonixtoll_tekercs"
+    }
+   }
+  ]
+ }
+}

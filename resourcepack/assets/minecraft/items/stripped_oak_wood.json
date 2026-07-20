@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/stripped_oak_wood"
+  },
+  "entries": [
+   {
+    "threshold": 6003,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_kemenyfa_gerenda"
+    }
+   }
+  ]
+ }
+}

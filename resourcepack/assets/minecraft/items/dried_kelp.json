@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/dried_kelp"
+  },
+  "entries": [
+   {
+    "threshold": 6133,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_sozott_csali"
+    }
+   }
+  ]
+ }
+}

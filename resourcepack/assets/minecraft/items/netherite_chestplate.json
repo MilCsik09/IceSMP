@@ -1,0 +1,40 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/netherite_chestplate"
+  },
+  "entries": [
+   {
+    "threshold": 6338,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_sarkanyvert_recept"
+    }
+   },
+   {
+    "threshold": 6371,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_szornyvert_mellveny"
+    }
+   },
+   {
+    "threshold": 6378,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_glatziendorfi_jegvert"
+    }
+   },
+   {
+    "threshold": 6409,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_eleftheria_fatyla"
+    }
+   }
+  ]
+ }
+}

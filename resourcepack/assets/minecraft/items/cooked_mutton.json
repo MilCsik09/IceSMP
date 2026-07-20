@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/cooked_mutton"
+  },
+  "entries": [
+   {
+    "threshold": 6414,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_fuszeres_vandorhus"
+    }
+   }
+  ]
+ }
+}

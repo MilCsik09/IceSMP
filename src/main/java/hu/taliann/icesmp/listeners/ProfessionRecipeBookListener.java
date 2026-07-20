@@ -247,10 +247,16 @@ public final class ProfessionRecipeBookListener implements Listener {
                             .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 }
                 meta.lore(loreLines);
-                if (recipe.customModelData() > 0) {
-                    meta.setCustomModelData(recipe.customModelData());
-                }
                 result.setItemMeta(meta);
+            }
+        }
+        // CMD-pecsét a lore-tól FÜGGETLENÜL: az affix-roll felszerelés is fix textúrát kap
+        // (a név a rollból jön, a textúra a receptből) — regiszter: docs/RESOURCE_PACK_CMD.md.
+        if (recipe.uniqueResult() == null && recipe.customModelData() > 0) {
+            final ItemMeta cmdMeta = result.getItemMeta();
+            if (cmdMeta != null) {
+                cmdMeta.setCustomModelData(recipe.customModelData());
+                result.setItemMeta(cmdMeta);
             }
         }
         // Signature perk-tag (K2/K3): a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll

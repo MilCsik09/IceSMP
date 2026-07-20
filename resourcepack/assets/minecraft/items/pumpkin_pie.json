@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/pumpkin_pie"
+  },
+  "entries": [
+   {
+    "threshold": 6385,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_fonixtojas_rantotta"
+    }
+   },
+   {
+    "threshold": 6405,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_vandorunnep_lepenye"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/generated",
+ "textures": {
+  "layer0": "icesmp:item/r_vandor_uti_kenyer"
+ }
+}

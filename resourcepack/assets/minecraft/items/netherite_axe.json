@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/netherite_axe"
+  },
+  "entries": [
+   {
+    "threshold": 6328,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_netherit_fejsze"
+    }
+   },
+   {
+    "threshold": 6392,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_glatziendorfi_jegtoro"
+    }
+   }
+  ]
+ }
+}

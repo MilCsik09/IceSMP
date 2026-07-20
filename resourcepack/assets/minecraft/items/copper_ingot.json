@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/copper_ingot"
+  },
+  "entries": [
+   {
+    "threshold": 6002,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_rezgo_rez_otvozet"
+    }
+   }
+  ]
+ }
+}

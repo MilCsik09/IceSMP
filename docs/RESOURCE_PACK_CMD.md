@@ -4,6 +4,20 @@ A plugin MINDEN egyedi (custom/unique) tárgya CustomModelData-t (CMD) visel, ho
 resource pack készítő egyedi textúrát adhasson nekik. **Új custom item = új CMD +
 új sor ebben a fájlban** — ez a lista a resource pack egyetlen hiteles forrása.
 
+## Generált resource pack
+
+A `tools/build_resourcepack.py` ebből a regiszterből legenerálja a teljes packot a
+`resourcepack/` mappába (16x16 pixel-art textúrák egységes stílusban, icesmp modellek,
+`assets/minecraft/items/*.json` CMD-kapcsolók) és becsomagolja `IceSMP-ResourcePack.zip`-be.
+Új item felvétele után futtasd újra: `python3 tools/build_resourcepack.py` (Pillow kell).
+A generált textúra placeholder — bármelyik felülírható kézzel rajzolttal a
+`resourcepack/assets/icesmp/textures/item/` alatt (a fájlnév tartása mellett).
+
+**Kivétel (vanilla kinézetű marad):** a COMPASS / RECOVERY_COMPASS / TRIDENT vanilla
+item-definíciója speciális (tű-animáció, dobás-állapot), ezeket a pack nem írja felül —
+érintett CMD-k: 6104 (Mélységi Iránytű), 6416 (Tárnatájoló), 6424 (Felépülés Iránytűje),
+6319/6337/6376 (szigonyok).
+
 ## Kiosztott tartományok
 
 | Tartomány | Rendszer | Forrás |
@@ -135,10 +149,14 @@ resource pack készítő egyedi textúrát adhasson nekik. **Új custom item = �
 | 6201 | Kereskedő Kulcs | TRIPWIRE_HOOK |
 | 6202 | Kincses Kulcs | TRIPWIRE_HOOK |
 
-## 6300–6414 — Nevesített recept-tárgyak (profession-recipes.yml)
+## 6300–6438 — Recept-tárgyak CMD-vel (profession-recipes.yml)
 
-Minden lore-os (nevesített) recept-eredmény CMD-t visel — signature fegyverek, ünnepi
-ételek, tómuszok, legendás páncélok és a szintlétra ritkaságai is.
+Minden nevesített (lore-os) recept-eredmény + a végtermék-eszközök + a 13 affix-roll
+felszerelés (íjak/pajzsok/sisakok — a név a rollból, a textúra a receptből).
+
+Szándékosan CMD NÉLKÜL marad: a 215 vanilla köteg-output (árucikk, stackelnie kell),
+a 22 lánc-köztes/lerakható egydarabos (netherit-sor, nautilus→conduit, üllő/pulpitus,
+névtábla, főzet-alap), és a 24 unique-anyag recept (a factory 6000+ CMD-jét viseli).
 
 | CMD | Recept-id | Név | Material | Szakma |
 |---|---|---|---|---|
@@ -257,4 +275,28 @@ Minden lore-os (nevesített) recept-eredmény CMD-t visel — signature fegyvere
 | 6412 | csontenyves_ijkar | Csontenyves Íjkar | BOW | lumberjack |
 | 6413 | gyongyhaz_talizman | Gyöngyház Talizmán | NAUTILUS_SHELL | fisherman |
 | 6414 | fuszeres_vandorhus | Fűszeres Vándorhús | COOKED_MUTTON | cook |
+| 6415 | csillekerek | Megkent Csille | MINECART | miner |
+| 6416 | melysegi_tajolo | Tárnatájoló | COMPASS | miner |
+| 6417 | tavcso | Bányamérnöki Távcső | SPYGLASS | miner |
+| 6418 | osi_ereklye_kiemeles | Ereklye-kiemelő Készlet | BRUSH | miner |
+| 6419 | vas_lopancel | Vas Lópáncél | IRON_HORSE_ARMOR | armorer |
+| 6420 | arany_lopancel | Arany Lópáncél | GOLDEN_HORSE_ARMOR | armorer |
+| 6421 | gyemant_lopancel | Gyémánt Lópáncél | DIAMOND_HORSE_ARMOR | armorer |
+| 6422 | totem_ujraelesztes | Újraélesztett Totem | TOTEM_OF_UNDYING | alchemist |
+| 6423 | kristaly_katalizator | Kristály-katalizátor | END_CRYSTAL | alchemist |
+| 6424 | felepules_iranytuje | Felépülés Iránytűje | RECOVERY_COMPASS | enchanter |
+| 6425 | vezetokurt | Mélység Vezérkürtje | CONDUIT | fisherman |
+| 6426 | vadaszij | Vadászíj | BOW | lumberjack |
+| 6427 | mefonott_pajzs | Erdőjáró Pajzs | SHIELD | lumberjack |
+| 6428 | feszitett_szaru_ij | Feszített Szaruíj | BOW | lumberjack |
+| 6429 | celkereszt_szamszerij | Céhmesteri Számszeríj | CROSSBOW | lumberjack |
+| 6430 | lancing | Kovácsolt Láncing | CHAINMAIL_CHESTPLATE | armorer |
+| 6431 | lancnadrag | Kovácsolt Láncnadrág | CHAINMAIL_LEGGINGS | armorer |
+| 6432 | pajzsdudor | Dudoros Hadipajzs | SHIELD | armorer |
+| 6433 | pancelozott_sisakrostely | Rostélyos Csatasisak | DIAMOND_HELMET | armorer |
+| 6434 | uszokeszlet | Úszókészlet | FISHING_ROD | fisherman |
+| 6435 | vizallo_csizma | Halászcsizma | LEATHER_BOOTS | fisherman |
+| 6436 | melyvizi_horog | Mélyvízi Horogsor | FISHING_ROD | fisherman |
+| 6437 | teknos_sisak | Teknőspáncél-sisak | TURTLE_HELMET | fisherman |
+| 6438 | halaszkalap | Halászkalap | LEATHER_HELMET | fisherman |
 

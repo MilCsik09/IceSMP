@@ -1,0 +1,33 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/diamond_helmet"
+  },
+  "entries": [
+   {
+    "threshold": 6335,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_gyemant_sisak"
+    }
+   },
+   {
+    "threshold": 6367,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_ereklyeszilankos_banyasisak"
+    }
+   },
+   {
+    "threshold": 6433,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_pancelozott_sisakrostely"
+    }
+   }
+  ]
+ }
+}

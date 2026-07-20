@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/blaze_powder"
+  },
+  "entries": [
+   {
+    "threshold": 6006,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_parazsmag"
+    }
+   },
+   {
+    "threshold": 6034,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_folyositoszer"
+    }
+   }
+  ]
+ }
+}

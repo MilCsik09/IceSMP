@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/bone_meal"
+  },
+  "entries": [
+   {
+    "threshold": 6019,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_csontenyv"
+    }
+   }
+  ]
+ }
+}

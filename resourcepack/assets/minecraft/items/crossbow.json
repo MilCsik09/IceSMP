@@ -1,0 +1,74 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:condition",
+   "property": "minecraft:using_item",
+   "on_false": {
+    "type": "minecraft:select",
+    "property": "minecraft:charge_type",
+    "fallback": {
+     "type": "minecraft:model",
+     "model": "minecraft:item/crossbow"
+    },
+    "cases": [
+     {
+      "when": "arrow",
+      "model": {
+       "type": "minecraft:model",
+       "model": "minecraft:item/crossbow_arrow"
+      }
+     },
+     {
+      "when": "rocket",
+      "model": {
+       "type": "minecraft:model",
+       "model": "minecraft:item/crossbow_firework"
+      }
+     }
+    ]
+   },
+   "on_true": {
+    "type": "minecraft:range_dispatch",
+    "property": "minecraft:crossbow/pull",
+    "fallback": {
+     "type": "minecraft:model",
+     "model": "minecraft:item/crossbow_pulling_0"
+    },
+    "entries": [
+     {
+      "threshold": 0.58,
+      "model": {
+       "type": "minecraft:model",
+       "model": "minecraft:item/crossbow_pulling_1"
+      }
+     },
+     {
+      "threshold": 1.0,
+      "model": {
+       "type": "minecraft:model",
+       "model": "minecraft:item/crossbow_pulling_2"
+      }
+     }
+    ]
+   }
+  },
+  "entries": [
+   {
+    "threshold": 6380,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_pyralingradi_tuzkopo"
+    }
+   },
+   {
+    "threshold": 6429,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_celkereszt_szamszerij"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,54 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/netherite_sword"
+  },
+  "entries": [
+   {
+    "threshold": 6339,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_netherit_kard"
+    }
+   },
+   {
+    "threshold": 6361,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_runakovacsolt_penge"
+    }
+   },
+   {
+    "threshold": 6365,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_ereklye_penge"
+    }
+   },
+   {
+    "threshold": 6381,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_verszavanna_agyara"
+    }
+   },
+   {
+    "threshold": 6393,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_miinus_haragja"
+    }
+   },
+   {
+    "threshold": 6395,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_zhoris_langnyelve"
+    }
+   }
+  ]
+ }
+}

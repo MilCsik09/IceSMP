@@ -1,0 +1,33 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/sugar"
+  },
+  "entries": [
+   {
+    "threshold": 6005,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_jegviragpor"
+    }
+   },
+   {
+    "threshold": 6116,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_polirpaszta"
+    }
+   },
+   {
+    "threshold": 6134,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_koso"
+    }
+   }
+  ]
+ }
+}

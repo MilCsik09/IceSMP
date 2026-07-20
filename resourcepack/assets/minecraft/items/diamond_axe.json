@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/diamond_axe"
+  },
+  "entries": [
+   {
+    "threshold": 6327,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_gyemant_fejsze"
+    }
+   }
+  ]
+ }
+}

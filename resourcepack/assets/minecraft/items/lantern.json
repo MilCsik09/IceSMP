@@ -1,0 +1,33 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/lantern"
+  },
+  "entries": [
+   {
+    "threshold": 6300,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_borostyan_lampa"
+    }
+   },
+   {
+    "threshold": 6316,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_viharjelzo_boja"
+    }
+   },
+   {
+    "threshold": 6401,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_viharuveg_lampas"
+    }
+   }
+  ]
+ }
+}

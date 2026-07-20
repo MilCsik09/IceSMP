@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/map"
+  },
+  "entries": [
+   {
+    "threshold": 6318,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_oceanjaro_terkep"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/potion"
+  },
+  "entries": [
+   {
+    "threshold": 6341,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_bajnok_elixir"
+    }
+   },
+   {
+    "threshold": 6372,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_ereklye_elixir"
+    }
+   }
+  ]
+ }
+}

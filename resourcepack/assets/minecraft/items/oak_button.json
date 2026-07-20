@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/oak_button"
+  },
+  "entries": [
+   {
+    "threshold": 6132,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_parafa_uszo"
+    }
+   }
+  ]
+ }
+}

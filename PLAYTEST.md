@@ -1138,7 +1138,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Fokozatok:** Inas (1–9) → Segéd → Legény → Mester → Nagymester → Legendás Mester (50);
         a szakma-GUI a szint mellett a fokozatot is mutatja.
   - [ ] **CMD-regiszter:** MINDEN nevesített (lore-os) recept-eredmény CustomModelData-t visel
-        (6300–6414), a Kopott erszény 1010 — teljes lista: `docs/RESOURCE_PACK_CMD.md`
+        (6300–6425, 126 tárgy — a végtermék-eszközök is), a Kopott erszény 1010 — teljes lista: `docs/RESOURCE_PACK_CMD.md`
         (resource pack készítéshez). Új custom item = új CMD + új sor a regiszterben!
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]` — tab-complete

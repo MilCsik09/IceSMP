@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/gunpowder"
+  },
+  "entries": [
+   {
+    "threshold": 6025,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_lelekhamu"
+    }
+   },
+   {
+    "threshold": 6100,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_robbantopor"
+    }
+   }
+  ]
+ }
+}

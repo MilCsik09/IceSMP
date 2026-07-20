@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/slime_ball"
+  },
+  "entries": [
+   {
+    "threshold": 6102,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_csillekenocs"
+    }
+   },
+   {
+    "threshold": 6130,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_csalizsir"
+    }
+   }
+  ]
+ }
+}

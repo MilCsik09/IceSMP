@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/diamond_chestplate"
+  },
+  "entries": [
+   {
+    "threshold": 6336,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_gyemant_mellvert"
+    }
+   },
+   {
+    "threshold": 6360,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_esszencialt_vasvert"
+    }
+   }
+  ]
+ }
+}

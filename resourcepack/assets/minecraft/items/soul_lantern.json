@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/soul_lantern"
+  },
+  "entries": [
+   {
+    "threshold": 5211,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/catalyst_warlock"
+    }
+   }
+  ]
+ }
+}

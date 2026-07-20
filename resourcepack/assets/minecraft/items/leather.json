@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/leather"
+  },
+  "entries": [
+   {
+    "threshold": 1010,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/money_pouch"
+    }
+   },
+   {
+    "threshold": 6117,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_nyelbor"
+    }
+   }
+  ]
+ }
+}

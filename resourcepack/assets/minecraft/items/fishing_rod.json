@@ -1,0 +1,83 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:condition",
+   "property": "minecraft:fishing_rod/cast",
+   "on_true": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/fishing_rod_cast"
+   },
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/fishing_rod"
+   }
+  },
+  "entries": [
+   {
+    "threshold": 6317,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_mestermuves_bot"
+    }
+   },
+   {
+    "threshold": 6353,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_egyszeru_horgaszbot"
+    }
+   },
+   {
+    "threshold": 6354,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_tartos_horgaszbot"
+    }
+   },
+   {
+    "threshold": 6355,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_mesteri_horgaszbot"
+    }
+   },
+   {
+    "threshold": 6356,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_legendas_horgaszbot"
+    }
+   },
+   {
+    "threshold": 6375,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_rezhorgany_horgaszbot"
+    }
+   },
+   {
+    "threshold": 6389,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_bokic_horgaszbot"
+    }
+   },
+   {
+    "threshold": 6434,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_uszokeszlet"
+    }
+   },
+   {
+    "threshold": 6436,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_melyvizi_horog"
+    }
+   }
+  ]
+ }
+}

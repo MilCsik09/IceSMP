@@ -1,0 +1,33 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/echo_shard"
+  },
+  "entries": [
+   {
+    "threshold": 6011,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_szorny_mag"
+    }
+   },
+   {
+    "threshold": 6015,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_suttogas_meghivo"
+    }
+   },
+   {
+    "threshold": 6032,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_elso_csend_szilankja"
+    }
+   }
+  ]
+ }
+}

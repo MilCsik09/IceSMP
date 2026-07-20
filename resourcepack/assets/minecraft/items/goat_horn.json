@@ -1,0 +1,34 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:condition",
+   "property": "minecraft:using_item",
+   "on_true": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/tooting_goat_horn"
+   },
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/goat_horn"
+   }
+  },
+  "entries": [
+   {
+    "threshold": 5202,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/catalyst_warrior"
+    }
+   },
+   {
+    "threshold": 6307,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_erdok_kurtje"
+    }
+   }
+  ]
+ }
+}

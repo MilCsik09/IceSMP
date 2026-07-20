@@ -1,0 +1,26 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/oak_sapling"
+  },
+  "entries": [
+   {
+    "threshold": 5205,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/catalyst_druid"
+    }
+   },
+   {
+    "threshold": 6305,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/r_vilagfa_magja"
+    }
+   }
+  ]
+ }
+}

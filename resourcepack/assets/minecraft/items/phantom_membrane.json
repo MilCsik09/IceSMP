@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/phantom_membrane"
+  },
+  "entries": [
+   {
+    "threshold": 6010,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/u_vad_esszencia"
+    }
+   }
+  ]
+ }
+}
