@@ -527,3 +527,40 @@ rare-variant:
   chance-percent: 1.5
   xp-multiplier: 2.0
   soul-chance-multiplier: 2.0
+
+# ===== D1 — Szezonális ünnepek: valós naptári ablakok (kódex VIII. Időrend) =====
+# Az aktív ablak nyíltakor/zártakor broadcast; a managerek a HolidayService.override()
+# kulcsain át futásidőben kaphatnak ünnep-skint (a config sosem íródik át).
+seasonal-events-enabled: true
+seasonal-events:
+  remej:
+    start: "10-25"
+    end: "11-02"
+    greeting: "Rém-éj közeleg — a fátyol elvékonyodik, a tökfejek vigyorognak! (Vérhold-virrasztás)"
+  erkezes_napja:
+    start: "12-20"
+    end: "12-27"
+    greeting: "Az Érkezés Napja — a Kapu fényei kigyúlnak, a kereskedők ajándék-kedvvel mérnek!"
+  hasadas_napja:
+    start: "03-21"
+    end: "03-23"
+    greeting: "A Hasadás Napja — emlékezz: egykor egy világ voltunk."
+  ultimatum_napja:
+    start: "06-21"
+    end: "06-22"
+    greeting: "Az Ultimátum Napja — a királyok ma keményebben alkusznak."
+
+# ===== D11 — Járőröző városi őrség (v1: plugin-spawnolta őr-NPC-k) =====
+# Waypoint-útvonalak őrönként; a léptetés az őr SAJÁT régió-szálán fut, éjjel
+# gyorsabb tempóban. Példa (töltsd ki a saját fővárosi koordinátáiddal):
+city-guards:
+  enabled: true
+  step-seconds: 2
+  day-step-blocks: 1.5
+  night-step-blocks: 3.0
+  guards: {}
+  # guards:
+  #   vamhaz_ore:
+  #     name: "A Vámház őre"
+  #     world: "world"
+  #     route: [ "100,64,100", "120,64,100", "120,64,120", "100,64,120" ]

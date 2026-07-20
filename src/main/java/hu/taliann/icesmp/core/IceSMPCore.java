@@ -221,6 +221,8 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
     private final hu.taliann.icesmp.managers.SpyManager spyManager;
     private final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager professionWeeklyGoalManager;
+    private final hu.taliann.icesmp.managers.HolidayService holidayService;
+    private final hu.taliann.icesmp.managers.CityGuardManager cityGuardManager;
     private final hu.taliann.icesmp.managers.DarkUndeadAmbienceManager darkUndeadAmbienceManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
@@ -346,6 +348,8 @@ public final class IceSMPCore {
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager);
         this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager);
         this.professionWeeklyGoalManager = new hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager(plugin, configManager, professionManager, messageManager);
+        this.holidayService = new hu.taliann.icesmp.managers.HolidayService(configManager, messageManager);
+        this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
         this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager);
         resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // E25/E32 — pool-bónuszok
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // E25 — pakt-oltár
@@ -959,6 +963,7 @@ public final class IceSMPCore {
         strangerNpcManager.shutdown();
         escortManager.shutdown();
         playerCaravanManager.shutdown();
+        cityGuardManager.shutdown();
         meteorEventManager.shutdown();
         serverChallengeManager.shutdown();
         totemManager.shutdown();
@@ -1013,6 +1018,8 @@ public final class IceSMPCore {
                     seasonFinaleManager.tick();
             playerCaravanManager.tick();
             professionWeeklyGoalManager.tick();
+            holidayService.tick();
+            cityGuardManager.tick();
             darkUndeadAmbienceManager.tick();
                     strangerNpcManager.tick();
                     hiddenSpotManager.tick();

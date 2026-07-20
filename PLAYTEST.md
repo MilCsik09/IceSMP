@@ -1126,6 +1126,18 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **D1 — Szezonális ünnepek (ÚJ):**
+  - [ ] HolidayService: valós naptári MM-DD ablakok (év-átfordulással), 4 kánon-ünnep
+        előre configolva (Rém-éj 10-25→11-02, Érkezés Napja 12-20→12-27, Hasadás Napja,
+        Ultimátum Napja); ablak-nyitás/zárás broadcast; `override(kulcs)` API-n át a
+        managerek futásidőben kaphatnak ünnep-skint (a config sosem íródik át).
+        Kulcsok: world.yml `seasonal-events.*`.
+- [ ] **D11 — Járőröző városi őrség (ÚJ, v1):**
+  - [ ] Config-útvonalú (waypoint-listás) őr-NPC-k: plugin-spawnolta, sebezhetetlen,
+        nevesített villager-őrök; a léptetés MINDIG az őr saját entity-schedulerén fut
+        (kis teleportAsync-lépések, több-régiós útvonalon is); éjjel gyorsabb tempó.
+  - [ ] Restart-újraspawn, shutdown-takarítás; példa-route kikommentelve. Kulcsok:
+        world.yml `city-guards.*` (guards.<id>.name/world/route).
 - [ ] **J7 — Rejtvény-küldetések (ÚJ):**
   - [ ] `riddle: true` quest-mező: a napló/haladás-sor "??? — a nyomot a leírás rejti"-t
         mutat; a felvétel időbélyege PDC-ben (q_accept_<id>); `quests-riddle.hint-minutes`

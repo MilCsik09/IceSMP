@@ -906,7 +906,7 @@ mindig a céljátékos saját régió-szálán fusson.
 *Gyengébb, de valós kánon-kötés — akkor érdemesek, ha a kapcsolódó kánon-elem (ünnepek,
 Vámház-őrség, Korszak-finálé) tartalmat kap.*
 
-### D1. Szezonális ünnepek
+### D1. Szezonális ünnepek `[KÉSZ ✅ — v1: naptár + broadcast + override-API]`
 
 > **Lore-horgony:** az Időrend évfordulói kész ünnep-naptár — kánon: kódex VIII. „Az Ünnepek" (Hasadás Napja, Ultimátum Napja, Vérhold-virrasztás, Érkezés Napja)
 
@@ -917,7 +917,7 @@ Vámház-őrség, Korszak-finálé) tartalmat kap.*
 **Miért jó:** A már ismert eseményeket (vérhold, invázió) új köntösben adja vissza — a valós naptárhoz igazodás azonnali „most van október!” él-a-világ érzetet kelt kis munkából.
 **Építőkövek:** `AmbientEventManager`, `InvasionManager`, CMD-skin infra (A33).
 **Buktatók:** Az időzóna-függő dátum-logika legyen konzisztens; a felülírás csak runtime-paraméter maradjon, ne írja át tartósan a configot.
-### D11. Járőröző városi őrség
+### D11. Járőröző városi őrség `[KÉSZ ✅ — v1: saját őr-entitások]`
 
 > **Lore-horgony:** a Vámház őrei kánon (kódex VII.) — a járőröző őrség csak megtestesíti
 
