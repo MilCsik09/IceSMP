@@ -9,9 +9,11 @@ minecraft:custom_model_data property-n — MC 1.21.4+ item-modell rendszer).
 
 Futtatás a repo gyökeréből:  python3 tools/build_resourcepack.py
 Kimenet: resourcepack/ (commitolható forrás) + IceSMP-ResourcePack.zip
-Kivétel: COMPASS / RECOVERY_COMPASS / TRIDENT — ezek vanilla item-definíciója
-speciális (tű-animáció / dobás-állapot), ezeket a pack nem írja felül (a rajtuk
-ülő CMD-s tárgyak vanilla kinézetűek maradnak, lásd a regiszter megjegyzését).
+A fallback minden materialnál a VALÓDI vanilla item-definíció (tools/vanilla_items/
+cache, forrás: a mcmeta tükör <mcverzió>-assets tagje) — így az iránytű tű-animációja,
+a szigony kézben-3D-je, az íj/pajzs állapotai és a bőr-itemek festék-színezése is
+bitpontosan megmarad a nem-CMD-s példányokon. Hiányzó cache-fájlnál a beépített
+közelítő fallback él (special_fallback).
 """
 import json
 import os
@@ -27,8 +29,9 @@ CFG = os.path.join(ROOT, 'src/main/resources/config')
 OUT = os.path.join(ROOT, 'resourcepack')
 S = 16
 
-# Vanilla item-definíciók, amiket NEM írunk felül (speciális belső logika).
-SKIP_MATERIALS = {'COMPASS', 'RECOVERY_COMPASS', 'TRIDENT'}
+# A vanilla item-definíciók helyi cache-e (fetch: mcmeta tükör, lásd fejkomment).
+VANILLA_CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vanilla_items')
+SKIP_MATERIALS = set()
 
 # ---------------------------------------------------------------- palettes ---
 PALETTES = {
@@ -386,7 +389,15 @@ def collect():
     for cur, cmd in (('red', 1001), ('blue', 1002), ('neutral', 1003), ('dark', 1004)):
         entries.append(('PAPER', cmd, 'coin_' + cur))
     entries.append(('LEATHER', 1010, 'money_pouch'))
-    entries.append(('GOLDEN_AXE', 4101, 'relic_metelytepo'))
+    # relikviák: a RelicManager hardcoded regisztrációiból (id, material, cmd)
+    rsrc = open(os.path.join(ROOT, 'src/main/java/hu/taliann/icesmp/managers/RelicManager.java')).read()
+    for rid, mat, cmd in re.findall(
+            r'registerRelic\(\s*"(\w+)",\s*Material\.(\w+),\s*(?://[^\n]*\n\s*)*(\d{4}),', rsrc):
+        entries.append((mat, int(cmd), 'relic_' + rid))
+    entries.append(('KNOWLEDGE_BOOK', 6210, 'blueprint'))          # tervrajz
+    entries.append(('LEAD', 5301, 'capture_beast'))                # Ősi Kötés Póráza
+    entries.append(('GHAST_TEAR', 5302, 'capture_necro'))          # Sötét Paktum-tekercs
+    entries.append(('TNT_MINECART', 5401, 'siege_cannon'))         # Ostromágyú
     src = open(os.path.join(ROOT, 'src/main/java/hu/taliann/icesmp/items/CatalystItemFactory.java')).read()
     for job, mat, _n, cmd in re.findall(r'JobType\.(\w+), new CatalystTheme\(\s*Material\.(\w+), "(.*?)",\s*(\d{4})', src, re.S):
         entries.append((mat, int(cmd), 'catalyst_' + job.lower()))
@@ -399,6 +410,36 @@ def collect():
     for cid, cv in (crates.get('crates') or crates).items():
         if isinstance(cv, dict) and cv.get('key-custom-model-data'):
             entries.append((cv.get('key-material', 'TRIPWIRE_HOOK'), cv['key-custom-model-data'], 'key_' + cid))
+    # bolt-különlegességek (faction-shops items custom-model-data) + nevesített loot-dropok
+    eco = yaml.safe_load(open(os.path.join(CFG, 'economy.yml')))
+    def walk_shop(node):
+        if isinstance(node, dict):
+            if node.get('custom-model-data') and node.get('material'):
+                yield node
+            for v in node.values():
+                yield from walk_shop(v)
+    seen_shop = set()
+    for it in walk_shop(eco.get('faction-shops', {})):
+        cmd = it['custom-model-data']
+        if cmd not in seen_shop:
+            seen_shop.add(cmd)
+            entries.append((it['material'], cmd, 'shop_%d' % cmd))
+    loot = yaml.safe_load(open(os.path.join(CFG, 'loot.yml')))
+    def walk_loot(node):
+        if isinstance(node, dict):
+            if node.get('type') == 'named' and node.get('custom-model-data'):
+                yield node
+            for v in node.values():
+                yield from walk_loot(v)
+        elif isinstance(node, list):
+            for v in node:
+                yield from walk_loot(v)
+    seen_loot = set()
+    for it in walk_loot(loot):
+        cmd = it['custom-model-data']
+        if cmd not in seen_loot:
+            seen_loot.add(cmd)
+            entries.append((str(it['item']), cmd, 'loot_%d' % cmd))
     recipes = yaml.safe_load(open(os.path.join(CFG, 'profession-recipes.yml')))['profession-recipes']
     for rid, v in recipes.items():
         res = v.get('result') or {}
@@ -410,6 +451,14 @@ def collect():
 # ------------------------------------------------------- special fallbacks ---
 def vanilla_model(name):
     return {'type': 'minecraft:model', 'model': 'minecraft:item/' + name}
+
+
+def vanilla_fallback(mat):
+    """A cache-elt VALÓDI vanilla definíció model-ága; ha nincs, közelítő fallback."""
+    path = os.path.join(VANILLA_CACHE, mat.lower() + '.json')
+    if os.path.isfile(path):
+        return json.load(open(path))['model']
+    return special_fallback(mat)
 
 
 def special_fallback(mat):
@@ -484,7 +533,7 @@ def main():
     for mat, lst in by_material.items():
         lst.sort()
         sel = {'model': {'type': 'minecraft:range_dispatch', 'property': 'minecraft:custom_model_data',
-                         'fallback': special_fallback(mat),
+                         'fallback': vanilla_fallback(mat),
                          'entries': [{'threshold': cmd,
                                       'model': {'type': 'minecraft:model', 'model': 'icesmp:item/' + tex}}
                                      for cmd, tex in lst]}}

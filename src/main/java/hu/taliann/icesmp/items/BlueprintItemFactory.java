@@ -45,6 +45,7 @@ public final class BlueprintItemFactory {
                 Component.text("(Craftoláshoz " + recipe.level() + ". szakma-szint is kell.)", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false)));
         meta.getPersistentDataContainer().set(recipeKey, PersistentDataType.STRING, recipe.id());
+        meta.setCustomModelData(6210); // resource pack horog — docs/RESOURCE_PACK_CMD.md
         item.setItemMeta(meta);
         return item;
     }

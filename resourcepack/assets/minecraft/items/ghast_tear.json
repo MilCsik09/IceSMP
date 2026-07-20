@@ -8,6 +8,13 @@
   },
   "entries": [
    {
+    "threshold": 5302,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/capture_necro"
+    }
+   },
+   {
     "threshold": 6029,
     "model": {
      "type": "minecraft:model",

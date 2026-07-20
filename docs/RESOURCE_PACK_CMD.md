@@ -13,10 +13,10 @@ A `tools/build_resourcepack.py` ebből a regiszterből legenerálja a teljes pac
 A generált textúra placeholder — bármelyik felülírható kézzel rajzolttal a
 `resourcepack/assets/icesmp/textures/item/` alatt (a fájlnév tartása mellett).
 
-**Kivétel (vanilla kinézetű marad):** a COMPASS / RECOVERY_COMPASS / TRIDENT vanilla
-item-definíciója speciális (tű-animáció, dobás-állapot), ezeket a pack nem írja felül —
-érintett CMD-k: 6104 (Mélységi Iránytű), 6416 (Tárnatájoló), 6424 (Felépülés Iránytűje),
-6319/6337/6376 (szigonyok).
+**Nincs kivétel:** minden material-kapcsoló fallbackje a VALÓDI vanilla item-definíció
+(`tools/vanilla_items/` cache, forrás: mcmeta tükör `1.21.11-assets`) — az iránytű
+tű-animációja, a szigony kézben-3D-je, az elytra törött-állapota és a bőr-itemek
+festék-színezése is bitpontosan megmarad a nem-CMD-s példányokon.
 
 ## Kiosztott tartományok
 
@@ -24,11 +24,16 @@ item-definíciója speciális (tű-animáció, dobás-állapot), ezeket a pack n
 |---|---|---|
 | 1001–1004 | Frakció-valuta veretek | `CurrencyType` enum |
 | 1010 | Kopott erszény | `MoneyPouchItemFactory` |
-| 4101 | Relikviák | `RelicManager` / `relics.yml` |
+| 4101, 4201–4205 | Relikviák (7 db) | `RelicManager` / `relics.yml` |
 | 5201–5213 | Kaszt-katalizátorok | `CatalystItemFactory` |
+| 5301–5302 | Pet-befogó eszközök | `CaptureItemFactory` |
+| 5401 | Ostromágyú | `SiegeWeaponFactory` |
+| 6210 | Recept-tervrajz | `BlueprintItemFactory` |
 | 6000–6199 | Unique szakma-anyagok | `profession-materials.yml` |
 | 6201–6202 | Láda-kulcsok | `crates.yml` |
-| 6300–6499 | Nevesített recept-tárgyak | `profession-recipes.yml` (`result.custom-model-data`) |
+| 6300–6438 | Nevesített recept-tárgyak | `profession-recipes.yml` (`result.custom-model-data`) |
+| 6450–6451 | Bolt-különlegességek (feketepiac) | `economy.yml` (`custom-model-data`) |
+| 6460–6463 | Nevesített loot-dropok | `loot.yml` (`custom-model-data`) |
 
 ## 1001–1010 — Pénz-tárgyak
 
@@ -40,11 +45,36 @@ item-definíciója speciális (tű-animáció, dobás-állapot), ezeket a pack n
 | 1004 | Csontveret (DARK veret) | PAPER |
 | 1010 | Kopott erszény | LEATHER |
 
-## 4101 — Relikviák
+## 4101, 4201–4205 — Relikviák
 
 | CMD | Item | Material |
 |---|---|---|
-| 4101 | A Mételytépő (relikvia) | GOLDEN_AXE |
+| 4101 | A Mételytépő | GOLDEN_AXE |
+| 4201 | Főnix-szárny | ELYTRA |
+| 4202 | Zúzmara-szárny | ELYTRA |
+| 4203 | Vándorszél | ELYTRA |
+| 4204 | Csontszárny | ELYTRA |
+| 4205 | Eleftheria Könnye | HEART_OF_THE_SEA |
+
+## 5301–5401, 6210 — Rendszer-itemek
+
+| CMD | Item | Material | Forrás |
+|---|---|---|---|
+| 5301 | Ősi Kötés Póráza (Vadmester befogó) | LEAD | CaptureItemFactory |
+| 5302 | Sötét Paktum-tekercs (Nekromanta befogó) | GHAST_TEAR | CaptureItemFactory |
+| 5401 | Ostromágyú | TNT_MINECART | SiegeWeaponFactory |
+| 6210 | Recept-tervrajz | KNOWLEDGE_BOOK | BlueprintItemFactory |
+
+## 6450–6463 — Bolt-különlegességek és nevesített loot
+
+| CMD | Item | Material | Forrás |
+|---|---|---|---|
+| 6450 | Bokic-menti Sétapálca | STICK | economy.yml (feketepiac) |
+| 6451 | Hamisított Menlevél | PAPER | economy.yml (feketepiac) |
+| 6460 | A Hetedik Vérháború Rozsdás Pengéje | IRON_SWORD | loot.yml (named) |
+| 6461 | Megrontott Elit Páncél | CHAINMAIL_CHESTPLATE | loot.yml (named) |
+| 6462 | Fekete Csont | BONE | loot.yml (named) |
+| 6463 | A Néma Királynő Suttogása | NETHERITE_SWORD | loot.yml (named) |
 
 ## 5201–5213 — Kaszt-katalizátorok
 

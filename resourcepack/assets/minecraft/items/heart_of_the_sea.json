@@ -8,6 +8,13 @@
   },
   "entries": [
    {
+    "threshold": 4205,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/relic_eleftheria_konnye"
+    }
+   },
+   {
     "threshold": 6301,
     "model": {
      "type": "minecraft:model",

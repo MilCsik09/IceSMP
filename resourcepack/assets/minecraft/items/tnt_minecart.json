@@ -1,0 +1,19 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/tnt_minecart"
+  },
+  "entries": [
+   {
+    "threshold": 5401,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/siege_cannon"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,48 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "fallback": {
+   "type": "minecraft:condition",
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/elytra"
+   },
+   "on_true": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/elytra_broken"
+   },
+   "property": "minecraft:broken"
+  },
+  "entries": [
+   {
+    "threshold": 4201,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/relic_phoenix_wing"
+    }
+   },
+   {
+    "threshold": 4202,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/relic_frost_wing"
+    }
+   },
+   {
+    "threshold": 4203,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/relic_wander_wind"
+    }
+   },
+   {
+    "threshold": 4204,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/relic_bone_wing"
+    }
+   }
+  ]
+ }
+}

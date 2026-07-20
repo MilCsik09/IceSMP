@@ -4,15 +4,15 @@
   "property": "minecraft:custom_model_data",
   "fallback": {
    "type": "minecraft:condition",
-   "property": "minecraft:using_item",
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/goat_horn"
+   },
    "on_true": {
     "type": "minecraft:model",
     "model": "minecraft:item/tooting_goat_horn"
    },
-   "on_false": {
-    "type": "minecraft:model",
-    "model": "minecraft:item/goat_horn"
-   }
+   "property": "minecraft:using_item"
   },
   "entries": [
    {

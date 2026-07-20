@@ -66,6 +66,7 @@ public final class CaptureItemFactory {
                 MINI.deserialize(spec).decoration(TextDecoration.ITALIC, false)));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         meta.getPersistentDataContainer().set(captureKey, PersistentDataType.STRING, tag);
+        meta.setCustomModelData("beast".equals(tag) ? 5301 : 5302); // docs/RESOURCE_PACK_CMD.md
         item.setItemMeta(meta);
         return item;
     }

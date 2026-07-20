@@ -189,6 +189,10 @@ public final class MobLootListener implements Listener {
                         }
                         meta.lore(lore);
                     }
+                    final int namedCmd = toInt(chosen.get("custom-model-data"), 0);
+                    if (namedCmd > 0) {
+                        meta.setCustomModelData(namedCmd); // docs/RESOURCE_PACK_CMD.md
+                    }
                     item.setItemMeta(meta);
                 }
                 return affixService.roll(item, tier, false);

@@ -20,6 +20,13 @@
      "type": "minecraft:model",
      "model": "icesmp:item/u_pergamen_simito"
     }
+   },
+   {
+    "threshold": 6462,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/loot_6462"
+    }
    }
   ]
  }

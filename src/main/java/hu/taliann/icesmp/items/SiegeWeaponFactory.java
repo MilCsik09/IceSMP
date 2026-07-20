@@ -44,6 +44,7 @@ public final class SiegeWeaponFactory {
         ));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(siegeKey, PersistentDataType.BOOLEAN, true);
+        meta.setCustomModelData(5401); // resource pack horog — docs/RESOURCE_PACK_CMD.md
         itemStack.setItemMeta(meta);
         return itemStack;
     }

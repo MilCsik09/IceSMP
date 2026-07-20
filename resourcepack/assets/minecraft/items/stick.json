@@ -20,6 +20,13 @@
      "type": "minecraft:model",
      "model": "icesmp:item/r_vandorbot"
     }
+   },
+   {
+    "threshold": 6450,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/shop_6450"
+    }
    }
   ]
  }

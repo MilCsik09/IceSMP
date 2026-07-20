@@ -4,7 +4,13 @@
   "property": "minecraft:custom_model_data",
   "fallback": {
    "type": "minecraft:model",
-   "model": "minecraft:item/potion"
+   "model": "minecraft:item/potion",
+   "tints": [
+    {
+     "type": "minecraft:potion",
+     "default": -13083194
+    }
+   ]
   },
   "entries": [
    {

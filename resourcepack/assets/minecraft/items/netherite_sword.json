@@ -48,6 +48,13 @@
      "type": "minecraft:model",
      "model": "icesmp:item/r_zhoris_langnyelve"
     }
+   },
+   {
+    "threshold": 6463,
+    "model": {
+     "type": "minecraft:model",
+     "model": "icesmp:item/loot_6463"
+    }
    }
   ]
  }
