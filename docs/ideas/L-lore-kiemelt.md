@@ -819,7 +819,7 @@ kereskedése emlékezetesebb, aki figyeli a piacot, nagyot nyerhet/veszíthet, a
 generál.
 **Építőkövek:** `ExchangeRateService`, B33 szezonzáró esemény-ütemezés (előfeltétel).
 **Buktatók:** Csak B33 mellett teljes az élménye — önállóan is működik, de a hatás kisebb.
-### G6. Becsület-párbaj a bűn tisztítására
+### G6. Becsület-párbaj a bűn tisztítására `[KÉSZ ✅]`
 
 > **Lore-horgony:** a bűn/vezeklés-rendszer becsület-útja (kódex VII. — Kitaszítottak)
 
@@ -836,7 +836,7 @@ sértett fél dönthet, elfogadja-e az „elégtételt", ahelyett hogy csak vár
 **Építőkövek:** SinManager, B2 duel-infra (escrow nélkül).
 **Buktatók:** exploit-veszély, ha a bűnös a saját alt/haverja ellen "veszít" szándékosan
 bűntisztázásért — érdemes napi/heti limitet szabni rá.
-### G14. Kém-mechanika: álca a LibsDisguises-hídon
+### G14. Kém-mechanika: álca a LibsDisguises-hídon `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Suttogók álca-motívuma nyílt kém-mechanikaként (kódex VII.)
 
@@ -873,7 +873,7 @@ mindig a céljátékos saját régió-szálán fusson.
 **Miért jó:** Olcsó „élő világ" réteg, ami a Gyógynövényész-t is bekapcsolja a szezon-ritmusba (eddig csak a druida spellek reagáltak rá) — a gyűjtögető ritmusa illeszkedik a világ ritmusához.
 **Építőkövek:** Világesemény-getterek (Bőség-idő állapot), `ProfessionXpListener`, `ConfigManager`.
 **Buktatók:** A szorzó csak a HARVEST eseményre hasson, ne a sima blokk-törésre (különben Favágó/Bányász is véletlenül bónuszt kapna).
-### I16. Szakma-céh heti közös cél
+### I16. Szakma-céh heti közös cél `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Céhek Öröksége — céh-közösségi célok (kódex VIII.)
 

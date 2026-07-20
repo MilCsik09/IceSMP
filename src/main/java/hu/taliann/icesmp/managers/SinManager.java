@@ -114,6 +114,14 @@ public final class SinManager {
      *
      * @param player the executed player
      */
+    /** G6 — becsület-párbaj: bűnpont-csökkentés (0 alá nem megy). */
+    public int reduceSin(final Player player, final int amount) {
+        final int current = getSinCount(player);
+        final int reduced = Math.max(0, current - Math.max(0, amount));
+        player.getPersistentDataContainer().set(sinKey, org.bukkit.persistence.PersistentDataType.INTEGER, reduced);
+        return reduced;
+    }
+
     public void resetSinCount(final Player player) {
         if (player != null) {
             player.getPersistentDataContainer().set(sinCountKey, PersistentDataType.INTEGER, 0);

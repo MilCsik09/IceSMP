@@ -332,3 +332,20 @@ guilds:
   xp-per-quest: 10
   level-base-xp: 500
   level-increment: 250
+
+# ===== G6 — Becsület-párbaj: beleegyezéses elégtétel a bűnökért =====
+honor-duel:
+  enabled: true
+  window-seconds: 180
+  weekly-limit: 2
+
+# ===== G14 — Kém-álca (LibsDisguises soft-depend): információs játék, nem harci előny =====
+spy:
+  enabled: true
+  duration-seconds: 60
+  cooldown-minutes: 15
+  fake-names:
+    red: "Parazstestvér"
+    blue: "Hófivér"
+    neutral: "Vándor"
+    dark: "Némavándor"

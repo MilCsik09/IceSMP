@@ -29,6 +29,13 @@ import java.util.Map;
  */
 public final class SinListener implements Listener {
 
+    /** G6 — setter-injektált: a beleegyezéses becsület-párbaj kill-kizárása. */
+    private volatile hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
+
+    public void setHonorDuelManager(final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager) {
+        this.honorDuelManager = honorDuelManager;
+    }
+
     private final JavaPlugin plugin;
     private final SinManager sinManager;
     private final RaidManager raidManager;
@@ -82,6 +89,21 @@ public final class SinListener implements Listener {
                                 : "<gray>⚔ Szentesített raid-ölés, de a raid-zónán kívül — nem ér pontot.</gray>",
                         Map.of("faction", killerFaction.getDisplayName())
                 ));
+            }, null);
+            return;
+        }
+
+        // G6 — becsület-párbaj: a beleegyezéses párbaj-ölés NEM bűn és NEM vérdíj-eset;
+        // a győztes bűnös egy bűnpontot veszít (a settleKill intézi). A kill a victim szálán fut,
+        // a settleKill csak konkurens mapeket + a KILLER PDC-jét érinti a killer szál-hopja után.
+        final hu.taliann.icesmp.managers.HonorDuelManager duelRef = honorDuelManager;
+        if (duelRef != null && duelRef.isDuelPair(killer.getUniqueId(), victim.getUniqueId())) {
+            killer.getScheduler().run(plugin, task -> {
+                if (duelRef.settleKill(killer, victim)) {
+                    killer.sendMessage(messageManager.getMessage(
+                            "duel-honor-won",
+                            "<gold>⚔ A becsület-párbaj a tiéd — egy bűnöd letörölve. <gray>A sértett fél elégtételt kapott.</gray></gold>"));
+                }
             }, null);
             return;
         }

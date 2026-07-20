@@ -35,6 +35,13 @@ import java.util.Set;
  */
 public final class ProfessionXpListener implements Listener {
 
+    /** I16 — setter-injektált: szakma-céh heti közös cél számlálója. */
+    private volatile hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoal;
+
+    public void setWeeklyGoal(final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoal) {
+        this.weeklyGoal = weeklyGoal;
+    }
+
     private static final Set<Material> CROPS = EnumSet.of(
             Material.WHEAT, Material.CARROTS, Material.POTATOES, Material.BEETROOTS,
             Material.NETHER_WART, Material.SWEET_BERRY_BUSH, Material.COCOA
@@ -97,6 +104,11 @@ public final class ProfessionXpListener implements Listener {
         final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
         professionManager.addXpFor(player, profession, totalXp);
+        // I16 — a termelt XP a szakma-céh heti közös célját is tölti.
+        final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
+        if (weeklyRef != null) {
+            weeklyRef.add(player, profession, totalXp);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

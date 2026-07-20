@@ -221,3 +221,10 @@ kattintsd rá** a fegyverre/íjra/mellvértre a táskádban: a véset a tárgyba
 állandó bónuszt ad (pl. +sebzés, gyújtás-esély, sebzés-csillapítás, több erszény-drop).
 **Egy tárgy — egy rúna**, és a véset nem cserélhető: gondold meg, mire teszed! A rúna a
 tárgy ritkaságától FÜGGETLEN — a legendás pengére is ér, meg a kezdő vaskardra is.
+
+## Szakma-céh heti közös cél ⚒
+
+Az azonos szakmát űzők — frakciótól függetlenül — **közös heti célt** töltenek: minden
+megtermelt szakma-XP a céh számlálójába is beszámít. Az állást a `/szakmacel` mutatja.
+Ha a cél teljesül, a hét fordulásakor minden érdemi hozzájáruló **+300 szakma-XP-t** kap
+(ha épp nem vagy fent, belépéskor érkezik). A Bányászok végre egy zászló alatt!

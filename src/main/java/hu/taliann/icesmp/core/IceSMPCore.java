@@ -218,6 +218,9 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
     private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
     private final hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
+    private final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
+    private final hu.taliann.icesmp.managers.SpyManager spyManager;
+    private final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager professionWeeklyGoalManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -339,6 +342,9 @@ public final class IceSMPCore {
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
         this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(plugin, configManager, jobManager, relicManager);
+        this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager);
+        this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager);
+        this.professionWeeklyGoalManager = new hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager(plugin, configManager, professionManager, messageManager);
         resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // E25/E32 — pool-bónuszok
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // E25 — pakt-oltár
         hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // E1 — statikus híd
@@ -491,7 +497,8 @@ public final class IceSMPCore {
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
                 moderationManager, chronicleManager, corruptionManager, seasonFinaleManager,
                 seasonMonumentManager, hiddenSpotManager,
-                guildManager);
+                guildManager,
+                professionWeeklyGoalManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -1003,6 +1010,7 @@ public final class IceSMPCore {
                     archeologyManager.tick();
                     seasonFinaleManager.tick();
             playerCaravanManager.tick();
+            professionWeeklyGoalManager.tick();
                     strangerNpcManager.tick();
                     hiddenSpotManager.tick();
                 },
@@ -1145,6 +1153,12 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.BestiaryCommand(bestiaryManager, professionRecipeCatalog, territoryManager, messageManager));
         plugin.registerCommand("soulforge", "Lélek-kovács — a Nekromanta minion-fejlesztései", List.of("lelekkovacs"),
                 new hu.taliann.icesmp.commands.SoulforgeCommand(soulforgeManager, soulShardManager, messageManager));
+        plugin.registerCommand("parbaj", "Becsület-párbaj — elégtétel a bűnökért", List.of("duel"),
+                new hu.taliann.icesmp.commands.HonorDuelCommand(plugin, honorDuelManager, messageManager));
+        plugin.registerCommand("kem", "Kém-álca — rövid felderítő álöltözet", List.of("spy"),
+                new hu.taliann.icesmp.commands.SpyCommand(spyManager, messageManager));
+        plugin.registerCommand("szakmacel", "Szakma-céhek heti közös céljai", List.of("weeklygoal"),
+                new hu.taliann.icesmp.commands.ProfessionWeeklyCommand(professionWeeklyGoalManager, messageManager));
         plugin.registerCommand("claim", "Terület-claim parancsok", List.of("birtok"), new hu.taliann.icesmp.commands.ClaimCommand(claimManager, currencyManager, messageManager));
         final EventsCommand eventsCommand = new EventsCommand(seasonManager, bloodMoonManager, worldBossManager, invasionManager, caravanManager, ambientEventManager, gatheringBuffManager, treasureEventManager, wildHuntManager, abundanceManager, serverChallengeManager, escortManager, meteorEventManager, introManager, messageManager);
         eventsCommand.setStrangerNpcManager(strangerNpcManager);
@@ -1200,6 +1214,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager, afkManager), plugin);
         final ProfessionXpListener professionXpListener = new ProfessionXpListener(professionManager, configManager, talentManager, afkManager);
         professionXpListener.setAbundanceManager(abundanceManager);
+        professionXpListener.setWeeklyGoal(professionWeeklyGoalManager); // I16 — heti közös cél
         pluginManager.registerEvents(professionXpListener, plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, itemRarityService), plugin);
@@ -1227,6 +1242,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(runeEffectListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager), plugin);
         pluginManager.registerEvents(resourceBonusService, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpyRevealListener(plugin, spyManager), plugin);
+        pluginManager.registerEvents(professionWeeklyGoalManager, plugin);
         pluginManager.registerEvents(new org.bukkit.event.Listener() {
             // B6 — a szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
             @org.bukkit.event.EventHandler
@@ -1269,7 +1286,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
-        pluginManager.registerEvents(new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager), plugin);
+        final SinListener sinListener = new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager);
+        sinListener.setHonorDuelManager(honorDuelManager); // G6 — párbaj-kill kizárás
+        pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

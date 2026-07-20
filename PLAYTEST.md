@@ -1126,6 +1126,25 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Horgász-szerencse:** ~4% eséllyel a fogás mellé iszapba veszett Kopott erszény
         akad (5-15 összeggel, véletlen valutával); AFK-jelöltnek nem jár. Kulcsok:
         `fishing-windfall.*`.
+- [ ] **G6 — Becsület-párbaj (ÚJ):**
+  - [ ] `/parbaj kihiv <név>` (CSAK bűnös ajánlhat) → `/parbaj elfogad|elutasit`; elfogadáskor
+        3 perces ablak; a párbaj-kill NEM termel bűnt és NEM fizet vérdíjat (SinListener-kizárás
+        a bounty ELŐTT); ha a bűnös nyer → -1 bűnpont (SinManager.reduceSin).
+  - [ ] Heti limit (2, PDC-ben, ELFOGADÁSKOR fogy — alt-exploit fék); kilépéskor állapot-takarítás.
+        Kulcsok: factions.yml `honor-duel.*`.
+- [ ] **G14 — Kém-álca (ÚJ, LibsDisguises soft-depend):**
+  - [ ] `/kem <célfrakció>`: 60 mp-es hamis nevű játékos-álca (SpyDisguise reflexiós híd,
+        PlayerDisguise); frakciónkénti álnevek (`spy.fake-names.*`); 15 perc cooldown (PDC).
+  - [ ] Korlátok: aktív raid alatt nem indítható; BÁRMILYEN PvP-találat (adott VAGY kapott)
+        azonnal lebuktat (SpyRevealListener, támadó-oldalon régió-hoppal); a bűn-szabályok
+        az álca alatt is élnek. LibsDisguises nélkül tiszta hibaüzenet.
+- [ ] **I16 — Szakma-céh heti közös cél (ÚJ):**
+  - [ ] Globális, frakció-független heti számláló szakmánként (egység = termelt szakma-XP;
+        AtomicLong + concurrent mapek); `/szakmacel` mutatja az állást; perzisztens
+        (profession-weekly.yml).
+  - [ ] Hét fordulásakor: elért cél → broadcast + a küszöb (100) feletti hozzájárulók +300
+        szakma-XP-t kapnak — online azonnal (saját régió-szálon), offline belépéskor
+        (perzisztált függő jutalom). Kulcsok: professions.yml `profession-weekly.*`.
 - [ ] **E25 — Pakt-oltár (Boszorkánymester, ÚJ):**
   - [ ] Új rituálé-típus: `pakt` (relics.yml `pakt_oltar` — SOUL_LANTERN mag, obszidián-alap);
         csak WARLOCK kaszt, NEM halmozható; ára 1× Első Csend Szilánkja a táskából.

@@ -80,3 +80,12 @@ egy kihirdetett **őrzőpontra** kerül (mindenki látja a koordinátákat!), é
 - Saját frakciós „baleset" esetén a rakomány **elvész** — ne álljatok a saját karaván útjába!
 
 Kockázat és jutalom: minél nagyobb a rakomány, annál édesebb célpont. Gyűjtsd a védőket!
+
+## Becsület-párbaj és kém-álca ⚔🕵
+
+- **Becsület-párbaj:** ha bűnös vagy, elégtételt ajánlhatsz: `/parbaj kihiv <név>`. Ha a sértett
+  elfogadja (`/parbaj elfogad`), 3 perces, beleegyezéses párbaj indul — **nem termel bűnt**, és
+  ha a bűnös nyer, **egy bűnpontja letörlődik**. Hetente legfeljebb kétszer.
+- **Kém-álca:** `/kem <célfrakció>` — 60 másodpercre álnevet öltesz (felderítéshez!). Raid alatt
+  nem megy, és **egyetlen ütés — adott vagy kapott — azonnal lebuktat**. Az álca a bűn alól nem
+  ment fel: a lopás lopás marad.

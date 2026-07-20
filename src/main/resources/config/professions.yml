@@ -42,3 +42,20 @@ professions:
   specialization:
     # A szakma ezen a szinten specializálódhat (/spec choose).
     required-level: 25
+
+# ===== I16 — Szakma-céh heti közös cél (globális, frakció-független) =====
+# Egység = a termelt szakma-XP; a hét fordulásakor az elért célok küszöb feletti
+# hozzájárulói reward-xp szakma-XP-t kapnak (offline belépéskor). /szakmacel mutatja.
+profession-weekly:
+  enabled: true
+  reward-xp: 300
+  min-contribution: 100
+  goals:
+    miner: 5000
+    herbalist: 4000
+    lumberjack: 4000
+    armorer: 5000
+    alchemist: 3500
+    enchanter: 3500
+    fisherman: 3000
+    cook: 3000
