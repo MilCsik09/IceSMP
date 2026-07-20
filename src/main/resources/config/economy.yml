@@ -30,6 +30,24 @@ currency:
     duration-hours: 48
     min-multiplier: 1.2
     max-multiplier: 1.6
+    # F13 — Piaci pánik: az események panic-chance része LEFELÉ sokk (a valuta x0.6-0.8-ra
+    # zuhan) — a felfelé sokk tükörpárja, saját broadcast-tal. 0 = soha nincs pánik.
+    panic-chance: 0.35
+    panic-min-multiplier: 0.6
+    panic-max-multiplier: 0.8
+    # F15 — a B33 végítélet-hét alatt sűrűbb (chance ×), hevesebb (kilengés ×) és rövidebb
+    # (duration ÷) sokkok — a szezonzárás gazdasági dráma-rétege.
+    finale-chance-mult: 3.0
+    finale-amplitude-mult: 1.5
+    finale-duration-div: 4
+  # F14 — Konjunktúra: ritka, rövid ablak, amíg EGY valutában a piaci eladási díj a normál
+  # market.fee-percent helyett a lenti fee-percent (kevesebb pénz ég el — pörög a kereskedés).
+  # Szigorúan ritkán: a díj a gazdaság fő pénz-nyelője.
+  market-boom:
+    enabled: true
+    chance-percent: 12
+    duration-minutes: 30
+    fee-percent: 5.0
   dynamic-exchange:
     enabled: true
     reference-supply: 10000

@@ -155,6 +155,10 @@ korszakról korszakra bővül a bajnokok és hőseik listája.
 > 🍂 **Évszakok:** a világ a valós évszakokra is rezonál — télen sűrűbb a vérhold és a Vad
 > Hajsza, nyáron gyakoribb a Bőség-idő és a gyűjtögető-láz. Figyeld a naptárat!
 
+> ℹ️ **Fontos: a szezonzárás NEM wipe!** Egyedül a **liga-pontok** nullázódnak (új bajnoki
+> évad indul). A szinted, a tárgyaid, a pénzed, a bázisod, a claimjeid, a talentjeid, a
+> szakmáid — MINDEN megmarad. A szezon csak a frakciók közti verseny ciklusa, nem a világé.
+
 ## A világ hangjai 🕯
 
 - **Korszakváltás:** szezonzáráskor a krónikások **rövid történetben** búcsúztatják a letűnt

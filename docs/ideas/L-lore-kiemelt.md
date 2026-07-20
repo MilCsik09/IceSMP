@@ -745,11 +745,15 @@ territórium bejárása) — inkrementálisan, kategóriánként érdemes beveze
 ---
 
 [← Ötlettár-index](../IDEAS.md)
-### F13. Piaci pánik esemény
+### F13. Piaci pánik esemény `[KÉSZ ✅]`
 
 > **Lore-horgony:** „a pénz értéke a világ állapotát követi" — a pánik mint kánon-esemény (kódex VIII.)
 
 🟡 • ⭐⭐
+
+> **Megvalósítva:** EconomyEventManager — a sorsolt esemény `panic-chance` (35%)
+> eséllyel LEFELÉ sokk (x0.6-0.8), saját broadcast/lecsengés-üzenettel.
+> Config: `currency.economy-event.panic-*`.
 
 **Mi ez:** Ritka világesemény, ami egy véletlen valuta árfolyamát átmenetileg leveri — a
 meglévő kereslet-sokk (felfelé mozgás) tükörpárja.
@@ -763,11 +767,14 @@ terepet teremt.
 **Építőkövek:** `ExchangeRateService` kereslet-sokk logikája (tükrözve).
 **Buktatók:** Túl gyakori/durva pánik random-frusztrálónak érződhet — kis valószínűség és jól
 látható broadcast kell, nehogy „láthatatlan büntetésként" éljék meg.
-### F14. Konjunktúra esemény
+### F14. Konjunktúra esemény `[KÉSZ ✅]`
 
 > **Lore-horgony:** ugyanaz a kánon-mondat — a konjunktúra a jó idők lenyomata (kódex VIII.)
 
 🟢 • ⭐
+
+> **Megvalósítva:** EconomyEventManager boom-ablak + MarketManager díj-felülbírálás —
+> ritkán fél órára egy valutában 5% az eladási díj. Config: `currency.market-boom.*`.
 
 **Mi ez:** A piaci pánik (F13) pozitív párja: időszakos „fellendülés", amikor egy valutában
 ideiglenesen csökken a piaci eladási díj (nem az árfolyam).
@@ -781,11 +788,14 @@ hangulati elem.
 **Építőkövek:** `MarketManager` díjszámítás, esemény-ütemező minta.
 **Buktatók:** Az alacsonyabb díj rövid távon kevesebb sinket jelent — gyakoriságban szigorúan
 korlátozva kell tartani, hogy ne törje meg az inflációs egyensúlyt.
-### F15. Szezonzáró árfolyam-sokk
+### F15. Szezonzáró árfolyam-sokk `[KÉSZ ✅]`
 
 > **Lore-horgony:** a Korszakok lapfordulása az árfolyamban (kódex VIII.)
 
 🟢 • ⭐⭐
+
+> **Megvalósítva:** a Végítélet-hét (B33) alatt a sokk-esély ×3, a kilengés ×1.5, a
+> hossz ÷4 (`currency.economy-event.finale-*` — a SeasonFinaleManager-hez kötve).
 
 **Mi ez:** A szezon utolsó napjaiban (a B33 „végítélet-hét" gazdasági rétege) minden valuta
 árfolyama felgyorsult ütemben, láthatóan ingadozik.

@@ -89,6 +89,13 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
   bűnök súlya a Kitaszítottak közé taszíthatja.
 - **Kereslet-sokk** (időnként): egy véletlen valuta értéke átmenetileg **megugrik** (x1,2–1,6) —
   ezt egy üzenet jelzi mindenkinek. Jó alkalom kereskedni!
+- **Piaci pánik** (a sokk tükörpárja): ritkábban egy valuta értéke átmenetileg **lezuhan**
+  (x0,6–0,8) — aki ilyenkor mer vásárolni, a normalizálódáskor nyerhet rajta. A piac
+  kétirányú: nemcsak felfelé mozog!
+- **Konjunktúra** (rövid fellendülés): időnként egy valutában **fél órára feleannyi a piaci
+  eladási díj** (10% helyett 5%) — üzenet jelzi, mikor éri meg igazán adni-venni.
+- **Szezonzáró tőzsdeláz:** a szezon utolsó hetében (Végítélet-hét) a sokkok **sűrűbbek,
+  hevesebbek és rövidebbek** — aki figyeli a piacot, nagyot nyerhet (vagy veszíthet).
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
 - **Frakció-boltok:** a fővárosokban álló **bolt-NPC-kre jobb-kattintva** egy vásárló felület
   nyílik — fix áron vehetsz alapanyagot/fogyóeszközt a banki egyenlegedből. A kifizetett pénz

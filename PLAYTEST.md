@@ -1040,6 +1040,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       oltárt (CRYING_OBSIDIAN mag + 3×3 obszidián talp, áldozat: 8 ametiszt + 1 ghast-könny)
       → SHIFT+jobb-katt → minden viselt/kézben tartott átok megtörik, a tárgy megmarad.
       Kulcsok: `item-rarity.cursed.*`, rituálé: `rituals.atok_tores`.
+- [ ] **F13/F14/F15 Gazdasági események (ÚJ — Tier A):** a kereslet-sokk mellett most
+      **pánik** is jöhet (~35% eséllyel a sorsolt esemény lefelé üt: x0.6-0.8, piros
+      broadcast, a lecsengése „A pánik elült…"); **konjunktúra**: ritkán fél órára egy
+      valutában 10%→5% a piaci eladási díj (broadcast nyit/zár; a díj-kedvezmény azonnal él
+      az eladás-jóváírásnál); **finálé-tőzsdeláz**: a Végítélet-hét alatt a sokkok esélye ×3,
+      kilengése ×1.5, hossza ÷4. Kulcsok: `currency.economy-event.panic-*` / `finale-*`,
+      `currency.market-boom.*`. A szezonzárás továbbra sem wipe — csak a liga-pontok nullázódnak.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` — tab-complete
       mind a négy típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,

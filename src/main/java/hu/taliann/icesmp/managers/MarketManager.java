@@ -423,13 +423,28 @@ public final class MarketManager implements PersistentStore {
         }
     }
 
-    /** Credits the seller the sale amount minus the configured burn fee. */
+    /** Credits the seller the sale amount minus the configured burn fee.
+     * F14 — konjunktúra alatt az érintett valutában a díj a csökkentett érték
+     * (EconomyEventManager.marketFeeOverride), amíg az ablak él. */
     private void creditSellerShare(final UUID seller, final CurrencyType currency, final double amount) {
-        final double feePercent = Math.max(0.0D, Math.min(100.0D, configManager.getDouble("market.fee-percent", 10.0D)));
+        Double override = null;
+        final EconomyEventManager economyRef = economyEventManager;
+        if (economyRef != null) {
+            override = economyRef.marketFeeOverride(currency);
+        }
+        final double feePercent = override != null ? override
+                : Math.max(0.0D, Math.min(100.0D, configManager.getDouble("market.fee-percent", 10.0D)));
         final double sellerShare = amount * (1.0D - (feePercent / 100.0D));
         if (sellerShare > 0.0D) {
             currencyManager.addToBalance(seller, currency, sellerShare);
         }
+    }
+
+    /** F14: setterrel kötve (az esemény-manager a piac után épülhet a DI-sorrendben). */
+    private volatile EconomyEventManager economyEventManager;
+
+    public void setEconomyEventManager(final EconomyEventManager economyEventManager) {
+        this.economyEventManager = economyEventManager;
     }
 
     /**

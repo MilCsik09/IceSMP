@@ -421,6 +421,9 @@ public final class IceSMPCore {
         // B54 — Átkozott felszerelés: curse-stamp a boss-lootra + Átok-törés az oltárnál.
         this.cursedGearService = new hu.taliann.icesmp.managers.CursedGearService(plugin, configManager);
         ritualManager.setCursedGearService(cursedGearService);
+        // F13/F14/F15 — gazdasági események: pánik-ág + konjunktúra díj-ablak + finálé-sokkok.
+        marketManager.setEconomyEventManager(economyEventManager);
+        economyEventManager.setSeasonFinale(seasonFinaleManager);
         // A quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
         // (mindkét célosztály a DI-sorrendben korábban épül).
         questManager.setStatsManager(statsManager);
