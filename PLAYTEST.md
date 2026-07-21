@@ -1479,3 +1479,17 @@ Jó tesztelést! ❄️
       jön a horgony-mód, végül a játékos-fallback.
 - [ ] N26 kegyelem-mechanika TULAJ-DÖNTÉSSEL ELVETVE (se gyengébb boss, se buff) —
       ismétlődés ellen a horgony-rotáció + hely-horgony véd.
+
+## N25b — Kultista esemény (ÚJ, teszter-ötlet + lore)
+- [ ] Három változat súlyozott sorsolással (cultists.variant-weights): TÁMADÁS (4 fős
+      portya — akolitus + pengék; az utolsó leölése broadcast-tal zár), RÍTUS (3 hív
+      kört áll, SOUL-particle + kántálás-hang; rite-minutes [6] alatt MINDET le kell
+      ölni → rite-loot hullik; különben a rítus beteljesül és rite-corruption-chance
+      [60%] eséllyel RONTÁS-GÓC nyílik a helyszínen!), HÍRVIVŐ (magányos csuklyás a
+      legközelebbi DARK territórium felé lépked — leölve zár, elérve/lejárva köddé
+      válik "az üzenete célba ért" broadcast-tal).
+- [ ] Spawn: spawn-rules.cultists mátrix-sor + N25 horgony-mód (anchors.cultists);
+      minden mob prepare-elt (nem ég, nem zombisodik), szintezett (mob-level 5),
+      PDC-jelölt; despawn plugin-leálláskor. Admin: /events cultists (+ tab).
+- [ ] Ellenőrzés: rítus kivárva → góc nyílik a rítus helyén; rítus megszakítva →
+      loot a kör közepén; hírvivő követése elvezet a DARK föld felé.

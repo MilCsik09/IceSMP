@@ -87,8 +87,10 @@
       /events spawnpoint add|remove|list (restart-álló pontok, event-spawnpoints.yml);
       eseményenkénti mód: world-events.anchors.<world-boss|escort|caravan>.mode =
       player|points|random|mixed (random-radius a fő világ spawnja körül).
-- [ ] **N25b — Kultista esemény (lore):** kultista támadás/keresés/követés — külön
-      körben, lore-hű tervvel (Suttogók/Kitaszítottak vonal).
+- [x] **N25b — Kultista esemény `[KÉSZ ✅]`:** CultistEventManager — három változat
+      (portya-támadás / megszakítható rítus, ami rontás-gócot szülhet / követhető
+      hírvivő a DARK föld felé); cultists.* élő kulcsok, spawn-rules + N25 horgony,
+      /events cultists admin-trigger.
 - [x] **N26 — Ismételt-spawn kegyelem `[ELVETVE ❌]`:** tulaj-döntés — se gyengébb boss
       (farmolható lenne), se buff; az ismétlődés ellen a horgony-rotáció (KÉSZ) és a
       hely-horgony rendszer (N25, KÉSZ) véd.

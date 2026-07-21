@@ -112,6 +112,16 @@ Siess: a kráter csak egy ideig marad, aztán **magától visszaáll az eredeti 
 kibányászol, a tiéd. A meteor **sosem csapódik claimelt területre vagy frakció-territóriumba**,
 és **nem rombolja maradandóan** a világot.
 
+## Kultisták 🕯
+
+A Néma Királynő kósza hívei időnként előbújnak a homályból — háromféleképpen:
+- **Portya:** kis kultista csapat támad — szórd szét őket, a szerver értesül a győzelemről.
+- **Rítus:** a hívek kört állnak és kántálnak. **Szakítsd meg** (öld le mindet), mielőtt az
+  idő lejár — jutalom-loot hullik a kör közepén. Ha a rítus **beteljesül**, jó eséllyel
+  **rontás-góc nyílik** a helyszínen…
+- **Hírvivő:** magányos csuklyás alak oson a Kitaszítottak földje felé. **Kövesd** — vagy
+  állítsd meg, mielőtt köddé válik és az üzenete célba ér.
+
 ## Rontás-góc 🕸
 
 Időnként egy **rontás-góc** nyílik a vadonban (broadcast megadja a helyét): közepén egy

@@ -77,12 +77,29 @@ public final class EventsCommand implements BasicCommand {
         this.spawnPointManager = spawnPointManager;
     }
 
+    /** N25b: setterrel kötve. */
+    private hu.taliann.icesmp.managers.CultistEventManager cultistEventManager;
+
+    public void setCultistEventManager(final hu.taliann.icesmp.managers.CultistEventManager cultistEventManager) {
+        this.cultistEventManager = cultistEventManager;
+    }
+
+    private void handleCultists(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(cultistEventManager != null && cultistEventManager.forceStart(anchor)
+                ? messageManager.get("events-cultists-started", "&5Kultisták gyülekeznek a közeledben…")
+                : messageManager.get("events-cultists-failed", "&7Nem sikerült (már fut egy kultista esemény, vagy nincs online játékos)."));
+    }
+
     /** N25 — esemény-spawnpontok kezelése: add <esemény|any> [id] | remove <id> | list. */
     private void handleSpawnPoint(final CommandSender sender, final String[] args) {
         if (!requireAdmin(sender) || spawnPointManager == null) {
             return;
         }
-        final String usage = "&cHasználat: /events spawnpoint add <world-boss|escort|caravan|any> [id] | remove <id> | list";
+        final String usage = "&cHasználat: /events spawnpoint add <world-boss|escort|caravan|cultists|any> [id] | remove <id> | list";
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
             return;
@@ -94,7 +111,7 @@ public final class EventsCommand implements BasicCommand {
                     return;
                 }
                 final String eventKey = args.length >= 3 ? args[2].toLowerCase(Locale.ROOT) : "any";
-                if (!List.of("world-boss", "escort", "caravan", "any").contains(eventKey)) {
+                if (!List.of("world-boss", "escort", "caravan", "cultists", "any").contains(eventKey)) {
                     sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
                     return;
                 }
@@ -174,6 +191,7 @@ public final class EventsCommand implements BasicCommand {
             case "corruption", "rontas" -> handleCorruption(sender);
             case "archeology", "regeszet" -> handleArcheology(sender);
             case "spawnpoint", "spawnpont" -> handleSpawnPoint(sender, args);
+            case "cultists", "kultistak" -> handleCultists(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -535,7 +553,7 @@ public final class EventsCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "corruption", "archeology", "spawnpoint", "intro")
+                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "corruption", "archeology", "cultists", "spawnpoint", "intro")
                 : List.of("status", "season", "blood-moon", "caravan");
         final String first = prefixAt(args, 0);
         final boolean firstComplete = options.contains(first);

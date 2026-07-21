@@ -189,6 +189,20 @@ public final class CorruptionManager implements PersistentStore {
         trySpawn(null);
     }
 
+    /** N25b — góc-nyitás ADOTT helyen (a kultista rítus beteljesülése hívja). */
+    public synchronized boolean forceSpawnAt(final Location where) {
+        if (active || System.currentTimeMillis() < spawnGraceUntil || where.getWorld() == null) {
+            return false;
+        }
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
+        final World world = where.getWorld();
+        final int x = where.getBlockX();
+        final int z = where.getBlockZ();
+        plugin.getServer().getRegionScheduler().run(plugin, where,
+                place -> placeCore(world, x, z, false));
+        return true;
+    }
+
     /** Admin override: rontás-góc most (a horgony közelébe). */
     public synchronized boolean forceSpawn(final Player anchor) {
         if (active || System.currentTimeMillis() < spawnGraceUntil) {

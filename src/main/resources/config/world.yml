@@ -59,6 +59,7 @@ world-events:
     archeology: { territory: true, claim: true, region: true, water: true }
     stranger:   { territory: true, claim: true, region: true, water: true }
     player-caravan: { territory: false, claim: false, region: false, water: false }
+    cultists: { territory: true, claim: true, region: true, water: true }
   # ===== N25 — Esemény-horgonyok: HELY-alapú spawn a játékos-horgony helyett =====
   # Módok eseményenként: player = játékos-horgony (default) • points = admin-kijelölt
   # spawnpontok (/events spawnpoint add — pl. állandó világboss-aréna) • random =
@@ -69,6 +70,7 @@ world-events:
     world-boss: { mode: "player" }
     escort: { mode: "player" }
     caravan: { mode: "player" }
+    cultists: { mode: "player" }
   # B19 — Évszakos világ-modifikátorok: a VALÓS naptári évszak finom esély-szorzói a
   # világesemények sorsolására (1.0 = nincs módosítás; a plafon mindig 100%). Évszakok:
   # tel (dec-feb) / tavasz (már-máj) / nyar (jún-aug) / osz (szept-nov). Események:
@@ -432,6 +434,36 @@ meteor:
   ore-chance: 0.45           # a kráter-közép blokkjai ekkora eséllyel érc (különben díszes bélés)
   # A becsapódás-hely védelme a world-events.spawn-rules.meteor mátrixba költözött
   # (a régi meteor.avoid-territory kulcs megszűnt).
+
+
+# ===== N25b — Kultista esemény (a Néma Királynő kósza hívei; teszter-ötlet) =====
+# Három változat súlyozott sorsolással: attack = portya (irtsd ki mindet) • rite =
+# rítus, amit rite-minutes alatt kell megszakítani, különben rite-corruption-chance
+# eséllyel RONTÁS-GÓC nyílik a helyszínen; megszakítva rite-loot hullik • courier =
+# csuklyás hírvivő a legközelebbi DARK territórium felé — leölve loot, különben eltűnik.
+# Spawn-hely: a spawn-rules.cultists mátrix-sor + world-events.anchors.cultists mód.
+cultists:
+  enabled: true
+  interval-minutes: 100
+  chance-percent: 30
+  spawn-offset: 48
+  mob-level: 5
+  variant-weights:
+    attack: 40
+    rite: 35
+    courier: 25
+  attack-count: 4
+  rite-count: 3
+  rite-minutes: 6
+  rite-corruption-chance: 60
+  rite-loot-rolls: 3
+  # LootTable-formátum: "MATERIAL" | "MATERIAL:DB" | "MATERIAL:MIN:MAX"
+  rite-loot:
+    - "SCULK:2:6"
+    - "ECHO_SHARD:1:2"
+    - "GOLD_INGOT:2:5"
+    - "EXPERIENCE_BOTTLE:3:6"
+  courier-lifetime-minutes: 8
 
 # ===== H2 — Terjedő korrupt zóna (a Kapu rontása; tisztítása a Fát gyógyítja) =====
 # Ritkán rontás-góc nyílik a vadonban: SCULK_CATALYST mag + logikai sugarú zóna, amely

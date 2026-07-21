@@ -225,6 +225,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.CityGuardManager cityGuardManager;
     private final hu.taliann.icesmp.managers.DarkUndeadAmbienceManager darkUndeadAmbienceManager;
     private final hu.taliann.icesmp.managers.EventSpawnPointManager eventSpawnPointManager;
+    private final hu.taliann.icesmp.managers.CultistEventManager cultistEventManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -390,6 +391,9 @@ public final class IceSMPCore {
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager, factionManager, seasonManager);
+        this.cultistEventManager = new hu.taliann.icesmp.managers.CultistEventManager(plugin, configManager,
+                mobScalingManager, eventSpawnGuard, territoryManager, corruptionManager, messageManager);
+        cultistEventManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
         this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
@@ -978,6 +982,7 @@ public final class IceSMPCore {
         meteorEventManager.shutdown();
         serverChallengeManager.shutdown();
         spyManager.shutdown();
+        cultistEventManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -1033,6 +1038,7 @@ public final class IceSMPCore {
             holidayService.tick();
             cityGuardManager.tick();
             darkUndeadAmbienceManager.tick();
+            cultistEventManager.tick();
                     strangerNpcManager.tick();
                     hiddenSpotManager.tick();
                 },
@@ -1186,6 +1192,7 @@ public final class IceSMPCore {
         eventsCommand.setCorruptionManager(corruptionManager);
         eventsCommand.setArcheologyManager(archeologyManager);
         eventsCommand.setSpawnPointManager(eventSpawnPointManager);
+        eventsCommand.setCultistEventManager(cultistEventManager);
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), eventsCommand);
         plugin.registerCommand("emlek", "Emlékszilánk-beváltás (visszaemlékezés)", List.of("memory", "emlekek"),
                 new hu.taliann.icesmp.commands.MemoryCommand(configManager, jobManager, talentManager, specializationManager, uniqueMaterialFactory, messageManager));
@@ -1279,6 +1286,10 @@ public final class IceSMPCore {
                 // DARK undead-népesség könyvelése (a jelölt undead kiesett).
                 if (darkUndeadAmbienceManager.isMarked(event.getEntity())) {
                     darkUndeadAmbienceManager.onDeath(event.getEntity().getUniqueId());
+                }
+                // N25b — kultista esemény könyvelése (portya/rítus/hírvivő zárása).
+                if (cultistEventManager.isCultist(event.getEntity())) {
+                    cultistEventManager.onDeath(event.getEntity().getUniqueId());
                 }
             }
         }, plugin);
