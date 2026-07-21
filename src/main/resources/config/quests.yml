@@ -61,7 +61,7 @@ community-goals:
       type: "COLLECT_ITEMS"
       materials:
         - "IRON_INGOT"
-      count: 1000
+      count: 600
     reward-treasury: 500
     reward-buff-minutes: 15
   server_hunt:
@@ -69,7 +69,7 @@ community-goals:
     display-name: "A Nagy Vadászat"
     objective:
       type: "KILL_MOBS"
-      count: 5000
+      count: 1500
     reward-treasury: 250
     reward-buff-minutes: 10
   blue_fish_market:
@@ -80,7 +80,7 @@ community-goals:
       materials:
         - "COD"
         - "SALMON"
-      count: 800
+      count: 500
     reward-treasury: 400
     reward-buff-minutes: 12
   neutral_ore_exchange:
@@ -91,7 +91,7 @@ community-goals:
       materials:
         - "COAL_ORE"
         - "DEEPSLATE_COAL_ORE"
-      count: 2000
+      count: 1000
     reward-treasury: 300
     reward-buff-minutes: 10
   dark_undead_purge:
@@ -100,7 +100,7 @@ community-goals:
     objective:
       type: "KILL_MOBS"
       entity-type: "ZOMBIE"
-      count: 3000
+      count: 800
     reward-treasury: 350
     reward-buff-minutes: 12
   red_raid_conquest:
@@ -108,7 +108,7 @@ community-goals:
     display-name: "Piros Hódító Hadjárat"
     objective:
       type: "WIN_RAID"
-      count: 20
+      count: 4
     reward-treasury: 450
     reward-buff-minutes: 15
   server_worldboss_hunt:
@@ -116,7 +116,7 @@ community-goals:
     display-name: "Világfaló Vadászat"
     objective:
       type: "KILL_WORLDBOSS"
-      count: 5
+      count: 3
     reward-treasury: 800
     reward-buff-minutes: 20
 
@@ -1287,6 +1287,7 @@ quests:
     display-name: "Első gyűjtögetés"
     description: "Vágj ki 10 rönköt — kezdő felszerelés vár érte."
     requires-quest: "onboarding_hunt"
+    next: "onboarding_utmutatas"
     objective:
       type: "COLLECT_ITEMS"
       count: 10
@@ -1307,6 +1308,27 @@ quests:
       items:
         - "WOODEN_PICKAXE:1"
         - "BREAD:8"
+  # A lánc zárása (gameplay-audit: eddig itt zsákutca volt): a hírnök elmagyarázza a
+  # következő lépéseket — kaszt (/class), szakma (/profession join), kaszt-próba.
+  onboarding_utmutatas:
+    display-name: "Az utad kezdete"
+    description: "Térj vissza a hírnökhöz — elmondja, hogyan válassz kasztot (/class), szakmát (/profession join), és hol vár a kaszt-próbád (/quest list)."
+    requires-quest: "onboarding_gather"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    dialogue:
+      speaker: "A Hírnök"
+      complete:
+        - "Ügyes vagy, vándor. Most jön a java."
+        - "Válassz kasztot a /class paranccsal — ez határozza meg, KI leszel."
+        - "Válassz szakmát a /profession join paranccsal — ebből fogsz megélni."
+        - "És ha készen állsz: a /quest list mutatja a kasztod próbáját. Sok szerencsét!"
+    rewards:
+      class-xp: 50
+      currency:
+        type: "OWN"
+        amount: 25
 
 # ===== Quest-NPC markerek =====
 # A quest-adó / quest-célpont NPC-k felett részecske-aura jelzi a teendőt —

@@ -136,6 +136,13 @@ world-events:
     treasury-reward: 300.0     # az archetípus reward-szorzója módosítja (pl. Mélységi Rém ×1.5)
     season-points: 10
     buff-minutes: 10
+    # A leütő SZEMÉLYES bónusz-zsákmánya (a frakciókassza-jutalom mellett) — tárgy, sosem pénz.
+    killer-loot-rolls: 2
+    killer-loot:
+      - "DIAMOND:2:4"
+      - "EXPERIENCE_BOTTLE:6:12"
+      - "GOLDEN_APPLE:1:2"
+      - "unique:emlekszilank:1"
   # Invázió: időnként egy szörnyhorda spawnol egy véletlen játékos köré (ROADMAP 9.).
   # A horda-összetétel VÉLETLEN a 8-as rosterből: Élőhalott Áradat / Csontlégió /
   # Pókfészek / Káosz-horda / Alvilági Roham / Zsivány Hadtest / Boszorkány Gyülekezet /
@@ -373,6 +380,13 @@ server-challenge:
   duration-minutes: 30       # egy kihívás időkerete
   chance-percent: 30         # esély, hogy az intervallum végén tényleg indul
   min-online-players: 2      # ennyi online játékos alatt nem indul közös kihívás
+  # Népesség-skálázás: per-player-targets = true esetén a cél a targets-per-player
+  # érték × online létszám (a fix targets csak fallback / kikapcsolt módhoz).
+  per-player-targets: true
+  targets-per-player:
+    slay: 40
+    mine: 60
+    harvest: 80
   targets:
     slay: 500                # ennyi szörnyet kell közösen leölni
     mine: 800                # ennyi ércet kibányászni
@@ -506,9 +520,10 @@ corruption:
   loot:
     - "SCULK:4:12"
     - "ECHO_SHARD:1:3"
-    - "DIAMOND:1:3"
+    - "DIAMOND:2:5"
     - "EXPERIENCE_BOTTLE:4:8"
     - "NETHERITE_SCRAP:1:2"
+    - "ENCHANTED_GOLDEN_APPLE:1"
 
 # ===== B42 — Régészet (a Mélység Népe nyomai; vanília ecset-mechanika) =====
 # Időnként gyanús homok/kavics lelőhely bukkan fel (broadcast koordinátával); a lelet
@@ -592,7 +607,7 @@ bestiary:
 # hagyják — a betolakodónak a holtak városa maga a rémálom. Élő kulcsok.
 dark-undead:
   enabled: true
-  scope: "capital"            # capital = csak a DARK főváros | all = MINDEN DARK territórium
+  scope: "all"            # capital = csak a DARK főváros | all = MINDEN DARK territórium
   territory-id: ""            # kitöltve: pontosan ez a territórium (a scope-ot felülbírálja)
   max-population: 24
   spawn-batch: 4
@@ -619,6 +634,9 @@ seasonal-events:
     start: "10-25"
     end: "11-02"
     greeting: "Rém-éj közeleg — a fátyol elvékonyodik, a tökfejek vigyorognak! (Vérhold-virrasztás)"
+    # Ünnep-szorzók (HolidayService.override): az ablak alatt sűrűbb vérhold + invázió.
+    blood-moon-chance-mult: "2.0"
+    invasion-chance-mult: "1.5"
   erkezes_napja:
     start: "12-20"
     end: "12-27"

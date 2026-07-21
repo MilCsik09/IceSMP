@@ -54,8 +54,8 @@ profession-weekly:
     miner: 5000
     herbalist: 4000
     lumberjack: 4000
-    armorer: 5000
-    alchemist: 3500
-    enchanter: 3500
+    armorer: 2500
+    alchemist: 1800
+    enchanter: 1500
     fisherman: 3000
-    cook: 3000
+    cook: 1500

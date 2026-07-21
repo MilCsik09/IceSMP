@@ -80,7 +80,7 @@ lehet mindig a **saját frakciód valutája** — így pl. a Piros frakció tagj
 
 A küldetések mellett vannak **szerver-szintű, közösségi célok** is: egy **megosztott számláló**,
 amibe egy frakció (vagy az egész szerver) **minden tagja** beleszámít — pl. „a Piros frakció
-együtt gyűjtsön **1000 vasat**”. Ezt **nem** kell külön felvenned: **automatikusan gyűlik**,
+együtt gyűjtsön **600 vasat**”. Ezt **nem** kell külön felvenned: **automatikusan gyűlik**,
 ahogy a normál játék közben teljesíted a hozzá tartozó tevékenységet. Amikor a cél elkészül,
 az **egész frakció jutalmat kap a kasszába** + egy rövid **buffot**, majd a cél **újraindul**.
 
@@ -159,7 +159,7 @@ fejezet-küldetések nyílnak. Figyeld a „📖 Új fejezet nyílik” üzenete
 Néhány küldetés **rejtvény**: a leírás egy versbe/találós kérdésbe rejti, mit kell tenned —
 a napló és a haladás-sor **soha nem árulja el a célt** (csak „???” látszik). Ha megfejted és
 megteszed, a küldetés magától teljesül. Ha elakadsz: gondolkodj, járj utána, vagy kérdezz
-más játékosokat — a közös fejtörés a játék része. Jelenleg 16 rejtvény vár megfejtőre.
+más játékosokat — a közös fejtörés a játék része. Jelenleg 17 rejtvény vár megfejtőre.
 
 ## Bestiárium — a krónikás-lajstromod 📜
 

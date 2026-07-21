@@ -350,6 +350,9 @@ public final class IceSMPCore {
         this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager, factionManager, seasonManager, territoryManager);
         this.professionWeeklyGoalManager = new hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager(plugin, configManager, professionManager, messageManager);
         this.holidayService = new hu.taliann.icesmp.managers.HolidayService(configManager, messageManager);
+        // D1 — az ünnep-felülbírálás bekötése a világesemény-esélyekbe (a hook eddig halott volt).
+        bloodMoonManager.setHolidayService(holidayService);
+        invasionManager.setHolidayService(holidayService);
         this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
         this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager, eventSpawnGuard);
         this.eventSpawnPointManager = new hu.taliann.icesmp.managers.EventSpawnPointManager(plugin, configManager);

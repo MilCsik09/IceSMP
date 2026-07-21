@@ -751,9 +751,19 @@ public final class WorldBossManager {
         final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
         // Folia: the death event runs on the boss's region; buff the killer on their own region thread.
         final int buffTicks = buffMinutes * 60 * 20;
+        // Gameplay-audit: a leütő SZEMÉLYES bónusz-zsákmánya a kasszajutalom mellett —
+        // a boss egyénileg is megéri (tárgy, sosem pénz). Inventory-írás = saját régió-szál.
+        final int killerRolls = Math.max(0, configManager.getInt("world-events.world-boss.killer-loot-rolls", 2));
         killer.getScheduler().run(plugin, task -> {
             killer.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, buffTicks, 0, false, true, true));
             killer.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, buffTicks, 0, false, true, true));
+            if (killerRolls > 0) {
+                for (final org.bukkit.inventory.ItemStack loot
+                        : LootTable.roll(configManager, "world-events.world-boss.killer-loot", killerRolls)) {
+                    killer.getInventory().addItem(loot).values()
+                            .forEach(left -> killer.getWorld().dropItemNaturally(killer.getLocation(), left));
+                }
+            }
         }, null);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(

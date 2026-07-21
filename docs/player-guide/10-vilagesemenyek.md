@@ -39,7 +39,8 @@ hogy könnyű észrevenni):
   (Warden-morajlás, idézésnél Evoker-kántálás) kíséri: amíg a lap nő, van időd ellépni a jelzett helyről!
 - **50% HP alatt feldühödik** (2. fázis): erősebb, gyorsabb csapások.
 - Aki **leüti**, annak a **frakciója kasszát + liga-pontot** kap; a **legyőző játékos** egy
-  időleges **harci buffot** (Erő + Védelem) kap.
+  időleges **harci buffot** (Erő + Védelem) ÉS **személyes bónusz-zsákmányt** kap (gyémánt,
+  tapasztalat-palack, arany alma, ritkán emlékszilánk — tárgy, sosem pénz).
 
 ## Invázió ⚔️
 Időnként egy **szörnyhorda** tör be egy játékos köré — ragyogó, **megerősített (skálázott)**
@@ -89,9 +90,10 @@ mindenkin. Építeni, farmolni, feltöltődni való — a béke szigete a hábor
 
 ## Kollektív szerver-kihívás ⚔
 
-Időnként az **egész szerver** kap egy közös, időzített célt (pl. öljetek meg együtt 500
-szörnyet / bányásszatok 800 ércet / takarítsatok be 1000 termést) — a haladást **boss-bar**
-mutatja mindenkinek. Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap
+Időnként az **egész szerver** kap egy közös, időzített célt (pl. öljetek meg együtt szörnyeket /
+bányásszatok ércet / takarítsatok be termést) — a cél **az online létszámhoz igazodik**
+(fejenként kb. 40 szörny / 60 érc / 80 termés), így kevesen és sokan is teljesíthető. A haladást
+**boss-bar** mutatja mindenkinek. Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap
 (XP + nyersanyag-csomag + rövid Sietség-buff). Közös cél, közös jutalom.
 
 ## Karaván-kíséret 🛡

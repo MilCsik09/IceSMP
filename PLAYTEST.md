@@ -1142,7 +1142,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] `riddle: true` quest-mező: a napló/haladás-sor MINDIG "??? — a nyomot a leírás
         rejti"-t mutat — a cél sosem tárul fel, a megfejtés a játékosé/közösségé
         (az időzített súgás-fokozat kivezetve, nincs hint-minutes kulcs).
-  - [ ] 16 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
+  - [ ] 17 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
         olvasztás, biom, horgászat, NPC-keresés versbe rejtve); admin-szerkesztés:
         `/quest admin set <id> riddle true`.
   - [ ] Ellenőrzés: rejtvény-quest felvéve → a /quest info és a napló SOHA nem írja ki
@@ -1503,3 +1503,22 @@ Jó tesztelést! ❄️
 - [ ] Nem farmolható: az esemény csak természetes sorsolással (vagy admin-triggerrel)
       indul, játékos nem tudja kiváltani. Ellenőrzés: Suttogó-státuszú játékossal
       várd ki egy rítus beteljesülését → gyanú-érték csökken (/suttogas), liga-pont nő.
+
+## P-audit javítások, 1. kör (gameplay-audit — [GYORS] tételek)
+- [ ] Szerver-kihívás népesség-skálázása: `server-challenge.per-player-targets` (true)
+      esetén a cél = `targets-per-player.<típus>` (slay 40 / mine 60 / harvest 80)
+      × online létszám — 3 fősen és 30 fősen is elérhető. `false` → régi fix cél.
+- [ ] Közösségi quest-célok újraskálázva (quests.yml community: vas 600, vadászat 1500,
+      hal 500, szén 1000, sötét-zombi 800, raid-győzelem 4, világboss 3) és a heti
+      szakma-célok is (professions.yml: armorer 2500, cook 1500, enchanter 1500,
+      alchemist 1800) — kis szerveren is teljesíthetők.
+- [ ] Onboarding-lánc folytatása: az `onboarding_gather` után új `onboarding_utmutatas`
+      quest (Hírnök NPC — elirányít a /class, /profession join, /quest list felé).
+- [ ] D1 ünnep-hook ÉLESÍTVE (halott kód volt): Rém-éj alatt a vérhold esélye ×2,
+      az invázióé ×1.5 (`seasonal-events.remej.blood-moon-chance-mult` /
+      `invasion-chance-mult` — bármely ünnepre megadható, élő kulcs).
+- [ ] Világboss: a leütő SZEMÉLYES bónusz-loot-ot kap a kasszajutalom mellett
+      (`world-events.world-boss.killer-loot`, 2 guríts — tárgy, sosem pénz).
+- [ ] Rontás-góc: loot-tábla feljavítva (DIAMOND 2:5 + ENCHANTED_GOLDEN_APPLE) — a
+      megtisztítás egyénileg is megéri; dark-undead ambiencia scope: "all" (minden
+      DARK territórium, nem csak a főváros).

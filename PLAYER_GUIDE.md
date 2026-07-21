@@ -556,7 +556,8 @@ koordináta). Spawnkor **véletlen archetípus** kerül kiválasztásra — saj�
 **~8 másodpercenként telegrafált különleges képességet** süt el (becsapódás / mérgező zóna /
 add-idézés) — a veszélyzónát **részecske-gyűrű** rajzolja ki, külön **hangjelzéssel** —, és
 **50% HP alatt feldühödik** (2. fázis, erősebb csapásokkal). Aki legyőzi: a
-**frakciója kasszát és liga-pontot** kap, a győztes pedig **ideiglenes buffot** (erő + ellenállás).
+**frakciója kasszát és liga-pontot** kap, a győztes pedig **ideiglenes buffot** (erő + ellenállás)
+ÉS **személyes bónusz-zsákmányt** (gyémánt, tapasztalat-palack, arany alma, ritkán emlékszilánk).
 
 ### Inváziók 🧟
 Időnként egy **szörnyhorda** spawnol egy véletlen játékos köré (broadcast jelzi). A horda-összetétel
@@ -601,8 +602,9 @@ A vérhold **pozitív ellenpárja**: egy nyugodt időablak, amikor a **termés g
 mindenkin. Építeni, farmolni, feltöltődni való — a béke szigete a háború közepén.
 
 ### Kollektív szerver-kihívás ⚔
-Időnként az **egész szerver** kap egy közös, időzített célt (pl. öljetek meg együtt 500 szörnyet /
-bányásszatok 800 ércet / takarítsatok be 1000 termést) — a haladást **boss-bar** mutatja mindenkinek.
+Időnként az **egész szerver** kap egy közös, időzített célt (öljetek meg együtt szörnyeket /
+bányásszatok ércet / takarítsatok be termést) — a cél az **online létszámhoz igazodik** (fejenként
+kb. 40 szörny / 60 érc / 80 termés), a haladást **boss-bar** mutatja mindenkinek.
 Ha időben **együtt** teljesítitek, **minden online játékos** jutalmat kap (XP + nyersanyag-csomag +
 rövid Sietség-buff). Közös cél, közös jutalom.
 
@@ -761,7 +763,7 @@ teljesítéskor jutalmat kapsz (kaszt XP, valuta — akár a **saját frakciód 
   Egyes NPC-k **naponta frissülő** kínálatból (rotáció) adnak questeket, és a párbeszédük
   után **választós opciók** indíthatnak eltérő folytatást.
 - **Frakció-közösségi célok:** szerver-szintű, **megosztott számláló**, amibe egy frakció
-  (vagy az egész szerver) minden tagja beleszámít (pl. „a Piros frakció gyűjtsön 1000 vasat”).
+  (vagy az egész szerver) minden tagja beleszámít (pl. „a Piros frakció gyűjtsön 600 vasat”).
   Nem egyéni quest — a normál játék közben gyűlik; teljesítéskor a frakció **kassza-jutalmat +
   rövid buffot** kap, majd a cél újraindul.
 - **Mester-próbák (NPC-s láncok):** a kezdő próba után a kasztod **mester-NPC-jénél**

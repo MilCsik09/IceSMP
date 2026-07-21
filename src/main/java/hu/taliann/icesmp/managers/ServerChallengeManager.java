@@ -173,7 +173,14 @@ public final class ServerChallengeManager {
             return;
         }
         type = picked;
-        target = Math.max(1L, configManager.getLong("server-challenge.targets." + picked.configKey(), defaultTarget(picked)));
+        // Népesség-skálázás (gameplay-audit): a cél = per-player érték × online létszám,
+        // ha a per-player mód él — így 3 és 30 fősen is elérhető marad a közös cél.
+        final long baseTarget = Math.max(1L, configManager.getLong(
+                "server-challenge.targets." + picked.configKey(), defaultTarget(picked)));
+        target = configManager.getBoolean("server-challenge.per-player-targets", true)
+                ? Math.max(1L, configManager.getLong("server-challenge.targets-per-player." + picked.configKey(),
+                        Math.max(1L, baseTarget / 10L)) * Bukkit.getOnlinePlayers().size())
+                : baseTarget;
         progress.set(0L);
         active = true;
         settled.set(false);

@@ -51,6 +51,21 @@ public final class BloodMoonManager {
         this.seasonalModifiers = seasonalModifiers;
     }
 
+    /** D1 — ünnep-hook (setterrel kötve; null = nincs ünnep-szorzó). */
+    private volatile HolidayService holidayService;
+
+    public void setHolidayService(final HolidayService holidayService) {
+        this.holidayService = holidayService;
+    }
+
+    private static double parseOr(final String raw, final double fallback) {
+        try {
+            return Double.parseDouble(raw);
+        } catch (final NumberFormatException exception) {
+            return fallback;
+        }
+    }
+
     public BloodMoonManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager) {
         this.plugin = plugin;
@@ -132,8 +147,13 @@ public final class BloodMoonManager {
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final SeasonalModifierService seasonalRef = seasonalModifiers;
         final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("blood-moon");
+        // D1 — ünnep-felülbírálás (pl. Rém-éj: sűrűbb vérhold). A halott hook életre kelt.
+        final hu.taliann.icesmp.managers.HolidayService holidayRef = holidayService;
+        final String holidayMult = holidayRef == null ? null : holidayRef.override("blood-moon-chance-mult");
+        final double holidayFactor = holidayMult == null ? 1.0D : Math.max(0.0D, parseOr(holidayMult, 1.0D));
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D) * finaleMult * seasonalMult));
+                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D)
+                        * finaleMult * seasonalMult * holidayFactor));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
