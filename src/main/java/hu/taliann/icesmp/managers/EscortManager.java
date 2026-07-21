@@ -57,6 +57,8 @@ public final class EscortManager {
     private final BossBar bar = BossBar.bossBar(Component.empty(), 0.0F, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
 
     private volatile UUID convoyId;
+    /** Az utolsó horgony-játékos (rotáció — teszter-visszajelzés). */
+    private volatile UUID lastAnchorId;
     /** Reserves the "active" state while a spawn is still hopping region threads. */
     private volatile long spawnGraceUntil;
     private volatile Location destination;
@@ -196,7 +198,11 @@ public final class EscortManager {
             if (online.isEmpty()) {
                 return false;
             }
-            anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
+            // Horgony-rotáció: ne mindig ugyanahhoz a játékoshoz spawnoljon (teszter-panasz).
+            final java.util.List<Player> candidates = online.stream()
+                    .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
+            anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+            lastAnchorId = anchor.getUniqueId();
         }
 
         final Player target = anchor;

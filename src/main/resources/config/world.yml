@@ -390,8 +390,8 @@ escort:
   chance-percent: 30         # esély, hogy az intervallum végén tényleg elindul
   route-distance: 150        # légvonalbeli táv az indulástól a célig (blokk)
   convoy-health: 60          # a konvoj életereje
-  wave-interval-seconds: 45  # két támadó hullám közti idő
-  wave-size: 4               # mob / hullám
+  wave-interval-seconds: 60  # két támadó hullám közti idő (teszter-visszajelzésre lazítva)
+  wave-size: 3               # mob / hullám (teszter-visszajelzésre lazítva)
   wave-level: 3              # a hullám-mobok skálázott szintje
   bonus-stock-minutes: 60    # siker után ennyi ideig árul bónusz-készletet a karaván
   reward-rolls: 4            # ennyi tételt húz a loot-táblából célba éréskor

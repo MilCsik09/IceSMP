@@ -76,3 +76,18 @@
 > A refaktor/technikai-adósság tételek EGY helyen élnek: [O-refaktor.md](O-refaktor.md)
 > (oda költözött a korábbi docs/REFACTOR_CANDIDATES.md teljes tartalma ÉS az itteni
 > N19-N23 is, utóbbiak #24-28 sorszámon).
+
+## Teszter-visszajelzések (2026-07-20)
+
+- [ ] **N24 — Claim-segéd:** a claimelés "macerás" — kijelölés-varázsló (wand-item vagy
+      lépésenkénti GUI-asszisztens, élő előnézettel a DisplayFx-falakkal); a pénz-oldala
+      és a magasság/irány-bővítés a teszterek szerint jó, marad.
+- [ ] **N25 — Hely-kötött világesemények:** a world boss / escort ne (csak) játékos-horgonyra
+      spawnoljon, hanem fix/megjelölt helyszínekre is (admin-kijelölt esemény-pontok listája,
+      sorsolás közülük); + ÚJ esemény-ötlet a lore-ból: kultista támadás/keresés/követés.
+- [ ] **N26 — Ismételt-spawn kegyelem:** ha ugyanarra a játékosra rövid időn belül többször
+      spawnol boss/esemény, a boss legyen gyengébb (kevesebb HP) VAGY a játékos kapjon
+      ideiglenes harci buffot — a horgony-rotáció (KÉSZ) az első lépés, ez a második.
+- [ ] **N27 — Vándor kereskedő-karaván szabad spawnja:** a kereskedő-karaván bárhol
+      megjelenhet (ne fix pont / játékos-közel legyen kötelező) — a N25 esemény-pont
+      rendszerrel együtt kezelendő.

@@ -254,8 +254,16 @@ public final class WorldBossManager {
             return;
         }
 
-        triggerSpawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
+        // Horgony-rotáció: ne mindig ugyanannak a játékosnak a nyakára szülessen a boss.
+        final List<? extends Player> candidates = online.stream()
+                .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
+        final Player anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        lastAnchorId = anchor.getUniqueId();
+        triggerSpawnNear(anchor);
     }
+
+    /** Az utolsó természetes spawn horgony-játékosa (rotáció — teszter-visszajelzés). */
+    private volatile java.util.UUID lastAnchorId;
 
     /**
      * Admin override: spawns a world boss immediately near the given anchor

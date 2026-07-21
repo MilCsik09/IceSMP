@@ -1432,3 +1432,24 @@ Build/verzió: <jar verzió>
 4. Utána a többi rendszer (kasztok, specek, gazdaság, események) végig a 4. szekció szerint.
 
 Jó tesztelést! ❄️
+
+## Teszter-visszajelzés kör (2026-07-20)
+- [ ] **Konvoj-halál átláthatóság:** a kíséret-láma CSAK szörny-sebzéstől halhat
+      (támadás/lövedék/robbanás) — esés/fulladás/kaktusz/tűz nem morzsolja némán.
+      Ellenőrzés: told vízbe/magasból — nem sérül; szörny üti — sérül, a bossbar
+      HP-száma frissül.
+- [ ] **Kíséret lazítva:** wave-interval 45→60 mp, wave-size 4→3 (world.yml escort).
+- [ ] **Horgony-rotáció:** world boss és escort nem spawnol kétszer egymás után
+      ugyanarra a játékosra (ha 2+ online). Teszt: két játékossal két egymás utáni
+      esemény → különböző horgony.
+- [ ] **Piglin-zombisodás:** az EventSpawnGuard.prepare a bossra ÉS a SUMMON-addokra
+      is fut (setImmuneToZombification) — a teszter által látott zombisodás a korábbi
+      buildben volt; friss builden ellenőrizendő, hogy a Pokoli Hadúr + kísérete a
+      felvilágon sem alakul át.
+- [ ] **HP-sáv:** a világboss-sáv sebzésre azonnal (WorldBossListener) és 2 mp-enként
+      (fázis-tick) is frissül — friss builden ellenőrizendő; az ESCORT sávja
+      TÁVOLSÁG-alapú (a % az út megtett része, a HP csak szöveg) — ha ez zavaró,
+      külön HP-sáv tétel nyitható.
+- [ ] Backlog (ideas N24-N27): claim-segéd varázsló, hely-kötött eventek + kultista
+      esemény, ismételt-spawn kegyelem (gyengébb boss VAGY ideiglenes buff),
+      kereskedő-karaván szabad spawn.
