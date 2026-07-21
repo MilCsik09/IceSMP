@@ -729,7 +729,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** középkék; akcent: törtfehér
 - **Hangulat / lore:** Recept-tervrajz — ebből tanulják a mesterek a ritka recepteket.
 
-## Recept-tárgyak (6300–6438)
+## Recept-tárgyak (6300–6439)
 
 ### 6300 — Borostyánfényű Lámpás
 - **Fájl:** `r_borostyan_lampa.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
@@ -1564,6 +1564,12 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Ábrázolás:** sisak
 - **Színvilág:** sötétebb, kékes acél; akcent: meleg arany, sárga csillanásokkal
 - **Hangulat / lore:** Halász-recept eredménye (Páncél kategória, 15. szint).
+
+### 6439 — Az Éjszaka Pengéje
+- **Fájl:** `ejszaka_pengeje.png` &nbsp;|&nbsp; **Alap-item:** `NETHERITE_SWORD`
+- **Ábrázolás:** netherit kard, amelynek élén füstszerű árnyék-fátyol fut végig
+- **Színvilág:** mélyfekete és sötét ibolya; akcent: fakó lélek-kék derengés
+- **Hangulat / lore:** a Suttogók árnyékporával edzett penge — a fém emlékszik a suttogásra. Sötét mágia, bűvölő-munka.
 
 ## Bolt-különlegességek és nevesített loot (6450–6463)
 

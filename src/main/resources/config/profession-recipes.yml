@@ -3816,6 +3816,20 @@ profession-recipes:
       - "erre a kulcsra vár. Belépéskor elfogy."
     result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_melyseg, custom-model-data: 6203 }
     ingredients: [ "ECHO_SHARD:2", "IRON_INGOT:8", "unique:runapor:2" ]
+  # ===== Sötét-mágiájú tárgy (a Suttogók anyagából): Az Éjszaka Pengéje =====
+  # Az árnyékpor fő forrása a kultista rítus-loot és a Suttogó-részesedés — a penge
+  # így a rejtett oldal gazdaságát erősíti (bárki megtanulhatja, de az anyag sötét út).
+  ejszaka_pengeje:
+    profession: enchanter
+    level: 35
+    display-name: "Az Éjszaka Pengéje"
+    lore:
+      - "&8A pengén árnyék fut végig, ha megvillan —"
+      - "&8mintha a fém emlékezne a suttogásra,"
+      - "&8amely megedzette."
+    category: "Sötét mágia"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: ejszaka_pengeje, custom-model-data: 6439 }
+    ingredients: [ "NETHERITE_SWORD:1", "unique:arnyekpor:4", "ECHO_SHARD:2", "OBSIDIAN:8" ]
   csontkripta_kulcsa:
     profession: enchanter
     level: 40

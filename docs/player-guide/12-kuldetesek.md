@@ -169,7 +169,7 @@ fejezet-küldetések nyílnak. Figyeld a „📖 Új fejezet nyílik” üzenete
 Néhány küldetés **rejtvény**: a leírás egy versbe/találós kérdésbe rejti, mit kell tenned —
 a napló és a haladás-sor **soha nem árulja el a célt** (csak „???” látszik). Ha megfejted és
 megteszed, a küldetés magától teljesül. Ha elakadsz: gondolkodj, járj utána, vagy kérdezz
-más játékosokat — a közös fejtörés a játék része. Jelenleg 16 rejtvény vár megfejtőre.
+más játékosokat — a közös fejtörés a játék része. Jelenleg 22 rejtvény vár megfejtőre.
 
 ## Bestiárium — a krónikás-lajstromod 📜
 

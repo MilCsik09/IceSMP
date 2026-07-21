@@ -88,6 +88,7 @@ public final class QuestManager implements PersistentStore {
             "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
             "requires-job", "requires-faction", "requires-level", "requires-quest", "chapter", "riddle",
+            "min-season-day", "max-season-day",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
@@ -598,6 +599,24 @@ public final class QuestManager implements PersistentStore {
             final int current = seasonRef == null ? 0 : seasonRef.getSeasonNumber();
             if (current > 0 && current != chapter) {
                 return current > chapter ? "quest-chapter-closed" : "quest-chapter-future";
+            }
+        }
+
+        // Szezon-közepi ablak (gameplay-audit 5. lelet): a min/max-season-day questek csak
+        // a szezon adott nap-sávjában vehetők fel — így a szezon KÖZEPÉNEK is van dátum-kapus
+        // tartalma. A már felvett quest az ablak zárta után is befejezhető (kegyelmi szabály).
+        final int minSeasonDay = quest.getInt("min-season-day", 0);
+        final int maxSeasonDay = quest.getInt("max-season-day", 0);
+        if (minSeasonDay > 0 || maxSeasonDay > 0) {
+            final SeasonManager seasonRef = seasonManager;
+            final int day = seasonRef == null ? 0 : seasonRef.getSeasonDay();
+            if (day > 0) {
+                if (minSeasonDay > 0 && day < minSeasonDay) {
+                    return "quest-season-window-future";
+                }
+                if (maxSeasonDay > 0 && day > maxSeasonDay) {
+                    return "quest-season-window-closed";
+                }
             }
         }
 

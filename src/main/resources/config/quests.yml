@@ -393,6 +393,84 @@ quests:
       currency:
         type: "OWN"
         amount: 25
+  rejtveny_edes_ho:
+    riddle: true
+    display-name: "Rejtvény: Az édes hó"
+    description: "„Fehér, mint a hó, de nem hideg; a nádból sajtolják, s a szakács keze alatt arannyá lesz. Hozz belőle egy marékkal a világra.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "SUGAR" ]
+      count: 16
+    rewards:
+      class-xp: 70
+      currency:
+        type: "OWN"
+        amount: 25
+  rejtveny_siro_ko:
+    riddle: true
+    display-name: "Rejtvény: A síró kő"
+    description: "„Fekete, mint az éj, s mégis lila könnyet hullat — a Kapu testvére, kit a láva és a víz nászán túl bűvölet szült. Végy belőle egyet.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "CRYING_OBSIDIAN" ]
+      count: 1
+    rewards:
+      class-xp: 110
+      currency:
+        type: "OWN"
+        amount: 45
+  rejtveny_lampas_nep:
+    riddle: true
+    display-name: "Rejtvény: A lámpás nép"
+    description: "„Nem gyertya, mégis világít; nem hal, mégis a mélyben terem. A tenger kertjének fénye — hozz fel négyet a felszínre.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "SEA_LANTERN" ]
+      count: 4
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 50
+  rejtveny_kilenc_elet:
+    riddle: true
+    display-name: "Rejtvény: A kilenc élet"
+    description: "„Puha talpon jár, s a leghosszabb éjben is hazatalál. Nyerd el a bizalmát — ne karddal, hanem türelemmel.”"
+    objective:
+      type: "TAME_ANIMALS"
+      count: 1
+      entity-type: "CAT"
+    rewards:
+      class-xp: 90
+      currency:
+        type: "OWN"
+        amount: 35
+  rejtveny_fold_vere:
+    riddle: true
+    display-name: "Rejtvény: A föld vére"
+    description: "„A hegy ereiben folyik, de nem víz; vörösen izzik, ha felszínre tör, s kővé dermed, ha nevén nevezik. Meríts belőle egy vödörrel.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "LAVA_BUCKET" ]
+      count: 1
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 40
+  rejtveny_hangtalan_dal:
+    riddle: true
+    display-name: "Rejtvény: A hangtalan dal"
+    description: "„A mélyváros őrzi a dalt, amit senki élő nem énekelt. Egy szilánkja elég — de vigyázz: aki sokáig hallgatja, azt a csend visszahallgatja.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "ECHO_SHARD" ]
+      count: 1
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 60
   fejezet1_suttogasok:
     chapter: 1
     display-name: "1. fejezet: Suttogások a Kapunál"
@@ -411,7 +489,7 @@ quests:
     chapter: 1
     display-name: "1. fejezet: Bizonyíték a mélyből"
     description: "A céhek bizonyítékot kérnek: gyűjts 24 lőport a Kapu kisodorta szörnyekből — a robbanás-szag a Kapu jele."
-    next: "fejezet1_kronikas"
+    next: "fejezet1_orjarat"
     objective:
       type: "COLLECT_ITEMS"
       materials: [ "GUNPOWDER" ]
@@ -421,6 +499,34 @@ quests:
       currency:
         type: "OWN"
         amount: 60
+  fejezet1_orjarat:
+    chapter: 1
+    display-name: "1. fejezet: Őrjárat a peremvidéken"
+    description: "A falvak félnek: járd a peremvidéket, és tisztítsd meg — győzz le 12 megerősített szörnyet (min. Lvl 2)."
+    next: "fejezet1_jelentes"
+    objective:
+      type: "KILL_MOBS"
+      count: 12
+      min-mob-level: 2
+    rewards:
+      class-xp: 110
+      currency:
+        type: "OWN"
+        amount: 45
+  fejezet1_jelentes:
+    chapter: 1
+    display-name: "1. fejezet: Az írott szó"
+    description: "Amit láttál, azt írásba kell adni. Készíts 6 papírt a jelentéshez — a krónika nem szóbeszédből épül."
+    next: "fejezet1_kronikas"
+    objective:
+      type: "CRAFT_ITEMS"
+      materials: [ "PAPER" ]
+      count: 6
+    rewards:
+      class-xp: 90
+      currency:
+        type: "OWN"
+        amount: 35
   fejezet1_kronikas:
     chapter: 1
     display-name: "1. fejezet: A Krónikás pecsétje"
@@ -433,6 +539,53 @@ quests:
       currency:
         type: "OWN"
         amount: 120
+  # --- Szezon-közepi ablak (20-40. nap, MINDEN szezonban): A Fa üzenete ---
+  # A min/max-season-day kapu miatt csak a szezon derekán vehető fel — a szezon
+  # közepének is van dátum-kapus tartalma (gameplay-audit 5. lelet zárása).
+  fa_uzenete_1:
+    min-season-day: 20
+    max-season-day: 40
+    display-name: "A Fa üzenete: Új hajtások"
+    description: "A szezon derekán a Fa megmozdul, és növekedést kér. Ültess 8 csemetét a sebzett tájakon."
+    next: "fa_uzenete_2"
+    objective:
+      type: "PLACE_BLOCKS"
+      materials: [ "OAK_SAPLING", "BIRCH_SAPLING", "SPRUCE_SAPLING", "JUNGLE_SAPLING", "ACACIA_SAPLING", "DARK_OAK_SAPLING", "CHERRY_SAPLING" ]
+      count: 8
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 40
+  fa_uzenete_2:
+    min-season-day: 20
+    max-season-day: 40
+    display-name: "A Fa üzenete: A ligetek védelme"
+    description: "A rontás a fiatal ligetek felé kúszik. Vágd vissza: győzz le 12 megerősített szörnyet (min. Lvl 3)."
+    next: "fa_uzenete_3"
+    objective:
+      type: "KILL_MOBS"
+      count: 12
+      min-mob-level: 3
+    rewards:
+      class-xp: 130
+      currency:
+        type: "OWN"
+        amount: 60
+  fa_uzenete_3:
+    min-season-day: 20
+    max-season-day: 40
+    display-name: "A Fa üzenete: A vének hálája"
+    description: "A liget hálás. Keresd fel az erdei véneket, hogy átadják, amit a Fa neked szánt."
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "erdei_venek"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 100
+      crate-key: "koznapi:1"
   # --- 2. fejezet (2. szezon): A Hasadás emlékezete — a világ sebei megnyílnak ---
   fejezet2_repedesek:
     chapter: 2
@@ -1472,6 +1625,99 @@ quests:
         amount: 70
       items:
         - "IRON_INGOT:8"
+
+  # --- Mellék-questek: a kovács és a vének több munkát adnak (rotálódó napi pool) ---
+  kovacs_acel_rendeles:
+    rotation-group: "napi-npc"
+    repeatable: true
+    cooldown-hours: 24
+    dialogue:
+      speaker: "Gorvik kovácsmester"
+      give:
+        - "A céh acélt rendelt, de a kohóm nem győzi. Olvassz nekem, és megéri."
+      complete:
+        - "Ez már beszéd! A Vasművek büszke lenne rád."
+    giver-npc: "kovacs_mester"
+    display-name: "Acél a céhnek"
+    description: "Olvassz ki 16 vasrudat a kovácsmester rendelésére."
+    objective:
+      type: "SMELT_ITEMS"
+      materials: [ "IRON_INGOT" ]
+      count: 16
+    rewards:
+      class-xp: 60
+      currency:
+        type: "OWN"
+        amount: 45
+  kovacs_szenszallitmany:
+    rotation-group: "napi-npc"
+    repeatable: true
+    cooldown-hours: 24
+    dialogue:
+      speaker: "Gorvik kovácsmester"
+      give:
+        - "Szén nélkül hideg a kohó, hideg kohó mellett éhes a kovács. Segíts!"
+      complete:
+        - "Meleg a műhely, tele a bendő. Derék munka."
+    giver-npc: "kovacs_mester"
+    display-name: "Szén a kohóba"
+    description: "Szállíts 32 szenet a kovácsműhelybe."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "kovacs_mester"
+      materials: [ "COAL" ]
+      count: 32
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 55
+      items:
+        - "TORCH:16"
+  venek_gyogyfu_szuret:
+    rotation-group: "napi-npc"
+    repeatable: true
+    cooldown-hours: 24
+    dialogue:
+      speaker: "Az erdei vének"
+      give:
+        - "A liget gyógyfüvei megértek. Szedj nekünk — a Fa nevében."
+      complete:
+        - "A főzeteink újra erősek lesznek. A liget köszöni."
+    giver-npc: "erdei_venek"
+    display-name: "Gyógyfű-szüret"
+    description: "Gyűjts 24 magas füvet és virágot a vének főzeteihez."
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "SHORT_GRASS", "FERN", "DANDELION", "POPPY", "OXEYE_DAISY", "CORNFLOWER" ]
+      count: 24
+    rewards:
+      class-xp: 55
+      currency:
+        type: "OWN"
+        amount: 35
+  venek_mez_aldozat:
+    rotation-group: "napi-npc"
+    repeatable: true
+    cooldown-hours: 24
+    dialogue:
+      speaker: "Az erdei vének"
+      give:
+        - "A Fa gyökereihez mézet öntünk, hogy édes legyen az álma. Hozz a kaptárakból!"
+      complete:
+        - "A gyökerek isznak. Az álom ma édes lesz."
+    giver-npc: "erdei_venek"
+    display-name: "Méz-áldozat"
+    description: "Vigyél 3 mézesüveget a véneknek a Fa áldozatához."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "erdei_venek"
+      materials: [ "HONEY_BOTTLE" ]
+      count: 3
+    rewards:
+      class-xp: 70
+      currency:
+        type: "OWN"
+        amount: 40
 
   # --- Frakció-questek ---
   red_supply_run:

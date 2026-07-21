@@ -1142,7 +1142,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] `riddle: true` quest-mező: a napló/haladás-sor MINDIG "??? — a nyomot a leírás
         rejti"-t mutat — a cél sosem tárul fel, a megfejtés a játékosé/közösségé
         (az időzített súgás-fokozat kivezetve, nincs hint-minutes kulcs).
-  - [ ] 16 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
+  - [ ] 22 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
         olvasztás, biom, horgászat, NPC-keresés versbe rejtve); admin-szerkesztés:
         `/quest admin set <id> riddle true`.
   - [ ] Ellenőrzés: rejtvény-quest felvéve → a /quest info és a napló SOHA nem írja ki
@@ -1608,3 +1608,23 @@ Jó tesztelést! ❄️
       A zónákat az építészek hozzák létre (melyseg, csontkripta id-vel).
 - [ ] **Suttogó sötét-anyag:** a rítus-loot (és így a Suttogó-részesedés) mostantól
       árnyékport is adhat (unique:arnyekpor:2) — a guide ígérte sötét-mágiájú anyag él.
+
+## Tartalom-kör 2: szezon-közép + fejezet1-bővítés + rejtvények + mellék-questek + sötét penge
+- [ ] **Szezon-közepi ablak (ÚJ mechanizmus):** min-season-day / max-season-day quest-kulcs
+      (QuestManager-kapu, admin-szerkeszthető, saját elutasítás-üzenetekkel) — a
+      "A Fa üzenete" 3 questes lánc CSAK a szezon 20-40. napján vehető fel (ültetés →
+      liget-védelem → vének, köznapi kulcs jutalommal). Ellenőrzés: a 20. nap előtt
+      "még nem jött el az ideje", a 40. nap után "az ablak bezárult"; felvett quest az
+      ablak zárta után is befejezhető.
+- [ ] **1. fejezet 3 → 5 quest:** suttogasok → bizonyitek → ÚJ orjarat (12 Lvl2+ mob) →
+      ÚJ jelentes (6 papír craft) → kronikas (a next-lánc átfűzve).
+- [ ] **+6 rejtvény (16 → 22):** edes_ho (cukor), siro_ko (síró obszidián), lampas_nep
+      (tengeri lámpás), kilenc_elet (macska-szelídítés), fold_vere (lávás vödör),
+      hangtalan_dal (echo-szilánk) — a cél egyikben sem derül ki a leírásból.
+- [ ] **4 mellék-quest a napi-npc rotációban** (pool: 5 → 9, naponta 3): kovács
+      acél-rendelés (16 vas-olvasztás) + szén-szállítmány (32 szén deliver), vének
+      gyógyfű-szüret (24 fű/virág) + méz-áldozat (3 mézesüveg deliver) — mind
+      giver-npc-s, dialógussal, napi cooldownnal.
+- [ ] **Az Éjszaka Pengéje** (sötét szignatúra-recept, bűvölő 35): netherit kard +
+      4 árnyékpor + 2 echo-szilánk + 8 obszidián → crafted-affixes penge (CMD 6439,
+      regiszterben) — az árnyékpor sötét útról jön (rítus-loot / Suttogó-részesedés).

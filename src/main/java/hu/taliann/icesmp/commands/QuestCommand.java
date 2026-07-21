@@ -403,6 +403,8 @@ public final class QuestCommand implements BasicCommand {
             case "quest-season-locked" -> "&cEzt a szezont már teljesítetted — az új szezonban újra elérhető lesz.";
             case "quest-chapter-closed" -> "&cEz a fejezet már lezárult — a krónika továbblapozott.";
             case "quest-chapter-future" -> "&cEz a fejezet még nem nyílt meg — várd ki a krónika következő lapját.";
+            case "quest-season-window-future" -> "&cEnnek a történetnek még nem jött el az ideje — a szezon későbbi napjain nyílik.";
+            case "quest-season-window-closed" -> "&cEz a történet-ablak bezárult ebben a szezonban — az idő továbbhaladt.";
             default -> "&cA küldetés nem vehető fel.";
         };
     }

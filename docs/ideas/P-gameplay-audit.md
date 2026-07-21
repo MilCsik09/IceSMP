@@ -41,9 +41,10 @@
    elfogy; a 10-53. napnak nincs dátum-kapus tartalma; a 2+ szezonnak NULLA fejezet-questje
    (csak chapter: 1 létezik). 46-50-es kaszt-szint: semmi nem oldódik fel (~236 kill üres
    grind). → fejezet 2-3 megírása, szezon-közepi esemény, level-50 capstone.
-   ✅ RÉSZBEN: 2. fejezet (5 quest, Hasadás-téma) + 3. fejezet (5 quest, Néma
-   Királynő-téma) + level-50 capstone-lánc (ver_emlekezete → kaszt_orokseg) megírva.
-   A szezon-KÖZEPI dátum-kapus esemény még nyitott (mechanizmus is kellene hozzá).
+   ✅ KÉSZ: 2. fejezet (5 quest) + 3. fejezet (5 quest) + level-50 capstone-lánc +
+   1. fejezet 3→5 questre bővítve + SZEZON-KÖZEPI ablak-mechanizmus (min/max-season-day
+   quest-kapu) a "A Fa üzenete" lánccal (20-40. nap) — a szezon-ív eleje-közepe-vége
+   egyaránt kap tartalmat.
 
 ## 🟡 Érdemi
 
@@ -115,5 +116,5 @@
   szerint — csak ha az admin-jegyes reset tehernek bizonyul.
 - **Doksi-adósság**: ✅ KÉSZ — dungeon player-guide oldal (16-kazamatak.md) + mind a
   13 kaszt mentor-lánca megírva; kazamata-kulcs receptek (melyseg, csontkripta) élnek.
-- **Szezon-közepi dátum-kapus esemény** (5. lelet maradéka): mechanizmus + tartalom még
-  nyitott.
+- **Szezon-közepi dátum-kapus esemény** (5. lelet maradéka): ✅ KÉSZ (min/max-season-day
+  kapu + "A Fa üzenete" lánc).

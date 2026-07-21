@@ -165,6 +165,11 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     /** J9 — az aktuális fejezet (szezon) sorszáma; a quest `chapter:` mező erre szűr. */
+    /** A futó szezon hányadik napja (1-től; a quests min/max-season-day kapuja használja). */
+    public int getSeasonDay() {
+        return (int) Math.max(1L, (System.currentTimeMillis() - seasonStart) / 86_400_000L + 1L);
+    }
+
     public int getSeasonNumber() {
         return seasonNumber;
     }
