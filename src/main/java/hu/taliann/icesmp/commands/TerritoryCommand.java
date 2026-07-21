@@ -58,7 +58,7 @@ public final class TerritoryCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -96,7 +96,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleAddPoint(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         final int count = territoryManager.addPoint(player);
@@ -107,7 +107,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleUndo(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         final int count = territoryManager.undoPoint(player.getUniqueId());
@@ -120,7 +120,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleClearPoints(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         territoryManager.clearPoints(player.getUniqueId());
@@ -129,7 +129,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handlePoints(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         final List<int[]> points = territoryManager.getPoints(player.getUniqueId());
@@ -150,7 +150,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleCreatePolygon(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 3) {
@@ -223,7 +223,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleCircle(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 4) {
@@ -277,7 +277,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleSetCapital(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 3) {
@@ -313,7 +313,7 @@ public final class TerritoryCommand implements BasicCommand {
      */
     private void handleSetSpawn(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 2) {
@@ -474,7 +474,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleInfo(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -501,7 +501,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleShow(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -559,7 +559,7 @@ public final class TerritoryCommand implements BasicCommand {
      */
     private void handleTeleport(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 2) {

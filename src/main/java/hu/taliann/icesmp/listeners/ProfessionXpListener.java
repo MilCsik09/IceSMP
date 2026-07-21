@@ -157,7 +157,7 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
         }
 
@@ -169,7 +169,7 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSmithItem(final SmithItemEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
         }
 
@@ -178,12 +178,15 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEnchantItem(final EnchantItemEvent event) {
+        if (!isSurvival(event.getEnchanter())) {
+            return;
+        }
         awardXp(event.getEnchanter(), ProfessionType.ENCHANTER, "professions.xp.enchanting", 10);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBrewedPotionPickup(final InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
         }
 
@@ -210,6 +213,9 @@ public final class ProfessionXpListener implements Listener {
             return;
         }
 
+        if (!isSurvival(event.getPlayer())) {
+            return;
+        }
         awardXp(event.getPlayer(), ProfessionType.FISHERMAN, "professions.xp.fishing", 4);
     }
 
@@ -219,6 +225,9 @@ public final class ProfessionXpListener implements Listener {
             return;
         }
 
+        if (!isSurvival(event.getPlayer())) {
+            return;
+        }
         awardXp(event.getPlayer(), ProfessionType.COOK, "professions.xp.cooking", 3);
     }
 

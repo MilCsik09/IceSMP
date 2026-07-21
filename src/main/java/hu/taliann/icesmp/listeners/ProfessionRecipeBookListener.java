@@ -149,15 +149,16 @@ public final class ProfessionRecipeBookListener implements Listener {
             return;
         }
 
-        for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            player.getInventory().removeItem(new ItemStack(entry.getKey(), entry.getValue()));
-        }
-        consumeUnique(player, recipe);
-
+        // ELŐBB épül az eredmény, és csak sikeres build UTÁN fogy a hozzávaló —
+        // hibás recept-config (feloldhatatlan unique eredmény) nem nyelheti el az anyagot.
         final ItemStack result = buildResult(player, recipe);
         if (result == null) {
             return;
         }
+        for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
+            player.getInventory().removeItem(new ItemStack(entry.getKey(), entry.getValue()));
+        }
+        consumeUnique(player, recipe);
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), overflow);
         }

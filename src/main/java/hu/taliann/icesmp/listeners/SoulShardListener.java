@@ -30,6 +30,13 @@ public final class SoulShardListener implements Listener {
         this.configManager = configManager;
     }
 
+    /** AFK-fék (setterrel kötve — az AfkManager később épül a DI-sorrendben). */
+    private volatile hu.taliann.icesmp.managers.AfkManager afkManager;
+
+    public void setAfkManager(final hu.taliann.icesmp.managers.AfkManager afkManager) {
+        this.afkManager = afkManager;
+    }
+
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
         if (!(event.getEntity() instanceof Monster)) {
@@ -46,6 +53,15 @@ public final class SoulShardListener implements Listener {
 
         final Player killer = event.getEntity().getKiller();
         if (killer == null) {
+            return;
+        }
+        // Saját minion nem lélek-forrás; AFK-parkolt farm sem termel szilánkot
+        // (a testvér-listenerek — Soulstone/ClassXp — ugyanígy fékeznek).
+        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(event.getEntity())) {
+            return;
+        }
+        final hu.taliann.icesmp.managers.AfkManager afkRef = afkManager;
+        if (afkRef != null && afkRef.isAfk(killer.getUniqueId())) {
             return;
         }
 

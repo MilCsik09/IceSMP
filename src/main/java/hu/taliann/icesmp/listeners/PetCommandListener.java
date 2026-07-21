@@ -28,6 +28,10 @@ public final class PetCommandListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInteractEntity(final PlayerInteractEntityEvent event) {
         final Player player = event.getPlayer();
+        // main+off kéz duplán tüzel — a stance-váltás különben kettőt ugrana.
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) {
+            return;
+        }
         if (!player.isSneaking() || !(event.getRightClicked() instanceof Mob minion)) {
             return;
         }

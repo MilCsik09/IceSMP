@@ -34,16 +34,20 @@ public final class BestiaryListener implements Listener {
         if (killer == null) {
             return;
         }
+        // Folia: a halál a MOB régió-szálán fut — a killer PDC-jét (record) a killer
+        // SAJÁT schedulerén írjuk (távolsági/AoE killnél más régióban lehet).
         if (worldBossManager != null && worldBossManager.isWorldBoss(event.getEntity())) {
-            bestiaryManager.record(killer, BestiaryManager.Category.BOSSES,
-                    event.getEntity().getType().name());
+            final String bossType = event.getEntity().getType().name();
+            killer.getScheduler().run(bestiaryManager.plugin(), task ->
+                    bestiaryManager.record(killer, BestiaryManager.Category.BOSSES, bossType), null);
             return;
         }
         if (event.getEntity() instanceof Monster) {
             // H14 — a ritka variáns ÖNÁLLÓ lajstrom-bejegyzés (pl. albino_zombie).
             final String variant = hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(event.getEntity());
-            bestiaryManager.record(killer, BestiaryManager.Category.MOBS,
-                    (variant == null ? "" : variant + "_") + event.getEntity().getType().name());
+            final String entry = (variant == null ? "" : variant + "_") + event.getEntity().getType().name();
+            killer.getScheduler().run(bestiaryManager.plugin(), task ->
+                    bestiaryManager.record(killer, BestiaryManager.Category.MOBS, entry), null);
         }
     }
 

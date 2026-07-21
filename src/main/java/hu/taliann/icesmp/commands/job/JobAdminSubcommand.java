@@ -54,7 +54,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
     @Override
     public boolean execute(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogod ehhez a parancshoz."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogod ehhez a parancshoz."));
             return true;
         }
 
@@ -72,7 +72,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
         final Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("system.target-player-offline", "&cA celjatekos nem erheto el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA celjatekos nem erheto el online."));
             return true;
         }
 

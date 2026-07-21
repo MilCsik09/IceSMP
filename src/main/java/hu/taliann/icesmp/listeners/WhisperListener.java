@@ -68,7 +68,9 @@ public final class WhisperListener implements Listener {
         whisperManager.handleJoin(event.getPlayer());
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // Szándékosan NINCS ignoreCancelled: a RIGHT_CLICK_AIR "cancelled" állapottal
+    // érkezik, és elnyelné a levegőbe-kattintós rítus-invokációt.
+    @EventHandler
     public void onRite(final PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND || !event.getAction().isRightClick()) {
             return;

@@ -1317,7 +1317,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.OnboardingListener(configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionSpawnListener(factionManager, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new SiegeWeaponListener(plugin, siegeWeaponFactory, raidManager, configManager, messageManager), plugin);
-        pluginManager.registerEvents(new SoulShardListener(plugin, soulShardManager, specializationManager, configManager), plugin);
+        final SoulShardListener soulShardListener = new SoulShardListener(plugin, soulShardManager, specializationManager, configManager);
+        soulShardListener.setAfkManager(afkManager);
+        pluginManager.registerEvents(soulShardListener, plugin);
         pluginManager.registerEvents(new RitualListener(ritualManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldGameRuleListener(configManager), plugin);
         // Plugin-leépítés: ICEsmpadditions + FarmProtect + MiniMOTD natív kiváltása

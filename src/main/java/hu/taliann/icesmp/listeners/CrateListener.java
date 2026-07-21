@@ -47,6 +47,10 @@ public final class CrateListener implements Listener {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
         }
+        // Egy fizikai katt main+off kézzel KÉTSZER tüzel — kulcs-duplafogyasztás lenne.
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) {
+            return;
+        }
         final Block block = event.getClickedBlock();
         final String crateId = block == null ? null : crateManager.crateAt(block.getLocation());
         if (crateId == null) {

@@ -36,7 +36,7 @@ public final class SoulforgeCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (!(commandSourceStack.getSender() instanceof Player player)) {
             commandSourceStack.getSender().sendMessage(messageManager.get(
-                    "player-only", "&cEzt a parancsot csak játékos használhatja."));
+                    "messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
             return;
         }
         if (args.length >= 2 && "fejleszt".equalsIgnoreCase(args[0])) {

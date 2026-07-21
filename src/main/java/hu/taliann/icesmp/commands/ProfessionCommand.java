@@ -75,7 +75,7 @@ public final class ProfessionCommand implements BasicCommand {
 
     private void handleJoin(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -114,7 +114,7 @@ public final class ProfessionCommand implements BasicCommand {
 
     private void handleRecipes(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         recipeBook.open(player);
@@ -123,7 +123,7 @@ public final class ProfessionCommand implements BasicCommand {
     /** Admin: hands a blueprint item for a recipe to a player (so NPC shops / rewards can distribute it). */
     private void handleBlueprint(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
         if (args.length < 3) {
@@ -152,7 +152,7 @@ public final class ProfessionCommand implements BasicCommand {
 
     private void handleInfo(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -218,7 +218,7 @@ public final class ProfessionCommand implements BasicCommand {
 
     private void handleSet(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -247,7 +247,7 @@ public final class ProfessionCommand implements BasicCommand {
 
     private void handleClear(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -283,7 +283,7 @@ public final class ProfessionCommand implements BasicCommand {
 
     private void handleAddXp(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 

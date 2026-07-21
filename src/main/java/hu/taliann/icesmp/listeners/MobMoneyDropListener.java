@@ -60,6 +60,10 @@ public final class MobMoneyDropListener implements Listener {
         if (killer == null || killer.getGameMode() != GameMode.SURVIVAL) {
             return;
         }
+        // Saját idézett minion (nekromanta-horda stb.) leölése nem pénzcsap.
+        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(entity)) {
+            return;
+        }
         double chance = Math.max(0.0D, Math.min(100.0D,
                 configManager.getDouble("mob-money-drop.chance-percent", 20.0D)));
         // B26 — Mohóság Rúnája a gyilkos fegyverén: drop-esély bónusz (százalékPONT).

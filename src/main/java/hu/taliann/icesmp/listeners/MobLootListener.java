@@ -74,6 +74,10 @@ public final class MobLootListener implements Listener {
         if (entity instanceof Player) {
             return;
         }
+        // Saját idézett minion leölése nem loot-forrás (farm-fék).
+        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(entity)) {
+            return;
+        }
 
         final boolean bossTier = worldBossManager.isWorldBoss(entity)
                 || invasionManager.isInvasionMob(entity.getUniqueId())

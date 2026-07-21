@@ -60,6 +60,12 @@ public final class MinionManager {
         return getOwner(entity) != null;
     }
 
+    /** Statikus minion-teszt DI nélkül (kill-jutalom listenereknek: saját idézett ne fizessen). */
+    public static boolean isMinionTagged(final Entity entity) {
+        return entity != null && entity.getPersistentDataContainer().has(
+                org.bukkit.NamespacedKey.fromString("icesmp:minion_owner"), PersistentDataType.STRING);
+    }
+
     /** @return the owner UUID of the minion, or null if the entity is not a minion */
     public UUID getOwner(final Entity entity) {
         if (entity == null) {

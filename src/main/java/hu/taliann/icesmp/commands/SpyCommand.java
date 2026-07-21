@@ -26,7 +26,7 @@ public final class SpyCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (!(commandSourceStack.getSender() instanceof Player player)) {
             commandSourceStack.getSender().sendMessage(messageManager.get(
-                    "player-only", "&cEzt a parancsot csak játékos használhatja."));
+                    "messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
             return;
         }
         final FactionType target = args.length == 0 ? null : FactionType.fromInput(args[0]);

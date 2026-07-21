@@ -117,6 +117,10 @@ public final class GuildCommand implements BasicCommand {
                     player.sendMessage(messageManager.get("guild-bad-amount-msg", "&cÉrvénytelen összeg."));
                     return;
                 }
+                if (!Double.isFinite(amount) || amount <= 0.0D) {
+                    player.sendMessage(messageManager.get("guild-bad-amount-msg", "&cÉrvénytelen összeg."));
+                    return;
+                }
                 reply(player, guildManager.deposit(player, amount), "guild-deposited",
                         "<gold>⚜ Befizetve a céh-kasszába: <white>{amount}</white>.</gold>",
                         Map.of("amount", String.valueOf(amount)));

@@ -40,7 +40,7 @@ public final class StatsCommand implements BasicCommand {
         final String targetName;
         if (args.length == 0) {
             if (!(sender instanceof Player player)) {
-                sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+                sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
                 return;
             }
             targetId = player.getUniqueId();

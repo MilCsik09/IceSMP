@@ -41,7 +41,7 @@ public final class WhisperCommand implements BasicCommand {
     @Override
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (!(commandSourceStack.getSender() instanceof Player player)) {
-            commandSourceStack.getSender().sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékos használhatja."));
+            commandSourceStack.getSender().sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
             return;
         }
         if (!whisperManager.isEnabled()) {

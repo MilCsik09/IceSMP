@@ -27,6 +27,7 @@ public final class BestiaryManager {
 
     public enum Category { MOBS, RECIPES, TERRITORIES, BOSSES }
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
@@ -36,6 +37,7 @@ public final class BestiaryManager {
     public BestiaryManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final CurrencyManager currencyManager, final FactionManager factionManager,
                            final MessageManager messageManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
@@ -43,6 +45,11 @@ public final class BestiaryManager {
         for (final Category category : Category.values()) {
             keys.put(category, new NamespacedKey(plugin, "bestiary_" + category.name().toLowerCase(Locale.ROOT)));
         }
+    }
+
+    /** A Folia-hopokhoz (a BestiaryListener a killer schedulerére ugrik vele). */
+    public JavaPlugin plugin() {
+        return plugin;
     }
 
     public boolean isEnabled() {

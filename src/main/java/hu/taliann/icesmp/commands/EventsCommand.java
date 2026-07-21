@@ -129,7 +129,7 @@ public final class EventsCommand implements BasicCommand {
     private void handleBloodMoon(final CommandSender sender, final String[] args) {
         if (args.length >= 2) {
             if (!sender.hasPermission(ADMIN_PERMISSION)) {
-                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
                 return;
             }
             final String sub = args[1].toLowerCase(Locale.ROOT);
@@ -191,7 +191,7 @@ public final class EventsCommand implements BasicCommand {
     private void handleCaravan(final CommandSender sender, final String[] args) {
         if (args.length >= 2) {
             if (!sender.hasPermission(ADMIN_PERMISSION)) {
-                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
                 return;
             }
             final String sub = args[1].toLowerCase(Locale.ROOT);
@@ -316,7 +316,7 @@ public final class EventsCommand implements BasicCommand {
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             return true;
         }
-        sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
         return false;
     }
 
@@ -470,7 +470,7 @@ public final class EventsCommand implements BasicCommand {
         } else if (sender instanceof Player player) {
             target = player;
         } else {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
