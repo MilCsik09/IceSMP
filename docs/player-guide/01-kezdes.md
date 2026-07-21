@@ -2,6 +2,11 @@
 
 Most léptél be először? Semmi gond — kövesd ezt a pár lépést, és máris benne vagy a játékban.
 
+> **Nem kell semmit előre tudnod.** Se a történetet, se a rendszereket nem kell elolvasnod
+> ahhoz, hogy játssz: az első belépéskor egy kezdő küldetés-lánc mindent megtanít, a világ
+> története pedig játék közben, apránként tárul fel — csak annak, aki kíváncsi rá. Ez a
+> kézikönyv is csak segédlet: akkor lapozd fel, ha elakadtál vagy mélyebbre ásnál.
+
 ## Az első 10 perced
 
 1. **Válassz frakciót.** Írd be: `/faction join <frakció>` — a frakciók: `red` (Piros),
