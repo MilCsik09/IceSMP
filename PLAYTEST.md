@@ -1583,3 +1583,28 @@ Jó tesztelést! ❄️
       local-announce-radius 192) csak a környéken állóknak szól (LocalAnnounce,
       Folia-safe távolság-ellenőrzés a címzett saját szálán). A nagy események
       (vérhold, boss, invázió, karaván, kihívás…) globális hírek maradnak.
+
+## Tartalom-kör 1: mester-láncok mind a 13 kasztnak + fejezet 2-3 + capstone + kazamata-starter
+- [ ] **9 új mentor+mester lánc** (druida, paplovag, halállovag, sámán, szerzetes, pap,
+      boszorkánymester, démonvadász, sárkányidéző): kezdő próba → mentor (TALK_TO_NPC,
+      100 XP) → mester-próba (kaszt-ízű feladat, 400 XP). Új mester-NPC-k: druida_mester,
+      paplovag_mester, halallovag_mester, saman_mester, szerzetes_mester, pap_mester,
+      pakt_mester, demonvadasz_mester, sarkany_mester (kihelyezés: EPITESZ_UTMUTATO).
+- [ ] **Parkour kivéve a kötelező útból (tulaj-döntés):** a 4 régi mester-próba is
+      kaszt-ízű feladat lett (harcos: 20 Lvl2+ mob; íjász: 12 csontváz; varázsló:
+      3 bűvölés; orgyilkos: 15 Lvl2+ mob) — a parkour opcionális szabadidős tartalom
+      (acrobat_challenge megmaradt). Egyetlen pálya megépítése sem kötelező többé.
+- [ ] **2. fejezet (2. szezon, 5 quest):** repedesek (bióm) → szilankok (16 ametiszt) →
+      ujjaepites (24 vas-olvasztás) → orzok (15 Lvl4+ mob) → pecset (hírnök, záró-jutalom).
+- [ ] **3. fejezet (3. szezon, 5 quest):** sohajok (20 zombi) → lelekfeny (8 lélekfáklya
+      craft) → visszhang (2 echo shard) → ostrom (20 Lvl5+ mob) → harmadik_mondat
+      (hírnök; ritka láda-kulcs jutalom).
+- [ ] **Level-50 capstone:** ver_emlekezete (requires-level 50; 30 Lvl6+ elit mob) →
+      kaszt_orokseg (hírnök; NETHERITE_INGOT + ENCHANTED_GOLDEN_APPLE + 2 ritka kulcs) —
+      a 46-50-es sávnak van célja.
+- [ ] **Kazamata-starter:** 2 kulcs-recept (bűvölő 30/40: A Mélység Kulcsa
+      [dungeonkulcs_melyseg, CMD 6203], A Csontkripta Kulcsa [dungeonkulcs_csontkripta,
+      CMD 6204] — CMD-regiszterbe felvéve); új player-guide oldal (16-kazamatak.md).
+      A zónákat az építészek hozzák létre (melyseg, csontkripta id-vel).
+- [ ] **Suttogó sötét-anyag:** a rítus-loot (és így a Suttogó-részesedés) mostantól
+      árnyékport is adhat (unique:arnyekpor:2) — a guide ígérte sötét-mágiájú anyag él.

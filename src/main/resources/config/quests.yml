@@ -433,6 +433,177 @@ quests:
       currency:
         type: "OWN"
         amount: 120
+  # --- 2. fejezet (2. szezon): A Hasadás emlékezete — a világ sebei megnyílnak ---
+  fejezet2_repedesek:
+    chapter: 2
+    display-name: "2. fejezet: A repedések éneke"
+    description: "A hegyek közt a föld ma is a Hasadásra emlékszik. Járd meg a szélfútta ormokat, és hallgasd meg, mit mesélnek."
+    next: "fejezet2_szilankok"
+    objective:
+      type: "EXPLORE_BIOME"
+      biome: "windswept_hills"
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 40
+  fejezet2_szilankok:
+    chapter: 2
+    display-name: "2. fejezet: A világ könnyei"
+    description: "A Hasadás fájdalma kristállyá dermedt a mélyben. Gyűjts 16 ametisztszilánkot — a hegy könnyeit."
+    next: "fejezet2_ujjaepites"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "AMETHYST_SHARD" ]
+      count: 16
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 60
+  fejezet2_ujjaepites:
+    chapter: 2
+    display-name: "2. fejezet: A céhek öröksége"
+    description: "A birodalmakat nemcsak karddal építik újjá. Olvassz ki 24 vasrudat a Vasművek Akadémiájának emlékére."
+    next: "fejezet2_orzok"
+    objective:
+      type: "SMELT_ITEMS"
+      materials: [ "IRON_INGOT" ]
+      count: 24
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 60
+  fejezet2_orzok:
+    chapter: 2
+    display-name: "2. fejezet: A mélység őrzői"
+    description: "A repedések mélyéről a Káoszkor őrzői másznak elő. Győzz le 15 elit szörnyet (min. Lvl 4)."
+    next: "fejezet2_pecset"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+      min-mob-level: 4
+    rewards:
+      class-xp: 180
+      currency:
+        type: "OWN"
+        amount: 80
+  fejezet2_pecset:
+    chapter: 2
+    display-name: "2. fejezet: A második pecsét"
+    description: "A krónika új lapja megtelt. Vidd a hírnöknek, amit a repedésekről megtudtál — a fejezet zárása gazdagon fizet."
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 150
+      items:
+        - "EXPERIENCE_BOTTLE:16"
+  # --- 3. fejezet (3. szezon): A Néma Királynő árnyéka — a Kapu válaszol ---
+  fejezet3_sohajok:
+    chapter: 3
+    display-name: "3. fejezet: Az álom sóhajai"
+    description: "A Királynő nyugtalanul forgolódik, s a holtak megindulnak. Küldj vissza 20 élőhalottat az álomba."
+    next: "fejezet3_lelekfeny"
+    objective:
+      type: "KILL_MOBS"
+      entity-type: "ZOMBIE"
+      count: 20
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 50
+  fejezet3_lelekfeny:
+    chapter: 3
+    display-name: "3. fejezet: Lélekfény-virrasztás"
+    description: "A virrasztók lélekfénnyel tartják távol az árnyakat. Készíts 8 lélekfáklyát a falak őreinek."
+    next: "fejezet3_visszhang"
+    objective:
+      type: "CRAFT_ITEMS"
+      materials: [ "SOUL_TORCH" ]
+      count: 8
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 70
+  fejezet3_visszhang:
+    chapter: 3
+    display-name: "3. fejezet: Az Első Csend visszhangja"
+    description: "A mélyvárosok falai még őrzik a hangot, amely a Királynőt is elragadta. Hozz fel 2 visszhang-szilánkot — de ne hallgasd sokáig."
+    next: "fejezet3_ostrom"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "ECHO_SHARD" ]
+      count: 2
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 100
+  fejezet3_ostrom:
+    chapter: 3
+    display-name: "3. fejezet: A Kapu ostroma"
+    description: "A Kapu felől a legerősebb fajzatok özönlenek. Törd meg az ostromot: győzz le 20 elit szörnyet (min. Lvl 5)."
+    next: "fejezet3_harmadik_mondat"
+    objective:
+      type: "KILL_MOBS"
+      count: 20
+      min-mob-level: 5
+    rewards:
+      class-xp: 220
+      currency:
+        type: "OWN"
+        amount: 120
+  fejezet3_harmadik_mondat:
+    chapter: 3
+    display-name: "3. fejezet: A harmadik mondat"
+    description: "Amit a Kapunál láttál, azt a krónikának tudnia kell — mert a harmadik mondatot senki élő nem akarja hallani. Beszélj a hírnökkel."
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    rewards:
+      class-xp: 250
+      currency:
+        type: "OWN"
+        amount: 200
+      items:
+        - "GOLDEN_APPLE:3"
+      crate-key: "ritka:1"
+  # --- Level-50 capstone: A Vér Emlékezete beteljesül (46-50 közti cél) ---
+  ver_emlekezete:
+    display-name: "A Vér Emlékezete"
+    description: "Ötven szint — az ősök öröksége már majdnem egész benned. Bizonyítsd a beteljesülést: győzz le 30 elit szörnyet (min. Lvl 6)."
+    requires-level: 50
+    next: "kaszt_orokseg"
+    objective:
+      type: "KILL_MOBS"
+      count: 30
+      min-mob-level: 6
+    rewards:
+      class-xp: 500
+      currency:
+        type: "OWN"
+        amount: 300
+  kaszt_orokseg:
+    display-name: "Az örökség pecsétje"
+    description: "A Vér Emlékezete beteljesült — az vagy, aki mindig is voltál. A hírnök hirdesse ki a neved a krónikában!"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "hirnok"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 200
+      items:
+        - "NETHERITE_INGOT:1"
+        - "ENCHANTED_GOLDEN_APPLE:1"
+      crate-key: "ritka:2"
   # --- Kaszt-próbák (bevezető questek) ---
   warrior_trial:
     display-name: "A Harcos Próbája"
@@ -480,9 +651,10 @@ quests:
       class-xp: 200
   # --- Kaszt-mester próbák (NPC-s láncok a kezdő próbák után) ---
   # A mester-NPC-ket a szerver-csapat helyezi ki FancyNpcs-szel a lenti belső
-  # nevekkel (pl. /npc create harcos_mester), a próbapályákat a /parkour
-  # paranccsal (pl. /parkour setstart harcos_proba ...). Amíg nincsenek kint,
-  # a láncok egyszerűen nem haladnak — semmi nem törik.
+  # nevekkel (pl. /npc create harcos_mester). Amíg nincsenek kint, a láncok
+  # egyszerűen nem haladnak — semmi nem törik. TULAJ-DÖNTÉS: a mester-próbák
+  # kaszt-ízű feladatok (NEM parkour) — a parkour opcionális szabadidős tartalom
+  # maradt (lásd acrobat_challenge).
   # A mentor-questet a játékos veszi fel (/quest accept vagy a quest GUI), a
   # mester-próbát viszont maga a mester-NPC ADJA (giver-npc): a mentor-quest
   # az NPC-nél teljesül, és ugyanazzal a kattintással megkapod a próbát.
@@ -509,11 +681,12 @@ quests:
         - "Végigmentél? Akkor mostantól a tanítványom vagy. Büszkeséggel tölt el."
     giver-npc: "harcos_mester"
     display-name: "A Harcos Mester-próbája"
-    description: "Teljesítsd a mester erőpróba-pályáját (/parkour start harcos_proba)."
+    description: "Bizonyítsd a pengéd a vadonban: terítsd le 20 megerősített szörnyet (min. Lvl 2)."
     requires-quest: "warrior_mentor"
     objective:
-      type: "PARKOUR_TRIAL"
-      course: "harcos_proba"
+      type: "KILL_MOBS"
+      count: 20
+      min-mob-level: 2
     rewards:
       class-xp: 400
   archer_mentor:
@@ -539,11 +712,12 @@ quests:
         - "Fürge vagy, mint a nyílvessző. Megérdemled a címed."
     giver-npc: "ijasz_mester"
     display-name: "Az Íjász Mester-próbája"
-    description: "Teljesítsd a mester ügyességi pályáját (/parkour start ijasz_proba)."
+    description: "Párbaj a holt íjászokkal: ejts el 12 csontvázat — vessző vessző ellen."
     requires-quest: "archer_mentor"
     objective:
-      type: "PARKOUR_TRIAL"
-      course: "ijasz_proba"
+      type: "KILL_MOBS"
+      count: 12
+      entity-type: "SKELETON"
     rewards:
       class-xp: 400
   wizard_mentor:
@@ -564,16 +738,16 @@ quests:
     dialogue:
       speaker: "Orvus főmágus"
       give:
-        - "A tornyom próbája megtanít összpontosítani. Indulj!"
+        - "A mágia fegyelem. Mutasd meg, hogy uralod a bűvölés művészetét!"
       complete:
-        - "A torony elfogadott. Az elméd immár penge — használd bölcsen."
+        - "A rúnák elfogadtak. Az elméd immár penge — használd bölcsen."
     giver-npc: "varazslo_mester"
     display-name: "A Varázsló Mester-próbája"
-    description: "Teljesítsd a mester tornypróbáját (/parkour start varazslo_proba)."
+    description: "Bizonyítsd a fegyelmed a bűvölő-asztalnál: bűvölj meg 3 tárgyat."
     requires-quest: "wizard_mentor"
     objective:
-      type: "PARKOUR_TRIAL"
-      course: "varazslo_proba"
+      type: "ENCHANT_ITEMS"
+      count: 3
     rewards:
       class-xp: 400
   assassin_mentor:
@@ -594,16 +768,300 @@ quests:
     dialogue:
       speaker: "A Névtelen"
       give:
-        - "Az árnypálya elnyeli az ügyetleneket. Te talán túléled."
+        - "Az éjszaka vadjai a legjobb tanítók. Vadássz, míg az árnyak be nem fogadnak."
       complete:
         - "Egy hang nélkül tetted meg. Az árnyak mostantól testvérüknek hívnak."
     giver-npc: "orgyilkos_mester"
     display-name: "Az Orgyilkos Mester-próbája"
-    description: "Teljesítsd a mester árnypályáját (/parkour start orgyilkos_proba)."
+    description: "Vadássz az éj leple alatt: terítsd le 15 megerősített szörnyet (min. Lvl 2)."
     requires-quest: "assassin_mentor"
     objective:
-      type: "PARKOUR_TRIAL"
-      course: "orgyilkos_proba"
+      type: "KILL_MOBS"
+      count: 15
+      min-mob-level: 2
+    rewards:
+      class-xp: 400
+  druid_mentor:
+    dialogue:
+      speaker: "Ylvara, a Vén Tölgy"
+      complete:
+        - "A Fa hangja szól belőled... de a vad még nem bízik benned."
+    display-name: "A Druida Mestere"
+    description: "Keresd fel a druida mesterét, és jelentkezz a mester-próbára."
+    requires-job: "druid"
+    requires-quest: "druid_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "druida_mester"
+    rewards:
+      class-xp: 100
+  druid_master_trial:
+    dialogue:
+      speaker: "Ylvara, a Vén Tölgy"
+      give:
+        - "Aetrinita kötése nem kényszer — bizalom. Szerezd meg a vadon bizalmát!"
+      complete:
+        - "A vad immár melletted jár. A liget befogadott, gyermekem."
+    giver-npc: "druida_mester"
+    display-name: "A Druida Mester-próbája"
+    description: "Teremtsd meg az ősi kötést: szelídíts meg 3 vadat."
+    requires-quest: "druid_mentor"
+    objective:
+      type: "TAME_ANIMALS"
+      count: 3
+    rewards:
+      class-xp: 400
+  paladin_mentor:
+    dialogue:
+      speaker: "Seratiel lovag-parancsnok"
+      complete:
+        - "A fény nem a kardodban él, hanem abban, amiért kirántod."
+    display-name: "A Paplovag Mestere"
+    description: "Keresd fel a paplovag mesterét, és jelentkezz a mester-próbára."
+    requires-job: "paladin"
+    requires-quest: "paladin_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "paplovag_mester"
+    rewards:
+      class-xp: 100
+  paladin_master_trial:
+    dialogue:
+      speaker: "Seratiel lovag-parancsnok"
+      give:
+        - "Indulj szent hadjáratra: a sötétség erős szolgáit sújtsd le!"
+      complete:
+        - "A fény veled harcolt. Térdelj le — lovaggá ütlek."
+    giver-npc: "paplovag_mester"
+    display-name: "A Paplovag Mester-próbája"
+    description: "Szent hadjárat: győzz le 20 megerősített szörnyet (min. Lvl 3)."
+    requires-quest: "paladin_mentor"
+    objective:
+      type: "KILL_MOBS"
+      count: 20
+      min-mob-level: 3
+    rewards:
+      class-xp: 400
+  death_knight_mentor:
+    dialogue:
+      speaker: "Morvran, a Fagyott Penge"
+      complete:
+        - "A halál nem ellenség. Rossz kézben eszköz — a miénkben fegyver."
+    display-name: "A Halállovag Mestere"
+    description: "Keresd fel a halállovag mesterét, és jelentkezz a mester-próbára."
+    requires-job: "death_knight"
+    requires-quest: "death_knight_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "halallovag_mester"
+    rewards:
+      class-xp: 100
+  death_knight_master_trial:
+    dialogue:
+      speaker: "Morvran, a Fagyott Penge"
+      give:
+        - "Az elit fajzatok lelke a tiéd lehet. Arasd le őket!"
+      complete:
+        - "A fagy és a vér immár egy benned. Kelj fel, lovag."
+    giver-npc: "halallovag_mester"
+    display-name: "A Halállovag Mester-próbája"
+    description: "Arass a mélységben: pusztíts el 15 elit szörnyet (min. Lvl 4)."
+    requires-quest: "death_knight_mentor"
+    objective:
+      type: "KILL_MOBS"
+      count: 15
+      min-mob-level: 4
+    rewards:
+      class-xp: 400
+  shaman_mentor:
+    dialogue:
+      speaker: "Tharkun, a Viharlátó"
+      complete:
+        - "Az elemek nem szolgák — táncpartnerek. Tanuld a lépést!"
+    display-name: "A Sámán Mestere"
+    description: "Keresd fel a sámán mesterét, és jelentkezz a mester-próbára."
+    requires-job: "shaman"
+    requires-quest: "shaman_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "saman_mester"
+    rewards:
+      class-xp: 100
+  shaman_master_trial:
+    dialogue:
+      speaker: "Tharkun, a Viharlátó"
+      give:
+        - "A vihar fémje a réz. Olvaszd ki a föld ereiből az elemek tiszteletére!"
+      complete:
+        - "A rézben ott alszik a villám. Az elemek elfogadtak, sámán."
+    giver-npc: "saman_mester"
+    display-name: "A Sámán Mester-próbája"
+    description: "Az elemek kohója: olvassz ki 12 rézrudat."
+    requires-quest: "shaman_mentor"
+    objective:
+      type: "SMELT_ITEMS"
+      materials: [ "COPPER_INGOT" ]
+      count: 12
+    rewards:
+      class-xp: 400
+  monk_mentor:
+    dialogue:
+      speaker: "Csendes Jin apát"
+      complete:
+        - "A leggyorsabb ököl a nyugodt elméből indul."
+    display-name: "A Szerzetes Mestere"
+    description: "Keresd fel a szerzetes mesterét, és jelentkezz a mester-próbára."
+    requires-job: "monk"
+    requires-quest: "monk_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "szerzetes_mester"
+    rewards:
+      class-xp: 100
+  monk_master_trial:
+    dialogue:
+      speaker: "Csendes Jin apát"
+      give:
+        - "Test és lélek: küzdj, majd ülj le a vízhez és halássz. Mindkettő ugyanaz a gyakorlat."
+      complete:
+        - "Az egyensúly megvan benned. A kolostor kapuja nyitva áll."
+    giver-npc: "szerzetes_mester"
+    display-name: "A Szerzetes Mester-próbája"
+    description: "Test és lélek egyensúlya: győzz le 12 szörnyet ÉS fogj ki 5 halat."
+    requires-quest: "monk_mentor"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        description: "Test: 12 szörny"
+        type: "KILL_MOBS"
+        count: 12
+      2:
+        description: "Lélek: 5 hal"
+        type: "CATCH_FISH"
+        count: 5
+    rewards:
+      class-xp: 400
+  priest_mentor:
+    dialogue:
+      speaker: "Elenora főtisztelendő"
+      complete:
+        - "A hit önmagában kevés — áldássá kell formálni."
+    display-name: "A Pap Mestere"
+    description: "Keresd fel a pap mesterét, és jelentkezz a mester-próbára."
+    requires-job: "priest"
+    requires-quest: "priest_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "pap_mester"
+    rewards:
+      class-xp: 100
+  priest_master_trial:
+    dialogue:
+      speaker: "Elenora főtisztelendő"
+      give:
+        - "Áldd meg a fegyvert, amely védi a gyengét: bűvölj a szentély asztalánál!"
+      complete:
+        - "Az áldásod immár erő. A szentély a tiéd is, gyermekem."
+    giver-npc: "pap_mester"
+    display-name: "A Pap Mester-próbája"
+    description: "A szentély áldása: bűvölj meg 3 tárgyat."
+    requires-quest: "priest_mentor"
+    objective:
+      type: "ENCHANT_ITEMS"
+      count: 3
+    rewards:
+      class-xp: 400
+  warlock_mentor:
+    dialogue:
+      speaker: "Az Alkuszó"
+      complete:
+        - "Minden hatalomnak ára van. A kérdés csak az: te fizetsz, vagy neked fizetnek?"
+    display-name: "A Boszorkánymester Mestere"
+    description: "Keresd fel a boszorkánymester mesterét, és jelentkezz a mester-próbára."
+    requires-job: "warlock"
+    requires-quest: "warlock_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "pakt_mester"
+    rewards:
+      class-xp: 100
+  warlock_master_trial:
+    dialogue:
+      speaker: "Az Alkuszó"
+      give:
+        - "A paktumhoz lélek-homok kell — a mélység pora, amelyben a holtak lélegzete ül."
+      complete:
+        - "Az alku megköttetett. A mélység immár válaszol, ha szólítod."
+    giver-npc: "pakt_mester"
+    display-name: "A Boszorkánymester Mester-próbája"
+    description: "A paktum ára: gyűjts 16 lélekhomokot a mélységből."
+    requires-quest: "warlock_mentor"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "SOUL_SAND" ]
+      count: 16
+    rewards:
+      class-xp: 400
+  demon_hunter_mentor:
+    dialogue:
+      speaker: "Karyx, a Megjelölt"
+      complete:
+        - "Ahhoz, hogy levadászd a sötétet, előbb bele kell nézned."
+    display-name: "A Démonvadász Mestere"
+    description: "Keresd fel a démonvadász mesterét, és jelentkezz a mester-próbára."
+    requires-job: "demon_hunter"
+    requires-quest: "demon_hunter_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "demonvadasz_mester"
+    rewards:
+      class-xp: 100
+  demon_hunter_master_trial:
+    dialogue:
+      speaker: "Karyx, a Megjelölt"
+      give:
+        - "A bosszú nem várhat: a sötétség erős szolgái közül végezz tizennyolccal!"
+      complete:
+        - "A jeleid immár égnek. Vadász vagy — és soha többé préda."
+    giver-npc: "demonvadasz_mester"
+    display-name: "A Démonvadász Mester-próbája"
+    description: "Bosszúhadjárat: semmisíts meg 18 megerősített szörnyet (min. Lvl 3)."
+    requires-quest: "demon_hunter_mentor"
+    objective:
+      type: "KILL_MOBS"
+      count: 18
+      min-mob-level: 3
+    rewards:
+      class-xp: 400
+  evoker_mentor:
+    dialogue:
+      speaker: "Vaelith, a Pikkelyes Bölcs"
+      complete:
+        - "A sárkány-mágia rezonancia. Hangolódj, vagy elég a saját tüzedben."
+    display-name: "A Sárkányidéző Mestere"
+    description: "Keresd fel a sárkányidéző mesterét, és jelentkezz a mester-próbára."
+    requires-job: "evoker"
+    requires-quest: "evoker_trial"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "sarkany_mester"
+    rewards:
+      class-xp: 100
+  evoker_master_trial:
+    dialogue:
+      speaker: "Vaelith, a Pikkelyes Bölcs"
+      give:
+        - "Az ametiszt a sárkányének kristálya. Gyűjts eleget, hogy meghalljad!"
+      complete:
+        - "Hallod már, ugye? A pikkelyesek elfogadtak, idéző."
+    giver-npc: "sarkany_mester"
+    display-name: "A Sárkányidéző Mester-próbája"
+    description: "Sárkány-rezonancia: gyűjts 24 ametisztszilánkot."
+    requires-quest: "evoker_mentor"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "AMETHYST_SHARD" ]
+      count: 24
     rewards:
       class-xp: 400
   # --- Példa: több-objektívás quest (párhuzamos ALL mód) ---

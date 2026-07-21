@@ -66,8 +66,8 @@ be minden új játékos.
 | **Piac- / aukciós csarnok** | flavor a /market, /auction köré | nem kötelező kötés, de ide való |
 | **Vámház + Botera-negyed (sikátorok)** | lore: feketepiac, csempészek; a fegyvertilalom „színpada" | kapukhoz őr-NPC dekoráció |
 | **A Korszakok Könyve emlékmű** | szezonzáráskor ide kerül a bajnok bannerje + hologram-krónika | talapzat + `season-monument.location` |
-| **4 mester-céhház / kiképzőtér** | harcos/íjász/varázsló/orgyilkos mentor-questek | NPC-k: `harcos_mester`, `ijasz_mester`, `varazslo_mester`, `orgyilkos_mester` |
-| **4 próbapálya (parkour)** | a mester-próbák időmérős pályái | `/parkour setstart <pálya> ...` — `harcos_proba`, `ijasz_proba`, `varazslo_proba`, `orgyilkos_proba` |
+| **Mester-céhházak / kiképzőterek** | mind a 13 kaszt mentor-questje | 13 mester-NPC (lásd a 10. szakasz NPC-táblázatát) |
+| **Parkour-pálya (OPCIONÁLIS)** | szabadidős kihívás (a kaszt-fejlődés NEM függ tőle) | `/parkour setstart <pálya> ...` — pl. az akrobata-kihíváshoz |
 | **Kovács-negyed** | `kovacs_mester` NPC (beszállító-questek) | `/npc create kovacs_mester` |
 | **Karaván-megálló / fogadó-udvar** | a vándorkereskedő karaván fix megállója | `caravan.stops` koordináta |
 | **Őrjárat-útvonalak** | járőröző városi őrség (éjjel gyorsabb) | `city-guards.guards.<id>.route` waypointok |
@@ -75,9 +75,8 @@ be minden új játékos.
 | **Kaszt-szentélyek csarnoka(i)** | 13 kaszt-oltár (buff-rituálék) — lehet egy Szentély-negyed | lásd 6. szakasz (multiblock) |
 | **Hazatérés-kő** | `hazateres` rituálé (fővárosba teleport) — a TÖBBI városba is kell egy | LODESTONE mag-oltár |
 
-**Pálya-méretek a parkourhoz:** 30-60 blokk hosszú, tematikus (harcos: erőd-falak;
-íjász: fák/tetők; varázsló: lebegő szigetek; orgyilkos: sikátor-tetők a Botera-negyed
-fölött). Checkpointokkal, 1-2 perc alatt teljesíthető.
+**Parkour (opcionális):** ha építetek pályát, 30-60 blokk hosszú, 1-2 perc alatt
+teljesíthető legyen — de egyetlen kaszt-lánc sem függ tőle, tehát ráér bármikor.
 
 **Falak:** a városmag köré. A szezonzáró boss a NEUTRAL főváros zóna-pereme MELLÉ
 spawnol (`wall-offset` blokkal kijjebb) — hagyd szabadon a fal külső előterét, hogy
@@ -276,6 +275,15 @@ Szórj szét a világban **8-15 kis nevezetességet** — mindegyik kap felfedez
 | `ijasz_mester` | Caldestera céhház | ugyanígy |
 | `varazslo_mester` | Caldestera akadémia | ugyanígy |
 | `orgyilkos_mester` | Botera-negyed | ugyanígy |
+| `druida_mester` | erdei liget (Ryanora) | ugyanígy |
+| `paplovag_mester` | Caldestera szentély-negyed | ugyanígy |
+| `halallovag_mester` | Mortengrad kapuja / kripta | ugyanígy |
+| `saman_mester` | viharvert magaslat v. Glatziendorf | ugyanígy |
+| `szerzetes_mester` | hegyi kolostor v. Caldestera | ugyanígy |
+| `pap_mester` | Caldestera szentély-negyed | ugyanígy |
+| `pakt_mester` | Botera-negyed mélye / rejtett zug | ugyanígy |
+| `demonvadasz_mester` | a Kárhozat Kapuja pereme | ugyanígy |
+| `sarkany_mester` | Glatziendorf (sárkány-lore) | ugyanígy |
 | `kovacs_mester` | Caldestera kovács-negyed | beszállító-questek |
 | `erdei_venek` | erdei liget (Ryanora) | quest-célpont |
 | `vandor_kereskedo` | (a karaván hozza magával) | quest-célpont |

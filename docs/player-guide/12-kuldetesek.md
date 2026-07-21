@@ -98,14 +98,13 @@ Négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**.
 
 ## Mester-próbák (NPC-s láncok) 🧭
 
-A kezdő próba után minden kezdő kaszt **kétlépcsős mester-lánccal** folytathatja:
+A kezdő próba után **mind a 13 kaszt** kétlépcsős mester-lánccal folytathatja:
 
 1. **Mentor-küldetés:** vedd fel (`/quest accept <kaszt>_mentor`), keresd fel a kasztod
    **mester-NPC-jét** (a fővárosokban áll) és **beszélj vele**. Jutalom: **100 kaszt-XP**.
 2. **Mester-próba:** ezt már **maga a mester adja** — ugyanaz a kattintás, amivel a
-   mentor-küldetést teljesíted, azonnal kezedbe adja a próbát. Teljesítsd a
-   **próbapályáját** (időmérős parkour, pl. `/parkour start harcos_proba`).
-   Jutalom: **400 kaszt-XP**.
+   mentor-küldetést teljesíted, azonnal kezedbe adja a próbát. A próba mindig a
+   **kasztodhoz illő feladat** (vadászat, szelídítés, bűvölés…). Jutalom: **400 kaszt-XP**.
 
 **Hogyan találod meg?** A quest-NPC-k felett **részecske-aura** világít — de **csak neked**,
 ha éppen dolgod van velük:
@@ -114,15 +113,25 @@ ha éppen dolgod van velük:
 
 Más játékos nem látja a te jelzéseidet, te sem az övéit.
 
-| Lánc | Kaszt | NPC | Pálya |
-|---|---|---|---|
-| A Harcos Mestere → Mester-próbája | Harcos | harcos mester | `harcos_proba` |
-| Az Íjász Mestere → Mester-próbája | Íjász | íjász mester | `ijasz_proba` |
-| A Varázsló Mestere → Mester-próbája | Varázsló | varázsló mester | `varazslo_proba` |
-| Az Orgyilkos Mestere → Mester-próbája | Orgyilkos | orgyilkos mester | `orgyilkos_proba` |
+| Kaszt | Mester | Mester-próba |
+|---|---|---|
+| Harcos | Aldric mester | 20 megerősített szörny (Lvl 2+) |
+| Íjász | Lysa mesterasszony | 12 csontváz |
+| Varázsló | Orvus főmágus | 3 tárgy megbűvölése |
+| Orgyilkos | A Névtelen | 15 megerősített szörny (Lvl 2+) |
+| Druida | Ylvara, a Vén Tölgy | 3 vad megszelídítése |
+| Paplovag | Seratiel lovag-parancsnok | 20 szörny (Lvl 3+) |
+| Halállovag | Morvran, a Fagyott Penge | 15 elit szörny (Lvl 4+) |
+| Sámán | Tharkun, a Viharlátó | 12 rézrúd kiolvasztása |
+| Szerzetes | Csendes Jin apát | 12 szörny ÉS 5 hal |
+| Pap | Elenora főtisztelendő | 3 tárgy megbűvölése |
+| Boszorkánymester | Az Alkuszó | 16 lélekhomok |
+| Démonvadász | Karyx, a Megjelölt | 18 szörny (Lvl 3+) |
+| Sárkányidéző | Vaelith, a Pikkelyes Bölcs | 24 ametisztszilánk |
 
-> Az NPC-k és a pályák **kihelyezése a szerver-csapat feladata** — ha még nem állnak,
-> a lánc egyszerűen nem halad (a küldetés nem törik el).
+> A mester-NPC-k **kihelyezése a szerver-csapat feladata** — ha még nem állnak,
+> a lánc egyszerűen nem halad (a küldetés nem törik el). A **parkour** opcionális
+> szabadidős tartalom maradt (pl. akrobata-kihívás) — a kaszt-fejlődés nem függ tőle.
 
 ## Sötét Beavatás (a Nekromanta kapuja)
 

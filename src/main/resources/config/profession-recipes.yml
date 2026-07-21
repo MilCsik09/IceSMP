@@ -3803,5 +3803,30 @@ profession-recipes:
     result: { unique: runa_visszhang }
     ingredients: [ "AMETHYST_SHARD:4", "unique:runapor:2", "unique:nema_kristaly:1", "unique:runakreta:1" ]
 
+  # ===== Kazamata-kulcsok (B3): belépő a DUNGEON zónákba =====
+  # A signature "dungeonkulcs_<zóna-id>" — a zónát az admin hozza létre:
+  # /territory create|circle dungeon <frakció> <zóna-id> ... A kulcs belépéskor ELFOGY.
+  melyseg_kulcsa:
+    profession: enchanter
+    level: 30
+    display-name: "A Mélység Kulcsa"
+    category: "Kazamata-kulcs"
+    lore:
+      - "A Vasművek elhagyott tárnáinak zárja"
+      - "erre a kulcsra vár. Belépéskor elfogy."
+    result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_melyseg, custom-model-data: 6203 }
+    ingredients: [ "ECHO_SHARD:2", "IRON_INGOT:8", "unique:runapor:2" ]
+  csontkripta_kulcsa:
+    profession: enchanter
+    level: 40
+    display-name: "A Csontkripta Kulcsa"
+    category: "Kazamata-kulcs"
+    lore:
+      - "Mortengrad kriptamélyének pecsétje —"
+      - "a holtak csak a kulcs hordozóját engedik le."
+    result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_csontkripta, custom-model-data: 6204 }
+    ingredients: [ "ECHO_SHARD:3", "BONE_BLOCK:8", "unique:arnyekpor:2" ]
+
 crafted-by:
   enabled: true
+

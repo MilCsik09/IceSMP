@@ -41,11 +41,17 @@
    elfogy; a 10-53. napnak nincs dátum-kapus tartalma; a 2+ szezonnak NULLA fejezet-questje
    (csak chapter: 1 létezik). 46-50-es kaszt-szint: semmi nem oldódik fel (~236 kill üres
    grind). → fejezet 2-3 megírása, szezon-közepi esemény, level-50 capstone.
+   ✅ RÉSZBEN: 2. fejezet (5 quest, Hasadás-téma) + 3. fejezet (5 quest, Néma
+   Királynő-téma) + level-50 capstone-lánc (ver_emlekezete → kaszt_orokseg) megírva.
+   A szezon-KÖZEPI dátum-kapus esemény még nyitott (mechanizmus is kellene hozzá).
 
 ## 🟡 Érdemi
 
 6. Onboarding-lánc zsákutca: az onboarding_gather-nek nincs next-je → a kaszt-próbát
-   magától kell megtalálni. [GYORS] ✅ KÉSZ: onboarding_utmutatas (Hírnök-quest) beláncolva. • Csak 4/13 kaszt kapott teljes mentor-láncot.
+   magától kell megtalálni. [GYORS] ✅ KÉSZ: onboarding_utmutatas (Hírnök-quest)
+   beláncolva. • Csak 4/13 kaszt kapott teljes mentor-láncot. ✅ KÉSZ: mind a 13
+   kasztnak teljes mentor+mester lánca van; TULAJ-DÖNTÉS: a mester-próbák kaszt-ízű
+   feladatok, a parkour opcionális szabadidős tartalom lett.
 7. A kaszt az egyetlen admin-jegyes, visszafordíthatatlan döntés — és a legkevesebb
    infóval (a szerep-címke csak a spec-oldalon látszik). → self-service kaszt-váltás a
    frakció-minta szerint (díj+cooldown) + szerep-címke a választó GUI-ban.
@@ -107,5 +113,7 @@
   kattintó visz mindent" → personal-loot minta, ha a létszám megnő.
 - **Self-service kaszt-váltás** (7. lelet második fele): díj+cooldown a frakció-minta
   szerint — csak ha az admin-jegyes reset tehernek bizonyul.
-- **Doksi-adósság**: dungeon-rendszer player-guide oldal; a hiányzó 9/13 kaszt
-  mentor-lánca (6. lelet második fele).
+- **Doksi-adósság**: ✅ KÉSZ — dungeon player-guide oldal (16-kazamatak.md) + mind a
+  13 kaszt mentor-lánca megírva; kazamata-kulcs receptek (melyseg, csontkripta) élnek.
+- **Szezon-közepi dátum-kapus esemény** (5. lelet maradéka): mechanizmus + tartalom még
+  nyitott.

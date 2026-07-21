@@ -711,6 +711,18 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** meleg arany, sárga csillanásokkal; akcent: királylila
 - **Hangulat / lore:** a Caldesterai Kincsesláda kulcsa — ritka, ünnepélyes, ötvösmunka.
 
+### 6203 — A Mélység Kulcsa
+- **Fájl:** `key_melyseg.png` &nbsp;|&nbsp; **Alap-item:** `TRIAL_KEY`
+- **Ábrázolás:** nehéz, ipari vaskulcs fogaskerék-mintás fejjel, rúnavésettel
+- **Színvilág:** sötét vasszürke, rozsda-nyomokkal; akcent: halvány rúna-türkiz
+- **Hangulat / lore:** a Vasművek Akadémiája elhagyott tárnáinak zárja — kazamata-belépő, belépéskor elfogy.
+
+### 6204 — A Csontkripta Kulcsa
+- **Fájl:** `key_csontkripta.png` &nbsp;|&nbsp; **Alap-item:** `TRIAL_KEY`
+- **Ábrázolás:** csontból faragott kulcs, koponya-fejjel, megfeketedett ezüst pánttal
+- **Színvilág:** csontfehér és hamuszürke; akcent: fakó lélek-kék
+- **Hangulat / lore:** Mortengrad kriptamélyének pecsétje — a holtak csak a hordozóját engedik le.
+
 ### 6210 — Recept-tervrajz
 - **Fájl:** `blueprint.png` &nbsp;|&nbsp; **Alap-item:** `KNOWLEDGE_BOOK`
 - **Ábrázolás:** kék tervrajz-lap fehér szerkesztési vonalakkal, egyik sarka felpöndörödik

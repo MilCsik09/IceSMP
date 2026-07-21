@@ -490,6 +490,9 @@ cultists:
     - "ECHO_SHARD:1:2"
     - "GOLD_INGOT:2:5"
     - "EXPERIENCE_BOTTLE:3:6"
+    # Sötét-mágiájú anyag (a guide ígérte a Suttogóknak): a rítus-zsákmányban és a
+    # Suttogó-részesedésben egyaránt gurulhat — a sötét receptek alapanyaga.
+    - "unique:arnyekpor:2"
   courier-lifetime-minutes: 8
   # ===== Suttogó-crossover: a BETELJESÜLT esemény (rítus / célba érő hírvivő) =====
   # jutalma a rejtett oldalnak: minden felesküdött Suttogó gyanúja ennyivel csillapodik

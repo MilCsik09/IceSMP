@@ -38,6 +38,7 @@ külön oldala van, hogy könnyen megtaláld, amit keresel.
 13. [Frakcióterületek és saját birtok](13-teruletek.md) — fővárosok, claim, építésvédelem
 14. [Parancsok listája](14-parancsok.md) — minden parancs egy helyen
 15. [Party (csapat)](15-csapat.md) — csapatalakítás, közös XP, party-HUD
+16. [Kazamaták](16-kazamatak.md) — kulcs-kapus dungeonök, futam-passz, heti pecsét
 
 ---
 
