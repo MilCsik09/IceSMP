@@ -79,9 +79,10 @@
 
 ## Teszter-visszajelzések (2026-07-20)
 
-- [ ] **N24 — Claim-segéd:** a claimelés "macerás" — kijelölés-varázsló (wand-item vagy
-      lépésenkénti GUI-asszisztens, élő előnézettel a DisplayFx-falakkal); a pénz-oldala
-      és a magasság/irány-bővítés a teszterek szerint jó, marad.
+- [x] **N24 — Claim-segéd `[KÉSZ ✅]`:** Birtokmérő pálca (/claim wand — sarok-kijelölés
+      kattintással, ár-előnézet, SNEAK+jobb foglalás) + admin Határkijelölő pálca
+      (/territory wand — poligon-pontok kattintással). A DisplayFx élő előnézet a
+      meglévő /claim show-val kombinálható; GUI-varázsló opcionális folytatás.
 - [ ] **N25 — Hely-kötött világesemények:** a world boss / escort ne (csak) játékos-horgonyra
       spawnoljon, hanem fix/megjelölt helyszínekre is (admin-kijelölt esemény-pontok listája,
       sorsolás közülük); + ÚJ esemény-ötlet a lore-ból: kultista támadás/keresés/követés.

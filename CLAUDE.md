@@ -43,7 +43,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
 - **CMD-szabály:** minden új custom/unique item CustomModelData-t kap, és fel KELL venni a
   `docs/RESOURCE_PACK_CMD.md` regiszterbe (a resource pack készítő ebből dolgozik). Sávok:
-  1001+ pénz, 4101/4201+ relikvia, 5201+ katalizátor, 5301+ pet-eszköz, 5401 ostromgép,
+  1001+ pénz, 4101/4201+ relikvia, 5201+ katalizátor, 5301+ pet-eszköz, 5401 ostromgép, 5410+ kijelölő-pálca,
   6000+ unique anyag, 6201+ kulcs, 6210 tervrajz, 6300+ recept-tárgy, 6450+ bolt-különlegesség,
   6460+ loot-nevesített.
 - Minden gameplay-változásnál frissítsd a docsot: `PLAYER_GUIDE.md` (+ a megfelelő `docs/player-guide/` oldal), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.

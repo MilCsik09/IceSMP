@@ -425,7 +425,11 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     /** Records the player's standing BLOCK as the selection's first/second corner. */
     public int[] setCorner(final Player player, final boolean first) {
-        final Location location = player.getLocation();
+        return setCorner(player, first, player.getLocation());
+    }
+
+    /** Pálcás kijelölés: a KATTINTOTT blokk koordinátájával (nem a játékos helyével). */
+    public int[] setCorner(final Player player, final boolean first, final Location location) {
         final Selection selection = selections.computeIfAbsent(player.getUniqueId(), id -> new Selection());
         synchronized (selection) {
             final String worldName = location.getWorld().getName();

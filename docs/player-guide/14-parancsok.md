@@ -79,6 +79,7 @@ jelenti, hogy **elhagyható**.
 | `/claim` | `birtok` | 16×16 blokk gyorsfoglalása körülötted (**saját birtok**, ±20 blokk magasan) |
 | `/claim unclaim\|info\|list\|show` | | Claim felszabadítása / infó / lista / határ-kirajzolás |
 | `/claim pos1\|pos2\|area` | | Blokk-pontos terület kijelölése és foglalása |
+| `/claim wand` | `palca` | **Birtokmérő pálca**: bal katt = 1. sarok, jobb = 2. sarok (ár-előnézet), SNEAK+jobb = foglalás |
 | `/claim extend up\|down` | | Claim magasítása / mélyítése (+5 blokk, pénzért) |
 | `/claim trust\|untrust <név>` | | Megbízott hozzáadása / elvétele (teljes hozzáférés a claimjeidhez) |
 

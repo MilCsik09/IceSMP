@@ -1453,3 +1453,15 @@ Jó tesztelést! ❄️
 - [ ] Backlog (ideas N24-N27): claim-segéd varázsló, hely-kötött eventek + kultista
       esemény, ismételt-spawn kegyelem (gyengébb boss VAGY ideiglenes buff),
       kereskedő-karaván szabad spawn.
+
+## Kijelölő-pálcák (N24 — teszter-kérés)
+- [ ] **Birtokmérő pálca** (`/claim wand`, CMD 5410, STICK): bal katt blokkra = 1. sarok,
+      jobb katt = 2. sarok (méret+ár-előnézet chatben, átfedés-figyelmeztetéssel),
+      SNEAK+jobb = foglalás (a /claim area teljes ár/limit-logikáján át). A kattintott
+      BLOKK koordinátája megy a kijelölésbe (nem a játékos helye). A pálca-katt nem
+      üt/nem nyit semmit (cancel).
+- [ ] **Határkijelölő pálca** (`/territory wand`, CMD 5411, BLAZE_ROD, admin-node):
+      bal katt = poligon-pont a kattintott blokkon, jobb katt = utolsó pont visszavonása,
+      SNEAK+jobb = határ-előnézet (/territory show); létrehozás továbbra is
+      /territory create-tel. Jog nélkül a pálca nem csinál semmit (hibaüzenet).
+- [ ] Tab-complete: `claim wand`, `territory wand`; CMD-regiszter: 5410-5411 felvéve.

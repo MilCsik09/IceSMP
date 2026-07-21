@@ -62,6 +62,14 @@ public final class ClaimCommand implements BasicCommand {
             case "show" -> handleShow(player);
             case "pos1" -> handleCorner(player, true);
             case "pos2" -> handleCorner(player, false);
+            case "wand", "palca" -> {
+                final var wand = hu.taliann.icesmp.listeners.SelectionWandListener.createWand("claim");
+                for (final var overflow : player.getInventory().addItem(wand).values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+                }
+                player.sendMessage(messageManager.get("claim-wand-given",
+                        "&a⚑ Birtokmérő pálca a kezedben: bal katt = 1. sarok, jobb = 2. sarok, SNEAK+jobb = foglalás."));
+            }
             case "area" -> handleArea(player);
             case "extend" -> handleExtend(player, args);
             case "admin" -> handleAdmin(player, args);
@@ -277,7 +285,7 @@ public final class ClaimCommand implements BasicCommand {
         final CommandSender sender = commandSourceStack.getSender();
 
         final List<String> options = new ArrayList<>(
-                List.of("claim", "unclaim", "info", "list", "trust", "trustgui", "untrust", "show", "pos1", "pos2", "area", "extend", "help"));
+                List.of("claim", "unclaim", "info", "list", "trust", "trustgui", "untrust", "show", "pos1", "pos2", "wand", "area", "extend", "help"));
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             options.add("admin");
         }

@@ -587,7 +587,11 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
      * world-scoped: moving to another world resets it. Returns the new point count.
      */
     public int addPoint(final Player player) {
-        final Location location = player.getLocation();
+        return addPoint(player, player.getLocation());
+    }
+
+    /** Pálcás kijelölés: a KATTINTOTT blokk koordinátájával (nem a játékos helyével). */
+    public int addPoint(final Player player, final Location location) {
         final String worldName = location.getWorld().getName();
         final PointBuffer buffer = pointBuffers.computeIfAbsent(player.getUniqueId(), id -> new PointBuffer());
         synchronized (buffer) {

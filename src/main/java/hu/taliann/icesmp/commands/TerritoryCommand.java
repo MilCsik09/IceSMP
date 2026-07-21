@@ -38,7 +38,7 @@ public final class TerritoryCommand implements BasicCommand {
     private static final int MAX_POINTS = 64;
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "pos", "undo", "clearpoints", "points", "create", "circle",
+            "pos", "wand", "undo", "clearpoints", "points", "create", "circle",
             "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
     private static final List<String> TYPE_NAMES = List.of(
             "faction", "protected-faction", "protected-city", "capital", "doom-gate", "dungeon");
@@ -69,6 +69,7 @@ public final class TerritoryCommand implements BasicCommand {
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "pos", "point" -> handleAddPoint(sender);
+            case "wand", "palca" -> handleWand(sender);
             case "undo" -> handleUndo(sender);
             case "clearpoints", "clear" -> handleClearPoints(sender);
             case "points" -> handlePoints(sender);
@@ -93,6 +94,19 @@ public final class TerritoryCommand implements BasicCommand {
     }
 
     // ==================== polygon boundary buffer ====================
+
+    private void handleWand(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final var wand = hu.taliann.icesmp.listeners.SelectionWandListener.createWand("territory");
+        for (final var overflow : player.getInventory().addItem(wand).values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+        }
+        sender.sendMessage(messageManager.get("territory-wand-given",
+                "&a⚑ Határkijelölő pálca a kezedben: bal katt = pont, jobb = visszavon, SNEAK+jobb = előnézet."));
+    }
 
     private void handleAddPoint(final CommandSender sender) {
         if (!(sender instanceof Player player)) {

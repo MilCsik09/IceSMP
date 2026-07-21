@@ -91,6 +91,9 @@ A **claim** a te személyes, védett földed — frakciótól függetlenül bár
    magasíthatod/mélyítheted +5 blokkonként). A határokat részecskék rajzolják ki.
    **Blokk-pontos, egyedi méretű** birtokhoz: állj a terület egyik sarkára (`/claim pos1`),
    a másikra (`/claim pos2`), majd `/claim area` — a méretet és az árat előre kiírja.
+   **Kényelmesebb út — a Birtokmérő pálca** (`/claim wand`): bal kattintás a blokkra =
+   1. sarok, jobb kattintás = 2. sarok (a méret és az ár azonnal megjelenik), majd
+   **SNEAK + jobb kattintás = foglalás**. Nem kell a sarkokra odaállni — elég rájuk mutatni!
    Claim-határ átlépésekor az action-bar mutatja, kinek a birtokára léptél.
 
 **Mennyibe kerül?**
@@ -133,6 +136,7 @@ A birtokodon (a claim dobozán belül) **idegenek**:
 | `/claim list` | Saját claimjeid listája |
 | `/claim show` | A környező claimek PEREMÉNEK kirajzolása pár másodpercig (zöld = sajátod, láng = másé, komposzt = a gyorsfoglalás előnézete) |
 | `/claim pos1` / `/claim pos2` | Blokk-pontos kijelölés két sarka (a blokk, amin állsz) |
+| `/claim wand` | **Birtokmérő pálca** — sarok-kijelölés kattintással, SNEAK+jobb = foglalás |
 | `/claim area` | A két sarok közti pontos téglalap lefoglalása (az ár előre kiírva, egyben ég el) |
 | `/claim extend up\|down` | A claim magasítása / mélyítése +5 blokkonként, pénzért (a menüből is) |
 | `/claim trust <név>` / `/claim untrust <név>` | Megbízott hozzáadása / elvétele |

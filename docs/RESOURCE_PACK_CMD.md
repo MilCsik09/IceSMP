@@ -202,6 +202,19 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** szénfekete-szürke; akcent: sötétebb, kékes acél
 - **Hangulat / lore:** Ostromágyú — a Hét Vérháború öröksége; csak raid alatt szólal meg.
 
+
+### 5410 — Birtokmérő pálca
+- **Fájl:** `claim_wand.png` &nbsp;|&nbsp; **Alap-item:** `STICK`
+- **Ábrázolás:** egyenes mérőpálca zöld zsinór-jelöléssel, a végén kis smaragd-csúccsal
+- **Színvilág:** világos fa + smaragdzöld akcent
+- **Hangulat / lore:** a Bankárszövetség földmérőinek eszköze — vele jelölik ki a birtokok sarkait.
+
+### 5411 — Határkijelölő pálca
+- **Fájl:** `territory_wand.png` &nbsp;|&nbsp; **Alap-item:** `BLAZE_ROD`
+- **Ábrázolás:** aranyveretes hosszú pálca, tetején kis zászló-motívummal
+- **Színvilág:** arany-bronz; akcent: mélyvörös zászló
+- **Hangulat / lore:** a koronák földmérő-pálcája — territórium-határok admin-kijelöléséhez.
+
 ## Unique szakma-anyagok (6000–6146)
 
 ### 6000 — Tiszta Vasesszencia
