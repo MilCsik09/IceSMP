@@ -1142,7 +1142,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] `riddle: true` quest-mező: a napló/haladás-sor MINDIG "??? — a nyomot a leírás
         rejti"-t mutat — a cél sosem tárul fel, a megfejtés a játékosé/közösségé
         (az időzített súgás-fokozat kivezetve, nincs hint-minutes kulcs).
-  - [ ] 17 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
+  - [ ] 16 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
         olvasztás, biom, horgászat, NPC-keresés versbe rejtve); admin-szerkesztés:
         `/quest admin set <id> riddle true`.
   - [ ] Ellenőrzés: rejtvény-quest felvéve → a /quest info és a napló SOHA nem írja ki

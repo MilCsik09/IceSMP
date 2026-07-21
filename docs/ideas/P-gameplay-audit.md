@@ -73,7 +73,8 @@
 
 ## 🟢 Polish / doc
 
-15. 17 riddle-quest él, a doc 16-ot mond. [GYORS] ✅ KÉSZ (doc javítva 17-re).
+15. ~~17 riddle-quest él, a doc 16-ot mond~~ — TÉVES lelet volt: a 17. találat egy
+    komment-sor; valójában 16 rejtvény él, a doc 16-ja HELYES volt (visszajavítva).
     • Dungeon-rendszer kapu-kód létezik, de nincs player-guide oldala.
     • Kalauz-ellentmondás: factions.yml komment vs. kód a DARK-váltás díjáról.
       ✅ KÉSZ (komment a kódhoz igazítva: a Sötétbe lépés mindig ingyenes).
