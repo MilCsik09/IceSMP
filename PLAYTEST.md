@@ -1543,3 +1543,14 @@ Jó tesztelést! ❄️
       forrás sosem tűnik el egy-egy érkezésre.
 - [ ] factions.yml komment-ellentmondás javítva: a Sötétbe lépés a KÓD szerint mindig
       ingyenes (sinner-feltétel + örök paktum az ára) — a config-komment már ezt mondja.
+
+## P-audit javítások, 3. kör — esemény-orchestráció
+- [ ] Egyszerre csak EGY nagy PvE-esemény indul természetes sorsolásból: a
+      world-events.orchestration.major-events listán szereplő események
+      (world-boss, invasion, wild-hunt, escort, cultists) sorsolása kimarad,
+      amíg egy másik listás esemény aktív. Élő kulcsok; kapcsoló a config-menüben.
+- [ ] Az admin /events parancsok (worldboss, invasion, wildhunt, escort, cultists)
+      a kaput MEGKERÜLIK — kézi indítás mindig lehetséges.
+- [ ] Ellenőrzés: futó világboss mellett az invázió/kíséret/kultista sorsolás nem
+      indít újat (az intervallum ettől még pörög); a boss halála után a következő
+      sorsolás már indíthat.

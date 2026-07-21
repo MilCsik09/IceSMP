@@ -61,6 +61,14 @@ public final class CultistEventManager {
     /** N25 — setterrel kötve. */
     private volatile EventSpawnPointManager spawnPointManager;
 
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public CultistEventManager(final JavaPlugin plugin, final ConfigManager configManager,
                                final MobScalingManager mobScalingManager, final EventSpawnGuard spawnGuard,
                                final TerritoryManager territoryManager, final CorruptionManager corruptionManager,
@@ -80,6 +88,11 @@ public final class CultistEventManager {
 
     public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
         this.spawnPointManager = spawnPointManager;
+    }
+
+    /** Fut-e éppen kultista esemény (orchestráció-kapu / menü). */
+    public boolean isActive() {
+        return active;
     }
 
     public boolean isCultist(final Entity entity) {
@@ -140,6 +153,11 @@ public final class CultistEventManager {
             return;
         }
         nextAttemptAt = now + Math.max(1L, configManager.getLong("cultists.interval-minutes", 100L)) * 60_000L;
+        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+        final MajorEventGate gateRef = eventGate;
+        if (gateRef != null && !gateRef.mayStartNaturally("cultists")) {
+            return;
+        }
         final double chance = Math.max(0.0D, Math.min(100.0D,
                 configManager.getDouble("cultists.chance-percent", 30.0D)));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {

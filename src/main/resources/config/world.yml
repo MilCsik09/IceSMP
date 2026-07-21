@@ -71,6 +71,12 @@ world-events:
     escort: { mode: "player" }
     caravan: { mode: "player" }
     cultists: { mode: "player" }
+  # ===== Figyelem-orchestráció (gameplay-audit): egyszerre csak EGY nagy PvE-esemény =====
+  # A listás események természetes sorsolása kimarad, amíg egy másik listás esemény fut
+  # (az admin /events ... parancsok mindig átmennek). Élő kulcsok.
+  orchestration:
+    enabled: true
+    major-events: [ "world-boss", "invasion", "wild-hunt", "escort", "cultists" ]
   # B19 — Évszakos világ-modifikátorok: a VALÓS naptári évszak finom esély-szorzói a
   # világesemények sorsolására (1.0 = nincs módosítás; a plafon mindig 100%). Évszakok:
   # tel (dec-feb) / tavasz (már-máj) / nyar (jún-aug) / osz (szept-nov). Események:

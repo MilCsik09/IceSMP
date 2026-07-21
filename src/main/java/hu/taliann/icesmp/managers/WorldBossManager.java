@@ -120,6 +120,14 @@ public final class WorldBossManager {
     /** Current health fraction (0–1) of the active boss, driving the shared HUD boss-bar. */
     private volatile float bossHealthFraction = 1.0F;
 
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public WorldBossManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager, final FactionManager factionManager,
                             final FactionTreasuryManager treasuryManager, final SeasonManager seasonManager) {
@@ -236,6 +244,12 @@ public final class WorldBossManager {
 
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.check-interval-minutes", 90L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
+
+        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+        final MajorEventGate gateRef = eventGate;
+        if (gateRef != null && !gateRef.mayStartNaturally("world-boss")) {
+            return;
+        }
 
         // B33: a végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció);
         // B19: a valós évszak finom szorzója (season-modifiers.<evszak>.world-boss).

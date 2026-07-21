@@ -79,6 +79,14 @@ public final class EscortManager {
 
     private final EventSpawnGuard spawnGuard;
 
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public EscortManager(final JavaPlugin plugin, final ConfigManager configManager,
                          final MobScalingManager mobScalingManager, final MessageManager messageManager,
                          final EventSpawnGuard spawnGuard) {
@@ -158,6 +166,11 @@ public final class EscortManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
+            // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+            final MajorEventGate gateRef = eventGate;
+            if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
+                return;
+            }
             final double chance = Math.max(0.0D, Math.min(100.0D,
                     configManager.getDouble("escort.chance-percent", 30.0D)));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {

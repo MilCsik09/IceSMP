@@ -398,6 +398,20 @@ public final class IceSMPCore {
                 mobScalingManager, eventSpawnGuard, territoryManager, corruptionManager, messageManager,
                 whisperManager, seasonManager);
         cultistEventManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
+        // Gameplay-audit: figyelem-orchestráció — egyszerre csak egy nagy PvE-esemény
+        // induljon természetes sorsolásból (admin-indítás mindig átmegy a kapun).
+        final hu.taliann.icesmp.managers.MajorEventGate majorEventGate =
+                new hu.taliann.icesmp.managers.MajorEventGate(configManager);
+        majorEventGate.register("world-boss", worldBossManager::isBossActive);
+        majorEventGate.register("invasion", invasionManager::isActive);
+        majorEventGate.register("wild-hunt", wildHuntManager::isActive);
+        majorEventGate.register("escort", escortManager::isActive);
+        majorEventGate.register("cultists", cultistEventManager::isActive);
+        worldBossManager.setEventGate(majorEventGate);
+        invasionManager.setEventGate(majorEventGate);
+        wildHuntManager.setEventGate(majorEventGate);
+        escortManager.setEventGate(majorEventGate);
+        cultistEventManager.setEventGate(majorEventGate);
         this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);

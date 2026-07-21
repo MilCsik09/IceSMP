@@ -61,6 +61,14 @@ public final class WildHuntManager {
     /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
     private volatile EventSpawnGuard spawnGuard;
 
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public WildHuntManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final PartyManager partyManager,
                            final MessageManager messageManager) {
@@ -132,6 +140,11 @@ public final class WildHuntManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
+            // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+            final MajorEventGate gateRef = eventGate;
+            if (gateRef != null && !gateRef.mayStartNaturally("wild-hunt")) {
+                return;
+            }
             // B19: évszak-szorzó (télen vadabb a Hajsza — season-modifiers.<evszak>.wild-hunt).
             final SeasonalModifierService seasonalRef = seasonalModifiers;
             final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("wild-hunt");

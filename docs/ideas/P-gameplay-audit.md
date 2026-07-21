@@ -25,6 +25,9 @@
    valószínűség ~0.7) + ~30 broadcast-forrás (8-12 broadcast/óra) — nincs prioritás-jel,
    nincs throttle. → közös "egy nagy PvE-esemény egyszerre" kapu + a személyes-léptékű
    események (régészet, titkos hely) action-barra/local-chatre.
+   ✅ RÉSZBEN: MajorEventGate — a nagy események (world-boss/invasion/wild-hunt/
+   escort/cultists) természetes sorsolása kapuzott (orchestration.enabled).
+   A broadcast-diéta (személyes-léptékű események action-barra) még nyitott.
 5. **A szezon-ív elöl-terhelt.** Minden rejtvény/story/fejezet-tartalom az első ~2 hétben
    elfogy; a 10-53. napnak nincs dátum-kapus tartalma; a 2+ szezonnak NULLA fejezet-questje
    (csak chapter: 1 létezik). 46-50-es kaszt-szint: semmi nem oldódik fel (~236 kill üres

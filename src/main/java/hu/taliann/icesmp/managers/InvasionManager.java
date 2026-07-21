@@ -106,6 +106,14 @@ public final class InvasionManager {
         }
     }
 
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public InvasionManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final MessageManager messageManager) {
         this.plugin = plugin;
@@ -132,6 +140,11 @@ public final class InvasionManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.invasion.check-interval-minutes", 75L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
+        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+        final MajorEventGate gateRef = eventGate;
+        if (gateRef != null && !gateRef.mayStartNaturally("invasion")) {
+            return;
+        }
         // B33: a végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció);
         // B19: évszak-szorzó (season-modifiers.<evszak>.invasion).
         final SeasonFinaleManager finaleRef = seasonFinale;

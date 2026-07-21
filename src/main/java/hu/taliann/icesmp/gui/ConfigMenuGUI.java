@@ -70,6 +70,7 @@ public final class ConfigMenuGUI {
                 Entry.integer("factions.tax.interval-minutes", "Beszedés (perc)", 5, 1, 100000))));
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
+                Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),
                 Entry.toggle("world-events.blood-moon.enabled", "Vérhold"),
                 Entry.number("world-events.blood-moon.chance-percent", "Vérhold esély (%)", 5, 0, 100),
                 Entry.toggle("world-events.world-boss.enabled", "Világboss"),

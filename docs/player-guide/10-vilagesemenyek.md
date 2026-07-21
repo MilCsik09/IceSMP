@@ -3,6 +3,10 @@
 Időnként **különleges dolgok** történnek az egész szerveren. Ezekre figyelj — extra jutalmat
 (vagy extra veszélyt!) hozhatnak.
 
+> **Egyszerre egy nagy kaland:** a nagy mob-események (világboss, invázió, vad hajsza,
+> kíséret, kultisták) nem torlódnak — amíg az egyik zajlik, a következő nagy esemény
+> megvárja a sorát. Így mindig tudod, merre van a "fő műsor".
+
 > **Hol jelenhetnek meg?** A mob-spawnoló események (világboss, invázió, vad hajsza) — akárcsak
 > a meteor és a kincs — **soha nem érkeznek városba**: claimelt frakció-territóriumba,
 > játékos-claimbe és védett régióba nem spawnolnak, és víz tetejére sem. Az esemény-szörnyek
