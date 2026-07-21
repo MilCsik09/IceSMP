@@ -179,6 +179,8 @@ world-events:
       cleanse:    { red: 1.0,  blue: 1.0,  neutral: 1.5,  dark: 0.5 }
       duel:       { red: 1.0,  blue: 1.0,  neutral: 1.0,  dark: 1.5 }
       spy:        { red: 0.75, blue: 0.75, neutral: 0.75, dark: 1.5 }
+      # cult — beteljesült kultista esemény (csak a DARK kapja, a kód oldaláról)
+      cult:       { dark: 1.0 }
     # Tárgy-jutalom a bajnok frakció online tagjainak: "MATERIAL:DARAB" lista.
     champion-reward-items:
       - "DIAMOND:8"
@@ -464,6 +466,12 @@ cultists:
     - "GOLD_INGOT:2:5"
     - "EXPERIENCE_BOTTLE:3:6"
   courier-lifetime-minutes: 8
+  # ===== Suttogó-crossover: a BETELJESÜLT esemény (rítus / célba érő hírvivő) =====
+  # jutalma a rejtett oldalnak: minden felesküdött Suttogó gyanúja ennyivel csillapodik
+  # (privát üzenettel — nem leplez le), a DARK frakció pedig liga-pontot kap ("cult"
+  # forrás a season.source-weights mátrixban). A védelem így valódi játék-cél.
+  whisper-suspicion-relief: 15.0
+  success-season-points: 3
 
 # ===== H2 — Terjedő korrupt zóna (a Kapu rontása; tisztítása a Fát gyógyítja) =====
 # Ritkán rontás-góc nyílik a vadonban: SCULK_CATALYST mag + logikai sugarú zóna, amely

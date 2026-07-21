@@ -122,6 +122,11 @@ A Néma Királynő kósza hívei időnként előbújnak a homályból — három
 - **Hírvivő:** magányos csuklyás alak oson a Kitaszítottak földje felé. **Kövesd** — vagy
   állítsd meg, mielőtt köddé válik és az üzenete célba ér.
 
+**A tét kétoldalú:** ha egy kultista esemény **beteljesül** (a rítus lefut, vagy a hírvivő
+célba ér), a Néma Királynő **rejtett hívei** — a Suttogók — jutalmat kapnak: az álcájuk
+mélyül, és a Kitaszítottak liga-pontot nyernek. Vagyis a kultisták **védelme** is valódi
+játék: sosem tudhatod, hogy aki melletted "késve ér oda" a rítushoz, az ügyetlen… vagy hű.
+
 ## Rontás-góc 🕸
 
 Időnként egy **rontás-góc** nyílik a vadonban (broadcast megadja a helyét): közepén egy

@@ -66,6 +66,33 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
         return configManager.getBoolean("factions.whisper.enabled", true);
     }
 
+    /**
+     * N25b-crossover — a Királynő kegye: amikor egy kultista esemény BETELJESÜL
+     * (rítus / célba érő hírvivő), minden online, felesküdött Suttogó gyanúja
+     * csillapodik — a hálózat sikere mélyíti az álcájukat. Ez adja a "védd meg az
+     * eseményt" oldal tétjét a rejtett játékosoknak. Folia: minden PDC-írás az
+     * érintett játékos SAJÁT régió-szálán fut (hop), az üzenet privát (nem leplez le).
+     */
+    public void rewardFaithful(final double relief) {
+        if (!isEnabled() || relief <= 0.0D) {
+            return;
+        }
+        for (final Player online : java.util.List.copyOf(org.bukkit.Bukkit.getOnlinePlayers())) {
+            online.getScheduler().run(plugin, task -> {
+                if (!isWhisperer(online)) {
+                    return;
+                }
+                final double current = online.getPersistentDataContainer()
+                        .getOrDefault(suspicionKey, PersistentDataType.DOUBLE, 0.0D);
+                online.getPersistentDataContainer().set(suspicionKey, PersistentDataType.DOUBLE,
+                        Math.max(0.0D, current - relief));
+                online.sendMessage(messageManager.getMessage("whisper-queen-favor",
+                        "<dark_gray>🕯 A Kapu érzi a hűséged — a gyanú árnyéka halványul körülötted. <gray>(−{relief} gyanú)</gray></dark_gray>",
+                        java.util.Map.of("relief", String.valueOf((int) relief))));
+            }, null);
+        }
+    }
+
     /** A játékos Suttogó-e (rejtett státusz; a játékos SAJÁT szálán olvasandó). */
     public boolean isWhisperer(final Player player) {
         return player.getPersistentDataContainer().getOrDefault(whispererKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;

@@ -392,7 +392,8 @@ public final class IceSMPCore {
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager, factionManager, seasonManager);
         this.cultistEventManager = new hu.taliann.icesmp.managers.CultistEventManager(plugin, configManager,
-                mobScalingManager, eventSpawnGuard, territoryManager, corruptionManager, messageManager);
+                mobScalingManager, eventSpawnGuard, territoryManager, corruptionManager, messageManager,
+                whisperManager, seasonManager);
         cultistEventManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
         this.archeologyManager = new hu.taliann.icesmp.managers.ArcheologyManager(plugin, configManager, eventSpawnGuard, uniqueMaterialFactory, messageManager);
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).

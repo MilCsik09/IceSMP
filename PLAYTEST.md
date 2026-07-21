@@ -1493,3 +1493,13 @@ Jó tesztelést! ❄️
       PDC-jelölt; despawn plugin-leálláskor. Admin: /events cultists (+ tab).
 - [ ] Ellenőrzés: rítus kivárva → góc nyílik a rítus helyén; rítus megszakítva →
       loot a kör közepén; hírvivő követése elvezet a DARK föld felé.
+
+## Kultista × Suttogó crossover (tulaj-kérés)
+- [ ] BETELJESÜLT kultista esemény (rítus lefutott VAGY a hírvivő célba ért) →
+      minden online, felesküdött Suttogó gyanúja −15 (cultists.whisper-suspicion-relief,
+      PRIVÁT üzenettel — nem leplez le), és a DARK frakció +3 liga-pont ("cult" forrás).
+- [ ] A hírvivő tétje így: leölve loot + a hálózat vesztesége; célba érve a Suttogók
+      álcája mélyül és a DARK pontot kap — a védelme valódi cél a rejtett/DARK oldalnak.
+- [ ] Nem farmolható: az esemény csak természetes sorsolással (vagy admin-triggerrel)
+      indul, játékos nem tudja kiváltani. Ellenőrzés: Suttogó-státuszú játékossal
+      várd ki egy rítus beteljesülését → gyanú-érték csökken (/suttogas), liga-pont nő.

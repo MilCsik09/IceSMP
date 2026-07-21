@@ -47,6 +47,8 @@ public final class CultistEventManager {
     private final TerritoryManager territoryManager;
     private final CorruptionManager corruptionManager;
     private final MessageManager messageManager;
+    private final WhisperManager whisperManager;
+    private final SeasonManager seasonManager;
     private final org.bukkit.NamespacedKey markKey;
 
     private final Set<UUID> cultists = ConcurrentHashMap.newKeySet();
@@ -62,7 +64,8 @@ public final class CultistEventManager {
     public CultistEventManager(final JavaPlugin plugin, final ConfigManager configManager,
                                final MobScalingManager mobScalingManager, final EventSpawnGuard spawnGuard,
                                final TerritoryManager territoryManager, final CorruptionManager corruptionManager,
-                               final MessageManager messageManager) {
+                               final MessageManager messageManager, final WhisperManager whisperManager,
+                               final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
@@ -70,6 +73,8 @@ public final class CultistEventManager {
         this.territoryManager = territoryManager;
         this.corruptionManager = corruptionManager;
         this.messageManager = messageManager;
+        this.whisperManager = whisperManager;
+        this.seasonManager = seasonManager;
         this.markKey = new org.bukkit.NamespacedKey(plugin, "cultist_mob");
     }
 
@@ -317,6 +322,7 @@ public final class CultistEventManager {
                 courier.remove();
                 Bukkit.getServer().broadcast(messageManager.getMessage("cultists-courier-escaped",
                         "<dark_purple>🕯 A hírvivő eltűnt a homályban — az üzenete célba ért. A Suttogók ma elégedettek…</dark_purple>"));
+                rewardCultSuccess();
                 task.cancel();
                 return;
             }
@@ -350,6 +356,22 @@ public final class CultistEventManager {
         if (site != null && ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
             corruptionManager.forceSpawnAt(site);
         }
+        rewardCultSuccess();
+    }
+
+    /**
+     * Suttogó-crossover: a BETELJESÜLT kultista esemény (rítus / célba érő hírvivő)
+     * a rejtett hálózatnak dolgozik — minden felesküdött Suttogó gyanúja csillapodik
+     * (privát üzenettel), a DARK frakció pedig liga-pontot kap ("cult" forrás). Így a
+     * védelem is valódi játék-cél: a Suttogóknak és a Kitaszítottaknak MEGÉRI kiállni
+     * a hívek mellé, az irtóknak pedig megakadályozni. Nem farmolható: az esemény
+     * természetes sorsolású, játékos nem tudja kiváltani.
+     */
+    private void rewardCultSuccess() {
+        whisperManager.rewardFaithful(Math.max(0.0D,
+                configManager.getDouble("cultists.whisper-suspicion-relief", 15.0D)));
+        seasonManager.addPoints(hu.taliann.icesmp.data.FactionType.DARK,
+                Math.max(0, configManager.getInt("cultists.success-season-points", 3)), "cult");
     }
 
     /** Leállításkor: a hívek despawnja (best effort). */
