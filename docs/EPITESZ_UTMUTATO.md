@@ -16,7 +16,7 @@
 A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
 
 ```
-                          spawn (0,0) — a Fa + Ó-CALDESTERA
+                          spawn (0,0) — a Fa + RADICORA
                                         │      ~6k, óceánnal
                                         │         ╲
                                         │      🌊 ~2k átkelés (KOMP)
@@ -29,7 +29,8 @@ A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
                       ☠ KÁRHOZAT KAPUJA — valahol a kettő közti déli senkiföldjén
 ```
 
-- **Spawn (0,0):** a Fa tövében áll **Ó-Caldestera**, a régi semleges főváros —
+- **Spawn (0,0):** a Fa tövében áll **Radicora** („a gyökerek városa", népnyelven
+  Ó-Caldestera), a régi semleges főváros —
   kisebb, régies testvér-település (lásd 1/b szakasz). Innen indul minden új játékos.
 - **S — új Caldestera** ÉK-en, ~6k-ra: a tényleges NEUTRAL **főváros** (bank-kapu,
   frakcióváltás, fővárosi törvény). A szárazföldtől ~2k blokknyi óceán választja el —
@@ -101,12 +102,13 @@ legyen hol megvívni.
   claimelhetnek a játékosok
 - spawn-pont: Ó-Caldesterába mutat (lásd 1/b) — `world-events.intro.first-join-spawn`
 
-### 1/b. Ó-Caldestera — a régi főváros a Fa tövében (a spawn-település)
+### 1/b. Radicora — a régi főváros a Fa tövében (a spawn-település)
 
 **Lore (építész-kánon):** a nagy háborúk után a város kettészakadt — sokan
 hiányolták a Világfa be-nem-avatkozását, ezért elköltöztek és ÚJ fővárost
 alapítottak messzebb (a mai Caldestera); a Fa tövében az ő **igaz követői**
-maradtak. Ó-Caldestera ezért **régies, kisebb, szerényebb** — más kort idéz,
+maradtak — az ő városuk **Radicora**, „a gyökerek városa" (a nép ajkán Ó-Caldestera).
+Ezért **régies, kisebb, szerényebb** — más kort idéz,
 mint a gazdag új főváros (szándékosan ütnek el egymástól).
 
 **Méret:** kb. **80×80 - 100×100 blokk** — falu-városka a Fa körül.
@@ -117,7 +119,7 @@ mint a gazdag új főváros (szándékosan ütnek el egymástól).
   lényeg: az első lépések itt történjenek.
 - **Erdei vének ligete** a közelben (`erdei_venek` NPC — questek + "A Fa üzenete").
 - Egyszerű **fogadó, kikötő/gázló** a Bokicnál, kezdő-barát környék (Lvl 0-1 vadon).
-- Zónázás: `protected-city` (nem claimelhető, nem építhető át).
+- Zónázás: `protected-city` (nem claimelhető, nem építhető át) — zóna-id javaslat: `radicora`.
 
 ---
 

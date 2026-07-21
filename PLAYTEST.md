@@ -1657,3 +1657,9 @@ Jó tesztelést! ❄️
       VÁLTOZATLANOK — a lore szerint az ősi név a receptekben maradt fenn.
 - [ ] /lore: a "thanaopolis" alias is a Kitaszítottak-oldalt nyitja (a "mortengrad"
       legacy-aliasként megmaradt). Zóna-id javaslat az építészeknek: thanaopolis.
+
+## Névadás: Radicora (a spawn-település lore-neve)
+- [ ] A Fa tövében álló régi főváros kanonikus neve **Radicora** („a gyökerek
+      városa" — radix + a Ryanora/Caldestera névcsalád -ora végződése); a nép
+      ajkán Ó-Caldestera. Zóna-id javaslat: radicora. A korábbi PLAYTEST-sorok
+      "Ó-Caldestera" említései erre a városra értendők.

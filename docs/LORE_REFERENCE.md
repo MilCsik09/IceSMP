@@ -188,11 +188,11 @@ enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.ym
 - **Valuta**: RED = Parázsló Parals, BLUE = Hópihér-veret, NEUTRAL = Creutzér/Smaragdkő,
   DARK = Csontveret.
 
-## Ó-Caldestera és az új Caldestera (építész-kánon, 2026-07)
+## Radicora (Ó-Caldestera) és az új Caldestera (építész-kánon, 2026-07)
 
 | Lore-elem | Mechanika |
 |---|---|
-| **Ó-Caldestera** (a Fa tövében, spawn) | first-join spawn + onboarding (`world-events.intro.first-join-spawn`); zóna: `protected-city`; kezdő-barát Lvl 0-1 vadon |
+| **Radicora** — „a gyökerek városa"; népnyelven Ó-Caldestera (a Fa tövében, spawn; zóna-id: `radicora`) | first-join spawn + onboarding (`world-events.intro.first-join-spawn`); zóna: `protected-city`; kezdő-barát Lvl 0-1 vadon |
 | **Új Caldestera** (ÉK, ~+5000/+2000) | a NEUTRAL `capital` zóna: bank/váltó-kapu, frakcióváltás, fővárosi törvény, emlékmű |
 | **Komp a szoroson át** | `/komp` + `ferry.routes.*` (economy.yml); révész-NPC: `/npcbind <npc> command "komp <út>"`; viteldíj = money sink |
 | **Vérfa (Pyralingrad nemesi negyede)** | építő-anyag kánon: mangrove = nemesség, akácia = köznép, kalcit-diorit-nyír falak |

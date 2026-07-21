@@ -109,7 +109,8 @@ E csalódottak fogták vagyonukat és tudományukat, s a vizeken túl, messze a 
 várost emeltek**: ez a mai **Caldestera**, a kereskedelem és a tudás ragyogó fővárosa, ahová ma
 komp hordja az utazót a szoroson át. A Fa tövében pedig ott maradtak az **igaz követők** — akik
 úgy tartják, a Fa hallgatása nem közöny volt, hanem bölcsesség. Az ő szerény, vénséges
-településük **Ó-Caldestera**: a régi főváros megkopott, de el nem múló magja, ahol ma is minden
+településük **Radicora** — „a gyökerek városa", ahogy a régiek nyelvén mondják; a nép ajkán
+egyszerűen csak Ó-Caldestera. A régi főváros megkopott, de el nem múló magja ez, ahol ma is minden
 újonnan érkező Felső először nyitja a szemét a világra. A két város egyazon nép két arca —
 az egyik a jövőt építi, a másik a gyökeret őrzi.
 
