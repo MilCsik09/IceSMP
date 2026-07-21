@@ -331,6 +331,8 @@ public final class IceSMPCore {
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
+        factionManager.setSeasonManager(seasonManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
+
         this.territoryManager = new TerritoryManager(plugin);
         this.territoryProtectionService = new TerritoryProtectionService(plugin, configManager, territoryManager, factionManager, messageManager);
         this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, territoryManager, messageManager);

@@ -79,7 +79,7 @@
     monopolizálható; raid 10v10 plafon kispadoztat. → personal-loot minta kiterjesztése.
     ✅ KÉSZ (tulaj-jóváhagyás, 50-60 fős célra): kincs runner-up ablak + Vad Hajsza
     sebző-részesedés + rontás irtó-részesedés (fél-értékű gurítások, plafonokkal).
-    A raid-plafon kérdése nyitva.
+    A raid-plafon kérdése LEZÁRVA (tulaj, 2026-07-21): marad a 10v10.
 13. Szakma-heti célok: a craft-szakmáknak (armorer 333 smith/hét, cook 1000 étel) 3-5×
     nehezebb egység-áron, mint a gyűjtőknek. [GYORS: célszám-hangolás] ✅ KÉSZ
     (armorer 2500 / cook 1500 / enchanter 1500 / alchemist 1800).

@@ -136,7 +136,7 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 3. **Egyedi dungeonök (PvE):** kézzel készített helyszínek megnevezett bossokkal, mechanikákkal,
    loot-táblákkal (a LootTable + world-event infra újrahasznosítható).
 4. **Kozmetikumok GUI-ból, valutáért** (money sink): részecske-nyomok, kalapok, halál-üzenetek.
-   Ide köthető egy **natív crate-rendszer** is (CrazyCrates-kiváltás, frakció-valutás kulcsokkal).
+   A **natív crate-rendszer KÉSZ** (crates.yml, /crate set|buy, pörgős reveal-GUI, quest-kulcs jutalmak — a CrazyCrates kiváltva); a kozmetikum-bolt maga még nyitott.
 5. **Világesemény-bővítések:** vihar / aranyláz-zóna / napfogyatkozás, heti/eseményhez kötött
    esemény-rotáció, karaván-készlet napi rotáció.
 6. **Party-extrák:** party-célpont jelölés, party-waypoint.
@@ -146,7 +146,7 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
-- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros — **Mortengrad, a Holtak Városa** (a
+- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros — **Thanaopolis, a Holtak Városa** (történelmi nevén Mortengrad; a
   Kitaszítottak/DARK fővárosa) — megépítése; `/territory` kijelölések,
   majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
   hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).

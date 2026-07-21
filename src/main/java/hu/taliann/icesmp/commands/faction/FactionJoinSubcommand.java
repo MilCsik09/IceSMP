@@ -92,6 +92,11 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
+        // Szezon-szabályok MINDEN váltásra (az ingyenes utakra is): hajrá-zár + szezon-plafon.
+        if (hasFaction && !FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
+            return true;
+        }
+
         // Első csatlakozás mindig ingyenes és időzítetlen. Frakcióváltás fizetős és
         // cooldownhoz kötött, KIVÉVE: a Semlegesből (alapértelmezett kezdő frakció)
         // bárhová ingyen léphetsz, és a Sötétbe lépés is ingyenes (annak a sinner-
@@ -134,6 +139,9 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             }
 
             factionManager.setFaction(uuid, FactionType.DARK);
+            if (hasFaction) {
+                factionManager.recordSeasonSwitch(player); // ingyenes út is a szezon-plafonba számít
+            }
             sinManager.sealDarkPact(player);
             sender.sendMessage(messageManager.get(
                     "messages.faction-dark-pact-sealed",
@@ -148,6 +156,9 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
         }
 
         factionManager.setFaction(uuid, factionType);
+        if (hasFaction && !isSwitch) {
+            factionManager.recordSeasonSwitch(player); // Semlegesből ingyen váltás is számít
+        }
         sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s",
                 factionType.getDisplayName() + " (" + factionType.getFullName() + ")"));
         teleportToFactionSpawn(player, factionType);

@@ -2262,6 +2262,375 @@ quests:
 # A quest-adó / quest-célpont NPC-k felett részecske-aura jelzi a teendőt —
 # KIZÁRÓLAG annak a játékosnak, akit érint (kliens-oldali részecske):
 # arany = ez az NPC questet tud adni NEKED; zöld = aktív quested hozzá szól.
+  # ===== Tartalom-hullám 4 (tulaj-kérés, 2026-07-21): +24 quest =====
+  # Napi rotáció-pool bővítés (11→15) — a "napi-npc" csoportból naponta 3 sorsolódik.
+
+  napi_ospatak:
+    repeatable: true
+    cooldown-hours: 24
+    rotation-group: "napi-npc"
+    display-name: "A vén halász kérése"
+    description: "Az Őspatak öreg halásza már nem bírja a hálót. Fogj helyette nyolc halat — a fele a tiéd."
+    objective:
+      type: "CATCH_FISH"
+      count: 8
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 35
+
+  napi_erclelet:
+    repeatable: true
+    cooldown-hours: 24
+    rotation-group: "napi-npc"
+    display-name: "Ércjárat"
+    description: "A kovácsműhely kifogyott a nyersanyagból. Fejts ki huszonnégy vas- vagy rézércet a környék tárnáiból."
+    objective:
+      type: "BREAK_BLOCKS"
+      materials: ["IRON_ORE", "DEEPSLATE_IRON_ORE", "COPPER_ORE", "DEEPSLATE_COPPER_ORE"]
+      count: 24
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 35
+
+  napi_csontszuret:
+    repeatable: true
+    cooldown-hours: 24
+    rotation-group: "napi-npc"
+    display-name: "Csontszüret"
+    description: "Éjszakánként csontvázak gyülekeznek a földeken. Tizenkettőt küldj vissza a földbe, mielőtt learatják, amit nem ők vetettek."
+    objective:
+      type: "KILL_MOBS"
+      entity-type: "SKELETON"
+      count: 12
+    rewards:
+      class-xp: 130
+      currency:
+        type: "OWN"
+        amount: 35
+
+  napi_fuvesasszony:
+    repeatable: true
+    cooldown-hours: 24
+    rotation-group: "napi-npc"
+    display-name: "A füvesasszony listája"
+    description: "A füvesasszony főzeteihez friss virág kell — tizenhat szálat kér, fajtája mindegy, csak a rét adja."
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: ["DANDELION", "POPPY", "CORNFLOWER", "OXEYE_DAISY", "AZURE_BLUET", "ALLIUM"]
+      count: 16
+    rewards:
+      class-xp: 110
+      currency:
+        type: "OWN"
+        amount: 30
+
+  # Új rejtvények (26→30) — a cél szándékosan rejtve, csak a sorok vezetnek.
+
+  rejtveny_soharcos:
+    riddle: true
+    display-name: "Rejtvény: A sosem-harcolt harcos"
+    description: "„Páncélt hord, de sosem vérzett. Áll, ahová állítod, s némán viseli, amit rábízol. Teremtsd meg — fából lesz, mégis katona.”"
+    objective:
+      type: "CRAFT_ITEMS"
+      materials: ["ARMOR_STAND"]
+      count: 1
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 30
+
+  rejtveny_feher_csend:
+    riddle: true
+    display-name: "Rejtvény: A fehér csend"
+    description: "„Van egy táj, ahol a fű elfelejtett zöldellni, s a hó nem vendég, hanem gazda. Állj meg ott, ahol a csend fehér.”"
+    objective:
+      type: "EXPLORE_BIOME"
+      biome: "snowy_plains"
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 30
+
+  rejtveny_melysegek_szava:
+    riddle: true
+    display-name: "Rejtvény: A mélység szava"
+    description: "„A tükör alatt némák laknak; öt szótlant húzz a fényre, és a víz elárulja, amit a part sosem mond ki.”"
+    objective:
+      type: "CATCH_FISH"
+      count: 5
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 30
+
+  rejtveny_hamu_kenyere:
+    riddle: true
+    display-name: "Rejtvény: A hamu kenyere"
+    description: "„Ami a földben hallgatott, a tűzben szólal meg. Tizenkétszer szólaltasd meg — a kemence tudja, mit ér a türelem.”"
+    objective:
+      type: "SMELT_ITEMS"
+      materials: ["BAKED_POTATO"]
+      count: 12
+    rewards:
+      currency:
+        type: "OWN"
+        amount: 30
+
+  # Frakció-heti második kör — minden népnek jusson heti identitás-feladat.
+
+  red_heti_hatartisztitas:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "RED"
+    display-name: "A Vérszavanna határjárása"
+    description: "A Láng nem tűr férget a portáján. Járd a határvidéket, és tisztíts meg negyvenöt szörnyet Pyralingrad nevében."
+    objective:
+      type: "KILL_MOBS"
+      count: 45
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+
+  blue_heti_jegszuret:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "BLUE"
+    display-name: "Jégszüret"
+    description: "Glatziendorf falai a fagyból élnek. Vágj ki kilencvenhat jégtömböt az örök tél mezőiről a kőfaragóknak."
+    objective:
+      type: "BREAK_BLOCKS"
+      materials: ["ICE", "PACKED_ICE", "BLUE_ICE"]
+      count: 96
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+
+  neutral_heti_vasarjaras:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "NEUTRAL"
+    display-name: "Vásárjárás"
+    description: "A Menedék ereje az alku. Köss tíz üzletet a falvak népével — Caldestera hírneve a kereskedői kezében van."
+    objective:
+      type: "TRADE_WITH_VILLAGER"
+      count: 10
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+
+  dark_heti_csonttized:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "DARK"
+    display-name: "Csont-tized"
+    description: "Thanaopolis utcáin a holtak járnak — de a vadonban kóborlók senkinek sem szolgálnak. Hatvan gazdátlan élőhalottat hajts be a tizedbe."
+    objective:
+      type: "KILL_MOBS"
+      entity-type: "ZOMBIE"
+      count: 60
+    rewards:
+      class-xp: 220
+      currency:
+        type: "OWN"
+        amount: 130
+
+  # "A gyökerek emlékezete" mini-lánc — a vérfák és a Világfa köteléke (3 quest).
+
+  gyokerek_1:
+    display-name: "A gyökerek emlékezete I."
+    description: "A vén kertész szerint a vérfák gyökere emlékszik arra, amit a világ elfelejtett. Gyűjts nyolc mangrove-gyökeret a mocsaras partokról."
+    next: "gyokerek_2"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: ["MANGROVE_ROOTS"]
+      count: 8
+    rewards:
+      class-xp: 120
+      currency:
+        type: "OWN"
+        amount: 40
+
+  gyokerek_2:
+    display-name: "A gyökerek emlékezete II."
+    description: "„A gyökér csak akkor beszél, ha új hajtást hall.” Ültess el négy mangrove-hajtást — hadd folytassák, amit az öregek elkezdtek."
+    requires-quest: "gyokerek_1"
+    next: "gyokerek_3"
+    objective:
+      type: "PLACE_BLOCKS"
+      materials: ["MANGROVE_PROPAGULE"]
+      count: 4
+    rewards:
+      class-xp: 130
+      currency:
+        type: "OWN"
+        amount: 45
+
+  gyokerek_3:
+    display-name: "A gyökerek emlékezete III."
+    description: "A hajtások megeredtek. Vidd el a hírüket a Világfa tövéhez, Radicorába — a gyökerek ott futnak össze, ahol a történetek is."
+    requires-quest: "gyokerek_2"
+    objective:
+      type: "VISIT_TERRITORY"
+      territory: "radicora"
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 60
+      crate-key: "koznapi:1"
+
+  # "Hamu és zúzmara" mini-lánc — készülődés a hadi-ablakra (3 quest).
+
+  hamu_zuzmara_1:
+    display-name: "Hamu és zúzmara I. — Az él"
+    description: "A veterán zsoldos szerint a háborút hétköznap nyerik meg. Bizonyíts: terítsd le huszonöt szörnyet, és tartsd élesen a mozdulatot."
+    next: "hamu_zuzmara_2"
+    objective:
+      type: "KILL_MOBS"
+      count: 25
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 45
+
+  hamu_zuzmara_2:
+    display-name: "Hamu és zúzmara II. — A fal"
+    description: "„Aki csak vág, elesik. Aki fedez is, hazatér.” Készíts magadnak pajzsot — a zsoldos addig szóba se áll veled."
+    requires-quest: "hamu_zuzmara_1"
+    next: "hamu_zuzmara_3"
+    objective:
+      type: "CRAFT_ITEMS"
+      materials: ["SHIELD"]
+      count: 1
+    rewards:
+      class-xp: 140
+      currency:
+        type: "OWN"
+        amount: 45
+
+  hamu_zuzmara_3:
+    display-name: "Hamu és zúzmara III. — Pengére írt eskü"
+    description: "Az utolsó lecke: a fegyver annyit ér, amennyit belefoglalsz. Bűvölj meg három tárgyat — aztán a zsoldos kezet ráz, és a hadi-ablakban már bajtársként köszönt."
+    requires-quest: "hamu_zuzmara_2"
+    objective:
+      type: "ENCHANT_ITEMS"
+      count: 3
+    rewards:
+      class-xp: 160
+      currency:
+        type: "OWN"
+        amount: 60
+      crate-key: "ritka:1"
+
+  # Heti beszállító-questek a vándor kereskedőnek (DELIVER_ITEMS — átveszi a tárgyakat).
+
+  beszallito_fa:
+    repeatable: true
+    cooldown-hours: 168
+    display-name: "Beszállítás: épületfa"
+    description: "A vándor kereskedő szekere üresen kong. Szállíts le hatvannégy szál rönköt — az ácsok már várják a túlparton."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "vandor_kereskedo"
+      materials: ["OAK_LOG", "SPRUCE_LOG", "BIRCH_LOG", "DARK_OAK_LOG", "ACACIA_LOG", "MANGROVE_LOG", "CHERRY_LOG"]
+      count: 64
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 90
+
+  beszallito_ko:
+    repeatable: true
+    cooldown-hours: 168
+    display-name: "Beszállítás: faragott kő"
+    description: "A kereskedő kőműveseknek visz árut: kilencvenhat zúzottkövet kér, egyenesen a tárnából."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "vandor_kereskedo"
+      materials: ["COBBLESTONE", "COBBLED_DEEPSLATE"]
+      count: 96
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 90
+
+  beszallito_elelem:
+    repeatable: true
+    cooldown-hours: 168
+    display-name: "Beszállítás: úti elemózsia"
+    description: "Hosszú az út a királyságok közt. Adj le negyven adag ételt a kereskedőnek — a karavánok gyomra nagy úr."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "vandor_kereskedo"
+      materials: ["BREAD", "COOKED_BEEF", "COOKED_PORKCHOP", "COOKED_CHICKEN", "COOKED_MUTTON", "BAKED_POTATO"]
+      count: 40
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 90
+
+  beszallito_bor:
+    repeatable: true
+    cooldown-hours: 168
+    display-name: "Beszállítás: cserzett bőr"
+    description: "Könyvkötőknek, nyergeseknek, vérteseknek — bőr mindig kell. Huszonnégy darabot vár a kereskedő."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "vandor_kereskedo"
+      materials: ["LEATHER"]
+      count: 24
+    rewards:
+      class-xp: 150
+      currency:
+        type: "OWN"
+        amount: 90
+
+  # Nagy heti kihívások — a kései szintek grind-törői (mindenkinek, plafon nélkül).
+
+  heti_nagyvadaszat:
+    repeatable: true
+    cooldown-hours: 168
+    display-name: "A nagy hajtóvadászat"
+    description: "A krónikás hetente megnyitja a vadászlajstromot: százhúsz szörny, aki győzi. A neved a lap tetejére kerül — a jutalom a lap aljára."
+    objective:
+      type: "KILL_MOBS"
+      count: 120
+    rewards:
+      class-xp: 400
+      currency:
+        type: "OWN"
+        amount: 150
+      crate-key: "ritka:1"
+
+  heti_nagyhalaszat:
+    repeatable: true
+    cooldown-hours: 168
+    display-name: "A nagy fogás"
+    description: "A kikötő heti fogadása: negyven hal egy hét alatt. A vén halászok szerint lehetetlen. A vén halászok sok mindent mondanak."
+    objective:
+      type: "CATCH_FISH"
+      count: 40
+    rewards:
+      class-xp: 300
+      currency:
+        type: "OWN"
+        amount: 120
+      crate-key: "koznapi:2"
+
 quest-npc-markers:
   enabled: true
   range: 48

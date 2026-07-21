@@ -1708,3 +1708,29 @@ Jó tesztelést! ❄️
 - [ ] **Invázió-mob élettartam (teszter-panasz: kóbor pókok a városban):** a le nem ölt
       horda-mob mob-lifespan-seconds [600] után köddé válik (saját entity-schedulerén,
       POOF-effekttel) — a nappal megszelídült pók nem vándorol be a semlegesbe.
+
+## Frakció-váltás szezon-szabályok + tartalom-hullám 4 (tulaj-kérés, 2026-07-21)
+- [ ] **Szezon-plafon:** ugyanabban a szezonban a 3. frakció-váltási kísérlet elutasul
+      (factions.switch.max-per-season [2]); az első, ingyenes választás NEM számít bele;
+      a Semlegesből ingyen váltás és a DARK-ba lépés VISZONT igen (PDC-számláló,
+      szezon-bélyeggel — új szezonban nullázódik).
+- [ ] **Hajrá-zár:** a szezon utolsó 7 napjában (factions.switch.lockout-final-days)
+      SEMMILYEN váltás nem megy: fizetős, Semlegesből ingyenes, DARK-belépés, /faction
+      leave — mind elutasul a hajrá-üzenettel. A bűn-száműzetés (kényszer-út) továbbra
+      is működik.
+- [ ] **Napi pool 15-re nőtt:** napi_ospatak (horgász), napi_erclelet (érc),
+      napi_csontszuret (csontváz), napi_fuvesasszony (virág) — a rotációban felbukkannak.
+- [ ] **4 új rejtvény (30 össz):** soharcos (állvány-craft), feher_csend (havas síkság),
+      melysegek_szava (5 hal), hamu_kenyere (12 sültkrumpli) — a leírásból kitalálható,
+      teljesítéskor jár a jutalom.
+- [ ] **Frakció-heti 2. kör:** red_heti_hatartisztitas (45 kill), blue_heti_jegszuret
+      (96 jég), neutral_heti_vasarjaras (10 villager-trade), dark_heti_csonttized
+      (60 zombi) — csak a saját frakció veheti fel, 168h cooldown.
+- [ ] **Gyökerek-lánc (3):** mangrove-gyökér → hajtás-ültetés → Radicora-látogatás
+      (VISIT_TERRITORY "radicora" — a zóna kijelölése UTÁN tesztelhető végig).
+- [ ] **Hamu és zúzmara lánc (3):** 25 kill → pajzs-craft → 3 bűvölés; a záró ritka
+      kulcsot ad.
+- [ ] **Beszállító-hetik (4):** fa/kő/étel/bőr leadás a vandor_kereskedo NPC-nek
+      (DELIVER_ITEMS — az NPC átveszi a tárgyakat).
+- [ ] **Nagy heti kihívások:** heti_nagyvadaszat (120 kill → ritka kulcs),
+      heti_nagyhalaszat (40 hal → 2 köznapi kulcs).

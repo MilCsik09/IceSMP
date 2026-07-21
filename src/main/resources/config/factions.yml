@@ -27,6 +27,12 @@ factions:
   switch:
     cost: 500.0
     cooldown-hours: 72.0
+    # Szezononként legfeljebb ennyi FIZETETT frakció-váltás fér bele (0 = korlátlan).
+    # Az első, ingyenes frakció-választás nem számít bele.
+    max-per-season: 2
+    # A szezon utolsó napjaiban a váltás TELJESEN tilos — a liga-hajrát ne lehessen
+    # oldalt váltva megjátszani (0 = nincs zár). Élő kulcsok.
+    lockout-final-days: 7
     # Frakciót váltani (ha már választottál) csak a Semleges Királyság fővárosában állva lehet.
     # Fail-open: amíg nincs kijelölt semleges főváros (/territory setcapital neutral ...), nem zár.
     only-in-neutral-capital: true

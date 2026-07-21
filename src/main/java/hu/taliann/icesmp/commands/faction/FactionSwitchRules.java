@@ -55,6 +55,39 @@ final class FactionSwitchRules {
      *
      * @return true if the switch may proceed, false if it was refused (a message was already sent)
      */
+    /**
+     * Season gates for ANY faction change after the first free choice — the paid ones AND the
+     * free paths (leaving NEUTRAL, entering DARK) alike: a szezon-végi teljes váltás-zár
+     * (lockout-final-days) és a szezononkénti plafon (max-per-season). A kényszer-száműzetés
+     * (SinManager exile) nem erre az útra jön, azt a szabály szándékosan nem fogja.
+     *
+     * @return true if the change may proceed; false if refused (a message was sent)
+     */
+    static boolean passesSeasonRules(final Player player, final FactionManager factionManager,
+                                     final MessageManager messageManager) {
+        // Szezon-végi zár: a liga hajrájában (alap: utolsó 7 nap) egyáltalán nincs váltás.
+        if (factionManager.isInSeasonEndLockout()) {
+            player.sendMessage(messageManager.get(
+                    "messages.faction-switch-season-lockout",
+                    "&cA szezon hajrájában (az utolsó &f%d nap&cban) már nem lehet frakciót váltani — a zászlód alatt fejezed be, amit elkezdtél.",
+                    factionManager.getSwitchLockoutFinalDays()
+            ));
+            return false;
+        }
+        // Szezononkénti plafon (alap: 2 váltás / szezon, az első ingyenes választás nem számít).
+        final int maxPerSeason = factionManager.getMaxSwitchesPerSeason();
+        final int usedThisSeason = factionManager.getSwitchesThisSeason(player);
+        if (maxPerSeason > 0 && usedThisSeason >= maxPerSeason) {
+            player.sendMessage(messageManager.get(
+                    "messages.faction-switch-season-cap",
+                    "&cEbben a szezonban már &f%d&c alkalommal váltottál frakciót — ez a szezononkénti maximum. A következő szezonban válthatsz újra.",
+                    usedThisSeason
+            ));
+            return false;
+        }
+        return true;
+    }
+
     static boolean chargeSwitch(final Player player, final FactionType currentFaction,
                                 final FactionManager factionManager, final CurrencyManager currencyManager,
                                 final MessageManager messageManager) {

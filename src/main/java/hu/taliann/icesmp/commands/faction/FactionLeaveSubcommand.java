@@ -59,6 +59,9 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             if (!FactionSwitchRules.passesNeutralCapitalGate(player, territoryManager, configManager, messageManager)) {
                 return true;
             }
+            if (!FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
+                return true;
+            }
             if (!FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
                 return true;
             }

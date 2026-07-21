@@ -31,13 +31,25 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     private final Map<UUID, FactionType> playerFactions = new ConcurrentHashMap<>();
     /** PDC key storing the epoch-millis timestamp of the player's last PAID faction switch. */
     private final NamespacedKey lastSwitchKey;
+    /** PDC key: melyik szezonban (seasonStart-bélyeg) számoltuk a váltásokat. */
+    private final NamespacedKey switchSeasonKey;
+    /** PDC key: hány FIZETETT váltás történt a {@link #switchSeasonKey} szerinti szezonban. */
+    private final NamespacedKey switchCountKey;
+    /** Setter-injektált (a SeasonManager a FactionManager UTÁN épül fel a core-ban). */
+    private volatile SeasonManager seasonManager;
 
     public FactionManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.storageFile = new File(plugin.getDataFolder(), "factions.yml");
         this.lastSwitchKey = new NamespacedKey(plugin, "faction_last_switch");
+        this.switchSeasonKey = new NamespacedKey(plugin, "faction_switch_season");
+        this.switchCountKey = new NamespacedKey(plugin, "faction_switch_count");
         plugin.getDataFolder().mkdirs();
+    }
+
+    public void setSeasonManager(final SeasonManager seasonManager) {
+        this.seasonManager = seasonManager;
     }
 
     public void load() {
@@ -158,12 +170,75 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     /**
-     * Records "now" as the player's last paid faction switch timestamp, starting the cooldown.
+     * Records "now" as the player's last paid faction switch timestamp, starting the cooldown,
+     * and bumps the per-season switch counter (resetting it when a new season has started since
+     * the last recorded switch).
      *
      * @param player the player who just paid to switch factions
      */
     public void recordSwitch(final Player player) {
         player.getPersistentDataContainer().set(lastSwitchKey, PersistentDataType.LONG, System.currentTimeMillis());
+        recordSeasonSwitch(player);
+    }
+
+    /**
+     * Bumps the per-season switch counter WITHOUT starting the paid-switch cooldown — az
+     * ingyenes váltás-utak (Menedékből kilépés, Sötétbe lépés) is ide számolnak, de nem
+     * indítanak fizetős cooldownt.
+     *
+     * @param player the player whose faction just changed
+     */
+    public void recordSeasonSwitch(final Player player) {
+        final SeasonManager seasons = this.seasonManager;
+        if (seasons == null) {
+            return;
+        }
+        final long season = seasons.getSeasonStart();
+        final var pdc = player.getPersistentDataContainer();
+        final long storedSeason = pdc.getOrDefault(switchSeasonKey, PersistentDataType.LONG, 0L);
+        final int count = storedSeason == season
+                ? pdc.getOrDefault(switchCountKey, PersistentDataType.INTEGER, 0)
+                : 0;
+        pdc.set(switchSeasonKey, PersistentDataType.LONG, season);
+        pdc.set(switchCountKey, PersistentDataType.INTEGER, count + 1);
+    }
+
+    /** @return hány fizetett frakció-váltása volt a játékosnak a FUTÓ szezonban */
+    public int getSwitchesThisSeason(final Player player) {
+        final SeasonManager seasons = this.seasonManager;
+        if (seasons == null) {
+            return 0;
+        }
+        final var pdc = player.getPersistentDataContainer();
+        if (pdc.getOrDefault(switchSeasonKey, PersistentDataType.LONG, 0L) != seasons.getSeasonStart()) {
+            return 0;
+        }
+        return pdc.getOrDefault(switchCountKey, PersistentDataType.INTEGER, 0);
+    }
+
+    /** @return szezononként engedélyezett fizetett váltások száma ({@code factions.switch.max-per-season}, 0 = korlátlan) */
+    public int getMaxSwitchesPerSeason() {
+        return configManager.getInt("factions.switch.max-per-season", 2);
+    }
+
+    /** @return a szezon-végi váltás-zár hossza napokban ({@code factions.switch.lockout-final-days}, 0 = nincs zár) */
+    public int getSwitchLockoutFinalDays() {
+        return configManager.getInt("factions.switch.lockout-final-days", 7);
+    }
+
+    /**
+     * A szezon hajrájában (az utolsó {@code lockout-final-days} napban) a frakció-váltás
+     * teljesen tilos — a liga-végjátékot ne lehessen oldalt váltva megjátszani.
+     *
+     * @return true, ha most a szezon-végi váltás-zár él
+     */
+    public boolean isInSeasonEndLockout() {
+        final SeasonManager seasons = this.seasonManager;
+        final int lockoutDays = getSwitchLockoutFinalDays();
+        if (seasons == null || lockoutDays <= 0) {
+            return false;
+        }
+        return seasons.getSeasonEndMillis() - System.currentTimeMillis() <= lockoutDays * 86_400_000L;
     }
 
     public void removeFaction(final UUID uuid) {
