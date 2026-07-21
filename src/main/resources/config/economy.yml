@@ -479,6 +479,9 @@ caravan:
   rotation:
     enabled: true
     stock-size: 5
+    # Slot-garancia: a sorsolt készletben mindig legyen legalább egy `unique:` anyag
+    # (a ritka szakma-alapanyagok alternatív forrása sose tűnjön el teljesen).
+    guarantee-unique: true
   items:
     1:
       material: "ENCHANTED_GOLDEN_APPLE"

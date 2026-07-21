@@ -114,9 +114,18 @@ public final class ShopManager {
                     && caravanStockSeed != null) {
                 final int stockSize = Math.max(1, configManager.getInt("caravan.rotation.stock-size", 4));
                 if (entries.size() > stockSize) {
-                    java.util.Collections.shuffle(entries,
-                            new java.util.Random(caravanStockSeed.getAsLong()));
+                    final java.util.Random rotationRandom = new java.util.Random(caravanStockSeed.getAsLong());
+                    // Gameplay-audit: unique-anyag slot-garancia — a ritka szakma-alapanyag
+                    // pool-ága ne sorsolódhasson ki teljesen (alternatív forrás maradjon).
+                    final java.util.List<ConfigurationSection> uniquePool =
+                            configManager.getBoolean("caravan.rotation.guarantee-unique", true)
+                                    ? entries.stream().filter(entry -> entry.getString("unique") != null).toList()
+                                    : List.<ConfigurationSection>of();
+                    java.util.Collections.shuffle(entries, rotationRandom);
                     entries.subList(stockSize, entries.size()).clear();
+                    if (!uniquePool.isEmpty() && entries.stream().noneMatch(entry -> entry.getString("unique") != null)) {
+                        entries.set(entries.size() - 1, uniquePool.get(rotationRandom.nextInt(uniquePool.size())));
+                    }
                 }
             }
             // Escort-success perk: while the bonus window is open, the caravan also

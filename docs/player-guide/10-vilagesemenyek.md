@@ -168,6 +168,8 @@ A szezon végén (alapból 60 nap) a **vezető frakció** győz:
 - a **frakciókassza** nagy jutalmat kap;
 - a győztes frakció **online tagjai** győzelmi **buffot** (Erő + Regeneráció + Falu Hőse) és
   **tárgy-jutalmat** (alapból gyémánt + aranyalma) kapnak, egy ünneplő **tűzijátékkal**;
+- aki a záráskor **offline** volt, a tárgy-jutalmát a **következő belépéskor** kapja meg
+  (nem marad le róla);
 
 majd a pontok lenullázódnak — kezdődik az új szezon. Az aktuális állást a `/events season` mutatja.
 

@@ -70,7 +70,9 @@ száműzetése, a Néma Királynő árnyéka. **Kétféleképpen** kerülsz ide:
 - **Lelepleződött Suttogóként:** akit rajtakapnak, hogy titokban **a Suttogók** hálózatát szolgálja
   (lásd 🔜 lentebb), azt egy csapásra ide veti a bélyeg.
 
-Belépéskor megköttetik a **sötét paktum**: a bűnös jelölést **soha nem lehet levenni** — még akkor
+A belépés **kétlépcsős**: az első `/faction join dark` csak figyelmeztet a paktum súlyára —
+ha komolyan gondolod, egy percen belül **meg kell ismételned**. Belépéskor aztán megköttetik
+a **sötét paktum**: a bűnös jelölést **soha nem lehet levenni** — még akkor
 sem, ha elhagyod a frakciót. Az **egyetlen** visszaút a **vezeklés-küldetéslánc** (lásd
 [Küldetések](12-kuldetesek.md)). Cserébe tiéd a **legerősebb PvE-passzív**: az élőhalottak békén
 hagynak, s a wither sem árt — a Néma Királynő megjelöli, de meg is óvja a szolgáit.

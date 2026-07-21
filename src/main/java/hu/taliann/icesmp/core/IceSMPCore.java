@@ -1280,6 +1280,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(resourceBonusService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpyRevealListener(plugin, spyManager), plugin);
         pluginManager.registerEvents(professionWeeklyGoalManager, plugin);
+        // Gameplay-audit: az offline bajnok-tagok függő szezon-jutalma belépéskor jár.
+        pluginManager.registerEvents(seasonManager, plugin);
         pluginManager.registerEvents(new org.bukkit.event.Listener() {
             // B6 — a szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
             @org.bukkit.event.EventHandler

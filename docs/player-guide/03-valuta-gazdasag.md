@@ -135,7 +135,8 @@ Hogy a pénz értékes maradjon, több helyen is „elszívódik":
   ritka portékákat vehetsz a banki egyenlegedből — köztük **ritka szakma-alapanyagokat**
   (Emlékszilánk, Sárkánycsont-szilánk, Főnixpihe, Néma Kristály…), amikhez máshol alig jutsz hozzá.
   A kínálat **érkezésenként rotálódik**: a karaván a teljes áru-listájából mindig csak néhány
-  tételt hoz („ma épp ezt”), úgyhogy minden látogatás más! A kifizetett pénz szintén **eltűnik**
+  tételt hoz („ma épp ezt”), úgyhogy minden látogatás más — de **legalább egy ritka
+  szakma-alapanyag mindig van a kocsiban**! A kifizetett pénz szintén **eltűnik**
   (money sink). Ha lekésed, legközelebb máshol tűnik fel — érdemes odasietni!
 
 ## Lélekkő — a veszélyes vidékek jutalma

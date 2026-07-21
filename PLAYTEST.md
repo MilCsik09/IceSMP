@@ -1522,3 +1522,24 @@ Jó tesztelést! ❄️
 - [ ] Rontás-góc: loot-tábla feljavítva (DIAMOND 2:5 + ENCHANTED_GOLDEN_APPLE) — a
       megtisztítás egyénileg is megéri; dark-undead ambiencia scope: "all" (minden
       DARK territórium, nem csak a főváros).
+
+## P-audit javítások, 2. kör (gameplay-audit — [GYORS] tételek)
+- [ ] Szezon-bajnok offline-kifizetés: a záráskor offline bajnok-tagok tárgy-jutalma
+      függőbe kerül (season.yml: pending-champion-spoils, restart-álló) és a
+      következő belépéskor jár, külön üzenettel. A buff/tűzijáték csak az élő
+      ünneplés pillanatáé (online tagok).
+- [ ] DARK-belépés kétlépcsős: az első `/faction join dark` figyelmeztet (örök paktum,
+      nincs visszaút), és csak `factions.dark.join-confirm-seconds` (60) másodpercen
+      belül megismételve lép életbe (0 = kikapcsolva). Ellenőrzés: első hívás nem
+      vált frakciót, második (ablakon belül) igen.
+- [ ] Kaszt-választó szerep-címkék: a /profile → Kaszt menü minden kaszt-ikonja
+      "Szerep: ..." sort mutat (messages.job-gui-role-<id> kulccsal felülírható) —
+      a visszafordíthatatlan döntés előtt látszik a tank/gyógyító/sebző irány.
+- [ ] Napi NPC-quest rotáció ÉLESÍTVE: hero_trial, borostyan_kutatas, uti_kenyer,
+      viharkvarc_fejto, korrupt_irtas a "napi-npc" rotation-groupban, naponta 3
+      elérhető (nap-determinisztikus). A frakció-kötött anyag-questek nem rotálnak.
+- [ ] Karaván unique-slot-garancia: a rotált készletben mindig van legalább egy
+      `unique:` anyag (caravan.rotation.guarantee-unique) — a ritka szakma-alapanyag
+      forrás sosem tűnik el egy-egy érkezésre.
+- [ ] factions.yml komment-ellentmondás javítva: a Sötétbe lépés a KÓD szerint mindig
+      ingyenes (sinner-feltétel + örök paktum az ára) — a config-komment már ezt mondja.

@@ -14,13 +14,16 @@ factions:
   dark:
     display-name: "Kitaszított"
     full-name: "A Kitaszítottak"
+    # A DARK-belépés kétlépcsős megerősítése (a paktum örök): az első /faction join dark
+    # figyelmeztet, ennyi másodpercen belül megismételve lép csak életbe (0 = kikapcsolva).
+    join-confirm-seconds: 60
   # ===== Frakcióváltás =====
   # Az ELSŐ csatlakozás (amikor a játékosnak még nincs frakciója) mindig ingyenes
   # és nincs rá cooldown. Ha a játékosnak MÁR van frakciója és másikba lép át
   # (frakcióváltás), azért a JELENLEGI frakciója valutájában kell fizetnie,
   # és csak cooldown-hours óránként válthat újra (money sink + a frakció-hopping
-  # ellen). A Sötét frakcióba való átlépésre (bűnösöknek) is vonatkozik, ha az
-  # frakcióváltás.
+  # ellen). KIVÉTEL (a kód szerint): a Semlegesből bárhová ingyen léphetsz, és a
+  # Sötétbe lépés MINDIG ingyenes — annak a sinner-feltétel + az örök paktum az ára.
   switch:
     cost: 500.0
     cooldown-hours: 72.0

@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * season reward; points reset and a new season begins. State persists to
  * season.yml; expiry is checked on the global world-events tick.
  */
-public final class SeasonManager implements PersistentStore {
+public final class SeasonManager implements PersistentStore, org.bukkit.event.Listener {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -47,6 +47,11 @@ public final class SeasonManager implements PersistentStore {
     /** G16 — nagydöntő-hétvége: bejelentés-flag (szezononként egyszer, volatilis). */
     private volatile boolean grandFinaleAnnounced;
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
+    /**
+     * Gameplay-audit: a szezonzáráskor OFFLINE bajnok-tagok függő jutalma (perzisztens) —
+     * belépéskor kapják meg a tárgy-jutalmat, ahogy a profession-weekly pending mintája.
+     */
+    private final java.util.Set<java.util.UUID> pendingChampionSpoils = ConcurrentHashMap.newKeySet();
 
     private volatile long seasonStart = System.currentTimeMillis();
 
@@ -84,6 +89,14 @@ public final class SeasonManager implements PersistentStore {
                     }
                 }
             }
+            pendingChampionSpoils.clear();
+            for (final String uuid : yaml.getStringList("season.pending-champion-spoils")) {
+                try {
+                    pendingChampionSpoils.add(java.util.UUID.fromString(uuid));
+                } catch (final IllegalArgumentException ignored) {
+                    // Sérült bejegyzés — kihagyjuk.
+                }
+            }
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load season.yml: " + exception.getMessage());
         }
@@ -96,6 +109,10 @@ public final class SeasonManager implements PersistentStore {
             yaml.set("season.number", seasonNumber);
             for (final Map.Entry<FactionType, Integer> entry : points.entrySet()) {
                 yaml.set("season.points." + entry.getKey().name(), entry.getValue());
+            }
+            if (!pendingChampionSpoils.isEmpty()) {
+                yaml.set("season.pending-champion-spoils",
+                        pendingChampionSpoils.stream().map(java.util.UUID::toString).toList());
             }
 
             YamlStore.saveAtomic(storageFile, yaml);
@@ -328,6 +345,15 @@ public final class SeasonManager implements PersistentStore {
         final java.util.List<String> rewardItems = configManager.getStringList("world-events.season.champion-reward-items");
         final boolean firework = configManager.getBoolean("world-events.season.champion-firework", true);
 
+        // Gameplay-audit: az OFFLINE bajnok-tagok se maradjanak ki — a tárgy-jutalmuk
+        // függőbe kerül (perzisztens), belépéskor kapják meg (a buff/tűzijáték nem
+        // időszerű már, az csak az ünneplés pillanatáé).
+        for (final Map.Entry<java.util.UUID, FactionType> member : factionManager.getFactionAssignments().entrySet()) {
+            if (member.getValue() == champion && Bukkit.getPlayer(member.getKey()) == null) {
+                pendingChampionSpoils.add(member.getKey());
+            }
+        }
+
         for (final Player online : Bukkit.getOnlinePlayers()) {
             if (factionManager.getFaction(online.getUniqueId()) != champion) {
                 continue;
@@ -353,6 +379,24 @@ public final class SeasonManager implements PersistentStore {
                 ));
             }, null);
         }
+    }
+
+    /**
+     * Gameplay-audit: a szezonzáráskor offline maradt bajnok-tag belépéskor kapja meg
+     * a tárgy-jutalmát. A join-event a játékos saját régió-szálán fut — az inventory-írás
+     * ott biztonságos.
+     */
+    @org.bukkit.event.EventHandler
+    public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
+        if (!pendingChampionSpoils.remove(event.getPlayer().getUniqueId())) {
+            return;
+        }
+        giveRewardItems(event.getPlayer(), configManager.getStringList("world-events.season.champion-reward-items"));
+        event.getPlayer().sendMessage(messageManager.getMessage(
+                "season-champion-member-late",
+                "<gold>🏆 A frakciód megnyerte az előző szezont — a győzelmi jutalmad megőriztük, fogadd!</gold>"
+        ));
+        requestSave();
     }
 
     /** Hands over the configured "MATERIAL:AMOUNT" reward items, dropping any overflow. */

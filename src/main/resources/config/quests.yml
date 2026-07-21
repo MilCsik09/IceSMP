@@ -614,6 +614,10 @@ quests:
     description: "Tisztítsd meg a vidéket és lásd el a falut."
     repeatable: true
     cooldown-hours: 24
+    # Gameplay-audit: a frakció-független napi NPC-questek végre rotálódnak —
+    # a napi-npc csoportból naponta 3 elérhető (nap-determinisztikus választás).
+    rotation-group: "napi-npc"
+    rotation-daily-count: 3
     objectives-mode: "ALL"
     objectives:
       1:
@@ -1132,6 +1136,7 @@ quests:
   borostyan_kutatas:
     display-name: "Borostyán a mélyből"
     description: "Hozz fel 6 nyers aranyat a Mélységi Borostyán tisztításához."
+    rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 48
     objective:
@@ -1188,6 +1193,7 @@ quests:
   uti_kenyer:
     display-name: "A vándor konyhája"
     description: "Süss 6 kenyeret — a karavánok úti kenyérként viszik magukkal."
+    rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
     objective:
@@ -1203,6 +1209,7 @@ quests:
   viharkvarc_fejto:
     display-name: "A vihar kövei"
     description: "Gyűjts 24 kvarcot a Viharkvarc fejtéséhez."
+    rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 48
     objective:
@@ -1218,6 +1225,7 @@ quests:
   korrupt_irtas:
     display-name: "A rontás ellen"
     description: "Irtsd a vadon fajzatait — a Fa minden leölt szörnnyel könnyebben lélegzik."
+    rotation-group: "napi-npc"
     repeatable: true
     cooldown-hours: 24
     objective:

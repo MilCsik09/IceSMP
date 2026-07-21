@@ -17,6 +17,14 @@ import java.util.UUID;
 
 public final class FactionJoinSubcommand implements FactionSubcommand {
 
+    /**
+     * Gameplay-audit (newbie-trap): a DARK-belépés visszafordíthatatlan (örök paktum) —
+     * kétlépcsős megerősítés kell. UUID → az első kérés időbélyege; az ablakon túli
+     * bejegyzések minden híváskor törlődnek (nem szivárog).
+     */
+    private final java.util.concurrent.ConcurrentHashMap<UUID, Long> darkConfirmPending =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final CurrencyManager currencyManager;
@@ -99,6 +107,26 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                         "&5A Kitaszítottak közé csak bűnösök léphetnek be."
                 ));
                 return true;
+            }
+
+            // Kétlépcsős megerősítés: az örök paktumot nem lehet "véletlenül" megkötni.
+            final long confirmWindowMillis = Math.max(0L,
+                    configManager.getLong("factions.dark.join-confirm-seconds", 60L)) * 1000L;
+            if (confirmWindowMillis > 0L) {
+                final long now = System.currentTimeMillis();
+                darkConfirmPending.values().removeIf(stamp -> now - stamp > confirmWindowMillis);
+                final Long firstAsk = darkConfirmPending.get(uuid);
+                if (firstAsk == null) {
+                    darkConfirmPending.put(uuid, now);
+                    sender.sendMessage(messageManager.get(
+                            "messages.faction-dark-confirm-warning",
+                            "&5⚠ A Kitaszítottak paktuma ÖRÖK: a bűnöd sosem tisztul le, és nincs visszaút "
+                                    + "más frakcióba. Ha biztos vagy benne, írd be újra &f%s&5 másodpercen belül: "
+                                    + "&f/faction join dark",
+                            String.valueOf(confirmWindowMillis / 1000L)));
+                    return true;
+                }
+                darkConfirmPending.remove(uuid);
             }
 
             if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {

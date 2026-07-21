@@ -36,9 +36,11 @@
    magától kell megtalálni. [GYORS] ✅ KÉSZ: onboarding_utmutatas (Hírnök-quest) beláncolva. • Csak 4/13 kaszt kapott teljes mentor-láncot.
 7. A kaszt az egyetlen admin-jegyes, visszafordíthatatlan döntés — és a legkevesebb
    infóval (a szerep-címke csak a spec-oldalon látszik). → self-service kaszt-váltás a
-   frakció-minta szerint (díj+cooldown) + szerep-címke a választó GUI-ban. [GYORS a címke]
+   frakció-minta szerint (díj+cooldown) + szerep-címke a választó GUI-ban.
+   [GYORS a címke] ✅ KÉSZ: szerep-címke a JobGUI-ban (a self-service váltás még nyitott).
 8. Szezon-bajnok kifizetés csak online tagoknak — az offline-pending minta (profession-
-   weekly) létezik, a zászlóshajó-jutalom nem használja. [GYORS]
+   weekly) létezik, a zászlóshajó-jutalom nem használja. [GYORS] ✅ KÉSZ
+   (pending-champion-spoils a season.yml-ben, belépéskor jár).
 9. HolidayService override() halott hook (0 hívó) — az ünnepeknek nincs mechanikai
    hatása. [GYORS: vérhold/invázió ünnep-skin bekötése] ✅ KÉSZ: blood-moon-chance-mult /
    invasion-chance-mult ünnep-kulcsok élnek (Rém-éj: ×2 / ×1.5).
@@ -46,7 +48,7 @@
     a szezon-jutalom; a raid.neutral súly halott config. → tanács/vén-mechanika.
 11. DARK-belépés newbie-trap (ingyenes, prompt nélkül, "örök"); Mortengrad (a scope:
     capital feltételezte főváros) még nem létezik → addig scope: all ajánlott.
-    [GYORS] ✅ RÉSZBEN: scope: all beállítva (a belépés-prompt még nyitott).
+    [GYORS] ✅ KÉSZ: scope: all + kétlépcsős DARK-belépés (join-confirm-seconds).
 12. Nagy szerveren: kincs/vad hajsza/rontás-mag "első kattintó visz mindent" —
     monopolizálható; raid 10v10 plafon kispadoztat. → personal-loot minta kiterjesztése.
 13. Szakma-heti célok: a craft-szakmáknak (armorer 333 smith/hét, cook 1000 étel) 3-5×
@@ -59,10 +61,14 @@
 
 ## 🟢 Polish / doc
 
-15. 17 riddle-quest él, a doc 16-ot mond. [GYORS] ✅ KÉSZ (doc javítva 17-re). • Dungeon-rendszer kapu-kód létezik,
-    de nincs player-guide oldala. • Kalauz-ellentmondás: factions.yml komment vs. kód a
-    DARK-váltás díjáról. • Napi questek sosem rotálódnak (a rotation-group mechanizmus
-    kész). [GYORS] • Karaván: unique-anyag slot-garancia a rotációba. [GYORS]
+15. 17 riddle-quest él, a doc 16-ot mond. [GYORS] ✅ KÉSZ (doc javítva 17-re).
+    • Dungeon-rendszer kapu-kód létezik, de nincs player-guide oldala.
+    • Kalauz-ellentmondás: factions.yml komment vs. kód a DARK-váltás díjáról.
+      ✅ KÉSZ (komment a kódhoz igazítva: a Sötétbe lépés mindig ingyenes).
+    • Napi questek sosem rotálódnak (a rotation-group mechanizmus kész). [GYORS]
+      ✅ KÉSZ ("napi-npc" csoport, naponta 3 a frakció-független ismételhetőkből).
+    • Karaván: unique-anyag slot-garancia a rotációba. [GYORS] ✅ KÉSZ
+      (caravan.rotation.guarantee-unique).
 
 ## Ami kifejezetten jól áll (a jelentések szerint)
 
