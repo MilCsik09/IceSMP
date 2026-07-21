@@ -1693,3 +1693,18 @@ Jó tesztelést! ❄️
 - [ ] **Ingame lore-bővítés:** +8 tábortűz-mese és +6 Idegen-sor az új nevekkel
       (Radicora, vérfa, Olethropyla, révész, Thanaopolis); /lore aliasok: radicora,
       olethropyla. TULAJ-DÖNTÉS RÖGZÍTVE: kaszt-váltás CSAK adminnal (self-service nem lesz).
+
+## Tanács + DARK mob-rules + invázió-élettartam (tulaj-jóváhagyások)
+- [ ] **Vének Tanácsa (NEUTRAL):** /tanacs szavaz <játékos> (heti 1 szavazat, csak
+      Menedék-polgárra, átszavazható; hét-fordulón nullázódik + broadcast); a tanács =
+      a hét élő top-3 szavazottja (factions.council.seats). Jogok: kassza-kivét
+      (tanácsi napi keret: 400), karaván-indítás, /tanacs vasarhet (Creutzér piaci
+      díj-kedvezmény ablak, market-week-minutes [60] — a meglévő konjunktúra-mechanikán).
+      Raidet a tanács NEM hirdethet. Perzisztens: council.yml (csak a futó hét szavazatai).
+      Config-menü kulcsok az Adó-kategóriában.
+- [ ] **DARK mob-rules élesítve (1-es opció):** a Kitaszítottak földjén minden spawnoló
+      mob +2 szint (a zóna-rámpázott alapra) és az élőhalott nappal sem ég — Thanaopolis
+      környéke nem szelídített vidék. (A 4-7-es élőhalott-népesség ettől független.)
+- [ ] **Invázió-mob élettartam (teszter-panasz: kóbor pókok a városban):** a le nem ölt
+      horda-mob mob-lifespan-seconds [600] után köddé válik (saját entity-schedulerén,
+      POOF-effekttel) — a nappal megszelídült pók nem vándorol be a semlegesbe.

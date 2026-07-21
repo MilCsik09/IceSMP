@@ -110,6 +110,24 @@ public final class EconomyEventManager implements PersistentStore {
         return isActive() && currencyType == eventCurrency ? eventMultiplier : 1.0D;
     }
 
+    /**
+     * A Vének Tanácsának Vásár-hete (tulaj-jóváhagyás): a tanács kézzel nyithat egy
+     * Creutzér-konjunktúrát (piaci díj-kedvezmény ablak). false, ha már fut konjunktúra.
+     */
+    public boolean startCouncilBoom() {
+        if (isBoomActive()) {
+            return false;
+        }
+        boomCurrency = hu.taliann.icesmp.data.CurrencyType.NEUTRAL;
+        boomEndsAt = System.currentTimeMillis() + Math.max(5L,
+                configManager.getLong("factions.council.market-week-minutes", 60L)) * 60_000L;
+        save();
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                "council-market-week",
+                "<gold>🏛 A Vének Tanácsa VÁSÁR-HETET hirdet — a Creutzér piaci díja átmenetileg kedvezményes! Caldestera kapui tárva!</gold>"));
+        return true;
+    }
+
     /** F14 — él-e konjunktúra-ablak. */
     public boolean isBoomActive() {
         return boomCurrency != null && System.currentTimeMillis() < boomEndsAt;

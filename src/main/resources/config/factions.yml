@@ -62,6 +62,17 @@ factions:
   # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
   # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
   # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  # ===== A Vének Tanácsa (a Menedék "király-pótléka" — tulaj-jóváhagyás) =====
+  # A NEUTRAL-nak nincs királya: hetente választott, seats fős tanács gyakorolja a
+  # GAZDASÁGI jogokat (kassza-kivét saját napi kerettel, karaván-indítás, Vásár-hét
+  # kihirdetése — /tanacs vasarhet: Creutzér piaci díj-kedvezmény ablak). Raidet a
+  # tanács NEM hirdethet. Szavazás: /tanacs szavaz <játékos> (hetente egy, átszavazható);
+  # a hét fordulóján a szavazatok nullázódnak. Élő kulcsok.
+  council:
+    enabled: true
+    seats: 3
+    withdraw-daily-cap: 400.0
+    market-week-minutes: 60
   treasury:
     # A király kassza-kivéte FIZIKAI veretben érkezik (bank-only szabály), és
     # naponta legfeljebb ennyit vehet ki (0 = korlátlan — nem ajánlott).
@@ -355,10 +366,11 @@ territory:
       bonus-levels: 5          # a kazamaták fix, kemény szint-bónusza
       no-daylight-burn: true
       no-zombification: true
-    # Példa: a Kitaszítottak földjein (Thanaopolis környéke) éjjel-nappal kitartó élőhalottak:
-    # dark:
-    #   bonus-levels: 2
-    #   no-daylight-burn: true
+    # A Kitaszítottak földje nem szelídített vidék (tulaj-döntés): minden ott spawnoló
+    # mob +2 szintet kap (a zóna-rámpázott alapra rakódik), és az élőhalott nappal sem ég.
+    dark:
+      bonus-levels: 2
+      no-daylight-burn: true
 
 # ===== B35 — Céhek: frakción belüli 5-15 fős kisközösségek =====
 # /ceh letrehoz|meghiv|elfogad|elhagy|kirug|befizet|info|lista — élő kulcsok.

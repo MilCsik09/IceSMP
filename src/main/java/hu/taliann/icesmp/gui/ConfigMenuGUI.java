@@ -69,7 +69,10 @@ public final class ConfigMenuGUI {
                 Entry.integer("factions.tax.evasion-strikes", "Adócsalás-strike küszöb", 1, 0, 50),
                 Entry.integer("factions.tax.interval-minutes", "Beszedés (perc)", 5, 1, 100000),
                 Entry.toggle("ferry.enabled", "Kompjáratok"),
-                Entry.number("ferry.default-fee", "Komp-viteldíj (alap)", 5, 0, 10000))));
+                Entry.number("ferry.default-fee", "Komp-viteldíj (alap)", 5, 0, 10000),
+                Entry.toggle("factions.council.enabled", "Vének Tanácsa (NEUTRAL)"),
+                Entry.number("factions.council.withdraw-daily-cap", "Tanácsi kassza-keret/nap", 50, 0, 100000),
+                Entry.integer("factions.council.market-week-minutes", "Vásár-hét hossza (perc)", 15, 5, 10080))));
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
                 Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),

@@ -72,6 +72,7 @@ jelenti, hogy **elhagyható**.
 | `/spellbook` | `varazskonyv`, `konyv`, `sb` | **Varázskönyv**: spellek böngészése (leírás, költség, sebzés, CD) és kiválasztása kattintással. *Sunyíts + jobb katt a Lélekkapcson* is megnyitja. |
 | `/events status` | `event`, `esemeny` | „Mi történik most?" — minden aktív világesemény + szezon-állás egyben |
 | `/komp [útvonal]` | `ferry` | Átkelés a kompon (a kikötőben állva); útvonal nélkül a járatok listája |
+| `/tanacs [szavaz <játékos>\|vasarhet]` | `council` | A Menedék Vének Tanácsa: heti szavazás, tanácstagként Vásár-hét |
 | `/events season` / `/events blood-moon` / `/events caravan` | `event`, `esemeny` | Világesemények állása (szezon, vérhold, kereskedő-karaván) |
 | `/party invite\|accept\|decline\|leave\|list` | `p`, `parti` | **Party (csapat)**: meghívás, csatlakozás, kilépés, taglista (max 5 fő) |
 | `/party kick\|promote <név>` | | Csapatvezetői műveletek: kirúgás, vezetés átadása |

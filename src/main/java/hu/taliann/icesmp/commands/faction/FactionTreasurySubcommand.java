@@ -93,10 +93,24 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         return true;
     }
 
+    /** A Vének Tanácsa (setterrel kötve): a NEUTRAL tanácstag is nyúlhat a kasszához. */
+    private volatile hu.taliann.icesmp.managers.CouncilManager councilManager;
+
+    public void setCouncilManager(final hu.taliann.icesmp.managers.CouncilManager councilManager) {
+        this.councilManager = councilManager;
+    }
+
+    private boolean isNeutralCouncillor(final Player player) {
+        final hu.taliann.icesmp.managers.CouncilManager councilRef = councilManager;
+        return councilRef != null && councilRef.isCouncillor(player.getUniqueId());
+    }
+
     private boolean handleWithdraw(final Player player, final String rawAmount) {
         // The crowned king commands their own faction's treasury; admins can always withdraw.
-        if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)) {
-            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA kasszából csak a frakció királya (vagy admin) vehet ki."));
+        // A Menedéknek nincs királya — ott a Vének Tanácsának tagjai vehetnek ki (saját kerettel).
+        if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)
+                && !isNeutralCouncillor(player)) {
+            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA kasszából csak a frakció királya (a Menedékben: a Vének Tanácsa) vagy admin vehet ki."));
             return true;
         }
 
@@ -118,7 +132,10 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         // Bank-only szabály: a kassza-kivét FIZIKAI veretben érkezik a király kezébe
         // (számlára pénz csak bankbefizetéssel kerülhet) — és napi limit fékezi, hogy
         // egy király ne üríthesse egy mozdulattal a kasszát (élő kulcs, 0 = korlátlan).
-        final double dailyCap = configManager.getDouble("factions.treasury.withdraw-daily-cap", 1000.0D);
+        // A tanácstag (nem-király) kisebb napi keretet kap — hárman együtt se ürítik a kasszát.
+        final double dailyCap = (!kingManager.isKing(player) && isNeutralCouncillor(player))
+                ? configManager.getDouble("factions.council.withdraw-daily-cap", 400.0D)
+                : configManager.getDouble("factions.treasury.withdraw-daily-cap", 1000.0D);
         final long today = System.currentTimeMillis() / 86_400_000L;
         final long storedDay = player.getPersistentDataContainer()
                 .getOrDefault(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);

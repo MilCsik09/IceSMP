@@ -17,6 +17,12 @@ public final class FactionCaravanSubcommand implements FactionSubcommand {
     private final PlayerCaravanManager caravanManager;
     private final KingManager kingManager;
     private final MessageManager messageManager;
+    /** A Vének Tanácsa (setterrel kötve; null = nincs tanács-jog). */
+    private volatile hu.taliann.icesmp.managers.CouncilManager councilManager;
+
+    public void setCouncilManager(final hu.taliann.icesmp.managers.CouncilManager councilManager) {
+        this.councilManager = councilManager;
+    }
 
     public FactionCaravanSubcommand(final PlayerCaravanManager caravanManager,
                                     final KingManager kingManager, final MessageManager messageManager) {
@@ -51,9 +57,12 @@ public final class FactionCaravanSubcommand implements FactionSubcommand {
             sender.sendMessage(messageManager.get("messages.faction-caravan-usage", "&cHasználat: %s", usage()));
             return true;
         }
-        if (!kingManager.isKing(player)) {
+        final hu.taliann.icesmp.managers.CouncilManager councilRef = councilManager;
+        // A Menedékben a Vének Tanácsa tölti be a király gazdasági szerepét.
+        if (!kingManager.isKing(player)
+                && (councilRef == null || !councilRef.isCouncillor(player.getUniqueId()))) {
             sender.sendMessage(messageManager.get("faction-caravan-not-king",
-                    "&cSzállítmányt csak a frakciód KIRÁLYA indíthat."));
+                    "&cSzállítmányt csak a frakciód KIRÁLYA (a Menedékben: a Vének Tanácsa) indíthat."));
             return true;
         }
         final double amount;

@@ -68,6 +68,10 @@
    invasion-chance-mult ünnep-kulcsok élnek (Rém-éj: ×2 / ×1.5).
 10. NEUTRAL: király-rétegből kizárva + adó-mentes = félhalott kassza, mégis oda folyna
     a szezon-jutalom; a raid.neutral súly halott config. → tanács/vén-mechanika.
+    ✅ KÉSZ (tulaj-jóváhagyás): Vének Tanácsa — heti szavazás (/tanacs szavaz, top-3),
+    gazdasági jogok (kassza-kivét tanácsi kerettel, karaván, /tanacs vasarhet =
+    Creutzér piaci díj-kedvezmény ablak), raid-jog NÉLKÜL. A raid.neutral halott
+    súly kérdése ezzel lezárva (a NEUTRAL szándékosan nem raidel).
 11. DARK-belépés newbie-trap (ingyenes, prompt nélkül, "örök"); Thanaopolis (a scope:
     capital feltételezte főváros) még nem létezik → addig scope: all ajánlott.
     [GYORS] ✅ KÉSZ: scope: all + kétlépcsős DARK-belépés (join-confirm-seconds).
@@ -113,9 +117,7 @@
   fejezet-questje; a 46-50 szint üres grind. Terv: 2. fejezet a Hasadás-lore, 3. a
   Néma Királynő/Kapu köré (5-6 quest/fejezet a kódexből); 50-es szinten záró
   mester-próba + szignatúra-jutalom. Külön tartalomírási kör.
-- **NEUTRAL tanács/vén-mechanika** (10. lelet): király-réteg helyett tanács; a
-  raid.neutral halott súly rendezése. Előbb lássuk, hogyan él a szerver a
-  hadi-ablakkal.
+- **NEUTRAL tanács/vén-mechanika** (10. lelet): ✅ KÉSZ (Vének Tanácsa, lásd fent).
 - **Personal-loot kiterjesztés** (12. lelet): ✅ KÉSZ (lásd fent).
 - **Self-service kaszt-váltás**: ❌ TULAJ-DÖNTÉS (2026-07-21): NEM LESZ — a kaszt-váltás
   végleg admin-only marad (/class admin resetclass).

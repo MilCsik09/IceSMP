@@ -352,6 +352,20 @@ public final class InvasionManager {
         mob.setRemoveWhenFarAway(false);
         mobScalingManager.forceLevel(mob, level);
         activeMobs.add(mob.getUniqueId());
+        // Élettartam (teszter-panasz: a túlélő pók nappal megszelídül és bevándorol a
+        // városba): a le nem ölt horda-mob lejáratkor köddé válik — a saját entity-
+        // schedulerén, ami a halálakor magától nyugdíjazódik. 0 = örök (régi viselkedés).
+        final long lifespanTicks = Math.max(0L,
+                configManager.getLong("world-events.invasion.mob-lifespan-seconds", 600L)) * 20L;
+        if (lifespanTicks > 0L) {
+            mob.getScheduler().runDelayed(plugin, task -> {
+                if (mob.isValid()) {
+                    mob.getWorld().spawnParticle(org.bukkit.Particle.POOF,
+                            mob.getLocation().add(0.0D, 0.8D, 0.0D), 8, 0.3D, 0.4D, 0.3D, 0.01D);
+                    mob.remove();
+                }
+            }, null, lifespanTicks);
+        }
         return mob;
     }
 
