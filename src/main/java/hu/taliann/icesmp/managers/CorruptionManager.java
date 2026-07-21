@@ -144,6 +144,17 @@ public final class CorruptionManager implements PersistentStore {
         dirty = true;
     }
 
+    /** Personal-loot kiterjesztés: irtás-hozzájárulás fejenkénti számlálása (volatilis). */
+    private final Map<UUID, Integer> purgeContributors = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** A korrupt mob halál-listenere hívja: számláló + a killer hozzájárulása. */
+    public void recordPurgeKill(final UUID killerId) {
+        recordPurgeKill();
+        if (killerId != null) {
+            purgeContributors.merge(killerId, 1, Integer::sum);
+        }
+    }
+
     public int getPurgeKills() {
         return purgeKills.get();
     }
@@ -336,6 +347,7 @@ public final class CorruptionManager implements PersistentStore {
         centerZ = z;
         radius = Math.max(4.0D, configManager.getDouble("corruption.initial-radius", 16.0D));
         purgeKills.set(0);
+        purgeContributors.clear();
         lastSpreadDay = -1L;
         active = true;
         spawnGraceUntil = 0L;
@@ -457,7 +469,37 @@ public final class CorruptionManager implements PersistentStore {
             final int buffTicks = Math.max(1, configManager.getInt("corruption.reward-buff-minutes", 5)) * 60 * 20;
             cleanser.addPotionEffect(new org.bukkit.potion.PotionEffect(
                     org.bukkit.potion.PotionEffectType.REGENERATION, buffTicks, 0, false, true, true));
+
+            // Personal-loot kiterjesztés (tulaj-jóváhagyás): aki elég korrupt fajzatot
+            // irtott (contributor-min-kills), csökkentett saját gurítást kap privátban —
+            // a mag-törő "visz mindent" helyett a közös irtás is fizet.
+            final int minKills = Math.max(1, configManager.getInt("corruption.contributor-min-kills", 3));
+            final double ratio = Math.max(0.0D, Math.min(1.0D,
+                    configManager.getDouble("corruption.contributor-loot-ratio", 0.5D)));
+            final int contributorRolls = (int) Math.round(rolls * ratio);
+            if (contributorRolls > 0) {
+                for (final Map.Entry<UUID, Integer> entry : Map.copyOf(purgeContributors).entrySet()) {
+                    if (entry.getValue() < minKills || entry.getKey().equals(cleanser.getUniqueId())) {
+                        continue;
+                    }
+                    final Player contributor = Bukkit.getPlayer(entry.getKey());
+                    if (contributor == null) {
+                        continue;
+                    }
+                    contributor.getScheduler().run(plugin, task -> {
+                        for (final org.bukkit.inventory.ItemStack loot
+                                : LootTable.roll(configManager, "corruption.loot", contributorRolls)) {
+                            contributor.getInventory().addItem(loot).values().forEach(left ->
+                                    contributor.getWorld().dropItemNaturally(contributor.getLocation(), left));
+                        }
+                        contributor.sendMessage(messageManager.getMessage(
+                                "corruption-contributor-loot",
+                                "<green>🕸 Irtottad a rontás fajzatait — a Fa hálája téged is elér.</green>"));
+                    }, null);
+                }
+            }
         }
+        purgeContributors.clear();
         // A fajzatok szétszélednek (despawn a saját régió-szálukon).
         for (final UUID id : corruptMobs) {
             try {

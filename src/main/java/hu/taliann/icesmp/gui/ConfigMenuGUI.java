@@ -88,7 +88,9 @@ public final class ConfigMenuGUI {
                 Entry.integer("territory.mob-rules.doom-gate.bonus-levels", "Zóna mob-bónusz szint", 1, 0, 20),
                 Entry.toggle("territory.mob-rules.doom-gate.no-daylight-burn", "Mob nappal sem ég"),
                 Entry.toggle("territory.mob-rules.doom-gate.no-zombification", "Mob nem zombisodik"),
-                Entry.toggle("nether-portal.allow-creation", "Nether-portál gyújtás engedett"))));
+                Entry.toggle("nether-portal.allow-creation", "Nether-portál gyújtás engedett"),
+                Entry.toggle("mob-scaling.zone-ramp.enabled", "Zóna-rámpás mob-szint"),
+                Entry.integer("mob-scaling.zone-ramp.blocks-per-level", "Rámpa (blokk/szint)", 50, 1, 5000))));
         categories.put("hadiablak", new Category("hadiablak", "Hadi-ablak", Material.IRON_SWORD, List.of(
                 Entry.toggle("factions.war-window.enabled", "Hadi-ablak (RED↔BLUE ölés nem bűn)"),
                 Entry.integer("factions.war-window.points-per-kill", "Liga-pont ölésenként", 1, 0, 100),
@@ -103,7 +105,8 @@ public final class ConfigMenuGUI {
                 Entry.integer("factions.whisper.exposure-sins", "Leleplezés bűn-terhe", 1, 1, 20),
                 Entry.toggle("factions.whisper.expose-broadcast", "Leleplezés-broadcast"),
                 Entry.toggle("factions.whisper.night-undead-truce", "Éjszakai élőhalott-békesség"),
-                Entry.integer("cultists.whisper-loot-rolls", "Kult-loot részesedés (guríts)", 1, 0, 10))));
+                Entry.integer("cultists.whisper-loot-rolls", "Kult-loot részesedés (guríts)", 1, 0, 10),
+                Entry.number("factions.whisper.blackmarket-discount-percent", "Feketepiac-kedvezmény (%)", 5, 0, 90))));
         categories.put("etelek", new Category("etelek", "Frakció-ételek (honvágy)", Material.COOKED_SALMON, List.of(
                 Entry.toggle("factions.food-duty.enabled", "Honvágy-kötelezettség"),
                 Entry.integer("factions.food-duty.grace-hours", "Türelmi idő (óra)", 1, 1, 100000),

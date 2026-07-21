@@ -178,8 +178,19 @@ public final class WildHuntManager {
      * @param slayer the killing player (may be null if it died some other way)
      * @param where the death location
      */
+    /** Personal-loot kiterjesztés: a fenevadat sebző résztvevők (spam-mentes halmaz). */
+    private final java.util.Set<java.util.UUID> damagers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** A sebzés-listener hívja (a fenevad régió-szálán): résztvevő-jelölés. */
+    public void recordDamager(final java.util.UUID playerId) {
+        if (beastId != null && playerId != null) {
+            damagers.add(playerId);
+        }
+    }
+
     public void onSlain(final Player slayer, final Location where) {
         if (!claimSettlement()) {
+            damagers.clear();
             return; // Expiry won the race — the escape path already settled it.
         }
 
@@ -197,7 +208,36 @@ public final class WildHuntManager {
             }
             world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.5D, 0.7D, 0.5D, 0.1D);
             world.playSound(where, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5F, 1.5F);
+
+            // Personal-loot kiterjesztés (tulaj-jóváhagyás, 50-60 fős szerverre): minden
+            // sebző résztvevő kap egy CSÖKKENTETT saját gurítást — a leütő (és a partyja,
+            // amely már teljes personal lootot kapott) kimarad a második körből.
+            final double ratio = Math.max(0.0D, Math.min(1.0D,
+                    configManager.getDouble("wild-hunt.participant-loot-ratio", 0.5D)));
+            final int participantRolls = (int) Math.round(rolls * ratio);
+            if (participantRolls > 0) {
+                for (final java.util.UUID id : java.util.Set.copyOf(damagers)) {
+                    if (slayer != null && (id.equals(slayer.getUniqueId())
+                            || partyManager.isSameParty(slayer.getUniqueId(), id))) {
+                        continue;
+                    }
+                    final Player participant = Bukkit.getPlayer(id);
+                    if (participant == null) {
+                        continue;
+                    }
+                    participant.getScheduler().run(plugin, task -> {
+                        for (final ItemStack loot : LootTable.roll(configManager, "wild-hunt.loot", participantRolls)) {
+                            participant.getInventory().addItem(loot).values()
+                                    .forEach(left -> participant.getWorld().dropItemNaturally(participant.getLocation(), left));
+                        }
+                        participant.sendMessage(messageManager.getMessage(
+                                "wild-hunt-participant-loot",
+                                "<green>🏹 Részt vettél a Hajszában — a zsákmányból neked is jut.</green>"));
+                    }, null);
+                }
+            }
         }
+        damagers.clear();
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-slain",
@@ -293,6 +333,7 @@ public final class WildHuntManager {
 
     private void escape() {
         final UUID id = beastId;
+        damagers.clear();
         if (!claimSettlement()) {
             return; // The death listener won the race — the slain path already settled it.
         }

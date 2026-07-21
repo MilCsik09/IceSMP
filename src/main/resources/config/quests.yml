@@ -61,7 +61,7 @@ community-goals:
       type: "COLLECT_ITEMS"
       materials:
         - "IRON_INGOT"
-      count: 600
+      count: 1500
     reward-treasury: 500
     reward-buff-minutes: 15
   server_hunt:
@@ -69,7 +69,7 @@ community-goals:
     display-name: "A Nagy Vadászat"
     objective:
       type: "KILL_MOBS"
-      count: 1500
+      count: 4000
     reward-treasury: 250
     reward-buff-minutes: 10
   blue_fish_market:
@@ -80,7 +80,7 @@ community-goals:
       materials:
         - "COD"
         - "SALMON"
-      count: 500
+      count: 1200
     reward-treasury: 400
     reward-buff-minutes: 12
   neutral_ore_exchange:
@@ -91,7 +91,7 @@ community-goals:
       materials:
         - "COAL_ORE"
         - "DEEPSLATE_COAL_ORE"
-      count: 1000
+      count: 2500
     reward-treasury: 300
     reward-buff-minutes: 10
   dark_undead_purge:
@@ -100,7 +100,7 @@ community-goals:
     objective:
       type: "KILL_MOBS"
       entity-type: "ZOMBIE"
-      count: 800
+      count: 1500
     reward-treasury: 350
     reward-buff-minutes: 12
   red_raid_conquest:
@@ -108,7 +108,7 @@ community-goals:
     display-name: "Piros Hódító Hadjárat"
     objective:
       type: "WIN_RAID"
-      count: 4
+      count: 6
     reward-treasury: 450
     reward-buff-minutes: 15
   server_worldboss_hunt:
@@ -116,7 +116,7 @@ community-goals:
     display-name: "Világfaló Vadászat"
     objective:
       type: "KILL_WORLDBOSS"
-      count: 3
+      count: 5
     reward-treasury: 800
     reward-buff-minutes: 20
 
@@ -393,6 +393,58 @@ quests:
       currency:
         type: "OWN"
         amount: 25
+  rejtveny_feher_arany:
+    riddle: true
+    display-name: "Rejtvény: A fehér arany"
+    description: "„A lángok földjének mélyén terem, fehér, mint a csont, s a tornyok tőle ragyognak. Hozz belőle tizenhatot.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "QUARTZ" ]
+      count: 16
+    rewards:
+      class-xp: 90
+      currency:
+        type: "OWN"
+        amount: 35
+  rejtveny_tuz_gyumolcse:
+    riddle: true
+    display-name: "Rejtvény: A tűz gyümölcse"
+    description: "„Tüske őrzi, vörösen ég, de nem melegít; a fenyők árnyéka rejti, s aki mohó, annak a keze bánja. Szedj egy kosárnyit.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "SWEET_BERRIES" ]
+      count: 16
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 30
+  rejtveny_eg_kove:
+    riddle: true
+    display-name: "Rejtvény: Az ég köve"
+    description: "„Az ég egyszer a mélybe költözött, és kővé vált — kékebb, mint a tenger, s a bűvölők tőle álmodnak. Fejts ki belőle két tucatnyit.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "LAPIS_LAZULI" ]
+      count: 24
+    rewards:
+      class-xp: 90
+      currency:
+        type: "OWN"
+        amount: 35
+  rejtveny_vilagito_ejfel:
+    riddle: true
+    display-name: "Rejtvény: A világító éjfél"
+    description: "„Éjfél úszik a vízben, s ha megijed, ragyogó sötétet hagy maga után. Gyűjts négyet a ragyogásából.”"
+    objective:
+      type: "COLLECT_ITEMS"
+      materials: [ "GLOW_INK_SAC" ]
+      count: 4
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 40
   rejtveny_edes_ho:
     riddle: true
     display-name: "Rejtvény: Az édes hó"
@@ -1719,6 +1771,170 @@ quests:
         type: "OWN"
         amount: 40
 
+  # --- A révész története (komp-mellék-lánc; NPC: revesz — a kikötő révésze) ---
+  revesz_ismerkedes:
+    dialogue:
+      speaker: "A révész"
+      complete:
+        - "Új arc a mólón. Jegyezd meg: a víz nem ellenség. Csak nem barát."
+    display-name: "A révész"
+    description: "Keresd fel a révészt a kikötőben — ő visz át a túlpartra, ha megfizeted."
+    next: "revesz_vacsoraja"
+    objective:
+      type: "TALK_TO_NPC"
+      npc: "revesz"
+    rewards:
+      class-xp: 60
+      currency:
+        type: "OWN"
+        amount: 20
+  revesz_vacsoraja:
+    dialogue:
+      speaker: "A révész"
+      give:
+        - "A szoros felett hosszú a nap. Hozz halat, és mesélek valamit a vízről."
+      complete:
+        - "Jó fogás. A víz ma kegyes volt — hozzád is, hozzám is."
+    giver-npc: "revesz"
+    display-name: "A révész vacsorája"
+    description: "Fogj 12 halat a révésznek — a szoros felett hosszú a nap."
+    next: "revesz_moloja"
+    objective:
+      type: "CATCH_FISH"
+      count: 12
+    rewards:
+      class-xp: 80
+      currency:
+        type: "OWN"
+        amount: 35
+  revesz_moloja:
+    dialogue:
+      speaker: "A révész"
+      give:
+        - "A móló palánkjai korhadnak. Hozz deszkát, és a komp neked mindig időben indul."
+      complete:
+        - "Erős munka. Mostantól a mólón mindig van helyed — és a történeteimnek is."
+    giver-npc: "revesz"
+    display-name: "A révész mólója"
+    description: "Vigyél 24 deszkát a révésznek a móló javításához."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "revesz"
+      materials: [ "OAK_PLANKS", "SPRUCE_PLANKS", "BIRCH_PLANKS" ]
+      count: 24
+    rewards:
+      class-xp: 100
+      currency:
+        type: "OWN"
+        amount: 60
+      items:
+        - "COOKED_SALMON:6"
+  # --- Frakció-heti questek (repeatable, 168h — a frakció-élet heti ritmusa) ---
+  red_heti_kohok:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "RED"
+    display-name: "A kohók hete"
+    description: "Pyralingrad kohói sosem hűlnek ki: olvassz ki 64 fémrudat a Láng dicsőségére."
+    objective:
+      type: "SMELT_ITEMS"
+      materials: [ "IRON_INGOT", "GOLD_INGOT", "COPPER_INGOT" ]
+      count: 64
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+  blue_heti_tisztogatas:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "BLUE"
+    display-name: "A Jégmezők tisztogatása"
+    description: "Glatziendorf határvidékét tisztán tartjuk: győzz le 60 megerősített szörnyet (min. Lvl 2)."
+    objective:
+      type: "KILL_MOBS"
+      count: 60
+      min-mob-level: 2
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+  neutral_heti_vasar:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "NEUTRAL"
+    display-name: "A vásár hete"
+    description: "Caldestera a kereskedelemből él: köss 20 üzletet a falusi kalmárokkal."
+    objective:
+      type: "TRADE_WITH_VILLAGER"
+      count: 20
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+  dark_heti_aratas:
+    repeatable: true
+    cooldown-hours: 168
+    requires-faction: "DARK"
+    display-name: "Lélek-aratás"
+    description: "A Királynő szavának maradékát arasd: pusztíts el 40 erős fajzatot (min. Lvl 3)."
+    objective:
+      type: "KILL_MOBS"
+      count: 40
+      min-mob-level: 3
+    rewards:
+      class-xp: 200
+      currency:
+        type: "OWN"
+        amount: 120
+  # --- +2 napi a rotációba ---
+  hirnok_hirvitel:
+    rotation-group: "napi-npc"
+    repeatable: true
+    cooldown-hours: 24
+    dialogue:
+      speaker: "A hírnök"
+      give:
+        - "A krónikának papír kell, a hírnek láb. Te most mindkettő leszel."
+      complete:
+        - "A hír célba ért. A krónika nem felejt — és én sem."
+    giver-npc: "hirnok"
+    display-name: "Hírvitel"
+    description: "Vigyél 8 papírt a hírnöknek — a krónika lapjai fogynak."
+    objective:
+      type: "DELIVER_ITEMS"
+      npc: "hirnok"
+      materials: [ "PAPER" ]
+      count: 8
+    rewards:
+      class-xp: 50
+      currency:
+        type: "OWN"
+        amount: 35
+  kovacs_fegyvermustra:
+    rotation-group: "napi-npc"
+    repeatable: true
+    cooldown-hours: 24
+    dialogue:
+      speaker: "Gorvik kovácsmester"
+      give:
+        - "Az újoncoknak penge kell, nekem meg segéd. Kovácsolj, és tanulsz is valamit."
+      complete:
+        - "Nem rossz él. Még lesz belőled valaki."
+    giver-npc: "kovacs_mester"
+    display-name: "Fegyvermustra"
+    description: "Kovácsolj 2 vaskardot a céh újoncainak."
+    objective:
+      type: "CRAFT_ITEMS"
+      materials: [ "IRON_SWORD" ]
+      count: 2
+    rewards:
+      class-xp: 60
+      currency:
+        type: "OWN"
+        amount: 40
   # --- Frakció-questek ---
   red_supply_run:
     display-name: "Piros Utánpótlás"

@@ -377,6 +377,7 @@ public final class IceSMPCore {
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager, seasonManager);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
+        shopManager.setWhisperManager(whisperManager); // Suttogó feketepiac-kedvezmény
         this.npcBindingManager = new NpcBindingManager(plugin);
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);

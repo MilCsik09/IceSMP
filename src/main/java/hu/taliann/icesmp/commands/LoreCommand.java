@@ -111,10 +111,10 @@ public final class LoreCommand implements BasicCommand {
         return switch (raw.toLowerCase(Locale.ROOT)) {
             case "red", "piros", "perinfernicitas" -> "lang";
             case "blue", "kek", "cryghaliris" -> "fagy";
-            case "neutral", "semleges", "ryanora", "caldestera" -> "menedek";
+            case "neutral", "semleges", "ryanora", "caldestera", "radicora" -> "menedek";
             case "dark", "sotet", "thanaopolis", "mortengrad", "kitaszitott" -> "kitaszitottak";
             case "eletfa", "elet-fa" -> "fa";
-            case "karhozat", "doom" -> "kapu";
+            case "karhozat", "doom", "olethropyla" -> "kapu";
             case "suttogas", "whisper" -> "suttogok";
             case "torpok", "melyseg-nepe" -> "melyseg";
             case "konyv", "kronika-lore", "korszak" -> "korszakok";

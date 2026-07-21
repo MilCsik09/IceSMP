@@ -189,6 +189,13 @@ public final class ShopManager {
      * @param index the zero-based item index in the shop's GUI
      * @return null on success, otherwise an error message key
      */
+    /** Suttogó-erősítés (setterrel kötve): feketepiaci kedvezmény a felesküdötteknek. */
+    private volatile WhisperManager whisperManager;
+
+    public void setWhisperManager(final WhisperManager whisperManager) {
+        this.whisperManager = whisperManager;
+    }
+
     public synchronized String buy(final Player buyer, final String npcName, final int index) {
         final ConfigurationSection shop = getShop(npcName);
         if (shop == null) {
@@ -214,7 +221,19 @@ public final class ShopManager {
         }
 
         final CurrencyType currency = resolveCurrency(item, buyer);
-        final double price = getPrice(item);
+        double price = getPrice(item);
+        // Suttogó-erősítés (tulaj-jóváhagyás): a feketepiacon a felesküdöttek a hálózat
+        // árát fizetik — csendes kedvezmény (a kijelzett ár marad, a levonás kevesebb;
+        // a titkos státuszt nem leplezi le semmi látható).
+        final WhisperManager whisperRef = whisperManager;
+        if (price > 0.0D && whisperRef != null
+                && npcName != null && npcName.equalsIgnoreCase(
+                        configManager.getString("factions.whisper.blackmarket-npc", "feketepiac"))
+                && whisperRef.isWhispererCached(buyer.getUniqueId())) {
+            final double discount = Math.max(0.0D, Math.min(90.0D,
+                    configManager.getDouble("factions.whisper.blackmarket-discount-percent", 25.0D)));
+            price = price * (1.0D - discount / 100.0D);
+        }
         if (price > 0.0D && !currencyManager.deductFromBalance(buyer.getUniqueId(), currency, price)) {
             return "shop-insufficient";
         }

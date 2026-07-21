@@ -5,6 +5,13 @@ mob-scaling:
   enabled: true
   blocks-per-level: 1000
   max-level: 10
+  # Zóna-rámpa (tulaj-kérés): a biztonságos territórium-zónák (városok) PEREMÉTŐL
+  # kifelé a szint 0-ról nő egyenletesen (zone-ramp.blocks-per-level blokkonként +1),
+  # amíg el nem éri a spawn-táv szerinti normál szintet — így a messzi fővárosok
+  # környéke is bejárható. A doom-gate/dungeon nem számít biztonságos zónának.
+  zone-ramp:
+    enabled: true
+    blocks-per-level: 250
   health-per-level: 2.0
   damage-per-level: 1.0
   # Csak ellenséges (Monster) mobok skálázódjanak.
@@ -331,6 +338,12 @@ gathering-buffs:
 # A loot-tábla bejegyzések: "MATERIAL", "MATERIAL:DARAB" vagy "MATERIAL:MIN:MAX".
 treasure-events:
   enabled: true
+  # Personal-loot kiterjesztés: az első megtaláló teljes zsákmánya UTÁN a láda még
+  # runner-up-seconds mp-ig nyitva marad — a későn érkezők fejenként EGYSZER,
+  # csökkentett gurítást kapnak (ratio), max-claimants plafonnal. 0 mp = régi viselkedés.
+  runner-up-seconds: 45
+  runner-up-loot-ratio: 0.5
+  max-claimants: 12
   interval-minutes: 45     # két kincs közti idő
   expire-minutes: 15       # ennyi idő után feltáratlanul eltűnik
   chance-percent: 40       # esély, hogy az intervallum végén tényleg felbukkan
@@ -353,6 +366,9 @@ treasure-events:
 # senki nem öli meg, eltűnik. Loot-formátum mint a kincsnél: "MATERIAL[:DARAB|:MIN:MAX]".
 wild-hunt:
   enabled: true
+  # Personal-loot kiterjesztés: minden sebző résztvevő csökkentett saját gurítást kap
+  # (a leütő és a partyja a teljes zsákmányt viszi, ők kimaradnak a második körből).
+  participant-loot-ratio: 0.5
   interval-minutes: 70     # két hajsza közti idő
   expire-minutes: 20       # ennyi idő után elszökik, ha nem ölik meg
   chance-percent: 30       # esély, hogy az intervallum végén tényleg felbukkan
@@ -512,6 +528,10 @@ cultists:
 # Élőben olvasódik; a zóna restart-álló (corruption.yml).
 corruption:
   enabled: true
+  # Personal-loot kiterjesztés: aki legalább contributor-min-kills korrupt fajzatot
+  # irtott, a tisztításkor csökkentett saját gurítást kap (a mag-törőé a teljes loot).
+  contributor-min-kills: 3
+  contributor-loot-ratio: 0.5
   interval-minutes: 120
   chance-percent: 25
   spawn-offset: 96           # a horgony-játékostól legfeljebb ennyire nyílik

@@ -25,7 +25,7 @@ public final class CorruptionListener implements Listener {
     public void onCorruptMobDeath(final EntityDeathEvent event) {
         if (corruptionManager.isCorruptMob(event.getEntity().getUniqueId())
                 && event.getEntity().getKiller() != null) {
-            corruptionManager.recordPurgeKill();
+            corruptionManager.recordPurgeKill(event.getEntity().getKiller().getUniqueId());
         }
     }
 

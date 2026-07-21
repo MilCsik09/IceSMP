@@ -68,6 +68,12 @@ public final class StrangerNpcManager {
             "<dark_gray>„Kérdezd meg a bárdot, ki tanította az első dalt. Nézd meg, elsápad-e.”</dark_gray>",
             "<dark_gray>„A Kárhozat Kapuja nem bejárat, vándor. Kijárat. Ezt kevesen értik.”</dark_gray>",
             "<dark_gray>„Ma jó napod lesz. Ezt nem jóslatként mondom. Bocsánatkérésként.”</dark_gray>",
+            "<dark_gray>„A gyökerek városában születtél újra. A kérdés csak az: melyik ágon halsz meg.”</dark_gray>",
+            "<dark_gray>„Két Caldestera van. Az egyik elfelejtette, miért ment el. A másik, hogy miért maradt.”</dark_gray>",
+            "<dark_gray>„A vérfák nem a nemességet táplálják, vándor. A nemesség táplálja őket.”</dark_gray>",
+            "<dark_gray>„Olethropyla. Régen így hívtuk. Én még emlékszem, KI adta ezt a nevet.”</dark_gray>",
+            "<dark_gray>„A holtak városának két neve van. Az élők adták mindkettőt. A holtak nem adnak nevet semminek.”</dark_gray>",
+            "<dark_gray>„A komp a szoroson jár. Én a szoros alatt jártam. Nem ajánlom.”</dark_gray>",
             "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>"
     };
 

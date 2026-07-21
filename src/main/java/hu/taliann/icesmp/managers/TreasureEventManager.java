@@ -163,6 +163,8 @@ public final class TreasureEventManager {
         originalState = block.getState();
         block.setType(Material.CHEST);
         chest = spot;
+        claimants.clear();
+        firstClaimant = null;
         expiresAt = System.currentTimeMillis() + expireMillis();
         spawnGraceUntil = 0L;
         startBeacon(spot);
@@ -185,34 +187,85 @@ public final class TreasureEventManager {
      *
      * @param finder the claiming player
      */
+    /** Personal-loot kiterjesztés: az első megtaláló + a későn érkezők nyilvántartása. */
+    private volatile java.util.UUID firstClaimant;
+    private final java.util.Set<java.util.UUID> claimants = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     public void claim(final Player finder) {
         final Location active = chest;
         if (active == null) {
             return;
         }
-        // Clear tracking first so a second interaction / the expiry tick can't double-grant.
-        chest = null;
-        cancelBeacon();
 
-        restoreBlock(active);
-        active.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, active.clone().add(0.5D, 1.0D, 0.5D), 24, 0.5D, 0.5D, 0.5D, 0.0D);
-        active.getWorld().playSound(active, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
-
+        final long windowSeconds = Math.max(0L, configManager.getLong("treasure-events.runner-up-seconds", 45L));
         final int rolls = Math.max(1, configManager.getInt("treasure-events.rolls", 3));
-        // WoW-style personal loot: a finder in a party shares the discovery — every
-        // nearby member rolls their own reward; solo finders keep the classic grant.
-        if (!partyManager.distributePersonalLoot(finder, "treasure-events.loot", rolls)) {
-            for (final ItemStack loot : LootTable.roll(configManager, "treasure-events.loot", rolls)) {
-                finder.getInventory().addItem(loot).values()
-                        .forEach(left -> finder.getWorld().dropItemNaturally(finder.getLocation(), left));
+
+        if (firstClaimant == null) {
+            // Első megtaláló: teljes zsákmány (party-personal-loot, mint eddig) + broadcast.
+            firstClaimant = finder.getUniqueId();
+            claimants.add(finder.getUniqueId());
+            active.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, active.clone().add(0.5D, 1.0D, 0.5D), 24, 0.5D, 0.5D, 0.5D, 0.0D);
+            active.getWorld().playSound(active, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
+            if (!partyManager.distributePersonalLoot(finder, "treasure-events.loot", rolls)) {
+                for (final ItemStack loot : LootTable.roll(configManager, "treasure-events.loot", rolls)) {
+                    finder.getInventory().addItem(loot).values()
+                            .forEach(left -> finder.getWorld().dropItemNaturally(finder.getLocation(), left));
+                }
             }
+            if (windowSeconds <= 0L) {
+                chest = null;
+                cancelBeacon();
+                restoreBlock(active);
+                claimants.clear();
+                firstClaimant = null;
+            } else {
+                // Personal-loot kiterjesztés (tulaj-jóváhagyás, 50-60 fősre): a láda még
+                // nyitva marad a későn érkezőknek — mindenki EGYSZER, csökkentett gurítással.
+                plugin.getServer().getRegionScheduler().runDelayed(plugin, active,
+                        task -> closeRunnerUpWindow(active), Math.max(1L, windowSeconds * 20L));
+            }
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "treasure-claimed",
+                    "&e🗺 {player} megtalálta az elrejtett kincset!" + (windowSeconds > 0L
+                            ? " &7A láda még {seconds} mp-ig nyitva a későn érkezőknek."
+                            : ""),
+                    Map.of("player", finder.getName(), "seconds", String.valueOf(windowSeconds))
+            ));
+            return;
         }
 
+        // Későn érkező: fejenként egyszer, csökkentett saját gurítás, plafonnal.
+        final int maxClaimants = Math.max(1, configManager.getInt("treasure-events.max-claimants", 12));
+        if (claimants.size() >= maxClaimants || !claimants.add(finder.getUniqueId())) {
+            finder.sendActionBar(messageManager.getMessage(
+                    "treasure-already-claimed",
+                    "<gray>🗺 A ládából már kivetted a részed — vagy kiürült.</gray>"));
+            return;
+        }
+        final double ratio = Math.max(0.0D, Math.min(1.0D,
+                configManager.getDouble("treasure-events.runner-up-loot-ratio", 0.5D)));
+        final int runnerRolls = Math.max(1, (int) Math.round(rolls * ratio));
+        for (final ItemStack loot : LootTable.roll(configManager, "treasure-events.loot", runnerRolls)) {
+            finder.getInventory().addItem(loot).values()
+                    .forEach(left -> finder.getWorld().dropItemNaturally(finder.getLocation(), left));
+        }
+        finder.sendMessage(messageManager.getMessage(
+                "treasure-runner-up",
+                "<yellow>🗺 Elkéstél a dicsőségről, de a láda alján még akadt valami — a tiéd.</yellow>"));
+    }
+
+    /** A későn-érkezők ablakának zárása (a láda régió-szálán fut). */
+    private void closeRunnerUpWindow(final Location active) {
+        if (chest != active) {
+            return; // Már leszedte a shutdown/expiry.
+        }
+        chest = null;
+        cancelBeacon();
+        restoreBlock(active);
+        claimants.clear();
+        firstClaimant = null;
         Bukkit.getServer().broadcast(messageManager.getMessage(
-                "treasure-claimed",
-                "&e🗺 {player} megtalálta az elrejtett kincset!",
-                Map.of("player", finder.getName())
-        ));
+                "treasure-window-closed", "&7🗺 A kincsesláda elenyészett — a homok visszavette."));
     }
 
     /** Removes the chest on plugin disable / expiry. */
@@ -235,7 +288,7 @@ public final class TreasureEventManager {
         try {
             plugin.getServer().getRegionScheduler().run(plugin, active, task -> {
                 try {
-                    if (chest == active) { // claim() may have won on this same thread.
+                    if (chest == active && firstClaimant == null) { // claim()/runner-up window may own it.
                         chest = null;
                         cancelBeacon();
                         restoreBlock(active);
@@ -267,6 +320,8 @@ public final class TreasureEventManager {
         final Location active = chest;
         chest = null;
         cancelBeacon();
+        claimants.clear();
+        firstClaimant = null;
         if (active == null) {
             return;
         }

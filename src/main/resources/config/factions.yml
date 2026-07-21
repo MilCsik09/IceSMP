@@ -126,6 +126,10 @@ factions:
     # Suttogó-erősítés: éjjel az élőhalottak a felesküdötteket sem támadják (rejtett,
     # éjszakai ízelítő a DARK-passzívából — a figyelmes szemtanúnak árulkodó jel!).
     night-undead-truce: true
+    # Suttogó-erősítés: a feketepiacon a felesküdöttek CSENDES kedvezményt kapnak
+    # (a kijelzett ár marad, a levonás kevesebb — semmi látható nem leplezi le őket).
+    blackmarket-npc: "feketepiac"
+    blackmarket-discount-percent: 25
     witness-seconds: 120         # a Tanú-token élettartama
     witness-radius: 24.0         # ekkora körben kapnak tokent az árulás szemtanúi
     rite-alone-radius: 16.0      # a rítushoz ekkora körben nem lehet más játékos

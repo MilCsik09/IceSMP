@@ -328,6 +328,7 @@ Szórj szét a világban **8-15 kis nevezetességet** — mindegyik kap felfedez
 | `sarkany_mester` | Glatziendorf (sárkány-lore) | ugyanígy |
 | `kovacs_mester` | Caldestera kovács-negyed | beszállító-questek |
 | `erdei_venek` | erdei liget (Ryanora) | quest-célpont |
+| `revesz` | komp-kikötő mólója | révész-lánc questek + komp-kötés (`command "komp <út>"`) |
 | `vandor_kereskedo` | (a karaván hozza magával) | quest-célpont |
 | frakció-választó NPC-k (3-4 db) | Caldestera követségek | `/npcbind <npc> faction <frakció>` |
 | banker + váltó NPC-k | minden főváros bankja | `/npcbind <npc> bank` / `exchange` |

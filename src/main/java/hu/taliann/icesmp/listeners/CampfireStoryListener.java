@@ -66,7 +66,15 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „A Fa egyik gyökere állítólag a tábortüzek alatt fut. Ezért melegszik át a történet is.”</gray>",
             "<gray>🔥 „Pyralingrad kohói sosem hűlnek ki. Egyszer kihűltek. Arról az évről nincs krónika.”</gray>",
             "<gray>🔥 „A Szellemszarvas nem hátas. Vendéglátó. Sose sarkantyúzd.”</gray>",
-            "<gray>🔥 „Minden térképen van egy fehér folt. Nem azért, mert nem jártak ott. Azért, mert visszajöttek, és nem rajzolták be.”</gray>"
+            "<gray>🔥 „Minden térképen van egy fehér folt. Nem azért, mert nem jártak ott. Azért, mert visszajöttek, és nem rajzolták be.”</gray>",
+            "<gray>🔥 „Radicorát a gazdagok Ó-Caldesterának hívják. A Fa sehogy se hívja. A Fa csak tudja, hol van.”</gray>",
+            "<gray>🔥 „Amikor a fél város elhajózott, a vének azt mondták: menjetek. A gyökér nem szalad a levél után.”</gray>",
+            "<gray>🔥 „A pyralingradi vérfa nedve meleg. Egyszer megvágtam egyet. Azóta nem fázom. És nem alszom jól.”</gray>",
+            "<gray>🔥 „A révész sosem kérdezi, hová mész. Csak azt, hogy visszafelé is vele jössz-e. Mondj igent.”</gray>",
+            "<gray>🔥 „Olethropyla. Így írták a régiek a Kaput. Ne tanuld meg. Amit néven szólítasz, az visszaszól.”</gray>",
+            "<gray>🔥 „A hadi-ablak előtt a kovácsok kétszer annyit dolgoznak. Utána a papok.”</gray>",
+            "<gray>🔥 „Thanaopolis kriptái alatt van egy terem, ahol a Csontszámvevő számol. Nem pénzt, fiam. Neveket.”</gray>",
+            "<gray>🔥 „A komp viteldíja nem a révésznek kell. A víznek. Kérdezd meg, mi történt, amikor egyszer nem fizették ki.”</gray>"
     };
 
     public CampfireStoryListener(final JavaPlugin plugin, final ConfigManager configManager,

@@ -28,6 +28,9 @@
    tárgy-csomag) + éjszakai élőhalott-békesség (rejtett DARK-ízelítő, egyben árulkodó
    jel a figyelmes szemtanúnak). TOVÁBBI ötletek, ha még mindig gyenge: feketepiac/
    kereskedő-kedvezmény, Suttogó-exkluzív receptek/tárgyak, spy-jutalom részesedés.
+   ✅ KÉSZ (2. kör): feketepiac-kedvezmény (csendes 25%) + Az Éjszaka Pengéje recept +
+   árnyékpor-gazdaság — a Suttogó-lét immár: csatorna + gyanú-relief + loot-részesedés +
+   éjszakai békesség + kedvezmény + exkluzív anyag-út.
 4. **Figyelem-orchestráció hiányzik.** 9 független világesemény (együttes "épp aktív"
    valószínűség ~0.7) + ~30 broadcast-forrás (8-12 broadcast/óra) — nincs prioritás-jel,
    nincs throttle. → közös "egy nagy PvE-esemény egyszerre" kapu + a személyes-léptékű
@@ -70,6 +73,9 @@
     [GYORS] ✅ KÉSZ: scope: all + kétlépcsős DARK-belépés (join-confirm-seconds).
 12. Nagy szerveren: kincs/vad hajsza/rontás-mag "első kattintó visz mindent" —
     monopolizálható; raid 10v10 plafon kispadoztat. → personal-loot minta kiterjesztése.
+    ✅ KÉSZ (tulaj-jóváhagyás, 50-60 fős célra): kincs runner-up ablak + Vad Hajsza
+    sebző-részesedés + rontás irtó-részesedés (fél-értékű gurítások, plafonokkal).
+    A raid-plafon kérdése nyitva.
 13. Szakma-heti célok: a craft-szakmáknak (armorer 333 smith/hét, cook 1000 étel) 3-5×
     nehezebb egység-áron, mint a gyűjtőknek. [GYORS: célszám-hangolás] ✅ KÉSZ
     (armorer 2500 / cook 1500 / enchanter 1500 / alchemist 1800).
@@ -110,10 +116,9 @@
 - **NEUTRAL tanács/vén-mechanika** (10. lelet): király-réteg helyett tanács; a
   raid.neutral halott súly rendezése. Előbb lássuk, hogyan él a szerver a
   hadi-ablakkal.
-- **Personal-loot kiterjesztés** (12. lelet): kincs / vad hajsza / rontás-mag "első
-  kattintó visz mindent" → personal-loot minta, ha a létszám megnő.
-- **Self-service kaszt-váltás** (7. lelet második fele): díj+cooldown a frakció-minta
-  szerint — csak ha az admin-jegyes reset tehernek bizonyul.
+- **Personal-loot kiterjesztés** (12. lelet): ✅ KÉSZ (lásd fent).
+- **Self-service kaszt-váltás**: ❌ TULAJ-DÖNTÉS (2026-07-21): NEM LESZ — a kaszt-váltás
+  végleg admin-only marad (/class admin resetclass).
 - **Doksi-adósság**: ✅ KÉSZ — dungeon player-guide oldal (16-kazamatak.md) + mind a
   13 kaszt mentor-lánca megírva; kazamata-kulcs receptek (melyseg, csontkripta) élnek.
 - **Szezon-közepi dátum-kapus esemény** (5. lelet maradéka): ✅ KÉSZ (min/max-season-day

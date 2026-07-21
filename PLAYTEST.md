@@ -1142,7 +1142,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] `riddle: true` quest-mező: a napló/haladás-sor MINDIG "??? — a nyomot a leírás
         rejti"-t mutat — a cél sosem tárul fel, a megfejtés a játékosé/közösségé
         (az időzített súgás-fokozat kivezetve, nincs hint-minutes kulcs).
-  - [ ] 22 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
+  - [ ] 26 rejtvény-quest él (rejtveny_* — gyűjtés, vadászat,
         olvasztás, biom, horgászat, NPC-keresés versbe rejtve); admin-szerkesztés:
         `/quest admin set <id> riddle true`.
   - [ ] Ellenőrzés: rejtvény-quest felvéve → a /quest info és a napló SOHA nem írja ki
@@ -1668,3 +1668,28 @@ Jó tesztelést! ❄️
 - [ ] A Kapu ősi/krónikás-neve **Olethropyla** (görög: olethros "pusztulás" + pylé
       "kapu" — Thermopülai-áthallással); a játékos-szövegek a népi "Kárhozat Kapuja"
       nevet használják továbbra is. Zóna-id KÖTÖTT: karhozat-kapuja (quest hivatkozik rá).
+
+## 50-60 fős kör: zóna-rámpa + personal-loot + Suttogó-kedvezmény + tartalom-hullám 3
+- [ ] **Zóna-rámpás mob-szint (tulaj-kérés):** a biztonságos territórium-zónák
+      (faction/protected/capital — doom-gate/dungeon NEM) peremétől kifelé a szint
+      0-ról nő (mob-scaling.zone-ramp.blocks-per-level [250] blokkonként +1), amíg el
+      nem éri a spawn-táv szerinti normál szintet. Zóna belsejében 0. Élő kulcsok +
+      config-menü. Ellenőrzés: a 12k-s főváros fala mellett Lvl 0-1, ~2500 blokkra Lvl 10.
+- [ ] **Personal-loot kiterjesztés (tulaj-jóváhagyás):**
+      • Kincs: az első megtaláló teljes zsákmánya után a láda runner-up-seconds [45] mp-ig
+        nyitva — fejenként EGYSZER, fél-értékű gurítás, max-claimants [12] plafon.
+      • Vad Hajsza: minden sebző résztvevő fél-értékű saját gurítást kap (a leütő és
+        partyja kimarad a 2. körből — ők a teljeset vitték).
+      • Rontás: aki 3+ korrupt fajzatot irtott, a tisztításkor fél-értékű privát gurítást kap.
+- [ ] **Suttogó feketepiac-kedvezmény:** a felesküdöttek a feketepiacon CSENDBEN 25%
+      kedvezményt kapnak (blackmarket-discount-percent — a kijelzett ár marad, semmi
+      látható nem leplez le). Config-menü kulcs a Suttogók kategóriában.
+- [ ] **Közösségi célok 50-60 főre:** vas 1500, szerver-vadászat 4000, hal 1200,
+      érc 2500, sötét-zombi 1500, raid 6, világboss 5.
+- [ ] **Tartalom-hullám 3 (123 → 136 quest):** +4 rejtvény (26 összesen); révész-lánc
+      (ÚJ revesz NPC a kikötőben: ismerkedés → 12 hal → 24 deszka); 4 frakció-heti
+      (kohók/tisztogatás/vásár/lélek-aratás, 168h); +2 napi a rotációban (hírvitel,
+      fegyvermustra — pool: 11, naponta 3).
+- [ ] **Ingame lore-bővítés:** +8 tábortűz-mese és +6 Idegen-sor az új nevekkel
+      (Radicora, vérfa, Olethropyla, révész, Thanaopolis); /lore aliasok: radicora,
+      olethropyla. TULAJ-DÖNTÉS RÖGZÍTVE: kaszt-váltás CSAK adminnal (self-service nem lesz).

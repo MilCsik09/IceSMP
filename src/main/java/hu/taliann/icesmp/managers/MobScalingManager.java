@@ -265,7 +265,22 @@ public final class MobScalingManager {
         final double deltaX = location.getX() - spawn.getX();
         final double deltaZ = location.getZ() - spawn.getZ();
         final double distance = Math.sqrt((deltaX * deltaX) + (deltaZ * deltaZ));
-        return (int) Math.min(maxLevel, distance / blocksPerLevel);
+        final int normalLevel = (int) Math.min(maxLevel, distance / blocksPerLevel);
+
+        // Zóna-rámpa (tulaj-kérés): a biztonságos territórium-zónák (városok) pereme
+        // körül a szint a zónától KIFELÉ nő egyenletesen, amíg el nem éri a táv-alapú
+        // "normál" szintet — így a 11-14k-ra épült fővárosok környéke sem Lvl 10-es
+        // azonnal. A zóna belsejében 0. Élő kulcsok; a doom-gate/dungeon nem számít
+        // biztonságos zónának (ott a mob-rules bónusz él).
+        if (normalLevel > 0 && configManager.getBoolean("mob-scaling.zone-ramp.enabled", true)) {
+            final double edgeDistance = territoryManager.distanceFromNearestSafeZoneEdge(location);
+            if (edgeDistance >= 0.0D) {
+                final double rampBlocks = Math.max(1.0D,
+                        configManager.getDouble("mob-scaling.zone-ramp.blocks-per-level", 250.0D));
+                return Math.min(normalLevel, (int) (edgeDistance / rampBlocks));
+            }
+        }
+        return normalLevel;
     }
 
     private void applyLevelName(final LivingEntity entity, final int level) {
