@@ -144,6 +144,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/events escort` | Karaván-kíséret (konvoj) indítása |
 | `/events meteor` | Meteor-becsapódás kiváltása |
 | `/events stranger` | A Rejtélyes Idegen megidézése |
+| `/events spawnpoint add\|remove\|list` | Esemény-spawnpontok (pl. állandó világboss-aréna) — mód: `world-events.anchors.*` |
 | `/events corruption` | Rontás-góc azonnali nyitása a közeledben |
 | `/events archeology` | Régészeti lelőhely azonnali felbukkanása |
 | `/events intro [játékos]` | Bemutató újrajátszása |

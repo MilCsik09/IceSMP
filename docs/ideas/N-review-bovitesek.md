@@ -83,12 +83,15 @@
       kattintással, ár-előnézet, SNEAK+jobb foglalás) + admin Határkijelölő pálca
       (/territory wand — poligon-pontok kattintással). A DisplayFx élő előnézet a
       meglévő /claim show-val kombinálható; GUI-varázsló opcionális folytatás.
-- [ ] **N25 — Hely-kötött világesemények:** a world boss / escort ne (csak) játékos-horgonyra
-      spawnoljon, hanem fix/megjelölt helyszínekre is (admin-kijelölt esemény-pontok listája,
-      sorsolás közülük); + ÚJ esemény-ötlet a lore-ból: kultista támadás/keresés/követés.
-- [ ] **N26 — Ismételt-spawn kegyelem:** ha ugyanarra a játékosra rövid időn belül többször
-      spawnol boss/esemény, a boss legyen gyengébb (kevesebb HP) VAGY a játékos kapjon
-      ideiglenes harci buffot — a horgony-rotáció (KÉSZ) az első lépés, ez a második.
-- [ ] **N27 — Vándor kereskedő-karaván szabad spawnja:** a kereskedő-karaván bárhol
-      megjelenhet (ne fix pont / játékos-közel legyen kötelező) — a N25 esemény-pont
-      rendszerrel együtt kezelendő.
+- [x] **N25 — Hely-kötött világesemények `[KÉSZ ✅]`:** EventSpawnPointManager +
+      /events spawnpoint add|remove|list (restart-álló pontok, event-spawnpoints.yml);
+      eseményenkénti mód: world-events.anchors.<world-boss|escort|caravan>.mode =
+      player|points|random|mixed (random-radius a fő világ spawnja körül).
+- [ ] **N25b — Kultista esemény (lore):** kultista támadás/keresés/követés — külön
+      körben, lore-hű tervvel (Suttogók/Kitaszítottak vonal).
+- [x] **N26 — Ismételt-spawn kegyelem `[ELVETVE ❌]`:** tulaj-döntés — se gyengébb boss
+      (farmolható lenne), se buff; az ismétlődés ellen a horgony-rotáció (KÉSZ) és a
+      hely-horgony rendszer (N25, KÉSZ) véd.
+- [x] **N27 — Vándor kereskedő-karaván szabad spawnja `[KÉSZ ✅]`:** a karaván is az
+      N25 horgony-rendszeren megy (anchors.caravan.mode = random/mixed/points) — a
+      configolt megállók (stops) elsőbbsége változatlan.

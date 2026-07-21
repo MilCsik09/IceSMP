@@ -70,6 +70,58 @@ public final class EventsCommand implements BasicCommand {
         this.archeologyManager = archeologyManager;
     }
 
+    /** N25: setterrel kötve. */
+    private hu.taliann.icesmp.managers.EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final hu.taliann.icesmp.managers.EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
+
+    /** N25 — esemény-spawnpontok kezelése: add <esemény|any> [id] | remove <id> | list. */
+    private void handleSpawnPoint(final CommandSender sender, final String[] args) {
+        if (!requireAdmin(sender) || spawnPointManager == null) {
+            return;
+        }
+        final String usage = "&cHasználat: /events spawnpoint add <world-boss|escort|caravan|any> [id] | remove <id> | list";
+        if (args.length < 2) {
+            sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
+            return;
+        }
+        switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "add" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+                    return;
+                }
+                final String eventKey = args.length >= 3 ? args[2].toLowerCase(Locale.ROOT) : "any";
+                if (!List.of("world-boss", "escort", "caravan", "any").contains(eventKey)) {
+                    sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
+                    return;
+                }
+                final String id = spawnPointManager.add(args.length >= 4 ? args[3] : null, eventKey, player.getLocation());
+                sender.sendMessage(messageManager.get("events-spawnpoint-added",
+                        "&a⚑ Spawnpont felvéve: &f%s &7(%s) — itt. A mód kapcsolása: &e/icesmp config set world-events.anchors.%s.mode points",
+                        id, eventKey, "any".equals(eventKey) ? "<esemény>" : eventKey));
+            }
+            case "remove", "torol" -> {
+                if (args.length < 3 || !spawnPointManager.remove(args[2])) {
+                    sender.sendMessage(messageManager.get("events-spawnpoint-unknown", "&cNincs ilyen spawnpont."));
+                    return;
+                }
+                sender.sendMessage(messageManager.get("events-spawnpoint-removed", "&aSpawnpont törölve."));
+            }
+            case "list", "lista" -> {
+                final var points = spawnPointManager.list();
+                sender.sendMessage(messageManager.get("events-spawnpoint-header", "&6Esemény-spawnpontok (&f%s&6):", points.size()));
+                for (final var point : points) {
+                    sender.sendMessage(messageManager.get("events-spawnpoint-line", "&e%s &7— %s @ %s (%s, %s, %s)",
+                            point.id(), point.eventKey(), point.world(), point.x(), point.y(), point.z()));
+                }
+            }
+            default -> sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
+        }
+    }
+
     public EventsCommand(final SeasonManager seasonManager, final BloodMoonManager bloodMoonManager,
                          final WorldBossManager worldBossManager, final InvasionManager invasionManager,
                          final CaravanManager caravanManager, final AmbientEventManager ambientEventManager,
@@ -121,6 +173,7 @@ public final class EventsCommand implements BasicCommand {
             case "stranger", "idegen" -> handleStranger(sender);
             case "corruption", "rontas" -> handleCorruption(sender);
             case "archeology", "regeszet" -> handleArcheology(sender);
+            case "spawnpoint", "spawnpont" -> handleSpawnPoint(sender, args);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -482,7 +535,7 @@ public final class EventsCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "corruption", "archeology", "intro")
+                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "corruption", "archeology", "spawnpoint", "intro")
                 : List.of("status", "season", "blood-moon", "caravan");
         final String first = prefixAt(args, 0);
         final boolean firstComplete = options.contains(first);

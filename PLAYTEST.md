@@ -1465,3 +1465,17 @@ Jó tesztelést! ❄️
       SNEAK+jobb = határ-előnézet (/territory show); létrehozás továbbra is
       /territory create-tel. Jog nélkül a pálca nem csinál semmit (hibaüzenet).
 - [ ] Tab-complete: `claim wand`, `territory wand`; CMD-regiszter: 5410-5411 felvéve.
+
+## N25/N27 — Esemény-spawnpontok és hely-horgony (teszter-kérés)
+- [ ] `/events spawnpoint add <world-boss|escort|caravan|any> [id]` az admin helyén
+      pontot vesz fel (restart-álló: event-spawnpoints.yml); `remove <id>` / `list`.
+- [ ] `world-events.anchors.<esemény>.mode`: player (default, régi viselkedés) |
+      points (admin-pontok közül sorsol) | random (véletlen koordináta a fő világ
+      spawnja körül, `random-radius` 1500) | mixed (pont, ha van; különben random).
+      Élő kulcsok — /icesmp reload nélkül is állíthatók.
+- [ ] Világboss: points-módban az admin-aréna környékére (±8 blokk) spawnol, a
+      spawn-rules mátrix ott is él; escort: a konvoj-útvonal a ponttól indul;
+      kereskedő-karaván: a configolt megállók (stops) elsőbbsége marad, utána
+      jön a horgony-mód, végül a játékos-fallback.
+- [ ] N26 kegyelem-mechanika TULAJ-DÖNTÉSSEL ELVETVE (se gyengébb boss, se buff) —
+      ismétlődés ellen a horgony-rotáció + hely-horgony véd.

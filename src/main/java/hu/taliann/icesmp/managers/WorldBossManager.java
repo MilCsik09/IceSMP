@@ -254,16 +254,48 @@ public final class WorldBossManager {
             return;
         }
 
+        // N25 — hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
+        final EventSpawnPointManager pointsRef = spawnPointManager;
+        final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("world-boss");
+        if (fixedAnchor != null) {
+            triggerSpawnAt(fixedAnchor);
+            return;
+        }
+
         // Horgony-rotáció: ne mindig ugyanannak a játékosnak a nyakára szülessen a boss.
         final List<? extends Player> candidates = online.stream()
                 .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
         final Player anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        // N26 (kegyelem-mechanika) tulaj-döntéssel ELVETVE: se gyengébb boss (farmolható),
+        // se buff — az ismétlődés ellen a horgony-rotáció + a hely-horgony (N25) véd.
         lastAnchorId = anchor.getUniqueId();
         triggerSpawnNear(anchor);
     }
 
     /** Az utolsó természetes spawn horgony-játékosa (rotáció — teszter-visszajelzés). */
     private volatile java.util.UUID lastAnchorId;
+
+    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
+    private volatile EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
+
+    /** N25 — spawn fix helyre (admin-pont / random koordináta), játékos-horgony nélkül. */
+    private synchronized void triggerSpawnAt(final Location where) {
+        if (isBossActive() || System.currentTimeMillis() < spawnGraceUntil) {
+            return;
+        }
+        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
+        plugin.getServer().getRegionScheduler().run(plugin, where, task -> {
+            final Location approx = where.clone().add(
+                    ThreadLocalRandom.current().nextDouble(-8.0D, 8.0D), 0.0D,
+                    ThreadLocalRandom.current().nextDouble(-8.0D, 8.0D));
+            final long lifetimeMinutes = Math.max(1L, configManager.getLong("world-events.world-boss.lifetime-minutes", 20L));
+            spawnBoss(approx, lifetimeMinutes);
+        });
+    }
 
     /**
      * Admin override: spawns a world boss immediately near the given anchor

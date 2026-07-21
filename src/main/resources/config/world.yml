@@ -59,6 +59,16 @@ world-events:
     archeology: { territory: true, claim: true, region: true, water: true }
     stranger:   { territory: true, claim: true, region: true, water: true }
     player-caravan: { territory: false, claim: false, region: false, water: false }
+  # ===== N25 — Esemény-horgonyok: HELY-alapú spawn a játékos-horgony helyett =====
+  # Módok eseményenként: player = játékos-horgony (default) • points = admin-kijelölt
+  # spawnpontok (/events spawnpoint add — pl. állandó világboss-aréna) • random =
+  # véletlen koordináta a fő világ spawnja körül • mixed = pont, ha van; különben random.
+  # A spawnpontok restart-állók (event-spawnpoints.yml). Élőben olvasódik.
+  anchors:
+    random-radius: 1500
+    world-boss: { mode: "player" }
+    escort: { mode: "player" }
+    caravan: { mode: "player" }
   # B19 — Évszakos világ-modifikátorok: a VALÓS naptári évszak finom esély-szorzói a
   # világesemények sorsolására (1.0 = nincs módosítás; a plafon mindig 100%). Évszakok:
   # tel (dec-feb) / tavasz (már-máj) / nyar (jún-aug) / osz (szept-nov). Események:

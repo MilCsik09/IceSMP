@@ -224,6 +224,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.HolidayService holidayService;
     private final hu.taliann.icesmp.managers.CityGuardManager cityGuardManager;
     private final hu.taliann.icesmp.managers.DarkUndeadAmbienceManager darkUndeadAmbienceManager;
+    private final hu.taliann.icesmp.managers.EventSpawnPointManager eventSpawnPointManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
@@ -350,6 +351,8 @@ public final class IceSMPCore {
         this.holidayService = new hu.taliann.icesmp.managers.HolidayService(configManager, messageManager);
         this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
         this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager, eventSpawnGuard);
+        this.eventSpawnPointManager = new hu.taliann.icesmp.managers.EventSpawnPointManager(plugin, configManager);
+        worldBossManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
@@ -382,6 +385,8 @@ public final class IceSMPCore {
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager, eventSpawnGuard);
+        escortManager.setSpawnPointManager(eventSpawnPointManager); // N25
+        caravanManager.setSpawnPointManager(eventSpawnPointManager); // N25/N27
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager, factionManager, seasonManager);
@@ -507,7 +512,8 @@ public final class IceSMPCore {
                 moderationManager, chronicleManager, corruptionManager, seasonFinaleManager,
                 seasonMonumentManager, hiddenSpotManager,
                 guildManager,
-                professionWeeklyGoalManager);
+                professionWeeklyGoalManager,
+                eventSpawnPointManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -1179,6 +1185,7 @@ public final class IceSMPCore {
         eventsCommand.setStrangerNpcManager(strangerNpcManager);
         eventsCommand.setCorruptionManager(corruptionManager);
         eventsCommand.setArcheologyManager(archeologyManager);
+        eventsCommand.setSpawnPointManager(eventSpawnPointManager);
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), eventsCommand);
         plugin.registerCommand("emlek", "Emlékszilánk-beváltás (visszaemlékezés)", List.of("memory", "emlekek"),
                 new hu.taliann.icesmp.commands.MemoryCommand(configManager, jobManager, talentManager, specializationManager, uniqueMaterialFactory, messageManager));

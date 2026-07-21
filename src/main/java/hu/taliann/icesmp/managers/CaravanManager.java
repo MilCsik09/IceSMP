@@ -37,6 +37,12 @@ public final class CaravanManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
+    private volatile EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
 
     private volatile boolean active;
     private volatile long activeUntil;
@@ -149,6 +155,19 @@ public final class CaravanManager {
             active = true;
             activeUntil = now + durationMillis();
             plugin.getServer().getRegionScheduler().run(plugin, stop, task -> spawnMerchant(stop));
+            return;
+        }
+
+        // N25/N27 — hely-horgony: admin-spawnpont vagy random koordináta (a karaván
+        // "bárhol megjelenhet" — teszter-kérés), mielőtt a játékos-útra esnénk vissza.
+        final EventSpawnPointManager pointsRef = spawnPointManager;
+        final Location fixedAnchor = preferredAnchor != null || pointsRef == null
+                ? null : pointsRef.resolveAnchorLocation("caravan");
+        if (fixedAnchor != null) {
+            active = true;
+            activeUntil = now + durationMillis();
+            plugin.getServer().getRegionScheduler().run(plugin, fixedAnchor,
+                    task -> spawnMerchant(topOf(fixedAnchor.clone())));
             return;
         }
 

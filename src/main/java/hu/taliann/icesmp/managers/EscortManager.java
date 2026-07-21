@@ -59,6 +59,12 @@ public final class EscortManager {
     private volatile UUID convoyId;
     /** Az utolsó horgony-játékos (rotáció — teszter-visszajelzés). */
     private volatile UUID lastAnchorId;
+    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
+    private volatile EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
     /** Reserves the "active" state while a spawn is still hopping region threads. */
     private volatile long spawnGraceUntil;
     private volatile Location destination;
@@ -194,6 +200,14 @@ public final class EscortManager {
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
+            // N25 — hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
+            final EventSpawnPointManager pointsRef = spawnPointManager;
+            final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("escort");
+            if (fixedAnchor != null) {
+                plugin.getServer().getRegionScheduler().run(plugin, fixedAnchor,
+                        spawnTask -> spawnConvoy(fixedAnchor));
+                return true;
+            }
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
                 return false;
