@@ -61,7 +61,7 @@ A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
                                         │        ⚖ S — ÚJ CALDESTERA (kb. +5000, +2000)
                                         │
               (délnyugat)                              (délkelet)
-   🔥 T — PYRALINGRAD (kb. -10000, +10000)   ❄ K — GLATZIENDORF (kb. +5500, +12500)
+   🔥 T — PYRALINGRAD (-8908, +9938 ✔)      ❄ K — GLATZIENDORF (kb. +5500, +12500)
                      ╲                                  ╱
                       ☠ OLETHROPYLA (Kárhozat Kapuja) — a kettő közti déli senkiföldjén
 ```
@@ -70,7 +70,8 @@ A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
   Ó-Caldestera) — innen indul minden új játékos.
 - **S — új Caldestera** ÉK-en, ~6k-ra: a tényleges NEUTRAL **főváros**. A szárazföldtől
   ~2k blokknyi óceán választja el — az átkelés **komppal** megy, nem híddal.
-- **T — Pyralingrad** DNy-on (~14k), **K — Glatziendorf** DK-en (~13.5k).
+- **T — Pyralingrad** DNy-on: **RÖGZÍTETT hely (-8908, +9938)**, ~13.3k a spawntól,
+  magashegyi terepen (Y~290 környékén) — hegyi lángváros! **K — Glatziendorf** DK-en (~13.5k).
 - **Kárhozat Kapuja:** a déli sávban, T és K között félúton javasolt (az építész dönt).
 - **Thanaopolis (DARK):** még nincs kijelölve — félreeső, sötét vidékre való.
 
@@ -85,7 +86,7 @@ A mobok ereje két szabályból áll össze, és **mindkettő él**:
    zóna **peremétől kifelé** pedig 250 blokkonként nő eggyel a szint, amíg utol nem
    éri a táv-szabály szerinti "helyi normált".
 
-**A gyakorlatban:** a 13-14k-ra épült Pyralingrad kapujában Lvl 0-1 szörnyek vannak,
+**A gyakorlatban:** a ~13.3k-ra épült Pyralingrad kapujában Lvl 0-1 szörnyek vannak,
 ~500 blokkra Lvl 2, és kb. 2500 blokkra éri el a Lvl 10-et. Vagyis a fővárosok
 környéke kezdőbarát, de aki messzebb merészkedik, az a végjáték-vadonban találja
 magát. **Építészként ebből az következik:** a városok köré nyugodtan tervezhettek
