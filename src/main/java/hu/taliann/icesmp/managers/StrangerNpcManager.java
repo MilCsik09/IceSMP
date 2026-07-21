@@ -217,17 +217,4 @@ public final class StrangerNpcManager {
         }
     }
 
-    /** Az Idegen státusza az /events állapot-kijelzéséhez. */
-    public boolean isPresent() {
-        final UUID id = activeStrangerId;
-        if (id == null) {
-            return false;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            return entity != null && entity.isValid();
-        } catch (final Exception exception) {
-            return true; // Régió nem elérhető — jelenlévőnek tekintjük a lejáratig.
-        }
-    }
 }

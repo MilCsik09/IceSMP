@@ -27,10 +27,6 @@ public final class CurrencyItemFactory {
         this.currencyTypeKey = new NamespacedKey(plugin, "currency_type");
     }
 
-    public ItemStack create(final FactionType factionType, final long amount) {
-        return create(CurrencyType.fromFactionType(factionType), amount);
-    }
-
     public ItemStack create(final CurrencyType currencyType, final long amount) {
         final int stackAmount = (int) Math.max(1L, Math.min(64L, amount));
         final ItemStack itemStack = new ItemStack(currencyType.getMaterial(), stackAmount);

@@ -69,12 +69,16 @@ public final class EscortManager {
     /** UUIDs of live wave mobs, pruned as they die; despawned on end/shutdown. */
     private final Set<UUID> waveMobs = ConcurrentHashMap.newKeySet();
 
+    private final EventSpawnGuard spawnGuard;
+
     public EscortManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final MobScalingManager mobScalingManager, final MessageManager messageManager) {
+                         final MobScalingManager mobScalingManager, final MessageManager messageManager,
+                         final EventSpawnGuard spawnGuard) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.messageManager = messageManager;
+        this.spawnGuard = spawnGuard;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
 
@@ -220,6 +224,12 @@ public final class EscortManager {
         final Location start = topOf(world, startX, startZ);
         final Location dest = new Location(world, destX + 0.5D, 0.0D, destZ + 0.5D);
 
+        // Spawn-rules: a konvoj se induljon territórium/claim/WG-régió belsejéből vagy vízről.
+        if (spawnGuard.isBlocked("escort", start)
+                || spawnGuard.isUnsafeSurface("escort", world, startX, startZ)) {
+            return; // védett/vizes indulópont — a következő intervallum máshol próbálkozik
+        }
+
         final Llama convoy = world.spawn(start, Llama.class, spawned -> {
             spawned.setPersistent(false);
             spawned.setRemoveWhenFarAway(false);
@@ -360,7 +370,12 @@ public final class EscortManager {
             if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
                 continue;
             }
-            final Mob mob = (Mob) world.spawn(topOf(world, x, z), entityClass.asSubclass(Mob.class));
+            final Location waveSpot = topOf(world, x, z);
+            // A hullám-mob sem szivároghat védett zónába (a konvoj útja keresztezhet claimet).
+            if (spawnGuard.isBlocked("escort", waveSpot)) {
+                continue;
+            }
+            final Mob mob = (Mob) world.spawn(waveSpot, entityClass.asSubclass(Mob.class));
             // Nappali kíséret-hullám: a zombi/csontváz ne égjen el, mielőtt a játékosokhoz ér
             // (+ jövőbiztos zombisodás-immunitás, ha a pool piglinnel bővül).
             EventSpawnGuard.prepare(mob);

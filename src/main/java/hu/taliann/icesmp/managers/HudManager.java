@@ -708,9 +708,6 @@ public final class HudManager {
         };
     }
 
-    private Component label(final String key, final Component value) {
-        return Component.text(key + ": ", NamedTextColor.GRAY).append(value);
-    }
 
     private static float clamp(final float value) {
         return Math.max(0.0F, Math.min(1.0F, value));

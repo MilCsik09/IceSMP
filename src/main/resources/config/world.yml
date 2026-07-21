@@ -55,6 +55,7 @@ world-events:
     # DARK undead-ambiencia: a territórium BELSEJE szándékosan engedett (ott él a nép),
     # de claim/WG-régió/víz védve.
     dark-undead: { territory: false, claim: true, region: true, water: true }
+    escort: { territory: true, claim: true, region: true, water: true }
     archeology: { territory: true, claim: true, region: true, water: true }
     stranger:   { territory: true, claim: true, region: true, water: true }
     player-caravan: { territory: false, claim: false, region: false, water: false }

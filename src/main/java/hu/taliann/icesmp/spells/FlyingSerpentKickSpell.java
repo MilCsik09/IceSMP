@@ -86,7 +86,7 @@ public final class FlyingSerpentKickSpell extends BaseSpell {
         }
     }
 
-    private static void applyImpact(final LivingEntity living, final Player caster, final Location casterLocation,
+    private void applyImpact(final LivingEntity living, final Player caster, final Location casterLocation,
                                      final double damage, final double knockback) {
         if (Bukkit.isOwnedByCurrentRegion(caster)) {
             hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());

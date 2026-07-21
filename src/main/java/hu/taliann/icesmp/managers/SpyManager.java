@@ -143,4 +143,15 @@ public final class SpyManager implements PlayerStateCleanup {
     public void clearPlayerState(final UUID playerId) {
         activeUntil.remove(playerId);
     }
+
+    /** Plugin-leállás/reload: az élő álcák levétele (különben az új példány már nem tudna róluk). */
+    public void shutdown() {
+        for (final UUID playerId : activeUntil.keySet()) {
+            final Player online = org.bukkit.Bukkit.getPlayer(playerId);
+            if (online != null) {
+                online.getScheduler().run(plugin, task -> SpyDisguise.remove(online), null);
+            }
+        }
+        activeUntil.clear();
+    }
 }

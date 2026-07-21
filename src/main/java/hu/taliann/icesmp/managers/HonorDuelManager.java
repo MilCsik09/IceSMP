@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HonorDuelManager implements PlayerStateCleanup {
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final SinManager sinManager;
     private final FactionManager factionManager;
@@ -39,6 +40,7 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     public HonorDuelManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final SinManager sinManager, final FactionManager factionManager,
                             final SeasonManager seasonManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.sinManager = sinManager;
         this.factionManager = factionManager;
@@ -91,10 +93,14 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         }
         final long week = System.currentTimeMillis() / (7L * 86_400_000L);
         // A limit-számláló elfogadáskor fogy (a fel nem vett kihívás nem számít bele).
-        challenger.getPersistentDataContainer().set(weekKey, PersistentDataType.LONG, week);
-        final int used = challenger.getPersistentDataContainer()
-                .getOrDefault(countKey, PersistentDataType.INTEGER, 0);
-        challenger.getPersistentDataContainer().set(countKey, PersistentDataType.INTEGER, used + 1);
+        // Folia: az accept az ELFOGADÓ szálán fut — a kihívó PDC-jét a SAJÁT
+        // régió-szálán írjuk (cross-region PDC-írás tilos).
+        challenger.getScheduler().run(plugin, task -> {
+            challenger.getPersistentDataContainer().set(weekKey, PersistentDataType.LONG, week);
+            final int used = challenger.getPersistentDataContainer()
+                    .getOrDefault(countKey, PersistentDataType.INTEGER, 0);
+            challenger.getPersistentDataContainer().set(countKey, PersistentDataType.INTEGER, used + 1);
+        }, null);
         final long end = System.currentTimeMillis()
                 + Math.max(30, configManager.getInt("honor-duel.window-seconds", 180)) * 1000L;
         active.put(challenger.getUniqueId(), target.getUniqueId());
@@ -155,7 +161,14 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     public void clearPlayerState(final UUID playerId) {
         pending.remove(playerId);
         pendingExpiry.remove(playerId);
-        pending.values().remove(playerId);
+        // A kilépő KIMENŐ kihívása: a target-kulcsú párt (pending + expiry) együtt takarítjuk.
+        pending.entrySet().removeIf(entry -> {
+            if (playerId.equals(entry.getValue())) {
+                pendingExpiry.remove(entry.getKey());
+                return true;
+            }
+            return false;
+        });
         clearPair(playerId);
     }
 }

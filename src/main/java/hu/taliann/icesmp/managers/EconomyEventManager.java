@@ -101,9 +101,6 @@ public final class EconomyEventManager implements PersistentStore {
         return eventCurrency != null && System.currentTimeMillis() < eventEndsAt;
     }
 
-    public CurrencyType getEventCurrency() {
-        return isActive() ? eventCurrency : null;
-    }
 
     /**
      * @param currencyType the currency
@@ -140,6 +137,9 @@ public final class EconomyEventManager implements PersistentStore {
      */
     public void tick() {
         if (!configManager.getBoolean("currency.economy-event.enabled", true)) {
+            // A konjunktúra (F14) a sokktól FÜGGETLEN saját állapot — a sokk kikapcsolása
+            // ne némítsa el (a komment mindig is ezt ígérte).
+            tickBoom();
             return;
         }
 

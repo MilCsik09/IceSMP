@@ -476,7 +476,10 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
                 return false;
             }
         }
-        return !sacrifices.isEmpty();
+        // Üres sacrifice-lista = nincs áldozat-követelmény (pl. pakt_oltar — a pakt a
+        // SAJÁT anyag-költségét a tryPakt-ban szedi be). A korábbi !isEmpty() az ilyen
+        // rituálékat NÉMÁN letiltotta ("ritual-missing-sacrifice" hibával).
+        return true;
     }
 
     private void consume(final Player player, final Map<Material, Integer> sacrifices) {

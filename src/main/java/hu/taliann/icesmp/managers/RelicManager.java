@@ -764,15 +764,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
     }
 
-    public String describeDefinitions() {
-        if (!enabled || registry.all().isEmpty()) {
-            return "none";
-        }
-
-        return registry.all().stream()
-                .map(RelicDefinition::id)
-                .collect(Collectors.joining(", "));
-    }
 
     private String toLegacyColorCode(final String rawColor, final String fallback) {
         if (rawColor == null || rawColor.isBlank()) {
@@ -844,7 +835,9 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     }
 
     public void clearPlayerState(final UUID playerId) {
-        cleanup(playerId);
+        // SZÁNDÉKOSAN nem törli a képesség-cooldownokat: a ki-be lépés különben
+        // ingyen nullázná az 5-30 perces relikvia-cooldownt (relog-exploit). A map
+        // amúgy is apró (relikvia-tulajdonosok száma korlátos), nem szivárgás-veszély.
         markOwnerSeen(playerId);
     }
 

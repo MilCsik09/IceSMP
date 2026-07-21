@@ -381,7 +381,7 @@ public final class IceSMPCore {
         this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
-        this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager);
+        this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager, eventSpawnGuard);
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager, factionManager, seasonManager);
@@ -423,7 +423,7 @@ public final class IceSMPCore {
         this.shopManager.setCaravanStockSeed(caravanManager::getStockSeed);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
-        this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager, specializationManager);
+        this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.spellFavoritesManager = new hu.taliann.icesmp.managers.SpellFavoritesManager(plugin);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
@@ -480,6 +480,7 @@ public final class IceSMPCore {
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
+        ambientEventManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
@@ -970,6 +971,7 @@ public final class IceSMPCore {
         cityGuardManager.shutdown();
         meteorEventManager.shutdown();
         serverChallengeManager.shutdown();
+        spyManager.shutdown();
         totemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -1096,10 +1098,9 @@ public final class IceSMPCore {
      * region scheduler.
      */
     private void scheduleEconomyEvents() {
-        if (!configManager.getBoolean("currency.economy-event.enabled", true)) {
-            return;
-        }
-
+        // A tick a sokk (economy-event) ÉS a konjunktúra (market-boom) közös drivere —
+        // mindig fut, a feature-kapukat a tick() nézi kulcsonként (élő config; a korábbi
+        // itteni kapu a boomot is némán letiltotta a sokkal együtt).
         final long intervalTicks = Math.max(1L, configManager.getLong("currency.economy-event.check-interval-minutes", 60L)) * 60L * 20L;
         economyEventTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin,

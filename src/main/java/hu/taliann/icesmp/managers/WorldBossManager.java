@@ -664,6 +664,13 @@ public final class WorldBossManager {
      * @param killer the slayer
      */
     public void handleBossDeath(final LivingEntity boss, final Player killer) {
+        // Csak az ÉLŐ, követett bossért jár jutalom: crash után árván maradt (PDC-tages,
+        // de már nem követett) példány leölése nem fizethet dupla kasszát/liga-pontot,
+        // és nem nullázhatja az épp futó boss követését.
+        final java.util.UUID trackedId = activeBossId;
+        if (trackedId == null || !boss.getUniqueId().equals(trackedId)) {
+            return;
+        }
         activeBossUntil = 0L;
         activeBossId = null;
 

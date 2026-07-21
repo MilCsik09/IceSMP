@@ -102,7 +102,7 @@ public final class DeepBreathSpell extends BaseSpell {
         }
     }
 
-    private static void applyScorch(final LivingEntity living, final Player caster, final double damage, final int burnTicks) {
+    private void applyScorch(final LivingEntity living, final Player caster, final double damage, final int burnTicks) {
         if (Bukkit.isOwnedByCurrentRegion(caster)) {
             hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
         } else {

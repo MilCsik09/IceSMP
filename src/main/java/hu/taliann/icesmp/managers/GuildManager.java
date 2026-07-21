@@ -38,7 +38,9 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         public String name;
         public FactionType faction;
         public UUID leader;
-        public final List<UUID> members = new ArrayList<>();
+        // COW-lista: a mutáció synchronized manager-metódusokban fut, de a /ceh info|list
+        // bármely régió-szálról iterál rajta — a sima ArrayList CME-t kockáztatna.
+        public final List<UUID> members = new java.util.concurrent.CopyOnWriteArrayList<>();
         public double bank;
         public long xp;
     }
@@ -320,9 +322,6 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         }
     }
 
-    public boolean hasPendingInvite(final UUID playerId) {
-        return pendingInvites.containsKey(playerId);
-    }
 
     @Override
     public void clearPlayerState(final UUID playerId) {

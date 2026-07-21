@@ -223,6 +223,11 @@ public final class KingManager implements PersistentStore {
         UUID leader = null;
         int leaderVotes = 0;
         for (final Map.Entry<UUID, Integer> entry : getTally(faction).entrySet()) {
+            // Csak AKTUÁLIS frakciótag koronázható — a frakcióváltás után bent ragadt
+            // szavazatok ne ültethessenek idegen "királyt" a trónra.
+            if (factionManager.getFaction(entry.getKey()) != faction) {
+                continue;
+            }
             if (entry.getValue() > leaderVotes) {
                 leader = entry.getKey();
                 leaderVotes = entry.getValue();

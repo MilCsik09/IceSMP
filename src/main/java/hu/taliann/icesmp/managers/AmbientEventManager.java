@@ -382,8 +382,20 @@ public final class AmbientEventManager {
         }
     }
 
+    /** AFK-fék (setterrel kötve — az AfkManager később épül a DI-sorrendben). */
+    private volatile AfkManager afkManager;
+
+    public void setAfkManager(final AfkManager afkManager) {
+        this.afkManager = afkManager;
+    }
+
     /** Runs on the player's own region thread: checks sky access and, if outdoors, pays out. */
     private void rewardIfOutdoors(final Ambient ambient, final Player player, final double rewardAmount) {
+        // AFK-parkoló ne szedje fel a hangulat-esemény pénzét (auto-farm guard, mint a többi jutalomnál).
+        final AfkManager afkRef = afkManager;
+        if (afkRef != null && afkRef.isAfk(player.getUniqueId())) {
+            return;
+        }
         final Location location = player.getLocation();
         final World world = location.getWorld();
         if (world == null) {

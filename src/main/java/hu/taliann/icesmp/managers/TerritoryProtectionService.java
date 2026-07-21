@@ -86,6 +86,9 @@ public final class TerritoryProtectionService {
      * (true = tiltva) as fallback so old configs keep working.
      */
     private boolean ruleEnabled(final TerritoryType type, final String rule) {
+        if (configManager.getConfiguration() == null) {
+            return true; // config még nem töltött be — a védelem alapból él
+        }
         if (type.isProtectedZone() && !configManager.getBoolean("territory.protection.protect-zones", true)) {
             return false;
         }

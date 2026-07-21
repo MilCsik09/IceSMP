@@ -53,6 +53,10 @@ public final class AngryChickenSpell extends BaseSpell {
                 if (!(nearby instanceof LivingEntity living) || living == chicken || living.getUniqueId().equals(shooterId)) {
                     continue;
                 }
+                // Baráti tűz-védelem, mint a többi irányított lövedéknél (party/frakció-társ nem cél).
+                if (shooterInCurrentRegion && SpellTargetingUtil.isAlly(shooter, living)) {
+                    continue;
+                }
 
                 final double damage = balance("damage", 8.0D);
                 if (shooterInCurrentRegion) {

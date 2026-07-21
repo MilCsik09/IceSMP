@@ -247,7 +247,9 @@ public final class ServerChallengeManager {
         }
     }
 
-    private void updateBar(final long current) {
+    // synchronized: a record() bármely régió-szálról hívja — a megosztott BossBar
+    // progress/name mutációja verseny nélkül fusson.
+    private synchronized void updateBar(final long current) {
         final float fraction = target <= 0L ? 0.0F : (float) Math.max(0.0D, Math.min(1.0D, (double) current / target));
         bar.progress(fraction);
         bar.name(Component.text("⚔ " + goalText(type, target) + " — " + current + " / " + target, NamedTextColor.GOLD));

@@ -1223,6 +1223,25 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         ritka variáns csak TÉNYLEGESEN szintezett mobra kerül; játékos-karaván
         kifizetése nem duplázódhat (tick szinkronizálva); szezon-hossz élő átírása
         NEM ismétli meg a nagydöntő-boss spawnját (szezon-azonosító = kezdő-bélyeg).
+- [ ] **Teljes kódbázis-audit (430 fájl, 7 mélyvizsgálat) — 1. javítás-hullám:**
+  - [ ] FORDÍTÁS-BLOKKOLÓ: 4 monk/harcos spell (Whirlwind/DeepBreath/SpinningCraneKick/
+        FlyingSerpentKick) statikus helperje instance-metódust hívott — javítva.
+  - [ ] Relikvia-cooldown NEM nullázódik ki-be lépéssel (relog-exploit zárva); világboss-
+        jutalom csak a KÖVETETT bossért jár (crash-árva példány nem fizet duplán).
+  - [ ] Pakt-oltár (E25) ÉLETRE KELT: az üres sacrifice-lista eddig némán letiltotta a
+        rituálét ("ritual-missing-sacrifice") — üres lista = nincs áldozat-követelmény.
+  - [ ] Karaván-kíséret (escort) spawn-guard: konvoj + hullám-mobok nem spawnolnak
+        territórium/claim/WG-régió belsejébe, vízre (új `escort` mátrix-sor).
+  - [ ] Vagyon-elérés az ÖSSZES valuta összegét nézi (RED/BLUE/DARK játékos is elérheti);
+        király-koronázás csak aktuális frakciótagnak (átállt szavazó nem koronázható);
+        claim-méret long-számítás (int-túlcsordulás plafon-kerülése zárva).
+  - [ ] Folia: párbaj-elfogadás a kihívó PDC-jét a SAJÁT szálán írja; céh-taglista COW
+        (CME-védelem); szerver-kihívás bossbar-frissítés synchronized; kém-álca
+        levétele plugin-leálláskor (spyManager.shutdown).
+  - [ ] Baráti tűz: Dühös Csirke + Árnyégés nem sebez párttagot/frakciótársat; EGYETLEN
+        élőhalott-definíció (csontváz-/zombiló is — UndeadUtil a közös forrás).
+  - [ ] Konjunktúra (F14) a sokk kikapcsolásakor is él; adomány-láda mentése debounce-olt;
+        hangulat-esemény pénze AFK-nak nem jár; 8 halott metódus + holt ctor-paraméter törölve.
 - [ ] **Gameplay-review kör (teljes diff, 4 mélyvizsgálat) — balansz-javítások:**
   - [ ] BANK-ONLY zárás: a király kassza-kivéte FIZIKAI veretben érkezik + napi keret
         (`factions.treasury.withdraw-daily-cap` 1000); a VAGYON-elérések kaszt-XP-t

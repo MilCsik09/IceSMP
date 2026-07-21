@@ -53,8 +53,7 @@ public final class ResourceManager implements PlayerStateCleanup {
     /** Epoch millis of the player's last dealt hit (combat-gain / idle-decay gate). */
     private final Map<UUID, Long> lastCombat = new ConcurrentHashMap<>();
 
-    public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
-                           final SpecializationManager specializationManager) {
+    public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager) {
         this.configManager = configManager;
         this.jobManager = jobManager;
     }

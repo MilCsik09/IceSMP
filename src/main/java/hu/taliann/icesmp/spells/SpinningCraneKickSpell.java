@@ -68,7 +68,7 @@ public final class SpinningCraneKickSpell extends BaseSpell {
         }
     }
 
-    private static void applyKick(final LivingEntity living, final Player caster, final double damage) {
+    private void applyKick(final LivingEntity living, final Player caster, final double damage) {
         if (Bukkit.isOwnedByCurrentRegion(caster)) {
             hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
         } else {

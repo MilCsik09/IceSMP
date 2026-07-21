@@ -133,7 +133,10 @@ public final class AchievementManager {
     public double metricValue(final Player player, final Metric metric) {
         return switch (metric) {
             case CLASS_LEVEL -> jobManager.getPrimaryLevel(player);
-            case WEALTH -> currencyManager.getBalance(player);
+            // Vagyon = az ÖSSZES valuta-egyenleg összege (a default-valutás olvasás a
+            // RED/BLUE/DARK játékosokat kizárta volna a vagyon-elérésekből).
+            case WEALTH -> currencyManager.getBalances(player).values().stream()
+                    .mapToDouble(Double::doubleValue).sum();
             case RAID_KILLS -> statsManager.getRaidKills(player.getUniqueId());
             case PROFESSION_LEVEL -> totalProfessionLevel(player);
             case DAILY_STREAK -> dailyQuestManager.getStreak(player);

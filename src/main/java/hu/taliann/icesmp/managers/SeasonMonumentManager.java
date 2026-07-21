@@ -190,8 +190,4 @@ public final class SeasonMonumentManager implements PersistentStore {
         };
     }
 
-    /** A vésett sorok (a /kronika-hoz hasonló visszaolvasáshoz, ha kell). */
-    public synchronized List<String> engravedLines() {
-        return List.copyOf(lines);
-    }
 }

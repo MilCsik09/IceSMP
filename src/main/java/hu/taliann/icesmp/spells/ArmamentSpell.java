@@ -120,9 +120,6 @@ public final class ArmamentSpell extends BaseSpell {
                 && Boolean.TRUE.equals(itemStack.getItemMeta().getPersistentDataContainer().get(armamentTag, PersistentDataType.BOOLEAN));
     }
 
-    public static boolean isArmamentActive(final Player player) {
-        return ACTIVE_UNTIL.getOrDefault(player.getUniqueId(), 0L) > System.currentTimeMillis();
-    }
 
     public static void cleanup(final UUID playerId) {
         if (playerId == null) {

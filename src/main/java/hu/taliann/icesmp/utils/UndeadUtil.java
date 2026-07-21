@@ -17,10 +17,14 @@ public final class UndeadUtil {
     }
 
     public static boolean isUndead(final Object entity) {
+        // EGYETLEN élőhalott-definíció az egész pluginban (a SpellTargetingUtil ide
+        // delegál) — a csontváz-/zombiló is élőhalott, mint a vaníliában.
         return entity instanceof Zombie
                 || entity instanceof AbstractSkeleton
                 || entity instanceof Phantom
                 || entity instanceof Zoglin
-                || entity instanceof Wither;
+                || entity instanceof Wither
+                || entity instanceof org.bukkit.entity.SkeletonHorse
+                || entity instanceof org.bukkit.entity.ZombieHorse;
     }
 }
