@@ -89,8 +89,29 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
                 online.sendMessage(messageManager.getMessage("whisper-queen-favor",
                         "<dark_gray>🕯 A Kapu érzi a hűséged — a gyanú árnyéka halványul körülötted. <gray>(−{relief} gyanú)</gray></dark_gray>",
                         java.util.Map.of("relief", String.valueOf((int) relief))));
+                // Suttogó-erősítés (tulaj-kérés): a hálózat sikere TÁRGY-részesedést is hoz —
+                // privát csomag a rítus-loot táblából (nem leplez le; tárgy, sosem pénz).
+                final int lootRolls = Math.max(0, configManager.getInt("cultists.whisper-loot-rolls", 1));
+                if (lootRolls > 0) {
+                    boolean gaveAny = false;
+                    for (final org.bukkit.inventory.ItemStack loot
+                            : LootTable.roll(configManager, "cultists.rite-loot", lootRolls)) {
+                        online.getInventory().addItem(loot).values().forEach(left ->
+                                online.getWorld().dropItemNaturally(online.getLocation(), left));
+                        gaveAny = true;
+                    }
+                    if (gaveAny) {
+                        online.sendMessage(messageManager.getMessage("whisper-queen-share",
+                                "<dark_gray>🕯 A hálózat osztozik a zsákmányon — csendben tedd el, ami a tiéd.</dark_gray>"));
+                    }
+                }
             }, null);
         }
+    }
+
+    /** Suttogó-e (a konkurens cache-ből — BÁRMELY régió-szálról biztonságos). */
+    public boolean isWhispererCached(final UUID playerId) {
+        return whispererCache.contains(playerId);
     }
 
     /** A játékos Suttogó-e (rejtett státusz; a játékos SAJÁT szálán olvasandó). */

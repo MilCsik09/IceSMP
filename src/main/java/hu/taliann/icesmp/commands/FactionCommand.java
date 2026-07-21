@@ -25,6 +25,7 @@ public final class FactionCommand extends AbstractDispatchCommand {
                           final KingManager kingManager, final RaidManager raidManager,
                           final TerritoryManager territoryManager, final ConfigManager configManager,
                           final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager,
+                          final hu.taliann.icesmp.managers.WarWindowManager warWindowManager,
                           final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
         register(new FactionJoinSubcommand(factionManager, sinManager, currencyManager, territoryManager, configManager, messageManager));
@@ -35,5 +36,6 @@ public final class FactionCommand extends AbstractDispatchCommand {
         register(new FactionKingSubcommand(kingManager, factionManager, treasuryManager, messageManager));
         register(new FactionRaidSubcommand(raidManager, kingManager, factionManager, territoryManager, messageManager));
         register(new hu.taliann.icesmp.commands.faction.FactionCaravanSubcommand(playerCaravanManager, kingManager, messageManager));
+        register(new hu.taliann.icesmp.commands.faction.FactionWarSubcommand(warWindowManager, messageManager));
     }
 }

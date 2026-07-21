@@ -219,6 +219,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager;
     private final hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
     private final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
+    private final hu.taliann.icesmp.managers.WarWindowManager warWindowManager;
     private final hu.taliann.icesmp.managers.SpyManager spyManager;
     private final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager professionWeeklyGoalManager;
     private final hu.taliann.icesmp.managers.HolidayService holidayService;
@@ -347,6 +348,8 @@ public final class IceSMPCore {
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(plugin, configManager, jobManager, relicManager);
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager, factionManager, seasonManager);
+        // Gameplay-audit: hadi-ablak — RED↔BLUE ölés az ablak alatt nem bűn, liga-pontot ér.
+        this.warWindowManager = new hu.taliann.icesmp.managers.WarWindowManager(plugin, configManager, messageManager, seasonManager);
         this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager, factionManager, seasonManager, territoryManager);
         this.professionWeeklyGoalManager = new hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager(plugin, configManager, professionManager, messageManager);
         this.holidayService = new hu.taliann.icesmp.managers.HolidayService(configManager, messageManager);
@@ -1054,6 +1057,7 @@ public final class IceSMPCore {
             playerCaravanManager.tick();
             professionWeeklyGoalManager.tick();
             holidayService.tick();
+            warWindowManager.tick();
             cityGuardManager.tick();
             darkUndeadAmbienceManager.tick();
             cultistEventManager.tick();
@@ -1172,7 +1176,7 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.UnmuteCommand(plugin, moderationManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
-        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, messageManager));
+        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, warWindowManager, messageManager));
         plugin.registerCommand("class", "Kaszt (class): szint, Lélekkapocs, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, specializationManager, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
@@ -1275,7 +1279,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
-        pluginManager.registerEvents(new FactionPassiveListener(factionManager, configManager), plugin);
+        final FactionPassiveListener factionPassiveListener = new FactionPassiveListener(factionManager, configManager);
+        factionPassiveListener.setWhisperManager(whisperManager); // Suttogó éjszakai élőhalott-békesség
+        pluginManager.registerEvents(factionPassiveListener, plugin);
         pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpellDamageListener(configManager, messageManager), plugin);
@@ -1348,6 +1354,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         final SinListener sinListener = new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager);
         sinListener.setHonorDuelManager(honorDuelManager); // G6 — párbaj-kill kizárás
+        sinListener.setWarWindowManager(warWindowManager); // hadi-ablak: RED↔BLUE kill nem bűn
         pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);

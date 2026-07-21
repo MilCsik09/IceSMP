@@ -93,7 +93,9 @@ paktummal). Bűnt háromféleképp követhetsz el:
 - **Lopás:** egy **másik frakció területén** konténerből (láda, hordó, kemence…) tárgyat
   veszel ki → **+1 bűn** (egy fosztogatás-sorozat területenként egyszer számít).
 
-Kivétel: **raid alatt** a **jelentkezett harcosok** (`/faction raid join`) közti **ölés és az
+Kivétel: a **hadi-ablak** alatt (alapból hétvégén 18-20 óra; állás: `/faction war`) a
+**Láng↔Fagy ölés nem bűn és nem vérdíj-eset** — szentesített hadicselekmény, liga-ponttal
+(napi plafonnal). Kivétel továbbá: **raid alatt** a **jelentkezett harcosok** (`/faction raid join`) közti **ölés és az
 ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett, arra raid alatt
 is a békeidős szabályok élnek.
 

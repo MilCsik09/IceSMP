@@ -50,6 +50,17 @@ public final class FactionPassiveListener implements Listener {
     private final FactionManager factionManager;
     private final ConfigManager configManager;
 
+    /**
+     * Suttogó-erősítés (setterrel kötve): éjjel az élőhalottak a Királynő felesküdött
+     * híveit is békén hagyják — a DARK-passzíva rejtett, éjszakai ízelítője. Kockázat
+     * a viselőjének: a figyelmes szemtanú észreveheti, hogy a holtak kerülik.
+     */
+    private volatile hu.taliann.icesmp.managers.WhisperManager whisperManager;
+
+    public void setWhisperManager(final hu.taliann.icesmp.managers.WhisperManager whisperManager) {
+        this.whisperManager = whisperManager;
+    }
+
     public FactionPassiveListener(final FactionManager factionManager, final ConfigManager configManager) {
         this.factionManager = factionManager;
         this.configManager = configManager;
@@ -127,6 +138,19 @@ public final class FactionPassiveListener implements Listener {
 
         if (faction == FactionType.DARK && isUndead(event.getEntity())) {
             event.setCancelled(true);
+            return;
+        }
+
+        // Suttogó éjszakai békessége: sötétedés után az élőhalottak a felesküdött
+        // Suttogót sem támadják (konkurens cache-olvasás — bármely régió-szálról safe).
+        final hu.taliann.icesmp.managers.WhisperManager whisperRef = whisperManager;
+        if (whisperRef != null && isUndead(event.getEntity())
+                && configManager.getBoolean("factions.whisper.night-undead-truce", true)
+                && whisperRef.isWhispererCached(player.getUniqueId())) {
+            final long time = event.getEntity().getWorld().getTime();
+            if (time >= 13000L && time <= 23000L) {
+                event.setCancelled(true);
+            }
         }
     }
 

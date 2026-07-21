@@ -142,11 +142,15 @@ public final class ArcheologyManager {
         expiresAt = System.currentTimeMillis() + Math.max(1L,
                 configManager.getLong("archeology.expire-minutes", 20L)) * 60_000L;
         spawnGraceUntil = 0L;
-        Bukkit.getServer().broadcast(messageManager.getMessage(
-                "archeology-spawned",
-                "<gold>🏺 A szél régi cserepeket fújt elő a(z) {world} világban ({x}, {z}) — hozz ecsetet, mielőtt a homok visszaveszi ({minutes} perc)!</gold>",
-                Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z),
-                        "minutes", String.valueOf(Math.max(1L, configManager.getLong("archeology.expire-minutes", 20L))))));
+        // Broadcast-diéta: a lelőhely személyes léptékű — csak a környéken állók
+        // értesülnek róla (a globális chat a nagy eseményeké marad).
+        hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, site,
+                configManager.getDouble("archeology.announce-radius", 160.0D),
+                messageManager.getMessage(
+                        "archeology-spawned",
+                        "<gold>🏺 A szél régi cserepeket fújt elő a közelben ({x}, {z}) — hozz ecsetet, mielőtt a homok visszaveszi ({minutes} perc)!</gold>",
+                        Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z),
+                                "minutes", String.valueOf(Math.max(1L, configManager.getLong("archeology.expire-minutes", 20L))))));
         return;
     }
 
@@ -214,8 +218,11 @@ public final class ArcheologyManager {
             // Scheduler nem elérhető (leállás) — a blokk marad; kozmetikai.
         }
         if (announce) {
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "archeology-expired", "<gray>🏺 A homok visszavette, amit őrzött — a lelőhely eltűnt.</gray>"));
+            // Broadcast-diéta: a lejárat is csak a környékbelieknek szól.
+            hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, active,
+                    configManager.getDouble("archeology.announce-radius", 160.0D),
+                    messageManager.getMessage(
+                            "archeology-expired", "<gray>🏺 A homok visszavette, amit őrzött — a lelőhely eltűnt.</gray>"));
         }
     }
 

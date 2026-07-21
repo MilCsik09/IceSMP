@@ -86,6 +86,11 @@ public final class ConfigMenuGUI {
                 Entry.integer("territory.mob-rules.doom-gate.bonus-levels", "Zóna mob-bónusz szint", 1, 0, 20),
                 Entry.toggle("territory.mob-rules.doom-gate.no-daylight-burn", "Mob nappal sem ég"),
                 Entry.toggle("territory.mob-rules.doom-gate.no-zombification", "Mob nem zombisodik"))));
+        categories.put("hadiablak", new Category("hadiablak", "Hadi-ablak", Material.IRON_SWORD, List.of(
+                Entry.toggle("factions.war-window.enabled", "Hadi-ablak (RED↔BLUE ölés nem bűn)"),
+                Entry.integer("factions.war-window.points-per-kill", "Liga-pont ölésenként", 1, 0, 100),
+                Entry.integer("factions.war-window.daily-point-cap", "Napi pont-plafon/fő", 1, 0, 100),
+                Entry.integer("factions.war-window.per-victim-cooldown-minutes", "Per-áldozat cooldown (perc)", 5, 0, 1440))));
         categories.put("suttogok", new Category("suttogok", "Suttogók", Material.ECHO_SHARD, List.of(
                 Entry.toggle("factions.whisper.enabled", "Suttogó-rendszer"),
                 Entry.number("factions.whisper.suspicion-threshold", "Leleplezés-küszöb", 5, 1, 10000),
@@ -93,7 +98,9 @@ public final class ConfigMenuGUI {
                 Entry.number("factions.whisper.accuse-suspicion", "Tanú-vád gyanú", 5, 0, 1000),
                 Entry.integer("factions.whisper.decay-minutes", "Csillapodás (perc)", 1, 1, 100000),
                 Entry.integer("factions.whisper.exposure-sins", "Leleplezés bűn-terhe", 1, 1, 20),
-                Entry.toggle("factions.whisper.expose-broadcast", "Leleplezés-broadcast"))));
+                Entry.toggle("factions.whisper.expose-broadcast", "Leleplezés-broadcast"),
+                Entry.toggle("factions.whisper.night-undead-truce", "Éjszakai élőhalott-békesség"),
+                Entry.integer("cultists.whisper-loot-rolls", "Kult-loot részesedés (guríts)", 1, 0, 10))));
         categories.put("etelek", new Category("etelek", "Frakció-ételek (honvágy)", Material.COOKED_SALMON, List.of(
                 Entry.toggle("factions.food-duty.enabled", "Honvágy-kötelezettség"),
                 Entry.integer("factions.food-duty.grace-hours", "Türelmi idő (óra)", 1, 1, 100000),
@@ -180,7 +187,8 @@ public final class ConfigMenuGUI {
     /** A főmenü (kategória-választó) megnyitása. */
     public static void openRoot(final Player player) {
         final ConfigMenuHolder holder = new ConfigMenuHolder(player.getUniqueId(), null);
-        final Inventory inventory = Bukkit.createInventory(holder, 27,
+        // 36 slot: 3 sor kategória-rács (7/sor, szélek üresen) — 21 kategóriáig elég.
+        final Inventory inventory = Bukkit.createInventory(holder, 36,
                 Component.text("⚙ IceSMP Config", NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
 
@@ -192,10 +200,12 @@ public final class ConfigMenuGUI {
             slot++;
             if (slot == 17) {
                 slot = 19;
+            } else if (slot == 26) {
+                slot = 28;
             }
         }
-        inventory.setItem(26, tile(Material.BARRIER, "&cBezárás", List.of()));
-        holder.bind(26, "CLOSE");
+        inventory.setItem(35, tile(Material.BARRIER, "&cBezárás", List.of()));
+        holder.bind(35, "CLOSE");
         player.openInventory(inventory);
     }
 

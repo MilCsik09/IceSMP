@@ -94,6 +94,10 @@ mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra
   ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett
   (`/faction raid join`), arra raid alatt is a békeidős szabályok élnek. Lásd
   [Raid és háború](11-raid-haboru.md).
+- **Kivétel — hadi-ablak:** hétvégente (alapból szombat-vasárnap 18-20 óra) megnyílik a
+  **hadi-ablak**: ez alatt a **Láng↔Fagy ölés nem bűn és nem vérdíj-eset** — szentesített
+  hadicselekmény, amely **liga-pontot ér** a frakciódnak (napi plafonnal, hogy ne legyen
+  farmolható). Állás és időpont: `/faction war`. A nyitást és zárást broadcast jelzi.
 
 > A bűnösöket egy különleges relikvia, a **Mételytépő** is megjelölheti és megbüntetheti —
 > erről a [Relikviák](09-relikviak.md) oldalon olvashatsz.
@@ -129,6 +133,12 @@ derül ki.
 - ha **közterületen, mások szeme láttára használsz sötét mágiát** (vagy Suttogó-tárgyat);
 - ha **rajtakapnak** egy rítuson vagy egy **áruláson** (frakciótárs hátbaszúrása);
 - ha a **gyanú** ellened gyűlik, míg át nem üt a bélyeg.
+
+**Mi jár érte?** A Királynő gondoskodik a híveiről:
+- ha a kósza kultisták ügye **beteljesül** (egy rítus lefut vagy egy hírvivő célba ér), minden
+  felesküdött Suttogó **gyanúja csillapodik**, és **titkos tárgy-részesedést** kap a hálózattól;
+- **éjszaka az élőhalottak békén hagyják** a felesküdötteket — a Királynő óvó keze. Vigyázat:
+  a figyelmes szemtanúnak ez **árulkodó jel** lehet…
 
 **Mi történik ekkor?** A titkos Suttogóból egy csapásra **Kitaszított** lesz: **bűnössé** válsz, a
 világ **száműz a Kitaszítottak közé**, és **azonnali vérdíj** kerül a fejedre — a többiek vadászni

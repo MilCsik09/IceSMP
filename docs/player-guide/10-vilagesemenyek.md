@@ -3,6 +3,10 @@
 Időnként **különleges dolgok** történnek az egész szerveren. Ezekre figyelj — extra jutalmat
 (vagy extra veszélyt!) hozhatnak.
 
+> **Helyi hírek:** a személyes léptékű események (régészeti lelőhely, hullócsillag,
+> vándorló csorda) **nem szerver-hírek** — csak az értesül róluk, aki a **közelben** jár.
+> Érdemes nyitott szemmel járni a vadont!
+
 > **Egyszerre egy nagy kaland:** a nagy mob-események (világboss, invázió, vad hajsza,
 > kíséret, kultisták) nem torlódnak — amíg az egyik zajlik, a következő nagy esemény
 > megvárja a sorát. Így mindig tudod, merre van a "fő műsor".

@@ -30,6 +30,20 @@ factions:
     # Frakciót váltani (ha már választottál) csak a Semleges Királyság fővárosában állva lehet.
     # Fail-open: amíg nincs kijelölt semleges főváros (/territory setcapital neutral ...), nem zár.
     only-in-neutral-capital: true
+  # ===== Hadi-ablak (gameplay-audit): a RED↔BLUE háborúnak legyen törvényes ideje =====
+  # A nyitott ablak alatt a Láng↔Fagy ölés NEM bűn és NEM vérdíj-eset — szentesített
+  # hadicselekmény, ami liga-pontot ér ("war" forrás a season.source-weights mátrixban).
+  # Menetrend-sorok: "DAYOFWEEK HH:MM-HH:MM" (szerver-helyi idő; angol napnevek).
+  # Admin: /faction war start [perc] | stop (jog: icesmp.admin.war). Farm-fék:
+  # ölőnként napi pont-plafon + ugyanarra az áldozatra cooldown. Élő kulcsok.
+  war-window:
+    enabled: true
+    schedule:
+      - "SATURDAY 18:00-20:00"
+      - "SUNDAY 18:00-20:00"
+    points-per-kill: 1
+    daily-point-cap: 5
+    per-victim-cooldown-minutes: 30
   # ===== Királyság-spawnok (/territory setspawn <frakció> — a beállító admin PONTOS pozíciója,
   # magassággal és nézésiránnyal együtt; amíg nincs beállítva, minden ág no-op) =====
   spawn:
@@ -109,6 +123,9 @@ factions:
     betrayal-suspicion: 40.0     # rajtakapott testvérgyilkosság (Suttogóként)
     caught-rite-suspicion: 50.0  # rajtakapott Sötét Rítus (a rítus meg is hiúsul)
     accuse-suspicion: 15.0       # egy tanú-vád súlya (csak valódi Suttogóra hat)
+    # Suttogó-erősítés: éjjel az élőhalottak a felesküdötteket sem támadják (rejtett,
+    # éjszakai ízelítő a DARK-passzívából — a figyelmes szemtanúnak árulkodó jel!).
+    night-undead-truce: true
     witness-seconds: 120         # a Tanú-token élettartama
     witness-radius: 24.0         # ekkora körben kapnak tokent az árulás szemtanúi
     rite-alone-radius: 16.0      # a rítushoz ekkora körben nem lehet más játékos

@@ -16,18 +16,27 @@
    száműzetés → a hadviselő frakciók aktív játékosait a bűn-rendszer a DARK-ba darálja;
    legális kivezetés csak a király-kapus raid (reálisan ritka) + 2 párbaj/hét.
    → hadi-zóna/háborús ablak, ahol a RED↔BLUE ölés bűn-mentes; VAGY király-nélküli
-   mini-raid fallback.
+   mini-raid fallback. ✅ KÉSZ (tulaj-jóváhagyással): hadi-ablak — menetrendes
+   (factions.war-window.schedule, alap: szo-va 18-20h) + admin /faction war start;
+   az ablak alatt a RED↔BLUE ölés nem bűn/nem vérdíj, liga-pontot ér ("war" forrás,
+   napi plafon + per-áldozat cooldown farm-fékkel).
 3. **Suttogónak lenni szigorúan rosszabb, mint nem lenni.** Egyetlen kód-oldali előny a
    /suttogas csatorna + az új cult-relief; az ár 6 HP + lelepleződéskor 4 bűn + vérdíj.
    A guide ígérte "sötét-mágiájú tárgyak" nem léteznek. → Suttogó-exkluzív jutalom
-   (feketepiac-kedvezmény, cult-loot részesedés, spy-súly bónusz).
+   (feketepiac-kedvezmény, cult-loot részesedés, spy-súly bónusz). ✅ RÉSZBEN
+   (tulaj: "még így is gyengék"): cult-loot részesedés (beteljesült eseménykor privát
+   tárgy-csomag) + éjszakai élőhalott-békesség (rejtett DARK-ízelítő, egyben árulkodó
+   jel a figyelmes szemtanúnak). TOVÁBBI ötletek, ha még mindig gyenge: feketepiac/
+   kereskedő-kedvezmény, Suttogó-exkluzív receptek/tárgyak, spy-jutalom részesedés.
 4. **Figyelem-orchestráció hiányzik.** 9 független világesemény (együttes "épp aktív"
    valószínűség ~0.7) + ~30 broadcast-forrás (8-12 broadcast/óra) — nincs prioritás-jel,
    nincs throttle. → közös "egy nagy PvE-esemény egyszerre" kapu + a személyes-léptékű
    események (régészet, titkos hely) action-barra/local-chatre.
-   ✅ RÉSZBEN: MajorEventGate — a nagy események (world-boss/invasion/wild-hunt/
-   escort/cultists) természetes sorsolása kapuzott (orchestration.enabled).
-   A broadcast-diéta (személyes-léptékű események action-barra) még nyitott.
+   ✅ KÉSZ: MajorEventGate — a nagy események (world-boss/invasion/wild-hunt/
+   escort/cultists) természetes sorsolása kapuzott (orchestration.enabled) +
+   broadcast-diéta: a személyes léptékű hírek (régészet-lelőhely, hullócsillag,
+   állat-csorda) csak a helyszín környékén hallatszanak (LocalAnnounce,
+   announce-radius kulcsok). A nagy események globális hírek maradnak.
 5. **A szezon-ív elöl-terhelt.** Minden rejtvény/story/fejezet-tartalom az első ~2 hétben
    elfogy; a 10-53. napnak nincs dátum-kapus tartalma; a 2+ szezonnak NULLA fejezet-questje
    (csak chapter: 1 létezik). 46-50-es kaszt-szint: semmi nem oldódik fel (~236 kill üres
@@ -83,3 +92,19 @@
   hiányzik még.
 - Az "elszigetelt sziget" gyanú többnyire alaptalan: bestiárium/régészet/pet/parkour mind
   bekötött; tisztán kozmetikai csak a városi őrség (szándékos) és a holiday-hook (halott).
+
+## Hátralék (lejegyezve — tulaj-döntés 2026-07-21: későbbre)
+
+- **Fejezet 2-3 + level-50 capstone** (5. lelet): a 2+ szezonnak jelenleg nincs
+  fejezet-questje; a 46-50 szint üres grind. Terv: 2. fejezet a Hasadás-lore, 3. a
+  Néma Királynő/Kapu köré (5-6 quest/fejezet a kódexből); 50-es szinten záró
+  mester-próba + szignatúra-jutalom. Külön tartalomírási kör.
+- **NEUTRAL tanács/vén-mechanika** (10. lelet): király-réteg helyett tanács; a
+  raid.neutral halott súly rendezése. Előbb lássuk, hogyan él a szerver a
+  hadi-ablakkal.
+- **Personal-loot kiterjesztés** (12. lelet): kincs / vad hajsza / rontás-mag "első
+  kattintó visz mindent" → personal-loot minta, ha a létszám megnő.
+- **Self-service kaszt-váltás** (7. lelet második fele): díj+cooldown a frakció-minta
+  szerint — csak ha az admin-jegyes reset tehernek bizonyul.
+- **Doksi-adósság**: dungeon-rendszer player-guide oldal; a hiányzó 9/13 kaszt
+  mentor-lánca (6. lelet második fele).

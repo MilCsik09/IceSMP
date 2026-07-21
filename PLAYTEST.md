@@ -1554,3 +1554,26 @@ Jó tesztelést! ❄️
 - [ ] Ellenőrzés: futó világboss mellett az invázió/kíséret/kultista sorsolás nem
       indít újat (az intervallum ettől még pörög); a boss halála után a következő
       sorsolás már indíthat.
+
+## P-audit javítások, 4. kör — hadi-ablak + Suttogó-erősítés + broadcast-diéta
+- [ ] **Hadi-ablak:** menetrend szerint (factions.war-window.schedule, alap: szombat-
+      vasárnap 18:00-20:00, szerver-helyi idő) vagy admin-nyitásra (/faction war
+      start [perc], jog: icesmp.admin.war) a RED↔BLUE ölés NEM bűn és NEM
+      vérdíj-eset — liga-pontot ér ("war" forrás, red/blue 1.0 súllyal).
+- [ ] Farm-fék: ölőnként napi 5 pont plafon (daily-point-cap) + ugyanarra az
+      áldozatra 30 perc cooldown (per-victim-cooldown-minutes) — a plafonon túli
+      hadi-ölés bűn-mentes, de pontot nem ér (külön üzenet). Nyitás/zárás broadcast;
+      státusz: /faction war (a következő nyitásig hátralévő idővel).
+- [ ] Ellenőrzés: ablakon KÍVÜL a RED↔BLUE ölés +1 bűn (mint eddig); NEUTRAL/DARK
+      érintett kill az ablak alatt is a normál bűn-úton megy; raid/párbaj elsőbbsége
+      megmarad. Config-menü: új "Hadi-ablak" kategória (a gyökér-rács 36 slotos lett).
+- [ ] **Suttogó-erősítés:** beteljesült kultista eseménykor a felesküdöttek a
+      gyanú-csillapítás MELLÉ privát tárgy-részesedést kapnak (cultists.
+      whisper-loot-rolls [1] guríts a rite-loot táblából, "a hálózat osztozik"
+      üzenettel); éjjel (13000-23000 tick) az élőhalottak a Suttogót sem támadják
+      (factions.whisper.night-undead-truce) — árulkodó jel a szemtanúnak!
+- [ ] **Broadcast-diéta:** a régészet-lelőhely (spawn + lejárat, archeology.
+      announce-radius 160), a hullócsillag és az állat-csorda (ambient-events.
+      local-announce-radius 192) csak a környéken állóknak szól (LocalAnnounce,
+      Folia-safe távolság-ellenőrzés a címzett saját szálán). A nagy események
+      (vérhold, boss, invázió, karaván, kihívás…) globális hírek maradnak.

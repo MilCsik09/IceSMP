@@ -270,15 +270,18 @@ public final class AmbientEventManager {
         final Player anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         anchor.getScheduler().run(plugin, task -> {
             final Location where = anchor.getLocation().clone();
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "ambient-falling-star",
-                    "&e☄ Hulló csillag hasít át az égbolton a(z) {world} felett ({x}, {z})!",
-                    Map.of(
-                            "world", where.getWorld() == null ? "?" : where.getWorld().getName(),
-                            "x", String.valueOf(where.getBlockX()),
-                            "z", String.valueOf(where.getBlockZ())
-                    )
-            ));
+            // Broadcast-diéta: a hullócsillag helyi látvány — csak a környékbeliek hallanak róla.
+            hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, where,
+                    configManager.getDouble("ambient-events.local-announce-radius", 192.0D),
+                    messageManager.getMessage(
+                            "ambient-falling-star",
+                            "&e☄ Hulló csillag hasít át az égbolton feletted ({x}, {z})!",
+                            Map.of(
+                                    "world", where.getWorld() == null ? "?" : where.getWorld().getName(),
+                                    "x", String.valueOf(where.getBlockX()),
+                                    "z", String.valueOf(where.getBlockZ())
+                            )
+                    ));
             // A short streak of sparks overhead, visible to nearby players.
             final World world = where.getWorld();
             if (world != null) {
@@ -363,8 +366,11 @@ public final class AmbientEventManager {
         }
         if (spawned > 0) {
             world.spawnParticle(Particle.HAPPY_VILLAGER, center.clone().add(0.0D, 1.0D, 0.0D), 12, 3.0D, 1.0D, 3.0D, 0.0D);
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "ambient-migration", "&a🐾 Vándorló állatcsorda kelt át a vidéken — élelem az éber telepeseknek."));
+            // Broadcast-diéta: a csorda egy embernek szóló szerencse — helyi hír.
+            hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, center,
+                    configManager.getDouble("ambient-events.local-announce-radius", 192.0D),
+                    messageManager.getMessage(
+                            "ambient-migration", "&a🐾 Vándorló állatcsorda kelt át a közeledben — élelem az éber telepeseknek."));
         }
     }
 

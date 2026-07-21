@@ -194,6 +194,8 @@ world-events:
       spy:        { red: 0.75, blue: 0.75, neutral: 0.75, dark: 1.5 }
       # cult — beteljesült kultista esemény (csak a DARK kapja, a kód oldaláról)
       cult:       { dark: 1.0 }
+      # war — hadi-ablak alatti RED↔BLUE ölés (a kód csak a hadviselő feleknek adja)
+      war:        { red: 1.0,  blue: 1.0 }
     # Tárgy-jutalom a bajnok frakció online tagjainak: "MATERIAL:DARAB" lista.
     champion-reward-items:
       - "DIAMOND:8"
@@ -284,6 +286,9 @@ world-events:
 #   animal-migration    — nappal (1000-11000)
 ambient-events:
   enabled: true
+  # Broadcast-diéta: a helyhez kötött hangulat-hírek (hullócsillag, csorda) csak
+  # ekkora sugárban hallatszanak — a globális chat a nagy eseményeké.
+  local-announce-radius: 192
   interval-minutes: 40
   chance-percent: 35
   min-online-players: 1              # ennyi játékos legyen fenn, különben a kör kimarad
@@ -491,6 +496,9 @@ cultists:
   # (privát üzenettel — nem leplez le), a DARK frakció pedig liga-pontot kap ("cult"
   # forrás a season.source-weights mátrixban). A védelem így valódi játék-cél.
   whisper-suspicion-relief: 15.0
+  # Suttogó-erősítés: beteljesült eseménykor a felesküdöttek TÁRGY-részesedést is
+  # kapnak (a rite-loot táblából gurítva, privátan; 0 = kikapcsolva).
+  whisper-loot-rolls: 1
   success-season-points: 3
 
 # ===== H2 — Terjedő korrupt zóna (a Kapu rontása; tisztítása a Fát gyógyítja) =====
@@ -540,6 +548,8 @@ archeology:
   interval-minutes: 50
   chance-percent: 35
   spawn-radius: 80
+  # Broadcast-diéta: a lelőhely-hír csak ekkora sugárban hallatszik (személyes lépték).
+  announce-radius: 160
   expire-minutes: 20
   finds:
     - "unique:emlekszilank:1"

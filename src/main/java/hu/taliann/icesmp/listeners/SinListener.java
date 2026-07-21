@@ -36,6 +36,13 @@ public final class SinListener implements Listener {
         this.honorDuelManager = honorDuelManager;
     }
 
+    /** Hadi-ablak (gameplay-audit): setterrel kötve — RED↔BLUE ölés az ablak alatt nem bűn. */
+    private volatile hu.taliann.icesmp.managers.WarWindowManager warWindowManager;
+
+    public void setWarWindowManager(final hu.taliann.icesmp.managers.WarWindowManager warWindowManager) {
+        this.warWindowManager = warWindowManager;
+    }
+
     private final JavaPlugin plugin;
     private final SinManager sinManager;
     private final RaidManager raidManager;
@@ -105,6 +112,17 @@ public final class SinListener implements Listener {
                             "<gold>⚔ A becsület-párbaj a tiéd — egy bűnöd letörölve. <gray>A sértett fél elégtételt kapott.</gray></gold>"));
                 }
             }, null);
+            return;
+        }
+
+        // Hadi-ablak: a nyitott ablak alatt a RED↔BLUE ölés szentesített hadicselekmény —
+        // nem bűn, nem vérdíj-eset (a hadijog a hadviselő felek közt felülírja a vérdíjat),
+        // liga-pontot ér farm-fékekkel. A pont/PDC-írás a killer SAJÁT régió-szálán fut.
+        final hu.taliann.icesmp.managers.WarWindowManager warRef = warWindowManager;
+        if (warRef != null && warRef.isSanctionedWarKill(killerFaction, victimFaction)) {
+            final java.util.UUID victimId = victim.getUniqueId();
+            killer.getScheduler().run(plugin, task ->
+                    warRef.handleWarKill(killer, victimId, killerFaction), null);
             return;
         }
 
