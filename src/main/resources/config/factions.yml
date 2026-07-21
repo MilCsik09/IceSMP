@@ -137,6 +137,9 @@ factions:
   # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
   sins:
     murder-counts: true
+    # A Kitaszított (DARK) áldozat ölése SOSEM bűn — a törvényen kívül áll. (Korábban
+    # ezt a vérdíj-ág fedte le implicit módon; ez a kulcs explicit és résmentes.)
+    dark-victim-exempt: true
     exile-threshold: 4
     # Árulás: a SAJÁT frakciótársad megölése súlyosabban esik latba (a Semlegesek
     # laza közösség — köztük az ölés sima gyilkosság marad).

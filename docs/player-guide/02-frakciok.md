@@ -83,7 +83,9 @@ mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra
 
 ## Hogyan leszek bűnös (sinner)?
 
-- **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz.
+- **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz. Kivétel a
+  **Kitaszított (DARK) áldozat**: ő a törvényen kívül áll — az ölése **sosem bűn**
+  (sőt, ha vérdíj van a fején, még fizetnek is érte).
 - **Árulás:** ha a **saját frakciótársadat** ölöd meg, az súlyosabb — **+2 bűn**. (A Menedék népe
   laza közösség: köztük az ölés sima gyilkosságnak számít.)
 - **Lopás:** ha egy **másik frakció területén** álló konténerből (láda, hordó, kemence,

@@ -1564,9 +1564,15 @@ Jó tesztelést! ❄️
       áldozatra 30 perc cooldown (per-victim-cooldown-minutes) — a plafonon túli
       hadi-ölés bűn-mentes, de pontot nem ér (külön üzenet). Nyitás/zárás broadcast;
       státusz: /faction war (a következő nyitásig hátralévő idővel).
-- [ ] Ellenőrzés: ablakon KÍVÜL a RED↔BLUE ölés +1 bűn (mint eddig); NEUTRAL/DARK
-      érintett kill az ablak alatt is a normál bűn-úton megy; raid/párbaj elsőbbsége
-      megmarad. Config-menü: új "Hadi-ablak" kategória (a gyökér-rács 36 slotos lett).
+- [ ] Ellenőrzés: ablakon KÍVÜL a RED↔BLUE ölés +1 bűn (mint eddig); NEUTRAL áldozat
+      az ablak alatt is a normál bűn-úton megy (DARK áldozat ölése SOSEM bűn — lásd
+      lent); raid/párbaj elsőbbsége megmarad. Config-menü: új "Hadi-ablak" kategória
+      (a gyökér-rács 36 slotos lett).
+- [ ] **DARK-áldozat kivétel EXPLICIT (tulaj-szabály):** Kitaszított ölése sosem bűn
+      (factions.sins.dark-victim-exempt, action-bar jelzéssel). Korábban ezt a
+      vérdíj-ág fedte implicit módon, de a vérdíj-kifizetés nullázza a számlálót —
+      a másodszor megölt Kitaszítottért bűn járt volna (rés bezárva). A 3+ bűnű
+      DARK-áldozatért a vérdíj továbbra is jár.
 - [ ] **Suttogó-erősítés:** beteljesült kultista eseménykor a felesküdöttek a
       gyanú-csillapítás MELLÉ privát tárgy-részesedést kapnak (cultists.
       whisper-loot-rolls [1] guríts a rite-loot táblából, "a hálózat osztozik"

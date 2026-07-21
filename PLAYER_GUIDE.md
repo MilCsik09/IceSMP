@@ -87,7 +87,8 @@ A chatben a neved a **frakciód színében** jelenik meg (a rang-prefixszel egy�
 
 **Hogyan leszel bűnös?** **4 bűnnél** automatikusan **száműznek a Kitaszítottak közé** (örök
 paktummal). Bűnt háromféleképp követhetsz el:
-- **Gyilkosság:** megölsz egy másik játékost → **+1 bűn**.
+- **Gyilkosság:** megölsz egy másik játékost → **+1 bűn**. Kivétel a **Kitaszított (DARK)
+  áldozat**: ő a törvényen kívül áll — az ölése **sosem bűn** (vérdíjas fejért fizetnek is).
 - **Árulás:** a **saját frakciótársadat** ölöd meg → **+2 bűn** (a Semlegesek laza közössége
   kivétel — köztük az ölés sima gyilkosság).
 - **Lopás:** egy **másik frakció területén** konténerből (láda, hordó, kemence…) tárgyat

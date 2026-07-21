@@ -194,6 +194,19 @@ public final class SinListener implements Listener {
             }
         }
 
+        // Tulaj-szabály: a Kitaszított élete a törvényen kívül áll — DARK-áldozat ölése
+        // SOSEM bűn. (Eddig ezt a gyakorlatban a vérdíj-ág fedte le, mert a DARK-tag
+        // bűnös-jelölt; de a vérdíj-kifizetés nullázza a számlálót, így a másodszor
+        // megölt Kitaszítottért már bűn járt volna — ez az explicit kivétel zárja a rést.
+        // A vérdíj-ág fentebb marad: a 3+ bűnű DARK-áldozatért továbbra is jár a veret.)
+        if (victimFaction == FactionType.DARK
+                && configManager.getBoolean("factions.sins.dark-victim-exempt", true)) {
+            killer.getScheduler().run(plugin, task -> killer.sendActionBar(messageManager.getMessage(
+                    "sinner.dark-victim-kill",
+                    "<gray>☠ A Kitaszított a törvényen kívül áll — az ölése nem bűn.</gray>")), null);
+            return;
+        }
+
         final boolean betrayal = killerFaction == victimFaction && killerFaction != FactionType.NEUTRAL;
         final int weight;
         final String messageKey;
