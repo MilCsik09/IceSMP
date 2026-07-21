@@ -1648,3 +1648,12 @@ Jó tesztelést! ❄️
 - [ ] **Lore-kánon bővítés:** a Menedék kettészakadása (Ó-Caldestera a Fa hű
       követőié, az új Caldestera a csalódottaké) + a pyralingradi vérfa a kódexben;
       mechanika-kötések a LORE_REFERENCE-ben.
+
+## Névváltás: Thanaopolis (tulaj-döntés)
+- [ ] A DARK főváros mai neve **Thanaopolis** (a Holtak Városa); a **Mortengrad** a
+      bukás előtti történelmi név (a kódexben így él tovább). Minden jelen-idejű
+      szöveg (guide-ok, questek, kandalló-mese, /lore, építész-útmutató) Thanaopolist
+      mond; a régi receptek (Mortengradi Hamukenyér / Árnygomba) nevei és id-i
+      VÁLTOZATLANOK — a lore szerint az ősi név a receptekben maradt fenn.
+- [ ] /lore: a "thanaopolis" alias is a Kitaszítottak-oldalt nyitja (a "mortengrad"
+      legacy-aliasként megmaradt). Zóna-id javaslat az építészeknek: thanaopolis.

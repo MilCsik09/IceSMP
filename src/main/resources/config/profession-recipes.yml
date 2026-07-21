@@ -3836,7 +3836,7 @@ profession-recipes:
     display-name: "A Csontkripta Kulcsa"
     category: "Kazamata-kulcs"
     lore:
-      - "Mortengrad kriptamélyének pecsétje —"
+      - "Thanaopolis kriptamélyének pecsétje —"
       - "a holtak csak a kulcs hordozóját engedik le."
     result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_csontkripta, custom-model-data: 6204 }
     ingredients: [ "ECHO_SHARD:3", "BONE_BLOCK:8", "unique:arnyekpor:2" ]

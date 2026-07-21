@@ -257,7 +257,7 @@ public final class CorruptionManager implements PersistentStore {
         Player anchor = preferredAnchor;
         if (anchor == null) {
             // Elfogadott irány: a rontás előszeretettel a DARK territóriumok PEREME
-            // felől szivárog ("Mortengrad lehelete") — configolható eséllyel a góc egy
+            // felől szivárog ("Thanaopolis lehelete") — configolható eséllyel a góc egy
             // DARK zóna szélén túl nyílik, a horgony-játékos helyett.
             if (tryDarkEdgeSpawn()) {
                 return true;

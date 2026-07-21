@@ -288,8 +288,10 @@ Királynő egyszer **teljesen felébredjen** — mert hitük szerint akkor kimon
 akarja hallani — s a krónikás úgy hiszi: a Fa ezért hívta vissza a Felsőket. Ti vagytok az ellensúly a
 mérleg másik serpenyőjében.
 
-**Mortengrad — a Holtak Városa.** Valaha büszke főváros állt a Káoszkor pusztításának útjában; ma csak
-**Mortengrad**, a Holtak Városa maradt belőle — düledező tornyok, benőtt sikátorok, a sírba szállt
+**Thanaopolis — a Holtak Városa.** Valaha büszke főváros állt a Káoszkor pusztításának útjában — a
+régi világ **Mortengradnak** nevezte, s e név ma már csak a vének receptjeiben és a romok közt talált
+pecséteken él tovább. Ami a falakból maradt, azt a száműzöttek új néven illetik: **Thanaopolis**, a
+Holtak Városa — düledező tornyok, benőtt sikátorok, a sírba szállt
 nemesség dicsőségének kővázai. Itt a legsűrűbb a Néma Királynő árnyéka: az élőhalottak úgy rótják a
 kihalt utcákat, mint egykor a polgárok, s a Fa fénye ide már nem ér el. Ez a **Kitaszítottak** egyetlen
 menedéke és fővárosa — a száműzöttek, a lelepleződött Suttogók és a bűnösök otthona. A világ minden

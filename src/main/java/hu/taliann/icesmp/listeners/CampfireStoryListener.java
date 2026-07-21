@@ -56,7 +56,7 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „A Bokic egyszer kiöntött, és egy egész falut odébb rakott. Senki se halt meg. A folyó válogat.”</gray>",
             "<gray>🔥 „Az Arany Liga? Volt. Nincs. A Számvevők átvették a könyveiket, és a nevüket is kifizették.”</gray>",
             "<gray>🔥 „A jégsárkányok nem haltak ki, fiam. Alszanak. És Kallan tudja, hol.”</gray>",
-            "<gray>🔥 „Mortengradban éjjel ne fütyülj. Nem babona. Csak udvariasság — valaki mindig hallgatózik.”</gray>",
+            "<gray>🔥 „Thanaopolisban éjjel ne fütyülj. Nem babona. Csak udvariasság — valaki mindig hallgatózik.”</gray>",
             "<gray>🔥 „A Vándorünnep lepénye? Az igazi receptjét csak három szakács tudja, és nem beszélnek egymással.”</gray>",
             "<gray>🔥 „Volt egy uralkodó, I. Lineata, aki sosem vesztett csatát. Aztán egyszer nem jött vissza. A Könyvben üres a lapja.”</gray>",
             "<gray>🔥 „A meteorvas jó vas. De ha éjjel kovácsolod, néha visszakalapál.”</gray>",

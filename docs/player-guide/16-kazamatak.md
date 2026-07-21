@@ -28,7 +28,7 @@ emlékei — a Vasművek elhagyott tárnái, elsüllyedt céh-pincék, kriptamé
 | Kulcs | Készíti | Kazamata |
 |---|---|---|
 | **A Mélység Kulcsa** | bűvölő (30. szint) | a Vasművek elhagyott tárnái |
-| **A Csontkripta Kulcsa** | bűvölő (40. szint) | Mortengrad kriptamélye |
+| **A Csontkripta Kulcsa** | bűvölő (40. szint) | Thanaopolis kriptamélye |
 
 > A kazamaták **fizikai megépítése a szerver-csapat feladata** — ahogy elkészülnek,
 > a kulcsok is értelmet nyernek. Ha egy kulcs receptje már tanulható, de a kapu még

@@ -38,7 +38,7 @@ A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
   a két harcos főváros a DÉLI sávban, egymástól ~15k-ra.
 - **Kárhozat Kapuja:** a lore szerint a két birodalom közti senkiföldjén — a déli
   sávban, T és K között félúton javasolt (az építész dönt).
-- **Mortengrad:** még nincs kijelölve — félreeső, sötét vidékre való (a fenti
+- **Thanaopolis:** még nincs kijelölve — félreeső, sötét vidékre való (a fenti
   pinektől távolabb; az északi vagy nyugati kevésbé használt sáv jó jelölt).
 
 **⚠ NYITOTT tulaj-döntés — mob-szintezés:** a jelenlegi szabállyal (1000 blokk =
@@ -169,7 +169,7 @@ BLUE-ra hangolva. Biom: havas síkság/hegység.
 
 ---
 
-## 4. Mortengrad — a Holtak Városa (DARK)
+## 4. Thanaopolis — a Holtak Városa (DARK)
 
 **Lore:** a Káoszkor által elpusztított egykori büszke főváros — **düledező tornyok,
 benőtt sikátorok, kővázak**. A Kitaszítottak egyetlen menedéke; az élőhalottak úgy
@@ -198,7 +198,7 @@ kő, sculk-erek a romok közt.
 - Ide illő szentélyek: `halallovag_szentely` (CRYING_OBSIDIAN), `boszorkany_szentely`
   (RESPAWN_ANCHOR), `pakt_oltar` (SOUL_LANTERN — Boszorkánymester paktum).
 
-**Zónázás:** `capital dark mortengrad` (ezzel él a `dark-undead` ambiencia „minden
+**Zónázás:** `capital dark thanaopolis` (ezzel él a `dark-undead` ambiencia „minden
 DARK territórium" beállítása) + a környék `faction DARK`.
 
 ---
@@ -238,12 +238,12 @@ A `pakt_oltar` kisebb: 3×3 obszidián alap, közepén CRYING_OBSIDIAN, rajta SO
 
 | Rituálé | Mag-blokk | Javasolt hely |
 |---|---|---|
-| `eleftheria_konnye` (DARK relikvia) | CRYING_OBSIDIAN | Mortengrad mélye (rejtett) |
+| `eleftheria_konnye` (DARK relikvia) | CRYING_OBSIDIAN | Thanaopolis mélye (rejtett) |
 | `phoenix_wing` | MAGMA_BLOCK | Vérszavanna / Pyralingrad környéke |
 | `frost_wing` | BLUE_ICE | Jégmezők / Glatziendorf környéke |
 | `wander_wind` | AMETHYST_BLOCK | vadon, magaslat |
-| `bone_wing` | SOUL_SOIL | Mortengrad / temető-rom |
-| `feloldozas` (bűn-tisztítás) | SOUL_LANTERN | Mortengrad széli kápolna |
+| `bone_wing` | SOUL_SOIL | Thanaopolis / temető-rom |
+| `feloldozas` (bűn-tisztítás) | SOUL_LANTERN | Thanaopolis széli kápolna |
 | `atok_tores` | CRYING_OBSIDIAN | vadon, romhely |
 | `hazateres` (haza-teleport) | LODESTONE | MINDEN fővárosba egy! |
 | 13 kaszt-szentély (`*_szentely`) | lásd relics.yml | fővárosok szentély-negyedei + vadon-szentélyek |
@@ -316,7 +316,7 @@ Szórj szét a világban **8-15 kis nevezetességet** — mindegyik kap felfedez
 | `orgyilkos_mester` | Botera-negyed | ugyanígy |
 | `druida_mester` | erdei liget (Ryanora) | ugyanígy |
 | `paplovag_mester` | Caldestera szentély-negyed | ugyanígy |
-| `halallovag_mester` | Mortengrad kapuja / kripta | ugyanígy |
+| `halallovag_mester` | Thanaopolis kapuja / kripta | ugyanígy |
 | `saman_mester` | viharvert magaslat v. Glatziendorf | ugyanígy |
 | `szerzetes_mester` | hegyi kolostor v. Caldestera | ugyanígy |
 | `pap_mester` | Caldestera szentély-negyed | ugyanígy |
@@ -329,7 +329,7 @@ Szórj szét a világban **8-15 kis nevezetességet** — mindegyik kap felfedez
 | frakció-választó NPC-k (3-4 db) | Caldestera követségek | `/npcbind <npc> faction <frakció>` |
 | banker + váltó NPC-k | minden főváros bankja | `/npcbind <npc> bank` / `exchange` |
 | bolt-NPC-k | fővárosi boltok | `/npcbind <npc> shop <bolt-id>` |
-| Csontszámvevő | Mortengrad kincstár | bank + exchange (DARK) |
+| Csontszámvevő | Thanaopolis kincstár | bank + exchange (DARK) |
 
 (NPC-létrehozás: FancyNpcs `/npc create <név>`; a skin/megjelenés szabad, a BELSŐ név
 számít a kötéshez.)
@@ -342,7 +342,7 @@ számít a kötéshez.)
 |---|---|
 | Caldestera városmag | 200×200 + falak |
 | Pyralingrad / Glatziendorf | 120-150 oldalhosszú + falak |
-| Mortengrad romváros | 100×150 |
+| Thanaopolis romváros | 100×150 |
 | Kárhozat Kapuja portál | 15-25 magas kapu, 60-100 sugarú zóna |
 | Rituálé-oltár | 5×5×3 (pakt: 3×3) |
 | Parkour-pálya | 30-60 hosszú, 1-2 perces |
@@ -367,6 +367,6 @@ számít a kötéshez.)
 # + config-fájlok: caravan.stops, city-guards.guards, hidden-spots.spots
 ```
 
-> **Sorrend-javaslat:** 1. Caldestera (spawn + onboarding működjön) → 2. Mortengrad
+> **Sorrend-javaslat:** 1. Caldestera (spawn + onboarding működjön) → 2. Thanaopolis
 > (a bűn-rendszer célállomása) → 3. a két harcos főváros → 4. Kárhozat Kapuja →
 > 5. oltárok/pályák/titkos helyek/arénák folyamatosan.

@@ -24,10 +24,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * összes DARK territórium): a mobok NEM égnek el a napon
  * (EventSpawnGuard.prepare), szinttel spawnolnak (MobScalingManager.forceLevel),
  * és korlátos élettartamúak — a populáció a tick-ből töltődik újra.
- * (A lore-név — pl. Mortengrad — csak configban/szövegben él, kódban nem.)
+ * (A lore-név — pl. Thanaopolis — csak configban/szövegben él, kódban nem.)
  *
  * <p>A DARK játékosokat a meglévő frakció-passzíva miatt békén hagyják — a
- * betolakodónak viszont Mortengrad maga a rémálom. Minden kulcs élő config
+ * betolakodónak viszont Thanaopolis maga a rémálom. Minden kulcs élő config
  * (dark-undead.*). Folia: a spawn a cél-helyszín régió-schedulerén fut;
  * a populáció-követés konkurrens map (uuid -> lejárat), a halál-listener és a
  * lifespan-remove is takarít.
@@ -131,7 +131,7 @@ public final class DarkUndeadAmbienceManager {
                     spawned.remove();
                     return;
                 }
-                EventSpawnGuard.prepare(mob); // napfény-égés/zombisodás ellen — Mortengrad népe nappal is jár
+                EventSpawnGuard.prepare(mob); // napfény-égés/zombisodás ellen — Thanaopolis népe nappal is jár
                 mob.getPersistentDataContainer().set(markKey,
                         org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
                 mob.setPersistent(false);

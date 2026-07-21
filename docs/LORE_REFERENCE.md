@@ -17,7 +17,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | `RED` | **Perinfernicitas** | tűz/láva-immunitás | Pyralingrad | **Parázsló Parals** | Soleil / Főnix |
 | `BLUE` | **Cryghaliris** | fagy + fulladás-immunitás | Glatziendorf | **Hópihér-veret** | Kallan / Sárkány |
 | `NEUTRAL` | **Ryanora & Caldestera** | zuhanás-immunitás, békés mobok, adómentes | Caldestera | **Creutzér / Smaragdkő** | Arkynn / Szarvas |
-| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Mortengrad** (rom) | **Csontveret** | Eleftheria / Néma Királynő |
+| `DARK` | **A Kitaszítottak** (lelepleződött Suttogók + bűnösök) | wither-immunitás, élőhalottak békén hagyják | **Thanaopolis** (rom) | **Csontveret** | Eleftheria / Néma Királynő |
 
 > **DARK vizuális azonosító (textúra/art irányelv):** csont-törtfehér + éjfekete-lila alap,
 > és a jellegzetes **hideg türkiz derengés** („lich-fény”) a szemekben, rúnákban, pengeélek
@@ -51,7 +51,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | A gyógyuló Fa (V.) | a szezonok/progresszió/közösségi célok narratív tétje („minden rendbe tett darab gyógyítja a Fát"); jövőbeli horgony: a repedés állapota mint szerver-szintű mérce/esemény |
 | Az Ünnepek (VIII.) | 🔜 D1 szezonális ünnepek — Hasadás Napja (Hu. 1: gyász/PvP-szünet?), Ultimátum Napja (Hu. 547: caldesterai vásár-esemény), Vérhold-virrasztás (vérhold-kiegészítő), Érkezés Napja (Hu. 978: szezon-évforduló) |
 | Lélekkő (VII.) | DARK-valuta drop magas-szintű mobokból; DARK-játékosnak élőhalottból NEM esik (`currency.soul-drop.dark-undead-drops`); Nekromanta lélek-szilánk csak élő szörnyből (`souls.shards-from-undead`) |
-| Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Mortengrad = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
+| Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Thanaopolis = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
 | Tárgyak Lelke (VIII.) | tárgy-raritás létra (Ócska→Ereklye), affixek, nevesített craft |
 | Vér Emlékezete (VIII.) | talentpontok + talentfák (kaszt- és szakma-szintből) |
@@ -86,7 +86,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 - **✅ K10 — Caldestera feketepiac (KÉSZ):** fegyvertilalom + körözött-kapu a NEUTRAL
   fővárosban (CapitalLawListener); Botera-negyed feketepiac-bolt Csontveretért — Bokic-menti
   Sétapálca (rejtett penge) és Hamisított Menlevél (`territory.capital-law.*`).
-- **🔜 Mortengrad megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben
+- **🔜 Thanaopolis megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben
   magas-veszélyű PvE rom-zóna, K5-loot forrás és a K9 Suttogó-oltár helye.
 
 ---
@@ -197,3 +197,10 @@ enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.ym
 | **Komp a szoroson át** | `/komp` + `ferry.routes.*` (economy.yml); révész-NPC: `/npcbind <npc> command "komp <út>"`; viteldíj = money sink |
 | **Vérfa (Pyralingrad nemesi negyede)** | építő-anyag kánon: mangrove = nemesség, akácia = köznép, kalcit-diorit-nyír falak |
 | **„Egyetlen kapu": nether-portál tilalom** | `nether-portal.allow-creation: false` (world.yml) — új portál sehol; a Kárhozat Kapuját admin gyújtja (zóna-bypass jog); Nether-út = a PvP-senkiföldjén át |
+
+## Névváltás: Thanaopolis (tulaj-döntés, 2026-07-21)
+
+| Név | Mi |
+|---|---|
+| **Thanaopolis** | a DARK főváros MAI neve (a Holtak Városa) — minden jelen-idejű szöveg/zóna ezt használja; zóna-id: `thanaopolis` |
+| **Mortengrad** | a bukás ELŐTTI (történelmi) név — csak a kódex múlt-idejű szövegében és a régi receptek nevében él (Mortengradi Hamukenyér, Mortengradi Árnygomba — az item-id-k és signature-ök változatlanok!) |

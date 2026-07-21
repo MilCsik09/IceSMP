@@ -351,7 +351,7 @@ territory:
       bonus-levels: 5          # a kazamaták fix, kemény szint-bónusza
       no-daylight-burn: true
       no-zombification: true
-    # Példa: a Kitaszítottak földjein (Mortengrad környéke) éjjel-nappal kitartó élőhalottak:
+    # Példa: a Kitaszítottak földjein (Thanaopolis környéke) éjjel-nappal kitartó élőhalottak:
     # dark:
     #   bonus-levels: 2
     #   no-daylight-burn: true

@@ -65,7 +65,7 @@
    invasion-chance-mult ünnep-kulcsok élnek (Rém-éj: ×2 / ×1.5).
 10. NEUTRAL: király-rétegből kizárva + adó-mentes = félhalott kassza, mégis oda folyna
     a szezon-jutalom; a raid.neutral súly halott config. → tanács/vén-mechanika.
-11. DARK-belépés newbie-trap (ingyenes, prompt nélkül, "örök"); Mortengrad (a scope:
+11. DARK-belépés newbie-trap (ingyenes, prompt nélkül, "örök"); Thanaopolis (a scope:
     capital feltételezte főváros) még nem létezik → addig scope: all ajánlott.
     [GYORS] ✅ KÉSZ: scope: all + kétlépcsős DARK-belépés (join-confirm-seconds).
 12. Nagy szerveren: kincs/vad hajsza/rontás-mag "első kattintó visz mindent" —

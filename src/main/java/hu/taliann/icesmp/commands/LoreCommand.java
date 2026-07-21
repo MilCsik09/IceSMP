@@ -62,7 +62,7 @@ public final class LoreCommand implements BasicCommand {
                     "&8A béke is üzlet. Caldesterában a legjobb üzlet.")),
             Map.entry("kitaszitottak", List.of(
                     "&8&l— A Kitaszítottak —",
-                    "&7Mortengrad romjai közt élnek, akiket a bűn vagy a Suttogás a falakon kívülre",
+                    "&7Thanaopolis romjai közt élnek, akiket a bűn vagy a Suttogás a falakon kívülre",
                     "&7taszított. A Csontszámvevő veretét használják, a Néma Királynő élőhalottai",
                     "&7békén hagyják őket. Nincs otthonuk, amire honvágyuk lehetne.",
                     "&8A kitaszítottat nem a sötét választotta. Csak a sötét fogadta be.")),
@@ -112,7 +112,7 @@ public final class LoreCommand implements BasicCommand {
             case "red", "piros", "perinfernicitas" -> "lang";
             case "blue", "kek", "cryghaliris" -> "fagy";
             case "neutral", "semleges", "ryanora", "caldestera" -> "menedek";
-            case "dark", "sotet", "mortengrad", "kitaszitott" -> "kitaszitottak";
+            case "dark", "sotet", "thanaopolis", "mortengrad", "kitaszitott" -> "kitaszitottak";
             case "eletfa", "elet-fa" -> "fa";
             case "karhozat", "doom" -> "kapu";
             case "suttogas", "whisper" -> "suttogok";

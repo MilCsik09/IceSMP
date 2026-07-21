@@ -31,7 +31,7 @@ kánon saját megvalósítási terve. Ajánlott sorrend: **K1** (reskin) → **K
   „Sötét Token" → **Csontveret** (DARK — a Csontszámvevő veretje, kódex VII.); a `symbol` marad vagy
   frakció-jelet kap.
 - Fővárosok: a `/territory setcapital` zónák nevei Glatziendorf (BLUE), Pyralingrad (RED), Caldestera
-  (NEUTRAL), **Mortengrad** (DARK — rom-főváros, a világépítés után); a broadcast/hangulat-szövegek
+  (NEUTRAL), **Thanaopolis** (DARK — rom-főváros, a világépítés után); a broadcast/hangulat-szövegek
   ehhez igazodnak.
 
 **Miért jó:** Egyetlen, olcsó lépés, ami az egész szervert „a lore világává" teszi — minden HUD-,

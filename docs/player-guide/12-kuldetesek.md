@@ -135,7 +135,7 @@ Más játékos nem látja a te jelzéseidet, te sem az övéit.
 
 ## Sötét Beavatás (a Nekromanta kapuja)
 
-- **Sötét Beavatás:** zarándokolj el **Mortengradba, a Holtak Városába** (a Kitaszítottak területére).
+- **Sötét Beavatás:** zarándokolj el **Thanaopolisba, a Holtak Városába** (a Kitaszítottak területére).
   Jutalom: **100 kaszt-XP**. **Ezt teljesítve nyílik meg a Nekromanta specializáció** (Sötét
   frakció + bűnös állapot is kell hozzá).
 

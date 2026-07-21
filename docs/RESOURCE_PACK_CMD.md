@@ -721,7 +721,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Fájl:** `key_csontkripta.png` &nbsp;|&nbsp; **Alap-item:** `TRIAL_KEY`
 - **Ábrázolás:** csontból faragott kulcs, koponya-fejjel, megfeketedett ezüst pánttal
 - **Színvilág:** csontfehér és hamuszürke; akcent: fakó lélek-kék
-- **Hangulat / lore:** Mortengrad kriptamélyének pecsétje — a holtak csak a hordozóját engedik le.
+- **Hangulat / lore:** Thanaopolis kriptamélyének pecsétje — a holtak csak a hordozóját engedik le.
 
 ### 6210 — Recept-tervrajz
 - **Fájl:** `blueprint.png` &nbsp;|&nbsp; **Alap-item:** `KNOWLEDGE_BOOK`
