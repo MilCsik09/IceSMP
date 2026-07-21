@@ -53,25 +53,29 @@
 A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
 
 ```
-                          spawn (0,0) — a Fa + RADICORA
-                                        │      ~6k, óceánnal
-                                        │         ╲
-                                        │      🌊 ~2k átkelés (KOMP)
-                                        │           ╲
-                                        │        ⚖ S — ÚJ CALDESTERA (kb. +5000, +2000)
-                                        │
-              (délnyugat)                              (délkelet)
-   🔥 T — PYRALINGRAD (-8908, +9938 ✔)      ❄ K — GLATZIENDORF (kb. +5500, +12500)
+        (északkelet)  ⚖ S — ÚJ CALDESTERA (3670, -3352 ✔) — ~5k
+                        ╱ 🌊 óceán-átkelés (KOMP)
+                       ╱
+          spawn (0,0) — a Fa + RADICORA
+                       │
+                       │   (délre a harcos-öv)
+                       │
+   🔥 T — PYRALINGRAD (-8908, +9938 ✔)    ❄ K — GLATZIENDORF (6274, +12062 ✔)
+          (délnyugat, ~13.3k)                    (délkelet, ~13.6k)
                      ╲                                  ╱
                       ☠ OLETHROPYLA (Kárhozat Kapuja) — a kettő közti déli senkiföldjén
 ```
 
 - **Spawn (0,0):** a Fa tövében áll **Radicora** („a gyökerek városa", népnyelven
   Ó-Caldestera) — innen indul minden új játékos.
-- **S — új Caldestera** ÉK-en, ~6k-ra: a tényleges NEUTRAL **főváros**. A szárazföldtől
-  ~2k blokknyi óceán választja el — az átkelés **komppal** megy, nem híddal.
+- **S — új Caldestera** ÉK-en: **RÖGZÍTETT hely (3670, -3352)**, ~5k a spawntól —
+  a tényleges NEUTRAL **főváros**. A szárazföldtől óceán választja el — az átkelés
+  **komppal** megy, nem híddal.
 - **T — Pyralingrad** DNy-on: **RÖGZÍTETT hely (-8908, +9938)**, ~13.3k a spawntól,
-  magashegyi terepen (Y~290 környékén) — hegyi lángváros! **K — Glatziendorf** DK-en (~13.5k).
+  magashegyi terepen (Y~290 környékén) — hegyi lángváros!
+- **K — Glatziendorf** DK-en: **RÖGZÍTETT hely (6274, +12062)**, ~13.6k a spawntól,
+  havas vidéken. A két harcos főváros egymástól ~15.3k-ra van — a Kapu a köztes
+  déli sávba való.
 - **Kárhozat Kapuja:** a déli sávban, T és K között félúton javasolt (az építész dönt).
 - **Thanaopolis (DARK):** még nincs kijelölve — félreeső, sötét vidékre való.
 
