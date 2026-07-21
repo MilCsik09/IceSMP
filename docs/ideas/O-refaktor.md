@@ -1,4 +1,8 @@
-# Refaktor-jelöltek (2026-07-14-i teljes kód-audit)
+# O — Refaktor-jelöltek / technikai adósság (egyesített backlog)
+
+> 2026-07-20: a docs/REFACTOR_CANDIDATES.md 1:1 átemelve az ideas-rendszerbe, kiegészítve
+> a teljes kódbázis-audit N19-N23 tételeivel (a fájl végén). Státusz-frissítés: a #9
+> (DonationChest debounce) az auditkörben elkészült.
 
 Ez a dokumentum a 2026. júliusi átfogó kód-audit során **talált, de szándékosan nem javított**
 leleteket rögzíti részletesen: mindegyiknél leírjuk a problémát, hogy miért maradt ki a
@@ -25,7 +29,7 @@ Jelölés: 🔴 érdemes hamarosan • 🟡 következő takarító körre • �
 | 6 | Világesemény-közös minták (`WorldEventUtil`) | Duplikáció | 🟡 |
 | 7 | `QuestManager.handleTerritoryEnter` O(questek) | Teljesítmény | 🟢 |
 | 8 | `RelicItemFactory` reflexiós metódus-scan cache | Teljesítmény | 🟢 |
-| 9 | `DonationChestManager` szinkron mentés | Teljesítmény | 🟢 |
+| 9 | `DonationChestManager` szinkron mentés | Teljesítmény | ✅ KÉSZ (2026-07-20 audit) |
 | 10 | `FactionPassiveListener` korai kilépés sorrendje | Teljesítmény | 🟢 |
 | 11 | GUI close-cleanup inkonzisztencia (3 listener) | Minta-konzisztencia | 🟢 |
 | 12 | `CommandMenus` körözési lista cross-region PDC-olvasás | Folia-szigor | 🟢 |
@@ -204,7 +208,7 @@ mintája követhető: egyszeri felderítés, `volatile` mezőben tárolva, hibá
 
 **Munka/kockázat:** ~fél óra, alacsony; egy relikvia-refresh kézi ellenőrzése elég.
 
-### 9. 🟢 `DonationChestManager` — szinkron mentés donate/take műveletnél
+### 9. ✅ KÉSZ — `DonationChestManager` — szinkron mentés (2026-07-20 auditkörben javítva: requestSave debounce)
 
 **Hely:** `managers/DonationChestManager.java` (kb. 141–183. sor, `donateHeldItem`,
 `takeEntry`).
@@ -460,3 +464,30 @@ Az üres-tábla ág és a switch default ága szó szerint ugyanazt a
 
 ### 23. 🟢 `CrateManager.persist()` — szinkron teljes-YAML írás minden mutációnál
 Ugyanaz a minta, mint a #9 (DonationChestManager) — a debounce-javítással együtt kezelendő.
+
+
+---
+
+## A teljes kódbázis-audit tételei (2026-07-20, korábban ideas/N 19-23)
+
+### 24. 🟡 `MobKillUtil.eligibleKill` — közös kill-jutalom előszűrő
+19 listener kezeli külön az EntityDeathEvent kill-jutalmat, eltérő AFK/minion/Monster-
+szűréssel — közös helper kell, hogy a fékek egy helyen éljenek (a minion/AFK-réseket a
+2026-07-20-i kör pontonként javította, de a minta tovább driftelhet).
+
+### 25. 🟡 `DailyBudget` PDC-util
+A nap-kulcs + összeg-kulcs "napi keret" minta 5+ helyen kézzel írva (kassza-kivét, buyer,
+kém-pont, horgász-sapka, mob-pénz) — egy spend(player, key, amount, cap) util kiváltaná.
+
+### 26. 🟡 `ErrorMessages.resolve` — közös hibakulcs→default tábla
+A defaultErrorFor switch 11+ osztályban majdnem szó szerint ismétlődik.
+
+### 27. 🟡 `PeriodicChanceEvent` — világesemény-ütemező váz
+5 manager (Abundance/Ambient/Archeology/Caravan/BloodMoon) azonos "enabled→intervallum→
+esély→fire" váza — közös helper; a #2 (force-vs-tick lock) és #6 (WorldEventUtil)
+tételekkel EGYÜTT érdemes, ugyanazokat a fájlokat érintik.
+
+### 28. 🟡 Elérés-küszöbök configba (AchievementManager)
+A tábla hardcode-olt, az élő-config konvenciót törve; + a vagyon-elérés kölcsön-tőkével
+(több játékos közt körbeadva) fejenként egyszer így is kijátszható — lifetime-betét
+metrika megfontolandó.

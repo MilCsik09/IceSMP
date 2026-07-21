@@ -2,7 +2,7 @@
 
 Fejlesztési ötletek gyűjtője — **nincs elköteleződés**, ez a brainstorm-réteg. Ami innen
 zöld utat kap, az a [ROADMAP.md](../ROADMAP.md)-be kerül tervezett tételként; a technikai
-adósság külön él a [REFACTOR_CANDIDATES.md](REFACTOR_CANDIDATES.md)-ben.
+adósság külön él a [ideas/O-refaktor.md](ideas/O-refaktor.md)-ben.
 
 A tár **356 kidolgozott ötletet** tartalmaz 12 kategória-fájlban (`docs/ideas/`); ebből **49
 lore-vezérelt tétel** a kódex ([LORE.md](LORE.md)) alapján az **L-válogatásba** került

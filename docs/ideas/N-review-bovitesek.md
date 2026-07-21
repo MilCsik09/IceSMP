@@ -71,20 +71,8 @@
       párbajból + kém-küldetésből (1.5×) pontoz erősebben. Új források: community (8),
       cleanse (6), duel (2), spy (2) — mindegyik élő configból.
 
-## Refaktor-backlog (teljes kódbázis-audit, 2026-07-20)
+## Refaktor-backlog
 
-- [ ] **N19 — MobKillUtil.eligibleKill:** 19 listener kezeli külön az EntityDeathEvent
-      kill-jutalmat, eltérő AFK/minion/Monster-szűréssel — közös helper, hogy a fékek
-      egy helyen éljenek (a minion/AFK-réseket most pontonként javítottuk).
-- [ ] **N20 — DailyBudget PDC-util:** a nap-kulcs + összeg-kulcs "napi keret" minta 5+
-      helyen kézzel írva (kassza-kivét, buyer, kém-pont, horgász-sapka, mob-pénz) —
-      egy spend(player, key, amount, cap) util kiváltaná.
-- [ ] **N21 — ErrorMessages.resolve:** a defaultErrorFor switch 11+ osztályban
-      majdnem szó szerint ismétlődik — közös hibakulcs→default tábla.
-- [ ] **N22 — PeriodicChanceEvent:** 5 világesemény-manager (Abundance/Ambient/
-      Archeology/Caravan/BloodMoon) azonos "enabled→intervallum→esély→fire" váza —
-      közös ütemező-helper.
-- [ ] **N23 — Elérés-küszöbök configba:** az AchievementManager táblája hardcode-olt,
-      az élő-config konvenciót törve; + a vagyon-elérés kölcsön-tőkével (több játékos
-      közt körbeadva) fejenként egyszer így is kijátszható — lifetime-betét metrika
-      megfontolandó.
+> A refaktor/technikai-adósság tételek EGY helyen élnek: [O-refaktor.md](O-refaktor.md)
+> (oda költözött a korábbi docs/REFACTOR_CANDIDATES.md teljes tartalma ÉS az itteni
+> N19-N23 is, utóbbiak #24-28 sorszámon).
