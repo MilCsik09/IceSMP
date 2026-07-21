@@ -187,3 +187,13 @@ enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.ym
   mérge / az Első Csend homálya.
 - **Valuta**: RED = Parázsló Parals, BLUE = Hópihér-veret, NEUTRAL = Creutzér/Smaragdkő,
   DARK = Csontveret.
+
+## Ó-Caldestera és az új Caldestera (építész-kánon, 2026-07)
+
+| Lore-elem | Mechanika |
+|---|---|
+| **Ó-Caldestera** (a Fa tövében, spawn) | first-join spawn + onboarding (`world-events.intro.first-join-spawn`); zóna: `protected-city`; kezdő-barát Lvl 0-1 vadon |
+| **Új Caldestera** (ÉK, ~+5000/+2000) | a NEUTRAL `capital` zóna: bank/váltó-kapu, frakcióváltás, fővárosi törvény, emlékmű |
+| **Komp a szoroson át** | `/komp` + `ferry.routes.*` (economy.yml); révész-NPC: `/npcbind <npc> command "komp <út>"`; viteldíj = money sink |
+| **Vérfa (Pyralingrad nemesi negyede)** | építő-anyag kánon: mangrove = nemesség, akácia = köznép, kalcit-diorit-nyír falak |
+| **„Egyetlen kapu": nether-portál tilalom** | `nether-portal.allow-creation: false` (world.yml) — új portál sehol; a Kárhozat Kapuját admin gyújtja (zóna-bypass jog); Nether-út = a PvP-senkiföldjén át |

@@ -226,6 +226,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.CityGuardManager cityGuardManager;
     private final hu.taliann.icesmp.managers.DarkUndeadAmbienceManager darkUndeadAmbienceManager;
     private final hu.taliann.icesmp.managers.EventSpawnPointManager eventSpawnPointManager;
+    private final hu.taliann.icesmp.managers.FerryManager ferryManager;
     private final hu.taliann.icesmp.managers.CultistEventManager cultistEventManager;
     private final hu.taliann.icesmp.listeners.ProfessionRecipeBookListener professionRecipeBookListener;
     private final hu.taliann.icesmp.listeners.FactionFoodListener factionFoodListener;
@@ -359,6 +360,8 @@ public final class IceSMPCore {
         this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
         this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager, eventSpawnGuard);
         this.eventSpawnPointManager = new hu.taliann.icesmp.managers.EventSpawnPointManager(plugin, configManager);
+        // Komp (építész-kérés): fix két-végpontú átkelő (óceán-átkelés híd helyett).
+        this.ferryManager = new hu.taliann.icesmp.managers.FerryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         worldBossManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
@@ -1216,6 +1219,7 @@ public final class IceSMPCore {
         eventsCommand.setSpawnPointManager(eventSpawnPointManager);
         eventsCommand.setCultistEventManager(cultistEventManager);
         plugin.registerCommand("events", "Világesemény parancsok", List.of("event", "esemeny"), eventsCommand);
+        plugin.registerCommand("komp", "Kompjárat: átkelés a túlpartra", List.of("ferry"), new hu.taliann.icesmp.commands.KompCommand(ferryManager, messageManager));
         plugin.registerCommand("emlek", "Emlékszilánk-beváltás (visszaemlékezés)", List.of("memory", "emlekek"),
                 new hu.taliann.icesmp.commands.MemoryCommand(configManager, jobManager, talentManager, specializationManager, uniqueMaterialFactory, messageManager));
         plugin.registerCommand("suttogas", "A Suttogók titkos csatornája és tanú-vád", List.of("sutt"),
@@ -1292,6 +1296,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SelectionWandListener(claimManager, territoryManager, currencyManager, messageManager), plugin);
+        // Nether-portál világszabály: új portál nem gyújtható — csak a Kárhozat Kapuja él.
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PortalGuardListener(configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneApplyListener(uniqueMaterialFactory, configManager, messageManager), plugin);
         final hu.taliann.icesmp.listeners.RuneEffectListener runeEffectListener = new hu.taliann.icesmp.listeners.RuneEffectListener(configManager);
         runeEffectListener.setJobManager(jobManager); // E7 — Varázsló rúna-affinitás

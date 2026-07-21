@@ -454,6 +454,25 @@ faction-shops:
         price: 50
         currency: "OWN"
 
+# ===== Komp (építész-kérés): fix két-végpontú átkelő-teleport =====
+# /komp <útvonal> — a játékos a KÖZELEBBI kikötőtől a túlpartra utazik; a viteldíj
+# a banki egyenlegből ég el (money sink). Beszálláshoz a kikötő közelében kell állni.
+# Tipikus kötés: révész-NPC-re: /npcbind <npc> command "komp <útvonal>".
+# Végpont-formátum: "world,x,y,z[,yaw,pitch]". Élő kulcsok.
+ferry:
+  enabled: true
+  default-fee: 15.0
+  max-board-distance: 24
+  cooldown-seconds: 10
+  routes: {}
+  # Példa (az óceán-átkelés az új Caldestera felé):
+  # routes:
+  #   bokic_atkelo:
+  #     name: "Bokic-torkolati komp"
+  #     a: "world,4200,63,900"
+  #     b: "world,5100,63,1900"
+  #     fee: 15.0
+
 # ===== Kereskedő-karaván (időszakos világesemény + money sink) =====
 # Egy vándorkereskedő időnként felbukkan egy stop-helyszínen (vagy ha nincs stop
 # megadva, egy véletlen online játékos közelében), egy ideig marad, majd

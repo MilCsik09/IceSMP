@@ -1628,3 +1628,23 @@ Jó tesztelést! ❄️
 - [ ] **Az Éjszaka Pengéje** (sötét szignatúra-recept, bűvölő 35): netherit kard +
       4 árnyékpor + 2 echo-szilánk + 8 obszidián → crafted-affixes penge (CMD 6439,
       regiszterben) — az árnyékpor sötét útról jön (rítus-loot / Suttogó-részesedés).
+
+## Építész-kör: valós térkép + komp + portál-szabály (tulaj-döntések)
+- [ ] **Komp (/komp, alias /ferry):** ferry.routes.<id> (a/b végpont "world,x,y,z",
+      fee) — a játékos a KÖZELEBBI kikötőtől (max-board-distance 24) a túlpartra
+      teleportál; viteldíj a banki egyenlegből ég el (money sink); 10 mp cooldown;
+      révész-NPC kötés: /npcbind <npc> command "komp <útvonal>". Útvonal nélkül lista.
+      Ellenőrzés: kikötőtől távol "menj közelebb"; kevés bank-egyenleggel elutasít.
+- [ ] **Nether-portál világszabály:** új portál gyújtása MINDENHOL tilos
+      (nether-portal.allow-creation: false, élő kulcs + config-menü kapcsoló) —
+      action-bar üzenettel; a zóna-bypass jogú admin gyújthat (a Kárhozat Kapuja
+      felélesztése). A NETHER_PAIR (túloldali pár) szabad → a Kapu működik.
+      A Netherbe az EGYETLEN út a PvP-senkiföldjén át vezet.
+- [ ] **EPITESZ_UTMUTATO a valós térképre:** T=Pyralingrad DNy (~-10k,+10k),
+      K=Glatziendorf DK (~+5.5k,+12.5k), S=új Caldestera ÉK (~+5k,+2k, óceánnal),
+      spawn=Ó-Caldestera a Fa tövében (1/b szakasz); Pyralingrad-anyagok javítva
+      (mangrove vérfa + akácia + kalcit-diorit-nyír); hazatérés-kő opcionális;
+      kazamata-terv 10+; mob-szintezés NYITOTT tulaj-döntésként jelölve.
+- [ ] **Lore-kánon bővítés:** a Menedék kettészakadása (Ó-Caldestera a Fa hű
+      követőié, az új Caldestera a csalódottaké) + a pyralingradi vérfa a kódexben;
+      mechanika-kötések a LORE_REFERENCE-ben.

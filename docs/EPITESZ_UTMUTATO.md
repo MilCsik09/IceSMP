@@ -8,39 +8,51 @@
 
 ---
 
-## 0. A világ elrendezése (nagy térkép)
+## 0. A világ elrendezése (a VALÓS térkép szerint)
 
-A világ veszélyessége a spawntól **kifelé nő**: minden 1000 blokk = +1 mob-szint (max 10).
-Erre épül a földrajz — a béke középen van, a veszély a széleken:
+> Frissítve az építész-csapat tényleges seedje/elrendezése alapján — a korábbi
+> "észak-dél tengely" vázlat ELAVULT.
+
+A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
 
 ```
-                 ❄ JÉGMEZŐK (észak)
-              Glatziendorf — BLUE főváros
-                       │
-                 ~3000-4000 blokk
-                       │
-     ☠ SENKIFÖLDJE — Kárhozat Kapuja (a RED-BLUE tengely felénél)
-                       │
-   🌳 KÖZÉP: a Fa + Bokic-folyó — Ryanora vidéke, CALDESTERA (spawn, NEUTRAL)
-                       │
-                 ~3000-4000 blokk
-                       │
-              Pyralingrad — RED főváros
-                 🔥 VÉRSZAVANNA (dél)
-
-   ⚫ MORTENGRAD (DARK romváros): oldalirányban, ~2000-3000 blokkra a spawntól,
-      sötét/mocsaras-sculkos vidéken — szándékosan félreeső.
+                          spawn (0,0) — a Fa + Ó-CALDESTERA
+                                        │      ~6k, óceánnal
+                                        │         ╲
+                                        │      🌊 ~2k átkelés (KOMP)
+                                        │           ╲
+                                        │        ⚖ S — ÚJ CALDESTERA (kb. +5000, +2000)
+                                        │
+              (délnyugat)                              (délkelet)
+   🔥 T — PYRALINGRAD (kb. -10000, +10000)   ❄ K — GLATZIENDORF (kb. +5500, +12500)
+                     ╲                                  ╱
+                      ☠ KÁRHOZAT KAPUJA — valahol a kettő közti déli senkiföldjén
 ```
 
-Ökölszabályok:
-- **Caldestera (spawn)** a világ közepén, 0. mob-szintű békés zónában.
-- **Pyralingrad és Glatziendorf** egymással ÁTELLENBEN (pl. dél/észak), a spawntól
-  ~3000-4000 blokkra (3-4. mob-szint) — a lore szerint a Fa a két harcos népet a világ
-  két ellentétes sarkába űzte. Biomot igazítsd: szavanna/badlands ↔ havas síkság/hegy.
-- **A Kárhozat Kapuja** a két harcos főváros KÖZÖTTI senkiföldjén, kb. félúton —
-  bármelyik frakciótól ~1500-2000 blokk.
-- **Mortengrad** a spawntól 2000-3000 blokkra, a fő tengelytől ELTOLVA (pl. kelet/nyugat),
-  sötét erdő / mocsár / mély sculkos völgy peremén.
+- **Spawn (0,0):** a Fa tövében áll **Ó-Caldestera**, a régi semleges főváros —
+  kisebb, régies testvér-település (lásd 1/b szakasz). Innen indul minden új játékos.
+- **S — új Caldestera** ÉK-en, ~6k-ra: a tényleges NEUTRAL **főváros** (bank-kapu,
+  frakcióváltás, fővárosi törvény). A szárazföldtől ~2k blokknyi óceán választja el —
+  az átkelés **komppal** megy (lásd lent), nem híddal.
+- **T — Pyralingrad** DNy-on (~14k a spawntól), **K — Glatziendorf** DK-en (~13.5k):
+  a két harcos főváros a DÉLI sávban, egymástól ~15k-ra.
+- **Kárhozat Kapuja:** a lore szerint a két birodalom közti senkiföldjén — a déli
+  sávban, T és K között félúton javasolt (az építész dönt).
+- **Mortengrad:** még nincs kijelölve — félreeső, sötét vidékre való (a fenti
+  pinektől távolabb; az északi vagy nyugati kevésbé használt sáv jó jelölt).
+
+**⚠ NYITOTT tulaj-döntés — mob-szintezés:** a jelenlegi szabállyal (1000 blokk =
++1 szint, max 10) az új Caldestera környéke ~Lvl 5-6, a két déli főváros környéke
+pedig **Lvl 10-es végjáték-vadon**. Opciók: (a) így marad — a fővárosok környéke
+veterán-vidék; (b) `mob-scaling.blocks-per-level` emelése 1500-2000-re (a déli
+fővárosok Lvl 6-8-ra szelídülnek); (c) zóna-alapú kivétel. Döntésig az (a) él.
+
+**Közlekedés:** a fővárosokat összekötő utak + az óceáni **komp** (`/komp` —
+kikötő-párok configból, révész-NPC-re köthető; viteldíj a bankból ég el). A
+**nether-portálok tiltva**: új portál sehol sem gyújtható, a világ EGYETLEN élő
+kapuja a Kárhozat Kapuja (az admin-csapat gyújtja meg zóna-bypass joggal) — a
+Netherbe tehát CSAK a senkiföldjén át vezet út. Ez szándékos: a leggyorsabb
+nether-utazás is a PvP-zónán megy keresztül.
 
 ---
 
@@ -73,7 +85,7 @@ be minden új játékos.
 | **Őrjárat-útvonalak** | járőröző városi őrség (éjjel gyorsabb) | `city-guards.guards.<id>.route` waypointok |
 | **Láda-terem / jutalomházak** | crate-ládák (kulcsos nyitás) | `/crate set <láda-id>` a fizikai ládára |
 | **Kaszt-szentélyek csarnoka(i)** | 13 kaszt-oltár (buff-rituálék) — lehet egy Szentély-negyed | lásd 6. szakasz (multiblock) |
-| **Hazatérés-kő** | `hazateres` rituálé (fővárosba teleport) — a TÖBBI városba is kell egy | LODESTONE mag-oltár |
+| **Hazatérés-kő (OPCIONÁLIS)** | `hazateres` rituálé (fővárosba teleport) — kihagyható, ha a komp/utak elég | LODESTONE mag-oltár |
 
 **Parkour (opcionális):** ha építetek pályát, 30-60 blokk hosszú, 1-2 perc alatt
 teljesíthető legyen — de egyetlen kaszt-lánc sem függ tőle, tehát ráér bármikor.
@@ -87,18 +99,40 @@ legyen hol megvívni.
 - külső védett műemlékek: `protected-city` típus
 - Ryanora vidéke (tanyák, gázlók a Bokic mentén): `faction NEUTRAL` zóna — ITT
   claimelhetnek a játékosok
-- spawn-pont: `/territory setspawn neutral` + `world-events.intro.first-join-spawn`
+- spawn-pont: Ó-Caldesterába mutat (lásd 1/b) — `world-events.intro.first-join-spawn`
+
+### 1/b. Ó-Caldestera — a régi főváros a Fa tövében (a spawn-település)
+
+**Lore (építész-kánon):** a nagy háborúk után a város kettészakadt — sokan
+hiányolták a Világfa be-nem-avatkozását, ezért elköltöztek és ÚJ fővárost
+alapítottak messzebb (a mai Caldestera); a Fa tövében az ő **igaz követői**
+maradtak. Ó-Caldestera ezért **régies, kisebb, szerényebb** — más kort idéz,
+mint a gazdag új főváros (szándékosan ütnek el egymástól).
+
+**Méret:** kb. **80×80 - 100×100 blokk** — falu-városka a Fa körül.
+
+**Ide való (mert itt landol minden új játékos):**
+- **first-join spawn** + a **Hírnök** (onboarding-lánc) — VAGY a Hírnök az új
+  fővárosban áll, és Ó-Caldesterában egy "révkalauz"-NPC irányít tovább; a
+  lényeg: az első lépések itt történjenek.
+- **Erdei vének ligete** a közelben (`erdei_venek` NPC — questek + "A Fa üzenete").
+- Egyszerű **fogadó, kikötő/gázló** a Bokicnál, kezdő-barát környék (Lvl 0-1 vadon).
+- Zónázás: `protected-city` (nem claimelhető, nem építhető át).
 
 ---
 
 ## 2. Pyralingrad — a Láng fővárosa (RED)
 
-**Lore:** a Vérszavanna szíve, Soleil főnix-örökségének városa. **Akácia, homokkő és
-mélypala** — tikkasztó, egzotikus, agresszív építészet: lángoló tornyok, főnix-motívumok,
-lándzsás kapuk. Már 14 évvel a Hasadás után állt: a legrégebbi főváros, lehet nyers,
-katonás.
+**Lore:** a Vérszavanna szíve, Soleil főnix-örökségének városa — tikkasztó, egzotikus,
+agresszív építészet: lángoló tornyok, főnix-motívumok, lándzsás kapuk. Már 14 évvel a
+Hasadás után állt: a legrégebbi főváros, lehet nyers, katonás.
 
-**Méret:** kb. **120×120 - 150×150 blokk** + falak. Biom: szavanna/badlands.
+**Anyagok (építész-kánon):** a belvárosban **mangrove** — a „vérfa", a nemesség
+jelképe (e fák egy csepp főnix-esszenciát hordoznak); a köznép negyede (commoners
+district) **akácia**; a falak **kalcit-diorit-nyír** keveréke. (Homokkő NINCS.)
+
+**Méret:** az építész szerint már most NAGYOBB, mint a korábbi 120-150-es javaslat —
+a méret az övék, a lényeg a lenti kötelező elemek megléte. Biom: szavanna/badlands.
 
 **Kötelező elemek:**
 - **Trónterem** — a király-rendszer színtere (koronázás, raid-hirdetés).
@@ -107,7 +141,7 @@ katonás.
 - **Bank-fiók + váltó** (banker/exchange NPC — a bank fővároshoz kötött!).
 - **Frakció-bolt** (shop-NPC: `/npcbind <npc> shop <bolt-id>`) — a RED tematikus árukészlete.
 - **Kassza-terem / kincstár** (flavor a /faction treasury köré, adó-hirdetőtábla).
-- **Hazatérés-kő szentély** (LODESTONE oltár).
+- **Hazatérés-kő szentély** (LODESTONE oltár) — OPCIONÁLIS.
 - **Kaszt-szentély(ek)** — ide illők: `harcos_szentely` (ANVIL), `demonvadasz_szentely`
   (CHISELED_NETHER_BRICKS), `saman_szentely` (LIGHTNING_ROD).
 - **Karaván-megálló** (ha a karaván ide is jár: `caravan.stops`).
@@ -160,7 +194,7 @@ kő, sculk-erek a romok közt.
   quest a városba érkezést figyeli, tehát a zóna maga a cél (`territory` DARK).
 - **`feloldozas` oltár** (SOUL_LANTERN mag) — a vezeklés-lánc végi bűn-tisztító
   szentély: lehet a város szélén álló megtört kápolna.
-- **Hazatérés-kő** (LODESTONE) romos változata.
+- **Hazatérés-kő** (LODESTONE) romos változata — OPCIONÁLIS.
 - Ide illő szentélyek: `halallovag_szentely` (CRYING_OBSIDIAN), `boszorkany_szentely`
   (RESPAWN_ANCHOR), `pakt_oltar` (SOUL_LANTERN — Boszorkánymester paktum).
 
@@ -223,7 +257,9 @@ felfedezésre vár.
 
 ## 7. Kazamaták (DUNGEON zónák)
 
-Kulcs-kapus, heti pecsétes instancia-dungeonök. Építs **1-2 kazamatát kezdésnek**:
+Kulcs-kapus, heti pecsétes instancia-dungeonök. Az építész-terv szerint **10+ dungeon**
+jön a falvak után — a plugin-oldal kész, két kulcs-recept már él (`melyseg`,
+`csontkripta` zóna-id-vel; továbbiakhoz csak új recept-sor kell). Irányelvek:
 - **Méret:** 40-80 blokk hosszú, kanyargó belső tér (folyosók + 2-3 terem + boss-terem).
 - **Stílus-ötlet:** a Vasművek Akadémiájának elhagyott tárnái; egy elsüllyedt
   Bokic-parti céh-pince; jégbarlang-labirintus.
@@ -251,6 +287,9 @@ nem bontható.
   `/events spawnpoint add cultists`.
 - **Utak!** A fővárosokat összekötő úthálózat (a Bokic-gázlókkal) sokat ad a
   világnak — a kíséret, a hírvivő és a karaván is „úton járó" események.
+- **Komp-kikötők:** az óceáni átkelés(ek)hez móló mindkét parton + révész-NPC
+  (`/npcbind <npc> command "komp <útvonal>"`); az útvonal a configban:
+  `ferry.routes.<id>` (a/b végpont, viteldíj). Az új Caldestera felé ez a fő út!
 
 ---
 

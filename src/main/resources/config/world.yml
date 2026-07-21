@@ -575,6 +575,14 @@ season-monument:
   max-lines: 12
   header: "<gold>📖 A Korszakok Könyve</gold>"
 
+# ===== Nether-portál világszabály (tulaj-döntés) =====
+# Új nether-portál gyújtása MINDENHOL tilos — a világ egyetlen élő kapuja a
+# Kárhozat Kapuja (az admin-csapat gyújtja meg; a zóna-bypass jog átengedi a
+# tiltáson). true = vanília viselkedés vissza. A meglévő portálok működnek,
+# csak ÚJAT nem lehet gyújtani.
+nether-portal:
+  allow-creation: false
+
 # ===== D8 — Felfedezhető titkos helyek =====
 # Admin-kijelölt rejtett pontok: aki ELSŐKÉNT ér oda, jutalmat kap és broadcast hirdeti;
 # a többiek egyszeri, fél-értékű jutalmat kapnak (repeat-reward-ratio), VAGY

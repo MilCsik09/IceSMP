@@ -49,6 +49,13 @@ legveszélyesebb zónája. Itt minden másképp működik:
 játékosok **saját birtokot (`/claim`) is foglalhatnak** — így a claim rendszer és a
 territórium rendszer együtt működik.
 
+### ⛩ Az egyetlen kapu — nether-portál szabály
+
+Ezen a világon **új nether-portált nem lehet gyújtani** — sehol. A világ **egyetlen élő
+kapuja a Kárhozat Kapuja**: aki a Netherbe akar jutni, annak a **senkiföldjén át** vezet
+az útja, ahol a PvP legális és az ölés nem bűn. A kapu használata tehát mindig kockázat —
+pontosan úgy, ahogy a régiek mesélik.
+
 ## Mi tiltható zónánként?
 
 Az adminok **zónatípusonként külön-külön** állíthatják, mi szabad az adott zónában

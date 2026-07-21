@@ -67,7 +67,9 @@ public final class ConfigMenuGUI {
                 Entry.number("factions.tax.minimum-amount", "Fejadó (min. összeg)", 0.5, 0, 1000),
                 Entry.number("factions.tax.max-arrears", "Hátralék-plafon", 5, 0, 100000),
                 Entry.integer("factions.tax.evasion-strikes", "Adócsalás-strike küszöb", 1, 0, 50),
-                Entry.integer("factions.tax.interval-minutes", "Beszedés (perc)", 5, 1, 100000))));
+                Entry.integer("factions.tax.interval-minutes", "Beszedés (perc)", 5, 1, 100000),
+                Entry.toggle("ferry.enabled", "Kompjáratok"),
+                Entry.number("ferry.default-fee", "Komp-viteldíj (alap)", 5, 0, 10000))));
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
                 Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),
@@ -85,7 +87,8 @@ public final class ConfigMenuGUI {
                 Entry.integer("territory.doom-gate.entry-grace-seconds", "Belépő-védelem (mp)", 1, 0, 120),
                 Entry.integer("territory.mob-rules.doom-gate.bonus-levels", "Zóna mob-bónusz szint", 1, 0, 20),
                 Entry.toggle("territory.mob-rules.doom-gate.no-daylight-burn", "Mob nappal sem ég"),
-                Entry.toggle("territory.mob-rules.doom-gate.no-zombification", "Mob nem zombisodik"))));
+                Entry.toggle("territory.mob-rules.doom-gate.no-zombification", "Mob nem zombisodik"),
+                Entry.toggle("nether-portal.allow-creation", "Nether-portál gyújtás engedett"))));
         categories.put("hadiablak", new Category("hadiablak", "Hadi-ablak", Material.IRON_SWORD, List.of(
                 Entry.toggle("factions.war-window.enabled", "Hadi-ablak (RED↔BLUE ölés nem bűn)"),
                 Entry.integer("factions.war-window.points-per-kill", "Liga-pont ölésenként", 1, 0, 100),
