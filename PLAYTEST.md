@@ -1663,3 +1663,8 @@ Jó tesztelést! ❄️
       városa" — radix + a Ryanora/Caldestera névcsalád -ora végződése); a nép
       ajkán Ó-Caldestera. Zóna-id javaslat: radicora. A korábbi PLAYTEST-sorok
       "Ó-Caldestera" említései erre a városra értendők.
+
+## Névadás: Olethropyla (a Kárhozat Kapuja ősi neve)
+- [ ] A Kapu ősi/krónikás-neve **Olethropyla** (görög: olethros "pusztulás" + pylé
+      "kapu" — Thermopülai-áthallással); a játékos-szövegek a népi "Kárhozat Kapuja"
+      nevet használják továbbra is. Zóna-id KÖTÖTT: karhozat-kapuja (quest hivatkozik rá).

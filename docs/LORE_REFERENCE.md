@@ -203,4 +203,5 @@ enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.ym
 | Név | Mi |
 |---|---|
 | **Thanaopolis** | a DARK főváros MAI neve (a Holtak Városa) — minden jelen-idejű szöveg/zóna ezt használja; zóna-id: `thanaopolis` |
+| **Olethropyla** | a Kárhozat Kapuja ŐSI neve (görög: olethros = pusztulás + pylé = kapu) — csak a kódex/krónikák használják; a játékos-szövegek a népi „Kárhozat Kapuja" nevet mondják; zóna-id: `karhozat-kapuja` (quest-kötés!) |
 | **Mortengrad** | a bukás ELŐTTI (történelmi) név — csak a kódex múlt-idejű szövegében és a régi receptek nevében él (Mortengradi Hamukenyér, Mortengradi Árnygomba — az item-id-k és signature-ök változatlanok!) |

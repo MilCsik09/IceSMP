@@ -26,7 +26,7 @@ A kijelölt helyszínek (hozzávetőleges koordináták a seed-térképről):
               (délnyugat)                              (délkelet)
    🔥 T — PYRALINGRAD (kb. -10000, +10000)   ❄ K — GLATZIENDORF (kb. +5500, +12500)
                      ╲                                  ╱
-                      ☠ KÁRHOZAT KAPUJA — valahol a kettő közti déli senkiföldjén
+                      ☠ OLETHROPYLA (Kárhozat Kapuja) — a kettő közti déli senkiföldjén
 ```
 
 - **Spawn (0,0):** a Fa tövében áll **Radicora** („a gyökerek városa", népnyelven
@@ -205,7 +205,7 @@ DARK territórium" beállítása) + a környék `faction DARK`.
 
 ---
 
-## 5. A Kárhozat Kapuja — a Senkiföldje (DOOM_GATE)
+## 5. Olethropyla — a Kárhozat Kapuja, a Senkiföldje (DOOM_GATE)
 
 **Lore:** a Hetedik Vérháborút kirobbantó **óriás Nether-portál** a Jégmezők és a
 Vérszavanna közti gazdátlan vadonban. Instabil, a Nether energiája szivárog belőle,
@@ -220,7 +220,8 @@ megfertőzve a földet. Itt nincs törvény: **a PvP legális, az ölés nem bű
 - A plugin ad rá: bónusz-szintű mobokat, belépési PvP-türelmet, robbanás/tűz-védett
   terepet — a zóna maga védett (nem építhető/bontható), tehát amit megépítesz, megmarad.
 
-**Zónázás:** `/territory circle doom-gate <id> <sugár>` (frakció nélkül) — a sugár
+**Zónázás:** `/territory circle doom-gate karhozat-kapuja <sugár>` — a zóna-id LEGYEN
+`karhozat-kapuja` (egy quest név szerint erre hivatkozik!); frakció nélkül — a sugár
 fedje az egész arénát.
 
 ---

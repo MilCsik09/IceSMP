@@ -241,13 +241,15 @@ nem a tárgyban.
 
 ## VII. A Világ Árnyékos Zugai
 
-**A Kárhozat Kapuja.** A Hetedik Vérháborút kirobbantó óriás Nether-portál ma is ott áll a Jégmezők és
+**Olethropyla — a Kárhozat Kapuja.** A Hetedik Vérháborút kirobbantó óriás Nether-portál ma is ott áll a Jégmezők és
 a Vérszavanna közé terülő roppant **Senkiföldjén** — a gazdátlan vadonban, amely a világ két ellentétes
 sarkába száműzött birodalmakat elválasztja. Amikor a Káoszkor elején eltűnt a nemesség, a kaput senki
 sem őrizte tovább; a két sereg maradványai az élőhalottakkal vívott harcban pusztultak el körülötte.
 Ma a portál instabil, a Nether energiája lassan a világba szivárog, megfertőzve a környező földeket.
-Ez a világ legveszélyesebb, egyetlen birodalomhoz sem tartozó senkiföldje — a nép csak **„Kárhozat
-Kapujának"** vagy **„Az Őrület Hasadékának"** hívja —, ahová a Felsők a legjobb nyersanyagért járnak,
+Ez a világ legveszélyesebb, egyetlen birodalomhoz sem tartozó senkiföldje. A régi világ térképein
+még az ősi nevén áll: **Olethropyla** — „a pusztulás kapuja", ahogy a holt nyelvek mondták; ám e
+nevet ma már csak a krónikások írják le. A nép csak **„Kárhozat Kapujának"** vagy **„Az Őrület
+Hasadékának"** hívja, s ahová a Felsők a legjobb nyersanyagért járnak,
 s ahol a birodalmak törvénye nem ér el: ott bármely zászló szabadon ronthat a másikra.
 
 **Caldestera alvilága.** Caldestera békés, semleges és gazdag főváros — ám a felszín alatt nem
