@@ -14,6 +14,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`haiku`-t a gyakorlat nem igazolta** — az "egyszerű" feladatok is ítélőképességet
   kérnek, és az utólagos ellenőrzés többe kerül, mint a sonnet-különbözet. Csak tiszta
   felsorolás/keresés-jellegű feladatra, ha egyáltalán.
+- **`opus` a középső sávra:** körülhatárolható, de sonnet-nél több ítélőképességet kérő
+  feladat — kényes (pl. konkurrencia-érzékeny) scope-olt elemzés/refaktor pontos
+  specifikációval, kritikus javítás független másod-ellenőrzése. NEM helyettesíti a
+  fő-agentet ott, ahol a session-kontextus számít (a delegált agent mindig üresen indul).
 - **Teljes több-agentes audit-kör CSAK kifejezett tulaj-kérésre** — drága (agentenként
   100-340k token), és a gépi drift-ellenőrző + a Definition of Done pont azért él, hogy
   ne kelljen ismételni. Új leletek az élő `docs/ideas/P2-gameplay-audit.md`-be, helyben.
