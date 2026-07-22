@@ -173,7 +173,7 @@ public final class ServerChallengeManager {
             return;
         }
         type = picked;
-        // Népesség-skálázás (gameplay-audit): a cél = per-player érték × online létszám,
+        // Népesség-skálázás: a cél = per-player érték × online létszám,
         // ha a per-player mód él — így 3 és 30 fősen is elérhető marad a közös cél.
         final long baseTarget = Math.max(1L, configManager.getLong(
                 "server-challenge.targets." + picked.configKey(), defaultTarget(picked)));

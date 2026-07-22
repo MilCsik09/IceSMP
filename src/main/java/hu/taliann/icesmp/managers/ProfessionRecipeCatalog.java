@@ -116,17 +116,17 @@ public final class ProfessionRecipeCatalog {
         // Optional lore lines: when present, the crafted item is stamped with the designed name + lore
         // (a "named" prestige item — gear/tome/special consumable); bulk results have no lore and stay vanilla.
         final List<String> lore = section.getStringList("lore");
-        // Signature items (K2/K3): a PDC id the perk listener recognises; optional faction gate.
+        // Signature items: a PDC id the perk listener recognises; optional faction gate.
         final String signature = resultSection.getString("signature", null);
         final hu.taliann.icesmp.data.FactionType faction =
                 hu.taliann.icesmp.data.FactionType.fromInput(section.getString("faction", null));
-        // I22 — loot-only: a tervrajz KIZÁRÓLAG világboss/nehéz esemény lootból eshet
+        // Loot-only: a tervrajz KIZÁRÓLAG világboss/nehéz esemény lootból eshet
         // (NPC-bolt/sima mob sosem adja) — csak blueprint-tanulású receptnél értelmes.
         final boolean lootOnly = blueprint && section.getBoolean("loot-only", false);
         // Resource-pack horog: a nevesített/lore-os eredmény CustomModelData-t kaphat
         // (result.custom-model-data) — a kiosztott értékek a docs/RESOURCE_PACK_CMD.md listán.
         final int customModelData = Math.max(0, resultSection.getInt("custom-model-data", 0));
-        // E7 — kaszt-zárt recept: csak a megadott kaszt készítheti (pl. Varázsló-rúnák).
+        // Kaszt-zárt recept: csak a megadott kaszt készítheti (pl. Varázsló-rúnák).
         final String job = section.getString("job", null);
         return new Recipe(id, profession, level, blueprint, displayName, category, result, amount,
                 affixTier == null || affixTier.isBlank() ? null : affixTier.toLowerCase(Locale.ROOT),

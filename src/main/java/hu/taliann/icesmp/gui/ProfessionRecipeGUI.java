@@ -105,7 +105,7 @@ public final class ProfessionRecipeGUI {
                 ? Component.text("✔ Szint " + recipe.level(), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
                 : Component.text("✘ Szint " + recipe.level() + " kell (most " + level + ")", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         if (recipe.blueprint()) {
-            // I22 — loot-only: a tervrajz kizárólag világboss/nehéz esemény lootból eshet.
+            // Loot-only: a tervrajz kizárólag világboss/nehéz esemény lootból eshet.
             lore.add(learned
                     ? Component.text("✔ Recept megtanulva", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
                     : recipe.lootOnly()

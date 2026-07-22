@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Market browser with pagination (ROADMAP phase 12): listings fill the top rows,
+ * Market browser with pagination: listings fill the top rows,
  * the bottom row holds page navigation. Clicking a listing buys it from the
  * player's bank balance.
  */
@@ -92,7 +92,7 @@ public final class MarketGUI {
         }
         final String needle = filter.toLowerCase(java.util.Locale.ROOT);
         final ItemStack item = listing.item();
-        // F11 — ereklye-börze: a "@ereklye" szűrő a PDC-tages (unique anyag / relikvia)
+        // Ereklye-börze: a "@ereklye" szűrő a PDC-tages (unique anyag / relikvia)
         // tételekre szűkít — a szilánk-kereskedelem külön csatornája.
         if ("@ereklye".equals(needle)) {
             if (!item.hasItemMeta()) {

@@ -101,7 +101,7 @@ public final class GatheringBuffManager {
                     < Math.max(0, configManager.getInt("gathering-buffs.min-online-players", 1))) {
                 return;
             }
-            // B19: évszak-szorzó (nyáron sűrűbb a gyűjtögető-láz — season-modifiers.<evszak>.gathering).
+            // Évszak-szorzó (nyáron sűrűbb a gyűjtögető-láz — season-modifiers.<evszak>.gathering).
             final SeasonalModifierService seasonalRef = seasonalModifiers;
             final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("gathering");
             final double chance = Math.max(0.0D, Math.min(100.0D,

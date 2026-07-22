@@ -115,7 +115,7 @@ public final class ShopManager {
                 final int stockSize = Math.max(1, configManager.getInt("caravan.rotation.stock-size", 4));
                 if (entries.size() > stockSize) {
                     final java.util.Random rotationRandom = new java.util.Random(caravanStockSeed.getAsLong());
-                    // Gameplay-audit: unique-anyag slot-garancia — a ritka szakma-alapanyag
+                    // Unique-anyag slot-garancia — a ritka szakma-alapanyag
                     // pool-ága ne sorsolódhasson ki teljesen (alternatív forrás maradjon).
                     final java.util.List<ConfigurationSection> uniquePool =
                             configManager.getBoolean("caravan.rotation.guarantee-unique", true)
@@ -222,7 +222,7 @@ public final class ShopManager {
 
         final CurrencyType currency = resolveCurrency(item, buyer);
         double price = getPrice(item);
-        // Suttogó-erősítés (tulaj-jóváhagyás): a feketepiacon a felesküdöttek a hálózat
+        // Suttogó-erősítés: a feketepiacon a felesküdöttek a hálózat
         // árát fizetik — csendes kedvezmény (a kijelzett ár marad, a levonás kevesebb;
         // a titkos státuszt nem leplezi le semmi látható).
         final WhisperManager whisperRef = whisperManager;

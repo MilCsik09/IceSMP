@@ -219,7 +219,7 @@ public final class TreasureEventManager {
                 claimants.clear();
                 firstClaimant = null;
             } else {
-                // Personal-loot kiterjesztés (tulaj-jóváhagyás, 50-60 fősre): a láda még
+                // Personal-loot kiterjesztés (50-60 fősre): a láda még
                 // nyitva marad a későn érkezőknek — mindenki EGYSZER, csökkentett gurítással.
                 plugin.getServer().getRegionScheduler().runDelayed(plugin, active,
                         task -> closeRunnerUpWindow(active), Math.max(1L, windowSeconds * 20L));

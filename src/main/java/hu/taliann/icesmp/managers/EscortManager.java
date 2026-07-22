@@ -213,7 +213,7 @@ public final class EscortManager {
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
-            // N25 — hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
+            // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
             final EventSpawnPointManager pointsRef = spawnPointManager;
             final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("escort");
             if (fixedAnchor != null) {
@@ -225,7 +225,7 @@ public final class EscortManager {
             if (online.isEmpty()) {
                 return false;
             }
-            // Horgony-rotáció: ne mindig ugyanahhoz a játékoshoz spawnoljon (teszter-panasz).
+            // Horgony-rotáció: ne mindig ugyanahhoz a játékoshoz spawnoljon.
             final java.util.List<Player> candidates = online.stream()
                     .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
             anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));

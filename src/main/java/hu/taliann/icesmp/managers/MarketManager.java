@@ -348,7 +348,7 @@ public final class MarketManager implements PersistentStore {
 
         // Valódi relikvia (relic_id PDC) NEM listázható: a relikvia több-lépcsős
         // kihívással szerzett, egyedi-tulajdonú tárgy — a börze a SZILÁNKOKÉ és az
-        // unique anyagoké (F11). Kapcsoló: market.allow-relic-listing (default: tilos).
+        // unique anyagoké. Kapcsoló: market.allow-relic-listing (default: tilos).
         if (!configManager.getBoolean("market.allow-relic-listing", false)
                 && held.hasItemMeta()
                 && held.getItemMeta().getPersistentDataContainer().has(

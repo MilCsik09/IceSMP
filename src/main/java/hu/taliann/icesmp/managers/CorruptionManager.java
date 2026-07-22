@@ -470,7 +470,7 @@ public final class CorruptionManager implements PersistentStore {
             cleanser.addPotionEffect(new org.bukkit.potion.PotionEffect(
                     org.bukkit.potion.PotionEffectType.REGENERATION, buffTicks, 0, false, true, true));
 
-            // Personal-loot kiterjesztés (tulaj-jóváhagyás): aki elég korrupt fajzatot
+            // Personal-loot kiterjesztés: aki elég korrupt fajzatot
             // irtott (contributor-min-kills), csökkentett saját gurítást kap privátban —
             // a mag-törő "visz mindent" helyett a közös irtás is fizet.
             final int minKills = Math.max(1, configManager.getInt("corruption.contributor-min-kills", 3));

@@ -43,7 +43,7 @@ public final class BestiaryListener implements Listener {
             return;
         }
         if (event.getEntity() instanceof Monster) {
-            // H14 — a ritka variáns ÖNÁLLÓ lajstrom-bejegyzés (pl. albino_zombie).
+            // A ritka variáns ÖNÁLLÓ lajstrom-bejegyzés (pl. albino_zombie).
             final String variant = hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(event.getEntity());
             final String entry = (variant == null ? "" : variant + "_") + event.getEntity().getType().name();
             killer.getScheduler().run(bestiaryManager.plugin(), task ->

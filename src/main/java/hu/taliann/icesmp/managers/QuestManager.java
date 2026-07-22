@@ -590,7 +590,7 @@ public final class QuestManager implements PersistentStore {
             }
         }
 
-        // J9 — fejezet-szűrő: a `chapter: N` quest csak az N. szezon-fejezet alatt vehető
+        // Fejezet-szűrő: a `chapter: N` quest csak az N. szezon-fejezet alatt vehető
         // fel. A már FELVETT fejezet-quest szezonváltás után is befejezhető (kegyelmi
         // szabály), de új felvétel és a next-lánc folytatása már nem nyílik meg.
         final int chapter = quest.getInt("chapter", 0);
@@ -602,7 +602,7 @@ public final class QuestManager implements PersistentStore {
             }
         }
 
-        // Szezon-közepi ablak (gameplay-audit 5. lelet): a min/max-season-day questek csak
+        // Szezon-közepi ablak: a min/max-season-day questek csak
         // a szezon adott nap-sávjában vehetők fel — így a szezon KÖZEPÉNEK is van dátum-kapus
         // tartalma. A már felvett quest az ablak zárta után is befejezhető (kegyelmi szabály).
         final int minSeasonDay = quest.getInt("min-season-day", 0);
@@ -1445,7 +1445,7 @@ public final class QuestManager implements PersistentStore {
      * the quest menu (e.g. "Szörnyek 4/10 • Gyűjtés 2/5").
      */
     public String describeProgress(final Player player, final String questId) {
-        // J7 — rejtvény-quest: a cél SOSEM jelenik meg — a nyom a leírásban van, a
+        // Rejtvény-quest: a cél SOSEM jelenik meg — a nyom a leírásban van, a
         // megfejtés a játékosé (vagy a közösségé). Nincs időzített súgás.
         final ConfigurationSection riddleQuest = getQuestSection(questId);
         if (riddleQuest != null && riddleQuest.getBoolean("riddle", false)) {
@@ -1506,7 +1506,7 @@ public final class QuestManager implements PersistentStore {
         if (statsManager != null) {
             statsManager.recordQuestComplete(player.getUniqueId());
         }
-        // B35 — céh-XP a tag-aktivitásból: minden quest-teljesítés a céhet is építi.
+        // Céh-XP a tag-aktivitásból: minden quest-teljesítés a céhet is építi.
         final GuildManager guildRef = guildManager;
         if (guildRef != null) {
             guildRef.addActivityXp(player, Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));

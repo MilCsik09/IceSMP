@@ -307,7 +307,7 @@ public final class IceSMPCore {
         this.configManager = new ConfigManager(plugin);
         // A config MÁR A KONSTRUKTOR-LÁNC ELŐTT betöltődik: több world-event manager a saját
         // konstruktorában számol első időablakot (nextAttemptAt) config-kulcsból — betöltés
-        // nélkül a kódbeli fallbackot kapnák a yml-ben beállított érték helyett (audit-hiba:
+        // nélkül a kódbeli fallbackot kapnák a yml-ben beállított érték helyett (így
         // az első ablak restart után rövidebb/hosszabb volt a beállítottnál). Az enable()
         // load()-ja emiatt már csak frissítés (idempotens).
         configManager.load();
@@ -352,14 +352,14 @@ public final class IceSMPCore {
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(plugin, configManager, jobManager, relicManager);
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager, factionManager, seasonManager);
-        // Gameplay-audit: hadi-ablak — RED↔BLUE ölés az ablak alatt nem bűn, liga-pontot ér.
+        // Hadi-ablak — RED↔BLUE ölés az ablak alatt nem bűn, liga-pontot ér.
         this.warWindowManager = new hu.taliann.icesmp.managers.WarWindowManager(plugin, configManager, messageManager, seasonManager);
         // A Menedék Vének Tanácsa (a NEUTRAL "király-pótlék" — gazdasági jogok, raid nélkül).
         this.councilManager = new hu.taliann.icesmp.managers.CouncilManager(plugin, configManager, factionManager, messageManager);
         this.spyManager = new hu.taliann.icesmp.managers.SpyManager(plugin, configManager, raidManager, messageManager, factionManager, seasonManager, territoryManager);
         this.professionWeeklyGoalManager = new hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager(plugin, configManager, professionManager, messageManager);
         this.holidayService = new hu.taliann.icesmp.managers.HolidayService(configManager, messageManager);
-        // D1 — az ünnep-felülbírálás bekötése a világesemény-esélyekbe (a hook eddig halott volt).
+        // Az ünnep-felülbírálás bekötése a világesemény-esélyekbe (a hook eddig halott volt).
         bloodMoonManager.setHolidayService(holidayService);
         invasionManager.setHolidayService(holidayService);
         this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
@@ -367,7 +367,7 @@ public final class IceSMPCore {
         this.eventSpawnPointManager = new hu.taliann.icesmp.managers.EventSpawnPointManager(plugin, configManager);
         // Komp (építész-kérés): fix két-végpontú átkelő (óceán-átkelés híd helyett).
         this.ferryManager = new hu.taliann.icesmp.managers.FerryManager(plugin, configManager, currencyManager, factionManager, messageManager);
-        worldBossManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
+        worldBossManager.setSpawnPointManager(eventSpawnPointManager); // hely-horgony
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
@@ -401,16 +401,16 @@ public final class IceSMPCore {
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
         this.serverChallengeManager = new ServerChallengeManager(plugin, configManager, messageManager);
         this.escortManager = new EscortManager(plugin, configManager, mobScalingManager, messageManager, eventSpawnGuard);
-        escortManager.setSpawnPointManager(eventSpawnPointManager); // N25
-        caravanManager.setSpawnPointManager(eventSpawnPointManager); // N25/N27
+        escortManager.setSpawnPointManager(eventSpawnPointManager);
+        caravanManager.setSpawnPointManager(eventSpawnPointManager);
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager, factionManager, seasonManager);
         this.cultistEventManager = new hu.taliann.icesmp.managers.CultistEventManager(plugin, configManager,
                 mobScalingManager, eventSpawnGuard, territoryManager, corruptionManager, messageManager,
                 whisperManager, seasonManager);
-        cultistEventManager.setSpawnPointManager(eventSpawnPointManager); // N25 — hely-horgony
-        // Gameplay-audit: figyelem-orchestráció — egyszerre csak egy nagy PvE-esemény
+        cultistEventManager.setSpawnPointManager(eventSpawnPointManager); // hely-horgony
+        // Figyelem-orchestráció — egyszerre csak egy nagy PvE-esemény
         // induljon természetes sorsolásból (admin-indítás mindig átmegy a kapun).
         final hu.taliann.icesmp.managers.MajorEventGate majorEventGate =
                 new hu.taliann.icesmp.managers.MajorEventGate(configManager);
@@ -428,15 +428,15 @@ public final class IceSMPCore {
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
         professionManager.setMessageManager(messageManager); // szintlépés/fokozat üzenetek
-        questManager.setGuildManager(guildManager); // B35 — quest-teljesítés céh-XP
-        professionRecipeBookListener.setBestiaryManager(bestiaryManager); // B21 — recept-lajstrom
-        professionRecipeBookListener.setJobManager(jobManager); // E7 — kaszt-zárt receptek
+        questManager.setGuildManager(guildManager); // quest-teljesítés céh-XP
+        professionRecipeBookListener.setBestiaryManager(bestiaryManager); // recept-lajstrom
+        professionRecipeBookListener.setJobManager(jobManager); // kaszt-zárt receptek
         // Vendor-only unique anyagok a boltokban (economy.yml `unique:` bolt-item mező).
         shopManager.setUniqueMaterialFactory(uniqueMaterialFactory);
-        // D19 — a Rejtélyes Idegen (tisztán atmoszférikus, ritka felbukkanás).
+        // A Rejtélyes Idegen (tisztán atmoszférikus, ritka felbukkanás).
         this.strangerNpcManager = new hu.taliann.icesmp.managers.StrangerNpcManager(plugin, configManager, messageManager);
         strangerNpcManager.setSpawnGuard(eventSpawnGuard);
-        // B19 — évszakos világ-modifikátorok: a valós évszak finom esély-szorzói.
+        // Évszakos világ-modifikátorok: a valós évszak finom esély-szorzói.
         final hu.taliann.icesmp.managers.SeasonalModifierService seasonalModifiers =
                 new hu.taliann.icesmp.managers.SeasonalModifierService(configManager);
         bloodMoonManager.setSeasonalModifiers(seasonalModifiers);
@@ -445,7 +445,7 @@ public final class IceSMPCore {
         wildHuntManager.setSeasonalModifiers(seasonalModifiers);
         abundanceManager.setSeasonalModifiers(seasonalModifiers);
         gatheringBuffManager.setSeasonalModifiers(seasonalModifiers);
-        // B33 — szezonzáró finálé: a fogyasztók (season/boss/vérhold/invázió) setterrel kapják,
+        // Szezonzáró finálé: a fogyasztók (season/boss/vérhold/invázió) setterrel kapják,
         // mert a finálé-manager náluk később épül (kölcsönös hivatkozás a DI-sorrendben).
         this.seasonFinaleManager = new hu.taliann.icesmp.managers.SeasonFinaleManager(plugin, configManager,
                 seasonManager, worldBossManager, territoryManager, messageManager);
@@ -476,35 +476,35 @@ public final class IceSMPCore {
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
         this.ritualManager = new RitualManager(plugin, configManager, relicManager, sinManager, factionManager,
                 territoryManager, jobManager, messageManager);
-        // E1/E25/E32 — CSAK ide, a resourceManager/soulShardManager/ritualManager felépülte
+        // CSAK ide, a resourceManager/soulShardManager/ritualManager felépülte
         // UTÁN köthető (korábbi hívásuk null-mezőn robbant volna a konstruktorban).
         this.soulforgeManager = new hu.taliann.icesmp.managers.SoulforgeManager(plugin, configManager, soulShardManager);
-        resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // E25/E32 — pool-bónuszok
-        ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // E25 — pakt-oltár
-        hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // E1 — statikus híd
+        resourceManager.setMaxMultiplier(resourceBonusService::maxMultiplier); // pool-bónuszok
+        ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // pakt-oltár
+        hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // statikus híd
         this.exchangeBoardManager = new ExchangeBoardManager(plugin, configManager, exchangeRateService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, configManager);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.chronicleManager = new hu.taliann.icesmp.managers.ChronicleManager(plugin, configManager, statsManager, seasonManager, messageManager);
-        // D17 — korszakváltás-narratíva: a szezonzárás hookja (a StatsManager itt már él).
+        // Korszakváltás-narratíva: a szezonzárás hookja (a StatsManager itt már él).
         seasonManager.setStoryTeller(new hu.taliann.icesmp.managers.SeasonStoryTeller(
                 plugin, configManager, statsManager, messageManager));
-        // D9 — Énekmondó: a heti balladát a FancyNpcs interact-hook (registerNpcQuestBridge) köti a bárd-NPC-re.
+        // Énekmondó: a heti balladát a FancyNpcs interact-hook (registerNpcQuestBridge) köti a bárd-NPC-re.
         this.bardManager = new hu.taliann.icesmp.managers.BardManager(configManager, statsManager, messageManager);
         // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
         this.buyerService = new hu.taliann.icesmp.managers.BuyerService(plugin, configManager, currencyManager, factionManager, messageManager);
-        // D3 — Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
+        // Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
         this.seasonMonumentManager = new hu.taliann.icesmp.managers.SeasonMonumentManager(plugin, configManager, statsManager);
         seasonManager.setMonumentManager(seasonMonumentManager);
-        // B54 — Átkozott felszerelés: curse-stamp a boss-lootra + Átok-törés az oltárnál.
+        // Átkozott felszerelés: curse-stamp a boss-lootra + Átok-törés az oltárnál.
         this.cursedGearService = new hu.taliann.icesmp.managers.CursedGearService(plugin, configManager);
         ritualManager.setCursedGearService(cursedGearService);
-        // F13/F14/F15 — gazdasági események: pánik-ág + konjunktúra díj-ablak + finálé-sokkok.
+        // Gazdasági események: pánik-ág + konjunktúra díj-ablak + finálé-sokkok.
         marketManager.setEconomyEventManager(economyEventManager);
         economyEventManager.setSeasonFinale(seasonFinaleManager);
-        // D8 — felfedezhető titkos helyek (admin-kijelölt pontok, első-felfedező jutalom).
+        // Felfedezhető titkos helyek (admin-kijelölt pontok, első-felfedező jutalom).
         this.hiddenSpotManager = new hu.taliann.icesmp.managers.HiddenSpotManager(plugin, configManager, messageManager);
         // A quest-teljesítés és a spell-cast számlálója setterrel kap StatsManager-t
         // (mindkét célosztály a DI-sorrendben korábban épül).
@@ -884,7 +884,7 @@ public final class IceSMPCore {
                     hu.taliann.icesmp.gui.ShopGUI.open(player, shopManager, currencyManager, messageManager, shopName);
                     return;
                 }
-                // D9 — Énekmondó: a bard.npc-name nevű NPC jobb-kattra a heti balladát énekli
+                // Énekmondó: a bard.npc-name nevű NPC jobb-kattra a heti balladát énekli
                 // (a hook a játékos saját régió-szálán fut, a küldés biztonságos).
                 if (shopName != null && shopName.toLowerCase(java.util.Locale.ROOT).equals(bardManager.npcName())) {
                     bardManager.sing(player);
@@ -1092,7 +1092,7 @@ public final class IceSMPCore {
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
-        // IDEAS A54: a tablist {event} tokenje a HUD-snapshotból olvas.
+        // A tablist {event} tokenje a HUD-snapshotból olvas.
         tablistManager.setHudManager(hudManager);
         // Natív tablist (TAB-kiváltás): saját, gyorsabb tick — a header/footer és a tab-nevek
         // diff-eltek, így a sűrűbb ütem csak valódi változáskor jelent csomagot.
@@ -1280,7 +1280,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new ClassXpListener(plugin, jobManager, mobScalingManager, configManager, talentManager, afkManager), plugin);
         final ProfessionXpListener professionXpListener = new ProfessionXpListener(professionManager, configManager, talentManager, afkManager);
         professionXpListener.setAbundanceManager(abundanceManager);
-        professionXpListener.setWeeklyGoal(professionWeeklyGoalManager); // I16 — heti közös cél
+        professionXpListener.setWeeklyGoal(professionWeeklyGoalManager); // heti közös cél
         pluginManager.registerEvents(professionXpListener, plugin);
         pluginManager.registerEvents(new ProfessionRecipeListener(professionRecipeManager, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MasterworkCraftListener(professionRecipeManager, itemRarityService), plugin);
@@ -1309,16 +1309,16 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PortalGuardListener(configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneApplyListener(uniqueMaterialFactory, configManager, messageManager), plugin);
         final hu.taliann.icesmp.listeners.RuneEffectListener runeEffectListener = new hu.taliann.icesmp.listeners.RuneEffectListener(configManager);
-        runeEffectListener.setJobManager(jobManager); // E7 — Varázsló rúna-affinitás
+        runeEffectListener.setJobManager(jobManager); // Varázsló rúna-affinitás
         pluginManager.registerEvents(runeEffectListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager), plugin);
         pluginManager.registerEvents(resourceBonusService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpyRevealListener(plugin, spyManager), plugin);
         pluginManager.registerEvents(professionWeeklyGoalManager, plugin);
-        // Gameplay-audit: az offline bajnok-tagok függő szezon-jutalma belépéskor jár.
+        // Az offline bajnok-tagok függő szezon-jutalma belépéskor jár.
         pluginManager.registerEvents(seasonManager, plugin);
         pluginManager.registerEvents(new org.bukkit.event.Listener() {
-            // B6 — a szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
+            // A szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
             @org.bukkit.event.EventHandler
             public void onConvoyDeath(final org.bukkit.event.entity.EntityDeathEvent event) {
                 if (playerCaravanManager.isConvoy(event.getEntity().getUniqueId())) {
@@ -1328,7 +1328,7 @@ public final class IceSMPCore {
                 if (darkUndeadAmbienceManager.isMarked(event.getEntity())) {
                     darkUndeadAmbienceManager.onDeath(event.getEntity().getUniqueId());
                 }
-                // N25b — kultista esemény könyvelése (portya/rítus/hírvivő zárása).
+                // Kultista esemény könyvelése (portya/rítus/hírvivő zárása).
                 if (cultistEventManager.isCultist(event.getEntity())) {
                     cultistEventManager.onDeath(event.getEntity().getUniqueId());
                 }
@@ -1338,7 +1338,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager), plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         final TerritoryListener territoryListener = new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager);
-        territoryListener.setBestiaryManager(bestiaryManager); // B21 — territórium-lajstrom
+        territoryListener.setBestiaryManager(bestiaryManager); // territórium-lajstrom
         pluginManager.registerEvents(territoryListener, plugin);
         pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
@@ -1368,7 +1368,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         final SinListener sinListener = new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager);
-        sinListener.setHonorDuelManager(honorDuelManager); // G6 — párbaj-kill kizárás
+        sinListener.setHonorDuelManager(honorDuelManager); // párbaj-kill kizárás
         sinListener.setWarWindowManager(warWindowManager); // hadi-ablak: RED↔BLUE kill nem bűn
         pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
@@ -1387,10 +1387,10 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldTweaksListener(configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DisplayFxCleanupListener(), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager, bloodMoonManager, worldBossManager, seasonManager), plugin);
-        // IDEAS A3/A8/A9: harci erőforrás-töltés, sebzés-számok, halál-összegzés
+        // Harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StatsCombatListener(statsManager), plugin);
-        // IDEAS A45/A51: a sebzés-szám listener a kombó-boost jelzéshez a katalizátor-listenert,
+        // A sebzés-szám listener a kombó-boost jelzéshez a katalizátor-listenert,
         // a HUD célpont-sora pedig ezt a listenert olvassa.
         final hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators =
                 new hu.taliann.icesmp.listeners.DamageIndicatorListener(plugin, configManager, abilityCatalystListener);

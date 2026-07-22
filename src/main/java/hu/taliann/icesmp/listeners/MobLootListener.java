@@ -101,7 +101,7 @@ public final class MobLootListener implements Listener {
 
         final ItemStack drop = rollTable(path, tier, entity);
         if (drop != null) {
-            // B54: boss-forrású gear ritkán Átkozott (erő + elköteleződés) — a curse-sorsolás
+            // Boss-forrású gear ritkán Átkozott (erő + elköteleződés) — a curse-sorsolás
             // csak a boss-ágon fut, a sima mob-loot sosem átkozott.
             event.getDrops().add(bossTier && cursedGearService != null
                     ? cursedGearService.maybeCurse(drop) : drop);
@@ -125,7 +125,7 @@ public final class MobLootListener implements Listener {
     private ItemStack rollTable(final String path, final String tier, final LivingEntity source) {
         final List<Map<?, ?>> raw = configManager.getConfiguration() == null
                 ? List.of() : configManager.getConfiguration().getMapList(path + ".table");
-        // K5: az 'undead-only: true' sorok csak élőhalott forrásból eshetnek (Káoszkor-loot).
+        // Az 'undead-only: true' sorok csak élőhalott forrásból eshetnek (Káoszkor-loot).
         final List<Map<?, ?>> table = new ArrayList<>();
         for (final Map<?, ?> entry : raw) {
             if (Boolean.parseBoolean(String.valueOf(entry.get("undead-only")))
@@ -171,7 +171,7 @@ public final class MobLootListener implements Listener {
                 return uniqueMaterials.create(String.valueOf(chosen.get("id")),
                         min + ThreadLocalRandom.current().nextInt(max - min + 1));
             }
-            // K5: nevesített Káoszkor-drop — tervezett név+lore, a rarity-motor a nevet megtartja
+            // Nevesített Káoszkor-drop — tervezett név+lore, a rarity-motor a nevet megtartja
             // (prefixeli a raritással) és affixeket ad rá.
             case "named" -> {
                 final Material material = Material.matchMaterial(String.valueOf(chosen.get("item")).toUpperCase(Locale.ROOT));
@@ -225,7 +225,7 @@ public final class MobLootListener implements Listener {
         if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble() >= chance) {
             return;
         }
-        // I22: a loot-only (csúcs-)receptek tervrajza CSAK boss-forrásból eshet.
+        // A loot-only (csúcs-)receptek tervrajza CSAK boss-forrásból eshet.
         final List<String> ids = recipeCatalog.blueprintDropPool(bossTier);
         if (ids.isEmpty()) {
             return;

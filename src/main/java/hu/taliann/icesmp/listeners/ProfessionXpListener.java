@@ -104,7 +104,7 @@ public final class ProfessionXpListener implements Listener {
         final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
         professionManager.addXpFor(player, profession, totalXp);
-        // I16 — a termelt XP a szakma-céh heti közös célját is tölti.
+        // A termelt XP a szakma-céh heti közös célját is tölti.
         final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
         if (weeklyRef != null) {
             weeklyRef.add(player, profession, totalXp);

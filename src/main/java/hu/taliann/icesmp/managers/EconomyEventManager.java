@@ -155,7 +155,7 @@ public final class EconomyEventManager implements PersistentStore {
      */
     public void tick() {
         if (!configManager.getBoolean("currency.economy-event.enabled", true)) {
-            // A konjunktúra (F14) a sokktól FÜGGETLEN saját állapot — a sokk kikapcsolása
+            // A konjunktúra a sokktól FÜGGETLEN saját állapot — a sokk kikapcsolása
             // ne némítsa el (a komment mindig is ezt ígérte).
             tickBoom();
             return;
@@ -178,15 +178,15 @@ public final class EconomyEventManager implements PersistentStore {
             return;
         }
 
-        // F14 — konjunktúra-ablak lejárata/sorsolása (a sokktól független, saját állapot).
+        // Konjunktúra-ablak lejárata/sorsolása (a sokktól független, saját állapot).
         tickBoom();
 
         if (isActive()) {
             return;
         }
 
-        // F15 — a végítélet-hét alatt sűrűbb sokkok (chance-szorzó) és rövidebb, hevesebb
-        // ablakok — a szezonzárás gazdasági dráma-rétege (B33-hoz kötve, nélküle 1.0).
+        // A végítélet-hét alatt sűrűbb sokkok (chance-szorzó) és rövidebb, hevesebb
+        // ablakok — a szezonzárás gazdasági dráma-rétege (finálé nélkül 1.0).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final boolean finaleActive = finaleRef != null && finaleRef.isActive();
         final double finaleChanceMult = finaleActive
@@ -201,7 +201,7 @@ public final class EconomyEventManager implements PersistentStore {
         final CurrencyType[] currencies = CurrencyType.values();
         eventCurrency = currencies[ThreadLocalRandom.current().nextInt(currencies.length)];
 
-        // F13 — a kereslet-sokk tükörpárja: panic-chance eséllyel PÁNIK jön (x0.6-0.8 leértékelés)
+        // A kereslet-sokk tükörpárja: panic-chance eséllyel PÁNIK jön (x0.6-0.8 leértékelés)
         // a felfelé sokk helyett — a lefelé mozgás nélkül a rendszer csak inflálna.
         final boolean panic = ThreadLocalRandom.current().nextDouble()
                 < Math.max(0.0D, Math.min(1.0D, configManager.getDouble("currency.economy-event.panic-chance", 0.35D)));
@@ -214,7 +214,7 @@ public final class EconomyEventManager implements PersistentStore {
             min = Math.max(1.0D, configManager.getDouble("currency.economy-event.min-multiplier", 1.2D));
             max = Math.max(min, configManager.getDouble("currency.economy-event.max-multiplier", 1.6D));
         }
-        // F15 — finálé alatt az amplitúdó is nő: a szorzó 1.0-tól mért kilengése felszorzódik.
+        // Finálé alatt az amplitúdó is nő: a szorzó 1.0-tól mért kilengése felszorzódik.
         double rolled = min + (ThreadLocalRandom.current().nextDouble() * (max - min));
         if (finaleActive) {
             final double amp = Math.max(1.0D, configManager.getDouble("currency.economy-event.finale-amplitude-mult", 1.5D));

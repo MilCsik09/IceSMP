@@ -141,13 +141,13 @@ public final class BloodMoonManager {
         }
 
         lastRolledDay = day;
-        // B33: a végítélet-hét alatt sűrűbb a vérhold (napi eszkalációs szorzó);
-        // B19: télen (évszak-szorzó) amúgy is gyakoribb.
+        // A végítélet-hét alatt sűrűbb a vérhold (napi eszkalációs szorzó);
+        // télen (évszak-szorzó) amúgy is gyakoribb.
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final SeasonalModifierService seasonalRef = seasonalModifiers;
         final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("blood-moon");
-        // D1 — ünnep-felülbírálás (pl. Rém-éj: sűrűbb vérhold). A halott hook életre kelt.
+        // Ünnep-felülbírálás (pl. Rém-éj: sűrűbb vérhold). A halott hook életre kelt.
         final hu.taliann.icesmp.managers.HolidayService holidayRef = holidayService;
         final String holidayMult = holidayRef == null ? null : holidayRef.override("blood-moon-chance-mult");
         final double holidayFactor = holidayMult == null ? 1.0D : Math.max(0.0D, parseOr(holidayMult, 1.0D));

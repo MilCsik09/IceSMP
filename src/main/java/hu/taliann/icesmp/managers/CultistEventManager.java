@@ -173,7 +173,7 @@ public final class CultistEventManager {
         }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         final String picked = pickVariant();
-        // N25 hely-horgony, aztán játékos-fallback.
+        // Hely-horgony, aztán játékos-fallback.
         final EventSpawnPointManager pointsRef = spawnPointManager;
         final Location fixedAnchor = preferredAnchor != null || pointsRef == null
                 ? null : pointsRef.resolveAnchorLocation("cultists");

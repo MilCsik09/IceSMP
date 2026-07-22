@@ -218,7 +218,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             return;
         }
 
-        // B33 + G16: a két idő-szorzó NEM szorzódik össze (×4-es hógolyó lenne a záró
+        // A két idő-szorzó NEM szorzódik össze (×4-es hógolyó lenne a záró
         // 48 órában) — a NAGYOBBIK érvényesül: végítélet-hét max ×2 VAGY top2-nagydöntő
         // ×2, együtt is legfeljebb ×2 (a forrás-súllyal együtt max ×3).
         final SeasonFinaleManager finaleRef = seasonFinale;
@@ -232,21 +232,21 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         requestSave();
     }
 
-    /** B33: setter-injected finálé-eszkaláció (a finálé-manager később épül a DI-sorrendben). */
+    /** Setter-injected finálé-eszkaláció (a finálé-manager később épül a DI-sorrendben). */
     private volatile SeasonFinaleManager seasonFinale;
 
     public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
         this.seasonFinale = seasonFinale;
     }
 
-    /** D17: setter-injected korszakváltás-narrátor (a StatsManager később épül a DI-sorrendben). */
+    /** Setter-injected korszakváltás-narrátor (a StatsManager később épül a DI-sorrendben). */
     private volatile SeasonStoryTeller storyTeller;
 
     public void setStoryTeller(final SeasonStoryTeller storyTeller) {
         this.storyTeller = storyTeller;
     }
 
-    /** D3: setter-injected emlékmű-vésnök. */
+    /** Setter-injected emlékmű-vésnök. */
     private volatile SeasonMonumentManager monumentManager;
 
     public void setMonumentManager(final SeasonMonumentManager monumentManager) {
@@ -286,7 +286,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             }
         }
 
-        // D17: a korszakváltás-narratíva a pont-reset ELŐTT gyűjti a statisztikát.
+        // A korszakváltás-narratíva a pont-reset ELŐTT gyűjti a statisztikát.
         final SeasonStoryTeller storyRef = storyTeller;
         if (champion == null || tie || best <= 0) {
             Bukkit.getServer().broadcast(messageManager.getMessage(
@@ -318,7 +318,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             if (storyRef != null) {
                 storyRef.tellTransition(champion);
             }
-            // D3: a bajnok kőbe vésve — a pont-reset ELŐTT (a hős-toplista még érvényes).
+            // A bajnok kőbe vésve — a pont-reset ELŐTT (a hős-toplista még érvényes).
             final SeasonMonumentManager monumentRef = monumentManager;
             if (monumentRef != null) {
                 monumentRef.recordSeason(champion);
@@ -327,9 +327,9 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
         points.clear();
         seasonStart = System.currentTimeMillis();
-        // J9 — új fejezet nyílik: a fejezet-questek (chapter: N) ehhez a sorszámhoz kötődnek.
+        // Új fejezet nyílik: a fejezet-questek (chapter: N) ehhez a sorszámhoz kötődnek.
         seasonNumber++;
-        grandFinaleAnnounced = false; // G16 — az új szezon nagydöntője újra hirdethető
+        grandFinaleAnnounced = false; // az új szezon nagydöntője újra hirdethető
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-chapter-opened",
                 "<gold>📖 Új fejezet nyílik a krónikában: <white>{chapter}. fejezet</white> — a régi fejezet küldetései lezárultak, újak várnak!</gold>",
@@ -350,7 +350,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         final java.util.List<String> rewardItems = configManager.getStringList("world-events.season.champion-reward-items");
         final boolean firework = configManager.getBoolean("world-events.season.champion-firework", true);
 
-        // Gameplay-audit: az OFFLINE bajnok-tagok se maradjanak ki — a tárgy-jutalmuk
+        // Az OFFLINE bajnok-tagok se maradjanak ki — a tárgy-jutalmuk
         // függőbe kerül (perzisztens), belépéskor kapják meg (a buff/tűzijáték nem
         // időszerű már, az csak az ünneplés pillanatáé).
         for (final Map.Entry<java.util.UUID, FactionType> member : factionManager.getFactionAssignments().entrySet()) {

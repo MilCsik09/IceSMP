@@ -21,12 +21,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Persistent player stats for the leaderboards (ROADMAP phase 7): best class
+ * Persistent player stats for the leaderboards: best class
  * level, total wealth and raid kills per player. Level/wealth are snapshotted on
  * a periodic tick (Folia-safe, on each player's region thread); raid kills are
  * incremented from the kill event. Stored in leaderboard.yml.
  *
- * <p>IDEAS A15 extends this with the {@code /stats} profile counters (kills,
+ * <p>This also tracks the {@code /stats} profile counters (kills,
  * deaths, mob kills, spell casts, quests completed). Those counters are
  * incremented from arbitrary region threads (e.g. a kill recorded from the
  * victim's death-event thread), so they use {@link AtomicInteger} fields

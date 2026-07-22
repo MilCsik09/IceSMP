@@ -134,7 +134,7 @@ public final class ProfessionRecipeBookListener implements Listener {
                     recipe.faction().getDisplayName() + " (" + recipe.faction().getFullName() + ")"));
             return;
         }
-        // E7 — kaszt-zárt recept (job:): csak a megadott kaszt olvashatja fel sikerrel.
+        // Kaszt-zárt recept (job:): csak a megadott kaszt olvashatja fel sikerrel.
         final hu.taliann.icesmp.managers.JobManager jobRef = jobManager;
         if (recipe.job() != null && jobRef != null) {
             final hu.taliann.icesmp.data.JobType required = hu.taliann.icesmp.data.JobType.fromId(recipe.job());
@@ -178,7 +178,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (craftXp > 0) {
             professionManager.addXpFor(player, recipe.profession(), craftXp);
         }
-        // B21 — a recept első elkészítése lajstrom-bejegyzés.
+        // A recept első elkészítése lajstrom-bejegyzés.
         final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
         if (bestiaryRef != null) {
             bestiaryRef.record(player, hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id());
@@ -289,12 +289,12 @@ public final class ProfessionRecipeBookListener implements Listener {
                 result.setItemMeta(cmdMeta);
             }
         }
-        // Signature perk-tag (K2/K3): a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
+        // Signature perk-tag: a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
         // ELŐTT kerül fel, mert a roll klónja a PDC-t is viszi.
         if (recipe.signature() != null && result.getItemMeta() != null) {
             final ItemMeta sigMeta = result.getItemMeta();
             sigMeta.getPersistentDataContainer().set(signatureKey, PersistentDataType.STRING, recipe.signature());
-            // Tűzköpő: a „+felhúzási sebesség" fele a vanília Quick Charge-on át (K3).
+            // Tűzköpő: a „+felhúzási sebesség" fele a vanília Quick Charge-on át.
             if (SignatureItemListener.TUZKOPO.equals(recipe.signature())) {
                 final int level = Math.max(0, Math.min(3,
                         configManager.getInt("signature.tuzkopo.quick-charge-level", 2)));
@@ -358,7 +358,7 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
         }
 
-        // I14 — „Készítette: X" (kódex VIII.: a mester keze alól kikerülő mű a nevét is viseli):
+        // „Készítette: X" (kódex VIII.: a mester keze alól kikerülő mű a nevét is viseli):
         // a NEVES/gear eredmények PDC-ben és lore-sorban viszik a készítő nevét — a piacon is
         // megmarad, márkajelzésként. Bulk (lore nélküli, stackelhető) eredményre nem kerül,
         // hogy a stackelést ne törje. A roll ELŐTT fut (a roll a lore alá fűzi az affixokat).

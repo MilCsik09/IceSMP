@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Native player-report store (IDEAS C29): players file a short text report on another player
+ * Native player-report store: players file a short text report on another player
  * (online or not) with {@code /report}, admins triage them with {@code /reports}. Reports persist
  * to {@code reports.yml}.
  *

@@ -145,13 +145,13 @@ public final class InvasionManager {
         if (gateRef != null && !gateRef.mayStartNaturally("invasion")) {
             return;
         }
-        // B33: a végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció);
-        // B19: évszak-szorzó (season-modifiers.<evszak>.invasion).
+        // A végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció);
+        // évszak-szorzó (season-modifiers.<evszak>.invasion).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final SeasonalModifierService seasonalRef = seasonalModifiers;
         final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("invasion");
-        // D1 — ünnep-felülbírálás (pl. Rém-éj: sűrűbb invázió). A halott hook életre kelt.
+        // Ünnep-felülbírálás (pl. Rém-éj: sűrűbb invázió). A halott hook életre kelt.
         final HolidayService holidayRef = holidayService;
         final String holidayMult = holidayRef == null ? null : holidayRef.override("invasion-chance-mult");
         final double holidayFactor = holidayMult == null ? 1.0D : Math.max(0.0D, parseOr(holidayMult, 1.0D));
@@ -284,7 +284,7 @@ public final class InvasionManager {
         // Pick a random horde composition for this wave (variety).
         final Horde horde = Horde.values()[ThreadLocalRandom.current().nextInt(Horde.values().length)];
         final int count = Math.max(1, configManager.getInt("world-events.invasion.mob-count", 8));
-        // B33: a végítélet-hét napi mob-szint bónusza (0, ha nincs finálé).
+        // A végítélet-hét napi mob-szint bónusza (0, ha nincs finálé).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final int finaleBonus = finaleRef == null ? 0 : finaleRef.bonusMobLevels();
         final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4)) + finaleBonus;
@@ -352,7 +352,7 @@ public final class InvasionManager {
         mob.setRemoveWhenFarAway(false);
         mobScalingManager.forceLevel(mob, level);
         activeMobs.add(mob.getUniqueId());
-        // Élettartam (teszter-panasz: a túlélő pók nappal megszelídül és bevándorol a
+        // Élettartam (a túlélő pók nappal megszelídül és bevándorol a
         // városba): a le nem ölt horda-mob lejáratkor köddé válik — a saját entity-
         // schedulerén, ami a halálakor magától nyugdíjazódik. 0 = örök (régi viselkedés).
         final long lifespanTicks = Math.max(0L,

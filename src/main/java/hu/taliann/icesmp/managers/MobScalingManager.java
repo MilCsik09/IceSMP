@@ -139,7 +139,7 @@ public final class MobScalingManager {
             return;
         }
 
-        // H14 — ritka variáns sorsolása CSAK ténylegesen szintezett mobra (a szint-kapu
+        // Ritka variáns sorsolása CSAK ténylegesen szintezett mobra (a szint-kapu
         // után, hogy a jelöletlen mob ne kapjon variáns-tageket).
         maybeMakeRareVariant(entity);
         applyLevel(entity, level);
@@ -267,7 +267,7 @@ public final class MobScalingManager {
         final double distance = Math.sqrt((deltaX * deltaX) + (deltaZ * deltaZ));
         final int normalLevel = (int) Math.min(maxLevel, distance / blocksPerLevel);
 
-        // Zóna-rámpa (tulaj-kérés): a biztonságos territórium-zónák (városok) pereme
+        // Zóna-rámpa: a biztonságos territórium-zónák (városok) pereme
         // körül a szint a zónától KIFELÉ nő egyenletesen, amíg el nem éri a táv-alapú
         // "normál" szintet — így a 11-14k-ra épült fővárosok környéke sem Lvl 10-es
         // azonnal. A zóna belsejében 0. Élő kulcsok; a doom-gate/dungeon nem számít

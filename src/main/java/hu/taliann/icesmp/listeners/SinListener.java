@@ -100,7 +100,7 @@ public final class SinListener implements Listener {
             return;
         }
 
-        // G6 — becsület-párbaj: a beleegyezéses párbaj-ölés NEM bűn és NEM vérdíj-eset;
+        // Becsület-párbaj: a beleegyezéses párbaj-ölés NEM bűn és NEM vérdíj-eset;
         // a győztes bűnös egy bűnpontot veszít (a settleKill intézi). A kill a victim szálán fut,
         // a settleKill csak konkurens mapeket + a KILLER PDC-jét érinti a killer szál-hopja után.
         final hu.taliann.icesmp.managers.HonorDuelManager duelRef = honorDuelManager;
@@ -182,7 +182,7 @@ public final class SinListener implements Listener {
             }
         }
 
-        // Kárhozat-zóna (K7): a senkiföldjén nincs törvény — az ottani ölés nem bűn. A halál
+        // Kárhozat-zóna: a senkiföldjén nincs törvény — az ottani ölés nem bűn. A halál
         // helyét a VICTIM régió-szálán olvassuk (az event ott fut); a zóna-lookup lock-mentes.
         if (configManager.getBoolean("territory.doom-gate.sin-exempt", true)) {
             final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
@@ -194,7 +194,7 @@ public final class SinListener implements Listener {
             }
         }
 
-        // Tulaj-szabály: a Kitaszított élete a törvényen kívül áll — DARK-áldozat ölése
+        // A Kitaszított élete a törvényen kívül áll — DARK-áldozat ölése
         // SOSEM bűn. (Eddig ezt a gyakorlatban a vérdíj-ág fedte le, mert a DARK-tag
         // bűnös-jelölt; de a vérdíj-kifizetés nullázza a számlálót, így a másodszor
         // megölt Kitaszítottért már bűn járt volna — ez az explicit kivétel zárja a rést.

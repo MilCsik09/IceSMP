@@ -145,7 +145,7 @@ public final class WildHuntManager {
             if (gateRef != null && !gateRef.mayStartNaturally("wild-hunt")) {
                 return;
             }
-            // B19: évszak-szorzó (télen vadabb a Hajsza — season-modifiers.<evszak>.wild-hunt).
+            // Évszak-szorzó (télen vadabb a Hajsza — season-modifiers.<evszak>.wild-hunt).
             final SeasonalModifierService seasonalRef = seasonalModifiers;
             final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("wild-hunt");
             final double chance = Math.max(0.0D, Math.min(100.0D,
@@ -156,7 +156,7 @@ public final class WildHuntManager {
         }
     }
 
-    /** B19: az évszak-szorzó bekötése. */
+    /** Az évszak-szorzó bekötése. */
     private volatile SeasonalModifierService seasonalModifiers;
 
     public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
@@ -209,7 +209,7 @@ public final class WildHuntManager {
             world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.5D, 0.7D, 0.5D, 0.1D);
             world.playSound(where, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5F, 1.5F);
 
-            // Personal-loot kiterjesztés (tulaj-jóváhagyás, 50-60 fős szerverre): minden
+            // Personal-loot kiterjesztés (50-60 fős szerverre): minden
             // sebző résztvevő kap egy CSÖKKENTETT saját gurítást — a leütő (és a partyja,
             // amely már teljes personal lootot kapott) kimarad a második körből.
             final double ratio = Math.max(0.0D, Math.min(1.0D,

@@ -89,7 +89,7 @@ public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerSta
                 online.sendMessage(messageManager.getMessage("whisper-queen-favor",
                         "<dark_gray>🕯 A Kapu érzi a hűséged — a gyanú árnyéka halványul körülötted. <gray>(−{relief} gyanú)</gray></dark_gray>",
                         java.util.Map.of("relief", String.valueOf((int) relief))));
-                // Suttogó-erősítés (tulaj-kérés): a hálózat sikere TÁRGY-részesedést is hoz —
+                // Suttogó-erősítés: a hálózat sikere TÁRGY-részesedést is hoz —
                 // privát csomag a rítus-loot táblából (nem leplez le; tárgy, sosem pénz).
                 final int lootRolls = Math.max(0, configManager.getInt("cultists.whisper-loot-rolls", 1));
                 if (lootRolls > 0) {

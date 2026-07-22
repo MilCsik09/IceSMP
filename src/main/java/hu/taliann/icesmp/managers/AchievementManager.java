@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Achievements (ROADMAP phase 8): milestone goals checked against tracked player
+ * Achievements: milestone goals checked against tracked player
  * data on the periodic stats tick. Newly-earned achievements are stored in the
  * player's PDC, announced, and pay a currency reward. Read-only helpers back the
  * achievements GUI.

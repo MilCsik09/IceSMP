@@ -137,7 +137,7 @@ public final class JobGUI {
 
     private static List<Component> resolveJobLore(final JobType jobType, final JobType primary,
                                                   final int primaryLevel, final MessageManager messageManager) {
-        // Gameplay-audit: a kaszt visszafordíthatatlan döntés — a szerep-címke már a
+        // A kaszt visszafordíthatatlan döntés — a szerep-címke már a
         // választó felületen látsszon, ne csak a spec-oldalon.
         final Component roleLine = messageManager.getComponent(
                 "messages.job-gui-role-" + jobType.getId(), "&b" + defaultRoleTag(jobType));

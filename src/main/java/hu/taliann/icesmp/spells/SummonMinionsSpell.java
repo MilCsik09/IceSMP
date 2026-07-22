@@ -107,7 +107,7 @@ public final class SummonMinionsSpell extends BaseSpell {
                 customizer.accept(minion, player);
             }
 
-            // E1 — lélek-kovács: Élet/Sebzés-rangok szorzói a spawnolt minionra.
+            // Lélek-kovács: Élet/Sebzés-rangok szorzói a spawnolt minionra.
             final hu.taliann.icesmp.managers.SoulforgeManager forgeRef = soulforge;
             final double forgeHealth = forgeRef == null ? 1.0D : forgeRef.healthMultiplier(player);
             final AttributeInstance maxHealth = minion.getAttribute(Attribute.MAX_HEALTH);

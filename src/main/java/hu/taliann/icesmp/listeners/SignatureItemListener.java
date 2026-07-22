@@ -41,7 +41,7 @@ public final class SignatureItemListener implements Listener {
     public static final String TUZKOPO = "pyralingradi_tuzkopo";
     public static final String AGYAR = "verszavanna_agyara";
     public static final String TOLLKOPENY = "fonix_tollkopeny";
-    // K4 — Ryanora & Caldestera (NEUTRAL) gyűjtő/gazdaság itemek:
+    // Ryanora & Caldestera (NEUTRAL) gyűjtő/gazdaság itemek:
     public static final String CSAKANY = "vasmuvek_csakanya";
     public static final String HORGASZBOT = "bokic_horgaszbot";
     public static final String BANKBETET = "smaragdko_bankbetet";
@@ -188,7 +188,7 @@ public final class SignatureItemListener implements Listener {
         // jelent (a kereszt-régió kockázat a távolsági/projectile esetekre áll), a felszerelés-
         // olvasás itt biztonságos.
         final String meleeSig = idOf(attacker.getInventory().getItemInMainHand());
-        // K10 — Bokic-menti Sétapálca: bot, amiben penge lakik. Caldestera fegyvertilalma a
+        // Bokic-menti Sétapálca: bot, amiben penge lakik. Caldestera fegyvertilalma a
         // botot nem látja — a rejtett penge viszont fegyverként üt (flat bónusz a bot-alapra).
         // A penge CSAK a fővárosban ér valamit (capital-only, default igaz) — különben egy
         // 400 DARK-os bot mindenhol felülütné a rendes fegyvereket.
@@ -305,7 +305,7 @@ public final class SignatureItemListener implements Listener {
             return;
         }
         // A „páncéltörés" végső-sebzés bónuszként valósul meg — a vanília páncél-formulát nem
-        // hackeljük, így a vanília-limiteken belül marad (lásd K2 buktatók).
+        // hackeljük, így a vanília-limiteken belül marad.
         event.setDamage(event.getDamage() * (1.0D + pierce));
     }
 
@@ -382,7 +382,7 @@ public final class SignatureItemListener implements Listener {
         }, null);
     }
 
-    // ==================== Vasművek Akadémiájának Csákánya (K4) ====================
+    // ==================== Vasművek Akadémiájának Csákánya ====================
 
     @EventHandler(ignoreCancelled = true)
     public void onMine(final org.bukkit.event.block.BlockBreakEvent event) {
@@ -398,7 +398,7 @@ public final class SignatureItemListener implements Listener {
         if (!(block.getType().name().endsWith("_ORE") || block.getType() == org.bukkit.Material.ANCIENT_DEBRIS)) {
             return;
         }
-        // Sapka (K4 buktató): bányász-láz esemény alatt a tárgy-perk alapból NEM stackel.
+        // Sapka: bányász-láz esemény alatt a tárgy-perk alapból NEM stackel.
         if (gatheringBuffManager.getActive() == hu.taliann.icesmp.managers.GatheringBuffManager.GatheringBuff.MINING_RUSH
                 && !configManager.getBoolean("signature.csakany.stack-with-event", false)) {
             return;
@@ -422,7 +422,7 @@ public final class SignatureItemListener implements Listener {
         }
     }
 
-    // ==================== Bokic-menti Horgászbot (K4) ====================
+    // ==================== Bokic-menti Horgászbot ====================
 
     @EventHandler(ignoreCancelled = true)
     public void onFish(final org.bukkit.event.player.PlayerFishEvent event) {
@@ -474,7 +474,7 @@ public final class SignatureItemListener implements Listener {
                 org.bukkit.potion.PotionEffectType.LUCK, seconds * 20, 0, true, true, true));
     }
 
-    // ==================== Smaragdkő Bankbetét + Szellemszarvas-Bűbáj (K4) ====================
+    // ==================== Smaragdkő Bankbetét + Szellemszarvas-Bűbáj ====================
 
     @EventHandler
     public void onUse(final org.bukkit.event.player.PlayerInteractEvent event) {

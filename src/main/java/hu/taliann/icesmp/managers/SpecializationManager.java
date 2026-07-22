@@ -95,7 +95,7 @@ public final class SpecializationManager {
             return false;
         }
 
-        // K8 Emlékszilánk: a "visszaemlékezett" játékosnál a szint-kapu elesik (a kaszt-egyezés
+        // Emlékszilánk: a "visszaemlékezett" játékosnál a szint-kapu elesik (a kaszt-egyezés
         // és a többi kapu — frakció/bűnös/quest — továbbra is kötelező).
         if (jobManager.getPrimaryJob(player) != specialization.getParentJob()) {
             return false;

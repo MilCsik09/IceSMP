@@ -81,7 +81,7 @@ public final class ElytraRelicListener implements Listener {
             }
             case "frost_wing" -> {
                 // Folia: a közeli entitás szomszéd régióé is lehet — csak birtokolt entitást
-                // érintünk közvetlenül, a többihez scheduler-hop (audit-javítás).
+                // érintünk közvetlenül, a többihez scheduler-hop.
                 for (final Entity nearby : player.getWorld().getNearbyEntities(player.getLocation(), 6.0D, 6.0D, 6.0D)) {
                     if (nearby instanceof LivingEntity living && nearby != player) {
                         if (org.bukkit.Bukkit.isOwnedByCurrentRegion(living)) {
@@ -155,7 +155,7 @@ public final class ElytraRelicListener implements Listener {
                 if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
                     event.setCancelled(true);
                     // Phoenix landing: a burst of flame ignites nearby enemies.
-                    // Folia: idegen régió entitásához scheduler-hop (audit-javítás).
+                    // Folia: idegen régió entitásához scheduler-hop.
                     for (final Entity nearby : player.getWorld().getNearbyEntities(player.getLocation(), 4.0D, 2.0D, 4.0D)) {
                         if (nearby instanceof LivingEntity living && nearby != player) {
                             if (org.bukkit.Bukkit.isOwnedByCurrentRegion(living)) {

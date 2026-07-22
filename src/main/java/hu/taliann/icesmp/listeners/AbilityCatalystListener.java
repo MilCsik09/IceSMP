@@ -382,7 +382,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     /**
-     * IDEAS A7: cast után a kézben tartott katalizátor anyagán elindítja a vanília szürke
+     * Cast után a kézben tartott katalizátor anyagán elindítja a vanília szürke
      * item-cooldown overlay-t — a hotbaron azonnal látszik, mikor castolhatsz újra.
      * A vizuális réteg NEM kapuz semmit (a tényleges cooldownt a putCooldown-pipeline őrzi);
      * a melee-katalizátoros kasztoknál a kard/balta ütés-képességét sem érinti.
@@ -699,8 +699,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     /**
      * Read-only view of the player's currently active SHORT (&lt;60s, in-memory) spell
-     * cooldowns, spell id → remaining milliseconds, expired entries filtered out (IDEAS
-     * C12 inspector). UUID-based (no {@link Player} needed) so it is safe to call from any
+     * cooldowns, spell id → remaining milliseconds, expired entries filtered out.
+     * UUID-based (no {@link Player} needed) so it is safe to call from any
      * thread — it only reads the {@link #spellCooldowns} map, never touches an entity.
      * Persistent (&gt;=60s, PDC-backed) cooldowns are NOT included here, since those require
      * reading the target's own PDC on the target's region thread; callers that already hold

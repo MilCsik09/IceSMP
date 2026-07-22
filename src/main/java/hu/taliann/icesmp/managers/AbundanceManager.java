@@ -85,7 +85,7 @@ public final class AbundanceManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
-            // B19: évszak-szorzó (nyáron bőségesebb — season-modifiers.<evszak>.abundance).
+            // Évszak-szorzó (nyáron bőségesebb — season-modifiers.<evszak>.abundance).
             final SeasonalModifierService seasonalRef = seasonalModifiers;
             final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("abundance");
             final double chance = Math.max(0.0D, Math.min(100.0D,

@@ -80,7 +80,7 @@ public final class TerritoryListener implements Listener {
 
         // VISIT_TERRITORY quest objectives complete on border crossing.
         questManager.handleTerritoryEnter(player, territory.id());
-        // B21 — az első belépés lajstrom-bejegyzés.
+        // Az első belépés lajstrom-bejegyzés.
         final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
         if (bestiaryRef != null) {
             bestiaryRef.record(player, hu.taliann.icesmp.managers.BestiaryManager.Category.TERRITORIES, territory.id());

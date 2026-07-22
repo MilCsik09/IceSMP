@@ -103,7 +103,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 List.of("&7A törpék rejtélyes civilizációjának...", "&7egy relikviája.")
         );
 
-        // A 4 frakció-elytra relikvia (ideas.md: "4 frakció – 4 elytra relikvia").
+        // A 4 frakció-elytra relikvia.
         registerRelic(
                 "phoenix_wing",
                 Material.ELYTRA,
@@ -128,7 +128,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 "WHITE",
                 List.of("&7Ryanora & Caldestera szabad szele,", "&7Arkynn békés örökségének fuvallata.", "&7Gyorsabb sikló, és a föld", "&7sosem üti meg viselőjét.")
         );
-        // K5: Eleftheria Könnye — misztikus, egy-példányos gyűjtő-relikvia (nincs aktív képessége;
+        // Eleftheria Könnye — misztikus, egy-példányos gyűjtő-relikvia (nincs aktív képessége;
         // a Néma Királynő-lore hordozója, rituálé/admin úton szerezhető).
         registerRelic(
                 "eleftheria_konnye",
@@ -147,7 +147,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 List.of("&7A Káoszkor csontból szőtt szárnya, a", "&7Néma Királynő élőhalottainak maradványa.", "&7Éjjel a viselője maga is", "&7árnyékká válik.")
         );
 
-        // E32 — kaszt-tematikus relikvia: a hatását a ResourceBonusService kapuzza Sárkányidézőre.
+        // Kaszt-tematikus relikvia: a hatását a ResourceBonusService kapuzza Sárkányidézőre.
         registerRelic(
                 "sarkany_tojas",
                 Material.DRAGON_EGG,
@@ -422,7 +422,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             }
 
             final UUID itemOwner = itemFactory.getOwner(itemStack);
-            // Audit-javítás: a központi tulajdonjogot csak akkor frissítjük, ha az üres, lejárt,
+            // A központi tulajdonjogot csak akkor frissítjük, ha az üres, lejárt,
             // vagy MÁR EZÉ a játékosé — egy másik, aktív tulajdonos jogát egy régi (halott)
             // példány belépése nem írhatja felül (ownership-eltérítés).
             if ((itemOwner == null || itemOwner.equals(playerId))
@@ -432,7 +432,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             }
         }
 
-        // Audit-javítás: a VISELT páncél (a 6 relikviából 4 elytra!) és az offhand is része a
+        // A VISELT páncél (a 6 relikviából 4 elytra!) és az offhand is része a
         // sweepnek — korábban a getContents() csak a 36 fő slotot látta, így a viselt szárny
         // sosem évült el, nem frissült és a dedup sem érte el.
         final ItemStack[] armor = inventory.getArmorContents();
@@ -565,7 +565,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         if (!force && !ownerReclaim && currentOwnership != null && !isExpiredFor(normalizedId, currentOwnership)) {
             // Singleton rule: while ANY active owner exists — the requester included — no new
             // copy may be minted. A self-re-summon would otherwise duplicate a usable relic
-            // (audit: the old check only blocked FOREIGN owners). A destroyed/lost item is
+            // (the old check only blocked FOREIGN owners). A destroyed/lost item is
             // recovered via the reclaim ritual, the lost/inactivity expiry or an admin force-give.
             return false;
         }
@@ -742,7 +742,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             inventory.setContents(contents);
         }
 
-        // Audit-javítás: a viselt páncél és az offhand relikviái is frissülnek (a szárnyak
+        // A viselt páncél és az offhand relikviái is frissülnek (a szárnyak
         // jellemzően a mellvért-slotban élnek — korábban sosem kaptak kozmetikai frissítést).
         final ItemStack[] armor = inventory.getArmorContents();
         boolean armorChanged = false;

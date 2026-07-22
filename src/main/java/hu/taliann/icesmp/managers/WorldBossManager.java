@@ -251,8 +251,8 @@ public final class WorldBossManager {
             return;
         }
 
-        // B33: a végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció);
-        // B19: a valós évszak finom szorzója (season-modifiers.<evszak>.world-boss).
+        // A végítélet-hét alatt a spawn-esély napi szorzóval nő (finálé-eszkaláció);
+        // a valós évszak finom szorzója (season-modifiers.<evszak>.world-boss).
         final SeasonFinaleManager finaleRef = seasonFinale;
         final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
         final SeasonalModifierService seasonalRef = seasonalModifiers;
@@ -268,7 +268,7 @@ public final class WorldBossManager {
             return;
         }
 
-        // N25 — hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
+        // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
         final EventSpawnPointManager pointsRef = spawnPointManager;
         final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("world-boss");
         if (fixedAnchor != null) {
@@ -280,16 +280,16 @@ public final class WorldBossManager {
         final List<? extends Player> candidates = online.stream()
                 .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
         final Player anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
-        // N26 (kegyelem-mechanika) tulaj-döntéssel ELVETVE: se gyengébb boss (farmolható),
-        // se buff — az ismétlődés ellen a horgony-rotáció + a hely-horgony (N25) véd.
+        // Szándékosan nincs kegyelem-mechanika: se gyengébb boss (farmolható),
+        // se buff — az ismétlődés ellen a horgony-rotáció + a fenti hely-horgony véd.
         lastAnchorId = anchor.getUniqueId();
         triggerSpawnNear(anchor);
     }
 
-    /** Az utolsó természetes spawn horgony-játékosa (rotáció — teszter-visszajelzés). */
+    /** Az utolsó természetes spawn horgony-játékosa (rotáció). */
     private volatile java.util.UUID lastAnchorId;
 
-    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
+    /** Setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
     private volatile EventSpawnPointManager spawnPointManager;
 
     public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
@@ -393,7 +393,7 @@ public final class WorldBossManager {
         // Placement rules (config: world-events.spawn-rules.world-boss): never inside a
         // town/claim/WG region, never on a water surface. Skipping leaves activeBossUntil
         // unset; the 10s spawn-grace self-heals and the next interval rolls a fresh spot.
-        // Finálé-mód (B33): a guard KIMARAD — a szezonboss szándékosan a főváros falainál áll.
+        // Finálé-mód: a guard KIMARAD — a szezonboss szándékosan a főváros falainál áll.
         final EventSpawnGuard guard = spawnGuard;
         if (!finale && guard != null && (guard.isBlocked("world-boss", spawnLocation)
                 || guard.isUnsafeSurface("world-boss", approx.getWorld(), approx.getBlockX(), approx.getBlockZ()))) {
@@ -746,7 +746,7 @@ public final class WorldBossManager {
 
         seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
 
-        // B33 — szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
+        // Szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
         // régió-szálán fut, a drop ott biztonságos) + extra liga-pont + saját broadcast.
         if (boss.getPersistentDataContainer().getOrDefault(finaleBossKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1) {
             final int rolls = Math.max(1, configManager.getInt("world-events.season-finale.boss.loot-rolls", 6));
@@ -765,7 +765,7 @@ public final class WorldBossManager {
         final int buffMinutes = Math.max(1, configManager.getInt("world-events.world-boss.buff-minutes", 10));
         // Folia: the death event runs on the boss's region; buff the killer on their own region thread.
         final int buffTicks = buffMinutes * 60 * 20;
-        // Gameplay-audit: a leütő SZEMÉLYES bónusz-zsákmánya a kasszajutalom mellett —
+        // A leütő SZEMÉLYES bónusz-zsákmánya a kasszajutalom mellett —
         // a boss egyénileg is megéri (tárgy, sosem pénz). Inventory-írás = saját régió-szál.
         final int killerRolls = Math.max(0, configManager.getInt("world-events.world-boss.killer-loot-rolls", 2));
         killer.getScheduler().run(plugin, task -> {

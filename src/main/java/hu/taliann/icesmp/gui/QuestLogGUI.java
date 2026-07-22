@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Quest log GUI (ROADMAP quest-package C): a paginated book of the player's
+ * Quest log GUI: a paginated book of the player's
  * quests split into three tabs — active (progress, shift-click to abandon),
  * available (click to accept) and completed. The bottom row holds the tab
  * buttons and page navigation. Purely a view over {@link QuestManager}; all

@@ -111,7 +111,7 @@ public final class MarketCommand implements BasicCommand {
     }
 
     private void handleAuction(final Player player, final String[] args) {
-        // F11 — ereklye-tételnél ajánlott minimum-kikiáltás (figyelmeztetés, NEM tiltás).
+        // Ereklye-tételnél ajánlott minimum-kikiáltás (figyelmeztetés, NEM tiltás).
         if (args.length < 2) {
             player.sendMessage(messageManager.get("market-auction-usage",
                     "&cHasználat: /market auction <kikiáltási ár> [óra] [valuta] [buyout:<ár>]"));
@@ -142,8 +142,8 @@ public final class MarketCommand implements BasicCommand {
             positional[positionalCount++] = args[i];
         }
 
-        // F11 — ereklye-börze: PDC-tages (unique/relikvia) tételnél ajánlott
-        // minimum-kikiáltás — figyelmeztetés, NEM tiltás (a spec döntése szerint).
+        // Ereklye-börze: PDC-tages (unique/relikvia) tételnél ajánlott
+        // minimum-kikiáltás — figyelmeztetés, NEM tiltás.
         final org.bukkit.inventory.ItemStack auctionHand = player.getInventory().getItemInMainHand();
         if (auctionHand.hasItemMeta()) {
             final org.bukkit.persistence.PersistentDataContainer handPdc =

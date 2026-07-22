@@ -94,7 +94,7 @@ public final class RuneEffectListener implements Listener {
                 event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));
             }
             case "runa_visszhang" -> {
-                // E7 — Varázsló-exkluzív rúna: kis esély visszhang-csapásra (bónusz-sebzés).
+                // Varázsló-exkluzív rúna: kis esély visszhang-csapásra (bónusz-sebzés).
                 if (roll("runes.runa_visszhang.chance", 0.08D * (affinity > 1.0D ? 1.5D : 1.0D))) {
                     final double bonus = pct("runes.runa_visszhang.echo-damage-percent", 30.0D);
                     event.setDamage(event.getDamage() * (1.0D + bonus / 100.0D));

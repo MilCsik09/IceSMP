@@ -67,7 +67,7 @@ public final class ClassXpListener implements Listener {
             final int perLevelXp = Math.max(0, configManager.getInt("classes.xp.per-mob-level", 2));
             final double xpBonusPercent = Math.max(0.0D, talentManager.getEffectTotal(killer, "class-xp-bonus"));
             int totalXp = (int) Math.round((baseXp + (mobLevel * perLevelXp)) * (1.0D + (xpBonusPercent / 100.0D)));
-            // H14 — ritka variáns: dupla kaszt-XP (rare-variant.xp-multiplier).
+            // Ritka variáns: dupla kaszt-XP (rare-variant.xp-multiplier).
             if (hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(entity) != null) {
                 totalXp = (int) Math.round(totalXp * Math.max(1.0D,
                         configManager.getDouble("rare-variant.xp-multiplier", 2.0D)));

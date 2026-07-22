@@ -52,14 +52,14 @@ public final class IntroManager {
      */
     public void playOnFirstJoin(final Player player) {
         if (!configManager.getBoolean("world-events.intro.enabled", true) || hasSeenIntro(player)) {
-            // A38 — visszatérő játékos: rövid, halk üdvözlő title (nem torlódik az intróval,
+            // Visszatérő játékos: rövid, halk üdvözlő title (nem torlódik az intróval,
             // mert az első belépést a fenti ág viszi el).
             playReturningWelcome(player);
             return;
         }
 
         player.getPersistentDataContainer().set(introSeenKey, PersistentDataType.BYTE, (byte) 1);
-        // A38 — első belépés: a zarándok a főváros látványos pontján ébred (ha be van állítva),
+        // Első belépés: a zarándok a főváros látványos pontján ébred (ha be van állítva),
         // és CSAK a teleport után indul az intro-szekvencia (a cím a helyhez tartozik).
         final Location firstSpawn = parseFirstJoinSpawn();
         if (firstSpawn != null) {

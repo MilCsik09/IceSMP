@@ -158,8 +158,8 @@ public final class CaravanManager {
             return;
         }
 
-        // N25/N27 — hely-horgony: admin-spawnpont vagy random koordináta (a karaván
-        // "bárhol megjelenhet" — teszter-kérés), mielőtt a játékos-útra esnénk vissza.
+        // Hely-horgony: admin-spawnpont vagy random koordináta (a karaván
+        // "bárhol megjelenhet"), mielőtt a játékos-útra esnénk vissza.
         final EventSpawnPointManager pointsRef = spawnPointManager;
         final Location fixedAnchor = preferredAnchor != null || pointsRef == null
                 ? null : pointsRef.resolveAnchorLocation("caravan");
