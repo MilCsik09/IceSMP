@@ -2,10 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Munkaszervezés (a repo tulajdonosának kérése)
-- A feladatokat alapértelmezésben **delegáld gyengébb/olcsóbb subagenteknek** (Agent tool): `haiku` — keresés, összegzés, mechanikus szerkesztés; `sonnet` — kód-review, körülhatárolt implementáció.
-- Ügyelj rá, hogy a feladat **ne haladja meg a delegált agent tudását**; ami a legerősebb modellt igényli (architektúra-döntés, Folia-konkurrencia, kényes refaktor), azt tartsd magadnál, ahogy a subagent-eredmények ellenőrzését és integrálását is.
-- **Légy token-takarékos**: tömör válaszok, célzott fájlolvasás, ne duplikáld a subagent munkáját.
+## Munkaszervezés (tapasztalat-alapú delegálási szabályok, 2026-07-22)
+- **Mit delegálj `sonnet`-nek (bevált):** körülhatárolt, READ-ONLY elemzés/audit egyetlen
+  jól definiált szemponttal; mechanikus több-fájlos szerkesztés SZIGORÚ tilalmi listával
+  (mit szabad, mit tilos); tömeges tartalom-konszolidálás. A promptba mindig: pontos
+  scope, mit NE ismételjen (élő audit-doksi), bizonyíték-formátum (fájl:sor), kimeneti
+  limit.
+- **Mit NE delegálj:** architektúra-döntés, Folia-érzékeny refaktor, integrálás és a
+  subagent-leletek ELLENŐRZÉSE — ez mindig a fő-agent dolga (a leleteket kézzel kell
+  visszaigazolni a kódban, mielőtt hibaként kezeljük).
+- **`haiku`-t a gyakorlat nem igazolta** — az "egyszerű" feladatok is ítélőképességet
+  kérnek, és az utólagos ellenőrzés többe kerül, mint a sonnet-különbözet. Csak tiszta
+  felsorolás/keresés-jellegű feladatra, ha egyáltalán.
+- **Teljes több-agentes audit-kör CSAK kifejezett tulaj-kérésre** — drága (agentenként
+  100-340k token), és a gépi drift-ellenőrző + a Definition of Done pont azért él, hogy
+  ne kelljen ismételni. Új leletek az élő `docs/ideas/P2-gameplay-audit.md`-be, helyben.
+- Egyszerre max 4-5 párhuzamos agent (a session-limit egyszer már elvitte a teljes kört).
+- **Légy token-takarékos**: tömör válaszok, célzott fájlolvasás, ne duplikáld a subagent
+  munkáját.
 
 ## Build & verify
 ```bash
