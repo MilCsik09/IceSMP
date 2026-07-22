@@ -45,7 +45,7 @@ public final class PetCommand implements BasicCommand {
         switch (sub) {
             case "item" -> {
                 if (!petManager.canOwnPet(player)) {
-                    player.sendMessage(messageManager.get("pet-not-allowed", "&cCsak Vadmester vagy Nekromanta tarthat társat."));
+                    player.sendMessage(messageManager.get("pet-not-allowed", "&cCsak Vadmester, Nekromanta, Szentségtelen vagy Boszorkánymester tarthat társat."));
                     return;
                 }
                 final ItemStack item = petManager.isNecromancer(player)

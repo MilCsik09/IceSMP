@@ -1906,3 +1906,11 @@ Jó tesztelést! ❄️
       + Légió-paktum talent.
 - [ ] **Kapuk:** mindhárom spec csak Kitaszított+bűnösként vehető fel; vezeklésnél
       automatikusan elvész (spec-reset üzenettel).
+
+## Pet-review P0 javítások (2026-07-22)
+- [ ] **/pet item routing:** Szentségtelen és Boszorkánymester a Sötét Paktum-tekercset
+      kapja (nem a beast-pórázt) — a befogás mindkét új szerepnek működik.
+- [ ] **Tiltólista:** Warden/Ravager/Vasgólem/Elder Guardian/Wither/Sárkány egyik
+      szereppel sem fogható be (pets.capture.blocklist, élő kulcs).
+- [ ] **Lopás-védelem:** más játékos vanília úton szelídített állata (farkas, ló, macska)
+      NEM fogható be idegen befogóval; a sajátod igen.

@@ -123,6 +123,18 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!(target instanceof Mob) || target instanceof Player || minionManager.isMinion(target)) {
             return false;
         }
+        // Más játékos vanília úton szelídített állata nem lopható el befogással.
+        if (target instanceof org.bukkit.entity.Tameable tameable && tameable.isTamed()
+                && !(tameable.getOwner() instanceof Player owner && owner.getUniqueId().equals(player.getUniqueId()))) {
+            return false;
+        }
+        // Erő-tiltólista: a meta-törő "legjobb pet" választások (Warden, Ravager,
+        // Vasgólem, Elder Guardian, Wither) egyik szerepnek sem foghatók be.
+        for (final String banned : configManager.getStringList("pets.capture.blocklist")) {
+            if (target.getType().name().equalsIgnoreCase(banned)) {
+                return false;
+            }
+        }
         if (isBeastMaster(player)) {
             return !(target instanceof Monster); // any non-hostile animal/mob
         }

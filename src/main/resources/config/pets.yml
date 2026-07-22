@@ -4,6 +4,15 @@
 # talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.
 # Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
 pets:
+  capture:
+    # Erő-tiltólista: ezek a lények egyik szereppel sem foghatók be (meta-törők).
+    blocklist:
+      - WARDEN
+      - RAVAGER
+      - IRON_GOLEM
+      - ELDER_GUARDIAN
+      - WITHER
+      - ENDER_DRAGON
   max-active: 8
   talent-health-share: 0.5
   # Vadmester / Nekromanta társa (ROADMAP 12. + befogás): bármilyen mob lehet a társ,
