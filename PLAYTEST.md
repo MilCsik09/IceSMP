@@ -1771,3 +1771,19 @@ Jó tesztelést! ❄️
 - [ ] **Restart-teszt:** robbanás után, a visszaépülés ELŐTT restart — a lyuk a restart
       után is visszaépül (block-regen.yml perzisztencia).
 - [ ] **Kikapcsolva** (regen.enabled: false): a korábbi teljes robbanás-tiltás él.
+
+## Ostrom-rombolás + teljes rombolás-lefedettség (tulaj-kérés, 2026-07-22)
+- [ ] **Ostrom-bontás:** élő raid alatt a CÉLZÓNÁBAN a regisztrált harcos kézzel bont
+      falat — nincs drop/XP, a blokk siege-delay-seconds [300] után visszaépül;
+      nem-résztvevő és zónán kívüli harcos továbbra sem bonthat.
+- [ ] **Ostromon kívüli bontás** (player-break.always-enabled, ALAPBÓL KI): bekapcsolva
+      bárki bonthat védett zónában (always-delay-seconds [120] regen); kikapcsolva a
+      régi tiltás él. Láda/kemence SOSEM bontható így.
+- [ ] **Wither-teszt:** Wither robbanás + test-bontás védett zónában/claimben —
+      törmelék repül, drop nincs, minden visszaépül; a Wither többé NEM rombol véglegesen
+      (a territory-oldalon ez rés volt: eddig semmi nem fogta).
+- [ ] **Ravager/enderman claimben:** blokk-evés/rombolás → regen-út vagy tiltás,
+      maradandó kár nincs.
+- [ ] **Tempó-hangolás:** restore-interval-ticks [10] + blocks-per-pass [3] — a fal
+      láthatóan, fokozatosan épül vissza (kb. 6 blokk/mp); a kulcsok átírásával a
+      sebesség változik (interval-hoz restart kell).

@@ -45,9 +45,32 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBreak(final BlockBreakEvent event) {
-        if (protection.denyBuild(event.getPlayer(), event.getBlock().getLocation())) {
-            event.setCancelled(true);
+        if (!protection.denyBuild(event.getPlayer(), event.getBlock().getLocation())) {
+            return;
         }
+        // Regen-rombolás: a tiltás helyett a blokk drop/XP nélkül törhető, és a
+        // beállított késleltetés után PONTOSAN visszaépül. Ostrom alatt a célzónában
+        // a regisztrált harcosnak jár; zónán kívüli ("always") módban config-kapcsolós.
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isEnabled()
+                && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())) {
+            final long delay;
+            if (regen.isSiegeBreakEnabled()
+                    && protection.isRaidSiegeAt(event.getPlayer(), event.getBlock().getLocation())) {
+                delay = regen.siegeBreakDelayMillis();
+            } else if (regen.isAlwaysBreakEnabled()) {
+                delay = regen.alwaysBreakDelayMillis();
+            } else {
+                event.setCancelled(true);
+                return;
+            }
+            if (regen.capture(event.getBlock(), delay)) {
+                event.setDropItems(false);
+                event.setExpToDrop(0);
+                return;
+            }
+        }
+        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -236,15 +259,34 @@ public final class TerritoryProtectionListener implements Listener {
         return captured;
     }
 
-    /** A törmelék landolva porlad — sosem válhat valódi blokká. */
+    /**
+     * (1) A törmelék landolva porlad — sosem válhat valódi blokká. (2) Mob-rombolás
+     * (Wither test-bontása, ravager, enderman…) védett zónában: regen-nel a blokk
+     * LÁTVÁNYOSAN kitörik (törmelék repül), drop nélkül, és visszaépül — regen nélkül
+     * sima tiltás. Enélkül a Wither VÉGLEG rombolta a városfalat (rés volt).
+     */
     @EventHandler(ignoreCancelled = true)
-    public void onDebrisLand(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
+    public void onEntityChangeBlock(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
         if (event.getEntity().getScoreboardTags().contains(
                 hu.taliann.icesmp.managers.BlockRegenService.DEBRIS_TAG)) {
             event.setCancelled(true);
             event.getEntity().getWorld().spawnParticle(org.bukkit.Particle.BLOCK_CRUMBLE,
                     event.getEntity().getLocation(), 12, 0.2D, 0.2D, 0.2D, event.getBlockData());
             event.getEntity().remove();
+            return;
+        }
+        if (event.getEntity() instanceof Player
+                || !event.getTo().isAir()
+                || !protection.isExplosionBlockedAt(event.getBlock().getLocation())) {
+            return;
+        }
+        event.setCancelled(true);
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isEnabled()
+                && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())
+                && regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            regen.spawnDebris(event.getBlock(), event.getEntity().getLocation());
+            event.getBlock().setType(org.bukkit.Material.AIR, false);
         }
     }
 

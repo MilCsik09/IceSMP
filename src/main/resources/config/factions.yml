@@ -267,7 +267,23 @@ territory:
     # Tile-entity blokk (láda, kemence…) sosem robban ki. Kikapcsolva: régi teljes tiltás.
     regen:
       enabled: true
+      # Robbanás utáni visszaépülés indulása (mp) — ennyi ideig marad a kráter.
       delay-seconds: 180
+      # A visszaépítő menet üteme: ennyi tickenként (10 = fél mp; restarthoz kötött kulcs)…
+      restore-interval-ticks: 10
+      # …és menetenként ennyi blokk kerül vissza — együtt adják a gyógyulás tempóját
+      # (alap: 3 blokk / 0.5 mp = 6 blokk/mp, látványos, fokozatos újraépülés).
+      blocks-per-pass: 3
+      # Kézi rombolás regen-nel (drop és XP nélkül, tile-entity sosem törhető):
+      player-break:
+        # Ostrom: élő raid alatt a CÉLZÓNÁBAN a regisztrált harcosok bonthatnak.
+        siege-enabled: true
+        siege-delay-seconds: 300
+        # Ostromon KÍVÜL is bárki bonthasson védett zónában (a fal visszagyógyul).
+        # Alapból KI: a safe-zone garanciát és a fővárosi törvényt gyengíti —
+        # playtest után kapcsold be, ha az élmény elbírja.
+        always-enabled: false
+        always-delay-seconds: 120
       debris-enabled: true
       debris-max-per-explosion: 30
       debris-lifetime-seconds: 4

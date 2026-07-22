@@ -55,6 +55,20 @@ public final class TerritoryProtectionService {
         this.raidManager = raidManager;
     }
 
+    /** Igaz, ha a hely az ÉLŐ raid célzónájában van és a játékos regisztrált harcos. */
+    public boolean isRaidSiegeAt(final Player player, final Location location) {
+        final RaidManager raids = this.raidManager;
+        if (raids == null || player == null) {
+            return false;
+        }
+        final RaidManager.ActiveRaid raid = raids.getActiveRaid();
+        if (raid == null || !raids.isParticipant(player.getUniqueId())) {
+            return false;
+        }
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        return zone != null && zone.id().equals(raid.territoryId());
+    }
+
     public TerritoryProtectionService(final JavaPlugin plugin, final ConfigManager configManager,
                                       final TerritoryManager territoryManager, final FactionManager factionManager,
                                       final MessageManager messageManager) {

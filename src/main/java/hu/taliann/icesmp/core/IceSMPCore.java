@@ -816,6 +816,11 @@ public final class IceSMPCore {
         scheduleHud();
         schedulePetCombat();
         scheduleAutosave();
+        // A visszaépítés saját, sűrű ütemén fut (látványos, fokozatos gyógyulás) —
+        // a 60 mp-es világesemény-tick ehhez túl durva.
+        final long regenTicks = blockRegenService.restoreIntervalTicks();
+        Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin,
+                task -> blockRegenService.tick(), regenTicks, regenTicks);
         registerPlaceholders();
         registerNpcQuestBridge();
         applyWorldGameRules();
@@ -1083,7 +1088,6 @@ public final class IceSMPCore {
                 plugin,
                 task -> {
                     bloodMoonManager.tick();
-                    blockRegenService.tick();
                     worldBossManager.tick();
                     invasionManager.tick();
                     seasonManager.tick();

@@ -317,12 +317,21 @@ public final class ClaimProtectionListener implements Listener {
         return false;
     }
 
-    /** Block-eating/-moving mobs (enderman, ravager…) leave claimed chunks alone. */
+    /** Block-eating/-moving mobs (enderman, ravager, Wither-test…) leave claimed
+     *  chunks alone — regen-nel a rombolás látványosan megtörténik és visszagyógyul. */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityChangeBlock(final EntityChangeBlockEvent event) {
-        if (!(event.getEntity() instanceof Player)
-                && claimManager.getClaimAt(event.getBlock().getLocation()) != null) {
-            event.setCancelled(true);
+        if (event.getEntity() instanceof Player
+                || claimManager.getClaimAt(event.getBlock().getLocation()) == null) {
+            return;
+        }
+        event.setCancelled(true);
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isEnabled() && event.getTo().isAir()
+                && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())
+                && regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            regen.spawnDebris(event.getBlock(), event.getEntity().getLocation());
+            event.getBlock().setType(org.bukkit.Material.AIR, false);
         }
     }
 

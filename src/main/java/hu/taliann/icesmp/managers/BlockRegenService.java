@@ -31,8 +31,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public final class BlockRegenService implements PersistentStore {
 
-    /** Egy menetben legfeljebb ennyi blokk épül vissza (tick-terhelés fék). */
-    private static final int RESTORE_BATCH = 40;
+
 
     private record Entry(String world, int x, int y, int z, String blockData, long restoreAt) {
     }
@@ -54,6 +53,34 @@ public final class BlockRegenService implements PersistentStore {
 
     public long explosionDelayMillis() {
         return Math.max(5L, configManager.getLong("territory.protection.regen.delay-seconds", 180L)) * 1000L;
+    }
+
+    /** Hány tickenként fut a visszaépítő menet (indításkor olvasott kulcs). */
+    public long restoreIntervalTicks() {
+        return Math.max(1L, configManager.getLong("territory.protection.regen.restore-interval-ticks", 10L));
+    }
+
+    /** Menetenként ennyi blokk kerül vissza — ez adja a visszaépülés "tempóját". */
+    public int blocksPerPass() {
+        return Math.max(1, configManager.getInt("territory.protection.regen.blocks-per-pass", 3));
+    }
+
+    public boolean isSiegeBreakEnabled() {
+        return configManager.getBoolean("territory.protection.regen.player-break.siege-enabled", true);
+    }
+
+    public long siegeBreakDelayMillis() {
+        return Math.max(5L, configManager.getLong(
+                "territory.protection.regen.player-break.siege-delay-seconds", 300L)) * 1000L;
+    }
+
+    public boolean isAlwaysBreakEnabled() {
+        return configManager.getBoolean("territory.protection.regen.player-break.always-enabled", false);
+    }
+
+    public long alwaysBreakDelayMillis() {
+        return Math.max(5L, configManager.getLong(
+                "territory.protection.regen.player-break.always-delay-seconds", 120L)) * 1000L;
     }
 
     /**
@@ -120,7 +147,7 @@ public final class BlockRegenService implements PersistentStore {
         for (final Entry e : queue) {
             if (e.restoreAt() <= now) {
                 due.add(e);
-                if (due.size() >= RESTORE_BATCH) {
+                if (due.size() >= blocksPerPass()) {
                     break;
                 }
             }
