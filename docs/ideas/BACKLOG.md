@@ -437,3 +437,54 @@ O-refaktor összefoglaló: #9 (DonationChestManager debounce) KÉSZ (2026-07-20 
 - **P2g Szezon-identitásutak kiegyensúlyozása** — a season.source-weights mátrix él, de
   kalibrálatlan: playtest-mérés után a 4 frakció-út (war/trade/faith/wild) pont-hozamát
   egy szintre kell hozni, különben a liga eldől az út-választáson. 🟡⭐⭐ (playtest-függő)
+
+### P3 — Teljes rework-térkép (rendszer-leltár alapján, 2026-07-22)
+
+A P2-audit nyitott leleteiből + a rendszer-leltárból összeállított rework-programok
+(nem új leletek — a meglévők PROGRAMOKBA rendezve, becsült sorrenddel).
+
+**Nagy rework-programok:**
+
+- **P3a [TOP] HP/sebzés-skála (= A17)** — a vanília 20 HP-ra 5-8 sebzésű spellek épülnek:
+  a PvP TTK rövid, a gyógyítás-értékek és a pajzsok inkonzisztensek. Kaszt-HP-profilok,
+  healthScale-normalizálás, harcon kívüli regen, pajzs-egységesítés, sebzés-újrahangolás
+  EGY körben — minden más balansz erre épül. Tulaj-döntés szerint külön nagy kör. 🔴⭐⭐⭐
+- **P3b [TOP] Onboarding NPC-függetlenítés (= P2-audit #9)** — a teljes sztori-gerinc a
+  FancyNpcs-en lóg néma hibával: TALK_TO_NPC kódos tartalék-út (pl. /quest talk parancs
+  vagy auto-teljesülés zóna-belépésre), hiányzó NPC-nél hangos admin-riasztás. Enélkül
+  egy plugin-hiba az egész új-játékos élményt csendben öli meg. 🔴⭐⭐⭐
+- **P3c [TOP] HUD/tablist teljesítmény (= P2-audit #19)** — O(n²) tablist-szinkron fél
+  másodpercenként + diff-cache nélküli oldalsáv: 50-60 fő ELŐTT kötelező kör (last-line
+  cache, cleanup-ritkítás, batch-diff). 🟡⭐⭐⭐
+- **P3d Szezon-dramaturgia** — 13 napos sztori-lyuk (41-53. nap), mind a 30 rejtvény
+  1. naptól kimeríthető (kapuzás visszaszökött), a finálé-ív pacing: a szezon közepére
+  tartalom-ütem kell (heti rejtvény-nyitás, köztes Fa-üzenetek). 🟡⭐⭐
+- **P3e Talent-rendszer mélyítés** — holt tier1-ek (scholar/arcane_might), 6 szakmának
+  nincs saját talentje, összesen 3 tier: a fák rövidek és részben halottak. A tier2
+  differenciálás (kész) folytatása: tier1-takarítás + szakma-talentek + opcionális 4.
+  tier a 40+ szinteknek. 🔴⭐⭐
+- **P3f Világesemény-ütemező szétterítés** — ~35 tick() egyetlen globál-kötegben
+  60 mp-enként (tüske-kockázat): fázis-eltolásos szétterítés az intervallumon belül.
+  Playtest-méréssel együtt. 🟡⭐⭐
+
+**Kis-közepes reworkok (egy-egy ülésben lehúzhatók):**
+
+- **P3g Integrációs hidak higiénia** — WorldGuard-híd flag-ellenőrzés nélkül tilt;
+  LibsDisguises-hidak (druida-forma/kém/fekvés) felülírják egymás álcáját (arbitráció
+  kell); dangling NPC-kötés mindenhol néma. 🟡⭐⭐
+- **P3h Actionbar-arbitráció** — több forrás (claim-warn, honvágy, esemény, combat-tag)
+  felülírja egymást: közös actionbar-csatorna prioritással/sorbanállással. 🟡⭐⭐
+- **P3i /menu lefedettség + admin-tab szűrés** — /tanacs, /komp, /faction war hiányzik a
+  menüből; az admin-alparancsok jog nélkül is látszanak a tab/helpben. 🟢⭐
+- **P3j Karaván-javítások** — a kalmár-karaván nem megy át az EventSpawnGuard-on; a
+  spawn felülírhatja a már lezárt szállítmányt (placeholder-UUID re-check). 🟢⭐⭐
+- **P3k Parkour-ranglista** — best-time perzisztálás + /leaderboard kategória (a napi
+  limit után a parkour versenyfelülete ez lenne). 🟢⭐
+- **P3l Apró gazdaság-hangolások** — beszállító-hetik olcsó faucet (4×90/hét), ambient-
+  jutalom napi cap, bajnok-jutalom létszám-skálázás, addPoints/rollover verseny-őr. 🟢⭐
+- **P3m Kém-akció raid-szűkítés** — csak az érintett frakciók raidje blokkolja, ne
+  bármely globális. 🟢⭐
+
+**Felmértük, és NEM kér reworkot:** crate (natív, kulcs-nyelővel), claim (védelem
+teljes), bounty/párbaj (fékek élnek), pet (friss rework), kazamata-loot (friss),
+vezeklés-lánc, emlékszilánk, komp, moderáció, AFK, bestiárium, Suttogó-pipeline.
