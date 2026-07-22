@@ -134,6 +134,7 @@ MIRROR = [
     ("docs/EPITESZ_UTMUTATO.md", "EPITESZ_UTMUTATO.md"),
     ("docs/TEASER.md", "TEASER.md"),
     ("docs/PITCH.md", "PITCH.md"),
+    ("docs/FEATURES.md", "FEATURES.md"),
     ("docs/LORE.md", "lore/LORE.md"),
     ("docs/LORE_REFERENCE.md", "lore/LORE_REFERENCE.md"),
 ]
