@@ -1852,3 +1852,15 @@ Jó tesztelést! ❄️
       normál, csak a max-recaptures hurok-fék véd); true → teljes pajzs.
 - [ ] **Restart-teszt:** kráteres állapotban restart → a kráter-pozíciók a betöltés
       után is pajzsoltak (a sorból épül vissza a pajzs-lista).
+
+## Regen 8. kör: irány-szelektív víz-szabály (tulaj-döntés, 2026-07-22)
+- [ ] **Befolyás él:** vízparti fal kirobbantva → a víz LÁTVÁNYOSAN beömlik a résen és
+      megül a kráterben (nem lebeg a peremen).
+- [ ] **Tovább-terjedés tiltva:** a kráterben álló víz NEM folyik tovább a fal mögötti
+      belső terekbe — az épület belseje szárazon marad.
+- [ ] **Kiszorítás:** a visszaépülő fal blokkonként kiszorítja a beállt vizet; záródás
+      után a külső víz a falnak feszül, a világ állapota a robbanás előtti.
+- [ ] **Fáklya-védelem:** vizes kráterbe visszaépült fáklya az utó-pajzs alatt nem
+      mosódik el, mire a pajzs lejár, a fal már körbeérte.
+- [ ] **Perem-homok:** a kráterbe hulló homok/kavics ITEMKÉNT esik le (felvehető),
+      nem tűnik el némán a visszaépítéskor.

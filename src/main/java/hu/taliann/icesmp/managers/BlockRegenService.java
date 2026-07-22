@@ -176,17 +176,10 @@ public final class BlockRegenService implements PersistentStore {
      * (frissítés, folyadék-befolyás, fizika-törés) a listener cancel-eli — a
      * visszaépített fáklyát a víz el sem érheti, a homok nem eshet le.
      */
-    public boolean isPhysicsShielded(final Block block) {
-        if (physicsShield.isEmpty() && pendingShield.isEmpty()) {
+    /** A frissen VISSZAÉPÍTETT blokk időzített pajzsa (fáklya-védelem a fal záródásáig). */
+    public boolean isRestoredShielded(final Block block) {
+        if (physicsShield.isEmpty() || !isShieldEnabled()) {
             return false; // gyors-út: pajzs nélkül a sűrű physics-event ára nulla
-        }
-        if (!isShieldEnabled()) {
-            return false;
-        }
-        // A kráter (visszaépülésre váró pozíció) is pajzsolt: a víz nem folyhat a
-        // lyukba, a perem-homok nem omolhat be, mielőtt a fal visszaépül.
-        if (pendingShield.contains(posKey(block))) {
-            return true;
         }
         final Long until = physicsShield.get(posKey(block));
         if (until == null) {
@@ -197,6 +190,14 @@ public final class BlockRegenService implements PersistentStore {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Kráter-pozíció (visszaépülésre vár): a folyadék BEfolyhat (természetes látvány),
+     * de innen TOVÁBB nem terjedhet — a fal mögötti eredeti légterek nem ázhatnak el.
+     */
+    public boolean isCraterPos(final Block block) {
+        return !pendingShield.isEmpty() && isShieldEnabled() && pendingShield.contains(posKey(block));
     }
 
     /** pozíció → [felvételek száma, ablak kezdete] — az újrarombolási hurok féke. */

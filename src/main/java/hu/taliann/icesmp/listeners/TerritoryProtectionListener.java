@@ -281,6 +281,15 @@ public final class TerritoryProtectionListener implements Listener {
             event.getEntity().remove();
             return;
         }
+        // A kráterbe hulló gravitációs blokk (perem-homok) itemként esik le — nem
+        // tűnhet el némán a későbbi visszaépítő felülírásban.
+        if (event.getEntity() instanceof org.bukkit.entity.FallingBlock) {
+            final hu.taliann.icesmp.managers.BlockRegenService fbRegen = this.blockRegenService;
+            if (fbRegen != null && fbRegen.isCraterPos(event.getBlock())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
         if (event.getEntity() instanceof Player || !event.getTo().isAir()) {
             return;
         }
@@ -314,15 +323,23 @@ public final class TerritoryProtectionListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onShieldedPhysics(final org.bukkit.event.block.BlockPhysicsEvent event) {
         final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
-        if (regen != null && regen.isPhysicsShielded(event.getBlock())) {
+        if (regen != null && regen.isRestoredShielded(event.getBlock())) {
             event.setCancelled(true);
         }
     }
 
+    /**
+     * Irány-szelektív víz-szabály: a kráterBE szabad a befolyás (látványos, természetes),
+     * de kráter-pozícióBÓL tovább nem terjedhet (a fal mögötti tér nem ázik el), és a
+     * frissen visszaépített blokkba (fáklya!) sem folyhat, amíg az utó-pajzs él.
+     */
     @EventHandler(ignoreCancelled = true)
     public void onShieldedLiquidFlow(final org.bukkit.event.block.BlockFromToEvent event) {
         final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
-        if (regen != null && regen.isPhysicsShielded(event.getToBlock())) {
+        if (regen == null) {
+            return;
+        }
+        if (regen.isCraterPos(event.getBlock()) || regen.isRestoredShielded(event.getToBlock())) {
             event.setCancelled(true);
         }
     }
@@ -330,7 +347,7 @@ public final class TerritoryProtectionListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockDestroy(final com.destroystokyo.paper.event.block.BlockDestroyEvent event) {
         final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
-        if (regen != null && regen.isPhysicsShielded(event.getBlock())) {
+        if (regen != null && regen.isRestoredShielded(event.getBlock())) {
             event.setCancelled(true);
             return;
         }

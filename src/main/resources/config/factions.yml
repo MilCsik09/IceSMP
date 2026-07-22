@@ -294,10 +294,11 @@ territory:
       # feladja azt a blokkot.
       max-recaptures: 3
       recapture-window-seconds: 600
-      # Fizika-pajzs fő-kapcsoló: bekapcsolva a kráter (visszaépülésre váró pozíciók)
-      # ÉS a frissen visszaépített blokkok fizika-mentesek (víz nem folyik a lyukba/nem
-      # mos el semmit, homok nem omlik, fáklya nem pattan). Kikapcsolva a régi megoldás
-      # él (csak az újrarombolási hurok-fék véd).
+      # Fizika-pajzs fő-kapcsoló. Irány-szelektív víz-szabály: a kráterbe a víz
+      # BEfolyhat (természetes látvány), de onnan TOVÁBB nem terjed (a fal mögötti tér
+      # nem ázik el), és a visszaépüléskor a fal kiszorítja; a frissen visszaépített
+      # blokk (fáklya) utó-pajzsot kap; a kráterbe hulló perem-homok itemként esik le.
+      # Kikapcsolva a régi megoldás él (csak az újrarombolási hurok-fék véd).
       physics-shield-enabled: true
       # A VISSZAÉPÍTETT blokk pajzsának hossza (mp) — a kráter-pozíciók a teljes
       # várakozás alatt pajzsoltak. 0 = a visszaépített blokkon azonnal él a fizika.
