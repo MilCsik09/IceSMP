@@ -198,6 +198,10 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Alap-item:** `minecraft:amethyst_shard`
 - **Mi ez:** a Boszorkánymester démon-rituálé kelléke (boszorka/illager drop)
 
+### 5305 — Társvért
+- **Alap-item:** `minecraft:leather_horse_armor`
+- **Mi ez:** társ-páncél (ritka szörny-zsákmány) — jobb katt a saját társon: +páncél/+életerő
+
 ### 5302 — Sötét Paktum-tekercs
 - **Fájl:** `capture_necro.png` &nbsp;|&nbsp; **Alap-item:** `GHAST_TEAR`
 - **Ábrázolás:** sötét pergamentekercs koponya-pecséttel, a koponya szemeiben türkiz izzással

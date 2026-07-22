@@ -742,6 +742,60 @@ a saját képességei.
 
 ---
 
+## 🧟 Szentségtelen (Halállovag-spec, csak Kitaszított) — élőholt ragály és szolgák
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Gennyes Csapás** | 6 sebzés + **sorvadás** (4,5 blokk) | 3 🍗 | 22 mp | 25 |
+| **Járvány** | Körkörös 3 sebzés + méreg (5 blokk) | 40 XP | 45 mp | 27 |
+| **Ghúl-szolga** | 2 ghúl idézése (40 mp-ig harcolnak) | 60 XP | 3 perc | 30 |
+| **Halálörvény** | 7 sebzés (6 blokk) — az árát **vérben** fizeted | 3 ❤ | 30 mp | 33 |
+| **A Holtak Szorítása** | Körkörös 2 sebzés + erős lassítás (4,5 blokk) | 35 XP | 40 mp | 36 |
+| **Ragály** | Körkörös 5 sebzés + sorvadás (6 blokk) | 50 XP | 75 mp | 39 |
+| **A Holtak Serege** | A végső: 6 élőholt harcos idézése (40 mp-ig) | 110 XP | 5 perc | 45 |
+
+Ezen felül a Szentségtelennek **állandó ghúl-társa** van (rituálé-idézés — lásd a
+[Specializációk](06-specializaciok.md) oldal Társ-részét).
+
+## 🦴 Csontpap (Pap-spec, csak Kitaszított) — a Néma Királynő liturgiája
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Csontforrasztás** | Szövetséges kör: regeneráció + magadra 3 gyógyítás (4 blokk) | 30 XP | 25 mp | 25 |
+| **Szívó Sugár** | 4 sebzés + magadra 3 gyógyítás (7 blokk) | 3 🍗 | 30 mp | 27 |
+| **Csont-oltalom** | Szövetséges kör: sebzéscsökkentés (5 blokk) | 35 XP | 60 mp | 30 |
+| **A Királynő Siráma** | Körkörös 3 sebzés + gyengítés (5 blokk) | 40 XP | 45 mp | 33 |
+| **Vér-tized** | Szövetséges kör: erős regeneráció (6 blokk) — az árát **vérben** fizeted | 4 ❤ | 75 mp | 36 |
+| **A Sír Csendje** | Körkörös 4 sebzés + sorvadás (5 blokk) | 50 XP | 90 mp | 39 |
+| **Utolsó Kenet** | A végső: szövetséges kör felszívódás-pajzs + magadra 8 gyógyítás (8 blokk) | 90 XP | 4 perc | 45 |
+
+## ☣️ Pestishozó (Orgyilkos-spec, csak Kitaszított) — pestis és sorvasztás
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Pestis-vágás** | 5 sebzés + méreg (4,5 blokk) | 3 🍗 | 20 mp | 25 |
+| **Fertőzés** | Körkörös 2 sebzés + erős méreg (4 blokk) | 35 XP | 40 mp | 27 |
+| **Fekete Kelések** | 3 sebzés + erős sorvadás (6 blokk) | 40 XP | 50 mp | 30 |
+| **Miazma** | Körkörös 3 sebzés + lassítás (5 blokk) | 45 XP | 60 mp | 33 |
+| **Gennyedő Sebek** | 6 sebzés + sorvadás (5 blokk) — az árát **vérben** fizeted | 3 ❤ | 75 mp | 36 |
+| **Pestis-szél** | Körkörös 4 sebzés + méreg (7 blokk) | 55 XP | 90 mp | 39 |
+| **Fekete Halál** | A végső: körkörös 7 sebzés + erős sorvadás (6 blokk) | 150 XP | 5 perc | 45 |
+
+## 👿 Demonológus (Boszorkánymester-spec, csak Kitaszított) — a Légió idézője
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Démontűz-lövedék** | 5 sebzés + meggyújt (7 blokk) | 3 🍗 | 25 mp | 25 |
+| **Imp-raj** | 3 imp idézése (30 mp-ig harcolnak) | 60 XP | 3 perc | 27 |
+| **Magma-szolga** | Izzó behemót idézése (45 mp-ig) | 70 XP | 3 perc 20 mp | 30 |
+| **Démonbőr** | Magadra erős sebzéscsökkentés | 45 XP | 90 mp | 33 |
+| **Káosz-láng** | Körkörös 5 sebzés + meggyújt (5 blokk) | 50 XP | 60 mp | 36 |
+| **Áldozati Paktum** | Körkörös 6 sebzés (6 blokk) — az árát **vérben** fizeted | 5 ❤ | 2 perc | 39 |
+| **A Légió** | A végső: 5 démon idézése (40 mp-ig) | 110 XP | 5 perc | 45 |
+
+Ezen felül a Boszorkánymesternek (kaszt-szinten) **állandó démon-familiárisa** van
+(rituálé-idézés — lásd a [Specializációk](06-specializaciok.md) oldal Társ-részét).
+
 ## ★ Talent-képességek (aktív talentekből)
 
 Ezek **nem a szintedből**, hanem az **aktív talentekből** oldódnak fel (lásd

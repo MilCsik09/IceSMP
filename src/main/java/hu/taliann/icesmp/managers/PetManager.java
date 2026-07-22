@@ -50,6 +50,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     private final NamespacedKey entityKey;
     private final NamespacedKey healthModKey;
     private final NamespacedKey damageModKey;
+    private final NamespacedKey respawnKey;
+    private final NamespacedKey stanceKey;
+    private final NamespacedKey armorKey;
+    private final NamespacedKey armorDefenseModKey;
+    private final NamespacedKey armorHealthModKey;
     /** owner UUID → current combat target UUID (assist / defend). */
     private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();
     /** pet UUID → epoch ms when the pet may attack again. */
@@ -69,6 +74,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         this.entityKey = new NamespacedKey(plugin, "pet_entity");
         this.healthModKey = new NamespacedKey(plugin, "pet_health_mod");
         this.damageModKey = new NamespacedKey(plugin, "pet_damage_mod");
+        this.respawnKey = new NamespacedKey(plugin, "pet_respawn_at");
+        this.stanceKey = new NamespacedKey(plugin, "pet_stance");
+        this.armorKey = new NamespacedKey(plugin, "pet_armor");
+        this.armorDefenseModKey = new NamespacedKey(plugin, "pet_armor_defense_mod");
+        this.armorHealthModKey = new NamespacedKey(plugin, "pet_armor_health_mod");
     }
 
     public boolean isBeastMaster(final Player player) {
@@ -81,6 +91,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     /** Setter-injektált (a JobManager a PetManager után is elérhető a core-ból). */
     private volatile hu.taliann.icesmp.managers.JobManager jobManager;
+
+    private volatile hu.taliann.icesmp.managers.TalentManager talentManagerRef;
+
+    public void setTalentManager(final hu.taliann.icesmp.managers.TalentManager talentManager) {
+        this.talentManagerRef = talentManager;
+    }
 
     public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
         this.jobManager = jobManager;
@@ -235,6 +251,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
+        final long respawnAt = player.getPersistentDataContainer()
+                .getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
+        if (respawnAt > System.currentTimeMillis()) {
+            return "pet-respawn-cooldown";
+        }
 
         final EntityType type = resolveType(player);
         if (type == null || type.getEntityClass() == null || !Mob.class.isAssignableFrom(type.getEntityClass())) {
@@ -276,6 +297,13 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
             if (deadId.toString().equals(raw)) {
                 owner.getPersistentDataContainer().remove(entityKey);
+                // A halálnak tétje van: újraidézés csak cooldown után.
+                final long cd = Math.max(0L, configManager.getLong(
+                        "pets.companion.death-respawn-seconds", 120L)) * 1000L;
+                if (cd > 0L) {
+                    owner.getPersistentDataContainer().set(respawnKey, PersistentDataType.LONG,
+                            System.currentTimeMillis() + cd);
+                }
                 owner.sendMessage(messageManager.getMessage(
                         "pet-died",
                         "<gray>A társad elesett a harcban. <dark_gray>(/pet summon az új idézéshez)</dark_gray></gray>"));
@@ -293,6 +321,91 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             updateName(pet, player);
         }
         return true;
+    }
+
+    /**
+     * A TÁRS állásmódja a GAZDA PDC-jében él (nem a pet entitásén): így a GUI és a
+     * parancs a játékos saját régió-szálán olvassa/írja, a vezérlő tick pedig a
+     * tickOwner gazda-oldali snapshotjával viszi át a pet szálára — nincs
+     * régió-átnyúló entitás-PDC hozzáférés. (A spell-idézett minionok állásmódja
+     * továbbra is a saját entitás-PDC-jükben van.)
+     */
+    public MinionManager.Stance getStance(final Player player) {
+        final String raw = player.getPersistentDataContainer().get(stanceKey, PersistentDataType.STRING);
+        if (raw == null) {
+            return MinionManager.Stance.ACTIVE;
+        }
+        try {
+            return MinionManager.Stance.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException exception) {
+            return MinionManager.Stance.ACTIVE;
+        }
+    }
+
+    public void setStance(final Player player, final MinionManager.Stance stance) {
+        player.getPersistentDataContainer().set(stanceKey, PersistentDataType.STRING, stance.name());
+    }
+
+    public MinionManager.Stance cycleStance(final Player player) {
+        final MinionManager.Stance next = switch (getStance(player)) {
+            case ACTIVE -> MinionManager.Stance.PASSIVE;
+            case PASSIVE -> MinionManager.Stance.STAY;
+            case STAY -> MinionManager.Stance.ACTIVE;
+        };
+        setStance(player, next);
+        return next;
+    }
+
+    /** A kattintott entitás a játékos aktív társa-e (gazda-PDC alapján, a gazda szálán hívandó). */
+    public boolean isActivePetEntity(final Player player, final Entity clicked) {
+        final Mob pet = activePet(player);
+        return pet != null && pet.getUniqueId().equals(clicked.getUniqueId());
+    }
+
+    public boolean hasActivePet(final Player player) {
+        return activePet(player) != null;
+    }
+
+    public int nextLevelCost(final Player player) {
+        return levelCost(getLevel(player));
+    }
+
+    public long respawnRemainingSeconds(final Player player) {
+        final long at = player.getPersistentDataContainer().getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
+        return Math.max(0L, (at - System.currentTimeMillis() + 999L) / 1000L);
+    }
+
+    /** Társvért: a jelzés a gazda PDC-jében él, így újraidézéskor is visszakerül a társra. */
+    public boolean hasPetArmor(final Player player) {
+        return player.getPersistentDataContainer().getOrDefault(armorKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /**
+     * Felszereli a Társvértet a játékos aktív társára.
+     *
+     * @return null siker, különben üzenet-kulcs
+     */
+    public String equipArmor(final Player player, final Entity clicked) {
+        if (!canOwnPet(player)) {
+            return "pet-not-allowed";
+        }
+        if (hasPetArmor(player)) {
+            return "pet-armor-already";
+        }
+        final Mob pet = activePet(player);
+        if (pet == null || !pet.getUniqueId().equals(clicked.getUniqueId())) {
+            return "pet-armor-not-pet";
+        }
+        player.getPersistentDataContainer().set(armorKey, PersistentDataType.BYTE, (byte) 1);
+        applyEquipment(pet);
+        return null;
+    }
+
+    private void applyEquipment(final LivingEntity pet) {
+        applyModifier(pet, Attribute.ARMOR, armorDefenseModKey,
+                Math.max(0.0D, configManager.getDouble("pets.equipment.armor-bonus", 4.0D)));
+        applyModifier(pet, Attribute.MAX_HEALTH, armorHealthModKey,
+                Math.max(0.0D, configManager.getDouble("pets.equipment.health-bonus", 4.0D)));
     }
 
     /** Awards companion XP for the owner; levels up (rebuffing the active pet) on threshold. */
@@ -405,20 +518,25 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final int level = getLevel(owner);
         final Location ownerLoc = owner.getLocation();
         final World ownerWorld = owner.getWorld();
+        final MinionManager.Stance stance = getStance(owner);
         pet.getScheduler().run(plugin, petTask ->
-                runPetTick(pet, ownerId, ownerLoc, ownerWorld, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+                runPetTick(pet, ownerId, stance, ownerLoc, ownerWorld, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
     }
 
-    private void runPetTick(final Mob pet, final UUID ownerId, final Location ownerLoc, final World ownerWorld,
+    private void runPetTick(final Mob pet, final UUID ownerId, final MinionManager.Stance stance,
+                            final Location ownerLoc, final World ownerWorld,
                             final int level, final double followSq, final double followStartSq, final double reach,
                             final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
         if (!pet.isValid()) {
             return;
         }
 
-        final MinionManager.Stance stance = minionManager.getStance(pet);
         if (stance == MinionManager.Stance.STAY) {
             combatTargets.remove(ownerId);
+            // Világváltásnál a STAY pet sem maradhat árván a régi világban.
+            if (!pet.getWorld().equals(ownerWorld)) {
+                pet.teleportAsync(ownerLoc);
+            }
             return; // hold position — no follow, no combat
         }
 
@@ -549,6 +667,26 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final int buffLevel = getLevel(player)
                 + (isSummonedPet(player) ? Math.max(0, configManager.getInt("pets.summon.bonus-levels", 5)) : 0);
         applyBuffs(mob, buffLevel, true);
+        // A gazda max-health talentjei a PERMANENS társat is erősítik (a minionokkal
+        // azonos megosztási arány — a két rendszer skálázása konzisztens).
+        final hu.taliann.icesmp.managers.TalentManager talents = this.talentManagerRef;
+        if (talents != null) {
+            final double share = Math.max(0.0D, talents.getEffectTotal(player, "max-health")
+                    * Math.max(0.0D, configManager.getDouble("pets.talent-health-share", 0.5D)));
+            final org.bukkit.attribute.AttributeInstance hp =
+                    mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (share > 0.0D && hp != null) {
+                hp.setBaseValue(hp.getBaseValue() + share);
+                mob.setHealth(hp.getValue());
+            }
+        }
+        if (hasPetArmor(player)) {
+            applyEquipment(mob);
+            final AttributeInstance hp = mob.getAttribute(Attribute.MAX_HEALTH);
+            if (hp != null) {
+                mob.setHealth(hp.getValue());
+            }
+        }
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
         player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
@@ -611,6 +749,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
             combatTargets.remove(playerId);
+            // A gazda nélkül maradt társ/minionok despawnolnak (PDC-ből újraidézhető) —
+            // nem maradhat árva, örök-persistent entitás a világban.
+            minionManager.removeAllOwned(playerId);
         }
     }
 

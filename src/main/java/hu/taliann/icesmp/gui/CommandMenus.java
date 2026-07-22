@@ -94,7 +94,7 @@ public final class CommandMenus {
         final SpecializationType spec = ctx.specializationManager().getClassSpecialization(player);
         if (spec == SpecializationType.BEAST_MASTER || spec == SpecializationType.NECROMANCER) {
             put(inv, holder, 12, GuiUtil.icon(Material.BONE, title("Társ"),
-                    List.of(grey("Vadmester / Nekromanta társ:"), grey("befogás, idézés, szint — infó chatben."), click())), "OPEN:pet");
+                    List.of(grey("Vadmester / Nekromanta / Szentségtelen /"), grey("Boszorkánymester társ: idézés, állásmód, vért — GUI."), click())), "OPEN:pet");
         }
         put(inv, holder, 13, GuiUtil.icon(Material.WRITTEN_BOOK, title("Küldetésnapló"),
                 List.of(grey("Aktív, felvehető és teljesített"), grey("küldetések — lapozható napló."), click())), "OPEN:quest log");

@@ -71,6 +71,23 @@ public final class PetCaptureListener implements Listener {
 
         final Player player = event.getPlayer();
         final ItemStack hand = player.getInventory().getItemInMainHand();
+
+        if (captureItemFactory.isPetArmorItem(hand)) {
+            event.setCancelled(true);
+            final String armorError = petManager.equipArmor(player, event.getRightClicked());
+            if (armorError != null) {
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
+                player.sendActionBar(messageManager.getMessage(armorError,
+                        "<red>A Társvértet csak a saját, kint lévő társadra adhatod fel.</red>"));
+                return;
+            }
+            hand.setAmount(hand.getAmount() - 1);
+            player.playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_LEATHER, 1.0F, 1.0F);
+            player.sendMessage(messageManager.getMessage("pet-armor-equipped",
+                    "<gold>A társad felöltötte a Társvértet — páncélt és életerőt kapott.</gold>"));
+            return;
+        }
+
         final boolean beast = captureItemFactory.isBeastCapture(hand);
         final boolean necro = captureItemFactory.isNecroCapture(hand);
         if (!beast && !necro) {

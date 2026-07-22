@@ -36,10 +36,10 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 |---|---|
 | A Felsők halhatatlansága (V.) | respawn a frakció-spawnon (`/territory setspawn`) |
 | Szent Zóna (V.) | a Semleges kezdő-spawn a Fa alatt; védett, PvP-tiltott territórium-zóna; a frakcióválasztó hírnök Caldesterában — az út a kettő közt a zarándoklat |
-| A Fa fényköre (V.) | táv-alapú mob-skálázás: 1000 blokk = +1 mob-szint (max 10), több XP + lélekkő-esély; spawner-mobok nem skálázódnak |
+| A Fa fényköre (V.) | táv-alapú mob-skálázás (`world.zone-ramp`): blocks-per-level blokkonként +1 mob-szint (max 10), több XP + lélekkő-esély; spawner-mobok nem skálázódnak |
 | Király-választás (IV.) | frakciónkénti szavazás (`KingManager`); király = raid-indítás + kassza |
 | Királyok Átka / Felsők (IV.) | a király/raid/szezon/claim rendszerek lore-indoklása |
-| Kasztok forrásai (VI.) | 13 kaszt (`JobType`), a kaszt végleges; 31 specializáció = a források „iskolái" |
+| Kasztok forrásai (VI.) | 13 kaszt (`JobType`), a kaszt végleges; 35 specializáció = a források „iskolái" — ebből 5 sötét iskola (Nekromanta, Szentségtelen, Csontpap, Pestishozó, Demonológus) csak Kitaszított+bűnös úton (`SpecializationType` DARK/sinner-kapu; DARK-elhagyás és vezeklés = spec-vesztés) |
 | Belső erők (VI.) | kasztonkénti erőforrás-sávok (Mana/Düh/Fókusz/Energia/Csi/Lélekerő…); hibrid költségek: HP = vérmágia, XP = rituálé, éhség = nehéz testi spell |
 | Lélekkapocs (VI.) | a kaszt-témás Képesség Katalizátor item (`CatalystItemFactory`); jobb katt = cast, sneak+ütés = váltás; **nem dobható el** (`CatalystProtectionListener`: drop-cancel + halálkor megőrzés/respawn-visszaadás), craft/kohó-védett (`CatalystCraftSafetyListener`); elvesztéskor pótolható (Job GUI / `/job givecatalyst`) |
 | Az Első Csend (I./VII.) | szándékosan megfejtetlen misztérium — jövőbeli antagonista/quest-horgony; NE magyarázd meg tartalomban |
@@ -55,7 +55,9 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
 | Tárgyak Lelke (VIII.) | tárgy-raritás létra (Ócska→Ereklye), affixek, nevesített craft |
 | Vér Emlékezete (VIII.) | talentpontok + talentfák (kaszt- és szakma-szintből) |
-| Hű Társak (VIII.) | Vadmester befogott állat-társa / Nekromanta élőholt companionja, pet-szintezés |
+| Hű Társak (VIII.) | Vadmester befogott állat-társa / Nekromanta élőholt companionja, pet-szintezés; Szentségtelen ghúlja és Boszorkánymester démona rituálé-idézéssel (Nyughatatlan Szív CMD 5303 / Démon-pecsét CMD 5304, éjjel; forma-fejlődés `pets.summon.*`); állásmódok + Társ-GUI (`/pet`); Társvért (CMD 5305, `pets.equipment.*`) |
+| Vének Tanácsa (III./IV.) | NEUTRAL heti tanács-szavazás: `CouncilManager` + `/tanacs` (`factions.council.*`) — a tanács véleményez, nem hirdet |
+| Hadi-ablak (IV.) | RED↔BLUE hadicselekmény-idősáv: `factions.war-window.*` (menetrend, ölésenkénti liga-pont, napi plafon, áldozat-cooldown); a szezonliga „war" pontforrása |
 | Égi Jelek (VIII.) | világesemények (vérhold, Bőség-idő, meteor/hulló csillag, északi fény, köd/szellemek, Vad Hajsza, karaván, kincs/gyűjtő-lázak, invázió/világboss, kollektív szerver-kihívás) — mind config-vezérelt; a spawn-helyeket esemény×védelem mátrix szabályozza (world-events.spawn-rules: territórium/claim/WG-régió/víz), az esemény-mobok nem zombisodnak és nappal sem égnek |
 | Fa Alatt Testvérek (VIII.) | party-rendszer: frakció-független, osztott XP, personal loot, párton belüli PvP-tiltás |
 | Arany Áramlása (VIII.) | bank/piac/aukció, dinamikus árfolyam, adók/illetékek mint pénz-nyelő, „nincs addolt pénz" elv; caldesterai ládák = crate-rendszer (kulcs-ár = valuta-nyelő); **adó = 2% + fejadó**, a fedezetlen rész hátralék, a tartós nem-fizetést a Számvevők bűnként jelentik fel (bűn-küszöb → száműzetés a Kitaszítottak közé) |

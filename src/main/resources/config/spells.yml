@@ -45,6 +45,19 @@ spells:
       shadowburn: arnyek
       life_drain: arnyek
       mind_blast: osmagia
+      # DARK-specek: a kaszt-default (fagy/szent) helyett árny/természet iskola
+      festering_strike: arnyek
+      outbreak: termeszet
+      unholy_coil: arnyek
+      grip_of_the_dead: arnyek
+      epidemic: arnyek
+      leeching_ray: arnyek
+      queens_lament: arnyek
+      silence_of_the_grave: arnyek
+      plague_cut: termeszet
+      plague_contagion: termeszet
+      miasma: termeszet
+      plague_wind: termeszet
   # ===== Baráti tűz (party-tudatos célzás) =====
   # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
   # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.

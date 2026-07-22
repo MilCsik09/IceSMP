@@ -135,6 +135,20 @@ public final class MinionManager {
      * @param owner the summoner
      * @return the number of valid, living minions
      */
+    /** A tulaj ÖSSZES élő minionját/társát eltávolítja (entitás-szál hoppal). */
+    public void removeAllOwned(final UUID owner) {
+        final Set<UUID> ids = minionsByOwner.remove(owner);
+        if (ids == null) {
+            return;
+        }
+        for (final UUID id : ids) {
+            final Entity entity = Bukkit.getEntity(id);
+            if (entity != null && entity.isValid()) {
+                entity.getScheduler().run(plugin, task -> entity.remove(), null);
+            }
+        }
+    }
+
     public int countActive(final UUID owner) {
         final Set<UUID> ids = minionsByOwner.get(owner);
         if (ids == null || ids.isEmpty()) {

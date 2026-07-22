@@ -26,7 +26,7 @@ jelenti, hogy **elhagyható**.
 | `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése (kulccsal a ládára jobb-katt = nyitás; a nyereményt egy 3D-ikon tárja fel a láda fölött) |
 | `/report <név> <ok>` | `bejelent` | Játékos bejelentése a moderátoroknak (percenként egyszer) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
-| `/pet item\|summon\|dismiss\|name` | `tars`, `companion` | Társ: befogó eszköz, idézés, név, szint (Vadmester / Nekromanta) |
+| `/pet [menu\|item\|summon\|dismiss\|name\|stance\|info]` | `tars`, `companion` | Társ-GUI (üresen), befogó eszköz, idézés, név, állásmód (Vadmester / Nekromanta / Szentségtelen / Boszorkánymester) |
 | `/parkour list\|start <id>` | `trial`, `palya` | Időmérős parkour-pályák |
 | `/market search <szöveg>` | `piac`, `ah` | Keresés a piacon (a /market mellett) |
 | `/profile` | `karakter`, `char`, `status` | A **karakterlap** — kaszt, spec, szakma, talent, képesség-fa menük |

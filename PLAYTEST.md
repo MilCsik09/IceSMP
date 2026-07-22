@@ -1933,3 +1933,40 @@ Jó tesztelést! ❄️
       a sötét spec automatikusan elveszik (üzenettel) — az "örök paktum" specet nem
       lehet kivinni; MagmaCube-minion halálakor NEM hasad gazdátlan kockákra;
       a dark-only DK-kapu a JobManagerben is él (minden hívási út védett).
+
+## Pet-rework: GUI, állásmódok, Társvért, halál-cooldown (tulaj-kérés, 2026-07-22)
+- [ ] **/pet GUI:** üres /pet (vagy /menu → Társ) vezérlőpultot nyit — infó-csempe
+      (név/szint/XP/állapot), Idézés, Elbocsátás, Átnevezés-súgó, 3 állásmód-gomb
+      (az aktuális világít), Társvért-státusz, Bezárás; minden kattintás a /pet
+      alparancsokra delegál és frissíti a GUI-t.
+- [ ] **Állásmód (gazda-PDC):** /pet stance aktiv|passziv|marad + sunyítás+jobb katt
+      a társon (ciklikus váltás) + GUI-gombok — mindhárom út ugyanazt állítja;
+      Passzívban sosem harcol, Maradj-ban helyben vár (világváltásnál utánad jön);
+      a spell-idézett minionok állásmódja ettől független (entitás-PDC).
+- [ ] **Halál-cooldown:** a társ halála után 120 mp-ig (pets.companion.death-respawn-
+      seconds) nem idézhető újra — a GUI mutatja a hátralévő időt; 0 = kikapcsolva.
+- [ ] **Társvért (CMD 5305):** 1% eséllyel esik szörny-killből társ-tartó kasztnak
+      (csak amíg nincs felszerelve); jobb katt a SAJÁT kint lévő társon → +4 páncél
+      +4 max-HP (pets.equipment.*), elfogy; újraidézés után is a társon marad;
+      idegen mobra/másik játékos társára nem tehető fel.
+- [ ] **Talent-átszállás:** a gazda max-health talentjeinek fele (pets.talent-health-
+      share) a companionra is rászáll idézéskor (a minionokkal azonos arány).
+- [ ] **Kijelentkezés-takarítás:** logoutkor a kint lévő társ/minionok despawnolnak
+      (PDC-ből újraidézhető) — nem marad árva persistent entitás; belépés után
+      /pet summon visszahozza.
+- [ ] **Aggro-szűrő:** a társ/minion célzása játékosra és falusira csak parancsból
+      (assist/defend) mehet — magától sosem támad rájuk; chunk-betöltéskor a
+      gazdátlan (offline tulaj) minionok despawnolnak.
+
+## DARK-spec hangolás + iskolák + katalógus-rend (2026-07-22)
+- [ ] **Fekete Halál újrahangolva:** 150 XP (100 helyett) és 6 blokk sugár (8 helyett)
+      — spells-balance.yml black_death entry a kóddal egyezik.
+- [ ] **Spell-id ütközés javítva:** a Pestishozó Fertőzése plague_contagion, a
+      Szentségtelen Halálörvénye unholy_coil id-t kapott — a Méregkeverő contagion
+      és a DK-alap death_coil spellje változatlanul működik (regresszió-teszt!).
+- [ ] **Iskola-felülírások:** Szentségtelen/Csontpap sebző spelljei árny-iskola,
+      a pestis/méreg spellek természet-iskola (spells.yml by-spell) — az iskola-
+      bónuszok ennek megfelelően számolnak.
+- [ ] **Balansz-entryk:** mind a 28 új DARK-spell (4 spec + 5 idézés) explicit
+      spells-balance.yml entryvel — /icesmp config set spell-balance.<id>.<kulcs>
+      élőben hangol.

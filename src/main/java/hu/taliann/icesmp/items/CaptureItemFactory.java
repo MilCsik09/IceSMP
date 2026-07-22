@@ -49,6 +49,16 @@ public final class CaptureItemFactory {
                 "<gray>és a démon a szolgálatodba áll. (Boszorkánymester)</gray>");
     }
 
+    public ItemStack createPetArmorItem(final int amount) {
+        return create(amount, "pet_armor", Material.LEATHER_HORSE_ARMOR, "<gold>Társvért</gold>",
+                "<gray>Mesterien szabott vért, amely bármely társ testére igazodik —</gray>",
+                "<gray>jobb katt a saját társadon: páncélt és életerőt kap. (minden társ-tartó)</gray>");
+    }
+
+    public boolean isPetArmorItem(final ItemStack item) {
+        return "pet_armor".equals(tagOf(item));
+    }
+
     public boolean isHeartItem(final ItemStack item) {
         return "heart".equals(tagOf(item));
     }
@@ -90,7 +100,8 @@ public final class CaptureItemFactory {
             case "beast" -> 5301;
             case "necro" -> 5302;
             case "heart" -> 5303;
-            default -> 5304;
+            case "seal" -> 5304;
+            default -> 5305;
         }); // docs/RESOURCE_PACK_CMD.md
         item.setItemMeta(meta);
         return item;

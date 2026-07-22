@@ -7,6 +7,7 @@ pets:
   # Rituálé-idézés (Szentségtelen ghúl / Boszorkánymester démon): kellék + éjszaka.
   # A forma a pet-szinttel fejlődik (tier2/tier3-level), az idézett társ
   # bonus-levels erő-prémiumot kap (a nehezebb beszerzés ellentételezése).
+  # Az Imp (vex) falakon átrepül — ez szándékos (démon-fantázia), nem hiba.
   summon:
     night-only: true
     bonus-levels: 5
@@ -25,11 +26,19 @@ pets:
       - ENDER_DRAGON
   max-active: 8
   talent-health-share: 0.5
+  # Társvért (ritka szörny-zsákmány a társ-tartó kasztoknak): jobb katt vele a saját
+  # társadon → a társ páncélt és életerőt kap; a jelzés a gazdán él, újraidézéskor is megmarad.
+  equipment:
+    drop-chance: 0.01   # esély szörny-killenként (csak amíg nincs felszerelve)
+    armor-bonus: 4.0    # +armor a társnak
+    health-bonus: 4.0   # +max életerő a társnak
   # Vadmester / Nekromanta társa (ROADMAP 12. + befogás): bármilyen mob lehet a társ,
   # befogó itemmel (Vadmester = nem ellenséges állat, Nekromanta = ellenséges / élőholt mob).
   # Megnevezett, szintet lépő companion; a nem szelídíthető társakat teleport-követés tartja a gazda mellett.
   companion:
     max-level: 30
+    # A társ halála után ennyi másodpercig nem idézhető újra (a halálnak tétje van).
+    death-respawn-seconds: 120
     base-xp: 10
     increment-per-level: 5
     xp-per-kill: 2

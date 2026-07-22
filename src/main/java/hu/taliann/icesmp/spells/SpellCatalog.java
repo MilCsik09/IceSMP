@@ -54,6 +54,10 @@ public final class SpellCatalog {
         registerDeathKnight(registry, mm);
         registerBlood(registry, mm);
         registerFrost(registry, mm);
+        registerUnholy(registry, mm);
+        registerBonePriest(registry, mm);
+        registerPlaguebringer(registry, mm);
+        registerDemonologist(registry, mm);
         registerShaman(registry, mm);
         registerElemental(registry, mm);
         registerEnhancement(registry, mm);
@@ -955,7 +959,62 @@ public final class SpellCatalog {
                 .target(4.5D).damage(8.0D)
                 .particle(Particle.CRIT, 20).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.6F)
                 .build());
-        // --- CSONTPAP (a Néma Királynő papja — DARK-kapus gyógyító) ---
+        registry.register(ConfiguredSpell.builder(mm, "frost_strike", "Fagycsapás", 25, SpellCostType.HUNGER, 3)
+                .target(5.0D).damage(6.0D).freeze(40)
+                .particle(Particle.SNOWFLAKE, 20).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "howling_blast", "Üvöltő Szél", 45, SpellCostType.XP, 45)
+                .aoe(5.0D).damage(4.0D).freeze(80).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 2)
+                .particle(Particle.SNOWFLAKE, 40).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "pillar_of_frost", "Fagyoszlop", 90, SpellCostType.HUNGER, 5)
+                .selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1).selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 0)
+                .particle(Particle.SNOWFLAKE, 30).sound(Sound.BLOCK_POWDER_SNOW_STEP, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "remorseless_winter", "Könyörtelen Tél", 75, SpellCostType.XP, 55)
+                .aoe(5.0D).damage(3.0D).freeze(60).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 1)
+                .particle(Particle.SNOWFLAKE, 50).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "frostscythe", "Fagykasza", 35, SpellCostType.HUNGER, 4)
+                .aoe(4.0D).damage(5.0D).freeze(40)
+                .particle(Particle.SWEEP_ATTACK, 15).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "chill_streak", "Dermesztő Suhanás", 60, SpellCostType.XP, 50)
+                .target(12.0D).damage(5.0D).freeze(60)
+                .particle(Particle.SNOWFLAKE, 25).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.9F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "breath_of_sindragosa", "Sindragosa Lehelete", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(8.0D).freeze(120).targetEffect(PotionEffectType.SLOWNESS, 6 * 20, 2)
+                .particle(Particle.SNOWFLAKE, 80).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.4F)
+                .build());
+    }
+
+    // ===== SZENTSÉGTELEN (death knight spec, DARK) — élőholt ragály + szolga-idézés =====
+    private static void registerUnholy(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "festering_strike", "Gennyes Csapás", 22, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(6.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 18).sound(Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "outbreak", "Járvány", 45, SpellCostType.XP, 40)
+                .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
+                .particle(Particle.SPORE_BLOSSOM_AIR, 30).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.8F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "unholy_coil", "Halálörvény", 30, SpellCostType.HEALTH, 3)
+                .target(6.0D).damage(7.0D)
+                .particle(Particle.SOUL, 25).sound(Sound.ENTITY_WITHER_SHOOT, 0.7F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "grip_of_the_dead", "A Holtak Szorítása", 40, SpellCostType.XP, 35)
+                .aoe(4.5D).damage(2.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 2)
+                .particle(Particle.SOUL_FIRE_FLAME, 30).sound(Sound.BLOCK_SOUL_SAND_BREAK, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "epidemic", "Ragály", 75, SpellCostType.XP, 50)
+                .aoe(6.0D).damage(5.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 45).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CONVERTED, 0.8F, 0.5F)
+                .build());
+    }
+
+    // ===== CSONTPAP (priest spec, DARK) — a Néma Királynő gyógyítója =====
+    private static void registerBonePriest(final SpellRegistry registry, final MessageManager mm) {
         registry.register(ConfiguredSpell.builder(mm, "bone_mend", "Csontforrasztás", 25, SpellCostType.XP, 30)
                 .friendly().aoe(4.0D).targetEffect(PotionEffectType.REGENERATION, 6 * 20, 0).healSelf(3.0D)
                 .particle(Particle.SOUL, 20).sound(Sound.BLOCK_BONE_BLOCK_PLACE, 1.0F, 0.7F)
@@ -984,12 +1043,15 @@ public final class SpellCatalog {
                 .friendly().aoe(8.0D).targetEffect(PotionEffectType.ABSORPTION, 20 * 20, 1).healSelf(8.0D)
                 .particle(Particle.SOUL, 60).sound(Sound.BLOCK_BELL_RESONATE, 1.0F, 0.5F)
                 .build());
-        // --- PESTISHOZÓ (Orgyilkos DARK-kapus DoT-spec) ---
+    }
+
+    // ===== PESTISHOZÓ (assassin spec, DARK) — méreg/DoT =====
+    private static void registerPlaguebringer(final SpellRegistry registry, final MessageManager mm) {
         registry.register(ConfiguredSpell.builder(mm, "plague_cut", "Pestis-vágás", 20, SpellCostType.HUNGER, 3)
                 .target(4.5D).damage(5.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
                 .particle(Particle.ITEM_SLIME, 15).sound(Sound.ENTITY_SPIDER_HURT, 1.0F, 0.6F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "contagion", "Fertőzés", 40, SpellCostType.XP, 35)
+        registry.register(ConfiguredSpell.builder(mm, "plague_contagion", "Fertőzés", 40, SpellCostType.XP, 35)
                 .aoe(4.0D).damage(2.0D).targetEffect(PotionEffectType.POISON, 8 * 20, 1)
                 .particle(Particle.SPORE_BLOSSOM_AIR, 25).sound(Sound.ENTITY_ZOMBIE_INFECT, 0.8F, 0.7F)
                 .build());
@@ -1009,11 +1071,14 @@ public final class SpellCatalog {
                 .aoe(7.0D).damage(4.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 1)
                 .particle(Particle.SPORE_BLOSSOM_AIR, 50).sound(Sound.ENTITY_PHANTOM_FLAP, 1.0F, 0.4F)
                 .build());
-        registry.register(ConfiguredSpell.builder(mm, "black_death", "Fekete Halál", 300, SpellCostType.XP, 100)
-                .aoe(8.0D).damage(7.0D).targetEffect(PotionEffectType.WITHER, 8 * 20, 1)
+        registry.register(ConfiguredSpell.builder(mm, "black_death", "Fekete Halál", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(7.0D).targetEffect(PotionEffectType.WITHER, 8 * 20, 1)
                 .particle(Particle.SQUID_INK, 70).sound(Sound.ENTITY_WITHER_DEATH, 0.5F, 0.5F)
                 .build());
-        // --- DEMONOLÓGUS (Boszorkánymester DARK-kapus idéző) ---
+    }
+
+    // ===== DEMONOLÓGUS (warlock spec, DARK) — démonidéző =====
+    private static void registerDemonologist(final SpellRegistry registry, final MessageManager mm) {
         registry.register(ConfiguredSpell.builder(mm, "fel_bolt", "Démontűz-lövedék", 25, SpellCostType.HUNGER, 3)
                 .target(7.0D).damage(5.0D).ignite(60)
                 .particle(Particle.SOUL_FIRE_FLAME, 20).sound(Sound.ENTITY_BLAZE_SHOOT, 0.8F, 0.6F)
@@ -1029,55 +1094,6 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "sacrifice_pact", "Áldozati Paktum", 120, SpellCostType.HEALTH, 5)
                 .aoe(6.0D).damage(6.0D)
                 .particle(Particle.DAMAGE_INDICATOR, 35).sound(Sound.ENTITY_WITHER_HURT, 0.7F, 0.6F)
-                .build());
-        // --- SZENTSÉGTELEN (Unholy DK — DARK-kapus spec) ---
-        registry.register(ConfiguredSpell.builder(mm, "festering_strike", "Gennyes Csapás", 22, SpellCostType.HUNGER, 3)
-                .target(4.5D).damage(6.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
-                .particle(Particle.SCULK_SOUL, 18).sound(Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.6F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "outbreak", "Járvány", 45, SpellCostType.XP, 40)
-                .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
-                .particle(Particle.SPORE_BLOSSOM_AIR, 30).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.8F, 0.5F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "death_coil", "Halálörvény", 30, SpellCostType.HEALTH, 3)
-                .target(6.0D).damage(7.0D)
-                .particle(Particle.SOUL, 25).sound(Sound.ENTITY_WITHER_SHOOT, 0.7F, 1.4F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "grip_of_the_dead", "A Holtak Szorítása", 40, SpellCostType.XP, 35)
-                .aoe(4.5D).damage(2.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 2)
-                .particle(Particle.SOUL_FIRE_FLAME, 30).sound(Sound.BLOCK_SOUL_SAND_BREAK, 1.0F, 0.5F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "epidemic", "Ragály", 75, SpellCostType.XP, 50)
-                .aoe(6.0D).damage(5.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
-                .particle(Particle.SCULK_SOUL, 45).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CONVERTED, 0.8F, 0.5F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "frost_strike", "Fagycsapás", 25, SpellCostType.HUNGER, 3)
-                .target(5.0D).damage(6.0D).freeze(40)
-                .particle(Particle.SNOWFLAKE, 20).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.8F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "howling_blast", "Üvöltő Szél", 45, SpellCostType.XP, 45)
-                .aoe(5.0D).damage(4.0D).freeze(80).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 2)
-                .particle(Particle.SNOWFLAKE, 40).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.6F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "pillar_of_frost", "Fagyoszlop", 90, SpellCostType.HUNGER, 5)
-                .selfEffect(PotionEffectType.STRENGTH, 12 * 20, 1).selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 0)
-                .particle(Particle.SNOWFLAKE, 30).sound(Sound.BLOCK_POWDER_SNOW_STEP, 1.0F, 0.5F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "remorseless_winter", "Könyörtelen Tél", 75, SpellCostType.XP, 55)
-                .aoe(5.0D).damage(3.0D).freeze(60).targetEffect(PotionEffectType.SLOWNESS, 4 * 20, 1)
-                .particle(Particle.SNOWFLAKE, 50).sound(Sound.BLOCK_GLASS_BREAK, 1.0F, 0.5F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "frostscythe", "Fagykasza", 35, SpellCostType.HUNGER, 4)
-                .aoe(4.0D).damage(5.0D).freeze(40)
-                .particle(Particle.SWEEP_ATTACK, 15).sound(Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 0.7F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "chill_streak", "Dermesztő Suhanás", 60, SpellCostType.XP, 50)
-                .target(12.0D).damage(5.0D).freeze(60)
-                .particle(Particle.SNOWFLAKE, 25).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.9F)
-                .build());
-        registry.register(ConfiguredSpell.builder(mm, "breath_of_sindragosa", "Sindragosa Lehelete", 300, SpellCostType.XP, 150)
-                .aoe(6.0D).damage(8.0D).freeze(120).targetEffect(PotionEffectType.SLOWNESS, 6 * 20, 2)
-                .particle(Particle.SNOWFLAKE, 80).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.4F)
                 .build());
     }
 

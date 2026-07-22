@@ -476,6 +476,8 @@ public final class IceSMPCore {
         this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         petManager.setJobManager(jobManager);
+        petManager.setTalentManager(talentManager);
+        jobManager.setFactionManager(factionManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.parkourManager = new ParkourManager(plugin, currencyManager, factionManager, messageManager);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
@@ -1423,7 +1425,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.InvseeGUIListener(messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ReportFeedbackListener(reportManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
-        pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
+        pluginManager.registerEvents(new PetCommandListener(minionManager, petManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PetGUIListener(petManager, messageManager), plugin);
         final PetXpListener petXpListener = new PetXpListener(plugin, petManager, configManager);
         petXpListener.setCaptureItemFactory(captureItemFactory);
         pluginManager.registerEvents(petXpListener, plugin);

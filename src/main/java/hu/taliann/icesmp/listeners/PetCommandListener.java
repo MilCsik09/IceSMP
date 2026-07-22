@@ -18,10 +18,13 @@ import java.util.Map;
 public final class PetCommandListener implements Listener {
 
     private final MinionManager minionManager;
+    private final hu.taliann.icesmp.managers.PetManager petManager;
     private final MessageManager messageManager;
 
-    public PetCommandListener(final MinionManager minionManager, final MessageManager messageManager) {
+    public PetCommandListener(final MinionManager minionManager, final hu.taliann.icesmp.managers.PetManager petManager,
+                              final MessageManager messageManager) {
         this.minionManager = minionManager;
+        this.petManager = petManager;
         this.messageManager = messageManager;
     }
 
@@ -41,7 +44,12 @@ public final class PetCommandListener implements Listener {
         }
 
         event.setCancelled(true);
-        final MinionManager.Stance stance = minionManager.cycleStance(minion);
+        // A companion állásmódja a gazda PDC-jében él (PetManager), a spell-idézett
+        // minioné a saját entitás-PDC-jében — a váltásnak oda kell írnia, ahonnan
+        // a megfelelő vezérlő olvas.
+        final MinionManager.Stance stance = petManager.isActivePetEntity(player, minion)
+                ? petManager.cycleStance(player)
+                : minionManager.cycleStance(minion);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8F, 1.3F);
         player.sendActionBar(messageManager.getMessage(
                 "pet-stance",

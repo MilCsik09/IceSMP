@@ -1957,3 +1957,150 @@ spell-balance:
   earthbind_totem:
     cooldown: 75
     cost-amount: 5  # HUNGER
+
+  # ===== Szentségtelen (DARK) =====
+  festering_strike:
+    cooldown: 22
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 6.0
+  outbreak:
+    cooldown: 45
+    cost-amount: 40  # XP
+    radius: 5.0
+    damage: 3.0
+  unholy_coil:
+    cooldown: 30
+    cost-amount: 3  # HEALTH
+    range: 6.0
+    damage: 7.0
+  grip_of_the_dead:
+    cooldown: 40
+    cost-amount: 35  # XP
+    radius: 4.5
+    damage: 2.0
+  epidemic:
+    cooldown: 75
+    cost-amount: 50  # XP
+    radius: 6.0
+    damage: 5.0
+  raise_ghoul:
+    cooldown: 180
+    cost-amount: 60  # XP
+    count: 2
+    duration-ticks: 800
+  army_of_the_dead:
+    cooldown: 300
+    cost-amount: 110  # XP
+    count: 6
+    duration-ticks: 800
+
+  # ===== Csontpap (DARK) =====
+  bone_mend:
+    cooldown: 25
+    cost-amount: 30  # XP
+    radius: 4.0
+    heal-self: 3.0
+  leeching_ray:
+    cooldown: 30
+    cost-amount: 3  # HUNGER
+    range: 7.0
+    damage: 4.0
+    heal-self: 3.0
+  bone_ward:
+    cooldown: 60
+    cost-amount: 35  # XP
+    radius: 5.0
+  queens_lament:
+    cooldown: 45
+    cost-amount: 40  # XP
+    radius: 5.0
+    damage: 3.0
+  blood_tithe:
+    cooldown: 75
+    cost-amount: 4  # HEALTH
+    radius: 6.0
+  silence_of_the_grave:
+    cooldown: 90
+    cost-amount: 50  # XP
+    radius: 5.0
+    damage: 4.0
+  last_rites:
+    cooldown: 240
+    cost-amount: 90  # XP
+    radius: 8.0
+    heal-self: 8.0
+
+  # ===== Pestishozó (DARK) =====
+  plague_cut:
+    cooldown: 20
+    cost-amount: 3  # HUNGER
+    range: 4.5
+    damage: 5.0
+  plague_contagion:
+    cooldown: 40
+    cost-amount: 35  # XP
+    radius: 4.0
+    damage: 2.0
+  black_boils:
+    cooldown: 50
+    cost-amount: 40  # XP
+    range: 6.0
+    damage: 3.0
+  miasma:
+    cooldown: 60
+    cost-amount: 45  # XP
+    radius: 5.0
+    damage: 3.0
+  festering_wounds:
+    cooldown: 75
+    cost-amount: 3  # HEALTH
+    range: 5.0
+    damage: 6.0
+  plague_wind:
+    cooldown: 90
+    cost-amount: 55  # XP
+    radius: 7.0
+    damage: 4.0
+  black_death:
+    cooldown: 300
+    cost-amount: 150  # XP
+    radius: 6.0
+    damage: 7.0
+
+  # ===== Demonológus (DARK) =====
+  fel_bolt:
+    cooldown: 25
+    cost-amount: 3  # HUNGER
+    range: 7.0
+    damage: 5.0
+    ignite-ticks: 60
+  demon_skin:
+    cooldown: 90
+    cost-amount: 45  # XP
+  chaos_flame:
+    cooldown: 60
+    cost-amount: 50  # XP
+    radius: 5.0
+    damage: 5.0
+    ignite-ticks: 80
+  sacrifice_pact:
+    cooldown: 120
+    cost-amount: 5  # HEALTH
+    radius: 6.0
+    damage: 6.0
+  imp_swarm:
+    cooldown: 180
+    cost-amount: 60  # XP
+    count: 3
+    duration-ticks: 600
+  magma_servant:
+    cooldown: 200
+    cost-amount: 70  # XP
+    count: 1
+    duration-ticks: 900
+  legion:
+    cooldown: 300
+    cost-amount: 110  # XP
+    count: 5
+    duration-ticks: 800

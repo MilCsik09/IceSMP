@@ -59,6 +59,11 @@ public final class PetXpListener implements Listener {
             if (factory == null) {
                 return;
             }
+            if (!petManager.hasPetArmor(killer)
+                    && Math.random() < configManager.getDouble("pets.equipment.drop-chance", 0.01D)) {
+                org.bukkit.Bukkit.getRegionScheduler().run(plugin, dropAt,
+                        t -> dropWorld.dropItemNaturally(dropAt, factory.createPetArmorItem(1)));
+            }
             if (undeadVictim && petManager.isUnholy(killer)
                     && Math.random() < configManager.getDouble("pets.summon.heart-drop-chance", 0.03D)) {
                 org.bukkit.Bukkit.getRegionScheduler().run(plugin, dropAt,

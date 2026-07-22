@@ -14,6 +14,18 @@ import java.util.UUID;
  */
 public final class MinionProtectionListener implements Listener {
 
+    /** Chunk-betöltéskor a gazdátlan (offline tulajú) minion/társ despawnol — a
+     *  restart előtt árván maradt persistent entitások lusta seprése. */
+    @org.bukkit.event.EventHandler
+    public void onEntitiesLoad(final org.bukkit.event.world.EntitiesLoadEvent event) {
+        for (final org.bukkit.entity.Entity entity : event.getEntities()) {
+            final UUID owner = minionManager.getOwner(entity);
+            if (owner != null && org.bukkit.Bukkit.getPlayer(owner) == null) {
+                entity.remove();
+            }
+        }
+    }
+
     /** A minion-tagelt MagmaCube/Slime halálakor NEM hasad — a gyerekek gazdátlan,
      *  cap-on kívüli vad mobok lennének. */
     @org.bukkit.event.EventHandler(ignoreCancelled = true)
@@ -44,6 +56,16 @@ public final class MinionProtectionListener implements Listener {
         }
 
         if (event.getTarget() instanceof Player player && player.getUniqueId().equals(minionOwner)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // Vanília aggro-fék: a minion/társ NEM veheti célba önhatalmúlag a játékosokat
+        // és falusiakat — csak a plugin-vezérelt (CUSTOM) kijelölés vagy a jogos
+        // visszatámadás (megütötték) engedett.
+        if ((event.getTarget() instanceof Player || event.getTarget() instanceof org.bukkit.entity.Villager)
+                && event.getReason() != org.bukkit.event.entity.EntityTargetEvent.TargetReason.CUSTOM
+                && event.getReason() != org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY) {
             event.setCancelled(true);
             return;
         }

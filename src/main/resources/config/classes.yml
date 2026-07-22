@@ -374,7 +374,7 @@ specializations:
   plaguebringer:
     spell-unlocks:
       plague_cut: 25
-      contagion: 27
+      plague_contagion: 27
       black_boils: 30
       miasma: 33
       festering_wounds: 36
@@ -395,7 +395,7 @@ specializations:
       festering_strike: 25
       outbreak: 27
       raise_ghoul: 30
-      death_coil: 33
+      unholy_coil: 33
       grip_of_the_dead: 36
       epidemic: 39
       army_of_the_dead: 45

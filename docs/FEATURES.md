@@ -209,9 +209,15 @@
 
 ## 🐾 Kísérők és extra rendszerek
 
-- **Pet-rendszer**: befogó-eszközök (CMD 5301+), társ-idézés, pet-szint és harc-
-  asszisztencia, Vadmester/Nekromanta társak; **Soulforge** (/soulforge): nekromanta
-  minion-fejlesztés lélekkövekből.
+- **Pet-rendszer**: befogó-eszközök (CMD 5301-02) a Vadmesternek/Nekromantának;
+  rituálé-idézett állandó társ (Szentségtelen ghúl / Boszorkánymester démon —
+  kellék-drop CMD 5303-04, éjszakai rituálé, forma-fejlődés szinttel, +5 szint
+  idézett-prémium); pet-szint és plugin-vezérelt harc-asszisztencia; **Társ-GUI**
+  (/pet): idézés/elbocsátás/átnevezés/állásmód-gombok; állásmódok (Támadás/Passzív/
+  Maradj — parancs, GUI vagy sneak+jobb katt); halál után újraidézési cooldown;
+  **Társvért** (CMD 5305, ritka drop): +páncél/+életerő a társnak, újraidézve is
+  megmarad; a gazda max-HP talentjeinek fele a társra száll; **Soulforge**
+  (/soulforge): nekromanta minion-fejlesztés lélekkövekből.
 - **Party** (/party): meghívás, XP-megosztás, party-HP a HUD-on, personal-loot
   kizárások.
 - **Céh** (/ceh): frakción belüli kisközösség — alapítás (250), tagság, kassza,
