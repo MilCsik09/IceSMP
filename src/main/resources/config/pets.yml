@@ -4,6 +4,16 @@
 # talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.
 # Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
 pets:
+  # Rituálé-idézés (Szentségtelen ghúl / Boszorkánymester démon): kellék + éjszaka.
+  # A forma a pet-szinttel fejlődik (tier2/tier3-level), az idézett társ
+  # bonus-levels erő-prémiumot kap (a nehezebb beszerzés ellentételezése).
+  summon:
+    night-only: true
+    bonus-levels: 5
+    tier2-level: 15
+    tier3-level: 25
+    heart-drop-chance: 0.03   # Nyughatatlan Szív: élőhalott-kill (Szentségtelen)
+    seal-drop-chance: 0.06    # Démon-pecsét: boszorka/illager-kill (Boszorkánymester)
   capture:
     # Erő-tiltólista: ezek a lények egyik szereppel sem foghatók be (meta-törők).
     blocklist:

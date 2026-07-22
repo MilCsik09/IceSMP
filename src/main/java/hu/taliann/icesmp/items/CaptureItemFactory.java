@@ -37,6 +37,26 @@ public final class CaptureItemFactory {
                 "<gray>Eleftheria mérgének paktuma — jobb katt egy szörnyön: szolgáddá köti.</gray>", "<gray>(Nekromanta)</gray>");
     }
 
+    public ItemStack createHeartItem(final int amount) {
+        return create(amount, "heart", Material.ECHO_SHARD, "<dark_green>Nyughatatlan Szív</dark_green>",
+                "<gray>Egy el nem porladt szív, amely még emlékszik a parancsszóra —</gray>",
+                "<gray>éjjel, szabad ég alatt idézd meg vele a ghúlodat. (Szentségtelen)</gray>");
+    }
+
+    public ItemStack createSealItem(final int amount) {
+        return create(amount, "seal", Material.AMETHYST_SHARD, "<dark_purple>Démon-pecsét</dark_purple>",
+                "<gray>A fátylon túlról zárt alku pecsétje — éjjel törd fel,</gray>",
+                "<gray>és a démon a szolgálatodba áll. (Boszorkánymester)</gray>");
+    }
+
+    public boolean isHeartItem(final ItemStack item) {
+        return "heart".equals(tagOf(item));
+    }
+
+    public boolean isSealItem(final ItemStack item) {
+        return "seal".equals(tagOf(item));
+    }
+
     public boolean isBeastCapture(final ItemStack item) {
         return "beast".equals(tagOf(item));
     }
@@ -66,7 +86,12 @@ public final class CaptureItemFactory {
                 MINI.deserialize(spec).decoration(TextDecoration.ITALIC, false)));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         meta.getPersistentDataContainer().set(captureKey, PersistentDataType.STRING, tag);
-        meta.setCustomModelData("beast".equals(tag) ? 5301 : 5302); // docs/RESOURCE_PACK_CMD.md
+        meta.setCustomModelData(switch (tag) {
+            case "beast" -> 5301;
+            case "necro" -> 5302;
+            case "heart" -> 5303;
+            default -> 5304;
+        }); // docs/RESOURCE_PACK_CMD.md
         item.setItemMeta(meta);
         return item;
     }

@@ -51,6 +51,12 @@ public final class JobManager implements PlayerStateCleanup {
         return player.getPersistentDataContainer().has(jobPrimaryKey, PersistentDataType.STRING);
     }
 
+    private volatile hu.taliann.icesmp.managers.FactionManager factionManagerRef;
+
+    public void setFactionManager(final hu.taliann.icesmp.managers.FactionManager factionManager) {
+        this.factionManagerRef = factionManager;
+    }
+
     public JobType getPrimaryJob(final Player player) {
         final String rawPrimary = player.getPersistentDataContainer().get(jobPrimaryKey, PersistentDataType.STRING);
         return JobType.fromId(rawPrimary);
@@ -86,6 +92,16 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public boolean setPrimaryJob(final Player player, final JobType job) {
+        // Kapcsolható mód: DK csak Kitaszítottnak — itt (és nem csak a GUI-ban)
+        // ellenőrizve, hogy jövőbeli hívási út se kerülhesse meg.
+        if (job == JobType.DEATH_KNIGHT
+                && configManager.getBoolean("classes.death-knight.dark-only", false)) {
+            final hu.taliann.icesmp.managers.FactionManager factions = this.factionManagerRef;
+            if (factions != null && factions.getFaction(player.getUniqueId())
+                    != hu.taliann.icesmp.data.FactionType.DARK) {
+                return false;
+            }
+        }
         if (!canSelectPrimary(player, job)) {
             return false;
         }

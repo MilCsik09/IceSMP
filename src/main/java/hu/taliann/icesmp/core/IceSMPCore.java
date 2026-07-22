@@ -1240,7 +1240,9 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.UnmuteCommand(plugin, moderationManager, messageManager));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
-        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, warWindowManager, councilManager, messageManager));
+        final FactionCommand factionCommand = new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, warWindowManager, councilManager, messageManager);
+        factionCommand.setSpecializationManager(specializationManager);
+        plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), factionCommand);
         plugin.registerCommand("class", "Kaszt (class): szint, Lélekkapocs, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, specializationManager, messageManager));
         plugin.registerCommand("menu", "Központi menü — minden parancs egy helyen", List.of("hub", "m"), new MenuCommand(commandMenuContext, messageManager));
         plugin.registerCommand("achievements", "Elérések (mérföldkövek + jutalmak)", List.of("ach", "eleresek"), new AchievementsCommand(commandMenuContext, messageManager));
@@ -1422,7 +1424,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ReportFeedbackListener(reportManager), plugin);
         pluginManager.registerEvents(new MinionProtectionListener(minionManager), plugin);
         pluginManager.registerEvents(new PetCommandListener(minionManager, messageManager), plugin);
-        pluginManager.registerEvents(new PetXpListener(plugin, petManager, configManager), plugin);
+        final PetXpListener petXpListener = new PetXpListener(plugin, petManager, configManager);
+        petXpListener.setCaptureItemFactory(captureItemFactory);
+        pluginManager.registerEvents(petXpListener, plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);
         pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);

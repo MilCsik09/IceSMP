@@ -141,21 +141,68 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (isNecromancer(player)) {
             return target instanceof Monster; // any hostile mob / undead
         }
-        if (isUnholy(player)) {
-            // A Szentségtelen csak élőhalottat köt magához (ghúl-társ).
-            return target instanceof org.bukkit.entity.Zombie
-                    || target instanceof org.bukkit.entity.AbstractSkeleton
-                    || target instanceof org.bukkit.entity.Phantom;
-        }
-        if (isWarlock(player)) {
-            // A Boszorkánymester démoni familiárist köt (vex/boszorka/láng-lények).
-            return target instanceof org.bukkit.entity.Vex
-                    || target instanceof org.bukkit.entity.Witch
-                    || target instanceof org.bukkit.entity.Blaze
-                    || target instanceof org.bukkit.entity.MagmaCube
-                    || target instanceof org.bukkit.entity.PigZombie;
-        }
+        // A Szentségtelen és a Boszorkánymester NEM befog, hanem IDÉZ (rituálé-kellékkel).
         return false;
+    }
+
+    /** Idézett társ jelölése — a rituálé-út erő-prémiumot ad (nehezebb beszerzés). */
+    private NamespacedKey summonedKeyLazy;
+
+    private NamespacedKey summonedKey() {
+        if (summonedKeyLazy == null) {
+            summonedKeyLazy = new NamespacedKey(plugin, "pet_summoned");
+        }
+        return summonedKeyLazy;
+    }
+
+    public boolean isSummonedPet(final Player player) {
+        return player.getPersistentDataContainer()
+                .getOrDefault(summonedKey(), PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /**
+     * Rituálé-idézés (Szentségtelen ghúl / Boszorkánymester démon): csak éjjel, a
+     * forma a pet-szinttel fejlődik — a magasabb forma új rituálét (új kelléket) kér.
+     *
+     * @return null siker, különben üzenet-kulcs
+     */
+    public String ritualSummon(final Player player) {
+        final boolean unholy = isUnholy(player);
+        final boolean warlock = !unholy && isWarlock(player);
+        if (!unholy && !warlock) {
+            return "pet-wrong-spec";
+        }
+        final long time = player.getWorld().getTime();
+        if (configManager.getBoolean("pets.summon.night-only", true) && (time < 13000L || time > 23000L)) {
+            return "pet-ritual-night-only";
+        }
+        final int level = getLevel(player);
+        final EntityType form;
+        final String formName;
+        if (unholy) {
+            if (level >= configManager.getInt("pets.summon.tier3-level", 25)) {
+                form = EntityType.ZOGLIN; formName = "Förtelem";
+            } else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) {
+                form = EntityType.WITHER_SKELETON; formName = "Csontszolga";
+            } else {
+                form = EntityType.HUSK; formName = "Ghúl";
+            }
+        } else {
+            if (level >= configManager.getInt("pets.summon.tier3-level", 25)) {
+                form = EntityType.MAGMA_CUBE; formName = "Magma-behemót";
+            } else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) {
+                form = EntityType.BLAZE; formName = "Tűz-démon";
+            } else {
+                form = EntityType.VEX; formName = "Imp";
+            }
+        }
+        final var pdc = player.getPersistentDataContainer();
+        pdc.set(typeKey, PersistentDataType.STRING, form.name());
+        pdc.set(summonedKey(), PersistentDataType.BYTE, (byte) 1);
+        if ("Társ".equals(getName(player))) {
+            pdc.set(nameKey, PersistentDataType.STRING, formName);
+        }
+        return summon(player);
     }
 
     /**
@@ -167,6 +214,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
+        player.getPersistentDataContainer().remove(summonedKey());
         if (!isValidTarget(player, target) || !(target instanceof Mob mob)) {
             return "pet-invalid-target";
         }
@@ -497,7 +545,10 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         // A pet BÁRMILYEN mob lehet (Beast Master / Necromancer): a közös keményítés fedi a
         // zombi/csontváz/phantom nappali égést ÉS a piglin/hoglin overworld-zombisodását is.
         EventSpawnGuard.prepare(mob);
-        applyBuffs(mob, getLevel(player), true);
+        // Idézett társ prémiuma: bónusz-szintekkel skálázott statok (a rituálé-beszerzés ára).
+        final int buffLevel = getLevel(player)
+                + (isSummonedPet(player) ? Math.max(0, configManager.getInt("pets.summon.bonus-levels", 5)) : 0);
+        applyBuffs(mob, buffLevel, true);
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
         player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());

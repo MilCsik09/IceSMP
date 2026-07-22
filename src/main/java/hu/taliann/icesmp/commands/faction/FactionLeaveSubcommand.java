@@ -16,6 +16,12 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
     private final TerritoryManager territoryManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    /** Setter-injektált: DARK-elhagyáskor a sötét spec elengedéséhez. */
+    private volatile hu.taliann.icesmp.managers.SpecializationManager specializationManager;
+
+    public void setSpecializationManager(final hu.taliann.icesmp.managers.SpecializationManager specializationManager) {
+        this.specializationManager = specializationManager;
+    }
 
     public FactionLeaveSubcommand(final FactionManager factionManager, final CurrencyManager currencyManager,
                                   final TerritoryManager territoryManager, final ConfigManager configManager,
@@ -67,7 +73,13 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             }
         }
 
+        final boolean leavingDark = currentFaction == FactionType.DARK;
         factionManager.removeFaction(player.getUniqueId());
+        final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
+        if (leavingDark && specs != null && specs.resetDarkGatedSpecialization(player)) {
+            player.sendMessage(messageManager.get("messages.dark-spec-lost",
+                    "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
+        }
         sender.sendMessage(messageManager.get("messages.faction-left", "&eKiléptél a frakciódból."));
         return true;
     }

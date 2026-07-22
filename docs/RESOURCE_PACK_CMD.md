@@ -190,6 +190,14 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** cserzett bőrbarna; akcent: élénk levélzöld
 - **Hangulat / lore:** Ősi Kötés Póráza — a Vadmester ezzel fogadja társává az állatokat (Aetrinita és Kallan kötése).
 
+### 5303 — Nyughatatlan Szív
+- **Alap-item:** `minecraft:echo_shard`
+- **Mi ez:** a Szentségtelen ghúl-rituálé kelléke (élőhalott-elit drop)
+
+### 5304 — Démon-pecsét
+- **Alap-item:** `minecraft:amethyst_shard`
+- **Mi ez:** a Boszorkánymester démon-rituálé kelléke (boszorka/illager drop)
+
 ### 5302 — Sötét Paktum-tekercs
 - **Fájl:** `capture_necro.png` &nbsp;|&nbsp; **Alap-item:** `GHAST_TEAR`
 - **Ábrázolás:** sötét pergamentekercs koponya-pecséttel, a koponya szemeiben türkiz izzással

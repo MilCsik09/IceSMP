@@ -1914,3 +1914,22 @@ Jó tesztelést! ❄️
       szereppel sem fogható be (pets.capture.blocklist, élő kulcs).
 - [ ] **Lopás-védelem:** más játékos vanília úton szelídített állata (farkas, ló, macska)
       NEM fogható be idegen befogóval; a sajátod igen.
+
+## Rituálé-idézés: lore-hű állandó társak (tulaj-döntés, 2026-07-22)
+- [ ] **Modell-váltás:** a Szentségtelen és a Boszorkánymester NEM befog, hanem IDÉZ —
+      a tekercs nekik nem működik, a /pet item útmutatót ad; Vadmester/Nekromanta
+      befogása változatlan.
+- [ ] **Kellék-beszerzés (kihívás):** Nyughatatlan Szív (CMD 5303) élőhalott-killből
+      3% (csak Szentségtelennek esik), Démon-pecsét (CMD 5304) boszorka/illager-killből
+      6% (csak Boszorkánymesternek).
+- [ ] **Rituálé:** kellékkel a kézben jobb-klikk, CSAK ÉJJEL (night-only) — lélek-
+      részecskék + hang; a kellék elfogy; nappal hibaüzenet.
+- [ ] **Forma-progresszió:** pet-szint 1-14: Ghúl (husk) / Imp (vex); 15+: Csontszolga
+      (wither skeleton) / Tűz-démon (blaze); 25+: Förtelem (zoglin) / Magma-behemót —
+      a magasabb forma ÚJ rituálét (új kelléket) kér.
+- [ ] **Idézett-prémium:** az idézett társ +5 bónusz-szintnyi statot kap (summon.
+      bonus-levels) a befogott társakhoz képest; befogásra váltásnál a prémium elvész.
+- [ ] **DARK-kilépés spec-reset:** kifizetős DARK→más váltásnál és /faction leave-nél
+      a sötét spec automatikusan elveszik (üzenettel) — az "örök paktum" specet nem
+      lehet kivinni; MagmaCube-minion halálakor NEM hasad gazdátlan kockákra;
+      a dark-only DK-kapu a JobManagerben is él (minden hívási út védett).

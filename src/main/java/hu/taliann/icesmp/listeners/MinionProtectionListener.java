@@ -14,6 +14,16 @@ import java.util.UUID;
  */
 public final class MinionProtectionListener implements Listener {
 
+    /** A minion-tagelt MagmaCube/Slime halálakor NEM hasad — a gyerekek gazdátlan,
+     *  cap-on kívüli vad mobok lennének. */
+    @org.bukkit.event.EventHandler(ignoreCancelled = true)
+    public void onMinionSplit(final org.bukkit.event.entity.EntityTransformEvent event) {
+        if (event.getTransformReason() == org.bukkit.event.entity.EntityTransformEvent.TransformReason.SPLIT
+                && minionManager.isMinion(event.getEntity())) {
+            event.setCancelled(true);
+        }
+    }
+
     private final MinionManager minionManager;
 
     public MinionProtectionListener(final MinionManager minionManager) {

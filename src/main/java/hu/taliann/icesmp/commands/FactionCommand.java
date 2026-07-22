@@ -20,6 +20,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FactionCommand extends AbstractDispatchCommand {
 
+    private FactionJoinSubcommand joinSubcommand;
+    private FactionLeaveSubcommand leaveSubcommand;
+
+    public void setSpecializationManager(final hu.taliann.icesmp.managers.SpecializationManager specializationManager) {
+        if (joinSubcommand != null) {
+            joinSubcommand.setSpecializationManager(specializationManager);
+        }
+        if (leaveSubcommand != null) {
+            leaveSubcommand.setSpecializationManager(specializationManager);
+        }
+    }
+
     public FactionCommand(final JavaPlugin plugin, final FactionManager factionManager, final SinManager sinManager,
                           final FactionTreasuryManager treasuryManager, final CurrencyManager currencyManager,
                           final KingManager kingManager, final RaidManager raidManager,
@@ -29,8 +41,12 @@ public final class FactionCommand extends AbstractDispatchCommand {
                           final hu.taliann.icesmp.managers.CouncilManager councilManager,
                           final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
-        register(new FactionJoinSubcommand(factionManager, sinManager, currencyManager, territoryManager, configManager, messageManager));
-        register(new FactionLeaveSubcommand(factionManager, currencyManager, territoryManager, configManager, messageManager));
+        final FactionJoinSubcommand joinSubcommand = new FactionJoinSubcommand(factionManager, sinManager, currencyManager, territoryManager, configManager, messageManager);
+        final FactionLeaveSubcommand leaveSubcommand = new FactionLeaveSubcommand(factionManager, currencyManager, territoryManager, configManager, messageManager);
+        register(joinSubcommand);
+        register(leaveSubcommand);
+        this.joinSubcommand = joinSubcommand;
+        this.leaveSubcommand = leaveSubcommand;
         register(new FactionSetSubcommand(plugin, factionManager, sinManager, messageManager));
         final FactionTreasurySubcommand treasurySubcommand = new FactionTreasurySubcommand(treasuryManager, factionManager, currencyManager, kingManager, messageManager, configManager);
         treasurySubcommand.setCouncilManager(councilManager); // Menedék: Vének Tanácsa jog

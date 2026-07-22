@@ -152,6 +152,22 @@ public final class SpecializationManager {
      *
      * @param player the player to reset
      */
+    /**
+     * A DARK-kapus spec (Nekromanta, Szentségtelen, Csontpap, Pestishozó, Demonológus…)
+     * nem élhet tovább a Kitaszítottakon kívül — frakció-elhagyáskor hívandó.
+     *
+     * @return true, ha volt mit elengedni
+     */
+    public boolean resetDarkGatedSpecialization(final Player player) {
+        final SpecializationType current = getClassSpecialization(player);
+        if (current == null || (current.getRequiredFaction() != hu.taliann.icesmp.data.FactionType.DARK
+                && !current.requiresSinner())) {
+            return false;
+        }
+        resetClassSpecialization(player);
+        return true;
+    }
+
     public void resetSpecializations(final Player player) {
         resetClassSpecialization(player);
         resetProfessionSpecialization(player);

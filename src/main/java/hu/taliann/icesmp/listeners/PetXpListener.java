@@ -18,6 +18,12 @@ public final class PetXpListener implements Listener {
     private final PetManager petManager;
     private final ConfigManager configManager;
 
+    private volatile hu.taliann.icesmp.items.CaptureItemFactory captureItemFactory;
+
+    public void setCaptureItemFactory(final hu.taliann.icesmp.items.CaptureItemFactory factory) {
+        this.captureItemFactory = factory;
+    }
+
     public PetXpListener(final JavaPlugin plugin, final PetManager petManager, final ConfigManager configManager) {
         this.plugin = plugin;
         this.petManager = petManager;
@@ -36,11 +42,32 @@ public final class PetXpListener implements Listener {
         // Folia: the death event runs on the mob's region thread; the killer is a DIFFERENT entity —
         // even the canOwnPet spec check reads its PDC. Hop first, then check + award on the killer's
         // thread. (Both pet-owning specs — Beast Master AND Necromancer — earn companion XP.)
+        final org.bukkit.Location dropAt = event.getEntity().getLocation();
+        final boolean undeadVictim = event.getEntity() instanceof org.bukkit.entity.Zombie
+                || event.getEntity() instanceof org.bukkit.entity.AbstractSkeleton
+                || event.getEntity() instanceof org.bukkit.entity.Phantom;
+        final boolean occultVictim = event.getEntity() instanceof org.bukkit.entity.Witch
+                || event.getEntity() instanceof org.bukkit.entity.Raider;
+        final org.bukkit.World dropWorld = dropAt.getWorld();
         killer.getScheduler().run(plugin, task -> {
             if (!petManager.canOwnPet(killer)) {
                 return;
             }
             petManager.addXp(killer, Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2)));
+            // Rituálé-kellék dropok: a beszerzés-kihívás forrása (a drop a mob helyén esik).
+            final hu.taliann.icesmp.items.CaptureItemFactory factory = this.captureItemFactory;
+            if (factory == null) {
+                return;
+            }
+            if (undeadVictim && petManager.isUnholy(killer)
+                    && Math.random() < configManager.getDouble("pets.summon.heart-drop-chance", 0.03D)) {
+                org.bukkit.Bukkit.getRegionScheduler().run(plugin, dropAt,
+                        t -> dropWorld.dropItemNaturally(dropAt, factory.createHeartItem(1)));
+            } else if (occultVictim && petManager.isWarlock(killer)
+                    && Math.random() < configManager.getDouble("pets.summon.seal-drop-chance", 0.06D)) {
+                org.bukkit.Bukkit.getRegionScheduler().run(plugin, dropAt,
+                        t -> dropWorld.dropItemNaturally(dropAt, factory.createSealItem(1)));
+            }
         }, null);
     }
 }
