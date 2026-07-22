@@ -304,3 +304,14 @@ parkour:
   # teljesíthető (idő + quest-haladás jár), de veret nem — a parkour így nem pénz-nyomda.
   # A futam megszakad gyöngy/refő-teleportra, elytrára és riptide-ra (mobilitás-fék).
   daily-reward-limit: 3
+
+# ===== Combat-tag (harc-jelölés) =====
+combat:
+  tag-enabled: true
+  # Ennyi másodpercig él a jelölés minden PvP-találat után (mindkét félen).
+  # Jelölt játékos bemehet a védett zónába, de ott sem kap PvP-védelmet,
+  # és a komp sem viszi el.
+  tag-seconds: 12
+  # Hadi-ablak pont / párbaj bűn-tisztulás csak ennyi másodpercnyi TÉNYLEGES
+  # harc (a pár első kontaktusától) után jár — win-trade/bűn-mosás fék.
+  min-fight-seconds: 20

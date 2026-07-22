@@ -43,7 +43,7 @@
    és a rítus-határidő (globál tick) egyszerre zárhatja le ugyanazt a rítust — nincs közös
    atomi "ki nyert" őr (a testvér-managerek claimSettlement-mintája itt hiányzik) → dupla
    jutalom + ellentmondó broadcast lehetséges. → compareAndSet-szerű lezárás-csere.
-6. **Az invázió és a kultista-sorsolások 65%-a jutalom nélküli holt tartalom.** Az
+6. ✅ KÉSZ (A-csomag: kultista loot-tábla — cultists.loot; az invázió-mobok már korábban boss-tier lootot dobtak) — **Az invázió és a kultista-sorsolások 65%-a jutalom nélküli holt tartalom.** Az
    inváziónak nincs semmilyen dedikált loot-ja (csak normál mob-XP), a kultista
    attack/courier variánsok (össz-súly 65%) leölve sem adnak tárgyat — racionális játékos
    kihagyja őket. → invasion.reward-loot + cultists attack/courier loot-tábla.
@@ -53,7 +53,7 @@
    mob-money-drop 300 és fishing-windfall 150 kapott), nincs spawner-kizárás, és a
    nem-DARK játékosok élőhalott-farmja sincs tiltva — uncapped Csontveret-forrás, 3%
    díjjal átváltva. → napi keret + spawner-kizárás + undead-szűkítés.
-8. **Az árfolyam 50-60 fős szerveren a 4× plafonon ragadna.** A reference-supply (10000)
+8. ✅ KÉSZ (A-csomag: reference-supply 2500 [50 fő] + napi váltási keret 200, kikapcsolható) — **Az árfolyam 50-60 fős szerveren a 4× plafonon ragadna.** A reference-supply (10000)
    nagy szerverre kalibrált: ~625 alatti össz-bankegyenlegnél már max-multiplier; ráadásul
    csak a BANKI egyenleg számít kínálatnak — tömeges kivéttel (fizikai veret zsebben) a
    kínálat mesterségesen ritkítható, majd felfújt árfolyamon visszaváltható.
@@ -94,7 +94,7 @@
     Nem-ultimate spellek 15-22 sebzést ütnek max szinten (obliterate 18 / 20 mp-enként,
     a deathfrost kombó 36 nyers sebzés 4 mp alatt — 60% max rezisztencia után is ~14).
     → a két szorzó additív összevonása vagy közös 1.75× sapka.
-16. **Fagylovag perma-CC.** 8-9 freeze/slow spell egy specen, összesített uptime max
+16. ✅ KÉSZ (A-csomag: hard-CC DR minden játékos-célponton — spells.cc-dr) — **Fagylovag perma-CC.** 8-9 freeze/slow spell egy specen, összesített uptime max
     szinten ~100-105% egyetlen célon — diminishing returns nélkül szinte folyamatos
     fagyontartás. → CC-DR (ismételt CC csökkenő időtartammal).
 17. ✅ KÉSZ (P2-1. csomag: requires-spent 9) — **Az ascendant capstone-talent tiszta szintezésből elérhetetlen.** 50 szint / 5 =
@@ -113,7 +113,7 @@
 
 ## 🟡 Érdemi leletek (válogatás, domain szerint)
 
-- **Hadi-ablak win-trade:** két összejátszó fél 30 percenként váltott öléssel kockázat
+- ✅ KÉSZ (A-csomag: pont csak min. 20 mp pár-harc után — combat.min-fight-seconds) — **Hadi-ablak win-trade:** két összejátszó fél 30 percenként váltott öléssel kockázat
   nélkül termeli a liga-pontot — min. harc-idő/HP-veszteség feltétel vagy kétirányú
   pár-cooldown kellene. (A pár-cooldown ráadásul volatilis: restart nullázza.)
 - **Tanácsi kassza-keret fejenkénti** (3×400=1200/nap > királyi 1000, a kódkomment
@@ -123,9 +123,9 @@
   új min-votes jelölt nélkül örökre marad. → automatikus trónfosztás lejáratkor.
 - **Suttogó éjszakai békesség kockázat-mentes** — az ígért "árulkodó jel" gyanú-hurok
   nincs bekötve (döntés kérdése: maradjon ingyen-előny, vagy kis witness-esély).
-- **Combat-tag nincs** — vesztésre álló harcból safe-zone-ba/kompra sétálás; a /komp
+- ✅ KÉSZ (A-csomag: CombatTagManager — 12 mp jelölés, zóna-védelem és komp-tiltás) — **Combat-tag nincs** — vesztésre álló harcból safe-zone-ba/kompra sétálás; a /komp
   sem néz harc-állapotot. → 10-15 mp combat-flag, ami zónába-lépést/kompot tilt.
-- **End-portál kikerüli az "egyetlen kapu" szabályt** (a FIRE-tiltás a stronghold-ra nem
+- ✅ KÉSZ (A-csomag: end-portal.allow=false — keret-aktiválás + átlépés blokk, tulaj-döntés: szezon 2 admin-event nyitja) — **End-portál kikerüli az "egyetlen kapu" szabályt** (a FIRE-tiltás a stronghold-ra nem
   hat) → döntés: End engedett-e; ha nem, portál-aktiválás blokk.
 - **Zóna-rámpa torzít elnyúlt zónáknál** (befoglaló-kör becslés): hosszú tengelyen túl
   messzire nyúlik a 0-szint, rövid tengelyen túl korán durvul → poligon-él távolság vagy
@@ -224,11 +224,11 @@
     limit (start→cél→start ciklus azonnali veret-kifizetéssel ismételhető), és a cél-check
     csak távolságot néz — pearl/elytra/mobilitás-spell bejárás nélkül célba visz.
     → napi limit + mobilitás-tiltás futás alatt (checkpoint-lánc).
-23. **A szezon-jutalom winner-takes-all.** A 2-4. helyezett frakció SEMMIT nem kap, még
+23. ✅ KÉSZ (A-csomag: runner-up-ratios 0.5/0.25 + teljes végeredmény-broadcast) — **A szezon-jutalom winner-takes-all.** A 2-4. helyezett frakció SEMMIT nem kap, még
     záró-broadcastot sem — 60 nap liga-munka a mezőny 3/4-ének nulla visszajelzéssel
     zárul. → lépcsőzetes jutalom (pl. fél/negyed kassza a 2-3. helynek) + záró-összegző
     broadcast mindenkinek.
-24. **A kazamata kód-szinten üres héj.** A kulcs-kapu és a +5 mob-szint működik, de nincs
+24. ✅ KÉSZ (A-csomag: fejenkénti kincsesládák + zónánkénti mini-boss + bónusz mob-drop — dungeon.*) — **A kazamata kód-szinten üres héj.** A kulcs-kapu és a +5 mob-szint működik, de nincs
     dungeon-specifikus loot/boss/szoba-logika — a kapu mögött admin-építés nélkül csak
     "erősebb mobokkal teli üres tér" van. → dungeon-loot/boss bekötése VAGY explicit
     jelzés az építész-doksiban, hogy a belső tartalom 100%-ban kézi.
@@ -240,7 +240,7 @@
   szezonális questet. → getSeasonNumber()-re váltás. (A rollover-mag egyébként
   megbízható: offline átfordulást pótol, dupla-rollover kizárt, a bajnok-megállapítás
   a nullázás előtt fut.)
-- **Párbajos bűn-mosás:** önként vesztő szövetségessel heti 2 bűn-tisztítás kockázat
+- ✅ KÉSZ (A-csomag: bűn-tisztulás/pont csak min. 20 mp pár-harc után) — **Párbajos bűn-mosás:** önként vesztő szövetségessel heti 2 bűn-tisztítás kockázat
   nélkül → min. harc-idő/sebzés feltétel (ugyanaz a fék, mint a hadi-ablak win-trade-re).
 - **Régészet "első kattintó visz mindent"** — a runner-up minta (HiddenSpot
   repeat-reward-ratio) átvehető; ráadásul a lelőhely mindig egy véletlen játékos 80
@@ -282,6 +282,15 @@ lore→mechanika táblájából (+ zone-ramp fél mondat) — pótlandó.
 
 - **Rejtett helyek feltöltése** (world.yml hidden-spots.spots — jelenleg üres) és
   **kazamata-belsők megépítése + loot-elhelyezés** (a kapu mögött nincs generált tartalom).
+
+## Tulaj-döntések (2026-07-22, A-kör)
+
+- **#3 ostrom-rombolás:** nem kell külön rendszer — a claim/territórium-robbantás a
+  regen-rendszerrel már lefedett (tulaj: "már most is lehet robbantani claimben").
+- **#21 céh:** NEM bővítjük — a tulaj szerint tovább szabdalná a 4 felé húzó
+  playerbase-t; a váz marad, tartalom-invest nélkül. (BACKLOG-ban tartva.)
+- **#18 relikvia-források (Mételytépő, Sárkánytojás):** függőben, tulaj-emlékeztetővel
+  — ne felejtsük el.
 
 ## Javasolt javítási sorrend (tulaj-döntésre; a függelék-leletekkel egyesítve)
 

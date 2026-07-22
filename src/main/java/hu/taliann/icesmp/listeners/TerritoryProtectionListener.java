@@ -153,7 +153,9 @@ public final class TerritoryProtectionListener implements Listener {
         final Player attacker = resolveAttacker(event.getDamager());
         if (event.getEntity() instanceof Player victim) {
             // Safe-zone: block player-attributed AND unattributed (TNT/mob) damage.
+            // Combat-taggelt áldozat kivétel: harc közben a zónába sétálás nem véd.
             if ((attacker != null || isHostileSource(event.getDamager()))
+                    && !protection.isPvpUnprotected(victim.getUniqueId())
                     && protection.denyCombat(victim.getLocation(), attacker, attacker != null)) {
                 event.setCancelled(true);
             }

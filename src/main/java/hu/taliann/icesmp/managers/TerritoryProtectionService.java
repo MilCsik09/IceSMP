@@ -55,6 +55,18 @@ public final class TerritoryProtectionService {
         this.raidManager = raidManager;
     }
 
+    private volatile CombatTagManager combatTagManager;
+
+    public void setCombatTagManager(final CombatTagManager combatTagManager) {
+        this.combatTagManager = combatTagManager;
+    }
+
+    /** Combat-taggelt játékos a zónában sem kap PvP-védelmet (safe-zone menekülés fék). */
+    public boolean isPvpUnprotected(final java.util.UUID victimId) {
+        final CombatTagManager tags = this.combatTagManager;
+        return tags != null && tags.isTagged(victimId);
+    }
+
     /** Igaz, ha a hely az ÉLŐ raid célzónájában van és a játékos regisztrált harcos. */
     public boolean isRaidSiegeAt(final Player player, final Location location) {
         final RaidManager raids = this.raidManager;
@@ -242,6 +254,9 @@ public final class TerritoryProtectionService {
                         "<gray>⚔ A belépő még a Kapu árnyékának védelme alatt áll — pár pillanat, és szabad a préda.</gray>")), null);
                 return true;
             }
+        }
+        if (isPvpUnprotected(victim.getUniqueId())) {
+            return false;
         }
         return denyCombat(victim.getLocation(), attacker, true);
     }

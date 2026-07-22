@@ -390,9 +390,22 @@ public final class ConfiguredSpell extends BaseSpell {
             hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, target, liveDamage * power, getId());
         }
 
+        // Hard-CC DR: spellenként EGY közös szorzó (a freeze+slow kombó nem eszik két töltetet).
+        Double ccFactor = null;
         for (final PotionEffect effect : targetEffects) {
             // Mob-célponton a képernyő-effektek ható megfelelőre fordulnak (lásd adaptForTarget).
-            target.addPotionEffect(SpellTargetingUtil.adaptForTarget(target, scaledDuration(effect, power)));
+            PotionEffect scaled = SpellTargetingUtil.adaptForTarget(target, scaledDuration(effect, power));
+            if (scaled.getType().equals(org.bukkit.potion.PotionEffectType.SLOWNESS) && scaled.getAmplifier() >= 1) {
+                if (ccFactor == null) {
+                    ccFactor = hu.taliann.icesmp.utils.CcDiminish.nextFactor(target);
+                }
+                if (ccFactor <= 0.0D) {
+                    continue;
+                }
+                scaled = new PotionEffect(scaled.getType(), Math.max(1, (int) (scaled.getDuration() * ccFactor)),
+                        scaled.getAmplifier(), scaled.isAmbient(), scaled.hasParticles(), scaled.hasIcon());
+            }
+            target.addPotionEffect(scaled);
         }
 
         final int liveIgnite = liveIgniteTicks();
@@ -402,7 +415,13 @@ public final class ConfiguredSpell extends BaseSpell {
 
         final int liveFreeze = liveFreezeTicks();
         if (liveFreeze > 0) {
-            target.setFreezeTicks(Math.max(target.getFreezeTicks(), FREEZE_BASE_TICKS + liveFreeze));
+            if (ccFactor == null) {
+                ccFactor = hu.taliann.icesmp.utils.CcDiminish.nextFactor(target);
+            }
+            if (ccFactor > 0.0D) {
+                target.setFreezeTicks(Math.max(target.getFreezeTicks(),
+                        FREEZE_BASE_TICKS + Math.max(1, (int) (liveFreeze * ccFactor))));
+            }
         }
 
         final double liveKnockback = liveKnockback();

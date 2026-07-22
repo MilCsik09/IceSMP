@@ -55,10 +55,15 @@ currency:
     fee-percent: 5.0
   dynamic-exchange:
     enabled: true
-    reference-supply: 10000
+    # 50 fős induló szerverre kalibrálva (~50 veret/fő banki átlaggal) — nagyobb
+    # népességnél emelendő, különben az árfolyam a min-multiplier padlóra ül.
+    reference-supply: 2500
     elasticity: 0.5
     min-multiplier: 0.25
     max-multiplier: 4.0
+    # Napi váltási keret játékosonként, forrás-összegben (0 = kikapcsolva) — a
+    # tömeges kivét → ritkított kínálat → felfújt árfolyamon visszaváltás fék.
+    daily-limit: 200
     base-values:
       RED: 1.0
       BLUE: 1.0

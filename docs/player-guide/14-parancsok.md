@@ -130,6 +130,8 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/territory circle\|create <típus> ...` | Kör- vagy poligon-zóna kijelölése (típus: faction, protected-faction, protected-city, capital, doom-gate, dungeon) |
 | `/territory pos\|undo\|clearpoints\|points\|show [id]` | Poligon-határpontok bejárása és előnézete (pl. városfal mentén) |
 | `/territory tp <id>` | Teleportálás a zóna középpontjához |
+| `/territory dungeonchest [tábla]` | A nézett láda/hordó regisztrálása kazamata-kincsesládának (újra kiadva törli) |
+| `/territory dungeonboss <zóna-id> [tábla]` | Kazamata mini-boss spawn-pont kijelölése (clear <zóna-id> = törlés) |
 | `/territory rename\|resize\|settype\|sety <id> ...` | Meglévő zóna módosítása (név / sugár / típus / magassági sáv) |
 | `/territory setcapital\|remove\|list\|info` | Főváros gyorskijelölés / zóna törlése / listája / infó |
 | `/exchangeboard place\|remove` | Árfolyamtábla lerakása/törlése |

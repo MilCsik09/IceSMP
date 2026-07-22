@@ -44,6 +44,12 @@ public final class WarWindowManager {
     /** Farm-fék: "killer:victim" pár → az utolsó jóváírt ölés időbélyege. */
     private final Map<String, Long> pairCooldowns = new ConcurrentHashMap<>();
 
+    private volatile CombatTagManager combatTagManagerRef;
+
+    public void setCombatTagManager(final CombatTagManager combatTagManager) {
+        this.combatTagManagerRef = combatTagManager;
+    }
+
     public WarWindowManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager, final SeasonManager seasonManager) {
         this.plugin = plugin;
@@ -177,6 +183,17 @@ public final class WarWindowManager {
         }
         final Long lastCounted = pairCooldowns.get(pairKey);
         final boolean pairFresh = lastCounted == null || now - lastCounted >= pairCooldownMillis;
+
+        // Win-trade fék: pont csak TÉNYLEGES harc után jár — a pár első kontaktusától
+        // min-fight-seconds-nek el kell telnie (az egy-ütéses "váltott ölés" nem harc).
+        final CombatTagManager tags = this.combatTagManagerRef;
+        if (tags != null && tags.isEnabled()
+                && tags.pairFightSeconds(killer.getUniqueId(), victimId) < tags.minFightSeconds()) {
+            killer.sendMessage(messageManager.getMessage(
+                    "war-kill-too-quick",
+                    "<gray>⚔ Szentesített hadi-ölés — de valódi összecsapás nélkül liga-pont nem jár.</gray>"));
+            return;
+        }
 
         // Napi pont-plafon (PDC nap-kulcs minta, a killer saját szálán).
         final long today = java.time.LocalDate.now().toEpochDay();

@@ -150,6 +150,9 @@ játékosnak az **élőhalott** mobokból (zombi, csontváz, phantom, zoglin, wi
 lélekkő** — azok úgysem védekeznek ellene (frakció-passzív), így a kockázat nélküli farmolás
 nem terem pénzt. Az ÉLŐ szörnyek (creeper, pók, witch, Nether-mobok…) a Sötéteknek is fizetnek.
 
+A valutaváltásnak **napi kerete** van (alapból 200 a forrás-valutában) — a tömeges
+oda-vissza váltogatás árfolyam-manipulációja így nem működik.
+
 A lélekkőnek **napi kerete** van (alapból 50 darab játékosonként) — fölötte aznap már nem
 esik több. A spawner-mobok sosem ejtenek lélekkövet (nem skálázódnak).
 

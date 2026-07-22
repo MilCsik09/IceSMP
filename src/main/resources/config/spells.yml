@@ -58,6 +58,12 @@ spells:
       plague_contagion: termeszet
       miasma: termeszet
       plague_wind: termeszet
+  # ===== Hard-CC diminishing returns (PvP) =====
+  # Ugyanarra a JÁTÉKOSRA ismételt hard CC (fagyasztás, Lassítás II+) csökkenő erővel
+  # hat az ablakon belül: 100% → 50% → 25% → immun. Mobokra nem vonatkozik.
+  cc-dr:
+    enabled: true
+    window-seconds: 15
   # ===== Baráti tűz (party-tudatos célzás) =====
   # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
   # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.

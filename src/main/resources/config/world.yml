@@ -513,6 +513,18 @@ cultists:
     # Suttogó-részesedésben egyaránt gurulhat — a sötét receptek alapanyaga.
     - "unique:arnyekpor:2"
   courier-lifetime-minutes: 8
+  # Kultista-zsákmány (portya/hírvivő/rítus-hívő leölése, esély/kill) — a sorsolt
+  # variánsok ne legyenek jutalom nélküli holt tartalom. Sorformátum:
+  # {type: material|unique, item/id, min, max, weight}.
+  loot:
+    chance: 0.35
+    table:
+      - { type: material, weight: 30, item: GOLD_NUGGET, min: 3, max: 8 }
+      - { type: material, weight: 20, item: EXPERIENCE_BOTTLE, min: 1, max: 3 }
+      - { type: unique, weight: 20, id: arnyekpor, min: 1, max: 2 }
+      - { type: material, weight: 15, item: SCULK, min: 1, max: 4 }
+      - { type: unique, weight: 10, id: emlekszilank, min: 1, max: 1 }
+      - { type: unique, weight: 5, id: suttogas_meghivo, min: 1, max: 1 }
   # ===== Suttogó-crossover: a BETELJESÜLT esemény (rítus / célba érő hírvivő) =====
   # jutalma a rejtett oldalnak: minden felesküdött Suttogó gyanúja ennyivel csillapodik
   # (privát üzenettel — nem leplez le), a DARK frakció pedig liga-pontot kap ("cult"
@@ -605,6 +617,12 @@ season-monument:
 # csak ÚJAT nem lehet gyújtani.
 nether-portal:
   allow-creation: false
+
+# End-zár (tulaj-döntés): az End a szezon 2 admin-eseményéig zárva — a stronghold-keret
+# nem aktiválható és az égő portál sem használható (zóna-bypass jog átenged). Megnyitáskor
+# is EGYETLEN kapu lesz, admin-esemény keretében. true = vanília End.
+end-portal:
+  allow: false
 
 # ===== D8 — Felfedezhető titkos helyek =====
 # Admin-kijelölt rejtett pontok: aki ELSŐKÉNT ér oda, jutalmat kap és broadcast hirdeti;
@@ -714,3 +732,46 @@ city-guards:
   #     name: "A Vámház őre"
   #     world: "world"
   #     route: [ "100,64,100", "120,64,100", "120,64,120", "100,64,120" ]
+
+# ===== Kazamata-loot réteg =====
+# Kincsesládák: /territory dungeonchest <tábla> — a nézett ládát regisztrálja (újra
+# kiadva törli). A loot FEJENKÉNTI és virtuális (nincs "első kattintó visz mindent"),
+# cooldownnal töltődik újra. Mini-boss: /territory dungeonboss <zóna-id> [tábla] jelöli
+# ki a spawn-pontot; a boss zónába lépéskor ébred, ha letelt a respawn-órája.
+# Táblasor-formátum: {type: material|unique, item/id, min, max, weight}.
+dungeon:
+  loot:
+    chest-cooldown-hours: 168  # fejenkénti újratöltés (168 = heti, a pecséttel azonos ritmus)
+    chest-rolls: 3             # húzások száma ládánként
+    boss-rolls: 4              # húzások száma boss-killenként
+  mob-loot:
+    chance: 0.08               # bónusz-drop esély kazamata-mob killenként
+    table: kazamata
+  minibosses:
+    melyseg:
+      type: WITHER_SKELETON
+      name: "A Mélység Őrzője"
+      level: 12
+      health-multiplier: 4.0
+      respawn-hours: 24
+    csontkripta:
+      type: SKELETON
+      name: "A Csontkripta Ura"
+      level: 12
+      health-multiplier: 4.0
+      respawn-hours: 24
+  loot-tables:
+    kazamata:
+      - { type: material, weight: 30, item: GOLD_INGOT, min: 2, max: 5 }
+      - { type: material, weight: 20, item: DIAMOND, min: 1, max: 2 }
+      - { type: material, weight: 15, item: EXPERIENCE_BOTTLE, min: 3, max: 6 }
+      - { type: unique, weight: 15, id: osi_ereklyeszilank, min: 1, max: 1 }
+      - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 2 }
+      - { type: unique, weight: 10, id: emlekszilank, min: 1, max: 1 }
+    kazamata-boss:
+      - { type: unique, weight: 25, id: osi_ereklyeszilank, min: 1, max: 2 }
+      - { type: unique, weight: 20, id: emlekszilank, min: 1, max: 2 }
+      - { type: unique, weight: 15, id: sarkanycsont_szilank, min: 1, max: 1 }
+      - { type: material, weight: 20, item: DIAMOND, min: 2, max: 4 }
+      - { type: material, weight: 12, item: NETHERITE_SCRAP, min: 1, max: 2 }
+      - { type: unique, weight: 8, id: karhozat_parazs, min: 1, max: 1 }

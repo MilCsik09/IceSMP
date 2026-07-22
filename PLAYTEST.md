@@ -2003,3 +2003,24 @@ Jó tesztelést! ❄️
 - [ ] **Doksi-szinkron:** README (DARK-belépés bűn-alapú, 6 zónatípus, 400+ recept),
       01-kezdes (veret-átadás a kikapcsolt /currency pay helyett), 02-frakciok
       (paktum-zár), 03-valuta (lélekkő-keret), 14-parancsok (territory-típusok).
+
+## A-csomag: tulaj-döntések implementálása (2026-07-22)
+- [ ] **End-zár:** stronghold-keretbe nem tehető szem (üzenet), égő End-portálon nem
+      lehet átlépni; zóna-bypass joggal igen; end-portal.allow=true visszaadja a vaníliát.
+- [ ] **Combat-tag:** PvP-találatra 12 mp jelölés (actionbar); jelölt játékos a védett
+      zónában IS sebezhető (üldözés végigvihető), a komp elutasítja; logout törli;
+      12 mp harc nélkül lejár és a zóna-védelem visszaáll.
+- [ ] **Min-harc-idő:** hadi-ablak pont és párbaj bűn-tisztulás csak akkor jár, ha a
+      pár első összecsapása óta ≥20 mp telt el — egy-ütéses ölés üzenetet ad, pontot nem.
+- [ ] **CC-DR:** ugyanazon játékosra 15 mp-en belül a 2. fagyasztás/erős lassítás fele,
+      a 3. negyed ideig tart, a 4.-től immun; mobokra nem vonatkozik; spells.cc-dr élő.
+- [ ] **Szezon-lépcső:** szezonzáráskor teljes végeredmény-broadcast; 2. hely fél,
+      3. hely negyed kassza-jutalom (runner-up-ratios, élő kulcs).
+- [ ] **Árfolyam:** reference-supply 2500 (50 fős kalibráció); napi váltási keret 200
+      forrás-veret (daily-limit, 0=ki) — túllépésnél üzenet, a keret másnap nullázódik.
+- [ ] **Kultista-loot:** portya/hírvivő/rítus-hívő leölve 35% eséllyel dob a
+      cultists.loot táblából (árnyékpor/emlékszilánk/ritkán Suttogás-meghívó).
+- [ ] **Kazamata-loot:** /territory dungeonchest regisztrált láda fejenként hetente
+      fosztható (vanília nyitás cancel, virtuális loot, actionbar-visszajelzés);
+      /territory dungeonboss kijelölt mini-boss belépéskor ébred (24h respawn),
+      halálakor boss-tábla loot; kazamata-mob 8% bónusz-drop; minden kulcs élő.

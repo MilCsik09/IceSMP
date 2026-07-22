@@ -37,11 +37,21 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     private final NamespacedKey weekKey;
     private final NamespacedKey countKey;
 
+    private volatile CombatTagManager combatTagManagerRef;
+
+    public void setCombatTagManager(final CombatTagManager combatTagManager) {
+        this.combatTagManagerRef = combatTagManager;
+    }
+
+    private final hu.taliann.icesmp.utils.MessageManager messageManager;
+
     public HonorDuelManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final SinManager sinManager, final FactionManager factionManager,
-                            final SeasonManager seasonManager) {
+                            final SeasonManager seasonManager,
+                            final hu.taliann.icesmp.utils.MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.messageManager = messageManager;
         this.sinManager = sinManager;
         this.factionManager = factionManager;
         this.seasonManager = seasonManager;
@@ -144,6 +154,16 @@ public final class HonorDuelManager implements PlayerStateCleanup {
             return false;
         }
         clearPair(killer.getUniqueId());
+        // Bűn-mosás fék: az önként vesztő szövetségessel rendezett "párbaj" nem harc —
+        // a bűn-tisztulás és a liga-pont is valódi összecsapást (min-fight-seconds) kér.
+        final CombatTagManager tags = this.combatTagManagerRef;
+        if (tags != null && tags.isEnabled()
+                && tags.pairFightSeconds(killer.getUniqueId(), victim.getUniqueId()) < tags.minFightSeconds()) {
+            killer.sendMessage(messageManager.getMessage(
+                    "duel-too-quick",
+                    "<gray>⚔ A párbaj véget ért, de valódi összecsapás nélkül se bűn-tisztulás, se liga-pont nem jár.</gray>"));
+            return true;
+        }
         if (sinManager.getSinCount(killer) > 0) {
             sinManager.reduceSin(killer, 1);
         }

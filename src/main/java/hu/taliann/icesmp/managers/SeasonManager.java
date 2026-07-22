@@ -286,6 +286,27 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             }
         }
 
+        // Záró-összegző MINDENKINEK: 60 nap liga-munka nem érhet véget visszajelzés
+        // nélkül a mezőny 3/4-ének.
+        final java.util.List<Map.Entry<FactionType, Integer>> standings = points.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .sorted(Map.Entry.<FactionType, Integer>comparingByValue().reversed())
+                .toList();
+        if (!standings.isEmpty()) {
+            final StringBuilder summary = new StringBuilder();
+            for (int i = 0; i < standings.size(); i++) {
+                if (i > 0) {
+                    summary.append(" <gray>•</gray> ");
+                }
+                summary.append(i + 1).append(". ").append(standings.get(i).getKey().getDisplayName())
+                        .append(" <gray>(").append(standings.get(i).getValue()).append(")</gray>");
+            }
+            Bukkit.getServer().broadcast(messageManager.getMessage(
+                    "season-final-standings",
+                    "<gold>🏁 Szezon-végeredmény: {standings}</gold>",
+                    Map.of("standings", summary.toString())));
+        }
+
         // A korszakváltás-narratíva a pont-reset ELŐTT gyűjti a statisztikát.
         final SeasonStoryTeller storyRef = storyTeller;
         if (champion == null || tie || best <= 0) {
@@ -300,6 +321,16 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             final double reward = Math.max(0.0D, configManager.getDouble("world-events.season.treasury-reward", 1000.0D));
             if (reward > 0.0D) {
                 treasuryManager.deposit(champion, reward);
+                // Lépcsőzetes jutalom: a 2-3. hely is kap (fél/negyed kassza) — a
+                // winner-takes-all a mezőny nagyját motiválatlanul hagyná.
+                final java.util.List<Double> ratios = configManager.getDoubleList("world-events.season.runner-up-ratios");
+                final java.util.List<Double> liveRatios = ratios.isEmpty() ? java.util.List.of(0.5D, 0.25D) : ratios;
+                for (int i = 1; i < standings.size() && i - 1 < liveRatios.size(); i++) {
+                    final double share = reward * Math.max(0.0D, liveRatios.get(i - 1));
+                    if (share > 0.0D) {
+                        treasuryManager.deposit(standings.get(i).getKey(), share);
+                    }
+                }
             }
 
             Bukkit.getServer().broadcast(messageManager.getMessage(

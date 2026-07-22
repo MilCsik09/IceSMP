@@ -18,10 +18,14 @@ import java.util.Locale;
 public final class KompCommand implements BasicCommand {
 
     private final FerryManager ferryManager;
+    private final hu.taliann.icesmp.managers.CombatTagManager combatTagManager;
     private final MessageManager messageManager;
 
-    public KompCommand(final FerryManager ferryManager, final MessageManager messageManager) {
+    public KompCommand(final FerryManager ferryManager,
+                       final hu.taliann.icesmp.managers.CombatTagManager combatTagManager,
+                       final MessageManager messageManager) {
         this.ferryManager = ferryManager;
+        this.combatTagManager = combatTagManager;
         this.messageManager = messageManager;
     }
 
@@ -44,6 +48,13 @@ public final class KompCommand implements BasicCommand {
                 player.sendMessage(messageManager.get("messages.ferry-list-line",
                         "&7 - &f%s &7(%s)", id, ferryManager.routeName(id)));
             }
+            return;
+        }
+        // Harc közben nincs menekülő-komp: a vesztésre álló fél ne tudjon elhajózni.
+        if (combatTagManager.isTagged(player.getUniqueId())) {
+            player.sendMessage(messageManager.get("messages.ferry-combat-tagged",
+                    "&c⛴ A révész nem indul, amíg harcolsz — várj %s másodpercet.",
+                    String.valueOf(combatTagManager.remainingSeconds(player.getUniqueId()))));
             return;
         }
         ferryManager.ride(player, args[0].toLowerCase(Locale.ROOT));

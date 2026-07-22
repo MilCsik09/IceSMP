@@ -199,6 +199,7 @@ enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.ym
 | **Komp a szoroson át** | `/komp` + `ferry.routes.*` (economy.yml); révész-NPC: `/npcbind <npc> command "komp <út>"`; viteldíj = money sink |
 | **Vérfa (Pyralingrad nemesi negyede)** | építő-anyag kánon: mangrove = nemesség, akácia = köznép, kalcit-diorit-nyír falak |
 | **„Egyetlen kapu": nether-portál tilalom** | `nether-portal.allow-creation: false` (world.yml) — új portál sehol; a Kárhozat Kapuját admin gyújtja (zóna-bypass jog); Nether-út = a PvP-senkiföldjén át |
+| **A Vég pecsétje (End-zár)** | `end-portal.allow: false` (world.yml) — a stronghold-keret nem aktiválható, az égő portál sem használható; szezon 2 admin-eseménye nyitja meg, egyetlen kapuval |
 
 ## Névváltás: Thanaopolis (tulaj-döntés, 2026-07-21)
 

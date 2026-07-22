@@ -248,3 +248,6 @@ egyszer fut le. (Admin újra le tudja játszani.)
 ---
 
 ➡️ Tovább: [Királyság, raid és háború](11-raid-haboru.md) • [Vissza a tartalomhoz](README.md)
+
+> 💰 **Kultista-zsákmány:** a Királynő kósza hívei (portya, hírvivő, rítus-hívők) leölve
+> eséllyel értéket dobnak — aranyat, árnyékport, emlékszilánkot, ritkán Suttogás-meghívót.

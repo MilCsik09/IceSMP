@@ -149,6 +149,13 @@ public final class ConfigManager {
         }
         return configuration.getStringList(path);
     }
+
+    public List<Double> getDoubleList(final String path) {
+        if (configuration == null) {
+            return List.of();
+        }
+        return configuration.getDoubleList(path);
+    }
 }
 
 

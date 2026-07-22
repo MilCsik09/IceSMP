@@ -44,4 +44,43 @@ public final class PortalGuardListener implements Listener {
         }
         event.setCancelled(true);
     }
+
+    /**
+     * End-zár (tulaj-döntés): az End a szezon 2 admin-eseményéig zárva — a stronghold
+     * kerete nem aktiválható, és a már égő portálon sem lehet átlépni. A zóna-bypass
+     * jog (admin) átenged. Élő kulcs: end-portal.allow (true = vanília End).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onEndFrameActivate(final org.bukkit.event.player.PlayerInteractEvent event) {
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK
+                || event.getClickedBlock() == null
+                || event.getClickedBlock().getType() != org.bukkit.Material.END_PORTAL_FRAME
+                || event.getItem() == null
+                || event.getItem().getType() != org.bukkit.Material.ENDER_EYE) {
+            return;
+        }
+        if (configManager.getBoolean("end-portal.allow", false)
+                || event.getPlayer().hasPermission(Permissions.TERRITORY_BYPASS)) {
+            return;
+        }
+        event.setCancelled(true);
+        event.getPlayer().sendActionBar(messageManager.getMessage(
+                "end-portal-blocked",
+                "<dark_purple>⛩ A Vég kapuja némán mered rád — a pecsétjét még nem törte fel senki. (Az End egy későbbi fejezetben nyílik meg.)</dark_purple>"));
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEndPortalUse(final org.bukkit.event.player.PlayerPortalEvent event) {
+        if (event.getCause() != org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL) {
+            return;
+        }
+        if (configManager.getBoolean("end-portal.allow", false)
+                || event.getPlayer().hasPermission(Permissions.TERRITORY_BYPASS)) {
+            return;
+        }
+        event.setCancelled(true);
+        event.getPlayer().sendActionBar(messageManager.getMessage(
+                "end-portal-blocked",
+                "<dark_purple>⛩ A Vég kapuja némán mered rád — a pecsétjét még nem törte fel senki. (Az End egy későbbi fejezetben nyílik meg.)</dark_purple>"));
+    }
 }

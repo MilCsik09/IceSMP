@@ -70,6 +70,10 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
 
 ---
 
+> ⚖️ **PvP-szabály — csökkenő kontroll (DR):** ugyanarra a **játékosra** ismételt
+> kemény kontroll (fagyasztás, erős lassítás) rövid időn belül egyre gyengébben hat:
+> 100% → 50% → 25% → immunis. Szörnyekre nem vonatkozik.
+
 ## ⭐ Spell-mesterség és kombók
 
 - **Mesterség (rang):** a `/spell` paranccsal **frakcióvalutáért** fejlesztheted a képességeid

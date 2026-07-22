@@ -23,6 +23,17 @@ emlékei — a Vasművek elhagyott tárnái, elsüllyedt céh-pincék, kriptamé
   vezet, nem a falon át.
 - A mélyén a szerver-csapat által elhelyezett **zsákmány és/vagy boss** vár.
 
+## Mit találsz bent? (loot-réteg)
+
+- **Kincsesládák:** a kazamatákban elrejtett ládák **fejenként, hetente** adnak zsákmányt —
+  mindenki a sajátját kapja, nincs "első kattintó visz mindent". A láda kifosztva is ott
+  marad, neked egy hét múlva töltődik újra.
+- **Mini-boss:** minden kazamatának saját őrzője van (pl. *A Mélység Őrzője*), aki a
+  belépésedkor ébred, ha már letelt az újraéledése (alapból 24 óra). Leölve **bővebb,
+  ritkább zsákmányt** dob (ereklyeszilánk, emlékszilánk, sárkánycsont…).
+- **Bónusz mob-drop:** a kazamata szörnyei a sima zsákmányon felül is dobhatnak
+  értéket — a kapu mögötti kockázat megéri.
+
 ## Ismert kulcsok
 
 | Kulcs | Készíti | Kazamata |

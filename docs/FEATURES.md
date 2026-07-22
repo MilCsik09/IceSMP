@@ -102,6 +102,23 @@
   penge kivétel), körözöttek kitiltása; városi őrség (kozmetikai).
 - **Globális nether-portál tiltás**: kaput gyújtani csak bypass-joggal lehet — a
   világ egyetlen aktív átjárója a Kárhozat Kapuja (Olethropyla).
+- **End-zár**: a stronghold-keret nem aktiválható és az égő End-portál sem
+  használható (end-portal.allow, bypass-jog átenged) — az End egy későbbi fejezet
+  admin-eseményével nyílik meg, abból is egyetlen kapuval.
+- **Harc-jelölés (combat-tag)**: PvP-találatra 12 mp jelölés mindkét félen — a
+  jelölt bemehet a védett zónába, de PvP-védelmet ott sem kap, és a komp sem
+  viszi el; a hadi-ablak pont / párbaj bűn-tisztulás min. 20 mp valódi harcot kér.
+- **Hard-CC diminishing returns (PvP)**: ismételt fagyasztás/erős lassítás
+  ugyanazon a játékoson 100% → 50% → 25% → immun (15 mp ablak); mobokra nem hat.
+- **Kazamata-loot réteg**: fejenkénti, hetente újratöltő kincsesládák (admin:
+  /territory dungeonchest), zónánkénti mini-boss saját loot-táblával (belépéskor
+  ébred, respawn-órával), bónusz mob-drop a kazamatán belül.
+- **Lépcsőzetes szezon-jutalom**: a 2. hely fél, a 3. hely negyed kassza-jutalmat
+  kap, és a szezonzárás teljes végeredmény-összegzőt hirdet.
+- **Kultista-zsákmány**: a portya/hírvivő/rítus-variánsok mobjai leölve saját
+  loot-táblából dobnak (árnyékpor, emlékszilánk, ritkán Suttogás-meghívó).
+- **Napi váltási keret**: a valutaváltó játékosonként napi 200 forrás-veretig
+  szolgál ki (configolható/kikapcsolható) — árfolyam-manipuláció fék.
 
 ## 💥 "A világ visszagyógyul" — rombolás/robbanás-rendszer
 

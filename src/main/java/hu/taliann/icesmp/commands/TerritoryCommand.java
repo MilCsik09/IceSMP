@@ -39,7 +39,8 @@ public final class TerritoryCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "pos", "wand", "undo", "clearpoints", "points", "create", "circle",
-            "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
+            "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp",
+            "dungeonchest", "dungeonboss");
     private static final List<String> TYPE_NAMES = List.of(
             "faction", "protected-faction", "protected-city", "capital", "doom-gate", "dungeon");
 
@@ -86,6 +87,8 @@ public final class TerritoryCommand implements BasicCommand {
             case "info" -> handleInfo(sender);
             case "show" -> handleShow(sender, args);
             case "tp", "teleport" -> handleTeleport(sender, args);
+            case "dungeonchest" -> handleDungeonChest(sender, args);
+            case "dungeonboss" -> handleDungeonBoss(sender, args);
             default -> {
                 sender.sendMessage(messageManager.get("territory-unknown-subcommand", "&cIsmeretlen alparancs: &f%s", args[0]));
                 sendHelp(sender);
@@ -571,6 +574,71 @@ public final class TerritoryCommand implements BasicCommand {
      * {@code teleportAsync} is dispatched from there; the viewer's facing is captured
      * up front (we are on the player's own region thread in the command).
      */
+    private volatile hu.taliann.icesmp.managers.DungeonLootService dungeonLootService;
+
+    public void setDungeonLootService(final hu.taliann.icesmp.managers.DungeonLootService dungeonLootService) {
+        this.dungeonLootService = dungeonLootService;
+    }
+
+    /** A nézett láda/hordó regisztrálása kazamata-kincsesládának (újra kiadva: törlés). */
+    private void handleDungeonChest(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final hu.taliann.icesmp.managers.DungeonLootService loot = this.dungeonLootService;
+        if (loot == null) {
+            return;
+        }
+        final org.bukkit.block.Block target = player.getTargetBlockExact(5);
+        if (target == null || (target.getType() != org.bukkit.Material.CHEST
+                && target.getType() != org.bukkit.Material.TRAPPED_CHEST
+                && target.getType() != org.bukkit.Material.BARREL)) {
+            sender.sendMessage(messageManager.get("territory-dungeonchest-no-target",
+                    "&cNézz egy ládára vagy hordóra (max 5 blokk)."));
+            return;
+        }
+        final String table = args.length >= 2 ? args[1] : "kazamata";
+        final boolean added = loot.toggleChest(target.getLocation(), table);
+        sender.sendMessage(added
+                ? messageManager.get("territory-dungeonchest-added",
+                        "&aKincsesláda regisztrálva (&f%s&a tábla) — fejenkénti, heti zsákmány.", table)
+                : messageManager.get("territory-dungeonchest-removed", "&eKincsesláda-regisztráció törölve."));
+    }
+
+    /** Mini-boss spawn-pont kijelölése az admin pozícióján: /territory dungeonboss <zóna> [tábla] | clear <zóna>. */
+    private void handleDungeonBoss(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final hu.taliann.icesmp.managers.DungeonLootService loot = this.dungeonLootService;
+        if (loot == null || args.length < 2) {
+            sender.sendMessage(messageManager.get("territory-dungeonboss-usage",
+                    "&cHasználat: /territory dungeonboss <zóna-id> [tábla] | clear <zóna-id>"));
+            return;
+        }
+        if ("clear".equalsIgnoreCase(args[1])) {
+            if (args.length < 3 || !loot.clearBossSpawn(args[2])) {
+                sender.sendMessage(messageManager.get("territory-dungeonboss-none", "&cNincs ilyen boss-kijelölés."));
+            } else {
+                sender.sendMessage(messageManager.get("territory-dungeonboss-cleared", "&eBoss-kijelölés törölve."));
+            }
+            return;
+        }
+        final Territory zone = territoryManager.getById(args[1]);
+        if (zone == null || zone.type() != hu.taliann.icesmp.data.TerritoryType.DUNGEON) {
+            sender.sendMessage(messageManager.get("territory-dungeonboss-not-dungeon",
+                    "&cIsmeretlen vagy nem DUNGEON típusú zóna: &f%s", args[1]));
+            return;
+        }
+        final String table = args.length >= 3 ? args[2] : "kazamata-boss";
+        loot.setBossSpawn(zone.id(), player.getLocation(), table);
+        sender.sendMessage(messageManager.get("territory-dungeonboss-set",
+                "&aMini-boss spawn kijelölve itt (&f%s&a zóna, &f%s&a tábla) — hangolás: dungeon.minibosses.%s.*",
+                zone.id(), table, zone.id().toLowerCase(java.util.Locale.ROOT)));
+    }
+
     private void handleTeleport(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));

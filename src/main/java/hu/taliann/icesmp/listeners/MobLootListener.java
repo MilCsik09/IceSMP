@@ -79,6 +79,21 @@ public final class MobLootListener implements Listener {
             return;
         }
 
+        // Kultista mobok (portya/hírvivő/rítus-hívő) saját táblát dobnak — a sorsolt
+        // variánsok ne legyenek jutalom nélküli holt tartalom. A sima mob-loot ágra
+        // nem esnek át (dupla-drop fék).
+        final hu.taliann.icesmp.managers.CultistEventManager cultists = this.cultistEventManagerRef;
+        if (cultists != null && cultists.isCultist(entity)) {
+            if (entity.getKiller() != null && ThreadLocalRandom.current().nextDouble()
+                    < configManager.getDouble("cultists.loot.chance", 0.35D)) {
+                final ItemStack cultDrop = rollTable("cultists.loot", ItemRarityService.TIER_DROP, entity);
+                if (cultDrop != null) {
+                    event.getDrops().add(cultDrop);
+                }
+            }
+            return;
+        }
+
         final boolean bossTier = worldBossManager.isWorldBoss(entity)
                 || invasionManager.isInvasionMob(entity.getUniqueId())
                 || wildHuntManager.isWildHunt(entity.getUniqueId());
@@ -106,6 +121,12 @@ public final class MobLootListener implements Listener {
             event.getDrops().add(bossTier && cursedGearService != null
                     ? cursedGearService.maybeCurse(drop) : drop);
         }
+    }
+
+    private volatile hu.taliann.icesmp.managers.CultistEventManager cultistEventManagerRef;
+
+    public void setCultistEventManager(final hu.taliann.icesmp.managers.CultistEventManager cultistEventManager) {
+        this.cultistEventManagerRef = cultistEventManager;
     }
 
     /** B54: setterrel kötve (a service a listener után épül a DI-sorrendben); null = nincs átok. */
