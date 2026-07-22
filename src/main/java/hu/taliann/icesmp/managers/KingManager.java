@@ -215,6 +215,17 @@ public final class KingManager implements PersistentStore {
         if (System.currentTimeMillis() - start > termDays * 24L * 60L * 60L * 1000L) {
             votes.remove(faction);
             electionStart.put(faction, System.currentTimeMillis());
+            // A ciklus lejárt = a korona is lejárt: enélkül egy inaktív király örökre
+            // trónon maradna, mert új min-votes jelölt sosem gyűlik össze ellene.
+            if (configManager.getBoolean("factions.kings.dethrone-on-expiry", true)
+                    && kings.remove(faction) != null) {
+                save();
+                Bukkit.getGlobalRegionScheduler().run(plugin, task ->
+                        Bukkit.getServer().broadcast(messageManager.getMessage(
+                                "king-term-expired",
+                                "<gold>👑 A(z) {faction} királyi ciklusa lejárt — a trón megüresedett, új szavazás indul!</gold>",
+                                Map.of("faction", faction.getDisplayName()))));
+            }
         }
     }
 

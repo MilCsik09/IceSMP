@@ -1078,7 +1078,7 @@ profession-recipes:
     ingredients: [ "DIAMOND:5", "NETHERITE_INGOT:1", "unique:osi_ereklyeszilank:1" ]
   kivonatos_csontliszt_bomba:
     profession: herbalist
-    level: 22
+    level: 24
     learn: level
     display-name: "Kivonatos Csontliszt Bomba"
     category: "Alapanyag"
@@ -1094,7 +1094,7 @@ profession-recipes:
     ingredients: [ "MOSS_BLOCK:4", "BONE_MEAL:6", "unique:vad_esszencia:2" ]
   kemenyfa_nyelkoteg:
     profession: lumberjack
-    level: 20
+    level: 24
     learn: level
     display-name: "Keményfa Nyélköteg"
     category: "Alapanyag"
@@ -3108,7 +3108,7 @@ profession-recipes:
     ingredients: [ "ITEM_FRAME:4", "GLOW_INK_SAC:4" ]
   runapor_finomitas:
     profession: enchanter
-    level: 25
+    level: 26
     learn: level
     display-name: "Rúnapor-finomítás"
     category: "Alapanyag"
@@ -3541,7 +3541,7 @@ profession-recipes:
     ingredients: [ "PUMPKIN:3", "HONEY_BOTTLE:1", "EGG:2", "unique:sutopergamen:1" ]
   vandor_lepenye:
     profession: cook
-    level: 17
+    level: 22
     learn: level
     display-name: "Vándor Úti-lepénye"
     category: "Étel"
@@ -3549,7 +3549,7 @@ profession-recipes:
     ingredients: [ "WHEAT:12", "unique:vandorfuszer:1" ]
   fuszeres_nyulragu:
     profession: cook
-    level: 19
+    level: 22
     learn: level
     display-name: "Fűszeres Nyúlragu"
     category: "Étel"
@@ -3696,7 +3696,7 @@ profession-recipes:
     ingredients: [ "IRON_INGOT:6" ]
   tutaj_keszlet:
     profession: fisherman
-    level: 11
+    level: 24
     learn: level
     display-name: "Tutajkészlet"
     category: "Eszköz"

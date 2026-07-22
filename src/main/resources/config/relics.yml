@@ -305,10 +305,12 @@ rituals:
       - "-2,1,2:BONE_BLOCK"
       - "2,0,2:BONE_BLOCK"
       - "2,1,2:BONE_BLOCK"
+    # A többi szárnnyal azonos árszinten (farmolható anyagok): a korábbi
+    # Wither-koponya + netherite aránytalanul drága volt.
     sacrifice:
-      - "BONE_BLOCK:8"
-      - "WITHER_SKELETON_SKULL:1"
-      - "NETHERITE_SCRAP:2"
+      - "BONE_BLOCK:16"
+      - "SOUL_SAND:16"
+      - "DIAMOND_BLOCK:1"
   feloldozas:
     type: "cleanse"
     altar-block: "SOUL_LANTERN"

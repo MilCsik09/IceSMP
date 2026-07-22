@@ -11,6 +11,11 @@ professions:
   # szint birtokában lehet craftolni. A required-level felülírható receptenként.
   recipes:
     enabled: true
+    # A régi, kódba égetett 8 mestermű-recept (Tárnász Csákány, Bástya Pajzs…)
+    # alapból KI: numerikusan mindig felülmúlták a recept-katalógus párjukat
+    # (két párhuzamos rendszer). A már legyártott példányok érvényesek maradnak;
+    # true = a régi receptek is craftolhatók (nem ajánlott).
+    legacy-masterworks: false
     tarnasz_csakany:
       required-level: 15
     favago_fejsze:

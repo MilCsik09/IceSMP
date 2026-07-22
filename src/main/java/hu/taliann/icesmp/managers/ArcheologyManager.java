@@ -155,6 +155,45 @@ public final class ArcheologyManager {
     }
 
     /**
+     * A kiásás megosztott jutalma: a lelőhely körül álló többi játékos is kap esélyt
+     * egy leletre — az "első kattintó visz mindent" fék. A hívó a LELŐHELY régió-szálán
+     * fut (BlockDropItemEvent); az item-átadás a részesülő saját szálán történik.
+     */
+    public void handleExcavated(final Player digger, final Location diggedAt) {
+        final Location current = this.site;
+        if (current == null || diggedAt.getWorld() == null
+                || !current.getWorld().equals(diggedAt.getWorld())
+                || current.distanceSquared(diggedAt) > 4.0D) {
+            return;
+        }
+        this.site = null;
+        this.originalState = null;
+        final double shareRadius = Math.max(0.0D, configManager.getDouble("archeology.share-radius", 24.0D));
+        final double shareChance = Math.max(0.0D, configManager.getDouble("archeology.share-chance", 0.5D));
+        final int maxPlayers = Math.max(0, configManager.getInt("archeology.share-max-players", 3));
+        if (shareRadius <= 0.0D || shareChance <= 0.0D || maxPlayers <= 0) {
+            return;
+        }
+        int shared = 0;
+        for (final Player nearby : diggedAt.getWorld().getNearbyPlayers(diggedAt, shareRadius)) {
+            if (shared >= maxPlayers || nearby.getUniqueId().equals(digger.getUniqueId())) {
+                continue;
+            }
+            if (ThreadLocalRandom.current().nextDouble() >= shareChance) {
+                continue;
+            }
+            shared++;
+            final ItemStack share = rollFind();
+            nearby.getScheduler().run(plugin, task -> {
+                nearby.getInventory().addItem(share).values()
+                        .forEach(left -> nearby.getWorld().dropItemNaturally(nearby.getLocation(), left));
+                nearby.sendMessage(messageManager.getMessage("archeology-share",
+                        "<gold>🏺 A régész melletted dolgozott — egy kisebb lelet neked is jutott a törmelékből.</gold>"));
+            }, null);
+        }
+    }
+
+    /**
      * Egy lelet sorsolása a finds-táblából. Formátum soronként:
      * {@code "unique:<id>:<db>"} (unique material) vagy {@code "MATERIAL[:MIN[:MAX]]"}.
      */

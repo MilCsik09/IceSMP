@@ -240,6 +240,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     /** Setter-injected korszakváltás-narrátor (a StatsManager később épül a DI-sorrendben). */
+    private volatile Runnable seasonResetHook;
+
+    public void setSeasonResetHook(final Runnable seasonResetHook) {
+        this.seasonResetHook = seasonResetHook;
+    }
+
     private volatile SeasonStoryTeller storyTeller;
 
     public void setStoryTeller(final SeasonStoryTeller storyTeller) {
@@ -360,6 +366,11 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         seasonStart = System.currentTimeMillis();
         // Új fejezet nyílik: a fejezet-questek (chapter: N) ehhez a sorszámhoz kötődnek.
         seasonNumber++;
+        // A szezonhoz kötött társ-rendszerek (pl. közösségi célok) is tiszta lappal indulnak.
+        final Runnable resetHook = this.seasonResetHook;
+        if (resetHook != null) {
+            resetHook.run();
+        }
         grandFinaleAnnounced = false; // az új szezon nagydöntője újra hirdethető
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-chapter-opened",

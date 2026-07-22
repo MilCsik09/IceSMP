@@ -116,37 +116,37 @@
 - ✅ KÉSZ (A-csomag: pont csak min. 20 mp pár-harc után — combat.min-fight-seconds) — **Hadi-ablak win-trade:** két összejátszó fél 30 percenként váltott öléssel kockázat
   nélkül termeli a liga-pontot — min. harc-idő/HP-veszteség feltétel vagy kétirányú
   pár-cooldown kellene. (A pár-cooldown ráadásul volatilis: restart nullázza.)
-- **Tanácsi kassza-keret fejenkénti** (3×400=1200/nap > királyi 1000, a kódkomment
+- ✅ KÉSZ (B-csomag: frakció-szintű közös napi számláló) — **Tanácsi kassza-keret fejenkénti** (3×400=1200/nap > királyi 1000, a kódkomment
   ellenkezőjét állítja; KÉT agent találta) → frakció-szintű közös számláló.
 - **Tanács-szavazás alt-védelem nélkül** (min. játékidő-feltétel javasolt).
-- **Inaktív király nem bukik le automatikusan** — lejáratkor csak a szavazatok nullázódnak,
+- ✅ KÉSZ (B-csomag: dethrone-on-expiry — lejáratkor a trón megüresedik, broadcast) — **Inaktív király nem bukik le automatikusan** — lejáratkor csak a szavazatok nullázódnak,
   új min-votes jelölt nélkül örökre marad. → automatikus trónfosztás lejáratkor.
-- **Suttogó éjszakai békesség kockázat-mentes** — az ígért "árulkodó jel" gyanú-hurok
+- ✅ KÉSZ (B-csomag: truce-witness-chance 2% gyanú tanú előtt) — **Suttogó éjszakai békesség kockázat-mentes** — az ígért "árulkodó jel" gyanú-hurok
   nincs bekötve (döntés kérdése: maradjon ingyen-előny, vagy kis witness-esély).
 - ✅ KÉSZ (A-csomag: CombatTagManager — 12 mp jelölés, zóna-védelem és komp-tiltás) — **Combat-tag nincs** — vesztésre álló harcból safe-zone-ba/kompra sétálás; a /komp
   sem néz harc-állapotot. → 10-15 mp combat-flag, ami zónába-lépést/kompot tilt.
 - ✅ KÉSZ (A-csomag: end-portal.allow=false — keret-aktiválás + átlépés blokk, tulaj-döntés: szezon 2 admin-event nyitja) — **End-portál kikerüli az "egyetlen kapu" szabályt** (a FIRE-tiltás a stronghold-ra nem
   hat) → döntés: End engedett-e; ha nem, portál-aktiválás blokk.
-- **Zóna-rámpa torzít elnyúlt zónáknál** (befoglaló-kör becslés): hosszú tengelyen túl
+- 📝 DOKUMENTÁLT KOMPROMISSZUM (befoglaló-kör becslés — poligon-él távolság backlogon) — **Zóna-rámpa torzít elnyúlt zónáknál** (befoglaló-kör becslés): hosszú tengelyen túl
   messzire nyúlik a 0-szint, rövid tengelyen túl korán durvul → poligon-él távolság vagy
   dokumentált kompromisszum.
-- **Rontás-góc: globális singleton, ~8h átlag-ritkaság** 50-60 főre kevés (megfontolandó:
+- ✅ KÉSZ (B-csomag: interval 75 perc + 35% esély — kb. 2×-es sűrűség) — **Rontás-góc: globális singleton, ~8h átlag-ritkaság** 50-60 főre kevés (megfontolandó:
   világonként egy, vagy sűrítés).
 - **Karaván-spawn felülírhatja a már lezárt szállítmányt** (placeholder-UUID re-check
   hiányzik a hopolt callbackben) + a kalmár-karaván nem megy át az EventSpawnGuard-on.
-- **Vér-spellek gyengébbek az azonos tierű XP-spelleknél** (a "kockázatnak ára van" elv
+- ✅ KÉSZ (B-csomag: +1 sebzés a régi HEALTH-költségű sebző spelleken — garrote/bloodbath/phantom_grip/soul_rot) — **Vér-spellek gyengébbek az azonos tierű XP-spelleknél** (a "kockázatnak ára van" elv
   fordítva sül el) + nekromanta-típusú HP-drain speceknek nincs olcsó visszagyógyulása.
-- **Energia-kasztok (orgyilkos/szerzetes/íjász) erőforrása sosem fogy ki** (regen 11-14/mp
+- ✅ KÉSZ (B-csomag: regen 14/11 → 7/6 per mp) — **Energia-kasztok (orgyilkos/szerzetes/íjász) erőforrása sosem fogy ki** (regen 11-14/mp
   vs. ~1/mp tényleges drain) — illuzórikus gazdálkodás.
-- **Tier2 talent-párok mind a 13 kasztnál numerikusan azonosak** (+1.5 dmg vs +6 HP) —
+- ✅ KÉSZ (B-csomag: mind a 13 pár kaszt-ízű effektet/számot kapott — casterek spell-power, mozgékonyak movement-speed, tankok nagyobb HP) — **Tier2 talent-párok mind a 13 kasztnál numerikusan azonosak** (+1.5 dmg vs +6 HP) —
   álválasztás; 6 szakmának nincs saját talentje; scholar/arcane_might holt tier1-ek.
-- **6 recept korábban nyílik, mint a hozzávalója termelhető** (pl. tutaj_keszlet
+- ✅ KÉSZ (B-csomag: mind a 6 szint-emelve + a checker új 7. szabálya őrzi) — **6 recept korábban nyílik, mint a hozzávalója termelhető** (pl. tutaj_keszlet
   fisherman 11 ← szavannafu_kotel CSAK lumberjack 24-től) → szint-emelés vagy bolt-forrás.
-- **Bástya-pajzs két párhuzamos rendszerben** (régi ProfessionRecipeManager-mestermű
+- ✅ KÉSZ (B-csomag: legacy-masterworks alapból KI — a katalógus az egyetlen craft-forrás) — **Bástya-pajzs két párhuzamos rendszerben** (régi ProfessionRecipeManager-mestermű
   mindig jobb, mint az új katalógus-recept) → a 8 régi mestermű összevonása/törlése.
 - ✅ KÉSZ (P2-1. csomag: FurnaceSmelt-tiltás) — **Unique anyag kemencében elolvasztható** (FurnaceSmeltEvent-védelem hiányzik; pl.
   melysegi_borostyan → sima aranyrúd). → smelt-input tiltás unique-tagen.
-- **DARK szárny-rituálé aránytalanul drága** (Wither-koponya + 2 netherite scrap vs. a
+- ✅ KÉSZ (B-csomag: csontblokk+lélekhomok+gyémántblokk — a többi szárnnyal azonos árszint) — **DARK szárny-rituálé aránytalanul drága** (Wither-koponya + 2 netherite scrap vs. a
   többiek farmolható blokkjai) → hozzávaló-csere.
 - ✅ KÉSZ (P2-1. csomag: a Vásárjárás DELIVER_ITEMS objektívát kapott) — **NEUTRAL dupla heti kereskedő-quest:** az új `neutral_heti_vasarjaras` majdnem
   duplikálja a meglévő `neutral_heti_vasar`-t (2×120/hét közel ingyen; SAJÁT tartalom-
@@ -166,7 +166,7 @@
   PetManager 4×/mp minden játékosra hop-ol pet nélkül is → mérendő playtesten.
 - **~13 napos sztori-lyuk a szezon 41-53. napján** (a Fa üzenete 40-ig, finálé 54-től) +
   mind a 30 rejtvény kapu nélkül, 1. naptól kimeríthető (elő-terheltség visszaszökött).
-- **Kaszt-választás megerősítés nélkül** — a legdrágább (admin-only visszafordítható)
+- ✅ KÉSZ (B-csomag: kétlépcsős megerősítés a DARK-minta szerint, select-confirm-seconds) — **Kaszt-választás megerősítés nélkül** — a legdrágább (admin-only visszafordítható)
   döntés egyetlen kattintás; a DARK-belépés kétlépcsős mintája átvehető.
 - **Beszállító-hetik olcsó faucet** (4×90/hét percek alatt gyűjthető anyagért) — hangolás.
 
@@ -242,15 +242,15 @@
   a nullázás előtt fut.)
 - ✅ KÉSZ (A-csomag: bűn-tisztulás/pont csak min. 20 mp pár-harc után) — **Párbajos bűn-mosás:** önként vesztő szövetségessel heti 2 bűn-tisztítás kockázat
   nélkül → min. harc-idő/sebzés feltétel (ugyanaz a fék, mint a hadi-ablak win-trade-re).
-- **Régészet "első kattintó visz mindent"** — a runner-up minta (HiddenSpot
+- ✅ KÉSZ (B-csomag: szórtabb spawn 250 + kiásáskor megosztott lelet a közelben állóknak) — **Régészet "első kattintó visz mindent"** — a runner-up minta (HiddenSpot
   repeat-reward-ratio) átvehető; ráadásul a lelőhely mindig egy véletlen játékos 80
   blokkos körzetében spawnol, és csak 160 blokkon belül hirdet — a horgony-játékos
   szisztematikus előnyben. → megosztott jutalom + szórtabb spawn.
 - **Rejtett helyek: a config üres** (hidden-spots.spots: {}) — a rendszer kész, de
   tartalom nélkül néma. VILÁGÉPÍTŐ-CHECKLIST tétel.
-- **Közösségi célok sosem nullázódnak szezonváltáskor** (inkonzisztens a többi rendszer
+- ✅ KÉSZ (B-csomag: season-reset hook nullázza) — **Közösségi célok sosem nullázódnak szezonváltáskor** (inkonzisztens a többi rendszer
   szezon-modelljével) → döntés + dokumentálás.
-- **Kazamata-belépés fejenként külön kulcs** (5 fős céh-túra = 5 kulcs, nincs
+- ✅ KÉSZ (B-csomag: party-shared-key — egy kulcs a közeli párttagoknak is nyit) — **Kazamata-belépés fejenként külön kulcs** (5 fős céh-túra = 5 kulcs, nincs
   csoport-mód) → megfontolandó kedvezmény; **kém-akciót bármely globális raid blokkol**
   (nem csak az érintett frakcióké); **ambient-jutalomnak nincs napi capje** (kicsi, de
   elvi következetlenség); **addPoints/rollover verseny** őr nélkül (60 naponta pár pont

@@ -150,6 +150,21 @@ public final class FactionPassiveListener implements Listener {
             final long time = event.getEntity().getWorld().getTime();
             if (time >= 13000L && time <= 23000L) {
                 event.setCancelled(true);
+                // Az "árulkodó jel": ha egy kívülálló látja, hogy a holtak elfordulnak
+                // tőled, kis eséllyel gyanú tapad rád — az ingyen-előnynek kockázata van.
+                final double witnessChance = configManager.getDouble(
+                        "factions.whisper.truce-witness-chance", 0.02D);
+                if (witnessChance > 0.0D
+                        && java.util.concurrent.ThreadLocalRandom.current().nextDouble() < witnessChance) {
+                    for (final Player witness : player.getLocation().getNearbyPlayers(16.0D)) {
+                        if (!witness.getUniqueId().equals(player.getUniqueId())
+                                && !whisperRef.isWhispererCached(witness.getUniqueId())) {
+                            whisperRef.addSuspicion(player, configManager.getDouble(
+                                    "factions.whisper.truce-witness-suspicion", 1.0D));
+                            break;
+                        }
+                    }
+                }
             }
         }
     }

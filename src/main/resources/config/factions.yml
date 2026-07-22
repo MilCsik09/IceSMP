@@ -77,6 +77,8 @@ factions:
   council:
     enabled: true
     seats: 3
+    # A tanácsi kassza-keret a FRAKCIÓ KÖZÖS napi kerete (nem fejenkénti):
+    # a 3 tanácstag együtt sem lépheti túl.
     withdraw-daily-cap: 400.0
     market-week-minutes: 60
   treasury:
@@ -111,7 +113,7 @@ factions:
     enabled: true
     grace-hours: 12            # ennyi valós óra hazai étel nélkül indul be a honvágy
     check-minutes: 5           # ellenőrzés/debuff gyakorisága
-    debuff-seconds: 10         # a honvágy-Éhség hossza alkalmanként (puha!)
+    debuff-seconds: 45         # a honvágy-Éhség hossza alkalmanként (érezhető, de nem büntető)
     pisztrang-buff-seconds: 60 # Fagyasztott Tavi Pisztráng: felszívódás-pajzs
     rantotta-buff-seconds: 60  # Főnixtojás-Rántotta: tűz-ellenállás
     suti-speed-seconds: 30     # Tiltott Kakaóbabos Sütemény: gyorsaság II
@@ -143,6 +145,10 @@ factions:
     # Suttogó-erősítés: éjjel az élőhalottak a felesküdötteket sem támadják (rejtett,
     # éjszakai ízelítő a DARK-passzívából — a figyelmes szemtanúnak árulkodó jel!).
     night-undead-truce: true
+    # Az "árulkodó jel": ha kívülálló látja, hogy a holtak elfordulnak a Suttogótól,
+    # kis eséllyel gyanú tapad rá — a békesség nem teljesen ingyenes. 0 = ki.
+    truce-witness-chance: 0.02
+    truce-witness-suspicion: 1.0
     # Suttogó-erősítés: a feketepiacon a felesküdöttek CSENDES kedvezményt kapnak
     # (a kijelzett ár marad, a levonás kevesebb — semmi látható nem leplezi le őket).
     blackmarket-npc: "feketepiac"
@@ -421,6 +427,9 @@ territory:
     enabled: true
     pass-hours: 2
     lockout-days: 7
+    # Csoport-kedvezmény: EGY kulcs a 16 blokkon belül álló párttagoknak is nyit
+    # (passz+pecsét) — az 5 fős túrához nem kell 5 kulcs. false = fejenkénti kulcs.
+    party-shared-key: true
   # ===== Zóna mob-szabályok (mob-rules) =====
   # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
   #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital

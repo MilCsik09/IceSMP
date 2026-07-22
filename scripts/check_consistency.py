@@ -153,6 +153,37 @@ if os.path.isdir(GUIDES):
     for extra in sorted(ideas_a ^ ideas_b):
         warn(f"tükör: ideas/{extra} csak az egyik repóban létezik")
 
+# ---------- 7. recept-hozzávaló szint-sorrend ----------
+# Egy recept nem nyílhat korábban, mint amikor a unique hozzávalója termelhetővé válik.
+try:
+    _rdata = yaml.safe_load(read(os.path.join(REPO, "src/main/resources/config/profession-recipes.yml")))
+    _recipes = []
+    def _walk_recipes(d, path=()):
+        if isinstance(d, dict):
+            for k, v in d.items():
+                _walk_recipes(v, path + (k,))
+            if "result" in d and "ingredients" in d:
+                _recipes.append((path, d))
+    _walk_recipes(_rdata)
+    _produced = {}
+    for _p, _r in _recipes:
+        _uid = (_r.get("result") or {}).get("unique")
+        if _uid:
+            _lvl = _r.get("level", 1)
+            if _uid not in _produced or _lvl < _produced[_uid][1]:
+                _produced[_uid] = (_p[-1], _lvl)
+    for _p, _r in _recipes:
+        _lvl = _r.get("level", 1)
+        for _ing in _r.get("ingredients") or []:
+            _s = str(_ing)
+            if _s.startswith("unique:"):
+                _uid = _s.split(":")[1]
+                if _uid in _produced and _produced[_uid][1] > _lvl:
+                    fail(f"recept '{_p[-1]}' (L{_lvl}) korábban nyílik, mint a hozzávalója "
+                         f"'{_uid}' (forrás: {_produced[_uid][0]} L{_produced[_uid][1]})")
+except Exception as e:
+    warn(f"recept-szint ellenőrzés kihagyva: {e}")
+
 # ---------- eredmény ----------
 for w in warns:
     print(f"⚠ WARN: {w}")

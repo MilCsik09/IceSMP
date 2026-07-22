@@ -395,6 +395,7 @@ public final class IceSMPCore {
                 currencyManager, factionManager, sinManager, seasonManager);
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager, seasonManager);
+        seasonManager.setSeasonResetHook(communityGoalManager::resetForNewSeason);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
         shopManager.setWhisperManager(whisperManager); // Suttogó feketepiac-kedvezmény
         this.npcBindingManager = new NpcBindingManager(plugin);
@@ -1408,7 +1409,10 @@ public final class IceSMPCore {
             }
         }, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobMoneyDropListener(plugin, configManager, mobScalingManager, moneyPouchItemFactory), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager), plugin);
+        final hu.taliann.icesmp.listeners.DungeonGateListener dungeonGateListener =
+                new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager);
+        dungeonGateListener.setPartyManager(partyManager);
+        pluginManager.registerEvents(dungeonGateListener, plugin);
         pluginManager.registerEvents(new TalentAttributeListener(plugin, talentManager), plugin);
         final TerritoryListener territoryListener = new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager);
         territoryListener.setBestiaryManager(bestiaryManager); // territórium-lajstrom
@@ -1454,6 +1458,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CombatTagListener(combatTagManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(dungeonLootService, territoryManager, configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

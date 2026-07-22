@@ -27,6 +27,10 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     private final KingManager kingManager;
     private final MessageManager messageManager;
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
+    /** frakció → {nap, ma kivett összeg} — a tanácsi keret KÖZÖS (memóriában él, a capnek elég). */
+    private final java.util.concurrent.ConcurrentHashMap<hu.taliann.icesmp.data.FactionType, double[]> councilWithdrawnToday =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private final org.bukkit.NamespacedKey withdrawDayKey =
             org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_day");
     private final org.bukkit.NamespacedKey withdrawSumKey =
@@ -132,19 +136,27 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         // Bank-only szabály: a kassza-kivét FIZIKAI veretben érkezik a király kezébe
         // (számlára pénz csak bankbefizetéssel kerülhet) — és napi limit fékezi, hogy
         // egy király ne üríthesse egy mozdulattal a kasszát (élő kulcs, 0 = korlátlan).
-        // A tanácstag (nem-király) kisebb napi keretet kap — hárman együtt se ürítik a kasszát.
-        final double dailyCap = (!kingManager.isKing(player) && isNeutralCouncillor(player))
+        // A tanácsi keret a FRAKCIÓ KÖZÖS számlálója (nem fejenkénti): a 3 tanácstag
+        // együtt sem viheti a királyi keret fölé.
+        final boolean councilPath = !kingManager.isKing(player) && isNeutralCouncillor(player);
+        final double dailyCap = councilPath
                 ? configManager.getDouble("factions.council.withdraw-daily-cap", 400.0D)
                 : configManager.getDouble("factions.treasury.withdraw-daily-cap", 1000.0D);
         final long today = System.currentTimeMillis() / 86_400_000L;
-        final long storedDay = player.getPersistentDataContainer()
-                .getOrDefault(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);
-        final double takenToday = storedDay == today ? player.getPersistentDataContainer()
-                .getOrDefault(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D) : 0.0D;
+        final double takenToday;
+        if (councilPath) {
+            final double[] shared = councilWithdrawnToday.get(faction);
+            takenToday = shared != null && (long) shared[0] == today ? shared[1] : 0.0D;
+        } else {
+            final long storedDay = player.getPersistentDataContainer()
+                    .getOrDefault(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);
+            takenToday = storedDay == today ? player.getPersistentDataContainer()
+                    .getOrDefault(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D) : 0.0D;
+        }
         if (dailyCap > 0.0D && takenToday + amount > dailyCap) {
             player.sendMessage(messageManager.get(
                     "messages.faction-treasury-daily-cap",
-                    "&cA mai kassza-kivét kereted elfogyott (&f%s&c/nap). Holnap folytathatod.",
+                    "&cA mai kassza-kivét keret elfogyott (&f%s&c/nap). Holnap folytathatod.",
                     currencyManager.formatBalance(dailyCap)));
             return true;
         }
@@ -154,8 +166,14 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
             return true;
         }
 
-        player.getPersistentDataContainer().set(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, today);
-        player.getPersistentDataContainer().set(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, takenToday + amount);
+        if (councilPath) {
+            councilWithdrawnToday.compute(faction, (key, old) ->
+                    old == null || (long) old[0] != today
+                            ? new double[]{today, amount} : new double[]{today, old[1] + amount});
+        } else {
+            player.getPersistentDataContainer().set(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, today);
+            player.getPersistentDataContainer().set(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, takenToday + amount);
+        }
         currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), (long) Math.floor(amount));
         player.sendMessage(messageManager.get(
                 "messages.faction-treasury-withdraw-success",

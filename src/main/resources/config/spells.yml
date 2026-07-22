@@ -120,13 +120,15 @@ spells:
         regen-per-second: 3.0
         combat-gain-per-hit: 8.0
         idle-decay-per-second: 2.0
-      # Energia-típus: kisebb tár, de gyorsan visszatöltődik (pörgős rotáció).
+      # Energia-típus: kisebb tár, gyors visszatöltés — de VÉGES: a korábbi 11-14/s
+      # regen mellett a tár sosem fogyott ki (illuzórikus gazdálkodás), a felezett
+      # ütem már valódi rotáció-döntéseket kényszerít.
       assassin:
-        regen-per-second: 14.0
+        regen-per-second: 7.0
       monk:
-        regen-per-second: 14.0
+        regen-per-second: 7.0
       archer:
-        regen-per-second: 11.0
+        regen-per-second: 6.0
       # Mana-típus: nagyobb tár, lomhább regen (a nagy leadás után tényleg ki kell várni).
       wizard:
         max: 120

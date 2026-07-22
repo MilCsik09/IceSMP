@@ -547,8 +547,9 @@ corruption:
   # irtott, a tisztításkor csökkentett saját gurítást kap (a mag-törőé a teljes loot).
   contributor-min-kills: 3
   contributor-loot-ratio: 0.5
-  interval-minutes: 120
-  chance-percent: 25
+  # 50-60 fős szerverre sűrítve (a ~8 órás átlag-ritkaság kevés volt).
+  interval-minutes: 75
+  chance-percent: 35
   spawn-offset: 96           # a horgony-játékostól legfeljebb ennyire nyílik
   initial-radius: 16.0
   radius-cap: 64.0
@@ -585,9 +586,16 @@ archeology:
   enabled: true
   interval-minutes: 50
   chance-percent: 35
-  spawn-radius: 80
+  # Szórtabb spawn: a horgony-játékostól messzebb is eshet, így a horgony nincs
+  # szisztematikus előnyben; a hír-sugár a spawn-szórásnál nagyobb.
+  spawn-radius: 250
   # Broadcast-diéta: a lelőhely-hír csak ekkora sugárban hallatszik (személyes lépték).
-  announce-radius: 160
+  announce-radius: 300
+  # Megosztott jutalom: kiásáskor a közelben álló többi játékos is kap esélyt egy
+  # (kisebb) leletre — az "első kattintó visz mindent" fék.
+  share-radius: 24
+  share-chance: 0.5
+  share-max-players: 3
   expire-minutes: 20
   finds:
     - "unique:emlekszilank:1"

@@ -159,7 +159,49 @@ public final class DungeonGateListener implements Listener {
         player.sendMessage(messageManager.getMessage("dungeon-entered",
                 "<gold>🗝 A kulcs porrá omlik a zárban — {name} megnyílt előtted ({hours} órád van; a pecsét {days} napig tart).</gold>",
                 Map.of("name", target.name(), "hours", String.valueOf(passHours), "days", String.valueOf(lockDays))));
+
+        // Csoport-kedvezmény: EGY kulcs a közelben álló párttagoknak is nyit (passz+pecsét) —
+        // az 5 fős túra nem kér 5 kulcsot. A tagok PDC-írása a saját régió-szálukon fut.
+        if (configManager.getBoolean("territory.dungeon.party-shared-key", true) && partyManagerRef != null) {
+            final hu.taliann.icesmp.managers.PartyManager.Party party =
+                    partyManagerRef.getParty(player.getUniqueId());
+            if (party != null) {
+                final long passUntilShared = now + passHours * 3_600_000L;
+                final long lockUntilShared = lockDays > 0L ? now + lockDays * 86_400_000L : 0L;
+                for (final java.util.UUID memberId : party.getMembers()) {
+                    if (memberId.equals(player.getUniqueId())) {
+                        continue;
+                    }
+                    final Player member = org.bukkit.Bukkit.getPlayer(memberId);
+                    if (member == null || !member.getWorld().equals(player.getWorld())
+                            || member.getLocation().distanceSquared(player.getLocation()) > 16.0D * 16.0D) {
+                        continue;
+                    }
+                    member.getScheduler().run(plugin, task -> {
+                        // A saját friss pecsétje alatt álló tag nem kap új passzt (a heti
+                        // zár rá is érvényes).
+                        final Long memberLock = member.getPersistentDataContainer().get(lockKey, PersistentDataType.LONG);
+                        if (memberLock != null && memberLock > System.currentTimeMillis()) {
+                            return;
+                        }
+                        member.getPersistentDataContainer().set(passKey, PersistentDataType.LONG, passUntilShared);
+                        if (lockUntilShared > 0L) {
+                            member.getPersistentDataContainer().set(lockKey, PersistentDataType.LONG, lockUntilShared);
+                        }
+                        member.sendMessage(messageManager.getMessage("dungeon-party-entry",
+                                "<gold>🗝 A csapatod kulcsa neked is utat nyitott — {name} vár.</gold>",
+                                Map.of("name", target.name())));
+                    }, null);
+                }
+            }
+        }
         return true;
+    }
+
+    private volatile hu.taliann.icesmp.managers.PartyManager partyManagerRef;
+
+    public void setPartyManager(final hu.taliann.icesmp.managers.PartyManager partyManager) {
+        this.partyManagerRef = partyManager;
     }
 
     /** A zóna kulcsa a játékosnál: signature == dungeonkulcs_<zóna-id>. */

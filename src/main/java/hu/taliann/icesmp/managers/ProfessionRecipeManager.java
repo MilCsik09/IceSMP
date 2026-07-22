@@ -55,6 +55,12 @@ public final class ProfessionRecipeManager {
             return;
         }
         recipes.clear();
+        // A kódba égetett régi mestermű-készlet alapból KI: numerikusan mindig
+        // felülmúlta a katalógus-párját (két párhuzamos rendszer) — a recept-katalógus
+        // az egyetlen craft-forrás. A már legyártott példányok érvényben maradnak.
+        if (!configManager.getBoolean("professions.recipes.legacy-masterworks", false)) {
+            return;
+        }
 
         define("tarnasz_csakany", ProfessionType.MINER, 15,
                 tool(Material.DIAMOND_PICKAXE, "<aqua>Tárnász Csákány</aqua>", "<gray>A Vasművek Akadémiáján edzett szerszám.</gray>",

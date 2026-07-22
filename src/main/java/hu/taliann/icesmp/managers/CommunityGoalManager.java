@@ -105,6 +105,12 @@ public final class CommunityGoalManager implements PersistentStore {
                 : configManager.getConfiguration().getConfigurationSection("community-goals");
     }
 
+    /** Szezonváltáskor a közösségi célok is tiszta lappal indulnak (konzisztens szezon-modell). */
+    public synchronized void resetForNewSeason() {
+        progress.clear();
+        save();
+    }
+
     public long getProgress(final String goalId) {
         return progress.getOrDefault(goalId.toLowerCase(Locale.ROOT), 0L);
     }

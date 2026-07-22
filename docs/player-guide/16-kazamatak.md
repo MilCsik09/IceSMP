@@ -23,6 +23,10 @@ emlékei — a Vasművek elhagyott tárnái, elsüllyedt céh-pincék, kriptamé
   vezet, nem a falon át.
 - A mélyén a szerver-csapat által elhelyezett **zsákmány és/vagy boss** vár.
 
+> 👥 **Csoport-kedvezmény:** ha **csapatban** érkeztek, **egy kulcs** a kapunál 16 blokkon
+> belül álló párttagoknak is nyit — az 5 fős túrához nem kell 5 kulcs. (A heti pecsét
+> mindenkire külön érvényes.)
+
 ## Mit találsz bent? (loot-réteg)
 
 - **Kincsesládák:** a kazamatákban elrejtett ládák **fejenként, hetente** adnak zsákmányt —

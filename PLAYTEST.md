@@ -2024,3 +2024,32 @@ Jó tesztelést! ❄️
       fosztható (vanília nyitás cancel, virtuális loot, actionbar-visszajelzés);
       /territory dungeonboss kijelölt mini-boss belépéskor ébred (24h respawn),
       halálakor boss-tábla loot; kazamata-mob 8% bónusz-drop; minden kulcs élő.
+
+## B-csomag: balansz-hangolások (tulaj-jóváhagyás, 2026-07-22)
+- [ ] **Vér-spellek:** garrote/bloodbath/phantom_grip/soul_rot +1 sebzés (spells-balance).
+- [ ] **Energia-regen:** orgyilkos/szerzetes 7/mp, íjász 6/mp — a tár most tényleg kifogyhat.
+- [ ] **Tier2 talent-párok:** kasztonként eltérő effekt/szám (pl. Varázsló: spell-power vs
+      HP; Íjász: sebzés vs mozgás; Boszorkánymester: erős spell-power vs kis HP) — a
+      választás már nem álválasztás; respec után újraoszthatók.
+- [ ] **Recept-szintek:** 6 recept a hozzávalója forrás-szintjére emelve (tutaj_keszlet 24,
+      vandor_lepenye/fuszeres_nyulragu 22, kivonatos_csontliszt_bomba/kemenyfa_nyelkoteg 24,
+      runapor_finomitas 26); a checker 7. szabálya mostantól FAIL-t ad ilyen driftre.
+- [ ] **Régi mesterművek KI:** a 8 kódba égetett recept (Tárnász Csákány…) nem craftolható
+      (legacy-masterworks=false); a meglévő példányok működnek; a katalógus-párok élnek.
+- [ ] **DARK szárny-rituálé:** csontblokk 16 + lélekhomok 16 + gyémántblokk 1 — a
+      többi szárnnyal azonos árszint.
+- [ ] **Kaszt-megerősítés:** első kaszt-kattintás figyelmeztet, 30 mp-en belül megismételve
+      választ; a DK dark-only kapu és a setPrimaryJob-elutasítás változatlan.
+- [ ] **Király-lejárat:** term-days után a trón automatikusan megüresedik (broadcast),
+      új szavazás indul; dethrone-on-expiry=false visszaadja a régi viselkedést.
+- [ ] **Tanácsi keret:** 3 tanácstag EGYÜTT max 400/nap (közös számláló) — a 2. tanácstag
+      kivétje már az elsőét is terheli.
+- [ ] **Régész-megosztás:** kiásáskor a 24 blokkon belül állók 50% eséllyel (max 3 fő)
+      kisebb leletet kapnak; a lelőhely-spawn 250 blokk szórású.
+- [ ] **Kazamata csoport-kulcs:** egy kulcs a 16 blokkon belüli párttagoknak is nyit;
+      friss pecsétes tag nem kap új passzt.
+- [ ] **Suttogó tanú-gyanú:** éjszakai élőhalott-békesség kívülálló szemtanú előtt 2%
+      eséllyel +1 gyanú.
+- [ ] **Közösségi célok:** szezonváltáskor nullázódnak (broadcast a szezonzáró részeként).
+- [ ] **Honvágy:** a debuff 45 mp Éhség (10 helyett) — érezhető, de nem büntető.
+- [ ] **Rontás-góc:** 75 percenként 35% — kb. kétszer olyan gyakori, mint eddig.

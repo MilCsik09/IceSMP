@@ -7,6 +7,10 @@ classes:
   # (a már meglévő nem-DARK DK-kat nem érinti). Élő kulcs.
   death-knight:
     dark-only: false
+  # Kaszt-választás kétlépcsős megerősítése (a döntés végleges, csak admin fordítja
+  # vissza): az első kattintás figyelmeztet, ennyi másodpercen belül kell megismételni.
+  # 0 = nincs megerősítés (egy kattintás választ).
+  select-confirm-seconds: 30
   xp:
     hostile-only: true
     # Rebalansz: a spec-spellek a 25-45. szinten oldódnak fel, ezért a leveling
@@ -939,8 +943,8 @@ talents:
         requires-job: "wizard"
         requires-talent: "power"
         excludes: ["mana_shield"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       mana_shield:
         display-name: "Mana Pajzs"
@@ -958,7 +962,7 @@ talents:
         requires-talent: "power"
         excludes: ["unbreakable"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       unbreakable:
         display-name: "Törhetetlen"
@@ -967,7 +971,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["berserker_might"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       deadly_aim:
         display-name: "Halálos Célzás"
@@ -976,7 +980,7 @@ talents:
         requires-talent: "power"
         excludes: ["evasion_training"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       evasion_training:
         display-name: "Kitérő Edzés"
@@ -984,8 +988,8 @@ talents:
         requires-job: "archer"
         requires-talent: "vitality"
         excludes: ["deadly_aim"]
-        effect: "max-health"
-        per-rank: 2.0
+        effect: "movement-speed"
+        per-rank: 0.004
         max-rank: 3
       lethality:
         display-name: "Halálosság"
@@ -994,7 +998,7 @@ talents:
         requires-talent: "power"
         excludes: ["shadow_guard"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       shadow_guard:
         display-name: "Árny Őrzet"
@@ -1003,7 +1007,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["lethality"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 1.5
         max-rank: 3
       wild_fury:
         display-name: "Vad Düh"
@@ -1012,7 +1016,7 @@ talents:
         requires-talent: "power"
         excludes: ["thick_fur"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       thick_fur:
         display-name: "Vastag Bunda"
@@ -1021,7 +1025,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["wild_fury"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       righteous_might:
         display-name: "Igaz Erő"
@@ -1030,7 +1034,7 @@ talents:
         requires-talent: "power"
         excludes: ["holy_aegis"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       holy_aegis:
         display-name: "Szent Égisz"
@@ -1039,7 +1043,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["righteous_might"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       unholy_might:
         display-name: "Szentségtelen Erő"
@@ -1048,7 +1052,7 @@ talents:
         requires-talent: "power"
         excludes: ["frost_armor"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       frost_armor:
         display-name: "Fagypáncél"
@@ -1057,7 +1061,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["unholy_might"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       elemental_focus:
         display-name: "Elemi Fókusz"
@@ -1065,8 +1069,8 @@ talents:
         requires-job: "shaman"
         requires-talent: "power"
         excludes: ["stoneskin"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       stoneskin:
         display-name: "Kőbőr"
@@ -1084,7 +1088,7 @@ talents:
         requires-talent: "power"
         excludes: ["iron_body"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       iron_body:
         display-name: "Vastest"
@@ -1092,8 +1096,8 @@ talents:
         requires-job: "monk"
         requires-talent: "vitality"
         excludes: ["inner_strength"]
-        effect: "max-health"
-        per-rank: 2.0
+        effect: "movement-speed"
+        per-rank: 0.004
         max-rank: 3
       divine_fury:
         display-name: "Isteni Düh"
@@ -1101,8 +1105,8 @@ talents:
         requires-job: "priest"
         requires-talent: "power"
         excludes: ["spirit_shell"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       spirit_shell:
         display-name: "Szellempáncél"
@@ -1119,8 +1123,8 @@ talents:
         requires-job: "warlock"
         requires-talent: "power"
         excludes: ["soul_link"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.5
         max-rank: 3
       soul_link:
         display-name: "Lélekkötés"
@@ -1129,7 +1133,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["dark_empowerment"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 1.5
         max-rank: 3
       fel_power:
         display-name: "Fel Hatalom"
@@ -1138,7 +1142,7 @@ talents:
         requires-talent: "power"
         excludes: ["demonic_hide"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       demonic_hide:
         display-name: "Démonbőr"
@@ -1146,8 +1150,8 @@ talents:
         requires-job: "demon_hunter"
         requires-talent: "vitality"
         excludes: ["fel_power"]
-        effect: "max-health"
-        per-rank: 2.0
+        effect: "movement-speed"
+        per-rank: 0.005
         max-rank: 3
       draconic_power:
         display-name: "Sárkány Hatalom"
@@ -1155,8 +1159,8 @@ talents:
         requires-job: "evoker"
         requires-talent: "power"
         excludes: ["scaled_hide"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       scaled_hide:
         display-name: "Pikkelyes Bőr"
