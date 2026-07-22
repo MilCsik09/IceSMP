@@ -44,12 +44,12 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Lélekkapocs (VI.) | a kaszt-témás Képesség Katalizátor item (`CatalystItemFactory`); jobb katt = cast, sneak+ütés = váltás; **nem dobható el** (`CatalystProtectionListener`: drop-cancel + halálkor megőrzés/respawn-visszaadás), craft/kohó-védett (`CatalystCraftSafetyListener`); elvesztéskor pótolható (Job GUI / `/job givecatalyst`) |
 | Az Első Csend (I./VII.) | szándékosan megfejtetlen misztérium — jövőbeli antagonista/quest-horgony; NE magyarázd meg tartalomban |
 | A Mélység Népe (I.) | Mételytépő relikvia (`relics.yml`); jövőbeli rom/dungeon/kazamata-horgony + ősi ereklyék forrása |
-| Az elveszett emlékek (V.) | 🔜 K8 Emlékszilánkok — a gyűjthető emlék-progresszió narratív alapja |
+| Az elveszett emlékek (V.) | K8 Emlékszilánkok (él): Opálos Emlékszilánk + `/emlek` beváltó — a gyűjthető emlék-progresszió narratív alapja |
 | Ryanora (III.) | a NEUTRAL vidék/tartomány neve (a Bokic-mente); Caldestera = a fővárosa — territórium-elnevezésnél így használd |
 | A fél-álomban alvó Királynő (VII.) | a vérhold + horda/invázió/világboss események narratív tétje; a K9 Suttogók célja (teljes ébresztés); végjáték-horgony — a „harmadik mondat" apokalipszisa NEM implementálandó, narratív tét marad |
 | A Királynő kósza hívei (V./VII.) | N25b kultista világesemény (`cultists.*`): portya / rítus (beteljesülve rontás-gócot nyithat — H2-kapocs) / hírvivő a Kitaszítottak földje felé; a Suttogók (K9) rejtett rétegének NYÍLT, világbeli tükre |
 | A gyógyuló Fa (V.) | a szezonok/progresszió/közösségi célok narratív tétje („minden rendbe tett darab gyógyítja a Fát"); jövőbeli horgony: a repedés állapota mint szerver-szintű mérce/esemény |
-| Az Ünnepek (VIII.) | 🔜 D1 szezonális ünnepek — Hasadás Napja (Hu. 1: gyász/PvP-szünet?), Ultimátum Napja (Hu. 547: caldesterai vásár-esemény), Vérhold-virrasztás (vérhold-kiegészítő), Érkezés Napja (Hu. 978: szezon-évforduló) |
+| Az Ünnepek (VIII.) | tervezett: D1 szezonális ünnepek — Hasadás Napja (Hu. 1: gyász/PvP-szünet?), Ultimátum Napja (Hu. 547: caldesterai vásár-esemény), Vérhold-virrasztás (vérhold-kiegészítő), Érkezés Napja (Hu. 978: szezon-évforduló) |
 | Lélekkő (VII.) | DARK-valuta drop magas-szintű mobokból; DARK-játékosnak élőhalottból NEM esik (`currency.soul-drop.dark-undead-drops`); Nekromanta lélek-szilánk csak élő szörnyből (`souls.shards-from-undead`) |
 | Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Thanaopolis = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
@@ -71,7 +71,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 
 ---
 
-## Tervezett világ-rendszerek (✅ = él • 🔜 = tervezett)
+## Tervezett világ-rendszerek (✅ = él)
 
 - **✅ Már a lore szerint él:** frakció-passzívák; territórium/claim (fővárosok, védett zónák);
   bűn/vérdíj + `DARK`-száműzetés; valuta-slotok; király/raid/szezon; lélekkő-szabály; Lélekkapocs-védelem.
@@ -88,7 +88,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 - **✅ K10 — Caldestera feketepiac (KÉSZ):** fegyvertilalom + körözött-kapu a NEUTRAL
   fővárosban (CapitalLawListener); Botera-negyed feketepiac-bolt Csontveretért — Bokic-menti
   Sétapálca (rejtett penge) és Hamisított Menlevél (`territory.capital-law.*`).
-- **🔜 Thanaopolis megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben
+- **Tervezett — Thanaopolis megépítése:** a DARK rom-főváros + spawn (világépítés, szerver-csapat); egyben
   magas-veszélyű PvE rom-zóna, K5-loot forrás és a K9 Suttogó-oltár helye.
 
 ---

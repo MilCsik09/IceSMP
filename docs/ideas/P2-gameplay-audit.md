@@ -260,8 +260,8 @@
 
 ### 🟡 Doksi-lemaradások (a "second-wave" rendszereket a magas szintű doksik nem követték)
 
-- **02-frakciok "🔜 Suttogók (tervezett)" szekció** — a rendszer TELJESEN él; a jelölés
-  törlendő, a tényleges mechanika leírandó. (A Guides-oldali példányon is!)
+- ✅ **02-frakciok "Suttogók (tervezett)" szekció** — a rendszer TELJESEN él; a 🔜/tervezett
+  jelölés törölve, a szekció élő rendszerként szól (mindkét repóban; tulaj-kérés: 2026-07-22).
 - **README elavult DARK-belépés** ("Mételytépő bélyegez bűnössé" — valójában a 4-bűnös
   számláló; a Mételytépő ma már csak fegyver).
 - **Zóna-típusok: 4-ként dokumentálva, valójában 6** (DOOM_GATE, DUNGEON hiányzik a
@@ -289,7 +289,7 @@ lore→mechanika táblájából (+ zone-ramp fél mondat) — pótlandó.
    #12 admin.item jog, #10 giver-npc 2 questre, #17 ascendant, #11 reload-race (2 osztály),
    #13 load/save try/catch, NEUTRAL dupla-heti szétválasztás, unique-smelt-védelem,
    #20 párbaj-invariáns, #22 parkour-limit, szezonális quest-id stabilizálás,
-   LORE_REFERENCE + doksi-lemaradások (Suttogó 🔜 törlése, README-javítások).
+   LORE_REFERENCE + doksi-lemaradások (Suttogó-jelölés ✅ törölve; README-javítások).
 2. **Kis-közepes patchek:** #4 claim entity-védelem, #5 kultista race, #14 autosave +
    raid-lezárás, #7 soulstone-cap, combat-tag, #19 tablist/HUD optimalizálás,
    #23 lépcsőzetes szezon-jutalom, régészet runner-up, párbaj/hadi-ablak harc-feltétel.

@@ -72,7 +72,7 @@ száműzetése, a Néma Királynő árnyéka. **Kétféleképpen** kerülsz ide:
 
 - **Bűnözőként:** akit **4 bűnnél (sinner)** a világ automatikusan ide **száműz** (lásd lentebb).
 - **Lelepleződött Suttogóként:** akit rajtakapnak, hogy titokban **a Suttogók** hálózatát szolgálja
-  (lásd 🔜 lentebb), azt egy csapásra ide veti a bélyeg.
+  (lásd lentebb), azt egy csapásra ide veti a bélyeg.
 
 A belépés **kétlépcsős**: az első `/faction join dark` csak figyelmeztet a paktum súlyára —
 ha komolyan gondolod, egy percen belül **meg kell ismételned**. Belépéskor aztán megköttetik
@@ -83,7 +83,7 @@ hagynak, s a wither sem árt — a Néma Királynő megjelöli, de meg is óvja 
 
 A Kitaszítottaknak is van otthonuk: **Thanaopolis, a Holtak Városa** — egy élőhalottak lakta **rom-főváros**,
 ahová a száműzöttek újraélednek. Mivel rátok nem támadnak a holtak, ez a düledező város nektek menedék;
-mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra vár — lásd 🔜.)*
+mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra vár.)*
 
 ## ⚖ A Vének Tanácsa — a Menedék vezetése
 
@@ -133,9 +133,7 @@ Ha **megölsz egy körözött bűnözőt**:
 
 Így a bűnözés kockázatos: minél többet vétkezel, annál nagyobb célpont vagy a fejvadászoknak.
 
-## 🔜 A Suttogók — a rejtett hálózat *(tervezett)*
-
-> *Ez a rendszer még fejlesztés alatt áll — a lore már számol vele, a mechanika hamarosan érkezik.*
+## 🌒 A Suttogók — a rejtett hálózat
 
 A **Suttogók** (Az Éjszaka Gyermekei) nem külön frakció, hanem egy **titkos státusz**, amely a
 **látható frakciód fölé** rétegződik. Láng, Fagy vagy Menedék maradsz mindenki szemében — miközben
@@ -160,8 +158,7 @@ derül ki.
 
 **Mi történik ekkor?** A titkos Suttogóból egy csapásra **Kitaszított** lesz: **bűnössé** válsz, a
 világ **száműz a Kitaszítottak közé**, és **azonnali vérdíj** kerül a fejedre — a többiek vadászni
-kezdenek rád. A leplet nem lehet visszaölteni; innen csak a **vezeklés** vezet vissza. *(A pontos
-mechanika-terv — rítus, gyanú-mérő, vizuális jelek — a fejlesztői ötlettár K9 tétele.)*
+kezdenek rád. A leplet nem lehet visszaölteni; innen csak a **vezeklés** vezet vissza.
 
 ## Frakció-viszonyok (reputáció)
 
