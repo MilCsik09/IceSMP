@@ -475,6 +475,7 @@ public final class IceSMPCore {
                 talentManager, messageManager, spellFavoritesManager);
         this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
+        petManager.setJobManager(jobManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.parkourManager = new ParkourManager(plugin, currencyManager, factionManager, messageManager);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);

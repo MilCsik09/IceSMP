@@ -8,7 +8,7 @@ Hogyan? `/profile` → **Specializáció** menü → kattints a választott irá
 `/spec list`, `/spec choose <azonosító>`.) A menü mindig csak **a te kasztod** irányait mutatja,
 és kiírja, ha valamihez még nem teljesíted a feltételt.
 
-Összesen **32 specializáció** van. A **spec dönti el a szerepedet** (🗡️ közelharci DPS,
+Összesen **35 specializáció** van. A **spec dönti el a szerepedet** (🗡️ közelharci DPS,
 🏹 távolsági DPS, ✨ caster, 🛡️ tank, ➕ gyógyító) — vagyis milyen stílusban a leghatékonyabb:
 
 | Kaszt | Specializációk (szerep) |

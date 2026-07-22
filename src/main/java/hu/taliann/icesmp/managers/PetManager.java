@@ -79,8 +79,31 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return specializationManager.getClassSpecialization(player) == SpecializationType.NECROMANCER;
     }
 
+    /** Setter-injektált (a JobManager a PetManager után is elérhető a core-ból). */
+    private volatile hu.taliann.icesmp.managers.JobManager jobManager;
+
+    public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
+        this.jobManager = jobManager;
+    }
+
+    /** Szentségtelen DK: állandó ghúl-társ (a WoW-hű permanens pet). */
+    public boolean isUnholy(final Player player) {
+        return specializationManager.getClassSpecialization(player) == SpecializationType.UNHOLY;
+    }
+
+    /** Boszorkánymester (kaszt-szintű): állandó démon-familiáris. */
+    public boolean isWarlock(final Player player) {
+        final hu.taliann.icesmp.managers.JobManager jobs = this.jobManager;
+        return jobs != null && jobs.getPrimaryJob(player) == hu.taliann.icesmp.data.JobType.WARLOCK;
+    }
+
+    /** A Sötét Paktum-tekercset használó szerepek közös kapuja. */
+    public boolean isDarkCapturer(final Player player) {
+        return isNecromancer(player) || isUnholy(player) || isWarlock(player);
+    }
+
     public boolean canOwnPet(final Player player) {
-        return isBeastMaster(player) || isNecromancer(player);
+        return isBeastMaster(player) || isDarkCapturer(player);
     }
 
     public int getLevel(final Player player) {
@@ -105,6 +128,20 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         }
         if (isNecromancer(player)) {
             return target instanceof Monster; // any hostile mob / undead
+        }
+        if (isUnholy(player)) {
+            // A Szentségtelen csak élőhalottat köt magához (ghúl-társ).
+            return target instanceof org.bukkit.entity.Zombie
+                    || target instanceof org.bukkit.entity.AbstractSkeleton
+                    || target instanceof org.bukkit.entity.Phantom;
+        }
+        if (isWarlock(player)) {
+            // A Boszorkánymester démoni familiárist köt (vex/boszorka/láng-lények).
+            return target instanceof org.bukkit.entity.Vex
+                    || target instanceof org.bukkit.entity.Witch
+                    || target instanceof org.bukkit.entity.Blaze
+                    || target instanceof org.bukkit.entity.MagmaCube
+                    || target instanceof org.bukkit.entity.PigZombie;
         }
         return false;
     }

@@ -1888,3 +1888,21 @@ Jó tesztelést! ❄️
 - [ ] **classes.death-knight.dark-only [false]:** true-ra állítva ÚJ Halállovagot
       csak Kitaszított választhat (magyarázó üzenet); meglévő nem-DARK DK-t nem érint;
       false-on a régi működés.
+
+## DARK-spec csomag: állandó petek + 3 új spec (tulaj-kérés, 2026-07-22)
+- [ ] **Állandó ghúl (Unholy):** a Sötét Paktum-tekerccsel élőhalott (zombi/csontváz/
+      phantom) fogható be tartós társnak — szintez, átnevezhető, stance-váltós, mint a
+      Vadmester/Nekromanta petje; nem-élőhalott NEM fogható.
+- [ ] **Warlock démon-familiáris:** kaszt-szintű (mindkét spec): vex/boszorka/blaze/
+      magma-kocka/zombified piglin fogható tartós társnak a tekerccsel.
+- [ ] **Csontpap (PRIEST, DARK+bűnös):** Csontforrasztás (csoport-regen aura),
+      Szívó Sugár (drain), Csont-oltalom (ellenállás-áldás), Királynő Siráma
+      (AoE+gyengítés), Vér-tized (SAJÁT HP-ból csoport-regen!), Sír Csendje,
+      Utolsó Kenet (nagy Absorption-aura ulti) + Sírfátyol talent.
+- [ ] **Pestishozó (ASSASSIN, DARK+bűnös):** Pestis-vágás→Fekete Halál DoT-íve
+      (méreg/wither halmozás, Miazma lassítás) + Pestis-mesterség talent.
+- [ ] **Demonológus (WARLOCK, DARK+bűnös):** Démontűz, Imp-raj (3 vex), Magma-szolga,
+      Démonbőr, Káosz-láng, Áldozati Paktum (vér-áras burst), A Légió (5 vex ulti)
+      + Légió-paktum talent.
+- [ ] **Kapuk:** mindhárom spec csak Kitaszított+bűnösként vehető fel; vezeklésnél
+      automatikusan elvész (spec-reset üzenettel).

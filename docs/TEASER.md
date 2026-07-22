@@ -37,7 +37,7 @@ a nép csak a Kárhozat Kapujának hívja. Ez a világ egyetlen átjárója a m�
 és senkiföldje, ahol nem véd törvény.
 
 **Mit rejt a világ?**
-- ⚔ **13 kaszt, 32 specializáció, több száz képesség** — harcos, druida, halállovag,
+- ⚔ **13 kaszt, 35 specializáció, több száz képesség** — harcos, druida, halállovag,
   sárkányidéző… a Vér Emlékezete benned szunnyad.
 - 🏰 **Négy birodalom, élő politika** — királyválasztás, adó, raid-háborúk, hétvégi
   hadi-ablak, szezon-liga, ahol a frakciód dicsőségéért minden ölés, minden
@@ -71,7 +71,7 @@ Négy nép a romokon: a Láng, a Fagy, a Menedék — és a Kitaszítottak, akik
 holtak városa, Thanaopolis az otthona. Köztük a Kárhozat Kapuja: a világ egyetlen
 átjárója a mélységbe, ahol nem véd törvény.
 
-⚔ 13 kaszt • 32 spec • több száz képesség
+⚔ 13 kaszt • 35 spec • több száz képesség
 🏰 Királyok, raidek, hadi-ablak, szezon-liga
 🌍 Vérhold, világbossok, kultisták, élő események
 💰 4 valuta, élő gazdaság, feketepiac

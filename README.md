@@ -61,7 +61,7 @@ mobok jönnek — és annál több XP-t adnak). A szintek WoW-mintára **egyre t
 kerülnek**, a képességek (spellek) pedig a szintekkel **automatikusan feloldódnak**.
 
 A 25. szinttől **specializálódhatsz** (`/spec choose <id>`), és a legerősebb képességek
-csak így érhetők el. Összesen **32 specializáció** van — a spec dönti el a szerepedet (DPS /
+csak így érhetők el. Összesen **35 specializáció** van — a spec dönti el a szerepedet (DPS /
 caster / tank / gyógyító), így minden szerep lefedett. A döntés nem örök: a `/spec respec`
 paranccsal **frakcióvalutáért visszaválthatod** a speced (a spec-talentjeid pontjai ilyenkor
 visszatérülnek):
@@ -279,7 +279,7 @@ adatmappájában — minden játékmeneti érték és üzenet ott testreszabhat�
   LibsDisguises (Druida-formák vizuálja), FancyNpcs (NPC-s kaszt-mester próbák),
   WorldGuard (a meteor/kincs események kerülik a WG-régiókat), LuckPerms (chat
   prefix/suffix a natív chat-formázóban) — mindegyik nélkül is teljes értékűen fut
-- Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 32 spec / 390+ spell,
+- Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 35 spec / 390+ spell,
   hibrid erőforrás-költség, talentek, szakmák, gazdaság + piac, relikviák + rituálék,
   világesemények (vérhold / világbossok / inváziók), király/raid/szezon, küldetések, pet-rendszer.
 - A hátralévő irányok: [ROADMAP.md](ROADMAP.md)

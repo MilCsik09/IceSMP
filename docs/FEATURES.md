@@ -8,7 +8,7 @@
 
 - **13 frakció-független kaszt** (Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag,
   Halállovag, Sámán, Szerzetes, Pap, Boszorkánymester, Démonvadász, Sárkányidéző) +
-  **32 specializáció** (25. szinttől) + **~390 spell** (config-vezérelt katalógus).
+  **35 specializáció** (25. szinttől) + **~390 spell** (config-vezérelt katalógus).
 - **Lélekkapocs**: a cast-eszköz — jobb-klikk cast, sneak-klikk spell-váltás, kedvencek,
   spellkönyv-GUI. A kaszt-választás VÉGLEGES (admin-only reset: /class admin resetclass).
 - **Hibrid erőforrás-modell**: kasztonként saját Erő-csík (Mana/Düh/Energia…, lazy-regen,
@@ -22,7 +22,7 @@
   sebzés-típusokkal + iskola-ellenes enchantok (Fagypáncél, Főnixtoll) + Rúnavért
   páncél-enchant (spell-rezisztencia, plafon 60%).
 - **Talent-fa**: 5 szintenként pont; stat-talentek (HP/sebzés/sebesség/XP), tier-kapuk,
-  kasztonkénti tier2 build-pár + mind a 32 spec saját tier3 talentje; szakma-talentek.
+  kasztonkénti tier2 build-pár + mind a 35 spec saját tier3 talentje; szakma-talentek.
   Bónusz-pont Emlékszilánkból (/emlek).
 - **Állapotos spellek** külön osztályban (druida-forma álcával, dupla-ugrás,
   rejtőzés…), kötelező állapot-takarítással kijelentkezéskor.

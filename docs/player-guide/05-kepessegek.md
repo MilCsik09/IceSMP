@@ -1,7 +1,7 @@
 # 5. Képességek (varázslatok) ✅
 
-Több mint **390 képesség** van — **minden a 13 kaszt és a 32 specializáció** saját, egyedi
-készletet kap. Ez az oldal **mind a 13 kasztot és mind a 32 specializációt** felsorolja: mit
+Több mint **390 képesség** van — **minden a 13 kaszt és a 35 specializáció** saját, egyedi
+készletet kap. Ez az oldal **mind a 13 kasztot és mind a 35 specializációt** felsorolja: mit
 csinál egy-egy képesség, mennyibe kerül, mennyit kell rá várni, és hányadik szinten oldódik fel.
 A saját kasztodra mindig naprakész a játékbeli **Képesség-fa** menü is (`/profile` → Képesség-fa).
 

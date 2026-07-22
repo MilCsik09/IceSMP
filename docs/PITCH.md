@@ -59,7 +59,7 @@ közben nyílik ki, akkor, amikor beleütközöl.
 
 ## Mitől több ez egy sima SMP-nél?
 
-- ⚔ **13 kaszt, 32 specializáció, több száz képesség** — a harc nem kard-katt, hanem
+- ⚔ **13 kaszt, 35 specializáció, több száz képesség** — a harc nem kard-katt, hanem
   build-építés.
 - 🏰 **Élő politika:** királyválasztás, adó, raid-háborúk, hétvégi hadi-ablak, tanács —
   a népek tényleg versengenek, és a **szezon végén van eredményhirdetés**.
