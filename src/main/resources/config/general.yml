@@ -297,3 +297,10 @@ campfire-story:
 bard:
   enabled: true
   npc-name: "enekmondo"
+
+# ===== Parkour =====
+parkour:
+  # Pályánkénti napi jutalom-limit játékosonként (0 = korlátlan). A limit fölött a futam
+  # teljesíthető (idő + quest-haladás jár), de veret nem — a parkour így nem pénz-nyomda.
+  # A futam megszakad gyöngy/refő-teleportra, elytrára és riptide-ra (mobilitás-fék).
+  daily-reward-limit: 3

@@ -17,6 +17,9 @@ currency:
     min-mob-level: 3
     chance-percent: 25
     max-amount: 5
+    # Napi lélekkő-keret játékosonként (0 = korlátlan). A spawner-mobok eleve kizártak
+    # (skálázatlanok, szintjük a min-mob-level alatt), a natural-farm ellen ez a plafon véd.
+    daily-cap: 50
     # „A Királynő nem fizet a testvérgyilkosságért": a DARK (Kitaszított) játékosnak az
     # ÉLŐHALOTT mobokból (zombi/csontváz/phantom/zoglin/wither) NEM esik lélekkő — azok
     # úgysem védekeznek ellene (frakció-passzív), így ez lore-szabály + auto-farm fék.

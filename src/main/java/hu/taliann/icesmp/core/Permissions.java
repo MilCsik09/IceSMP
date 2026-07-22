@@ -49,6 +49,7 @@ public final class Permissions {
     public static final String CRATE = "icesmp.admin.crate";
     public static final String MODERATION = "icesmp.admin.moderation";
     public static final String INSPECT = "icesmp.admin.inspect";
+    public static final String ITEM = "icesmp.admin.item";
     public static final String TERRITORY_BUILDER = "icesmp.territory.builder";
 
     private Permissions() {
@@ -79,6 +80,7 @@ public final class Permissions {
         canonical.put(CRATE, "Láda-admin (/crate set/remove/give)");
         canonical.put(MODERATION, "Moderáció: némítás, chat-szűrő, bejelentések (/mute, /reports)");
         canonical.put(INSPECT, "Játékos-inspektor + inventory-betekintés (/icesmp inspect, /invsee)");
+        canonical.put(ITEM, "Admin item-adás (/iceitem)");
         canonical.put(TERRITORY_BUILDER, "Építés a védett zónákban (szerver-építő szerep)");
 
         final Map<String, Boolean> allChildren = new LinkedHashMap<>();

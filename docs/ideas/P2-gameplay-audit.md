@@ -10,13 +10,13 @@
 ## 🔴 Strukturális leletek
 
 ### Frakció / PvP
-1. **A DARK "örök paktum" pénzért megkerülhető.** A `/faction join red|blue|neutral` ÉS a
+1. ✅ KÉSZ (P2-1. csomag) — **A DARK "örök paktum" pénzért megkerülhető.** A `/faction join red|blue|neutral` ÉS a
    `/faction leave` is kienged a Kitaszítottak közül a sima váltás-díjért (500) — sehol nincs
    `hasDarkPact` ellenőrzés, miközben a belépési figyelmeztetés és a SinManager javadoc is
    örök paktumot ígér, és az egyetlen szándékolt kiút a vezeklés-lánc (`breakDarkPact`,
    egyetlen hívó: QuestManager vezeklés-jutalom). A bűn→száműzetés→vezeklés narratíva így
    fizetős forgóajtó. KÉZZEL MEGERŐSÍTVE. → `hasDarkPact` kapu a join/leave váltás-ágain.
-2. **Vérdíj bűn-törlése megrendezett halállal.** A bounty-ág (SinListener) az áldozat
+2. ✅ KÉSZ (P2-1. csomag: a bűn-törlés is a 12h cooldown alá került) — **Vérdíj bűn-törlése megrendezett halállal.** A bounty-ág (SinListener) az áldozat
    bűneit feltétel nélkül nullázza (`clear-sins-on-death`), a 12h cooldown csak a
    PÉNZ-kifizetést fogja vissza — egy 3 bűnű játékos baráti kivégzéssel korlátlanul
    nullázhatja magát a 4-bűnös száműzetés előtt. (A kódkomment részben szándékosnak
@@ -31,7 +31,7 @@
    harcosokra, VAGY a raid-cél ne protected-zone legyen.
 
 ### Claim / grief
-4. **Idegen claimben az élőlények és a kirakott tárgyak védtelenek.** Nincs
+4. ✅ KÉSZ (P2-1. csomag: entity-damage + item-frame + armor-stand + mob-vödör kapuk) — **Idegen claimben az élőlények és a kirakott tárgyak védtelenek.** Nincs
    `EntityDamageByEntityEvent` handler a claim-listenerben (állat/villager/armor-stand
    ölhető), nincs `PlayerInteractEntityEvent`/`PlayerArmorStandManipulateEvent` (item-frame
    tartalma és állvány-felszerelés lopható törés nélkül), nincs `PlayerBucketEntityEvent`
@@ -49,7 +49,7 @@
    kihagyja őket. → invasion.reward-loot + cultists attack/courier loot-tábla.
 
 ### Gazdaság
-7. **A lélekkő-drop az egyetlen napi keret nélküli pénz-faucet.** Nincs napi cap (a
+7. ✅ KÉSZ (P2-1. csomag: daily-cap 50; a spawner-kizárás a min-mob-level révén eleve élt) — **A lélekkő-drop az egyetlen napi keret nélküli pénz-faucet.** Nincs napi cap (a
    mob-money-drop 300 és fishing-windfall 150 kapott), nincs spawner-kizárás, és a
    nem-DARK játékosok élőhalott-farmja sincs tiltva — uncapped Csontveret-forrás, 3%
    díjjal átváltva. → napi keret + spawner-kizárás + undead-szűkítés.
@@ -65,7 +65,7 @@
    `hirnok` 9, az `erdei_venek` 5 quest-ponton kötelező — köztük az auto-induló első
    quest és mindhárom fejezet-zárás. Az intro/motd nem mond parancsot fallbackként.
    → kódos tartalék-út + a hiányzó NPC-ről hangos log/admin-jelzés.
-10. **Két quest párbeszéde soha nem jelenik meg.** `merchant_choice` (a JÁTÉK EGYETLEN
+10. ✅ KÉSZ (P2-1. csomag: giver-npc mindkettőre) — **Két quest párbeszéde soha nem jelenik meg.** `merchant_choice` (a JÁTÉK EGYETLEN
     elágazó story-választása!) és `forest_cleansing` (lépéssorrend-magyarázat) giver-npc
     nélkül csak `/quest accept`-tel vehető fel, ami a dialógus-render utat kihagyja.
     → giver-npc: "vandor_kereskedo" ill. "erdei_venek" felvétele.
@@ -76,7 +76,7 @@
     clear+rebuild mintával épül újra `/icesmp reload` alatt, miközben régió-szálak
     olvassák — reload közbeni craft/relikvia-használat CME/crash-képes. A házon belüli
     megoldás (ConfigManager volatile+build-then-swap mintája) nem lett végigvezetve.
-12. **`icesmp.admin.item` nincs regisztrálva a Permissions-ben** (KÉT agent egymástól
+12. ✅ KÉSZ (P2-1. csomag) — **`icesmp.admin.item` nincs regisztrálva a Permissions-ben** (KÉT agent egymástól
     függetlenül) — az `icesmp.admin.all` NEM adja meg a `/iceitem`-et. → ITEM felvétele
     a canonical map-be.
 13. ✅ KÉSZ (Fable-kör) — **A persistentStores load/save lánca hibakezelés nélküli.** Egy sérült YAML egyetlen
@@ -97,7 +97,7 @@
 16. **Fagylovag perma-CC.** 8-9 freeze/slow spell egy specen, összesített uptime max
     szinten ~100-105% egyetlen célon — diminishing returns nélkül szinte folyamatos
     fagyontartás. → CC-DR (ismételt CC csökkenő időtartammal).
-17. **Az ascendant capstone-talent tiszta szintezésből elérhetetlen.** 50 szint / 5 =
+17. ✅ KÉSZ (P2-1. csomag: requires-spent 9) — **Az ascendant capstone-talent tiszta szintezésből elérhetetlen.** 50 szint / 5 =
     10 pont; a talent requires-spent: 10 UTÁN 11.-ként kellene megvenni — csak a rejtett
     /emlek talent (Emlékszilánk) út adja ki. KÉZZEL MEGERŐSÍTVE (classes.yml:555,1117).
     → requires-spent 9-re, vagy garantált bónusz-pont az 50. szinten.
@@ -144,11 +144,11 @@
   fisherman 11 ← szavannafu_kotel CSAK lumberjack 24-től) → szint-emelés vagy bolt-forrás.
 - **Bástya-pajzs két párhuzamos rendszerben** (régi ProfessionRecipeManager-mestermű
   mindig jobb, mint az új katalógus-recept) → a 8 régi mestermű összevonása/törlése.
-- **Unique anyag kemencében elolvasztható** (FurnaceSmeltEvent-védelem hiányzik; pl.
+- ✅ KÉSZ (P2-1. csomag: FurnaceSmelt-tiltás) — **Unique anyag kemencében elolvasztható** (FurnaceSmeltEvent-védelem hiányzik; pl.
   melysegi_borostyan → sima aranyrúd). → smelt-input tiltás unique-tagen.
 - **DARK szárny-rituálé aránytalanul drága** (Wither-koponya + 2 netherite scrap vs. a
   többiek farmolható blokkjai) → hozzávaló-csere.
-- **NEUTRAL dupla heti kereskedő-quest:** az új `neutral_heti_vasarjaras` majdnem
+- ✅ KÉSZ (P2-1. csomag: a Vásárjárás DELIVER_ITEMS objektívát kapott) — **NEUTRAL dupla heti kereskedő-quest:** az új `neutral_heti_vasarjaras` majdnem
   duplikálja a meglévő `neutral_heti_vasar`-t (2×120/hét közel ingyen; SAJÁT tartalom-
   hullám-4 hiba) → az új quest más objektívát kapjon.
 - **`/icesmp reload` három managernél nem él** (Relic/MobScaling/CraftingRestriction a
@@ -220,7 +220,7 @@
     integráció (egyetlen külső hívó a quest-XP). A 250-es alapítási díj után a rendszer
     semmit nem ad. A legerősebb "sziget" a kódbázisban. → kassza-felhasználási út +
     legalább egy szint-kötött előny, vagy őszinte kivezetés.
-22. **A parkour korlátlan pénz-faucet, anti-cheat nélkül.** Nincs per-pálya cooldown/napi
+22. ✅ KÉSZ (P2-1. csomag: napi 3 jutalmazott futam/pálya + gyöngy/refő/elytra/riptide futam-megszakítás) — **A parkour korlátlan pénz-faucet, anti-cheat nélkül.** Nincs per-pálya cooldown/napi
     limit (start→cél→start ciklus azonnali veret-kifizetéssel ismételhető), és a cél-check
     csak távolságot néz — pearl/elytra/mobilitás-spell bejárás nélkül célba visz.
     → napi limit + mobilitás-tiltás futás alatt (checkpoint-lánc).
@@ -262,12 +262,12 @@
 
 - ✅ **02-frakciok "Suttogók (tervezett)" szekció** — a rendszer TELJESEN él; a 🔜/tervezett
   jelölés törölve, a szekció élő rendszerként szól (mindkét repóban; tulaj-kérés: 2026-07-22).
-- **README elavult DARK-belépés** ("Mételytépő bélyegez bűnössé" — valójában a 4-bűnös
+- ✅ KÉSZ (P2-1. csomag) — **README elavult DARK-belépés** ("Mételytépő bélyegez bűnössé" — valójában a 4-bűnös
   számláló; a Mételytépő ma már csak fegyver).
-- **Zóna-típusok: 4-ként dokumentálva, valójában 6** (DOOM_GATE, DUNGEON hiányzik a
+- ✅ KÉSZ (P2-1. csomag: README + 14-parancsok frissítve; az AGENTS.md már 6-ot mondott) — **Zóna-típusok: 4-ként dokumentálva, valójában 6** (DOOM_GATE, DUNGEON hiányzik a
   README-ből, AGENTS-ből, a 14-parancsok territory-típuslistájából; az AGENTS.md 15-16.
   sora önellentmondó).
-- **README "120+ recept" → valójában 410**; **01-kezdes a kikapcsolt /currency pay-t
+- ✅ KÉSZ (P2-1. csomag: README 400+, 01-kezdes veret-átadásra írva; a PLAYER_GUIDE kazamata-link már élt) — **README "120+ recept" → valójában 410**; **01-kezdes a kikapcsolt /currency pay-t
   élőként ajánlja**; **PLAYER_GUIDE linklistájából és szövegéből teljesen hiányzik a
   16-kazamatak oldal**.
 

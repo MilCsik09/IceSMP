@@ -48,9 +48,13 @@ public final class ParkourManager implements PersistentStore {
     private final Map<UUID, Run> activeRuns = new ConcurrentHashMap<>();
     private java.util.function.BiConsumer<Player, String> finishHook;
 
-    public ParkourManager(final JavaPlugin plugin, final CurrencyManager currencyManager,
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
+
+    public ParkourManager(final JavaPlugin plugin, final hu.taliann.icesmp.managers.ConfigManager configManager,
+                          final CurrencyManager currencyManager,
                           final FactionManager factionManager, final MessageManager messageManager) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.messageManager = messageManager;
@@ -171,9 +175,16 @@ public final class ParkourManager implements PersistentStore {
 
         activeRuns.remove(player.getUniqueId());
         final double seconds = (System.currentTimeMillis() - run.startMillis()) / 1000.0D;
-        if (course.reward > 0) {
+        // A parkour korlátlan pénz-faucet lenne: pályánként napi daily-reward-limit
+        // alkalommal fizet, fölötte a futam teljesíthető, de veret nem jár.
+        final boolean paid = course.reward > 0 && tryConsumeDailyRun(player.getUniqueId(), run.courseId());
+        if (paid) {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());
             currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), Math.round(course.reward));
+        } else if (course.reward > 0) {
+            player.sendMessage(messageManager.getMessage(
+                    "parkour-daily-limit",
+                    "<gray>🏁 A mai jutalom-keret erre a pályára elfogyott — a futam számít, veret holnap jár újra.</gray>"));
         }
         // Quest bridge (PARKOUR_TRIAL objectives) — runs on the player's own thread.
         if (finishHook != null) {
@@ -185,11 +196,45 @@ public final class ParkourManager implements PersistentStore {
                 Map.of(
                         "course", course.name,
                         "time", String.format(java.util.Locale.ROOT, "%.1f", seconds),
-                        "reward", String.valueOf(course.reward)
+                        "reward", String.valueOf(paid ? course.reward : 0)
                 )));
     }
 
     public void cancel(final UUID playerId) {
         activeRuns.remove(playerId);
+    }
+
+    /**
+     * Mobilitás-eszköz (gyöngy/refő/elytra/riptide) használatakor a futam megszakad —
+     * a cél-ellenőrzés csak távolságot néz, e nélkül a pálya bejárás nélkül teljesíthető.
+     *
+     * @return true, ha volt aktív futam és megszakadt
+     */
+    public boolean cancelForMobility(final Player player) {
+        final Run run = activeRuns.remove(player.getUniqueId());
+        if (run == null) {
+            return false;
+        }
+        player.sendMessage(messageManager.getMessage(
+                "parkour-mobility-cancel",
+                "<gray>🏁 A futam megszakadt: a pályát saját lábbal kell teljesíteni (teleport/repülés tilos).</gray>"));
+        return true;
+    }
+
+    /** játékos+pálya -> (nap, mai jutalmazott futamok) — memóriában él, a capnek elég. */
+    private final Map<String, long[]> dailyRewardedRuns = new ConcurrentHashMap<>();
+
+    private boolean tryConsumeDailyRun(final UUID playerId, final String courseId) {
+        final int limit = configManager.getInt("parkour.daily-reward-limit", 3);
+        if (limit <= 0) {
+            return true;
+        }
+        final long today = System.currentTimeMillis() / 86_400_000L;
+        if (dailyRewardedRuns.size() > 1024) {
+            dailyRewardedRuns.values().removeIf(entry -> entry[0] != today);
+        }
+        final long[] entry = dailyRewardedRuns.compute(playerId + "|" + courseId, (key, old) ->
+                old == null || old[0] != today ? new long[]{today, 1L} : new long[]{today, old[1] + 1L});
+        return entry[1] <= limit;
     }
 }

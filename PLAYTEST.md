@@ -1970,3 +1970,36 @@ Jó tesztelést! ❄️
 - [ ] **Balansz-entryk:** mind a 28 új DARK-spell (4 spec + 5 idézés) explicit
       spells-balance.yml entryvel — /icesmp config set spell-balance.<id>.<kulcs>
       élőben hangol.
+
+## P2 1. csomag: kis kód-patchek (tulaj-kérés, 2026-07-22)
+- [ ] **Örök paktum kapu:** paktumos DARK-játékos se /faction join <más>, se /faction
+      leave úton nem tud kilépni (üzenet: vezeklés az egyetlen út); a vezeklés-lánc
+      után (breakDarkPact) a kilépés újra működik, és a sötét spec ilyenkor is
+      elveszik a már élő reset-úton.
+- [ ] **Vérdíj bűn-mosás fék:** ugyanarra az áldozatra 12 órán belül a második
+      kivégzés se veretet, se bűn-nullázást nem ad (üzenet jelzi); az első
+      kivégzés változatlanul fizet ÉS nulláz.
+- [ ] **admin.item jog:** az icesmp.admin.all mostantól a /iceitem-et is megadja;
+      LuckPerms-ben az icesmp.admin.item külön is kiadható.
+- [ ] **Quest-dialógusok:** a merchant_choice a vándor kereskedőnél, a
+      forest_cleansing az erdei véneknél vehető fel NPC-re kattintva — a
+      dialógus-sorok ténylegesen megjelennek.
+- [ ] **Vásárjárás átdolgozva:** a NEUTRAL heti Vásárjárás mostantól szállítás
+      (25 kenyér/smaragd a vándor kereskedőnek), nem a Vásár hete duplikátuma.
+- [ ] **Ascendant talent:** 10 elköltött pont után (requires-spent 9 + maga a
+      talent) tiszta szintezésből is megvehető az 50. szinten.
+- [ ] **Unique-smelt:** unique anyag (pl. mélységi borostyán) kemencében NEM olvad
+      át vanília itemmé — a smelt elakad rajta.
+- [ ] **Claim entitás-védelem:** idegen claimben állat/villager/armor-stand nem
+      ölhető (közvetlen ütés, nyíl, szelídített állat útján sem), item-frame nem
+      forgatható/fosztható, mob nem vödrözhető; szörny-ölés és PvP változatlan;
+      megbízott (trust) mindent tehet.
+- [ ] **Lélekkő napi keret:** 50 lélekkő/nap/játékos (élő kulcs:
+      currency.soul-drop.daily-cap; 0 = korlátlan); spawner-mob eleve nem ejt
+      (skálázatlan → min-mob-level alatt).
+- [ ] **Parkour-fék:** pályánként napi 3 jutalmazott futam (parkour.daily-reward-limit,
+      élő kulcs) — fölötte a futam és a quest-haladás számít, veret nem jár (üzenet);
+      gyöngy/refő-teleport, elytra-nyitás és riptide futás közben MEGSZAKÍTJA a futamot.
+- [ ] **Doksi-szinkron:** README (DARK-belépés bűn-alapú, 6 zónatípus, 400+ recept),
+      01-kezdes (veret-átadás a kikapcsolt /currency pay helyett), 02-frakciok
+      (paktum-zár), 03-valuta (lélekkő-keret), 14-parancsok (territory-típusok).

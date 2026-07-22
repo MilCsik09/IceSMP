@@ -26,8 +26,8 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 | ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | **Nincs zuhanás-sebzés**; a nem-ellenséges mobok **és endermanök** békén hagyják; adómentes |
 | ⚫ **Sötét** | `/faction join dark` — **csak bűnösként!** | Immunis a wither-sebzésre; az élőhalottak nem támadják |
 
-**A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
-**bűnössé (sinner)** bélyegzett. Belépéskor megköttetik a **sötét paktum** — onnantól a
+**A Sötét frakció különleges:** csak **bűnösként (sinner)** léphetsz be — bűnössé a
+tetteid tesznek (lásd lentebb), a belépés pedig kétlépcsős megerősítést kér. Belépéskor megköttetik a **sötét paktum** — onnantól a
 bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később elhagyod a frakciót.
 Bűn a **gyilkosság** (+1), az **árulás** (saját frakciótárs megölése, +2) és a **lopás**
 (másik frakció területén konténer-fosztás, +1); 4 bűnnél automatikus a száműzetés. Raid
@@ -146,7 +146,7 @@ minden szakma specializálódhat — szakmánként 2 irány (pl. Fegyverkovács 
 Főzetmester / Transzmutátor, Séf / Hentes) **valódi mechanikai passzívokkal** (dupladrop,
 XP-bónusz, ital-hosszabbítás).
 
-**Recept-könyv** (`/profession recipes`): WoW-szerű, több mint **120 recept** — a tanultak
+**Recept-könyv** (`/profession recipes`): WoW-szerű, több mint **400 recept** — a tanultak
 zölddel, a zároltak szürkén, egy kattintással craftolható. A receptek **szintre** vagy
 **tervrajzból** (Knowledge Book — NPC-bolt / mob-drop / admin) nyílnak meg. Egyes szakmák
 **egyedi köztes alapanyagot** gyártanak (pl. *Tiszta Vasesszencia*, *Rúnapor*), amit a
@@ -208,10 +208,11 @@ skálázódnak, így a farmok nem törhetik el a rendszert.
 ### 🏰 Frakcióterületek
 
 Adminok **kör-** vagy **poligon-zónákat** jelölhetnek ki (`/territory circle`, illetve a fal
-mentén bejárt pontokból `/territory pos` → `/territory create`). Négy **zónatípus** védi a
+mentén bejárt pontokból `/territory pos` → `/territory create`). Hat **zónatípus** védi a
 térképet: **frakcióterület** (csak a frakció tagjai építhetnek, de ide a játékosok
-**claimelhetnek** is), valamint a **védett frakcióterület**, **védett város** és **főváros**,
-ahol **senki** sem építhet és claimelni sem lehet. A határátlépést a játékosok típusfüggő action
+**claimelhetnek** is), a **védett frakcióterület**, **védett város** és **főváros**,
+ahol **senki** sem építhet és claimelni sem lehet, továbbá a **Kárhozat Kapuja**
+(törvényen kívüli PvP-zóna) és a **kazamata** (kulcs-kapus, emelt mob-szintű dungeon). A határátlépést a játékosok típusfüggő action
 bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). Zónatípusonként **külön
 állítható**, mi tiltott (`territory.protection.rules`): **build**, **interact**, **pvp**,
 **explosions**, **fire** — így egy védett város teljes biztonságos zóna, egy frakcióváros viszont

@@ -6,7 +6,7 @@ Azokat a konzisztencia-osztályokat ellenőrzi, amiket kézzel könnyű elfelejt
   2. quest-hivatkozások épek (next/requires-quest/crate-key/requires-faction/rotáció)
   3. CustomModelData: minden használt CMD szerepel a docs/RESOURCE_PACK_CMD.md regiszterben
   4. jogosultság-node-ok: minden kódban használt icesmp.admin.* regisztrálva van a
-     Permissions.java-ban (egyelőre WARN — a P2 #12 javítása után váltson FAIL-re)
+     Permissions.java-ban (FAIL — az icesmp.admin.all csak a regisztrált node-okat adja meg)
   5. /menu akció-célok (RUN:/OPEN:) létező parancsra mutatnak
   6. tükör-repo drift (ha a IceSMPGuides checkout elérhető)
 
@@ -101,8 +101,8 @@ for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
         continue
     used_perms.update(re.findall(r'"(icesmp\.admin\.[a-z.]+)"', read(path)))
 for node in sorted(used_perms - canonical):
-    warn(f"jog-node '{node}' használatban, de nincs a Permissions.java-ban regisztrálva "
-         f"(az icesmp.admin.all nem adja meg!) — P2 #12 után ez FAIL lesz")
+    fail(f"jog-node '{node}' használatban, de nincs a Permissions.java-ban regisztrálva "
+         f"(az icesmp.admin.all nem adja meg!)")
 
 # ---------- 5. /menu akció-célok ----------
 core_src = read(os.path.join(JAVA, "hu/taliann/icesmp/core/IceSMPCore.java"))

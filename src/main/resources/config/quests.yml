@@ -1524,6 +1524,7 @@ quests:
         type: "OWN"
         amount: 20
   merchant_choice:
+    giver-npc: "vandor_kereskedo"
     dialogue:
       speaker: "Benedek kereskedő"
       give:
@@ -1599,6 +1600,7 @@ quests:
         type: "OWN"
         amount: 15
   forest_cleansing:
+    giver-npc: "erdei_venek"
     dialogue:
       speaker: "Sylvana vénasszony"
       give:
@@ -2418,10 +2420,14 @@ quests:
     cooldown-hours: 168
     requires-faction: "NEUTRAL"
     display-name: "Vásárjárás"
-    description: "A Menedék ereje az alku. Köss tíz üzletet a falvak népével — Caldestera hírneve a kereskedői kezében van."
+    description: "A Menedék ereje az alku — de a vásár áruból él. Szállíts kenyeret és smaragdot a vándor kereskedőnek, hogy a karaván tovább indulhasson."
     objective:
-      type: "TRADE_WITH_VILLAGER"
-      count: 10
+      type: "DELIVER_ITEMS"
+      npc: "vandor_kereskedo"
+      count: 25
+      materials:
+        - "BREAD"
+        - "EMERALD"
     rewards:
       class-xp: 200
       currency:

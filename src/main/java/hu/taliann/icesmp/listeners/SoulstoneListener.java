@@ -91,6 +91,33 @@ public final class SoulstoneListener implements Listener {
 
         final int maxAmount = Math.max(1, configManager.getInt("currency.soul-drop.max-amount", 5));
         final int amount = Math.min(maxAmount, mobLevel - minLevel + 1);
+        if (!tryConsumeDailyBudget(killer.getUniqueId(), amount)) {
+            return;
+        }
         event.getDrops().add(currencyManager.createCurrencyItem(CurrencyType.DARK, amount));
+    }
+
+    /** játékos -> (nap, mai összeg) — memóriában él (restartkor nullázódik, a capnek elég). */
+    private final java.util.Map<java.util.UUID, long[]> dailyEarned = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Napi keret (currency.soul-drop.daily-cap, 0 = korlátlan): a min-mob-level a
+     * spawner-mobokat kizárja (azok skálázatlanok, szintjük 0), de a szint-zónás
+     * natural-farm ellen csak a plafon véd — ez volt az egyetlen keret nélküli
+     * pénz-faucet. Konkurrens map (a kill bármely régió-szálán futhat); a más-napi
+     * bejegyzések túlcsordulásnál söprődnek.
+     */
+    private boolean tryConsumeDailyBudget(final java.util.UUID playerId, final long amount) {
+        final double cap = configManager.getDouble("currency.soul-drop.daily-cap", 50.0D);
+        if (cap <= 0.0D) {
+            return true;
+        }
+        final long today = System.currentTimeMillis() / 86_400_000L;
+        if (dailyEarned.size() > 512) {
+            dailyEarned.values().removeIf(entry -> entry[0] != today);
+        }
+        final long[] entry = dailyEarned.compute(playerId, (key, old) ->
+                old == null || old[0] != today ? new long[]{today, amount} : new long[]{today, old[1] + amount});
+        return entry[1] <= (long) cap;
     }
 }

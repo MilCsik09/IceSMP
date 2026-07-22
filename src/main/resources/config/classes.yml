@@ -1188,7 +1188,7 @@ talents:
       ascendant:
         display-name: "Felemelkedés"
         tier: 3
-        requires-spent: 10
+        requires-spent: 9
         grants-spell: "talent_surge"
         effect: "max-health"
         per-rank: 6.0

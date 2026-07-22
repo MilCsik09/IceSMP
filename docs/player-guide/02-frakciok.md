@@ -76,9 +76,10 @@ száműzetése, a Néma Királynő árnyéka. **Kétféleképpen** kerülsz ide:
 
 A belépés **kétlépcsős**: az első `/faction join dark` csak figyelmeztet a paktum súlyára —
 ha komolyan gondolod, egy percen belül **meg kell ismételned**. Belépéskor aztán megköttetik
-a **sötét paktum**: a bűnös jelölést **soha nem lehet levenni** — még akkor
-sem, ha elhagyod a frakciót. Az **egyetlen** visszaút a **vezeklés-küldetéslánc** (lásd
-[Küldetések](12-kuldetesek.md)). Cserébe tiéd a **legerősebb PvE-passzív**: az élőhalottak békén
+a **sötét paktum**: a bűnös jelölés **soha nem törlődik le**, és amíg a paktum áll,
+a frakciót **el sem hagyhatod** — se pénzért, se `/faction leave`-vel. Az **egyetlen**
+kiút a **vezeklés-küldetéslánc** (lásd [Küldetések](12-kuldetesek.md)): az oldja a
+paktumot, és utána léphetsz tovább. Cserébe tiéd a **legerősebb PvE-passzív**: az élőhalottak békén
 hagynak, s a wither sem árt — a Néma Királynő megjelöli, de meg is óvja a szolgáit.
 
 A Kitaszítottaknak is van otthonuk: **Thanaopolis, a Holtak Városa** — egy élőhalottak lakta **rom-főváros**,

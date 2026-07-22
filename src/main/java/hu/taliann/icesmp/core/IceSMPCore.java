@@ -479,7 +479,7 @@ public final class IceSMPCore {
         petManager.setTalentManager(talentManager);
         jobManager.setFactionManager(factionManager);
         this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
-        this.parkourManager = new ParkourManager(plugin, currencyManager, factionManager, messageManager);
+        this.parkourManager = new ParkourManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
         this.ritualManager = new RitualManager(plugin, configManager, relicManager, sinManager, factionManager,

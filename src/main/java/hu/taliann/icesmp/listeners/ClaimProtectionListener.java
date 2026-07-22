@@ -366,6 +366,67 @@ public final class ClaimProtectionListener implements Listener {
         }
     }
 
+    /**
+     * Idegen claimben az élőlények és a dísz-entitások is védettek (állat/villager/
+     * armor-stand ölés, item-frame kifosztás, mob-vödrözés) — a blokk-védelemmel
+     * azonos kapun. Szörnyekre és játékos-PvP-re nem vonatkozik: az nem claim-kérdés
+     * (a PvP-t a territórium/raid-szabályok kezelik).
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onEntityDamage(final org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (event.getEntity() instanceof Player || event.getEntity() instanceof org.bukkit.entity.Monster) {
+            return;
+        }
+        final Player attacker = attackerOf(event.getDamager());
+        if (attacker != null && denied(attacker, event.getEntity().getLocation())) {
+            event.setCancelled(true);
+            warn(attacker, event.getEntity().getLocation());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onInteractEntity(final org.bukkit.event.player.PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof org.bukkit.entity.ItemFrame)) {
+            return;
+        }
+        if (denied(event.getPlayer(), event.getRightClicked().getLocation())) {
+            event.setCancelled(true);
+            warn(event.getPlayer(), event.getRightClicked().getLocation());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onArmorStandManipulate(final org.bukkit.event.player.PlayerArmorStandManipulateEvent event) {
+        if (denied(event.getPlayer(), event.getRightClicked().getLocation())) {
+            event.setCancelled(true);
+            warn(event.getPlayer(), event.getRightClicked().getLocation());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onBucketEntity(final org.bukkit.event.player.PlayerBucketEntityEvent event) {
+        if (denied(event.getPlayer(), event.getEntity().getLocation())) {
+            event.setCancelled(true);
+            warn(event.getPlayer(), event.getEntity().getLocation());
+        }
+    }
+
+    /** A sebzés mögötti játékos: közvetlen támadó, lövedék lövője vagy szelídített állat gazdája. */
+    private Player attackerOf(final org.bukkit.entity.Entity damager) {
+        if (damager instanceof Player player) {
+            return player;
+        }
+        if (damager instanceof org.bukkit.entity.Projectile projectile
+                && projectile.getShooter() instanceof Player shooter) {
+            return shooter;
+        }
+        if (damager instanceof org.bukkit.entity.Tameable tameable
+                && tameable.getOwner() instanceof Player owner) {
+            return owner;
+        }
+        return null;
+    }
+
     /** True when the location is someone else's claim and the player has no access/bypass. */
     private boolean denied(final Player player, final Location location) {
         return !claimManager.canUse(player.getUniqueId(), location)

@@ -44,7 +44,7 @@ Első belépéskor egy rövid **bemutató cím-szekvencia** is lejátszódik —
 | **Mindent egy helyen, kattintással** | **`/menu`** |
 | Megnézni az adataimat | `/profile` |
 | Képességet használni | tartsd kézben a Lélekkapcsot → jobb katt |
-| Pénzt nézni / utalni | `/bank balance`, `/currency pay` |
+| Pénzt nézni / adni | `/bank balance` — pénzt adni a fizikai veret kézből átadásával lehet |
 | Eladni valamit | `/market sell <ár>` |
 | Küldetést felvenni | `/quest list` |
 | Csapatot alakítani a barátaiddal | `/party invite <név>` — lásd [Party](15-csapat.md) |

@@ -91,6 +91,16 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
+        // Az örök paktum nem pénz-kérdés: paktumos Kitaszított nem válthat ki más
+        // frakcióba — az egyetlen kiút a vezeklés-lánc (breakDarkPact).
+        if (hasFaction && currentFaction == FactionType.DARK && factionType != FactionType.DARK
+                && sinManager.hasDarkPact(player)) {
+            sender.sendMessage(messageManager.get("messages.faction-dark-pact-locked",
+                    "&5A sötét paktum örök — a Kitaszítottak közül nem vezet ki pénz. "
+                            + "Az egyetlen út a vezeklés-küldetéslánc."));
+            return true;
+        }
+
         // Frakciót VÁLTANI (ha már választottál) csak a semleges fővárosban lehet —
         // gyakorlatban a semleges királyság spawn-területén, a leendő frakció-NPC-nél.
         // Fail-open: ha még nincs kijelölt semleges főváros, a kapu nem zár.

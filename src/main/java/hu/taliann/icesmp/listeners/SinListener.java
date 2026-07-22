@@ -137,8 +137,9 @@ public final class SinListener implements Listener {
             if (victimSins >= minSins) {
                 // Pénznyomda-fék: ugyanarra az áldozatra csak per-victim-cooldown-hours
                 // (12) óránként jár kifizetés — a megrendezett "3 gyilkosság → kivégzés →
-                // vérdíj" kör így nem skálázható. A bűn-törlés cooldown alatt is jár
-                // (az áldozat az életével fizetett), csak a veret marad el.
+                // vérdíj" kör így nem skálázható. A bűn-törlés UGYANEZEN cooldown alatt
+                // áll: különben baráti kivégzéssel korlátlanul nullázható a bűnszámláló
+                // a 4-bűnös száműzetés előtt (exile-kerülő exploit).
                 final org.bukkit.NamespacedKey paidAtKey =
                         org.bukkit.NamespacedKey.fromString("icesmp:bounty_paid_at");
                 final long cooldownMillis = Math.max(0L, configManager.getLong(
@@ -150,7 +151,7 @@ public final class SinListener implements Listener {
                 final double reward = onCooldown ? 0.0D : victimSins
                         * Math.max(0.0D, configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D));
                 final CurrencyType currency = resolveBountyCurrency();
-                if (configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
+                if (!onCooldown && configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
                     sinManager.resetSinCount(victim);
                 }
                 if (reward > 0.0D && currency != null) {
@@ -176,7 +177,7 @@ public final class SinListener implements Listener {
                     // Cooldown alatt: az ítélet megvolt, de a Bankárszövetség nem fizet kétszer.
                     killer.getScheduler().run(plugin, task -> killer.sendMessage(messageManager.getMessage(
                             "bounty-cooldown",
-                            "<gray>💰 Az ítélet lesújtott, de erre a fejre nemrég már fizettek — a vérdíj most elmarad.</gray>")), null);
+                            "<gray>💰 Erre a fejre nemrég már fizettek — a vérdíj elmarad, és a bűnlista is megmarad.</gray>")), null);
                 }
                 return;
             }
