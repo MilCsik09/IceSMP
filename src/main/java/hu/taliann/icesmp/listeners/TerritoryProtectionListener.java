@@ -305,9 +305,35 @@ public final class TerritoryProtectionListener implements Listener {
      * drop nélkül semmisül meg és a fallal együtt visszaépül — "ha csináljuk,
      * csináljuk rendesen" (tulaj-kérés).
      */
+    /**
+     * Fizika-pajzs: a frissen visszaépített blokkot a vanília fizika nem bánthatja —
+     * se frissítés (homok-leesés, fáklya-lepattanás), se folyadék-befolyás, se
+     * fizika-törés, amíg a pajzs él. A gyors-út (üres pajzs-lista) miatt a sűrű
+     * physics-event terhelése pajzs nélkül gyakorlatilag nulla.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onShieldedPhysics(final org.bukkit.event.block.BlockPhysicsEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isPhysicsShielded(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onShieldedLiquidFlow(final org.bukkit.event.block.BlockFromToEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isPhysicsShielded(event.getToBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onBlockDestroy(final com.destroystokyo.paper.event.block.BlockDestroyEvent event) {
         final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isPhysicsShielded(event.getBlock())) {
+            event.setCancelled(true);
+            return;
+        }
         if (regen == null || !regen.isEnabled()
                 || !regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()))) {
             return;

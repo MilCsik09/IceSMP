@@ -1834,3 +1834,12 @@ Jó tesztelést! ❄️
 - [ ] **Hurok-fék:** fáklya vízfolyásba regen-elve max-recaptures [3] után nem épül
       újra (a rendszer elengedi) — nincs végtelen capture-restore kör;
       recapture-window-seconds [600] után a számláló nullázódik.
+
+## Regen 6. kör: fizika-pajzs a visszaépített blokkokon (tulaj-kérés, 2026-07-22)
+- [ ] **Pajzs-teszt:** vízfolyásba visszaépült fáklya physics-shield-seconds [300] ideig
+      NEM mosódik el (a víz be sem folyik a blokkjába), homok nem esik le, semmi nem
+      pattan le; a pajzs lejárta után a vanília fizika visszaáll.
+- [ ] **Hurok-fék mint védőháló:** pajzzsal a víz-elmosás hurok el sem indul; 0-ra
+      állított pajzsnál (physics-shield-seconds: 0) a max-recaptures fék fogja meg.
+- [ ] **Terhelés:** pajzsolt pozíció nélkül a BlockPhysicsEvent-handler gyors-úton
+      azonnal visszatér — üresjáratban nem mérhető többlet.

@@ -149,6 +149,39 @@ public final class BlockRegenService implements PersistentStore {
         return true;
     }
 
+    /** pozíció → pajzs lejárta — a frissen visszaépített blokkot a fizika nem bánthatja. */
+    private final java.util.Map<String, Long> physicsShield = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static String posKey(final Block block) {
+        return block.getWorld().getName() + ';' + block.getX() + ';' + block.getY() + ';' + block.getZ();
+    }
+
+    /** A visszaépített blokk fizika-pajzsot kap ennyi mp-re (0 = nincs pajzs). */
+    private long physicsShieldMillis() {
+        return Math.max(0L, configManager.getLong(
+                "territory.protection.regen.physics-shield-seconds", 300L)) * 1000L;
+    }
+
+    /**
+     * Igaz, ha a pozíció fizika-pajzs alatt áll: a rá ható fizika-eseményeket
+     * (frissítés, folyadék-befolyás, fizika-törés) a listener cancel-eli — a
+     * visszaépített fáklyát a víz el sem érheti, a homok nem eshet le.
+     */
+    public boolean isPhysicsShielded(final Block block) {
+        if (physicsShield.isEmpty()) {
+            return false; // gyors-út: pajzs nélkül a sűrű physics-event費 nulla
+        }
+        final Long until = physicsShield.get(posKey(block));
+        if (until == null) {
+            return false;
+        }
+        if (until <= System.currentTimeMillis()) {
+            physicsShield.remove(posKey(block));
+            return false;
+        }
+        return true;
+    }
+
     /** pozíció → [felvételek száma, ablak kezdete] — az újrarombolási hurok féke. */
     private final java.util.Map<String, long[]> captureHistory = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -286,6 +319,10 @@ public final class BlockRegenService implements PersistentStore {
                     // vissza (a közben odarakott blokk drop nélkül tűnik el — hadszíntér).
                     target.setBlockData(data, false);
                     restoreExtra(target, e.extra());
+                    final long shield = physicsShieldMillis();
+                    if (shield > 0L) {
+                        physicsShield.put(posKey(target), System.currentTimeMillis() + shield);
+                    }
                     if (configManager.getBoolean("territory.protection.regen.restore-effects-enabled", true)) {
                         // Anyag-hű "gyógyulás": a blokk saját lerakás-hangja + kis porfelhő.
                         final Location fx = loc.clone().add(0.5D, 0.5D, 0.5D);
