@@ -60,7 +60,7 @@
    → reference-supply újrakalibrálás + napi váltási limit (F21).
 
 ### Onboarding / quest
-9. **A teljes onboarding + sztori-gerinc a FancyNpcs-en lóg, tartalék nélkül.** A
+9. ✅ KÉSZ (üzembiztonsági kör: /quest talk tartalék-út híd nélkül automatikusan; give-dialógus a parancsos accept-en is; induláskori hangos riasztás hiányzó hídra ÉS hiányzó NPC-kre [60s-os késleltetett létezés-ellenőrzés]) — **A teljes onboarding + sztori-gerinc a FancyNpcs-en lóg, tartalék nélkül.** A
    TALK_TO_NPC objektíva a híd nélkül VÉGLEG teljesíthetetlen (csendes korai return); a
    `hirnok` 9, az `erdei_venek` 5 quest-ponton kötelező — köztük az auto-induló első
    quest és mindhárom fejezet-zárás. Az intro/motd nem mond parancsot fallbackként.
@@ -106,7 +106,7 @@
     RelicPvpTransferListener holt kód. → rituálé/boss-loot forrás mindkettőnek.
 
 ### Teljesítmény
-19. **Tablist-szinkron O(n²) fél másodpercenként + HUD-oldalsáv diff-cache nélkül.**
+19. ✅ KÉSZ (üzembiztonsági kör: tablist-söprés csak minden 10. frissítésen, előre épített érvényes-készletekkel O(n)-re ejtve; HUD last-line diff-cache — változatlan sor nem megy ki; + a világesemény-köteg 4-es csokrokban szétterítve, hibázó manager izolálva; pet-tick csak élő társ-tulajokra hop-ol) — **Tablist-szinkron O(n²) fél másodpercenként + HUD-oldalsáv diff-cache nélkül.**
     60 főnél több százezer összehasonlítás/tick a tablistben; a HUD ~900 változatlan
     tartalmú csomag/mp. → cleanup ritkítása + last-line cache (a tablist header/footer
     diff-mintája már házon belül megvan).
@@ -162,7 +162,7 @@
 - **/tanacs, /komp, /faction war hiányzik a /menu-ből**; relikvia-üzenetek a
   MessageManager-en kívül (1 hardcoded string); actionbar-források arbitráció nélkül
   írják felül egymást; admin-alparancsok jog nélkül is látszanak a tab/help-ben.
-- **worldEventsTask: ~35 tick() egy globál-szálas kötegben** 60s-enként (tüske-kockázat) +
+- ✅ KÉSZ (üzembiztonsági kör: köteg-szétterítés + pet-tick üresjárat-fék; a tényleges terhelés playtesten mérendő) — **worldEventsTask: ~35 tick() egy globál-szálas kötegben** 60s-enként (tüske-kockázat) +
   PetManager 4×/mp minden játékosra hop-ol pet nélkül is → mérendő playtesten.
 - **~13 napos sztori-lyuk a szezon 41-53. napján** (a Fa üzenete 40-ig, finálé 54-től) +
   mind a 30 rejtvény kapu nélkül, 1. naptól kimeríthető (elő-terheltség visszaszökött).

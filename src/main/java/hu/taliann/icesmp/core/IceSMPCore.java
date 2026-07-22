@@ -906,6 +906,12 @@ public final class IceSMPCore {
      */
     private void registerNpcQuestBridge() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled("FancyNpcs")) {
+            final java.util.Set<String> questNpcs = questManager.getQuestNpcNames();
+            if (!questNpcs.isEmpty()) {
+                plugin.getLogger().warning("FancyNpcs nincs telepítve, pedig " + questNpcs.size()
+                        + " quest-NPC-re épül a tartalom — a /quest talk <npc> tartalék-út aktív, "
+                        + "a dialógusok a parancsos úton is lejátszódnak.");
+            }
             return;
         }
         try {
@@ -938,10 +944,26 @@ public final class IceSMPCore {
             npcQuestBridge.setFactionMenuHook(player ->
                     hu.taliann.icesmp.gui.CommandMenus.openFaction(player, commandMenuContext));
             scheduleQuestNpcMarkers();
+            questManager.setNpcBridgeActive(true);
+            // NPC-létezés ellenőrzés késleltetve (a FancyNpcs a saját NPC-it a világok
+            // betöltése után éleszti) — hiányzó NPC hangos figyelmeztetést kap.
+            final hu.taliann.icesmp.integration.FancyNpcsQuestBridge bridgeRef = npcQuestBridge;
+            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task ->
+                    bridgeRef.validateNpcs(questManager.getQuestNpcNames()), 20L * 60L);
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
             plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
                     + throwable.getMessage());
+        }
+        // A sztori-gerinc NPC-ken lóg: híd nélkül a TALK_TO_NPC/giver-npc questek némán
+        // állnának — a /quest talk tartalék-út ilyenkor automatikusan él, és a log jelez.
+        if (npcQuestBridge == null) {
+            final java.util.Set<String> questNpcs = questManager.getQuestNpcNames();
+            if (!questNpcs.isEmpty()) {
+                plugin.getLogger().warning("FancyNpcs-híd nem aktív, pedig " + questNpcs.size()
+                        + " quest-NPC-re épül a tartalom — a /quest talk <npc> tartalék-út aktív, "
+                        + "a dialógusok a parancsos úton is lejátszódnak.");
+            }
         }
     }
 
@@ -1100,42 +1122,63 @@ public final class IceSMPCore {
      */
     private void scheduleWorldEvents() {
         final long intervalTicks = Math.max(1L, configManager.getLong("world-events.check-interval-seconds", 60L)) * 20L;
+        // A ~33 rendszer-tick nem futhat egyetlen kötegben (globál-szálas tüske):
+        // kis csokrokban, az intervallum első felére terítve fut. A rendszerek
+        // egymástól függetlenek (mind saját config-őrrel dolgozik), és egy hibázó
+        // manager nem viheti el a köteg többi tagját.
+        final List<Runnable> ticks = List.of(
+                bloodMoonManager::tick,
+                worldBossManager::tick,
+                invasionManager::tick,
+                seasonManager::tick,
+                exchangeBoardManager::tick,
+                statsManager::tick,
+                achievementManager::tick,
+                marketManager::tickAuctions,
+                caravanManager::tick,
+                ambientEventManager::tick,
+                gatheringBuffManager::tick,
+                treasureEventManager::tick,
+                wildHuntManager::tick,
+                abundanceManager::tick,
+                serverChallengeManager::tick,
+                escortManager::tick,
+                meteorEventManager::tick,
+                factionFoodListener::tick,
+                whisperManager::tick,
+                chronicleManager::tick,
+                corruptionManager::tick,
+                archeologyManager::tick,
+                seasonFinaleManager::tick,
+                playerCaravanManager::tick,
+                professionWeeklyGoalManager::tick,
+                holidayService::tick,
+                warWindowManager::tick,
+                councilManager::tick,
+                cityGuardManager::tick,
+                darkUndeadAmbienceManager::tick,
+                cultistEventManager::tick,
+                strangerNpcManager::tick,
+                hiddenSpotManager::tick);
+        final int bucketSize = 4;
+        final int buckets = (ticks.size() + bucketSize - 1) / bucketSize;
+        final long spreadTicks = Math.max(buckets, intervalTicks / 2);
         worldEventsTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin,
                 task -> {
-                    bloodMoonManager.tick();
-                    worldBossManager.tick();
-                    invasionManager.tick();
-                    seasonManager.tick();
-                    exchangeBoardManager.tick();
-                    statsManager.tick();
-                    achievementManager.tick();
-                    marketManager.tickAuctions();
-                    caravanManager.tick();
-                    ambientEventManager.tick();
-                    gatheringBuffManager.tick();
-                    treasureEventManager.tick();
-                    wildHuntManager.tick();
-                    abundanceManager.tick();
-                    serverChallengeManager.tick();
-                    escortManager.tick();
-                    meteorEventManager.tick();
-                    factionFoodListener.tick();
-                    whisperManager.tick();
-                    chronicleManager.tick();
-                    corruptionManager.tick();
-                    archeologyManager.tick();
-                    seasonFinaleManager.tick();
-            playerCaravanManager.tick();
-            professionWeeklyGoalManager.tick();
-            holidayService.tick();
-            warWindowManager.tick();
-            councilManager.tick();
-            cityGuardManager.tick();
-            darkUndeadAmbienceManager.tick();
-            cultistEventManager.tick();
-                    strangerNpcManager.tick();
-                    hiddenSpotManager.tick();
+                    for (int b = 0; b < buckets; b++) {
+                        final List<Runnable> bucket = ticks.subList(b * bucketSize,
+                                Math.min(ticks.size(), (b + 1) * bucketSize));
+                        Bukkit.getGlobalRegionScheduler().runDelayed(plugin, delayed -> {
+                            for (final Runnable tick : bucket) {
+                                try {
+                                    tick.run();
+                                } catch (final Throwable throwable) {
+                                    plugin.getLogger().warning("Világesemény-tick hiba: " + throwable);
+                                }
+                            }
+                        }, Math.max(1L, b * spreadTicks / buckets));
+                    }
                 },
                 intervalTicks,
                 intervalTicks
@@ -1274,7 +1317,7 @@ public final class IceSMPCore {
         final TerritoryCommand territoryCommand = new TerritoryCommand(plugin, territoryManager, messageManager);
         territoryCommand.setDungeonLootService(dungeonLootService);
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), territoryCommand);
-        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, messageManager, questBuilderListener));
+        plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, configManager, messageManager, questBuilderListener));
         plugin.registerCommand("market", "Piactér parancsok", List.of("piac", "ah"), new MarketCommand(marketManager, currencyManager, factionManager, configManager, messageManager));
         plugin.registerCommand("adomany", "Közösségi adomány-láda", List.of("donate", "adomanylada"), new DonationChestCommand(donationChestManager, messageManager));
         plugin.registerCommand("party", "Party (csapat) parancsok", List.of("p", "parti"), new hu.taliann.icesmp.commands.PartyCommand(partyManager, messageManager));

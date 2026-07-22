@@ -181,3 +181,7 @@ A `/bestiarium` paranccsal megnyílik a **lajstromod**: a krónikások számon t
 szörny-FAJT ejtettél el, hány receptet készítettél el először, hány territóriumot jártál be,
 és hány világboss-archetípust győztél le. A **mérföldkövek** (pl. 10/25/50 faj) veret-jutalmat
 adnak a kezedbe, a nagy mérföldköveknél az egész szerver értesül. Hónapokra ad gyűjtögető-célt!
+
+> 🛟 **Ha egy mesélő (NPC) eltűnne:** a küldetés-rendszer nem akad el — a `/quest talk
+> <npc-név>` paranccsal a beszélgetés-célok teljesíthetők és a küldetések felvehetők,
+> a párbeszéd-sorokkal együtt. A parancs csak akkor él, ha az NPC-k tényleg nem elérhetők.

@@ -653,6 +653,25 @@ public final class QuestManager implements PersistentStore {
         return null;
     }
 
+    /** A FancyNpcs quest-bridge állapota — a /quest talk tartalék-út ebből tudja, hogy kell-e. */
+    private volatile boolean npcBridgeActive;
+
+    public void setNpcBridgeActive(final boolean active) {
+        this.npcBridgeActive = active;
+    }
+
+    public boolean isNpcBridgeActive() {
+        return npcBridgeActive;
+    }
+
+    /** A give-dialógus lejátszása parancsos felvételkor (az NPC-út a saját folyamában játssza). */
+    public void playGiveDialogue(final Player player, final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest != null) {
+            sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
+        }
+    }
+
     public boolean accept(final Player player, final String questId) {
         if (getAcceptBlocker(player, questId) != null) {
             return false;

@@ -55,6 +55,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     private final NamespacedKey armorKey;
     private final NamespacedKey armorDefenseModKey;
     private final NamespacedKey armorHealthModKey;
+    /** Élő társsal rendelkező gazdák — a vezérlő tick CSAK rájuk hop-ol (üresjárat-fék). */
+    private final java.util.Set<UUID> activeOwners = ConcurrentHashMap.newKeySet();
     /** owner UUID → current combat target UUID (assist / defend). */
     private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();
     /** pet UUID → epoch ms when the pet may attack again. */
@@ -269,6 +271,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public boolean dismiss(final Player player) {
+        activeOwners.remove(player.getUniqueId());
         final boolean removed = removeActive(player);
         player.getPersistentDataContainer().remove(entityKey);
         return removed;
@@ -286,6 +289,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             return;
         }
         final UUID deadId = dead.getUniqueId();
+        activeOwners.remove(ownerId);
         combatTargets.remove(ownerId);
         attackReady.remove(deadId);
 
@@ -493,7 +497,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
         // Folia: read each owner's PDC + location on the OWNER's region thread, snapshot it,
         // then hop to the PET's region thread for all pet mutations (the pet may be elsewhere).
-        for (final Player owner : Bukkit.getOnlinePlayers()) {
+        for (final UUID ownerId : activeOwners) {
+            final Player owner = Bukkit.getPlayer(ownerId);
+            if (owner == null) {
+                activeOwners.remove(ownerId);
+                continue;
+            }
             owner.getScheduler().run(plugin, ownerTask ->
                     tickOwner(owner, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
         }
@@ -690,6 +699,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
         player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
+        activeOwners.add(player.getUniqueId());
     }
 
     private int levelCost(final int level) {
@@ -748,6 +758,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
+            activeOwners.remove(playerId);
             combatTargets.remove(playerId);
             // A gazda nélkül maradt társ/minionok despawnolnak (PDC-ből újraidézhető) —
             // nem maradhat árva, örök-persistent entitás a világban.

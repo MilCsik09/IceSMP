@@ -2637,6 +2637,12 @@ quests:
         amount: 120
       crate-key: "koznapi:2"
 
+# NPC-tartalék-út: a /quest talk <npc> parancs a FancyNpcs-híd NÉLKÜL automatikusan él
+# (TALK_TO_NPC/DELIVER_ITEMS teljesítés + giver-npc quest-felvétel, dialógussal).
+# always: true = a parancs a híd MELLETT is használható (pl. eltűnt NPC áthidalására).
+quest-npc-fallback:
+  always: false
+
 quest-npc-markers:
   enabled: true
   range: 48

@@ -58,6 +58,7 @@ jelenti, hogy **elhagyható**.
 | `/profession recipes` | `prof`, `szakma` | **Recept-könyv** — tanult/zárolt receptek, 1 kattintásos craft |
 | `/class givecatalyst` | `kaszt`, `job` | Elveszett Lélekkapocs pótlása |
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
+| `/quest talk <npc-név>` | `quests`, `kuldetes` | NPC-tartalék-út: küldetés-beszélgetés/átadás NPC-plugin nélkül (csak ha a mesélők nem elérhetők) |
 | `/quest log` | `gui`, `naplo` | **Küldetésnapló GUI** — Aktív / Felvehető / Teljesített fülek, lapozható |
 | `/souls` / `/souls champion` | `soul`, `lelek` | Lélekszilánk (csak Nekromanta) |
 | `/soulforge` / `/soulforge fejleszt <ág>` | `lelekkovacs` | **Lélek-kovács** (csak Nekromanta): minion-fejlesztési ágak szilánkért |

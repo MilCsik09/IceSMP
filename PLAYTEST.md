@@ -2053,3 +2053,24 @@ Jó tesztelést! ❄️
 - [ ] **Közösségi célok:** szezonváltáskor nullázódnak (broadcast a szezonzáró részeként).
 - [ ] **Honvágy:** a debuff 45 mp Éhség (10 helyett) — érezhető, de nem büntető.
 - [ ] **Rontás-góc:** 75 percenként 35% — kb. kétszer olyan gyakori, mint eddig.
+
+## Üzembiztonsági kör: NPC-tartalék + HUD/tablist perf + tick-szétterítés (2026-07-22)
+- [ ] **NPC-tartalék-út:** FancyNpcs NÉLKÜL a /quest talk <npc-név> teljesíti a
+      TALK_TO_NPC/DELIVER_ITEMS célokat és felveszi a giver-npc questeket (dialógussal);
+      híddal a parancs udvarias elutasítást ad (quest-npc-fallback.always=true felülírja);
+      tab-complete a quest-NPC neveket ajánlja.
+- [ ] **Dialógus parancsos felvételkor:** /quest accept után a give-dialógus lejátszódik
+      (merchant_choice elágazó szövege parancsból is látszik).
+- [ ] **Induláskori NPC-őr:** FancyNpcs hiányában WARN a logban a quest-NPC-számmal;
+      híddal 60 mp után létezés-ellenőrzés — a hiányzó NPC-k név szerint a logban.
+- [ ] **Tablist-perf:** a kilépő játékos team/score-bejegyzése legkésőbb ~5 mp-en belül
+      (sweep-every-refresh) tűnik el; a nevek/ping/színek frissítése azonnali marad;
+      60 fős terhelésnél a tablist-tick ideje mérendő (cél: nincs tüske).
+- [ ] **HUD diff-cache:** változatlan oldalsáv-sor nem generál csomagot (packet-sniff
+      vagy timings); sor-változás (HP, valuta) azonnal átmegy; /hud szekció-váltásnál
+      és sidebar ki/be-nél nincs beragadt sor.
+- [ ] **Világesemény-szétterítés:** a ~33 rendszer-tick 4-es csokrokban, az intervallum
+      első felére terítve fut (timings: nincs 60 mp-enkénti globál-tüske); egy hibázó
+      manager WARN-t ír, de a többi csokor lefut.
+- [ ] **Pet-tick üresjárat-fék:** társ nélküli játékosokra nem megy scheduler-hop
+      (timings); idézésnél azonnal indul a követés, elbocsátás/halál/logout után leáll.
