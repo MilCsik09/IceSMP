@@ -386,3 +386,54 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
 - **O27** 🟡 `PeriodicChanceEvent` világesemény-ütemező váz — 5 manager azonos váza közös helperbe (O2/O6-tal együtt).
 - **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
 O-refaktor összefoglaló: #9 (DonationChestManager debounce) KÉSZ (2026-07-20 auditkör); a többi nyitott technikai adósság.
+
+## P — kormányzás, gazdaság-hurok és rework-jelöltek (2026-07-22, tulaj-kérés)
+
+### P1 — Király/adó rework kiegészítő ötletek (az 5 pillér mellé)
+
+- **P1a** Hadiadó-rendelet — raid előtt a király emelt adó-hetet hirdethet; a befolyt többlet
+  látható "hadi-költségvetés" (raid-díj + győzelmi jutalom-alap ebből megy). 🟡⭐⭐
+- **P1b** Vereség-reparáció — vesztes raidnél a támadó frakció kasszája fix hányadot fizet
+  a védőnek; a királyi döntésnek (raid-indítás) így valódi tétje van. 🟢⭐⭐
+- **P1c** Progresszív adó + újonc-mentesség — az adó a banki vagyon sávjai szerint nő; az
+  első N nap (onboarding) adómentes. A "fejadó" a szegényeket ma aránytalanul üti. 🟡⭐⭐⭐
+- **P1d** Választási kampány-hét — a jelöltek előre kihirdetik az első rendeletüket
+  (programot); a szavazó tudja, mire szavaz. 🟡⭐⭐
+- **P1e** Trón-kihívás (puccs-párbaj) — hetente egyszer a legtöbb szavazatú kihívó
+  becsület-párbajra hívhatja a királyt; győzelme azonnali új választást ír ki. A
+  min-harc-idő fék már él, a párbaj-infrastruktúra kész. 🟡⭐⭐
+- **P1f** Koronázási ceremónia — új király megválasztásakor rituálé-esemény a fővárosban,
+  rövid frakció-buff a jelenlévőknek (social sűrűség). 🟢⭐
+- **P1g** Interregnum-zár — üres trón alatt a kassza csak minimál-költést enged; a
+  frakciót ez tereli szavazni. 🟢⭐⭐
+- **P1h** Királyi kegy — a király hetente egy "bajnokot" jelölhet (kis buff + Krónika-
+  említés); pozitív jog, visszaélésre alkalmatlan. 🟢⭐
+
+### P2 — Rokon rendszerek, ahol ugyanígy hiányzik a játék-hurok (rework-jelöltek)
+
+- **P2a [TOP] Frakció-infrastruktúra (a kassza értelme)** — a kassza ma nyelő nélküli
+  gyűjtőláda: legyen költhető VÁROSFEJLESZTÉSRE (fokozatok: bank-kamat, fővárosi
+  craft-buff, őrség-erő, raid-védmű-bónusz). Ez adja az adó "miért"-jét, a rendeletek
+  költési célját, és látható, közös progressziót — a király/adó rework természetes
+  folytatása. 🔴⭐⭐⭐
+- **P2b [TOP] Frakció-reputáció dinamikussá tétele** — a barát/ellenség viszony ma
+  admin-set statikus tábla; mozgassa esemény (hadi-ablak, raid, karaván-kifosztás,
+  szövetségi segítség), és hasson többre a piaci feláron túl (komp-ár, zóna-belépési
+  hangulat, kereskedő-készlet). Geopolitika admin nélkül. 🔴⭐⭐⭐
+- **P2c Raid 2.0 — ostrom-célpontok** — a raid ma tiszta kill-pont verseny: cél-objektum
+  réteg kellene (védmű-rombolás a regen-rendszerrel + ostromgép-item már kész; zászló-
+  elfoglalás), vereség-reparációval (P1b). A "csata" így hely-alapú lesz, nem TDM. 🔴⭐⭐
+- **P2d Aktivitás-mérés közös alapként** — a szavazati jog (kormányzás-fék), a tanács
+  alt-védelme, a szezon-jutalom skálázás és az AFK-fék mind ugyanazt a "heti aktív
+  játékidő" mércét kéri — egyszer megépítve négy rendszer kapja meg. 🟡⭐⭐⭐
+- **P2e Piac-megrendelések (buy order)** — a piac ma csak eladó-oldali; a vevő-oldali
+  megrendelés a craftereknek kereslet-jelzést, a gazdaságnak mélységet ad (a
+  börze-tábla infrastruktúra részben megvan). 🔴⭐⭐
+- **P2f Céh mint frakció-alegység (a szétszabdalás-félelem feloldása)** — a céh ne
+  KÜLÖN közösség legyen (tulaj-aggály: tovább osztaná a playerbase-t), hanem a SAJÁT
+  FRAKCIÓ liga-pontjaira és közösségi céljaira dolgozó "brigád": céh-hozzájárulás =
+  frakció-pont bónusz + Krónika-említés. Így összeköt, nem szétválaszt — a kassza-váz
+  pedig végre kap funkciót. 🟡⭐⭐
+- **P2g Szezon-identitásutak kiegyensúlyozása** — a season.source-weights mátrix él, de
+  kalibrálatlan: playtest-mérés után a 4 frakció-út (war/trade/faith/wild) pont-hozamát
+  egy szintre kell hozni, különben a liga eldől az út-választáson. 🟡⭐⭐ (playtest-függő)
