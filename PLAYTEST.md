@@ -1758,3 +1758,16 @@ Jó tesztelést! ❄️
 - [ ] **Fővárosi raid él:** meghirdetett raid alatt a célzóna-fővárosban a REGISZTRÁLT
       harcosok tudnak PvP-zni (kill-pont születik), nem-résztvevőt továbbra is véd a
       zóna máshol; a raid végén a tiltás visszaáll.
+
+## "A világ visszagyógyul" — robbanás-regen + törmelék (tulaj-kérés, 2026-07-22)
+- [ ] **Robbanás védett zónában/claimben:** a creeper/TNT LÁTVÁNYOSAN robban — a blokkok
+      törmelékként repülnek ki a középpontból (pattognak, csúsznak), landolva/pár mp után
+      porfelhővel eltűnnek; SEMMI nem droppol; a kráter valódi.
+- [ ] **Visszaépülés:** territory.protection.regen.delay-seconds [180] után a blokkok
+      PONTOSAN az eredeti állapotukba épülnek vissza, alulról felfelé (menetenként max
+      40 blokk); a közben odaépített idegen blokk drop nélkül tűnik el.
+- [ ] **Láda-teszt:** robbanás láda/kemence mellett — a tile-entity blokk NEM robban ki,
+      tartalma érintetlen.
+- [ ] **Restart-teszt:** robbanás után, a visszaépülés ELŐTT restart — a lyuk a restart
+      után is visszaépül (block-regen.yml perzisztencia).
+- [ ] **Kikapcsolva** (regen.enabled: false): a korábbi teljes robbanás-tiltás él.

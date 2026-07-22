@@ -261,6 +261,17 @@ territory:
     # Action bar üzenet területhatár átlépésekor.
     enabled: true
   protection:
+    # "A világ visszagyógyul": védett zónában/claimben a robbanás LÁTVÁNYOSAN megtörténik
+    # (a blokkokból törmelék repül ki, pattog, majd szétporlad), de semmi nem droppol,
+    # és delay-seconds után minden blokk PONTOSAN az eredeti állapotába épül vissza.
+    # Tile-entity blokk (láda, kemence…) sosem robban ki. Kikapcsolva: régi teljes tiltás.
+    regen:
+      enabled: true
+      delay-seconds: 180
+      debris-enabled: true
+      debris-max-per-explosion: 30
+      debris-lifetime-seconds: 4
+      debris-launch-power: 0.6
     # Fő kapcsoló a VÉDETT zónákra (protected-faction/protected-city/capital). Ha false, a védett
     # zónák MINDEN szabálya kikapcsol. (A normál frakcióterület szabályai külön, a rules alatt.)
     protect-zones: true

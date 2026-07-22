@@ -186,12 +186,72 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityExplode(final EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> protection.isExplosionBlockedAt(block.getLocation()));
+        if (applyRegenExplosion(event.blockList(), event.getEntity().getLocation())) {
+            event.setYield(0.0F);
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBlockExplode(final BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> protection.isExplosionBlockedAt(block.getLocation()));
+        if (applyRegenExplosion(event.blockList(), event.getBlock().getLocation())) {
+            event.setYield(0.0F);
+        }
+    }
+
+    /**
+     * Védett zónában a robbanás megtörténhet, de a világ visszagyógyul: a védett
+     * blokkok pillanatképpel a regen-sorba kerülnek (drop nélkül — yield 0), a
+     * tile-entity blokkok (láda, kemence…) érintetlenek maradnak. Kikapcsolt regen
+     * mellett a korábbi teljes tiltás él.
+     *
+     * @return true, ha volt regen-re fogott blokk (a hívó nullázza a yield-et)
+     */
+    private boolean applyRegenExplosion(final java.util.List<org.bukkit.block.Block> blocks,
+                                        final org.bukkit.Location center) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null || !regen.isEnabled()) {
+            blocks.removeIf(block -> protection.isExplosionBlockedAt(block.getLocation()));
+            return false;
+        }
+        boolean captured = false;
+        int debris = 0;
+        final long delay = regen.explosionDelayMillis();
+        final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
+        while (it.hasNext()) {
+            final org.bukkit.block.Block block = it.next();
+            if (!protection.isExplosionBlockedAt(block.getLocation())) {
+                continue;
+            }
+            if (hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(block)
+                    || !regen.capture(block, delay)) {
+                it.remove();
+            } else {
+                if (debris < regen.debrisMaxPerExplosion()) {
+                    regen.spawnDebris(block, center);
+                    debris++;
+                }
+                captured = true;
+            }
+        }
+        return captured;
+    }
+
+    /** A törmelék landolva porlad — sosem válhat valódi blokká. */
+    @EventHandler(ignoreCancelled = true)
+    public void onDebrisLand(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
+        if (event.getEntity().getScoreboardTags().contains(
+                hu.taliann.icesmp.managers.BlockRegenService.DEBRIS_TAG)) {
+            event.setCancelled(true);
+            event.getEntity().getWorld().spawnParticle(org.bukkit.Particle.BLOCK_CRUMBLE,
+                    event.getEntity().getLocation(), 12, 0.2D, 0.2D, 0.2D, event.getBlockData());
+            event.getEntity().remove();
+        }
+    }
+
+    private volatile hu.taliann.icesmp.managers.BlockRegenService blockRegenService;
+
+    public void setBlockRegenService(final hu.taliann.icesmp.managers.BlockRegenService service) {
+        this.blockRegenService = service;
     }
 
     // ==================== fire (gyújtás / terjedés / égés) ====================

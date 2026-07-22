@@ -83,6 +83,7 @@ import hu.taliann.icesmp.listeners.TalentAttributeListener;
 import hu.taliann.icesmp.listeners.TerritoryListener;
 import hu.taliann.icesmp.listeners.TerritoryProtectionListener;
 import hu.taliann.icesmp.listeners.TheftListener;
+import hu.taliann.icesmp.managers.BlockRegenService;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -289,6 +290,7 @@ public final class IceSMPCore {
     private hu.taliann.icesmp.integration.FancyNpcsQuestBridge npcQuestBridge;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
+    private final BlockRegenService blockRegenService;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask afkTask;
@@ -334,6 +336,7 @@ public final class IceSMPCore {
         factionManager.setSeasonManager(seasonManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
 
         this.territoryManager = new TerritoryManager(plugin);
+        this.blockRegenService = new BlockRegenService(plugin, configManager);
         this.territoryProtectionService = new TerritoryProtectionService(plugin, configManager, territoryManager, factionManager, messageManager);
         this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, territoryManager, messageManager);
         territoryProtectionService.setRaidManager(raidManager); // ostrom alatt a célzóna hadszíntér
@@ -540,7 +543,7 @@ public final class IceSMPCore {
         this.tablistManager.setRaidManager(raidManager);
         // One registered list of YAML-persistent managers: the core loads them all on enable and
         // saves them all on disable (replacing two hand-maintained call lists).
-        this.persistentStores = List.of(currencyManager, factionManager, relicManager, territoryManager,
+        this.persistentStores = List.of(blockRegenService, currencyManager, factionManager, relicManager, territoryManager,
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
@@ -1080,6 +1083,7 @@ public final class IceSMPCore {
                 plugin,
                 task -> {
                     bloodMoonManager.tick();
+                    blockRegenService.tick();
                     worldBossManager.tick();
                     invasionManager.tick();
                     seasonManager.tick();
@@ -1383,7 +1387,9 @@ public final class IceSMPCore {
         final TerritoryListener territoryListener = new TerritoryListener(territoryManager, territoryProtectionService, configManager, questManager, messageManager);
         territoryListener.setBestiaryManager(bestiaryManager); // territórium-lajstrom
         pluginManager.registerEvents(territoryListener, plugin);
-        pluginManager.registerEvents(new TerritoryProtectionListener(territoryProtectionService), plugin);
+        final TerritoryProtectionListener territoryProtectionListener = new TerritoryProtectionListener(territoryProtectionService);
+        territoryProtectionListener.setBlockRegenService(blockRegenService);
+        pluginManager.registerEvents(territoryProtectionListener, plugin);
         pluginManager.registerEvents(new QuestProgressListener(plugin, questManager, mobScalingManager, worldBossManager, communityGoalManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.QuestLogListener(questManager, messageManager), plugin);
         pluginManager.registerEvents(questBuilderListener, plugin);
@@ -1396,7 +1402,10 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ServerChallengeListener(serverChallengeManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EscortListener(escortManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PartyListener(plugin, partyManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimProtectionListener(claimManager, configManager, factionManager, raidManager, messageManager), plugin);
+        final hu.taliann.icesmp.listeners.ClaimProtectionListener claimProtectionListener =
+                new hu.taliann.icesmp.listeners.ClaimProtectionListener(claimManager, configManager, factionManager, raidManager, messageManager);
+        claimProtectionListener.setBlockRegenService(blockRegenService);
+        pluginManager.registerEvents(claimProtectionListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimTrustGUIListener(claimManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatFormatListener(configManager, hudManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatModerationListener(

@@ -160,19 +160,57 @@ public final class ClaimProtectionListener implements Listener {
         }
     }
 
-    /** Explosions never crater claimed chunks (creeper, TNT, crystal…). */
+    /** Explosions never permanently crater claimed chunks — regen mellett látványosan
+     *  robbannak, majd a claim pontosan visszagyógyul (drop nélkül). */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityExplode(final EntityExplodeEvent event) {
-        if (configManager.getBoolean("claims.protect-explosions", true)) {
-            event.blockList().removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
+        if (configManager.getBoolean("claims.protect-explosions", true) && applyRegen(event.blockList(), event.getEntity().getLocation())) {
+            event.setYield(0.0F);
         }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBlockExplode(final BlockExplodeEvent event) {
-        if (configManager.getBoolean("claims.protect-explosions", true)) {
-            event.blockList().removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
+        if (configManager.getBoolean("claims.protect-explosions", true) && applyRegen(event.blockList(), event.getBlock().getLocation())) {
+            event.setYield(0.0F);
         }
+    }
+
+    /** @return true, ha volt regen-re fogott claim-blokk (yield-nullázást kér) */
+    private boolean applyRegen(final java.util.List<org.bukkit.block.Block> blocks,
+                               final org.bukkit.Location center) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null || !regen.isEnabled()) {
+            blocks.removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
+            return false;
+        }
+        boolean captured = false;
+        int debris = 0;
+        final long delay = regen.explosionDelayMillis();
+        final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
+        while (it.hasNext()) {
+            final org.bukkit.block.Block block = it.next();
+            if (claimManager.getClaimAt(block.getLocation()) == null) {
+                continue;
+            }
+            if (hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(block)
+                    || !regen.capture(block, delay)) {
+                it.remove();
+            } else {
+                if (debris < regen.debrisMaxPerExplosion()) {
+                    regen.spawnDebris(block, center);
+                    debris++;
+                }
+                captured = true;
+            }
+        }
+        return captured;
+    }
+
+    private volatile hu.taliann.icesmp.managers.BlockRegenService blockRegenService;
+
+    public void setBlockRegenService(final hu.taliann.icesmp.managers.BlockRegenService service) {
+        this.blockRegenService = service;
     }
 
     // ==================== terrain (tűz / folyadék / dugattyú) ====================
