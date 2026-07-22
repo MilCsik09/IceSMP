@@ -117,6 +117,11 @@ public final class BlockRegenService implements PersistentStore {
         if (!configManager.getBoolean("territory.protection.regen.debris-enabled", true)) {
             return;
         }
+        // Csak a blokkok debris-percent %-a válik repülő törmelékké (látvány-sűrűség fék).
+        final double percent = configManager.getDouble("territory.protection.regen.debris-percent", 100.0D);
+        if (Math.random() * 100.0D >= percent) {
+            return;
+        }
         final Location from = block.getLocation().add(0.5D, 0.5D, 0.5D);
         final org.bukkit.util.Vector dir = from.toVector().subtract(center.toVector());
         if (dir.lengthSquared() < 0.01D) {
@@ -168,8 +173,15 @@ public final class BlockRegenService implements PersistentStore {
                 try {
                     // Mindig felülírunk: a világ PONTOSAN a rombolás előtti állapotba tér
                     // vissza (a közben odarakott blokk drop nélkül tűnik el — hadszíntér).
-                    world.getBlockAt(e.x(), e.y(), e.z())
-                            .setBlockData(Bukkit.createBlockData(e.blockData()), false);
+                    final org.bukkit.block.data.BlockData data = Bukkit.createBlockData(e.blockData());
+                    world.getBlockAt(e.x(), e.y(), e.z()).setBlockData(data, false);
+                    if (configManager.getBoolean("territory.protection.regen.restore-effects-enabled", true)) {
+                        // Anyag-hű "gyógyulás": a blokk saját lerakás-hangja + kis porfelhő.
+                        final Location fx = loc.clone().add(0.5D, 0.5D, 0.5D);
+                        world.playSound(fx, data.getSoundGroup().getPlaceSound(), 0.6F,
+                                0.8F + (float) (Math.random() * 0.4D));
+                        world.spawnParticle(org.bukkit.Particle.CLOUD, fx, 4, 0.25D, 0.25D, 0.25D, 0.01D);
+                    }
                 } catch (final IllegalArgumentException ignored) {
                     // Érvénytelenné vált blockdata (pl. verzióváltás) — kihagyjuk.
                 }

@@ -1787,3 +1787,14 @@ Jó tesztelést! ❄️
 - [ ] **Tempó-hangolás:** restore-interval-ticks [10] + blocks-per-pass [3] — a fal
       láthatóan, fokozatosan épül vissza (kb. 6 blokk/mp); a kulcsok átírásával a
       sebesség változik (interval-hoz restart kell).
+
+## Regen-finomítások: gyógyulás-effekt + törmelék-% (tulaj-kérés, 2026-07-22)
+- [ ] **Gyógyulás-effekt:** visszaépüléskor blokkonként az anyag saját lerakás-hangja
+      szól + porfelhő (restore-effects-enabled [true]) — kikapcsolva néma.
+- [ ] **Törmelék-%:** debris-percent [100] csökkentésével (pl. 40) a kirobbant blokkoknak
+      csak ennyi %-a repül ki törmelékként, a többi csendben tűnik el.
+- [ ] **Metadata-teszt:** lépcsők/félblokkok/forgatott blokkok orientációja a
+      visszaépülés után PONTOSAN az eredeti; tábla/zászló/láda (tile-entity) eleve nem
+      robban ki, adata nem veszhet el.
+- [ ] **Perem-eset (ismert):** támaszték-vesztő rátett blokk (fáklya, falitábla) a
+      vanília fizikával lepattanhat és droppolhat — playtesten mérd, mennyire zavaró.

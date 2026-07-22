@@ -284,7 +284,11 @@ territory:
         # playtest után kapcsold be, ha az élmény elbírja.
         always-enabled: false
         always-delay-seconds: 120
+      # Visszaépüléskor blokkonkénti lerakás-hang + porfelhő (anyag-hű "gyógyulás").
+      restore-effects-enabled: true
       debris-enabled: true
+      # A kirobbant blokkok ennyi %-a válik repülő törmelékké (a többi csak eltűnik).
+      debris-percent: 100
       debris-max-per-explosion: 30
       debris-lifetime-seconds: 4
       debris-launch-power: 0.6
