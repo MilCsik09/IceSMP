@@ -142,15 +142,24 @@ public final class BlockRegenService implements PersistentStore {
             }
             queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
                     block.getBlockData().getAsString(), extra, System.currentTimeMillis() + delayMillis));
+            pendingShield.add(posKey(block));
             return true;
         }
         queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
                 block.getBlockData().getAsString(), null, System.currentTimeMillis() + delayMillis));
+        pendingShield.add(posKey(block));
         return true;
     }
 
     /** pozíció → pajzs lejárta — a frissen visszaépített blokkot a fizika nem bánthatja. */
     private final java.util.Map<String, Long> physicsShield = new java.util.concurrent.ConcurrentHashMap<>();
+    /** A sorban álló (kráter-) pozíciók gyors-lookup másolata — a pajzs rájuk is kiterjed. */
+    private final java.util.Set<String> pendingShield = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** A pajzs-rendszer fő-kapcsolója — kikapcsolva a régi megoldás (hurok-fék) él. */
+    private boolean isShieldEnabled() {
+        return configManager.getBoolean("territory.protection.regen.physics-shield-enabled", true);
+    }
 
     private static String posKey(final Block block) {
         return block.getWorld().getName() + ';' + block.getX() + ';' + block.getY() + ';' + block.getZ();
@@ -168,8 +177,16 @@ public final class BlockRegenService implements PersistentStore {
      * visszaépített fáklyát a víz el sem érheti, a homok nem eshet le.
      */
     public boolean isPhysicsShielded(final Block block) {
-        if (physicsShield.isEmpty()) {
-            return false; // gyors-út: pajzs nélkül a sűrű physics-event費 nulla
+        if (physicsShield.isEmpty() && pendingShield.isEmpty()) {
+            return false; // gyors-út: pajzs nélkül a sűrű physics-event ára nulla
+        }
+        if (!isShieldEnabled()) {
+            return false;
+        }
+        // A kráter (visszaépülésre váró pozíció) is pajzsolt: a víz nem folyhat a
+        // lyukba, a perem-homok nem omolhat be, mielőtt a fal visszaépül.
+        if (pendingShield.contains(posKey(block))) {
+            return true;
         }
         final Long until = physicsShield.get(posKey(block));
         if (until == null) {
@@ -293,6 +310,7 @@ public final class BlockRegenService implements PersistentStore {
         for (final Entry e : due) {
             final World world = Bukkit.getWorld(e.world());
             if (world == null) {
+                pendingShield.remove(e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z());
                 continue;
             }
             final Location loc = new Location(world, e.x(), e.y(), e.z());
@@ -319,6 +337,7 @@ public final class BlockRegenService implements PersistentStore {
                     // vissza (a közben odarakott blokk drop nélkül tűnik el — hadszíntér).
                     target.setBlockData(data, false);
                     restoreExtra(target, e.extra());
+                    pendingShield.remove(posKey(target));
                     final long shield = physicsShieldMillis();
                     if (shield > 0L) {
                         physicsShield.put(posKey(target), System.currentTimeMillis() + shield);
@@ -332,6 +351,7 @@ public final class BlockRegenService implements PersistentStore {
                     }
                 } catch (final IllegalArgumentException ignored) {
                     // Érvénytelenné vált blockdata (pl. verzióváltás) — kihagyjuk.
+                    pendingShield.remove(e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z());
                 }
             });
         }
@@ -371,6 +391,7 @@ public final class BlockRegenService implements PersistentStore {
     @Override
     public void load() {
         queue.clear();
+        pendingShield.clear();
         if (!storageFile.exists()) {
             return;
         }
@@ -382,9 +403,13 @@ public final class BlockRegenService implements PersistentStore {
                         ((Number) raw.get("z")).intValue(), String.valueOf(raw.get("data")),
                         raw.get("extra") == null ? null : String.valueOf(raw.get("extra")),
                         ((Number) raw.get("at")).longValue()));
+
             } catch (final RuntimeException ignored) {
                 // Sérült sor — a többi bejegyzés attól még betölt.
             }
+        }
+        for (final Entry e : queue) {
+            pendingShield.add(e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z());
         }
     }
 

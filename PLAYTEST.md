@@ -1843,3 +1843,12 @@ Jó tesztelést! ❄️
       állított pajzsnál (physics-shield-seconds: 0) a max-recaptures fék fogja meg.
 - [ ] **Terhelés:** pajzsolt pozíció nélkül a BlockPhysicsEvent-handler gyors-úton
       azonnal visszatér — üresjáratban nem mérhető többlet.
+
+## Regen 7. kör: kráter-pajzs + pajzs fő-kapcsoló (tulaj-kérés, 2026-07-22)
+- [ ] **Kráter-pajzs:** robbanás után a lyukba NEM folyik be a szomszédos víz, a
+      perem-homok nem omlik be — a kráter a visszaépülésig érintetlen marad; a
+      visszaépült blokkok utána physics-shield-seconds-ig pajzsoltak.
+- [ ] **Fő-kapcsoló:** physics-shield-enabled: false → a régi megoldás él (fizika
+      normál, csak a max-recaptures hurok-fék véd); true → teljes pajzs.
+- [ ] **Restart-teszt:** kráteres állapotban restart → a kráter-pozíciók a betöltés
+      után is pajzsoltak (a sorból épül vissza a pajzs-lista).

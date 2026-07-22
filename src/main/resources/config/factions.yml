@@ -294,9 +294,13 @@ territory:
       # feladja azt a blokkot.
       max-recaptures: 3
       recapture-window-seconds: 600
-      # A visszaépített blokk fizika-pajzsa: ennyi mp-ig SEMMILYEN vanília fizika nem
-      # hat rá (víz nem mossa el, homok nem esik le, fáklya nem pattan le) — addig a
-      # környezet (pl. vízforrás) kijavítható. 0 = nincs pajzs, azonnal él a fizika.
+      # Fizika-pajzs fő-kapcsoló: bekapcsolva a kráter (visszaépülésre váró pozíciók)
+      # ÉS a frissen visszaépített blokkok fizika-mentesek (víz nem folyik a lyukba/nem
+      # mos el semmit, homok nem omlik, fáklya nem pattan). Kikapcsolva a régi megoldás
+      # él (csak az újrarombolási hurok-fék véd).
+      physics-shield-enabled: true
+      # A VISSZAÉPÍTETT blokk pajzsának hossza (mp) — a kráter-pozíciók a teljes
+      # várakozás alatt pajzsoltak. 0 = a visszaépített blokkon azonnal él a fizika.
       physics-shield-seconds: 300
       # Kézi rombolás regen-nel (drop és XP nélkül, tile-entity sosem törhető):
       player-break:
