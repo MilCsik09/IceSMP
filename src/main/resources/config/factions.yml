@@ -277,6 +277,23 @@ territory:
       # Támasz-váró blokk (homok, fáklya) legfeljebb ennyi mp-et vár a támaszára,
       # utána mindenképp visszaépül (a visszaépítés sosem ragadhat be).
       support-grace-seconds: 120
+      # Zónánkénti regen-mátrix: hol gyógyul a rombolás. Védett zónák alapból BE,
+      # frakcióföld és a vadon alapból KI (vadonban a robbanás/mob-rombolás vanília
+      # marad, amíg be nem kapcsolod — a kézi bányászást a regen SOSEM érinti a
+      # vadonban, az mindig vanília).
+      zones:
+        capital: true
+        protected-city: true
+        protected-faction: true
+        dungeon: true
+        doom-gate: true
+        faction: false
+        wilderness: false
+      # Újrarombolási hurok-fék: ha ugyanaz a pozíció az ablakon belül ennyinél
+      # többször kerülne a sorba (pl. fáklyát folyton elmos a víz), a visszaépítés
+      # feladja azt a blokkot.
+      max-recaptures: 3
+      recapture-window-seconds: 600
       # Kézi rombolás regen-nel (drop és XP nélkül, tile-entity sosem törhető):
       player-break:
         # Ostrom: élő raid alatt a CÉLZÓNÁBAN a regisztrált harcosok bonthatnak.

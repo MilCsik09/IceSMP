@@ -69,6 +69,13 @@ public final class TerritoryProtectionService {
         return zone != null && zone.id().equals(raid.territoryId());
     }
 
+    /** A hely zóna-kulcsa a regen-mátrixhoz: territórium-típus vagy "wilderness". */
+    public String zoneTypeKeyAt(final Location location) {
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        return zone == null ? "wilderness"
+                : zone.type().name().toLowerCase(Locale.ROOT).replace('_', '-');
+    }
+
     public TerritoryProtectionService(final JavaPlugin plugin, final ConfigManager configManager,
                                       final TerritoryManager territoryManager, final FactionManager factionManager,
                                       final MessageManager messageManager) {

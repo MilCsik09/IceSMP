@@ -241,7 +241,12 @@ public final class TerritoryProtectionListener implements Listener {
         final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
         while (it.hasNext()) {
             final org.bukkit.block.Block block = it.next();
-            if (!protection.isExplosionBlockedAt(block.getLocation())) {
+            // Zóna-mátrix dönt: regen-es zónában (vadon is lehet!) gyógyuló rombolás;
+            // regen nélküli védett zónában a régi teljes tiltás; máshol vanília.
+            if (!regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(block.getLocation()))) {
+                if (protection.isExplosionBlockedAt(block.getLocation())) {
+                    it.remove();
+                }
                 continue;
             }
             if (block.getType() == org.bukkit.Material.TNT) {
@@ -276,9 +281,13 @@ public final class TerritoryProtectionListener implements Listener {
             event.getEntity().remove();
             return;
         }
-        if (event.getEntity() instanceof Player
-                || !event.getTo().isAir()
-                || !protection.isExplosionBlockedAt(event.getBlock().getLocation())) {
+        if (event.getEntity() instanceof Player || !event.getTo().isAir()) {
+            return;
+        }
+        final hu.taliann.icesmp.managers.BlockRegenService regenSvc = this.blockRegenService;
+        final boolean zoneRegen = regenSvc != null && regenSvc.isEnabled()
+                && regenSvc.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()));
+        if (!zoneRegen && !protection.isExplosionBlockedAt(event.getBlock().getLocation())) {
             return;
         }
         event.setCancelled(true);
@@ -300,7 +309,7 @@ public final class TerritoryProtectionListener implements Listener {
     public void onBlockDestroy(final com.destroystokyo.paper.event.block.BlockDestroyEvent event) {
         final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
         if (regen == null || !regen.isEnabled()
-                || !protection.isExplosionBlockedAt(event.getBlock().getLocation())) {
+                || !regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()))) {
             return;
         }
         if (regen.capture(event.getBlock(), regen.explosionDelayMillis())) {

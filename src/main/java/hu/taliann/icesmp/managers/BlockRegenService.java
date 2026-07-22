@@ -51,6 +51,15 @@ public final class BlockRegenService implements PersistentStore {
         return configManager.getBoolean("territory.protection.regen.enabled", true);
     }
 
+    /**
+     * Zónánkénti regen-kapcsoló (territory.protection.regen.zones.<típus>): védett
+     * zónákban alapból BE, frakcióföldön és a vadonban alapból KI.
+     */
+    public boolean isZoneRegenEnabled(final String zoneKey) {
+        final boolean def = !"wilderness".equals(zoneKey) && !"faction".equals(zoneKey);
+        return configManager.getBoolean("territory.protection.regen.zones." + zoneKey, def);
+    }
+
     public long explosionDelayMillis() {
         return Math.max(5L, configManager.getLong("territory.protection.regen.delay-seconds", 180L)) * 1000L;
     }
@@ -102,6 +111,9 @@ public final class BlockRegenService implements PersistentStore {
         if (isQueued(block)) {
             return true; // már sorban áll (pl. robbanás + fizika-esemény dupla-jelzése)
         }
+        if (isRecaptureLooping(block)) {
+            return false; // valami folyton újrarombolja (pl. vízfolyás) — elengedjük
+        }
         if (block.getState() instanceof TileState) {
             if (!isTileEntityExplodeEnabled()) {
                 return false;
@@ -135,6 +147,27 @@ public final class BlockRegenService implements PersistentStore {
         queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
                 block.getBlockData().getAsString(), null, System.currentTimeMillis() + delayMillis));
         return true;
+    }
+
+    /** pozíció → [felvételek száma, ablak kezdete] — az újrarombolási hurok féke. */
+    private final java.util.Map<String, long[]> captureHistory = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Igaz, ha a pozíció rövid időn belül túl sokszor került a sorba — ilyenkor a
+     * visszaépítés feladja (pl. fáklyát folyton elmos a víz), különben capture→restore→
+     * rombolás→capture végtelen kör pörögne.
+     */
+    private boolean isRecaptureLooping(final Block block) {
+        final long windowMillis = Math.max(30L, configManager.getLong(
+                "territory.protection.regen.recapture-window-seconds", 600L)) * 1000L;
+        final int maxRecaptures = Math.max(1, configManager.getInt(
+                "territory.protection.regen.max-recaptures", 3));
+        final long now = System.currentTimeMillis();
+        captureHistory.values().removeIf(v -> now - v[1] > windowMillis);
+        final String key = block.getWorld().getName() + ';' + block.getX() + ';' + block.getY() + ';' + block.getZ();
+        final long[] entry = captureHistory.computeIfAbsent(key, k -> new long[]{0L, now});
+        entry[0]++;
+        return entry[0] > maxRecaptures;
     }
 
     /** Pozíció-alapú dedupe: ugyanaz a blokk nem kerülhet kétszer a sorba. */

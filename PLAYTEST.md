@@ -1823,3 +1823,14 @@ Jó tesztelést! ❄️
       érintetlen marad; a robbant fél visszaépülve a saját tartalmával tér vissza.
 - [ ] **Dedupe:** robbanás + fizika-esemény ugyanarra a blokkra → a blokk EGYSZER áll
       vissza (nincs dupla sor-bejegyzés).
+
+## Regen 5. kör: zóna-mátrix + hurok-fék (tulaj-kérés, 2026-07-22)
+- [ ] **Zóna-mátrix:** regen.zones.wilderness true-ra állítva a vadonban is gyógyul a
+      creeper-kráter/Wither-rombolás (drop nélkül); false-on vanília. Frakcióföld
+      (faction) külön kulcson. A kézi bányászás a vadonban MINDIG vanília marad.
+- [ ] **Regen nélküli védett zóna** (pl. zones.capital: false): a régi teljes
+      robbanás-tiltás él ott — a mátrix zónánként vált a három mód közt
+      (vanília / tiltás / regen).
+- [ ] **Hurok-fék:** fáklya vízfolyásba regen-elve max-recaptures [3] után nem épül
+      újra (a rendszer elengedi) — nincs végtelen capture-restore kör;
+      recapture-window-seconds [600] után a számláló nullázódik.
