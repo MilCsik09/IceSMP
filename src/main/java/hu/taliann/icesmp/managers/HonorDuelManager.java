@@ -77,6 +77,12 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         if (existing != null && existing > now) {
             return "duel-pending";
         }
+        // Egy kihívónak egyszerre csak EGY kimenő felkérése lehet — különben két
+        // közel-egyidejű elfogadás felülírná egymást az active-mapben, és az első
+        // célpont egy már nem élő párbajra hivatkozva ölhetne bűn-mentesen.
+        if (pending.containsValue(challenger.getUniqueId())) {
+            return "duel-pending";
+        }
         pending.put(target.getUniqueId(), challenger.getUniqueId());
         pendingExpiry.put(target.getUniqueId(), now
                 + Math.max(10, configManager.getInt("honor-duel.challenge-expiry-seconds", 60)) * 1000L);
@@ -90,6 +96,11 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         final Player challenger = challengerId == null ? null : Bukkit.getPlayer(challengerId);
         if (challenger == null || expiry == null || expiry < System.currentTimeMillis()) {
             return "duel-no-challenge";
+        }
+        // Az elfogadás pillanatában is friss állapotot követelünk: ha a kihívó időközben
+        // már aktív párbajban áll, ez a pár nem jöhet létre (invariáns-védelem).
+        if (active.containsKey(challenger.getUniqueId()) || active.containsKey(target.getUniqueId())) {
+            return "duel-busy";
         }
         final long week = System.currentTimeMillis() / (7L * 86_400_000L);
         // A limit-számláló elfogadáskor fogy (a fel nem vett kihívás nem számít bele).

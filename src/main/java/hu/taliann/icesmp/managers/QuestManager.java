@@ -1670,9 +1670,13 @@ public final class QuestManager implements PersistentStore {
         return player.getPersistentDataContainer().getOrDefault(doneAtKey(questId), PersistentDataType.LONG, 0L);
     }
 
-    /** The current season's identity (its end timestamp changes when a new season starts). */
+    /**
+     * Stabil szezon-azonosító: a kezdő-bélyeg. A getSeasonEndMillis() élő configból
+     * számolódik — egy length-days átírás szezon közben minden teljesített szezonális
+     * questet újranyitna; a seasonStart csak tényleges szezonváltáskor mozdul.
+     */
     private long currentSeasonId() {
-        return seasonManager == null ? 0L : seasonManager.getSeasonEndMillis();
+        return seasonManager == null ? 0L : seasonManager.getSeasonStart();
     }
 
     private long getCompletedSeason(final Player player, final String questId) {

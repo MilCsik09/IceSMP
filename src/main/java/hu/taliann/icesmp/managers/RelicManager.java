@@ -48,7 +48,8 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     private final RelicItemFactory itemFactory;
     private final RelicCooldownService cooldownService;
     private final RelicAbilityRegistry abilityRegistry;
-    private final Map<String, EnumMap<RelicTrigger, RelicTriggerConfig>> triggerConfigs = new java.util.HashMap<>();
+    // Reload (clear+rebuild) közben régió-szálak olvassák — concurrent szerkezet kell.
+    private final Map<String, EnumMap<RelicTrigger, RelicTriggerConfig>> triggerConfigs = new ConcurrentHashMap<>();
     private final Map<String, RelicOwnership> ownerships = new ConcurrentHashMap<>();
     /**
      * "Elveszett" passzív relikviák (halálkor a tárgy megsemmisül, de a tulajdon marad):

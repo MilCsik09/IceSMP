@@ -559,6 +559,12 @@ public final class RaidManager {
 
     /** Cancels the pending timers on plugin disable. */
     public void shutdown() {
+        final ActiveRaid raid = activeRaid;
+        if (raid != null) {
+            // Restart alatt a menet nem folytatható — legalább ne némán vesszen el.
+            Bukkit.getServer().broadcast(messageManager.getMessage("raid-cancelled-restart",
+                    "<yellow>⚔ A folyamatban lévő ostrom a szerver újraindulása miatt eredmény nélkül zárult — a krónikák nem jegyzik.</yellow>"));
+        }
         cancelTasks();
         activeRaid = null;
         participants.clear();

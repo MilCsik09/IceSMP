@@ -336,6 +336,7 @@ public final class IceSMPCore {
         this.territoryManager = new TerritoryManager(plugin);
         this.territoryProtectionService = new TerritoryProtectionService(plugin, configManager, territoryManager, factionManager, messageManager);
         this.raidManager = new RaidManager(plugin, configManager, factionManager, factionTreasuryManager, seasonManager, territoryManager, messageManager);
+        territoryProtectionService.setRaidManager(raidManager); // ostrom alatt a célzóna hadszíntér
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
         this.introManager = new IntroManager(plugin, configManager);
         this.mobScalingManager = new MobScalingManager(plugin, configManager, bloodMoonManager, territoryManager);
@@ -793,7 +794,15 @@ public final class IceSMPCore {
         mobScalingManager.load();
         craftingRestrictionManager.load();
         professionRecipeCatalog.load();
-        persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::load);
+        // Egy sérült fájl nem viheti el a többi manager betöltését (kaszkád-adatvesztés).
+        for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
+            try {
+                store.load();
+            } catch (final RuntimeException e) {
+                plugin.getLogger().severe("Store load() hiba (" + store.getClass().getSimpleName()
+                        + ") — a manager alapállapotból indul: " + e);
+            }
+        }
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
@@ -803,6 +812,7 @@ public final class IceSMPCore {
         scheduleWorldEvents();
         scheduleHud();
         schedulePetCombat();
+        scheduleAutosave();
         registerPlaceholders();
         registerNpcQuestBridge();
         applyWorldGameRules();
@@ -1018,7 +1028,14 @@ public final class IceSMPCore {
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
-        persistentStores.forEach(hu.taliann.icesmp.storage.PersistentStore::save);
+        // Egy hibázó save() nem akadályozhatja meg a többi store mentését.
+        for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
+            try {
+                store.save();
+            } catch (final RuntimeException e) {
+                plugin.getLogger().severe("Store save() hiba (" + store.getClass().getSimpleName() + "): " + e);
+            }
+        }
         ProfileGUI.closeAll();
 
         // Then clean up live player session state (HUD teams, restored armor, caches).
@@ -1029,6 +1046,27 @@ public final class IceSMPCore {
         }
 
         plugin.getLogger().info("IceSMP core disabled.");
+    }
+
+    /**
+     * Időszakos mentés ASYNC szálon (fájl-I/O nem mehet régió-szálra) — crash esetén
+     * legfeljebb az utolsó ciklus vész el, nem a teljes uptime. A store-ok concurrent
+     * szerkezetekből dolgoznak, a YamlStore.saveAtomic írásonként atomi.
+     */
+    private void scheduleAutosave() {
+        final long minutes = Math.max(0L, configManager.getLong("settings.autosave-minutes", 10L));
+        if (minutes <= 0L) {
+            return;
+        }
+        Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> {
+            for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
+                try {
+                    store.save();
+                } catch (final RuntimeException e) {
+                    plugin.getLogger().warning("Autosave hiba (" + store.getClass().getSimpleName() + "): " + e);
+                }
+            }
+        }, minutes, minutes, java.util.concurrent.TimeUnit.MINUTES);
     }
 
     /**
@@ -1162,6 +1200,11 @@ public final class IceSMPCore {
         final IceSMPCommand iceSMPCommand = new IceSMPCommand(plugin, configManager, messageManager,
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
+        iceSMPCommand.setReloadHook(() -> {
+            relicManager.load();
+            mobScalingManager.load();
+            craftingRestrictionManager.load();
+        });
         // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
         // leggyakoribb kulcsokhoz — az override-fájlba ír, restart nélkül él.
         final hu.taliann.icesmp.listeners.ConfigMenuGUIListener configMenuGUIListener =

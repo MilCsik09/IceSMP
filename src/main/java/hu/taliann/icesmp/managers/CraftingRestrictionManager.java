@@ -31,11 +31,12 @@ public final class CraftingRestrictionManager implements PlayerStateCleanup {
     private final ConfigManager configManager;
     private final JobManager jobManager;
     private final ProfessionManager professionManager;
-    private final List<CraftingRule> rules = new ArrayList<>();
+    // Reload (clear+add sorozat) közben craft-eventek iterálják régió-szálról — COW véd.
+    private final List<CraftingRule> rules = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final Map<UUID, Long> lastNotifyMillis = new ConcurrentHashMap<>();
 
-    private boolean enabled;
-    private long notifyCooldownMillis;
+    private volatile boolean enabled;
+    private volatile long notifyCooldownMillis;
 
     public CraftingRestrictionManager(final JavaPlugin plugin, final ConfigManager configManager,
                                       final JobManager jobManager, final ProfessionManager professionManager) {

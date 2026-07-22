@@ -48,6 +48,12 @@ public final class TerritoryProtectionService {
     private final TerritoryManager territoryManager;
     private final FactionManager factionManager;
     private final MessageManager messageManager;
+    /** Setter-injektált (a RaidManager a protection-service UTÁN épül fel a core-ban). */
+    private volatile RaidManager raidManager;
+
+    public void setRaidManager(final RaidManager raidManager) {
+        this.raidManager = raidManager;
+    }
 
     public TerritoryProtectionService(final JavaPlugin plugin, final ConfigManager configManager,
                                       final TerritoryManager territoryManager, final FactionManager factionManager,
@@ -234,6 +240,17 @@ public final class TerritoryProtectionService {
         }
         if (attacker != null && attacker.hasPermission(ADMIN_BYPASS)) {
             return false;
+        }
+        // Élő ostrom alatt a raid CÉLZÓNÁJA hadszíntér: regisztrált harcos támadása ott
+        // nem eshet a békeidős PvP-tiltás alá — enélkül a fővárosi raid (az alapértelmezett
+        // célpont védett zóna) soha nem termelhetne kill-pontot.
+        final RaidManager raids = this.raidManager;
+        if (raids != null && attacker != null) {
+            final RaidManager.ActiveRaid raid = raids.getActiveRaid();
+            if (raid != null && zone.id().equals(raid.territoryId())
+                    && raids.isParticipant(attacker.getUniqueId())) {
+                return false;
+            }
         }
         if (notify && attacker != null) {
             attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(

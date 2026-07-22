@@ -100,12 +100,25 @@ public final class CultistEventManager {
                 org.bukkit.persistence.PersistentDataType.BYTE);
     }
 
+    /**
+     * Pontosan egy lezáró ág nyerhet: az utolsó hívő halála (mob régió-szál) és a
+     * rítus-határidő (globál tick) versenyét ez a csere dönti el — dupla kifizetés
+     * és ellentmondó broadcast ellen.
+     */
+    private synchronized boolean claimClose() {
+        if (!active) {
+            return false;
+        }
+        active = false;
+        return true;
+    }
+
     /** A közös halál-listener hívja (a mob régió-szálán). */
     public void onDeath(final UUID entityId) {
         if (!cultists.remove(entityId) || !active) {
             return;
         }
-        if (cultists.isEmpty()) {
+        if (cultists.isEmpty() && claimClose()) {
             final String key = "rite".equals(variant) ? "cultists-rite-broken"
                     : "courier".equals(variant) ? "cultists-courier-slain" : "cultists-routed";
             final String def = switch (variant) {
@@ -116,7 +129,6 @@ public final class CultistEventManager {
             if ("rite".equals(variant)) {
                 dropRiteLoot();
             }
-            active = false;
             Bukkit.getServer().broadcast(messageManager.getMessage(key, def));
         }
     }
@@ -350,10 +362,9 @@ public final class CultistEventManager {
 
     /** A rítus beteljesül: hívek köddé válnak, eséllyel rontás-góc nyílik a helyszínen. */
     private synchronized void completeRite() {
-        if (!active || !"rite".equals(variant)) {
+        if (!"rite".equals(variant) || !claimClose()) {
             return;
         }
-        active = false;
         riteEndsAt = 0L;
         for (final UUID id : cultists) {
             final Entity entity = Bukkit.getEntity(id);

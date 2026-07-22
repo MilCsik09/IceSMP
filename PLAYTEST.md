@@ -1734,3 +1734,27 @@ Jó tesztelést! ❄️
       (DELIVER_ITEMS — az NPC átveszi a tárgyakat).
 - [ ] **Nagy heti kihívások:** heti_nagyvadaszat (120 kill → ritka kulcs),
       heti_nagyhalaszat (40 hal → 2 köznapi kulcs).
+
+## Fable-javítási kör (P2-leletek első hulláma, 2026-07-22)
+- [ ] **Reload-race zárva:** /icesmp reload közbeni craftolás és relikvia-használat nem
+      dob hibát (RelicRegistry synchronized, CraftingRestrictionManager COW-lista);
+      a reload után a relic/mob-scaling/craft-restrikció configok AZONNAL élnek
+      (reload-hook, restart nélkül).
+- [ ] **Kultista rítus:** az utolsó hívő levágása a határidő pillanatában sem adhat
+      dupla jutalmat/kettős broadcastot (claimClose csere).
+- [ ] **Load/save kaszkád:** egy kézzel elrontott YAML-store mellett a többi manager
+      betöltődik (severe log a hibásról), leállásnál a többi mentése lefut.
+- [ ] **Autosave:** settings.autosave-minutes [10] percenként async mentés — kill -9
+      után legfeljebb ennyi percnyi adat hiányzik (pl. friss stats/ranglista).
+- [ ] **Raid restartnál:** folyamatban lévő ostrom alatt leállítva a szerver broadcast
+      jelzi az eredmény nélküli zárást (nem némán tűnik el).
+- [ ] **Párbaj-invariáns:** egy kihívó második függő kihívása "duel-pending" hibát ad;
+      elfogadás csak akkor megy át, ha egyik fél sem áll már aktív párbajban.
+- [ ] **Szezonális quest-id:** world-events.season.length-days átírása a futó szezonban
+      NEM nyitja újra a már teljesített seasonal questeket.
+- [ ] **Spell-erő plafon:** spells.total-power-cap [1.75] — max mastery + max szint +
+      lánc-finisher együtt sem üt nagyobbat, mint alap-sebzés × 1.75 (pl. obliterate
+      max ~14, deathfrost-kombó ~22.5 össz a korábbi 36 helyett).
+- [ ] **Fővárosi raid él:** meghirdetett raid alatt a célzóna-fővárosban a REGISZTRÁLT
+      harcosok tudnak PvP-zni (kill-pont születik), nem-résztvevőt továbbra is véd a
+      zóna máshol; a raid végén a tiltás visszaáll.

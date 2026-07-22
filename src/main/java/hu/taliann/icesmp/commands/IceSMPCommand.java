@@ -68,6 +68,12 @@ public final class IceSMPCommand implements BasicCommand {
     private final AbilityCatalystListener abilityCatalystListener;
     private final SinManager sinManager;
 
+    private volatile Runnable reloadHook;
+
+    public void setReloadHook(final Runnable reloadHook) {
+        this.reloadHook = reloadHook;
+    }
+
     public IceSMPCommand(final JavaPlugin plugin, final ConfigManager configManager,
                          final MessageManager messageManager, final JobManager jobManager,
                          final SpecializationManager specializationManager, final ResourceManager resourceManager,
@@ -102,6 +108,12 @@ public final class IceSMPCommand implements BasicCommand {
             configManager.reload();
             messageManager.reload();
             ConfigValidator.validate(configManager, plugin.getLogger());
+            // A load()-időben cache-elő managerek (relic/mob-scaling/craft-restrikció)
+            // csak így frissülnek restart nélkül.
+            final Runnable hook = this.reloadHook;
+            if (hook != null) {
+                hook.run();
+            }
             sender.sendMessage(messageManager.get("admin.icesmp.reload.success", "<green>Plugin konfiguracio sikeresen ujratoltve!</green>"));
             return;
         }

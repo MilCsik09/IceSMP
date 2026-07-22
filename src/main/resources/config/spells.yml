@@ -137,6 +137,11 @@ spells:
     radius: 6.0            # ekkora körben hat a pulzálás
     pulse-ticks: 30        # ennyi tickenként pulzál (20 tick = 1 mp)
   # Mesterség: frakcióvalutáért fejleszthető rang, ami csökkenti a cooldownt.
+  # Az össz-erőszorzó plafonja: mastery x (szint+talent dinamikus bónusz) x lánc-finisher
+  # SZORZATA sosem lépheti túl — plafon nélkül 2.8x fölé futna, és nem-ultimate spellek
+  # is ~20 sebzést ütnének. Élő kulcs.
+  total-power-cap: 1.75
+
   mastery:
     enabled: true
     max-rank: 5

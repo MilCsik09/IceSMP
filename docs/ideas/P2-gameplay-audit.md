@@ -5,7 +5,7 @@
 > Folia-konkurrencia • GUI/parancs/UX • talent/spec/erőforrás • perzisztencia/restart •
 > integrációs hidak • teljesítmény (50-60 fő). A számok config-ellenőrzöttek; a kiemelt
 > leleteket kézzel is visszaellenőriztük a kódban. Az előző (P1) audit mind a 15 lelete lezárult
-> (részletek a git-történetben); ez a doksi az élő audit, helyben frissül. Státusz: MINDEN lelet tulaj-döntésre vár.
+> (részletek a git-történetben); ez a doksi az élő audit, helyben frissül. Státusz: a ✅ jelölt tételek javítva; a többi tulaj-döntésre vár.
 
 ## 🔴 Strukturális leletek
 
@@ -22,7 +22,7 @@
    nullázhatja magát a 4-bűnös száműzetés előtt. (A kódkomment részben szándékosnak
    jelzi — "az életével fizetett" —, de az exile-kerülő exploit áll.) KÉZZEL MEGERŐSÍTVE.
    → a bűn-reset is menjen cooldown alá, vagy csak tényleges kifizetésnél nullázzon.
-3. **A raid a saját fő célpontján nem tud működni.** A raid alapból a védekező FŐVÁROSÁT
+3. ✅ RÉSZBEN KÉSZ (Fable-kör: raid-tudatos PvP-kapu a célzónában; ostrom-rombolás továbbra sincs — design-döntés) — **A raid a saját fő célpontján nem tud működni.** A raid alapból a védekező FŐVÁROSÁT
    jelöli célnak, de a főváros védett zóna: a `TerritoryProtectionService.denyCombat`
    SEHOL nem kérdezi a RaidManagert (kézzel megerősítve: 0 hivatkozás), így fővárosi
    raidnél a PvP-sebzés cancel-elődik → kill-pont sosem születhet. Blokk-rombolást a raid
@@ -39,7 +39,7 @@
    → a territórium-oldali minta átvétele a claim-oldalra.
 
 ### Világesemények
-5. **Kultista rítus dupla-lezárás versenyhelyzet.** Az utolsó hívő halála (mob régió-szál)
+5. ✅ KÉSZ (Fable-kör) — **Kultista rítus dupla-lezárás versenyhelyzet.** Az utolsó hívő halála (mob régió-szál)
    és a rítus-határidő (globál tick) egyszerre zárhatja le ugyanazt a rítust — nincs közös
    atomi "ki nyert" őr (a testvér-managerek claimSettlement-mintája itt hiányzik) → dupla
    jutalom + ellentmondó broadcast lehetséges. → compareAndSet-szerű lezárás-csere.
@@ -71,7 +71,7 @@
     → giver-npc: "vandor_kereskedo" ill. "erdei_venek" felvétele.
 
 ### Kód-egészség
-11. **Reload-race két managerben (Folia).** `RelicManager.triggerConfigs` + RelicRegistry
+11. ✅ KÉSZ (Fable-kör; + reload-hook: a 3 load()-cache-elő manager reloadra frissül) — **Reload-race két managerben (Folia).** `RelicManager.triggerConfigs` + RelicRegistry
     (sima HashMap/LinkedHashMap) és `CraftingRestrictionManager.rules` (sima ArrayList)
     clear+rebuild mintával épül újra `/icesmp reload` alatt, miközben régió-szálak
     olvassák — reload közbeni craft/relikvia-használat CME/crash-képes. A házon belüli
@@ -79,18 +79,18 @@
 12. **`icesmp.admin.item` nincs regisztrálva a Permissions-ben** (KÉT agent egymástól
     függetlenül) — az `icesmp.admin.all` NEM adja meg a `/iceitem`-et. → ITEM felvétele
     a canonical map-be.
-13. **A persistentStores load/save lánca hibakezelés nélküli.** Egy sérült YAML egyetlen
+13. ✅ KÉSZ (Fable-kör) — **A persistentStores load/save lánca hibakezelés nélküli.** Egy sérült YAML egyetlen
     managerben megszakítja a forEach-et: minden utána következő manager üresen indul
     (load) vagy mentetlen marad (save) — kaszkád-adatvesztés egyetlen rossz sorból.
     → per-manager try/catch + log.
-14. **Nincs időszakos autosave; a StatsManager KIZÁRÓLAG leállásnál ment.** Crash =
+14. ✅ KÉSZ (Fable-kör: settings.autosave-minutes async mentés + raid-zárás broadcast restartnál) — **Nincs időszakos autosave; a StatsManager KIZÁRÓLAG leállásnál ment.** Crash =
     minden ranglista-progressz + az utolsó mentés utáni összes YAML-mutáció elvész
     (a MarketManager 2s debounce-a kivétel, az jó minta). Az aktív raid pedig még tiszta
     restartnál is csendben megsemmisül (nincs force-resolve). → async autosave ütemezés +
     raid-lezárás shutdown()-ban.
 
 ### Balansz
-15. **Mastery × dinamikus skálázás szorzódik, plafon nélkül (2.25×, finisherrel 2.81×).**
+15. ✅ KÉSZ (Fable-kör: spells.total-power-cap 1.75) — **Mastery × dinamikus skálázás szorzódik, plafon nélkül (2.25×, finisherrel 2.81×).**
     Nem-ultimate spellek 15-22 sebzést ütnek max szinten (obliterate 18 / 20 mp-enként,
     a deathfrost kombó 36 nyers sebzés 4 mp alatt — 60% max rezisztencia után is ~14).
     → a két szorzó additív összevonása vagy közös 1.75× sapka.
@@ -211,7 +211,7 @@
 
 ### 🔴 Új strukturális leletek
 
-20. **Párbaj pár-invariáns megtörhető.** A kihívó több párhuzamos függő kihívása közül a
+20. ✅ KÉSZ (Fable-kör) — **Párbaj pár-invariáns megtörhető.** A kihívó több párhuzamos függő kihívása közül a
     második elfogadás felülírja az elsőt az active-mapben — az első célpont egy már nem
     élő párbajra hivatkozva bűn/vérdíj-mentesen ölhet. → challenge() tiltsa a több
     kimenő pendinget, vagy accept() ellenőrizze újra az aktív állapotot.
@@ -235,7 +235,7 @@
 
 ### 🟡 Új érdemi leletek
 
-- **Szezonális quest-azonosító instabil:** a currentSeasonId az élő getSeasonEndMillis-re
+- ✅ KÉSZ (Fable-kör: currentSeasonId = getSeasonStart) — **Szezonális quest-azonosító instabil:** a currentSeasonId az élő getSeasonEndMillis-re
   épül — egy length-days állítás szezon közben újranyitja az összes teljesített
   szezonális questet. → getSeasonNumber()-re váltás. (A rollover-mag egyébként
   megbízható: offline átfordulást pótol, dupla-rollover kizárt, a bajnok-megállapítás

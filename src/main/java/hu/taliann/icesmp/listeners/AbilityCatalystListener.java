@@ -324,9 +324,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         // Spell-mastery power scales the offensive output (damage, self-heal, effect duration);
         // the dynamic layer adds a capped class-level + 'spell-power' talent bonus on top.
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
-        final double power = masteryManager.getPowerMultiplier(player, selected.getId())
-                * dynamicPowerMultiplier(player)
-                * (1.0D + chainBonusPercent / 100.0D);
+        // A három réteg (mastery × szint/talent × lánc-finisher) szorzódva sapka nélkül
+        // 2.8× fölé futna (nem-ultimate spellek is ~20 sebzésig) — közös felső plafon fékez.
+        final double powerCap = Math.max(1.0D,
+                configManager.getDouble("spells.total-power-cap", 1.75D));
+        final double power = Math.min(powerCap,
+                masteryManager.getPowerMultiplier(player, selected.getId())
+                        * dynamicPowerMultiplier(player)
+                        * (1.0D + chainBonusPercent / 100.0D));
         if (!selected.executeSpell(player, power)) {
             // No effect fired (no target, no companions, …) — refund the cost and skip the
             // cooldown so a missed cast costs the player nothing.
