@@ -118,12 +118,13 @@ if os.path.exists(menus_path):
 
 # ---------- 5b. duplikált metódus-szignatúrák (a sandbox-javac elnyeli!) ----------
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
-    sigs = re.findall(r"(?:public|private|protected)\s+\w+\s+(\w+)\(\s*final\s+([\w.]+)", read(path))
     seen = {}
-    for name, ptype in sigs:
-        key = (name, ptype.split(".")[-1])
+    for m in re.finditer(r"(?:public|private|protected)[\w\s<>,\[\]]*?\s(\w+)\(([^)]*)\)\s*\{", read(path)):
+        name, params = m.group(1), m.group(2)
+        types = tuple(t.split(".")[-1] for t in re.findall(r"(?:final\s+)?([\w.<>\[\]]+)\s+\w+\s*(?:,|$)", params))
+        key = (name, types)
         if key in seen:
-            fail(f"duplikált metódus: {os.path.basename(path)}: {name}({key[1]}) kétszer definiálva")
+            fail(f"duplikált metódus: {os.path.basename(path)}: {name}({', '.join(types)}) kétszer definiálva")
         seen[key] = True
 
 # ---------- 6. tükör-drift ----------
