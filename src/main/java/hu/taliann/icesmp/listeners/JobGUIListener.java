@@ -31,6 +31,11 @@ public final class JobGUIListener implements Listener {
     private final SpecializationManager specializationManager;
     private final SpellRegistry spellRegistry;
     private final ConfigManager configManager;
+    private volatile hu.taliann.icesmp.managers.FactionManager factionManager;
+
+    public void setFactionManager(final hu.taliann.icesmp.managers.FactionManager factionManager) {
+        this.factionManager = factionManager;
+    }
     private final MessageManager messageManager;
     private final CharacterMenuContext menuContext;
 
@@ -90,6 +95,15 @@ public final class JobGUIListener implements Listener {
             return;
         }
 
+        // Kapcsolható mód: a Halállovag csak Kitaszítottnak nyílik (a meglévő
+        // nem-DARK DK-kat a kapu nem érinti, csak az ÚJ választást).
+        if (selectedJob == hu.taliann.icesmp.data.JobType.DEATH_KNIGHT
+                && configManager.getBoolean("classes.death-knight.dark-only", false)
+                && factionManager != null && factionManager.getFaction(player.getUniqueId()) != hu.taliann.icesmp.data.FactionType.DARK) {
+            player.sendMessage(messageManager.getMessage("job-dk-dark-only",
+                    "<dark_red>A halál lovagja nem tartozhat az élők királyságaihoz — ezt az utat csak a Kitaszítottak járhatják.</dark_red>"));
+            return;
+        }
         if (jobManager.setPrimaryJob(player, selectedJob)) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
             player.sendMessage(messageManager.getComponent("messages.job-select-primary-success", "&aElsodleges kaszt kivalasztva:").append(Component.space()).append(selectedJob.getDisplayName()));

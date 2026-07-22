@@ -23,6 +23,7 @@ public enum SpecializationType {
     RETRIBUTION("retribution", "<gold>Megtorló</gold>", JobType.PALADIN, null, false),
     BLOOD("blood", "<dark_red>Vérlovag</dark_red>", JobType.DEATH_KNIGHT, null, false),
     FROST("frost", "<aqua>Fagylovag</aqua>", JobType.DEATH_KNIGHT, null, false),
+    UNHOLY("unholy", "<dark_green>Szentségtelen</dark_green>", JobType.DEATH_KNIGHT, FactionType.DARK, true),
     ELEMENTAL("elemental", "<blue>Elemi</blue>", JobType.SHAMAN, null, false),
     ENHANCEMENT("enhancement", "<gold>Erősítő</gold>", JobType.SHAMAN, null, false),
     WINDWALKER("windwalker", "<aqua>Szélfutó</aqua>", JobType.MONK, null, false),

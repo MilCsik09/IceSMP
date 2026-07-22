@@ -12,6 +12,7 @@ import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Panda;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.Husk;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -124,6 +125,28 @@ public final class SpellCatalog {
                 },
                 Particle.SOUL_FIRE_FLAME, Sound.ENTITY_SKELETON_AMBIENT, 0.7F,
                 "<dark_gray>Csontíjászok emelkednek ki a sírjukból, hogy szolgáljanak.</dark_gray>"));
+
+        // --- SZENTSÉGTELEN idézések ---
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "raise_ghoul", "Ghúl-szolga", 180, SpellCostType.XP, 60,
+                Husk.class, 2, 40,
+                (mob, owner) -> {
+                    final Husk ghoul = (Husk) mob;
+                    ghoul.setShouldBurnInDay(false);
+                    ghoul.setAdult();
+                },
+                Particle.SCULK_SOUL, Sound.ENTITY_HUSK_AMBIENT, 0.6F,
+                "<dark_green>Ghúl kaparja ki magát a földből — éhes, és a te szavadra vár.</dark_green>"));
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "army_of_the_dead", "A Holtak Serege", 300, SpellCostType.XP, 110,
+                Husk.class, 6, 40,
+                (mob, owner) -> {
+                    final Husk soldier = (Husk) mob;
+                    soldier.setShouldBurnInDay(false);
+                    soldier.setAdult();
+                },
+                Particle.SOUL, Sound.ENTITY_WITHER_SPAWN, 0.4F,
+                "<dark_green>A föld felmorajlik: a holtak serege felsorakozik a Szentségtelen mögé.</dark_green>"));
 
         // --- VADMESTER idézések ---
         registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
@@ -911,6 +934,27 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "obliterate", "Megsemmisítés", 20, SpellCostType.HUNGER, 3)
                 .target(4.5D).damage(8.0D)
                 .particle(Particle.CRIT, 20).sound(Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0F, 0.6F)
+                .build());
+        // --- SZENTSÉGTELEN (Unholy DK — DARK-kapus spec) ---
+        registry.register(ConfiguredSpell.builder(mm, "festering_strike", "Gennyes Csapás", 22, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(6.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 18).sound(Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "outbreak", "Járvány", 45, SpellCostType.XP, 40)
+                .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
+                .particle(Particle.SPORE_BLOSSOM_AIR, 30).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.8F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "death_coil", "Halálörvény", 30, SpellCostType.HEALTH, 3)
+                .target(6.0D).damage(7.0D)
+                .particle(Particle.SOUL, 25).sound(Sound.ENTITY_WITHER_SHOOT, 0.7F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "grip_of_the_dead", "A Holtak Szorítása", 40, SpellCostType.XP, 35)
+                .aoe(4.5D).damage(2.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 2)
+                .particle(Particle.SOUL_FIRE_FLAME, 30).sound(Sound.BLOCK_SOUL_SAND_BREAK, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "epidemic", "Ragály", 75, SpellCostType.XP, 50)
+                .aoe(6.0D).damage(5.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 45).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CONVERTED, 0.8F, 0.5F)
                 .build());
         registry.register(ConfiguredSpell.builder(mm, "frost_strike", "Fagycsapás", 25, SpellCostType.HUNGER, 3)
                 .target(5.0D).damage(6.0D).freeze(40)

@@ -333,7 +333,8 @@ public final class IceSMPCore {
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
-        factionManager.setSeasonManager(seasonManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
+        factionManager.setSeasonManager(seasonManager);
+        questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
 
         this.territoryManager = new TerritoryManager(plugin);
         this.blockRegenService = new BlockRegenService(plugin, configManager);
@@ -1313,7 +1314,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SitListener(sitManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateListener(crateManager, crateKeyFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateSpinGUIListener(), plugin);
-        pluginManager.registerEvents(new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext), plugin);
+        final JobGUIListener jobGUIListener = new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext);
+        jobGUIListener.setFactionManager(factionManager);
+        pluginManager.registerEvents(jobGUIListener, plugin);
         pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new MarketDeliveryListener(marketManager, messageManager), plugin);

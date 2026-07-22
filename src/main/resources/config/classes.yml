@@ -3,6 +3,10 @@
 # Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.
 # A spell-unlocks térkép szerint a kaszt adott szintjén a varázslat automatikusan feloldódik.
 classes:
+  # Kapcsolható mód: true esetén a Halállovagot csak Kitaszított választhatja
+  # (a már meglévő nem-DARK DK-kat nem érinti). Élő kulcs.
+  death-knight:
+    dark-only: false
   xp:
     hostile-only: true
     # Rebalansz: a spec-spellek a 25-45. szinten oldódnak fel, ezért a leveling
@@ -357,6 +361,16 @@ specializations:
       bonestorm: 39
       dancing_rune_weapon: 45
   # Fagylovag (Frost): a Halállovag fagyos sebző specje.
+  unholy:
+    # DARK-kapus spec (a Nekromanta mintája): csak Kitaszított + örök bűnös veheti fel.
+    spell-unlocks:
+      festering_strike: 25
+      outbreak: 27
+      raise_ghoul: 30
+      death_coil: 33
+      grip_of_the_dead: 36
+      epidemic: 39
+      army_of_the_dead: 45
   frost:
     spell-unlocks:
       obliterate: 25
@@ -710,6 +724,14 @@ talents:
         requires-talent: "vitality"
         effect: "max-health"
         per-rank: 3.0
+        max-rank: 3
+      unholy_bond:
+        display-name: "Szentségtelen Kötelék"
+        tier: 3
+        requires-spec: "unholy"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
         max-rank: 3
       frost_edge:
         display-name: "Fagyél"

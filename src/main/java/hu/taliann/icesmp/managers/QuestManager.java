@@ -266,6 +266,12 @@ public final class QuestManager implements PersistentStore {
             "type", "count", "entity-type", "min-mob-level", "materials",
             "territory", "level", "npc", "course", "biome", "description");
 
+    private volatile SpecializationManager specializationManagerRef;
+
+    public void setSpecializationManager(final SpecializationManager specializationManager) {
+        this.specializationManagerRef = specializationManager;
+    }
+
     public synchronized String setCustomQuestField(final String questId, final String field, final String rawValue) {
         if (!isCustomQuest(questId)) {
             return "quest-admin-not-custom";
@@ -1619,6 +1625,18 @@ public final class QuestManager implements PersistentStore {
         // The penance chain's final mercy: even the dark pact can be broken.
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
             sinManager.breakDarkPact(player);
+            // A DARK-kapus spec (Nekromanta, Szentségtelen, jövőbeliek) nem élhet tovább
+            // a paktum nélkül — a vezeklés a specet is elengedi (a kaszt marad).
+            final SpecializationManager specs = this.specializationManagerRef;
+            if (specs != null) {
+                final hu.taliann.icesmp.data.SpecializationType current = specs.getClassSpecialization(player);
+                if (current != null && (current.getRequiredFaction() == hu.taliann.icesmp.data.FactionType.DARK
+                        || current.requiresSinner())) {
+                    specs.resetClassSpecialization(player);
+                    player.sendMessage(messageManager.getMessage("penance-spec-reset",
+                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott. Új utat választhatsz.</yellow>"));
+                }
+            }
         }
     }
 

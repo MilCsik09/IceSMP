@@ -1876,3 +1876,15 @@ Jó tesztelést! ❄️
       blokkot "sérthetetlenné"; dupla-törmelék nincs claim+territórium átfedésnél.
 - [ ] **Terhelés-javítások:** O(1) dedupe + periodikus pajzs/history-seprés — 100 TNT-s
       lánc alatt mérendő a TPS (playtest-pont).
+
+## Szentségtelen (Unholy) DK-spec + DARK-kaszt kapcsoló (tulaj-kérés, 2026-07-22)
+- [ ] **Unholy spec:** csak Kitaszított + bűnös veheti fel (Nekromanta-minta);
+      spelljei 25-45: Gennyes Csapás, Járvány, Ghúl-szolga (2 husk-minion),
+      Halálörvény (vér-áras), A Holtak Szorítása, Ragály, A Holtak Serege (6 minion
+      ulti) + Szentségtelen Kötelék tier3 talent.
+- [ ] **Vezeklés-reset:** a vezeklés-lánc záró jutalma a DARK-kapus specet
+      (Nekromanta/Szentségtelen) automatikusan elengedi (a kaszt marad, üzenettel);
+      nem-DARK-spec játékosnál nem történik semmi.
+- [ ] **classes.death-knight.dark-only [false]:** true-ra állítva ÚJ Halállovagot
+      csak Kitaszított választhat (magyarázó üzenet); meglévő nem-DARK DK-t nem érint;
+      false-on a régi működés.
