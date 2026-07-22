@@ -4,8 +4,8 @@
 > quest-konzisztencia • spell/kaszt-balansz • szakmák+itemek+relikviák • claim/grief-védelem •
 > Folia-konkurrencia • GUI/parancs/UX • talent/spec/erőforrás • perzisztencia/restart •
 > integrációs hidak • teljesítmény (50-60 fő). A számok config-ellenőrzöttek; a kiemelt
-> leleteket kézzel is visszaellenőriztük a kódban. Az előző audit (P-gameplay-audit.md)
-> leleteit nem ismétli. Státusz: MINDEN lelet tulaj-döntésre vár.
+> leleteket kézzel is visszaellenőriztük a kódban. Az előző (P1) audit mind a 15 lelete lezárult
+> (részletek a git-történetben); ez a doksi az élő audit, helyben frissül. Státusz: MINDEN lelet tulaj-döntésre vár.
 
 ## 🔴 Strukturális leletek
 

@@ -3,10 +3,9 @@
 Ez az **egyetlen előre néző terv-dokumentum**. A megvalósult állapotot a
 [README.md](README.md) és a [PLAYER_GUIDE.md](PLAYER_GUIDE.md) írja le, az architektúrát a
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a tesztelést a [PLAYTEST.md](PLAYTEST.md).
-A kötetlen ötlet-gyűjtő a [docs/IDEAS.md](docs/IDEAS.md) (index — 316 kidolgozott tétel
-10 kategória-fájlban a `docs/ideas/` alatt, munka/érték becsléssel),
-a technikai adósság a [docs/ideas/O-refaktor.md](docs/ideas/O-refaktor.md) — ami onnan
-zöld utat kap, ide kerül tervezett tételként.
+A kötetlen ötlet-gyűjtő a [docs/ideas/BACKLOG.md](docs/ideas/BACKLOG.md) (konszolidált,
+319 nyitott tétel munka/érték becsléssel, a technikai adósság az O-szekcióban) — ami
+onnan zöld utat kap, ide kerül tervezett tételként.
 (A korábbi terv-doksik — ideas.md, todo.md, CONTENT-PLAN, DEPTH-ROADMAP, a fázis-napló —
 megvalósultak és törölve lettek; a még nyitott pontjaik itt élnek tovább.)
 
