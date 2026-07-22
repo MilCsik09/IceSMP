@@ -1,6 +1,6 @@
 # P2 — Teljes gameplay-audit, 2. kör (2026-07-21, 14 szempont, több-agentes mélyvizsgálat)
 
-> 14 párhuzamos szempont: játékos-életút • gazdaság • frakció/PvP • világesemények+loot •
+> 18 párhuzamos szempont (14 fő + 4 záró): játékos-életút • gazdaság • frakció/PvP • világesemények+loot •
 > quest-konzisztencia • spell/kaszt-balansz • szakmák+itemek+relikviák • claim/grief-védelem •
 > Folia-konkurrencia • GUI/parancs/UX • talent/spec/erőforrás • perzisztencia/restart •
 > integrációs hidak • teljesítmény (50-60 fő). A számok config-ellenőrzöttek; a kiemelt
@@ -206,15 +206,96 @@
 - **4 territory-id:** `dark-capital`, `erdei-szentely`, `karhozat-kapuja`, `radicora` —
   egyik sincs még kijelölve, mind /territory admin-eszközzel készítendő.
 
-## Javasolt javítási sorrend (tulaj-döntésre)
+## FÜGGELÉK — Záró kör (15-18. szempont: mellék-rendszerek, szezon-életciklus,
+## lore-kánon, doksi↔config)
+
+### 🔴 Új strukturális leletek
+
+20. **Párbaj pár-invariáns megtörhető.** A kihívó több párhuzamos függő kihívása közül a
+    második elfogadás felülírja az elsőt az active-mapben — az első célpont egy már nem
+    élő párbajra hivatkozva bűn/vérdíj-mentesen ölhet. → challenge() tiltsa a több
+    kimenő pendinget, vagy accept() ellenőrizze újra az aktív állapotot.
+21. **A céh funkció nélküli váz.** A kassza egyirányú (deposit van, withdraw/felhasználás
+    SEHOL), a céh-szint csak taglétszám-plafont emel — se perk, se kedvezmény, se
+    integráció (egyetlen külső hívó a quest-XP). A 250-es alapítási díj után a rendszer
+    semmit nem ad. A legerősebb "sziget" a kódbázisban. → kassza-felhasználási út +
+    legalább egy szint-kötött előny, vagy őszinte kivezetés.
+22. **A parkour korlátlan pénz-faucet, anti-cheat nélkül.** Nincs per-pálya cooldown/napi
+    limit (start→cél→start ciklus azonnali veret-kifizetéssel ismételhető), és a cél-check
+    csak távolságot néz — pearl/elytra/mobilitás-spell bejárás nélkül célba visz.
+    → napi limit + mobilitás-tiltás futás alatt (checkpoint-lánc).
+23. **A szezon-jutalom winner-takes-all.** A 2-4. helyezett frakció SEMMIT nem kap, még
+    záró-broadcastot sem — 60 nap liga-munka a mezőny 3/4-ének nulla visszajelzéssel
+    zárul. → lépcsőzetes jutalom (pl. fél/negyed kassza a 2-3. helynek) + záró-összegző
+    broadcast mindenkinek.
+24. **A kazamata kód-szinten üres héj.** A kulcs-kapu és a +5 mob-szint működik, de nincs
+    dungeon-specifikus loot/boss/szoba-logika — a kapu mögött admin-építés nélkül csak
+    "erősebb mobokkal teli üres tér" van. → dungeon-loot/boss bekötése VAGY explicit
+    jelzés az építész-doksiban, hogy a belső tartalom 100%-ban kézi.
+
+### 🟡 Új érdemi leletek
+
+- **Szezonális quest-azonosító instabil:** a currentSeasonId az élő getSeasonEndMillis-re
+  épül — egy length-days állítás szezon közben újranyitja az összes teljesített
+  szezonális questet. → getSeasonNumber()-re váltás. (A rollover-mag egyébként
+  megbízható: offline átfordulást pótol, dupla-rollover kizárt, a bajnok-megállapítás
+  a nullázás előtt fut.)
+- **Párbajos bűn-mosás:** önként vesztő szövetségessel heti 2 bűn-tisztítás kockázat
+  nélkül → min. harc-idő/sebzés feltétel (ugyanaz a fék, mint a hadi-ablak win-trade-re).
+- **Régészet "első kattintó visz mindent"** — a runner-up minta (HiddenSpot
+  repeat-reward-ratio) átvehető; ráadásul a lelőhely mindig egy véletlen játékos 80
+  blokkos körzetében spawnol, és csak 160 blokkon belül hirdet — a horgony-játékos
+  szisztematikus előnyben. → megosztott jutalom + szórtabb spawn.
+- **Rejtett helyek: a config üres** (hidden-spots.spots: {}) — a rendszer kész, de
+  tartalom nélkül néma. VILÁGÉPÍTŐ-CHECKLIST tétel.
+- **Közösségi célok sosem nullázódnak szezonváltáskor** (inkonzisztens a többi rendszer
+  szezon-modelljével) → döntés + dokumentálás.
+- **Kazamata-belépés fejenként külön kulcs** (5 fős céh-túra = 5 kulcs, nincs
+  csoport-mód) → megfontolandó kedvezmény; **kém-akciót bármely globális raid blokkol**
+  (nem csak az érintett frakcióké); **ambient-jutalomnak nincs napi capje** (kicsi, de
+  elvi következetlenség); **addPoints/rollover verseny** őr nélkül (60 naponta pár pont
+  kockázat); **bajnok-jutalom nem skálázódik létszámmal**; **parkournak nincs
+  ranglistája** (best-time nem perzisztált); **honvágy-büntetés gyakorlatilag
+  érzékelhetetlen** (10s Hunger 0 / 5 perc — ha szándékos, dokumentálni).
+
+### 🟡 Doksi-lemaradások (a "second-wave" rendszereket a magas szintű doksik nem követték)
+
+- **02-frakciok "🔜 Suttogók (tervezett)" szekció** — a rendszer TELJESEN él; a jelölés
+  törlendő, a tényleges mechanika leírandó. (A Guides-oldali példányon is!)
+- **README elavult DARK-belépés** ("Mételytépő bélyegez bűnössé" — valójában a 4-bűnös
+  számláló; a Mételytépő ma már csak fegyver).
+- **Zóna-típusok: 4-ként dokumentálva, valójában 6** (DOOM_GATE, DUNGEON hiányzik a
+  README-ből, AGENTS-ből, a 14-parancsok territory-típuslistájából; az AGENTS.md 15-16.
+  sora önellentmondó).
+- **README "120+ recept" → valójában 410**; **01-kezdes a kikapcsolt /currency pay-t
+  élőként ajánlja**; **PLAYER_GUIDE linklistájából és szövegéből teljesen hiányzik a
+  16-kazamatak oldal**.
+
+### 🟢 Lore-kánon: NULLA törés
+
+A név-kánon (Thanaopolis/Radicora/Olethropyla/Mortengrad-items-only) gépi ellenőrzésen
+hibátlan; idővonal és frakció-attribúciók mindenhol helyesek; a LORE.md tisztaság-szabálya
+áll. Két referencia-rés: a Vének Tanácsa és a hadi-ablak hiányzik a LORE_REFERENCE
+lore→mechanika táblájából (+ zone-ramp fél mondat) — pótlandó.
+
+### Világépítő-checklist kiegészítés
+
+- **Rejtett helyek feltöltése** (world.yml hidden-spots.spots — jelenleg üres) és
+  **kazamata-belsők megépítése + loot-elhelyezés** (a kapu mögött nincs generált tartalom).
+
+## Javasolt javítási sorrend (tulaj-döntésre; a függelék-leletekkel egyesítve)
 
 1. **Azonnali kód-patchek (kicsik, egyértelműek):** #1 DARK-kapu, #2 bounty-reset-cooldown,
    #12 admin.item jog, #10 giver-npc 2 questre, #17 ascendant, #11 reload-race (2 osztály),
-   #13 load/save try/catch, NEUTRAL dupla-heti szétválasztás, unique-smelt-védelem.
+   #13 load/save try/catch, NEUTRAL dupla-heti szétválasztás, unique-smelt-védelem,
+   #20 párbaj-invariáns, #22 parkour-limit, szezonális quest-id stabilizálás,
+   LORE_REFERENCE + doksi-lemaradások (Suttogó 🔜 törlése, README-javítások).
 2. **Kis-közepes patchek:** #4 claim entity-védelem, #5 kultista race, #14 autosave +
-   raid-lezárás, #7 soulstone-cap, combat-tag, #19 tablist/HUD optimalizálás.
+   raid-lezárás, #7 soulstone-cap, combat-tag, #19 tablist/HUD optimalizálás,
+   #23 lépcsőzetes szezon-jutalom, régészet runner-up, párbaj/hadi-ablak harc-feltétel.
 3. **Design-döntést igényel:** #3 raid-cél (fővárosi ostrom-modell), #6 invázió/kultista
    loot, #8 árfolyam-kalibráció, #15-16 spell-sapkák + CC-DR, End-portál, Suttogó
-   witness-hurok, király-trónfosztás, tanács-keret modell.
+   witness-hurok, király-trónfosztás, tanács-keret modell, #21 céh-tartalom (vagy
+   kivezetés), #24 kazamata-loot modell, közösségi célok szezon-viselkedése.
 4. **Playtest-mérés (nem kód):** tablist/worldEventsTask/petTask időzítés 50-60 fővel;
    Íjász/Orgyilkos valós DPS (a papír-metrika vak a DoT/vanília rétegre).
