@@ -99,27 +99,34 @@ public final class BlockRegenService implements PersistentStore {
         if (block.getType() == org.bukkit.Material.TNT) {
             return false;
         }
+        if (isQueued(block)) {
+            return true; // már sorban áll (pl. robbanás + fizika-esemény dupla-jelzése)
+        }
         if (block.getState() instanceof TileState) {
             if (!isTileEntityExplodeEnabled()) {
                 return false;
             }
-            // Kapcsolható NBT-út: konténer-tartalom és tábla-szöveg pillanatképpel.
-            String extra = null;
-            final org.bukkit.block.BlockState state = block.getState();
-            if (state instanceof org.bukkit.block.Container container) {
-                final org.bukkit.inventory.ItemStack[] contents = container.getInventory().getContents();
-                extra = "inv:" + java.util.Base64.getEncoder().encodeToString(
-                        org.bukkit.inventory.ItemStack.serializeItemsAsBytes(contents));
-                container.getInventory().clear(); // a robbanás ne szórja ki a tartalmat
-            } else if (state instanceof org.bukkit.block.Sign sign) {
-                final java.util.List<String> lines = new ArrayList<>();
-                for (final net.kyori.adventure.text.Component c
-                        : sign.getSide(org.bukkit.block.sign.Side.FRONT).lines()) {
-                    lines.add(net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(c));
-                }
-                extra = "sign:" + String.join("\u0001", lines);
-            } else {
-                return false; // fej/zászló/spawner: NBT-je nem támogatott — rúna-védett marad
+            // Generikus NBT-út: 1x1x1 struktúra-pillanatkép — a blokk TELJES NBT-jét
+            // viszi (láda/shulker-tartalom, tábla-szöveg, fej-textúra, zászló-minta,
+            // spawner-beállítás, lektorna-könyv…), verziófüggetlen szerializálással.
+            final String extra;
+            try {
+                final org.bukkit.structure.Structure snap = Bukkit.getStructureManager().createStructure();
+                snap.fill(block.getLocation(), new org.bukkit.util.BlockVector(1, 1, 1), false);
+                final java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                Bukkit.getStructureManager().saveStructure(bytes, snap);
+                extra = "nbt:" + java.util.Base64.getEncoder().encodeToString(bytes.toByteArray());
+            } catch (final java.io.IOException | RuntimeException ex) {
+                plugin.getLogger().warning("Tile-entity pillanatkép hiba (" + block.getType() + "): " + ex);
+                return false; // pillanatkép nélkül inkább rúna-védelem, mint adatvesztés
+            }
+            // A robbanás ne szórja ki a tartalmat: a pillanatkép UTÁN kiürítjük.
+            // Dupla ládánál CSAK a saját fél ürülhet — a getInventory() a közös
+            // inventoryt adná, és a túlélő fél tartalma is elveszne.
+            if (block.getState() instanceof org.bukkit.block.Chest chest) {
+                chest.getBlockInventory().clear();
+            } else if (block.getState() instanceof org.bukkit.inventory.InventoryHolder holder) {
+                holder.getInventory().clear();
             }
             queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
                     block.getBlockData().getAsString(), extra, System.currentTimeMillis() + delayMillis));
@@ -128,6 +135,18 @@ public final class BlockRegenService implements PersistentStore {
         queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
                 block.getBlockData().getAsString(), null, System.currentTimeMillis() + delayMillis));
         return true;
+    }
+
+    /** Pozíció-alapú dedupe: ugyanaz a blokk nem kerülhet kétszer a sorba. */
+    private boolean isQueued(final Block block) {
+        final String w = block.getWorld().getName();
+        for (final Entry e : queue) {
+            if (e.x() == block.getX() && e.y() == block.getY() && e.z() == block.getZ()
+                    && e.world().equals(w)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Tile-entity robbanás (NBT-pillanatképpel) — alapból KI, a rúna-védelem él. */
@@ -251,6 +270,17 @@ public final class BlockRegenService implements PersistentStore {
     /** A tile-entity pillanatkép visszatöltése (konténer-tartalom / tábla-szöveg). */
     private void restoreExtra(final Block block, final String extra) {
         if (extra == null) {
+            return;
+        }
+        if (extra.startsWith("nbt:")) {
+            try {
+                final org.bukkit.structure.Structure snap = Bukkit.getStructureManager().loadStructure(
+                        new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(extra.substring(4))));
+                snap.place(block.getLocation(), false, org.bukkit.block.structure.StructureRotation.NONE,
+                        org.bukkit.block.structure.Mirror.NONE, 0, 1.0F, new java.util.Random());
+            } catch (final java.io.IOException | RuntimeException ex) {
+                plugin.getLogger().warning("Tile-entity visszaállítás hiba: " + ex);
+            }
             return;
         }
         final org.bukkit.block.BlockState state = block.getState();

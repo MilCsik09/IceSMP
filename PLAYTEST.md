@@ -1814,3 +1814,12 @@ Jó tesztelést! ❄️
 - [ ] **Támasz-teszt:** homok/kavics fal + fáklyás fal robbantása → visszaépüléskor SEMMI
       nem esik le és nem pattan le: a gravitációs blokk megvárja az alapját, a fáklya a
       falát (support-grace-seconds [120] után kényszer-visszaépítés).
+
+## Regen 4. kör: teljes tile-entity NBT + rendszer-átvizsgálás (2026-07-22)
+- [ ] **Teljes NBT-kör** (tile-entity-explode: true): fej (textúrás!), zászló (mintás),
+      spawner, lektorna+könyv, shulker-tartalom, díszcserép robbanása után MINDEN adat
+      pontosan visszatér; robbanáskor semmi tartalom nem szóródik ki.
+- [ ] **Dupla láda:** a robbanás csak az egyik felet éri → a TÚLÉLŐ fél tartalma
+      érintetlen marad; a robbant fél visszaépülve a saját tartalmával tér vissza.
+- [ ] **Dedupe:** robbanás + fizika-esemény ugyanarra a blokkra → a blokk EGYSZER áll
+      vissza (nincs dupla sor-bejegyzés).

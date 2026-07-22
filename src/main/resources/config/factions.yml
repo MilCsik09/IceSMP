@@ -289,10 +289,10 @@ territory:
         always-delay-seconds: 120
       # Visszaépüléskor blokkonkénti lerakás-hang + porfelhő (anyag-hű "gyógyulás").
       restore-effects-enabled: true
-      # Tile-entity (láda, kemence, tábla) robbanása NBT-pillanatképpel: a tartalom/
-      # szöveg a visszaépüléskor pontosan visszatér. Alapból KI — ilyenkor a
+      # Tile-entity robbanása TELJES NBT-pillanatképpel (struktúra-alapú): láda/shulker-
+      # tartalom, tábla-szöveg, fej-textúra, zászló-minta, spawner-beállítás — minden
+      # pontosan visszatér a visszaépüléskor, restart-biztosan. Alapból KI — ilyenkor a
       # tile-entity "óvó rúnák" effekttel sértetlenül túléli a robbanást.
-      # (Fej/zászló/spawner NBT-je nem támogatott: azok bekapcsolva is rúna-védettek.)
       tile-entity-explode: false
       debris-enabled: true
       # A kirobbant blokkok ennyi %-a válik repülő törmelékké (100 = MIND repül).
