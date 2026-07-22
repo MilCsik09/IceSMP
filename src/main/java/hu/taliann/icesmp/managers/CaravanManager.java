@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Merchant caravan world event (ROADMAP economy: "kereskedő-karaván esemény").
+ * Merchant caravan world event.
  * Periodically a travelling merchant arrives at one of the configured stops (or,
  * if none are set, near a random online player), stays for a limited window and
  * then departs. While it is in town, right-clicking the merchant opens a special

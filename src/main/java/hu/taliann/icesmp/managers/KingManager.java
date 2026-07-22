@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Faction kings and elections (ideas.md: "Királyok és választás").
+ * Faction kings and elections.
  * Every non-excluded faction elects a king by simple plurality: members vote
  * with /faction king vote; whoever reaches the configured minimum vote count
  * and leads the tally is crowned. Votes reset when the configured term

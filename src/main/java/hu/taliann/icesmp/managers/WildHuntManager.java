@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Wild Hunt world event (ROADMAP "élőbb világ", harci variáns): periodically a
+ * Wild Hunt world event: periodically a
  * single named, level-scaled elite beast roams in near a random adventurer — a
  * roaming mini-threat between the invasion swarms and the world bosses. Slaying it
  * drops a rare loot table (raw items, never currency) and announces the hunter; if

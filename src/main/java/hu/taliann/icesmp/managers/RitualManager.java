@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Ritual altars (ideas.md "Rituálé-oltárok"): each altar is a multi-block shrine.
+ * Ritual altars: each altar is a multi-block shrine.
  * Sneak-right-clicking the altar's core block validates the surrounding structure
  * (if configured) and, given the required sacrifices, consumes them and grants an
  * outcome chosen by the ritual's {@code type}:

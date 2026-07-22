@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Parkour / trial courses (ROADMAP phase 12): admins lay out a course in the world
+ * Parkour / trial courses: admins lay out a course in the world
  * and register its start + finish; players run it timed, and finishing pays a
  * reward. Courses persist in parkour.yml. (The obstacles themselves are built
  * in-world — this is the tracking/reward framework.)

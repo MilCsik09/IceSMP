@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Meteor impact world event (ROADMAP "élőbb világ", felfedező-ág): periodically a
+ * Meteor impact world event: periodically a
  * meteor lands in the wilderness, leaving a small crater studded with rare, mineable
  * ore blocks that players race to strip before it erodes away. The reward is the ore
  * they mine — raw items, never currency.

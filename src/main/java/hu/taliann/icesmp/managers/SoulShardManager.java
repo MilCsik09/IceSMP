@@ -20,7 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Map;
 
 /**
- * Necromancer soul-shard resource (ideas.md "Nekromanta lélek-erőforrás").
+ * Necromancer soul-shard resource.
  * Necromancer-spec players accumulate soul shards from kills (stored in player
  * PDC); shards are spent to raise a buffed Wither Skeleton champion through the
  * minion framework — a stronger payoff than the regular timed summons.

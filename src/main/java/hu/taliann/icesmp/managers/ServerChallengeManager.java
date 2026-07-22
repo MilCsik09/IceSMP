@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Collective server challenge (ROADMAP "élőbb világ"): periodically the whole
+ * Collective server challenge: periodically the whole
  * server is handed one timed, shared goal — slay, mine or harvest a target count
  * <em>together</em> — tracked on a boss bar everyone sees. Meet it in time and
  * every online player is rewarded (XP + a raw-item pack, never currency); miss it

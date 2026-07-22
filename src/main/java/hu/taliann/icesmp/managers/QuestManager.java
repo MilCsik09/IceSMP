@@ -32,7 +32,7 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * Config-driven quest framework (ideas.md "Quest-keretrendszer"): quest
+ * Config-driven quest framework: quest
  * definitions live under 'quests.<id>' in config.yml, player progress lives in
  * PDC. Quests gate content (the necromancer initiation), reward progression
  * (class trials) and offer the only way back from the dark pact (the penance
@@ -1545,7 +1545,7 @@ public final class QuestManager implements PersistentStore {
      * accept-blockers, so requirement mismatches or an already-active/completed
      * next link simply skip silently). Used by story sequences that shouldn't
      * need an NPC visit or territory crossing between every link — e.g. the
-     * first-join onboarding chain (ROADMAP A5).
+     * first-join onboarding chain.
      */
     private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
         final String next = completedQuest.getString("next");

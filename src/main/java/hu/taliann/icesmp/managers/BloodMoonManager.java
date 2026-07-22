@@ -10,7 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Blood moon nights (ideas.md "Vérhold-éjszaka"): rarely, a night turns into a
+ * Blood moon nights: rarely, a night turns into a
  * blood moon — every scaled mob spawns with bonus levels and soulstone drops
  * multiply. The tick runs on the global region scheduler, which owns the
  * day-night cycle on Folia, so reading world time here is thread-correct.

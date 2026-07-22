@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Abundance (Bőség-idő) world event — the calm, restorative counterpart to the
- * blood moon (ROADMAP "élőbb világ"). While the window is open, crops grow faster,
+ * blood moon. While the window is open, crops grow faster,
  * animals occasionally bear twins, fewer hostile mobs spawn naturally, and a gentle
  * regeneration pulse washes over everyone online. It never touches terrain and adds
  * no currency — only comfort and a little extra farm/food yield.

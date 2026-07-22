@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Caravan escort world event (ROADMAP "élőbb világ", kooperatív harci ág): a
+ * Caravan escort world event: a
  * merchant convoy sets out toward a destination while monster waves harry it —
  * nearby players must keep the pack animal alive until it arrives. Success drops
  * a shared loot table at the destination and unlocks the caravan shop's bonus

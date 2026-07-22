@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Raid system (ideas.md "Raid eventek", deepened per ROADMAP "Raid-mélyítés"):
+ * Raid system:
  * a faction king declares a raid against another faction for an entry fee paid
  * from the treasury, optionally bound to one of the defender's territory claims
  * (default: their capital).

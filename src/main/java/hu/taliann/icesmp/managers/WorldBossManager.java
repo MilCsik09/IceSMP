@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * World bosses (ideas.md "Világ-bossok"): periodically a boss-grade guardian
+ * World bosses: periodically a boss-grade guardian
  * spawns near a random adventurer. Slaying it rewards the killer's faction
  * treasury, grants league points and buffs the slayer. The spawn attempt is
  * rolled on the global world-events tick, but the actual entity spawn runs on

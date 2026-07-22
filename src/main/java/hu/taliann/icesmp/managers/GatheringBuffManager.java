@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Gathering buff windows (ROADMAP "élőbb világ"): time-limited, server-wide
+ * Gathering buff windows: time-limited, server-wide
  * bonus periods that reward the everyday grind without touching the economy —
  * only raw materials and XP, never currency. Each window is one of a handful of
  * flavours; while it is open the {@link hu.taliann.icesmp.listeners.GatheringBuffListener}

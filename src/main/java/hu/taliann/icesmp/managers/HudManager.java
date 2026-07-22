@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Live player HUD (ROADMAP phase 1): a sidebar scoreboard (faction, currency,
+ * Live player HUD: a sidebar scoreboard (faction, currency,
  * class + level, active event), faction-coloured tab-list names, and shared
  * boss-bars for the raid / blood moon / world boss. Refreshed on a ~1s tick.
  *

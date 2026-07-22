@@ -29,13 +29,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * Player market (ideas.md "Piaci tábla / aukciósház"): sellers list the item
+ * Player market: sellers list the item
  * held in hand for a price in a chosen currency; buyers purchase from the
  * market GUI using bank balances. A configurable fee burns on every sale
  * (money sink), and player-to-player trade moves currency supply — feeding
  * the dynamic exchange rates. Listings persist to market.yml.
  *
- * <p>Auction listings (ROADMAP "Valódi aukciósház") extend the same store:
+ * <p>Auction listings extend the same store:
  * bids are escrowed from the bidder's bank immediately, an overbid refunds
  * the previous bidder, and {@link #tickAuctions()} settles expired auctions —
  * the winner's escrowed bid pays the seller (minus the market fee) and the

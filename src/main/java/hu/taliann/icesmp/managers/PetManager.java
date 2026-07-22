@@ -29,8 +29,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Companion pets for the Beast Master and Necromancer (ROADMAP phase 12 + capture
- * extension). The pet can be ANY mob, obtained with a spec-specific capture item:
+ * Companion pets for the Beast Master and Necromancer. The pet can be ANY mob,
+ * obtained with a spec-specific capture item:
  * the Beast Master tames any non-hostile animal, the Necromancer binds any hostile
  * mob / undead. The pet's type, level, XP and name persist in the player's PDC and
  * re-apply on summon. Tameable pets follow via vanilla; the rest are kept near the

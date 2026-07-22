@@ -10,7 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Tracks each player's favorite spells (ideas.md A4) directly in their PDC as a
+ * Tracks each player's favorite spells directly in their PDC as a
  * comma-separated spell-id list under the "favorite_spells" key. Only ever touched
  * from the owning player's own thread (spellbook GUI clicks), so no in-memory
  * UUID-keyed cache — and therefore no session cleanup — is needed.

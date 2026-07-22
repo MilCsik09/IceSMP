@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The four faction elytra relics (ideas.md "4 frakció – 4 elytra relikvia"):
+ * The four faction elytra relics:
  * - phoenix_wing (RED): fire/lava immunity while worn; falls end in a flame burst
  * - frost_wing (BLUE): freeze immunity; taking flight freezes nearby enemies
  * - wander_wind (NEUTRAL): no fall damage; taking flight grants a wind boost

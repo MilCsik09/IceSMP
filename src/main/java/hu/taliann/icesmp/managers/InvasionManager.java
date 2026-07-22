@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Invasion events (ROADMAP phase 9): periodically (or on admin command) a wave
+ * Invasion events: periodically (or on admin command) a wave
  * of scaled monsters spawns around a random player — a dangerous swarm that
  * rewards via the normal scaled-mob XP and soulstone drops. The spawn runs on
  * the target region's thread (Folia-safe).

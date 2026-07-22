@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Ambient world events (ROADMAP "élőbb világ"): infrequent, small, atmospheric
+ * Ambient world events: infrequent, small, atmospheric
  * happenings that make the world feel alive without touching balance or the
  * economy. Each firing picks one <em>enabled</em> flavour at random, checks
  * that flavour's environmental gate (time of day / weather) against the main

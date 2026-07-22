@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Daily quests (ROADMAP phase 8): a small pool of objectives that rotates once
+ * Daily quests: a small pool of objectives that rotates once
  * per day. Everyone shares the same daily (deterministic by day index); progress
  * and completion are tracked per player in PDC and reset when the day changes.
  * Completing it auto-pays a currency reward.

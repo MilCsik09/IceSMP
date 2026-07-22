@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Periodic economy events (ideas.md "Heti gazdasági esemény"): a random
+ * Periodic economy events: a random
  * "demand shock" temporarily multiplies one currency's base value in the
  * dynamic exchange model — a trading opportunity for attentive players.
  * State survives restarts via economy-event.yml; the tick runs on the global

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Seasonal league (ideas.md "Szezonális liga"): factions earn points from raid
+ * Seasonal league: factions earn points from raid
  * victories and world boss kills over a configurable season. When the season
  * ends, the leading faction is crowned champion and its treasury receives the
  * season reward; points reset and a new season begins. State persists to

@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MinionManager {
 
-    /** Pet stances cycled by the owner (ideas.md "Pet parancsok"). */
+    /** Pet stances cycled by the owner. */
     public enum Stance {
         ACTIVE,   // attacks enemies (default)
         PASSIVE,  // keeps its AI but never picks a target

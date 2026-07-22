@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Treasure hunt world event (ROADMAP "élőbb világ", felfedező-ág): periodically a
+ * Treasure hunt world event: periodically a
  * marked treasure chest appears near a random adventurer and its rough location is
  * broadcast — the first player to reach and open it claims the loot, then it
  * vanishes. The reward is a config loot table of raw items, never currency.

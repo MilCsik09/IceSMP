@@ -18,7 +18,7 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * First-join intro sequence (ideas.md "Első belépés videó"): a vanilla-friendly
+ * First-join intro sequence: a vanilla-friendly
  * emulation of an intro cutscene — a timed sequence of title cards with sound,
  * scheduled on the joining player's own scheduler (Folia-correct). Plays once
  * (tracked by the 'intro_seen' PDC flag); admins can replay it.

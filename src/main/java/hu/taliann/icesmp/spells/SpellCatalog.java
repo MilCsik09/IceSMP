@@ -80,7 +80,7 @@ public final class SpellCatalog {
     }
 
     /**
-     * Spells granted by ACTIVE talents (ROADMAP phase 2), not by class level — so
+     * Spells granted by ACTIVE talents, not by class level — so
      * they are only obtainable through the talent tree (e.g. the 'ascendant'
      * capstone). Available to any class once the talent is taken.
      */

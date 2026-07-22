@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Profession recipes (ROADMAP phase 10): themed, PDC-tagged "masterwork" items
+ * Profession recipes: themed, PDC-tagged "masterwork" items
  * that only a player with the right profession at a high enough level can craft.
  * The recipe is always discoverable, but {@code ProfessionRecipeListener} clears
  * the result unless the crafter meets the requirement — so the professions

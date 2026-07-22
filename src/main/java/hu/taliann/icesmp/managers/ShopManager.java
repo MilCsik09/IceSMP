@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Faction shop NPCs (ROADMAP economy: "frakció-bolt NPC-k" money sink):
+ * Faction shop NPCs (money sink):
  * config-driven vendors bound to a FancyNpcs NPC. Right-clicking a shop NPC
  * opens a buy GUI; purchases deduct the price from the player's bank balance
  * and the currency is BURNED (never credited anywhere) — a pure money sink
