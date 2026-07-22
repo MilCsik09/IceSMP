@@ -15,6 +15,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Nincs teszt-suite; az ellenőrzés = hibátlan fordítás + kézi playtest (`PLAYTEST.md`).
 - Sandboxban, ahol a Gradle nem éri el a repókat: `javac`-kal fordíts a cache-elt szerver-libek ellen (`run/libraries`), vagy ha az sincs, `javac -sourcepath src/main/java` futtatással szűrd ki, hogy minden hiba külső függőségből jön-e (Bukkit/Adventure „cannot find symbol" elfogadható, minden más nem; ismert baseline-műtermék: 2×"does not override" a gui/*Holder-ben). **Push előtt mindig fordítás-ellenőrzés.**
 - Sandbox-buktatók: a magyar „idézőjelek" Java- ÉS Python-stringben is törnek (Java-ban ” zárójelet használj, Pythonban aposztrófos stringet); a cwd Bash-hívások közt visszaáll (`cd /home/user/IceSMP` mindig); minden YAML-szerkesztés után `python3 -c "import yaml; yaml.safe_load(...)"` ellenőrzés.
+- **Gépi drift-ellenőrzés — push előtt KÖTELEZŐ:** `python3 scripts/check_consistency.py`
+  (YAML-ok, quest-hivatkozások, CMD-regiszter, jog-node-regisztráció, /menu célok,
+  tükör-drift). FAIL-lel nem pushol­unk; a WARN-okat vagy javítjuk, vagy indokoljuk a
+  commit-üzenetben. Ha új drift-osztály derül ki (audit talál olyat, amit kézzel kellett
+  észrevenni), a scriptet BŐVÍTENI kell, ne csak a hibát javítani.
 - **Tükör-repo (IceSMPGuides):** a docs egy része a `MilCsik09/IceSMPGuides` repóba is átmásolandó minden változtatásnál. Térkép: `PLAYTEST.md` ↔ gyökér; `docs/player-guide/NN-*.md` ↔ gyökér számozott fájlok (FIGYELEM: a Guides-oldali példányokon 🔜 tesztelői jelölés-réteg lehet — tartalmi merge kell, nem vak felülírás!); `docs/RESOURCE_PACK_CMD.md` ↔ gyökér; `docs/EPITESZ_UTMUTATO.md` ↔ gyökér; `docs/TEASER.md` ↔ gyökér; `docs/PITCH.md` ↔ gyökér; `docs/LORE.md` + `docs/LORE_REFERENCE.md` ↔ `lore/`; `docs/ideas/*` ↔ `ideas/`; `docs/IDEAS.md` ↔ `ideas/README.md`. Mindkét repót ugyanarra a feature-branchre pushold.
 
 ## Mi ez a projekt
@@ -40,13 +45,32 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - Teleport: `teleportAsync`; blokk-szkennelés kicsi és régió-lokális legyen.
 
 ## Konvenciók
+- **Komment-politika (tulaj-kérés, 2026-07-22):** Java-kommentet CSAK megszorítás/invariáns
+  indoklására írunk (miért ilyen a kód, mi törne el nélküle — pl. Folia-hop, atomicitás,
+  fail-open ok). TILOS: provenancia ("audit-lelet", "tulaj-döntés", tétel-azonosítók,
+  review-hivatkozás), kód-narrálás ("// mentés"), változás-történet ("// mostantól").
+  A config-YAML kommentjei kivételek: ott a komment a dokumentáció.
+- **MD-politika:** új .md fájl CSAK kifejezett tulaj-kérésre születhet. Auditok a meglévő
+  `docs/ideas/P2-gameplay-audit.md`-t frissítik HELYBEN (nem új fájl körönként); ötletek
+  egyetlen helyre mennek: `docs/ideas/BACKLOG.md`. A `PLAYER_GUIDE.md` csak index — az
+  egyetlen igazságforrás a `docs/player-guide/` oldalak.
+- **Definition of Done — minden változás UGYANABBAN a commitban propagál:**
+  - új parancs → tab-complete + `/menu` csempe (CommandMenus) + `14-parancsok.md` + jog-node
+  - új jog-node → `Permissions.java` canonical map (különben az admin.all nem adja meg!)
+  - új config-kulcs → use-site olvasás (élő-config) + ha admin-hangolandó: ConfigMenuGUI
+  - új custom item → CMD + `docs/RESOURCE_PACK_CMD.md` regiszter-sor
+  - új quest-NPC / territory-id → a P2-audit világépítő-checklistjére is fel kell kerülnie
+  - új rendszer/mechanika → érintett `docs/player-guide/` oldal + PLAYTEST-blokk +
+    `LORE_REFERENCE.md` sor (ha lore-kötött) + README feature-lista, ha ott is szerepel
+  - minden doksi-szám a configból származik, nem fejből
+  - záráskor: fordítás-ellenőrzés + `scripts/check_consistency.py` + tükör-push
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
 - **CMD-szabály:** minden új custom/unique item CustomModelData-t kap, és fel KELL venni a
   `docs/RESOURCE_PACK_CMD.md` regiszterbe (a resource pack készítő ebből dolgozik). Sávok:
   1001+ pénz, 4101/4201+ relikvia, 5201+ katalizátor, 5301+ pet-eszköz, 5401 ostromgép, 5410+ kijelölő-pálca,
   6000+ unique anyag, 6201+ kulcs, 6210 tervrajz, 6300+ recept-tárgy, 6450+ bolt-különlegesség,
   6460+ loot-nevesített.
-- Minden gameplay-változásnál frissítsd a docsot: `PLAYER_GUIDE.md` (+ a megfelelő `docs/player-guide/` oldal), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.
+- Minden gameplay-változásnál frissítsd a docsot: a megfelelő `docs/player-guide/` oldal (a `PLAYER_GUIDE.md` csak index, nem kell bővíteni), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.
 - Commit-üzenet: magyar, tömör tárgysor + felsorolásos törzs; a repo-ban használt `Co-Authored-By` + `Claude-Session` trailerekkel zárul. Csak a kijelölt feature-branchre pusholj.
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).
 - **Lore/tartalom-referencia:** `docs/LORE.md` — a kanonikus kódex, TISZTA világon-belüli szöveg (ne
