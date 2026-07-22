@@ -103,15 +103,20 @@ public final class BlockRegenService implements PersistentStore {
      * blokkra false — azt a hívó ne engedje elpusztulni.
      */
     public boolean capture(final Block block, final long delayMillis) {
+        return capture(block, delayMillis, true);
+    }
+
+    /** A kézi (ostrom-)bontás loopGuarded=false-szal hívja: a szándékos újra-bontás nem hurok. */
+    public boolean capture(final Block block, final long delayMillis, final boolean loopGuarded) {
         // TNT sosem kerül a sorba: lánc-robbanásban elfogy, visszaépítve ingyen-TNT +
         // végtelen robbanás-hurok lenne. (A listában marad, tehát a lánc él.)
         if (block.getType() == org.bukkit.Material.TNT) {
             return false;
         }
-        if (isQueued(block)) {
+        if (isPending(block)) {
             return true; // már sorban áll (pl. robbanás + fizika-esemény dupla-jelzése)
         }
-        if (isRecaptureLooping(block)) {
+        if (loopGuarded && isRecaptureLooping(block)) {
             return false; // valami folyton újrarombolja (pl. vízfolyás) — elengedjük
         }
         if (block.getState() instanceof TileState) {
@@ -135,9 +140,11 @@ public final class BlockRegenService implements PersistentStore {
             // A robbanás ne szórja ki a tartalmat: a pillanatkép UTÁN kiürítjük.
             // Dupla ládánál CSAK a saját fél ürülhet — a getInventory() a közös
             // inventoryt adná, és a túlélő fél tartalma is elveszne.
-            if (block.getState() instanceof org.bukkit.block.Chest chest) {
+            // getState(false): az ÉLŐ állapotot ürítjük, nem egy pillanatkép-másolatot —
+            // különben a robbanás a valódi tartalmat szórná ki (dupe a visszaépítéssel).
+            if (block.getState(false) instanceof org.bukkit.block.Chest chest) {
                 chest.getBlockInventory().clear();
-            } else if (block.getState() instanceof org.bukkit.inventory.InventoryHolder holder) {
+            } else if (block.getState(false) instanceof org.bukkit.inventory.InventoryHolder holder) {
                 holder.getInventory().clear();
             }
             queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
@@ -214,23 +221,24 @@ public final class BlockRegenService implements PersistentStore {
         final int maxRecaptures = Math.max(1, configManager.getInt(
                 "territory.protection.regen.max-recaptures", 3));
         final long now = System.currentTimeMillis();
-        captureHistory.values().removeIf(v -> now - v[1] > windowMillis);
-        final String key = block.getWorld().getName() + ';' + block.getX() + ';' + block.getY() + ';' + block.getZ();
-        final long[] entry = captureHistory.computeIfAbsent(key, k -> new long[]{0L, now});
-        entry[0]++;
-        return entry[0] > maxRecaptures;
+        final long[] entry = captureHistory.computeIfAbsent(posKey(block), k -> new long[]{0L, now});
+        synchronized (entry) {
+            if (now - entry[1] > windowMillis) {
+                entry[0] = 0L;
+                entry[1] = now;
+            }
+            entry[0]++;
+            return entry[0] > maxRecaptures;
+        }
     }
 
-    /** Pozíció-alapú dedupe: ugyanaz a blokk nem kerülhet kétszer a sorba. */
-    private boolean isQueued(final Block block) {
-        final String w = block.getWorld().getName();
-        for (final Entry e : queue) {
-            if (e.x() == block.getX() && e.y() == block.getY() && e.z() == block.getZ()
-                    && e.world().equals(w)) {
-                return true;
-            }
-        }
-        return false;
+    /** Pozíció-alapú dedupe O(1)-ben — a pendingShield pontosan a sorban álló pozíciók halmaza. */
+    public boolean isPending(final Block block) {
+        return pendingShield.contains(posKey(block));
+    }
+
+    private static String posKey(final Entry e) {
+        return e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z();
     }
 
     /** Tile-entity robbanás (NBT-pillanatképpel) — alapból KI, a rúna-védelem él. */
@@ -293,6 +301,12 @@ public final class BlockRegenService implements PersistentStore {
     /** A globál-tickről hívva: az esedékes blokkok visszaépítése (alulról felfelé). */
     public void tick() {
         final long now = System.currentTimeMillis();
+        // Lejárt pajzs/history bejegyzések periodikus seprése — a forró eseménykezelő
+        // utakról kikerült minden takarítás.
+        physicsShield.values().removeIf(until -> until <= now);
+        final long historyWindow = Math.max(30L, configManager.getLong(
+                "territory.protection.regen.recapture-window-seconds", 600L)) * 1000L;
+        captureHistory.values().removeIf(v -> now - v[1] > historyWindow);
         final List<Entry> due = new ArrayList<>();
         for (final Entry e : queue) {
             if (e.restoreAt() <= now) {
@@ -311,7 +325,7 @@ public final class BlockRegenService implements PersistentStore {
         for (final Entry e : due) {
             final World world = Bukkit.getWorld(e.world());
             if (world == null) {
-                pendingShield.remove(e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z());
+                pendingShield.remove(posKey(e));
                 continue;
             }
             final Location loc = new Location(world, e.x(), e.y(), e.z());
@@ -319,6 +333,13 @@ public final class BlockRegenService implements PersistentStore {
                 try {
                     final org.bukkit.block.data.BlockData data = Bukkit.createBlockData(e.blockData());
                     final Block target = world.getBlockAt(e.x(), e.y(), e.z());
+                    // Befalazás-védelem: élőlényre (játékosra!) sosem építünk rá —
+                    // amíg valaki a pozícióban áll, a blokk a sor végén várakozik.
+                    if (!target.getLocation().toCenterLocation().getNearbyLivingEntities(0.9D).isEmpty()) {
+                        queue.add(new Entry(e.world(), e.x(), e.y(), e.z(),
+                                e.blockData(), e.extra(), e.restoreAt()));
+                        return;
+                    }
                     // Támasz-ellenőrzés: gravitációs blokk csak szilárd alapra, rátett
                     // blokk (fáklya, tábla, gomb…) csak létező támaszra kerül vissza —
                     // különben a következő fizika-frissítés leejtené/lepattintaná.
@@ -352,7 +373,7 @@ public final class BlockRegenService implements PersistentStore {
                     }
                 } catch (final IllegalArgumentException ignored) {
                     // Érvénytelenné vált blockdata (pl. verzióváltás) — kihagyjuk.
-                    pendingShield.remove(e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z());
+                    pendingShield.remove(posKey(e));
                 }
             });
         }
@@ -373,19 +394,6 @@ public final class BlockRegenService implements PersistentStore {
                 plugin.getLogger().warning("Tile-entity visszaállítás hiba: " + ex);
             }
             return;
-        }
-        final org.bukkit.block.BlockState state = block.getState();
-        if (extra.startsWith("inv:") && state instanceof org.bukkit.block.Container container) {
-            container.getInventory().setContents(org.bukkit.inventory.ItemStack.deserializeItemsFromBytes(
-                    java.util.Base64.getDecoder().decode(extra.substring(4))));
-        } else if (extra.startsWith("sign:") && state instanceof org.bukkit.block.Sign sign) {
-            final String[] parts = extra.substring(5).split("\u0001", -1);
-            for (int i = 0; i < parts.length && i < 4; i++) {
-                sign.getSide(org.bukkit.block.sign.Side.FRONT).line(i,
-                        net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson()
-                                .deserialize(parts[i]));
-            }
-            sign.update(true, false);
         }
     }
 
@@ -410,7 +418,7 @@ public final class BlockRegenService implements PersistentStore {
             }
         }
         for (final Entry e : queue) {
-            pendingShield.add(e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z());
+            pendingShield.add(posKey(e));
         }
     }
 

@@ -116,6 +116,16 @@ if os.path.exists(menus_path):
         if m.group(1) not in known_commands:
             fail(f"CommandMenus: RUN/OPEN cél '{m.group(1)}' nem regisztrált parancs")
 
+# ---------- 5b. duplikált metódus-szignatúrák (a sandbox-javac elnyeli!) ----------
+for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
+    sigs = re.findall(r"(?:public|private|protected)\s+\w+\s+(\w+)\(\s*final\s+([\w.]+)", read(path))
+    seen = {}
+    for name, ptype in sigs:
+        key = (name, ptype.split(".")[-1])
+        if key in seen:
+            fail(f"duplikált metódus: {os.path.basename(path)}: {name}({key[1]}) kétszer definiálva")
+        seen[key] = True
+
 # ---------- 6. tükör-drift ----------
 MIRROR = [
     ("PLAYTEST.md", "PLAYTEST.md"),

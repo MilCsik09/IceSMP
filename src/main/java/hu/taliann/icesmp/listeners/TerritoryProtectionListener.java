@@ -53,6 +53,7 @@ public final class TerritoryProtectionListener implements Listener {
         // a regisztrált harcosnak jár; zónán kívüli ("always") módban config-kapcsolós.
         final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
         if (regen != null && regen.isEnabled()
+                && regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()))
                 && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())) {
             final long delay;
             if (regen.isSiegeBreakEnabled()
@@ -64,7 +65,7 @@ public final class TerritoryProtectionListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            if (regen.capture(event.getBlock(), delay)) {
+            if (regen.capture(event.getBlock(), delay, false)) {
                 event.setDropItems(false);
                 event.setExpToDrop(0);
                 return;
@@ -290,13 +291,23 @@ public final class TerritoryProtectionListener implements Listener {
                 return;
             }
         }
-        if (event.getEntity() instanceof Player || !event.getTo().isAir()) {
+        if (event.getEntity() instanceof Player) {
+            return;
+        }
+        // Nem-romboló mob-változás (pl. enderman blokkot RAK): a régi terrain-tiltás él.
+        if (!event.getTo().isAir()) {
+            if (protection.isTerrainProtectedAt(event.getBlock().getLocation())) {
+                event.setCancelled(true);
+            }
             return;
         }
         final hu.taliann.icesmp.managers.BlockRegenService regenSvc = this.blockRegenService;
         final boolean zoneRegen = regenSvc != null && regenSvc.isEnabled()
                 && regenSvc.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()));
-        if (!zoneRegen && !protection.isExplosionBlockedAt(event.getBlock().getLocation())) {
+        if (!zoneRegen) {
+            if (protection.isTerrainProtectedAt(event.getBlock().getLocation())) {
+                event.setCancelled(true);
+            }
             return;
         }
         event.setCancelled(true);
@@ -391,15 +402,6 @@ public final class TerritoryProtectionListener implements Listener {
     }
 
     // ==================== terrain (mob-grief / folyadék / dugattyú) ====================
-
-    /** Block-eating/-moving mobs (enderman, ravager, silverfish…) leave protected zones alone. */
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    public void onEntityChangeBlock(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
-        if (!(event.getEntity() instanceof Player)
-                && protection.isTerrainProtectedAt(event.getBlock().getLocation())) {
-            event.setCancelled(true);
-        }
-    }
 
     /** Liquid (water/lava) may not flow INTO a protected zone from outside. */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)

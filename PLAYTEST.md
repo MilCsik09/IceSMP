@@ -1864,3 +1864,15 @@ Jó tesztelést! ❄️
       mosódik el, mire a pajzs lejár, a fal már körbeérte.
 - [ ] **Perem-homok:** a kráterbe hulló homok/kavics ITEMKÉNT esik le (felvehető),
       nem tűnik el némán a visszaépítéskor.
+
+## Regen 9. kör: review-javítások (2 agent leletei, 2026-07-22)
+- [ ] **Befalazás-védelem:** a kráterben álló játékosra NEM épül rá a fal (a blokk
+      várakozik, amíg el nem mozdul) — nincs fulladás-csapda.
+- [ ] **Duplikált handler javítva:** mob-grief + regen egyetlen EntityChangeBlock
+      handlerben (enderman blokk-rakás továbbra is tiltva védett zónában).
+- [ ] **Zóna-mátrix az ostrom-bontásra is hat** (zones.<típus>: false → ott a bontás
+      a régi tiltásra esik vissza).
+- [ ] **Hurok-fék csak fizikára:** a szándékos ismételt ostrom-bontás nem tesz
+      blokkot "sérthetetlenné"; dupla-törmelék nincs claim+territórium átfedésnél.
+- [ ] **Terhelés-javítások:** O(1) dedupe + periodikus pajzs/history-seprés — 100 TNT-s
+      lánc alatt mérendő a TPS (playtest-pont).
