@@ -185,7 +185,6 @@ public final class ClaimProtectionListener implements Listener {
             return false;
         }
         boolean captured = false;
-        int debris = 0;
         final long delay = regen.explosionDelayMillis();
         final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
         while (it.hasNext()) {
@@ -193,18 +192,33 @@ public final class ClaimProtectionListener implements Listener {
             if (claimManager.getClaimAt(block.getLocation()) == null) {
                 continue;
             }
-            if (hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(block)
-                    || !regen.capture(block, delay)) {
+            if (block.getType() == org.bukkit.Material.TNT) {
+                continue; // a lánc-robbanás él, de a TNT nem épül vissza (nincs hurok)
+            }
+            if (!regen.capture(block, delay)) {
                 it.remove();
-            } else {
-                if (debris < regen.debrisMaxPerExplosion()) {
-                    regen.spawnDebris(block, center);
-                    debris++;
+                if (hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(block)) {
+                    regen.playWardEffect(block); // az óvó rúnák látványa
                 }
+            } else {
+                regen.spawnDebris(block, center);
                 captured = true;
             }
         }
         return captured;
+    }
+
+    /** Fizika-lepattanás (fáklya a kirobbant falról) claimben: drop nélkül, regen-nel. */
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockDestroy(final com.destroystokyo.paper.event.block.BlockDestroyEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null || !regen.isEnabled()
+                || claimManager.getClaimAt(event.getBlock().getLocation()) == null) {
+            return;
+        }
+        if (regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            event.setWillDrop(false);
+        }
     }
 
     private volatile hu.taliann.icesmp.managers.BlockRegenService blockRegenService;

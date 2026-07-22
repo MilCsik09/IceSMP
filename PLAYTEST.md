@@ -1798,3 +1798,19 @@ Jó tesztelést! ❄️
       robban ki, adata nem veszhet el.
 - [ ] **Perem-eset (ismert):** támaszték-vesztő rátett blokk (fáklya, falitábla) a
       vanília fizikával lepattanhat és droppolhat — playtesten mérd, mennyire zavaró.
+
+## Regen 3. kör: rúnák, NBT-kapcsoló, TNT-kizárás, támasz-tudatos visszaépítés (2026-07-22)
+- [ ] **Rúna-effekt:** robbanást túlélő láda/kemence/tábla körül rúna-részecskék +
+      enchant-hang — nem tűnik bugnak, hogy állva maradt.
+- [ ] **tile-entity-explode [ki] bekapcsolva:** láda robbanáskor kirobban, tartalma NEM
+      szóródik ki, visszaépüléskor a TELJES tartalom + tábla-szöveg visszatér (restart
+      közben is — block-regen.yml extra mező). Fej/zászló/spawner ilyenkor is rúna-védett.
+- [ ] **TNT-lánc:** több egymás melletti TNT robbanása végigfut (lánc él), de a TNT
+      blokkok NEM épülnek vissza — nincs robbanás-hurok, nincs ingyen-TNT.
+- [ ] **Törmelék-%:** debris-percent 100-on MINDEN kirobbant blokk repül (nincs darabszám-
+      plafon); 40-en kb. minden második-harmadik.
+- [ ] **Fizika-lepattanás:** a kirobbant falról fáklya/falitábla NEM droppol — drop nélkül
+      tűnik el és a fallal együtt visszaépül (BlockDestroyEvent-út).
+- [ ] **Támasz-teszt:** homok/kavics fal + fáklyás fal robbantása → visszaépüléskor SEMMI
+      nem esik le és nem pattan le: a gravitációs blokk megvárja az alapját, a fáklya a
+      falát (support-grace-seconds [120] után kényszer-visszaépítés).

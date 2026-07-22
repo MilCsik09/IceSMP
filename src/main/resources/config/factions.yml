@@ -274,6 +274,9 @@ territory:
       # …és menetenként ennyi blokk kerül vissza — együtt adják a gyógyulás tempóját
       # (alap: 3 blokk / 0.5 mp = 6 blokk/mp, látványos, fokozatos újraépülés).
       blocks-per-pass: 3
+      # Támasz-váró blokk (homok, fáklya) legfeljebb ennyi mp-et vár a támaszára,
+      # utána mindenképp visszaépül (a visszaépítés sosem ragadhat be).
+      support-grace-seconds: 120
       # Kézi rombolás regen-nel (drop és XP nélkül, tile-entity sosem törhető):
       player-break:
         # Ostrom: élő raid alatt a CÉLZÓNÁBAN a regisztrált harcosok bonthatnak.
@@ -286,10 +289,14 @@ territory:
         always-delay-seconds: 120
       # Visszaépüléskor blokkonkénti lerakás-hang + porfelhő (anyag-hű "gyógyulás").
       restore-effects-enabled: true
+      # Tile-entity (láda, kemence, tábla) robbanása NBT-pillanatképpel: a tartalom/
+      # szöveg a visszaépüléskor pontosan visszatér. Alapból KI — ilyenkor a
+      # tile-entity "óvó rúnák" effekttel sértetlenül túléli a robbanást.
+      # (Fej/zászló/spawner NBT-je nem támogatott: azok bekapcsolva is rúna-védettek.)
+      tile-entity-explode: false
       debris-enabled: true
-      # A kirobbant blokkok ennyi %-a válik repülő törmelékké (a többi csak eltűnik).
+      # A kirobbant blokkok ennyi %-a válik repülő törmelékké (100 = MIND repül).
       debris-percent: 100
-      debris-max-per-explosion: 30
       debris-lifetime-seconds: 4
       debris-launch-power: 0.6
     # Fő kapcsoló a VÉDETT zónákra (protected-faction/protected-city/capital). Ha false, a védett

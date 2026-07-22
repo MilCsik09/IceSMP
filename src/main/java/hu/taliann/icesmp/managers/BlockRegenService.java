@@ -33,7 +33,7 @@ public final class BlockRegenService implements PersistentStore {
 
 
 
-    private record Entry(String world, int x, int y, int z, String blockData, long restoreAt) {
+    private record Entry(String world, int x, int y, int z, String blockData, String extra, long restoreAt) {
     }
 
     private final JavaPlugin plugin;
@@ -65,6 +65,12 @@ public final class BlockRegenService implements PersistentStore {
         return Math.max(1, configManager.getInt("territory.protection.regen.blocks-per-pass", 3));
     }
 
+    /** Ennyi mp várakozás után a támasz nélküli blokk is visszakerül (sor-beragadás ellen). */
+    private long supportGraceMillis() {
+        return Math.max(5L, configManager.getLong(
+                "territory.protection.regen.support-grace-seconds", 120L)) * 1000L;
+    }
+
     public boolean isSiegeBreakEnabled() {
         return configManager.getBoolean("territory.protection.regen.player-break.siege-enabled", true);
     }
@@ -88,12 +94,52 @@ public final class BlockRegenService implements PersistentStore {
      * blokkra false — azt a hívó ne engedje elpusztulni.
      */
     public boolean capture(final Block block, final long delayMillis) {
-        if (block.getState() instanceof TileState) {
+        // TNT sosem kerül a sorba: lánc-robbanásban elfogy, visszaépítve ingyen-TNT +
+        // végtelen robbanás-hurok lenne. (A listában marad, tehát a lánc él.)
+        if (block.getType() == org.bukkit.Material.TNT) {
             return false;
         }
+        if (block.getState() instanceof TileState) {
+            if (!isTileEntityExplodeEnabled()) {
+                return false;
+            }
+            // Kapcsolható NBT-út: konténer-tartalom és tábla-szöveg pillanatképpel.
+            String extra = null;
+            final org.bukkit.block.BlockState state = block.getState();
+            if (state instanceof org.bukkit.block.Container container) {
+                final org.bukkit.inventory.ItemStack[] contents = container.getInventory().getContents();
+                extra = "inv:" + java.util.Base64.getEncoder().encodeToString(
+                        org.bukkit.inventory.ItemStack.serializeItemsAsBytes(contents));
+                container.getInventory().clear(); // a robbanás ne szórja ki a tartalmat
+            } else if (state instanceof org.bukkit.block.Sign sign) {
+                final java.util.List<String> lines = new ArrayList<>();
+                for (final net.kyori.adventure.text.Component c
+                        : sign.getSide(org.bukkit.block.sign.Side.FRONT).lines()) {
+                    lines.add(net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(c));
+                }
+                extra = "sign:" + String.join("\u0001", lines);
+            } else {
+                return false; // fej/zászló/spawner: NBT-je nem támogatott — rúna-védett marad
+            }
+            queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
+                    block.getBlockData().getAsString(), extra, System.currentTimeMillis() + delayMillis));
+            return true;
+        }
         queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
-                block.getBlockData().getAsString(), System.currentTimeMillis() + delayMillis));
+                block.getBlockData().getAsString(), null, System.currentTimeMillis() + delayMillis));
         return true;
+    }
+
+    /** Tile-entity robbanás (NBT-pillanatképpel) — alapból KI, a rúna-védelem él. */
+    public boolean isTileEntityExplodeEnabled() {
+        return configManager.getBoolean("territory.protection.regen.tile-entity-explode", false);
+    }
+
+    /** A robbanást túlélő tile-entity "óvó rúnái" — látvány+hang, hogy ne tűnjön bugnak. */
+    public void playWardEffect(final Block block) {
+        final Location fx = block.getLocation().add(0.5D, 0.5D, 0.5D);
+        block.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT, fx, 25, 0.4D, 0.4D, 0.4D, 0.5D);
+        block.getWorld().playSound(fx, org.bukkit.Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.7F, 1.6F);
     }
 
     /** Igaz, ha a blokk tile-entity — robbanás-listából eleve ki kell venni. */
@@ -103,10 +149,6 @@ public final class BlockRegenService implements PersistentStore {
 
     /** A törmelék-entitások jelölése — landoláskor porladnak, sosem raknak le blokkot. */
     public static final String DEBRIS_TAG = "icesmp_debris";
-
-    public int debrisMaxPerExplosion() {
-        return configManager.getInt("territory.protection.regen.debris-max-per-explosion", 30);
-    }
 
     /**
      * Kozmetikai törmelék: a kirobbant blokk másolata FallingBlockként repül ki a
@@ -171,10 +213,27 @@ public final class BlockRegenService implements PersistentStore {
             final Location loc = new Location(world, e.x(), e.y(), e.z());
             Bukkit.getRegionScheduler().run(plugin, loc, task -> {
                 try {
+                    final org.bukkit.block.data.BlockData data = Bukkit.createBlockData(e.blockData());
+                    final Block target = world.getBlockAt(e.x(), e.y(), e.z());
+                    // Támasz-ellenőrzés: gravitációs blokk csak szilárd alapra, rátett
+                    // blokk (fáklya, tábla, gomb…) csak létező támaszra kerül vissza —
+                    // különben a következő fizika-frissítés leejtené/lepattintaná.
+                    // Amíg nincs támasz, a sor végére kerül; a grace lejárta után
+                    // mindenképp visszakerül (a sor nem ragadhat be körkörös függésen).
+                    if (now - e.restoreAt() <= supportGraceMillis()) {
+                        final boolean unsupported = data.getMaterial().hasGravity()
+                                ? !target.getRelative(org.bukkit.block.BlockFace.DOWN).isSolid()
+                                : !data.isSupported(loc);
+                        if (unsupported) {
+                            queue.add(new Entry(e.world(), e.x(), e.y(), e.z(),
+                                    e.blockData(), e.extra(), e.restoreAt()));
+                            return;
+                        }
+                    }
                     // Mindig felülírunk: a világ PONTOSAN a rombolás előtti állapotba tér
                     // vissza (a közben odarakott blokk drop nélkül tűnik el — hadszíntér).
-                    final org.bukkit.block.data.BlockData data = Bukkit.createBlockData(e.blockData());
-                    world.getBlockAt(e.x(), e.y(), e.z()).setBlockData(data, false);
+                    target.setBlockData(data, false);
+                    restoreExtra(target, e.extra());
                     if (configManager.getBoolean("territory.protection.regen.restore-effects-enabled", true)) {
                         // Anyag-hű "gyógyulás": a blokk saját lerakás-hangja + kis porfelhő.
                         final Location fx = loc.clone().add(0.5D, 0.5D, 0.5D);
@@ -186,6 +245,26 @@ public final class BlockRegenService implements PersistentStore {
                     // Érvénytelenné vált blockdata (pl. verzióváltás) — kihagyjuk.
                 }
             });
+        }
+    }
+
+    /** A tile-entity pillanatkép visszatöltése (konténer-tartalom / tábla-szöveg). */
+    private void restoreExtra(final Block block, final String extra) {
+        if (extra == null) {
+            return;
+        }
+        final org.bukkit.block.BlockState state = block.getState();
+        if (extra.startsWith("inv:") && state instanceof org.bukkit.block.Container container) {
+            container.getInventory().setContents(org.bukkit.inventory.ItemStack.deserializeItemsFromBytes(
+                    java.util.Base64.getDecoder().decode(extra.substring(4))));
+        } else if (extra.startsWith("sign:") && state instanceof org.bukkit.block.Sign sign) {
+            final String[] parts = extra.substring(5).split("\u0001", -1);
+            for (int i = 0; i < parts.length && i < 4; i++) {
+                sign.getSide(org.bukkit.block.sign.Side.FRONT).line(i,
+                        net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson()
+                                .deserialize(parts[i]));
+            }
+            sign.update(true, false);
         }
     }
 
@@ -201,6 +280,7 @@ public final class BlockRegenService implements PersistentStore {
                 queue.add(new Entry(String.valueOf(raw.get("world")),
                         ((Number) raw.get("x")).intValue(), ((Number) raw.get("y")).intValue(),
                         ((Number) raw.get("z")).intValue(), String.valueOf(raw.get("data")),
+                        raw.get("extra") == null ? null : String.valueOf(raw.get("extra")),
                         ((Number) raw.get("at")).longValue()));
             } catch (final RuntimeException ignored) {
                 // Sérült sor — a többi bejegyzés attól még betölt.
@@ -219,6 +299,9 @@ public final class BlockRegenService implements PersistentStore {
             row.put("y", e.y());
             row.put("z", e.z());
             row.put("data", e.blockData());
+            if (e.extra() != null) {
+                row.put("extra", e.extra());
+            }
             row.put("at", e.restoreAt());
             out.add(row);
         }
