@@ -651,8 +651,10 @@ de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`
 **[TOP] Data-component API (1.20.5+) — MA egyáltalán nem használjuk (PDC/ItemMeta helyett):**
 - **P7a EQUIPPABLE** — BÁRMELY item viselhető (kozmetikai kalap/korona, saját páncél-modell,
   kamera-overlay). A frakció-kozmetikák és relikvia-viseletek aranybányája. 🟡⭐⭐⭐
-- **P7b CONSUMABLE + FOOD + USE_EFFECTS** — saját étel/ital deklaratívan: effekt, evés-
-  animáció, hang, partikel — a signature-étel LISTENEREK kiváltása. 🟡⭐⭐⭐
+- 🔄 **P7b CONSUMABLE + FOOD (FOLYAMATBAN)** — `ItemDataFactory` alap KÉSZ (általános
+  applyConsumable/applyFood + signature-étel migráció). A 7 fix-effektű K6-étel buffja már
+  a CONSUMABLE-ből jön (food_v2 jelölő, nincs dupla buff, régi ételek nem regresszálnak).
+  NYITVA: új ételek/italok tartalom (DRINK-animáció), és a Süti-féle nem-potion effektek. 🟡⭐⭐⭐
 - **P7c USE_COOLDOWN (cooldown-csoportok)** — katalizátor/relikvia/tekercs KÖZÖS nevesített
   cooldownt kap, kézi setCooldown-könyvelés nélkül (ma 17 get/4 set kézzel). 🟢⭐⭐
 - **P7d DEATH_PROTECTION** — totem-viselkedés BÁRMELY itemen (relikvia, ami egyszer megment). 🟢⭐⭐

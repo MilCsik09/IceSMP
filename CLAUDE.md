@@ -70,7 +70,12 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - **Élő-config konvenció**: MINDEN új kulcsot híváskor olvass (`configManager.getX` a use-site-on, ne konstruktorban) → `/icesmp reload` restart nélkül él. Ingame felülbírálás: `/icesmp config get|set|unset|list|find|menu` + kattintható GUI (`ConfigMenuGUI`, jog: `icesmp.admin.config`) — az írás EGYETLEN útja a szerializált `ConfigManager.applyOverride` (data-folder config.yml, utolsóként merge-ölve). Boolean-kulcsok egyértelműek: `allow-<szabály>` séma (true=SZABAD), legacy invertált kulcsok fallbackként olvasva.
 - **Esemény-spawnok**: minden világesemény-spawn az `EventSpawnGuard`-on megy át (`isBlocked(eventKey, loc)` — territory/claim/WG per `world-events.spawn-rules.<event>` mátrix; `isUnsafeSurface`; statikus `prepare(Mob)` zombisodás/nappali égés ellen). Új eseménynél új mátrix-sor + guard-hívás kötelező.
 - **Admin item-adás**: `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` (`ItemGiveCommand`, jog: `icesmp.admin.item`) — a recept-út a `ProfessionRecipeBookListener.buildResult` teljes stamp-láncát használja.
-- **Itemek**: PDC-tagekkel az `items/*ItemFactory` osztályokban, craft-safety listenerekkel védve.
+- **Itemek**: PDC-tagekkel (IDENTITÁS: signature_item, unique-id — ez marad) az `items/*ItemFactory`
+  osztályokban, craft-safety listenerekkel védve. **Viselkedés/megjelenés = data-component** (1.20.5+,
+  `items/ItemDataFactory`): CONSUMABLE/FOOD (ételek-italok), később GLIDER/DEATH_PROTECTION/EQUIPPABLE/
+  USE_COOLDOWN/TOOLTIP_DISPLAY, és a CMD→ITEM_MODEL átállás. **KRITIKUS sorrend-invariáns:** a
+  `itemStack.setData(...)` UTÁN a `setItemMeta(...)` TÖRLI a komponenst (a meta-round-trip nem hordozza)
+  — a data-komponenseket MINDIG a meta-műveletek UTÁN, utolsóként kell alkalmazni (a `buildResult` a végén hívja).
 - **Spellek**: deklaratív `ConfiguredSpell.builder(...)` a `spells/SpellCatalog`-ban + unlock a `config/classes.yml`-ben; külön osztály csak valóban állapotos spellnek (kötelező `clearPlayerState` override).
 - **Soft-depend integrációk** (`integration/`): PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms — mind reflexiós híd, a plugin nélkülük is fut. Build-oldalon csak `compileOnly` (lásd `build.gradle.kts`).
 

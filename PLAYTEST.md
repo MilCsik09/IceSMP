@@ -837,6 +837,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (cím + első-lépés sorok + „rendben" gomb) — resource pack NÉLKÜL. ESC/gomb bezárja.
       `onboarding.welcome-dialog: false` → nem jön. Tartalom élő-configból
       (`onboarding.welcome-dialog-title/-lines`, MiniMessage). Régi játékosnál NEM jelenik meg.
+- [ ] **P7 Data-component ételek (ÚJ, CONSUMABLE-migráció):** frissen craftolt signature-étel
+      (Fagyasztott pisztráng, Főnixtojás-rántotta, Sárkány-pörkölt, Vadlakoma, Vándorünnep lepénye,
+      Hamvak lakomája, Mortengrádi hamukenyér) evésekor a buff MOST a data-komponensből jön —
+      a hatás ugyanaz, de **nincs dupla buff** (a listener a food_v2 jelölő miatt kihagyja).
+      A Tiltott kakaóbabos sütemény (lökés+partikel) VÁLTOZATLAN (listener-ág). A honvágy-
+      kötelezettség (BLUE hal / RED tojás) változatlanul működik. `/icesmp reload` után az
+      ÚJ craftok tükrözik a buff-időt (a komponens craft-időben olvassa a configot).
 - [ ] **P8e Alacsony-HP piros vignetta (ÚJ):** HP a küszöb (alap 30%) alá esve a képernyő
       szélén vörös vészköd jelenik meg; gyógyulva/küszöb fölé eltűnik. `hud.low-hp-vignette.enabled:
       false` → nem jön. A per-player világperem NEM okoz tényleges perem-hatást (nem lök vissza,

@@ -98,7 +98,12 @@ public final class FactionFoodListener implements Listener {
             player.getPersistentDataContainer().set(foodFactionKey, PersistentDataType.STRING, faction.name());
         }
 
-        // Signature étel-buffok (kicsik, tematikusak; a consume a játékos saját szálán fut).
+        // Signature étel-buffok: a CONSUMABLE-migrált (food_v2) ételekre a KOMPONENS adja a
+        // buffot (deklaratívan, evéskor) — a legacy-ágat csak a régi/nem-migrált ételekre és
+        // a Sütire (lökés+partikel, nem potion-effekt) futtatjuk, hogy ne legyen dupla buff.
+        final boolean migratedFood = item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer()
+                .has(hu.taliann.icesmp.items.ItemDataFactory.FOOD_V2_KEY, PersistentDataType.BYTE);
+        if (!migratedFood) {
         if (PISZTRANG.equals(sig)) {
             final int seconds = Math.max(1, configManager.getInt("factions.food-duty.pisztrang-buff-seconds", 60));
             player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, seconds * 20, 0, true, true, true));
@@ -135,6 +140,7 @@ public final class FactionFoodListener implements Listener {
             player.getWorld().playSound(player.getLocation(), org.bukkit.Sound.ENTITY_FIREWORK_ROCKET_BLAST, 0.8F, 1.2F);
             hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(), org.bukkit.Particle.FIREWORK,
                     player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.5D, 0.6D, 0.5D, 0.08D);
+        }
         }
     }
 

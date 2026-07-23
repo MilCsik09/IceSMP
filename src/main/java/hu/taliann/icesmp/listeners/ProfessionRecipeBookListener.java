@@ -388,6 +388,12 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (recipe.affixTier() != null && recipe.resultAmount() == 1) {
             result = affixService.roll(result, recipe.affixTier());
         }
+        // P7 data-komponensek UTOLSÓnak (minden setItemMeta után) — a signature-ételek
+        // fix-effektű buffja a CONSUMABLE-be kerül (a FactionFoodListener a food_v2 jelölő
+        // alapján hagyja ki rájuk a legacy-buffot).
+        if (recipe.signature() != null) {
+            hu.taliann.icesmp.items.ItemDataFactory.applySignatureFoodConsumable(result, recipe.signature(), configManager);
+        }
         return result;
     }
 }
