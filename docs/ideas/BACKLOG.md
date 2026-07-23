@@ -510,8 +510,12 @@ tételek a védőháló + a kihasználatlan potenciál.
   (dialog-registry + minden típus/input/akció builder: Notice, Confirmation,
   MultiAction, DialogList, ServerLinks; szöveg/szám/választó inputok; parancs-sablon
   és custom-click akciók szerver-oldali kezelővel) — RP nélkül működik. 🟡⭐⭐⭐
-- **P4e Környezeti damage-type-ok** — saját halál-üzenetű típusok a rontás-zónának,
-  Kárhozat-aurának, vérzés/átok DoT-oknak (olcsó regisztráció, erős hangulat). 🟢⭐⭐
+- ✅ **P4e Környezeti damage-type-ok (2026-07-23, RÉSZBEN KÉSZ)** — MEGÉPÜLT az
+  `icesmp:rontas`: a rontás-góc mag-aurája (CorruptionAuraListener, valódi fogyasztóval,
+  saját magyar halál-üzenettel, `corruption.aura.*` élő-config, kikapcsolható). A
+  vérzés/átok DoT SZÁNDÉKOSAN KIMARADT: nincs meglévő vérzés/átok-mechanika, amihez
+  fogyasztóként kötni lehetne — a szabály tiltja a dísz-regisztrációt. Ha később valódi
+  vérzés-rendszer épül (pl. Vérlovag/Orgyilkos), akkor jön a saját damage-type is. 🟢⭐⭐
 - **P4f RP-kötött registry-tartalom (világépítéssel együtt)** — banner-minta
   frakció-címerek; painting-variáns lore-festmények (Radicora/Thanaopolis) a
   fővárosokba; jukebox-song az Énekmondó balladájának/frakció-himnuszoknak;
