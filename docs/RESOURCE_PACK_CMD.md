@@ -84,10 +84,10 @@ A faction-kötött tárgyak (a nevükben szereplő hely/örökség alapján) ezt
 | factory:catalyst | `catalyst_warlock` | `SOUL_LANTERN` | Kárhozat Lámpása | vaskeretes lélek-lámpás kék-zöld lélektűzzel, sötét kárhozat-derengés |
 | factory:catalyst | `catalyst_warrior` | `GOAT_HORN` | Sárkánykirály Kürtje | faragott harci kürt sárkánymotívummal, arany-vörös veret, mély réz-csillanás |
 | factory:catalyst | `catalyst_wizard` | `ENCHANTED_BOOK` | Caldesterai Rúnakódex | bőrkötésű rúnakódex, izzó kék-arany glyphek, lebegő varázslapok |
-| factory:currency | `currency_blue` | `PAPER` | Hópihér-veret | kék-ezüst érme, vésett hópehely-címer, hideg fémcsillanás |
-| factory:currency | `currency_dark` | `PAPER` | Csontveret | csont-törtfehér érme, koponya-címer, hideg türkiz lich-derengés |
-| factory:currency | `currency_neutral` | `PAPER` | Creutzér | arany-borostyán érme, kereskedő-mérleg címer, meleg fémcsillanás |
-| factory:currency | `currency_red` | `PAPER` | Parázsló Parals | vörös-arany érme, lángnyelv-címer, parázs-narancs izzás |
+| factory:currency | `currency_blue` | `PAPER` | Hópihér-veret | vert ezüst érme, sima peremgyűrű, középen világoskék hópehely-címer, hűvös ezüstszürke |
+| factory:currency | `currency_dark` | `PAPER` | Csontveret | kopott sötét acélszürke érme, szürke koponya-címer, izzó türkiz szempár, csorba perem |
+| factory:currency | `currency_neutral` | `PAPER` | Creutzér | vert arany érme, gyöngyözött perem, középen kereskedő-mérleg címer, meleg borostyán csillanás |
+| factory:currency | `currency_red` | `PAPER` | Parázsló Parals | vert arany érme, rovátkolt gyöngyözött perem, középen vörös-narancs lángcímer, parázs izzás |
 | factory:spell | `spell_demonic_circle` | `REDSTONE` | Démoni Só | vörös-lila szórt por, izzó idéző-körminta, sötét mágia-derengés |
 | factory:spell | `spell_expel_harm` | `BLAZE_ROD` | Kiűzés Botja | fényes szent bot, arany-fehér rúnaragyogás, gyógyító derengés |
 | factory:spell | `spell_rune_strike` | `AMETHYST_SHARD` | Rúnakő | ametiszt rúnakristály, kék-fehér villámszikra, éles fénytörés |
