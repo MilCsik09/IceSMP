@@ -8,7 +8,7 @@ messages:
   faction-already-member: '&cMár tagja vagy ennek a frakciónak!'
   faction-change-success: '&aFrakcióváltás sikeres!'
   faction-dark-pact-sealed: '&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad.'
-  faction-dark-sinners-only: '&5A Sötét frakcióba csak bűnösök léphetnek be.'
+  faction-dark-sinners-only: '&5A Kitaszítottak közé csak bűnösök léphetnek be.'
   faction-donate-success: '&aAdomány elküldve: &f%s %s &7-> a(z) &f%s &7frakció kasszája (új egyenleg: &f%s&7).'
   faction-donate-usage: '&cHasználat: /faction donate <összeg>'
   faction-help-donate: '&e/faction donate <összeg> &7- Adomány a frakciókasszába.'
@@ -55,6 +55,8 @@ messages:
   faction-switch-insufficient: '&cA frakcióváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.'
   faction-switch-paid: '&aFrakcióváltás díja levonva: &f%s %s &7(új egyenleg: &f%s&7).'
   faction-tax-notice: '&6Állampolgári adó levonva: &f{amount} {currency} &7(a frakciókasszába került).'
+  faction-tax-arrears: '&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7 — a Számvevők a következő beszedéskor is behajtják.'
+  faction-tax-evasion: '&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!'
   faction-treasury-header: '&6Frakciókasszák:'
   faction-treasury-insufficient: '&cNincs ennyi a frakciókasszában.'
   faction-treasury-king-only: '&cA kasszából csak a frakció királya (vagy admin) vehet ki.'
@@ -65,11 +67,12 @@ messages:
   sinner-marked: '&5A Mételytépő igazságot látott: &cBűnös lettél!'
   sinner.add-success: '<green>Bűn rögzítve: <white>{player}</white> <gray>(bűnök: <white>{count}</white>)</gray></green>'
   sinner.betrayal-recorded: '<dark_purple>Bűnt követtél el: árulás — a saját frakciótársadat ölted meg. <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
+  sinner.doom-gate-kill: '<dark_red>☠ A Kárhozat Kapujánál nincs törvény — az ölés itt nem bűn.</dark_red>'
   sinner.cleansed: <green><i>Megtisztultál bűneid súlyától...</i></green>
   sinner.clear-blocked-dark-pact: '<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>'
   sinner.clear-success: '<green>A játékos megtisztult a bűneitől: <white>{player}</white></green>'
-  sinner.exile-broadcast: <dark_purple>{player} bűnei elérték a tűréshatárt — a Sötét frakcióba száműzték!</dark_purple>
-  sinner.exiled: '<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: száműztek a Sötét frakcióba. A paktum örök.</dark_purple>'
+  sinner.exile-broadcast: <dark_purple>{player} bűnei elérték a tűréshatárt — a Kitaszítottak közé száműzték!</dark_purple>
+  sinner.exiled: '<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: a Kitaszítottak közé száműztek. A paktum örök.</dark_purple>'
   sinner.invalid-action: <red>Érvénytelen művelet! Használd a 'set' vagy 'clear' parancsot.</red>
   sinner.pact-broken: '<gold>A vezeklésed teljes: a sötét paktum megtört, bűneid feloldozást nyertek.</gold>'
   sinner.set-success: '<green>A játékos bűnössé vált: <white>{player}</white></green>'

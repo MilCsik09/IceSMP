@@ -13,7 +13,8 @@ Minden harcos frakció (Piros / Kék / Sötét — a Semleges kivételével) **k
 - `/faction king` — megmutatja a jelenlegi királyt és a szavazatokat.
 
 **A király jogai:**
-- Kivehet a **frakciókasszából** (`/faction treasury withdraw <összeg>`).
+- Kivehet a **frakciókasszából** (`/faction treasury withdraw <összeg>`) — a pénz **veretben,
+  a kezébe** érkezik (a bankba magának kell befizetnie), és **napi keret** korlátozza.
 - **Beállíthatja a frakció adókulcsát** (`/faction king tax <százalék>`).
 - **Raidet (háborút) hirdethet** egy másik frakció ellen.
 
@@ -69,3 +70,35 @@ Ha **Nekromanta-specet** játszol, minden megölt ellenség után **lélekszilá
 ---
 
 ➡️ Tovább: [Küldetések](12-kuldetesek.md) • [Vissza a tartalomhoz](README.md)
+
+## Frakció-szállítmány — védd vagy rabold! 🐫
+
+A király a kasszából **szállítmányt indíthat**: `/faction caravan send <összeg>`. A rakomány
+egy kihirdetett **őrzőpontra** kerül (mindenki látja a koordinátákat!), és pár percig ott áll:
+
+- Ha a szállítmány **túléli az ablakot**, a kassza a rakományt **nyereséggel** kapja vissza.
+- Ha egy **ellenséges frakció** játékosa leöli a konvojt, a rakomány **az övék**.
+- Saját frakciós „baleset" esetén a rakomány **elvész** — ne álljatok a saját karaván útjába!
+
+Kockázat és jutalom: minél nagyobb a rakomány, annál édesebb célpont. Gyűjtsd a védőket!
+
+## Becsület-párbaj és kém-álca ⚔🕵
+
+- **Becsület-párbaj:** ha bűnös vagy, elégtételt ajánlhatsz: `/parbaj kihiv <név>`. Ha a sértett
+  elfogadja (`/parbaj elfogad`), 3 perces, beleegyezéses párbaj indul — **nem termel bűnt**, és
+  ha a bűnös nyer, **egy bűnpontja letörlődik**. Hetente legfeljebb kétszer.
+- **Kém-álca:** `/kem <célfrakció>` — 60 másodpercre álnevet öltesz (felderítéshez!). Raid alatt
+  nem megy, és **egyetlen ütés — adott vagy kapott — azonnal lebuktat**. Az álca a bűn alól nem
+  ment fel: a lopás lopás marad.
+
+## ⚔️ Harc-jelölés (combat-tag)
+
+PvP-találatkor mindkét fél **12 másodpercre harc-jelölést** kap:
+
+- a jelölt játékos **bemehet** a védett zónába, de ott sem kap PvP-védelmet — a
+  vesztésre álló fél nem válik sebezhetetlenné egy fővárosba sétálással;
+- a **komp nem indul**, amíg harcolsz.
+
+A **hadi-ablak liga-pontja** és a **párbaj bűn-tisztulása** csak **valódi összecsapás**
+után jár: a két félnek legalább **20 másodperce** harcban kell állnia egymással — az
+egy-ütéses, megrendezett "váltott ölés" se pontot, se bűn-mosást nem ér.

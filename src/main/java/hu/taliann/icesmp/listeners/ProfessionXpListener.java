@@ -35,6 +35,13 @@ import java.util.Set;
  */
 public final class ProfessionXpListener implements Listener {
 
+    /** I16 — setter-injektált: szakma-céh heti közös cél számlálója. */
+    private volatile hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoal;
+
+    public void setWeeklyGoal(final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyGoal) {
+        this.weeklyGoal = weeklyGoal;
+    }
+
     private static final Set<Material> CROPS = EnumSet.of(
             Material.WHEAT, Material.CARROTS, Material.POTATOES, Material.BEETROOTS,
             Material.NETHER_WART, Material.SWEET_BERRY_BUSH, Material.COCOA
@@ -59,16 +66,49 @@ public final class ProfessionXpListener implements Listener {
         this.afkManager = afkManager;
     }
 
+    /** I7: setterrel kötve — Bőség-idő alatt a Gyógynövényész BETAKARÍTÁS extra XP-t ad. */
+    private volatile hu.taliann.icesmp.managers.AbundanceManager abundanceManager;
+
+    public void setAbundanceManager(final hu.taliann.icesmp.managers.AbundanceManager abundanceManager) {
+        this.abundanceManager = abundanceManager;
+    }
+
+    /**
+     * I7 — évszakos termés: a HERBALIST betakarítás-XP a Bőség-idő ablakában
+     * config-szorzót kap (professions.seasonal.abundance-multiplier, default 1.5) —
+     * CSAK a harvest-utakra, a sima blokk-törés (bányász/favágó) érintetlen.
+     */
+    private void awardHarvestXp(final Player player, final String configPath, final int fallback) {
+        final hu.taliann.icesmp.managers.AbundanceManager abundanceRef = abundanceManager;
+        final double mult = abundanceRef != null && abundanceRef.isActive()
+                ? Math.max(1.0D, configManager.getDouble("professions.seasonal.abundance-multiplier", 1.5D))
+                : 1.0D;
+        final int base = Math.max(0, configManager.getInt(configPath, fallback));
+        awardXpAmount(player, ProfessionType.HERBALIST, (int) Math.round(base * mult));
+    }
+
     private void awardXp(final Player player, final ProfessionType profession, final String configPath, final int fallback) {
         // AFK-jelölt játékos nem termel szakma-XP-t (auto-farm exploit-fék).
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(player.getUniqueId())) {
             return;
         }
-        final int baseXp = Math.max(0, configManager.getInt(configPath, fallback));
+        awardXpAmount(player, profession, Math.max(0, configManager.getInt(configPath, fallback)));
+    }
+
+    private void awardXpAmount(final Player player, final ProfessionType profession, final int baseXp) {
+        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
+                && afkManager.isAfk(player.getUniqueId())) {
+            return;
+        }
         final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
         professionManager.addXpFor(player, profession, totalXp);
+        // A termelt XP a szakma-céh heti közös célját is tölti.
+        final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
+        if (weeklyRef != null) {
+            weeklyRef.add(player, profession, totalXp);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -93,13 +133,13 @@ public final class ProfessionXpListener implements Listener {
         }
 
         if (Tag.FLOWERS.isTagged(material)) {
-            awardXp(player, ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3);
             return;
         }
 
         if (CROPS.contains(material) && block.getBlockData() instanceof Ageable ageable
                 && ageable.getAge() >= ageable.getMaximumAge()) {
-            awardXp(player, ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3);
         }
     }
 
@@ -108,7 +148,7 @@ public final class ProfessionXpListener implements Listener {
         if (!isSurvival(event.getPlayer())) {
             return;
         }
-        awardXp(event.getPlayer(), ProfessionType.HERBALIST, "professions.xp.herbalism-harvest", 3);
+        awardHarvestXp(event.getPlayer(), "professions.xp.herbalism-harvest", 3);
     }
 
     private static boolean isSurvival(final Player player) {
@@ -117,7 +157,7 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
         }
 
@@ -129,7 +169,7 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSmithItem(final SmithItemEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
         }
 
@@ -138,12 +178,15 @@ public final class ProfessionXpListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEnchantItem(final EnchantItemEvent event) {
+        if (!isSurvival(event.getEnchanter())) {
+            return;
+        }
         awardXp(event.getEnchanter(), ProfessionType.ENCHANTER, "professions.xp.enchanting", 10);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBrewedPotionPickup(final InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
         }
 
@@ -170,6 +213,9 @@ public final class ProfessionXpListener implements Listener {
             return;
         }
 
+        if (!isSurvival(event.getPlayer())) {
+            return;
+        }
         awardXp(event.getPlayer(), ProfessionType.FISHERMAN, "professions.xp.fishing", 4);
     }
 
@@ -179,6 +225,9 @@ public final class ProfessionXpListener implements Listener {
             return;
         }
 
+        if (!isSurvival(event.getPlayer())) {
+            return;
+        }
         awardXp(event.getPlayer(), ProfessionType.COOK, "professions.xp.cooking", 3);
     }
 

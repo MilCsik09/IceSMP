@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Spell mastery / ranks (ROADMAP phase 3): players spend faction currency to
+ * Spell mastery / ranks: players spend faction currency to
  * rank up an unlocked spell, which lowers its effective cooldown (a clean,
  * non-invasive "spell strength" that the cast pipeline applies). Ranks are
  * stored per player in PDC as "spellId:rank,..." (mirrors the talent storage).

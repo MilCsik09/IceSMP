@@ -160,19 +160,71 @@ public final class ClaimProtectionListener implements Listener {
         }
     }
 
-    /** Explosions never crater claimed chunks (creeper, TNT, crystal…). */
+    /** Explosions never permanently crater claimed chunks — regen mellett látványosan
+     *  robbannak, majd a claim pontosan visszagyógyul (drop nélkül). */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityExplode(final EntityExplodeEvent event) {
-        if (configManager.getBoolean("claims.protect-explosions", true)) {
-            event.blockList().removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
+        if (configManager.getBoolean("claims.protect-explosions", true) && applyRegen(event.blockList(), event.getEntity().getLocation())) {
+            event.setYield(0.0F);
         }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBlockExplode(final BlockExplodeEvent event) {
-        if (configManager.getBoolean("claims.protect-explosions", true)) {
-            event.blockList().removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
+        if (configManager.getBoolean("claims.protect-explosions", true) && applyRegen(event.blockList(), event.getBlock().getLocation())) {
+            event.setYield(0.0F);
         }
+    }
+
+    /** @return true, ha volt regen-re fogott claim-blokk (yield-nullázást kér) */
+    private boolean applyRegen(final java.util.List<org.bukkit.block.Block> blocks,
+                               final org.bukkit.Location center) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null || !regen.isEnabled()) {
+            blocks.removeIf(block -> claimManager.getClaimAt(block.getLocation()) != null);
+            return false;
+        }
+        boolean captured = false;
+        final long delay = regen.explosionDelayMillis();
+        final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
+        while (it.hasNext()) {
+            final org.bukkit.block.Block block = it.next();
+            if (claimManager.getClaimAt(block.getLocation()) == null) {
+                continue;
+            }
+            if (block.getType() == org.bukkit.Material.TNT) {
+                continue; // a lánc-robbanás él, de a TNT nem épül vissza (nincs hurok)
+            }
+            if (!regen.capture(block, delay)) {
+                it.remove();
+                if (hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(block)) {
+                    regen.playWardEffect(block); // az óvó rúnák látványa
+                }
+            } else {
+                regen.spawnDebris(block, center);
+                captured = true;
+            }
+        }
+        return captured;
+    }
+
+    /** Fizika-lepattanás (fáklya a kirobbant falról) claimben: drop nélkül, regen-nel. */
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockDestroy(final com.destroystokyo.paper.event.block.BlockDestroyEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null || !regen.isEnabled()
+                || claimManager.getClaimAt(event.getBlock().getLocation()) == null) {
+            return;
+        }
+        if (regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            event.setWillDrop(false);
+        }
+    }
+
+    private volatile hu.taliann.icesmp.managers.BlockRegenService blockRegenService;
+
+    public void setBlockRegenService(final hu.taliann.icesmp.managers.BlockRegenService service) {
+        this.blockRegenService = service;
     }
 
     // ==================== terrain (tűz / folyadék / dugattyú) ====================
@@ -279,12 +331,21 @@ public final class ClaimProtectionListener implements Listener {
         return false;
     }
 
-    /** Block-eating/-moving mobs (enderman, ravager…) leave claimed chunks alone. */
+    /** Block-eating/-moving mobs (enderman, ravager, Wither-test…) leave claimed
+     *  chunks alone — regen-nel a rombolás látványosan megtörténik és visszagyógyul. */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityChangeBlock(final EntityChangeBlockEvent event) {
-        if (!(event.getEntity() instanceof Player)
-                && claimManager.getClaimAt(event.getBlock().getLocation()) != null) {
-            event.setCancelled(true);
+        if (event.getEntity() instanceof Player
+                || claimManager.getClaimAt(event.getBlock().getLocation()) == null) {
+            return;
+        }
+        event.setCancelled(true);
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isEnabled() && event.getTo().isAir()
+                && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())
+                && regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            regen.spawnDebris(event.getBlock(), event.getEntity().getLocation());
+            event.getBlock().setType(org.bukkit.Material.AIR, false);
         }
     }
 
@@ -303,6 +364,67 @@ public final class ClaimProtectionListener implements Listener {
             event.setCancelled(true);
             warn(player, event.getEntity().getLocation());
         }
+    }
+
+    /**
+     * Idegen claimben az élőlények és a dísz-entitások is védettek (állat/villager/
+     * armor-stand ölés, item-frame kifosztás, mob-vödrözés) — a blokk-védelemmel
+     * azonos kapun. Szörnyekre és játékos-PvP-re nem vonatkozik: az nem claim-kérdés
+     * (a PvP-t a territórium/raid-szabályok kezelik).
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onEntityDamage(final org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (event.getEntity() instanceof Player || event.getEntity() instanceof org.bukkit.entity.Monster) {
+            return;
+        }
+        final Player attacker = attackerOf(event.getDamager());
+        if (attacker != null && denied(attacker, event.getEntity().getLocation())) {
+            event.setCancelled(true);
+            warn(attacker, event.getEntity().getLocation());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onInteractEntity(final org.bukkit.event.player.PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof org.bukkit.entity.ItemFrame)) {
+            return;
+        }
+        if (denied(event.getPlayer(), event.getRightClicked().getLocation())) {
+            event.setCancelled(true);
+            warn(event.getPlayer(), event.getRightClicked().getLocation());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onArmorStandManipulate(final org.bukkit.event.player.PlayerArmorStandManipulateEvent event) {
+        if (denied(event.getPlayer(), event.getRightClicked().getLocation())) {
+            event.setCancelled(true);
+            warn(event.getPlayer(), event.getRightClicked().getLocation());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onBucketEntity(final org.bukkit.event.player.PlayerBucketEntityEvent event) {
+        if (denied(event.getPlayer(), event.getEntity().getLocation())) {
+            event.setCancelled(true);
+            warn(event.getPlayer(), event.getEntity().getLocation());
+        }
+    }
+
+    /** A sebzés mögötti játékos: közvetlen támadó, lövedék lövője vagy szelídített állat gazdája. */
+    private Player attackerOf(final org.bukkit.entity.Entity damager) {
+        if (damager instanceof Player player) {
+            return player;
+        }
+        if (damager instanceof org.bukkit.entity.Projectile projectile
+                && projectile.getShooter() instanceof Player shooter) {
+            return shooter;
+        }
+        if (damager instanceof org.bukkit.entity.Tameable tameable
+                && tameable.getOwner() instanceof Player owner) {
+            return owner;
+        }
+        return null;
     }
 
     /** True when the location is someone else's claim and the player has no access/bypass. */

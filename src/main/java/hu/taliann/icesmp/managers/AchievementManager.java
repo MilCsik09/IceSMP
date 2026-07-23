@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Achievements (ROADMAP phase 8): milestone goals checked against tracked player
+ * Achievements: milestone goals checked against tracked player
  * data on the periodic stats tick. Newly-earned achievements are stored in the
  * player's PDC, announced, and pay a currency reward. Read-only helpers back the
  * achievements GUI.
@@ -133,7 +133,10 @@ public final class AchievementManager {
     public double metricValue(final Player player, final Metric metric) {
         return switch (metric) {
             case CLASS_LEVEL -> jobManager.getPrimaryLevel(player);
-            case WEALTH -> currencyManager.getBalance(player);
+            // Vagyon = az ÖSSZES valuta-egyenleg összege (a default-valutás olvasás a
+            // RED/BLUE/DARK játékosokat kizárta volna a vagyon-elérésekből).
+            case WEALTH -> currencyManager.getBalances(player).values().stream()
+                    .mapToDouble(Double::doubleValue).sum();
             case RAID_KILLS -> statsManager.getRaidKills(player.getUniqueId());
             case PROFESSION_LEVEL -> totalProfessionLevel(player);
             case DAILY_STREAK -> dailyQuestManager.getStreak(player);
@@ -149,15 +152,25 @@ public final class AchievementManager {
     }
 
     private void award(final Player player, final Achievement achievement) {
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        final CurrencyType currency = CurrencyType.fromFactionType(faction);
+        // A VAGYON-elérések kaszt-XP-t fizetnek, NEM veretet: az egyenleg-küszöb
+        // kölcsönkért tokenekkel (alt-számláról) átléphető, és pénz-jutalommal ez
+        // ingyen-pénz-nyomda lenne (befizet → jutalom → visszaadja). Az XP nem
+        // átruházható, így a kör értelmetlen; a többi metrika veretben fizet tovább.
+        final boolean xpReward = achievement.metric() == Metric.WEALTH;
         if (achievement.reward() > 0) {
-            currencyManager.addToBalance(player.getUniqueId(), currency, achievement.reward());
+            if (xpReward) {
+                jobManager.addXpToJob(player, (int) Math.min(Integer.MAX_VALUE, achievement.reward()));
+            } else {
+                final FactionType faction = factionManager.getFaction(player.getUniqueId());
+                currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), achievement.reward());
+            }
         }
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
         player.sendMessage(messageManager.getMessage(
-                "achievement-earned",
-                "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>",
+                xpReward ? "achievement-earned-xp" : "achievement-earned",
+                xpReward
+                        ? "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} kaszt-XP)</gray></gold>"
+                        : "<gold>🏆 Elérés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta)</gray></gold>",
                 Map.of("name", achievement.name(), "reward", String.valueOf(achievement.reward()))));
     }
 

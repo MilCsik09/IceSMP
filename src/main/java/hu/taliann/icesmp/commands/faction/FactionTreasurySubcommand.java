@@ -26,15 +26,26 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
     private final CurrencyManager currencyManager;
     private final KingManager kingManager;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
+    /** frakció → {nap, ma kivett összeg} — a tanácsi keret KÖZÖS (memóriában él, a capnek elég). */
+    private final java.util.concurrent.ConcurrentHashMap<hu.taliann.icesmp.data.FactionType, double[]> councilWithdrawnToday =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    private final org.bukkit.NamespacedKey withdrawDayKey =
+            org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_day");
+    private final org.bukkit.NamespacedKey withdrawSumKey =
+            org.bukkit.NamespacedKey.fromString("icesmp:treasury_withdraw_sum");
 
     public FactionTreasurySubcommand(final FactionTreasuryManager treasuryManager, final FactionManager factionManager,
                                      final CurrencyManager currencyManager, final KingManager kingManager,
-                                     final MessageManager messageManager) {
+                                     final MessageManager messageManager,
+                                     final hu.taliann.icesmp.managers.ConfigManager configManager) {
         this.treasuryManager = treasuryManager;
         this.factionManager = factionManager;
         this.currencyManager = currencyManager;
         this.kingManager = kingManager;
         this.messageManager = messageManager;
+        this.configManager = configManager;
     }
 
     @Override
@@ -86,10 +97,24 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         return true;
     }
 
+    /** A Vének Tanácsa (setterrel kötve): a NEUTRAL tanácstag is nyúlhat a kasszához. */
+    private volatile hu.taliann.icesmp.managers.CouncilManager councilManager;
+
+    public void setCouncilManager(final hu.taliann.icesmp.managers.CouncilManager councilManager) {
+        this.councilManager = councilManager;
+    }
+
+    private boolean isNeutralCouncillor(final Player player) {
+        final hu.taliann.icesmp.managers.CouncilManager councilRef = councilManager;
+        return councilRef != null && councilRef.isCouncillor(player.getUniqueId());
+    }
+
     private boolean handleWithdraw(final Player player, final String rawAmount) {
         // The crowned king commands their own faction's treasury; admins can always withdraw.
-        if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)) {
-            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA kasszából csak a frakció királya (vagy admin) vehet ki."));
+        // A Menedéknek nincs királya — ott a Vének Tanácsának tagjai vehetnek ki (saját kerettel).
+        if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)
+                && !isNeutralCouncillor(player)) {
+            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA kasszából csak a frakció királya (a Menedékben: a Vének Tanácsa) vagy admin vehet ki."));
             return true;
         }
 
@@ -107,15 +132,52 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         }
 
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
+
+        // Bank-only szabály: a kassza-kivét FIZIKAI veretben érkezik a király kezébe
+        // (számlára pénz csak bankbefizetéssel kerülhet) — és napi limit fékezi, hogy
+        // egy király ne üríthesse egy mozdulattal a kasszát (élő kulcs, 0 = korlátlan).
+        // A tanácsi keret a FRAKCIÓ KÖZÖS számlálója (nem fejenkénti): a 3 tanácstag
+        // együtt sem viheti a királyi keret fölé.
+        final boolean councilPath = !kingManager.isKing(player) && isNeutralCouncillor(player);
+        final double dailyCap = councilPath
+                ? configManager.getDouble("factions.council.withdraw-daily-cap", 400.0D)
+                : configManager.getDouble("factions.treasury.withdraw-daily-cap", 1000.0D);
+        final long today = System.currentTimeMillis() / 86_400_000L;
+        final double takenToday;
+        if (councilPath) {
+            final double[] shared = councilWithdrawnToday.get(faction);
+            takenToday = shared != null && (long) shared[0] == today ? shared[1] : 0.0D;
+        } else {
+            final long storedDay = player.getPersistentDataContainer()
+                    .getOrDefault(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);
+            takenToday = storedDay == today ? player.getPersistentDataContainer()
+                    .getOrDefault(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D) : 0.0D;
+        }
+        if (dailyCap > 0.0D && takenToday + amount > dailyCap) {
+            player.sendMessage(messageManager.get(
+                    "messages.faction-treasury-daily-cap",
+                    "&cA mai kassza-kivét keret elfogyott (&f%s&c/nap). Holnap folytathatod.",
+                    currencyManager.formatBalance(dailyCap)));
+            return true;
+        }
+
         if (!treasuryManager.withdraw(faction, amount)) {
             player.sendMessage(messageManager.get("messages.faction-treasury-insufficient", "&cNincs ennyi a frakciókasszában."));
             return true;
         }
 
-        currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), amount);
+        if (councilPath) {
+            councilWithdrawnToday.compute(faction, (key, old) ->
+                    old == null || (long) old[0] != today
+                            ? new double[]{today, amount} : new double[]{today, old[1] + amount});
+        } else {
+            player.getPersistentDataContainer().set(withdrawDayKey, org.bukkit.persistence.PersistentDataType.LONG, today);
+            player.getPersistentDataContainer().set(withdrawSumKey, org.bukkit.persistence.PersistentDataType.DOUBLE, takenToday + amount);
+        }
+        currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), (long) Math.floor(amount));
         player.sendMessage(messageManager.get(
                 "messages.faction-treasury-withdraw-success",
-                "&aKivét a kasszából: &f%s %s &7(a bankodba került).",
+                "&aKivét a kasszából: &f%s %s &7(veretben, a kezedbe).",
                 currencyManager.formatBalance(amount),
                 faction.getDisplayName()
         ));

@@ -10,7 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Blood moon nights (ideas.md "Vérhold-éjszaka"): rarely, a night turns into a
+ * Blood moon nights: rarely, a night turns into a
  * blood moon — every scaled mob spawns with bonus levels and soulstone drops
  * multiply. The tick runs on the global region scheduler, which owns the
  * day-night cycle on Folia, so reading world time here is thread-correct.
@@ -18,7 +18,14 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class BloodMoonManager {
 
     private static final long NIGHT_START_TICK = 13000L;
-    private static final long ROLL_WINDOW_END_TICK = 14400L;
+    /**
+     * A roll-ablak vége éjfél (18000): a lastRolledDay-őr miatt éjszakánként úgyis csak
+     * egyszer sorsolunk, a széles ablak viszont garantálja, hogy a világesemény-tick
+     * (world-events.check-interval-seconds, akár többperces érték) sose ugorja át az
+     * ablakot — a korábbi 14400-as vég 70 mp-nél nagyobb intervallumnál kimaradó
+     * vérholdakat okozott (audit-hiba).
+     */
+    private static final long ROLL_WINDOW_END_TICK = 18000L;
     private static final long DAWN_TICK = 12500L;
 
     private final JavaPlugin plugin;
@@ -29,6 +36,35 @@ public final class BloodMoonManager {
     private volatile long lastRolledDay = -1L;
     // > 0 while an admin-forced blood moon is running; it ends on a timer rather than at dawn.
     private volatile long forcedEndAtMillis = 0L;
+    /** B33: setter-injected finálé-eszkaláció (null = nincs finálé-szorzó). */
+    private volatile SeasonFinaleManager seasonFinale;
+
+    /** B33: a szezonzáró-eszkaláció bekötése (a finálé-manager később épül a DI-sorrendben). */
+    public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
+        this.seasonFinale = seasonFinale;
+    }
+
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
+    }
+
+    /** D1 — ünnep-hook (setterrel kötve; null = nincs ünnep-szorzó). */
+    private volatile HolidayService holidayService;
+
+    public void setHolidayService(final HolidayService holidayService) {
+        this.holidayService = holidayService;
+    }
+
+    private static double parseOr(final String raw, final double fallback) {
+        try {
+            return Double.parseDouble(raw);
+        } catch (final NumberFormatException exception) {
+            return fallback;
+        }
+    }
 
     public BloodMoonManager(final JavaPlugin plugin, final ConfigManager configManager,
                             final MessageManager messageManager) {
@@ -105,8 +141,19 @@ public final class BloodMoonManager {
         }
 
         lastRolledDay = day;
+        // A végítélet-hét alatt sűrűbb a vérhold (napi eszkalációs szorzó);
+        // télen (évszak-szorzó) amúgy is gyakoribb.
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
+        final SeasonalModifierService seasonalRef = seasonalModifiers;
+        final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("blood-moon");
+        // Ünnep-felülbírálás (pl. Rém-éj: sűrűbb vérhold). A halott hook életre kelt.
+        final hu.taliann.icesmp.managers.HolidayService holidayRef = holidayService;
+        final String holidayMult = holidayRef == null ? null : holidayRef.override("blood-moon-chance-mult");
+        final double holidayFactor = holidayMult == null ? 1.0D : Math.max(0.0D, parseOr(holidayMult, 1.0D));
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D)));
+                configManager.getDouble("world-events.blood-moon.chance-percent", 15.0D)
+                        * finaleMult * seasonalMult * holidayFactor));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }

@@ -29,8 +29,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Companion pets for the Beast Master and Necromancer (ROADMAP phase 12 + capture
- * extension). The pet can be ANY mob, obtained with a spec-specific capture item:
+ * Companion pets for the Beast Master and Necromancer. The pet can be ANY mob,
+ * obtained with a spec-specific capture item:
  * the Beast Master tames any non-hostile animal, the Necromancer binds any hostile
  * mob / undead. The pet's type, level, XP and name persist in the player's PDC and
  * re-apply on summon. Tameable pets follow via vanilla; the rest are kept near the
@@ -50,6 +50,13 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     private final NamespacedKey entityKey;
     private final NamespacedKey healthModKey;
     private final NamespacedKey damageModKey;
+    private final NamespacedKey respawnKey;
+    private final NamespacedKey stanceKey;
+    private final NamespacedKey armorKey;
+    private final NamespacedKey armorDefenseModKey;
+    private final NamespacedKey armorHealthModKey;
+    /** Élő társsal rendelkező gazdák — a vezérlő tick CSAK rájuk hop-ol (üresjárat-fék). */
+    private final java.util.Set<UUID> activeOwners = ConcurrentHashMap.newKeySet();
     /** owner UUID → current combat target UUID (assist / defend). */
     private final Map<UUID, UUID> combatTargets = new ConcurrentHashMap<>();
     /** pet UUID → epoch ms when the pet may attack again. */
@@ -69,6 +76,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         this.entityKey = new NamespacedKey(plugin, "pet_entity");
         this.healthModKey = new NamespacedKey(plugin, "pet_health_mod");
         this.damageModKey = new NamespacedKey(plugin, "pet_damage_mod");
+        this.respawnKey = new NamespacedKey(plugin, "pet_respawn_at");
+        this.stanceKey = new NamespacedKey(plugin, "pet_stance");
+        this.armorKey = new NamespacedKey(plugin, "pet_armor");
+        this.armorDefenseModKey = new NamespacedKey(plugin, "pet_armor_defense_mod");
+        this.armorHealthModKey = new NamespacedKey(plugin, "pet_armor_health_mod");
     }
 
     public boolean isBeastMaster(final Player player) {
@@ -79,8 +91,37 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         return specializationManager.getClassSpecialization(player) == SpecializationType.NECROMANCER;
     }
 
+    /** Setter-injektált (a JobManager a PetManager után is elérhető a core-ból). */
+    private volatile hu.taliann.icesmp.managers.JobManager jobManager;
+
+    private volatile hu.taliann.icesmp.managers.TalentManager talentManagerRef;
+
+    public void setTalentManager(final hu.taliann.icesmp.managers.TalentManager talentManager) {
+        this.talentManagerRef = talentManager;
+    }
+
+    public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
+        this.jobManager = jobManager;
+    }
+
+    /** Szentségtelen DK: állandó ghúl-társ (a WoW-hű permanens pet). */
+    public boolean isUnholy(final Player player) {
+        return specializationManager.getClassSpecialization(player) == SpecializationType.UNHOLY;
+    }
+
+    /** Boszorkánymester (kaszt-szintű): állandó démon-familiáris. */
+    public boolean isWarlock(final Player player) {
+        final hu.taliann.icesmp.managers.JobManager jobs = this.jobManager;
+        return jobs != null && jobs.getPrimaryJob(player) == hu.taliann.icesmp.data.JobType.WARLOCK;
+    }
+
+    /** A Sötét Paktum-tekercset használó szerepek közös kapuja. */
+    public boolean isDarkCapturer(final Player player) {
+        return isNecromancer(player) || isUnholy(player) || isWarlock(player);
+    }
+
     public boolean canOwnPet(final Player player) {
-        return isBeastMaster(player) || isNecromancer(player);
+        return isBeastMaster(player) || isDarkCapturer(player);
     }
 
     public int getLevel(final Player player) {
@@ -100,13 +141,86 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!(target instanceof Mob) || target instanceof Player || minionManager.isMinion(target)) {
             return false;
         }
+        // Más játékos vanília úton szelídített állata nem lopható el befogással.
+        if (target instanceof org.bukkit.entity.Tameable tameable && tameable.isTamed()
+                && !(tameable.getOwner() instanceof Player owner && owner.getUniqueId().equals(player.getUniqueId()))) {
+            return false;
+        }
+        // Erő-tiltólista: a meta-törő "legjobb pet" választások (Warden, Ravager,
+        // Vasgólem, Elder Guardian, Wither) egyik szerepnek sem foghatók be.
+        for (final String banned : configManager.getStringList("pets.capture.blocklist")) {
+            if (target.getType().name().equalsIgnoreCase(banned)) {
+                return false;
+            }
+        }
         if (isBeastMaster(player)) {
             return !(target instanceof Monster); // any non-hostile animal/mob
         }
         if (isNecromancer(player)) {
             return target instanceof Monster; // any hostile mob / undead
         }
+        // A Szentségtelen és a Boszorkánymester NEM befog, hanem IDÉZ (rituálé-kellékkel).
         return false;
+    }
+
+    /** Idézett társ jelölése — a rituálé-út erő-prémiumot ad (nehezebb beszerzés). */
+    private NamespacedKey summonedKeyLazy;
+
+    private NamespacedKey summonedKey() {
+        if (summonedKeyLazy == null) {
+            summonedKeyLazy = new NamespacedKey(plugin, "pet_summoned");
+        }
+        return summonedKeyLazy;
+    }
+
+    public boolean isSummonedPet(final Player player) {
+        return player.getPersistentDataContainer()
+                .getOrDefault(summonedKey(), PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /**
+     * Rituálé-idézés (Szentségtelen ghúl / Boszorkánymester démon): csak éjjel, a
+     * forma a pet-szinttel fejlődik — a magasabb forma új rituálét (új kelléket) kér.
+     *
+     * @return null siker, különben üzenet-kulcs
+     */
+    public String ritualSummon(final Player player) {
+        final boolean unholy = isUnholy(player);
+        final boolean warlock = !unholy && isWarlock(player);
+        if (!unholy && !warlock) {
+            return "pet-wrong-spec";
+        }
+        final long time = player.getWorld().getTime();
+        if (configManager.getBoolean("pets.summon.night-only", true) && (time < 13000L || time > 23000L)) {
+            return "pet-ritual-night-only";
+        }
+        final int level = getLevel(player);
+        final EntityType form;
+        final String formName;
+        if (unholy) {
+            if (level >= configManager.getInt("pets.summon.tier3-level", 25)) {
+                form = EntityType.ZOGLIN; formName = "Förtelem";
+            } else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) {
+                form = EntityType.WITHER_SKELETON; formName = "Csontszolga";
+            } else {
+                form = EntityType.HUSK; formName = "Ghúl";
+            }
+        } else {
+            if (level >= configManager.getInt("pets.summon.tier3-level", 25)) {
+                form = EntityType.MAGMA_CUBE; formName = "Magma-behemót";
+            } else if (level >= configManager.getInt("pets.summon.tier2-level", 15)) {
+                form = EntityType.BLAZE; formName = "Tűz-démon";
+            } else {
+                form = EntityType.VEX; formName = "Imp";
+            }
+        }
+        final var pdc = player.getPersistentDataContainer();
+        pdc.set(typeKey, PersistentDataType.STRING, form.name());
+        pdc.set(summonedKey(), PersistentDataType.BYTE, (byte) 1);
+        if ("Társ".equals(getName(player))) {
+            pdc.set(nameKey, PersistentDataType.STRING, formName);
+        }
+        return summon(player);
     }
 
     /**
@@ -118,6 +232,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
+        player.getPersistentDataContainer().remove(summonedKey());
         if (!isValidTarget(player, target) || !(target instanceof Mob mob)) {
             return "pet-invalid-target";
         }
@@ -138,6 +253,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         if (!canOwnPet(player)) {
             return "pet-not-allowed";
         }
+        final long respawnAt = player.getPersistentDataContainer()
+                .getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
+        if (respawnAt > System.currentTimeMillis()) {
+            return "pet-respawn-cooldown";
+        }
 
         final EntityType type = resolveType(player);
         if (type == null || type.getEntityClass() == null || !Mob.class.isAssignableFrom(type.getEntityClass())) {
@@ -151,6 +271,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public boolean dismiss(final Player player) {
+        activeOwners.remove(player.getUniqueId());
         final boolean removed = removeActive(player);
         player.getPersistentDataContainer().remove(entityKey);
         return removed;
@@ -168,6 +289,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             return;
         }
         final UUID deadId = dead.getUniqueId();
+        activeOwners.remove(ownerId);
         combatTargets.remove(ownerId);
         attackReady.remove(deadId);
 
@@ -179,6 +301,13 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
             if (deadId.toString().equals(raw)) {
                 owner.getPersistentDataContainer().remove(entityKey);
+                // A halálnak tétje van: újraidézés csak cooldown után.
+                final long cd = Math.max(0L, configManager.getLong(
+                        "pets.companion.death-respawn-seconds", 120L)) * 1000L;
+                if (cd > 0L) {
+                    owner.getPersistentDataContainer().set(respawnKey, PersistentDataType.LONG,
+                            System.currentTimeMillis() + cd);
+                }
                 owner.sendMessage(messageManager.getMessage(
                         "pet-died",
                         "<gray>A társad elesett a harcban. <dark_gray>(/pet summon az új idézéshez)</dark_gray></gray>"));
@@ -196,6 +325,91 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             updateName(pet, player);
         }
         return true;
+    }
+
+    /**
+     * A TÁRS állásmódja a GAZDA PDC-jében él (nem a pet entitásén): így a GUI és a
+     * parancs a játékos saját régió-szálán olvassa/írja, a vezérlő tick pedig a
+     * tickOwner gazda-oldali snapshotjával viszi át a pet szálára — nincs
+     * régió-átnyúló entitás-PDC hozzáférés. (A spell-idézett minionok állásmódja
+     * továbbra is a saját entitás-PDC-jükben van.)
+     */
+    public MinionManager.Stance getStance(final Player player) {
+        final String raw = player.getPersistentDataContainer().get(stanceKey, PersistentDataType.STRING);
+        if (raw == null) {
+            return MinionManager.Stance.ACTIVE;
+        }
+        try {
+            return MinionManager.Stance.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException exception) {
+            return MinionManager.Stance.ACTIVE;
+        }
+    }
+
+    public void setStance(final Player player, final MinionManager.Stance stance) {
+        player.getPersistentDataContainer().set(stanceKey, PersistentDataType.STRING, stance.name());
+    }
+
+    public MinionManager.Stance cycleStance(final Player player) {
+        final MinionManager.Stance next = switch (getStance(player)) {
+            case ACTIVE -> MinionManager.Stance.PASSIVE;
+            case PASSIVE -> MinionManager.Stance.STAY;
+            case STAY -> MinionManager.Stance.ACTIVE;
+        };
+        setStance(player, next);
+        return next;
+    }
+
+    /** A kattintott entitás a játékos aktív társa-e (gazda-PDC alapján, a gazda szálán hívandó). */
+    public boolean isActivePetEntity(final Player player, final Entity clicked) {
+        final Mob pet = activePet(player);
+        return pet != null && pet.getUniqueId().equals(clicked.getUniqueId());
+    }
+
+    public boolean hasActivePet(final Player player) {
+        return activePet(player) != null;
+    }
+
+    public int nextLevelCost(final Player player) {
+        return levelCost(getLevel(player));
+    }
+
+    public long respawnRemainingSeconds(final Player player) {
+        final long at = player.getPersistentDataContainer().getOrDefault(respawnKey, PersistentDataType.LONG, 0L);
+        return Math.max(0L, (at - System.currentTimeMillis() + 999L) / 1000L);
+    }
+
+    /** Társvért: a jelzés a gazda PDC-jében él, így újraidézéskor is visszakerül a társra. */
+    public boolean hasPetArmor(final Player player) {
+        return player.getPersistentDataContainer().getOrDefault(armorKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /**
+     * Felszereli a Társvértet a játékos aktív társára.
+     *
+     * @return null siker, különben üzenet-kulcs
+     */
+    public String equipArmor(final Player player, final Entity clicked) {
+        if (!canOwnPet(player)) {
+            return "pet-not-allowed";
+        }
+        if (hasPetArmor(player)) {
+            return "pet-armor-already";
+        }
+        final Mob pet = activePet(player);
+        if (pet == null || !pet.getUniqueId().equals(clicked.getUniqueId())) {
+            return "pet-armor-not-pet";
+        }
+        player.getPersistentDataContainer().set(armorKey, PersistentDataType.BYTE, (byte) 1);
+        applyEquipment(pet);
+        return null;
+    }
+
+    private void applyEquipment(final LivingEntity pet) {
+        applyModifier(pet, Attribute.ARMOR, armorDefenseModKey,
+                Math.max(0.0D, configManager.getDouble("pets.equipment.armor-bonus", 4.0D)));
+        applyModifier(pet, Attribute.MAX_HEALTH, armorHealthModKey,
+                Math.max(0.0D, configManager.getDouble("pets.equipment.health-bonus", 4.0D)));
     }
 
     /** Awards companion XP for the owner; levels up (rebuffing the active pet) on threshold. */
@@ -235,26 +449,34 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     /**
-     * Records a combat target for the owner's active pet (assist when the owner
-     * strikes a mob, or defend when the owner is struck). Ignored if the target is
-     * the owner or one of the owner's own minions, so a pet never turns on its allies.
+     * Owner-side gate of the combat-target flow: the owner has a pet-owning spec AND a live
+     * companion. Reads the OWNER's PDC — must run on the owner's region thread (Folia).
      */
-    public void setCombatTarget(final Player owner, final LivingEntity target) {
-        if (owner == null || target == null || target.isDead() || !target.isValid()) {
-            return;
+    public boolean canReceiveCombatTarget(final Player owner) {
+        return owner != null && canOwnPet(owner) && activePet(owner) != null;
+    }
+
+    /**
+     * Target-side filter of the combat-target flow: the target is alive, not the owner and not
+     * one of the owner's own minions (a pet never turns on its allies). Reads the TARGET's
+     * state/PDC — must run on the target's region thread (Folia).
+     */
+    public boolean isEligibleCombatTarget(final UUID ownerId, final LivingEntity target) {
+        return ownerId != null && target != null && !target.isDead() && target.isValid()
+                && !target.getUniqueId().equals(ownerId)
+                && !minionManager.isOwnedBy(target, ownerId);
+    }
+
+    /**
+     * Records a validated combat target for the owner's pet (assist/defend). Concurrent-map
+     * write — safe from any region thread once both sides were validated on their own threads
+     * ({@link #canReceiveCombatTarget} / {@link #isEligibleCombatTarget}); the pet controller
+     * {@link #tick()} re-validates the target anyway.
+     */
+    public void putCombatTarget(final UUID ownerId, final UUID targetId) {
+        if (ownerId != null && targetId != null) {
+            combatTargets.put(ownerId, targetId);
         }
-        // Cheap early-out: this fires on every PvE/PvP damage event, but only the two pet-owning
-        // specs can have a companion — skip the PDC/entity lookup for everyone else.
-        if (!canOwnPet(owner)) {
-            return;
-        }
-        if (target.getUniqueId().equals(owner.getUniqueId()) || minionManager.isOwnedBy(target, owner.getUniqueId())) {
-            return;
-        }
-        if (activePet(owner) == null) {
-            return;
-        }
-        combatTargets.put(owner.getUniqueId(), target.getUniqueId());
     }
 
     /**
@@ -275,7 +497,12 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
         // Folia: read each owner's PDC + location on the OWNER's region thread, snapshot it,
         // then hop to the PET's region thread for all pet mutations (the pet may be elsewhere).
-        for (final Player owner : Bukkit.getOnlinePlayers()) {
+        for (final UUID ownerId : activeOwners) {
+            final Player owner = Bukkit.getPlayer(ownerId);
+            if (owner == null) {
+                activeOwners.remove(ownerId);
+                continue;
+            }
             owner.getScheduler().run(plugin, ownerTask ->
                     tickOwner(owner, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
         }
@@ -300,20 +527,25 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final int level = getLevel(owner);
         final Location ownerLoc = owner.getLocation();
         final World ownerWorld = owner.getWorld();
+        final MinionManager.Stance stance = getStance(owner);
         pet.getScheduler().run(plugin, petTask ->
-                runPetTick(pet, ownerId, ownerLoc, ownerWorld, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
+                runPetTick(pet, ownerId, stance, ownerLoc, ownerWorld, level, followSq, followStartSq, reach, aggro, leash, chaseSpeed, cooldownMs), null);
     }
 
-    private void runPetTick(final Mob pet, final UUID ownerId, final Location ownerLoc, final World ownerWorld,
+    private void runPetTick(final Mob pet, final UUID ownerId, final MinionManager.Stance stance,
+                            final Location ownerLoc, final World ownerWorld,
                             final int level, final double followSq, final double followStartSq, final double reach,
                             final double aggro, final double leash, final double chaseSpeed, final long cooldownMs) {
         if (!pet.isValid()) {
             return;
         }
 
-        final MinionManager.Stance stance = minionManager.getStance(pet);
         if (stance == MinionManager.Stance.STAY) {
             combatTargets.remove(ownerId);
+            // Világváltásnál a STAY pet sem maradhat árván a régi világban.
+            if (!pet.getWorld().equals(ownerWorld)) {
+                pet.teleportAsync(ownerLoc);
+            }
             return; // hold position — no follow, no combat
         }
 
@@ -437,16 +669,37 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             tameable.setTamed(true);
             tameable.setOwner(player);
         }
-        if (mob instanceof Zombie zombie) {
-            zombie.setShouldBurnInDay(false);
+        // A pet BÁRMILYEN mob lehet (Beast Master / Necromancer): a közös keményítés fedi a
+        // zombi/csontváz/phantom nappali égést ÉS a piglin/hoglin overworld-zombisodását is.
+        EventSpawnGuard.prepare(mob);
+        // Idézett társ prémiuma: bónusz-szintekkel skálázott statok (a rituálé-beszerzés ára).
+        final int buffLevel = getLevel(player)
+                + (isSummonedPet(player) ? Math.max(0, configManager.getInt("pets.summon.bonus-levels", 5)) : 0);
+        applyBuffs(mob, buffLevel, true);
+        // A gazda max-health talentjei a PERMANENS társat is erősítik (a minionokkal
+        // azonos megosztási arány — a két rendszer skálázása konzisztens).
+        final hu.taliann.icesmp.managers.TalentManager talents = this.talentManagerRef;
+        if (talents != null) {
+            final double share = Math.max(0.0D, talents.getEffectTotal(player, "max-health")
+                    * Math.max(0.0D, configManager.getDouble("pets.talent-health-share", 0.5D)));
+            final org.bukkit.attribute.AttributeInstance hp =
+                    mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (share > 0.0D && hp != null) {
+                hp.setBaseValue(hp.getBaseValue() + share);
+                mob.setHealth(hp.getValue());
+            }
         }
-        if (mob instanceof AbstractSkeleton skeleton) {
-            skeleton.setShouldBurnInDay(false);
+        if (hasPetArmor(player)) {
+            applyEquipment(mob);
+            final AttributeInstance hp = mob.getAttribute(Attribute.MAX_HEALTH);
+            if (hp != null) {
+                mob.setHealth(hp.getValue());
+            }
         }
-        applyBuffs(mob, getLevel(player), true);
         updateName(mob, player);
         minionManager.tag(mob, player.getUniqueId());
         player.getPersistentDataContainer().set(entityKey, PersistentDataType.STRING, mob.getUniqueId().toString());
+        activeOwners.add(player.getUniqueId());
     }
 
     private int levelCost(final int level) {
@@ -505,7 +758,11 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
+            activeOwners.remove(playerId);
             combatTargets.remove(playerId);
+            // A gazda nélkül maradt társ/minionok despawnolnak (PDC-ből újraidézhető) —
+            // nem maradhat árva, örök-persistent entitás a világban.
+            minionManager.removeAllOwned(playerId);
         }
     }
 

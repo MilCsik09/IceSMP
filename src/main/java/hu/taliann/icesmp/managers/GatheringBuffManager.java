@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Gathering buff windows (ROADMAP "élőbb világ"): time-limited, server-wide
+ * Gathering buff windows: time-limited, server-wide
  * bonus periods that reward the everyday grind without touching the economy —
  * only raw materials and XP, never currency. Each window is one of a handful of
  * flavours; while it is open the {@link hu.taliann.icesmp.listeners.GatheringBuffListener}
@@ -101,12 +101,22 @@ public final class GatheringBuffManager {
                     < Math.max(0, configManager.getInt("gathering-buffs.min-online-players", 1))) {
                 return;
             }
+            // Évszak-szorzó (nyáron sűrűbb a gyűjtögető-láz — season-modifiers.<evszak>.gathering).
+            final SeasonalModifierService seasonalRef = seasonalModifiers;
+            final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("gathering");
             final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("gathering-buffs.chance-percent", 40.0D)));
+                    configManager.getDouble("gathering-buffs.chance-percent", 40.0D) * seasonalMult));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 start(pickRandomEnabled());
             }
         }
+    }
+
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
     }
 
     /** Hungarian label of the active buff window (menu display), or null when none. */

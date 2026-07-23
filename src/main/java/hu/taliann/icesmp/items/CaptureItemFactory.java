@@ -28,13 +28,43 @@ public final class CaptureItemFactory {
     }
 
     public ItemStack createBeastItem(final int amount) {
-        return create(amount, "beast", Material.LEAD, "<dark_green>Szelídítő Póráz</dark_green>",
-                "<gray>Jobb katt egy állaton: a társaddá fogadod.</gray>", "<gray>(Vadmester)</gray>");
+        return create(amount, "beast", Material.LEAD, "<dark_green>Ősi Kötés Póráza</dark_green>",
+                "<gray>Aetrinita és Kallan természet-kötése — jobb katt egy állaton: a társaddá fogadod.</gray>", "<gray>(Vadmester)</gray>");
     }
 
     public ItemStack createNecroItem(final int amount) {
-        return create(amount, "necro", Material.GHAST_TEAR, "<dark_purple>Lélekkötő Tekercs</dark_purple>",
-                "<gray>Jobb katt egy szörnyön: szolgáddá köti.</gray>", "<gray>(Nekromanta)</gray>");
+        return create(amount, "necro", Material.GHAST_TEAR, "<dark_purple>Sötét Paktum-tekercs</dark_purple>",
+                "<gray>Eleftheria mérgének paktuma — jobb katt egy szörnyön: szolgáddá köti.</gray>", "<gray>(Nekromanta)</gray>");
+    }
+
+    public ItemStack createHeartItem(final int amount) {
+        return create(amount, "heart", Material.ECHO_SHARD, "<dark_green>Nyughatatlan Szív</dark_green>",
+                "<gray>Egy el nem porladt szív, amely még emlékszik a parancsszóra —</gray>",
+                "<gray>éjjel, szabad ég alatt idézd meg vele a ghúlodat. (Szentségtelen)</gray>");
+    }
+
+    public ItemStack createSealItem(final int amount) {
+        return create(amount, "seal", Material.AMETHYST_SHARD, "<dark_purple>Démon-pecsét</dark_purple>",
+                "<gray>A fátylon túlról zárt alku pecsétje — éjjel törd fel,</gray>",
+                "<gray>és a démon a szolgálatodba áll. (Boszorkánymester)</gray>");
+    }
+
+    public ItemStack createPetArmorItem(final int amount) {
+        return create(amount, "pet_armor", Material.LEATHER_HORSE_ARMOR, "<gold>Társvért</gold>",
+                "<gray>Mesterien szabott vért, amely bármely társ testére igazodik —</gray>",
+                "<gray>jobb katt a saját társadon: páncélt és életerőt kap. (minden társ-tartó)</gray>");
+    }
+
+    public boolean isPetArmorItem(final ItemStack item) {
+        return "pet_armor".equals(tagOf(item));
+    }
+
+    public boolean isHeartItem(final ItemStack item) {
+        return "heart".equals(tagOf(item));
+    }
+
+    public boolean isSealItem(final ItemStack item) {
+        return "seal".equals(tagOf(item));
     }
 
     public boolean isBeastCapture(final ItemStack item) {
@@ -67,6 +97,7 @@ public final class CaptureItemFactory {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         meta.getPersistentDataContainer().set(captureKey, PersistentDataType.STRING, tag);
         item.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, "icesmp:capture_" + tag);
         return item;
     }
 }

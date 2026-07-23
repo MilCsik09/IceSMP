@@ -63,3 +63,124 @@ crafting-restrictions:
     # HERBALIST + FISHERMAN: ezeknek a craft-asztali kapuzás erőltetett lenne — az értékük a
     # GYŰJTÉS és a főző-/alkimista-alapanyag-ellátás. Nekik a főzés-hook (brew) vagy egy gyűjtés-
     # oldali mechanika illik jobban — lásd a tervet (ROADMAP/IDEAS), nem ebben a config-körben.
+
+# ===== Signature-item perkek (K2/K3/K4 — frakció-kapus craftolt tárgyak) =====
+# Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
+signature:
+  # Bootstrap-regisztrált EGYEDI enchantok a signature itemeken (Jégfog, Vihartűz,
+  # Vérszomj, Fagypáncél, Főnixtoll, Érc-érzék, Bokic Kegye) — a magyar nevük valódi
+  # enchant-sorként jelenik meg a tooltipben (kliens-mod és resource pack nélkül).
+  # A Fagypáncél és a Főnixtoll NEM csak dísz: iskola-counterek (fagymágia-, ill.
+  # tűzmágia-ellenállás — spells.magic-resist.school-per-level). Itemenként kapcsolható:
+  # items.<signature-id>: false = arra az itemre a craft nem stampeli rá.
+  custom-enchants:
+    enabled: true
+    items:
+      kallan_szeletelo: true
+      pyralingradi_tuzkopo: true
+      verszavanna_agyara: true
+      glatziendorfi_jegvert: true
+      fonix_tollkopeny: true
+      vasmuvek_csakanya: true
+      bokic_horgaszbot: true
+  # Az enchantok RIDER-effektjei (audit: egyik enchant sem puszta dísz — mindnek
+  # lore-horgonyzott funkciója van; itt hangolhatók, 0 = az adott rider kikapcsol).
+  # A Fagypáncél és a Főnixtoll SZÁNDÉKOSAN nem szerepel itt: ők passzív iskola-
+  # counterek (spells.magic-resist.school-per-level), nincs külön rider-effektjük.
+  enchant-riders:
+    jegfog-slow-seconds: 2       # Jégfog: a nyíl-találat rövid lassítást harap
+    vihartuz-fire-ticks: 40      # Vihartűz: a lövedék parazsat hord (2 mp égés)
+    verszomj-lifesteal: 0.1      # Vérszomj: a bevitt sebzés ekkora része gyógyít…
+    verszomj-heal-cap: 2.0       # …de ütésenként legfeljebb ennyi HP (1 szív)
+    erc-erzek-xp: 2              # Érc-érzék: bónusz XP-gömb érc-törésnél
+    bokic-luck-seconds: 30       # Bokic Kegye: fogáskor rövid Szerencse (jobb zsákmánytábla)
+  # K10 — Bokic-menti Sétapálca (feketepiac): a rejtett penge flat bónusz-sebzése.
+  # capital-only: true = a penge CSAK Caldestera (NEUTRAL főváros) zónájában üt —
+  # a fegyvertilalom kiskapuja a városon kívül nem érhet többet egy botnál.
+  setapalca:
+    bonus-damage: 5.0
+    capital-only: true
+  # Cryghaliris (BLUE)
+  kallan:
+    arrow-velocity-mult: 1.5   # a nyíl sebesség-szorzója
+    armor-pierce: 0.15         # páncéltörés: végső sebzés +15%
+  jegvert:
+    damage-mult: 0.8           # bejövő sebzés-szorzó (0.8 = -20%)
+  kantar:
+    speed-add: 0.05            # a felkantározott hátas sebesség-bónusza
+  # --- 2. hullám signature fegyverek (LORE_REFERENCE tervtábla) ---
+  jegtoro:
+    slowed-bonus: 0.25         # Jégtörő: lassított célon +25% sebzés
+  miinus:
+    low-health-threshold: 0.35 # V. Miinus Haragja: e HP-arány ALATT él a bónusz…
+    low-health-bonus: 0.2      # …+20% sebzés (a megfagyott király haragja)
+  sarkanycsont:
+    pierce-add: 2              # Sárkánycsont Íj: a nyíl pierce-szintje +2 (átüti a sorfalat)
+  langnyelv:
+    ignite-chance: 0.2         # Lángnyelv: gyújtás-esély találatkor
+    ignite-ticks: 40           # …2 mp égés
+    burning-bonus: 0.15        # égő célon +15% sebzés
+  napfogyatkozas:
+    night-velocity-mult: 1.15  # Napfogyatkozás: éjjel gyorsabb lövedék…
+    night-damage-bonus: 0.25   # …és +25% sebzés a becsapódáskor
+  # Perinfernicitas (RED)
+  tuzkopo:
+    arrow-velocity-mult: 1.5
+    quick-charge-level: 2      # a crafthoz kapott Quick Charge szint (0 = nincs, max 3)
+  agyar:
+    damage-mult: 1.15          # közelharci sebzés-szorzó
+    offhand-axe-mult: 1.3      # ha a másik kézben balta van
+  tollkopeny:
+    fire-immunity: true        # tűz/láva/izzó blokk sebzés kioltása
+  # Ryanora & Caldestera (NEUTRAL) — K4
+  csakany:
+    bonus-drop-chance: 0.2     # érc-töréskor extra drop esélye (0-1)
+    stack-with-event: false    # false = bányász-láz esemény ALATT a perk szünetel (nincs stack)
+  horgaszbot:
+    bonus-drop-chance: 0.2     # fogáskor dupla zsákmány esélye (0-1)
+    stack-with-event: false    # false = halászati láz ALATT a perk szünetel
+  bankbetet:
+    value: 25.0                # beváltási érték Creutzérben (jobb-katt; a papír elfogy)
+  szarvas:
+    cooldown-seconds: 120      # Szellemszarvas-hívás visszatöltődése
+    duration-seconds: 90       # a hátas élettartama (utána köddé válik)
+    speed: 0.3                 # a hátas sebesség-attribútuma (vanília ló: ~0.1-0.34)
+    jump: 0.8                  # ugrás-erő
+
+# ===== B26 — Rúna-kovácsolás: hatás-értékek (élő kulcsok, /icesmp reload) =====
+# A rúna unique-materialként készül (profession-materials + recept), felhelyezés:
+# a kurzoron tartott rúnát kattintsd a cél-tárgyra. Tárgyanként EGY rúna, nem cserélhető.
+runes:
+  runa_elek:
+    display: "Él Rúnája"
+    applies: [ "weapon" ]
+    melee-damage-percent: 5.0
+  runa_zapor:
+    display: "Zápor Rúnája"
+    applies: [ "bow" ]
+    projectile-damage-percent: 7.0
+  runa_bastya:
+    display: "Bástya Rúnája"
+    applies: [ "chest" ]
+    damage-reduction-percent: 4.0
+  runa_lang:
+    display: "Láng Rúnája"
+    applies: [ "weapon" ]
+    chance: 0.10
+    fire-ticks: 40
+  runa_fagy:
+    display: "Fagy Rúnája"
+    applies: [ "weapon" ]
+    chance: 0.10
+    slow-ticks: 40
+  runa_moho:
+    display: "Mohóság Rúnája"
+    applies: [ "weapon" ]
+    money-drop-bonus-percent: 5.0
+  # E7 — Varázsló-exkluzív rúna + affinitás-szorzó (a Varázsló minden rúnát erősebben olvas)
+  wizard-affinity-multiplier: 2.0
+  runa_visszhang:
+    display: "Visszhang Rúnája"
+    applies: [ "weapon" ]
+    chance: 0.08
+    echo-damage-percent: 30.0

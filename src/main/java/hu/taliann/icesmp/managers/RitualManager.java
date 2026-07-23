@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Ritual altars (ideas.md "Rituálé-oltárok"): each altar is a multi-block shrine.
+ * Ritual altars: each altar is a multi-block shrine.
  * Sneak-right-clicking the altar's core block validates the surrounding structure
  * (if configured) and, given the required sacrifices, consumes them and grants an
  * outcome chosen by the ritual's {@code type}:
@@ -42,6 +42,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code cooldown-seconds} to rate-limit repeats (in memory, reset on restart).
  */
 public final class RitualManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
+
+    /** E25 — setter-injektált függőségek a pakt-ceremóniához. */
+    private volatile hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
+    private volatile hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
+
+    public void setPaktDependencies(final hu.taliann.icesmp.managers.ResourceBonusService bonusService,
+                                    final hu.taliann.icesmp.items.UniqueMaterialFactory factory) {
+        this.resourceBonusService = bonusService;
+        this.uniqueMaterialFactory = factory;
+    }
 
     private final org.bukkit.plugin.java.JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -177,6 +187,8 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             case "cleanse" -> tryCleanse(player);
             case "buff" -> tryBuff(player, ritual);
             case "home" -> tryHome(player);
+            case "uncurse" -> tryUncurse(player);
+            case "pakt" -> tryPakt(player);
             default -> tryRelic(player, ritualId, ritual);
         };
         if (!success) {
@@ -205,6 +217,84 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         player.sendMessage(messageManager.getMessage(
                 "ritual-success",
                 "<gold>A rituálé sikeres — a relikvia testet öltött a kezedben!</gold>"
+        ));
+        return true;
+    }
+
+    /** B54: setter-injected átok-szolgáltatás (a service a manager után épül a DI-sorrendben). */
+    private volatile CursedGearService cursedGearService;
+
+    public void setCursedGearService(final CursedGearService cursedGearService) {
+        this.cursedGearService = cursedGearService;
+    }
+
+    /**
+     * B54 — Átok-törés ({@code uncurse} rituálé-típus): a rituálézó VISELT páncéljáról és
+     * a két kezében tartott tárgyról leszedi az Első Csend átkát — a levételi zár és a
+     * bónusz megszűnik, a tárgy megmarad. A játékos saját régió-szálán futunk.
+     */
+    /**
+     * E25 — Boszorkánymester pakt-ceremónia: egyszeri, kaszt-zárt, NEM halmozható
+     * +20% max Lélekerő; ára egy ritka unique anyag (pakt.material, alap: az Első
+     * Csend Szilánkja) a táskából. A játékos saját régió-szálán futunk.
+     */
+    private boolean tryPakt(final Player player) {
+        final hu.taliann.icesmp.managers.ResourceBonusService bonusRef = resourceBonusService;
+        final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueRef = uniqueMaterialFactory;
+        if (bonusRef == null || uniqueRef == null) {
+            return false;
+        }
+        if (jobManager != null && jobManager.getPrimaryJob(player) != hu.taliann.icesmp.data.JobType.WARLOCK) {
+            player.sendMessage(messageManager.getMessage("ritual-pakt-wrong-job",
+                    "<gray>Az oltár hallgat — a paktumot csak Boszorkánymester kötheti meg.</gray>"));
+            return false;
+        }
+        if (bonusRef.hasPakt(player)) {
+            player.sendMessage(messageManager.getMessage("ritual-pakt-already",
+                    "<gray>A lelkeden már ott a pecsét — a Kárhozat nem alkuszik kétszer.</gray>"));
+            return false;
+        }
+        final String materialId = configManager.getString("pakt.material", "elso_csend_szilankja");
+        final org.bukkit.inventory.ItemStack[] contents = player.getInventory().getContents();
+        for (final org.bukkit.inventory.ItemStack stack : contents) {
+            if (stack != null && materialId.equals(uniqueRef.idOf(stack))) {
+                stack.setAmount(stack.getAmount() - 1);
+                bonusRef.sealPakt(player);
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_WITHER_SPAWN, 0.5F, 1.6F);
+                player.sendMessage(messageManager.getMessage("ritual-pakt-sealed",
+                        "<dark_purple>☠ A paktum megköttetett — a Lélekerő-medred tartósan kitágult. Az ár már nem a tiéd.</dark_purple>"));
+                return true;
+            }
+        }
+        player.sendMessage(messageManager.getMessage("ritual-pakt-missing",
+                "<gray>A paktumhoz a(z) {material} kell a táskádban.</gray>",
+                java.util.Map.of("material", uniqueRef.displayName(materialId))));
+        return false;
+    }
+
+    private boolean tryUncurse(final Player player) {
+        final CursedGearService serviceRef = cursedGearService;
+        if (serviceRef == null) {
+            return false;
+        }
+        boolean broken = false;
+        final org.bukkit.inventory.ItemStack[] armor = player.getInventory().getArmorContents();
+        for (final org.bukkit.inventory.ItemStack piece : armor) {
+            broken |= serviceRef.breakCurse(piece);
+        }
+        player.getInventory().setArmorContents(armor);
+        broken |= serviceRef.breakCurse(player.getInventory().getItemInMainHand());
+        broken |= serviceRef.breakCurse(player.getInventory().getItemInOffHand());
+        if (!broken) {
+            player.sendMessage(messageManager.getMessage(
+                    "ritual-uncurse-nothing",
+                    "<gray>Nincs rajtad átkozott tárgy — az oltárnak nincs mit megtörnie.</gray>"
+            ));
+            return false;
+        }
+        player.sendMessage(messageManager.getMessage(
+                "ritual-uncurse-success",
+                "<gold>Az oltár megtörte az átkot — az Első Csend elengedett. A tárgy a tiéd marad, de már nem köt.</gold>"
         ));
         return true;
     }
@@ -386,7 +476,10 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
                 return false;
             }
         }
-        return !sacrifices.isEmpty();
+        // Üres sacrifice-lista = nincs áldozat-követelmény (pl. pakt_oltar — a pakt a
+        // SAJÁT anyag-költségét a tryPakt-ban szedi be). A korábbi !isEmpty() az ilyen
+        // rituálékat NÉMÁN letiltotta ("ritual-missing-sacrifice" hibával).
+        return true;
     }
 
     private void consume(final Player player, final Map<Material, Integer> sacrifices) {

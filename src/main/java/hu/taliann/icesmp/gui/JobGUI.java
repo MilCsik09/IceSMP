@@ -88,7 +88,7 @@ public final class JobGUI {
         if (primaryJob == null) {
             final ItemStack lockedButton = new ItemStack(Material.BARRIER);
             final ItemMeta lockedMeta = lockedButton.getItemMeta();
-            lockedMeta.displayName(messageManager.getComponent("messages.job-gui-catalyst-locked", "&cKépesség Katalizátor"));
+            lockedMeta.displayName(messageManager.getComponent("messages.job-gui-catalyst-locked", "&cLélekkapocs"));
             lockedMeta.lore(List.of(messageManager.getComponent("messages.job-gui-catalyst-locked-lore", "&7Előbb válassz elsődleges kasztot!")));
             lockedMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
             lockedButton.setItemMeta(lockedMeta);
@@ -99,7 +99,7 @@ public final class JobGUI {
         final ItemMeta meta = button.getItemMeta();
         meta.displayName(catalystItemFactory.getDisplayName(primaryJob));
         meta.lore(List.of(
-                messageManager.getComponent("messages.job-gui-catalyst-lore", "&7A kasztod Képesség Katalizátora."),
+                messageManager.getComponent("messages.job-gui-catalyst-lore", "&7A kasztod Lélekkapcsa."),
                 messageManager.getComponent("messages.job-gui-catalyst-claim", "&eKattints az igényléshez, ha elveszett!")
         ));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
@@ -137,8 +137,13 @@ public final class JobGUI {
 
     private static List<Component> resolveJobLore(final JobType jobType, final JobType primary,
                                                   final int primaryLevel, final MessageManager messageManager) {
+        // A kaszt visszafordíthatatlan döntés — a szerep-címke már a
+        // választó felületen látsszon, ne csak a spec-oldalon.
+        final Component roleLine = messageManager.getComponent(
+                "messages.job-gui-role-" + jobType.getId(), "&b" + defaultRoleTag(jobType));
         if (primary == jobType) {
             return List.of(
+                    roleLine,
                     messageManager.getComponent("messages.job-gui-lore-primary", "&aElsodleges kasztod"),
                     messageManager.getComponent(
                             "messages.job-gui-lore-level-line",
@@ -150,14 +155,36 @@ public final class JobGUI {
         }
 
         if (primary == null) {
-            return List.of(messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kivalasztashoz!"));
+            return List.of(
+                    roleLine,
+                    messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kivalasztashoz!"));
         }
 
         // A class is already chosen (and it isn't this one) — the player can't change it anymore.
         return List.of(
+                roleLine,
                 messageManager.getComponent("messages.job-gui-lore-already-have", "&cMar van kasztod."),
                 messageManager.getComponent("messages.job-gui-lore-no-change", "&7Jelenleg nem modosithato.")
         );
+    }
+
+    /** A kaszt szerep-címkéje (a spec-roster szerint: tank/gyógyító ág, ha van). */
+    private static String defaultRoleTag(final JobType jobType) {
+        return switch (jobType) {
+            case WIZARD -> "Szerep: Távolsági sebző";
+            case WARRIOR -> "Szerep: Sebző / Tank";
+            case ARCHER -> "Szerep: Távolsági sebző";
+            case ASSASSIN -> "Szerep: Közelharci sebző";
+            case DRUID -> "Szerep: Sebző / Tank / Gyógyító";
+            case PALADIN -> "Szerep: Sebző / Tank / Gyógyító";
+            case DEATH_KNIGHT -> "Szerep: Sebző / Tank";
+            case SHAMAN -> "Szerep: Sebző / Gyógyító";
+            case MONK -> "Szerep: Sebző / Tank / Gyógyító";
+            case PRIEST -> "Szerep: Gyógyító / Sebző";
+            case WARLOCK -> "Szerep: Távolsági sebző";
+            case DEMON_HUNTER -> "Szerep: Sebző / Tank";
+            case EVOKER -> "Szerep: Sebző / Gyógyító";
+        };
     }
 
     private static ItemStack createBackButton(final MessageManager messageManager) {

@@ -6,15 +6,20 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Reload (clear+register sorozat) a reload-szálon fut, miközben régió-szálak olvasnak —
+ * a metódusok synchronized-oltak, hogy a rebuild alatt se lásson senki fél-kész map-et.
+ * A LinkedHashMap a regisztrációs sorrendet őrzi (listázások stabil sorrendje).
+ */
 public final class RelicRegistry {
 
     private final Map<String, RelicDefinition> definitions = new LinkedHashMap<>();
 
-    public void clear() {
+    public synchronized void clear() {
         definitions.clear();
     }
 
-    public void register(final RelicDefinition definition) {
+    public synchronized void register(final RelicDefinition definition) {
         if (definition == null || definition.id() == null || definition.id().isBlank()) {
             return;
         }
@@ -22,7 +27,7 @@ public final class RelicRegistry {
         definitions.put(normalize(definition.id()), definition);
     }
 
-    public RelicDefinition findById(final String relicId) {
+    public synchronized RelicDefinition findById(final String relicId) {
         if (relicId == null || relicId.isBlank()) {
             return null;
         }
@@ -30,12 +35,11 @@ public final class RelicRegistry {
         return definitions.get(normalize(relicId));
     }
 
-    public Collection<RelicDefinition> all() {
-        return Collections.unmodifiableCollection(definitions.values());
+    public synchronized Collection<RelicDefinition> all() {
+        return Collections.unmodifiableCollection(new java.util.ArrayList<>(definitions.values()));
     }
 
     private String normalize(final String relicId) {
         return relicId.trim().toLowerCase(Locale.ROOT);
     }
 }
-

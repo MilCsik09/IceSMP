@@ -61,6 +61,8 @@ A fővárosokban **árfolyamtáblák** (lebegő hologramok) is mutatják az aktu
   nyertes (vagy licit nélküli aukciónál az eladó) épp nincs fenn, **belépéskor** vagy
   `/market claim`-mel veszi át a tárgyat.
 - Élő licites aukció **nem vonható vissza**; licit nélkülit a `/market cancel` visszaad.
+- **Relikvia nem listázható!** A relikviák több-lépcsős kihívással szerzett, egyedi tárgyak —
+  piacra/aukcióra csak a **szilánkok és unique anyagok** kerülhetnek (`/market ereklye` szűrő).
 
 **Eladási díj:** minden eladásból kb. **10% eltűnik** a gazdaságból — ez tartja kordában az
 inflációt (a pénz „elértéktelenedését").
@@ -77,28 +79,82 @@ Ez **nem piac** — nincs ár, nincs valuta, tiszta ajándékozás. Egy szerver-
 **Reputáció-ár:** a vételár attól is függ, milyen viszonyban van a frakciód az eladóéval:
 **ellenségtől drágább (+25%)**, **szövetségestől olcsóbb (−10%)**.
 
+## Honnan jön a pénz? (jövedelem-források) 🪙
+
+> 🏦 **Aranyszabály: a számládra pénz KIZÁRÓLAG a banki befizetésen át kerülhet!** Minden
+> jutalom és talált pénz **fizikai veretben** (token-itemben) érkezik a kezedbe — ha a
+> bankszámládon akarod tudni, vidd be a fővárosi bankba (`/bank deposit`).
+
+- **Kopott erszény (mob-drop):** az ellenséges szörnyek legyőzésekor eséllyel egy **erszény**
+  esik — fizikai tárgy, benne **véletlen frakció-valutával** (az összeg a szörny szintjével nő).
+  **Jobb-katt** az erszénnyel, és a veretek a kezedbe hullanak. Spawner-szörny sosem dob!
+- **Horgász-szerencse:** horgászat közben kis eséllyel egy **iszapba veszett erszény** is a
+  horogra akad — ugyanúgy jobb-kattal nyitod ki. (AFK-horgásznak nem jár.)
+- **Felvásárló NPC:** a fővárosi **Felvásárlónál** a kézben tartott nyersanyagot (termény, hal,
+  érc, bőr…) **fix áron eladhatod** — **veretben fizet, egyenesen a kezedbe**. Ez a biztos
+  alapjövedelem, de **napi kerete** van, és egyedi/különleges tárgyat nem vesz meg. A jobb
+  árat mindig a játékos-piac adja!
+- **Küldetések és napi feladatok:** a questek, napi kihívások, közösségi célok és
+  mérföldkövek jutalma is **veretben** érkezik a kezedbe.
+- **Lélekkő:** a magas szintű szörnyek Sötét tokent ejtenek (részletek lentebb).
+- **Vérdíj és parkour:** a fejvadász-rendszer és a parkour-próbák szintén veretben fizetnek.
+- **Piac és aukció:** amit megtermelsz/kicraftolsz, a piacon másik játékosnak adhatod el —
+  a piaci bevétel a **bankszámládra** érkezik (a piac a bankon keresztül köt üzletet).
+
 ## Hová „tűnik" a pénz? (money sinkek)
 
 Hogy a pénz értékes maradjon, több helyen is „elszívódik":
 
-- **Állampolgári adó:** óránként a frakciótagok a saját token-egyenlegük **2%-át** befizetik a
-  frakciókasszába (a Semlegesek mentesek).
+- **Állampolgári adó:** óránként a frakciótagok a saját valuta-egyenlegük **2%-át**, de
+  **legalább 2 érme fejadót** befizetnek a frakciókasszába (a Semlegesek mentesek). Az üresen
+  tartott számla sem kibúvó: amit a számla nem fedez, **hátralékként** gyűlik (legfeljebb 50
+  érméig), és a következő beszedésekkor automatikusan levonódik. Aki tartósan a plafonon ülő
+  hátralékkal, fizetés nélkül „csal", azt a **Számvevők feljelentik** — **bűnt** kap, és a
+  bűnök súlya a Kitaszítottak közé taszíthatja.
 - **Kereslet-sokk** (időnként): egy véletlen valuta értéke átmenetileg **megugrik** (x1,2–1,6) —
   ezt egy üzenet jelzi mindenkinek. Jó alkalom kereskedni!
+- **Piaci pánik** (a sokk tükörpárja): ritkábban egy valuta értéke átmenetileg **lezuhan**
+  (x0,6–0,8) — aki ilyenkor mer vásárolni, a normalizálódáskor nyerhet rajta. A piac
+  kétirányú: nemcsak felfelé mozog!
+- **Konjunktúra** (rövid fellendülés): időnként egy valutában **fél órára feleannyi a piaci
+  eladási díj** (10% helyett 5%) — üzenet jelzi, mikor éri meg igazán adni-venni.
+- **Szezonzáró tőzsdeláz:** a szezon utolsó hetében (Végítélet-hét) a sokkok **sűrűbbek,
+  hevesebbek és rövidebbek** — aki figyeli a piacot, nagyot nyerhet (vagy veszíthet).
 - **Eladási díj, raid-nevezés, rituálé-alapanyagok** — ezek is mind „elnyelnek" pénzt.
+- **Vendor-only szakma-kellékek:** a **Szakmai Kellékbolt** (és más boltok) több tucat,
+  **kizárólag boltban kapható** kelléket árulnak (Kősó, Írnok-tinta, Edzőolaj, Sózott csali,
+  Számvevő-pecsétviasz, Lámpaolaj, Kovács-folyósítószer…) — szakmánként legalább 5-féle.
+  A magasabb szintű receptek hozzávalóként kérik őket, így a szakma-progresszió folyamatosan
+  pénzt „éget” (money sink). A boltok kínálata teljesen config-vezérelt: az admin szabja meg,
+  melyik NPC mit áruljon.
 - **Frakció-boltok:** a fővárosokban álló **bolt-NPC-kre jobb-kattintva** egy vásárló felület
   nyílik — fix áron vehetsz alapanyagot/fogyóeszközt a banki egyenlegedből. A kifizetett pénz
   **eltűnik** a gazdaságból (money sink). Egyes boltok csak a saját frakciód tagjainak árulnak.
 - **Kereskedő-karaván:** időnként egy **vándorkereskedő** bukkan fel a világban (egy üzenet jelzi,
   merre) — csak **korlátozott ideig** marad. Amíg itt van, **jobb-kattints a karaván-NPC-re**, és
-  ritka portékákat (pl. arany alma, gyémánttömb, névcímke) vehetsz a banki egyenlegedből. A kifizetett
-  pénz szintén **eltűnik** (money sink). Ha lekésed, legközelebb máshol tűnik fel — érdemes odasietni!
+  ritka portékákat vehetsz a banki egyenlegedből — köztük **ritka szakma-alapanyagokat**
+  (Emlékszilánk, Sárkánycsont-szilánk, Főnixpihe, Néma Kristály…), amikhez máshol alig jutsz hozzá.
+  A kínálat **érkezésenként rotálódik**: a karaván a teljes áru-listájából mindig csak néhány
+  tételt hoz („ma épp ezt”), úgyhogy minden látogatás más — de **legalább egy ritka
+  szakma-alapanyag mindig van a kocsiban**! A kifizetett pénz szintén **eltűnik**
+  (money sink). Ha lekésed, legközelebb máshol tűnik fel — érdemes odasietni!
 
 ## Lélekkő — a veszélyes vidékek jutalma
 
 A spawntól messze a szörnyek erősebbek. A **magas szintű (3+) szörnyek** eséllyel **Sötét
 tokent** (lélekkövet) ejtenek — így a távoli, veszélyes helyeken kalandozni **gazdaságilag is
 megéri**.
+
+⚠️ **Kivétel — „a Királynő nem fizet a testvérgyilkosságért":** a **Sötét (Kitaszított)**
+játékosnak az **élőhalott** mobokból (zombi, csontváz, phantom, zoglin, wither) **nem esik
+lélekkő** — azok úgysem védekeznek ellene (frakció-passzív), így a kockázat nélküli farmolás
+nem terem pénzt. Az ÉLŐ szörnyek (creeper, pók, witch, Nether-mobok…) a Sötéteknek is fizetnek.
+
+A valutaváltásnak **napi kerete** van (alapból 200 a forrás-valutában) — a tömeges
+oda-vissza váltogatás árfolyam-manipulációja így nem működik.
+
+A lélekkőnek **napi kerete** van (alapból 50 darab játékosonként) — fölötte aznap már nem
+esik több. A spawner-mobok sosem ejtenek lélekkövet (nem skálázódnak).
 
 ---
 

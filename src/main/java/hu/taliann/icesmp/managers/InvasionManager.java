@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Invasion events (ROADMAP phase 9): periodically (or on admin command) a wave
+ * Invasion events: periodically (or on admin command) a wave
  * of scaled monsters spawns around a random player — a dangerous swarm that
  * rewards via the normal scaled-mob XP and soulstone drops. The spawn runs on
  * the target region's thread (Folia-safe).
@@ -70,8 +70,49 @@ public final class InvasionManager {
     private final MessageManager messageManager;
 
     private volatile long nextAttemptAt;
+    /** Rövid indítási türelem: két egyidejű indítás (tick + admin) nem torlódhat egymásra. */
+    private volatile long launchGraceUntil;
     /** UUIDs of currently-spawned invasion mobs, pruned each wave; despawned on shutdown. */
     private final Set<UUID> activeMobs = ConcurrentHashMap.newKeySet();
+    /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
+    private volatile EventSpawnGuard spawnGuard;
+    /** B33: setter-injected finálé-eszkaláció (null = nincs finálé-bónusz). */
+    private volatile SeasonFinaleManager seasonFinale;
+
+    /** B33: a szezonzáró-eszkaláció bekötése (a finálé-manager később épül a DI-sorrendben). */
+    public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
+        this.seasonFinale = seasonFinale;
+    }
+
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
+    }
+
+    /** D1 — ünnep-hook (setterrel kötve; null = nincs ünnep-szorzó). */
+    private volatile HolidayService holidayService;
+
+    public void setHolidayService(final HolidayService holidayService) {
+        this.holidayService = holidayService;
+    }
+
+    private static double parseOr(final String raw, final double fallback) {
+        try {
+            return Double.parseDouble(raw);
+        } catch (final NumberFormatException exception) {
+            return fallback;
+        }
+    }
+
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
 
     public InvasionManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final MessageManager messageManager) {
@@ -79,6 +120,11 @@ public final class InvasionManager {
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.messageManager = messageManager;
+    }
+
+    /** Wires the shared spawn-placement guard (built after this manager in the DI order). */
+    public void setSpawnGuard(final EventSpawnGuard spawnGuard) {
+        this.spawnGuard = spawnGuard;
     }
 
     /** Periodic attempt on the global world-events tick. */
@@ -94,16 +140,29 @@ public final class InvasionManager {
         final long intervalMinutes = Math.max(1L, configManager.getLong("world-events.invasion.check-interval-minutes", 75L));
         nextAttemptAt = now + (intervalMinutes * 60_000L);
 
+        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+        final MajorEventGate gateRef = eventGate;
+        if (gateRef != null && !gateRef.mayStartNaturally("invasion")) {
+            return;
+        }
+        // A végítélet-hét alatt sűrűbb és erősebb az invázió (napi eszkaláció);
+        // évszak-szorzó (season-modifiers.<evszak>.invasion).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final double finaleMult = finaleRef == null ? 1.0D : finaleRef.eventChanceMultiplier();
+        final SeasonalModifierService seasonalRef = seasonalModifiers;
+        final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("invasion");
+        // Ünnep-felülbírálás (pl. Rém-éj: sűrűbb invázió). A halott hook életre kelt.
+        final HolidayService holidayRef = holidayService;
+        final String holidayMult = holidayRef == null ? null : holidayRef.override("invasion-chance-mult");
+        final double holidayFactor = holidayMult == null ? 1.0D : Math.max(0.0D, parseOr(holidayMult, 1.0D));
         final double chancePercent = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.invasion.chance-percent", 30.0D)));
+                configManager.getDouble("world-events.invasion.chance-percent", 30.0D)
+                        * finaleMult * seasonalMult * holidayFactor));
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
 
-        final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
-        if (!online.isEmpty()) {
-            triggerNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
-        }
+        launch(null);
     }
 
     /**
@@ -114,6 +173,18 @@ public final class InvasionManager {
      * @return true if an invasion was launched
      */
     public boolean forceStart(final Player anchor) {
+        return launch(anchor);
+    }
+
+    /**
+     * Az egyetlen indítási út (tick + admin): synchronized + indítási türelem, hogy két
+     * egyidejű hívás (vagy egy még élő hullám mellett érkező) ne torlódhasson egymásra.
+     */
+    private synchronized boolean launch(final Player anchor) {
+        final long now = System.currentTimeMillis();
+        if (now < launchGraceUntil || isActive()) {
+            return false;
+        }
         Player target = anchor;
         if (target == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
@@ -122,6 +193,7 @@ public final class InvasionManager {
             }
             target = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
+        launchGraceUntil = now + 15_000L;
         triggerNear(target);
         return true;
     }
@@ -140,15 +212,34 @@ public final class InvasionManager {
         return entityId != null && activeMobs.contains(entityId);
     }
 
+    /** A horda-mob halálakor hívandó (MobLootListener) — az aktív-jelzés így nem ragad be. */
+    public void handleMobDeath(final UUID entityId) {
+        if (entityId != null) {
+            activeMobs.remove(entityId);
+        }
+    }
+
     /**
      * Whether an invasion wave is currently under way (any of its mobs are still
      * tracked as alive). No expiry timestamp is kept for invasions — the wave simply
      * lasts until its mobs are all killed — so only presence, not remaining time, is
-     * exposed here.
+     * exposed here. A halott/eltűnt (pl. despawnolt vagy /kill-elt) mobokat lekérdezéskor
+     * is kiszórjuk, hogy az állapot ne mutasson hamisan aktív inváziót.
      *
      * @return true while at least one wave mob is tracked as alive
      */
     public boolean isActive() {
+        if (activeMobs.isEmpty()) {
+            return false;
+        }
+        activeMobs.removeIf(id -> {
+            try {
+                final Entity existing = Bukkit.getEntity(id);
+                return existing == null || !existing.isValid();
+            } catch (final Exception exception) {
+                return false; // Régió nem elérhető erről a szálról — döntsön a következő hívás.
+            }
+        });
         return !activeMobs.isEmpty();
     }
 
@@ -172,6 +263,14 @@ public final class InvasionManager {
             return;
         }
 
+        // Never launch an invasion inside a town/claim/WG region — the anchor player may be
+        // standing in a protected city (config: world-events.spawn-rules.invasion). Silent
+        // skip; the next interval picks a new anchor.
+        final EventSpawnGuard guard = spawnGuard;
+        if (guard != null && guard.isBlocked("invasion", center)) {
+            return;
+        }
+
         // Keep the tracked set bounded: drop UUIDs whose mobs are already dead/gone.
         activeMobs.removeIf(id -> {
             try {
@@ -185,22 +284,29 @@ public final class InvasionManager {
         // Pick a random horde composition for this wave (variety).
         final Horde horde = Horde.values()[ThreadLocalRandom.current().nextInt(Horde.values().length)];
         final int count = Math.max(1, configManager.getInt("world-events.invasion.mob-count", 8));
-        final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4));
+        // A végítélet-hét napi mob-szint bónusza (0, ha nincs finálé).
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        final int finaleBonus = finaleRef == null ? 0 : finaleRef.bonusMobLevels();
+        final int level = Math.max(1, configManager.getInt("world-events.invasion.mob-level", 4)) + finaleBonus;
         final double radius = Math.max(2.0D, configManager.getDouble("world-events.invasion.radius", 8.0D));
 
-        int spawned = 0;
+        // Folia: a gyűrű szélső tagjai (radius ~8 blokk) régióhatár közelében MÁSIK régió
+        // chunkjaira eshetnek — minden gyűrű-pont a SAJÁT hely-régió-schedulerén spawnol
+        // (a getHighestBlockYAt is csak ott biztonságos). Minta: CorruptionManager.spreadAndSpawn.
+        final org.bukkit.World world = center.getWorld();
         for (int i = 0; i < count; i++) {
             final double angle = (Math.PI * 2.0D / count) * i;
             final int x = center.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
             final int z = center.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
-            if (spawnAt(topOf(center.getWorld(), x, z), horde.randomMob(), level) != null) {
-                spawned++;
-            }
+            final EntityType member = horde.randomMob();
+            plugin.getServer().getRegionScheduler().run(plugin, new Location(world, x, 0, z),
+                    task -> spawnAt(topOf(world, x, z), member, level));
         }
 
         // The horde's champion: a tougher, named mini-boss at the centre (final-wave feel).
+        // A center régió-szálán vagyunk — a bajnok spawnja itt közvetlen.
         final int bossBonus = Math.max(0, configManager.getInt("world-events.invasion.mini-boss-level-bonus", 6));
-        final Mob champion = spawnAt(topOf(center.getWorld(), center.getBlockX(), center.getBlockZ()),
+        final Mob champion = spawnAt(topOf(world, center.getBlockX(), center.getBlockZ()),
                 horde.miniBoss, level + bossBonus);
         if (champion != null) {
             champion.customName(net.kyori.adventure.text.Component.text(
@@ -210,13 +316,13 @@ public final class InvasionManager {
             startChampionTick(champion);
         }
 
-        if (spawned > 0 || champion != null) {
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "invasion-started",
-                    "<dark_red>⚔ INVÁZIÓ — {horde}! Egy szörnyhorda tört be a vidékre, élükön egy bajnokkal — vigyázz!</dark_red>",
-                    Map.of("horde", horde.displayName)
-            ));
-        }
+        // A hullám elindult (a gyűrű-tagok aszinkron érkeznek; a per-pont guard legfeljebb
+        // ritkítja a szélét) — a kihirdetés a top-szintű guard-on átjutott indításhoz kötött.
+        Bukkit.getServer().broadcast(messageManager.getMessage(
+                "invasion-started",
+                "<dark_red>⚔ INVÁZIÓ — {horde}! Egy szörnyhorda tört be a vidékre, élükön egy bajnokkal — vigyázz!</dark_red>",
+                Map.of("horde", horde.displayName)
+        ));
     }
 
     /** Highest safe spawn spot above the given column. */
@@ -231,11 +337,35 @@ public final class InvasionManager {
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             return null;
         }
+        // Per-spot rules: the wave ring can straddle a town border or reach over water — those
+        // members are simply skipped (the wave stays a wave, just thinner at the edge).
+        final EventSpawnGuard guard = spawnGuard;
+        if (guard != null && (guard.isBlocked("invasion", spot)
+                || guard.isUnsafeSurface("invasion", spot.getWorld(), spot.getBlockX(), spot.getBlockZ()))) {
+            return null;
+        }
         final Mob mob = (Mob) spot.getWorld().spawn(spot, entityClass.asSubclass(Mob.class));
+        // No overworld zombification (a conversion would spawn a NEW entity outside activeMobs,
+        // so killing it would wrongly count as sin) / no daylight burn for undead hordes.
+        EventSpawnGuard.prepare(mob);
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mobScalingManager.forceLevel(mob, level);
         activeMobs.add(mob.getUniqueId());
+        // Élettartam (a túlélő pók nappal megszelídül és bevándorol a
+        // városba): a le nem ölt horda-mob lejáratkor köddé válik — a saját entity-
+        // schedulerén, ami a halálakor magától nyugdíjazódik. 0 = örök (régi viselkedés).
+        final long lifespanTicks = Math.max(0L,
+                configManager.getLong("world-events.invasion.mob-lifespan-seconds", 600L)) * 20L;
+        if (lifespanTicks > 0L) {
+            mob.getScheduler().runDelayed(plugin, task -> {
+                if (mob.isValid()) {
+                    mob.getWorld().spawnParticle(org.bukkit.Particle.POOF,
+                            mob.getLocation().add(0.0D, 0.8D, 0.0D), 8, 0.3D, 0.4D, 0.3D, 0.01D);
+                    mob.remove();
+                }
+            }, null, lifespanTicks);
+        }
         return mob;
     }
 
@@ -260,17 +390,40 @@ public final class InvasionManager {
                     return;
                 }
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(world, org.bukkit.Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
+                // Folia: a nearby player can belong to a neighbouring region — touch them directly
+                // only when we own them, otherwise hop to their scheduler (damager omitted
+                // cross-region). Same pattern as WorldBossManager.fireSpecial.
                 for (final Entity nearby : champion.getNearbyEntities(4.0D, 4.0D, 4.0D)) {
-                    if (nearby instanceof Player player
-                            && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)) {
-                        player.damage(damage, champion);
-                        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
-                        if (kb.lengthSquared() > 0.0D) {
-                            player.setVelocity(kb.normalize().setY(0.5D).multiply(0.7D));
+                    if (nearby instanceof Player player) {
+                        if (Bukkit.isOwnedByCurrentRegion(player)) {
+                            if (isSurvivor(player)) {
+                                player.damage(damage, champion);
+                                applySlamKnockback(player, center);
+                            }
+                        } else {
+                            player.getScheduler().run(plugin, t2 -> {
+                                if (isSurvivor(player)) {
+                                    player.damage(damage);
+                                    applySlamKnockback(player, center);
+                                }
+                            }, null);
                         }
                     }
                 }
             }, null, 25L);
         }, null, 120L, 120L);
+    }
+
+    /** A survivor (survival/adventure) — never hit creative or spectator players. */
+    private static boolean isSurvivor(final Player player) {
+        return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+    }
+
+    /** Knocks the player away from the slam center (runs on the player's own region thread). */
+    private static void applySlamKnockback(final Player player, final Location center) {
+        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
+        if (kb.lengthSquared() > 0.0D) {
+            player.setVelocity(kb.normalize().setY(0.5D).multiply(0.7D));
+        }
     }
 }

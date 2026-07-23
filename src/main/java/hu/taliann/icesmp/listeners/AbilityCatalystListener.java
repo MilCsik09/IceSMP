@@ -124,8 +124,25 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final double perLevel = Math.max(0.0D, configManager.getDouble("spells.dynamic-scaling.per-level-percent", 0.5D));
         final double talentBonus = talentManager == null ? 0.0D : talentManager.getEffectTotal(player, "spell-power");
         final double cap = Math.max(0.0D, configManager.getDouble("spells.dynamic-scaling.max-bonus-percent", 50.0D));
-        final double bonusPercent = Math.min(cap, jobManager.getPrimaryLevel(player) * perLevel + Math.max(0.0D, talentBonus));
+        // Varázserő gear-affix: a viselt páncél + a főkéz PDC-jéből összegezve — a caster-gear
+        // így sebzést is ad (a közös plafon alatt); Ócska-roll negatív is lehet.
+        double gearBonus = 0.0D;
+        final hu.taliann.icesmp.managers.ItemRarityService rarity = this.itemRarityServiceRef;
+        if (rarity != null) {
+            for (final org.bukkit.inventory.ItemStack armor : player.getInventory().getArmorContents()) {
+                gearBonus += rarity.spellPowerOf(armor);
+            }
+            gearBonus += rarity.spellPowerOf(player.getInventory().getItemInMainHand());
+        }
+        final double bonusPercent = Math.max(-50.0D,
+                Math.min(cap, jobManager.getPrimaryLevel(player) * perLevel + Math.max(0.0D, talentBonus) + gearBonus));
         return 1.0D + bonusPercent / 100.0D;
+    }
+
+    private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
+
+    public void setItemRarityService(final hu.taliann.icesmp.managers.ItemRarityService itemRarityService) {
+        this.itemRarityServiceRef = itemRarityService;
     }
 
     @EventHandler
@@ -324,9 +341,14 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         // Spell-mastery power scales the offensive output (damage, self-heal, effect duration);
         // the dynamic layer adds a capped class-level + 'spell-power' talent bonus on top.
         final double chainBonusPercent = chainFinisherPercent(player, selected.getId(), now);
-        final double power = masteryManager.getPowerMultiplier(player, selected.getId())
-                * dynamicPowerMultiplier(player)
-                * (1.0D + chainBonusPercent / 100.0D);
+        // A három réteg (mastery × szint/talent × lánc-finisher) szorzódva sapka nélkül
+        // 2.8× fölé futna (nem-ultimate spellek is ~20 sebzésig) — közös felső plafon fékez.
+        final double powerCap = Math.max(1.0D,
+                configManager.getDouble("spells.total-power-cap", 1.75D));
+        final double power = Math.min(powerCap,
+                masteryManager.getPowerMultiplier(player, selected.getId())
+                        * dynamicPowerMultiplier(player)
+                        * (1.0D + chainBonusPercent / 100.0D));
         if (!selected.executeSpell(player, power)) {
             // No effect fired (no target, no companions, …) — refund the cost and skip the
             // cooldown so a missed cast costs the player nothing.
@@ -382,7 +404,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     }
 
     /**
-     * IDEAS A7: cast után a kézben tartott katalizátor anyagán elindítja a vanília szürke
+     * Cast után a kézben tartott katalizátor anyagán elindítja a vanília szürke
      * item-cooldown overlay-t — a hotbaron azonnal látszik, mikor castolhatsz újra.
      * A vizuális réteg NEM kapuz semmit (a tényleges cooldownt a putCooldown-pipeline őrzi);
      * a melee-katalizátoros kasztoknál a kard/balta ütés-képességét sem érinti.
@@ -399,7 +421,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (held == null || held.getType().isAir()) {
             return;
         }
-        player.setCooldown(held.getType(), (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
+        // ItemStack-overload: a pálca-katalizátor SAJÁT cooldown-csoportját (USE_COOLDOWN) használja,
+        // a melee-kard (nincs komponens) marad a Material-alapú overlayen — így nincs vanília-item bleed.
+        player.setCooldown(held, (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
     }
 
     /** Whether the player's previous cast forms a configured combo with this one. */
@@ -699,8 +723,8 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
 
     /**
      * Read-only view of the player's currently active SHORT (&lt;60s, in-memory) spell
-     * cooldowns, spell id → remaining milliseconds, expired entries filtered out (IDEAS
-     * C12 inspector). UUID-based (no {@link Player} needed) so it is safe to call from any
+     * cooldowns, spell id → remaining milliseconds, expired entries filtered out.
+     * UUID-based (no {@link Player} needed) so it is safe to call from any
      * thread — it only reads the {@link #spellCooldowns} map, never touches an entity.
      * Persistent (&gt;=60s, PDC-backed) cooldowns are NOT included here, since those require
      * reading the target's own PDC on the target's region thread; callers that already hold

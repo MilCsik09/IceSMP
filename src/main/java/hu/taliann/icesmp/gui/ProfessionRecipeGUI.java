@@ -105,9 +105,17 @@ public final class ProfessionRecipeGUI {
                 ? Component.text("✔ Szint " + recipe.level(), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
                 : Component.text("✘ Szint " + recipe.level() + " kell (most " + level + ")", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         if (recipe.blueprint()) {
+            // Loot-only: a tervrajz kizárólag világboss/nehéz esemény lootból eshet.
             lore.add(learned
                     ? Component.text("✔ Recept megtanulva", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
-                    : Component.text("✘ Tervrajz kell (NPC / mob-drop)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    : recipe.lootOnly()
+                            ? Component.text("✘ Csak legendás ellenfelektől szerezhető tervrajz", NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false)
+                            : Component.text("✘ Tervrajz kell (NPC / mob-drop)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+        }
+        if (recipe.faction() != null) {
+            lore.add(Component.text("⚑ Csak: " + recipe.faction().getDisplayName()
+                            + " (" + recipe.faction().getFullName() + ")", NamedTextColor.AQUA)
+                    .decoration(TextDecoration.ITALIC, false));
         }
         lore.add(Component.empty());
         lore.add(grey("Hozzávalók:"));

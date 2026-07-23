@@ -202,7 +202,7 @@ public final class AfkManager implements PlayerStateCleanup {
         if (amount <= 0.0D) {
             return;
         }
-        currencyManager.addToBalance(player.getUniqueId(), currencyType, amount);
+        currencyManager.payOutTokens(player, currencyType, Math.round(amount));
         player.sendMessage(messageManager.get("afk-reward-received",
                 "&b⌚ AFK-jutalom: &f+%s &b%s",
                 currencyManager.formatBalance(amount), currencyType.getDisplayName()));
@@ -292,6 +292,9 @@ public final class AfkManager implements PlayerStateCleanup {
         currentZone.remove(playerId);
         zoneProgress.remove(playerId);
         zoneEnteredAt.remove(playerId);
+        // A kézi /afk jelölés is a session állapota — kilépéskor törlendő, különben az offline
+        // játékos isAfk() lekérdezése hamisan igazat ad (a clearPlayerState online ága ide fut be).
+        manualAfk.remove(playerId);
         final BossBar bar = bossBars.remove(playerId);
         if (bar != null) {
             player.hideBossBar(bar);

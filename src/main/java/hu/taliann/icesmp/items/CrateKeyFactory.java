@@ -70,15 +70,13 @@ public final class CrateKeyFactory {
         lore.addAll(topRewardLore(basePath));
         meta.lore(lore);
 
-        final int customModelData = configManager.getInt(basePath + ".key-custom-model-data", 0);
-        if (customModelData > 0) {
-            final CustomModelDataComponent customModelDataComponent = meta.getCustomModelDataComponent();
-            customModelDataComponent.setFloats(List.of((float) customModelData));
-            meta.setCustomModelDataComponent(customModelDataComponent);
-        }
-
         meta.getPersistentDataContainer().set(crateKeyIdKey, PersistentDataType.STRING, crateId);
         itemStack.setItemMeta(meta);
+        // ITEM_MODEL (CMD helyett) a setItemMeta UTÁN: key-item-model configból, különben base-item.
+        final String keyModel = configManager.getString(basePath + ".key-item-model", null);
+        if (keyModel != null && !keyModel.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, keyModel);
+        }
         return itemStack;
     }
 

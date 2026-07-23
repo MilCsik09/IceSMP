@@ -45,9 +45,33 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBreak(final BlockBreakEvent event) {
-        if (protection.denyBuild(event.getPlayer(), event.getBlock().getLocation())) {
-            event.setCancelled(true);
+        if (!protection.denyBuild(event.getPlayer(), event.getBlock().getLocation())) {
+            return;
         }
+        // Regen-rombolás: a tiltás helyett a blokk drop/XP nélkül törhető, és a
+        // beállított késleltetés után PONTOSAN visszaépül. Ostrom alatt a célzónában
+        // a regisztrált harcosnak jár; zónán kívüli ("always") módban config-kapcsolós.
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isEnabled()
+                && regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()))
+                && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())) {
+            final long delay;
+            if (regen.isSiegeBreakEnabled()
+                    && protection.isRaidSiegeAt(event.getPlayer(), event.getBlock().getLocation())) {
+                delay = regen.siegeBreakDelayMillis();
+            } else if (regen.isAlwaysBreakEnabled()) {
+                delay = regen.alwaysBreakDelayMillis();
+            } else {
+                event.setCancelled(true);
+                return;
+            }
+            if (regen.capture(event.getBlock(), delay, false)) {
+                event.setDropItems(false);
+                event.setExpToDrop(0);
+                return;
+            }
+        }
+        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -129,7 +153,9 @@ public final class TerritoryProtectionListener implements Listener {
         final Player attacker = resolveAttacker(event.getDamager());
         if (event.getEntity() instanceof Player victim) {
             // Safe-zone: block player-attributed AND unattributed (TNT/mob) damage.
+            // Combat-taggelt áldozat kivétel: harc közben a zónába sétálás nem véd.
             if ((attacker != null || isHostileSource(event.getDamager()))
+                    && !protection.isPvpUnprotected(victim.getUniqueId())
                     && protection.denyCombat(victim.getLocation(), attacker, attacker != null)) {
                 event.setCancelled(true);
             }
@@ -186,12 +212,171 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityExplode(final EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> protection.isExplosionBlockedAt(block.getLocation()));
+        if (applyRegenExplosion(event.blockList(), event.getEntity().getLocation())) {
+            event.setYield(0.0F);
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBlockExplode(final BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> protection.isExplosionBlockedAt(block.getLocation()));
+        if (applyRegenExplosion(event.blockList(), event.getBlock().getLocation())) {
+            event.setYield(0.0F);
+        }
+    }
+
+    /**
+     * Védett zónában a robbanás megtörténhet, de a világ visszagyógyul: a védett
+     * blokkok pillanatképpel a regen-sorba kerülnek (drop nélkül — yield 0), a
+     * tile-entity blokkok (láda, kemence…) érintetlenek maradnak. Kikapcsolt regen
+     * mellett a korábbi teljes tiltás él.
+     *
+     * @return true, ha volt regen-re fogott blokk (a hívó nullázza a yield-et)
+     */
+    private boolean applyRegenExplosion(final java.util.List<org.bukkit.block.Block> blocks,
+                                        final org.bukkit.Location center) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null || !regen.isEnabled()) {
+            blocks.removeIf(block -> protection.isExplosionBlockedAt(block.getLocation()));
+            return false;
+        }
+        boolean captured = false;
+        final long delay = regen.explosionDelayMillis();
+        final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
+        while (it.hasNext()) {
+            final org.bukkit.block.Block block = it.next();
+            // Zóna-mátrix dönt: regen-es zónában (vadon is lehet!) gyógyuló rombolás;
+            // regen nélküli védett zónában a régi teljes tiltás; máshol vanília.
+            if (!regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(block.getLocation()))) {
+                if (protection.isExplosionBlockedAt(block.getLocation())) {
+                    it.remove();
+                }
+                continue;
+            }
+            if (block.getType() == org.bukkit.Material.TNT) {
+                continue; // a lánc-robbanás él, de a TNT nem épül vissza (nincs hurok)
+            }
+            if (!regen.capture(block, delay)) {
+                it.remove();
+                if (hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(block)) {
+                    regen.playWardEffect(block); // az óvó rúnák látványa
+                }
+            } else {
+                regen.spawnDebris(block, center);
+                captured = true;
+            }
+        }
+        return captured;
+    }
+
+    /**
+     * (1) A törmelék landolva porlad — sosem válhat valódi blokká. (2) Mob-rombolás
+     * (Wither test-bontása, ravager, enderman…) védett zónában: regen-nel a blokk
+     * LÁTVÁNYOSAN kitörik (törmelék repül), drop nélkül, és visszaépül — regen nélkül
+     * sima tiltás. Enélkül a Wither VÉGLEG rombolta a városfalat (rés volt).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityChangeBlock(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
+        if (event.getEntity().getScoreboardTags().contains(
+                hu.taliann.icesmp.managers.BlockRegenService.DEBRIS_TAG)) {
+            event.setCancelled(true);
+            event.getEntity().getWorld().spawnParticle(org.bukkit.Particle.BLOCK_CRUMBLE,
+                    event.getEntity().getLocation(), 12, 0.2D, 0.2D, 0.2D, event.getBlockData());
+            event.getEntity().remove();
+            return;
+        }
+        // A kráterbe hulló gravitációs blokk (perem-homok) itemként esik le — nem
+        // tűnhet el némán a későbbi visszaépítő felülírásban.
+        if (event.getEntity() instanceof org.bukkit.entity.FallingBlock) {
+            final hu.taliann.icesmp.managers.BlockRegenService fbRegen = this.blockRegenService;
+            if (fbRegen != null && fbRegen.isCraterPos(event.getBlock())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+        if (event.getEntity() instanceof Player) {
+            return;
+        }
+        // Nem-romboló mob-változás (pl. enderman blokkot RAK): a régi terrain-tiltás él.
+        if (!event.getTo().isAir()) {
+            if (protection.isTerrainProtectedAt(event.getBlock().getLocation())) {
+                event.setCancelled(true);
+            }
+            return;
+        }
+        final hu.taliann.icesmp.managers.BlockRegenService regenSvc = this.blockRegenService;
+        final boolean zoneRegen = regenSvc != null && regenSvc.isEnabled()
+                && regenSvc.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()));
+        if (!zoneRegen) {
+            if (protection.isTerrainProtectedAt(event.getBlock().getLocation())) {
+                event.setCancelled(true);
+            }
+            return;
+        }
+        event.setCancelled(true);
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isEnabled()
+                && !hu.taliann.icesmp.managers.BlockRegenService.isTileEntity(event.getBlock())
+                && regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            regen.spawnDebris(event.getBlock(), event.getEntity().getLocation());
+            event.getBlock().setType(org.bukkit.Material.AIR, false);
+        }
+    }
+
+    /**
+     * Fizika által lepattanó rátett blokk (fáklya, falitábla a kirobbant falról):
+     * drop nélkül semmisül meg és a fallal együtt visszaépül — "ha csináljuk,
+     * csináljuk rendesen" (tulaj-kérés).
+     */
+    /**
+     * Fizika-pajzs: a frissen visszaépített blokkot a vanília fizika nem bánthatja —
+     * se frissítés (homok-leesés, fáklya-lepattanás), se folyadék-befolyás, se
+     * fizika-törés, amíg a pajzs él. A gyors-út (üres pajzs-lista) miatt a sűrű
+     * physics-event terhelése pajzs nélkül gyakorlatilag nulla.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onShieldedPhysics(final org.bukkit.event.block.BlockPhysicsEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isRestoredShielded(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Irány-szelektív víz-szabály: a kráterBE szabad a befolyás (látványos, természetes),
+     * de kráter-pozícióBÓL tovább nem terjedhet (a fal mögötti tér nem ázik el), és a
+     * frissen visszaépített blokkba (fáklya!) sem folyhat, amíg az utó-pajzs él.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onShieldedLiquidFlow(final org.bukkit.event.block.BlockFromToEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen == null) {
+            return;
+        }
+        if (regen.isCraterPos(event.getBlock()) || regen.isRestoredShielded(event.getToBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockDestroy(final com.destroystokyo.paper.event.block.BlockDestroyEvent event) {
+        final hu.taliann.icesmp.managers.BlockRegenService regen = this.blockRegenService;
+        if (regen != null && regen.isRestoredShielded(event.getBlock())) {
+            event.setCancelled(true);
+            return;
+        }
+        if (regen == null || !regen.isEnabled()
+                || !regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(event.getBlock().getLocation()))) {
+            return;
+        }
+        if (regen.capture(event.getBlock(), regen.explosionDelayMillis())) {
+            event.setWillDrop(false);
+        }
+    }
+
+    private volatile hu.taliann.icesmp.managers.BlockRegenService blockRegenService;
+
+    public void setBlockRegenService(final hu.taliann.icesmp.managers.BlockRegenService service) {
+        this.blockRegenService = service;
     }
 
     // ==================== fire (gyújtás / terjedés / égés) ====================
@@ -219,15 +404,6 @@ public final class TerritoryProtectionListener implements Listener {
     }
 
     // ==================== terrain (mob-grief / folyadék / dugattyú) ====================
-
-    /** Block-eating/-moving mobs (enderman, ravager, silverfish…) leave protected zones alone. */
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    public void onEntityChangeBlock(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
-        if (!(event.getEntity() instanceof Player)
-                && protection.isTerrainProtectedAt(event.getBlock().getLocation())) {
-            event.setCancelled(true);
-        }
-    }
 
     /** Liquid (water/lava) may not flow INTO a protected zone from outside. */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)

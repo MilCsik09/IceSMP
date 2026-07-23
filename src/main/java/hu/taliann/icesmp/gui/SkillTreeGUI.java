@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Skill tree view (ideas.md "Skill-fa GUI"): a read-only board showing the
+ * Skill tree view: a read-only board showing the
  * player's primary class spell unlocks and the chosen specialization's spells,
  * ordered by unlock level — unlocked spells glow, locked ones show their
  * required level.

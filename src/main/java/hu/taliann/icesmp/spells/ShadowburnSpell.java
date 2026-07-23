@@ -61,6 +61,12 @@ public final class ShadowburnSpell extends BaseSpell {
                 if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
                     continue;
                 }
+                // Baráti tűz: párttag/frakciótárs ne élesítse az aknát.
+                final Player owner = Bukkit.getPlayer(casterId);
+                if (owner != null && Bukkit.isOwnedByCurrentRegion(owner)
+                        && SpellTargetingUtil.isAlly(owner, living)) {
+                    continue;
+                }
 
                 detonate(rabbit, casterId, explodeRadius, damage);
                 task.cancel();
@@ -94,9 +100,13 @@ public final class ShadowburnSpell extends BaseSpell {
             if (!(nearby instanceof LivingEntity living) || living.getUniqueId().equals(casterId)) {
                 continue;
             }
+            // Baráti tűz: a robbanás ne sebezze a párttagot/frakciótársat.
+            if (casterInRegion && SpellTargetingUtil.isAlly(caster, living)) {
+                continue;
+            }
 
             if (casterInRegion) {
-                living.damage(damage, caster);
+                hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(caster, living, damage, getId());
             } else {
                 living.damage(damage);
             }

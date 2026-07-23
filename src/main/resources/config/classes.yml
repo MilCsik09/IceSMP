@@ -3,6 +3,14 @@
 # Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.
 # A spell-unlocks térkép szerint a kaszt adott szintjén a varázslat automatikusan feloldódik.
 classes:
+  # Kapcsolható mód: true esetén a Halállovagot csak Kitaszított választhatja
+  # (a már meglévő nem-DARK DK-kat nem érinti). Élő kulcs.
+  death-knight:
+    dark-only: false
+  # Kaszt-választás kétlépcsős megerősítése (a döntés végleges, csak admin fordítja
+  # vissza): az első kattintás figyelmeztet, ennyi másodpercen belül kell megismételni.
+  # 0 = nincs megerősítés (egy kattintás választ).
+  select-confirm-seconds: 30
   xp:
     hostile-only: true
     # Rebalansz: a spec-spellek a 25-45. szinten oldódnak fel, ezért a leveling
@@ -357,6 +365,44 @@ specializations:
       bonestorm: 39
       dancing_rune_weapon: 45
   # Fagylovag (Frost): a Halállovag fagyos sebző specje.
+  bone_priest:
+    # DARK-kapus gyógyító-spec (a Nekromanta-minta): Kitaszított + örök bűnös.
+    spell-unlocks:
+      bone_mend: 25
+      leeching_ray: 27
+      bone_ward: 30
+      queens_lament: 33
+      blood_tithe: 36
+      silence_of_the_grave: 39
+      last_rites: 45
+  plaguebringer:
+    spell-unlocks:
+      plague_cut: 25
+      plague_contagion: 27
+      black_boils: 30
+      miasma: 33
+      festering_wounds: 36
+      plague_wind: 39
+      black_death: 45
+  demonologist:
+    spell-unlocks:
+      fel_bolt: 25
+      imp_swarm: 27
+      magma_servant: 30
+      demon_skin: 33
+      chaos_flame: 36
+      sacrifice_pact: 39
+      legion: 45
+  unholy:
+    # DARK-kapus spec (a Nekromanta mintája): csak Kitaszított + örök bűnös veheti fel.
+    spell-unlocks:
+      festering_strike: 25
+      outbreak: 27
+      raise_ghoul: 30
+      unholy_coil: 33
+      grip_of_the_dead: 36
+      epidemic: 39
+      army_of_the_dead: 45
   frost:
     spell-unlocks:
       obliterate: 25
@@ -711,6 +757,38 @@ talents:
         effect: "max-health"
         per-rank: 3.0
         max-rank: 3
+      grave_veil:
+        display-name: "Sírfátyol"
+        tier: 3
+        requires-spec: "bone_priest"
+        requires-talent: "vitality"
+        effect: "max-health"
+        per-rank: 2.0
+        max-rank: 3
+      plague_mastery:
+        display-name: "Pestis-mesterség"
+        tier: 3
+        requires-spec: "plaguebringer"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
+        max-rank: 3
+      legion_pact:
+        display-name: "Légió-paktum"
+        tier: 3
+        requires-spec: "demonologist"
+        requires-talent: "power"
+        effect: "spell-power"
+        per-rank: 2.0
+        max-rank: 5
+      unholy_bond:
+        display-name: "Szentségtelen Kötelék"
+        tier: 3
+        requires-spec: "unholy"
+        requires-talent: "power"
+        effect: "attack-damage"
+        per-rank: 0.7
+        max-rank: 3
       frost_edge:
         display-name: "Fagyél"
         tier: 3
@@ -865,8 +943,8 @@ talents:
         requires-job: "wizard"
         requires-talent: "power"
         excludes: ["mana_shield"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       mana_shield:
         display-name: "Mana Pajzs"
@@ -884,7 +962,7 @@ talents:
         requires-talent: "power"
         excludes: ["unbreakable"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       unbreakable:
         display-name: "Törhetetlen"
@@ -893,7 +971,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["berserker_might"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       deadly_aim:
         display-name: "Halálos Célzás"
@@ -902,7 +980,7 @@ talents:
         requires-talent: "power"
         excludes: ["evasion_training"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       evasion_training:
         display-name: "Kitérő Edzés"
@@ -910,8 +988,8 @@ talents:
         requires-job: "archer"
         requires-talent: "vitality"
         excludes: ["deadly_aim"]
-        effect: "max-health"
-        per-rank: 2.0
+        effect: "movement-speed"
+        per-rank: 0.004
         max-rank: 3
       lethality:
         display-name: "Halálosság"
@@ -920,7 +998,7 @@ talents:
         requires-talent: "power"
         excludes: ["shadow_guard"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       shadow_guard:
         display-name: "Árny Őrzet"
@@ -929,7 +1007,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["lethality"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 1.5
         max-rank: 3
       wild_fury:
         display-name: "Vad Düh"
@@ -938,7 +1016,7 @@ talents:
         requires-talent: "power"
         excludes: ["thick_fur"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       thick_fur:
         display-name: "Vastag Bunda"
@@ -947,7 +1025,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["wild_fury"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       righteous_might:
         display-name: "Igaz Erő"
@@ -956,7 +1034,7 @@ talents:
         requires-talent: "power"
         excludes: ["holy_aegis"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       holy_aegis:
         display-name: "Szent Égisz"
@@ -965,7 +1043,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["righteous_might"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       unholy_might:
         display-name: "Szentségtelen Erő"
@@ -974,7 +1052,7 @@ talents:
         requires-talent: "power"
         excludes: ["frost_armor"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       frost_armor:
         display-name: "Fagypáncél"
@@ -983,7 +1061,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["unholy_might"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 2.5
         max-rank: 3
       elemental_focus:
         display-name: "Elemi Fókusz"
@@ -991,8 +1069,8 @@ talents:
         requires-job: "shaman"
         requires-talent: "power"
         excludes: ["stoneskin"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       stoneskin:
         display-name: "Kőbőr"
@@ -1010,7 +1088,7 @@ talents:
         requires-talent: "power"
         excludes: ["iron_body"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.6
         max-rank: 3
       iron_body:
         display-name: "Vastest"
@@ -1018,8 +1096,8 @@ talents:
         requires-job: "monk"
         requires-talent: "vitality"
         excludes: ["inner_strength"]
-        effect: "max-health"
-        per-rank: 2.0
+        effect: "movement-speed"
+        per-rank: 0.004
         max-rank: 3
       divine_fury:
         display-name: "Isteni Düh"
@@ -1027,8 +1105,8 @@ talents:
         requires-job: "priest"
         requires-talent: "power"
         excludes: ["spirit_shell"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       spirit_shell:
         display-name: "Szellempáncél"
@@ -1045,8 +1123,8 @@ talents:
         requires-job: "warlock"
         requires-talent: "power"
         excludes: ["soul_link"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.5
         max-rank: 3
       soul_link:
         display-name: "Lélekkötés"
@@ -1055,7 +1133,7 @@ talents:
         requires-talent: "vitality"
         excludes: ["dark_empowerment"]
         effect: "max-health"
-        per-rank: 2.0
+        per-rank: 1.5
         max-rank: 3
       fel_power:
         display-name: "Fel Hatalom"
@@ -1064,7 +1142,7 @@ talents:
         requires-talent: "power"
         excludes: ["demonic_hide"]
         effect: "attack-damage"
-        per-rank: 0.5
+        per-rank: 0.7
         max-rank: 3
       demonic_hide:
         display-name: "Démonbőr"
@@ -1072,8 +1150,8 @@ talents:
         requires-job: "demon_hunter"
         requires-talent: "vitality"
         excludes: ["fel_power"]
-        effect: "max-health"
-        per-rank: 2.0
+        effect: "movement-speed"
+        per-rank: 0.005
         max-rank: 3
       draconic_power:
         display-name: "Sárkány Hatalom"
@@ -1081,8 +1159,8 @@ talents:
         requires-job: "evoker"
         requires-talent: "power"
         excludes: ["scaled_hide"]
-        effect: "attack-damage"
-        per-rank: 0.5
+        effect: "spell-power"
+        per-rank: 2.0
         max-rank: 3
       scaled_hide:
         display-name: "Pikkelyes Bőr"
@@ -1114,7 +1192,7 @@ talents:
       ascendant:
         display-name: "Felemelkedés"
         tier: 3
-        requires-spent: 10
+        requires-spent: 9
         grants-spell: "talent_surge"
         effect: "max-health"
         per-rank: 6.0
@@ -1152,3 +1230,70 @@ talents:
         effect: "class-xp-bonus"
         per-rank: 5.0
         max-rank: 2
+
+# ===== E1 — Lélek-kovács (Nekromanta): lélekszilánk-befektetés a minion-seregbe =====
+soulforge:
+  enabled: true
+  rank-costs: [ 5, 8, 12, 18, 25 ]
+  health-per-rank: 0.08
+  damage-per-rank: 0.06
+
+# ===== HP-rendszer (kaszt-HP-profilok + kijelzés + harcon kívüli regen) =====
+# Max HP = 20 (vanília) + (base − 20) + kaszt-szint × per-level (+ talentek).
+# 50. szinten: tank ~50, bruiser ~42-43, mozgékony ~37-38, caster ~32-33.
+# A szívsor a display.normalize-zal mindig hearts db szív marad (a tényleges
+# max nő, a kijelzés nem duzzad). A direkt gyógyítások (heal-self) a maxHP/20
+# aránnyal skálázódnak (scale-heals, plafon: scale-heals-cap) — a heal nem
+# értéktelenedik el a nagyobb tavak mellett.
+health:
+  # IDEIGLENESEN KIKAPCSOLVA (tulaj-döntés, 2026-07-22): a kaszt-HP-profilok, a
+  # szívsor-normalizálás és a harcon kívüli regen alapból nem él — minden vanília.
+  # Visszakapcsolás: enabled: true (+ scale-heals: true) — restart nélkül,
+  # /icesmp reload vagy a config-GUI HP-kategóriája is átbillenti.
+  enabled: false
+  display:
+    normalize: true
+    hearts: 10
+  # Harcon kívüli regen: az utolsó sebzés-kontaktus (adott VAGY kapott) után
+  # delay-seconds-szel indul; interval-ticks-enként percent-per-tick %-ot tölt;
+  # min-food éhségszint alatt nem fut (az étel harci tét marad).
+  ooc-regen:
+    enabled: true
+    delay-seconds: 8
+    interval-ticks: 40
+    percent-per-tick: 5.0
+    min-food: 6
+  scale-heals: false
+  # Kaszt-sebzés-profilok (a WoW-érzés másik fele, ugyanezen fő-kapcsoló alatt):
+  # fizikai sebzés-bónusz = kaszt-szint × per-level (kézre attribútumként, nyílra/
+  # szigonyra a találatkor adódik hozzá). 50. szinten: fizikai kasztok +5, casterek
+  # +1.5 — ők a spell-erő szint-skálázást kapják helyette (spells.dynamic-scaling).
+  class-damage-profiles:
+    warrior: { per-level: 0.10 }
+    death_knight: { per-level: 0.10 }
+    demon_hunter: { per-level: 0.10 }
+    monk: { per-level: 0.09 }
+    assassin: { per-level: 0.09 }
+    paladin: { per-level: 0.08 }
+    archer: { per-level: 0.08 }
+    druid: { per-level: 0.07 }
+    shaman: { per-level: 0.05 }
+    evoker: { per-level: 0.04 }
+    wizard: { per-level: 0.03 }
+    warlock: { per-level: 0.03 }
+    priest: { per-level: 0.03 }
+  scale-heals-cap: 2.5
+  class-profiles:
+    warrior: { base: 20, per-level: 0.6 }
+    death_knight: { base: 20, per-level: 0.6 }
+    paladin: { base: 20, per-level: 0.55 }
+    monk: { base: 20, per-level: 0.45 }
+    druid: { base: 20, per-level: 0.45 }
+    demon_hunter: { base: 20, per-level: 0.45 }
+    shaman: { base: 20, per-level: 0.4 }
+    archer: { base: 20, per-level: 0.35 }
+    assassin: { base: 20, per-level: 0.35 }
+    evoker: { base: 20, per-level: 0.3 }
+    wizard: { base: 20, per-level: 0.25 }
+    warlock: { base: 20, per-level: 0.25 }
+    priest: { base: 20, per-level: 0.25 }

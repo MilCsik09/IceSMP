@@ -136,15 +136,9 @@ public final class SpellTargetingUtil {
         return effect;
     }
 
-    /** Élőhalott-e a célpont (a méreg rájuk hatástalan — vanília szabály). */
+    /** Élőhalott-e a célpont (a méreg rájuk hatástalan — vanília szabály). Közös definíció. */
     public static boolean isUndead(final LivingEntity entity) {
-        return entity instanceof org.bukkit.entity.Zombie
-                || entity instanceof org.bukkit.entity.AbstractSkeleton
-                || entity instanceof org.bukkit.entity.Phantom
-                || entity instanceof org.bukkit.entity.Wither
-                || entity instanceof org.bukkit.entity.Zoglin
-                || entity instanceof org.bukkit.entity.SkeletonHorse
-                || entity instanceof org.bukkit.entity.ZombieHorse;
+        return hu.taliann.icesmp.utils.UndeadUtil.isUndead(entity);
     }
 
     public static LivingEntity rayTraceLivingEntity(final Player player, final double range) {

@@ -29,3 +29,9 @@ motd:
     war:
       line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
       line2: "<red>⚔</red> <gray>Melyik királyságért harcolsz?</gray> <dark_gray>({online} hős online)</dark_gray>"
+    konyv:
+      line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
+      line2: "<gold>📖</gold> <gray>A Korszakok Könyve új lapot nyitott — a tiéd lehet?</gray>"
+    suttogas:
+      line1: "<gradient:#4FC3F7:#E1F5FE><b>❄ Ice SMP ❄</b></gradient> <dark_gray>—</dark_gray> <gray>MMO-kalandszerver</gray>"
+      line2: "<dark_purple>🕯</dark_purple> <gray>Azt suttogják, az Idegen ma is járja a vidéket…</gray>"

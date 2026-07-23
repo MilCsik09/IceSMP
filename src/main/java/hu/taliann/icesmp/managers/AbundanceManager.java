@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Abundance (Bőség-idő) world event — the calm, restorative counterpart to the
- * blood moon (ROADMAP "élőbb világ"). While the window is open, crops grow faster,
+ * blood moon. While the window is open, crops grow faster,
  * animals occasionally bear twins, fewer hostile mobs spawn naturally, and a gentle
  * regeneration pulse washes over everyone online. It never touches terrain and adds
  * no currency — only comfort and a little extra farm/food yield.
@@ -85,11 +85,22 @@ public final class AbundanceManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
-            final double chance = clampChance(configManager.getDouble("abundance.chance-percent", 45.0D)) * 100.0D;
+            // Évszak-szorzó (nyáron bőségesebb — season-modifiers.<evszak>.abundance).
+            final SeasonalModifierService seasonalRef = seasonalModifiers;
+            final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("abundance");
+            final double chance = Math.max(0.0D, Math.min(100.0D,
+                    clampChance(configManager.getDouble("abundance.chance-percent", 45.0D)) * 100.0D * seasonalMult));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 start();
             }
         }
+    }
+
+    /** B19: az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
     }
 
     /** Admin override: opens the abundance window now. Returns false if one is already open. */

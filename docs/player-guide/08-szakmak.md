@@ -16,6 +16,9 @@ többet csinálod őket, annál magasabb szintre érsz bennük.
   - 1 → 2 szint: **100 XP**
   - 2 → 3 szint: **115 XP**
   - 3 → 4 szint: **130 XP** … és így tovább. **Max szint: 50.**
+- **Fokozatok:** a szinted egyben céh-fokozat is — **Inas** (1–9), **Segéd** (10–19),
+  **Legény** (20–29), **Mester** (30–39), **Nagymester** (40–49), **Legendás Mester** (50).
+  A fokozatod a szakma-menüben is látszik, és szint-/fokozatlépéskor üzenet + hang jelzi.
 - **Szakmaváltáskor a szinted megmarad** (külön tárolódik szakmánként), így később vissza is
   tanulhatod ott, ahol abbahagytad.
 
@@ -80,6 +83,16 @@ receptjét — a **tanultakat zölddel**, a **zároltakat szürkén** (odaírja,
 tervrajz), és minden recepthez a **hozzávalókat** (megvan/hiányzik). Egy kattintással **craftolsz**,
 ha minden feltétel megvan (a hozzávalók a táskádból fogynak).
 
+**Craftolni = fejlődni (WoW-módra):** a recept-könyvi craft **szakma-XP-t is ad** — minél
+magasabb szintű a recept, annál többet. De vigyázz: a **rég kinőtt receptek „kiszürkülnek”** —
+ha a szinted 10+ szinttel a recept felett jár, már csak fél XP-t, 20+ felett semmit sem ad.
+Mindig a szintedhez közeli recepteket készítsd a leggyorsabb fejlődésért!
+
+**Szintlétra:** minden szakmának **50 receptje** van, az 1. szinttől az 50.-ig elosztva —
+mindig van mit megnyitni. A magasabb receptek bolti kellékeket és ritka unique anyagokat
+kérnek, az 50. szintű **céh-mesterművek** (pl. *A Mélység Szíve*, *A Bokic Áldása*, *A Kapu
+Lakomája*, *Az Erdő Szíve*) pedig az *Első Csend Szilánkját* is.
+
 **Kétféleképp tanulsz receptet:**
 - 📈 **Szintre:** a receptek nagy része a szakma adott szintjén magától megnyílik.
 - 📜 **Tervrajzból:** a ritka/erős receptekhez egy **tervrajz** (Knowledge Book) kell — ezt
@@ -87,7 +100,7 @@ ha minden feltétel megvan (a hozzávalók a táskádból fogynak).
   megtanulod a receptet (utána már a recept-könyvből craftolható, ha megvan hozzá a szint).
 
 **Egyedi köztes alapanyagok:** egyes szakmák **egyedi alapanyagot** gyártanak (pl. *Tiszta
-Vasesszencia*, *Rúnapor*), amit a magasabb receptek hozzávalóként kérnek — ezek nem sima itemek,
+Vasesszencia*, *Rúnapor*, *Jégvirág-por*, *Parázsmag*, *Viharkvarc*, *Mélységi Borostyán*), amit a magasabb receptek hozzávalóként kérnek — ezek nem sima itemek,
 hanem szakma-specifikus félkész anyagok (mint WoW-ban a „Spirit Dust"). A recept-könyv jelzi, ha
 egy recepthez egyedi alapanyag kell (kék színnel).
 
@@ -105,6 +118,13 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 | 📖 **Bölcs Könyve** | Bűvölő | Javítás (Mending) varázskönyv |
 
 > A receptek smaragd-alapanyaggal készülnek (hogy ne ütközzenek a vanilla receptekkel).
+
+**🍺 Szakács kocsma-italok és tájfogások (20+ recept)** — a Szakács saját **italokat**
+(ivás-animációval!) és **ételeket** főz, mind rövid, nem-harci buffal. Ízelítő:
+*Jéghegyi Sör* (regeneráció), *Parázs Pálinka* (tűzállóság+erő), *Hamvasztott Kávé* (sietség),
+*Kőfejtő Söre* (ellenállás), *Tengerész Rum* (vízlégzés+ugrás), *Árnyéklikőr* (rövid láthatatlanság),
+*Aranyfényű Mézsör* (szerencse), *Szentelt Bor* (gyógyulás), *Pásztor Ürücombja*, *Bányász Szalonnája*
+(sietség), *Harcos Húsos Tála* (erő), *Tüzes Chilis Tál* (tűzállóság). A hatás-idők a szerveren hangolhatók.
 
 ### 🔒 Craft-korlátok (vanilla tárgyak)
 
@@ -124,6 +144,9 @@ A korai alapok (íj, kőszerszám, sült húsok, fapáncél) bárkinek szabadok 
 kimenetet és a szakma-„állomásokat" védik.
 
 ### ✨ Minőség és affixek (egyedi tárgyak)
+
+> 🔮 A WoW-módban (ha a szerver bekapcsolja) az affixek közt **Varázserő** is sorsolódhat —
+> %-ban növeli a spellek erejét (caster-gear).
 
 Minden mestermunka craftoláskor (és minden mob-loot tárgy) **véletlen raritást** és **random
 attribútum-affixeket** kap — így nincs két egyforma darab! A raritás egy **létrán** helyezkedik el
@@ -145,6 +168,22 @@ Az affixek attribútumok: **Szívósság** (+élet), **Vértezet**, **Keménysé
 elé a raritás kerül a hozzá illő jelzővel (pl. `[Legendás] Isteni Penge` vagy `[Ócska] Rozsdás Vért`),
 a bónuszok a leírásban látszanak (negatív affix pirossal).
 
+> 🌾 **Bőség-idő bónusz:** amíg a Bőség-idő világesemény tart, a **Gyógynövényész**
+> betakarítása (virág, érett termény) **másfélszeres szakma-XP-t** ad — érdemes az
+> ablakra időzíteni az aratást.
+
+> 📜 **Loot-only tervrajzok:** a legerősebb mestermunkák (pl. a netherit csúcs-szerszámok,
+> a *Sárkányvért*, a *V. Miinus Haragja* és az *I. Zhoris Lángnyelve*) tervrajza **kizárólag világbossoktól és nehéz eseményektől** eshet —
+> boltban nem kapható. A recept-könyvben lila sor jelzi: „Csak legendás ellenfelektől
+> szerezhető tervrajz".
+
+> ☠ **Átkozott tárgyak:** a boss-zsákmány ritkán az **Első Csend érintését** hordozza
+> (sötétvörös lore-sor). Az átkozott darab **erőt ad** (darabonként +10% sebzés, legfeljebb
+> +40%), de **felvéve nem ereszt** — a páncél nem vehető le szabadon! Felvételkor a játék
+> kétszer is megkérdez (első kattintás figyelmeztet, a gyors második erősít meg). Az átkot
+> csak az **Átok-törés oltára** oldja (síró obszidián mag, obszidián talapzat; áldozat:
+> ametiszt + ghast-könny) — a tárgy megmarad, csak az átok (és a bónusz) tűnik el.
+
 **Balansz — a forrás dönti el, MELY raritások eshetnek:**
 - 🧑‍🏭 **Szakma-craft:** nincs Ócska, kiegyensúlyozott (Közönséges→Legendás), **megtervezett névvel**.
 - 👹 **Mob-drop:** a szörnyek **sokféle** tárgyat ejtenek egy súlyozott loot-tábláról: egyedi
@@ -152,7 +191,27 @@ a bónuszok a leírásban látszanak (negatív affix pirossal).
   és **csak-mobból-eső egyedi alapanyagokat** (*Vad Esszencia*, *Szörny Mag*, *Árnyékpor*), amiket a
   szakma-receptek igényelnek. A szakma által craftolt (nevesített) tárgyak **soha nem esnek mobból**.
 - 🐉 **Világboss / nehéz event loot:** magas raritások (Ritka→**Ereklye**) + boss-only egyedi
-  alapanyag (*Ősi Ereklyeszilánk*, a legendás receptekhez) — a legjobb forrás.
+  alapanyag (*Fekete Villám Szilánk*, a legendás receptekhez) — a legjobb forrás.
+
+
+### ⚑ Frakció-signature receptek (tervrajz)
+
+A birodalmak **saját, vágyott végjáték-tárgyakat** kaptak — tervrajzból tanulható, **frakcióhoz
+kötött** receptek (a recept-könyv ⚑ sora jelzi). Az első kör a **Fagyott Királyságé** (Fagy/BLUE,
+páncélkovács): **Kallan Szeletelője** (íj — gyorsabb, páncéltörő nyilak), **Glatziendorfi Jégvért**
+(mellvért — viselve tompítja a sebzést), **Jégsárkány-Kantár** (jobb katt egy hátason: tartós
+gyorsítás, a kantár elfogy). A második kör a **Lángoló Birodalomé** (Láng/RED, páncélkovács):
+**Pyralingradi Tűzköpő** (számszeríj — Quick Charge + gyorsabb lövedék), **A Vérszavanna Agyara**
+(kard — bónusz-sebzés, baltával a másik kézben még nagyobb), **Főnix-Tollköpeny** (mellvért-slot —
+tűz/láva-immunitás viselve; a craft RED-kapus, de a köpeny kereskedhető). A harmadik kör a **Menedéké** (NEUTRAL — gazdaság/kényelem):
+**Vasművek Akadémiájának Csákánya** (bányász 45 — érc-töréskor +20% eséllyel extra drop; bányász-láz
+esemény alatt szünetel), **Bokic-menti Horgászbot** (horgász 40 — +20% eséllyel dupla fogás),
+**Smaragdkő Bankbetét** (rúnaírnok 35 — jobb-kattal Creutzérre váltható betétjegy), és a
+**Szellemszarvas-Bűbáj** (füvész 45 — jobb-katt: ideiglenes, gyors szellem-hátast idéz; nem fogy el,
+cooldownnal). Ráadásul minden signature
+tárgy saját, **egyedi enchantot** visel (pl. „Jégfog", „Vérszomj", „Főnixtoll") — a neve valódi
+enchant-sorként ragyog a tooltipben. A perkek pontos számai
+configból hangolhatók (`signature.*` a `crafting.yml`-ben).
 
 ## Talentpontok a szakmákból
 
@@ -163,3 +222,19 @@ szintezni — még a másodlagosakat is!
 ---
 
 ➡️ Tovább: [Relikviák és rituálék](09-relikviak.md) • [Vissza a tartalomhoz](README.md)
+
+## Rúna-kovácsolás ◆
+
+A magas szintű Kovácsok és Bűvölők (26+) **rúnákat** készíthetnek — ritka anyagokból
+(Rúnapor, tematikus unique anyag, bolti Rúnakréta). A rúnát **fogd a kurzorodra, és
+kattintsd rá** a fegyverre/íjra/mellvértre a táskádban: a véset a tárgyba ég, és kis
+állandó bónuszt ad (pl. +sebzés, gyújtás-esély, sebzés-csillapítás, több erszény-drop).
+**Egy tárgy — egy rúna**, és a véset nem cserélhető: gondold meg, mire teszed! A rúna a
+tárgy ritkaságától FÜGGETLEN — a legendás pengére is ér, meg a kezdő vaskardra is.
+
+## Szakma-céh heti közös cél ⚒
+
+Az azonos szakmát űzők — frakciótól függetlenül — **közös heti célt** töltenek: minden
+megtermelt szakma-XP a céh számlálójába is beszámít. Az állást a `/szakmacel` mutatja.
+Ha a cél teljesül, a hét fordulásakor minden érdemi hozzájáruló **+300 szakma-XP-t** kap
+(ha épp nem vagy fent, belépéskor érkezik). A Bányászok végre egy zászló alatt!

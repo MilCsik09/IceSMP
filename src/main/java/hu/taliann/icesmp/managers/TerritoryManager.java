@@ -535,6 +535,39 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         return territories.values();
     }
 
+    /**
+     * Zóna-rámpás mob-skálázás (tulaj-kérés): a legközelebbi BIZTONSÁGOS zóna
+     * (faction/protected/capital — a doom-gate és a dungeon NEM számít) peremétől
+     * mért távolság blokkban. A zóna belsejében 0; ha a világban nincs ilyen zóna,
+     * -1. A becslés a zóna befoglaló körével számol (poligonnál a centroid + a
+     * befoglaló sugár) — a rámpához ez a pontosság elég, és lock-mentesen olcsó.
+     *
+     * @param location a vizsgált hely
+     * @return távolság a legközelebbi biztonságos zóna peremétől, vagy -1
+     */
+    public double distanceFromNearestSafeZoneEdge(final Location location) {
+        if (location == null || location.getWorld() == null) {
+            return -1.0D;
+        }
+        final String worldName = location.getWorld().getName();
+        double best = -1.0D;
+        for (final Territory zone : territories.values()) {
+            if (zone.type() == TerritoryType.DOOM_GATE || zone.type() == TerritoryType.DUNGEON) {
+                continue;
+            }
+            if (!worldName.equals(zone.world())) {
+                continue;
+            }
+            final double deltaX = location.getX() - zone.x();
+            final double deltaZ = location.getZ() - zone.z();
+            final double edge = Math.max(0.0D, Math.sqrt((deltaX * deltaX) + (deltaZ * deltaZ)) - zone.radius());
+            if (best < 0.0D || edge < best) {
+                best = edge;
+            }
+        }
+        return best;
+    }
+
     // ==================== spatial index ====================
 
     /** Rebuilds the chunk→zones lookup from each zone's bounding box and swaps it atomically. */
@@ -587,7 +620,11 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
      * world-scoped: moving to another world resets it. Returns the new point count.
      */
     public int addPoint(final Player player) {
-        final Location location = player.getLocation();
+        return addPoint(player, player.getLocation());
+    }
+
+    /** Pálcás kijelölés: a KATTINTOTT blokk koordinátájával (nem a játékos helyével). */
+    public int addPoint(final Player player, final Location location) {
         final String worldName = location.getWorld().getName();
         final PointBuffer buffer = pointBuffers.computeIfAbsent(player.getUniqueId(), id -> new PointBuffer());
         synchronized (buffer) {

@@ -37,15 +37,50 @@ public final class PetCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
-        final String sub = args.length == 0 ? "info" : args[0].toLowerCase(Locale.ROOT);
+        final String sub = args.length == 0 ? "menu" : args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
+            case "menu" -> hu.taliann.icesmp.gui.PetGUI.open(player, petManager, messageManager);
+            case "stance" -> {
+                if (!petManager.canOwnPet(player)) {
+                    player.sendMessage(messageManager.get("pet-not-allowed", "&cCsak Vadmester, Nekromanta, Szentségtelen vagy Boszorkánymester tarthat társat."));
+                    return;
+                }
+                final hu.taliann.icesmp.managers.MinionManager.Stance stance = args.length < 2 ? null
+                        : switch (args[1].toLowerCase(Locale.ROOT)) {
+                            case "aktiv", "active" -> hu.taliann.icesmp.managers.MinionManager.Stance.ACTIVE;
+                            case "passziv", "passive" -> hu.taliann.icesmp.managers.MinionManager.Stance.PASSIVE;
+                            case "marad", "stay" -> hu.taliann.icesmp.managers.MinionManager.Stance.STAY;
+                            default -> null;
+                        };
+                if (stance == null) {
+                    player.sendMessage(messageManager.get("pet-stance-usage", "&cHasználat: /pet stance <aktiv|passziv|marad>"));
+                    return;
+                }
+                petManager.setStance(player, stance);
+                player.sendMessage(messageManager.getMessage(
+                        "pet-stance",
+                        "<gray>Társ parancs: <gold>{stance}</gold></gray>",
+                        Map.of("stance", switch (stance) {
+                            case ACTIVE -> "Támadás";
+                            case PASSIVE -> "Passzív";
+                            case STAY -> "Maradj";
+                        })));
+            }
             case "item" -> {
                 if (!petManager.canOwnPet(player)) {
-                    player.sendMessage(messageManager.get("pet-not-allowed", "&cCsak Vadmester vagy Nekromanta tarthat társat."));
+                    player.sendMessage(messageManager.get("pet-not-allowed", "&cCsak Vadmester, Nekromanta, Szentségtelen vagy Boszorkánymester tarthat társat."));
+                    return;
+                }
+                if (petManager.isUnholy(player) || petManager.isWarlock(player)) {
+                    // A Szentségtelen/Boszorkánymester társa nem befogható: rituálé idézi.
+                    player.sendMessage(messageManager.get("pet-ritual-hint",
+                            "&5A társadat rituálé idézi, nem befogás. Kellék: &fNyughatatlan Szív&5 "
+                                    + "(élőholt-kill) / &fDémon-pecsét&5 (boszorka- és illager-kill) — "
+                                    + "éjjel, jobb katt a kellékkel a kezedben."));
                     return;
                 }
                 final ItemStack item = petManager.isNecromancer(player)
@@ -90,7 +125,11 @@ public final class PetCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return List.of("item", "summon", "dismiss", "name", "info").stream().filter(o -> o.startsWith(prefix)).toList();
+            return List.of("menu", "item", "summon", "dismiss", "name", "stance", "info").stream().filter(o -> o.startsWith(prefix)).toList();
+        }
+        if (args.length == 2 && "stance".equalsIgnoreCase(args[0])) {
+            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            return List.of("aktiv", "passziv", "marad").stream().filter(o -> o.startsWith(prefix)).toList();
         }
         return List.of();
     }

@@ -61,13 +61,14 @@ public final class UniqueMaterialFactory {
             lore.add(legacy(line).colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         }
         meta.lore(lore);
-        // Resource-pack hook: a custom model data so the pack can render each unique material distinctly.
-        final int cmd = section.getInt("custom-model-data", 0);
-        if (cmd > 0) {
-            meta.setCustomModelData(cmd);
-        }
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
+        // Resource-pack hook: ITEM_MODEL (CMD helyett) — a data-komponens a setItemMeta UTÁN.
+        // A modell-id a configból (item-model: "icesmp:<id>"); enélkül a base-item látszik.
+        final String model = section.getString("item-model", null);
+        if (model != null && !model.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, model);
+        }
         return item;
     }
 
@@ -81,6 +82,16 @@ public final class UniqueMaterialFactory {
 
     public boolean isDefined(final String uniqueId) {
         return configOf(uniqueId) != null;
+    }
+
+    /** Minden definiált unique-material id (admin item-adó parancs tab-complete-je). */
+    public List<String> allIds() {
+        if (configManager.getConfiguration() == null) {
+            return List.of();
+        }
+        final ConfigurationSection root = configManager.getConfiguration()
+                .getConfigurationSection("profession-materials");
+        return root == null ? List.of() : List.copyOf(root.getKeys(false));
     }
 
     private static Component legacy(final String text) {

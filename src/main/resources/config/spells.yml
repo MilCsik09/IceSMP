@@ -6,6 +6,64 @@
 # class-xp-bonus, profession-xp-bonus (százalékos XP bónusz).
 # ===== Spell-mesterség és kombók (ROADMAP 3. fázis) =====
 spells:
+  # Halál-összegzés: halál után rövid lista a legutóbbi sebzés-forrásokról.
+  death-recap:
+    enabled: true
+  # Mágia-ellenállás: a Rúnavért (generikus, MINDEN iskola ellen, per-level/szint) és
+  # az iskola-counter enchantok (Fagypáncél → fagymágia, Főnixtoll → tűzmágia,
+  # school-per-level/szint) összeadódnak, a közös max-reduction plafonig. Élőben olvasódik.
+  magic-resist:
+    per-level: 0.08
+    school-per-level: 0.10
+    max-reduction: 0.6
+  # ===== Varázslat-iskolák (damage-type-besorolás) =====
+  # Minden spell a saját iskolája damage-type-jával sebez (icesmp:tuz_magia, fagy_magia,
+  # szent_magia, arnyek_magia, termeszet_magia, vihar_magia, kaosz_magia, magia=ősmágia).
+  # Feloldás: by-spell felülírás → a caster kasztjának by-class defaultja → ősmágia.
+  # ÍGY MINDEN SPELL EGYEDIVÉ HANGOLHATÓ: vedd fel a spell-id-t a by-spell alá.
+  # Érvényes értékek: tuz | fagy | szent | arnyek | termeszet | vihar | kaosz | osmagia.
+  spell-schools:
+    by-class:
+      wizard: osmagia
+      warrior: osmagia
+      archer: termeszet
+      assassin: arnyek
+      druid: termeszet
+      paladin: szent
+      death_knight: fagy
+      shaman: vihar
+      monk: szent
+      priest: szent
+      warlock: kaosz
+      demon_hunter: arnyek
+      evoker: tuz
+    # Kézi felülírások (spell-id → iskola) — bővítsd szabadon:
+    by-spell:
+      living_flame: tuz
+      frost_fever: fagy
+      holy_wrath: szent
+      shadowburn: arnyek
+      life_drain: arnyek
+      mind_blast: osmagia
+      # DARK-specek: a kaszt-default (fagy/szent) helyett árny/természet iskola
+      festering_strike: arnyek
+      outbreak: termeszet
+      unholy_coil: arnyek
+      grip_of_the_dead: arnyek
+      epidemic: arnyek
+      leeching_ray: arnyek
+      queens_lament: arnyek
+      silence_of_the_grave: arnyek
+      plague_cut: termeszet
+      plague_contagion: termeszet
+      miasma: termeszet
+      plague_wind: termeszet
+  # ===== Hard-CC diminishing returns (PvP) =====
+  # Ugyanarra a JÁTÉKOSRA ismételt hard CC (fagyasztás, Lassítás II+) csökkenő erővel
+  # hat az ablakon belül: 100% → 50% → 25% → immun. Mobokra nem vonatkozik.
+  cc-dr:
+    enabled: true
+    window-seconds: 15
   # ===== Baráti tűz (party-tudatos célzás) =====
   # Az ellenséges spellek (AoE, splash, sugár, lövedék, csapda-item) kihagyják a szövetségest,
   # a baráti (buff) AoE-k pedig CSAK szövetségest érintenek.
@@ -62,13 +120,15 @@ spells:
         regen-per-second: 3.0
         combat-gain-per-hit: 8.0
         idle-decay-per-second: 2.0
-      # Energia-típus: kisebb tár, de gyorsan visszatöltődik (pörgős rotáció).
+      # Energia-típus: kisebb tár, gyors visszatöltés — de VÉGES: a korábbi 11-14/s
+      # regen mellett a tár sosem fogyott ki (illuzórikus gazdálkodás), a felezett
+      # ütem már valódi rotáció-döntéseket kényszerít.
       assassin:
-        regen-per-second: 14.0
+        regen-per-second: 7.0
       monk:
-        regen-per-second: 14.0
+        regen-per-second: 7.0
       archer:
-        regen-per-second: 11.0
+        regen-per-second: 6.0
       # Mana-típus: nagyobb tár, lomhább regen (a nagy leadás után tényleg ki kell várni).
       wizard:
         max: 120
@@ -98,6 +158,11 @@ spells:
     radius: 6.0            # ekkora körben hat a pulzálás
     pulse-ticks: 30        # ennyi tickenként pulzál (20 tick = 1 mp)
   # Mesterség: frakcióvalutáért fejleszthető rang, ami csökkenti a cooldownt.
+  # Az össz-erőszorzó plafonja: mastery x (szint+talent dinamikus bónusz) x lánc-finisher
+  # SZORZATA sosem lépheti túl — plafon nélkül 2.8x fölé futna, és nem-ultimate spellek
+  # is ~20 sebzést ütnének. Élő kulcs.
+  total-power-cap: 1.75
+
   mastery:
     enabled: true
     max-rank: 5

@@ -85,11 +85,11 @@ public final class SinManager {
         sealDarkPact(player);
         player.sendMessage(messageManager.getMessage(
                 "sinner.exiled",
-                "<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: száműztek a Sötét frakcióba. A paktum örök.</dark_purple>"
+                "<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: a Kitaszítottak közé száműztek. A paktum örök.</dark_purple>"
         ));
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "sinner.exile-broadcast",
-                "<dark_purple>{player} bűnei elérték a tűréshatárt — a Sötét frakcióba száműzték!</dark_purple>",
+                "<dark_purple>{player} bűnei elérték a tűréshatárt — a Kitaszítottak közé száműzték!</dark_purple>",
                 Map.of("player", player.getName())
         ));
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.6F, 0.7F);
@@ -114,6 +114,14 @@ public final class SinManager {
      *
      * @param player the executed player
      */
+    /** G6 — becsület-párbaj: bűnpont-csökkentés (0 alá nem megy). */
+    public int reduceSin(final Player player, final int amount) {
+        final int current = getSinCount(player);
+        final int reduced = Math.max(0, current - Math.max(0, amount));
+        player.getPersistentDataContainer().set(sinCountKey, org.bukkit.persistence.PersistentDataType.INTEGER, reduced);
+        return reduced;
+    }
+
     public void resetSinCount(final Player player) {
         if (player != null) {
             player.getPersistentDataContainer().set(sinCountKey, PersistentDataType.INTEGER, 0);

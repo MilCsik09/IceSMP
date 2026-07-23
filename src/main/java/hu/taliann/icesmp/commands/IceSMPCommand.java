@@ -68,6 +68,12 @@ public final class IceSMPCommand implements BasicCommand {
     private final AbilityCatalystListener abilityCatalystListener;
     private final SinManager sinManager;
 
+    private volatile Runnable reloadHook;
+
+    public void setReloadHook(final Runnable reloadHook) {
+        this.reloadHook = reloadHook;
+    }
+
     public IceSMPCommand(final JavaPlugin plugin, final ConfigManager configManager,
                          final MessageManager messageManager, final JobManager jobManager,
                          final SpecializationManager specializationManager, final ResourceManager resourceManager,
@@ -94,7 +100,7 @@ public final class IceSMPCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
             return;
         }
 
@@ -102,13 +108,19 @@ public final class IceSMPCommand implements BasicCommand {
             configManager.reload();
             messageManager.reload();
             ConfigValidator.validate(configManager, plugin.getLogger());
+            // A load()-időben cache-elő managerek (relic/mob-scaling/craft-restrikció)
+            // csak így frissülnek restart nélkül.
+            final Runnable hook = this.reloadHook;
+            if (hook != null) {
+                hook.run();
+            }
             sender.sendMessage(messageManager.get("admin.icesmp.reload.success", "<green>Plugin konfiguracio sikeresen ujratoltve!</green>"));
             return;
         }
 
         if (args.length >= 1 && "config".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission(CONFIG_PERMISSION)) {
-                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
                 return;
             }
             handleConfig(sender, args);
@@ -117,7 +129,7 @@ public final class IceSMPCommand implements BasicCommand {
 
         if (args.length >= 1 && "inspect".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission(INSPECT_PERMISSION)) {
-                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
                 return;
             }
             handleInspect(sender, args);
@@ -262,6 +274,13 @@ public final class IceSMPCommand implements BasicCommand {
         return String.format(Locale.ROOT, "%.1f", ratio);
     }
 
+    /** A GUI-s config-menü megnyitója (setterrel kötve — a listener a parancs UTÁN épül). */
+    private java.util.function.Consumer<Player> configMenuOpener;
+
+    public void setConfigMenuOpener(final java.util.function.Consumer<Player> configMenuOpener) {
+        this.configMenuOpener = configMenuOpener;
+    }
+
     private void handleConfig(final CommandSender sender, final String[] args) {
         final String action = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "";
         switch (action) {
@@ -270,6 +289,13 @@ public final class IceSMPCommand implements BasicCommand {
             case "unset" -> handleUnset(sender, args);
             case "list" -> handleList(sender);
             case "find" -> handleFind(sender, args);
+            case "menu" -> {
+                if (sender instanceof Player player && configMenuOpener != null) {
+                    configMenuOpener.accept(player);
+                } else {
+                    sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+                }
+            }
             default -> sendHelp(sender);
         }
     }
@@ -303,9 +329,9 @@ public final class IceSMPCommand implements BasicCommand {
         final String raw = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
         final Object parsed = parseValue(key, raw);
 
-        plugin.getConfig().set(key, parsed);
-        plugin.saveConfig();
-        configManager.reload();
+        // Szerializált override-út (ConfigManager.applyOverride): két admin egyidejű írása
+        // (parancs + GUI bármely kombinációban) nem veszíthet el módosítást.
+        configManager.applyOverride(key, parsed);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
 
@@ -320,14 +346,11 @@ public final class IceSMPCommand implements BasicCommand {
             return;
         }
         final String key = args[2];
-        if (!plugin.getConfig().isSet(key)) {
+        if (!configManager.applyOverride(key, null)) {
             sender.sendMessage(messageManager.get("admin.icesmp.config.unset-missing",
                     "&eNincs ilyen ingame felülbírálás: &f%s &7(csak a config.yml-ben tárolt kulcsok törölhetők innen).", key));
             return;
         }
-        plugin.getConfig().set(key, null);
-        plugin.saveConfig();
-        configManager.reload();
         messageManager.reload();
         sender.sendMessage(messageManager.get("admin.icesmp.config.unset-success",
                 "&aFelülbírálás törölve: &6%s &7— újra a config-fájlok/kódbeli default él.", key));
@@ -407,6 +430,7 @@ public final class IceSMPCommand implements BasicCommand {
     private void sendHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("admin.icesmp.help-header", "&6/icesmp &7- admin parancsok:"));
         sender.sendMessage(messageManager.get("admin.icesmp.help-reload", "&e/icesmp reload &7- Config + üzenetek újratöltése."));
+        sender.sendMessage(messageManager.get("admin.icesmp.help-config-menu", "&e/icesmp config menu &7- Kattintható config-menü (kategóriákkal)."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-get", "&e/icesmp config get <kulcs> &7- Kulcs aktuális értéke."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-set", "&e/icesmp config set <kulcs> <érték> &7- Felülbírálás (azonnali reload)."));
         sender.sendMessage(messageManager.get("admin.icesmp.help-config-unset", "&e/icesmp config unset <kulcs> &7- Felülbírálás törlése."));
@@ -448,7 +472,7 @@ public final class IceSMPCommand implements BasicCommand {
         }
         if (args.length == 2) {
             final String prefix = args[1].toLowerCase(Locale.ROOT);
-            return List.of("get", "set", "unset", "list", "find").stream().filter(option -> option.startsWith(prefix)).toList();
+            return List.of("menu", "get", "set", "unset", "list", "find").stream().filter(option -> option.startsWith(prefix)).toList();
         }
         if (args.length == 3) {
             final String action = args[1].toLowerCase(Locale.ROOT);

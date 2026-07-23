@@ -48,3 +48,17 @@ WoW party-frame. Ha nem vagy csapatban, a szekció el sem foglal helyet az oldal
 ---
 
 [Vissza a tartalomhoz](README.md)
+
+## Céhek — a frakción belüli kisközösséged ⚜
+
+A frakció (50+ fő) és a party (5 fő) közé érkezik a **céh**: 10-15 fős, tartós közösség
+saját névvel, kasszával és céh-szinttel.
+
+- `/ceh letrehoz <név>` — céh-alapítás (kis díj a számládról). Csak frakciótag alapíthat.
+- `/ceh meghiv <játékos>` → a meghívott `/ceh elfogad` — **csak a saját frakciódból** hívhatsz.
+- `/ceh befizet <összeg>` — a számládról a **céh-kasszába** teszel (közös célokra gyűjthettek).
+- `/ceh info` — szint, XP, tagok, kassza; `/ceh lista` — a szerver top-céhei.
+- **Céh-szint:** a tagok quest-teljesítései céh-XP-t termelnek — szintlépéskor mindenki
+  értesül, és a **taglétszám-plafon nő** (10-ről akár 15-ig). A közös munka szó szerint
+  nagyobbá teszi a céhet!
+- Kilépés: `/ceh elhagy` (a vezetés az első tagra száll); a vezető `/ceh kirug`-gal rúghat.

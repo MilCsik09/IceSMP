@@ -20,7 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Map;
 
 /**
- * Necromancer soul-shard resource (ideas.md "Nekromanta lélek-erőforrás").
+ * Necromancer soul-shard resource.
  * Necromancer-spec players accumulate soul shards from kills (stored in player
  * PDC); shards are spent to raise a buffed Wither Skeleton champion through the
  * minion framework — a stronger payoff than the regular timed summons.
@@ -84,6 +84,8 @@ public final class SoulShardManager {
         spendShards(player, cost);
 
         final WitherSkeleton champion = player.getWorld().spawn(player.getLocation(), WitherSkeleton.class);
+        // Jövőbiztos keményítés (a wither skeleton ma sem ég nappal, de típus-csere ellen véd).
+        EventSpawnGuard.prepare(champion);
         champion.setPersistent(false);
         minionManager.tag(champion, player.getUniqueId());
         if (champion instanceof AbstractSkeleton skeleton) {

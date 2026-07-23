@@ -17,12 +17,26 @@ import java.util.UUID;
 
 public final class FactionJoinSubcommand implements FactionSubcommand {
 
+    /**
+     * Gameplay-audit (newbie-trap): a DARK-belépés visszafordíthatatlan (örök paktum) —
+     * kétlépcsős megerősítés kell. UUID → az első kérés időbélyege; az ablakon túli
+     * bejegyzések minden híváskor törlődnek (nem szivárog).
+     */
+    private final java.util.concurrent.ConcurrentHashMap<UUID, Long> darkConfirmPending =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private final FactionManager factionManager;
     private final SinManager sinManager;
     private final CurrencyManager currencyManager;
     private final TerritoryManager territoryManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    /** Setter-injektált: DARK-elhagyáskor a sötét spec elengedéséhez. */
+    private volatile hu.taliann.icesmp.managers.SpecializationManager specializationManager;
+
+    public void setSpecializationManager(final hu.taliann.icesmp.managers.SpecializationManager specializationManager) {
+        this.specializationManager = specializationManager;
+    }
 
     public FactionJoinSubcommand(final FactionManager factionManager, final SinManager sinManager,
                                  final CurrencyManager currencyManager, final TerritoryManager territoryManager,
@@ -77,10 +91,25 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
+        // Az örök paktum nem pénz-kérdés: paktumos Kitaszított nem válthat ki más
+        // frakcióba — az egyetlen kiút a vezeklés-lánc (breakDarkPact).
+        if (hasFaction && currentFaction == FactionType.DARK && factionType != FactionType.DARK
+                && sinManager.hasDarkPact(player)) {
+            sender.sendMessage(messageManager.get("messages.faction-dark-pact-locked",
+                    "&5A sötét paktum örök — a Kitaszítottak közül nem vezet ki pénz. "
+                            + "Az egyetlen út a vezeklés-küldetéslánc."));
+            return true;
+        }
+
         // Frakciót VÁLTANI (ha már választottál) csak a semleges fővárosban lehet —
         // gyakorlatban a semleges királyság spawn-területén, a leendő frakció-NPC-nél.
         // Fail-open: ha még nincs kijelölt semleges főváros, a kapu nem zár.
         if (hasFaction && !FactionSwitchRules.passesNeutralCapitalGate(player, territoryManager, configManager, messageManager)) {
+            return true;
+        }
+
+        // Szezon-szabályok MINDEN váltásra (az ingyenes utakra is): hajrá-zár + szezon-plafon.
+        if (hasFaction && !FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
             return true;
         }
 
@@ -96,9 +125,29 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             if (!sinManager.isSinner(player)) {
                 sender.sendMessage(messageManager.get(
                         "messages.faction-dark-sinners-only",
-                        "&5A Sötét frakcióba csak bűnösök léphetnek be."
+                        "&5A Kitaszítottak közé csak bűnösök léphetnek be."
                 ));
                 return true;
+            }
+
+            // Kétlépcsős megerősítés: az örök paktumot nem lehet "véletlenül" megkötni.
+            final long confirmWindowMillis = Math.max(0L,
+                    configManager.getLong("factions.dark.join-confirm-seconds", 60L)) * 1000L;
+            if (confirmWindowMillis > 0L) {
+                final long now = System.currentTimeMillis();
+                darkConfirmPending.values().removeIf(stamp -> now - stamp > confirmWindowMillis);
+                final Long firstAsk = darkConfirmPending.get(uuid);
+                if (firstAsk == null) {
+                    darkConfirmPending.put(uuid, now);
+                    sender.sendMessage(messageManager.get(
+                            "messages.faction-dark-confirm-warning",
+                            "&5⚠ A Kitaszítottak paktuma ÖRÖK: a bűnöd sosem tisztul le, és nincs visszaút "
+                                    + "más frakcióba. Ha biztos vagy benne, írd be újra &f%s&5 másodpercen belül: "
+                                    + "&f/faction join dark",
+                            String.valueOf(confirmWindowMillis / 1000L)));
+                    return true;
+                }
+                darkConfirmPending.remove(uuid);
             }
 
             if (isSwitch && !FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
@@ -106,6 +155,9 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             }
 
             factionManager.setFaction(uuid, FactionType.DARK);
+            if (hasFaction) {
+                factionManager.recordSeasonSwitch(player); // ingyenes út is a szezon-plafonba számít
+            }
             sinManager.sealDarkPact(player);
             sender.sendMessage(messageManager.get(
                     "messages.faction-dark-pact-sealed",
@@ -119,8 +171,18 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
             return true;
         }
 
+        final boolean leavingDark = hasFaction && currentFaction == FactionType.DARK;
         factionManager.setFaction(uuid, factionType);
-        sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s", factionType.getDisplayName()));
+        if (leavingDark && specializationManager != null
+                && specializationManager.resetDarkGatedSpecialization(player)) {
+            player.sendMessage(messageManager.get("messages.dark-spec-lost",
+                    "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
+        }
+        if (hasFaction && !isSwitch) {
+            factionManager.recordSeasonSwitch(player); // Semlegesből ingyen váltás is számít
+        }
+        sender.sendMessage(messageManager.get("messages.faction-set-self-success", "&aFrakció beállítva: &f%s",
+                factionType.getDisplayName() + " (" + factionType.getFullName() + ")"));
         teleportToFactionSpawn(player, factionType);
         return true;
     }
@@ -143,7 +205,7 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                 player.sendMessage(messageManager.get(
                         "messages.faction-spawn-welcome",
                         "&aÜdvözöl a(z) &f%s&a! A királyság spawnjára kerültél.",
-                        factionType.getDisplayName()));
+                        factionType.getFullName()));
             }
         });
     }

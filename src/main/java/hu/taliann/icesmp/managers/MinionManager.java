@@ -23,18 +23,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MinionManager {
 
-    /** Pet stances cycled by the owner (ideas.md "Pet parancsok"). */
+    /** Pet stances cycled by the owner. */
     public enum Stance {
         ACTIVE,   // attacks enemies (default)
         PASSIVE,  // keeps its AI but never picks a target
         STAY      // frozen in place (AI off)
     }
 
+    private final JavaPlugin plugin;
     private final NamespacedKey minionOwnerKey;
     private final NamespacedKey minionStanceKey;
     private final Map<UUID, Set<UUID>> minionsByOwner = new ConcurrentHashMap<>();
 
     public MinionManager(final JavaPlugin plugin) {
+        this.plugin = plugin;
         this.minionOwnerKey = new NamespacedKey(plugin, "minion_owner");
         this.minionStanceKey = new NamespacedKey(plugin, "minion_stance");
     }
@@ -58,6 +60,12 @@ public final class MinionManager {
 
     public boolean isMinion(final Entity entity) {
         return getOwner(entity) != null;
+    }
+
+    /** Statikus minion-teszt DI nélkül (kill-jutalom listenereknek: saját idézett ne fizessen). */
+    public static boolean isMinionTagged(final Entity entity) {
+        return entity != null && entity.getPersistentDataContainer().has(
+                org.bukkit.NamespacedKey.fromString("icesmp:minion_owner"), PersistentDataType.STRING);
     }
 
     /** @return the owner UUID of the minion, or null if the entity is not a minion */
@@ -129,6 +137,20 @@ public final class MinionManager {
      * @param owner the summoner
      * @return the number of valid, living minions
      */
+    /** A tulaj ÖSSZES élő minionját/társát eltávolítja (entitás-szál hoppal). */
+    public void removeAllOwned(final UUID owner) {
+        final Set<UUID> ids = minionsByOwner.remove(owner);
+        if (ids == null) {
+            return;
+        }
+        for (final UUID id : ids) {
+            final Entity entity = Bukkit.getEntity(id);
+            if (entity != null && entity.isValid()) {
+                entity.getScheduler().run(plugin, task -> entity.remove(), null);
+            }
+        }
+    }
+
     public int countActive(final UUID owner) {
         final Set<UUID> ids = minionsByOwner.get(owner);
         if (ids == null || ids.isEmpty()) {

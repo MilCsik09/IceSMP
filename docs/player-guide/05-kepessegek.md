@@ -1,18 +1,18 @@
 # 5. Képességek (varázslatok) ✅
 
-Több mint **390 képesség** van — **minden a 13 kaszt és a 31 specializáció** saját, egyedi
-készletet kap. Ez az oldal **mind a 13 kasztot és mind a 31 specializációt** felsorolja: mit
+Több mint **390 képesség** van — **minden a 13 kaszt és a 35 specializáció** saját, egyedi
+készletet kap. Ez az oldal **mind a 13 kasztot és mind a 35 specializációt** felsorolja: mit
 csinál egy-egy képesség, mennyibe kerül, mennyit kell rá várni, és hányadik szinten oldódik fel.
 A saját kasztodra mindig naprakész a játékbeli **Képesség-fa** menü is (`/profile` → Képesség-fa).
 
 ## Hogyan működnek a képességek?
 
-A kasztod képességeit egy **Katalizátor** nevű tárggyal használod (a kasztodhoz illő tárgy, pl.
+A kasztod képességeit egy **Lélekkapocs** nevű tárggyal használod (a kasztodhoz illő tárgy, pl.
 a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 
 - **Jobb katt** = a kiválasztott képesség elsütése.
 - **Lopakodás (SHIFT) + görgetés** = gyors váltás a képességeid között előre/hátra — a
-  hotbar nem vált el, és a katalizátor **neve az épp kiválasztott képességet** mutatja.
+  hotbar nem vált el, és a Lélekkapocs **neve az épp kiválasztott képességet** mutatja.
 - **★ Kedvencek:** a spellkönyvben (`/spellbook`) **shift-katt** egy feloldott képességen →
   kedvencnek jelölöd (★). Ha van legalább egy kedvenced, a shift+görgetés **csak a
   kedvenceket** lépkedi — 20+ képességnél így villámgyors a váltás. (Újra shift-katt: levétel;
@@ -27,7 +27,7 @@ a Varázslónak egy könyv, a Sámánnak egy totem). Tartsd a kezedben, és:
 > fagy kék-fehér, szentség arany…). Tisztán vizuális, a hatáson nem változtat.
 
 > ⚔️ **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász): a kezedben
-> tartott **kard vagy balta is katalizátorként működik** — nem kell tárgyat váltanod a harc közben!
+> tartott **kard vagy balta is Lélekkapocsként működik** — nem kell tárgyat váltanod a harc közben!
 > Ugyanazok a mozdulatok érvényesek (jobb katt = cast, SHIFT+jobb katt = varázskönyv,
 > SHIFT+ütés = képesség-váltás).
 
@@ -69,6 +69,10 @@ egy színes csík mutat. **A legtöbb képesség ezt fogyasztja:**
 > A „blokk" a távolságot jelenti (1 blokk ≈ 1 méter).
 
 ---
+
+> ⚖️ **PvP-szabály — csökkenő kontroll (DR):** ugyanarra a **játékosra** ismételt
+> kemény kontroll (fagyasztás, erős lassítás) rövid időn belül egyre gyengébben hat:
+> 100% → 50% → 25% → immunis. Szörnyekre nem vonatkozik.
 
 ## ⭐ Spell-mesterség és kombók
 
@@ -742,10 +746,64 @@ a saját képességei.
 
 ---
 
+## 🧟 Szentségtelen (Halállovag-spec, csak Kitaszított) — élőholt ragály és szolgák
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Gennyes Csapás** | 6 sebzés + **sorvadás** (4,5 blokk) | 3 🍗 | 22 mp | 25 |
+| **Járvány** | Körkörös 3 sebzés + méreg (5 blokk) | 40 XP | 45 mp | 27 |
+| **Ghúl-szolga** | 2 ghúl idézése (40 mp-ig harcolnak) | 60 XP | 3 perc | 30 |
+| **Halálörvény** | 7 sebzés (6 blokk) — az árát **vérben** fizeted | 3 ❤ | 30 mp | 33 |
+| **A Holtak Szorítása** | Körkörös 2 sebzés + erős lassítás (4,5 blokk) | 35 XP | 40 mp | 36 |
+| **Ragály** | Körkörös 5 sebzés + sorvadás (6 blokk) | 50 XP | 75 mp | 39 |
+| **A Holtak Serege** | A végső: 6 élőholt harcos idézése (40 mp-ig) | 110 XP | 5 perc | 45 |
+
+Ezen felül a Szentségtelennek **állandó ghúl-társa** van (rituálé-idézés — lásd a
+[Specializációk](06-specializaciok.md) oldal Társ-részét).
+
+## 🦴 Csontpap (Pap-spec, csak Kitaszított) — a Néma Királynő liturgiája
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Csontforrasztás** | Szövetséges kör: regeneráció + magadra 3 gyógyítás (4 blokk) | 30 XP | 25 mp | 25 |
+| **Szívó Sugár** | 4 sebzés + magadra 3 gyógyítás (7 blokk) | 3 🍗 | 30 mp | 27 |
+| **Csont-oltalom** | Szövetséges kör: sebzéscsökkentés (5 blokk) | 35 XP | 60 mp | 30 |
+| **A Királynő Siráma** | Körkörös 3 sebzés + gyengítés (5 blokk) | 40 XP | 45 mp | 33 |
+| **Vér-tized** | Szövetséges kör: erős regeneráció (6 blokk) — az árát **vérben** fizeted | 4 ❤ | 75 mp | 36 |
+| **A Sír Csendje** | Körkörös 4 sebzés + sorvadás (5 blokk) | 50 XP | 90 mp | 39 |
+| **Utolsó Kenet** | A végső: szövetséges kör felszívódás-pajzs + magadra 8 gyógyítás (8 blokk) | 90 XP | 4 perc | 45 |
+
+## ☣️ Pestishozó (Orgyilkos-spec, csak Kitaszított) — pestis és sorvasztás
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Pestis-vágás** | 5 sebzés + méreg (4,5 blokk) | 3 🍗 | 20 mp | 25 |
+| **Fertőzés** | Körkörös 2 sebzés + erős méreg (4 blokk) | 35 XP | 40 mp | 27 |
+| **Fekete Kelések** | 3 sebzés + erős sorvadás (6 blokk) | 40 XP | 50 mp | 30 |
+| **Miazma** | Körkörös 3 sebzés + lassítás (5 blokk) | 45 XP | 60 mp | 33 |
+| **Gennyedő Sebek** | 6 sebzés + sorvadás (5 blokk) — az árát **vérben** fizeted | 3 ❤ | 75 mp | 36 |
+| **Pestis-szél** | Körkörös 4 sebzés + méreg (7 blokk) | 55 XP | 90 mp | 39 |
+| **Fekete Halál** | A végső: körkörös 7 sebzés + erős sorvadás (6 blokk) | 150 XP | 5 perc | 45 |
+
+## 👿 Demonológus (Boszorkánymester-spec, csak Kitaszított) — a Légió idézője
+
+| Képesség | Mit csinál | Költség | Várakozás | Szint |
+|---|---|---|---|---|
+| **Démontűz-lövedék** | 5 sebzés + meggyújt (7 blokk) | 3 🍗 | 25 mp | 25 |
+| **Imp-raj** | 3 imp idézése (30 mp-ig harcolnak) | 60 XP | 3 perc | 27 |
+| **Magma-szolga** | Izzó behemót idézése (45 mp-ig) | 70 XP | 3 perc 20 mp | 30 |
+| **Démonbőr** | Magadra erős sebzéscsökkentés | 45 XP | 90 mp | 33 |
+| **Káosz-láng** | Körkörös 5 sebzés + meggyújt (5 blokk) | 50 XP | 60 mp | 36 |
+| **Áldozati Paktum** | Körkörös 6 sebzés (6 blokk) — az árát **vérben** fizeted | 5 ❤ | 2 perc | 39 |
+| **A Légió** | A végső: 5 démon idézése (40 mp-ig) | 110 XP | 5 perc | 45 |
+
+Ezen felül a Boszorkánymesternek (kaszt-szinten) **állandó démon-familiárisa** van
+(rituálé-idézés — lásd a [Specializációk](06-specializaciok.md) oldal Társ-részét).
+
 ## ★ Talent-képességek (aktív talentekből)
 
 Ezek **nem a szintedből**, hanem az **aktív talentekből** oldódnak fel (lásd
-[Talentek](07-talentek.md)), és **bármelyik kaszttal** használhatók a Katalizátorral:
+[Talentek](07-talentek.md)), és **bármelyik kaszttal** használhatók a Lélekkapocsral:
 
 | Képesség | Mit csinál | Költség | Várakozás | Honnan |
 |---|---|---|---|---|
@@ -753,4 +811,35 @@ Ezek **nem a szintedből**, hanem az **aktív talentekből** oldódnak fel (lás
 
 ---
 
+### ✧ Mágia-sebzés és Rúnavért
+
+A varázslatok saját **mágia-sebzésként** ütnek — a vanília páncél mellett létezik ellenük egy
+külön védelem: a **Rúnavért** enchant. A rúnaírnokok (enchanter 40) **Rúnavért-tekercset**
+készítenek (enchantelt könyv), amit **üllőn** vihetsz a páncélodra; darabonként és szintenként
+csökkenti a bejövő spell-sebzést (max 3. szint — két azonos szintű könyv üllőn kombinálható).
+A vanília sebzés ellen nem véd — ez kifejezetten a mágia countere.
+
+**Iskolák:** minden varázslat egy **iskolához** tartozik (tűz, fagy, szent, árnyék, természet,
+vihar, káosz, ősmágia) — alapból a kaszt szabja meg (pl. a Paplovag szent, a Halállovag fagy,
+a Boszorkánymester káosz mágiával üt), de spellenként is testre szabható. A **Fagypáncél** és a
+**Főnixtoll** signature-vért nem csak dísz: a saját iskolájuk (fagy-, ill. tűzmágia) ellen
+külön ellenállást adnak, ami a Rúnavérttel összeadódik.
+
 ➡️ Tovább: [Specializációk](06-specializaciok.md) • [Vissza a tartalomhoz](README.md)
+
+## Lélek-kovács és rúna-affinitás ☠◆
+
+- **Nekromanta — `/soulforge`:** a lélekszilánkjaidat tartósan a sereged erejébe fektetheted:
+  Élet, Sebzés és Létszám ág, áganként 5 rang. A magas Létszám-rang extra idézés-slotot ad —
+  a sereged szó szerint nő a szezonnal!
+- **Varázsló — rúnaíró affinitás:** a Varázsló „olvassa" a rúnákat: minden rúna-hatás
+  **duplán** érvényesül nála, és csak ő készítheti el a **Visszhang Rúnáját** (találatkor
+  eséllyel visszhang-csapás).
+
+## Pakt és Sárkánytojás — kaszt-végjáték 🐉
+
+- **Boszorkánymester — Pakt-oltár:** építs pakt-oltárt (SOUL_LANTERN mag), és az Első Csend
+  Szilánkjáért cserébe a max Lélekerőd **tartósan +20%**. Egyszeri és visszavonhatatlan —
+  a Kárhozat nem alkuszik kétszer.
+- **Sárkányidéző — Sárkánytojás-töredék:** új relikvia; amíg a tiéd ÉS Sárkányidéző vagy,
+  az Eszencia-medred +10%-kal tágabb. Másnak csak hideg kő — neked végjáték-cél.

@@ -39,6 +39,9 @@ public final class TalentManager {
     private final SpecializationManager specializationManager;
     private final NamespacedKey classTalentsKey;
     private final NamespacedKey professionTalentsKey;
+    /** K8 Emlékszilánk-beváltásból származó extra talentpontok (PDC, additív). */
+    private final NamespacedKey bonusClassPointsKey;
+    private final NamespacedKey bonusProfessionPointsKey;
     private final NamespacedKey healthModifierKey;
     private final NamespacedKey speedModifierKey;
     private final NamespacedKey damageModifierKey;
@@ -52,6 +55,8 @@ public final class TalentManager {
         this.specializationManager = specializationManager;
         this.classTalentsKey = new NamespacedKey(plugin, "talents_class");
         this.professionTalentsKey = new NamespacedKey(plugin, "talents_profession");
+        this.bonusClassPointsKey = new NamespacedKey(plugin, "talent_bonus_class");
+        this.bonusProfessionPointsKey = new NamespacedKey(plugin, "talent_bonus_profession");
         this.healthModifierKey = new NamespacedKey(plugin, "talent_max_health");
         this.speedModifierKey = new NamespacedKey(plugin, "talent_movement_speed");
         this.damageModifierKey = new NamespacedKey(plugin, "talent_attack_damage");
@@ -115,7 +120,7 @@ public final class TalentManager {
             if (jobManager.hasPrimaryJob(player)) {
                 totalLevels += jobManager.getPrimaryLevel(player);
             }
-            return totalLevels / perLevels;
+            return totalLevels / perLevels + getBonusPoints(player, true);
         }
 
         // Profession pool: every profession contributes its levels above 1
@@ -125,7 +130,30 @@ public final class TalentManager {
         for (final ProfessionType professionType : ProfessionType.values()) {
             totalLevels += Math.max(0, professionManager.getLevel(player, professionType) - 1);
         }
-        return totalLevels / perLevels;
+        return totalLevels / perLevels + getBonusPoints(player, false);
+    }
+
+    /** K8: Emlékszilánk-beváltásból származó extra pontok az adott poolban. */
+    public int getBonusPoints(final Player player, final boolean classPool) {
+        return player.getPersistentDataContainer().getOrDefault(
+                classPool ? bonusClassPointsKey : bonusProfessionPointsKey, org.bukkit.persistence.PersistentDataType.INTEGER, 0);
+    }
+
+    /**
+     * K8: extra talentpont jóváírása (Emlékszilánk-beváltás — "visszaemlékezés").
+     * A játékos saját régió-szálán hívandó (PDC-írás).
+     *
+     * @param player the player
+     * @param classPool true = kaszt-pool, false = szakma-pool
+     * @param amount hány pont (≥1)
+     */
+    public void grantBonusPoints(final Player player, final boolean classPool, final int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        final NamespacedKey key = classPool ? bonusClassPointsKey : bonusProfessionPointsKey;
+        final int current = player.getPersistentDataContainer().getOrDefault(key, org.bukkit.persistence.PersistentDataType.INTEGER, 0);
+        player.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.INTEGER, current + amount);
     }
 
     /**

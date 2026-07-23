@@ -29,23 +29,41 @@ import java.util.Map;
  */
 public final class SinListener implements Listener {
 
+    /** G6 — setter-injektált: a beleegyezéses becsület-párbaj kill-kizárása. */
+    private volatile hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager;
+
+    public void setHonorDuelManager(final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager) {
+        this.honorDuelManager = honorDuelManager;
+    }
+
+    /** Hadi-ablak (gameplay-audit): setterrel kötve — RED↔BLUE ölés az ablak alatt nem bűn. */
+    private volatile hu.taliann.icesmp.managers.WarWindowManager warWindowManager;
+
+    public void setWarWindowManager(final hu.taliann.icesmp.managers.WarWindowManager warWindowManager) {
+        this.warWindowManager = warWindowManager;
+    }
+
     private final JavaPlugin plugin;
     private final SinManager sinManager;
     private final RaidManager raidManager;
     private final FactionManager factionManager;
+    private final hu.taliann.icesmp.managers.TerritoryManager territoryManager;
     private final StatsManager statsManager;
     private final CurrencyManager currencyManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
     public SinListener(final JavaPlugin plugin, final SinManager sinManager, final RaidManager raidManager,
-                       final FactionManager factionManager, final StatsManager statsManager,
+                       final FactionManager factionManager,
+                       final hu.taliann.icesmp.managers.TerritoryManager territoryManager,
+                       final StatsManager statsManager,
                        final CurrencyManager currencyManager, final ConfigManager configManager,
                        final MessageManager messageManager) {
         this.plugin = plugin;
         this.sinManager = sinManager;
         this.raidManager = raidManager;
         this.factionManager = factionManager;
+        this.territoryManager = territoryManager;
         this.statsManager = statsManager;
         this.currencyManager = currencyManager;
         this.configManager = configManager;
@@ -82,6 +100,32 @@ public final class SinListener implements Listener {
             return;
         }
 
+        // Becsület-párbaj: a beleegyezéses párbaj-ölés NEM bűn és NEM vérdíj-eset;
+        // a győztes bűnös egy bűnpontot veszít (a settleKill intézi). A kill a victim szálán fut,
+        // a settleKill csak konkurens mapeket + a KILLER PDC-jét érinti a killer szál-hopja után.
+        final hu.taliann.icesmp.managers.HonorDuelManager duelRef = honorDuelManager;
+        if (duelRef != null && duelRef.isDuelPair(killer.getUniqueId(), victim.getUniqueId())) {
+            killer.getScheduler().run(plugin, task -> {
+                if (duelRef.settleKill(killer, victim)) {
+                    killer.sendMessage(messageManager.getMessage(
+                            "duel-honor-won",
+                            "<gold>⚔ A becsület-párbaj a tiéd — egy bűnöd letörölve. <gray>A sértett fél elégtételt kapott.</gray></gold>"));
+                }
+            }, null);
+            return;
+        }
+
+        // Hadi-ablak: a nyitott ablak alatt a RED↔BLUE ölés szentesített hadicselekmény —
+        // nem bűn, nem vérdíj-eset (a hadijog a hadviselő felek közt felülírja a vérdíjat),
+        // liga-pontot ér farm-fékekkel. A pont/PDC-írás a killer SAJÁT régió-szálán fut.
+        final hu.taliann.icesmp.managers.WarWindowManager warRef = warWindowManager;
+        if (warRef != null && warRef.isSanctionedWarKill(killerFaction, victimFaction)) {
+            final java.util.UUID victimId = victim.getUniqueId();
+            killer.getScheduler().run(plugin, task ->
+                    warRef.handleWarKill(killer, victimId, killerFaction), null);
+            return;
+        }
+
         // Bounty hunter rule: a high-sin victim carries a
         // bounty. Executing them is a justified kill — the hunter is PAID and gains NO sin,
         // and the criminal's bounty resets (they paid with their life). The sin count is
@@ -91,27 +135,77 @@ public final class SinListener implements Listener {
             final int victimSins = sinManager.getSinCount(victim);
             final int minSins = Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
             if (victimSins >= minSins) {
-                final double reward = victimSins
+                // Pénznyomda-fék: ugyanarra az áldozatra csak per-victim-cooldown-hours
+                // (12) óránként jár kifizetés — a megrendezett "3 gyilkosság → kivégzés →
+                // vérdíj" kör így nem skálázható. A bűn-törlés UGYANEZEN cooldown alatt
+                // áll: különben baráti kivégzéssel korlátlanul nullázható a bűnszámláló
+                // a 4-bűnös száműzetés előtt (exile-kerülő exploit).
+                final org.bukkit.NamespacedKey paidAtKey =
+                        org.bukkit.NamespacedKey.fromString("icesmp:bounty_paid_at");
+                final long cooldownMillis = Math.max(0L, configManager.getLong(
+                        "factions.sins.bounty.per-victim-cooldown-hours", 12L)) * 3_600_000L;
+                final long paidAt = victim.getPersistentDataContainer()
+                        .getOrDefault(paidAtKey, org.bukkit.persistence.PersistentDataType.LONG, 0L);
+                final boolean onCooldown = cooldownMillis > 0L
+                        && System.currentTimeMillis() - paidAt < cooldownMillis;
+                final double reward = onCooldown ? 0.0D : victimSins
                         * Math.max(0.0D, configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D));
                 final CurrencyType currency = resolveBountyCurrency();
-                if (configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
+                if (!onCooldown && configManager.getBoolean("factions.sins.bounty.clear-sins-on-death", true)) {
                     sinManager.resetSinCount(victim);
                 }
                 if (reward > 0.0D && currency != null) {
-                    currencyManager.addToBalance(killer.getUniqueId(), currency, reward);
+                    victim.getPersistentDataContainer().set(paidAtKey,
+                            org.bukkit.persistence.PersistentDataType.LONG, System.currentTimeMillis());
+                    // Fizikai veret-kifizetés a killer SAJÁT régió-szálán (Folia-hop).
+                    final long rewardTokens = Math.round(reward);
+                    killer.getScheduler().run(plugin, task ->
+                            currencyManager.payOutTokens(killer, currency, rewardTokens), null);
                 }
-                Bukkit.getServer().broadcast(messageManager.getMessage(
-                        "bounty-claimed",
-                        "<gold>💰 {hunter} beváltotta a fejpénzt {target} fejére: {reward} {currency}!</gold>",
-                        Map.of(
-                                "hunter", killer.getName(),
-                                "target", victim.getName(),
-                                "reward", currencyManager.formatBalance(reward),
-                                "currency", currency == null ? "?" : currency.getDisplayName()
-                        )
-                ));
+                if (reward > 0.0D) {
+                    Bukkit.getServer().broadcast(messageManager.getMessage(
+                            "bounty-claimed",
+                            "<gold>💰 {hunter} beváltotta a fejpénzt {target} fejére: {reward} {currency}!</gold>",
+                            Map.of(
+                                    "hunter", killer.getName(),
+                                    "target", victim.getName(),
+                                    "reward", currencyManager.formatBalance(reward),
+                                    "currency", currency == null ? "?" : currency.getDisplayName()
+                            )
+                    ));
+                } else {
+                    // Cooldown alatt: az ítélet megvolt, de a Bankárszövetség nem fizet kétszer.
+                    killer.getScheduler().run(plugin, task -> killer.sendMessage(messageManager.getMessage(
+                            "bounty-cooldown",
+                            "<gray>💰 Erre a fejre nemrég már fizettek — a vérdíj elmarad, és a bűnlista is megmarad.</gray>")), null);
+                }
                 return;
             }
+        }
+
+        // Kárhozat-zóna: a senkiföldjén nincs törvény — az ottani ölés nem bűn. A halál
+        // helyét a VICTIM régió-szálán olvassuk (az event ott fut); a zóna-lookup lock-mentes.
+        if (configManager.getBoolean("territory.doom-gate.sin-exempt", true)) {
+            final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
+            if (zone != null && zone.type() == hu.taliann.icesmp.data.TerritoryType.DOOM_GATE) {
+                killer.getScheduler().run(plugin, task -> killer.sendActionBar(messageManager.getMessage(
+                        "sinner.doom-gate-kill",
+                        "<dark_red>☠ A Kárhozat Kapujánál nincs törvény — az ölés itt nem bűn.</dark_red>")), null);
+                return;
+            }
+        }
+
+        // A Kitaszított élete a törvényen kívül áll — DARK-áldozat ölése
+        // SOSEM bűn. (Eddig ezt a gyakorlatban a vérdíj-ág fedte le, mert a DARK-tag
+        // bűnös-jelölt; de a vérdíj-kifizetés nullázza a számlálót, így a másodszor
+        // megölt Kitaszítottért már bűn járt volna — ez az explicit kivétel zárja a rést.
+        // A vérdíj-ág fentebb marad: a 3+ bűnű DARK-áldozatért továbbra is jár a veret.)
+        if (victimFaction == FactionType.DARK
+                && configManager.getBoolean("factions.sins.dark-victim-exempt", true)) {
+            killer.getScheduler().run(plugin, task -> killer.sendActionBar(messageManager.getMessage(
+                    "sinner.dark-victim-kill",
+                    "<gray>☠ A Kitaszított a törvényen kívül áll — az ölése nem bűn.</gray>")), null);
+            return;
         }
 
         final boolean betrayal = killerFaction == victimFaction && killerFaction != FactionType.NEUTRAL;

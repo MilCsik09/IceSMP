@@ -1,6 +1,7 @@
 # IceSMP üzenetek — world alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
   blood-moon-ended: <gray>🌙 A vérhold lenyugodott — a világ fellélegzik.</gray>
+  corruption-aura-death: <dark_gray>{victim} testét felemésztette a rontás.</dark_gray>
   blood-moon-started: <dark_red>🌕 VÉRHOLD! Ma éjjel a szörnyek erősebbek (+{bonus} szint), de a lelkük is értékesebb...</dark_red>
   events-bloodmoon-active: '&cVérhold tombol!'
   events-bloodmoon-already: '&7Már tombol a vérhold.'
@@ -61,7 +62,7 @@ messages:
   events-status-meteor-timed: '&c☄ Meteor-kráter vár bányászásra — még ~%s perc'
   events-status-meteor-active: '&c☄ Meteor-kráter vár bányászásra'
   ambient-aurora: '&b🌌 Északi fény ragyog fel az égen — a világ egy pillanatra elcsendesedik.'
-  ambient-reward: '&d✨ Az esemény megérintett: &f+{amount} token'
+  ambient-reward: '&d✨ Az esemény megérintett: &f+{amount} érme'
   ambient-falling-star: '&e☄ Hulló csillag hasít át az égbolton a(z) {world} felett ({x}, {z})!'
   ambient-fireflies: '&e✨ Szentjánosbogarak raja gyúl fel a szürkületben.'
   ambient-fog: '&7🌫 Sűrű köd ereszkedik a tájra — óvatosan az utakon.'

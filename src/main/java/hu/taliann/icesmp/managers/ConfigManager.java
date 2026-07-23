@@ -14,10 +14,15 @@ import java.util.List;
  */
 public final class ConfigManager {
 
-    /** Bundled per-subsystem config files under config/ (extracted on first run). */
+    /** Bundled per-subsystem config files under config/ (extracted on first run).
+     * AUDIT-JAVÍTÁS: a lista korábban 6 fájlt kihagyott (item-rarity, loot, motd,
+     * profession-materials, profession-recipes, tablist) — friss telepítésen ezek sosem
+     * csomagolódtak ki, így a rájuk épülő rendszerek némán a kód-defaultokra estek
+     * (pl. NULLA szakma-recept). Új fájl hozzáadásakor ide is fel KELL venni. */
     private static final String[] CONFIG_FILES = {
             "general", "economy", "factions", "classes", "spells", "spells-balance",
-            "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation"
+            "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation",
+            "item-rarity", "loot", "motd", "profession-materials", "profession-recipes", "tablist"
     };
 
     private final JavaPlugin plugin;
@@ -35,7 +40,7 @@ public final class ConfigManager {
      * {@code getX("subsystem.key")} paths keep working unchanged. The per-subsystem files are the
      * defaults; {@code config.yml} is loaded LAST so an admin can override any key there.
      */
-    public void load() {
+    public synchronized void load() {
         final YamlConfiguration merged = new YamlConfiguration();
 
         // Per-subsystem defaults: config/<subsystem>.yml. Extract the bundled set on first run,
@@ -73,6 +78,29 @@ public final class ConfigManager {
 
     public void reload() {
         load();
+    }
+
+    /**
+     * Az ingame override-írás EGYETLEN, szerializált útja (GUI-kattintás + /icesmp config
+     * set|unset — Folián mindkettő a hívó játékos régió-szálán fut, akár egyszerre többen).
+     * A plugin megosztott {@code getConfig()} objektumán a set+save+reload hármas
+     * szinkronizáció nélkül elveszíthetné az egyik admin módosítását (a reloadConfig a
+     * lemezről cseréli le a memóriabeli, még mentetlen példányt), ezért:
+     * (1) friss lemez-állapot betöltése, (2) set, (3) mentés, (4) merge-újratöltés —
+     * egyetlen monitor alatt. {@code value == null} = a kulcs törlése (unset).
+     *
+     * @return unsetnél true, ha a kulcs létezett; setnél mindig true
+     */
+    public synchronized boolean applyOverride(final String key, final Object value) {
+        plugin.reloadConfig();
+        final boolean existed = plugin.getConfig().isSet(key);
+        if (value == null && !existed) {
+            return false;
+        }
+        plugin.getConfig().set(key, value);
+        plugin.saveConfig();
+        load();
+        return true;
     }
 
     /** Returns null if not yet loaded. */
@@ -120,6 +148,13 @@ public final class ConfigManager {
             return List.of();
         }
         return configuration.getStringList(path);
+    }
+
+    public List<Double> getDoubleList(final String path) {
+        if (configuration == null) {
+            return List.of();
+        }
+        return configuration.getDoubleList(path);
     }
 }
 

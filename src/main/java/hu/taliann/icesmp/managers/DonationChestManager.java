@@ -37,6 +37,8 @@ public final class DonationChestManager implements PersistentStore {
     private final ConfigManager configManager;
     private final File storageFile;
     private final Map<UUID, DonationEntry> entries = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public DonationChestManager(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -96,7 +98,16 @@ public final class DonationChestManager implements PersistentStore {
         }
     }
 
-    @Override
+    /** Debounce-olt mentés: a donate/take a hívó régió-szálán nem blokkolhat lemez-I/O-n. */
+    private void requestSave() {
+        if (saveScheduled.compareAndSet(false, true)) {
+            plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
+                saveScheduled.set(false);
+                save();
+            }, 2L, java.util.concurrent.TimeUnit.SECONDS);
+        }
+    }
+
     public synchronized void save() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final DonationEntry entry : entries.values()) {
@@ -161,7 +172,7 @@ public final class DonationChestManager implements PersistentStore {
         entries.put(id, new DonationEntry(id, donor.getUniqueId(), donor.getName(), held.clone(),
                 System.currentTimeMillis()));
         donor.getInventory().setItemInMainHand(null);
-        save();
+        requestSave();
         return null;
     }
 
@@ -178,7 +189,7 @@ public final class DonationChestManager implements PersistentStore {
         if (entry == null) {
             return null;
         }
-        save();
+        requestSave();
         return entry.item();
     }
 }

@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Raid system (ideas.md "Raid eventek", deepened per ROADMAP "Raid-mélyítés"):
+ * Raid system:
  * a faction king declares a raid against another faction for an entry fee paid
  * from the treasury, optionally bound to one of the defender's territory claims
  * (default: their capital).
@@ -56,6 +56,8 @@ public final class RaidManager {
     private final Map<UUID, FactionType> participants = new ConcurrentHashMap<>();
 
     private volatile ActiveRaid activeRaid;
+    /** Az utolsó raid lezárásának bélyege — a lánc-raid cooldown alapja (memóriában él). */
+    private volatile long lastRaidEndedAt;
     private ScheduledTask combatStartTask;
     private ScheduledTask captureTask;
     private ScheduledTask endTask;
@@ -161,6 +163,13 @@ public final class RaidManager {
                                          final String requestedTerritoryId) {
         if (isRaidActive()) {
             return "faction-raid-already-active";
+        }
+
+        // Lánc-raid fék: két hirdetés közt kötelező szünet (élő kulcs, 0 = kikapcsolva).
+        final long cooldownMillis = Math.max(0L,
+                configManager.getLong("factions.raid.cooldown-minutes", 60L)) * 60_000L;
+        if (cooldownMillis > 0L && System.currentTimeMillis() - lastRaidEndedAt < cooldownMillis) {
+            return "faction-raid-cooldown";
         }
 
         if (attacker == null || defender == null || attacker == defender) {
@@ -405,6 +414,7 @@ public final class RaidManager {
             return;
         }
 
+        lastRaidEndedAt = System.currentTimeMillis();
         activeRaid = null;
         cancelTasks();
 
@@ -437,7 +447,7 @@ public final class RaidManager {
         }
 
         // Raid victory feeds the seasonal league standings.
-        seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)));
+        seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)), "raid");
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
         applyWinnerBuff(winner);
@@ -549,6 +559,12 @@ public final class RaidManager {
 
     /** Cancels the pending timers on plugin disable. */
     public void shutdown() {
+        final ActiveRaid raid = activeRaid;
+        if (raid != null) {
+            // Restart alatt a menet nem folytatható — legalább ne némán vesszen el.
+            Bukkit.getServer().broadcast(messageManager.getMessage("raid-cancelled-restart",
+                    "<yellow>⚔ A folyamatban lévő ostrom a szerver újraindulása miatt eredmény nélkül zárult — a krónikák nem jegyzik.</yellow>"));
+        }
         cancelTasks();
         activeRaid = null;
         participants.clear();

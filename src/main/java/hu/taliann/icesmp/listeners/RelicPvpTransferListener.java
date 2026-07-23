@@ -36,13 +36,59 @@ public final class RelicPvpTransferListener implements Listener {
         this.messageManager = messageManager;
     }
 
+    /**
+     * Halál-stash a passzív relikviákhoz: a nem-fegyver relikvia halálkor NEM esik a földre
+     * (bárki felkapná és a tulajdonos számára örökre elveszne — audit-hiba), hanem
+     * respawnkor visszakerül a gazdájához. Kilépés respawn előtt = a stash elvész (ritka;
+     * ugyanaz a kompromisszum, mint a Lélekkapocs-védelemnél).
+     */
+    private final Map<java.util.UUID, List<ItemStack>> keptRelics = new java.util.concurrent.ConcurrentHashMap<>();
+
     @EventHandler
     public void onPlayerDeath(final PlayerDeathEvent event) {
+        final Player victim = event.getEntity();
+
+        // 1) Passzív relikviák sorsa halálkor (relics.passive-death.mode, élőben olvasva):
+        //    reclaim (default) — a tárgy MEGSEMMISÜL, a tulajdon marad: csak a tulaj idézheti
+        //                        újra az oltárnál, a rövidített lost-expiry lejártáig;
+        //    keep             — a tárgy respawnkor visszakerül a tulajhoz;
+        //    drop             — vanília viselkedés (leesik; idegen frakció így sem veheti fel).
+        final String mode = configManager.getString("relics.passive-death.mode", "reclaim")
+                .toLowerCase(java.util.Locale.ROOT);
+        if ("reclaim".equals(mode)) {
+            event.getDrops().removeIf(drop -> {
+                final RelicDefinition definition = relicManager.identify(drop);
+                if (definition == null || relicManager.isWeaponRelic(definition.id())) {
+                    return false;
+                }
+                relicManager.markLost(definition.id());
+                victim.sendMessage(messageManager.getMessage(
+                        "relic.death-lost",
+                        "<dark_purple>✦ A(z) <white>{relic}</white> köddé vált a halálodban — a kötés él: idézd újra az oltárnál, mielőtt végleg elhagyna ({days} nap).</dark_purple>",
+                        Map.of("relic", definition.displayName(),
+                                "days", String.valueOf(Math.max(0L, configManager.getLong("relics.inactivity.lost-expiry-days", 3L))))));
+                return true;
+            });
+        } else if ("keep".equals(mode)) {
+            final List<ItemStack> kept = new ArrayList<>();
+            event.getDrops().removeIf(drop -> {
+                final RelicDefinition definition = relicManager.identify(drop);
+                if (definition == null || relicManager.isWeaponRelic(definition.id())) {
+                    return false;
+                }
+                kept.add(drop);
+                return true;
+            });
+            if (!kept.isEmpty()) {
+                keptRelics.put(victim.getUniqueId(), kept);
+            }
+        }
+
+        // 2) Fegyver-relikviák PvP-átvétele.
         if (!configManager.getBoolean("relics.pvp-transfer.enabled", true)) {
             return;
         }
 
-        final Player victim = event.getEntity();
         final Player killer = victim.getKiller();
         if (killer == null || killer.getUniqueId().equals(victim.getUniqueId())) {
             return;
@@ -80,5 +126,27 @@ public final class RelicPvpTransferListener implements Listener {
                 ));
             }
         }, null);
+    }
+
+    @EventHandler
+    public void onRespawn(final org.bukkit.event.player.PlayerRespawnEvent event) {
+        final List<ItemStack> kept = keptRelics.remove(event.getPlayer().getUniqueId());
+        if (kept == null) {
+            return;
+        }
+        // A respawn-event a játékos saját régió-szálán fut — az inventory-írás biztonságos.
+        for (final ItemStack itemStack : kept) {
+            event.getPlayer().getInventory().addItem(itemStack).values()
+                    .forEach(left -> event.getPlayer().getWorld()
+                            .dropItemNaturally(event.getPlayer().getLocation(), left));
+        }
+        event.getPlayer().sendMessage(messageManager.getMessage(
+                "relic.death-kept",
+                "<gold>✦ A relikviád hű maradt hozzád — a halál sem választott el tőle.</gold>"));
+    }
+
+    @EventHandler
+    public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
+        keptRelics.remove(event.getPlayer().getUniqueId());
     }
 }

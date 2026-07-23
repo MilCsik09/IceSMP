@@ -27,4 +27,22 @@ public final class WildHuntListener implements Listener {
         }
         wildHuntManager.onSlain(dead.getKiller(), dead.getLocation());
     }
+
+    /**
+     * Personal-loot kiterjesztés: minden játékos, aki a fenevadat sebzi, résztvevővé
+     * válik (leölésnél csökkentett saját gurítást kap). A damage-event a fenevad
+     * régió-szálán fut; a jelölés konkurens halmazba ír (szál-biztos).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onDamage(final org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (!wildHuntManager.isWildHunt(event.getEntity().getUniqueId())) {
+            return;
+        }
+        if (event.getDamager() instanceof org.bukkit.entity.Player player) {
+            wildHuntManager.recordDamager(player.getUniqueId());
+        } else if (event.getDamager() instanceof org.bukkit.entity.Projectile projectile
+                && projectile.getShooter() instanceof org.bukkit.entity.Player shooter) {
+            wildHuntManager.recordDamager(shooter.getUniqueId());
+        }
+    }
 }

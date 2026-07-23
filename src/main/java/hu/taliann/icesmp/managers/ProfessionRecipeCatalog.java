@@ -30,7 +30,9 @@ public final class ProfessionRecipeCatalog {
     public record Recipe(String id, ProfessionType profession, int level, boolean blueprint,
                          String displayName, String category, Material result, int resultAmount,
                          String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
-                         Map<String, Integer> uniqueIngredients) {
+                         Map<String, Integer> uniqueIngredients, List<String> lore,
+                         String signature, hu.taliann.icesmp.data.FactionType faction,
+                         boolean lootOnly, int customModelData, String job) {
     }
 
     private final JavaPlugin plugin;
@@ -111,10 +113,33 @@ public final class ProfessionRecipeCatalog {
         final String category = section.getString("category", "Egyéb");
         final int amount = Math.max(1, resultSection.getInt("amount", 1));
         final String affixTier = resultSection.getString("affix-tier", null);
+        // Optional lore lines: when present, the crafted item is stamped with the designed name + lore
+        // (a "named" prestige item — gear/tome/special consumable); bulk results have no lore and stay vanilla.
+        final List<String> lore = section.getStringList("lore");
+        // Signature items: a PDC id the perk listener recognises; optional faction gate.
+        final String signature = resultSection.getString("signature", null);
+        final hu.taliann.icesmp.data.FactionType faction =
+                hu.taliann.icesmp.data.FactionType.fromInput(section.getString("faction", null));
+        // Loot-only: a tervrajz KIZÁRÓLAG világboss/nehéz esemény lootból eshet
+        // (NPC-bolt/sima mob sosem adja) — csak blueprint-tanulású receptnél értelmes.
+        final boolean lootOnly = blueprint && section.getBoolean("loot-only", false);
+        // Resource-pack horog: a nevesített/lore-os eredmény CustomModelData-t kaphat
+        // (result.custom-model-data) — a kiosztott értékek a docs/RESOURCE_PACK_CMD.md listán.
+        final int customModelData = Math.max(0, resultSection.getInt("custom-model-data", 0));
+        // Kaszt-zárt recept: csak a megadott kaszt készítheti (pl. Varázsló-rúnák).
+        final String job = section.getString("job", null);
         return new Recipe(id, profession, level, blueprint, displayName, category, result, amount,
                 affixTier == null || affixTier.isBlank() ? null : affixTier.toLowerCase(Locale.ROOT),
                 uniqueResult == null || uniqueResult.isBlank() ? null : uniqueResult.toLowerCase(Locale.ROOT),
-                ingredients, uniqueIngredients);
+                ingredients, uniqueIngredients, lore,
+                signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction,
+                lootOnly, customModelData,
+                job == null || job.isBlank() ? null : job.toLowerCase(Locale.ROOT));
+    }
+
+    /** Minden recept-id betöltési sorrendben (admin item-adó parancs tab-complete-je). */
+    public List<String> allIds() {
+        return List.copyOf(byId.keySet());
     }
 
     public Recipe get(final String id) {
@@ -130,6 +155,20 @@ public final class ProfessionRecipeCatalog {
         final List<String> ids = new ArrayList<>();
         for (final Recipe recipe : byId.values()) {
             if (recipe.blueprint()) {
+                ids.add(recipe.id());
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * I22 — a tervrajz-drop sorsolási poolja: a loot-only receptek tervrajza CSAK
+     * boss-forrásból eshet, a többi blueprint-recept mindkét ágból.
+     */
+    public List<String> blueprintDropPool(final boolean bossSource) {
+        final List<String> ids = new ArrayList<>();
+        for (final Recipe recipe : byId.values()) {
+            if (recipe.blueprint() && (bossSource || !recipe.lootOnly())) {
                 ids.add(recipe.id());
             }
         }

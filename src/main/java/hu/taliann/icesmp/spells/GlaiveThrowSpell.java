@@ -108,7 +108,7 @@ public final class GlaiveThrowSpell extends BaseSpell {
                 }
 
                 if (shooterInCurrentRegion) {
-                    living.damage(damage, shooter);
+                    hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(shooter, living, damage, getId());
                 } else {
                     living.damage(damage);
                 }

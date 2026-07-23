@@ -26,11 +26,22 @@ import java.util.Set;
  */
 public final class MobScalingManager {
 
+    /** H14 — ritka variáns PDC-kulcsa (albino|arnyek); a kill-oldali bónuszok erre szűrnek. */
+    public static final org.bukkit.NamespacedKey RARE_VARIANT_KEY =
+            org.bukkit.NamespacedKey.fromString("icesmp:rare_variant");
+
+    /** A mob ritka variáns-címkéje (null, ha sima). */
+    public static String rareVariantOf(final org.bukkit.entity.Entity entity) {
+        return entity.getPersistentDataContainer().get(RARE_VARIANT_KEY,
+                org.bukkit.persistence.PersistentDataType.STRING);
+    }
+
     private static final LegacyComponentSerializer SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final BloodMoonManager bloodMoonManager;
+    private final TerritoryManager territoryManager;
     private final NamespacedKey mobLevelKey;
     private final Set<SpawnReason> ignoredSpawnReasons = EnumSet.noneOf(SpawnReason.class);
 
@@ -46,10 +57,11 @@ public final class MobScalingManager {
     private NamedTextColor nameColor;
 
     public MobScalingManager(final JavaPlugin plugin, final ConfigManager configManager,
-                             final BloodMoonManager bloodMoonManager) {
+                             final BloodMoonManager bloodMoonManager, final TerritoryManager territoryManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.bloodMoonManager = bloodMoonManager;
+        this.territoryManager = territoryManager;
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
     }
 
@@ -61,7 +73,12 @@ public final class MobScalingManager {
         damagePerLevel = Math.max(0.0D, configManager.getDouble("mob-scaling.damage-per-level", 1.0D));
         hostileOnly = configManager.getBoolean("mob-scaling.hostile-only", true);
         nameEnabled = configManager.getBoolean("mob-scaling.name.enabled", true);
-        nameVisible = configManager.getBoolean("mob-scaling.name.visible", true);
+        // Egyértelmű név: always-visible (true = falakon át/messziről is látszik; false =
+        // csak ránézésre). A régi 'visible' kulcs legacy-fallbackként él tovább.
+        nameVisible = configManager.getConfiguration() != null
+                && configManager.getConfiguration().isSet("mob-scaling.name.always-visible")
+                ? configManager.getBoolean("mob-scaling.name.always-visible", true)
+                : configManager.getBoolean("mob-scaling.name.visible", true);
         namePrefix = configManager.getString("mob-scaling.name.prefix", "&7[Lvl %level%] ");
         nameColor = resolveColor(configManager.getString("mob-scaling.name.color", "WHITE"));
 
@@ -106,12 +123,25 @@ public final class MobScalingManager {
             return;
         }
 
-        // Blood moon nights spawn every mob with bonus levels (may exceed max-level).
-        final int level = resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels();
+        // Blood moon nights spawn every mob with bonus levels (may exceed max-level), and a
+        // territórium mob-szabálya (territory.mob-rules — pl. Kárhozat-zóna, DARK-földek)
+        // adds its own danger bonus on top.
+        // Egyetlen zóna-lookup spawnonként — a szelektor-listát mindkét fogyasztó megkapja.
+        final java.util.List<String> zoneSelectors = zoneRuleSelectors(entity.getLocation());
+        // A vérhold/zóna-bónusz átlépheti a max-level-t, de az abszolút plafon fogja:
+        // a "max 10" invariánst a bónuszok legfeljebb hard-cap-level-ig (15) tolhatják.
+        final int level = Math.min(
+                Math.max(1, configManager.getInt("mob-scaling.hard-cap-level", 15)),
+                resolveLevel(entity.getLocation()) + bloodMoonManager.getBonusMobLevels()
+                        + zoneBonusLevels(zoneSelectors));
+        applyZoneHardening(entity, zoneSelectors);
         if (level < 1) {
             return;
         }
 
+        // Ritka variáns sorsolása CSAK ténylegesen szintezett mobra (a szint-kapu
+        // után, hogy a jelöletlen mob ne kapjon variáns-tageket).
+        maybeMakeRareVariant(entity);
         applyLevel(entity, level);
     }
 
@@ -159,6 +189,68 @@ public final class MobScalingManager {
     }
 
     /**
+     * A territórium mob-szabályainak (territory.mob-rules.<szelektor>) kulcsai a spawn
+     * helyén. Két szelektor illeszkedhet egyszerre: a zóna TÍPUSA (pl. doom-gate,
+     * protected-city) és a zóna tulajdonos-FRAKCIÓJA (dark/red/blue/neutral) — így a
+     * „minden DARK-föld" és a „minden Kárhozat-zóna" is külön szabályozható. Lock-mentes
+     * zóna-lookup, a spawnoló régió-szálán biztonságos. Üres lista = nincs zóna.
+     */
+    private java.util.List<String> zoneRuleSelectors(final Location location) {
+        final hu.taliann.icesmp.data.Territory zone = territoryManager.getTerritoryAt(location);
+        if (zone == null) {
+            return java.util.List.of();
+        }
+        return java.util.List.of(
+                zone.type().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'),
+                zone.faction().name().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * Bonus mob levels a spawn helyének territórium-szabályaiból (a legnagyobb illeszkedő
+     * érték számít, nem összeadás — kiszámítható marad a végszint). Doom-gate default: 3.
+     */
+    private int zoneBonusLevels(final java.util.List<String> selectors) {
+        int bonus = 0;
+        for (final String selector : selectors) {
+            final int fallback = "doom-gate".equals(selector) ? 3 : 0;
+            bonus = Math.max(bonus, Math.max(0,
+                    configManager.getInt("territory.mob-rules." + selector + ".bonus-levels", fallback)));
+        }
+        return bonus;
+    }
+
+    /**
+     * Zóna-alapú mob-keményítés a spawn pillanatában: no-daylight-burn = a zombi/csontváz/
+     * phantom típus nappal sem gyullad meg (pl. DARK-földek örök élőhalottjai), no-zombification
+     * = piglin/hoglin nem alakul át az overworldben. Doom-gate default: mindkettő igaz.
+     */
+    private void applyZoneHardening(final LivingEntity entity, final java.util.List<String> selectors) {
+        boolean noBurn = false;
+        boolean noZombification = false;
+        for (final String selector : selectors) {
+            final boolean fallback = "doom-gate".equals(selector);
+            noBurn |= configManager.getBoolean("territory.mob-rules." + selector + ".no-daylight-burn", fallback);
+            noZombification |= configManager.getBoolean("territory.mob-rules." + selector + ".no-zombification", fallback);
+        }
+        if (noBurn) {
+            if (entity instanceof org.bukkit.entity.AbstractSkeleton skeleton) {
+                skeleton.setShouldBurnInDay(false);
+            } else if (entity instanceof org.bukkit.entity.Zombie zombie) {
+                zombie.setShouldBurnInDay(false);
+            } else if (entity instanceof org.bukkit.entity.Phantom phantom) {
+                phantom.setShouldBurnInDay(false);
+            }
+        }
+        if (noZombification) {
+            if (entity instanceof org.bukkit.entity.PiglinAbstract piglin) {
+                piglin.setImmuneToZombification(true);
+            } else if (entity instanceof org.bukkit.entity.Hoglin hoglin) {
+                hoglin.setImmuneToZombification(true);
+            }
+        }
+    }
+
+    /**
      * Resolves the mob level for a location based on horizontal distance from the world spawn.
      *
      * @param location the spawn location
@@ -173,7 +265,22 @@ public final class MobScalingManager {
         final double deltaX = location.getX() - spawn.getX();
         final double deltaZ = location.getZ() - spawn.getZ();
         final double distance = Math.sqrt((deltaX * deltaX) + (deltaZ * deltaZ));
-        return (int) Math.min(maxLevel, distance / blocksPerLevel);
+        final int normalLevel = (int) Math.min(maxLevel, distance / blocksPerLevel);
+
+        // Zóna-rámpa: a biztonságos territórium-zónák (városok) pereme
+        // körül a szint a zónától KIFELÉ nő egyenletesen, amíg el nem éri a táv-alapú
+        // "normál" szintet — így a 11-14k-ra épült fővárosok környéke sem Lvl 10-es
+        // azonnal. A zóna belsejében 0. Élő kulcsok; a doom-gate/dungeon nem számít
+        // biztonságos zónának (ott a mob-rules bónusz él).
+        if (normalLevel > 0 && configManager.getBoolean("mob-scaling.zone-ramp.enabled", true)) {
+            final double edgeDistance = territoryManager.distanceFromNearestSafeZoneEdge(location);
+            if (edgeDistance >= 0.0D) {
+                final double rampBlocks = Math.max(1.0D,
+                        configManager.getDouble("mob-scaling.zone-ramp.blocks-per-level", 250.0D));
+                return Math.min(normalLevel, (int) (edgeDistance / rampBlocks));
+            }
+        }
+        return normalLevel;
     }
 
     private void applyLevelName(final LivingEntity entity, final int level) {
@@ -191,5 +298,36 @@ public final class MobScalingManager {
 
         final NamedTextColor color = NamedTextColor.NAMES.value(rawColor.trim().toLowerCase(Locale.ROOT));
         return color == null ? NamedTextColor.WHITE : color;
+    }
+
+    /**
+     * H14 — ritka spawn-variáns: kis eséllyel a mob „Albínó” (fehér, derengő) vagy
+     * „Árnyék” (sötét, fürge) változat lesz — PDC-tag + névtábla; a kill-oldal
+     * (kaszt-XP dupla, lélekkő-esély emelt, önálló bestiárium-bejegyzés) erre szűr.
+     * A spawn-event a mob régió-szálán fut — az effekt-adás biztonságos.
+     */
+    private void maybeMakeRareVariant(final LivingEntity entity) {
+        final double chance = Math.max(0.0D, Math.min(100.0D,
+                configManager.getDouble("rare-variant.chance-percent", 1.5D)));
+        if (chance <= 0.0D
+                || java.util.concurrent.ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
+            return;
+        }
+        final boolean albino = java.util.concurrent.ThreadLocalRandom.current().nextBoolean();
+        entity.getPersistentDataContainer().set(RARE_VARIANT_KEY,
+                org.bukkit.persistence.PersistentDataType.STRING, albino ? "albino" : "arnyek");
+        final String base = entity.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        entity.customName(net.kyori.adventure.text.Component.text(
+                (albino ? "✦ Albínó " : "☽ Árnyék-") + base,
+                albino ? net.kyori.adventure.text.format.NamedTextColor.WHITE
+                        : net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
+        entity.setCustomNameVisible(true);
+        if (albino) {
+            entity.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                    org.bukkit.potion.PotionEffectType.GLOWING, Integer.MAX_VALUE, 0, false, false));
+        } else {
+            entity.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                    org.bukkit.potion.PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false));
+        }
     }
 }

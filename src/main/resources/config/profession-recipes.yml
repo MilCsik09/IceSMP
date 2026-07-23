@@ -2,6 +2,8 @@
 # ===== WoW-szerű szakma recept-lista =====
 # Minden recept egy szakmához tartozik, szintet igényel, és vagy szintre nyílik meg
 # (learn: level), vagy tervrajzból tanulható (learn: blueprint — NPC-bolt / mob-drop / admin).
+# I22 — loot-only: true (csak blueprint-receptre): a tervrajz KIZÁRÓLAG világboss/nehéz
+# esemény lootjából eshet — NPC-bolt/sima mob sosem adja; a recept-könyvben lila zárolt sor.
 # A recept-könyv: /profession recipes (a tanult/zárolt receptek + craftolás egy kattintással).
 #
 # Séma:
@@ -66,8 +68,11 @@ profession-recipes:
     level: 15
     learn: level
     display-name: "Tárnász Csákány"
+    lore:
+      - "&7A Vasművek Akadémiájának mesterei szerint"
+      - "&7még a legmélyebb tárna is megnyílik előtte."
     category: "Szerszám"
-    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:tarnasz_csakany_recept" }
     ingredients: [ "DIAMOND:3", "EMERALD:2", "STICK:2" ]
   kvarc_finomitas:
     profession: miner
@@ -97,9 +102,13 @@ profession-recipes:
     profession: miner
     level: 48
     learn: blueprint
+    loot-only: true
     display-name: "Mélybányász Netherit Csákány"
+    lore:
+      - "&7A Kárhozat Kapujából szüremlő netherit"
+      - "&7fejezi be ezt a mélybányász szerszámot."
     category: "Szerszám (tervrajz)"
-    result: { material: NETHERITE_PICKAXE, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_csakany" }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:3", "STICK:2" ]
 
   # =========================================================
@@ -226,8 +235,11 @@ profession-recipes:
     level: 10
     learn: level
     display-name: "Kővésett Fejsze"
+    lore:
+      - "&7Caldestera kovácsinasainak első próbája:"
+      - "&7durva kő, de biztos kézzel faragva."
     category: "Szerszám"
-    result: { material: STONE_AXE, amount: 1, affix-tier: crafted }
+    result: { material: STONE_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:kovilta_fejsze" }
     ingredients: [ "COBBLESTONE:3", "STICK:2" ]
   faszen:
     profession: lumberjack
@@ -250,8 +262,11 @@ profession-recipes:
     level: 20
     learn: level
     display-name: "Vasfejsze"
+    lore:
+      - "&7A kovácscéhek szabvány szerint edzik,"
+      - "&7hogy egyetlen favágó se álljon meg tőle."
     category: "Szerszám"
-    result: { material: IRON_AXE, amount: 1, affix-tier: crafted }
+    result: { material: IRON_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:vasfejsze" }
     ingredients: [ "IRON_INGOT:3", "STICK:2" ]
   mangrove_deszka:
     profession: lumberjack
@@ -274,8 +289,11 @@ profession-recipes:
     level: 36
     learn: level
     display-name: "Gyémántfejsze"
+    lore:
+      - "&7Csiszolt gyémántél, mely a Vasművek"
+      - "&7Akadémiájának büszkesége az erdőkben."
     category: "Szerszám"
-    result: { material: DIAMOND_AXE, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_fejsze" }
     ingredients: [ "DIAMOND:3", "STICK:2" ]
   ezerarcu_gerenda:
     profession: lumberjack
@@ -289,9 +307,13 @@ profession-recipes:
     profession: lumberjack
     level: 48
     learn: blueprint
+    loot-only: true
     display-name: "Erdőirtó Netherit Fejsze"
+    lore:
+      - "&7A Kárhozat Kapujának netheritjével edzve,"
+      - "&7egyetlen fatörzs sem áll ellen neki."
     category: "Szerszám (tervrajz)"
-    result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_fejsze" }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:3", "STICK:2" ]
 
   # =========================================================
@@ -302,96 +324,133 @@ profession-recipes:
     level: 8
     learn: level
     display-name: "Vaskard"
+    lore:
+      - "&7Egyszerű, de megbízható penge —"
+      - "&7a caldesterai kovácsműhelyek alapja."
     category: "Fegyver"
-    result: { material: IRON_SWORD, amount: 1, affix-tier: crafted }
+    result: { material: IRON_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:vaskard" }
     ingredients: [ "IRON_INGOT:2", "STICK:1" ]
   vas_sisak:
     profession: armorer
     level: 10
     learn: level
     display-name: "Vassisak"
+    lore:
+      - "&7Vastag vaslemez, mely a kovácscéhek"
+      - "&7műhelyeiben nyeri el végső formáját."
     category: "Páncél"
-    result: { material: IRON_HELMET, amount: 1, affix-tier: crafted }
+    result: { material: IRON_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_sisak" }
     ingredients: [ "IRON_INGOT:5" ]
   vas_csizma:
     profession: armorer
     level: 10
     learn: level
     display-name: "Vascsizma"
+    lore:
+      - "&7Szilárd talp és pántok, hogy a viselője"
+      - "&7bármely tárnában biztosan álljon lábán."
     category: "Páncél"
-    result: { material: IRON_BOOTS, amount: 1, affix-tier: crafted }
+    result: { material: IRON_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_csizma" }
     ingredients: [ "IRON_INGOT:4" ]
   vas_lablemez:
     profession: armorer
     level: 12
     learn: level
     display-name: "Vas Lábvért"
+    lore:
+      - "&7A Vasművek Akadémiájának szabott mintája,"
+      - "&7mely minden csatában szolgálatot tesz."
     category: "Páncél"
-    result: { material: IRON_LEGGINGS, amount: 1, affix-tier: crafted }
+    result: { material: IRON_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_lablemez" }
     ingredients: [ "IRON_INGOT:7" ]
   bastya_pajzs_recept:
     profession: armorer
     level: 15
     learn: level
     display-name: "Bástya Pajzs"
+    lore:
+      - "&7Vasborítás és smaragd-veret — a kovácscéhek"
+      - "&7bástyaként állítják a viselő elé."
     category: "Páncél"
-    result: { material: SHIELD, amount: 1, affix-tier: crafted }
+    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:bastya_pajzs_recept" }
     ingredients: [ "IRON_INGOT:6", "EMERALD:2" ]
   gyemant_kard:
     profession: armorer
     level: 22
     learn: level
     display-name: "Gyémántkard"
+    lore:
+      - "&7A legkeményebb kő élesíti, a kovácsmesterek"
+      - "&7keze formálja tökéletes egyensúlyúvá."
     category: "Fegyver"
-    result: { material: DIAMOND_SWORD, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_kard" }
     ingredients: [ "DIAMOND:2", "STICK:1" ]
   gyemant_sisak:
     profession: armorer
     level: 24
     learn: level
     display-name: "Gyémántsisak"
+    lore:
+      - "&7Csiszolt gyémántlemezek, melyeket csak a"
+      - "&7Vasművek Akadémiájának mesterei értenek."
     category: "Páncél"
-    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_sisak" }
     ingredients: [ "DIAMOND:5" ]
   gyemant_mellvert:
     profession: armorer
     level: 26
     learn: level
     display-name: "Gyémánt Mellvért"
+    lore:
+      - "&7A kovácscéhek legdrágább rendelése:"
+      - "&7tömör gyémánt, mely visszaveri a pengét."
     category: "Páncél"
-    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_mellvert" }
     ingredients: [ "DIAMOND:8" ]
   haromagu_szigony:
     profession: armorer
     level: 30
     learn: level
     display-name: "Háromágú Szigony"
+    lore:
+      - "&7A Bokic mélyéről merített erő,"
+      - "&7mit csak a víz szellemei adnak kölcsön."
     category: "Fegyver"
-    result: { material: TRIDENT, amount: 1, affix-tier: crafted }
+    result: { material: TRIDENT, amount: 1, affix-tier: crafted, item-model: "icesmp:haromagu_szigony" }
     ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2" ]
   sarkanyvert_recept:
     profession: armorer
     level: 40
     learn: blueprint
+    loot-only: true
     display-name: "Sárkányvért"
+    lore:
+      - "&7Kallan jégsárkányainak pikkelye ihlette"
+      - "&7hadi vért, a kovácscéhek büszkesége."
     category: "Páncél (tervrajz)"
-    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:sarkanyvert_recept" }
     ingredients: [ "NETHERITE_INGOT:4", "EMERALD_BLOCK:1" ]
   netherit_kard:
     profession: armorer
     level: 42
     learn: blueprint
     display-name: "Netherit Pallos"
+    lore:
+      - "&7A Kárhozat Kapuja körül gyűjtött netherit"
+      - "&7adja e pallos törhetetlen élét."
     category: "Fegyver (tervrajz)"
-    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_kard" }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:2", "STICK:1" ]
   netherit_sisak:
     profession: armorer
     level: 45
     learn: blueprint
     display-name: "Netherit Csatasisak"
+    lore:
+      - "&7A Nether-portál sötét fémjéből kovácsolva,"
+      - "&7hogy viselője a csata hevében is álljon."
     category: "Páncél (tervrajz)"
-    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_sisak" }
     ingredients: [ "NETHERITE_INGOT:3", "DIAMOND:5" ]
 
   # =========================================================
@@ -482,8 +541,11 @@ profession-recipes:
     level: 48
     learn: blueprint
     display-name: "Bajnok Elixírje"
+    lore:
+      - "&7Aetrinita áldása száll benne,"
+      - "&7hogy a bajnokok sose hátráljanak."
     category: "Ital (tervrajz)"
-    result: { material: POTION, amount: 1 }
+    result: { material: POTION, amount: 1, item-model: "icesmp:bajnok_elixir" }
     ingredients: [ "PHANTOM_MEMBRANE:2", "GHAST_TEAR:2", "GOLDEN_APPLE:1" ]
 
   # =========================================================
@@ -494,88 +556,121 @@ profession-recipes:
     level: 8
     learn: level
     display-name: "Tartósság Tomus"
+    lore:
+      - "&7Caldestera Akadémiájának elveszett rúnái,"
+      - "&7melyek örök tartást kölcsönöznek a fegyvernek."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:tartossag_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "IRON_INGOT:1" ]
   hatekonysag_tomus:
     profession: enchanter
     level: 12
     learn: level
     display-name: "Hatékonyság Tomus"
+    lore:
+      - "&7Rúnaírás az Akadémia mélyéről —"
+      - "&7a kéz mozdulatait gyorsítja meg örökre."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:hatekonysag_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "REDSTONE:2" ]
   eles_tomus:
     profession: enchanter
     level: 15
     learn: level
     display-name: "Élesség Tomus"
+    lore:
+      - "&7Ősi rúnatudás élesíti a pengét,"
+      - "&7melyet Caldestera bölcsei jegyeztek le."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:eles_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "DIAMOND:1" ]
   zuhanascsokkentes_tomus:
     profession: enchanter
     level: 16
     learn: level
     display-name: "Zuhanáscsökkentés Tomus"
+    lore:
+      - "&7Elfeledett rúnák, melyek könnyűvé"
+      - "&7teszik a legmagasabb zuhanást is."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:zuhanascsokkentes_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "FEATHER:4" ]
   vedelem_tomus:
     profession: enchanter
     level: 18
     learn: level
     display-name: "Védelem Tomus"
+    lore:
+      - "&7Az Akadémia rúnatára őrizte évszázadokon át,"
+      - "&7hogy pajzsként vonja be viselőjét."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:vedelem_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "OBSIDIAN:1" ]
   csali_tomus:
     profession: enchanter
     level: 20
     learn: level
     display-name: "Csali Tomus"
+    lore:
+      - "&7Caldestera vízi rúnái, melyek a legmélyebb"
+      - "&7vizek lakóit is a felszínre csábítják."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:csali_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "PRISMARINE_CRYSTALS:2" ]
   fosztogatas_tomus:
     profession: enchanter
     level: 26
     learn: level
     display-name: "Fosztogatás Tomus"
+    lore:
+      - "&7Az elveszett rúnatudás egy szilánkja,"
+      - "&7mely bőségesebb zsákmányt ígér."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:fosztogatas_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "GOLD_INGOT:2" ]
   szerencse_tomus:
     profession: enchanter
     level: 30
     learn: level
     display-name: "Szerencse Tomus"
+    lore:
+      - "&7Az Akadémia legritkább rúnája — állítólag"
+      - "&7Asterlayna csillagfényéből őrződött meg."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:szerencse_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:4", "EMERALD:2" ]
   javitas_tomus:
     profession: enchanter
     level: 40
     learn: blueprint
     display-name: "Javítás Tomus"
+    lore:
+      - "&7Rúnaírás, mely a tapasztalat erejét"
+      - "&7a legkopottabb pengébe is visszaönti."
     category: "Bűvölés (tervrajz)"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:javitas_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:6", "PHANTOM_MEMBRANE:3", "EXPERIENCE_BOTTLE:5" ]
   orvenylo_pusztitas_tomus:
     profession: enchanter
     level: 45
     learn: blueprint
     display-name: "Örvénylő Pusztítás Tomus"
+    lore:
+      - "&7Netherit-porral kevert ősi rúna,"
+      - "&7mely pusztító örvényt zár a fegyverbe."
     category: "Bűvölés (tervrajz)"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:orvenylo_pusztitas_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:8", "NETHERITE_SCRAP:1", "DIAMOND:4" ]
   selyemerintes_tomus:
     profession: enchanter
     level: 48
     learn: blueprint
     display-name: "Selyemérintés Tomus"
+    lore:
+      - "&7Az Akadémia legfinomabb rúnaírása,"
+      - "&7mely a kéz érintését selyemmé szelídíti."
     category: "Bűvölés (tervrajz)"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:selyemerintes_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:8", "ENDER_PEARL:4", "EXPERIENCE_BOTTLE:8" ]
 
   # =========================================================
@@ -586,8 +681,11 @@ profession-recipes:
     level: 5
     learn: level
     display-name: "Egyszerű Horgászbot"
+    lore:
+      - "&7Egyszerű bot a Bokic partjáról,"
+      - "&7de a víz szellemei így is figyelnek rá."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1 }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:egyszeru_horgaszbot" }
     ingredients: [ "STICK:3", "STRING:2" ]
   halaszhalo_fonat:
     profession: fisherman
@@ -610,8 +708,11 @@ profession-recipes:
     level: 20
     learn: level
     display-name: "Tartós Horgászbot"
+    lore:
+      - "&7Gyémánttal erősített nyél, mely a Bokic"
+      - "&7legmélyebb sodrásában sem törik el."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1 }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:tartos_horgaszbot" }
     ingredients: [ "STICK:3", "STRING:2", "DIAMOND:1" ]
   tengeri_halkonzerv:
     profession: fisherman
@@ -642,24 +743,33 @@ profession-recipes:
     level: 35
     learn: level
     display-name: "Mesteri Horgászbot"
+    lore:
+      - "&7Arannyal és smaragddal díszített mesterbot —"
+      - "&7a Bokic vizének szellemei is elismerik."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1 }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:mesteri_horgaszbot" }
     ingredients: [ "STICK:3", "STRING:2", "GOLD_INGOT:2", "EMERALD:1" ]
   legendas_horgaszbot:
     profession: fisherman
     level: 45
     learn: blueprint
     display-name: "Legendás Horgászbot"
+    lore:
+      - "&7Netherittel edzett zsinór, mely a Bokic"
+      - "&7legrégebbi, legvadabb lakóit is kifogja."
     category: "Szerszám (tervrajz)"
-    result: { material: FISHING_ROD, amount: 1 }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:legendas_horgaszbot" }
     ingredients: [ "STICK:3", "STRING:4", "NETHERITE_INGOT:1", "PRISMARINE_CRYSTALS:4" ]
   tengeristen_amulettje:
     profession: fisherman
     level: 48
     learn: blueprint
     display-name: "Tengeristen Amulettje"
+    lore:
+      - "&7A tenger mélyének szíve dobog benne,"
+      - "&7egy elfeledett isten hagyatéka."
     category: "Alapanyag (tervrajz)"
-    result: { material: CONDUIT, amount: 1 }
+    result: { material: CONDUIT, amount: 1, item-model: "icesmp:tengeristen_amulettje" }
     ingredients: [ "HEART_OF_THE_SEA:1", "NAUTILUS_SHELL:8", "PRISMARINE:8" ]
 
   # =========================================================
@@ -750,16 +860,22 @@ profession-recipes:
     level: 45
     learn: blueprint
     display-name: "Aranyalma Lakoma"
+    lore:
+      - "&7Ünnepi lakoma, melyben a Fa áldása"
+      - "&7és az arany fénye egyaránt megcsillan."
     category: "Étel (tervrajz)"
-    result: { material: GOLDEN_APPLE, amount: 2 }
+    result: { material: GOLDEN_APPLE, amount: 2, item-model: "icesmp:aranyalma_lakoma" }
     ingredients: [ "APPLE:2", "GOLD_INGOT:16" ]
   legendas_lakoma:
     profession: cook
     level: 48
     learn: blueprint
     display-name: "Legendás Lakoma"
+    lore:
+      - "&7Aetrinita áldásával sütött lakoma,"
+      - "&7méltó egy legenda asztalára."
     category: "Étel (tervrajz)"
-    result: { material: ENCHANTED_GOLDEN_APPLE, amount: 1 }
+    result: { material: ENCHANTED_GOLDEN_APPLE, amount: 1, item-model: "icesmp:legendas_lakoma" }
     ingredients: [ "GOLDEN_APPLE:4", "NETHER_STAR:1" ]
 
   # =========================================================
@@ -813,16 +929,22 @@ profession-recipes:
     level: 35
     learn: level
     display-name: "Esszenciált Vasvért"
+    lore:
+      - "&7Tiszta Vasesszenciával itatott lemezek,"
+      - "&7melyek szinte élővé teszik a páncélt."
     category: "Páncél"
-    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:esszencialt_vasvert" }
     ingredients: [ "DIAMOND:6", "unique:tiszta_vasesszencia:3" ]
   runakovacsolt_penge:
     profession: armorer
     level: 44
     learn: blueprint
     display-name: "Rúnakovácsolt Penge"
+    lore:
+      - "&7Rúnaporral kovácsolt penge, mely"
+      - "&7az Akadémia elveszett tudását őrzi."
     category: "Fegyver (tervrajz)"
-    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:runakovacsolt_penge" }
     ingredients: [ "NETHERITE_INGOT:1", "unique:tiszta_vasesszencia:2", "unique:runapor:2" ]
 
   # =========================================================
@@ -835,8 +957,11 @@ profession-recipes:
     level: 28
     learn: level
     display-name: "Vadbőr Vért"
+    lore:
+      - "&7Egy káoszkori fenevad esszenciája"
+      - "&7ivódott bele, vadságot kölcsönözve."
     category: "Páncél"
-    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:vadbor_pancel" }
     ingredients: [ "DIAMOND:5", "unique:vad_esszencia:3" ]
   eszencias_fozet:
     profession: alchemist
@@ -851,24 +976,33 @@ profession-recipes:
     level: 38
     learn: blueprint
     display-name: "Árnyékméreg"
+    lore:
+      - "&7A Suttogók receptje: Árnyékporból lepárolt"
+      - "&7méreg, mely elnyeli a fényt és az életet."
     category: "Ital (tervrajz)"
-    result: { material: SPLASH_POTION, amount: 1 }
+    result: { material: SPLASH_POTION, amount: 1, item-model: "icesmp:arnyekmereg" }
     ingredients: [ "GLASS_BOTTLE:1", "unique:arnyekpor:2", "SPIDER_EYE:1" ]
   szornymag_talizman:
     profession: enchanter
     level: 40
     learn: blueprint
     display-name: "Szörnymag Talizmán"
+    lore:
+      - "&7Egy Szörny Mag lüktet a talizmán szívében,"
+      - "&7sötét energiát kölcsönözve viselőjének."
     category: "Bűvölés (tervrajz)"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:szornymag_talizman" }
     ingredients: [ "BOOK:1", "unique:szorny_mag:2", "unique:runapor:2" ]
   ereklye_penge:
     profession: armorer
     level: 50
     learn: blueprint
-    display-name: "Ereklyepenge"
+    display-name: "Villámszilánk Pengéje"
+    lore:
+      - "&7Fekete Villám Szilánkkal kovácsolva —"
+      - "&7a Hu. 698-as ég hasadékának ereje él benne."
     category: "Fegyver (tervrajz)"
-    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:ereklye_penge" }
     ingredients: [ "NETHERITE_INGOT:2", "unique:osi_ereklyeszilank:1", "unique:szorny_mag:3" ]
 
   # =========================================================
@@ -925,20 +1059,26 @@ profession-recipes:
     level: 32
     learn: level
     display-name: "Rúnafényes Bányászcsákány"
+    lore:
+      - "&7Rúnapor fénye vezeti a csákány élét"
+      - "&7a legmélyebb tárnák sötétjében is."
     category: "Szerszám"
-    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:runafenyes_csakany" }
     ingredients: [ "DIAMOND:3", "STICK:2", "unique:runapor:2" ]
   ereklyeszilankos_banyasisak:
     profession: miner
     level: 50
     learn: blueprint
-    display-name: "Ereklyeszilánkos Bányászsisak"
+    display-name: "Villámszilánkos Bányászsisak"
+    lore:
+      - "&7Fekete Villám Szilánk izzik a sisak mélyén,"
+      - "&7megvilágítva a legsötétebb járatokat."
     category: "Páncél (tervrajz)"
-    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:ereklyeszilankos_banyasisak" }
     ingredients: [ "DIAMOND:5", "NETHERITE_INGOT:1", "unique:osi_ereklyeszilank:1" ]
   kivonatos_csontliszt_bomba:
     profession: herbalist
-    level: 22
+    level: 24
     learn: level
     display-name: "Kivonatos Csontliszt Bomba"
     category: "Alapanyag"
@@ -954,7 +1094,7 @@ profession-recipes:
     ingredients: [ "MOSS_BLOCK:4", "BONE_MEAL:6", "unique:vad_esszencia:2" ]
   kemenyfa_nyelkoteg:
     profession: lumberjack
-    level: 20
+    level: 24
     learn: level
     display-name: "Keményfa Nyélköteg"
     category: "Alapanyag"
@@ -973,32 +1113,44 @@ profession-recipes:
     level: 30
     learn: level
     display-name: "Vasesszenciás Pajzs"
+    lore:
+      - "&7Tiszta Vasesszenciával átitatott vaslemez,"
+      - "&7mely szinte magától állja a csapásokat."
     category: "Páncél"
-    result: { material: SHIELD, amount: 1, affix-tier: crafted }
+    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:vasesszencias_pajzs" }
     ingredients: [ "IRON_INGOT:4", "unique:tiszta_vasesszencia:2" ]
   rezvertezet_lablemez:
     profession: armorer
     level: 33
     learn: level
     display-name: "Rézvértezet Lábvért"
+    lore:
+      - "&7Rezgő Rézötvözettel erősített lábvért,"
+      - "&7mely sosem veszti fényét a csatában."
     category: "Páncél"
-    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:rezvertezet_lablemez" }
     ingredients: [ "DIAMOND:6", "unique:rezgo_rez_otvozet:3" ]
   vadolo_csizma:
     profession: armorer
     level: 32
     learn: level
     display-name: "Vadölő Csizma"
+    lore:
+      - "&7Vad Esszenciával itatott talp, mely"
+      - "&7néma léptekkel követi a fenevadak nyomát."
     category: "Páncél"
-    result: { material: DIAMOND_BOOTS, amount: 1, affix-tier: crafted }
+    result: { material: DIAMOND_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:vadolo_csizma" }
     ingredients: [ "DIAMOND:4", "unique:vad_esszencia:2" ]
   szornyvert_mellveny:
     profession: armorer
     level: 46
     learn: blueprint
     display-name: "Szörnyvért Mellvény"
+    lore:
+      - "&7Egy Szörny Mag sötét ereje dobog"
+      - "&7e mellvény netherit-lemezei alatt."
     category: "Páncél (tervrajz)"
-    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted }
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:szornyvert_mellveny" }
     ingredients: [ "NETHERITE_INGOT:3", "unique:szorny_mag:3" ]
   kivonatos_regeneracio_fozet:
     profession: alchemist
@@ -1020,41 +1172,56 @@ profession-recipes:
     profession: alchemist
     level: 49
     learn: blueprint
-    display-name: "Ereklyeelixír"
+    display-name: "Villámszilánk Elixírje"
+    lore:
+      - "&7Fekete Villám Szilánk cseppjei oldódtak"
+      - "&7ebbe az elixírbe, a Hu. 698 emlékeként."
     category: "Ital (tervrajz)"
-    result: { material: POTION, amount: 1 }
+    result: { material: POTION, amount: 1, item-model: "icesmp:ereklye_elixir" }
     ingredients: [ "GLASS_BOTTLE:1", "GOLDEN_APPLE:1", "unique:osi_ereklyeszilank:1" ]
   vasesszencias_paloscsapas_tomus:
     profession: enchanter
     level: 30
     learn: level
     display-name: "Vasesszenciás Páncéltörés Tomus"
+    lore:
+      - "&7Tiszta Vasesszenciával írt rúna,"
+      - "&7mely a legkeményebb páncélt is megtöri."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:vasesszencias_paloscsapas_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:3", "unique:tiszta_vasesszencia:2" ]
   kemenyfa_ijkeret_tomus:
     profession: enchanter
     level: 27
     learn: level
     display-name: "Keményfa Íjkeret Tomus"
+    lore:
+      - "&7Keményfa Gerenda erezetébe vésett rúna,"
+      - "&7mely az íjkeretet acélos hajlékonnyá teszi."
     category: "Bűvölés"
-    result: { material: ENCHANTED_BOOK, amount: 1 }
+    result: { material: ENCHANTED_BOOK, amount: 1, item-model: "icesmp:kemenyfa_ijkeret_tomus" }
     ingredients: [ "BOOK:1", "LAPIS_LAZULI:2", "unique:kemenyfa_gerenda:2" ]
   rezhorgany_horgaszbot:
     profession: fisherman
     level: 26
     learn: level
     display-name: "Rézhorgony Horgászbot"
+    lore:
+      - "&7Rezgő Rézötvözet horgonyzza le e botot"
+      - "&7a Bokic legerősebb sodrásában is."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1 }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:rezhorgany_horgaszbot" }
     ingredients: [ "STICK:3", "STRING:2", "unique:rezgo_rez_otvozet:2" ]
   melytengeri_ereklyeszigony:
     profession: fisherman
     level: 47
     learn: blueprint
-    display-name: "Mélytengeri Ereklyeszigony"
+    display-name: "Mélytengeri Villámszigony"
+    lore:
+      - "&7Fekete Villám Szilánk pulzál a szigony hegyén,"
+      - "&7mit a mélytenger sötétjéből hoztak fel."
     category: "Fegyver (tervrajz)"
-    result: { material: TRIDENT, amount: 1, affix-tier: crafted }
+    result: { material: TRIDENT, amount: 1, affix-tier: crafted, item-model: "icesmp:melytengeri_ereklyeszigony" }
     ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2", "unique:osi_ereklyeszilank:1" ]
   gyogyerovel_dusitott_lakoma:
     profession: cook
@@ -1064,3 +1231,2992 @@ profession-recipes:
     category: "Étel"
     result: { material: GOLDEN_CARROT, amount: 6 }
     ingredients: [ "CARROT:6", "GOLD_NUGGET:32", "unique:gyogy_kivonat:1" ]
+
+  # =========================================================
+  # --- K2: Cryghaliris signature itemek (tervrajz + BLUE frakció-kapu) ---
+  # A 'signature' PDC-id-t a SignatureItemListener ismeri fel (perk-viselkedés);
+  # a 'faction' kapu: csak az adott frakció mesterei craftolhatják.
+  # =========================================================
+  kallan_szeletelo:
+    profession: armorer
+    level: 45
+    learn: blueprint
+    faction: BLUE
+    display-name: "Kallan Szeletelője"
+    lore:
+      - "&7Kallan első pikkelyeiből és ősi fenyőből"
+      - "&7faragva; a jégsárkányok inaiból font húr"
+      - "&7a legvastagabb vértet is átvágja."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: BOW, amount: 1, affix-tier: crafted, signature: kallan_szeletelo, item-model: "icesmp:kallan_szeletelo" }
+    ingredients: [ "BOW:1", "STRING:8", "NETHERITE_INGOT:1", "unique:vad_esszencia:3" ]
+  glatziendorfi_jegvert:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    faction: BLUE
+    display-name: "Glatziendorfi Jégvért"
+    lore:
+      - "&7Oly nehéz és fagyos, hogy viselőjét"
+      - "&7sziklaként rögzíti; az ellenség fegyverei"
+      - "&7tompán koppannak rajta."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegvert, item-model: "icesmp:glatziendorfi_jegvert" }
+    ingredients: [ "NETHERITE_CHESTPLATE:1", "PACKED_ICE:16", "IRON_BLOCK:2", "unique:osi_ereklyeszilank:1" ]
+  jegsarkany_kantar:
+    profession: armorer
+    level: 40
+    learn: blueprint
+    faction: BLUE
+    display-name: "Jégsárkány-Kantár"
+    lore:
+      - "&7Kemény bőr és sötét mágia; csak ezzel"
+      - "&7tartható kordában egy vad sárkány."
+      - "&7Jobb katt egy hátason: tartós gyorsítás."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: SADDLE, amount: 1, signature: jegsarkany_kantar, item-model: "icesmp:jegsarkany_kantar" }
+    ingredients: [ "SADDLE:1", "LEATHER:8", "STRING:4", "unique:arnyekpor:2" ]
+
+  # =========================================================
+  # --- K3: Perinfernicitas signature itemek (tervrajz + RED frakció-kapu) ---
+  # =========================================================
+  pyralingradi_tuzkopo:
+    profession: armorer
+    level: 45
+    learn: blueprint
+    faction: RED
+    display-name: "Pyralingradi Tűzköpő"
+    lore:
+      - "&7Soleil papjai áldották meg; lövedékei"
+      - "&7a sivatagi vihar sebességével csapnak le."
+    category: "Lángoló Birodalom (tervrajz)"
+    result: { material: CROSSBOW, amount: 1, affix-tier: crafted, signature: pyralingradi_tuzkopo, item-model: "icesmp:pyralingradi_tuzkopo" }
+    ingredients: [ "CROSSBOW:1", "BLAZE_ROD:4", "NETHERITE_INGOT:1", "unique:vad_esszencia:3" ]
+  verszavanna_agyara:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    faction: RED
+    display-name: "A Vérszavanna Agyara"
+    lore:
+      - "&7Kovácsolásakor a lángok fekete füstöt"
+      - "&7okádtak; baltával a másik kézben"
+      - "&7emberfeletti erőt ád."
+    category: "Lángoló Birodalom (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: verszavanna_agyara, item-model: "icesmp:verszavanna_agyara" }
+    ingredients: [ "NETHERITE_SWORD:1", "BLAZE_POWDER:8", "unique:szorny_mag:3" ]
+  fonix_tollkopeny:
+    profession: armorer
+    level: 40
+    learn: blueprint
+    faction: RED
+    display-name: "Főnix-Tollköpeny"
+    lore:
+      - "&7I. Zhoris lángmadarainak tollaiból szőve;"
+      - "&7óv a hőségtől és a láva haragjától."
+    category: "Lángoló Birodalom (tervrajz)"
+    result: { material: LEATHER_CHESTPLATE, amount: 1, affix-tier: crafted, signature: fonix_tollkopeny, item-model: "icesmp:fonix_tollkopeny" }
+    ingredients: [ "LEATHER_CHESTPLATE:1", "FEATHER:32", "MAGMA_CREAM:8", "unique:arnyekpor:2" ]
+  # A Rúnavért a mágia-sebzés (spellek) ellenállás-enchantja: a tekercs enchantelt könyv,
+  # üllőn kerül a páncélra; két azonos szintű könyv üllőn szintet léphet (max 3).
+  runavert_tekercs:
+    profession: enchanter
+    level: 40
+    learn: blueprint
+    display-name: "Rúnavért-tekercs"
+    lore:
+      - "&7Caldestera rúnaírnokainak védőírása —"
+      - "&7a bőrbe rótt rúna elissza a mágiát."
+      - "&8Üllőn vihető páncélra."
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:runavert:1", item-model: "icesmp:runavert_tekercs" }
+    ingredients: [ "BOOK:1", "AMETHYST_SHARD:8", "LAPIS_BLOCK:2", "unique:arnyekpor:1" ]
+  # Iskola-counter tekercsek (a Fagypáncél/Főnixtoll párjai): enchantelt könyv, üllőn
+  # mellvértre — egy páncélon EGY iskola-counter élhet (üllő-őr), a Rúnavért mellette fér.
+  ej_fatyol_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Éj-fátyol tekercs"
+    lore:
+      - "&7A Néma Királynő csont-amulettjeinek írása —"
+      - "&7a fátyol elnyeli a vakító szent fényt."
+      - "&8Üllőn vihető mellvértre. (Szent mágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:ej_fatyol:1", item-model: "icesmp:ej_fatyol_tekercs" }
+    ingredients: [ "BOOK:1", "BONE_BLOCK:4", "SCULK:8", "unique:arnyekpor:1" ]
+  arnyuzo_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Árnyűző tekercs"
+    lore:
+      - "&7A Fa virrasztóinak lámpás-olajával írt jel —"
+      - "&7a fény kiszorítja az árnyék marását."
+      - "&8Üllőn vihető mellvértre. (Árnyékmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:arnyuzo:1", item-model: "icesmp:arnyuzo_tekercs" }
+    ingredients: [ "BOOK:1", "GLOWSTONE_DUST:16", "GOLD_INGOT:4", "unique:emlekszilank:1" ]
+  meregfojto_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Méregfojtó tekercs"
+    lore:
+      - "&7A Bokic-menti füvesasszonyok ellenszér-receptje —"
+      - "&7a bőrbe ivódó főzet fojtja a mérget és a pestist."
+      - "&8Üllőn vihető mellvértre. (Természetmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:meregfojto:1", item-model: "icesmp:meregfojto_tekercs" }
+    ingredients: [ "BOOK:1", "SPIDER_EYE:8", "HONEY_BOTTLE:2", "unique:gyogy_kivonat:1" ]
+  viharfogo_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Viharfogó tekercs"
+    lore:
+      - "&7A Vérszavanna pásztorainak földelő-vasa ihlette —"
+      - "&7a vihar haragja a földbe fut a viselő mellett."
+      - "&8Üllőn vihető mellvértre. (Viharmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:viharfogo:1", item-model: "icesmp:viharfogo_tekercs" }
+    ingredients: [ "BOOK:1", "COPPER_INGOT:16", "LIGHTNING_ROD:2", "unique:szorny_mag:1" ]
+  kaosz_zabla_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Káosz-zabla tekercs"
+    lore:
+      - "&7Olethropyla pecsét-töredékeiből kovácsolt jel —"
+      - "&7a lánc megüli a káosz lángját a viselőn."
+      - "&8Üllőn vihető mellvértre. (Káoszmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:kaosz_zabla:1", item-model: "icesmp:kaosz_zabla_tekercs" }
+    ingredients: [ "BOOK:1", "CHAIN:8", "MAGMA_CREAM:8", "unique:karhozat_parazs:1" ]
+  # ===== K6 — frakció-ételek (a kódex "konyhái"; a fogyasztási kötelezettséget a
+  # factions.food-duty vezérli — a hazai étel evése nullázza a honvágy-visszaszámlálót) =====
+  fagyasztott_pisztrang:
+    profession: cook
+    level: 25
+    faction: BLUE
+    display-name: "Fagyasztott Tavi Pisztráng"
+    lore:
+      - "&7A glatziendorfi tavak jégbe zárt kincse —"
+      - "&7a Fagy népe ezen él. Fogyasztva rövid"
+      - "&7felszívódás-pajzsot ad."
+    category: "Fagyott Királyság (konyha)"
+    result: { material: COOKED_SALMON, amount: 3, signature: fagyasztott_pisztrang, item-model: "icesmp:fagyasztott_pisztrang" }
+    ingredients: [ "SALMON:3", "SNOWBALL:2", "SUGAR:1" ]
+  fonixtojas_rantotta:
+    profession: cook
+    level: 25
+    faction: RED
+    display-name: "Fűszeres Főnixtojás-Rántotta"
+    lore:
+      - "&7A Vérszavanna reggelije: tojás, parázs"
+      - "&7és bátorság. Fogyasztva rövid tűz-"
+      - "&7ellenállást ad."
+    category: "Lángoló Birodalom (konyha)"
+    result: { material: PUMPKIN_PIE, amount: 3, signature: fonixtojas_rantotta, item-model: "icesmp:fonixtojas_rantotta" }
+    ingredients: [ "EGG:3", "BLAZE_POWDER:1", "SUGAR:2" ]
+  kakaobabos_sutemeny:
+    profession: cook
+    level: 35
+    faction: NEUTRAL
+    display-name: "Tiltott Kakaóbabos Sütemény"
+    lore:
+      - "&7Caldestera cukrászai Asterlayna Gyümölcsének"
+      - "&7hívják — a Bankárszövetség hivatalosan tiltja."
+      - "&7Fogyasztva… robban egy kicsit."
+    category: "Menedék (konyha)"
+    result: { material: COOKIE, amount: 4, signature: kakaobabos_sutemeny, item-model: "icesmp:kakaobabos_sutemeny" }
+    ingredients: [ "COCOA_BEANS:4", "WHEAT:4", "GUNPOWDER:1", "SUGAR:2" ]
+  mortengradi_hamukenyer:
+    profession: cook
+    level: 30
+    faction: DARK
+    display-name: "Mortengradi Hamukenyér"
+    lore:
+      - "&7A Kitaszítottak kenyere: hamuval sütik,"
+      - "&7hogy a Királynő szolgái ne érezzék az élet"
+      - "&7szagát. Fogyasztva rövid éjjellátást ad."
+      - "&8A Kitaszítottaknak nincs honvágyuk — nincs otthon."
+    category: "Kitaszítottak (konyha)"
+    result: { material: BREAD, amount: 3, signature: mortengradi_hamukenyer, item-model: "icesmp:mortengradi_hamukenyer" }
+    ingredients: [ "WHEAT:3", "BONE_MEAL:2", "CHARCOAL:1" ]
+  # ===== K4 — Ryanora & Caldestera signature itemek (gyűjtő/gazdaság, NEUTRAL-kapus) =====
+  vasmuvek_csakanya:
+    profession: miner
+    level: 45
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Vasművek Akadémiájának Csákánya"
+    lore:
+      - "&7A ryanorai Vasművek mestervizsga-darabja;"
+      - "&7éle megérzi az érc rejtett teléreit."
+    category: "Menedék (tervrajz)"
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, signature: vasmuvek_csakanya, item-model: "icesmp:vasmuvek_csakanya" }
+    ingredients: [ "DIAMOND_PICKAXE:1", "IRON_BLOCK:4", "EMERALD:8", "unique:vad_esszencia:2" ]
+  bokic_horgaszbot:
+    profession: fisherman
+    level: 40
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Bokic-menti Horgászbot"
+    lore:
+      - "&7A Bokic halászai szerint a folyó annak ad"
+      - "&7kétszer, aki ismeri a vize énekét."
+    category: "Menedék (tervrajz)"
+    result: { material: FISHING_ROD, amount: 1, affix-tier: crafted, signature: bokic_horgaszbot, item-model: "icesmp:bokic_horgaszbot" }
+    ingredients: [ "FISHING_ROD:1", "STRING:16", "PRISMARINE_CRYSTALS:8", "unique:vad_esszencia:1" ]
+  smaragdko_bankbetet:
+    profession: enchanter
+    level: 35
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Smaragdkő Bankbetét"
+    lore:
+      - "&7A Bankárszövetség pecsétes betétjegye —"
+      - "&7jobb-kattal beváltható Creutzérre."
+    category: "Menedék (tervrajz)"
+    result: { material: PAPER, amount: 1, signature: smaragdko_bankbetet, item-model: "icesmp:smaragdko_bankbetet" }
+    ingredients: [ "PAPER:1", "EMERALD_BLOCK:1" ]
+  szellemszarvas_bubaj:
+    profession: herbalist
+    level: 45
+    learn: blueprint
+    faction: NEUTRAL
+    display-name: "Szellemszarvas-Bűbáj"
+    lore:
+      - "&7Arkynn ligeteinek ajándéka: hívó bűbáj,"
+      - "&7amely a ködből szólítja elő a Szellemszarvast."
+      - "&7Jobb-katt: hátas-hívás (nem fogy el)."
+    category: "Menedék (tervrajz)"
+    result: { material: RABBIT_FOOT, amount: 1, signature: szellemszarvas_bubaj, item-model: "icesmp:szellemszarvas_bubaj" }
+    ingredients: [ "RABBIT_FOOT:1", "GOLDEN_CARROT:8", "AMETHYST_SHARD:8", "unique:vad_esszencia:2" ]
+
+  # =========================================================
+  # --- Tartalombővítés (2. hullám): köztes anyagok, signature fegyverek,
+  # --- ételek, tekercsek. A lore-kötések: docs/LORE_REFERENCE.md tervtábla.
+  # =========================================================
+  jegviragpor_orles:
+    profession: herbalist
+    level: 18
+    display-name: "Jégvirág-por őrlése"
+    category: "Alapanyag"
+    result: { unique: jegviragpor, amount: 2 }
+    ingredients: [ "CORNFLOWER:3", "SUGAR:2", "ICE:1" ]
+  parazsmag_kinyeres:
+    profession: alchemist
+    level: 20
+    display-name: "Parázsmag kinyerése"
+    category: "Alapanyag"
+    result: { unique: parazsmag, amount: 2 }
+    ingredients: [ "BLAZE_POWDER:2", "MAGMA_CREAM:1", "unique:lombik_szen:1" ]
+  viharkvarc_fejtes:
+    profession: miner
+    level: 22
+    display-name: "Viharkvarc fejtése"
+    category: "Alapanyag"
+    result: { unique: viharkvarc, amount: 2 }
+    ingredients: [ "QUARTZ:4", "REDSTONE:8", "COPPER_INGOT:2" ]
+  melysegi_borostyan_tisztitas:
+    profession: miner
+    level: 30
+    display-name: "Mélységi Borostyán tisztítása"
+    category: "Alapanyag"
+    result: { unique: melysegi_borostyan, amount: 1 }
+    ingredients: [ "RAW_GOLD:2", "HONEYCOMB:2", "unique:rezgo_rez_otvozet:1", "unique:ercmoso_lug:1" ]
+  # --- BLUE signature fegyverek (tervtábla: Jégtörő / V. Miinus Haragja / Sárkánycsont Íj) ---
+  glatziendorfi_jegtoro:
+    profession: armorer
+    level: 46
+    learn: blueprint
+    faction: BLUE
+    display-name: "Glatziendorfi Jégtörő"
+    lore:
+      - "&7A kikötő jégtörőinek mintájára kovácsolt"
+      - "&7csatabárd — ami egyszer megdermedt,"
+      - "&7azt ez a fejsze megtöri."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegtoro, item-model: "icesmp:glatziendorfi_jegtoro" }
+    ingredients: [ "DIAMOND_AXE:1", "NETHERITE_INGOT:2", "unique:jegviragpor:3", "unique:sarkanycsont_szilank:2", "unique:folyositoszer:1" ]
+  miinus_haragja:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    faction: BLUE
+    display-name: "V. Miinus Haragja"
+    lore:
+      - "&7A megfagyott király pengéje: minél mélyebb"
+      - "&7a viselő sebe, annál hidegebben üt vissza."
+      - "&8„A tél nem kegyelmez — emlékezik.”"
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: miinus_haragja, item-model: "icesmp:miinus_haragja" }
+    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:3", "unique:sarkanycsont_szilank:3", "unique:osi_ereklyeszilank:1", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2" ]
+  sarkanycsont_ij:
+    profession: armorer
+    level: 44
+    learn: blueprint
+    faction: BLUE
+    display-name: "Sárkánycsont Íj"
+    lore:
+      - "&7Kallan elhullott sárkányainak csontjából"
+      - "&7hajlított íj — nyila átüti a sorfalat."
+    category: "Fagyott Királyság (tervrajz)"
+    result: { material: BOW, amount: 1, affix-tier: crafted, signature: sarkanycsont_ij, item-model: "icesmp:sarkanycsont_ij" }
+    ingredients: [ "BOW:1", "unique:sarkanycsont_szilank:2", "STRING:6", "unique:vad_esszencia:2" ]
+  # --- RED signature fegyverek (tervtábla: I. Zhoris Lángnyelve / Napfogyatkozás) ---
+  zhoris_langnyelve:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    faction: RED
+    display-name: "I. Zhoris Lángnyelve"
+    lore:
+      - "&7Az első lángkirály kardja — a penge éle"
+      - "&7sosem hűl ki, s a sebek, amiket ejt,"
+      - "&7parázslanak, mint az emléke."
+    category: "Vérszavanna (tervrajz)"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: zhoris_langnyelve, item-model: "icesmp:zhoris_langnyelve" }
+    ingredients: [ "DIAMOND_SWORD:1", "NETHERITE_INGOT:3", "unique:parazsmag:3", "unique:osi_ereklyeszilank:1", "unique:karhozat_parazs:2", "unique:folyositoszer:2" ]
+  napfogyatkozas:
+    profession: armorer
+    level: 46
+    learn: blueprint
+    faction: RED
+    display-name: "Napfogyatkozás"
+    lore:
+      - "&7Fekete obszidián-íj, amely akkor a"
+      - "&7legerősebb, amikor a nap lehunyja szemét —"
+      - "&7éjjel a nyila árnyékból csap le."
+    category: "Vérszavanna (tervrajz)"
+    result: { material: BOW, amount: 1, affix-tier: crafted, signature: napfogyatkozas, item-model: "icesmp:napfogyatkozas" }
+    ingredients: [ "BOW:1", "unique:fonixpihe:3", "unique:obszidian_szilank:3", "unique:parazsmag:2", "unique:folyositoszer:1" ]
+  # --- Ételek + neves darabok ---
+  sarkany_porkolt:
+    profession: cook
+    level: 30
+    faction: BLUE
+    display-name: "Sárkány-pörkölt"
+    lore:
+      - "&7Glatziendorf ünnepi étke: lassan fő,"
+      - "&7gyorsan melegít — a tenger íze és a"
+      - "&7tűzhely ereje egy tálban."
+    category: "Étel"
+    result: { material: RABBIT_STEW, amount: 1, signature: sarkany_porkolt, item-model: "icesmp:sarkany_porkolt" }
+    ingredients: [ "COOKED_COD:2", "COOKED_SALMON:1", "BOWL:1", "unique:jegviragpor:1", "unique:koso:1" ]
+  vandor_uti_kenyer:
+    profession: cook
+    level: 12
+    display-name: "Vándor Úti Kenyere"
+    lore:
+      - "&7Kétszer sütött, mézzel kent úti kenyér —"
+      - "&7a karavánok esküsznek rá."
+    category: "Étel"
+    result: { material: BREAD, amount: 3, item-model: "icesmp:vandor_uti_kenyer" }
+    ingredients: [ "WHEAT:6", "HONEY_BOTTLE:1" ]
+  bokic_gyogytea:
+    profession: herbalist
+    level: 24
+    display-name: "Bokic-parti Gyógytea"
+    lore:
+      - "&7Hajnali szedésű füvek forrázata a Bokic"
+      - "&7partjáról — átmelegít és tisztán tart."
+    category: "Ital"
+    result: { material: HONEY_BOTTLE, amount: 1, item-model: "icesmp:bokic_gyogytea" }
+    ingredients: [ "unique:gyogy_kivonat:1", "unique:uvegfiola_keszlet:1", "SUGAR:1" ]
+  sarkanycsont_pajzs:
+    profession: armorer
+    level: 40
+    faction: BLUE
+    display-name: "Sárkánycsont Pajzs"
+    lore:
+      - "&7Sárkánycsont-lemezekkel erősített pajzs —"
+      - "&7ami nekicsapódik, megdermed egy szívverésre."
+    category: "Páncél"
+    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:sarkanycsont_pajzs" }
+    ingredients: [ "SHIELD:1", "unique:sarkanycsont_szilank:1", "IRON_INGOT:4", "unique:nyelbor:1" ]
+  viharuveg_lampas:
+    profession: enchanter
+    level: 28
+    display-name: "Viharüveg Lámpás"
+    lore:
+      - "&7Viharkvarc-szilánk ég az üveg mögött —"
+      - "&7a fénye nem alszik ki, mert a vihar"
+      - "&7sosem fárad el."
+    category: "Különleges"
+    result: { material: LANTERN, amount: 1, item-model: "icesmp:viharuveg_lampas" }
+    ingredients: [ "LANTERN:1", "unique:viharkvarc:2", "GLASS:4", "unique:lampaolaj:1" ]
+  # --- Bűvölő iskola-counter tekercsek (Fagypáncél / Főnixtoll könyv-formában, üllőhöz) ---
+  fagypancel_tekercs:
+    profession: enchanter
+    level: 35
+    display-name: "Fagypáncél Tekercse"
+    lore:
+      - "&7Glatziendorf jégvértjének rúnája könyvbe"
+      - "&7írva — üllőnél páncélra vihető."
+    category: "Bűvölés"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fagypancel:1", item-model: "icesmp:fagypancel_tekercs" }
+    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:jegviragpor:2", "unique:irnok_tinta:1" ]
+  fonixtoll_tekercs:
+    profession: enchanter
+    level: 35
+    display-name: "Főnixtoll Tekercse"
+    lore:
+      - "&7Soleil főnixeinek pihéjével írt rúna —"
+      - "&7üllőnél páncélra vihető tűz-oltalom."
+    category: "Bűvölés"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:fonixtoll:1", item-model: "icesmp:fonixtoll_tekercs" }
+    ingredients: [ "BOOK:1", "unique:runapor:3", "unique:fonixpihe:2", "unique:irnok_tinta:1" ]
+
+  # =========================================================
+  # --- Tartalombővítés (3. hullám): anyag-receptek, ünnepi ételek minden
+  # --- frakciónak, legendás (drága, loot-only) darabok, vendor-anyag felhasználók.
+  # =========================================================
+  holdezust_huzas:
+    profession: enchanter
+    level: 26
+    display-name: "Holdezüst húzása"
+    category: "Alapanyag"
+    result: { unique: holdezust_huzal, amount: 1 }
+    ingredients: [ "IRON_INGOT:2", "AMETHYST_SHARD:1", "unique:runapor:1" ]
+  csontenyv_fozes:
+    profession: cook
+    level: 20
+    display-name: "Csontenyv főzése"
+    category: "Alapanyag"
+    result: { unique: csontenyv, amount: 2 }
+    ingredients: [ "BONE:4", "SUGAR:1" ]
+  sarkfeny_gyujtes:
+    profession: miner
+    level: 26
+    display-name: "Sarkfény-cseppkő fejtése"
+    category: "Alapanyag"
+    result: { unique: sarkfeny_cseppko, amount: 1 }
+    ingredients: [ "PRISMARINE_CRYSTALS:2", "AMETHYST_SHARD:2", "ICE:2", "unique:ercmoso_lug:1" ]
+  szavannafu_sodras:
+    profession: lumberjack
+    level: 24
+    display-name: "Szavannafű-kötél sodrása"
+    category: "Alapanyag"
+    result: { unique: szavannafu_kotel, amount: 2 }
+    ingredients: [ "VINE:4", "STRING:4" ]
+  obszidian_pattintas:
+    profession: miner
+    level: 18
+    display-name: "Obszidián-szilánk pattintása"
+    category: "Alapanyag"
+    result: { unique: obszidian_szilank, amount: 2 }
+    ingredients: [ "OBSIDIAN:2", "FLINT:2" ]
+  arnygomba_szedes:
+    profession: herbalist
+    level: 28
+    display-name: "Árnygomba szedése"
+    category: "Alapanyag"
+    result: { unique: arnygomba, amount: 2 }
+    ingredients: [ "CRIMSON_FUNGUS:2", "BROWN_MUSHROOM:2", "unique:tozegkocka:1" ]
+  lelekhamu_kinyeres:
+    profession: alchemist
+    level: 30
+    display-name: "Lélekhamu kinyerése"
+    category: "Alapanyag"
+    result: { unique: lelekhamu, amount: 2 }
+    ingredients: [ "SOUL_SAND:2", "GUNPOWDER:2", "unique:katalizator_so:1" ]
+  aranyfust_veres:
+    profession: armorer
+    level: 24
+    display-name: "Aranyfüst-lemez verése"
+    category: "Alapanyag"
+    result: { unique: aranyfust_lemez, amount: 2 }
+    ingredients: [ "GOLD_INGOT:3", "unique:tiszta_vasesszencia:1", "unique:polirpaszta:1" ]
+  gyongyhaz_fejtes:
+    profession: fisherman
+    level: 20
+    display-name: "Gyöngyház-pikkely fejtése"
+    category: "Alapanyag"
+    result: { unique: gyongyhaz_pikkely, amount: 1 }
+    ingredients: [ "SALMON:2", "PRISMARINE_SHARD:1", "unique:sozott_csali:1" ]
+  vandorfuszer_keveres:
+    profession: cook
+    level: 22
+    display-name: "Vándorfűszer keverése"
+    category: "Alapanyag"
+    result: { unique: vandorfuszer, amount: 2 }
+    ingredients: [ "COCOA_BEANS:2", "SUGAR:1", "RED_MUSHROOM:1", "DRIED_KELP:1" ]
+  # --- Ünnepi ételek: minden frakciónak a magáé (a BLUE Sárkány-pörkölt párjai) ---
+  vadlakoma:
+    profession: cook
+    level: 30
+    faction: RED
+    display-name: "Vérszavannai Vadlakoma"
+    lore:
+      - "&7Nyílt tűzön, egészben sült vad, ahogy"
+      - "&7I. Zhoris vadászai ették győzelem után."
+    category: "Étel"
+    result: { material: COOKED_BEEF, amount: 1, signature: vadlakoma, item-model: "icesmp:vadlakoma" }
+    ingredients: [ "BEEF:2", "unique:vandorfuszer:1", "unique:parazsmag:1", "unique:fustoloforgacs:1" ]
+  vandorunnep_lepenye:
+    profession: cook
+    level: 30
+    faction: NEUTRAL
+    display-name: "Vándorünnep Lepénye"
+    lore:
+      - "&7A Bokic-parti aratóünnep édes lepénye —"
+      - "&7egy szelet szerencse minden vándornak."
+    category: "Étel"
+    result: { material: PUMPKIN_PIE, amount: 1, signature: vandorunnep_lepenye, item-model: "icesmp:vandorunnep_lepenye" }
+    ingredients: [ "PUMPKIN:1", "EGG:1", "unique:vaj:1", "unique:sutopergamen:1", "unique:vandorfuszer:1" ]
+  hamvak_lakomaja:
+    profession: cook
+    level: 30
+    faction: DARK
+    display-name: "Hamvak Lakomája"
+    lore:
+      - "&7A Kitaszítottak ünnepi tála: kevés, keserű,"
+      - "&7de aki megosztja, az már nem idegen."
+    category: "Étel"
+    result: { material: BEETROOT_SOUP, amount: 1, signature: hamvak_lakomaja, item-model: "icesmp:hamvak_lakomaja" }
+    ingredients: [ "BEETROOT:4", "BOWL:1", "unique:arnygomba:1" ]
+  # --- Legendás (drága) darabok: vendor-only + boss-anyag + loot-only tervrajz ---
+  melysegi_korona:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    display-name: "A Mélység Népe Koronája"
+    lore:
+      - "&7Borostyánba dermedt idő és néma kristály"
+      - "&7egy koronában — az utolsó kovácsmű,"
+      - "&7amit a Mélység Népe hátrahagyott."
+    category: "Legendás (tervrajz)"
+    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:melysegi_korona" }
+    ingredients: [ "unique:melysegi_borostyan:3", "unique:nema_kristaly:2", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2", "GOLD_BLOCK:4", "NETHERITE_INGOT:2" ]
+  viharjaro_csizma:
+    profession: armorer
+    level: 48
+    learn: blueprint
+    loot-only: true
+    display-name: "Viharjáró Csizma"
+    lore:
+      - "&7Aki viseli, a vihar előtt jár egy"
+      - "&7lépéssel — és a vihar ezt tiszteli."
+    category: "Legendás (tervrajz)"
+    result: { material: NETHERITE_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:viharjaro_csizma" }
+    ingredients: [ "unique:viharkvarc:4", "unique:fonixpihe:2", "unique:folyositoszer:1", "NETHERITE_INGOT:2", "DIAMOND_BLOCK:1" ]
+  eleftheria_fatyla:
+    profession: armorer
+    level: 50
+    learn: blueprint
+    loot-only: true
+    faction: DARK
+    display-name: "Eleftheria Fátyla"
+    lore:
+      - "&7Lélekhamuból szőtt, könnyekkel hímzett"
+      - "&7vért — a Néma Királynő gyásza, páncéllá"
+      - "&7kovácsolva. Viselni kegy. És teher."
+    category: "Legendás (tervrajz)"
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:eleftheria_fatyla" }
+    ingredients: [ "unique:lelekhamu:4", "unique:dermedt_konnycsepp:2", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2", "NETHERITE_INGOT:3" ]
+  # --- Vendor-anyag felhasználó kézműves darabok ---
+  pecsetes_szerzodes:
+    profession: enchanter
+    level: 30
+    display-name: "Pecsétes Szerződés"
+    lore:
+      - "&7A Bankárszövetség viaszával hitelesített"
+      - "&7üres szerződés — két fél, egy pecsét,"
+      - "&7és nincs többé vita."
+    category: "Különleges"
+    result: { material: PAPER, amount: 1, item-model: "icesmp:pecsetes_szerzodes" }
+    ingredients: [ "PAPER:2", "unique:viaszpecset:1" ]
+  sarkfeny_prizma:
+    profession: enchanter
+    level: 38
+    display-name: "Sarkfény-prizma"
+    lore:
+      - "&7Cseppkőbe zárt északi fény — a szoba,"
+      - "&7ahol áll, sosem lesz igazán sötét."
+    category: "Különleges"
+    result: { material: SEA_LANTERN, amount: 1, item-model: "icesmp:sarkfeny_prizma" }
+    ingredients: [ "unique:sarkfeny_cseppko:3", "GLASS:4", "unique:lampaolaj:1" ]
+  csontenyves_ijkar:
+    profession: lumberjack
+    level: 34
+    display-name: "Csontenyves Íjkar"
+    lore:
+      - "&7Csontenyvvel rétegelt, kötéllel erősített"
+      - "&7íjkar — a Mélység Népe így készítette."
+    category: "Fegyver"
+    result: { material: BOW, amount: 1, affix-tier: crafted, item-model: "icesmp:csontenyves_ijkar" }
+    ingredients: [ "BOW:1", "unique:csontenyv:2", "unique:szavannafu_kotel:2", "unique:favedo_pac:1" ]
+  gyongyhaz_talizman:
+    profession: fisherman
+    level: 32
+    display-name: "Gyöngyház Talizmán"
+    lore:
+      - "&7Hét pikkely, hét szín, egy kagylóházban —"
+      - "&7a Bokic halászainak szerencsehozója."
+    category: "Különleges"
+    result: { material: NAUTILUS_SHELL, amount: 1, item-model: "icesmp:gyongyhaz_talizman" }
+    ingredients: [ "NAUTILUS_SHELL:1", "unique:gyongyhaz_pikkely:3", "unique:halofonal:1" ]
+  fuszeres_vandorhus:
+    profession: cook
+    level: 28
+    display-name: "Fűszeres Vándorhús"
+    lore:
+      - "&7Vándorfűszerrel érlelt, füstölt hús —"
+      - "&7hetekig eláll a nyeregtáskában."
+    category: "Étel"
+    result: { material: COOKED_MUTTON, amount: 3, item-model: "icesmp:fuszeres_vandorhus" }
+    ingredients: [ "MUTTON:3", "unique:vandorfuszer:1" ]
+
+# ===== I14 — „Készítette: X" címke (kódex VIII.: a mester keze alól kikerülő mű
+# a nevét is viseli). A NEVES/gear recept-eredmények PDC-ben (crafted_by/crafted_at)
+# és halvány lore-sorban viszik a készítő nevét — a piacon is megmarad. A bulk
+# (stackelhető) eredményekre nem kerül. Élőben olvasódik.
+  # =========================================================
+  # --- Profession-mélyítés: szintlétra-receptek (1-50, minden szakma ~50 recept) ---
+  # --- A nevesített (lore-os) eredmények CMD-i: docs/RESOURCE_PACK_CMD.md ---
+  # =========================================================
+
+  # --- miner (szintlétra) ---
+  kavicsrosta:
+    profession: miner
+    level: 1
+    learn: level
+    display-name: "Átrostált Kavics"
+    category: "Alapanyag"
+    result: { material: FLINT, amount: 3 }
+    ingredients: [ "GRAVEL:6" ]
+  szenbrikett:
+    profession: miner
+    level: 2
+    learn: level
+    display-name: "Szénbrikett"
+    category: "Alapanyag"
+    result: { material: COAL, amount: 4 }
+    ingredients: [ "COAL_BLOCK:1", "STICK:1" ]
+  tomor_ko:
+    profession: miner
+    level: 3
+    learn: level
+    display-name: "Faragott Zsindelykő"
+    category: "Építkezés"
+    result: { material: STONE_BRICKS, amount: 16 }
+    ingredients: [ "STONE:16" ]
+  melyszikla_teglazat:
+    profession: miner
+    level: 4
+    learn: level
+    display-name: "Mélyszikla-téglázat"
+    category: "Építkezés"
+    result: { material: DEEPSLATE_BRICKS, amount: 16 }
+    ingredients: [ "COBBLED_DEEPSLATE:16" ]
+  rezrudak:
+    profession: miner
+    level: 6
+    learn: level
+    display-name: "Rézrudacska-köteg"
+    category: "Alapanyag"
+    result: { material: COPPER_INGOT, amount: 6 }
+    ingredients: [ "RAW_COPPER:4", "COAL:2" ]
+  vaslanc:
+    profession: miner
+    level: 7
+    learn: level
+    display-name: "Tárnalánc"
+    category: "Építkezés"
+    result: { material: CHAIN, amount: 8 }
+    ingredients: [ "IRON_INGOT:2", "IRON_NUGGET:4" ]
+  vasracs:
+    profession: miner
+    level: 9
+    learn: level
+    display-name: "Kovácsolt Vasrács"
+    category: "Építkezés"
+    result: { material: IRON_BARS, amount: 12 }
+    ingredients: [ "IRON_INGOT:3" ]
+  tarnalampas:
+    profession: miner
+    level: 10
+    learn: level
+    display-name: "Tárnalámpás"
+    category: "Eszköz"
+    result: { material: LANTERN, amount: 4 }
+    ingredients: [ "IRON_NUGGET:8", "TORCH:4", "unique:lampaolaj:1" ]
+  sinkoteg:
+    profession: miner
+    level: 12
+    learn: level
+    display-name: "Sínköteg"
+    category: "Eszköz"
+    result: { material: RAIL, amount: 24 }
+    ingredients: [ "IRON_INGOT:6", "STICK:2", "unique:tarnatamasz_szegecs:1" ]
+  csillekerek:
+    profession: miner
+    level: 14
+    learn: level
+    display-name: "Megkent Csille"
+    category: "Eszköz"
+    result: { material: MINECART, item-model: "icesmp:csillekerek" }
+    ingredients: [ "IRON_INGOT:5", "unique:csillekenocs:1" ]
+    lore:
+      - "A tárnák olajozott vasparipája —"
+      - "nyikorgás nélkül fut a sínen."
+
+  aranyrudak:
+    profession: miner
+    level: 15
+    learn: level
+    display-name: "Aranyrúd-öntvény"
+    category: "Alapanyag"
+    result: { material: GOLD_INGOT, amount: 4 }
+    ingredients: [ "RAW_GOLD:3", "COAL:2", "unique:ercmoso_lug:1" ]
+  erositett_sin:
+    profession: miner
+    level: 17
+    learn: level
+    display-name: "Gyorsító Sín"
+    category: "Eszköz"
+    result: { material: POWERED_RAIL, amount: 6 }
+    ingredients: [ "GOLD_INGOT:6", "REDSTONE:2", "STICK:1" ]
+  banyaszlampa_soul:
+    profession: miner
+    level: 19
+    learn: level
+    display-name: "Lélekfényű Lámpás"
+    category: "Eszköz"
+    result: { material: SOUL_LANTERN, amount: 4 }
+    ingredients: [ "IRON_NUGGET:8", "SOUL_TORCH:4", "unique:lampaolaj:1" ]
+  robbanto_toltet:
+    profession: miner
+    level: 21
+    learn: level
+    display-name: "Bányász Robbanótöltet"
+    category: "Eszköz"
+    result: { material: TNT, amount: 3 }
+    ingredients: [ "SAND:4", "GUNPOWDER:5", "unique:robbantopor:1" ]
+  melysegi_tajolo:
+    profession: miner
+    level: 23
+    learn: level
+    display-name: "Tárnatájoló"
+    category: "Eszköz"
+    result: { material: COMPASS, item-model: "icesmp:melysegi_tajolo" }
+    ingredients: [ "IRON_INGOT:4", "REDSTONE:1", "unique:melysegi_iranytu:1" ]
+    lore:
+      - "A tű nem északra mutat —"
+      - "a legközelebbi tárnára."
+
+  csiszolt_ametiszt:
+    profession: miner
+    level: 25
+    learn: level
+    display-name: "Csiszolt Ametiszt"
+    category: "Alapanyag"
+    result: { material: AMETHYST_SHARD, amount: 6 }
+    ingredients: [ "AMETHYST_BLOCK:1", "unique:ercmoso_lug:1" ]
+  tavcso:
+    profession: miner
+    level: 27
+    learn: level
+    display-name: "Bányamérnöki Távcső"
+    category: "Eszköz"
+    result: { material: SPYGLASS, item-model: "icesmp:tavcso" }
+    ingredients: [ "COPPER_INGOT:2", "AMETHYST_SHARD:1", "unique:merozsinor:1" ]
+    lore:
+      - "A bányamérnök szeme: meglátja"
+      - "a repedést, mielőtt omlana."
+
+  obszidian_tomb:
+    profession: miner
+    level: 29
+    learn: level
+    display-name: "Hasított Obszidián"
+    category: "Alapanyag"
+    result: { material: OBSIDIAN, amount: 4 }
+    ingredients: [ "COBBLESTONE:16", "LAVA_BUCKET:1", "unique:obszidian_szilank:1" ]
+  vasarany_otvozet:
+    profession: miner
+    level: 31
+    learn: level
+    display-name: "Vas-arany Ötvözet"
+    category: "Alapanyag"
+    result: { material: GOLD_INGOT, amount: 8 }
+    ingredients: [ "IRON_INGOT:4", "RAW_GOLD:6", "unique:folyositoszer:1" ]
+  gyemantpor_csiszolo:
+    profession: miner
+    level: 33
+    learn: level
+    display-name: "Gyémántcsiszoló Korong"
+    category: "Alapanyag"
+    result: { material: DIAMOND, amount: 2 }
+    ingredients: [ "DIAMOND_ORE:1", "unique:ercmoso_lug:2" ]
+  melyszikla_oszlop:
+    profession: miner
+    level: 35
+    learn: level
+    display-name: "Mélyszikla Tartóoszlop"
+    category: "Építkezés"
+    result: { material: DEEPSLATE_TILES, amount: 32 }
+    ingredients: [ "COBBLED_DEEPSLATE:32", "unique:tarnatamasz_szegecs:2" ]
+  visszhang_szilank:
+    profession: miner
+    level: 37
+    learn: level
+    display-name: "Visszhang-szilánk"
+    category: "Ritkaság"
+    result: { material: ECHO_SHARD }
+    ingredients: [ "SCULK:8", "AMETHYST_SHARD:2", "unique:nema_kristaly:1" ]
+  borostyan_lampa:
+    profession: miner
+    level: 39
+    learn: level
+    display-name: "Borostyánfényű Lámpás"
+    category: "Ritkaság"
+    result: { material: LANTERN, amount: 2, item-model: "icesmp:borostyan_lampa" }
+    ingredients: [ "GOLD_NUGGET:8", "unique:melysegi_borostyan:1", "unique:lampaolaj:1" ]
+    lore:
+      - "A mélység gyantája ég benne —"
+      - "fénye nyugtatja a tárnák szellemeit."
+  netherit_tormelek:
+    profession: miner
+    level: 41
+    learn: level
+    display-name: "Kohósított Törmelék"
+    category: "Alapanyag"
+    result: { material: NETHERITE_SCRAP }
+    ingredients: [ "ANCIENT_DEBRIS:1", "unique:folyositoszer:1" ]
+  magma_jaro_talp:
+    profession: miner
+    level: 43
+    learn: level
+    display-name: "Magmajáró Talplemez"
+    category: "Ritkaság"
+    result: { material: MAGMA_BLOCK, amount: 8 }
+    ingredients: [ "NETHERRACK:16", "unique:parazsmag:1" ]
+  kristalybarlang_magja:
+    profession: miner
+    level: 45
+    learn: level
+    display-name: "Kristálybarlang Magja"
+    category: "Ritkaság"
+    result: { material: AMETHYST_CLUSTER, amount: 3 }
+    ingredients: [ "AMETHYST_SHARD:9", "unique:viharkvarc:1" ]
+  vilagito_tomb:
+    profession: miner
+    level: 46
+    learn: level
+    display-name: "Ragyogó Kőtömb"
+    category: "Építkezés"
+    result: { material: GLOWSTONE, amount: 8 }
+    ingredients: [ "GLOWSTONE_DUST:24", "unique:sarkfeny_cseppko:1" ]
+  tarna_kapuzat:
+    profession: miner
+    level: 47
+    learn: level
+    display-name: "Tárnakapuzat"
+    category: "Építkezés"
+    result: { material: POLISHED_BLACKSTONE_BRICKS, amount: 32 }
+    ingredients: [ "BLACKSTONE:32", "unique:tarnatamasz_szegecs:2" ]
+  osi_ereklye_kiemeles:
+    profession: miner
+    level: 48
+    learn: level
+    display-name: "Ereklye-kiemelő Készlet"
+    category: "Ritkaság"
+    result: { material: BRUSH, item-model: "icesmp:osi_ereklye_kiemeles" }
+    ingredients: [ "COPPER_INGOT:2", "FEATHER:3", "unique:merozsinor:1" ]
+    lore:
+      - "Puha ecset, acél türelem —"
+      - "a múlt nem szereti a sietséget."
+
+  netherit_ontveny:
+    profession: miner
+    level: 49
+    learn: level
+    display-name: "Netherit-öntvény"
+    category: "Alapanyag"
+    result: { material: NETHERITE_INGOT }
+    ingredients: [ "NETHERITE_SCRAP:4", "GOLD_INGOT:4", "unique:folyositoszer:2" ]
+  melyseg_szive:
+    profession: miner
+    level: 50
+    learn: level
+    display-name: "A Mélység Szíve"
+    category: "Ritkaság"
+    result: { material: HEART_OF_THE_SEA, item-model: "icesmp:melyseg_szive" }
+    ingredients: [ "DIAMOND:8", "unique:melysegi_borostyan:2", "unique:elso_csend_szilankja:1", "unique:melysegi_iranytu:1" ]
+    lore:
+      - "A legmélyebb tárna alján dobog valami."
+      - "A bányászcéh legendás mesterműve."
+
+  # --- herbalist (szintlétra) ---
+  magvalogatas:
+    profession: herbalist
+    level: 1
+    learn: level
+    display-name: "Válogatott Vetőmag"
+    category: "Alapanyag"
+    result: { material: WHEAT_SEEDS, amount: 8 }
+    ingredients: [ "WHEAT:4" ]
+  csontliszt_orlemeny:
+    profession: herbalist
+    level: 2
+    learn: level
+    display-name: "Csontliszt-őrlemény"
+    category: "Alapanyag"
+    result: { material: BONE_MEAL, amount: 9 }
+    ingredients: [ "BONE:3" ]
+  gyogyfu_kotes:
+    profession: herbalist
+    level: 3
+    learn: level
+    display-name: "Gyógyfű-kötés"
+    category: "Alapanyag"
+    result: { material: PAPER, amount: 4 }
+    ingredients: [ "SUGAR_CANE:3", "SHORT_GRASS:2" ]
+  pirosfestek:
+    profession: herbalist
+    level: 4
+    learn: level
+    display-name: "Pipacs-festék"
+    category: "Alapanyag"
+    result: { material: RED_DYE, amount: 6 }
+    ingredients: [ "POPPY:6" ]
+  mohatelepites:
+    profession: herbalist
+    level: 6
+    learn: level
+    display-name: "Mohatelepítés"
+    category: "Alapanyag"
+    result: { material: MOSS_BLOCK, amount: 8 }
+    ingredients: [ "MOSS_CARPET:4", "BONE_MEAL:4" ]
+  mezeskanna:
+    profession: herbalist
+    level: 8
+    learn: level
+    display-name: "Lépes Méz"
+    category: "Alapanyag"
+    result: { material: HONEY_BOTTLE, amount: 2 }
+    ingredients: [ "HONEYCOMB:3", "GLASS_BOTTLE:2" ]
+  szaritott_gomba:
+    profession: herbalist
+    level: 10
+    learn: level
+    display-name: "Aszalt Gombafüzér"
+    category: "Alapanyag"
+    result: { material: BROWN_MUSHROOM, amount: 6 }
+    ingredients: [ "BROWN_MUSHROOM:3", "unique:aszalohalo:1" ]
+  viragpor_keverek:
+    profession: herbalist
+    level: 12
+    learn: level
+    display-name: "Virágpor-keverék"
+    category: "Alapanyag"
+    result: { material: ORANGE_DYE, amount: 8 }
+    ingredients: [ "ORANGE_TULIP:4", "DANDELION:4" ]
+  oltott_csemete:
+    profession: herbalist
+    level: 14
+    learn: level
+    display-name: "Oltott Tölgycsemete"
+    category: "Alapanyag"
+    result: { material: OAK_SAPLING, amount: 4 }
+    ingredients: [ "OAK_SAPLING:1", "BONE_MEAL:4", "unique:oltoviasz:1" ]
+  fenyvarazs_bogyo:
+    profession: herbalist
+    level: 16
+    learn: level
+    display-name: "Fénybogyó-inda"
+    category: "Alapanyag"
+    result: { material: GLOW_BERRIES, amount: 6 }
+    ingredients: [ "GLOW_BERRIES:2", "BONE_MEAL:4", "unique:tozegkocka:1" ]
+  melon_kivonat:
+    profession: herbalist
+    level: 18
+    learn: level
+    display-name: "Csillámdinnye-szelet"
+    category: "Főzet-alap"
+    result: { material: GLISTERING_MELON_SLICE, amount: 2 }
+    ingredients: [ "MELON_SLICE:4", "GOLD_NUGGET:8" ]
+  erjesztett_pokszem:
+    profession: herbalist
+    level: 20
+    learn: level
+    display-name: "Erjesztett Pókszem"
+    category: "Főzet-alap"
+    result: { material: FERMENTED_SPIDER_EYE, amount: 3 }
+    ingredients: [ "SPIDER_EYE:3", "SUGAR:3", "BROWN_MUSHROOM:3" ]
+  tozeg_agyas:
+    profession: herbalist
+    level: 22
+    learn: level
+    display-name: "Tőzeg-ágyás"
+    category: "Alapanyag"
+    result: { material: PODZOL, amount: 8 }
+    ingredients: [ "DIRT:8", "unique:tozegkocka:2" ]
+  harmatgyujto:
+    profession: herbalist
+    level: 24
+    learn: level
+    display-name: "Hajnali Harmat"
+    category: "Főzet-alap"
+    result: { material: GLASS_BOTTLE, amount: 6 }
+    ingredients: [ "GLASS:6", "unique:desztillalt_esoviz:1" ]
+  kaktuszlekvar_zold:
+    profession: herbalist
+    level: 26
+    learn: level
+    display-name: "Kaktusz-festékfőzet"
+    category: "Alapanyag"
+    result: { material: GREEN_DYE, amount: 8 }
+    ingredients: [ "CACTUS:8" ]
+  viragzo_azalea:
+    profession: herbalist
+    level: 28
+    learn: level
+    display-name: "Virágzó Azálea"
+    category: "Alapanyag"
+    result: { material: FLOWERING_AZALEA, amount: 4 }
+    ingredients: [ "AZALEA:4", "BONE_MEAL:8", "unique:permetezo_kanna:1" ]
+  gombafonal_agy:
+    profession: herbalist
+    level: 30
+    learn: level
+    display-name: "Gombafonal-ágy"
+    category: "Alapanyag"
+    result: { material: MYCELIUM, amount: 6 }
+    ingredients: [ "DIRT:6", "RED_MUSHROOM:3", "unique:arnygomba:1" ]
+  langvirag_mag:
+    profession: herbalist
+    level: 32
+    learn: level
+    display-name: "Fáklyaliliom-mag"
+    category: "Ritkaság"
+    result: { material: TORCHFLOWER_SEEDS, amount: 2 }
+    ingredients: [ "TORCHFLOWER:1", "BONE_MEAL:8", "unique:oltoviasz:1" ]
+  jegvirag_koszoru:
+    profession: herbalist
+    level: 34
+    learn: level
+    display-name: "Jégvirág-koszorú"
+    category: "Ritkaság"
+    result: { material: BLUE_ORCHID, amount: 6, item-model: "icesmp:jegvirag_koszoru" }
+    ingredients: [ "BLUE_ORCHID:2", "unique:jegviragpor:1" ]
+    lore:
+      - "Cryghaliris kertjeinek dísze —"
+      - "nem hervad el soha."
+  sporavirag:
+    profession: herbalist
+    level: 36
+    learn: level
+    display-name: "Spóravirág-oltvány"
+    category: "Ritkaság"
+    result: { material: SPORE_BLOSSOM, amount: 2 }
+    ingredients: [ "FLOWERING_AZALEA:2", "BONE_MEAL:16", "unique:arnygomba:1" ]
+  vad_esszencia_parlat:
+    profession: herbalist
+    level: 38
+    learn: level
+    display-name: "Vadesszencia-párlat"
+    category: "Főzet-alap"
+    result: { material: MAGMA_CREAM, amount: 4 }
+    ingredients: [ "SLIME_BALL:4", "BLAZE_POWDER:2", "unique:vad_esszencia:1" ]
+  uveghazi_dinnye:
+    profession: herbalist
+    level: 40
+    learn: level
+    display-name: "Üvegházi Dinnye"
+    category: "Alapanyag"
+    result: { material: MELON, amount: 6 }
+    ingredients: [ "MELON_SLICE:18", "unique:permetezo_kanna:1", "unique:tozegkocka:1" ]
+  csendfu_fozet_alap:
+    profession: herbalist
+    level: 42
+    learn: level
+    display-name: "Csendfű-esszencia"
+    category: "Főzet-alap"
+    result: { material: GHAST_TEAR, amount: 2 }
+    ingredients: [ "FERMENTED_SPIDER_EYE:2", "unique:nema_kristaly:1", "unique:desztillalt_esoviz:1" ]
+  aranyrepa_vetes:
+    profession: herbalist
+    level: 43
+    learn: level
+    display-name: "Aranyrépa-nemesítés"
+    category: "Főzet-alap"
+    result: { material: GOLDEN_CARROT, amount: 4 }
+    ingredients: [ "CARROT:8", "GOLD_NUGGET:16" ]
+  wither_rozsa_oltvany:
+    profession: herbalist
+    level: 44
+    learn: level
+    display-name: "Fonnyadt Rózsa-oltvány"
+    category: "Ritkaság"
+    result: { material: WITHER_ROSE, amount: 2, item-model: "icesmp:wither_rozsa_oltvany" }
+    ingredients: [ "POPPY:4", "BONE_MEAL:8", "unique:lelekhamu:1" ]
+    lore:
+      - "A Kitaszítottak kertjének virága."
+      - "Aki megszagolja, megborzong."
+  eletfa_kereg:
+    profession: herbalist
+    level: 45
+    learn: level
+    display-name: "Életfa-kéreg Főzet"
+    category: "Főzet-alap"
+    result: { material: GLISTERING_MELON_SLICE, amount: 6 }
+    ingredients: [ "MELON_SLICE:8", "GOLD_INGOT:2", "unique:gyogy_kivonat:1" ]
+  langvarazs_krem:
+    profession: herbalist
+    level: 46
+    learn: level
+    display-name: "Parázskrém"
+    category: "Főzet-alap"
+    result: { material: MAGMA_CREAM, amount: 6 }
+    ingredients: [ "SLIME_BALL:6", "unique:parazsmag:1" ]
+  sarkanylehelet_parlat:
+    profession: herbalist
+    level: 47
+    learn: level
+    display-name: "Sárkánylehelet-párlat"
+    category: "Ritkaság"
+    result: { material: DRAGON_BREATH }
+    ingredients: [ "GLASS_BOTTLE:3", "unique:karhozat_parazs:1", "unique:desztillalt_esoviz:1" ]
+  orok_viragzas:
+    profession: herbalist
+    level: 48
+    learn: level
+    display-name: "Örök Virágzás Csokra"
+    category: "Ritkaság"
+    result: { material: PEONY, amount: 8, item-model: "icesmp:orok_viragzas" }
+    ingredients: [ "PEONY:2", "BONE_MEAL:16", "unique:oltoviasz:2" ]
+    lore:
+      - "Ryanora mezőinek emléke —"
+      - "a csokor sosem hullajtja szirmát."
+  fonixpihe_agyas:
+    profession: herbalist
+    level: 49
+    learn: level
+    display-name: "Főnixpihe-ágyás"
+    category: "Ritkaság"
+    result: { material: TORCHFLOWER, amount: 3 }
+    ingredients: [ "TORCHFLOWER_SEEDS:1", "unique:fonixpihe:1", "unique:tozegkocka:2" ]
+  vilagfa_magja:
+    profession: herbalist
+    level: 50
+    learn: level
+    display-name: "A Világfa Magja"
+    category: "Ritkaság"
+    result: { material: OAK_SAPLING, item-model: "icesmp:vilagfa_magja" }
+    ingredients: [ "DARK_OAK_SAPLING:4", "unique:elso_csend_szilankja:1", "unique:gyogy_kivonat:2", "unique:oltoviasz:2" ]
+    lore:
+      - "Azt mondják, az Első Fa magja."
+      - "Ültesd el, és figyeld, mi nő belőle."
+
+  # --- lumberjack (szintlétra) ---
+  gyujtos_koteg:
+    profession: lumberjack
+    level: 1
+    learn: level
+    display-name: "Gyújtós-köteg"
+    category: "Alapanyag"
+    result: { material: STICK, amount: 16 }
+    ingredients: [ "OAK_LOG:2" ]
+  deszkakoteg:
+    profession: lumberjack
+    level: 2
+    learn: level
+    display-name: "Deszkaköteg"
+    category: "Alapanyag"
+    result: { material: OAK_PLANKS, amount: 20 }
+    ingredients: [ "OAK_LOG:4" ]
+  faszen_egetes:
+    profession: lumberjack
+    level: 3
+    learn: level
+    display-name: "Faszén-égetés"
+    category: "Alapanyag"
+    result: { material: CHARCOAL, amount: 6 }
+    ingredients: [ "OAK_LOG:4", "STICK:2" ]
+  letra_sor:
+    profession: lumberjack
+    level: 4
+    learn: level
+    display-name: "Létrasor"
+    category: "Építkezés"
+    result: { material: LADDER, amount: 12 }
+    ingredients: [ "STICK:14" ]
+  hantolt_ronk:
+    profession: lumberjack
+    level: 6
+    learn: level
+    display-name: "Hántolt Rönk"
+    category: "Alapanyag"
+    result: { material: STRIPPED_OAK_LOG, amount: 8 }
+    ingredients: [ "OAK_LOG:8", "unique:fenoko:1" ]
+  nyilvesszo_koteg:
+    profession: lumberjack
+    level: 8
+    learn: level
+    display-name: "Nyílvessző-köteg"
+    category: "Eszköz"
+    result: { material: ARROW, amount: 16 }
+    ingredients: [ "STICK:4", "FLINT:4", "FEATHER:4" ]
+  acs_allvanyzat:
+    profession: lumberjack
+    level: 10
+    learn: level
+    display-name: "Ács-állványzat"
+    category: "Építkezés"
+    result: { material: SCAFFOLDING, amount: 12 }
+    ingredients: [ "BAMBOO:12", "STRING:2" ]
+  hordokeszites:
+    profession: lumberjack
+    level: 12
+    learn: level
+    display-name: "Erdei Hordó"
+    category: "Eszköz"
+    result: { material: BARREL, amount: 2 }
+    ingredients: [ "STRIPPED_OAK_LOG:6", "unique:acskapocs:1" ]
+  vadaszij:
+    profession: lumberjack
+    level: 14
+    learn: level
+    display-name: "Vadászíj"
+    category: "Eszköz"
+    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:vadaszij" }
+    ingredients: [ "STICK:3", "STRING:3", "unique:gyantaoldo:1" ]
+  utazolada:
+    profession: lumberjack
+    level: 16
+    learn: level
+    display-name: "Utazóláda"
+    category: "Eszköz"
+    result: { material: CHEST, amount: 4 }
+    ingredients: [ "OAK_PLANKS:24", "unique:acskapocs:1" ]
+  tabortuz_keszlet:
+    profession: lumberjack
+    level: 18
+    learn: level
+    display-name: "Tábortűz-készlet"
+    category: "Eszköz"
+    result: { material: CAMPFIRE, amount: 2 }
+    ingredients: [ "STICK:6", "CHARCOAL:2", "OAK_LOG:6" ]
+  pacolt_gerenda:
+    profession: lumberjack
+    level: 20
+    learn: level
+    display-name: "Pácolt Gerenda"
+    category: "Építkezés"
+    result: { material: DARK_OAK_PLANKS, amount: 24 }
+    ingredients: [ "DARK_OAK_LOG:5", "unique:favedo_pac:1" ]
+  iroasztal_lap:
+    profession: lumberjack
+    level: 22
+    learn: level
+    display-name: "Gyalult Asztallap"
+    category: "Építkezés"
+    result: { material: CARTOGRAPHY_TABLE }
+    ingredients: [ "OAK_PLANKS:8", "PAPER:2", "unique:fenoko:1" ]
+  csonakacs:
+    profession: lumberjack
+    level: 24
+    learn: level
+    display-name: "Ácsolt Csónak"
+    category: "Eszköz"
+    result: { material: OAK_BOAT, amount: 2 }
+    ingredients: [ "OAK_PLANKS:10", "unique:gyantaoldo:1" ]
+  keretezes:
+    profession: lumberjack
+    level: 26
+    learn: level
+    display-name: "Képkeret-sorozat"
+    category: "Eszköz"
+    result: { material: ITEM_FRAME, amount: 8 }
+    ingredients: [ "STICK:16", "LEATHER:2" ]
+  fegyverallvany:
+    profession: lumberjack
+    level: 28
+    learn: level
+    display-name: "Fegyverállvány"
+    category: "Eszköz"
+    result: { material: ARMOR_STAND, amount: 2 }
+    ingredients: [ "STICK:12", "SMOOTH_STONE_SLAB:2", "unique:acskapocs:1" ]
+  pergolenyeg:
+    profession: lumberjack
+    level: 30
+    learn: level
+    display-name: "Erdei Pergő"
+    category: "Eszköz"
+    result: { material: NOTE_BLOCK, amount: 4 }
+    ingredients: [ "OAK_PLANKS:16", "REDSTONE:4" ]
+  kemenyfa_ragaszto:
+    profession: lumberjack
+    level: 32
+    learn: level
+    display-name: "Csontenyves Illesztés"
+    category: "Alapanyag"
+    result: { material: STRIPPED_DARK_OAK_LOG, amount: 12 }
+    ingredients: [ "DARK_OAK_LOG:12", "unique:csontenyv:1" ]
+  vandorbot:
+    profession: lumberjack
+    level: 33
+    learn: level
+    display-name: "Vándorbot"
+    category: "Ritkaság"
+    result: { material: STICK, item-model: "icesmp:vandorbot" }
+    ingredients: [ "STRIPPED_OAK_LOG:1", "unique:szavannafu_kotel:1" ]
+    lore:
+      - "Egyszerű bot, ezer mérföld emléke."
+      - "A vándor sosem hagyja el."
+  szigony_nyel:
+    profession: lumberjack
+    level: 34
+    learn: level
+    display-name: "Szigonynyél-köteg"
+    category: "Eszköz"
+    result: { material: STICK, amount: 24 }
+    ingredients: [ "STRIPPED_SPRUCE_LOG:6", "unique:fenoko:1" ]
+  mefonott_pajzs:
+    profession: lumberjack
+    level: 36
+    learn: level
+    display-name: "Erdőjáró Pajzs"
+    category: "Eszköz"
+    result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:mefonott_pajzs" }
+    ingredients: [ "OAK_PLANKS:6", "IRON_INGOT:1", "unique:favedo_pac:1" ]
+  erdei_lampasoszlop:
+    profession: lumberjack
+    level: 38
+    learn: level
+    display-name: "Erdei Lámpásoszlop"
+    category: "Építkezés"
+    result: { material: TORCH, amount: 24 }
+    ingredients: [ "STICK:12", "CHARCOAL:6", "unique:gyantaoldo:1" ]
+  kaptarkeszites:
+    profession: lumberjack
+    level: 40
+    learn: level
+    display-name: "Ácsolt Kaptár"
+    category: "Eszköz"
+    result: { material: BEEHIVE, amount: 2 }
+    ingredients: [ "OAK_PLANKS:12", "HONEYCOMB:6", "unique:acskapocs:1" ]
+  feszitett_szaru_ij:
+    profession: lumberjack
+    level: 41
+    learn: level
+    display-name: "Feszített Szaruíj"
+    category: "Eszköz"
+    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:feszitett_szaru_ij" }
+    ingredients: [ "STICK:3", "STRING:3", "BONE:4", "unique:csontenyv:1" ]
+  gerendahid_elem:
+    profession: lumberjack
+    level: 42
+    learn: level
+    display-name: "Gerendahíd-elem"
+    category: "Építkezés"
+    result: { material: SPRUCE_PLANKS, amount: 32 }
+    ingredients: [ "SPRUCE_LOG:7", "unique:kemenyfa_gerenda:1" ]
+  celkereszt_szamszerij:
+    profession: lumberjack
+    level: 44
+    learn: level
+    display-name: "Céhmesteri Számszeríj"
+    category: "Eszköz"
+    result: { material: CROSSBOW, affix-tier: crafted, item-model: "icesmp:celkereszt_szamszerij" }
+    ingredients: [ "STICK:6", "IRON_INGOT:2", "STRING:4", "unique:merozsinor:1" ]
+  viharallo_zsindely:
+    profession: lumberjack
+    level: 45
+    learn: level
+    display-name: "Viharálló Zsindelysor"
+    category: "Építkezés"
+    result: { material: SPRUCE_STAIRS, amount: 24 }
+    ingredients: [ "SPRUCE_PLANKS:36", "unique:favedo_pac:2" ]
+  lelekfa_maglya:
+    profession: lumberjack
+    level: 46
+    learn: level
+    display-name: "Lélekfa-máglya"
+    category: "Ritkaság"
+    result: { material: SOUL_CAMPFIRE, amount: 2 }
+    ingredients: [ "STICK:6", "SOUL_SAND:2", "SPRUCE_LOG:6", "unique:lelekhamu:1" ]
+  erdok_kurtje:
+    profession: lumberjack
+    level: 47
+    learn: level
+    display-name: "Erdők Kürtje"
+    category: "Ritkaság"
+    result: { material: GOAT_HORN, item-model: "icesmp:erdok_kurtje" }
+    ingredients: [ "GOAT_HORN:1", "unique:kemenyfa_gerenda:1", "unique:csontenyv:1" ]
+    lore:
+      - "Mélyen zengő hang: a fák válaszolnak rá."
+      - "Aki hallja, hazatalál."
+  osfa_gerenda:
+    profession: lumberjack
+    level: 48
+    learn: level
+    display-name: "Ősfa-gerenda"
+    category: "Alapanyag"
+    result: { material: DARK_OAK_LOG, amount: 16 }
+    ingredients: [ "DARK_OAK_LOG:8", "unique:kemenyfa_gerenda:2" ]
+  vasfa_ij:
+    profession: lumberjack
+    level: 49
+    learn: level
+    display-name: "Vasfa Íj"
+    category: "Ritkaság"
+    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:vasfa_ij" }
+    ingredients: [ "STICK:3", "STRING:3", "unique:kemenyfa_gerenda:2", "unique:holdezust_huzal:1" ]
+    lore:
+      - "A vasfa nem hajlik —"
+      - "a mester keze alatt mégis."
+  erdo_szive_totem:
+    profession: lumberjack
+    level: 50
+    learn: level
+    display-name: "Az Erdő Szíve"
+    category: "Ritkaság"
+    result: { material: TOTEM_OF_UNDYING, item-model: "icesmp:erdo_szive_totem" }
+    ingredients: [ "EMERALD:8", "unique:kemenyfa_gerenda:2", "unique:elso_csend_szilankja:1", "unique:vad_esszencia:2" ]
+    lore:
+      - "A favágócéhek legendája: az erdő"
+      - "egyszer visszaadja, amit elvettél tőle."
+
+  # --- armorer (szintlétra) ---
+  lancszem_koteg:
+    profession: armorer
+    level: 5
+    learn: level
+    display-name: "Láncszem-köteg"
+    category: "Alapanyag"
+    result: { material: CHAIN, amount: 6 }
+    ingredients: [ "IRON_NUGGET:18", "unique:fujtatobor:1" ]
+  lancing:
+    profession: armorer
+    level: 11
+    learn: level
+    display-name: "Kovácsolt Láncing"
+    category: "Páncél"
+    result: { material: CHAINMAIL_CHESTPLATE, affix-tier: crafted, item-model: "icesmp:lancing" }
+    ingredients: [ "CHAIN:8", "IRON_INGOT:3", "unique:nyelbor:1" ]
+  lancnadrag:
+    profession: armorer
+    level: 13
+    learn: level
+    display-name: "Kovácsolt Láncnadrág"
+    category: "Páncél"
+    result: { material: CHAINMAIL_LEGGINGS, affix-tier: crafted, item-model: "icesmp:lancnadrag" }
+    ingredients: [ "CHAIN:7", "IRON_INGOT:2", "unique:nyelbor:1" ]
+  vas_lopancel:
+    profession: armorer
+    level: 17
+    learn: level
+    display-name: "Vas Lópáncél"
+    category: "Páncél"
+    result: { material: IRON_HORSE_ARMOR, item-model: "icesmp:vas_lopancel" }
+    ingredients: [ "IRON_INGOT:7", "LEATHER:2", "unique:nyelbor:1" ]
+    lore:
+      - "A céh kovácsainak munkája:"
+      - "a ló is katonának érzi magát benne."
+
+  kovacsullokeszlet:
+    profession: armorer
+    level: 21
+    learn: level
+    display-name: "Kovácsüllő"
+    category: "Eszköz"
+    result: { material: ANVIL }
+    ingredients: [ "IRON_BLOCK:3", "IRON_INGOT:4", "unique:edzoolaj:1" ]
+  koszoruko:
+    profession: armorer
+    level: 23
+    learn: level
+    display-name: "Köszörűkő"
+    category: "Eszköz"
+    result: { material: GRINDSTONE }
+    ingredients: [ "STONE_SLAB:1", "STICK:2", "OAK_PLANKS:2", "unique:polirpaszta:1" ]
+  arany_lopancel:
+    profession: armorer
+    level: 27
+    learn: level
+    display-name: "Arany Lópáncél"
+    category: "Páncél"
+    result: { material: GOLDEN_HORSE_ARMOR, item-model: "icesmp:arany_lopancel" }
+    ingredients: [ "GOLD_INGOT:7", "LEATHER:2", "unique:aranyfust_lemez:1" ]
+    lore:
+      - "Aranyfüst-lemezzel futtatva —"
+      - "a parádék dísze."
+
+  pajzsdudor:
+    profession: armorer
+    level: 31
+    learn: level
+    display-name: "Dudoros Hadipajzs"
+    category: "Eszköz"
+    result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:pajzsdudor" }
+    ingredients: [ "IRON_INGOT:3", "OAK_PLANKS:4", "unique:edzoolaj:1" ]
+  gyemant_lopancel:
+    profession: armorer
+    level: 37
+    learn: level
+    display-name: "Gyémánt Lópáncél"
+    category: "Páncél"
+    result: { material: DIAMOND_HORSE_ARMOR, item-model: "icesmp:gyemant_lopancel" }
+    ingredients: [ "DIAMOND:7", "LEATHER:2", "unique:polirpaszta:1" ]
+    lore:
+      - "Ritkább, mint a jó lovas."
+      - "A céh büszkén veri rá a pecsétjét."
+
+  pancelozott_sisakrostely:
+    profession: armorer
+    level: 43
+    learn: level
+    display-name: "Rostélyos Csatasisak"
+    category: "Páncél"
+    result: { material: DIAMOND_HELMET, affix-tier: crafted, item-model: "icesmp:pancelozott_sisakrostely" }
+    ingredients: [ "DIAMOND:5", "CHAIN:2", "unique:edzoolaj:1", "unique:nyelbor:1" ]
+  kovacsmesteri_sablon:
+    profession: armorer
+    level: 47
+    learn: level
+    display-name: "Kovácsmesteri Sablon-másolat"
+    category: "Ritkaság"
+    result: { material: NETHERITE_UPGRADE_SMITHING_TEMPLATE }
+    ingredients: [ "NETHERITE_UPGRADE_SMITHING_TEMPLATE:1", "DIAMOND:5", "NETHERRACK:1", "unique:aranyfust_lemez:1" ]
+  cehmester_ulloje:
+    profession: armorer
+    level: 50
+    learn: level
+    display-name: "A Céhmester Üllője"
+    category: "Ritkaság"
+    result: { material: ANVIL, item-model: "icesmp:cehmester_ulloje" }
+    ingredients: [ "IRON_BLOCK:4", "unique:elso_csend_szilankja:1", "unique:edzoolaj:2", "unique:folyositoszer:1" ]
+    lore:
+      - "Ezen az üllőn nem görbül el semmi."
+      - "A kovácscéhek büszkesége."
+
+  # --- alchemist (szintlétra) ---
+  uvegfuvas:
+    profession: alchemist
+    level: 1
+    learn: level
+    display-name: "Fúvott Üvegpalack"
+    category: "Főzet-alap"
+    result: { material: GLASS_BOTTLE, amount: 6 }
+    ingredients: [ "GLASS:6" ]
+  cukorparlat:
+    profession: alchemist
+    level: 2
+    learn: level
+    display-name: "Cukorpárlat"
+    category: "Főzet-alap"
+    result: { material: SUGAR, amount: 6 }
+    ingredients: [ "SUGAR_CANE:4" ]
+  lazurpor:
+    profession: alchemist
+    level: 3
+    learn: level
+    display-name: "Őrölt Lazúr"
+    category: "Alapanyag"
+    result: { material: LAPIS_LAZULI, amount: 6 }
+    ingredients: [ "LAPIS_LAZULI:4", "unique:katalizator_so:1" ]
+  vorospor_tisztitas:
+    profession: alchemist
+    level: 4
+    learn: level
+    display-name: "Tisztított Vöröspor"
+    category: "Alapanyag"
+    result: { material: REDSTONE, amount: 8 }
+    ingredients: [ "REDSTONE:6", "unique:szuropapir:1" ]
+  ragacs_labdacs:
+    profession: alchemist
+    level: 6
+    learn: level
+    display-name: "Ragacslabdacs"
+    category: "Alapanyag"
+    result: { material: SLIME_BALL, amount: 4 }
+    ingredients: [ "SLIME_BALL:2", "SUGAR:2" ]
+  izzokopor:
+    profession: alchemist
+    level: 8
+    learn: level
+    display-name: "Izzókő-por"
+    category: "Főzet-alap"
+    result: { material: GLOWSTONE_DUST, amount: 6 }
+    ingredients: [ "GLOWSTONE_DUST:4", "unique:katalizator_so:1" ]
+  lorepor:
+    profession: alchemist
+    level: 10
+    learn: level
+    display-name: "Lőpor-keverék"
+    category: "Alapanyag"
+    result: { material: GUNPOWDER, amount: 6 }
+    ingredients: [ "GUNPOWDER:4", "CHARCOAL:2", "unique:szuropapir:1" ]
+  savfozet:
+    profession: alchemist
+    level: 12
+    learn: level
+    display-name: "Ecetsav-főzet"
+    category: "Főzet-alap"
+    result: { material: FERMENTED_SPIDER_EYE, amount: 2 }
+    ingredients: [ "SPIDER_EYE:2", "SUGAR:2", "unique:ecet_eszencia:1" ]
+  desztillacio:
+    profession: alchemist
+    level: 14
+    learn: level
+    display-name: "Desztillált Elixír-alap"
+    category: "Főzet-alap"
+    result: { material: GLASS_BOTTLE, amount: 12 }
+    ingredients: [ "GLASS:8", "unique:desztillalt_esoviz:2" ]
+  lang_por:
+    profession: alchemist
+    level: 16
+    learn: level
+    display-name: "Lángpor"
+    category: "Főzet-alap"
+    result: { material: BLAZE_POWDER, amount: 4 }
+    ingredients: [ "BLAZE_ROD:1", "unique:katalizator_so:1" ]
+  magmakrem_fozes:
+    profession: alchemist
+    level: 18
+    learn: level
+    display-name: "Magmakrém-főzés"
+    category: "Főzet-alap"
+    result: { material: MAGMA_CREAM, amount: 4 }
+    ingredients: [ "SLIME_BALL:4", "BLAZE_POWDER:2" ]
+  olom_zaras:
+    profession: alchemist
+    level: 20
+    learn: level
+    display-name: "Ólomzáras Fiola"
+    category: "Főzet-alap"
+    result: { material: GLASS_BOTTLE, amount: 8 }
+    ingredients: [ "GLASS:8", "unique:olomdugo:2" ]
+  tapasztalat_szurlet:
+    profession: alchemist
+    level: 22
+    learn: level
+    display-name: "Tapasztalat-szűrlet"
+    category: "Ritkaság"
+    result: { material: EXPERIENCE_BOTTLE, amount: 2 }
+    ingredients: [ "GLASS_BOTTLE:2", "LAPIS_LAZULI:4", "unique:szuropapir:1" ]
+  villamlo_szilank:
+    profession: alchemist
+    level: 24
+    learn: level
+    display-name: "Villámló Szilánk"
+    category: "Főzet-alap"
+    result: { material: PRISMARINE_CRYSTALS, amount: 4 }
+    ingredients: [ "PRISMARINE_SHARD:4", "unique:viharkvarc:1" ]
+  vegtelen_lombik:
+    profession: alchemist
+    level: 26
+    learn: level
+    display-name: "Szenes Lombik"
+    category: "Főzet-alap"
+    result: { material: GLASS_BOTTLE, amount: 16 }
+    ingredients: [ "GLASS:12", "unique:lombik_szen:1" ]
+  fantomhartya_tartositas:
+    profession: alchemist
+    level: 28
+    learn: level
+    display-name: "Tartósított Fantomhártya"
+    category: "Főzet-alap"
+    result: { material: PHANTOM_MEMBRANE, amount: 3 }
+    ingredients: [ "PHANTOM_MEMBRANE:2", "unique:ecet_eszencia:1" ]
+  endergyongy_stabilizalas:
+    profession: alchemist
+    level: 30
+    learn: level
+    display-name: "Stabilizált Endergyöngy"
+    category: "Ritkaság"
+    result: { material: ENDER_PEARL, amount: 3 }
+    ingredients: [ "ENDER_PEARL:2", "unique:katalizator_so:2" ]
+  arnyeksurites:
+    profession: alchemist
+    level: 32
+    learn: level
+    display-name: "Árnyéksűrítmény"
+    category: "Főzet-alap"
+    result: { material: BLACK_DYE, amount: 12 }
+    ingredients: [ "INK_SAC:6", "unique:arnyekpor:1" ]
+  ender_szem:
+    profession: alchemist
+    level: 34
+    learn: level
+    display-name: "Végzet Szeme"
+    category: "Ritkaság"
+    result: { material: ENDER_EYE, amount: 2 }
+    ingredients: [ "ENDER_PEARL:2", "BLAZE_POWDER:2", "unique:lombik_szen:1" ]
+  konnycsepp_parlat:
+    profession: alchemist
+    level: 36
+    learn: level
+    display-name: "Ghast-könny Párlat"
+    category: "Főzet-alap"
+    result: { material: GHAST_TEAR, amount: 2 }
+    ingredients: [ "GHAST_TEAR:1", "unique:desztillalt_esoviz:1", "unique:dermedt_konnycsepp:1" ]
+  nagy_tapasztalat_ampulla:
+    profession: alchemist
+    level: 38
+    learn: level
+    display-name: "Nagy Tapasztalat-ampulla"
+    category: "Ritkaság"
+    result: { material: EXPERIENCE_BOTTLE, amount: 6 }
+    ingredients: [ "GLASS_BOTTLE:6", "LAPIS_BLOCK:1", "unique:runapor:1" ]
+  robbano_ampulla:
+    profession: alchemist
+    level: 40
+    learn: level
+    display-name: "Robbanó Ampulla"
+    category: "Eszköz"
+    result: { material: FIRE_CHARGE, amount: 6 }
+    ingredients: [ "BLAZE_POWDER:3", "GUNPOWDER:3", "unique:olomdugo:1" ]
+  lelekhamu_oldat:
+    profession: alchemist
+    level: 41
+    learn: level
+    display-name: "Lélekhamu-oldat"
+    category: "Főzet-alap"
+    result: { material: SOUL_SAND, amount: 8 }
+    ingredients: [ "SAND:8", "unique:lelekhamu:1" ]
+  holdezust_kolloid:
+    profession: alchemist
+    level: 42
+    learn: level
+    display-name: "Holdezüst-kolloid"
+    category: "Ritkaság"
+    result: { material: GLOWSTONE_DUST, amount: 12 }
+    ingredients: [ "GLOWSTONE_DUST:8", "unique:holdezust_huzal:1" ]
+  sarkanylehelet_leparlas:
+    profession: alchemist
+    level: 44
+    learn: level
+    display-name: "Lepárolt Sárkánylehelet"
+    category: "Ritkaság"
+    result: { material: DRAGON_BREATH, amount: 2 }
+    ingredients: [ "DRAGON_BREATH:1", "GLASS_BOTTLE:2", "unique:olomdugo:1" ]
+  elet_esszencia:
+    profession: alchemist
+    level: 45
+    learn: level
+    display-name: "Élet-esszencia"
+    category: "Ritkaság"
+    result: { material: GHAST_TEAR, amount: 3 }
+    ingredients: [ "GHAST_TEAR:2", "unique:gyogy_kivonat:1", "unique:desztillalt_esoviz:1" ]
+  vihar_palack:
+    profession: alchemist
+    level: 46
+    learn: level
+    display-name: "Palackozott Vihar"
+    category: "Ritkaság"
+    result: { material: WIND_CHARGE, amount: 6, item-model: "icesmp:vihar_palack" }
+    ingredients: [ "WIND_CHARGE:3", "unique:viharkvarc:1", "unique:olomdugo:1" ]
+    lore:
+      - "Egy marék szél, üvegbe zárva."
+      - "Óvatosan a dugóval!"
+  fonix_fozet_alap:
+    profession: alchemist
+    level: 47
+    learn: level
+    display-name: "Főnix-esszencia"
+    category: "Ritkaság"
+    result: { material: BLAZE_POWDER, amount: 8 }
+    ingredients: [ "BLAZE_POWDER:4", "unique:fonixpihe:1" ]
+  totem_ujraelesztes:
+    profession: alchemist
+    level: 48
+    learn: level
+    display-name: "Újraélesztett Totem"
+    category: "Ritkaság"
+    result: { material: TOTEM_OF_UNDYING, item-model: "icesmp:totem_ujraelesztes" }
+    ingredients: [ "GOLD_BLOCK:2", "EMERALD:4", "GHAST_TEAR:2", "unique:lelekhamu:2" ]
+    lore:
+      - "Lélekhamuval újratöltve."
+      - "Egyszer még visszaránt a peremről."
+
+  kristaly_katalizator:
+    profession: alchemist
+    level: 49
+    learn: level
+    display-name: "Kristály-katalizátor"
+    category: "Ritkaság"
+    result: { material: END_CRYSTAL, item-model: "icesmp:kristaly_katalizator" }
+    ingredients: [ "GLASS:7", "ENDER_EYE:1", "GHAST_TEAR:1", "unique:nema_kristaly:1" ]
+    lore:
+      - "Néma kristály szívvel ver —"
+      - "ne nézz bele túl sokáig."
+
+  bolcsek_kove:
+    profession: alchemist
+    level: 50
+    learn: level
+    display-name: "A Bölcsek Köve"
+    category: "Ritkaság"
+    result: { material: EXPERIENCE_BOTTLE, amount: 16, item-model: "icesmp:bolcsek_kove" }
+    ingredients: [ "LAPIS_BLOCK:2", "GOLD_BLOCK:1", "unique:elso_csend_szilankja:1", "unique:katalizator_so:2" ]
+    lore:
+      - "Nem arannyá változtat — bölccsé."
+      - "Az alkimista-céh végső titka."
+
+  # --- enchanter (szintlétra) ---
+  papirmerites:
+    profession: enchanter
+    level: 1
+    learn: level
+    display-name: "Merített Papír"
+    category: "Alapanyag"
+    result: { material: PAPER, amount: 6 }
+    ingredients: [ "SUGAR_CANE:4" ]
+  tintakeszites:
+    profession: enchanter
+    level: 2
+    learn: level
+    display-name: "Kevert Írótinta"
+    category: "Alapanyag"
+    result: { material: INK_SAC, amount: 4 }
+    ingredients: [ "INK_SAC:2", "unique:irnok_tinta:1" ]
+  konyvkotes:
+    profession: enchanter
+    level: 3
+    learn: level
+    display-name: "Kötött Kódex"
+    category: "Alapanyag"
+    result: { material: BOOK, amount: 4 }
+    ingredients: [ "PAPER:9", "LEATHER:2" ]
+  gyertyaontes:
+    profession: enchanter
+    level: 5
+    learn: level
+    display-name: "Öntött Gyertyasor"
+    category: "Eszköz"
+    result: { material: CANDLE, amount: 6 }
+    ingredients: [ "STRING:3", "HONEYCOMB:3", "unique:viaszgyertya:1" ]
+  lazurcsiszolas:
+    profession: enchanter
+    level: 7
+    learn: level
+    display-name: "Csiszolt Lazúrkő"
+    category: "Alapanyag"
+    result: { material: LAPIS_LAZULI, amount: 8 }
+    ingredients: [ "LAPIS_LAZULI:6", "unique:runakreta:1" ]
+  vilagito_tinta:
+    profession: enchanter
+    level: 9
+    learn: level
+    display-name: "Világító Tinta"
+    category: "Alapanyag"
+    result: { material: GLOW_INK_SAC, amount: 4 }
+    ingredients: [ "INK_SAC:4", "GLOWSTONE_DUST:2" ]
+  konyvespolc_sor:
+    profession: enchanter
+    level: 11
+    learn: level
+    display-name: "Könyvespolc-sor"
+    category: "Építkezés"
+    result: { material: BOOKSHELF, amount: 4 }
+    ingredients: [ "BOOK:12", "OAK_PLANKS:24" ]
+  nevtabla_irnokolas:
+    profession: enchanter
+    level: 13
+    learn: level
+    display-name: "Írnokolt Névtábla"
+    category: "Ritkaság"
+    result: { material: NAME_TAG }
+    ingredients: [ "PAPER:2", "STRING:1", "unique:ezust_toll:1" ]
+  pulpitus:
+    profession: enchanter
+    level: 15
+    learn: level
+    display-name: "Felolvasó-pulpitus"
+    category: "Eszköz"
+    result: { material: LECTERN }
+    ingredients: [ "BOOKSHELF:1", "OAK_SLAB:4", "unique:pergamen_simito:1" ]
+  runavesetek:
+    profession: enchanter
+    level: 17
+    learn: level
+    display-name: "Rúnavésett Kőlap"
+    category: "Alapanyag"
+    result: { material: CHISELED_STONE_BRICKS, amount: 8 }
+    ingredients: [ "STONE_BRICKS:8", "unique:runakreta:1" ]
+  vegrod:
+    profession: enchanter
+    level: 19
+    learn: level
+    display-name: "Vég-rúd"
+    category: "Eszköz"
+    result: { material: END_ROD, amount: 4 }
+    ingredients: [ "BLAZE_ROD:2", "POPPED_CHORUS_FRUIT:2" ]
+  tapasztalat_kotes:
+    profession: enchanter
+    level: 21
+    learn: level
+    display-name: "Kötött Tapasztalat"
+    category: "Ritkaság"
+    result: { material: EXPERIENCE_BOTTLE, amount: 3 }
+    ingredients: [ "GLASS_BOTTLE:3", "LAPIS_LAZULI:6", "unique:irnok_tinta:1" ]
+  fenylo_keret:
+    profession: enchanter
+    level: 23
+    learn: level
+    display-name: "Fénylő Képkeret"
+    category: "Eszköz"
+    result: { material: GLOW_ITEM_FRAME, amount: 4 }
+    ingredients: [ "ITEM_FRAME:4", "GLOW_INK_SAC:4" ]
+  runapor_finomitas:
+    profession: enchanter
+    level: 26
+    learn: level
+    display-name: "Rúnapor-finomítás"
+    category: "Alapanyag"
+    result: { material: GLOWSTONE_DUST, amount: 8 }
+    ingredients: [ "AMETHYST_SHARD:2", "unique:runapor:1" ]
+  csendulo_harang:
+    profession: enchanter
+    level: 27
+    learn: level
+    display-name: "Csendülő Harang"
+    category: "Ritkaság"
+    result: { material: BELL, item-model: "icesmp:csendulo_harang" }
+    ingredients: [ "GOLD_INGOT:4", "OAK_PLANKS:4", "unique:nema_kristaly:1" ]
+    lore:
+      - "Hangja messzire száll a fagyban."
+      - "A Suttogók megállnak, ha megkondul."
+  iranytu_delejezes:
+    profession: enchanter
+    level: 29
+    learn: level
+    display-name: "Delejezett Iránytű"
+    category: "Eszköz"
+    result: { material: COMPASS, amount: 2 }
+    ingredients: [ "IRON_INGOT:8", "REDSTONE:2", "unique:holdezust_huzal:1" ]
+  magnesko:
+    profession: enchanter
+    level: 31
+    learn: level
+    display-name: "Mágneskő-talapzat"
+    category: "Eszköz"
+    result: { material: LODESTONE }
+    ingredients: [ "CHISELED_STONE_BRICKS:8", "NETHERITE_SCRAP:1", "unique:runakreta:2" ]
+  amuletthuzal:
+    profession: enchanter
+    level: 33
+    learn: level
+    display-name: "Amulett-huzalozás"
+    category: "Alapanyag"
+    result: { material: GOLD_NUGGET, amount: 18 }
+    ingredients: [ "GOLD_INGOT:2", "unique:holdezust_huzal:1" ]
+  visszhangtabla:
+    profession: enchanter
+    level: 35
+    learn: level
+    display-name: "Visszhang-tábla"
+    category: "Ritkaság"
+    result: { material: ECHO_SHARD, amount: 2 }
+    ingredients: [ "AMETHYST_SHARD:4", "SCULK:4", "unique:pergamen_simito:1" ]
+  emlekek_konyve:
+    profession: enchanter
+    level: 37
+    learn: level
+    display-name: "Emlékek Könyve"
+    category: "Ritkaság"
+    result: { material: WRITTEN_BOOK, item-model: "icesmp:emlekek_konyve" }
+    ingredients: [ "BOOK:1", "unique:emlekszilank:1", "unique:ezust_toll:1" ]
+    lore:
+      - "Üres lapjain néha idegen sorok"
+      - "jelennek meg — más korokból."
+  felepules_iranytuje:
+    profession: enchanter
+    level: 39
+    learn: level
+    display-name: "Felépülés Iránytűje"
+    category: "Ritkaság"
+    result: { material: RECOVERY_COMPASS, item-model: "icesmp:felepules_iranytuje" }
+    ingredients: [ "COMPASS:1", "ECHO_SHARD:6", "unique:emlekszilank:1" ]
+    lore:
+      - "Oda vezet vissza, ahol utoljára"
+      - "minden elveszett."
+
+  sotet_runak:
+    profession: enchanter
+    level: 41
+    learn: level
+    display-name: "Sötét Rúnasor"
+    category: "Alapanyag"
+    result: { material: OBSIDIAN, amount: 6 }
+    ingredients: [ "OBSIDIAN:4", "unique:arnyekpor:1", "unique:runakreta:1" ]
+  nagy_tapasztalat_kodex:
+    profession: enchanter
+    level: 43
+    learn: level
+    display-name: "Nagy Tapasztalat-kódex"
+    category: "Ritkaság"
+    result: { material: EXPERIENCE_BOTTLE, amount: 8 }
+    ingredients: [ "GLASS_BOTTLE:8", "LAPIS_BLOCK:2", "unique:runapor:2" ]
+  csillagfeny_lampas:
+    profession: enchanter
+    level: 45
+    learn: level
+    display-name: "Csillagfény-lámpás"
+    category: "Ritkaság"
+    result: { material: END_ROD, amount: 8 }
+    ingredients: [ "END_ROD:4", "unique:sarkfeny_cseppko:1" ]
+  osi_pecset:
+    profession: enchanter
+    level: 47
+    learn: level
+    display-name: "Ősi Pecsét"
+    category: "Ritkaság"
+    result: { material: ECHO_SHARD, amount: 4 }
+    ingredients: [ "ECHO_SHARD:2", "unique:osi_ereklyeszilank:1", "unique:viaszpecset:1" ]
+  vegtelen_kodex:
+    profession: enchanter
+    level: 50
+    learn: level
+    display-name: "A Végtelen Kódex"
+    category: "Ritkaság"
+    result: { material: WRITTEN_BOOK, item-model: "icesmp:vegtelen_kodex" }
+    ingredients: [ "BOOK:3", "unique:elso_csend_szilankja:1", "unique:irnok_tinta:2", "unique:ezust_toll:1" ]
+    lore:
+      - "Minden lapja egy-egy elfeledett név."
+      - "A bűvölőcéhek legféltettebb kincse."
+
+  # --- fisherman (szintlétra) ---
+  fereg_gyujtes:
+    profession: fisherman
+    level: 1
+    learn: level
+    display-name: "Csali-gyűjtés"
+    category: "Alapanyag"
+    result: { material: STRING, amount: 4 }
+    ingredients: [ "SHORT_GRASS:4", "DIRT:2" ]
+  kezdo_horgaszbot:
+    profession: fisherman
+    level: 2
+    learn: level
+    display-name: "Kezdő Horgászbot"
+    category: "Eszköz"
+    result: { material: FISHING_ROD }
+    ingredients: [ "STICK:3", "STRING:2" ]
+  halaszhalo_fonas:
+    profession: fisherman
+    level: 3
+    learn: level
+    display-name: "Fonott Halászháló"
+    category: "Alapanyag"
+    result: { material: COBWEB, amount: 2 }
+    ingredients: [ "STRING:8", "unique:halofonal:1" ]
+  szaritott_hinar:
+    profession: fisherman
+    level: 4
+    learn: level
+    display-name: "Szárított Hínár"
+    category: "Alapanyag"
+    result: { material: DRIED_KELP, amount: 12 }
+    ingredients: [ "KELP:12" ]
+  hinartomb:
+    profession: fisherman
+    level: 6
+    learn: level
+    display-name: "Hínárbála"
+    category: "Alapanyag"
+    result: { material: DRIED_KELP_BLOCK, amount: 3 }
+    ingredients: [ "DRIED_KELP:27" ]
+  uszokeszlet:
+    profession: fisherman
+    level: 8
+    learn: level
+    display-name: "Úszókészlet"
+    category: "Eszköz"
+    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:uszokeszlet" }
+    ingredients: [ "STICK:3", "STRING:2", "unique:parafa_uszo:1" ]
+  polip_tinta:
+    profession: fisherman
+    level: 10
+    learn: level
+    display-name: "Fejtett Tintazsák"
+    category: "Alapanyag"
+    result: { material: INK_SAC, amount: 6 }
+    ingredients: [ "INK_SAC:4", "unique:sozott_csali:1" ]
+  porackoteg:
+    profession: fisherman
+    level: 12
+    learn: level
+    display-name: "Póráz-köteg"
+    category: "Eszköz"
+    result: { material: LEAD, amount: 4 }
+    ingredients: [ "STRING:8", "SLIME_BALL:1", "unique:halofonal:1" ]
+  prizmarin_valogatas:
+    profession: fisherman
+    level: 14
+    learn: level
+    display-name: "Válogatott Prizmarin"
+    category: "Alapanyag"
+    result: { material: PRISMARINE_SHARD, amount: 6 }
+    ingredients: [ "PRISMARINE_SHARD:4", "unique:horogkeszlet:1" ]
+  vizallo_csizma:
+    profession: fisherman
+    level: 16
+    learn: level
+    display-name: "Halászcsizma"
+    category: "Páncél"
+    result: { material: LEATHER_BOOTS, affix-tier: crafted, item-model: "icesmp:vizallo_csizma" }
+    ingredients: [ "LEATHER:4", "unique:csalizsir:1" ]
+  melyvizi_horog:
+    profession: fisherman
+    level: 18
+    learn: level
+    display-name: "Mélyvízi Horogsor"
+    category: "Eszköz"
+    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:melyvizi_horog" }
+    ingredients: [ "STICK:3", "STRING:3", "IRON_NUGGET:4", "unique:horogkeszlet:1" ]
+  tekno_pancel_apolas:
+    profession: fisherman
+    level: 20
+    learn: level
+    display-name: "Ápolt Teknőspáncél"
+    category: "Alapanyag"
+    result: { material: TURTLE_SCUTE, amount: 3 }
+    ingredients: [ "TURTLE_SCUTE:2", "unique:csalizsir:1" ]
+  prizmarin_kristaly:
+    profession: fisherman
+    level: 22
+    learn: level
+    display-name: "Prizmarin-kristály"
+    category: "Alapanyag"
+    result: { material: PRISMARINE_CRYSTALS, amount: 4 }
+    ingredients: [ "PRISMARINE_SHARD:6", "unique:gyongyhaz_pikkely:1" ]
+  tengeri_lampas:
+    profession: fisherman
+    level: 24
+    learn: level
+    display-name: "Tengeri Lámpás"
+    category: "Építkezés"
+    result: { material: SEA_LANTERN, amount: 2 }
+    ingredients: [ "PRISMARINE_SHARD:8", "PRISMARINE_CRYSTALS:5" ]
+  sozott_fogas:
+    profession: fisherman
+    level: 26
+    learn: level
+    display-name: "Sózott Fogás"
+    category: "Alapanyag"
+    result: { material: COD, amount: 8 }
+    ingredients: [ "COD:6", "unique:koso:1", "unique:sozott_csali:1" ]
+  nautilus_fenyezes:
+    profession: fisherman
+    level: 28
+    learn: level
+    display-name: "Fényezett Nautilus"
+    category: "Ritkaság"
+    result: { material: NAUTILUS_SHELL }
+    ingredients: [ "PRISMARINE_SHARD:12", "unique:gyongyhaz_pikkely:1" ]
+  teknos_sisak:
+    profession: fisherman
+    level: 30
+    learn: level
+    display-name: "Teknőspáncél-sisak"
+    category: "Páncél"
+    result: { material: TURTLE_HELMET, affix-tier: crafted, item-model: "icesmp:teknos_sisak" }
+    ingredients: [ "TURTLE_SCUTE:5", "unique:halofonal:1" ]
+  viharjelzo_boja:
+    profession: fisherman
+    level: 32
+    learn: level
+    display-name: "Viharjelző Bója"
+    category: "Eszköz"
+    result: { material: LANTERN, amount: 2, item-model: "icesmp:viharjelzo_boja" }
+    ingredients: [ "IRON_NUGGET:8", "TORCH:2", "unique:parafa_uszo:2" ]
+    lore:
+      - "A kikötők őrszeme: ha pislog,"
+      - "vihar közeleg a Bokic felől."
+  szivacstelep:
+    profession: fisherman
+    level: 34
+    learn: level
+    display-name: "Szivacstelep"
+    category: "Ritkaság"
+    result: { material: SPONGE, amount: 2 }
+    ingredients: [ "WET_SPONGE:1", "unique:aszalohalo:1" ]
+  gyongyhalasz_keszlet:
+    profession: fisherman
+    level: 36
+    learn: level
+    display-name: "Gyöngyhalász-készlet"
+    category: "Ritkaság"
+    result: { material: NAUTILUS_SHELL, amount: 2 }
+    ingredients: [ "PRISMARINE_CRYSTALS:6", "unique:gyongyhaz_pikkely:2" ]
+  jeghorgasz_leke:
+    profession: fisherman
+    level: 38
+    learn: level
+    display-name: "Jéghorgász-lék Készlet"
+    category: "Eszköz"
+    result: { material: ICE, amount: 8 }
+    ingredients: [ "ICE:4", "unique:jegviragpor:1" ]
+  mestermuves_bot:
+    profession: fisherman
+    level: 40
+    learn: level
+    display-name: "Mesterhorgász Botja"
+    category: "Eszköz"
+    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:mestermuves_bot" }
+    ingredients: [ "STICK:3", "STRING:3", "unique:horogkeszlet:2", "unique:parafa_uszo:1", "unique:csalizsir:1" ]
+    lore:
+      - "Azt beszélik, ez a bot már akkor"
+      - "ránt, mielőtt a hal harapna."
+  delfinbarat_uszony:
+    profession: fisherman
+    level: 42
+    learn: level
+    display-name: "Delfinbarát Uszony"
+    category: "Ritkaság"
+    result: { material: PRISMARINE_CRYSTALS, amount: 8 }
+    ingredients: [ "PRISMARINE_CRYSTALS:4", "unique:gyongyhaz_pikkely:1", "unique:csalizsir:1" ]
+  tenger_szive_foglalat:
+    profession: fisherman
+    level: 44
+    learn: level
+    display-name: "Tenger Szíve-foglalat"
+    category: "Ritkaság"
+    result: { material: HEART_OF_THE_SEA }
+    ingredients: [ "NAUTILUS_SHELL:4", "PRISMARINE_CRYSTALS:8", "unique:gyongyhaz_pikkely:2", "unique:dermedt_konnycsepp:1" ]
+  vezetokurt:
+    profession: fisherman
+    level: 46
+    learn: level
+    display-name: "Mélység Vezérkürtje"
+    category: "Ritkaság"
+    result: { material: CONDUIT, item-model: "icesmp:vezetokurt" }
+    ingredients: [ "HEART_OF_THE_SEA:1", "NAUTILUS_SHELL:8" ]
+    lore:
+      - "A mélység válaszol, ha megszólal."
+      - "A halászcéhek őrzik a titkát."
+
+  koral_kertesz:
+    profession: fisherman
+    level: 47
+    learn: level
+    display-name: "Korallkertész-készlet"
+    category: "Ritkaság"
+    result: { material: FIRE_CORAL, amount: 6 }
+    ingredients: [ "FIRE_CORAL_FAN:3", "BONE_MEAL:6", "unique:permetezo_kanna:1" ]
+  oceanjaro_terkep:
+    profession: fisherman
+    level: 48
+    learn: level
+    display-name: "Óceánjáró Térképe"
+    category: "Ritkaság"
+    result: { material: MAP, item-model: "icesmp:oceanjaro_terkep" }
+    ingredients: [ "PAPER:8", "COMPASS:1", "unique:melysegi_iranytu:1" ]
+    lore:
+      - "Olyan zátonyokat is jelöl, amiket"
+      - "még senki sem látott — még."
+  bokic_aldasa:
+    profession: fisherman
+    level: 50
+    learn: level
+    display-name: "A Bokic Áldása"
+    category: "Ritkaság"
+    result: { material: TRIDENT, affix-tier: crafted, item-model: "icesmp:bokic_aldasa" }
+    ingredients: [ "PRISMARINE_SHARD:16", "DIAMOND:4", "unique:elso_csend_szilankja:1", "unique:gyongyhaz_pikkely:3" ]
+    lore:
+      - "A folyó egyszer mindent visszaad."
+      - "A halászcéhek legendás szigonya."
+
+  # --- cook (szintlétra) ---
+  friss_cipok:
+    profession: cook
+    level: 1
+    learn: level
+    display-name: "Friss Cipók"
+    category: "Étel"
+    result: { material: BREAD, amount: 4 }
+    ingredients: [ "WHEAT:6" ]
+  sult_krumpli_adag:
+    profession: cook
+    level: 2
+    learn: level
+    display-name: "Sült Krumpli-adag"
+    category: "Étel"
+    result: { material: BAKED_POTATO, amount: 6 }
+    ingredients: [ "POTATO:6", "COAL:1" ]
+  keksz_tepsi:
+    profession: cook
+    level: 3
+    learn: level
+    display-name: "Kekszes Tepsi"
+    category: "Étel"
+    result: { material: COOKIE, amount: 16 }
+    ingredients: [ "WHEAT:4", "COCOA_BEANS:2", "unique:sutopergamen:1" ]
+  gombaleves_bogracs:
+    profession: cook
+    level: 5
+    learn: level
+    display-name: "Bográcsos Gombaleves"
+    category: "Étel"
+    result: { material: MUSHROOM_STEW, amount: 3 }
+    ingredients: [ "BOWL:3", "RED_MUSHROOM:3", "BROWN_MUSHROOM:3" ]
+  ceklaleves:
+    profession: cook
+    level: 7
+    learn: level
+    display-name: "Céklaleves"
+    category: "Étel"
+    result: { material: BEETROOT_SOUP, amount: 3 }
+    ingredients: [ "BOWL:3", "BEETROOT:12", "unique:koso:1" ]
+  fustolt_oldalas:
+    profession: cook
+    level: 9
+    learn: level
+    display-name: "Füstölt Oldalas"
+    category: "Étel"
+    result: { material: COOKED_PORKCHOP, amount: 6 }
+    ingredients: [ "PORKCHOP:6", "unique:fustoloforgacs:1" ]
+  vajas_sutemeny:
+    profession: cook
+    level: 11
+    learn: level
+    display-name: "Vajas Sütemény"
+    category: "Étel"
+    result: { material: PUMPKIN_PIE, amount: 4 }
+    ingredients: [ "PUMPKIN:2", "SUGAR:2", "EGG:2", "unique:vaj:1" ]
+  sult_hal_talca:
+    profession: cook
+    level: 13
+    learn: level
+    display-name: "Sült Hal-tálca"
+    category: "Étel"
+    result: { material: COOKED_COD, amount: 8 }
+    ingredients: [ "COD:8", "unique:koso:1" ]
+  mezes_sult_tok:
+    profession: cook
+    level: 15
+    learn: level
+    display-name: "Mézes Sült Tök"
+    category: "Étel"
+    result: { material: PUMPKIN_PIE, amount: 6 }
+    ingredients: [ "PUMPKIN:3", "HONEY_BOTTLE:1", "EGG:2", "unique:sutopergamen:1" ]
+  vandor_lepenye:
+    profession: cook
+    level: 22
+    learn: level
+    display-name: "Vándor Úti-lepénye"
+    category: "Étel"
+    result: { material: BREAD, amount: 10 }
+    ingredients: [ "WHEAT:12", "unique:vandorfuszer:1" ]
+  fuszeres_nyulragu:
+    profession: cook
+    level: 22
+    learn: level
+    display-name: "Fűszeres Nyúlragu"
+    category: "Étel"
+    result: { material: RABBIT_STEW, amount: 3 }
+    ingredients: [ "BOWL:3", "COOKED_RABBIT:3", "CARROT:3", "BAKED_POTATO:3", "unique:vandorfuszer:1" ]
+  unnepi_torta:
+    profession: cook
+    level: 21
+    learn: level
+    display-name: "Ünnepi Torta"
+    category: "Étel"
+    result: { material: CAKE, amount: 2 }
+    ingredients: [ "MILK_BUCKET:3", "SUGAR:4", "EGG:2", "WHEAT:6", "unique:vaj:1" ]
+  aranyrepa_konfit:
+    profession: cook
+    level: 23
+    learn: level
+    display-name: "Aranyrépa-konfit"
+    category: "Étel"
+    result: { material: GOLDEN_CARROT, amount: 6 }
+    ingredients: [ "CARROT:6", "GOLD_NUGGET:24", "unique:vaj:1" ]
+  pacolt_hering:
+    profession: cook
+    level: 25
+    learn: level
+    display-name: "Pácolt Hering"
+    category: "Étel"
+    result: { material: COOKED_SALMON, amount: 8 }
+    ingredients: [ "SALMON:8", "unique:ecet_eszencia:1", "unique:koso:1" ]
+  mezeskalacs_figurak:
+    profession: cook
+    level: 27
+    learn: level
+    display-name: "Mézeskalács-figurák"
+    category: "Étel"
+    result: { material: COOKIE, amount: 24 }
+    ingredients: [ "WHEAT:6", "HONEY_BOTTLE:2", "unique:sutopergamen:1" ]
+  erdei_lakoma_tal:
+    profession: cook
+    level: 29
+    learn: level
+    display-name: "Erdei Lakomatál"
+    category: "Étel"
+    result: { material: COOKED_CHICKEN, amount: 10 }
+    ingredients: [ "CHICKEN:10", "BROWN_MUSHROOM:4", "unique:fustoloforgacs:1" ]
+  sarkany_gyumolcstal:
+    profession: cook
+    level: 31
+    learn: level
+    display-name: "Kórusgyümölcs-tál"
+    category: "Étel"
+    result: { material: POPPED_CHORUS_FRUIT, amount: 8 }
+    ingredients: [ "CHORUS_FRUIT:8", "unique:vandorfuszer:1" ]
+  aranyalma_befott:
+    profession: cook
+    level: 35
+    learn: level
+    display-name: "Aranyalma-befőtt"
+    category: "Étel"
+    result: { material: GOLDEN_APPLE }
+    ingredients: [ "APPLE:4", "GOLD_INGOT:6", "unique:vaj:1" ]
+  tengeri_lakoma:
+    profession: cook
+    level: 37
+    learn: level
+    display-name: "Tengeri Lakoma"
+    category: "Étel"
+    result: { material: COOKED_SALMON, amount: 12 }
+    ingredients: [ "SALMON:8", "COD:8", "unique:koso:2", "unique:sozott_csali:1" ]
+  kiralyi_ostya:
+    profession: cook
+    level: 39
+    learn: level
+    display-name: "Királyi Ostyák"
+    category: "Étel"
+    result: { material: COOKIE, amount: 32 }
+    ingredients: [ "WHEAT:8", "SUGAR:6", "HONEY_BOTTLE:2", "unique:aranyfust_lemez:1" ]
+  fonix_fuszeres_szarny:
+    profession: cook
+    level: 41
+    learn: level
+    display-name: "Főnixfűszeres Szárny"
+    category: "Étel"
+    result: { material: COOKED_CHICKEN, amount: 12, item-model: "icesmp:fonix_fuszeres_szarny" }
+    ingredients: [ "CHICKEN:12", "BLAZE_POWDER:1", "unique:vandorfuszer:2" ]
+    lore:
+      - "Csípős! A Perinfernicitas konyhájának"
+      - "kedvence — óvatosan vele."
+  teli_eltevo:
+    profession: cook
+    level: 43
+    learn: level
+    display-name: "Téli Eltevő-készlet"
+    category: "Étel"
+    result: { material: SWEET_BERRIES, amount: 24 }
+    ingredients: [ "SWEET_BERRIES:12", "SUGAR:4", "unique:ecet_eszencia:2" ]
+  lakodalmas_torta:
+    profession: cook
+    level: 45
+    learn: level
+    display-name: "Lakodalmas Emeletes Torta"
+    category: "Étel"
+    result: { material: CAKE, amount: 3, item-model: "icesmp:lakodalmas_torta" }
+    ingredients: [ "MILK_BUCKET:6", "SUGAR:8", "EGG:4", "WHEAT:9", "unique:vaj:2", "unique:vandorfuszer:1" ]
+    lore:
+      - "Három emelet, három frakció békéje —"
+      - "legalább amíg a torta el nem fogy."
+  husvarazs_lakoma:
+    profession: cook
+    level: 47
+    learn: level
+    display-name: "Vadászmester Lakomája"
+    category: "Étel"
+    result: { material: COOKED_BEEF, amount: 16 }
+    ingredients: [ "BEEF:16", "unique:fustoloforgacs:2", "unique:koso:1" ]
+  kapu_lakomaja:
+    profession: cook
+    level: 50
+    learn: level
+    display-name: "A Kapu Lakomája"
+    category: "Étel"
+    result: { material: ENCHANTED_GOLDEN_APPLE, item-model: "icesmp:kapu_lakomaja" }
+    ingredients: [ "GOLDEN_APPLE:2", "GOLD_BLOCK:4", "unique:elso_csend_szilankja:1", "unique:vaj:2" ]
+    lore:
+      - "Egyetlen falat, és megérted, mit"
+      - "őrzött a Kapu túlsó oldala."
+
+  # --- kiegészítés: fisherman +7, alchemist +1 (50/50) ---
+  tavi_csali:
+    profession: fisherman
+    level: 5
+    learn: level
+    display-name: "Tavi Csalikeverék"
+    category: "Alapanyag"
+    result: { material: BONE_MEAL, amount: 6 }
+    ingredients: [ "BONE:2", "WHEAT_SEEDS:4" ]
+  vodor_keszlet:
+    profession: fisherman
+    level: 9
+    learn: level
+    display-name: "Halászvödör-pár"
+    category: "Eszköz"
+    result: { material: BUCKET, amount: 2 }
+    ingredients: [ "IRON_INGOT:6" ]
+  tutaj_keszlet:
+    profession: fisherman
+    level: 24
+    learn: level
+    display-name: "Tutajkészlet"
+    category: "Eszköz"
+    result: { material: BAMBOO_RAFT, amount: 2 }
+    ingredients: [ "BAMBOO:12", "unique:szavannafu_kotel:1" ]
+  halaszkalap:
+    profession: fisherman
+    level: 15
+    learn: level
+    display-name: "Halászkalap"
+    category: "Páncél"
+    result: { material: LEATHER_HELMET, affix-tier: crafted, item-model: "icesmp:halaszkalap" }
+    ingredients: [ "LEATHER:5", "unique:parafa_uszo:1" ]
+  vizinoveny_ultetes:
+    profession: fisherman
+    level: 19
+    learn: level
+    display-name: "Tündérrózsa-telepítés"
+    category: "Alapanyag"
+    result: { material: LILY_PAD, amount: 6 }
+    ingredients: [ "SEAGRASS:8", "BONE_MEAL:4" ]
+  ragyogo_tintazsak:
+    profession: fisherman
+    level: 21
+    learn: level
+    display-name: "Ragyogó Tintazsák"
+    category: "Alapanyag"
+    result: { material: GLOW_INK_SAC, amount: 6 }
+    ingredients: [ "INK_SAC:4", "GLOWSTONE_DUST:2", "unique:sozott_csali:1" ]
+  viharfonal:
+    profession: fisherman
+    level: 25
+    learn: level
+    display-name: "Viharfonal"
+    category: "Alapanyag"
+    result: { material: STRING, amount: 16 }
+    ingredients: [ "STRING:8", "unique:halofonal:1" ]
+  meregtelenito_szen:
+    profession: alchemist
+    level: 15
+    learn: level
+    display-name: "Méregtelenítő Szén"
+    category: "Főzet-alap"
+    result: { material: CHARCOAL, amount: 8 }
+    ingredients: [ "COAL:4", "unique:szuropapir:1" ]
+
+  # --- B26: rúna-kovácsolás (Kovács + Bűvölő magas szintű receptek) ---
+  runa_elek_kovacsolas:
+    profession: armorer
+    level: 26
+    learn: level
+    display-name: "Él Rúnája"
+    category: "Rúna"
+    result: { unique: runa_elek }
+    ingredients: [ "IRON_INGOT:4", "unique:runapor:1", "unique:obszidian_szilank:1", "unique:runakreta:1" ]
+  runa_zapor_irasa:
+    profession: enchanter
+    level: 28
+    learn: level
+    display-name: "Zápor Rúnája"
+    category: "Rúna"
+    result: { unique: runa_zapor }
+    ingredients: [ "FEATHER:8", "unique:runapor:1", "unique:viharkvarc:1", "unique:runakreta:1" ]
+  runa_bastya_kovacsolas:
+    profession: armorer
+    level: 32
+    learn: level
+    display-name: "Bástya Rúnája"
+    category: "Rúna"
+    result: { unique: runa_bastya }
+    ingredients: [ "IRON_BLOCK:1", "unique:runapor:1", "unique:tiszta_vasesszencia:1", "unique:runakreta:1" ]
+  runa_lang_irasa:
+    profession: enchanter
+    level: 34
+    learn: level
+    display-name: "Láng Rúnája"
+    category: "Rúna"
+    result: { unique: runa_lang }
+    ingredients: [ "BLAZE_POWDER:4", "unique:runapor:1", "unique:parazsmag:1", "unique:runakreta:1" ]
+  runa_fagy_irasa:
+    profession: enchanter
+    level: 38
+    learn: level
+    display-name: "Fagy Rúnája"
+    category: "Rúna"
+    result: { unique: runa_fagy }
+    ingredients: [ "PACKED_ICE:4", "unique:runapor:1", "unique:jegviragpor:1", "unique:runakreta:1" ]
+  runa_moho_kovacsolas:
+    profession: armorer
+    level: 42
+    learn: level
+    display-name: "Mohóság Rúnája"
+    category: "Rúna"
+    result: { unique: runa_moho }
+    ingredients: [ "GOLD_BLOCK:1", "unique:runapor:1", "unique:aranyfust_lemez:1", "unique:runakreta:1" ]
+
+  runa_visszhang_irasa:
+    profession: enchanter
+    level: 40
+    learn: level
+    job: wizard
+    display-name: "Visszhang Rúnája"
+    category: "Rúna"
+    result: { unique: runa_visszhang }
+    ingredients: [ "AMETHYST_SHARD:4", "unique:runapor:2", "unique:nema_kristaly:1", "unique:runakreta:1" ]
+
+  # ===== Kazamata-kulcsok (B3): belépő a DUNGEON zónákba =====
+  # A signature "dungeonkulcs_<zóna-id>" — a zónát az admin hozza létre:
+  # /territory create|circle dungeon <frakció> <zóna-id> ... A kulcs belépéskor ELFOGY.
+  melyseg_kulcsa:
+    profession: enchanter
+    level: 30
+    display-name: "A Mélység Kulcsa"
+    category: "Kazamata-kulcs"
+    lore:
+      - "A Vasművek elhagyott tárnáinak zárja"
+      - "erre a kulcsra vár. Belépéskor elfogy."
+    result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_melyseg, item-model: "icesmp:melyseg_kulcsa" }
+    ingredients: [ "ECHO_SHARD:2", "IRON_INGOT:8", "unique:runapor:2" ]
+  # ===== Sötét-mágiájú tárgy (a Suttogók anyagából): Az Éjszaka Pengéje =====
+  # Az árnyékpor fő forrása a kultista rítus-loot és a Suttogó-részesedés — a penge
+  # így a rejtett oldal gazdaságát erősíti (bárki megtanulhatja, de az anyag sötét út).
+  ejszaka_pengeje:
+    profession: enchanter
+    level: 35
+    display-name: "Az Éjszaka Pengéje"
+    lore:
+      - "&8A pengén árnyék fut végig, ha megvillan —"
+      - "&8mintha a fém emlékezne a suttogásra,"
+      - "&8amely megedzette."
+    category: "Sötét mágia"
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, signature: ejszaka_pengeje, item-model: "icesmp:ejszaka_pengeje" }
+    ingredients: [ "NETHERITE_SWORD:1", "unique:arnyekpor:4", "ECHO_SHARD:2", "OBSIDIAN:8" ]
+  csontkripta_kulcsa:
+    profession: enchanter
+    level: 40
+    display-name: "A Csontkripta Kulcsa"
+    category: "Kazamata-kulcs"
+    lore:
+      - "Thanaopolis kriptamélyének pecsétje —"
+      - "a holtak csak a kulcs hordozóját engedik le."
+    result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_csontkripta, item-model: "icesmp:csontkripta_kulcsa" }
+    ingredients: [ "ECHO_SHARD:3", "BONE_BLOCK:8", "unique:arnyekpor:2" ]
+
+  # ===== P7 — Szakács fogyaszthatók (data-component CONSUMABLE/FOOD, CMD 6500+) =====
+  # A result.consumable blokk vezérli a fogyasztást (kód nélkül): animation (eat|drink),
+  # seconds, nutrition, saturation, always-edible, effects ["TÍPUS:másodperc:szint"].
+  # Kocsma-italok (DRINK) + tájfogások — rövid, NEM harc-eldöntő buffok.
+  jeghegyi_sor:
+    profession: cook
+    level: 10
+    learn: level
+    display-name: "Jéghegyi Sör"
+    category: "Ital"
+    lore:
+      - "Cryghaliris kikötőinek jeges árpasöre —"
+      - "a Jégmezők népe erre esküszik hosszú éj után."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:jeghegyi_sor"
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects: [ "REGENERATION:20:0", "ABSORPTION:20:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:2", "SUGAR:1" ]
+  parazs_palinka:
+    profession: cook
+    level: 14
+    learn: level
+    display-name: "Parázs Pálinka"
+    category: "Ital"
+    lore:
+      - "Pyralingrad kohóiban érlelt tűzitalt —"
+      - "a torkod égeti, a bőröd viszont megvédi."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:parazs_palinka"
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects: [ "FIRE_RESISTANCE:45:0", "STRENGTH:30:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "BLAZE_POWDER:1", "NETHER_WART:1" ]
+  caldesterai_gyogytea:
+    profession: cook
+    level: 8
+    learn: level
+    display-name: "Caldesterai Gyógytea"
+    category: "Ital"
+    lore:
+      - "A Bokic-menti füvesasszonyok főzete —"
+      - "langyos korty, ami visszahozza az erőt."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:caldesterai_gyogytea"
+      consumable:
+        animation: drink
+        seconds: 1.4
+        effects: [ "REGENERATION:15:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "GLOW_BERRIES:2", "SUGAR:1" ]
+  mortengradi_keseru:
+    profession: cook
+    level: 12
+    learn: level
+    display-name: "Mortengrádi Keserű"
+    category: "Ital"
+    lore:
+      - "A Kitaszítottak keserű nedűje —"
+      - "az éjben lát, aki egyszer megissza."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:mortengradi_keseru"
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects: [ "NIGHT_VISION:90:0", "ABSORPTION:30:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:1", "CRIMSON_FUNGUS:1" ]
+  vandor_pogacsaja:
+    profession: cook
+    level: 6
+    learn: level
+    display-name: "Vándor Pogácsája"
+    category: "Étel"
+    lore:
+      - "Útra való sós pogácsa — a lába alá"
+      - "sietséget ad az éhes vándornak."
+    result:
+      material: BREAD
+      amount: 3
+      item-model: "icesmp:vandor_pogacsaja"
+      consumable:
+        animation: eat
+        seconds: 1.4
+        nutrition: 6
+        saturation: 7.2
+        effects: [ "SPEED:20:0" ]
+    ingredients: [ "WHEAT:3", "EGG:1", "SUGAR:1" ]
+  halasz_fogasa:
+    profession: cook
+    level: 10
+    learn: level
+    display-name: "Halász Fogása"
+    category: "Étel"
+    lore:
+      - "Frissen sült fogás hínár-körettel —"
+      - "a víz alatt is otthon érzed magad tőle."
+    result:
+      material: COOKED_SALMON
+      amount: 2
+      item-model: "icesmp:halasz_fogasa"
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 6
+        saturation: 6.0
+        effects: [ "WATER_BREATHING:45:0" ]
+    ingredients: [ "SALMON:2", "DRIED_KELP:2" ]
+
+  # --- P7 Szakács fogyaszthatók, 2. adag (italok + tájfogások) ---
+  hamvasztott_kave:
+    profession: cook
+    level: 8
+    learn: level
+    display-name: "Hamvasztott Kávé"
+    category: "Ital"
+    lore: [ "Feketére pörkölt babok forró főzete —", "elűzi az álmot a hosszú műszak előtt." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:hamvasztott_kave"
+      consumable: { animation: drink, seconds: 1.4, effects: [ "HASTE:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "COCOA_BEANS:2", "BLAZE_POWDER:1" ]
+  kofejto_sore:
+    profession: cook
+    level: 10
+    learn: level
+    display-name: "Kőfejtő Söre"
+    category: "Ital"
+    lore: [ "Sűrű, kenyérízű árpasör —", "a bányász háta ettől bírja a súlyt." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:kofejto_sore"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "RESISTANCE:20:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:3" ]
+  tengeresz_rum:
+    profession: cook
+    level: 12
+    learn: level
+    display-name: "Tengerész Rum"
+    category: "Ital"
+    lore: [ "Bokic-parti nádcukorból erjesztve —", "a hullámok közt is otthon a matróz." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:tengeresz_rum"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "WATER_BREATHING:60:0", "JUMP_BOOST:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "SUGAR:2", "KELP:2" ]
+  arnyeklikor:
+    profession: cook
+    level: 18
+    learn: level
+    display-name: "Árnyéklikőr"
+    category: "Ital"
+    lore: [ "A Kitaszítottak sötét párlata —", "egy pillanatra a szem elől is elrejt." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:arnyeklikor"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "INVISIBILITY:15:0", "SPEED:20:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:2", "FERMENTED_SPIDER_EYE:1" ]
+  aranyfeny_mezsor:
+    profession: cook
+    level: 9
+    learn: level
+    display-name: "Aranyfényű Mézsör"
+    category: "Ital"
+    lore: [ "Ryanora kereskedőinek méhsöre —", "aki issza, arra rámosolyog a szerencse." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:aranyfeny_mezsor"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "LUCK:60:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "HONEYCOMB:2", "GOLD_NUGGET:1" ]
+  viharfi_almabor:
+    profession: cook
+    level: 7
+    learn: level
+    display-name: "Viharfi Almabor"
+    category: "Ital"
+    lore: [ "A Vérszavanna gyümölcséből —", "friss korty, ami lábra állít." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:viharfi_almabor"
+      consumable: { animation: drink, seconds: 1.4, effects: [ "SPEED:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "SWEET_BERRIES:3", "SUGAR:1" ]
+  jegkiraly_parlat:
+    profession: cook
+    level: 14
+    learn: level
+    display-name: "Jégkirály Párlata"
+    category: "Ital"
+    lore: [ "Glatziendorf jégpincéjében érlelt —", "hideg nyugalom minden kortyban." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:jegkiraly_parlat"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "RESISTANCE:15:0", "SLOW_FALLING:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "SNOWBALL:2", "SUGAR:1" ]
+  szentelt_bor:
+    profession: cook
+    level: 16
+    learn: level
+    display-name: "Szentelt Bor"
+    category: "Ital"
+    lore: [ "A Fa virrasztóinak áldott bora —", "a seb gyorsabban hegged tőle." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:szentelt_bor"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "REGENERATION:10:1", "ABSORPTION:40:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "GLISTERING_MELON_SLICE:1", "GLOW_BERRIES:2" ]
+  pasztor_urucomb:
+    profession: cook
+    level: 6
+    learn: level
+    display-name: "Pásztor Ürücombja"
+    category: "Étel"
+    lore: [ "Nyílt tűzön sült birkacomb —", "a pásztor egész nap fürgén jár tőle." ]
+    result:
+      material: COOKED_MUTTON
+      amount: 2
+      item-model: "icesmp:pasztor_urucomb"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 9.6, effects: [ "SPEED:20:0" ] }
+    ingredients: [ "MUTTON:2", "CARROT:1" ]
+  erdei_gombapite:
+    profession: cook
+    level: 8
+    learn: level
+    display-name: "Erdei Gomba Pite"
+    category: "Étel"
+    lore: [ "Vadon gombájából sült pite —", "az erdő gyógyító ereje van benne." ]
+    result:
+      material: PUMPKIN_PIE
+      amount: 2
+      item-model: "icesmp:erdei_gombapite"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 7.0, effects: [ "REGENERATION:15:0" ] }
+    ingredients: [ "PUMPKIN:1", "BROWN_MUSHROOM:2", "EGG:1", "SUGAR:1" ]
+  banyasz_szalonna:
+    profession: cook
+    level: 7
+    learn: level
+    display-name: "Bányász Szalonnája"
+    category: "Étel"
+    lore: [ "Faszén fölött füstölt szalonna —", "a csákány gyorsabban jár utána." ]
+    result:
+      material: COOKED_PORKCHOP
+      amount: 2
+      item-model: "icesmp:banyasz_szalonna"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 8.0, effects: [ "HASTE:25:0" ] }
+    ingredients: [ "PORKCHOP:2", "CHARCOAL:1" ]
+  mezes_puszedli:
+    profession: cook
+    level: 5
+    learn: level
+    display-name: "Mézes Puszedli"
+    category: "Étel"
+    lore: [ "Ropogós mézes aprósütemény —", "könnyűvé teszi a lépted." ]
+    result:
+      material: COOKIE
+      amount: 4
+      item-model: "icesmp:mezes_puszedli"
+      consumable: { animation: eat, seconds: 1.2, nutrition: 4, saturation: 3.0, effects: [ "JUMP_BOOST:20:0" ] }
+    ingredients: [ "WHEAT:2", "HONEYCOMB:1", "SUGAR:1" ]
+  harcos_husos_tal:
+    profession: cook
+    level: 11
+    learn: level
+    display-name: "Harcos Húsos Tála"
+    category: "Étel"
+    lore: [ "Bőséges hústál a csata előtt —", "erőt önt a kardforgató karba." ]
+    result:
+      material: COOKED_BEEF
+      amount: 2
+      item-model: "icesmp:harcos_husos_tal"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 9.0, effects: [ "STRENGTH:15:0" ] }
+    ingredients: [ "BEEF:2", "POTATO:1" ]
+  tuzes_chili_tal:
+    profession: cook
+    level: 13
+    learn: level
+    display-name: "Tüzes Chilis Tál"
+    category: "Étel"
+    lore: [ "Pyralingrad fűszerével izzított —", "a gyomrod tüze véd a lángtól." ]
+    result:
+      material: COOKED_BEEF
+      amount: 2
+      item-model: "icesmp:tuzes_chili_tal"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 8.0, effects: [ "FIRE_RESISTANCE:30:0" ] }
+    ingredients: [ "BEEF:2", "BLAZE_POWDER:1" ]
+  tengerek_gyongye:
+    profession: cook
+    level: 12
+    learn: level
+    display-name: "Tengerek Gyöngye"
+    category: "Étel"
+    lore: [ "Prizmás körettel tálalt fogás —", "a mélyben is fürge a falatozó." ]
+    result:
+      material: COOKED_COD
+      amount: 2
+      item-model: "icesmp:tengerek_gyongye"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 6, saturation: 6.0, effects: [ "DOLPHINS_GRACE:30:0", "WATER_BREATHING:45:0" ] }
+    ingredients: [ "COD:2", "PRISMARINE_SHARD:1" ]
+
+crafted-by:
+  enabled: true
+

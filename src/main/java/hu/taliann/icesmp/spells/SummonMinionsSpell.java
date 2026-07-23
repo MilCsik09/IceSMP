@@ -29,6 +29,13 @@ import java.util.function.BiConsumer;
  */
 public final class SummonMinionsSpell extends BaseSpell {
 
+    /** E1 — statikus híd (LootTable-minta): a lélek-kovács rangok cast-kori forrása. */
+    private static volatile hu.taliann.icesmp.managers.SoulforgeManager soulforge;
+
+    public static void setSoulforge(final hu.taliann.icesmp.managers.SoulforgeManager manager) {
+        soulforge = manager;
+    }
+
     private static final double TARGET_RANGE = 16.0D;
     private static final double FALLBACK_SCAN_RADIUS = 12.0D;
     private static final double SUMMON_RING_RADIUS = 1.6D;
@@ -100,11 +107,19 @@ public final class SummonMinionsSpell extends BaseSpell {
                 customizer.accept(minion, player);
             }
 
-            if (bonusHealth > 0.0D) {
-                final AttributeInstance maxHealth = minion.getAttribute(Attribute.MAX_HEALTH);
-                if (maxHealth != null) {
-                    maxHealth.setBaseValue(maxHealth.getBaseValue() + bonusHealth);
-                    minion.setHealth(maxHealth.getValue());
+            // Lélek-kovács: Élet/Sebzés-rangok szorzói a spawnolt minionra.
+            final hu.taliann.icesmp.managers.SoulforgeManager forgeRef = soulforge;
+            final double forgeHealth = forgeRef == null ? 1.0D : forgeRef.healthMultiplier(player);
+            final AttributeInstance maxHealth = minion.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null && (bonusHealth > 0.0D || forgeHealth > 1.0D)) {
+                maxHealth.setBaseValue((maxHealth.getBaseValue() + bonusHealth) * forgeHealth);
+                minion.setHealth(maxHealth.getValue());
+            }
+            final double forgeDamage = forgeRef == null ? 1.0D : forgeRef.damageMultiplier(player);
+            if (forgeDamage > 1.0D) {
+                final AttributeInstance attack = minion.getAttribute(Attribute.ATTACK_DAMAGE);
+                if (attack != null) {
+                    attack.setBaseValue(attack.getBaseValue() * forgeDamage);
                 }
             }
 
@@ -123,7 +138,9 @@ public final class SummonMinionsSpell extends BaseSpell {
     }
 
     private int remainingSlots(final Player player) {
-        final int maxActive = Math.max(1, configManager.getInt("pets.max-active", 8));
+        final hu.taliann.icesmp.managers.SoulforgeManager forgeRef = soulforge;
+        final int maxActive = Math.max(1, configManager.getInt("pets.max-active", 8))
+                + (forgeRef == null ? 0 : forgeRef.extraSlots(player));
         return maxActive - minionManager.countActive(player.getUniqueId());
     }
 

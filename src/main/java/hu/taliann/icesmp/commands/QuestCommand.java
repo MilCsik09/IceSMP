@@ -31,10 +31,14 @@ public final class QuestCommand implements BasicCommand {
     private final MessageManager messageManager;
     private final QuestBuilderListener questBuilderListener;
 
+    private final hu.taliann.icesmp.managers.ConfigManager configManager;
+
     public QuestCommand(final JavaPlugin plugin, final QuestManager questManager,
+                        final hu.taliann.icesmp.managers.ConfigManager configManager,
                         final MessageManager messageManager, final QuestBuilderListener questBuilderListener) {
         this.plugin = plugin;
         this.questManager = questManager;
+        this.configManager = configManager;
         this.messageManager = messageManager;
         this.questBuilderListener = questBuilderListener;
     }
@@ -53,6 +57,7 @@ public final class QuestCommand implements BasicCommand {
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender);
             case "accept" -> handleAccept(sender, args);
+            case "talk" -> handleTalk(sender, args);
             case "abandon" -> handleAbandon(sender, args);
             case "complete" -> handleComplete(sender, args);
             case "admin" -> handleAdmin(sender, args);
@@ -67,7 +72,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleAdmin(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -207,7 +212,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleAdminBuilder(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 3) {
@@ -262,7 +267,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleLog(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         hu.taliann.icesmp.gui.QuestLogGUI.open(player, questManager, messageManager);
@@ -270,7 +275,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleList(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -299,7 +304,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleInfo(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -323,7 +328,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleAccept(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -344,11 +349,43 @@ public final class QuestCommand implements BasicCommand {
                 "&aKüldetés felvéve: &e%s",
                 questManager.getDisplayName(args[1])
         ));
+        // A dialógus a parancsos felvételkor is jár — az elágazó story-döntések
+        // (pl. merchant_choice) szövege enélkül sosem látszana NPC nélkül.
+        questManager.playGiveDialogue(player, args[1]);
+    }
+
+    /**
+     * NPC-tartalék-út: a TALK_TO_NPC/DELIVER_ITEMS objektívák és a giver-npc questek
+     * a FancyNpcs-híd nélkül is teljesíthetők/felvehetők — a sztori-gerinc nem lóghat
+     * némán egy külső pluginon. Alapból csak akkor él, ha a híd NEM aktív.
+     */
+    private void handleTalk(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        if (questManager.isNpcBridgeActive()
+                && !configManager.getBoolean("quest-npc-fallback.always", false)) {
+            sender.sendMessage(messageManager.get("quest-talk-npc-active",
+                    "&7A mesélők a helyükön állnak — keresd fel őket személyesen (kattints az NPC-re)."));
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messageManager.get("quest-talk-usage", "&cHasználat: /quest talk <npc-név>"));
+            return;
+        }
+        final String npcName = args[1];
+        questManager.handleNpcInteract(player, npcName);
+        final String accepted = questManager.acceptFromNpc(player, npcName);
+        if (accepted == null) {
+            sender.sendMessage(messageManager.get("quest-talk-done",
+                    "&7Szót váltottatok. (Ha küldetés-célpont volt, teljesült.)"));
+        }
     }
 
     private void handleAbandon(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -362,7 +399,7 @@ public final class QuestCommand implements BasicCommand {
 
     private void handleComplete(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -401,6 +438,10 @@ public final class QuestCommand implements BasicCommand {
             case "quest-on-cooldown" -> "&cEz a küldetés még pihen — nézz vissza később.";
             case "quest-not-offered-today" -> "&cEz a küldetés ma nem elérhető — nézz vissza egy másik napon.";
             case "quest-season-locked" -> "&cEzt a szezont már teljesítetted — az új szezonban újra elérhető lesz.";
+            case "quest-chapter-closed" -> "&cEz a fejezet már lezárult — a krónika továbblapozott.";
+            case "quest-chapter-future" -> "&cEz a fejezet még nem nyílt meg — várd ki a krónika következő lapját.";
+            case "quest-season-window-future" -> "&cEnnek a történetnek még nem jött el az ideje — a szezon későbbi napjain nyílik.";
+            case "quest-season-window-closed" -> "&cEz a történet-ablak bezárult ebben a szezonban — az idő továbbhaladt.";
             default -> "&cA küldetés nem vehető fel.";
         };
     }
@@ -422,8 +463,8 @@ public final class QuestCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> subcommands = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("log", "list", "info", "accept", "abandon", "complete", "admin")
-                : List.of("log", "list", "info", "accept", "abandon");
+                ? List.of("log", "list", "info", "accept", "abandon", "talk", "complete", "admin")
+                : List.of("log", "list", "info", "accept", "abandon", "talk");
 
         // A Paper a lezáró szóköz utáni ÜRES szót nem adja át (args rövidebb), ezért minden
         // szintet két hosszal kezelünk: N+1 = szó közben (prefix az utolsó arg), N = szóköz
@@ -436,6 +477,11 @@ public final class QuestCommand implements BasicCommand {
         final String subcommand = args[0].toLowerCase(Locale.ROOT);
         if ("admin".equals(subcommand)) {
             return suggestAdmin(sender, args);
+        }
+        if (args.length <= 2 && "talk".equals(subcommand)) {
+            final String prefix = prefixAt(args, 1);
+            return questManager.getQuestNpcNames().stream()
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
         }
         if (args.length <= 2 && ("accept".equals(subcommand) || "abandon".equals(subcommand))) {
             final String prefix = prefixAt(args, 1);

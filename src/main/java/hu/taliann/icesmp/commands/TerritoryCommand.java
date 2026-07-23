@@ -38,10 +38,11 @@ public final class TerritoryCommand implements BasicCommand {
     private static final int MAX_POINTS = 64;
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "pos", "undo", "clearpoints", "points", "create", "circle",
-            "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp");
+            "pos", "wand", "undo", "clearpoints", "points", "create", "circle",
+            "setcapital", "setspawn", "rename", "resize", "settype", "sety", "remove", "list", "info", "show", "tp",
+            "dungeonchest", "dungeonboss");
     private static final List<String> TYPE_NAMES = List.of(
-            "faction", "protected-faction", "protected-city", "capital");
+            "faction", "protected-faction", "protected-city", "capital", "doom-gate", "dungeon");
 
     private final JavaPlugin plugin;
     private final TerritoryManager territoryManager;
@@ -58,7 +59,7 @@ public final class TerritoryCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -69,6 +70,7 @@ public final class TerritoryCommand implements BasicCommand {
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "pos", "point" -> handleAddPoint(sender);
+            case "wand", "palca" -> handleWand(sender);
             case "undo" -> handleUndo(sender);
             case "clearpoints", "clear" -> handleClearPoints(sender);
             case "points" -> handlePoints(sender);
@@ -85,6 +87,8 @@ public final class TerritoryCommand implements BasicCommand {
             case "info" -> handleInfo(sender);
             case "show" -> handleShow(sender, args);
             case "tp", "teleport" -> handleTeleport(sender, args);
+            case "dungeonchest" -> handleDungeonChest(sender, args);
+            case "dungeonboss" -> handleDungeonBoss(sender, args);
             default -> {
                 sender.sendMessage(messageManager.get("territory-unknown-subcommand", "&cIsmeretlen alparancs: &f%s", args[0]));
                 sendHelp(sender);
@@ -94,9 +98,22 @@ public final class TerritoryCommand implements BasicCommand {
 
     // ==================== polygon boundary buffer ====================
 
+    private void handleWand(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final var wand = hu.taliann.icesmp.listeners.SelectionWandListener.createWand("territory");
+        for (final var overflow : player.getInventory().addItem(wand).values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+        }
+        sender.sendMessage(messageManager.get("territory-wand-given",
+                "&a⚑ Határkijelölő pálca a kezedben: bal katt = pont, jobb = visszavon, SNEAK+jobb = előnézet."));
+    }
+
     private void handleAddPoint(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         final int count = territoryManager.addPoint(player);
@@ -107,7 +124,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleUndo(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         final int count = territoryManager.undoPoint(player.getUniqueId());
@@ -120,7 +137,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleClearPoints(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         territoryManager.clearPoints(player.getUniqueId());
@@ -129,7 +146,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handlePoints(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         final List<int[]> points = territoryManager.getPoints(player.getUniqueId());
@@ -150,12 +167,12 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleCreatePolygon(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (args.length < 4) {
+        if (args.length < 3) {
             sender.sendMessage(messageManager.get("territory-create-usage",
-                    "&cHasználat: /territory create <típus> <frakció> <azonosító> [név...]"));
+                    "&cHasználat: /territory create <típus> <frakció> <azonosító> [név...] &7(doom-gate: a frakció elhagyható)"));
             return;
         }
 
@@ -163,9 +180,24 @@ public final class TerritoryCommand implements BasicCommand {
         if (type == null) {
             return;
         }
-        final FactionType faction = parseFaction(sender, args[2]);
-        if (faction == null) {
-            return;
+        // Kárhozat-zóna: frakció-semleges senkiföldje — a <frakció> argumentum elhagyható
+        // (/territory create doom-gate <id> [név...]); belső tulajdonosként NEUTRAL-t jegyzünk.
+        final FactionType faction;
+        final int idIndex;
+        if (type == TerritoryType.DOOM_GATE && FactionType.fromInput(args[2]) == null) {
+            faction = FactionType.NEUTRAL;
+            idIndex = 2;
+        } else {
+            if (args.length < 4) {
+                sender.sendMessage(messageManager.get("territory-create-usage",
+                        "&cHasználat: /territory create <típus> <frakció> <azonosító> [név...] &7(doom-gate: a frakció elhagyható)"));
+                return;
+            }
+            faction = parseFaction(sender, args[2]);
+            if (faction == null) {
+                return;
+            }
+            idIndex = 3;
         }
 
         final List<int[]> points = territoryManager.getPoints(player.getUniqueId());
@@ -191,10 +223,10 @@ public final class TerritoryCommand implements BasicCommand {
             return;
         }
 
-        final String name = args.length > 4
-                ? String.join(" ", Arrays.copyOfRange(args, 4, args.length))
+        final String name = args.length > idIndex + 1
+                ? String.join(" ", Arrays.copyOfRange(args, idIndex + 1, args.length))
                 : type.getDisplayName();
-        final Territory territory = territoryManager.definePolygon(args[3], faction, name, type, world, points);
+        final Territory territory = territoryManager.definePolygon(args[idIndex], faction, name, type, world, points);
         if (territory == null) {
             sender.sendMessage(messageManager.get("territory-create-failed", "&cA terület létrehozása nem sikerült."));
             return;
@@ -208,12 +240,12 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleCircle(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
-        if (args.length < 5) {
+        if (args.length < 4) {
             sender.sendMessage(messageManager.get("territory-circle-usage",
-                    "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...]"));
+                    "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...] &7(doom-gate: a frakció elhagyható)"));
             return;
         }
 
@@ -221,19 +253,39 @@ public final class TerritoryCommand implements BasicCommand {
         if (type == null) {
             return;
         }
-        final FactionType faction = parseFaction(sender, args[2]);
-        if (faction == null) {
+        // Kárhozat-zóna: frakció-semleges — a <frakció> elhagyható
+        // (/territory circle doom-gate <id> <sugár> [név...]).
+        final FactionType faction;
+        final int idIndex;
+        if (type == TerritoryType.DOOM_GATE && FactionType.fromInput(args[2]) == null) {
+            faction = FactionType.NEUTRAL;
+            idIndex = 2;
+        } else {
+            if (args.length < 5) {
+                sender.sendMessage(messageManager.get("territory-circle-usage",
+                        "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...] &7(doom-gate: a frakció elhagyható)"));
+                return;
+            }
+            faction = parseFaction(sender, args[2]);
+            if (faction == null) {
+                return;
+            }
+            idIndex = 3;
+        }
+        if (args.length < idIndex + 2) {
+            sender.sendMessage(messageManager.get("territory-circle-usage",
+                    "&cHasználat: /territory circle <típus> <frakció> <azonosító> <sugár> [név...] &7(doom-gate: a frakció elhagyható)"));
             return;
         }
-        final Integer radius = parseRadius(sender, args[4]);
+        final Integer radius = parseRadius(sender, args[idIndex + 1]);
         if (radius == null) {
             return;
         }
 
-        final String name = args.length > 5
-                ? String.join(" ", Arrays.copyOfRange(args, 5, args.length))
-                : args[3];
-        final Territory territory = territoryManager.define(args[3], faction, name, type, player.getLocation(), radius);
+        final String name = args.length > idIndex + 2
+                ? String.join(" ", Arrays.copyOfRange(args, idIndex + 2, args.length))
+                : args[idIndex];
+        final Territory territory = territoryManager.define(args[idIndex], faction, name, type, player.getLocation(), radius);
         sender.sendMessage(messageManager.get("territory-circle-success",
                 "&aKör-terület kijelölve: &f%s &7(%s, %s, sugár: %s, középpont: %s, %s)",
                 territory.name(), type.getDisplayName(), faction.getDisplayName(),
@@ -242,7 +294,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleSetCapital(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 3) {
@@ -278,7 +330,7 @@ public final class TerritoryCommand implements BasicCommand {
      */
     private void handleSetSpawn(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 2) {
@@ -439,7 +491,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleInfo(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -466,7 +518,7 @@ public final class TerritoryCommand implements BasicCommand {
 
     private void handleShow(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -522,9 +574,74 @@ public final class TerritoryCommand implements BasicCommand {
      * {@code teleportAsync} is dispatched from there; the viewer's facing is captured
      * up front (we are on the player's own region thread in the command).
      */
+    private volatile hu.taliann.icesmp.managers.DungeonLootService dungeonLootService;
+
+    public void setDungeonLootService(final hu.taliann.icesmp.managers.DungeonLootService dungeonLootService) {
+        this.dungeonLootService = dungeonLootService;
+    }
+
+    /** A nézett láda/hordó regisztrálása kazamata-kincsesládának (újra kiadva: törlés). */
+    private void handleDungeonChest(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final hu.taliann.icesmp.managers.DungeonLootService loot = this.dungeonLootService;
+        if (loot == null) {
+            return;
+        }
+        final org.bukkit.block.Block target = player.getTargetBlockExact(5);
+        if (target == null || (target.getType() != org.bukkit.Material.CHEST
+                && target.getType() != org.bukkit.Material.TRAPPED_CHEST
+                && target.getType() != org.bukkit.Material.BARREL)) {
+            sender.sendMessage(messageManager.get("territory-dungeonchest-no-target",
+                    "&cNézz egy ládára vagy hordóra (max 5 blokk)."));
+            return;
+        }
+        final String table = args.length >= 2 ? args[1] : "kazamata";
+        final boolean added = loot.toggleChest(target.getLocation(), table);
+        sender.sendMessage(added
+                ? messageManager.get("territory-dungeonchest-added",
+                        "&aKincsesláda regisztrálva (&f%s&a tábla) — fejenkénti, heti zsákmány.", table)
+                : messageManager.get("territory-dungeonchest-removed", "&eKincsesláda-regisztráció törölve."));
+    }
+
+    /** Mini-boss spawn-pont kijelölése az admin pozícióján: /territory dungeonboss <zóna> [tábla] | clear <zóna>. */
+    private void handleDungeonBoss(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            return;
+        }
+        final hu.taliann.icesmp.managers.DungeonLootService loot = this.dungeonLootService;
+        if (loot == null || args.length < 2) {
+            sender.sendMessage(messageManager.get("territory-dungeonboss-usage",
+                    "&cHasználat: /territory dungeonboss <zóna-id> [tábla] | clear <zóna-id>"));
+            return;
+        }
+        if ("clear".equalsIgnoreCase(args[1])) {
+            if (args.length < 3 || !loot.clearBossSpawn(args[2])) {
+                sender.sendMessage(messageManager.get("territory-dungeonboss-none", "&cNincs ilyen boss-kijelölés."));
+            } else {
+                sender.sendMessage(messageManager.get("territory-dungeonboss-cleared", "&eBoss-kijelölés törölve."));
+            }
+            return;
+        }
+        final Territory zone = territoryManager.getById(args[1]);
+        if (zone == null || zone.type() != hu.taliann.icesmp.data.TerritoryType.DUNGEON) {
+            sender.sendMessage(messageManager.get("territory-dungeonboss-not-dungeon",
+                    "&cIsmeretlen vagy nem DUNGEON típusú zóna: &f%s", args[1]));
+            return;
+        }
+        final String table = args.length >= 3 ? args[2] : "kazamata-boss";
+        loot.setBossSpawn(zone.id(), player.getLocation(), table);
+        sender.sendMessage(messageManager.get("territory-dungeonboss-set",
+                "&aMini-boss spawn kijelölve itt (&f%s&a zóna, &f%s&a tábla) — hangolás: dungeon.minibosses.%s.*",
+                zone.id(), table, zone.id().toLowerCase(java.util.Locale.ROOT)));
+    }
+
     private void handleTeleport(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 2) {
@@ -617,7 +734,7 @@ public final class TerritoryCommand implements BasicCommand {
         final TerritoryType type = TerritoryType.fromInput(raw);
         if (type == null) {
             sender.sendMessage(messageManager.get("territory-type-unknown",
-                    "&cIsmeretlen típus: &f%s &7(faction, protected-faction, protected-city, capital)", raw));
+                    "&cIsmeretlen típus: &f%s &7(faction, protected-faction, protected-city, capital, doom-gate, dungeon)", raw));
         }
         return type;
     }
@@ -709,7 +826,7 @@ public final class TerritoryCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("territory-help-show", "&e/territory show [id] &7- Határrajz (puffer / aktuális / megadott zóna)."));
         sender.sendMessage(messageManager.get("territory-help-tp", "&e/territory tp <id> &7- Teleportálás a zóna középpontjához."));
         sender.sendMessage(messageManager.get("territory-help-types",
-                "&7Típusok: &ffaction &7(csak tagok), &fprotected-faction&7/&fprotected-city &7(senki), &fcapital &7(főváros)."));
+                "&7Típusok: &ffaction &7(csak tagok), &fprotected-faction&7/&fprotected-city &7(senki), &fcapital &7(főváros), &fdoom-gate &7(PvPvE senkiföldje), &fdungeon &7(kazamata, kulcs+lockout)."));
     }
 
     @Override

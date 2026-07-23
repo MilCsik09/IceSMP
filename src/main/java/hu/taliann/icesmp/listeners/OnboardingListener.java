@@ -1,15 +1,20 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.DialogService;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,12 +32,14 @@ import java.util.Map;
  */
 public final class OnboardingListener implements Listener {
 
+    private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final QuestManager questManager;
     private final MessageManager messageManager;
 
-    public OnboardingListener(final ConfigManager configManager, final QuestManager questManager,
-                              final MessageManager messageManager) {
+    public OnboardingListener(final JavaPlugin plugin, final ConfigManager configManager,
+                              final QuestManager questManager, final MessageManager messageManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
         this.questManager = questManager;
         this.messageManager = messageManager;
@@ -68,5 +75,31 @@ public final class OnboardingListener implements Listener {
                         "description", questSection == null ? "" : questSection.getString("description", "")
                 )
         ));
+
+        showWelcomeDialog(player, firstQuest);
+    }
+
+    /**
+     * Natív üdvözlő-dialógus (P4d) az első belépéskor. Rövid késleltetéssel jön, hogy ne
+     * takarja az intro-cím-szekvenciát; a JÁTÉKOS saját szálán (a join-thread) marad.
+     * Kikapcsolható: {@code onboarding.welcome-dialog=false}.
+     */
+    private void showWelcomeDialog(final Player player, final String firstQuest) {
+        if (!configManager.getBoolean("onboarding.welcome-dialog", true)) {
+            return;
+        }
+        final long delay = Math.max(1L, configManager.getLong("onboarding.welcome-dialog-delay-ticks", 80L));
+        final MiniMessage mm = MiniMessage.miniMessage();
+        final Component title = mm.deserialize(configManager.getString(
+                "onboarding.welcome-dialog-title", "<gradient:#8ab4ff:#c9a3ff>Üdv az IceSMP-n!</gradient>"));
+        final List<String> raw = configManager.getStringList("onboarding.welcome-dialog-lines");
+        final List<String> lines = raw.isEmpty() ? List.of(
+                "<gray>A <white>Fa árnyékában</white> írod a legendád. Első lépések:</gray>",
+                "<yellow>•</yellow> <white>/kaszt</white> — válassz hivatást (13 kaszt).",
+                "<yellow>•</yellow> <white>/faction</white> — csatlakozz a négy hatalom egyikéhez.",
+                "<yellow>•</yellow> <white>/menu</white> — minden rendszer egy helyen.",
+                "<gray>A haladásodat a <white>Haladás</white> képernyőn (L) is követheted.</gray>") : raw;
+        final List<Component> body = lines.stream().map(mm::deserialize).toList();
+        player.getScheduler().runDelayed(plugin, task -> DialogService.showNotice(player, title, body), null, delay);
     }
 }

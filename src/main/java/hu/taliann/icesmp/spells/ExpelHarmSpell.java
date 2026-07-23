@@ -79,12 +79,10 @@ public final class ExpelHarmSpell extends BaseSpell {
         meta.addEnchant(Enchantment.KNOCKBACK, 3, true);
         meta.setUnbreakable(true);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE);
-        // Resource pack-hez: egyedi CMD (RESOURCE_PACK_CMD.md leltár; balansz-kulccsal felülbírálható).
-        final org.bukkit.inventory.meta.components.CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-        cmd.setFloats(java.util.List.of((float) balanceInt("custom-model-data", 6104)));
-        meta.setCustomModelDataComponent(cmd);
         meta.getPersistentDataContainer().set(stickTag, PersistentDataType.BOOLEAN, true);
         stack.setItemMeta(meta);
+        // Resource pack-hez: ITEM_MODEL (CMD helyett) a setItemMeta után.
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, "icesmp:spell_expel_harm");
         return stack;
     }
 

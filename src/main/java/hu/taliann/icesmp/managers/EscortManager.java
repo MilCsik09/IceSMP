@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Caravan escort world event (ROADMAP "élőbb világ", kooperatív harci ág): a
+ * Caravan escort world event: a
  * merchant convoy sets out toward a destination while monster waves harry it —
  * nearby players must keep the pack animal alive until it arrives. Success drops
  * a shared loot table at the destination and unlocks the caravan shop's bonus
@@ -57,6 +57,14 @@ public final class EscortManager {
     private final BossBar bar = BossBar.bossBar(Component.empty(), 0.0F, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
 
     private volatile UUID convoyId;
+    /** Az utolsó horgony-játékos (rotáció — teszter-visszajelzés). */
+    private volatile UUID lastAnchorId;
+    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
+    private volatile EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
     /** Reserves the "active" state while a spawn is still hopping region threads. */
     private volatile long spawnGraceUntil;
     private volatile Location destination;
@@ -69,12 +77,24 @@ public final class EscortManager {
     /** UUIDs of live wave mobs, pruned as they die; despawned on end/shutdown. */
     private final Set<UUID> waveMobs = ConcurrentHashMap.newKeySet();
 
+    private final EventSpawnGuard spawnGuard;
+
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
     public EscortManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final MobScalingManager mobScalingManager, final MessageManager messageManager) {
+                         final MobScalingManager mobScalingManager, final MessageManager messageManager,
+                         final EventSpawnGuard spawnGuard) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.messageManager = messageManager;
+        this.spawnGuard = spawnGuard;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
     }
 
@@ -146,6 +166,11 @@ public final class EscortManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
+            // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+            final MajorEventGate gateRef = eventGate;
+            if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
+                return;
+            }
             final double chance = Math.max(0.0D, Math.min(100.0D,
                     configManager.getDouble("escort.chance-percent", 30.0D)));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
@@ -188,11 +213,23 @@ public final class EscortManager {
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
-            final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
+            // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
+            final EventSpawnPointManager pointsRef = spawnPointManager;
+            final Location fixedAnchor = pointsRef == null ? null : pointsRef.resolveAnchorLocation("escort");
+            if (fixedAnchor != null) {
+                plugin.getServer().getRegionScheduler().run(plugin, fixedAnchor,
+                        spawnTask -> spawnConvoy(fixedAnchor));
+                return true;
+            }
+            final List<Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
                 return false;
             }
-            anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
+            // Horgony-rotáció: ne mindig ugyanahhoz a játékoshoz spawnoljon.
+            final java.util.List<Player> candidates = online.stream()
+                    .filter(p -> online.size() == 1 || !p.getUniqueId().equals(lastAnchorId)).toList();
+            anchor = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+            lastAnchorId = anchor.getUniqueId();
         }
 
         final Player target = anchor;
@@ -219,6 +256,12 @@ public final class EscortManager {
 
         final Location start = topOf(world, startX, startZ);
         final Location dest = new Location(world, destX + 0.5D, 0.0D, destZ + 0.5D);
+
+        // Spawn-rules: a konvoj se induljon territórium/claim/WG-régió belsejéből vagy vízről.
+        if (spawnGuard.isBlocked("escort", start)
+                || spawnGuard.isUnsafeSurface("escort", world, startX, startZ)) {
+            return; // védett/vizes indulópont — a következő intervallum máshol próbálkozik
+        }
 
         final Llama convoy = world.spawn(start, Llama.class, spawned -> {
             spawned.setPersistent(false);
@@ -360,7 +403,15 @@ public final class EscortManager {
             if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
                 continue;
             }
-            final Mob mob = (Mob) world.spawn(topOf(world, x, z), entityClass.asSubclass(Mob.class));
+            final Location waveSpot = topOf(world, x, z);
+            // A hullám-mob sem szivároghat védett zónába (a konvoj útja keresztezhet claimet).
+            if (spawnGuard.isBlocked("escort", waveSpot)) {
+                continue;
+            }
+            final Mob mob = (Mob) world.spawn(waveSpot, entityClass.asSubclass(Mob.class));
+            // Nappali kíséret-hullám: a zombi/csontváz ne égjen el, mielőtt a játékosokhoz ér
+            // (+ jövőbiztos zombisodás-immunitás, ha a pool piglinnel bővül).
+            EventSpawnGuard.prepare(mob);
             mob.setRemoveWhenFarAway(false);
             mob.setPersistent(false);
             mobScalingManager.forceLevel(mob, level);

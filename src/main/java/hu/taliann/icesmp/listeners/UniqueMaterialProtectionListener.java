@@ -56,6 +56,14 @@ public final class UniqueMaterialProtectionListener implements Listener {
         }
     }
 
+    /** Smelt-INPUT tiltás: a unique a vanília alap-itemmé olvadna (pl. borostyán → aranyrúd). */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onFurnaceSmelt(final org.bukkit.event.inventory.FurnaceSmeltEvent event) {
+        if (isUnique(event.getSource())) {
+            event.setCancelled(true);
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onConsume(final PlayerItemConsumeEvent event) {
         if (isUnique(event.getItem())) {

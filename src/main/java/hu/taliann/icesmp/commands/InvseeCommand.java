@@ -39,11 +39,11 @@ public final class InvseeCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
             return;
         }
         if (!(sender instanceof Player viewer)) {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
         if (args.length < 1 || args[0].isBlank()) {

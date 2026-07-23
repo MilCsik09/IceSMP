@@ -6,11 +6,27 @@ relics:
   inactivity:
     enabled: true
     expiry-days: 14
+    # Halálban ELVESZETT (reclaim-módú) relikvia rövidített lejárata: ha a tulaj ennyi
+    # napon belül nem idézi újra az oltárnál, a relikvia MINDENKINEK felszabadul.
+    lost-expiry-days: 3
   # Fegyver-relikviák: PvP-ben gazdát cserélhetnek (a passzívak védettek).
   weapon-relics:
     - "metelytepo"
+  # Frakció-szárnyak: idegen frakció tagja a földről sem veheti fel őket (a szárny
+  # "elutasítja"); a rituáléjuk is frakció-kapus (requires-faction). Élőben olvasódik.
+  wings:
+    faction-locked-pickup: true
   pvp-transfer:
     enabled: true
+  # Passzív (nem-fegyver) relikviák sorsa halálkor (a fegyver-relikviák PvP-átvétele
+  # változatlan). Módok:
+  #   reclaim - a tárgy MEGSEMMISÜL, de a tulajdon marad: csak a tulaj idézheti újra az
+  #             oltárnál (áldozattal), az inactivity.lost-expiry-days lejártáig — utána
+  #             a relikvia mindenkinek felszabadul (ez a default)
+  #   keep    - respawnkor visszakerül a tulajhoz
+  #   drop    - vanília: leesik a földre (idegen frakció így sem veheti fel)
+  passive-death:
+    mode: "reclaim"
   messages:
     cooldown: "&cA relikvia pihen: &f%seconds%s &cmaradék"
     expired: "&5A(z) &f%relic_name% &5relikvia a hosszú tétlenség miatt elenyészett, és újra megszerezhetővé vált."
@@ -18,45 +34,56 @@ relics:
     metelytepo:
       display-name: "Mételytépő"
       display-color: "&5"
-      # A material/custom-model-data itt dokumentáció: a tényleges értéket a kód adja
-      # (RelicManager.registerRelic) — a kettő szinkronban tartandó (GOLDEN_AXE + 4101).
+      # A material itt dokumentáció: a tényleges értéket a kód adja (RelicManager.registerRelic).
+      # A megjelenés ITEM_MODEL-lel megy (icesmp:relic_<id>), nem CMD-vel — a RelicItemFactory állítja.
       material: "GOLDEN_AXE"
-      custom-model-data: 4101
+      item-model: "icesmp:relic_metelytepo"
       lore:
-        - "&7A Mételytépő a törpék rejtélyes"
-        - "&7civilizációjának ősi relikviája."
+        - "&7A Mélység Népének — a rég letűnt törp"
+        - "&7civilizációnak — ősi relikviája."
         - ""
-        - "&7Ősi mágia övezi, melynek segítségével"
-        - "&7ez a harci fejsze lesújt a bűnösökre,"
-        - "&7igazságot szolgáltatva a világnak."
+        - "&7Ősi ítélet-mágia lakik benne: e harci"
+        - "&7fejsze lesújt a bűnösökre, s igazságot tesz"
+        - "&7ott, ahol a Káoszkor rendje szertefoszlott."
     phoenix_wing:
       display-name: "Főnix-szárny"
       display-color: "&c"
       lore:
-        - "&7A Piros királyság lángoló ereklyéje."
+        - "&7Perinfernicitas lángoló ereklyéje,"
+        - "&7Soleil főnixeinek tollából szőve."
         - "&7Viselőjét nem égeti tűz, és zuhanása"
         - "&7lángviharban végződik."
     frost_wing:
       display-name: "Zúzmara-szárny"
       display-color: "&b"
       lore:
-        - "&7A Kék királyság jeges ereklyéje."
+        - "&7Cryghaliris jeges ereklyéje, Kallan"
+        - "&7jégsárkányainak leheletével átitatva."
         - "&7Szárnyra kapva megfagyasztja"
         - "&7a körülötte lévőket."
     wander_wind:
       display-name: "Vándorszél"
       display-color: "&f"
       lore:
-        - "&7A Semlegesek szabad szele."
-        - "&7Gyorsabb sikló, és a föld"
+        - "&7Ryanora & Caldestera szabad szele,"
+        - "&7Arkynn békés örökségének fuvallata."
+        - "&7Felszálláskor széllökés repíti, és a föld"
         - "&7sosem üti meg viselőjét."
+    eleftheria_konnye:
+      display-name: "Eleftheria Könnye"
+      display-color: "&5"
+      lore:
+        - "&7Megkövült, éjfekete csepp; a Néma Királynő"
+        - "&7első suttogása hozta létre, magába zárva"
+        - "&7a Fa kínjait és a magányt."
     bone_wing:
       display-name: "Csontszárny"
       display-color: "&8"
       lore:
-        - "&7Az összeomlott királyság csontból"
-        - "&7szőtt szárnya. Éjjel a viselője"
-        - "&7maga is árnyékká válik."
+        - "&7A Káoszkor csontból szőtt szárnya, a"
+        - "&7Néma Királynő élőhalottainak maradványa."
+        - "&7Éjjel a viselője maga is"
+        - "&7árnyékká válik."
 
 # ===== Rituálé-oltárok (multi-block szentélyek) =====
 # Egy oltár egy MAG-BLOKK (altar-block), amit SHIFT+jobb kattal aktiválsz. A 'structure' a mag
@@ -73,7 +100,50 @@ relics:
 # ('*_szentely') tematikus buffot adnak a saját kasztjuknak — másold/hangold őket kedvedre.
 # cooldown-seconds: az ismétlés korlátja (memóriában, újraindításkor nullázódik).
 rituals:
+  eleftheria_konnye:
+    altar-block: "CRYING_OBSIDIAN"
+    requires-faction: "DARK"
+    structure:
+      - "-2,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "-1,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "0,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "1,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,-2:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,-1:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,0:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,1:POLISHED_BLACKSTONE_BRICKS"
+      - "2,-1,2:POLISHED_BLACKSTONE_BRICKS"
+      - "-2,0,-2:OBSIDIAN"
+      - "-2,1,-2:OBSIDIAN"
+      - "-2,0,2:OBSIDIAN"
+      - "-2,1,2:OBSIDIAN"
+      - "2,0,-2:OBSIDIAN"
+      - "2,1,-2:OBSIDIAN"
+      - "2,0,2:OBSIDIAN"
+      - "2,1,2:OBSIDIAN"
+    sacrifice:
+      - "ECHO_SHARD:8"
+      - "CRYING_OBSIDIAN:8"
+      - "DIAMOND_BLOCK:1"
   phoenix_wing:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "RED"
     altar-block: "MAGMA_BLOCK"
     structure:
       - "-2,-1,-2:NETHER_BRICKS"
@@ -114,6 +184,8 @@ rituals:
       - "FIRE_CHARGE:16"
       - "GOLD_BLOCK:1"
   frost_wing:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "BLUE"
     altar-block: "BLUE_ICE"
     structure:
       - "-2,-1,-2:PACKED_ICE"
@@ -154,6 +226,8 @@ rituals:
       - "PRISMARINE_CRYSTALS:8"
       - "DIAMOND_BLOCK:1"
   wander_wind:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "NEUTRAL"
     altar-block: "AMETHYST_BLOCK"
     structure:
       - "-2,-1,-2:CUT_COPPER"
@@ -194,6 +268,8 @@ rituals:
       - "PHANTOM_MEMBRANE:8"
       - "EMERALD_BLOCK:1"
   bone_wing:
+    # A szárny csak a saját népét szolgálja — a rituálét is csak ők végezhetik el.
+    requires-faction: "DARK"
     altar-block: "SOUL_SOIL"
     structure:
       - "-2,-1,-2:SOUL_SAND"
@@ -229,10 +305,12 @@ rituals:
       - "-2,1,2:BONE_BLOCK"
       - "2,0,2:BONE_BLOCK"
       - "2,1,2:BONE_BLOCK"
+    # A többi szárnnyal azonos árszinten (farmolható anyagok): a korábbi
+    # Wither-koponya + netherite aránytalanul drága volt.
     sacrifice:
-      - "BONE_BLOCK:8"
-      - "WITHER_SKELETON_SKULL:1"
-      - "NETHERITE_SCRAP:2"
+      - "BONE_BLOCK:16"
+      - "SOUL_SAND:16"
+      - "DIAMOND_BLOCK:1"
   feloldozas:
     type: "cleanse"
     altar-block: "SOUL_LANTERN"
@@ -275,6 +353,26 @@ rituals:
       - "GOLD_BLOCK:3"
       - "GHAST_TEAR:2"
       - "TOTEM_OF_UNDYING:1"
+  # B54 — Átok-törés: a viselt/kézben tartott Átkozott tárgyakról leszedi az Első Csend
+  # átkát (a tárgy megmarad, a levételi zár és a bónusz megszűnik). A Feloldozás-oltár
+  # mintája: SOUL_LANTERN mag, kvarc-gyűrű nélkül is működik kisebb struktúrával.
+  atok_tores:
+    type: "uncurse"
+    altar-block: "CRYING_OBSIDIAN"
+    cooldown-seconds: 600
+    structure:
+      - "-1,-1,-1:OBSIDIAN"
+      - "0,-1,-1:OBSIDIAN"
+      - "1,-1,-1:OBSIDIAN"
+      - "-1,-1,0:OBSIDIAN"
+      - "0,-1,0:OBSIDIAN"
+      - "1,-1,0:OBSIDIAN"
+      - "-1,-1,1:OBSIDIAN"
+      - "0,-1,1:OBSIDIAN"
+      - "1,-1,1:OBSIDIAN"
+    sacrifice:
+      - "AMETHYST_SHARD:8"
+      - "GHAST_TEAR:1"
   hazateres:
     type: "home"
     altar-block: "LODESTONE"
@@ -916,6 +1014,33 @@ rituals:
 # megerősített Wither-csontváz bajnokot idézhetnek (/souls champion).
 souls:
   shards-per-kill: 1
+  # Az élőhalottban nincs learatható lélek (a Néma Királynő szava mozgatja) — élőhalott
+  # ölésből NEM jár szilánk; a szilánk az ÉLŐ szörnyek lelkéből jön. true = régi viselkedés.
+  shards-from-undead: false
   champion-cost: 10
   champion-health: 60.0
   champion-lifespan-seconds: 60
+
+  # ===== E25 — Pakt-oltár (Boszorkánymester): tartós +20% max Lélekerő =====
+  # Ára: 1× Első Csend Szilánkja a táskából (pakt.material) — nem halmozható.
+  pakt_oltar:
+    type: "pakt"
+    altar-block: "SOUL_LANTERN"
+    cooldown-seconds: 600
+    structure:
+      - "-1,-1,-1:OBSIDIAN"
+      - "0,-1,-1:OBSIDIAN"
+      - "1,-1,-1:OBSIDIAN"
+      - "-1,-1,0:OBSIDIAN"
+      - "0,-1,0:CRYING_OBSIDIAN"
+      - "1,-1,0:OBSIDIAN"
+      - "-1,-1,1:OBSIDIAN"
+      - "0,-1,1:OBSIDIAN"
+      - "1,-1,1:OBSIDIAN"
+
+# ===== E25/E32 — kaszt-erőforrás pool-bónuszok (élő kulcsok) =====
+pakt:
+  bonus-percent: 20.0
+  material: "elso_csend_szilankja"
+  dragon-relic-id: "sarkany_tojas"
+  dragon-essence-bonus-percent: 10.0

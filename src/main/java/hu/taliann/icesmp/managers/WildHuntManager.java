@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Wild Hunt world event (ROADMAP "élőbb világ", harci variáns): periodically a
+ * Wild Hunt world event: periodically a
  * single named, level-scaled elite beast roams in near a random adventurer — a
  * roaming mini-threat between the invasion swarms and the world bosses. Slaying it
  * drops a rare loot table (raw items, never currency) and announces the hunter; if
@@ -58,6 +58,16 @@ public final class WildHuntManager {
     private volatile long nextAttemptAt;
     /** Reserves the "active" state while a spawn is still hopping region threads. */
     private volatile long spawnGraceUntil;
+    /** Setter-injected (constructed later in the DI order); null = no placement restriction. */
+    private volatile EventSpawnGuard spawnGuard;
+
+
+    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
+    private volatile MajorEventGate eventGate;
+
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
 
     public WildHuntManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager, final PartyManager partyManager,
@@ -68,6 +78,11 @@ public final class WildHuntManager {
         this.partyManager = partyManager;
         this.messageManager = messageManager;
         this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
+    }
+
+    /** Wires the shared spawn-placement guard (built after this manager in the DI order). */
+    public void setSpawnGuard(final EventSpawnGuard spawnGuard) {
+        this.spawnGuard = spawnGuard;
     }
 
     /** Whether the given entity is the active wild-hunt beast (for the death listener). */
@@ -125,12 +140,27 @@ public final class WildHuntManager {
 
         if (now >= nextAttemptAt) {
             nextAttemptAt = now + intervalMillis();
+            // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+            final MajorEventGate gateRef = eventGate;
+            if (gateRef != null && !gateRef.mayStartNaturally("wild-hunt")) {
+                return;
+            }
+            // Évszak-szorzó (télen vadabb a Hajsza — season-modifiers.<evszak>.wild-hunt).
+            final SeasonalModifierService seasonalRef = seasonalModifiers;
+            final double seasonalMult = seasonalRef == null ? 1.0D : seasonalRef.chanceMultiplier("wild-hunt");
             final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("wild-hunt.chance-percent", 30.0D)));
+                    configManager.getDouble("wild-hunt.chance-percent", 30.0D) * seasonalMult));
             if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
                 spawn(null);
             }
         }
+    }
+
+    /** Az évszak-szorzó bekötése. */
+    private volatile SeasonalModifierService seasonalModifiers;
+
+    public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
+        this.seasonalModifiers = seasonalModifiers;
     }
 
     /** Admin override: unleashes the hunt now near the anchor (or a random player). */
@@ -148,8 +178,19 @@ public final class WildHuntManager {
      * @param slayer the killing player (may be null if it died some other way)
      * @param where the death location
      */
+    /** Personal-loot kiterjesztés: a fenevadat sebző résztvevők (spam-mentes halmaz). */
+    private final java.util.Set<java.util.UUID> damagers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** A sebzés-listener hívja (a fenevad régió-szálán): résztvevő-jelölés. */
+    public void recordDamager(final java.util.UUID playerId) {
+        if (beastId != null && playerId != null) {
+            damagers.add(playerId);
+        }
+    }
+
     public void onSlain(final Player slayer, final Location where) {
         if (!claimSettlement()) {
+            damagers.clear();
             return; // Expiry won the race — the escape path already settled it.
         }
 
@@ -167,7 +208,36 @@ public final class WildHuntManager {
             }
             world.spawnParticle(Particle.TOTEM_OF_UNDYING, where.clone().add(0.0D, 1.0D, 0.0D), 16, 0.5D, 0.7D, 0.5D, 0.1D);
             world.playSound(where, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5F, 1.5F);
+
+            // Personal-loot kiterjesztés (50-60 fős szerverre): minden
+            // sebző résztvevő kap egy CSÖKKENTETT saját gurítást — a leütő (és a partyja,
+            // amely már teljes personal lootot kapott) kimarad a második körből.
+            final double ratio = Math.max(0.0D, Math.min(1.0D,
+                    configManager.getDouble("wild-hunt.participant-loot-ratio", 0.5D)));
+            final int participantRolls = (int) Math.round(rolls * ratio);
+            if (participantRolls > 0) {
+                for (final java.util.UUID id : java.util.Set.copyOf(damagers)) {
+                    if (slayer != null && (id.equals(slayer.getUniqueId())
+                            || partyManager.isSameParty(slayer.getUniqueId(), id))) {
+                        continue;
+                    }
+                    final Player participant = Bukkit.getPlayer(id);
+                    if (participant == null) {
+                        continue;
+                    }
+                    participant.getScheduler().run(plugin, task -> {
+                        for (final ItemStack loot : LootTable.roll(configManager, "wild-hunt.loot", participantRolls)) {
+                            participant.getInventory().addItem(loot).values()
+                                    .forEach(left -> participant.getWorld().dropItemNaturally(participant.getLocation(), left));
+                        }
+                        participant.sendMessage(messageManager.getMessage(
+                                "wild-hunt-participant-loot",
+                                "<green>🏹 Részt vettél a Hajszában — a zsákmányból neked is jut.</green>"));
+                    }, null);
+                }
+            }
         }
+        damagers.clear();
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-slain",
@@ -182,9 +252,14 @@ public final class WildHuntManager {
         beastId = null;
     }
 
-    private boolean spawn(final Player preferredAnchor) {
+    private synchronized boolean spawn(final Player preferredAnchor) {
         // Reserve the active state while the spawn hops threads (self-healing after 10s
         // if the chain dies, e.g. the world unloads), so no second beast can start.
+        // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick
+        // és egy egyidejű admin-hívás közül csak az első juthat át.
+        if (System.currentTimeMillis() < spawnGraceUntil) {
+            return false;
+        }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
@@ -213,11 +288,22 @@ public final class WildHuntManager {
         final int z = center.getBlockZ();
         final Location spot = new Location(world, x + 0.5D, world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
 
+        // Placement rules (config: world-events.spawn-rules.wild-hunt): never inside a
+        // town/claim/WG region, never on a water surface. The 10s spawn-grace self-heals;
+        // the next interval rolls again elsewhere.
+        final EventSpawnGuard guard = spawnGuard;
+        if (guard != null && (guard.isBlocked("wild-hunt", spot) || guard.isUnsafeSurface("wild-hunt", world, x, z))) {
+            return;
+        }
+
         final Class<? extends Entity> entityClass = beast.type.getEntityClass();
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             return;
         }
         final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
+        // No overworld zombification (a conversion would spawn a NEW entity with a new UUID, so
+        // the beast would count as "escaped" while its zombified body keeps roaming) / no burn.
+        EventSpawnGuard.prepare(mob);
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mob.setPersistent(false);
@@ -247,6 +333,7 @@ public final class WildHuntManager {
 
     private void escape() {
         final UUID id = beastId;
+        damagers.clear();
         if (!claimSettlement()) {
             return; // The death listener won the race — the slain path already settled it.
         }

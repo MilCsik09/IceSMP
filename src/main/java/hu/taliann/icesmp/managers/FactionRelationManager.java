@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Faction reputation (ideas.md "Frakció-reputáció"): a config-driven relation
+ * Faction reputation: a config-driven relation
  * matrix (ALLY / NEUTRAL / ENEMY) plus a dynamic ENEMY state whenever the two
  * factions are in an active raid. The relation drives a market price modifier —
  * trading with an enemy faction carries a surcharge (which burns, a money sink),

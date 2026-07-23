@@ -32,7 +32,7 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * Config-driven quest framework (ideas.md "Quest-keretrendszer"): quest
+ * Config-driven quest framework: quest
  * definitions live under 'quests.<id>' in config.yml, player progress lives in
  * PDC. Quests gate content (the necromancer initiation), reward progression
  * (class trials) and offer the only way back from the dark pact (the penance
@@ -66,6 +66,13 @@ import java.util.Set;
  */
 public final class QuestManager implements PersistentStore {
 
+    /** B35 — setter-injektált (konstruktor-sorrend): quest-teljesítés céh-XP-je. */
+    private volatile GuildManager guildManager;
+
+    public void setGuildManager(final GuildManager guildManager) {
+        this.guildManager = guildManager;
+    }
+
     /** Objective types the framework understands (admin create validates against this). */
     public static final Set<String> OBJECTIVE_TYPES = Set.of(
             "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
@@ -80,7 +87,8 @@ public final class QuestManager implements PersistentStore {
             "display-name", "description", "giver-npc", "next",
             "repeatable", "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count",
-            "requires-job", "requires-faction", "requires-level", "requires-quest",
+            "requires-job", "requires-faction", "requires-level", "requires-quest", "chapter", "riddle",
+            "min-season-day", "max-season-day",
             "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.territory",
             "objective.level", "objective.npc", "objective.course", "objective.biome",
@@ -257,6 +265,12 @@ public final class QuestManager implements PersistentStore {
     private static final Set<String> OBJECTIVE_SUBFIELDS = Set.of(
             "type", "count", "entity-type", "min-mob-level", "materials",
             "territory", "level", "npc", "course", "biome", "description");
+
+    private volatile SpecializationManager specializationManagerRef;
+
+    public void setSpecializationManager(final SpecializationManager specializationManager) {
+        this.specializationManagerRef = specializationManager;
+    }
 
     public synchronized String setCustomQuestField(final String questId, final String field, final String rawValue) {
         if (!isCustomQuest(questId)) {
@@ -582,6 +596,36 @@ public final class QuestManager implements PersistentStore {
             }
         }
 
+        // Fejezet-szűrő: a `chapter: N` quest csak az N. szezon-fejezet alatt vehető
+        // fel. A már FELVETT fejezet-quest szezonváltás után is befejezhető (kegyelmi
+        // szabály), de új felvétel és a next-lánc folytatása már nem nyílik meg.
+        final int chapter = quest.getInt("chapter", 0);
+        if (chapter > 0) {
+            final SeasonManager seasonRef = seasonManager;
+            final int current = seasonRef == null ? 0 : seasonRef.getSeasonNumber();
+            if (current > 0 && current != chapter) {
+                return current > chapter ? "quest-chapter-closed" : "quest-chapter-future";
+            }
+        }
+
+        // Szezon-közepi ablak: a min/max-season-day questek csak
+        // a szezon adott nap-sávjában vehetők fel — így a szezon KÖZEPÉNEK is van dátum-kapus
+        // tartalma. A már felvett quest az ablak zárta után is befejezhető (kegyelmi szabály).
+        final int minSeasonDay = quest.getInt("min-season-day", 0);
+        final int maxSeasonDay = quest.getInt("max-season-day", 0);
+        if (minSeasonDay > 0 || maxSeasonDay > 0) {
+            final SeasonManager seasonRef = seasonManager;
+            final int day = seasonRef == null ? 0 : seasonRef.getSeasonDay();
+            if (day > 0) {
+                if (minSeasonDay > 0 && day < minSeasonDay) {
+                    return "quest-season-window-future";
+                }
+                if (maxSeasonDay > 0 && day > maxSeasonDay) {
+                    return "quest-season-window-closed";
+                }
+            }
+        }
+
         final String requiredJobId = quest.getString("requires-job");
         if (requiredJobId != null && !requiredJobId.isBlank()) {
             final JobType requiredJob = JobType.fromId(requiredJobId);
@@ -607,6 +651,25 @@ public final class QuestManager implements PersistentStore {
         }
 
         return null;
+    }
+
+    /** A FancyNpcs quest-bridge állapota — a /quest talk tartalék-út ebből tudja, hogy kell-e. */
+    private volatile boolean npcBridgeActive;
+
+    public void setNpcBridgeActive(final boolean active) {
+        this.npcBridgeActive = active;
+    }
+
+    public boolean isNpcBridgeActive() {
+        return npcBridgeActive;
+    }
+
+    /** A give-dialógus lejátszása parancsos felvételkor (az NPC-út a saját folyamában játssza). */
+    public void playGiveDialogue(final Player player, final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (quest != null) {
+            sendDialogue(player, questId, "give", dialogueSpeakerFallback(quest));
+        }
     }
 
     public boolean accept(final Player player, final String questId) {
@@ -1407,6 +1470,12 @@ public final class QuestManager implements PersistentStore {
      * the quest menu (e.g. "Szörnyek 4/10 • Gyűjtés 2/5").
      */
     public String describeProgress(final Player player, final String questId) {
+        // Rejtvény-quest: a cél SOSEM jelenik meg — a nyom a leírásban van, a
+        // megfejtés a játékosé (vagy a közösségé). Nincs időzített súgás.
+        final ConfigurationSection riddleQuest = getQuestSection(questId);
+        if (riddleQuest != null && riddleQuest.getBoolean("riddle", false)) {
+            return "??? — a nyomot a leírás rejti";
+        }
         final List<ConfigurationSection> objectives = getObjectiveSections(getQuestSection(questId));
         if (objectives.isEmpty()) {
             return getProgress(player, questId) + "/" + getObjectiveCount(questId);
@@ -1462,6 +1531,11 @@ public final class QuestManager implements PersistentStore {
         if (statsManager != null) {
             statsManager.recordQuestComplete(player.getUniqueId());
         }
+        // Céh-XP a tag-aktivitásból: minden quest-teljesítés a céhet is építi.
+        final GuildManager guildRef = guildManager;
+        if (guildRef != null) {
+            guildRef.addActivityXp(player, Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));
+        }
         // Repeatable-cooldown anchor + seasonal anchor: when / in which season was it turned in.
         player.getPersistentDataContainer().set(doneAtKey(questId), PersistentDataType.LONG, System.currentTimeMillis());
         player.getPersistentDataContainer().set(seasonKey(questId), PersistentDataType.LONG, currentSeasonId());
@@ -1496,7 +1570,7 @@ public final class QuestManager implements PersistentStore {
      * accept-blockers, so requirement mismatches or an already-active/completed
      * next link simply skip silently). Used by story sequences that shouldn't
      * need an NPC visit or territory crossing between every link — e.g. the
-     * first-join onboarding chain (ROADMAP A5).
+     * first-join onboarding chain.
      */
     private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
         final String next = completedQuest.getString("next");
@@ -1532,7 +1606,7 @@ public final class QuestManager implements PersistentStore {
                     : CurrencyType.fromInput(typeRaw);
             final double amount = currencyReward.getDouble("amount", 0.0D);
             if (currencyType != null && amount > 0.0D) {
-                currencyManager.addToBalance(player.getUniqueId(), currencyType, amount);
+                currencyManager.payOutTokens(player, currencyType, Math.round(amount));
             }
         }
 
@@ -1570,6 +1644,18 @@ public final class QuestManager implements PersistentStore {
         // The penance chain's final mercy: even the dark pact can be broken.
         if (quest.getBoolean("rewards.cleanse-sins", false)) {
             sinManager.breakDarkPact(player);
+            // A DARK-kapus spec (Nekromanta, Szentségtelen, jövőbeliek) nem élhet tovább
+            // a paktum nélkül — a vezeklés a specet is elengedi (a kaszt marad).
+            final SpecializationManager specs = this.specializationManagerRef;
+            if (specs != null) {
+                final hu.taliann.icesmp.data.SpecializationType current = specs.getClassSpecialization(player);
+                if (current != null && (current.getRequiredFaction() == hu.taliann.icesmp.data.FactionType.DARK
+                        || current.requiresSinner())) {
+                    specs.resetClassSpecialization(player);
+                    player.sendMessage(messageManager.getMessage("penance-spec-reset",
+                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott. Új utat választhatsz.</yellow>"));
+                }
+            }
         }
     }
 
@@ -1621,9 +1707,13 @@ public final class QuestManager implements PersistentStore {
         return player.getPersistentDataContainer().getOrDefault(doneAtKey(questId), PersistentDataType.LONG, 0L);
     }
 
-    /** The current season's identity (its end timestamp changes when a new season starts). */
+    /**
+     * Stabil szezon-azonosító: a kezdő-bélyeg. A getSeasonEndMillis() élő configból
+     * számolódik — egy length-days átírás szezon közben minden teljesített szezonális
+     * questet újranyitna; a seasonStart csak tényleges szezonváltáskor mozdul.
+     */
     private long currentSeasonId() {
-        return seasonManager == null ? 0L : seasonManager.getSeasonEndMillis();
+        return seasonManager == null ? 0L : seasonManager.getSeasonStart();
     }
 
     private long getCompletedSeason(final Player player, final String questId) {

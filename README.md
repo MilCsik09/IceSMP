@@ -2,7 +2,7 @@
 
 Az **IceSMP** egy Folia-alapú Minecraft plugin (1.21.11, Paper API kompatibilis), amely egy
 fantasy "királyságos" SMP szerver teljes játékmenet-rendszerét adja: frakciók, kasztok és
-specializációk, talentek, szakmák, katalizátor-alapú képességek, legendás relikviák,
+specializációk, talentek, szakmák, Lélekkapocs-alapú képességek, legendás relikviák,
 dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
 > 🎮 **Játékos tájékoztató:** [PLAYER_GUIDE.md](PLAYER_GUIDE.md) — mit hogyan használj a játékban
@@ -26,8 +26,8 @@ dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 | ⚪ **Semleges** | `/faction join neutral` (alapértelmezett) | **Nincs zuhanás-sebzés**; a nem-ellenséges mobok **és endermanök** békén hagyják; adómentes |
 | ⚫ **Sötét** | `/faction join dark` — **csak bűnösként!** | Immunis a wither-sebzésre; az élőhalottak nem támadják |
 
-**A Sötét frakció különleges:** csak az léphet be, akit a Mételytépő relikvia (vagy admin)
-**bűnössé (sinner)** bélyegzett. Belépéskor megköttetik a **sötét paktum** — onnantól a
+**A Sötét frakció különleges:** csak **bűnösként (sinner)** léphetsz be — bűnössé a
+tetteid tesznek (lásd lentebb), a belépés pedig kétlépcsős megerősítést kér. Belépéskor megköttetik a **sötét paktum** — onnantól a
 bűnös jelölés **soha többé nem törölhető le**, akkor sem, ha később elhagyod a frakciót.
 Bűn a **gyilkosság** (+1), az **árulás** (saját frakciótárs megölése, +2) és a **lopás**
 (másik frakció területén konténer-fosztás, +1); 4 bűnnél automatikus a száműzetés. Raid
@@ -61,7 +61,7 @@ mobok jönnek — és annál több XP-t adnak). A szintek WoW-mintára **egyre t
 kerülnek**, a képességek (spellek) pedig a szintekkel **automatikusan feloldódnak**.
 
 A 25. szinttől **specializálódhatsz** (`/spec choose <id>`), és a legerősebb képességek
-csak így érhetők el. Összesen **31 specializáció** van — a spec dönti el a szerepedet (DPS /
+csak így érhetők el. Összesen **35 specializáció** van — a spec dönti el a szerepedet (DPS /
 caster / tank / gyógyító), így minden szerep lefedett. A döntés nem örök: a `/spec respec`
 paranccsal **frakcióvalutáért visszaválthatod** a speced (a spec-talentjeid pontjai ilyenkor
 visszatérülnek):
@@ -82,33 +82,33 @@ visszatérülnek):
 | Démonvadász | 💥 Tombolás • 🛡 Bosszú |
 | Sárkányidéző | 🔥 Perzselés • 💧 Megőrzés |
 
-### ✨ Képesség Katalizátor
+### ✨ Lélekkapocs
 
-Minden kaszt a saját, tematikus **Képesség Katalizátorával** használja a képességeit
+Minden kaszt a saját, tematikus **Lélekkapocsával** használja a képességeit
 (a kasztválasztó GUI-ból bármikor igényelhető, ha elveszett; admin: `/job givecatalyst`):
 
-| Kaszt | Katalizátor |
+| Kaszt | Lélekkapocs |
 |---|---|
-| Varázsló | 📖 **Mágikus Kódex** (bűvölt könyv) |
-| Harcos | 📯 **Harci Kürt** (kecskekürt) |
-| Íjász | 🎒 **Vadásztarsoly** (nyúlbőr) |
-| Orgyilkos | 🪨 **Árnyékamulett** (kovakő) |
-| Druida | 🌱 **Vadon Talizmánja** (tölgycsemete) |
-| Paplovag | 🔔 **Szent Harang** (harang) |
-| Halállovag | 💀 **Rúnakovácsolt Koponya** (wither-koponya) |
-| Sámán | 🪬 **Ősök Totemje** (mentő totem) |
-| Szerzetes | 🎍 **Jáde Bot** (bambusz) |
-| Pap | 🕯️ **Szent Gyertya** (fehér gyertya) |
-| Boszorkánymester | 🏮 **Lélek Lámpás** (lélek-lámpás) |
-| Démonvadász | 👁️ **Démonszem** (ender-szem) |
-| Sárkányidéző | 🐲 **Sárkány Esszencia** (sárkánylehelet) |
+| Varázsló | 📖 **Caldesterai Rúnakódex** (bűvölt könyv) |
+| Harcos | 📯 **Sárkánykirály Kürtje** (kecskekürt) |
+| Íjász | 🎒 **Soleil Vadásztarsolya** (nyúlbőr) |
+| Orgyilkos | 🪨 **Homály-szilánk** (kovakő) |
+| Druida | 🌱 **Aetrinita Sarja** (tölgycsemete) |
+| Paplovag | 🔔 **Hajnaltűz Harangja** (harang) |
+| Halállovag | 💀 **Néma Rúnakoponya** (wither-koponya) |
+| Sámán | 🪬 **Ősvihar Totemje** (mentő totem) |
+| Szerzetes | 🎍 **Élet Ága** (bambusz) |
+| Pap | 🕯️ **Asterlayna Gyertyája** (fehér gyertya) |
+| Boszorkánymester | 🏮 **Kárhozat Lámpása** (lélek-lámpás) |
+| Démonvadász | 👁️ **Hasadék Szeme** (ender-szem) |
+| Sárkányidéző | 🐲 **Sárkányvér-fiola** (sárkánylehelet) |
 
 - **Jobb katt** — kiválasztott képesség elsütése
 - **Lopakodás + ütés (bal katt)** — váltás a feloldott képességek között, kaszt-specifikus
   hanggal (lapozás / kürt / számszeríj / suttogó szél) és a képesség nevét + költségét
   mutató action bar kijelzéssel
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben tartott
-  **kard/balta is katalizátor** — nem kell tárgyat váltani harc közben.
+  **kard/balta is Lélekkapocs** — nem kell tárgyat váltani harc közben.
 
 Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. Több mint 390 képesség van a
 rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
@@ -146,7 +146,7 @@ minden szakma specializálódhat — szakmánként 2 irány (pl. Fegyverkovács 
 Főzetmester / Transzmutátor, Séf / Hentes) **valódi mechanikai passzívokkal** (dupladrop,
 XP-bónusz, ital-hosszabbítás).
 
-**Recept-könyv** (`/profession recipes`): WoW-szerű, több mint **120 recept** — a tanultak
+**Recept-könyv** (`/profession recipes`): WoW-szerű, több mint **400 recept** — a tanultak
 zölddel, a zároltak szürkén, egy kattintással craftolható. A receptek **szintre** vagy
 **tervrajzból** (Knowledge Book — NPC-bolt / mob-drop / admin) nyílnak meg. Egyes szakmák
 **egyedi köztes alapanyagot** gyártanak (pl. *Tiszta Vasesszencia*, *Rúnapor*), amit a
@@ -163,7 +163,7 @@ WoW-ban / Terraria reforge-ban. A raritás a nevet, a színt, az affixek számá
 - 👹 **Mob-loot:** súlyozott loot-tábláról sokféle tárgy — rolled felszerelés (random névvel, akár
   átkos), nyersanyagok, és **csak-mobból-eső egyedi alapanyagok** (*Vad Esszencia*, *Szörny Mag*…),
   amiket a szakma-receptek igényelnek. Szakma-craftolt tárgy sosem esik mobból.
-- 🐉 **Világboss / nehéz event loot:** a legmagasabb raritások + boss-only *Ősi Ereklyeszilánk*.
+- 🐉 **Világboss / nehéz event loot:** a legmagasabb raritások + boss-only *Fekete Villám Szilánk*.
 
 ### 🗡 Relikviák és rituálé-oltárok
 
@@ -179,7 +179,7 @@ bűnösöket). Szabályaik:
 
 ### 💰 Gazdaság — dinamikus árfolyammal
 
-Minden frakciónak saját valutája van (Piros / Kék / Semleges / Sötét token), amelyek fizikai
+Minden frakciónak saját valutája van (Piros / Kék / Semleges / Csontveret), amelyek fizikai
 itemként és banki egyenlegként is léteznek:
 
 - `/bank deposit` — a nálad lévő tokenek bankba helyezése; `/bank withdraw` — kivét itemként
@@ -208,10 +208,11 @@ skálázódnak, így a farmok nem törhetik el a rendszert.
 ### 🏰 Frakcióterületek
 
 Adminok **kör-** vagy **poligon-zónákat** jelölhetnek ki (`/territory circle`, illetve a fal
-mentén bejárt pontokból `/territory pos` → `/territory create`). Négy **zónatípus** védi a
+mentén bejárt pontokból `/territory pos` → `/territory create`). Hat **zónatípus** védi a
 térképet: **frakcióterület** (csak a frakció tagjai építhetnek, de ide a játékosok
-**claimelhetnek** is), valamint a **védett frakcióterület**, **védett város** és **főváros**,
-ahol **senki** sem építhet és claimelni sem lehet. A határátlépést a játékosok típusfüggő action
+**claimelhetnek** is), a **védett frakcióterület**, **védett város** és **főváros**,
+ahol **senki** sem építhet és claimelni sem lehet, továbbá a **Kárhozat Kapuja**
+(törvényen kívüli PvP-zóna) és a **kazamata** (kulcs-kapus, emelt mob-szintű dungeon). A határátlépést a játékosok típusfüggő action
 bar üzenetben látják ("✦ Piros főváros ✦", "⛨ védett város ⛨"). Zónatípusonként **külön
 állítható**, mi tiltott (`territory.protection.rules`): **build**, **interact**, **pvp**,
 **explosions**, **fire** — így egy védett város teljes biztonságos zóna, egy frakcióváros viszont
@@ -279,7 +280,7 @@ adatmappájában — minden játékmeneti érték és üzenet ott testreszabhat�
   LibsDisguises (Druida-formák vizuálja), FancyNpcs (NPC-s kaszt-mester próbák),
   WorldGuard (a meteor/kincs események kerülik a WG-régiókat), LuckPerms (chat
   prefix/suffix a natív chat-formázóban) — mindegyik nélkül is teljes értékűen fut
-- Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 31 spec / 390+ spell,
+- Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 35 spec / 390+ spell,
   hibrid erőforrás-költség, talentek, szakmák, gazdaság + piac, relikviák + rituálék,
   világesemények (vérhold / világbossok / inváziók), király/raid/szezon, küldetések, pet-rendszer.
 - A hátralévő irányok: [ROADMAP.md](ROADMAP.md)

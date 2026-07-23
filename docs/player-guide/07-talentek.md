@@ -27,7 +27,7 @@ A két pontfajta külön: kaszt-pontot csak a kaszt-fába, szakma-pontot csak a 
   (+sebzés) — nem lehet mindkettő.
 - 👑 **Csúcs-talent (capstone):** erős talent a fa „csúcsán", ami csak akkor nyílik, ha már
   **elég pontot elköltöttél** abban a fában (pl. a **Felemelkedés** 10 elköltött pont után).
-- ★ **Aktív talent:** nem csak passzív bónusz — **képességet old fel** a Katalizátorodban!
+- ★ **Aktív talent:** nem csak passzív bónusz — **képességet old fel** a Lélekkapcsodban!
   Pl. a **Felemelkedés** feloldja a **Talentum Lendület** ultit (rövid, erős önbuff). Ezek a
   talentek `★` jellel látszanak.
 

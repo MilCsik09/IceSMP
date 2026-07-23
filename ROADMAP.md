@@ -3,10 +3,9 @@
 Ez az **egyetlen előre néző terv-dokumentum**. A megvalósult állapotot a
 [README.md](README.md) és a [PLAYER_GUIDE.md](PLAYER_GUIDE.md) írja le, az architektúrát a
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a tesztelést a [PLAYTEST.md](PLAYTEST.md).
-A kötetlen ötlet-gyűjtő a [docs/IDEAS.md](docs/IDEAS.md) (index — 316 kidolgozott tétel
-10 kategória-fájlban a `docs/ideas/` alatt, munka/érték becsléssel),
-a technikai adósság a [docs/REFACTOR_CANDIDATES.md](docs/REFACTOR_CANDIDATES.md) — ami onnan
-zöld utat kap, ide kerül tervezett tételként.
+A kötetlen ötlet-gyűjtő a [docs/ideas/BACKLOG.md](docs/ideas/BACKLOG.md) (konszolidált,
+319 nyitott tétel munka/érték becsléssel, a technikai adósság az O-szekcióban) — ami
+onnan zöld utat kap, ide kerül tervezett tételként.
 (A korábbi terv-doksik — ideas.md, todo.md, CONTENT-PLAN, DEPTH-ROADMAP, a fázis-napló —
 megvalósultak és törölve lettek; a még nyitott pontjaik itt élnek tovább.)
 
@@ -136,7 +135,7 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 3. **Egyedi dungeonök (PvE):** kézzel készített helyszínek megnevezett bossokkal, mechanikákkal,
    loot-táblákkal (a LootTable + world-event infra újrahasznosítható).
 4. **Kozmetikumok GUI-ból, valutáért** (money sink): részecske-nyomok, kalapok, halál-üzenetek.
-   Ide köthető egy **natív crate-rendszer** is (CrazyCrates-kiváltás, frakció-valutás kulcsokkal).
+   A **natív crate-rendszer KÉSZ** (crates.yml, /crate set|buy, pörgős reveal-GUI, quest-kulcs jutalmak — a CrazyCrates kiváltva); a kozmetikum-bolt maga még nyitott.
 5. **Világesemény-bővítések:** vihar / aranyláz-zóna / napfogyatkozás, heti/eseményhez kötött
    esemény-rotáció, karaván-készlet napi rotáció.
 6. **Party-extrák:** party-célpont jelölés, party-waypoint.
@@ -146,7 +145,8 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
 10. **Külön ulti-töltő sáv** (második, lassan töltődő mérő a burst-jutalomhoz).
 
 ### Világépítés (szerver-csapat, nem plugin-kód)
-- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros megépítése; `/territory` kijelölések,
+- ⬜ Fővárosok, az Élet Fája (spawn), a Sötét romváros — **Thanaopolis, a Holtak Városa** (történelmi nevén Mortengrad; a
+  Kitaszítottak/DARK fővárosa) — megépítése; `/territory` kijelölések,
   majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
   hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).
 - ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.

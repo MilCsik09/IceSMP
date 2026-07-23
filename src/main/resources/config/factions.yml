@@ -1,26 +1,55 @@
 # IceSMP konfiguráció — factions (a ConfigManager az összes config/*.yml-t betölti)
+# A nevek KANONIKUSAK (docs/LORE.md): a rövid alak a HUD/tab-on, a teljes a /faction info-ban.
+# A tényleges forrás a FactionType enum — ez a blokk dokumentáció, tartsd szinkronban.
 factions:
   red:
-    display-name: "Piros"
+    display-name: "Láng"
+    full-name: "Perinfernicitas"
   blue:
-    display-name: "Kék"
+    display-name: "Fagy"
+    full-name: "Cryghaliris"
   neutral:
-    display-name: "Semleges"
+    display-name: "Menedék"
+    full-name: "Ryanora & Caldestera"
   dark:
-    display-name: "Sötét"
+    display-name: "Kitaszított"
+    full-name: "A Kitaszítottak"
+    # A DARK-belépés kétlépcsős megerősítése (a paktum örök): az első /faction join dark
+    # figyelmeztet, ennyi másodpercen belül megismételve lép csak életbe (0 = kikapcsolva).
+    join-confirm-seconds: 60
   # ===== Frakcióváltás =====
   # Az ELSŐ csatlakozás (amikor a játékosnak még nincs frakciója) mindig ingyenes
   # és nincs rá cooldown. Ha a játékosnak MÁR van frakciója és másikba lép át
   # (frakcióváltás), azért a JELENLEGI frakciója valutájában kell fizetnie,
   # és csak cooldown-hours óránként válthat újra (money sink + a frakció-hopping
-  # ellen). A Sötét frakcióba való átlépésre (bűnösöknek) is vonatkozik, ha az
-  # frakcióváltás.
+  # ellen). KIVÉTEL (a kód szerint): a Semlegesből bárhová ingyen léphetsz, és a
+  # Sötétbe lépés MINDIG ingyenes — annak a sinner-feltétel + az örök paktum az ára.
   switch:
     cost: 500.0
     cooldown-hours: 72.0
+    # Szezononként legfeljebb ennyi FIZETETT frakció-váltás fér bele (0 = korlátlan).
+    # Az első, ingyenes frakció-választás nem számít bele.
+    max-per-season: 2
+    # A szezon utolsó napjaiban a váltás TELJESEN tilos — a liga-hajrát ne lehessen
+    # oldalt váltva megjátszani (0 = nincs zár). Élő kulcsok.
+    lockout-final-days: 7
     # Frakciót váltani (ha már választottál) csak a Semleges Királyság fővárosában állva lehet.
     # Fail-open: amíg nincs kijelölt semleges főváros (/territory setcapital neutral ...), nem zár.
     only-in-neutral-capital: true
+  # ===== Hadi-ablak (gameplay-audit): a RED↔BLUE háborúnak legyen törvényes ideje =====
+  # A nyitott ablak alatt a Láng↔Fagy ölés NEM bűn és NEM vérdíj-eset — szentesített
+  # hadicselekmény, ami liga-pontot ér ("war" forrás a season.source-weights mátrixban).
+  # Menetrend-sorok: "DAYOFWEEK HH:MM-HH:MM" (szerver-helyi idő; angol napnevek).
+  # Admin: /faction war start [perc] | stop (jog: icesmp.admin.war). Farm-fék:
+  # ölőnként napi pont-plafon + ugyanarra az áldozatra cooldown. Élő kulcsok.
+  war-window:
+    enabled: true
+    schedule:
+      - "SATURDAY 18:00-20:00"
+      - "SUNDAY 18:00-20:00"
+    points-per-kill: 1
+    daily-point-cap: 5
+    per-victim-cooldown-minutes: 30
   # ===== Királyság-spawnok (/territory setspawn <frakció> — a beállító admin PONTOS pozíciója,
   # magassággal és nézésiránnyal együtt; amíg nincs beállítva, minden ág no-op) =====
   spawn:
@@ -39,19 +68,105 @@ factions:
   # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
   # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
   # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
+  # ===== A Vének Tanácsa (a Menedék "király-pótléka" — tulaj-jóváhagyás) =====
+  # A NEUTRAL-nak nincs királya: hetente választott, seats fős tanács gyakorolja a
+  # GAZDASÁGI jogokat (kassza-kivét saját napi kerettel, karaván-indítás, Vásár-hét
+  # kihirdetése — /tanacs vasarhet: Creutzér piaci díj-kedvezmény ablak). Raidet a
+  # tanács NEM hirdethet. Szavazás: /tanacs szavaz <játékos> (hetente egy, átszavazható);
+  # a hét fordulóján a szavazatok nullázódnak. Élő kulcsok.
+  council:
+    enabled: true
+    seats: 3
+    # A tanácsi kassza-keret a FRAKCIÓ KÖZÖS napi kerete (nem fejenkénti):
+    # a 3 tanácstag együtt sem lépheti túl.
+    withdraw-daily-cap: 400.0
+    market-week-minutes: 60
+  treasury:
+    # A király kassza-kivéte FIZIKAI veretben érkezik (bank-only szabály), és
+    # naponta legfeljebb ennyit vehet ki (0 = korlátlan — nem ajánlott).
+    withdraw-daily-cap: 1000.0
   tax:
     enabled: true
     interval-minutes: 60
     rate-percent: 2.0
     # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
     max-rate-percent: 10.0
+    # Fejadó: beszedésenként LEGALÁBB ennyi jár, akkor is, ha a számla üres — az üresen
+    # tartott számla így nem adóelkerülés. 0 = csak a százalékos adó él.
+    minimum-amount: 2.0
+    # Amit a számla nem fedez, hátralékként gyűlik (treasury.yml: tax-arrears), és a
+    # következő beszedésekkor automatikusan törlesztődik. Ez a plafonja (0 = nincs hátralék).
+    max-arrears: 50.0
+    # Adócsalás: ha a hátralék a plafonon ragad és a beszedés SEMMIT sem tud levonni, strike
+    # jár; ennyi egymást követő strike után a Számvevők feljelentik az adócsalót → +1 bűn
+    # (a bűn-küszöb elérése a meglévő száműzetés-mechanikát indítja — Kitaszítottak közé).
+    # A strike törlődik, amint a tartozás a plafon alá kerül. 0 = kikapcsolva.
+    evasion-strikes: 3
     exempt:
       - "NEUTRAL"
+  # ===== Frakció-étel kötelezettség (K6 — "hazai konyha") =====
+  # A Fagy (BLUE) népe halon, a Láng (RED) népe tojás-ételen él: aki grace-hours óta nem
+  # evett ilyet, check-minutes ütemben PUHA honvágy-debuffot kap (rövid Éhség + action-bar
+  # emlékeztető). Új játékos / frissen váltó először türelmi időt kap. Minden kulcs élőben
+  # olvasódik. A K6 signature ételek kis buffot is adnak (lásd a kulcsokat lent).
+  food-duty:
+    enabled: true
+    grace-hours: 12            # ennyi valós óra hazai étel nélkül indul be a honvágy
+    check-minutes: 5           # ellenőrzés/debuff gyakorisága
+    debuff-seconds: 45         # a honvágy-Éhség hossza alkalmanként (érezhető, de nem büntető)
+    pisztrang-buff-seconds: 60 # Fagyasztott Tavi Pisztráng: felszívódás-pajzs
+    rantotta-buff-seconds: 60  # Főnixtojás-Rántotta: tűz-ellenállás
+    suti-speed-seconds: 30     # Tiltott Kakaóbabos Sütemény: gyorsaság II
+    suti-launch-y: 0.6         # a süti "robbanásának" felfelé lökése
+    # A DARK-nak van étele (Mortengradi Hamukenyér: éjjellátás-buff), de honvágy-
+    # kötelezettsége NINCS — a Kitaszítottaknak nincs otthonuk, amire honvágyuk lehetne.
+    hamukenyer-buff-seconds: 60
+    # 2-3. hullám — ünnepi ételek MINDEN frakciónak (a duty-t is teljesítik, ahol van):
+    # BLUE Sárkány-pörkölt: Erő | RED Vadlakoma: Gyorsaság+Tűzáll | NEUTRAL Vándorünnep
+    # Lepénye: Szerencse+Gyorsaság | DARK Hamvak Lakomája: Felszívódás+Éjjellátás.
+    porkolt-buff-seconds: 45
+    vadlakoma-buff-seconds: 45
+    lepeny-buff-seconds: 60
+    hamulakoma-buff-seconds: 60
+  # ===== A Suttogók (K9 — rejtett státusz + lelepleződés) =====
+  # A Suttogó rejtett státusz a látható frakció fölött (titkos /suttogas csatorna). A Sötét
+  # Rítus: Suttogás-meghívóval (élőhalott-drop), éjjel, sculkon állva, egyedül, SHIFT+jobb
+  # katt — ára vér (rite-hp-cost). A gyanú sötét tettektől nő (rajtakapott rítus/árulás,
+  # tanú-vád), decay-minutes ütemben csökken; a küszöbnél a lelepleződés bűnökkel a
+  # Kitaszítottak közé taszít. Minden kulcs élőben olvasódik.
+  whisper:
+    enabled: true
+    suspicion-threshold: 100.0   # e fölött: azonnali lelepleződés
+    decay-minutes: 10            # ilyen gyakran csillapodik a gyanú
+    decay-amount: 5.0            # ennyivel csökken alkalmanként
+    betrayal-suspicion: 40.0     # rajtakapott testvérgyilkosság (Suttogóként)
+    caught-rite-suspicion: 50.0  # rajtakapott Sötét Rítus (a rítus meg is hiúsul)
+    accuse-suspicion: 15.0       # egy tanú-vád súlya (csak valódi Suttogóra hat)
+    # Suttogó-erősítés: éjjel az élőhalottak a felesküdötteket sem támadják (rejtett,
+    # éjszakai ízelítő a DARK-passzívából — a figyelmes szemtanúnak árulkodó jel!).
+    night-undead-truce: true
+    # Az "árulkodó jel": ha kívülálló látja, hogy a holtak elfordulnak a Suttogótól,
+    # kis eséllyel gyanú tapad rá — a békesség nem teljesen ingyenes. 0 = ki.
+    truce-witness-chance: 0.02
+    truce-witness-suspicion: 1.0
+    # Suttogó-erősítés: a feketepiacon a felesküdöttek CSENDES kedvezményt kapnak
+    # (a kijelzett ár marad, a levonás kevesebb — semmi látható nem leplezi le őket).
+    blackmarket-npc: "feketepiac"
+    blackmarket-discount-percent: 25
+    witness-seconds: 120         # a Tanú-token élettartama
+    witness-radius: 24.0         # ekkora körben kapnak tokent az árulás szemtanúi
+    rite-alone-radius: 16.0      # a rítushoz ekkora körben nem lehet más játékos
+    rite-hp-cost: 6.0            # a vér-áldozat (HP)
+    exposure-sins: 4             # a lelepleződés bűn-terhe (a bűn-küszöb visz a DARK-ba)
+    expose-broadcast: true       # szerver-broadcast a leleplezésről
   # ===== Bűn-számláló és száműzetés =====
   # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
   # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
   sins:
     murder-counts: true
+    # A Kitaszított (DARK) áldozat ölése SOSEM bűn — a törvényen kívül áll. (Korábban
+    # ezt a vérdíj-ág fedte le implicit módon; ez a kulcs explicit és résmentes.)
+    dark-victim-exempt: true
     exile-threshold: 4
     # Árulás: a SAJÁT frakciótársad megölése súlyosabban esik latba (a Semlegesek
     # laza közösség — köztük az ölés sima gyilkosság marad).
@@ -74,6 +189,10 @@ factions:
       reward-per-sin: 25.0
       currency: "NEUTRAL"
       clear-sins-on-death: true
+      # Ugyanarra az áldozatra csak ennyi óránként jár vérdíj-kifizetés (a
+      # megrendezett gyilkosság→kivégzés pénznyomda féke; a bűn-törlés ettől
+      # függetlenül jár). 0 = nincs fék (nem ajánlott).
+      per-victim-cooldown-hours: 12
   # ===== Királyok és választás =====
   # A frakciótagok a /faction king vote paranccsal szavaznak; min-votes elérése
   # után a listavezető trónra kerül. A ciklus lejártával a szavazatok törlődnek.
@@ -105,7 +224,11 @@ factions:
     territory-takeover: true
     entry-cost: 200
     spoils-percent: 20
-    season-points: 5
+    # Emelt liga-pont (balansz-döntés): a háború a legkockázatosabb pont-út, ne
+    # maradjon le a közösségi/identitás-utak mögött.
+    season-points: 10
+    # Két raid-hirdetés közti kötelező szünet (a lánc-grief féke; 0 = nincs).
+    cooldown-minutes: 60
     # Győztes-buff a győztes frakció online tagjainak (0 perc = kikapcsolva).
     winner-buff-minutes: 30
     winner-buff-strength: 0
@@ -144,44 +267,224 @@ territory:
     # Action bar üzenet területhatár átlépésekor.
     enabled: true
   protection:
+    # "A világ visszagyógyul": védett zónában/claimben a robbanás LÁTVÁNYOSAN megtörténik
+    # (a blokkokból törmelék repül ki, pattog, majd szétporlad), de semmi nem droppol,
+    # és delay-seconds után minden blokk PONTOSAN az eredeti állapotába épül vissza.
+    # Tile-entity blokk (láda, kemence…) sosem robban ki. Kikapcsolva: régi teljes tiltás.
+    regen:
+      enabled: true
+      # Robbanás utáni visszaépülés indulása (mp) — ennyi ideig marad a kráter.
+      delay-seconds: 180
+      # A visszaépítő menet üteme: ennyi tickenként (10 = fél mp; restarthoz kötött kulcs)…
+      restore-interval-ticks: 10
+      # …és menetenként ennyi blokk kerül vissza — együtt adják a gyógyulás tempóját
+      # (alap: 3 blokk / 0.5 mp = 6 blokk/mp, látványos, fokozatos újraépülés).
+      blocks-per-pass: 3
+      # Támasz-váró blokk (homok, fáklya) legfeljebb ennyi mp-et vár a támaszára,
+      # utána mindenképp visszaépül (a visszaépítés sosem ragadhat be).
+      support-grace-seconds: 120
+      # Zónánkénti regen-mátrix: hol gyógyul a rombolás. Védett zónák alapból BE,
+      # frakcióföld és a vadon alapból KI (vadonban a robbanás/mob-rombolás vanília
+      # marad, amíg be nem kapcsolod — a kézi bányászást a regen SOSEM érinti a
+      # vadonban, az mindig vanília).
+      zones:
+        capital: true
+        protected-city: true
+        protected-faction: true
+        dungeon: true
+        doom-gate: true
+        faction: false
+        wilderness: false
+      # Újrarombolási hurok-fék: ha ugyanaz a pozíció az ablakon belül ennyinél
+      # többször kerülne a sorba (pl. fáklyát folyton elmos a víz), a visszaépítés
+      # feladja azt a blokkot.
+      max-recaptures: 3
+      recapture-window-seconds: 600
+      # Fizika-pajzs fő-kapcsoló. Irány-szelektív víz-szabály: a kráterbe a víz
+      # BEfolyhat (természetes látvány), de onnan TOVÁBB nem terjed (a fal mögötti tér
+      # nem ázik el), és a visszaépüléskor a fal kiszorítja; a frissen visszaépített
+      # blokk (fáklya) utó-pajzsot kap; a kráterbe hulló perem-homok itemként esik le.
+      # Kikapcsolva a régi megoldás él (csak az újrarombolási hurok-fék véd).
+      physics-shield-enabled: true
+      # A VISSZAÉPÍTETT blokk pajzsának hossza (mp) — a kráter-pozíciók a teljes
+      # várakozás alatt pajzsoltak. 0 = a visszaépített blokkon azonnal él a fizika.
+      physics-shield-seconds: 300
+      # Kézi rombolás regen-nel (drop és XP nélkül, tile-entity sosem törhető):
+      player-break:
+        # Ostrom: élő raid alatt a CÉLZÓNÁBAN a regisztrált harcosok bonthatnak.
+        siege-enabled: true
+        siege-delay-seconds: 300
+        # Ostromon KÍVÜL is bárki bonthasson védett zónában (a fal visszagyógyul).
+        # Alapból KI: a safe-zone garanciát és a fővárosi törvényt gyengíti —
+        # playtest után kapcsold be, ha az élmény elbírja.
+        always-enabled: false
+        always-delay-seconds: 120
+      # Visszaépüléskor blokkonkénti lerakás-hang + porfelhő (anyag-hű "gyógyulás").
+      restore-effects-enabled: true
+      # Tile-entity robbanása TELJES NBT-pillanatképpel (struktúra-alapú): láda/shulker-
+      # tartalom, tábla-szöveg, fej-textúra, zászló-minta, spawner-beállítás — minden
+      # pontosan visszatér a visszaépüléskor, restart-biztosan. Alapból KI — ilyenkor a
+      # tile-entity "óvó rúnák" effekttel sértetlenül túléli a robbanást.
+      tile-entity-explode: false
+      debris-enabled: true
+      # A kirobbant blokkok ennyi %-a válik repülő törmelékké (100 = MIND repül).
+      debris-percent: 100
+      debris-lifetime-seconds: 4
+      debris-launch-power: 0.6
     # Fő kapcsoló a VÉDETT zónákra (protected-faction/protected-city/capital). Ha false, a védett
     # zónák MINDEN szabálya kikapcsol. (A normál frakcióterület szabályai külön, a rules alatt.)
     protect-zones: true
-    # Zónatípusonként állítható, mi TILTOTT (true = védve) az adott zónában:
+    # Zónatípusonként állítható, mi SZABAD az adott zónában — EGYÉRTELMŰ séma:
+    #   allow-<szabály>: true  = az adott dolog SZABAD (engedett)
+    #   allow-<szabály>: false = az adott dolog TILOS (a zóna védi)
+    # Szabályok:
     #   build       - blokk törése/rakása, vödör, kép-/festménykeret, armor stand
-    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik);
+    #                 (NORMÁL frakcióterületen a tiltás csak a NEM-tagokra vonatkozik);
     #                 VÉDETT zónában a mob-grief (enderman), folyadék-befolyás és
     #                 dugattyú-tolás is ehhez a szabályhoz kötött
     #   interact    - konténer/ajtó/gomb/kar/műhely jobbklikk
-    #                 (NORMÁL frakcióterületen csak a NEM-tagokra vonatkozik)
-    #   pvp         - játékos↔játékos sebzés a zónán belül (biztonságos zóna):
+    #                 (NORMÁL frakcióterületen a tiltás csak a NEM-tagokra vonatkozik)
+    #   pvp         - játékos↔játékos sebzés a zónán belül:
     #                 közelharc, nyíl/lövedék, háziállat, TNT és ártó/dobott bájital is
     #   explosions  - robbanás (creeper/TNT/kristály) blokk- ÉS dekoráció-kára
     #   fire        - tűz gyújtása/terjedése/égése
+    # (A régi, fordított jelentésű `build: true = tiltva` séma is működik még, de az
+    # allow-* kulcs nyer, ha ki van írva.)
     # Megkerülő jogok: icesmp.admin.territory.bypass (mindent + PvP),
     #                  icesmp.territory.builder (build + interact védett zónában is).
     rules:
-      faction:              # normál frakcióterület
-        build: true         # nem-tag nem építhet; a frakció tagjai igen
-        interact: false     # jobbklikk/konténer szabadon (állítsd true-ra zárt frakcióvárosokhoz)
-        pvp: false          # háborús szerver: a frakcióterületen szabad a harc
-        explosions: false
-        fire: false
-      protected-faction:    # védett frakcióterület (falak, műemlékek): senki nem építhet
-        build: true
-        interact: true
-        pvp: true
-        explosions: true
-        fire: true
-      protected-city:       # védett város (jellemzően semleges): senki nem építhet
-        build: true
-        interact: true
-        pvp: true
-        explosions: true
-        fire: true
-      capital:              # főváros (+ bank/valutaváltó): senki nem építhet
-        build: true
-        interact: true
-        pvp: true
-        explosions: true
-        fire: true
+      faction:                  # normál frakcióterület
+        allow-build: false      # nem-tag NEM építhet; a frakció tagjai igen
+        allow-interact: true    # jobbklikk/konténer szabad (false = zárt frakcióvárosok)
+        allow-pvp: true         # háborús szerver: a frakcióterületen szabad a harc
+        allow-explosions: true
+        allow-fire: true
+      protected-faction:        # védett frakcióterület (falak, műemlékek)
+        allow-build: false      # senki nem építhet
+        allow-interact: false
+        allow-pvp: false
+        allow-explosions: false
+        allow-fire: false
+      protected-city:           # védett város (jellemzően semleges)
+        allow-build: false
+        allow-interact: false
+        allow-pvp: false
+        allow-explosions: false
+        allow-fire: false
+      capital:                  # főváros (+ bank/valutaváltó)
+        allow-build: false
+        allow-interact: false
+        allow-pvp: false
+        allow-explosions: false
+        allow-fire: false
+      dungeon:                  # Kazamata (B3): az épített dungeon védelme
+        allow-build: false      # a dungeon nem bontható/építhető át
+        allow-interact: true    # ajtók/ládák/mechanizmusok használhatók
+        allow-pvp: true         # bent a harc szabad (a futam kockázata)
+        allow-explosions: false
+        allow-fire: false
+      doom-gate:                # Kárhozat Kapuja — PvPvE senkiföldje
+        allow-build: false      # az aréna nem építhető át / nem tornyozható be
+        allow-interact: true    # ajtók/oltárok szabadon használhatók
+        allow-pvp: true         # ⚔ a harc itt LEGÁLIS
+        allow-explosions: false # robbanás nem rongálja a terepet
+        allow-fire: false       # tűz nem terjed (a hangulat-tüzek admin-oldalról épülnek)
+  # ===== Kárhozat Kapuja (DOOM_GATE zóna) extra szabályai =====
+  # /territory circle doom-gate <id> <sugár> [név...] — frakció megadása NEM kell.
+  # Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
+  doom-gate:
+    # Az itteni játékos-ölés NEM számít bűnnek („a Kapunál nincs törvény").
+    sin-exempt: true
+    # Belépéskor ennyi másodperc PvP-védelem jár (spawn-kill ellen); aki maga támad,
+    # azonnal elveszti. 0 = nincs belépő-védelem.
+    entry-grace-seconds: 8
+  # ===== Caldestera városi törvényei (K10 — a NEUTRAL főváros zónájában) =====
+  # weapon-ban: nyílt fegyver (kard/balta/szigony/íj/számszeríj/buzogány) kézben tartása
+  # tilos — az őrség elrakatja (az inventoryba kerül, nem vész el). A Bokic-menti
+  # Sétapálca bot, a szabály nem látja — ez a feketepiac kiskapuja.
+  # wanted-ban: a körözött (vérdíjas) játékost a határon visszafordítja az őrség,
+  # hacsak nincs nála Hamisított Menlevél (feketepiac-áru). Élőben olvasódik.
+  capital-law:
+    enabled: true
+    weapon-ban: true
+    wanted-ban: true
+  # ===== Kazamaták (B3 — DUNGEON zóna: kulcs-kapu + heti pecsét) =====
+  # /territory create|circle dungeon <frakció> <id> ... — belépni csak kulccsal lehet:
+  # a kulcs signature-tagelt tárgy (signature: "dungeonkulcs_<zóna-id>"), boltból vagy
+  # receptből adható (minta lent). Belépéskor a kulcs ELFOGY: pass-hours órás futam-passz
+  # + lockout-days napos pecsét kerül a játékosra (játékosonként — a party minden tagja
+  # saját kulccsal lép). A bent lévő mobok erejét a mob-rules.dungeon sor adja; boss:
+  # admin-eszközökkel telepíthető. Élőben olvasódik.
+  # Kulcs-recept minta (profession-recipes.yml alá):
+  #   melyseg_kulcsa:
+  #     profession: enchanter
+  #     level: 30
+  #     display-name: "A Mélység Kulcsa"
+  #     category: "Kazamata-kulcs"
+  #     result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_<zóna-id> }
+  #     ingredients: [ "ECHO_SHARD:4", "IRON_INGOT:8" ]
+  dungeon:
+    enabled: true
+    pass-hours: 2
+    lockout-days: 7
+    # Csoport-kedvezmény: EGY kulcs a 16 blokkon belül álló párttagoknak is nyit
+    # (passz+pecsét) — az 5 fős túrához nem kell 5 kulcs. false = fejenkénti kulcs.
+    party-shared-key: true
+  # ===== Zóna mob-szabályok (mob-rules) =====
+  # A spawn helyének territóriuma szerint extra mob-viselkedés. A szelektor lehet:
+  #   - zóna-TÍPUS: doom-gate, faction, protected-faction, protected-city, capital
+  #   - a zóna tulajdonos-FRAKCIÓJA: dark, red, blue, neutral (pl. minden DARK-föld)
+  # Ha több szelektor illeszkedik, a bonus-levels-ből a NAGYOBB számít (nem adódik össze),
+  # a tiltás-kapcsolók pedig VAGY-kapcsolatban élnek. Élőben olvasódik.
+  mob-rules:
+    doom-gate:
+      bonus-levels: 3          # ennyi plusz szint a zónában spawnoló mobokon
+      no-daylight-burn: true   # true = a zombi/csontváz/phantom NAPPAL SEM ég el
+      no-zombification: true   # true = piglin/hoglin nem zombisodik az overworldben
+    dungeon:
+      bonus-levels: 5          # a kazamaták fix, kemény szint-bónusza
+      no-daylight-burn: true
+      no-zombification: true
+    # A Kitaszítottak földje nem szelídített vidék (tulaj-döntés): minden ott spawnoló
+    # mob +2 szintet kap (a zóna-rámpázott alapra rakódik), és az élőhalott nappal sem ég.
+    dark:
+      bonus-levels: 2
+      no-daylight-burn: true
+
+# ===== B35 — Céhek: frakción belüli 5-15 fős kisközösségek =====
+# /ceh letrehoz|meghiv|elfogad|elhagy|kirug|befizet|info|lista — élő kulcsok.
+guilds:
+  enabled: true
+  create-cost: 250.0
+  base-max-members: 10
+  levels-per-extra-member: 3
+  max-members-cap: 15
+  xp-per-quest: 10
+  level-base-xp: 500
+  level-increment: 250
+
+# ===== G6 — Becsület-párbaj: beleegyezéses elégtétel a bűnökért =====
+honor-duel:
+  enabled: true
+  window-seconds: 180
+  weekly-limit: 2
+  challenge-expiry-seconds: 60   # ennyi ideig él egy felkérés; élő felkérés nem írható felül
+  # Liga-pont a győztes frakciójának ("duel" forrás, DARK-erős súly) — CSAK
+  # különböző frakciójú felek közt (az azonos-frakciós bemutató nem ér pontot).
+  season-points: 2
+
+# ===== G14 — Kém-álca (LibsDisguises soft-depend): információs játék, nem harci előny =====
+spy:
+  enabled: true
+  duration-seconds: 60
+  cooldown-minutes: 15
+  # Liga-pont CSAK valódi beszivárgásért: az álcának IDEGEN frakció territóriumában
+  # kell lejárnia (a saját bázison AFK-zás nem küldetés), és naponta legfeljebb
+  # points-daily-limit sikeres küldetés ér pontot (0 = korlátlan — nem ajánlott).
+  season-points: 2
+  points-daily-limit: 2
+  fake-names:
+    red: "Parazstestvér"
+    blue: "Hófivér"
+    neutral: "Vándor"
+    dark: "Némavándor"

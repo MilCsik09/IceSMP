@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Collective server challenge (ROADMAP "élőbb világ"): periodically the whole
+ * Collective server challenge: periodically the whole
  * server is handed one timed, shared goal — slay, mine or harvest a target count
  * <em>together</em> — tracked on a boss bar everyone sees. Meet it in time and
  * every online player is rewarded (XP + a raw-item pack, never currency); miss it
@@ -173,7 +173,14 @@ public final class ServerChallengeManager {
             return;
         }
         type = picked;
-        target = Math.max(1L, configManager.getLong("server-challenge.targets." + picked.configKey(), defaultTarget(picked)));
+        // Népesség-skálázás: a cél = per-player érték × online létszám,
+        // ha a per-player mód él — így 3 és 30 fősen is elérhető marad a közös cél.
+        final long baseTarget = Math.max(1L, configManager.getLong(
+                "server-challenge.targets." + picked.configKey(), defaultTarget(picked)));
+        target = configManager.getBoolean("server-challenge.per-player-targets", true)
+                ? Math.max(1L, configManager.getLong("server-challenge.targets-per-player." + picked.configKey(),
+                        Math.max(1L, baseTarget / 10L)) * Bukkit.getOnlinePlayers().size())
+                : baseTarget;
         progress.set(0L);
         active = true;
         settled.set(false);
@@ -247,7 +254,9 @@ public final class ServerChallengeManager {
         }
     }
 
-    private void updateBar(final long current) {
+    // synchronized: a record() bármely régió-szálról hívja — a megosztott BossBar
+    // progress/name mutációja verseny nélkül fusson.
+    private synchronized void updateBar(final long current) {
         final float fraction = target <= 0L ? 0.0F : (float) Math.max(0.0D, Math.min(1.0D, (double) current / target));
         bar.progress(fraction);
         bar.name(Component.text("⚔ " + goalText(type, target) + " — " + current + " / " + target, NamedTextColor.GOLD));

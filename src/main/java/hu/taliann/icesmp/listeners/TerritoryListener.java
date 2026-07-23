@@ -23,16 +23,26 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class TerritoryListener implements Listener {
 
+    /** B21 — setter-injektált: első határátlépés bestiárium-bejegyzése. */
+    private volatile hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
+
+    public void setBestiaryManager(final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager) {
+        this.bestiaryManager = bestiaryManager;
+    }
+
     private final TerritoryManager territoryManager;
+    private final hu.taliann.icesmp.managers.TerritoryProtectionService protectionService;
     private final ConfigManager configManager;
     private final QuestManager questManager;
     private final MessageManager messageManager;
     private final Map<UUID, String> lastTerritoryIds = new ConcurrentHashMap<>();
 
     public TerritoryListener(final TerritoryManager territoryManager,
+                             final hu.taliann.icesmp.managers.TerritoryProtectionService protectionService,
                              final ConfigManager configManager, final QuestManager questManager,
                              final MessageManager messageManager) {
         this.territoryManager = territoryManager;
+        this.protectionService = protectionService;
         this.configManager = configManager;
         this.questManager = questManager;
         this.messageManager = messageManager;
@@ -60,6 +70,7 @@ public final class TerritoryListener implements Listener {
         }
 
         if (territory == null) {
+            protectionService.clearDoomGrace(player.getUniqueId());
             player.sendActionBar(messageManager.getMessage(
                     "territory-enter-wilderness",
                     "<gray>Vadon</gray>"
@@ -69,10 +80,32 @@ public final class TerritoryListener implements Listener {
 
         // VISIT_TERRITORY quest objectives complete on border crossing.
         questManager.handleTerritoryEnter(player, territory.id());
+        // Az első belépés lajstrom-bejegyzés.
+        final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
+        if (bestiaryRef != null) {
+            bestiaryRef.record(player, hu.taliann.icesmp.managers.BestiaryManager.Category.TERRITORIES, territory.id());
+        }
+
+        // Kárhozat-zóna: belépéskor PvP-grace indul (spawn-kill védelem), kilépéskor törlődik.
+        if (territory.type() == hu.taliann.icesmp.data.TerritoryType.DOOM_GATE) {
+            protectionService.markDoomEntry(player.getUniqueId());
+            // Belépő hangulat: baljós hang + hamu-örvény a játékos körül (a saját régió-szálán fut).
+            player.playSound(player.getLocation(), org.bukkit.Sound.AMBIENT_NETHER_WASTES_MOOD, 1.2F, 0.6F);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(player, org.bukkit.Particle.ASH,
+                    player.getLocation().clone().add(0.0D, 1.0D, 0.0D), 40, 2.5D, 1.5D, 2.5D, 0.01D);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(player, org.bukkit.Particle.SOUL,
+                    player.getLocation().clone().add(0.0D, 0.5D, 0.0D), 10, 1.5D, 0.5D, 1.5D, 0.01D);
+        } else {
+            protectionService.clearDoomGrace(player.getUniqueId());
+        }
 
         final String key;
         final String fallback;
         switch (territory.type()) {
+            case DOOM_GATE -> {
+                key = "territory-enter-doom-gate";
+                fallback = "<dark_red>☠ {name} ☠</dark_red> <gray>— senkiföldje: itt nincs törvény, a harc szabad!</gray>";
+            }
             case CAPITAL -> {
                 key = "territory-enter-capital";
                 fallback = "<gold>✦ {name} ✦</gold> <gray>({faction} főváros)</gray>";
@@ -94,14 +127,26 @@ public final class TerritoryListener implements Listener {
                 Map.of("name", territory.name(), "faction", territory.faction().getDisplayName())));
     }
 
+    /**
+     * Enderpearl/portál/plugin-teleport is zóna-váltás — a teleport KÜLÖN handler-lista,
+     * e nélkül a Kárhozat-zónába becsapódó játékos nem kapná meg a belépési PvP-grace-t
+     * (és a zóna-címke sem frissülne).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
+        onPlayerMove(event);
+    }
+
     @EventHandler
     public void onPlayerQuit(final PlayerQuitEvent event) {
         lastTerritoryIds.remove(event.getPlayer().getUniqueId());
+        protectionService.clearDoomGrace(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onPlayerKick(final org.bukkit.event.player.PlayerKickEvent event) {
         // PlayerKickEvent does not reliably chain to PlayerQuitEvent — clear here too.
         lastTerritoryIds.remove(event.getPlayer().getUniqueId());
+        protectionService.clearDoomGrace(event.getPlayer().getUniqueId());
     }
 }

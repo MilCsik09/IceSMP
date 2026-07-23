@@ -12,15 +12,24 @@ import org.bukkit.entity.Player;
 public final class FactionLeaveSubcommand implements FactionSubcommand {
 
     private final FactionManager factionManager;
+    private final hu.taliann.icesmp.managers.SinManager sinManager;
     private final CurrencyManager currencyManager;
     private final TerritoryManager territoryManager;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    /** Setter-injektált: DARK-elhagyáskor a sötét spec elengedéséhez. */
+    private volatile hu.taliann.icesmp.managers.SpecializationManager specializationManager;
 
-    public FactionLeaveSubcommand(final FactionManager factionManager, final CurrencyManager currencyManager,
+    public void setSpecializationManager(final hu.taliann.icesmp.managers.SpecializationManager specializationManager) {
+        this.specializationManager = specializationManager;
+    }
+
+    public FactionLeaveSubcommand(final FactionManager factionManager, final hu.taliann.icesmp.managers.SinManager sinManager,
+                                  final CurrencyManager currencyManager,
                                   final TerritoryManager territoryManager, final ConfigManager configManager,
                                   final MessageManager messageManager) {
         this.factionManager = factionManager;
+        this.sinManager = sinManager;
         this.currencyManager = currencyManager;
         this.territoryManager = territoryManager;
         this.configManager = configManager;
@@ -53,10 +62,22 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         // ár és cooldown vonatkozik rá, mint a /faction join váltásra — különben a
         // leave+join páros ingyenes, kapu nélküli kerülőút lenne.
         final FactionType currentFaction = factionManager.getFaction(player.getUniqueId());
+        // Az örök paktum nem pénz-kérdés: paktumos Kitaszított nem léphet ki — az
+        // egyetlen kiút a vezeklés-lánc (breakDarkPact); anélkül a leave fizetős
+        // forgóajtóvá tenné a száműzetést.
+        if (currentFaction == FactionType.DARK && sinManager.hasDarkPact(player)) {
+            sender.sendMessage(messageManager.get("messages.faction-dark-pact-locked",
+                    "&5A sötét paktum örök — a Kitaszítottak közül nem vezet ki pénz. "
+                            + "Az egyetlen út a vezeklés-küldetéslánc."));
+            return true;
+        }
         final boolean leavingKingdom = factionManager.hasChosenFaction(player.getUniqueId())
                 && currentFaction != FactionType.NEUTRAL;
         if (leavingKingdom) {
             if (!FactionSwitchRules.passesNeutralCapitalGate(player, territoryManager, configManager, messageManager)) {
+                return true;
+            }
+            if (!FactionSwitchRules.passesSeasonRules(player, factionManager, messageManager)) {
                 return true;
             }
             if (!FactionSwitchRules.chargeSwitch(player, currentFaction, factionManager, currencyManager, messageManager)) {
@@ -64,7 +85,13 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
             }
         }
 
+        final boolean leavingDark = currentFaction == FactionType.DARK;
         factionManager.removeFaction(player.getUniqueId());
+        final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
+        if (leavingDark && specs != null && specs.resetDarkGatedSpecialization(player)) {
+            player.sendMessage(messageManager.get("messages.dark-spec-lost",
+                    "&5A Kitaszítottakat elhagyva a sötét utad is lezárult — a specializációd elveszett."));
+        }
         sender.sendMessage(messageManager.get("messages.faction-left", "&eKiléptél a frakciódból."));
         return true;
     }

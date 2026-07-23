@@ -5,18 +5,25 @@ bónusza** (egy állandó képesség, amiért nem kell semmit csinálnod) van.
 
 Belépés: `/faction join <red|blue|neutral|dark>` • Kilépés: `/faction leave`
 
-Az **első csatlakozásod** teljesen **ingyenes és időzítetlen**, és mindenki **Semlegesként
-kezd** — új játékosként a **Semleges Királyság spawnján** jelensz meg. Amikor királyságot
+> 🏷️ **Kanonikus nevek:** a négy frakció a lore szerint **Láng** (*Perinfernicitas*, `red`),
+> **Fagy** (*Cryghaliris*, `blue`), **Menedék** (*Ryanora & Caldestera*, `neutral`) és
+> **Kitaszított** (*A Kitaszítottak*, `dark`). A parancs-azonosítók változatlanok.
+
+Az **első csatlakozásod** teljesen **ingyenes és időzítetlen**, és mindenki a **Menedékben (Semleges) kezd** — új játékosként a **Menedék spawnján** jelensz meg. Amikor királyságot
 választasz, a plugin **odateleportál az új királyságod spawnjára**, és ha nincs ágyad /
 respawn-horgonyod, halál után is a **saját királyságod spawnján** éledsz újra — így mindig
 tudod, hol a fővárosod.
 
-A **Semlegesből bárhová ingyen** válthatsz, és a **Sötétbe lépés is mindig ingyenes**
-(annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Piros↔Kék,
-illetve vissza a Semlegesbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi
+A **Menedékből bárhová ingyen** válthatsz, és a **Kitaszítottak közé lépés is mindig ingyenes**
+(annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Láng↔Fagy,
+illetve vissza a Menedékbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi
 frakciód valutájában** kerül **alapból 500-ba**, és utána **72 óráig** nem válthatsz megint
 (`factions.switch.cost` / `factions.switch.cooldown-hours` a configban) — ez a
-frakció-hopping ellen véd. **Váltani csak a Semleges Királyság fővárosában állva lehet**
+frakció-hopping ellen véd. Ezen felül **szezononként legfeljebb 2× válthatsz** (az első,
+ingyenes választás nem számít bele, de a Menedékből való ingyen váltás és a Sötétbe lépés
+igen), és **a szezon utolsó hetében egyáltalán nincs váltás** — a liga hajráját azzal a
+zászlóval fejezed be, amelyik alatt elkezdted (`factions.switch.max-per-season` /
+`factions.switch.lockout-final-days`). **Váltani csak a Menedék fővárosában, Caldesterában állva lehet**
 (ott, ahol a királyság-választó hírnök NPC is áll) — így a döntés mindig a semleges földön,
 „hivatalosan" születik meg.
 
@@ -25,36 +32,91 @@ helyzetben erős, így a választás ízlés (playstyle) kérdése, nem „melyi
 
 | Frakció | Passzív bónusz | Mire jó |
 |---|---|---|
-| 🔴 **Piros** | Immunis a **tűz / láva / forró blokk** sebzésére | Hő-mesterség: a Nether és a láva veszélytelen |
-| 🔵 **Kék** | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget | Víz-mesterség: végtelen búvárkodás, hideg biómok, víz alatti építés/aknázás |
-| ⚪ **Semleges** | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
-| ⚫ **Sötét** | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
+| 🔴 **Láng** (Perinfernicitas) | Immunis a **tűz / láva / forró blokk** sebzésére | Hő-mesterség: a Nether és a láva veszélytelen |
+| 🔵 **Fagy** (Cryghaliris) | Immunis a **fagyásra ÉS a fulladásra**; **50% eséllyel** nem veszít éhséget | Víz-mesterség: végtelen búvárkodás, hideg biómok, víz alatti építés/aknázás |
+| ⚪ **Menedék** (Ryanora & Caldestera) | **Nincs zuhanás-sebzés** (esésimmunitás); a **nem-ellenséges mobok és az endermanök** nem támadják; **adómentes** | Biztos léptű vándor: magasból is leugorhatsz, az endermanre ránézhetsz, és nincs állampolgári adó |
+| ⚫ **Kitaszított** (A Kitaszítottak) | Immunis a **wither-sebzésre**; az **élőhalottak (zombi, csontváz, phantom, zoglin) nem támadják** | A **legerősebb PvE-passzív**: éjszaka és barlang szinte veszélytelen — cserébe az **örök bűnös-jelölés** |
+
+
+### 🍲 A frakciók konyhája (K6)
+
+A kódex szerint minden népnek megvan a maga konyhája — és a frakció-aura ezt meg is követeli:
+
+- **Fagy (BLUE):** halon él — ha ~12 órán át nem eszel halat (bármely hal, vagy a séf
+  **Fagyasztott Tavi Pisztrángja**), enyhe honvágy tör rád (rövid Éhség + emlékeztető).
+  A Pisztráng rövid **felszívódás-pajzsot** is ad.
+- **Láng (RED):** tojás-ételen él — a **Fűszeres Főnixtojás-Rántotta** (vagy tökpite/torta)
+  nullázza a honvágyat; a Rántotta rövid **tűz-ellenállást** is ad.
+- **Ünnepi ételek — minden frakciónak a magáé** (a séf-recept frakció-kapus):
+  a Fagy **Sárkány-pörköltje** (Erő), a Láng **Vérszavannai Vadlakomája** (Gyorsaság +
+  tűz-oltalom), a Menedék **Vándorünnep Lepénye** (Szerencse + Gyorsaság) és a
+  Kitaszítottak **Hamvak Lakomája** (Felszívódás + Éjjellátás). Ahol van honvágy-
+  kötelezettség, az ünnepi étel azt is teljesíti.
+- **Menedék:** a **Tiltott Kakaóbabos Sütemény** (a cukrászok Asterlayna Gyümölcsének hívják)
+  fogyasztva **„robban"** — feldob, felgyorsít, csillagszóró-effekttel. A Bankárszövetség
+  hivatalosan tiltja. Hivatalosan.
+- **Kitaszítottak (DARK):** a **Mortengradi Hamukenyér** a kenyerük (rövid éjjellátást ad) —
+  de honvágy-kötelezettségük **nincs**: a Kitaszítottaknak nincs otthonuk, amire honvágyuk
+  lehetne.
+
+A honvágy **puha** mechanika (config: `factions.food-duty`), új játékost és frissen váltót
+türelmi idő véd.
 
 > 💬 A **chatben a neved a frakciód színében** jelenik meg (a rang-prefixszel együtt) — így
 > mindenki azonnal látja, ki melyik oldalon áll.
 
-## A Sötét frakció — fontos tudnivalók ⚫
+## ⚫ A Kitaszítottak — a „Sötét" (dark) frakció
 
-A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.
+A Kitaszítottak frakciója nem egy „sima választás" — ez a **börtön a világ végén**, a **Kitaszítottak**
+száműzetése, a Néma Királynő árnyéka. **Kétféleképpen** kerülsz ide:
 
-- **Csak az léphet be, akit bűnössé (sinner) bélyegeztek.**
-- Belépéskor megköttetik a **sötét paktum**: ettől kezdve a bűnös jelölést **soha nem lehet
-  levenni** — még akkor sem, ha elhagyod a frakciót. Az **egyetlen** visszaút a **vezeklés
-  küldetéslánc** (lásd [Küldetések](12-kuldetesek.md)).
+- **Bűnözőként:** akit **4 bűnnél (sinner)** a világ automatikusan ide **száműz** (lásd lentebb).
+- **Lelepleződött Suttogóként:** akit rajtakapnak, hogy titokban **a Suttogók** hálózatát szolgálja
+  (lásd lentebb), azt egy csapásra ide veti a bélyeg.
+
+A belépés **kétlépcsős**: az első `/faction join dark` csak figyelmeztet a paktum súlyára —
+ha komolyan gondolod, egy percen belül **meg kell ismételned**. Belépéskor aztán megköttetik
+a **sötét paktum**: a bűnös jelölés **soha nem törlődik le**, és amíg a paktum áll,
+a frakciót **el sem hagyhatod** — se pénzért, se `/faction leave`-vel. Az **egyetlen**
+kiút a **vezeklés-küldetéslánc** (lásd [Küldetések](12-kuldetesek.md)): az oldja a
+paktumot, és utána léphetsz tovább. Cserébe tiéd a **legerősebb PvE-passzív**: az élőhalottak békén
+hagynak, s a wither sem árt — a Néma Királynő megjelöli, de meg is óvja a szolgáit.
+
+A Kitaszítottaknak is van otthonuk: **Thanaopolis, a Holtak Városa** — egy élőhalottak lakta **rom-főváros**,
+ahová a száműzöttek újraélednek. Mivel rátok nem támadnak a holtak, ez a düledező város nektek menedék;
+mindenki másnak halálos csapda. *(A romváros megépítése a szerver-csapatra vár.)*
+
+## ⚖ A Vének Tanácsa — a Menedék vezetése
+
+A Menedéknek **nincs királya** (az Armageddon-ultimátum tiltja a fegyvert) — helyette
+**hetente választott, 3 fős Vének Tanácsa** vezeti:
+
+- **Szavazás:** `/tanacs szavaz <játékos>` — hetente egy szavazatod van (átszavazhatod);
+  a hét fordulóján a választás újraindul. Állás: `/tanacs`.
+- **A tanács jogai:** kassza-kivét (saját, kisebb napi kerettel), karaván-indítás, és a
+  békés zászlóshajó: a **Vásár-hét** (`/tanacs vasarhet`) — a tanács kihirdetheti, hogy a
+  **Creutzér piaci díja átmenetileg kedvezményes** legyen (pörög a kereskedelem!).
+- **Amit a tanács NEM tehet:** raidet nem hirdethet — a Menedék fegyvertelen marad.
 
 ## Hogyan leszek bűnös (sinner)?
 
-- **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz.
-- **Árulás:** ha a **saját frakciótársadat** ölöd meg, az súlyosabb — **+2 bűn**. (A Semlegesek
+- **Gyilkosság:** ha **megölsz egy másik játékost**, **+1 bűnt** kapsz. Kivétel a
+  **Kitaszított (DARK) áldozat**: ő a törvényen kívül áll — az ölése **sosem bűn**
+  (sőt, ha vérdíj van a fején, még fizetnek is érte).
+- **Árulás:** ha a **saját frakciótársadat** ölöd meg, az súlyosabb — **+2 bűn**. (A Menedék népe
   laza közösség: köztük az ölés sima gyilkosságnak számít.)
 - **Lopás:** ha egy **másik frakció területén** álló konténerből (láda, hordó, kemence,
   hopper…) tárgyat veszel ki, **+1 bűnt** kapsz. Egy fosztogatás-sorozat területenként
   egyszer számít (nem minden kattintás külön bűn).
-- **4 bűnnél** automatikusan **száműznek a Sötét frakcióba** (örök paktummal).
+- **4 bűnnél** automatikusan **száműznek a Kitaszítottak közé** (örök paktummal).
 - **Kivétel:** **raid** (frakcióháború) alatt a **jelentkezett harcosok** közti **ölés és az
   ellenség földjén való zsákmányolás nem számít bűnnek** — aki nem jelentkezett
   (`/faction raid join`), arra raid alatt is a békeidős szabályok élnek. Lásd
   [Raid és háború](11-raid-haboru.md).
+- **Kivétel — hadi-ablak:** hétvégente (alapból szombat-vasárnap 18-20 óra) megnyílik a
+  **hadi-ablak**: ez alatt a **Láng↔Fagy ölés nem bűn és nem vérdíj-eset** — szentesített
+  hadicselekmény, amely **liga-pontot ér** a frakciódnak (napi plafonnal, hogy ne legyen
+  farmolható). Állás és időpont: `/faction war`. A nyitást és zárást broadcast jelzi.
 
 > A bűnösöket egy különleges relikvia, a **Mételytépő** is megjelölheti és megbüntetheti —
 > erről a [Relikviák](09-relikviak.md) oldalon olvashatsz.
@@ -62,15 +124,42 @@ A Sötét frakció nem egy „sima választás" — ez a **bűnösök** helye.
 ## Fejvadászat (körözés) 💰
 
 Aki elér egy bizonyos bűnszámot (alapból **3 bűn**), az **körözötté** válik — a fejére
-**fejpénz** kerül (a bűnök száma × egy fix összeg, alapból Semleges tokenben). A `/bounty`
+**fejpénz** kerül (a bűnök száma × egy fix összeg, alapból Creutzérben). A `/bounty`
 paranccsal megnézheted a körözési listát: ki körözött és mennyit ér a feje.
 
 Ha **megölsz egy körözött bűnözőt**:
-- **megkapod a fejpénzt** (a bankodba);
+- **megkapod a fejpénzt** (veretben, a kezedbe — ugyanarra a fejre fél naponta csak egyszer fizet a Bankárszövetség);
 - **nem kapsz érte bűnt** — ez igazságos kivégzés, nem gyilkosság;
 - a bűnöző **bűnszámlálója nullázódik** (a bűnös-jelölése viszont megmarad).
 
 Így a bűnözés kockázatos: minél többet vétkezel, annál nagyobb célpont vagy a fejvadászoknak.
+
+## 🌒 A Suttogók — a rejtett hálózat
+
+A **Suttogók** (Az Éjszaka Gyermekei) nem külön frakció, hanem egy **titkos státusz**, amely a
+**látható frakciód fölé** rétegződik. Láng, Fagy vagy Menedék maradsz mindenki szemében — miközben
+titkon a Néma Királynő ügyét szolgálod, és **sötét-mágiájú tárgyakhoz** jutsz. A hovatartozásod
+kívülről **láthatatlan**: sötét mágia rejti.
+
+**Hogyan csatlakozol?** Egy **titkos, éjszakai rítussal** — magányosan (más játékos nélkül a
+közeledben), egy elrejtett **Suttogó-oltárnál**, ahol felajánlod a hűségedet és egy áldozatot. A
+rítus helye és módja maga is rejtély: lore-nyomokból, egy titkos hírnöktől vagy egy ritka „meghívóból"
+derül ki.
+
+**Hogyan lepleződsz le?** A sötét erő nem tűri a napvilágot:
+- ha **közterületen, mások szeme láttára használsz sötét mágiát** (vagy Suttogó-tárgyat);
+- ha **rajtakapnak** egy rítuson vagy egy **áruláson** (frakciótárs hátbaszúrása);
+- ha a **gyanú** ellened gyűlik, míg át nem üt a bélyeg.
+
+**Mi jár érte?** A Királynő gondoskodik a híveiről:
+- ha a kósza kultisták ügye **beteljesül** (egy rítus lefut vagy egy hírvivő célba ér), minden
+  felesküdött Suttogó **gyanúja csillapodik**, és **titkos tárgy-részesedést** kap a hálózattól;
+- **éjszaka az élőhalottak békén hagyják** a felesküdötteket — a Királynő óvó keze. Vigyázat:
+  a figyelmes szemtanúnak ez **árulkodó jel** lehet…
+
+**Mi történik ekkor?** A titkos Suttogóból egy csapásra **Kitaszított** lesz: **bűnössé** válsz, a
+világ **száműz a Kitaszítottak közé**, és **azonnali vérdíj** kerül a fejedre — a többiek vadászni
+kezdenek rád. A leplet nem lehet visszaölteni; innen csak a **vezeklés** vezet vissza.
 
 ## Frakció-viszonyok (reputáció)
 

@@ -38,7 +38,7 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-givecatalyst", "Képesség Katalizátor adása egy játékosnak (admin).");
+        return messageManager.get("messages.job-desc-givecatalyst", "Lélekkapocs adása egy játékosnak (admin).");
     }
 
     @Override
@@ -72,7 +72,7 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
             if (primaryJob == null) {
                 sender.sendMessage(messageManager.get(
                         "messages.job-givecatalyst-no-class",
-                        "&cA célpontnak nincs elsődleges kasztja, így nincs katalizátora sem."
+                        "&cA célpontnak nincs elsődleges kasztja, így nincs Lélekkapcsa sem."
                 ));
                 return;
             }
@@ -85,7 +85,7 @@ public final class JobGiveCatalystSubcommand implements JobSubcommand {
 
             sender.sendMessage(messageManager.getMessage(
                     "job-givecatalyst-success",
-                    "&aKatalizátor átadva: &e{catalyst} &7-> &f{player}",
+                    "&aLélekkapocs átadva: &e{catalyst} &7-> &f{player}",
                     Map.of(
                             "catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob),
                             "player", target.getName()

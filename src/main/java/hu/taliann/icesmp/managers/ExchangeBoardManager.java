@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Exchange-rate hologram boards (ideas.md "Árfolyam-hologramok"): floating
+ * Exchange-rate hologram boards: floating
  * TextDisplay panels that show the live, supply-driven currency values from the
  * {@link ExchangeRateService} and refresh on the world-events tick. Admins place
  * and remove boards with /exchangeboard. Board locations are persisted so the

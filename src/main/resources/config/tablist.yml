@@ -15,6 +15,10 @@
 tablist:
   enabled: true
   refresh-ticks: 10           # tablist-tick (10 = 0,5 mp); az animációk ettől függetlenül időalapúak
+  # A kilépett/átrendeződött bejegyzések söprése (nézőnként drága ciklus) csak minden
+  # N. frissítésen fut — 10 = kb. 5 másodpercenként. A normál frissítés (nevek, ping,
+  # színek) minden körben megy, diff-elve.
+  sweep-every-refresh: 10
   header-footer:
     enabled: true
     header:

@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Faction shop NPCs (ROADMAP economy: "frakció-bolt NPC-k" money sink):
+ * Faction shop NPCs (money sink):
  * config-driven vendors bound to a FancyNpcs NPC. Right-clicking a shop NPC
  * opens a buy GUI; purchases deduct the price from the player's bank balance
  * and the currency is BURNED (never credited anywhere) — a pure money sink
@@ -40,6 +40,12 @@ public final class ShopManager {
      * {@link EscortManager} is constructed. Null = escort feature not wired.
      */
     private java.util.function.BooleanSupplier escortBonusCheck;
+    /** A karaván-látogatás készlet-sorsolási magja (rotáló kínálat — CaravanManager adja). */
+    private java.util.function.LongSupplier caravanStockSeed;
+
+    public void setCaravanStockSeed(final java.util.function.LongSupplier caravanStockSeed) {
+        this.caravanStockSeed = caravanStockSeed;
+    }
 
     public ShopManager(final ConfigManager configManager, final CurrencyManager currencyManager,
                        final FactionManager factionManager, final MessageManager messageManager) {
@@ -100,11 +106,33 @@ public final class ShopManager {
         final java.util.List<ConfigurationSection> entries =
                 new java.util.ArrayList<>(sectionsOf(shop.getConfigurationSection("items")));
 
-        // Escort-success perk: while the bonus window is open, the caravan also
-        // sells its bonus-items entries (appended after the regular stock).
-        if (CaravanManager.SHOP_NAME.equalsIgnoreCase(npcName)
-                && escortBonusCheck != null && escortBonusCheck.getAsBoolean()) {
-            entries.addAll(sectionsOf(shop.getConfigurationSection("bonus-items")));
+        if (CaravanManager.SHOP_NAME.equalsIgnoreCase(npcName)) {
+            // Rotáló karaván-készlet: érkezésenként a teljes áru-poolból stock-size darab
+            // sorsolódik (a látogatás stockSeed-jével determinisztikusan — a bolt a
+            // tartózkodás ALATT stabil, a következő érkezéskor fordul).
+            if (configManager.getBoolean("caravan.rotation.enabled", true)
+                    && caravanStockSeed != null) {
+                final int stockSize = Math.max(1, configManager.getInt("caravan.rotation.stock-size", 4));
+                if (entries.size() > stockSize) {
+                    final java.util.Random rotationRandom = new java.util.Random(caravanStockSeed.getAsLong());
+                    // Unique-anyag slot-garancia — a ritka szakma-alapanyag
+                    // pool-ága ne sorsolódhasson ki teljesen (alternatív forrás maradjon).
+                    final java.util.List<ConfigurationSection> uniquePool =
+                            configManager.getBoolean("caravan.rotation.guarantee-unique", true)
+                                    ? entries.stream().filter(entry -> entry.getString("unique") != null).toList()
+                                    : List.<ConfigurationSection>of();
+                    java.util.Collections.shuffle(entries, rotationRandom);
+                    entries.subList(stockSize, entries.size()).clear();
+                    if (!uniquePool.isEmpty() && entries.stream().noneMatch(entry -> entry.getString("unique") != null)) {
+                        entries.set(entries.size() - 1, uniquePool.get(rotationRandom.nextInt(uniquePool.size())));
+                    }
+                }
+            }
+            // Escort-success perk: while the bonus window is open, the caravan also
+            // sells its bonus-items entries (appended after the regular stock).
+            if (escortBonusCheck != null && escortBonusCheck.getAsBoolean()) {
+                entries.addAll(sectionsOf(shop.getConfigurationSection("bonus-items")));
+            }
         }
         return List.copyOf(entries);
     }
@@ -161,6 +189,13 @@ public final class ShopManager {
      * @param index the zero-based item index in the shop's GUI
      * @return null on success, otherwise an error message key
      */
+    /** Suttogó-erősítés (setterrel kötve): feketepiaci kedvezmény a felesküdötteknek. */
+    private volatile WhisperManager whisperManager;
+
+    public void setWhisperManager(final WhisperManager whisperManager) {
+        this.whisperManager = whisperManager;
+    }
+
     public synchronized String buy(final Player buyer, final String npcName, final int index) {
         final ConfigurationSection shop = getShop(npcName);
         if (shop == null) {
@@ -186,14 +221,26 @@ public final class ShopManager {
         }
 
         final CurrencyType currency = resolveCurrency(item, buyer);
-        final double price = getPrice(item);
+        double price = getPrice(item);
+        // Suttogó-erősítés: a feketepiacon a felesküdöttek a hálózat
+        // árát fizetik — csendes kedvezmény (a kijelzett ár marad, a levonás kevesebb;
+        // a titkos státuszt nem leplezi le semmi látható).
+        final WhisperManager whisperRef = whisperManager;
+        if (price > 0.0D && whisperRef != null
+                && npcName != null && npcName.equalsIgnoreCase(
+                        configManager.getString("factions.whisper.blackmarket-npc", "feketepiac"))
+                && whisperRef.isWhispererCached(buyer.getUniqueId())) {
+            final double discount = Math.max(0.0D, Math.min(90.0D,
+                    configManager.getDouble("factions.whisper.blackmarket-discount-percent", 25.0D)));
+            price = price * (1.0D - discount / 100.0D);
+        }
         if (price > 0.0D && !currencyManager.deductFromBalance(buyer.getUniqueId(), currency, price)) {
             return "shop-insufficient";
         }
 
         // The price is now burned (never credited) — this is the money sink.
         final int amount = getAmount(item);
-        final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(new ItemStack(material, amount));
+        final Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(buildShopItem(item, material, amount));
         leftovers.values().forEach(left -> buyer.getWorld().dropItemNaturally(buyer.getLocation(), left));
 
         buyer.sendMessage(messageManager.get(
@@ -202,5 +249,70 @@ public final class ShopManager {
                 material.name(), amount, currencyManager.formatBalance(price), currency.getDisplayName()
         ));
         return null;
+    }
+
+    /**
+     * A megvásárolt tárgy felépítése: sima material, VAGY — ha a bolt-item configja kéri —
+     * nevesített/lore-os/signature-tagelt különleges áru (K10 feketepiac: Sétapálca, Menlevél).
+     * Config-mezők az item-szekción: name (legacy &-kódokkal), lore (lista), signature
+     * (PDC-id — a SignatureItemListener perk-kulcsa; ugyanaz a tag, mint a recept-motoré).
+     */
+    /** Vendor-only unique anyagok támogatása: setterrel kötve (a factory később épülhet). */
+    private volatile hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
+
+    public void setUniqueMaterialFactory(final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory) {
+        this.uniqueMaterialFactory = uniqueMaterialFactory;
+    }
+
+    private ItemStack buildShopItem(final ConfigurationSection item, final Material material, final int amount) {
+        // Vendor-only unique anyag (`unique: <id>` a bolt-item configon): a valódi
+        // UniqueMaterialFactory-tárgy kerül a kosárba (PDC-taggel) — a recept-motor
+        // így ismeri fel; a bolt az EGYETLEN forrása (pénz-nyelő + recept-kereslet).
+        final String uniqueId = item.getString("unique", "");
+        final hu.taliann.icesmp.items.UniqueMaterialFactory factoryRef = uniqueMaterialFactory;
+        if (!uniqueId.isBlank() && factoryRef != null) {
+            final ItemStack uniqueStack = factoryRef.create(uniqueId, amount);
+            if (uniqueStack != null) {
+                return uniqueStack;
+            }
+        }
+        final ItemStack stack = new ItemStack(material, amount);
+        final String name = item.getString("name", "");
+        final java.util.List<String> lore = item.getStringList("lore");
+        final String signature = item.getString("signature", "");
+        if (name.isBlank() && lore.isEmpty() && signature.isBlank()) {
+            return stack;
+        }
+        final org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return stack;
+        }
+        final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacy =
+                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
+        if (!name.isBlank()) {
+            meta.displayName(legacy.deserialize(name)
+                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+        }
+        if (!lore.isEmpty()) {
+            final java.util.List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+            for (final String line : lore) {
+                lines.add(legacy.deserialize(line)
+                        .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            }
+            meta.lore(lines);
+        }
+        if (!signature.isBlank()) {
+            meta.getPersistentDataContainer().set(
+                    hu.taliann.icesmp.listeners.SignatureItemListener.SIGNATURE_PDC_KEY,
+                    org.bukkit.persistence.PersistentDataType.STRING, signature);
+        }
+        stack.setItemMeta(meta);
+        // Resource pack horog: ITEM_MODEL (CMD helyett) a setItemMeta UTÁN — item-model configból.
+        final String shopModel = item.getString("item-model", null);
+        if (shopModel != null && !shopModel.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, shopModel);
+        }
+        return stack;
     }
 }

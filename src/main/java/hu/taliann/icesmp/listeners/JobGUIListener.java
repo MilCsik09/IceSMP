@@ -26,11 +26,23 @@ import java.util.Map;
 
 public final class JobGUIListener implements Listener {
 
+    /** Függő kaszt-választás a kétlépcsős megerősítéshez (első katt → figyelmeztetés). */
+    private record PendingClassPick(JobType job, long at) {
+    }
+
+    private final java.util.concurrent.ConcurrentHashMap<java.util.UUID, PendingClassPick> classConfirmPending =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private final JobManager jobManager;
     private final CatalystItemFactory catalystItemFactory;
     private final SpecializationManager specializationManager;
     private final SpellRegistry spellRegistry;
     private final ConfigManager configManager;
+    private volatile hu.taliann.icesmp.managers.FactionManager factionManager;
+
+    public void setFactionManager(final hu.taliann.icesmp.managers.FactionManager factionManager) {
+        this.factionManager = factionManager;
+    }
     private final MessageManager messageManager;
     private final CharacterMenuContext menuContext;
 
@@ -90,6 +102,37 @@ public final class JobGUIListener implements Listener {
             return;
         }
 
+        // Kapcsolható mód: a Halállovag csak Kitaszítottnak nyílik (a meglévő
+        // nem-DARK DK-kat a kapu nem érinti, csak az ÚJ választást).
+        if (selectedJob == hu.taliann.icesmp.data.JobType.DEATH_KNIGHT
+                && configManager.getBoolean("classes.death-knight.dark-only", false)
+                && factionManager != null && factionManager.getFaction(player.getUniqueId()) != hu.taliann.icesmp.data.FactionType.DARK) {
+            player.sendMessage(messageManager.getMessage("job-dk-dark-only",
+                    "<dark_red>A halál lovagja nem tartozhat az élők királyságaihoz — ezt az utat csak a Kitaszítottak járhatják.</dark_red>"));
+            return;
+        }
+        // Kétlépcsős megerősítés (a DARK-belépés mintája): a kaszt-választás a
+        // legdrágább, csak admin által visszafordítható döntés — nem lehet egyetlen
+        // félrekattintás. Csak az ELSŐ választásra vonatkozik (utána a setPrimaryJob
+        // amúgy is elutasít).
+        final long confirmWindowMillis = Math.max(0L,
+                configManager.getLong("classes.select-confirm-seconds", 30L)) * 1000L;
+        if (confirmWindowMillis > 0L && !jobManager.hasPrimaryJob(player)) {
+            final long now = System.currentTimeMillis();
+            classConfirmPending.values().removeIf(pending -> now - pending.at() > confirmWindowMillis);
+            final PendingClassPick pending = classConfirmPending.get(player.getUniqueId());
+            if (pending == null || pending.job() != selectedJob) {
+                classConfirmPending.put(player.getUniqueId(), new PendingClassPick(selectedJob, now));
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 0.8F);
+                player.sendMessage(messageManager.getMessage("job-select-confirm",
+                        "<gold>⚠ A kaszt-választás VÉGLEGES (csak admin fordíthatja vissza). "
+                                + "Ha biztos vagy benne, kattints újra a(z) {job} ikonjára {seconds} másodpercen belül.</gold>",
+                        java.util.Map.of("job", net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(selectedJob.getDisplayName()),
+                                "seconds", String.valueOf(confirmWindowMillis / 1000L))));
+                return;
+            }
+            classConfirmPending.remove(player.getUniqueId());
+        }
         if (jobManager.setPrimaryJob(player, selectedJob)) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
             player.sendMessage(messageManager.getComponent("messages.job-select-primary-success", "&aElsodleges kaszt kivalasztva:").append(Component.space()).append(selectedJob.getDisplayName()));
@@ -114,7 +157,7 @@ public final class JobGUIListener implements Listener {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.2F);
                 player.sendMessage(messageManager.getMessage(
                         "job-gui-catalyst-already-owned",
-                        "&eMár van katalizátorod: &f{catalyst}",
+                        "&eMár van Lélekkapcsod: &f{catalyst}",
                         Map.of("catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob))
                 ));
                 return;
@@ -130,7 +173,7 @@ public final class JobGUIListener implements Listener {
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.4F);
         player.sendMessage(messageManager.getMessage(
                 "job-gui-catalyst-claimed",
-                "&aKatalizátor átvéve: &e{catalyst}",
+                "&aLélekkapocs átvéve: &e{catalyst}",
                 Map.of("catalyst", catalystItemFactory.getDisplayNamePlain(primaryJob))
         ));
     }

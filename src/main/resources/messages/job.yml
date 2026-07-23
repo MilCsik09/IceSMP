@@ -1,20 +1,20 @@
 # IceSMP üzenetek — job alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
-  job-desc-givecatalyst: Képesség Katalizátor adása egy játékosnak (admin).
-  job-givecatalyst-no-class: '&cA célpontnak nincs elsődleges kasztja, így nincs katalizátora sem.'
-  job-givecatalyst-success: '&aKatalizátor átadva: &e{catalyst} &7-> &f{player}'
+  job-desc-givecatalyst: Lélekkapocs adása egy játékosnak (admin).
+  job-givecatalyst-no-class: '&cA célpontnak nincs elsődleges kasztja, így nincs Lélekkapcsa sem.'
+  job-givecatalyst-success: '&aLélekkapocs átadva: &e{catalyst} &7-> &f{player}'
   job-givecatalyst-usage: '&cHasználat: %s'
-  job-gui-catalyst-already-owned: '&eMár van katalizátorod: &f{catalyst}'
+  job-gui-catalyst-already-owned: '&eMár van Lélekkapcsod: &f{catalyst}'
   job-gui-catalyst-claim: '&eKattints az igényléshez, ha elveszett!'
-  job-gui-catalyst-claimed: '&aKatalizátor átvéve: &e{catalyst}'
-  job-gui-catalyst-locked: '&cKépesség Katalizátor'
+  job-gui-catalyst-claimed: '&aLélekkapocs átvéve: &e{catalyst}'
+  job-gui-catalyst-locked: '&cLélekkapocs'
   job-gui-catalyst-locked-lore: '&7Előbb válassz elsődleges kasztot!'
-  job-gui-catalyst-lore: '&7A kasztod Képesség Katalizátora.'
+  job-gui-catalyst-lore: '&7A kasztod Lélekkapcsa.'
   job-gui-catalyst-no-class: '&cElőbb válassz elsődleges kasztot!'
   job-gui-skilltree: '&5Képesség-fa'
   job-gui-skilltree-lore: '&7A kasztod képességei és feloldási szintjei.'
   job-help-admin: '&e/job admin <resetcd|unlockallskills|resetskills> <játékos> &7- Varázslatok kezelése'
-  job-help-givecatalyst: '&e/job givecatalyst <játékos> &7- Kaszt-specifikus Képesség Katalizátor átadása (Admin).'
+  job-help-givecatalyst: '&e/job givecatalyst <játékos> &7- Kaszt-specifikus Lélekkapocs átadása (Admin).'
   job-help-header: '&6/job &7- elérhető parancsok:'
   job-select-failed: '&cJelenleg nem választhatsz új kasztot!'
   job-select-primary-success: '&aElsődleges kaszt kiválasztva:'

@@ -51,6 +51,93 @@ public final class EventsCommand implements BasicCommand {
     private final MeteorEventManager meteorEventManager;
     private final IntroManager introManager;
     private final MessageManager messageManager;
+    /** D19: setterrel kötve (a manager a parancsnál később épül a DI-sorrendben). */
+    private hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager;
+
+    public void setStrangerNpcManager(final hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager) {
+        this.strangerNpcManager = strangerNpcManager;
+    }
+
+    /** H2/B42: setterrel kötve (a managerek a parancsnál később épülnek a DI-sorrendben). */
+    private hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
+    private hu.taliann.icesmp.managers.ArcheologyManager archeologyManager;
+
+    public void setCorruptionManager(final hu.taliann.icesmp.managers.CorruptionManager corruptionManager) {
+        this.corruptionManager = corruptionManager;
+    }
+
+    public void setArcheologyManager(final hu.taliann.icesmp.managers.ArcheologyManager archeologyManager) {
+        this.archeologyManager = archeologyManager;
+    }
+
+    /** N25: setterrel kötve. */
+    private hu.taliann.icesmp.managers.EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final hu.taliann.icesmp.managers.EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
+
+    /** N25b: setterrel kötve. */
+    private hu.taliann.icesmp.managers.CultistEventManager cultistEventManager;
+
+    public void setCultistEventManager(final hu.taliann.icesmp.managers.CultistEventManager cultistEventManager) {
+        this.cultistEventManager = cultistEventManager;
+    }
+
+    private void handleCultists(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(cultistEventManager != null && cultistEventManager.forceStart(anchor)
+                ? messageManager.get("events-cultists-started", "&5Kultisták gyülekeznek a közeledben…")
+                : messageManager.get("events-cultists-failed", "&7Nem sikerült (már fut egy kultista esemény, vagy nincs online játékos)."));
+    }
+
+    /** N25 — esemény-spawnpontok kezelése: add <esemény|any> [id] | remove <id> | list. */
+    private void handleSpawnPoint(final CommandSender sender, final String[] args) {
+        if (!requireAdmin(sender) || spawnPointManager == null) {
+            return;
+        }
+        final String usage = "&cHasználat: /events spawnpoint add <world-boss|escort|caravan|cultists|any> [id] | remove <id> | list";
+        if (args.length < 2) {
+            sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
+            return;
+        }
+        switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "add" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
+                    return;
+                }
+                final String eventKey = args.length >= 3 ? args[2].toLowerCase(Locale.ROOT) : "any";
+                if (!List.of("world-boss", "escort", "caravan", "cultists", "any").contains(eventKey)) {
+                    sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
+                    return;
+                }
+                final String id = spawnPointManager.add(args.length >= 4 ? args[3] : null, eventKey, player.getLocation());
+                sender.sendMessage(messageManager.get("events-spawnpoint-added",
+                        "&a⚑ Spawnpont felvéve: &f%s &7(%s) — itt. A mód kapcsolása: &e/icesmp config set world-events.anchors.%s.mode points",
+                        id, eventKey, "any".equals(eventKey) ? "<esemény>" : eventKey));
+            }
+            case "remove", "torol" -> {
+                if (args.length < 3 || !spawnPointManager.remove(args[2])) {
+                    sender.sendMessage(messageManager.get("events-spawnpoint-unknown", "&cNincs ilyen spawnpont."));
+                    return;
+                }
+                sender.sendMessage(messageManager.get("events-spawnpoint-removed", "&aSpawnpont törölve."));
+            }
+            case "list", "lista" -> {
+                final var points = spawnPointManager.list();
+                sender.sendMessage(messageManager.get("events-spawnpoint-header", "&6Esemény-spawnpontok (&f%s&6):", points.size()));
+                for (final var point : points) {
+                    sender.sendMessage(messageManager.get("events-spawnpoint-line", "&e%s &7— %s @ %s (%s, %s, %s)",
+                            point.id(), point.eventKey(), point.world(), point.x(), point.y(), point.z()));
+                }
+            }
+            default -> sender.sendMessage(messageManager.get("events-spawnpoint-usage", usage));
+        }
+    }
 
     public EventsCommand(final SeasonManager seasonManager, final BloodMoonManager bloodMoonManager,
                          final WorldBossManager worldBossManager, final InvasionManager invasionManager,
@@ -100,6 +187,11 @@ public final class EventsCommand implements BasicCommand {
             case "challenge", "kihivas" -> handleChallenge(sender);
             case "escort", "kiseret" -> handleEscort(sender);
             case "meteor" -> handleMeteor(sender);
+            case "stranger", "idegen" -> handleStranger(sender);
+            case "corruption", "rontas" -> handleCorruption(sender);
+            case "archeology", "regeszet" -> handleArcheology(sender);
+            case "spawnpoint", "spawnpont" -> handleSpawnPoint(sender, args);
+            case "cultists", "kultistak" -> handleCultists(sender);
             case "intro" -> handleIntro(sender, args);
             default -> handleSeason(sender);
         }
@@ -108,7 +200,7 @@ public final class EventsCommand implements BasicCommand {
     private void handleBloodMoon(final CommandSender sender, final String[] args) {
         if (args.length >= 2) {
             if (!sender.hasPermission(ADMIN_PERMISSION)) {
-                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
                 return;
             }
             final String sub = args[1].toLowerCase(Locale.ROOT);
@@ -129,6 +221,20 @@ public final class EventsCommand implements BasicCommand {
         sender.sendMessage(messageManager.get(
                 bloodMoonManager.isActive() ? "events-bloodmoon-active" : "events-bloodmoon-inactive",
                 bloodMoonManager.isActive() ? "&cVérhold tombol!" : "&7Jelenleg nincs vérhold."));
+    }
+
+    /** D19 — az Idegen kézi megidézése (atmoszféra-teszthez). */
+    private void handleStranger(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        if (strangerNpcManager == null) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(strangerNpcManager.forceSpawn(anchor)
+                ? messageManager.get("events-stranger-spawned", "&8Az Idegen… valahol a közelben jár.")
+                : messageManager.get("events-stranger-failed", "&7Nincs online játékos, aki mellett feltűnhetne."));
     }
 
     private void handleWorldBoss(final CommandSender sender) {
@@ -156,7 +262,7 @@ public final class EventsCommand implements BasicCommand {
     private void handleCaravan(final CommandSender sender, final String[] args) {
         if (args.length >= 2) {
             if (!sender.hasPermission(ADMIN_PERMISSION)) {
-                sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
                 return;
             }
             final String sub = args[1].toLowerCase(Locale.ROOT);
@@ -256,12 +362,32 @@ public final class EventsCommand implements BasicCommand {
                 : messageManager.get("events-meteor-failed", "&7Nem sikerült (már van kráter, vagy nincs online játékos)."));
     }
 
+    private void handleCorruption(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(corruptionManager != null && corruptionManager.forceSpawn(anchor)
+                ? messageManager.get("events-corruption-spawned", "&5Rontás-góc nyílik a közeledben!")
+                : messageManager.get("events-corruption-failed", "&7Nem sikerült (már van aktív góc, vagy nincs online játékos)."));
+    }
+
+    private void handleArcheology(final CommandSender sender) {
+        if (!requireAdmin(sender)) {
+            return;
+        }
+        final Player anchor = sender instanceof Player player ? player : null;
+        sender.sendMessage(archeologyManager != null && archeologyManager.forceSpawn(anchor)
+                ? messageManager.get("events-archeology-spawned", "&eGyanús lelőhely bukkant fel a közeledben!")
+                : messageManager.get("events-archeology-failed", "&7Nem sikerült (már van aktív lelőhely, vagy nincs online játékos)."));
+    }
+
     /** One admin gate for every admin-only subcommand: messages and returns false when denied. */
     private boolean requireAdmin(final CommandSender sender) {
         if (sender.hasPermission(ADMIN_PERMISSION)) {
             return true;
         }
-        sender.sendMessage(messageManager.get("system.permission-denied", "&cNincs jogosultságod erre a parancsra."));
+        sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
         return false;
     }
 
@@ -415,7 +541,7 @@ public final class EventsCommand implements BasicCommand {
         } else if (sender instanceof Player player) {
             target = player;
         } else {
-            sender.sendMessage(messageManager.get("player-only", "&cEzt a parancsot csak játékosok használhatják."));
+            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékosok használhatják."));
             return;
         }
 
@@ -427,7 +553,7 @@ public final class EventsCommand implements BasicCommand {
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "intro")
+                ? List.of("status", "season", "blood-moon", "worldboss", "invasion", "caravan", "ambient", "gathering", "treasure", "wild-hunt", "abundance", "challenge", "escort", "meteor", "stranger", "corruption", "archeology", "cultists", "spawnpoint", "intro")
                 : List.of("status", "season", "blood-moon", "caravan");
         final String first = prefixAt(args, 0);
         final boolean firstComplete = options.contains(first);

@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Live player HUD (ROADMAP phase 1): a sidebar scoreboard (faction, currency,
+ * Live player HUD: a sidebar scoreboard (faction, currency,
  * class + level, active event), faction-coloured tab-list names, and shared
  * boss-bars for the raid / blood moon / world boss. Refreshed on a ~1s tick.
  *
@@ -86,6 +86,8 @@ public final class HudManager {
     private final BossBar worldBossBar = BossBar.bossBar(Component.empty(), 1.0F, BossBar.Color.PURPLE, BossBar.Overlay.NOTCHED_6);
 
     private final ConcurrentHashMap<UUID, Team[]> playerTeams = new ConcurrentHashMap<>();
+    /** játékos → az utoljára kiküldött oldalsáv-sorok (diff-cache: azonos sor nem megy ki újra). */
+    private final ConcurrentHashMap<UUID, List<Component>> lastLines = new ConcurrentHashMap<>();
 
     private final NamespacedKey hiddenSectionsKey;
     /** Per-player /hud toggle state, cached in memory (PDC is only touched on load/save, never per tick). */
@@ -268,31 +270,40 @@ public final class HudManager {
         if (sidebarVisibleFor(player)) {
             Team[] teams = playerTeams.get(player.getUniqueId());
             if (teams == null) {
+                // Friss (üres prefixű) sorok épülnek — a régi diff-cache nem érvényes rájuk.
+                lastLines.remove(player.getUniqueId());
                 buildSidebar(player);
                 teams = playerTeams.get(player.getUniqueId());
             }
             if (teams != null) {
                 final List<Component> lines = buildLines(player);
+                // Last-line diff-cache: változatlan sor nem megy ki csomagként — enélkül
+                // a HUD másodpercenként ~15 azonos tartalmú team-frissítést küldene fejenként.
+                final List<Component> previous = lastLines.get(player.getUniqueId());
                 final Scoreboard board = player.getScoreboard();
                 final Objective objective = board.getObjective(OBJECTIVE);
                 for (int i = 0; i < LINES; i++) {
                     final String entry = entry(i);
                     if (i < lines.size()) {
-                        teams[i].prefix(lines.get(i));
+                        if (previous == null || i >= previous.size() || !lines.get(i).equals(previous.get(i))) {
+                            teams[i].prefix(lines.get(i));
+                        }
                         if (objective != null && !objective.getScore(entry).isScoreSet()) {
                             final org.bukkit.scoreboard.Score score = objective.getScore(entry);
                             score.setScore(LINES - i);
                             // A jobb szélső piros sor-számok elrejtése (1.20.3+ API).
                             score.numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat.blank());
                         }
-                    } else {
+                    } else if (previous == null || previous.size() > i) {
                         // Hide the unused row entirely (no empty sidebar line).
                         teams[i].prefix(Component.empty());
                         board.resetScores(entry);
                     }
                 }
+                lastLines.put(player.getUniqueId(), lines);
             }
         } else if (playerTeams.remove(player.getUniqueId()) != null) {
+            lastLines.remove(player.getUniqueId());
             // Sidebar kikapcsolva (config vagy /hud mind): csak az objective-et és a sor-teameket
             // szedjük le — a board marad, mert a TablistManager nametag/ping rétege azon él.
             final Scoreboard board = player.getScoreboard();
@@ -390,6 +401,7 @@ public final class HudManager {
             return;
         }
         playerTeams.remove(player.getUniqueId());
+        lastLines.remove(player.getUniqueId());
         snapshots.remove(player.getUniqueId());
         hiddenSectionsCache.remove(player.getUniqueId());
         player.hideBossBar(raidBar);
@@ -708,9 +720,6 @@ public final class HudManager {
         };
     }
 
-    private Component label(final String key, final Component value) {
-        return Component.text(key + ": ", NamedTextColor.GRAY).append(value);
-    }
 
     private static float clamp(final float value) {
         return Math.max(0.0F, Math.min(1.0F, value));

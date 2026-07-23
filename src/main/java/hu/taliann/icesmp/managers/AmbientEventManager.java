@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Ambient world events (ROADMAP "élőbb világ"): infrequent, small, atmospheric
+ * Ambient world events: infrequent, small, atmospheric
  * happenings that make the world feel alive without touching balance or the
  * economy. Each firing picks one <em>enabled</em> flavour at random, checks
  * that flavour's environmental gate (time of day / weather) against the main
@@ -270,15 +270,18 @@ public final class AmbientEventManager {
         final Player anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         anchor.getScheduler().run(plugin, task -> {
             final Location where = anchor.getLocation().clone();
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "ambient-falling-star",
-                    "&e☄ Hulló csillag hasít át az égbolton a(z) {world} felett ({x}, {z})!",
-                    Map.of(
-                            "world", where.getWorld() == null ? "?" : where.getWorld().getName(),
-                            "x", String.valueOf(where.getBlockX()),
-                            "z", String.valueOf(where.getBlockZ())
-                    )
-            ));
+            // Broadcast-diéta: a hullócsillag helyi látvány — csak a környékbeliek hallanak róla.
+            hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, where,
+                    configManager.getDouble("ambient-events.local-announce-radius", 192.0D),
+                    messageManager.getMessage(
+                            "ambient-falling-star",
+                            "&e☄ Hulló csillag hasít át az égbolton feletted ({x}, {z})!",
+                            Map.of(
+                                    "world", where.getWorld() == null ? "?" : where.getWorld().getName(),
+                                    "x", String.valueOf(where.getBlockX()),
+                                    "z", String.valueOf(where.getBlockZ())
+                            )
+                    ));
             // A short streak of sparks overhead, visible to nearby players.
             final World world = where.getWorld();
             if (world != null) {
@@ -363,8 +366,11 @@ public final class AmbientEventManager {
         }
         if (spawned > 0) {
             world.spawnParticle(Particle.HAPPY_VILLAGER, center.clone().add(0.0D, 1.0D, 0.0D), 12, 3.0D, 1.0D, 3.0D, 0.0D);
-            Bukkit.getServer().broadcast(messageManager.getMessage(
-                    "ambient-migration", "&a🐾 Vándorló állatcsorda kelt át a vidéken — élelem az éber telepeseknek."));
+            // Broadcast-diéta: a csorda egy embernek szóló szerencse — helyi hír.
+            hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, center,
+                    configManager.getDouble("ambient-events.local-announce-radius", 192.0D),
+                    messageManager.getMessage(
+                            "ambient-migration", "&a🐾 Vándorló állatcsorda kelt át a közeledben — élelem az éber telepeseknek."));
         }
     }
 
@@ -382,8 +388,20 @@ public final class AmbientEventManager {
         }
     }
 
+    /** AFK-fék (setterrel kötve — az AfkManager később épül a DI-sorrendben). */
+    private volatile AfkManager afkManager;
+
+    public void setAfkManager(final AfkManager afkManager) {
+        this.afkManager = afkManager;
+    }
+
     /** Runs on the player's own region thread: checks sky access and, if outdoors, pays out. */
     private void rewardIfOutdoors(final Ambient ambient, final Player player, final double rewardAmount) {
+        // AFK-parkoló ne szedje fel a hangulat-esemény pénzét (auto-farm guard, mint a többi jutalomnál).
+        final AfkManager afkRef = afkManager;
+        if (afkRef != null && afkRef.isAfk(player.getUniqueId())) {
+            return;
+        }
         final Location location = player.getLocation();
         final World world = location.getWorld();
         if (world == null) {
@@ -401,9 +419,9 @@ public final class AmbientEventManager {
 
         if (rewardAmount > 0.0D) {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());
-            currencyManager.addToBalance(player.getUniqueId(), CurrencyType.fromFactionType(faction), rewardAmount);
+            currencyManager.payOutTokens(player, CurrencyType.fromFactionType(faction), Math.round(rewardAmount));
             player.sendMessage(messageManager.getMessage(
-                    "ambient-reward", "&d✨ Az esemény megérintett: &f+{amount} token",
+                    "ambient-reward", "&d✨ Az esemény megérintett: &f+{amount} érme",
                     Map.of("amount", formatAmount(rewardAmount))));
         }
     }

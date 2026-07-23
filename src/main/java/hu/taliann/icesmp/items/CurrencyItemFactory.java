@@ -27,10 +27,6 @@ public final class CurrencyItemFactory {
         this.currencyTypeKey = new NamespacedKey(plugin, "currency_type");
     }
 
-    public ItemStack create(final FactionType factionType, final long amount) {
-        return create(CurrencyType.fromFactionType(factionType), amount);
-    }
-
     public ItemStack create(final CurrencyType currencyType, final long amount) {
         final int stackAmount = (int) Math.max(1L, Math.min(64L, amount));
         final ItemStack itemStack = new ItemStack(currencyType.getMaterial(), stackAmount);
@@ -78,14 +74,12 @@ public final class CurrencyItemFactory {
         meta.displayName(serializer.deserialize(resolveDisplayName(currencyType)));
         meta.lore(List.of());
 
-        final CustomModelDataComponent customModelDataComponent = meta.getCustomModelDataComponent();
-        customModelDataComponent.setFloats(List.of((float) currencyType.getCustomModelData()));
-        meta.setCustomModelDataComponent(customModelDataComponent);
-
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(currencyTypeKey, PersistentDataType.STRING, currencyType.name());
 
         itemStack.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack,
+                "icesmp:currency_" + currencyType.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     private String resolveDisplayName(final CurrencyType currencyType) {
@@ -96,10 +90,10 @@ public final class CurrencyItemFactory {
         }
 
         return switch (currencyType) {
-            case RED -> TextUtil.color("&cPiros Token");
-            case BLUE -> TextUtil.color("&9Kék Token");
-            case NEUTRAL -> TextUtil.color("&7Semleges Token");
-            case DARK -> TextUtil.color("&8Sötét Token");
+            case RED -> TextUtil.color("&cParázsló Parals");
+            case BLUE -> TextUtil.color("&9Hópihér-veret");
+            case NEUTRAL -> TextUtil.color("&5Creutzér");
+            case DARK -> TextUtil.color("&8Csontveret");
         };
     }
 }

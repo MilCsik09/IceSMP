@@ -42,18 +42,20 @@ public final class CommunityGoalManager implements PersistentStore {
     private final FactionManager factionManager;
     private final FactionTreasuryManager treasuryManager;
     private final MessageManager messageManager;
+    private final SeasonManager seasonManager;
     private final File storageFile;
     private final Map<String, Long> progress = new ConcurrentHashMap<>();
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     public CommunityGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
                                 final FactionManager factionManager, final FactionTreasuryManager treasuryManager,
-                                final MessageManager messageManager) {
+                                final MessageManager messageManager, final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.factionManager = factionManager;
         this.treasuryManager = treasuryManager;
         this.messageManager = messageManager;
+        this.seasonManager = seasonManager;
         this.storageFile = new File(plugin.getDataFolder(), "community-goals.yml");
         plugin.getDataFolder().mkdirs();
     }
@@ -101,6 +103,12 @@ public final class CommunityGoalManager implements PersistentStore {
     private ConfigurationSection goalsSection() {
         return configManager.getConfiguration() == null ? null
                 : configManager.getConfiguration().getConfigurationSection("community-goals");
+    }
+
+    /** Szezonváltáskor a közösségi célok is tiszta lappal indulnak (konzisztens szezon-modell). */
+    public synchronized void resetForNewSeason() {
+        progress.clear();
+        save();
     }
 
     public long getProgress(final String goalId) {
@@ -193,6 +201,22 @@ public final class CommunityGoalManager implements PersistentStore {
                 }
             } else {
                 treasuryManager.deposit(goalFaction, treasuryReward);
+            }
+        }
+
+        // Aszimmetrikus liga: a közösségi cél liga-pontot is ér ("community" forrás —
+        // a NEUTRAL identitás-útja, a súlymátrix szerint). Szerver-célnál mindenki kap.
+        final int seasonPoints = Math.max(0, configManager.getInt("community-goals.season-points", 8));
+        if (seasonPoints > 0) {
+            if (serverWide) {
+                // Szerver-cél: MINDENKI kap, de SÚLYOZATLANUL ("community-server" forrás,
+                // nincs súly-sor → 1.0) — a NEUTRAL 1.5-ös bónusza csak a SAJÁT frakció-
+                // céljaira jár, ne kapjon prémiumot mások közös munkájáért.
+                for (final FactionType faction : FactionType.values()) {
+                    seasonManager.addPoints(faction, seasonPoints, "community-server");
+                }
+            } else {
+                seasonManager.addPoints(goalFaction, seasonPoints, "community");
             }
         }
 

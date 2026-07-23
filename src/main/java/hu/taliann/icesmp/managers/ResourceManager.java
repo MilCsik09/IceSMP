@@ -27,6 +27,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ResourceManager implements PlayerStateCleanup {
 
+    /** E25/E32 — setter-injektált pool-bónusz lookup (pakt + sárkánytojás-relikvia). */
+    private volatile java.util.function.ToDoubleFunction<UUID> maxMultiplier;
+
+    public void setMaxMultiplier(final java.util.function.ToDoubleFunction<UUID> maxMultiplier) {
+        this.maxMultiplier = maxMultiplier;
+    }
+
     /** Harc utáni türelmi idő: eddig számít "harcban" a játékos (düh-típusú tárnál nincs decay). */
     private static final long COMBAT_GRACE_MS = 5000L;
 
@@ -46,8 +53,7 @@ public final class ResourceManager implements PlayerStateCleanup {
     /** Epoch millis of the player's last dealt hit (combat-gain / idle-decay gate). */
     private final Map<UUID, Long> lastCombat = new ConcurrentHashMap<>();
 
-    public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
-                           final SpecializationManager specializationManager) {
+    public ResourceManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager) {
         this.configManager = configManager;
         this.jobManager = jobManager;
     }
@@ -118,8 +124,10 @@ public final class ResourceManager implements PlayerStateCleanup {
     }
 
     private double max(final UUID id) {
+        final java.util.function.ToDoubleFunction<UUID> bonusRef = maxMultiplier;
+        final double multiplier = bonusRef == null ? 1.0D : Math.max(0.1D, bonusRef.applyAsDouble(id));
         return Math.max(10.0D, profile(id, "max",
-                configManager.getDouble("spells.resource.max", 100.0D)));
+                configManager.getDouble("spells.resource.max", 100.0D)) * multiplier);
     }
 
     private double regenPerSecond(final UUID id) {

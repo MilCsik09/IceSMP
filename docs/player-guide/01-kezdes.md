@@ -2,6 +2,11 @@
 
 Most léptél be először? Semmi gond — kövesd ezt a pár lépést, és máris benne vagy a játékban.
 
+> **Nem kell semmit előre tudnod.** Se a történetet, se a rendszereket nem kell elolvasnod
+> ahhoz, hogy játssz: az első belépéskor egy kezdő küldetés-lánc mindent megtanít, a világ
+> története pedig játék közben, apránként tárul fel — csak annak, aki kíváncsi rá. Ez a
+> kézikönyv is csak segédlet: akkor lapozd fel, ha elakadtál vagy mélyebbre ásnál.
+
 ## Az első 10 perced
 
 1. **Válassz frakciót.** Írd be: `/faction join <frakció>` — a frakciók: `red` (Piros),
@@ -13,7 +18,7 @@ Most léptél be először? Semmi gond — kövesd ezt a pár lépést, és már
    Képesség-fa**.
 3. **Válassz kasztot** a Kaszt menüből — **13 kaszt** közül (Varázsló, Harcos, Íjász, Orgyilkos,
    Druida, Paplovag, Halállovag, Sámán, Szerzetes, Pap, Boszorkánymester, Démonvadász,
-   Sárkányidéző), majd **igényeld a Képesség Katalizátorodat** (egy gomb ugyanott). Ezzel
+   Sárkányidéző), majd **igényeld a Lélekkapocsodat** (egy gomb ugyanott). Ezzel
    használod a varázslataidat. (Minden kasztnak saját **Erő-csíkja** is van a HUD-on — a legtöbb
    spell ezt fogyasztja, és idővel visszatöltődik; a vér/rituálé/fizikai spellek HP/XP/éhséget
    kérnek. Lásd [Kasztok](04-kasztok.md).)
@@ -38,14 +43,33 @@ Első belépéskor egy rövid **bemutató cím-szekvencia** is lejátszódik —
 |---|---|
 | **Mindent egy helyen, kattintással** | **`/menu`** |
 | Megnézni az adataimat | `/profile` |
-| Képességet használni | tartsd kézben a Katalizátort → jobb katt |
-| Pénzt nézni / utalni | `/bank balance`, `/currency pay` |
+| Képességet használni | tartsd kézben a Lélekkapcsot → jobb katt |
+| Pénzt nézni / adni | `/bank balance` — pénzt adni a fizikai veret kézből átadásával lehet |
 | Eladni valamit | `/market sell <ár>` |
 | Küldetést felvenni | `/quest list` |
 | Csapatot alakítani a barátaiddal | `/party invite <név>` — lásd [Party](15-csapat.md) |
 | Megvédeni a házam (saját birtok) | állj a chunkba és `/claim` — lásd [Területek](13-teruletek.md) |
 
 > A teljes parancslista: [Parancsok](14-parancsok.md).
+
+## 🖥️ Képernyő: HUD, tablista, sebzés-számok
+
+A szerver **saját, natív** felületet ad (nem kell hozzá külső mod vagy resource-trükk):
+
+- **Dinamikus HUD (oldalsáv):** harc közben a HUD **a harchoz fontos sorokra** vált (erőforrás,
+  csapat), és egy **forgó infósor** váltogatja a kevésbé sürgős adatokat — így a korlátozott hely
+  mindig a leghasznosabbat mutatja. Célzáskor egy **célpont-sor** is megjelenhet az ellenfél
+  életével.
+- **Natív tablista:** saját **fejléc/lábléc** (animációkkal), a nevek a rangod szerint rendezve,
+  és **relációs háború-színek** — raid alatt az ellenséges frakció neve **pirosan** villan a
+  tablistádban és a fejük fölött. A **ping** is színkódolt.
+- **Lebegő sebzés-számok:** ütéskor a sebzés száma felugrik a célpont felett (alapból **csak te
+  látod, amit te okozol** — configból állítható/kikapcsolható).
+- **Haladás-fül (natív advancementek):** a vanília **Haladás** képernyőn (alapból **L**) van egy
+  saját **IceSMP** fül — külső mod és resource pack nélkül. A mérföldköveid itt gyűlnek: első
+  kaszt, specializáció, frakció-csatlakozás, első szakma, és **rejtett** teljesítmények is (pl.
+  egy rontás-góc megtisztítása, egy titkos hely felfedezése). Minden bejegyzésnél **felugró
+  értesítést** kapsz.
 
 ---
 

@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Faction kings and elections (ideas.md: "Királyok és választás").
+ * Faction kings and elections.
  * Every non-excluded faction elects a king by simple plurality: members vote
  * with /faction king vote; whoever reaches the configured minimum vote count
  * and leads the tally is crowned. Votes reset when the configured term
@@ -215,6 +215,17 @@ public final class KingManager implements PersistentStore {
         if (System.currentTimeMillis() - start > termDays * 24L * 60L * 60L * 1000L) {
             votes.remove(faction);
             electionStart.put(faction, System.currentTimeMillis());
+            // A ciklus lejárt = a korona is lejárt: enélkül egy inaktív király örökre
+            // trónon maradna, mert új min-votes jelölt sosem gyűlik össze ellene.
+            if (configManager.getBoolean("factions.kings.dethrone-on-expiry", true)
+                    && kings.remove(faction) != null) {
+                save();
+                Bukkit.getGlobalRegionScheduler().run(plugin, task ->
+                        Bukkit.getServer().broadcast(messageManager.getMessage(
+                                "king-term-expired",
+                                "<gold>👑 A(z) {faction} királyi ciklusa lejárt — a trón megüresedett, új szavazás indul!</gold>",
+                                Map.of("faction", faction.getDisplayName()))));
+            }
         }
     }
 
@@ -223,6 +234,11 @@ public final class KingManager implements PersistentStore {
         UUID leader = null;
         int leaderVotes = 0;
         for (final Map.Entry<UUID, Integer> entry : getTally(faction).entrySet()) {
+            // Csak AKTUÁLIS frakciótag koronázható — a frakcióváltás után bent ragadt
+            // szavazatok ne ültethessenek idegen "királyt" a trónra.
+            if (factionManager.getFaction(entry.getKey()) != faction) {
+                continue;
+            }
             if (entry.getValue() > leaderVotes) {
                 leader = entry.getKey();
                 leaderVotes = entry.getValue();

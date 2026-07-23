@@ -1,10 +1,13 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.utils.UndeadUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,16 +27,19 @@ public final class SoulstoneListener implements Listener {
     private final MobScalingManager mobScalingManager;
     private final BloodMoonManager bloodMoonManager;
     private final ConfigManager configManager;
+    private final FactionManager factionManager;
 
     private final hu.taliann.icesmp.managers.AfkManager afkManager;
 
     public SoulstoneListener(final CurrencyManager currencyManager, final MobScalingManager mobScalingManager,
                              final BloodMoonManager bloodMoonManager, final ConfigManager configManager,
+                             final FactionManager factionManager,
                              final hu.taliann.icesmp.managers.AfkManager afkManager) {
         this.currencyManager = currencyManager;
         this.mobScalingManager = mobScalingManager;
         this.bloodMoonManager = bloodMoonManager;
         this.configManager = configManager;
+        this.factionManager = factionManager;
         this.afkManager = afkManager;
     }
 
@@ -54,6 +60,16 @@ public final class SoulstoneListener implements Listener {
             return;
         }
 
+        // „A Királynő nem fizet a testvérgyilkosságért": a DARK-jelölt kezén az élőhalottból nem
+        // kristályosodik lélekkő — az élőhalottak úgysem védekeznek ellene (frakció-passzív), így ez
+        // egyszerre lore-szabály és auto-farm exploit-fék. (A frakció-lekérdezés ConcurrentHashMap —
+        // Folia-biztos a mob régió-szálán is.)
+        if (!configManager.getBoolean("currency.soul-drop.dark-undead-drops", false)
+                && UndeadUtil.isUndead(entity)
+                && factionManager.getFaction(killer.getUniqueId()) == FactionType.DARK) {
+            return;
+        }
+
         final int minLevel = Math.max(1, configManager.getInt("currency.soul-drop.min-mob-level", 3));
         final int mobLevel = mobScalingManager.getLevel(entity);
         if (mobLevel < minLevel) {
@@ -61,15 +77,47 @@ public final class SoulstoneListener implements Listener {
         }
 
         // Blood moon nights multiply the soulstone drop chance.
-        final double chancePercent = Math.max(0.0D, Math.min(100.0D,
+        double chancePercent = Math.max(0.0D, Math.min(100.0D,
                 configManager.getDouble("currency.soul-drop.chance-percent", 25.0D)
                         * bloodMoonManager.getSoulDropMultiplier()));
+        // Ritka variáns: emelt lélekkő-esély (rare-variant.soul-chance-multiplier).
+        if (hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(event.getEntity()) != null) {
+            chancePercent = Math.min(100.0D, chancePercent * Math.max(1.0D,
+                    configManager.getDouble("rare-variant.soul-chance-multiplier", 2.0D)));
+        }
         if (ThreadLocalRandom.current().nextDouble(100.0D) >= chancePercent) {
             return;
         }
 
         final int maxAmount = Math.max(1, configManager.getInt("currency.soul-drop.max-amount", 5));
         final int amount = Math.min(maxAmount, mobLevel - minLevel + 1);
+        if (!tryConsumeDailyBudget(killer.getUniqueId(), amount)) {
+            return;
+        }
         event.getDrops().add(currencyManager.createCurrencyItem(CurrencyType.DARK, amount));
+    }
+
+    /** játékos -> (nap, mai összeg) — memóriában él (restartkor nullázódik, a capnek elég). */
+    private final java.util.Map<java.util.UUID, long[]> dailyEarned = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Napi keret (currency.soul-drop.daily-cap, 0 = korlátlan): a min-mob-level a
+     * spawner-mobokat kizárja (azok skálázatlanok, szintjük 0), de a szint-zónás
+     * natural-farm ellen csak a plafon véd — ez volt az egyetlen keret nélküli
+     * pénz-faucet. Konkurrens map (a kill bármely régió-szálán futhat); a más-napi
+     * bejegyzések túlcsordulásnál söprődnek.
+     */
+    private boolean tryConsumeDailyBudget(final java.util.UUID playerId, final long amount) {
+        final double cap = configManager.getDouble("currency.soul-drop.daily-cap", 50.0D);
+        if (cap <= 0.0D) {
+            return true;
+        }
+        final long today = System.currentTimeMillis() / 86_400_000L;
+        if (dailyEarned.size() > 512) {
+            dailyEarned.values().removeIf(entry -> entry[0] != today);
+        }
+        final long[] entry = dailyEarned.compute(playerId, (key, old) ->
+                old == null || old[0] != today ? new long[]{today, amount} : new long[]{today, old[1] + amount});
+        return entry[1] <= (long) cap;
     }
 }

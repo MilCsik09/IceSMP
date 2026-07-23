@@ -26,6 +26,12 @@ public final class ProfessionManager implements PlayerStateCleanup {
     public static final int MAX_PROFESSION_LEVEL = 50;
 
     private final ConfigManager configManager;
+    /** Setter-injektált (opcionális): szintlépés/fokozat üzenetekhez. */
+    private volatile hu.taliann.icesmp.utils.MessageManager messageManager;
+
+    public void setMessageManager(final hu.taliann.icesmp.utils.MessageManager messageManager) {
+        this.messageManager = messageManager;
+    }
     private final NamespacedKey gatheringKey;
     private final NamespacedKey craftingKey;
     private final NamespacedKey learnedRecipesKey;
@@ -123,6 +129,7 @@ public final class ProfessionManager implements PlayerStateCleanup {
 
         player.getPersistentDataContainer().set(slotKey(professionType.getCategory()),
                 PersistentDataType.STRING, professionType.getId());
+        AdvancementService.award(player, "profession_pick");
         return true;
     }
 
@@ -193,7 +200,48 @@ public final class ProfessionManager implements PlayerStateCleanup {
             return false;
         }
 
-        return addXp(player, professionType, amount);
+        // Szintlépés-figyelés: a WoW-stílusú fejlődés-érzethez a szint- és fokozat-ugrás
+        // azonnal visszajelez (üzenet + hang). A messageManager setter-injektált (opcionális).
+        final int before = getLevel(player, professionType);
+        final boolean granted = addXp(player, professionType, amount);
+        if (granted && messageManager != null) {
+            final int after = getLevel(player, professionType);
+            if (after > before) {
+                final String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                        .plainText().serialize(professionType.getDisplayName());
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.9F, 1.3F);
+                player.sendMessage(messageManager.getMessage("profession-level-up",
+                        "<green>⚒ Szakma-szintlépés: <white>{profession}</white> — <gold>{level}. szint</gold> <gray>({rank})</gray></green>",
+                        java.util.Map.of("profession", name,
+                                "level", String.valueOf(after), "rank", getRankName(after))));
+                if (!getRankName(before).equals(getRankName(after))) {
+                    player.sendMessage(messageManager.getMessage("profession-rank-up",
+                            "<gold>🏅 Új fokozat: <white>{rank}</white>! A céh elismeri a munkádat.</gold>",
+                            java.util.Map.of("rank", getRankName(after))));
+                }
+            }
+        }
+        return granted;
+    }
+
+    /** WoW-stílusú fokozat-név a szakma-szinthez (a céh-ranglétra fokai). */
+    public static String getRankName(final int level) {
+        if (level >= MAX_PROFESSION_LEVEL) {
+            return "Legendás Mester";
+        }
+        if (level >= 40) {
+            return "Nagymester";
+        }
+        if (level >= 30) {
+            return "Mester";
+        }
+        if (level >= 20) {
+            return "Legény";
+        }
+        if (level >= 10) {
+            return "Segéd";
+        }
+        return "Inas";
     }
 
     /**

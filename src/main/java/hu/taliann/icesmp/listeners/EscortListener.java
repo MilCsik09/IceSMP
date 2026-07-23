@@ -32,6 +32,22 @@ public final class EscortListener implements Listener {
         escortManager.onWaveMobDied(event.getEntity().getUniqueId());
     }
 
+    /**
+     * Teszter-visszajelzés: „nem egyértelmű, mitől hal meg a láma" — a konvojt CSAK
+     * a szörnyek sebezhetik (támadás/lövedék/robbanás); a környezeti halál-okok
+     * (esés, fulladás, kaktusz, tűz, szikla) némán morzsolták — tiltva.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onConvoyDamage(final org.bukkit.event.entity.EntityDamageEvent event) {
+        if (!escortManager.isConvoy(event.getEntity().getUniqueId())) {
+            return;
+        }
+        switch (event.getCause()) {
+            case ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE, ENTITY_EXPLOSION -> { }
+            default -> event.setCancelled(true);
+        }
+    }
+
     /** Terrain guard: an escort mob's explosion may hurt entities, never blocks. */
     @EventHandler(ignoreCancelled = true)
     public void onExplode(final EntityExplodeEvent event) {

@@ -12,6 +12,7 @@ import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Panda;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.Husk;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -53,6 +54,10 @@ public final class SpellCatalog {
         registerDeathKnight(registry, mm);
         registerBlood(registry, mm);
         registerFrost(registry, mm);
+        registerUnholy(registry, mm);
+        registerBonePriest(registry, mm);
+        registerPlaguebringer(registry, mm);
+        registerDemonologist(registry, mm);
         registerShaman(registry, mm);
         registerElemental(registry, mm);
         registerEnhancement(registry, mm);
@@ -80,7 +85,7 @@ public final class SpellCatalog {
     }
 
     /**
-     * Spells granted by ACTIVE talents (ROADMAP phase 2), not by class level — so
+     * Spells granted by ACTIVE talents, not by class level — so
      * they are only obtainable through the talent tree (e.g. the 'ascendant'
      * capstone). Available to any class once the talent is taken.
      */
@@ -124,6 +129,48 @@ public final class SpellCatalog {
                 },
                 Particle.SOUL_FIRE_FLAME, Sound.ENTITY_SKELETON_AMBIENT, 0.7F,
                 "<dark_gray>Csontíjászok emelkednek ki a sírjukból, hogy szolgáljanak.</dark_gray>"));
+
+        // --- SZENTSÉGTELEN idézések ---
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "raise_ghoul", "Ghúl-szolga", 180, SpellCostType.XP, 60,
+                Husk.class, 2, 40,
+                (mob, owner) -> {
+                    final Husk ghoul = (Husk) mob;
+                    ghoul.setShouldBurnInDay(false);
+                    ghoul.setAdult();
+                },
+                Particle.SCULK_SOUL, Sound.ENTITY_HUSK_AMBIENT, 0.6F,
+                "<dark_green>Ghúl kaparja ki magát a földből — éhes, és a te szavadra vár.</dark_green>"));
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "army_of_the_dead", "A Holtak Serege", 300, SpellCostType.XP, 110,
+                Husk.class, 6, 40,
+                (mob, owner) -> {
+                    final Husk soldier = (Husk) mob;
+                    soldier.setShouldBurnInDay(false);
+                    soldier.setAdult();
+                },
+                Particle.SOUL, Sound.ENTITY_WITHER_SPAWN, 0.4F,
+                "<dark_green>A föld felmorajlik: a holtak serege felsorakozik a Szentségtelen mögé.</dark_green>"));
+
+        // --- DEMONOLÓGUS idézések ---
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "imp_swarm", "Imp-raj", 180, SpellCostType.XP, 60,
+                org.bukkit.entity.Vex.class, 3, 30,
+                (mob, owner) -> { },
+                Particle.SMOKE, Sound.ENTITY_VEX_AMBIENT, 0.6F,
+                "<dark_purple>Sikoltva rajzanak elő a kis démonok — a Légió előőrse.</dark_purple>"));
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "magma_servant", "Magma-szolga", 200, SpellCostType.XP, 70,
+                org.bukkit.entity.MagmaCube.class, 1, 45,
+                (mob, owner) -> ((org.bukkit.entity.MagmaCube) mob).setSize(3),
+                Particle.LAVA, Sound.ENTITY_MAGMA_CUBE_SQUISH, 0.5F,
+                "<dark_purple>A föld megreped, és izzó szolga emelkedik ki belőle.</dark_purple>"));
+        registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
+                "legion", "A Légió", 300, SpellCostType.XP, 110,
+                org.bukkit.entity.Vex.class, 5, 40,
+                (mob, owner) -> { },
+                Particle.SMOKE, Sound.ENTITY_WITHER_SPAWN, 0.35F,
+                "<dark_purple>A fátyol felszakad: a Légió átözönlik, és a hívó szavára vár.</dark_purple>"));
 
         // --- VADMESTER idézések ---
         registry.register(new SummonMinionsSpell(plugin, minionManager, configManager, talentManager, mm,
@@ -939,6 +986,114 @@ public final class SpellCatalog {
         registry.register(ConfiguredSpell.builder(mm, "breath_of_sindragosa", "Sindragosa Lehelete", 300, SpellCostType.XP, 150)
                 .aoe(6.0D).damage(8.0D).freeze(120).targetEffect(PotionEffectType.SLOWNESS, 6 * 20, 2)
                 .particle(Particle.SNOWFLAKE, 80).sound(Sound.ENTITY_BREEZE_SHOOT, 1.0F, 0.4F)
+                .build());
+    }
+
+    // ===== SZENTSÉGTELEN (death knight spec, DARK) — élőholt ragály + szolga-idézés =====
+    private static void registerUnholy(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "festering_strike", "Gennyes Csapás", 22, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(6.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 18).sound(Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "outbreak", "Járvány", 45, SpellCostType.XP, 40)
+                .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
+                .particle(Particle.SPORE_BLOSSOM_AIR, 30).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.8F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "unholy_coil", "Halálörvény", 30, SpellCostType.HEALTH, 3)
+                .target(6.0D).damage(7.0D)
+                .particle(Particle.SOUL, 25).sound(Sound.ENTITY_WITHER_SHOOT, 0.7F, 1.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "grip_of_the_dead", "A Holtak Szorítása", 40, SpellCostType.XP, 35)
+                .aoe(4.5D).damage(2.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 2)
+                .particle(Particle.SOUL_FIRE_FLAME, 30).sound(Sound.BLOCK_SOUL_SAND_BREAK, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "epidemic", "Ragály", 75, SpellCostType.XP, 50)
+                .aoe(6.0D).damage(5.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 45).sound(Sound.ENTITY_ZOMBIE_VILLAGER_CONVERTED, 0.8F, 0.5F)
+                .build());
+    }
+
+    // ===== CSONTPAP (priest spec, DARK) — a Néma Királynő gyógyítója =====
+    private static void registerBonePriest(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "bone_mend", "Csontforrasztás", 25, SpellCostType.XP, 30)
+                .friendly().aoe(4.0D).targetEffect(PotionEffectType.REGENERATION, 6 * 20, 0).healSelf(3.0D)
+                .particle(Particle.SOUL, 20).sound(Sound.BLOCK_BONE_BLOCK_PLACE, 1.0F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "leeching_ray", "Szívó Sugár", 30, SpellCostType.HUNGER, 3)
+                .target(7.0D).damage(4.0D).healSelf(3.0D)
+                .particle(Particle.SCULK_SOUL, 20).sound(Sound.ENTITY_VEX_CHARGE, 0.8F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "bone_ward", "Csont-oltalom", 60, SpellCostType.XP, 35)
+                .friendly().aoe(5.0D).targetEffect(PotionEffectType.RESISTANCE, 5 * 20, 0)
+                .particle(Particle.WHITE_ASH, 30).sound(Sound.ENTITY_SKELETON_AMBIENT, 0.8F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "queens_lament", "A Királynő Siráma", 45, SpellCostType.XP, 40)
+                .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.WEAKNESS, 6 * 20, 0)
+                .particle(Particle.SCULK_SOUL, 30).sound(Sound.ENTITY_GHAST_SCREAM, 0.5F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "blood_tithe", "Vér-tized", 75, SpellCostType.HEALTH, 4)
+                .friendly().aoe(6.0D).targetEffect(PotionEffectType.REGENERATION, 8 * 20, 1)
+                .particle(Particle.DAMAGE_INDICATOR, 25).sound(Sound.ENTITY_WARDEN_HEARTBEAT, 1.0F, 0.8F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "silence_of_the_grave", "A Sír Csendje", 90, SpellCostType.XP, 50)
+                .aoe(5.0D).damage(4.0D).targetEffect(PotionEffectType.WITHER, 4 * 20, 0)
+                .particle(Particle.ASH, 40).sound(Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "last_rites", "Utolsó Kenet", 240, SpellCostType.XP, 90)
+                .friendly().aoe(8.0D).targetEffect(PotionEffectType.ABSORPTION, 20 * 20, 1).healSelf(8.0D)
+                .particle(Particle.SOUL, 60).sound(Sound.BLOCK_BELL_RESONATE, 1.0F, 0.5F)
+                .build());
+    }
+
+    // ===== PESTISHOZÓ (assassin spec, DARK) — méreg/DoT =====
+    private static void registerPlaguebringer(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "plague_cut", "Pestis-vágás", 20, SpellCostType.HUNGER, 3)
+                .target(4.5D).damage(5.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
+                .particle(Particle.ITEM_SLIME, 15).sound(Sound.ENTITY_SPIDER_HURT, 1.0F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "plague_contagion", "Fertőzés", 40, SpellCostType.XP, 35)
+                .aoe(4.0D).damage(2.0D).targetEffect(PotionEffectType.POISON, 8 * 20, 1)
+                .particle(Particle.SPORE_BLOSSOM_AIR, 25).sound(Sound.ENTITY_ZOMBIE_INFECT, 0.8F, 0.7F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "black_boils", "Fekete Kelések", 50, SpellCostType.XP, 40)
+                .target(6.0D).damage(3.0D).targetEffect(PotionEffectType.WITHER, 6 * 20, 1)
+                .particle(Particle.SQUID_INK, 20).sound(Sound.ENTITY_SLIME_SQUISH, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "miasma", "Miazma", 60, SpellCostType.XP, 45)
+                .aoe(5.0D).damage(3.0D).targetEffect(PotionEffectType.SLOWNESS, 5 * 20, 1)
+                .particle(Particle.SNEEZE, 40).sound(Sound.ENTITY_BREEZE_IDLE_AIR, 0.8F, 0.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "festering_wounds", "Gennyedő Sebek", 75, SpellCostType.HEALTH, 3)
+                .target(5.0D).damage(6.0D).targetEffect(PotionEffectType.WITHER, 5 * 20, 1)
+                .particle(Particle.DAMAGE_INDICATOR, 20).sound(Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "plague_wind", "Pestis-szél", 90, SpellCostType.XP, 55)
+                .aoe(7.0D).damage(4.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 1)
+                .particle(Particle.SPORE_BLOSSOM_AIR, 50).sound(Sound.ENTITY_PHANTOM_FLAP, 1.0F, 0.4F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "black_death", "Fekete Halál", 300, SpellCostType.XP, 150)
+                .aoe(6.0D).damage(7.0D).targetEffect(PotionEffectType.WITHER, 8 * 20, 1)
+                .particle(Particle.SQUID_INK, 70).sound(Sound.ENTITY_WITHER_DEATH, 0.5F, 0.5F)
+                .build());
+    }
+
+    // ===== DEMONOLÓGUS (warlock spec, DARK) — démonidéző =====
+    private static void registerDemonologist(final SpellRegistry registry, final MessageManager mm) {
+        registry.register(ConfiguredSpell.builder(mm, "fel_bolt", "Démontűz-lövedék", 25, SpellCostType.HUNGER, 3)
+                .target(7.0D).damage(5.0D).ignite(60)
+                .particle(Particle.SOUL_FIRE_FLAME, 20).sound(Sound.ENTITY_BLAZE_SHOOT, 0.8F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "demon_skin", "Démonbőr", 90, SpellCostType.XP, 45)
+                .self().selfEffect(PotionEffectType.RESISTANCE, 8 * 20, 1)
+                .particle(Particle.LAVA, 25).sound(Sound.ENTITY_MAGMA_CUBE_SQUISH, 1.0F, 0.5F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "chaos_flame", "Káosz-láng", 60, SpellCostType.XP, 50)
+                .aoe(5.0D).damage(5.0D).ignite(80)
+                .particle(Particle.FLAME, 45).sound(Sound.ENTITY_GHAST_SHOOT, 0.8F, 0.6F)
+                .build());
+        registry.register(ConfiguredSpell.builder(mm, "sacrifice_pact", "Áldozati Paktum", 120, SpellCostType.HEALTH, 5)
+                .aoe(6.0D).damage(6.0D)
+                .particle(Particle.DAMAGE_INDICATOR, 35).sound(Sound.ENTITY_WITHER_HURT, 0.7F, 0.6F)
                 .build());
     }
 

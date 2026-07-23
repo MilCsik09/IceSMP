@@ -29,13 +29,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * Player market (ideas.md "Piaci tábla / aukciósház"): sellers list the item
+ * Player market: sellers list the item
  * held in hand for a price in a chosen currency; buyers purchase from the
  * market GUI using bank balances. A configurable fee burns on every sale
  * (money sink), and player-to-player trade moves currency supply — feeding
  * the dynamic exchange rates. Listings persist to market.yml.
  *
- * <p>Auction listings (ROADMAP "Valódi aukciósház") extend the same store:
+ * <p>Auction listings extend the same store:
  * bids are escrowed from the bidder's bank immediately, an overbid refunds
  * the previous bidder, and {@link #tickAuctions()} settles expired auctions —
  * the winner's escrowed bid pays the seller (minus the market fee) and the
@@ -346,6 +346,17 @@ public final class MarketManager implements PersistentStore {
             return "market-no-item";
         }
 
+        // Valódi relikvia (relic_id PDC) NEM listázható: a relikvia több-lépcsős
+        // kihívással szerzett, egyedi-tulajdonú tárgy — a börze a SZILÁNKOKÉ és az
+        // unique anyagoké. Kapcsoló: market.allow-relic-listing (default: tilos).
+        if (!configManager.getBoolean("market.allow-relic-listing", false)
+                && held.hasItemMeta()
+                && held.getItemMeta().getPersistentDataContainer().has(
+                        org.bukkit.NamespacedKey.fromString("icesmp:relic_id"),
+                        org.bukkit.persistence.PersistentDataType.STRING)) {
+            return "market-relic-not-tradeable";
+        }
+
         if (!Double.isFinite(price) || price <= 0.0D) {
             return "amount-must-be-positive";
         }
@@ -423,13 +434,28 @@ public final class MarketManager implements PersistentStore {
         }
     }
 
-    /** Credits the seller the sale amount minus the configured burn fee. */
+    /** Credits the seller the sale amount minus the configured burn fee.
+     * F14 — konjunktúra alatt az érintett valutában a díj a csökkentett érték
+     * (EconomyEventManager.marketFeeOverride), amíg az ablak él. */
     private void creditSellerShare(final UUID seller, final CurrencyType currency, final double amount) {
-        final double feePercent = Math.max(0.0D, Math.min(100.0D, configManager.getDouble("market.fee-percent", 10.0D)));
+        Double override = null;
+        final EconomyEventManager economyRef = economyEventManager;
+        if (economyRef != null) {
+            override = economyRef.marketFeeOverride(currency);
+        }
+        final double feePercent = override != null ? override
+                : Math.max(0.0D, Math.min(100.0D, configManager.getDouble("market.fee-percent", 10.0D)));
         final double sellerShare = amount * (1.0D - (feePercent / 100.0D));
         if (sellerShare > 0.0D) {
             currencyManager.addToBalance(seller, currency, sellerShare);
         }
+    }
+
+    /** F14: setterrel kötve (az esemény-manager a piac után épülhet a DI-sorrendben). */
+    private volatile EconomyEventManager economyEventManager;
+
+    public void setEconomyEventManager(final EconomyEventManager economyEventManager) {
+        this.economyEventManager = economyEventManager;
     }
 
     /**

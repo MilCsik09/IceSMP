@@ -48,6 +48,45 @@ public final class TerritoryProtectionService {
     private final TerritoryManager territoryManager;
     private final FactionManager factionManager;
     private final MessageManager messageManager;
+    /** Setter-injektált (a RaidManager a protection-service UTÁN épül fel a core-ban). */
+    private volatile RaidManager raidManager;
+
+    public void setRaidManager(final RaidManager raidManager) {
+        this.raidManager = raidManager;
+    }
+
+    private volatile CombatTagManager combatTagManager;
+
+    public void setCombatTagManager(final CombatTagManager combatTagManager) {
+        this.combatTagManager = combatTagManager;
+    }
+
+    /** Combat-taggelt játékos a zónában sem kap PvP-védelmet (safe-zone menekülés fék). */
+    public boolean isPvpUnprotected(final java.util.UUID victimId) {
+        final CombatTagManager tags = this.combatTagManager;
+        return tags != null && tags.isTagged(victimId);
+    }
+
+    /** Igaz, ha a hely az ÉLŐ raid célzónájában van és a játékos regisztrált harcos. */
+    public boolean isRaidSiegeAt(final Player player, final Location location) {
+        final RaidManager raids = this.raidManager;
+        if (raids == null || player == null) {
+            return false;
+        }
+        final RaidManager.ActiveRaid raid = raids.getActiveRaid();
+        if (raid == null || !raids.isParticipant(player.getUniqueId())) {
+            return false;
+        }
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        return zone != null && zone.id().equals(raid.territoryId());
+    }
+
+    /** A hely zóna-kulcsa a regen-mátrixhoz: territórium-típus vagy "wilderness". */
+    public String zoneTypeKeyAt(final Location location) {
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        return zone == null ? "wilderness"
+                : zone.type().name().toLowerCase(Locale.ROOT).replace('_', '-');
+    }
 
     public TerritoryProtectionService(final JavaPlugin plugin, final ConfigManager configManager,
                                       final TerritoryManager territoryManager, final FactionManager factionManager,
@@ -67,6 +106,11 @@ public final class TerritoryProtectionService {
 
     /** Baked-in default for a rule (true = protected). Faction land only guards building by default. */
     private static boolean defaultRule(final TerritoryType type, final String rule) {
+        if (type == TerritoryType.DOOM_GATE) {
+            // PvPvE no-man's land: fighting is LEGAL and interaction free by default;
+            // the arena itself stays protected (build/explosions/fire).
+            return !(PVP.equals(rule) || INTERACT.equals(rule));
+        }
         if (type.isProtectedZone()) {
             return true;
         }
@@ -74,14 +118,24 @@ public final class TerritoryProtectionService {
         return BUILD.equals(rule);
     }
 
-    /** Whether the given rule is active for the zone type (config with kill-switch + default). */
+    /**
+     * Whether the given rule is active for the zone type (config with kill-switch + default).
+     * Two config schemas are read: the CLEAR {@code allow-<szabály>} form (true = SZABAD,
+     * false = tiltva — this wins when set), and the legacy {@code <szabály>} form
+     * (true = tiltva) as fallback so old configs keep working.
+     */
     private boolean ruleEnabled(final TerritoryType type, final String rule) {
+        if (configManager.getConfiguration() == null) {
+            return true; // config még nem töltött be — a védelem alapból él
+        }
         if (type.isProtectedZone() && !configManager.getBoolean("territory.protection.protect-zones", true)) {
             return false;
         }
-        return configManager.getBoolean(
-                "territory.protection.rules." + typeKey(type) + "." + rule,
-                defaultRule(type, rule));
+        final String base = "territory.protection.rules." + typeKey(type) + ".";
+        if (configManager.getConfiguration().isSet(base + "allow-" + rule)) {
+            return !configManager.getBoolean(base + "allow-" + rule, !defaultRule(type, rule));
+        }
+        return configManager.getBoolean(base + rule, defaultRule(type, rule));
     }
 
     // ==================== player actions (build / interact) ====================
@@ -146,11 +200,64 @@ public final class TerritoryProtectionService {
     // ==================== PvP ====================
 
     /**
+     * Entry-grace timestamps for the DOOM_GATE zone (spawn-kill protection): a
+     * player crossing INTO the zone is PvP-immune for a few seconds, and loses
+     * the grace early the moment they attack someone themselves. UUID-keyed
+     * concurrent map, marked by TerritoryListener, cleared on quit/kick.
+     */
+    private final java.util.Map<java.util.UUID, Long> doomGraceUntil = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Marks a player's DOOM_GATE entry (starts the PvP grace window). */
+    public void markDoomEntry(final java.util.UUID playerId) {
+        final long seconds = Math.max(0L, configManager.getLong("territory.doom-gate.entry-grace-seconds", 8L));
+        if (seconds > 0L && playerId != null) {
+            doomGraceUntil.put(playerId, System.currentTimeMillis() + seconds * 1000L);
+        }
+    }
+
+    /** Clears a player's doom-grace state (zone exit, quit/kick session cleanup). */
+    public void clearDoomGrace(final java.util.UUID playerId) {
+        if (playerId != null) {
+            doomGraceUntil.remove(playerId);
+        }
+    }
+
+    /** Whether the player is inside their DOOM_GATE entry-grace window. */
+    private boolean hasDoomGrace(final java.util.UUID playerId) {
+        final Long until = doomGraceUntil.get(playerId);
+        if (until == null) {
+            return false;
+        }
+        if (until <= System.currentTimeMillis()) {
+            doomGraceUntil.remove(playerId);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Whether player-vs-player damage is denied at the victim's location. The
      * denial notice is sent to the attacker on the attacker's own scheduler
      * (Folia cross-entity touch). The admin bypass lets staff fight anywhere.
+     * In the DOOM_GATE zone PvP is legal, but a freshly entered victim is
+     * covered by a short entry grace — and an attacker forfeits their own
+     * grace the moment they swing first.
      */
     public boolean denyPvp(final Player victim, final Player attacker) {
+        final Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
+        if (zone != null && zone.type() == TerritoryType.DOOM_GATE) {
+            // Attacking voids the attacker's own protection (no grace-abuse ganking).
+            clearDoomGrace(attacker.getUniqueId());
+            if (hasDoomGrace(victim.getUniqueId())) {
+                attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(
+                        "territory-doom-grace",
+                        "<gray>⚔ A belépő még a Kapu árnyékának védelme alatt áll — pár pillanat, és szabad a préda.</gray>")), null);
+                return true;
+            }
+        }
+        if (isPvpUnprotected(victim.getUniqueId())) {
+            return false;
+        }
         return denyCombat(victim.getLocation(), attacker, true);
     }
 
@@ -169,6 +276,17 @@ public final class TerritoryProtectionService {
         }
         if (attacker != null && attacker.hasPermission(ADMIN_BYPASS)) {
             return false;
+        }
+        // Élő ostrom alatt a raid CÉLZÓNÁJA hadszíntér: regisztrált harcos támadása ott
+        // nem eshet a békeidős PvP-tiltás alá — enélkül a fővárosi raid (az alapértelmezett
+        // célpont védett zóna) soha nem termelhetne kill-pontot.
+        final RaidManager raids = this.raidManager;
+        if (raids != null && attacker != null) {
+            final RaidManager.ActiveRaid raid = raids.getActiveRaid();
+            if (raid != null && zone.id().equals(raid.territoryId())
+                    && raids.isParticipant(attacker.getUniqueId())) {
+                return false;
+            }
         }
         if (notify && attacker != null) {
             attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(

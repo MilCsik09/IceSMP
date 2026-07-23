@@ -204,6 +204,31 @@ public final class FancyNpcsQuestBridge {
      * @param name the NPC's internal name
      * @return a defensive copy of the location, or null if unknown
      */
+    /**
+     * Quest-NPC létezés-ellenőrzés (indulás után késleltetve hívva): a hiányzó NPC ma
+     * némán teljesíthetetlenné teszi a questjeit — itt hangos figyelmeztetés lesz belőle.
+     */
+    public void validateNpcs(final java.util.Set<String> questNpcNames) {
+        final java.util.List<String> missing = new java.util.ArrayList<>();
+        for (final String name : questNpcNames) {
+            try {
+                if (getNpcByName.invoke(npcManager, name) == null) {
+                    missing.add(name);
+                }
+            } catch (final ReflectiveOperationException exception) {
+                plugin.getLogger().warning("Quest-NPC ellenőrzés hiba (" + name + "): " + exception.getMessage());
+                return;
+            }
+        }
+        if (!missing.isEmpty()) {
+            plugin.getLogger().warning("HIÁNYZÓ quest-NPC-k (" + missing.size() + "): " + String.join(", ", missing)
+                    + " — az érintett questek NPC nélkül nem haladnak! Hozd létre őket (FancyNpcs), "
+                    + "vagy a /quest talk tartalék-út a quest-npc-fallback.always kulccsal bekapcsolható.");
+        } else {
+            plugin.getLogger().info("Quest-NPC ellenőrzés: mind a(z) " + questNpcNames.size() + " NPC a helyén van.");
+        }
+    }
+
     public Location locateNpc(final String name) {
         try {
             final Object npc = getNpcByName.invoke(npcManager, name);

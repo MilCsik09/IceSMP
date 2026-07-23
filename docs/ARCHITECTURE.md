@@ -331,6 +331,14 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 ## 7. Build és ismert korlátok
 
 - **Stack:** Java 21, Gradle, Paper/Folia API `1.21.11`. Belépő/bootstrap/loader a `paper-plugin.yml`-ben.
+- **Bootstrap-szint (`IceSMPBootstrap`):** a registry-fagyás előtt fut — itt regisztráljuk a
+  data-driven **signature-enchantokat** (`icesmp:jegfog` stb., kulcsok: `items/SignatureEnchantKeys`);
+  a kliens a registry-szinkronnal kapja őket, a leírás-Component a tooltipben renderelődik. A
+  viselkedés NEM itt él (SignatureItemListener); a craft-stamp kulcsa `signature.custom-enchants`.
+  Bővíthető: damage-type/banner-minta/trim regisztráció ugyanígt; MobEffect (bájital-effekt) NEM
+  regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
+- **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
+  jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
 - **Méret:** ~298 Java-fájl, ~45 000 sor.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
   inline parancsok migrálásához a dispatch-bázis additív bővítése (default-subcommand + láthatósági

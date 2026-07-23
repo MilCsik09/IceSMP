@@ -3,6 +3,8 @@
 # időzített AFK-zóna jutalom (kicsi "faucet" — gazdasági csap, ld. lent).
 afk:
   enabled: true
+  # Az AFK-állapot ellenőrzésének gyakorisága (tick; 20 = másodpercenként).
+  refresh-ticks: 20
 
   # Ennyi másodperc inaktivitás (mozgás/nézés-változás, chat, parancs, blokk-interakció
   # nélkül) után számít a játékos AFK-nak — BÁRHOL a szerveren (nem csak a zónában).

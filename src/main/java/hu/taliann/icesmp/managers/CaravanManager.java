@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Merchant caravan world event (ROADMAP economy: "kereskedő-karaván esemény").
+ * Merchant caravan world event.
  * Periodically a travelling merchant arrives at one of the configured stops (or,
  * if none are set, near a random online player), stays for a limited window and
  * then departs. While it is in town, right-clicking the merchant opens a special
@@ -37,6 +37,12 @@ public final class CaravanManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    /** N25 — setterrel kötve (a spawnpont-manager később épül a DI-sorrendben). */
+    private volatile EventSpawnPointManager spawnPointManager;
+
+    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+        this.spawnPointManager = spawnPointManager;
+    }
 
     private volatile boolean active;
     private volatile long activeUntil;
@@ -118,6 +124,13 @@ public final class CaravanManager {
         return true;
     }
 
+    /** A jelenlegi látogatás készlet-sorsolási magja (érkezésenként újrasorsolva). */
+    private volatile long stockSeed = System.currentTimeMillis();
+
+    public long getStockSeed() {
+        return stockSeed;
+    }
+
     /** Removes the merchant on plugin disable so it does not survive as an orphan. */
     public void shutdown() {
         removeMerchant();
@@ -133,12 +146,28 @@ public final class CaravanManager {
         final long now = System.currentTimeMillis();
         // Reschedule the NEXT arrival up front so a failed spawn still retries later.
         nextArrivalAt = now + intervalMillis();
+        // Rotáló készlet: minden érkezéskor új sorsolási mag — a ShopManager ebből
+        // válogatja ki, hogy MOST épp mit árul a karaván (caravan.rotation.*).
+        stockSeed = java.util.concurrent.ThreadLocalRandom.current().nextLong();
 
         final Location stop = nextStop();
         if (stop != null) {
             active = true;
             activeUntil = now + durationMillis();
             plugin.getServer().getRegionScheduler().run(plugin, stop, task -> spawnMerchant(stop));
+            return;
+        }
+
+        // Hely-horgony: admin-spawnpont vagy random koordináta (a karaván
+        // "bárhol megjelenhet"), mielőtt a játékos-útra esnénk vissza.
+        final EventSpawnPointManager pointsRef = spawnPointManager;
+        final Location fixedAnchor = preferredAnchor != null || pointsRef == null
+                ? null : pointsRef.resolveAnchorLocation("caravan");
+        if (fixedAnchor != null) {
+            active = true;
+            activeUntil = now + durationMillis();
+            plugin.getServer().getRegionScheduler().run(plugin, fixedAnchor,
+                    task -> spawnMerchant(topOf(fixedAnchor.clone())));
             return;
         }
 

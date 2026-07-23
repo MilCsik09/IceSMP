@@ -22,19 +22,45 @@ A térkép védelme több **zónatípusra** épül:
 | **Védett frakcióterület** | **Senki** (a frakció magja: falak, műemlékek) | ❌ Nem |
 | **Védett város** | **Senki** (jellemzően semleges városok) | ❌ Nem |
 | **Főváros** | **Senki** (egyben a bank/valutaváltó helyszíne) | ❌ Nem |
+| **Kárhozat-zóna** ☠ | **Senki** (PvPvE senkiföldje — lásd lent) | ❌ Nem |
+| **Kazamata** 🗝 | **Senki** (kulccsal járható dungeon: 2 órás futam, 7 napos pecsét) | ❌ Nem |
 
 > ⛨ A **védett zónák** (védett város/frakcióterület és a főváros) a térkép **pajzsa**: ott
 > alapból **senki** sem építhet/bonthat, nincs interakció, **nincs PvP**, robbanás és tűz sem
 > tesz kárt, és **claimelni sem lehet**. Csak az admin/builder jogok kerülik meg.
 
+### ☠ Kárhozat Kapuja — a PvPvE senkiföldje
+
+A kódex szerint a Hetedik Vérháborút kirobbantó **óriás Nether-portál** környéke a szerver
+legveszélyesebb zónája. Itt minden másképp működik:
+
+- **A PvP legális** — a zónában bárki megtámadhat bárkit, és az ölés **nem számít bűnnek**
+  („a Kapunál nincs törvény"). A frakciók itt nyíltan összecsaphatnak.
+- **Belépő-védelem:** a zónába lépve pár másodperc PvP-védelmet kapsz (spawn-kill ellen) —
+  de aki maga támad, azonnal elveszti.
+- **A szörnyek erősebbek**: a zónában spawnoló mobok bónusz szinteket kapnak — cserébe a
+  magasabb szint jobb lootot ér (a Néma Királynő élőhalottaitól a nevesített relikvia-drop is
+  eshet).
+- Az aréna maga védett: **építeni nem lehet**, robbanás és tűz nem rongálja — de ajtók,
+  oltárok szabadon használhatók.
+- Belépéskor baljós hang és hamu-örvény jelzi, hogy a Kapu árnyékába értél.
+
 **Frakcióterületen** csak az adott frakció tagjai építhetnek (mások nem), viszont ide a
 játékosok **saját birtokot (`/claim`) is foglalhatnak** — így a claim rendszer és a
 territórium rendszer együtt működik.
 
+### ⛩ Az egyetlen kapu — nether-portál szabály
+
+Ezen a világon **új nether-portált nem lehet gyújtani** — sehol. A világ **egyetlen élő
+kapuja a Kárhozat Kapuja**: aki a Netherbe akar jutni, annak a **senkiföldjén át** vezet
+az útja, ahol a PvP legális és az ölés nem bűn. A kapu használata tehát mindig kockázat —
+pontosan úgy, ahogy a régiek mesélik.
+
 ## Mi tiltható zónánként?
 
-Az adminok **zónatípusonként külön-külön** állíthatják, mi tiltott az adott zónában
-(`territory.protection.rules` a configban):
+Az adminok **zónatípusonként külön-külön** állíthatják, mi szabad az adott zónában
+(`territory.protection.rules` a configban, egyértelmű kulcsokkal: `allow-<szabály>: true` =
+szabad, `false` = tilos):
 
 | Szabály | Mit tilt le | Frakcióterület alapból | Védett zóna alapból |
 |---|---|---|---|
@@ -72,6 +98,9 @@ A **claim** a te személyes, védett földed — frakciótól függetlenül bár
    magasíthatod/mélyítheted +5 blokkonként). A határokat részecskék rajzolják ki.
    **Blokk-pontos, egyedi méretű** birtokhoz: állj a terület egyik sarkára (`/claim pos1`),
    a másikra (`/claim pos2`), majd `/claim area` — a méretet és az árat előre kiírja.
+   **Kényelmesebb út — a Birtokmérő pálca** (`/claim wand`): bal kattintás a blokkra =
+   1. sarok, jobb kattintás = 2. sarok (a méret és az ár azonnal megjelenik), majd
+   **SNEAK + jobb kattintás = foglalás**. Nem kell a sarkokra odaállni — elég rájuk mutatni!
    Claim-határ átlépésekor az action-bar mutatja, kinek a birtokára léptél.
 
 **Mennyibe kerül?**
@@ -114,6 +143,7 @@ A birtokodon (a claim dobozán belül) **idegenek**:
 | `/claim list` | Saját claimjeid listája |
 | `/claim show` | A környező claimek PEREMÉNEK kirajzolása pár másodpercig (zöld = sajátod, láng = másé, komposzt = a gyorsfoglalás előnézete) |
 | `/claim pos1` / `/claim pos2` | Blokk-pontos kijelölés két sarka (a blokk, amin állsz) |
+| `/claim wand` | **Birtokmérő pálca** — sarok-kijelölés kattintással, SNEAK+jobb = foglalás |
 | `/claim area` | A két sarok közti pontos téglalap lefoglalása (az ár előre kiírva, egyben ég el) |
 | `/claim extend up\|down` | A claim magasítása / mélyítése +5 blokkonként, pénzért (a menüből is) |
 | `/claim trust <név>` / `/claim untrust <név>` | Megbízott hozzáadása / elvétele |
@@ -136,6 +166,8 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 - `/territory undo` / `clearpoints` / `points` — a határpont-puffer kezelése.
 - `/territory create <típus> <frakció> <id> [név...]` — poligon-zóna lezárása a pontokból.
 - `/territory circle <típus> <frakció> <id> <sugár> [név...]` — kör-zóna a pozíciódnál.
+- `/territory create doom-gate <id> [név...]` / `/territory circle doom-gate <id> <sugár> [név...]`
+  — a Kárhozat-zóna frakció-semleges, ezért ott a `<frakció>` argumentum elhagyható.
 - `/territory setcapital <frakció> <sugár> [név...]` — főváros (kör) gyorsan.
 - `/territory show [id]` — határrajz: a puffered + az aktuális zóna, vagy a megadott zóna.
 - `/territory tp <id>` — teleportálás a zóna középpontjához.
@@ -149,10 +181,18 @@ Kör-zóna a pozíciódnál, vagy pontos **poligon** a bejárt határpontokból:
 - `/claim admin unclaim` — idegen claim törlése admin-jogon (a claimben állva).
 
 > **Típusok:** `faction` (csak tagok építhetnek), `protected-faction` / `protected-city`
-> (senki), `capital` (főváros). A városfal mentén így pontosan kijelölhető a terület: járd
+> (senki), `capital` (főváros), `doom-gate` (Kárhozat-zóna: PvPvE senkiföldje).
+> A városfal mentén így pontosan kijelölhető a terület: járd
 > körbe a falat, minden saroknál `/territory pos`, végül `/territory create protected-city ...`.
 > A rendszer figyelmeztet, ha a határvonal **önmagát keresztezné** (összegabalyodott fal).
 
 ---
 
 ➡️ Tovább: [Parancsok listája](14-parancsok.md) • [Vissza a tartalomhoz](README.md)
+
+## Thanaopolis — a holtak fővárosa 💀
+
+A Kitaszítottak fővárosa a lore szerint is az élőholtaké: a territóriumban **folyamatosan
+magas szintű undead-horda** kóborol, akik **nappal sem égnek el**. A Kitaszítottakat a Néma
+Királynő népe békén hagyja — mindenki más csak saját felelősségére lépjen be. A látvány
+(és a loot) megéri… ha túléled.

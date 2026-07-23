@@ -12,7 +12,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +27,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * the {@code boss} tier, on par with profession crafts. Config: {@code loot} (loot.yml).
  */
 public final class MobLootListener implements Listener {
+
+    private static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY =
+            net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
 
     private final ConfigManager configManager;
     private final ItemRarityService affixService;
@@ -51,6 +56,15 @@ public final class MobLootListener implements Listener {
         this.uniqueMaterials = uniqueMaterials;
     }
 
+    /**
+     * MONITOR: a horda-nyilvántartásból halálkor azonnal kikerül a mob (az isActive nem
+     * ragadhat be) — a loot-ág (normál prioritás) előbb fut, így az invázió-jelölést még látja.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInvasionMobDeath(final EntityDeathEvent event) {
+        invasionManager.handleMobDeath(event.getEntity().getUniqueId());
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
         if (!configManager.getBoolean("loot.enabled", true) || !affixService.isEnabled()) {
@@ -58,6 +72,25 @@ public final class MobLootListener implements Listener {
         }
         final LivingEntity entity = event.getEntity();
         if (entity instanceof Player) {
+            return;
+        }
+        // Saját idézett minion leölése nem loot-forrás (farm-fék).
+        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(entity)) {
+            return;
+        }
+
+        // Kultista mobok (portya/hírvivő/rítus-hívő) saját táblát dobnak — a sorsolt
+        // variánsok ne legyenek jutalom nélküli holt tartalom. A sima mob-loot ágra
+        // nem esnek át (dupla-drop fék).
+        final hu.taliann.icesmp.managers.CultistEventManager cultists = this.cultistEventManagerRef;
+        if (cultists != null && cultists.isCultist(entity)) {
+            if (entity.getKiller() != null && ThreadLocalRandom.current().nextDouble()
+                    < configManager.getDouble("cultists.loot.chance", 0.35D)) {
+                final ItemStack cultDrop = rollTable("cultists.loot", ItemRarityService.TIER_DROP, entity);
+                if (cultDrop != null) {
+                    event.getDrops().add(cultDrop);
+                }
+            }
             return;
         }
 
@@ -81,10 +114,26 @@ public final class MobLootListener implements Listener {
             return;
         }
 
-        final ItemStack drop = rollTable(path, tier);
+        final ItemStack drop = rollTable(path, tier, entity);
         if (drop != null) {
-            event.getDrops().add(drop);
+            // Boss-forrású gear ritkán Átkozott (erő + elköteleződés) — a curse-sorsolás
+            // csak a boss-ágon fut, a sima mob-loot sosem átkozott.
+            event.getDrops().add(bossTier && cursedGearService != null
+                    ? cursedGearService.maybeCurse(drop) : drop);
         }
+    }
+
+    private volatile hu.taliann.icesmp.managers.CultistEventManager cultistEventManagerRef;
+
+    public void setCultistEventManager(final hu.taliann.icesmp.managers.CultistEventManager cultistEventManager) {
+        this.cultistEventManagerRef = cultistEventManager;
+    }
+
+    /** B54: setterrel kötve (a service a listener után épül a DI-sorrendben); null = nincs átok. */
+    private hu.taliann.icesmp.managers.CursedGearService cursedGearService;
+
+    public void setCursedGearService(final hu.taliann.icesmp.managers.CursedGearService cursedGearService) {
+        this.cursedGearService = cursedGearService;
     }
 
     /**
@@ -94,9 +143,18 @@ public final class MobLootListener implements Listener {
      * material {@code id} — including mob-only ones that recipes need). Falls back to the gear-pool
      * when no table is configured.
      */
-    private ItemStack rollTable(final String path, final String tier) {
-        final List<Map<?, ?>> table = configManager.getConfiguration() == null
+    private ItemStack rollTable(final String path, final String tier, final LivingEntity source) {
+        final List<Map<?, ?>> raw = configManager.getConfiguration() == null
                 ? List.of() : configManager.getConfiguration().getMapList(path + ".table");
+        // Az 'undead-only: true' sorok csak élőhalott forrásból eshetnek (Káoszkor-loot).
+        final List<Map<?, ?>> table = new ArrayList<>();
+        for (final Map<?, ?> entry : raw) {
+            if (Boolean.parseBoolean(String.valueOf(entry.get("undead-only")))
+                    && !hu.taliann.icesmp.utils.UndeadUtil.isUndead(source)) {
+                continue;
+            }
+            table.add(entry);
+        }
         if (table.isEmpty()) {
             final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
             return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
@@ -134,6 +192,38 @@ public final class MobLootListener implements Listener {
                 return uniqueMaterials.create(String.valueOf(chosen.get("id")),
                         min + ThreadLocalRandom.current().nextInt(max - min + 1));
             }
+            // Nevesített Káoszkor-drop — tervezett név+lore, a rarity-motor a nevet megtartja
+            // (prefixeli a raritással) és affixeket ad rá.
+            case "named" -> {
+                final Material material = Material.matchMaterial(String.valueOf(chosen.get("item")).toUpperCase(Locale.ROOT));
+                if (material == null || material.isAir()) {
+                    return null;
+                }
+                final ItemStack item = new ItemStack(material);
+                final ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    meta.displayName(LEGACY.deserialize(String.valueOf(chosen.get("name")))
+                            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                    final Object loreObj = chosen.get("lore");
+                    if (loreObj instanceof List<?> lines) {
+                        final List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
+                        for (final Object line : lines) {
+                            lore.add(LEGACY.deserialize(String.valueOf(line))
+                                    .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                                    .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                        }
+                        meta.lore(lore);
+                    }
+                    item.setItemMeta(meta);
+                }
+                final ItemStack rolledNamed = affixService.roll(item, tier, false);
+                // ITEM_MODEL (CMD helyett) a roll UTÁN — a roll setItemMeta-ja különben törölné.
+                final Object namedModel = chosen.get("item-model");
+                if (namedModel != null && !String.valueOf(namedModel).isBlank()) {
+                    hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(rolledNamed, String.valueOf(namedModel));
+                }
+                return rolledNamed;
+            }
             default -> {
                 final Material base = pickGear(configManager.getStringList(path + ".gear-pool"));
                 return base == null ? null : affixService.roll(new ItemStack(base), tier, true);
@@ -158,7 +248,8 @@ public final class MobLootListener implements Listener {
         if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble() >= chance) {
             return;
         }
-        final List<String> ids = recipeCatalog.blueprintRecipeIds();
+        // A loot-only (csúcs-)receptek tervrajza CSAK boss-forrásból eshet.
+        final List<String> ids = recipeCatalog.blueprintDropPool(bossTier);
         if (ids.isEmpty()) {
             return;
         }

@@ -70,7 +70,7 @@ Minden kaszt kap egy **saját szentélyt**, ami csak neki ad tematikus, időlege
 | Varázsló | Varázsló-asztal | Sietség II + Regeneráció |
 | Harcos | Üllő | Erő II + Ellenállás |
 | Íjász | Nyílkészítő-asztal | Gyorsaság + Ugrás II |
-| Orgyilkos | Sculk-katalizátor | Láthatatlanság + Gyorsaság II |
+| Orgyilkos | Sculk-Lélekkapocs | Láthatatlanság + Gyorsaság II |
 | Druida | Virágzó azálea | Regeneráció + Ugrás + Vízlégzés |
 | Paplovag | Fényporkő (glowstone) | Ellenállás + Regeneráció + Tűzállóság |
 | Halállovag | Síró obszidián | Erő + Felszívás III |
@@ -86,5 +86,21 @@ Minden kaszt kap egy **saját szentélyt**, ami csak neki ad tematikus, időlege
 > `requires-class`/`requires-faction` kapukkal).
 
 ---
+
+
+### 💧 Eleftheria Könnye *(gyűjtő-relikvia)*
+
+Megkövült, éjfekete csepp — a Néma Királynő első suttogása hozta létre. **Nincs aktív képessége**:
+presztízs- és lore-kincs, egy példányban létezik a szerveren. Rituálé-oltára (síró obszidián mag,
+feketekő szentély) **csak a Kitaszítottak (DARK) frakcióval** aktiválható.
+
+
+## Mi történik a relikviával, ha meghalsz? ⚰️
+
+- A **fegyver-relikvia** (pl. Mételytépő) PvP-halálnál a **gyilkosé** lesz (gazdát cserél).
+- A **passzív relikvia** (szárnyak, Eleftheria Könnye) **köddé válik** — nem esik le, senki sem
+  veheti fel. A kötés viszont él: **csak te idézheted újra** a rituálé-oltárnál (az áldozat újra
+  kell!). Ha **~3 napon belül** nem idézed újra, a relikvia **mindenkinek felszabadul** — siess.
+- Aktív tulajdonosként az oltár nem ad második példányt — egy relikvia, egy gazda, egy tárgy.
 
 ➡️ Tovább: [Világesemények](10-vilagesemenyek.md) • [Vissza a tartalomhoz](README.md)

@@ -425,7 +425,11 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     /** Records the player's standing BLOCK as the selection's first/second corner. */
     public int[] setCorner(final Player player, final boolean first) {
-        final Location location = player.getLocation();
+        return setCorner(player, first, player.getLocation());
+    }
+
+    /** Pálcás kijelölés: a KATTINTOTT blokk koordinátájával (nem a játékos helyével). */
+    public int[] setCorner(final Player player, final boolean first, final Location location) {
         final Selection selection = selections.computeIfAbsent(player.getUniqueId(), id -> new Selection());
         synchronized (selection) {
             final String worldName = location.getWorld().getName();
@@ -492,7 +496,9 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         final int maxX = Math.max(selection.x1, selection.x2);
         final int minZ = Math.min(selection.z1, selection.z2);
         final int maxZ = Math.max(selection.z1, selection.z2);
-        final int columns = (maxX - minX + 1) * (maxZ - minZ + 1);
+        // long-szorzás: egy ~46341×46341-es kijelölésnél az int-szorzat átfordulna, és a
+        // méret-plafon + a költség-számítás is kijátszható lenne.
+        final long columns = (long) (maxX - minX + 1) * (long) (maxZ - minZ + 1);
         final int areaMax = Math.max(16, configManager.getInt("claims.area-max-columns", 6400));
         if (columns > areaMax) {
             return "claim-area-too-big";
