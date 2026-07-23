@@ -240,7 +240,7 @@ profession-recipes:
     profession: lumberjack
     level: 10
     learn: level
-    display-name: "Vándorkovács Kőfejszéje"
+    display-name: "Ösvényvágó Kőbalta"
     lore:
       - "&7Caldestera kovácsinasainak első próbája:"
       - "&7durva kő, de biztos kézzel faragva."
@@ -267,7 +267,7 @@ profession-recipes:
     profession: lumberjack
     level: 20
     learn: level
-    display-name: "Rönkhasító Céhfejsze"
+    display-name: "Tuskótörő Balta"
     lore:
       - "&7A kovácscéhek szabvány szerint edzik,"
       - "&7hogy egyetlen favágó se álljon meg tőle."
@@ -294,7 +294,7 @@ profession-recipes:
     profession: lumberjack
     level: 36
     learn: level
-    display-name: "Mesterkovács Gyémántfejszéje"
+    display-name: "Prizmaél Fejsze"
     lore:
       - "&7Csiszolt gyémántél, mely a Vasművek"
       - "&7Akadémiájának büszkesége az erdőkben."
@@ -329,7 +329,7 @@ profession-recipes:
     profession: armorer
     level: 8
     learn: level
-    display-name: "Céhkovács Vaspengéje"
+    display-name: "Vasököl Pengéje"
     lore:
       - "&7Egyszerű, de megbízható penge —"
       - "&7a caldesterai kovácsműhelyek alapja."
@@ -340,7 +340,7 @@ profession-recipes:
     profession: armorer
     level: 10
     learn: level
-    display-name: "Céhőr Vassisakja"
+    display-name: "Marcona Vassisak"
     lore:
       - "&7Vastag vaslemez, mely a kovácscéhek"
       - "&7műhelyeiben nyeri el végső formáját."
@@ -351,7 +351,7 @@ profession-recipes:
     profession: armorer
     level: 10
     learn: level
-    display-name: "Kovácsműhely Vasbakancsa"
+    display-name: "Kőúti Vasbakancs"
     lore:
       - "&7Szilárd talp és pántok, hogy a viselője"
       - "&7bármely tárnában biztosan álljon lábán."
@@ -362,7 +362,7 @@ profession-recipes:
     profession: armorer
     level: 12
     learn: level
-    display-name: "Céhkovács Vas Lábvértje"
+    display-name: "Vasabroncs Lábvért"
     lore:
       - "&7A Vasművek Akadémiájának szabott mintája,"
       - "&7mely minden csatában szolgálatot tesz."
@@ -384,7 +384,7 @@ profession-recipes:
     profession: armorer
     level: 22
     learn: level
-    display-name: "Csiszolt Gyémántpenge"
+    display-name: "Szilánkfény Penge"
     lore:
       - "&7A legkeményebb kő élesíti, a kovácsmesterek"
       - "&7keze formálja tökéletes egyensúlyúvá."
@@ -395,7 +395,7 @@ profession-recipes:
     profession: armorer
     level: 24
     learn: level
-    display-name: "Csiszolt Gyémántsisak"
+    display-name: "Szikrázó Kristálysisak"
     lore:
       - "&7Csiszolt gyémántlemezek, melyeket csak a"
       - "&7Vasművek Akadémiájának mesterei értenek."
@@ -406,7 +406,7 @@ profession-recipes:
     profession: armorer
     level: 26
     learn: level
-    display-name: "Ragyogó Gyémántvért"
+    display-name: "Prizmavért"
     lore:
       - "&7A kovácscéhek legdrágább rendelése:"
       - "&7tömör gyémánt, mely visszaveri a pengét."
@@ -417,7 +417,7 @@ profession-recipes:
     profession: armorer
     level: 30
     learn: level
-    display-name: "Halászcéh Szigonya"
+    display-name: "Hullámtörő Szigony"
     lore:
       - "&7A Bokic mélyéről merített erő,"
       - "&7mit csak a víz szellemei adnak kölcsön."
@@ -440,7 +440,7 @@ profession-recipes:
     profession: armorer
     level: 42
     learn: blueprint
-    display-name: "Kohóéj Netherit Pallos"
+    display-name: "Kohóéj Pallos"
     lore:
       - "&7A Kárhozat Kapuja körül gyűjtött netherit"
       - "&7adja e pallos törhetetlen élét."
@@ -451,7 +451,7 @@ profession-recipes:
     profession: armorer
     level: 45
     learn: blueprint
-    display-name: "Kohóéj Netherit Csatasisak"
+    display-name: "Salakvas Csatasisak"
     lore:
       - "&7A Nether-portál sötét fémjéből kovácsolva,"
       - "&7hogy viselője a csata hevében is álljon."
@@ -2705,7 +2705,7 @@ profession-recipes:
     profession: armorer
     level: 11
     learn: level
-    display-name: "Fonott Céhláncing"
+    display-name: "Fonott Gyűrűing"
     category: "Páncél"
     result: { material: CHAINMAIL_CHESTPLATE, affix-tier: crafted, item-model: "icesmp:lancing", attributes: [ "armor:1" ] }
     ingredients: [ "CHAIN:8", "IRON_INGOT:3", "unique:nyelbor:1" ]
@@ -2713,7 +2713,7 @@ profession-recipes:
     profession: armorer
     level: 13
     learn: level
-    display-name: "Fonott Céhláncnadrág"
+    display-name: "Fonott Gyűrűnadrág"
     category: "Páncél"
     result: { material: CHAINMAIL_LEGGINGS, affix-tier: crafted, item-model: "icesmp:lancnadrag", attributes: [ "armor:1" ] }
     ingredients: [ "CHAIN:7", "IRON_INGOT:2", "unique:nyelbor:1" ]
@@ -2721,7 +2721,7 @@ profession-recipes:
     profession: armorer
     level: 17
     learn: level
-    display-name: "Málhás Vas Lópáncél"
+    display-name: "Rohamvas Lópáncél"
     category: "Páncél"
     result: { material: IRON_HORSE_ARMOR, item-model: "icesmp:vas_lopancel", attributes: [ "armor:2:body" ] }
     ingredients: [ "IRON_INGOT:7", "LEATHER:2", "unique:nyelbor:1" ]
@@ -2769,7 +2769,7 @@ profession-recipes:
     profession: armorer
     level: 37
     learn: level
-    display-name: "Fényvésett Gyémánt Lópáncél"
+    display-name: "Csillámvésett Lópáncél"
     category: "Páncél"
     result: { material: DIAMOND_HORSE_ARMOR, item-model: "icesmp:gyemant_lopancel", attributes: [ "armor:4:body" ] }
     ingredients: [ "DIAMOND:7", "LEATHER:2", "unique:polirpaszta:1" ]

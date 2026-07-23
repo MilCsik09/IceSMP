@@ -1025,19 +1025,19 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** sárgás csontszín; akcent: sötét fahátlap
 - **Hangulat / lore:** Csontenyvvel rétegelt, kötéllel erősített íjkar — a Mélység Népe így készítette. Favágó-recept eredménye (Fegyver kategória, 34. szint).
 
-### `gyemant_kard` — Csiszolt Gyémántpenge
+### `gyemant_kard` — Szilánkfény Penge
 - **Fájl:** `gyemant_kard.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_SWORD`
 - **Ábrázolás:** átlós penge cián-fehér kristályéllel, ragyogó gyémántbetétek, ezüst keresztvas, tiszta kék csillanás
 - **Színvilág:** cián-fehér; akcent: ezüst
 - **Hangulat / lore:** A legkeményebb kő élesíti, a kovácsmesterek keze formálja tökéletes egyensúlyúvá. Kovács-recept eredménye (Fegyver kategória, 22. szint).
 
-### `haromagu_szigony` — Halászcéh Szigonya
+### `haromagu_szigony` — Hullámtörő Szigony
 - **Fájl:** `haromagu_szigony.png` &nbsp;|&nbsp; **Alap-item:** `TRIDENT`
 - **Ábrázolás:** átlós hármas villafej, szürke acél szakák, kék-zöld tengeri csillanás, csavart nyél
 - **Színvilág:** szürke; akcent: kék
 - **Hangulat / lore:** A Bokic mélyéről merített erő, mit csak a víz szellemei adnak kölcsön. Kovács-recept eredménye (Fegyver kategória, 30. szint).
 
-### `vaskard` — Céhkovács Vaspengéje
+### `vaskard` — Vasököl Pengéje
 - **Fájl:** `vaskard.png` &nbsp;|&nbsp; **Alap-item:** `IRON_SWORD`
 - **Ábrázolás:** átlós szürke acélpenge, csiszolt él, egyszerű vas keresztvas, bőrtekercs markolat
 - **Színvilág:** acélszürke; akcent: bőrbarna markolat
@@ -1057,7 +1057,7 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** fekete; akcent: fehér
 - **Hangulat / lore:** Fekete Villám Szilánk pulzál a szigony hegyén, mit a mélytenger sötétjéből hoztak fel. Halász-recept eredménye (Fegyver (tervrajz) kategória, 47. szint).
 
-### `netherit_kard` — Kohóéj Netherit Pallos
+### `netherit_kard` — Kohóéj Pallos
 - **Fájl:** `netherit_kard.png` &nbsp;|&nbsp; **Alap-item:** `NETHERITE_SWORD`
 - **Ábrázolás:** átlós sötét szemcsés netherit penge, arany-perem él, széles pallos, tompa fém csillanás
 - **Színvilág:** netherit-fekete; akcent: arany-perem él
@@ -1319,19 +1319,19 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** acélszürke; akcent: cián-fehér esszencia-izzás
 - **Hangulat / lore:** Tiszta Vasesszenciával itatott lemezek, melyek szinte élővé teszik a páncélt. Kovács-recept eredménye (Páncél kategória, 35. szint).
 
-### `gyemant_lopancel` — Fényvésett Gyémánt Lópáncél
+### `gyemant_lopancel` — Csillámvésett Lópáncél
 - **Fájl:** `gyemant_lopancel.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_HORSE_ARMOR`
 - **Ábrázolás:** cián-fehér kristálylemez lóvért, ragyogó gyémántbetétek, ezüst szegély, hideg kék csillanás
 - **Színvilág:** cián-fehér; akcent: ezüst
 - **Hangulat / lore:** Ritkább, mint a jó lovas. A céh büszkén veri rá a pecsétjét. Kovács-recept eredménye (Páncél kategória, 37. szint).
 
-### `gyemant_mellvert` — Ragyogó Gyémántvért
+### `gyemant_mellvert` — Prizmavért
 - **Fájl:** `gyemant_mellvert.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_CHESTPLATE`
 - **Ábrázolás:** frontális cián-fehér kristálymellvért, ragyogó gyémánt lemezek, ezüst gerinc, kék csillanás
 - **Színvilág:** cián-fehér; akcent: ezüst
 - **Hangulat / lore:** A kovácscéhek legdrágább rendelése: tömör gyémánt, mely visszaveri a pengét. Kovács-recept eredménye (Páncél kategória, 26. szint).
 
-### `gyemant_sisak` — Csiszolt Gyémántsisak
+### `gyemant_sisak` — Szikrázó Kristálysisak
 - **Fájl:** `gyemant_sisak.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_HELMET`
 - **Ábrázolás:** frontális cián-fehér kristálysisak, ragyogó gyémánt homloklemez, ezüst él, hideg kék fény
 - **Színvilág:** cián-fehér; akcent: ezüst
@@ -1343,13 +1343,13 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** barna; akcent: sárgás
 - **Hangulat / lore:** Halász-recept eredménye (Páncél kategória, 15. szint).
 
-### `lancing` — Fonott Céhláncing
+### `lancing` — Fonott Gyűrűing
 - **Fájl:** `lancing.png` &nbsp;|&nbsp; **Alap-item:** `CHAINMAIL_CHESTPLATE`
 - **Ábrázolás:** fonott acélgyűrűk mellvértje, szürke fém szövet, kovácsolt gyűrűsorok, tompa csillanás
 - **Színvilág:** acélszürke; akcent: fonott gyűrű-csillanás
 - **Hangulat / lore:** Kovács-recept eredménye (Páncél kategória, 11. szint).
 
-### `lancnadrag` — Fonott Céhláncnadrág
+### `lancnadrag` — Fonott Gyűrűnadrág
 - **Fájl:** `lancnadrag.png` &nbsp;|&nbsp; **Alap-item:** `CHAINMAIL_LEGGINGS`
 - **Ábrázolás:** fonott acélgyűrű lábvért, szürke fém szövet, sűrű gyűrűsorok, csípő-lemez kapcsok
 - **Színvilág:** acélszürke; akcent: hideg fémcsillanás
@@ -1391,25 +1391,25 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** cián-fehér; akcent: barna
 - **Hangulat / lore:** Vad Esszenciával itatott talp, mely néma léptekkel követi a fenevadak nyomát. Kovács-recept eredménye (Páncél kategória, 32. szint).
 
-### `vas_csizma` — Kovácsműhely Vasbakancsa
+### `vas_csizma` — Kőúti Vasbakancs
 - **Fájl:** `vas_csizma.png` &nbsp;|&nbsp; **Alap-item:** `IRON_BOOTS`
 - **Ábrázolás:** frontális szürke acélcsizma, csiszolt lábfej-lemez, egyszerű szegecsek, tompa fém csillanás
 - **Színvilág:** acélszürke; akcent: csiszolt ezüst
 - **Hangulat / lore:** Szilárd talp és pántok, hogy a viselője bármely tárnában biztosan álljon lábán. Kovács-recept eredménye (Páncél kategória, 10. szint).
 
-### `vas_lablemez` — Céhkovács Vas Lábvértje
+### `vas_lablemez` — Vasabroncs Lábvért
 - **Fájl:** `vas_lablemez.png` &nbsp;|&nbsp; **Alap-item:** `IRON_LEGGINGS`
 - **Ábrázolás:** frontális szürke acél lábvért, csiszolt combelemezek, egyszerű szegecssorok, tompa csillanás
 - **Színvilág:** acélszürke; akcent: szegecs-csillanás
 - **Hangulat / lore:** A Vasművek Akadémiájának szabott mintája, mely minden csatában szolgálatot tesz. Kovács-recept eredménye (Páncél kategória, 12. szint).
 
-### `vas_lopancel` — Málhás Vas Lópáncél
+### `vas_lopancel` — Rohamvas Lópáncél
 - **Fájl:** `vas_lopancel.png` &nbsp;|&nbsp; **Alap-item:** `IRON_HORSE_ARMOR`
 - **Ábrázolás:** szürke acél lemezű lóvért, egyszerű lószügy-lemez, kalapált felület, tompa fém csillanás
 - **Színvilág:** acélszürke; akcent: kalapált fémfény
 - **Hangulat / lore:** A céh kovácsainak munkája: a ló is katonának érzi magát benne. Kovács-recept eredménye (Páncél kategória, 17. szint).
 
-### `vas_sisak` — Céhőr Vassisakja
+### `vas_sisak` — Marcona Vassisak
 - **Fájl:** `vas_sisak.png` &nbsp;|&nbsp; **Alap-item:** `IRON_HELMET`
 - **Ábrázolás:** frontális szürke acélsisak, csiszolt homloklemez, egyszerű orrvédő, tompa fém csillanás
 - **Színvilág:** acélszürke; akcent: csiszolt homloklemez
@@ -1435,7 +1435,7 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** fekete; akcent: cián-fehér
 - **Hangulat / lore:** Fekete Villám Szilánk izzik a sisak mélyén, megvilágítva a legsötétebb járatokat. Bányász-recept eredménye (Páncél (tervrajz) kategória, 50. szint).
 
-### `netherit_sisak` — Kohóéj Netherit Csatasisak
+### `netherit_sisak` — Salakvas Csatasisak
 - **Fájl:** `netherit_sisak.png` &nbsp;|&nbsp; **Alap-item:** `NETHERITE_HELMET`
 - **Ábrázolás:** frontális sötét szemcsés netherit sisak, arany-perem szegély, tompa fém, csatakarcolt homloklemez
 - **Színvilág:** netherit-fekete; akcent: arany-perem szegély
@@ -1639,13 +1639,13 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** natúr fabarna; akcent: fehér zsinór
 - **Hangulat / lore:** Egyszerű bot a Bokic partjáról, de a víz szellemei így is figyelnek rá. Halász-recept eredménye (Szerszám kategória, 5. szint).
 
-### `gyemant_fejsze` — Mesterkovács Gyémántfejszéje
+### `gyemant_fejsze` — Prizmaél Fejsze
 - **Fájl:** `gyemant_fejsze.png` &nbsp;|&nbsp; **Alap-item:** `DIAMOND_AXE`
 - **Ábrázolás:** átlós cián-fehér kristályél bárdfej, ragyogó gyémánt penge, ezüst nyak, kék csillanás
 - **Színvilág:** cián-fehér; akcent: ezüst
 - **Hangulat / lore:** Csiszolt gyémántél, mely a Vasművek Akadémiájának büszkesége az erdőkben. Favágó-recept eredménye (Szerszám kategória, 36. szint).
 
-### `kovilta_fejsze` — Vándorkovács Kőfejszéje
+### `kovilta_fejsze` — Ösvényvágó Kőbalta
 - **Fájl:** `kovilta_fejsze.png` &nbsp;|&nbsp; **Alap-item:** `STONE_AXE`
 - **Ábrázolás:** átlós szürke kőbárd fej, durva pattintott él, barna faág nyél, kőszemcsés felület
 - **Színvilág:** szürke; akcent: barna
@@ -1681,7 +1681,7 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** sötét lakk-barna; akcent: vas orsó-szürke
 - **Hangulat / lore:** Gyémánttal erősített nyél, mely a Bokic legmélyebb sodrásában sem törik el. Halász-recept eredménye (Szerszám kategória, 20. szint).
 
-### `vasfejsze` — Rönkhasító Céhfejsze
+### `vasfejsze` — Tuskótörő Balta
 - **Fájl:** `vasfejsze.png` &nbsp;|&nbsp; **Alap-item:** `IRON_AXE`
 - **Ábrázolás:** átlós szürke acél bárdfej, csiszolt él, egyszerű vas nyakrész, barna faág nyél
 - **Színvilág:** szürke; akcent: barna
