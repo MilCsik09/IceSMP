@@ -1237,3 +1237,41 @@ soulforge:
   rank-costs: [ 5, 8, 12, 18, 25 ]
   health-per-rank: 0.08
   damage-per-rank: 0.06
+
+# ===== HP-rendszer (kaszt-HP-profilok + kijelzés + harcon kívüli regen) =====
+# Max HP = 20 (vanília) + (base − 20) + kaszt-szint × per-level (+ talentek).
+# 50. szinten: tank ~50, bruiser ~42-43, mozgékony ~37-38, caster ~32-33.
+# A szívsor a display.normalize-zal mindig hearts db szív marad (a tényleges
+# max nő, a kijelzés nem duzzad). A direkt gyógyítások (heal-self) a maxHP/20
+# aránnyal skálázódnak (scale-heals, plafon: scale-heals-cap) — a heal nem
+# értéktelenedik el a nagyobb tavak mellett.
+health:
+  enabled: true
+  display:
+    normalize: true
+    hearts: 10
+  # Harcon kívüli regen: az utolsó sebzés-kontaktus (adott VAGY kapott) után
+  # delay-seconds-szel indul; interval-ticks-enként percent-per-tick %-ot tölt;
+  # min-food éhségszint alatt nem fut (az étel harci tét marad).
+  ooc-regen:
+    enabled: true
+    delay-seconds: 8
+    interval-ticks: 40
+    percent-per-tick: 5.0
+    min-food: 6
+  scale-heals: true
+  scale-heals-cap: 2.5
+  class-profiles:
+    warrior: { base: 20, per-level: 0.6 }
+    death_knight: { base: 20, per-level: 0.6 }
+    paladin: { base: 20, per-level: 0.55 }
+    monk: { base: 20, per-level: 0.45 }
+    druid: { base: 20, per-level: 0.45 }
+    demon_hunter: { base: 20, per-level: 0.45 }
+    shaman: { base: 20, per-level: 0.4 }
+    archer: { base: 20, per-level: 0.35 }
+    assassin: { base: 20, per-level: 0.35 }
+    evoker: { base: 20, per-level: 0.3 }
+    wizard: { base: 20, per-level: 0.25 }
+    warlock: { base: 20, per-level: 0.25 }
+    priest: { base: 20, per-level: 0.25 }

@@ -61,6 +61,16 @@ public final class ConfigMenuGUI {
 
     private static Map<String, Category> buildCatalog() {
         final Map<String, Category> categories = new LinkedHashMap<>();
+        categories.put("hp", new Category("hp", "HP-rendszer", Material.GOLDEN_APPLE, List.of(
+                Entry.toggle("health.enabled", "Kaszt-HP-profilok bekapcsolva"),
+                Entry.toggle("health.display.normalize", "Szívsor-normalizálás (10 szív)"),
+                Entry.toggle("health.ooc-regen.enabled", "Harcon kívüli regen"),
+                Entry.number("health.ooc-regen.delay-seconds", "Regen-késleltetés (mp)", 1, 0, 60),
+                Entry.number("health.ooc-regen.percent-per-tick", "Regen üteme (%/2mp)", 1, 0, 25),
+                Entry.number("health.ooc-regen.min-food", "Regen étel-küszöb", 1, 0, 20),
+                Entry.toggle("health.scale-heals", "Gyógyítás-skálázás (maxHP/20)"),
+                Entry.number("health.scale-heals-cap", "Gyógyítás-skála plafon", 0.25, 1, 5)
+        )));
         categories.put("ado", new Category("ado", "Adó és gazdaság", Material.GOLD_INGOT, List.of(
                 Entry.toggle("factions.tax.enabled", "Adó bekapcsolva"),
                 Entry.number("factions.tax.rate-percent", "Adókulcs (%)", 0.5, 0, 100),

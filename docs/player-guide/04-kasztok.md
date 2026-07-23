@@ -70,6 +70,26 @@ mutatják, hányadik szint kell hozzájuk.
 
 > A teljes képességlistát (mit tud, mennyibe kerül) lásd: [Képességek](05-kepessegek.md).
 
+## ❤️ Életerő: a kasztod alkata számít
+
+A maximális életerőd a **kasztod jellegével és szintjével nő** (a szívsor közben mindig
+10 szív marad — a szívek "sűrűbbek" lesznek):
+
+| Alkat | Kasztok | Növekedés | Max HP az 50. szinten* |
+|---|---|---|---|
+| 🛡️ Tank-alkat | Harcos, Halállovag | +0.6/szint | ~50 |
+| ⚔️ Kiegyensúlyozott | Paplovag (+0.55), Szerzetes, Druida, Démonvadász (+0.45) | +0.45–0.55/szint | ~42–47 |
+| 🏹 Mozgékony | Sámán (+0.4), Íjász, Orgyilkos (+0.35) | +0.35–0.4/szint | ~37–40 |
+| ✨ Caster | Sárkányidéző (+0.3), Varázsló, Boszorkánymester, Pap (+0.25) | +0.25–0.3/szint | ~32–35 |
+
+\* a talentek és a Rúnavért ezen felül jönnek.
+
+- **Harcon kívüli regen:** ha 8 másodpercig nem ért és nem okoztál sebzést, az életerőd
+  magától töltődik (2 másodpercenként a maximum 5%-a) — de csak ha nem vagy éhes
+  (legalább 3 comb). Harcban továbbra is az étel, a gyógyítás és a pajzsok tartanak életben.
+- **A gyógyítások együtt nőnek veled:** a direkt gyógyító képességek a max életerőddel
+  arányosan erősödnek, így magas szinten sem értéktelenednek el.
+
 ---
 
 ➡️ Tovább: [Képességek](05-kepessegek.md) • [Specializációk](06-specializaciok.md) • [Vissza](README.md)

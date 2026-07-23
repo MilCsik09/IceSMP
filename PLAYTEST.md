@@ -2074,3 +2074,21 @@ Jó tesztelést! ❄️
       manager WARN-t ír, de a többi csokor lefut.
 - [ ] **Pet-tick üresjárat-fék:** társ nélküli játékosokra nem megy scheduler-hop
       (timings); idézésnél azonnal indul a követés, elbocsátás/halál/logout után leáll.
+
+## HP/sebzés-skála (A17 1. ütem, tulaj-kérés, 2026-07-22)
+- [ ] **Kaszt-HP-profil:** kaszt-választás után a max HP a szinttel nő (pl. Harcos 25.
+      szint: 20+15=35; Varázsló 25. szint: 26.25); szint-lépés után legkésőbb 2 mp-en
+      belül frissül; kaszt admin-resetnél visszaáll 20-ra; talent-HP ezen felül adódik.
+- [ ] **Szívsor-normalizálás:** a kijelzés minden max HP-nál 10 szív (a szív "értéke"
+      nő); health.display.normalize=false visszaadja a vanília szív-duzzadást;
+      abszorpció-szívek továbbra is látszanak.
+- [ ] **Harcon kívüli regen:** sebzés-kontaktus (adott VAGY kapott, PvE is) után 8 mp-ig
+      nincs regen; utána 2 mp-enként max-HP 5%; 3 comb (6 food) alatt nem fut; harc
+      közben a vanília étel-regen változatlan; a regen a sebzés-számokat nem triggereli.
+- [ ] **Gyógyítás-skálázás:** 40 HP-s tanknál a 4-es heal 8-at gyógyít (maxHP/20 = 2.0
+      szorzó, plafon 2.5); 20 HP-s frissnél változatlan; scale-heals=false kikapcsolja.
+- [ ] **PvP TTK mérés:** 50-es szinteken a kill-idő érezhetően hosszabb (cél: nem
+      2-3 spell); Fagylovag-kombó a CC-DR + nagyobb tavak mellett mérendő.
+- [ ] **PvE mérés:** a nagyobb játékos-HP mellett a magas szintű zónák nehézsége
+      (mob damage-per-level 1.0) újraértékelendő — szükség esetén emelés.
+- [ ] **Admin-GUI:** /icesmp config menü új "HP-rendszer" kategória — kapcsolók élőben.

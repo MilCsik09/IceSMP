@@ -16,6 +16,10 @@ public abstract class BaseSpell implements Spell {
         balanceSource = configManager;
     }
 
+    protected static hu.taliann.icesmp.managers.ConfigManager balanceSource() {
+        return balanceSource;
+    }
+
     private final String id;
     private final String defaultName;
     private final int cooldown;

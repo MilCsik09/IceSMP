@@ -223,6 +223,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.WarWindowManager warWindowManager;
     private final hu.taliann.icesmp.managers.CombatTagManager combatTagManager;
     private final hu.taliann.icesmp.managers.DungeonLootService dungeonLootService;
+    private final hu.taliann.icesmp.managers.ClassHealthService classHealthService;
     private final hu.taliann.icesmp.managers.CouncilManager councilManager;
     private final hu.taliann.icesmp.managers.SpyManager spyManager;
     private final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager professionWeeklyGoalManager;
@@ -296,6 +297,7 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask afkTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask healthTask;
     private final hu.taliann.icesmp.utils.TextAnimator textAnimator;
     private final hu.taliann.icesmp.managers.TablistManager tablistManager;
     private final hu.taliann.icesmp.managers.AfkManager afkManager;
@@ -365,6 +367,7 @@ public final class IceSMPCore {
         this.combatTagManager = new hu.taliann.icesmp.managers.CombatTagManager(plugin, configManager, messageManager);
         this.dungeonLootService = new hu.taliann.icesmp.managers.DungeonLootService(plugin, configManager,
                 messageManager, uniqueMaterialFactory, mobScalingManager);
+        this.classHealthService = new hu.taliann.icesmp.managers.ClassHealthService(plugin, configManager, jobManager);
         territoryProtectionService.setCombatTagManager(combatTagManager);
         warWindowManager.setCombatTagManager(combatTagManager);
         honorDuelManager.setCombatTagManager(combatTagManager);
@@ -600,6 +603,7 @@ public final class IceSMPCore {
                 honorDuelManager,
                 spyManager,
                 combatTagManager,
+                classHealthService,
                 spellRegistry
         );
 
@@ -830,6 +834,7 @@ public final class IceSMPCore {
         scheduleEconomyEvents();
         scheduleWorldEvents();
         scheduleHud();
+        scheduleHealth();
         schedulePetCombat();
         scheduleAutosave();
         // A visszaépítés saját, sűrű ütemén fut (látványos, fokozatos gyógyulás) —
@@ -1047,6 +1052,10 @@ public final class IceSMPCore {
             tablistTask.cancel();
             tablistTask = null;
         }
+        if (healthTask != null) {
+            healthTask.cancel();
+            healthTask = null;
+        }
         if (afkTask != null) {
             afkTask.cancel();
             afkTask = null;
@@ -1208,6 +1217,13 @@ public final class IceSMPCore {
         final long afkTicks = Math.max(5L, configManager.getLong("afk.refresh-ticks", 20L));
         afkTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> afkManager.tick(), afkTicks, afkTicks);
+    }
+
+    /** HP-rendszer: kaszt-profil karbantartás + harcon kívüli regen (a HUD-kapcsolótól független). */
+    private void scheduleHealth() {
+        final long healthTicks = Math.max(20L, configManager.getLong("health.ooc-regen.interval-ticks", 40L));
+        healthTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> classHealthService.tick(), healthTicks, healthTicks);
     }
 
     /**
@@ -1502,6 +1518,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CombatTagListener(combatTagManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(dungeonLootService, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.HealthRegenListener(classHealthService), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
