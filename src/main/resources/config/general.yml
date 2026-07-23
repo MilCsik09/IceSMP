@@ -44,6 +44,12 @@ hud:
   # nametag+rendezés, ping-oszlop) a NATÍV tablist-réteg viszi: config/tablist.yml.
   # A TAB plugin többé NEM szükséges — leszedhető; a teljes megjelenés house-ban van.
   enabled: true
+  # Alacsony-HP piros vignetta (P8e): a küszöb alatt a képernyő szélén vörös vészköd
+  # (per-player világperem-vészjel kihasználva; a peremnek NINCS játékmenet-hatása).
+  # Tisztán vizuális, a HP-skálázás (health.enabled) mester-kapcsolójától FÜGGETLEN.
+  low-hp-vignette:
+    enabled: true
+    threshold-percent: 30.0   # ez alatti HP%-nál jelenik meg
   # Az IceSMP saját scoreboard-oldalsávja. Ha mégis külső scoreboard-plugint futtatsz
   # (pl. TAB), kapcsold false-ra ezt ÉS a tablist.enabled-et a tablist.yml-ben — az
   # IceSMP-adatok akkor a %icesmp_...% placeholderekkel jeleníthetők meg

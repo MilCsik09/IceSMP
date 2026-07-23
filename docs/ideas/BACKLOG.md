@@ -698,8 +698,9 @@ de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`
   pixel-pontos GUI/HUD-grafika a packből (bossbar-keret, GUI-háttér az inventory-cím fontján,
   színes szöveg-árnyék). RP-kötött, de nagy prezentációs ugrás. 🟡⭐⭐
 - **P8d openBook** — írott könyv mint pillanat-UI (lore-kódex, quest-napló olvasónézet). 🟢⭐
-- **P8e Per-player WorldBorder** — vizuális effekt: alacsony-HP piros vignetta, zóna-perem,
-  szűkülő PvP-aréna. 🟢⭐⭐
+- ✅ **P8e Per-player WorldBorder — alacsony-HP piros vignetta KÉSZ** (LowHealthBorderListener,
+  `hud.low-hp-vignette`, kikapcsolható; a perem játékmenet-semleges). Nyitva: zóna-perem,
+  szűkülő PvP-aréna ugyanezzel a technikával. 🟢⭐⭐
 - **P8f Block/BlockState PDC (TileState)** — adat közvetlenül a blokkon (rituálé-oltár,
   claim-jelölő, kazamata-láda) külön UUID-map helyett. 🟢⭐
 - **P8g Teljes Brigadier (ArgumentTypes, tooltip-javaslatok)** — 50 BasicCommand; gazdagabb

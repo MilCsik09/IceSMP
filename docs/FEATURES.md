@@ -278,6 +278,9 @@
   (`DialogService`: értesítő + megerősítő minta, szerver-oldali válasz-kezeléssel).
   Első felhasználás: natív üdvözlő-ablak új játékosnak az első belépéskor
   (`onboarding.welcome-dialog`, config-vezérelt tartalommal, kikapcsolható).
+- **Alacsony-HP piros vignetta**: a küszöb alatt (alap 30%) a képernyő szélén vörös
+  vészköd (per-player világperem-vészjel, játékmenet-hatás nélkül); tisztán vizuális,
+  a HP-skálázástól független, kikapcsolható (`hud.low-hp-vignette`).
 - **Parancsok**: ~60 parancs magyar tab-complete-tel és hibaüzenetekkel;
   ranglisták (/leaderboard), /lore kódex-lapozó (frakciók/helyek történetei,
   alias-okkal), /kronika, /adomany közösségi láda.
@@ -299,8 +302,9 @@
 - **Gépi drift-ellenőrző** (scripts/check_consistency.py): YAML-épség, quest-
   hivatkozások, CMD-regiszter lefedettség, jog-node regisztráció, /menu célok,
   duplikált metódusok, tükör-repo drift — push előtt kötelező.
-- **Resource pack**: teljes CMD-regiszter (docs/RESOURCE_PACK_CMD.md, 233 CMD
-  sávozva) + textúra-generátor és pack-összeállító scriptek.
+- **Resource pack**: a CMD-regiszter (docs/RESOURCE_PACK_CMD.md, sávozott CMD-lista) a
+  KÜLSŐ pack-készítő specifikációja; magát a packet külön forrásban állítják elő (a
+  repóban nincs pack-artefaktum/generátor).
 - **Integrációk** (mind opcionális, reflexiós híd): PlaceholderAPI (%icesmp_%
   placeholderek), LibsDisguises (druida-forma, kém, fekvés), FancyNpcs (quest-NPC-k),
   WorldGuard (spawn-guard), LuckPerms (chat-prefix, tablist-rang).

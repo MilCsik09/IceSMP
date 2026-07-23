@@ -837,6 +837,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (cím + első-lépés sorok + „rendben" gomb) — resource pack NÉLKÜL. ESC/gomb bezárja.
       `onboarding.welcome-dialog: false` → nem jön. Tartalom élő-configból
       (`onboarding.welcome-dialog-title/-lines`, MiniMessage). Régi játékosnál NEM jelenik meg.
+- [ ] **P8e Alacsony-HP piros vignetta (ÚJ):** HP a küszöb (alap 30%) alá esve a képernyő
+      szélén vörös vészköd jelenik meg; gyógyulva/küszöb fölé eltűnik. `hud.low-hp-vignette.enabled:
+      false` → nem jön. A per-player világperem NEM okoz tényleges perem-hatást (nem lök vissza,
+      nem sebez). Respawn/reconnect után tiszta állapot. Threshold élő-configból.
 - [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
 - [ ] **Natív tablist (ÚJ — TAB-kiváltás, a TAB.jar NÉLKÜL tesztelendő):**
