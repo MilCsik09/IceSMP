@@ -29,7 +29,7 @@ crates:
     display-name: "Caldesterai Kereskedőláda"
     key-name: "&fKereskedő Kulcs"
     key-material: TRIPWIRE_HOOK
-    key-custom-model-data: 6201
+    key-item-model: "icesmp:cratekey_koznapi"
     # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
     key-price:
       currency: NEUTRAL
@@ -45,7 +45,7 @@ crates:
     display-name: "&5Caldesterai Kincsesláda"
     key-name: "&5Kincses Kulcs"
     key-material: TRIPWIRE_HOOK
-    key-custom-model-data: 6202
+    key-item-model: "icesmp:cratekey_ritka"
     # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
     key-price:
       currency: NEUTRAL

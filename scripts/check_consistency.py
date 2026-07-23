@@ -92,6 +92,19 @@ for cmd, places in sorted(used.items()):
     if cmd not in registered_cmds:
         fail(f"CMD {cmd} használatban ({places[0]}), de HIÁNYZIK a docs/RESOURCE_PACK_CMD.md regiszterből")
 
+# ---------- 3b. CMD→ITEM_MODEL migráció drift-védelem ----------
+# A teljes migráció után ÚJ item CMD-t NEM kaphat — ITEM_MODEL a szabály (ItemDataFactory.applyItemModel
+# / result.item-model / item-model config-kulcs). Bukjunk, ha bárki visszahoz CMD-t.
+for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
+    src = read(path)
+    if re.search(r"\.setCustomModelData(Component)?\s*\(", src):
+        fail(f"{os.path.basename(path)}: setCustomModelData(...) — MIGRÁLVA, ITEM_MODEL-t használj "
+             f"(ItemDataFactory.applyItemModel)")
+for path in glob.glob(os.path.join(CFG, "*.yml")):
+    if re.search(r"(?:key-)?custom-model-data:\s*\d", read(path)):
+        fail(f"{os.path.basename(path)}: custom-model-data — MIGRÁLVA, item-model kulcsot használj "
+             f'(item-model: "icesmp:<id>")')
+
 # ---------- 4. jogosultság-node-ok ----------
 perm_src = read(os.path.join(JAVA, "hu/taliann/icesmp/core/Permissions.java"))
 canonical = set(re.findall(r'"(icesmp\.[a-z.]+)"', perm_src))

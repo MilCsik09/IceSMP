@@ -280,15 +280,8 @@ public final class ProfessionRecipeBookListener implements Listener {
                 result.setItemMeta(meta);
             }
         }
-        // CMD-pecsét a lore-tól FÜGGETLENÜL: az affix-roll felszerelés is fix textúrát kap
-        // (a név a rollból jön, a textúra a receptből) — regiszter: docs/RESOURCE_PACK_CMD.md.
-        if (recipe.uniqueResult() == null && recipe.customModelData() > 0) {
-            final ItemMeta cmdMeta = result.getItemMeta();
-            if (cmdMeta != null) {
-                cmdMeta.setCustomModelData(recipe.customModelData());
-                result.setItemMeta(cmdMeta);
-            }
-        }
+        // (A régi CMD-pecsét törölve: a recept-tárgyak ITEM_MODEL-t kapnak — result.item-model,
+        // a buildResult végén alkalmazva; a recept-id az icesmp:<id> modell-kulcs.)
         // Signature perk-tag: a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
         // ELŐTT kerül fel, mert a roll klónja a PDC-t is viszi.
         if (recipe.signature() != null && result.getItemMeta() != null) {

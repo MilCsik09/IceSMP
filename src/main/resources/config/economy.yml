@@ -142,7 +142,7 @@ faction-shops:
         amount: 1
         price: 400
         currency: "DARK"
-        custom-model-data: 6450
+        item-model: "icesmp:shop_setapalca"
         name: "&6Bokic-menti Sétapálca"
         lore:
           - "&7Úri bot a Bokic-part sétányairól."
@@ -153,7 +153,7 @@ faction-shops:
         amount: 1
         price: 600
         currency: "DARK"
-        custom-model-data: 6451
+        item-model: "icesmp:shop_menlevel"
         name: "&fHamisított Menlevél"
         lore:
           - "&7A Bankárszövetség pecsétje. Majdnem."

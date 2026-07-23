@@ -1,8 +1,14 @@
 # Resource Pack — CMD-regiszter és textúra-leírások
 
-**A textúra-készítőnek.** Minden egyedi (custom) plugin-item CustomModelData-t (CMD)
-visel; ez a fájl itemenként megadja a CMD-t, a fájlnevet, az alap-itemet és a
-RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
+>## ⚠️ ITEM_MODEL-migráció (2026-07-23)
+> A plugin a **teljes item-megjelenést ITEM_MODEL-re migrálta** (integer CMD helyett).
+> Az ÉLŐ modell-id-k az **„ITEM_MODEL tárgyak"** szekcióban (a pack az
+> `assets/icesmp/items/<id>.json`-t szállítja). A lenti CMD-szekciók **történeti referencia**
+> a régi textúra-kulcsokhoz — új itemhez ne CMD-t, hanem `icesmp:<id>` modell-id-t adj.
+
+**A textúra-készítőnek.** Az egyedi plugin-itemek **ITEM_MODEL**-t viselnek (`icesmp:<id>`);
+az „ITEM_MODEL tárgyak" szekció itemenként megadja a modell-id-t és az alap-itemet, a lenti
+(régi) CMD-szekciók pedig a RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 
 ## Technikai tudnivalók
 
@@ -1895,6 +1901,12 @@ Az ÚJ custom itemek nem integer CustomModelData-t kapnak, hanem **ITEM_MODEL** 
 | `catalyst_<kaszt-id>` | Kaszt-katalizátor kasztonként (pl. catalyst_wizard, catalyst_archer, catalyst_death_knight…) |
 | `currency_<red\|blue\|neutral\|dark>` | Frakció-valuta veret |
 | `capture_<beast\|necro\|heart\|seal>` | Pet-befogó eszköz típusonként |
+| `relic_<relikvia-id>` | Relikvia (pl. relic_metelytepo) |
+| `cratekey_<koznapi\|ritka>` | Láda-kulcs típusonként |
+| `loot_rozsdas_penge` / `loot_elit_pancel` / `loot_fekete_csont` / `loot_nema_kiralyno` | Nevesített DARK-lootok |
+| `shop_setapalca` / `shop_menlevel` | Bolt-különlegességek (Sétapálca, Menlevél) |
+| `spell_expel_harm` / `spell_rune_strike` / `spell_wild_mushroom` / `spell_demonic_circle` | Spell-vizuál itemek |
+| `selection_wand` / `selection_wand_territory` | Kijelölő-pálcák |
 
 ### Egyedi anyagok (profession-materials)
 

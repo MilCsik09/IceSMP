@@ -108,13 +108,13 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   - minden doksi-szám a configból származik, nem fejből
   - záráskor: fordítás-ellenőrzés + `scripts/check_consistency.py` + tükör-push
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
-- **Item-megjelenés szabálya:** ÚJ custom/unique item **ITEM_MODEL** komponenst kap (string
-  modell-id az `icesmp:` névtérben; `result.item-model:` a receptben / `ItemDataFactory.applyItemModel`),
-  és fel KELL venni a `docs/RESOURCE_PACK_CMD.md` „ITEM_MODEL tárgyak" szekciójába (a resource pack
-  készítő ebből dolgozik). A **régi integer-CMD** itemek a migrálásig maradnak, sávjaik:
-  1001+ pénz, 4101/4201+ relikvia, 5201+ katalizátor, 5301+ pet-eszköz, 5401 ostromgép, 5410+ kijelölő-pálca,
-  6000+ unique anyag, 6201+ kulcs, 6210 tervrajz, 6300+ recept-tárgy, 6450+ bolt-különlegesség,
-  6460+ loot-nevesített. (CMD→ITEM_MODEL teljes migráció: P7 alatt, egyeztetve a pack-készítővel.)
+- **Item-megjelenés szabálya (CMD→ITEM_MODEL migráció KÉSZ, 2026-07-23):** MINDEN custom/unique
+  item **ITEM_MODEL** komponenst visel (string modell-id az `icesmp:` névtérben) — integer CMD-t
+  már SEHOL nem használunk (a `scripts/check_consistency.py` FAIL-el bármely `setCustomModelData`-ra
+  ÉS `custom-model-data:` config-kulcsra). Új itemnél: `result.item-model: "icesmp:<id>"` a receptben,
+  vagy `ItemDataFactory.applyItemModel(item, "icesmp:<id>")` a factoryban (a setItemMeta UTÁN!), és
+  fel KELL venni a `docs/RESOURCE_PACK_CMD.md` „ITEM_MODEL tárgyak" szekciójába (a pack-készítő az
+  `assets/icesmp/items/<id>.json`-t szállítja). A régi CMD-szekciók a regiszterben történeti referencia.
 - Minden gameplay-változásnál frissítsd a docsot: a megfelelő `docs/player-guide/` oldal (a `PLAYER_GUIDE.md` csak index, nem kell bővíteni), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.
 - Commit-üzenet: magyar, tömör tárgysor + felsorolásos törzs; a repo-ban használt `Co-Authored-By` + `Claude-Session` trailerekkel zárul. Csak a kijelölt feature-branchre pusholj.
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).

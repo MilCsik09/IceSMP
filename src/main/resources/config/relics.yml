@@ -34,10 +34,10 @@ relics:
     metelytepo:
       display-name: "Mételytépő"
       display-color: "&5"
-      # A material/custom-model-data itt dokumentáció: a tényleges értéket a kód adja
-      # (RelicManager.registerRelic) — a kettő szinkronban tartandó (GOLDEN_AXE + 4101).
+      # A material itt dokumentáció: a tényleges értéket a kód adja (RelicManager.registerRelic).
+      # A megjelenés ITEM_MODEL-lel megy (icesmp:relic_<id>), nem CMD-vel — a RelicItemFactory állítja.
       material: "GOLDEN_AXE"
-      custom-model-data: 4101
+      item-model: "icesmp:relic_metelytepo"
       lore:
         - "&7A Mélység Népének — a rég letűnt törp"
         - "&7civilizációnak — ősi relikviája."

@@ -302,18 +302,17 @@ public final class ShopManager {
             }
             meta.lore(lines);
         }
-        // Resource pack horog: a bolt-különlegességek fix textúrát kaphatnak
-        // (`custom-model-data` a bolt-item configon) — docs/RESOURCE_PACK_CMD.md.
-        final int customModelData = item.getInt("custom-model-data", 0);
-        if (customModelData > 0) {
-            meta.setCustomModelData(customModelData);
-        }
         if (!signature.isBlank()) {
             meta.getPersistentDataContainer().set(
                     hu.taliann.icesmp.listeners.SignatureItemListener.SIGNATURE_PDC_KEY,
                     org.bukkit.persistence.PersistentDataType.STRING, signature);
         }
         stack.setItemMeta(meta);
+        // Resource pack horog: ITEM_MODEL (CMD helyett) a setItemMeta UTÁN — item-model configból.
+        final String shopModel = item.getString("item-model", null);
+        if (shopModel != null && !shopModel.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, shopModel);
+        }
         return stack;
     }
 }

@@ -60,6 +60,7 @@ public final class RelicItemFactory {
         pdc.set(relicCreatedAtKey, PersistentDataType.LONG, System.currentTimeMillis());
 
         itemStack.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
         return itemStack;
     }
 
@@ -121,6 +122,7 @@ public final class RelicItemFactory {
         final ItemMeta meta = itemStack.getItemMeta();
         applyVisuals(meta, definition);
         itemStack.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + definition.id());
     }
 
     private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {
@@ -133,8 +135,6 @@ public final class RelicItemFactory {
                 .<Component>map(line -> serializer.deserialize(TextUtil.color(line)).decoration(TextDecoration.ITALIC, false))
                 .toList();
         meta.lore(lore.isEmpty() ? null : lore);
-
-        applyCustomModelData(meta, definition.customModelData());
 
         if (METELYTEPO_ID.equalsIgnoreCase(definition.id())) {
             applyMetelytepoMeta(meta, definition);
@@ -190,15 +190,6 @@ public final class RelicItemFactory {
         );
     }
 
-    private void applyCustomModelData(final ItemMeta meta, final int customModelData) {
-        final CustomModelDataComponent component = meta.getCustomModelDataComponent();
-        if (customModelData > 0) {
-            component.setFloats(List.of((float) customModelData));
-        } else {
-            component.setFloats(List.of());
-        }
-        meta.setCustomModelDataComponent(component);
-    }
 
     private ToolRule createPickaxeToolRule() {
         try {

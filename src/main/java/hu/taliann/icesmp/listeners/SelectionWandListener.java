@@ -114,7 +114,6 @@ public final class SelectionWandListener implements Listener {
         final ItemStack wand = new ItemStack(territory ? org.bukkit.Material.BLAZE_ROD : org.bukkit.Material.STICK);
         wand.editMeta(meta -> {
             meta.getPersistentDataContainer().set(WAND_KEY, PersistentDataType.STRING, kind);
-            meta.setCustomModelData(territory ? 5411 : 5410);
             meta.displayName(net.kyori.adventure.text.Component.text(
                             territory ? "⚑ Határkijelölő pálca" : "⚑ Birtokmérő pálca",
                             territory ? net.kyori.adventure.text.format.NamedTextColor.GOLD
@@ -132,6 +131,8 @@ public final class SelectionWandListener implements Listener {
                             net.kyori.adventure.text.format.NamedTextColor.GRAY)
                             .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)));
         });
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(wand,
+                territory ? "icesmp:selection_wand_territory" : "icesmp:selection_wand");
         return wand;
     }
 }
