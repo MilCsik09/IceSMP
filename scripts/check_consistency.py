@@ -79,7 +79,7 @@ for qid, q in quests.items():
 
 # ---------- 3. ITEM_MODEL manifest-lefedettség + legacy drift-védelem ----------
 manifest = read(os.path.join(REPO, "docs/RESOURCE_PACK_CMD.md"))
-manifest_models = set(re.findall(r"\| `([a-z0-9_]+)` \|", manifest))
+manifest_models = set(re.findall(r"^### `([a-z0-9_]+)`", manifest, re.M)) | set(re.findall(r"\| `([a-z0-9_]+)` \|", manifest))
 used_models = {}
 for name, path in [(os.path.basename(p), p) for p in glob.glob(os.path.join(CFG, "*.yml"))]:
     for m in re.finditer(r"(?:key-)?item-model:\s*[\"']?([^\"'\s#}]+)", read(path)):
