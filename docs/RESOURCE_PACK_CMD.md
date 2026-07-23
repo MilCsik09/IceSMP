@@ -741,7 +741,11 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** középkék; akcent: törtfehér
 - **Hangulat / lore:** Recept-tervrajz — ebből tanulják a mesterek a ritka recepteket.
 
-## Recept-tárgyak (6300–6439)
+## Recept-tárgyak (6300–6439) — ⚠️ MIGRÁLVA ITEM_MODEL-re
+
+> Ezek a CMD-k **már nem élnek** a pluginban: a recept-tárgyak `item-model`-t kapnak
+> (`icesmp:<recept-id>`), lásd az „ITEM_MODEL tárgyak” szekciót. Ez a lista már csak
+> történeti referencia a régi textúra-kulcsokhoz.
 
 ### 6300 — Borostyánfényű Lámpás
 - **Fájl:** `r_borostyan_lampa.png` &nbsp;|&nbsp; **Alap-item:** `LANTERN`
@@ -1732,3 +1736,150 @@ Az ÚJ custom itemek nem integer CustomModelData-t kapnak, hanem **ITEM_MODEL** 
 | `harcos_husos_tal` | COOKED_BEEF | Harcos Húsos Tála (étel) |
 | `tuzes_chili_tal` | COOKED_BEEF | Tüzes Chilis Tál (étel) |
 | `tengerek_gyongye` | COOKED_COD | Tengerek Gyöngye (étel) |
+| `tarnasz_csakany_recept` | DIAMOND_PICKAXE | Tárnász Csákány |
+| `netherit_csakany` | NETHERITE_PICKAXE | Mélybányász Netherit Csákány |
+| `kovilta_fejsze` | STONE_AXE | Kővésett Fejsze |
+| `vasfejsze` | IRON_AXE | Vasfejsze |
+| `gyemant_fejsze` | DIAMOND_AXE | Gyémántfejsze |
+| `netherit_fejsze` | NETHERITE_AXE | Erdőirtó Netherit Fejsze |
+| `vaskard` | IRON_SWORD | Vaskard |
+| `vas_sisak` | IRON_HELMET | Vassisak |
+| `vas_csizma` | IRON_BOOTS | Vascsizma |
+| `vas_lablemez` | IRON_LEGGINGS | Vas Lábvért |
+| `bastya_pajzs_recept` | SHIELD | Bástya Pajzs |
+| `gyemant_kard` | DIAMOND_SWORD | Gyémántkard |
+| `gyemant_sisak` | DIAMOND_HELMET | Gyémántsisak |
+| `gyemant_mellvert` | DIAMOND_CHESTPLATE | Gyémánt Mellvért |
+| `haromagu_szigony` | TRIDENT | Háromágú Szigony |
+| `sarkanyvert_recept` | NETHERITE_CHESTPLATE | Sárkányvért |
+| `netherit_kard` | NETHERITE_SWORD | Netherit Pallos |
+| `netherit_sisak` | NETHERITE_HELMET | Netherit Csatasisak |
+| `bajnok_elixir` | POTION | Bajnok Elixírje |
+| `tartossag_tomus` | ENCHANTED_BOOK | Tartósság Tomus |
+| `hatekonysag_tomus` | ENCHANTED_BOOK | Hatékonyság Tomus |
+| `eles_tomus` | ENCHANTED_BOOK | Élesség Tomus |
+| `zuhanascsokkentes_tomus` | ENCHANTED_BOOK | Zuhanáscsökkentés Tomus |
+| `vedelem_tomus` | ENCHANTED_BOOK | Védelem Tomus |
+| `csali_tomus` | ENCHANTED_BOOK | Csali Tomus |
+| `fosztogatas_tomus` | ENCHANTED_BOOK | Fosztogatás Tomus |
+| `szerencse_tomus` | ENCHANTED_BOOK | Szerencse Tomus |
+| `javitas_tomus` | ENCHANTED_BOOK | Javítás Tomus |
+| `orvenylo_pusztitas_tomus` | ENCHANTED_BOOK | Örvénylő Pusztítás Tomus |
+| `selyemerintes_tomus` | ENCHANTED_BOOK | Selyemérintés Tomus |
+| `egyszeru_horgaszbot` | FISHING_ROD | Egyszerű Horgászbot |
+| `tartos_horgaszbot` | FISHING_ROD | Tartós Horgászbot |
+| `mesteri_horgaszbot` | FISHING_ROD | Mesteri Horgászbot |
+| `legendas_horgaszbot` | FISHING_ROD | Legendás Horgászbot |
+| `tengeristen_amulettje` | CONDUIT | Tengeristen Amulettje |
+| `aranyalma_lakoma` | GOLDEN_APPLE | Aranyalma Lakoma |
+| `legendas_lakoma` | ENCHANTED_GOLDEN_APPLE | Legendás Lakoma |
+| `esszencialt_vasvert` | DIAMOND_CHESTPLATE | Esszenciált Vasvért |
+| `runakovacsolt_penge` | NETHERITE_SWORD | Rúnakovácsolt Penge |
+| `vadbor_pancel` | DIAMOND_LEGGINGS | Vadbőr Vért |
+| `arnyekmereg` | SPLASH_POTION | Árnyékméreg |
+| `szornymag_talizman` | ENCHANTED_BOOK | Szörnymag Talizmán |
+| `ereklye_penge` | NETHERITE_SWORD | Villámszilánk Pengéje |
+| `runafenyes_csakany` | DIAMOND_PICKAXE | Rúnafényes Bányászcsákány |
+| `ereklyeszilankos_banyasisak` | DIAMOND_HELMET | Villámszilánkos Bányászsisak |
+| `vasesszencias_pajzs` | SHIELD | Vasesszenciás Pajzs |
+| `rezvertezet_lablemez` | DIAMOND_LEGGINGS | Rézvértezet Lábvért |
+| `vadolo_csizma` | DIAMOND_BOOTS | Vadölő Csizma |
+| `szornyvert_mellveny` | NETHERITE_CHESTPLATE | Szörnyvért Mellvény |
+| `ereklye_elixir` | POTION | Villámszilánk Elixírje |
+| `vasesszencias_paloscsapas_tomus` | ENCHANTED_BOOK | Vasesszenciás Páncéltörés Tomus |
+| `kemenyfa_ijkeret_tomus` | ENCHANTED_BOOK | Keményfa Íjkeret Tomus |
+| `rezhorgany_horgaszbot` | FISHING_ROD | Rézhorgony Horgászbot |
+| `melytengeri_ereklyeszigony` | TRIDENT | Mélytengeri Villámszigony |
+| `kallan_szeletelo` | BOW | Kallan Szeletelője |
+| `glatziendorfi_jegvert` | NETHERITE_CHESTPLATE | Glatziendorfi Jégvért |
+| `jegsarkany_kantar` | SADDLE | Jégsárkány-Kantár |
+| `pyralingradi_tuzkopo` | CROSSBOW | Pyralingradi Tűzköpő |
+| `verszavanna_agyara` | NETHERITE_SWORD | A Vérszavanna Agyara |
+| `fonix_tollkopeny` | LEATHER_CHESTPLATE | Főnix-Tollköpeny |
+| `runavert_tekercs` | ENCHANTED_BOOK | Rúnavért-tekercs |
+| `ej_fatyol_tekercs` | ENCHANTED_BOOK | Éj-fátyol tekercs |
+| `arnyuzo_tekercs` | ENCHANTED_BOOK | Árnyűző tekercs |
+| `meregfojto_tekercs` | ENCHANTED_BOOK | Méregfojtó tekercs |
+| `viharfogo_tekercs` | ENCHANTED_BOOK | Viharfogó tekercs |
+| `kaosz_zabla_tekercs` | ENCHANTED_BOOK | Káosz-zabla tekercs |
+| `fagyasztott_pisztrang` | COOKED_SALMON | Fagyasztott Tavi Pisztráng |
+| `fonixtojas_rantotta` | PUMPKIN_PIE | Fűszeres Főnixtojás-Rántotta |
+| `kakaobabos_sutemeny` | COOKIE | Tiltott Kakaóbabos Sütemény |
+| `mortengradi_hamukenyer` | BREAD | Mortengradi Hamukenyér |
+| `vasmuvek_csakanya` | DIAMOND_PICKAXE | Vasművek Akadémiájának Csákánya |
+| `bokic_horgaszbot` | FISHING_ROD | Bokic-menti Horgászbot |
+| `smaragdko_bankbetet` | PAPER | Smaragdkő Bankbetét |
+| `szellemszarvas_bubaj` | RABBIT_FOOT | Szellemszarvas-Bűbáj |
+| `glatziendorfi_jegtoro` | NETHERITE_AXE | Glatziendorfi Jégtörő |
+| `miinus_haragja` | NETHERITE_SWORD | V. Miinus Haragja |
+| `sarkanycsont_ij` | BOW | Sárkánycsont Íj |
+| `zhoris_langnyelve` | NETHERITE_SWORD | I. Zhoris Lángnyelve |
+| `napfogyatkozas` | BOW | Napfogyatkozás |
+| `sarkany_porkolt` | RABBIT_STEW | Sárkány-pörkölt |
+| `vandor_uti_kenyer` | BREAD | Vándor Úti Kenyere |
+| `bokic_gyogytea` | HONEY_BOTTLE | Bokic-parti Gyógytea |
+| `sarkanycsont_pajzs` | SHIELD | Sárkánycsont Pajzs |
+| `viharuveg_lampas` | LANTERN | Viharüveg Lámpás |
+| `fagypancel_tekercs` | ENCHANTED_BOOK | Fagypáncél Tekercse |
+| `fonixtoll_tekercs` | ENCHANTED_BOOK | Főnixtoll Tekercse |
+| `vadlakoma` | COOKED_BEEF | Vérszavannai Vadlakoma |
+| `vandorunnep_lepenye` | PUMPKIN_PIE | Vándorünnep Lepénye |
+| `hamvak_lakomaja` | BEETROOT_SOUP | Hamvak Lakomája |
+| `melysegi_korona` | NETHERITE_HELMET | A Mélység Népe Koronája |
+| `viharjaro_csizma` | NETHERITE_BOOTS | Viharjáró Csizma |
+| `eleftheria_fatyla` | NETHERITE_CHESTPLATE | Eleftheria Fátyla |
+| `pecsetes_szerzodes` | PAPER | Pecsétes Szerződés |
+| `sarkfeny_prizma` | SEA_LANTERN | Sarkfény-prizma |
+| `csontenyves_ijkar` | BOW | Csontenyves Íjkar |
+| `gyongyhaz_talizman` | NAUTILUS_SHELL | Gyöngyház Talizmán |
+| `fuszeres_vandorhus` | COOKED_MUTTON | Fűszeres Vándorhús |
+| `csillekerek` | MINECART | Megkent Csille |
+| `melysegi_tajolo` | COMPASS | Tárnatájoló |
+| `tavcso` | SPYGLASS | Bányamérnöki Távcső |
+| `borostyan_lampa` | LANTERN | Borostyánfényű Lámpás |
+| `osi_ereklye_kiemeles` | BRUSH | Ereklye-kiemelő Készlet |
+| `melyseg_szive` | HEART_OF_THE_SEA | A Mélység Szíve |
+| `jegvirag_koszoru` | BLUE_ORCHID | Jégvirág-koszorú |
+| `wither_rozsa_oltvany` | WITHER_ROSE | Fonnyadt Rózsa-oltvány |
+| `orok_viragzas` | PEONY | Örök Virágzás Csokra |
+| `vilagfa_magja` | OAK_SAPLING | A Világfa Magja |
+| `vadaszij` | BOW | Vadászíj |
+| `vandorbot` | STICK | Vándorbot |
+| `mefonott_pajzs` | SHIELD | Erdőjáró Pajzs |
+| `feszitett_szaru_ij` | BOW | Feszített Szaruíj |
+| `celkereszt_szamszerij` | CROSSBOW | Céhmesteri Számszeríj |
+| `erdok_kurtje` | GOAT_HORN | Erdők Kürtje |
+| `vasfa_ij` | BOW | Vasfa Íj |
+| `erdo_szive_totem` | TOTEM_OF_UNDYING | Az Erdő Szíve |
+| `lancing` | CHAINMAIL_CHESTPLATE | Kovácsolt Láncing |
+| `lancnadrag` | CHAINMAIL_LEGGINGS | Kovácsolt Láncnadrág |
+| `vas_lopancel` | IRON_HORSE_ARMOR | Vas Lópáncél |
+| `arany_lopancel` | GOLDEN_HORSE_ARMOR | Arany Lópáncél |
+| `pajzsdudor` | SHIELD | Dudoros Hadipajzs |
+| `gyemant_lopancel` | DIAMOND_HORSE_ARMOR | Gyémánt Lópáncél |
+| `pancelozott_sisakrostely` | DIAMOND_HELMET | Rostélyos Csatasisak |
+| `cehmester_ulloje` | ANVIL | A Céhmester Üllője |
+| `vihar_palack` | WIND_CHARGE | Palackozott Vihar |
+| `totem_ujraelesztes` | TOTEM_OF_UNDYING | Újraélesztett Totem |
+| `kristaly_katalizator` | END_CRYSTAL | Kristály-katalizátor |
+| `bolcsek_kove` | EXPERIENCE_BOTTLE | A Bölcsek Köve |
+| `csendulo_harang` | BELL | Csendülő Harang |
+| `emlekek_konyve` | WRITTEN_BOOK | Emlékek Könyve |
+| `felepules_iranytuje` | RECOVERY_COMPASS | Felépülés Iránytűje |
+| `vegtelen_kodex` | WRITTEN_BOOK | A Végtelen Kódex |
+| `uszokeszlet` | FISHING_ROD | Úszókészlet |
+| `vizallo_csizma` | LEATHER_BOOTS | Halászcsizma |
+| `melyvizi_horog` | FISHING_ROD | Mélyvízi Horogsor |
+| `teknos_sisak` | TURTLE_HELMET | Teknőspáncél-sisak |
+| `viharjelzo_boja` | LANTERN | Viharjelző Bója |
+| `mestermuves_bot` | FISHING_ROD | Mesterhorgász Botja |
+| `vezetokurt` | CONDUIT | Mélység Vezérkürtje |
+| `oceanjaro_terkep` | MAP | Óceánjáró Térképe |
+| `bokic_aldasa` | TRIDENT | A Bokic Áldása |
+| `fonix_fuszeres_szarny` | COOKED_CHICKEN | Főnixfűszeres Szárny |
+| `lakodalmas_torta` | CAKE | Lakodalmas Emeletes Torta |
+| `kapu_lakomaja` | ENCHANTED_GOLDEN_APPLE | A Kapu Lakomája |
+| `halaszkalap` | LEATHER_HELMET | Halászkalap |
+| `melyseg_kulcsa` | TRIAL_KEY | A Mélység Kulcsa |
+| `ejszaka_pengeje` | NETHERITE_SWORD | Az Éjszaka Pengéje |
+| `csontkripta_kulcsa` | TRIAL_KEY | A Csontkripta Kulcsa |
