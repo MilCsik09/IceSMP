@@ -2108,3 +2108,19 @@ Jó tesztelést! ❄️
 - [ ] **Halmozódás-ellenőrzés:** szint% + talent + Varázserő együtt sem lépi át a
       spells.dynamic-scaling.max-bonus-percent plafont; a teljes szorzat a
       total-power-cap (1.75) alatt marad.
+
+## Bootstrap-kiaknázás: 5 új iskola-counter + védőháló (tulaj-kérés, 2026-07-22)
+- [ ] **Védőháló:** a bootstrap handler-hibái logolódnak, de a szerver elindul
+      (szimulálható: ideiglenesen rossz kulccsal); a spellek vanília sebzésre esnek
+      vissza, a signature-stamp kihagyja a hiányzó enchantot.
+- [ ] **5 új counter-enchant:** Éj-fátyol (szent), Árnyűző (árnyék), Méregfojtó
+      (természet), Viharfogó (vihar), Káosz-zabla (káosz) — enchanter 38-as
+      tervrajz-receptek (CMD 6440-6444), enchantelt könyv, üllőn mellvértre; a
+      megfelelő iskola spell-sebzését szintenként 10%-kal csökkenti (magic-resist.
+      school-per-level), a Rúnavérttel a 60% plafonig összeadódik.
+- [ ] **Counter-exkluzivitás:** két különböző iskola-counter NEM kerülhet egy
+      páncélra üllőn (az eredmény eltűnik); Rúnavért + egy counter együtt mehet;
+      a meglévő Fagypáncél/Főnixtoll párra is érvényes.
+- [ ] **DARK-specek ellen:** Árnyűző mellvértben a Szentségtelen/Csontpap árny-spelljei
+      ~10%-kal kisebbet ütnek; Méregfojtó a Pestishozó természet-spelljei ellen.
+- [ ] **Enchant-asztal tiszta:** az új enchantok sem jönnek enchant-asztalról.

@@ -494,16 +494,16 @@ vezeklés-lánc, emlékszilánk, komp, moderáció, AFK, bestiárium, Suttogó-p
 Állapot: a réteg RENDBEN VAN (lásd audit-összegzés a P2/LORE_REFERENCE-ben) — az alábbi
 tételek a védőháló + a kihasználatlan potenciál.
 
-- **P4a [TOP] Bootstrap védőháló** — a freeze-handlerek try/catch nélkül futnak: egy
+- ✅ **P4a Bootstrap védőháló** — a freeze-handlerek try/catch nélkül futnak: egy
   unstable-API változás (verzió-bump!) a plugin betöltését töri. Catch + hangos log →
   graceful degradation (a SpellDamageUtil vanilla-fallbackje már kész rá). 🟢⭐⭐⭐
-- **P4b [TOP] Hiányzó iskola-counter enchantok** — 8 iskolából csak 2-nek van countere
+- ✅ **P4b Hiányzó iskola-counter enchantok** — 8 iskolából csak 2-nek van countere
   (Fagypáncél/Főnixtoll); a DARK-specek árny/természet sebzése ellen ma csak a Rúnavért
   véd. Pótlás: Árnyűző (arnyek), Méregfojtó (termeszet), Viharfogó (vihar), Szent-fény
   (szent), Káosz-zabla (kaosz) — a SpellSchool.resistEnchantId mező és a
   SpellDamageListener generikus resist-útja MÁR FEL VAN KÉSZÍTVE, csak regisztráció +
   lore-horgony + tekercs-recept kell (szabály: dísz-enchant nincs). 🟡⭐⭐⭐
-- **P4c Fagypáncél+Főnixtoll exkluzivitás** — nincs exclusiveWith: két azonos típusú
+- ✅ **P4c Fagypáncél+Főnixtoll exkluzivitás** (megoldás: üllő-őr listener, MIND a 7 counterre) — nincs exclusiveWith: két azonos típusú
   mellvért üllőn összefésülve mindkét counter egy páncélra kerülhet. Döntés:
   exclusive-set vagy szándékosként dokumentálni. 🟢⭐
 - **P4d Dialog-registry felderítés (1.21.6+)** — natív szerver-oldali párbeszéd-ablakok:
@@ -517,6 +517,6 @@ tételek a védőháló + a kihasználatlan potenciál.
   fővárosokba; jukebox-song az Énekmondó balladájának/frakció-himnuszoknak;
   mob-variánsok (pl. csont-farkas a DARK-földre) — mind RP-textúra/audio-függő,
   a meglévő resource-pack pipeline-ra ül. 🟡⭐⭐
-- **P4g Upgrade-checklist tétel** — verzió-bumpnál a bootstrap az első törési pont
+- ✅ **P4g Upgrade-checklist tétel** (CLAUDE.md Build&verify) — verzió-bumpnál a bootstrap az első törési pont
   (unstable API): a PLAYTEST/upgrade-folyamatba explicit "bootstrap fordul + registry
   bejegyzések élnek" ellenőrzés. 🟢⭐

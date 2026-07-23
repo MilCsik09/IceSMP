@@ -1331,6 +1331,68 @@ profession-recipes:
     category: "Rúnaírnok (tervrajz)"
     result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:runavert:1", custom-model-data: 6383 }
     ingredients: [ "BOOK:1", "AMETHYST_SHARD:8", "LAPIS_BLOCK:2", "unique:arnyekpor:1" ]
+  # Iskola-counter tekercsek (a Fagypáncél/Főnixtoll párjai): enchantelt könyv, üllőn
+  # mellvértre — egy páncélon EGY iskola-counter élhet (üllő-őr), a Rúnavért mellette fér.
+  ej_fatyol_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Éj-fátyol tekercs"
+    lore:
+      - "&7A Néma Királynő csont-amulettjeinek írása —"
+      - "&7a fátyol elnyeli a vakító szent fényt."
+      - "&8Üllőn vihető mellvértre. (Szent mágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:ej_fatyol:1", custom-model-data: 6440 }
+    ingredients: [ "BOOK:1", "BONE_BLOCK:4", "SCULK:8", "unique:arnyekpor:1" ]
+  arnyuzo_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Árnyűző tekercs"
+    lore:
+      - "&7A Fa virrasztóinak lámpás-olajával írt jel —"
+      - "&7a fény kiszorítja az árnyék marását."
+      - "&8Üllőn vihető mellvértre. (Árnyékmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:arnyuzo:1", custom-model-data: 6441 }
+    ingredients: [ "BOOK:1", "GLOWSTONE_DUST:16", "GOLD_INGOT:4", "unique:emlekszilank:1" ]
+  meregfojto_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Méregfojtó tekercs"
+    lore:
+      - "&7A Bokic-menti füvesasszonyok ellenszér-receptje —"
+      - "&7a bőrbe ivódó főzet fojtja a mérget és a pestist."
+      - "&8Üllőn vihető mellvértre. (Természetmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:meregfojto:1", custom-model-data: 6442 }
+    ingredients: [ "BOOK:1", "SPIDER_EYE:8", "HONEY_BOTTLE:2", "unique:gyogy_kivonat:1" ]
+  viharfogo_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Viharfogó tekercs"
+    lore:
+      - "&7A Vérszavanna pásztorainak földelő-vasa ihlette —"
+      - "&7a vihar haragja a földbe fut a viselő mellett."
+      - "&8Üllőn vihető mellvértre. (Viharmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:viharfogo:1", custom-model-data: 6443 }
+    ingredients: [ "BOOK:1", "COPPER_INGOT:16", "LIGHTNING_ROD:2", "unique:szorny_mag:1" ]
+  kaosz_zabla_tekercs:
+    profession: enchanter
+    level: 38
+    learn: blueprint
+    display-name: "Káosz-zabla tekercs"
+    lore:
+      - "&7Olethropyla pecsét-töredékeiből kovácsolt jel —"
+      - "&7a lánc megüli a káosz lángját a viselőn."
+      - "&8Üllőn vihető mellvértre. (Káoszmágia ellen.)"
+    category: "Rúnaírnok (tervrajz)"
+    result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:kaosz_zabla:1", custom-model-data: 6444 }
+    ingredients: [ "BOOK:1", "CHAIN:8", "MAGMA_CREAM:8", "unique:karhozat_parazs:1" ]
   # ===== K6 — frakció-ételek (a kódex "konyhái"; a fogyasztási kötelezettséget a
   # factions.food-duty vezérli — a hazai étel evése nullázza a honvágy-visszaszámlálót) =====
   fagyasztott_pisztrang:

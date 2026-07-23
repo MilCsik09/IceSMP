@@ -1520,6 +1520,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(dungeonLootService, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.HealthRegenListener(classHealthService), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SchoolCounterAnvilListener(), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
         pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);

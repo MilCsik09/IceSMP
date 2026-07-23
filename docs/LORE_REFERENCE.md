@@ -170,10 +170,17 @@ hangolható (spells.spell-schools).
 | Főnixtoll | Soleil főnixei (kódex II.) | tűzmágia-ellenállás (iskola-counter) |
 | Érc-érzék | a Vasművek Akadémiájának tanítása | bónusz tapasztalat érc-törésnél |
 | Bokic Kegye | a Bokic folyó áldása (kódex III.) | fogáskor rövid Szerencse (jobb zsákmány) |
+| Éj-fátyol | a Néma Királynő csont-amulettjei (kódex VII.) | szent mágia-ellenállás (iskola-counter) |
+| Árnyűző | a Fa virrasztóinak lámpás-olaja (kódex V.) | árnyékmágia-ellenállás (iskola-counter) |
+| Méregfojtó | a Bokic-menti füvesasszonyok ellenszerei (kódex III.) | természetmágia-ellenállás (iskola-counter) |
+| Viharfogó | a Vérszavanna pásztorainak földelő-vasa (kódex III.) | viharmágia-ellenállás (iskola-counter) |
+| Káosz-zabla | Olethropyla pecsét-töredékei (kódex VI.) | káoszmágia-ellenállás (iskola-counter) |
 | Rúnavért | Caldestera rúnaírnokai + a Mélység Népe rúna-öröksége (kódex I.) | generikus mágia-ellenállás (minden iskola) |
 
 Megszerzés: kizárólag signature-craft / tekercs-recept (a saját enchantok nincsenek az
 enchant-asztal tagben); rider-számok: `signature.enchant-riders.*` (crafting.yml).
+Szabály: egy páncélon EGY iskola-counter élhet (üllő-őr) — az iskola-választás
+build-döntés; a generikus Rúnavért bármelyik mellett fér.
 
 ## Elnevezési irányelvek
 

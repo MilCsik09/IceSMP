@@ -17,11 +17,11 @@ public enum SpellSchool {
 
     TUZ("tuz_magia", "tűzmágia", "fonixtoll"),
     FAGY("fagy_magia", "fagymágia", "fagypancel"),
-    SZENT("szent_magia", "szent mágia", null),
-    ARNYEK("arnyek_magia", "árnyékmágia", null),
-    TERMESZET("termeszet_magia", "természetmágia", null),
-    VIHAR("vihar_magia", "viharmágia", null),
-    KAOSZ("kaosz_magia", "káoszmágia", null),
+    SZENT("szent_magia", "szent mágia", "ej_fatyol"),
+    ARNYEK("arnyek_magia", "árnyékmágia", "arnyuzo"),
+    TERMESZET("termeszet_magia", "természetmágia", "meregfojto"),
+    VIHAR("vihar_magia", "viharmágia", "viharfogo"),
+    KAOSZ("kaosz_magia", "káoszmágia", "kaosz_zabla"),
     OSMAGIA("magia", "ősmágia", null);
 
     private final String typeId;

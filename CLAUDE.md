@@ -38,6 +38,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   tükör-drift). FAIL-lel nem pushol­unk; a WARN-okat vagy javítjuk, vagy indokoljuk a
   commit-üzenetben. Ha új drift-osztály derül ki (audit talál olyat, amit kézzel kellett
   észrevenni), a scriptet BŐVÍTENI kell, ne csak a hibát javítani.
+- **Verzió-bump ellenőrzés:** MC/Paper-frissítésnél az ELSŐ törési pont a bootstrap
+  (unstable registry-API) — a védőháló catch-el és logol, de bumpnál kötelező ellenőrizni:
+  a bootstrap fordul, a damage-type-ok és enchantok regisztrálódnak (log), a resist/stamp él.
 - **Tükör-repo (IceSMPGuides):** a docs egy része a `MilCsik09/IceSMPGuides` repóba is átmásolandó minden változtatásnál. Térkép: `PLAYTEST.md` ↔ gyökér; `docs/player-guide/NN-*.md` ↔ gyökér számozott fájlok (FIGYELEM: a Guides-oldali példányokon 🔜 tesztelői jelölés-réteg lehet — tartalmi merge kell, nem vak felülírás!); `docs/RESOURCE_PACK_CMD.md` ↔ gyökér; `docs/EPITESZ_UTMUTATO.md` ↔ gyökér; `docs/TEASER.md` ↔ gyökér; `docs/PITCH.md` ↔ gyökér; `docs/FEATURES.md` ↔ gyökér; `docs/LORE.md` + `docs/LORE_REFERENCE.md` ↔ `lore/`; `docs/ideas/*` ↔ `ideas/`; `docs/IDEAS.md` ↔ `ideas/README.md`. Mindkét repót ugyanarra a feature-branchre pushold.
 
 ## Mi ez a projekt

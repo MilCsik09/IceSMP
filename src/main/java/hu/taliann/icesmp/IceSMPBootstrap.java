@@ -40,19 +40,29 @@ public final class IceSMPBootstrap implements PluginBootstrap {
         // A spell→iskola besorolás configból jön (spells.yml spell-schools) — a spellek a
         // SpellDamageUtil-on át ütnek; a message-id kliens-oldalon nem fordul, a magyar
         // halál-üzenetet a SpellDamageListener írja felül.
+        // Védőháló: az unstable registry-API verzió-bumpnál törhet — a hiba itt NEM
+        // viheti el a szerver-indulást: a runtime minden regisztrációra fallbackkel
+        // készül (SpellDamageUtil vanília sebzés; a signature-stamp kihagyja a
+        // hiányzó enchantot), így degradáltan, de elindul a plugin.
         context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.freeze().newHandler(event -> {
-            for (final hu.taliann.icesmp.data.SpellSchool school : hu.taliann.icesmp.data.SpellSchool.values()) {
-                event.registry().register(
-                        io.papermc.paper.registry.keys.DamageTypeKeys.create(
-                                net.kyori.adventure.key.Key.key("icesmp", school.getTypeId())),
-                        builder -> builder
-                                .messageId("death.attack.icesmp_" + school.getTypeId())
-                                .damageScaling(org.bukkit.damage.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER)
-                                .exhaustion(0.1F));
+            try {
+                for (final hu.taliann.icesmp.data.SpellSchool school : hu.taliann.icesmp.data.SpellSchool.values()) {
+                    event.registry().register(
+                            io.papermc.paper.registry.keys.DamageTypeKeys.create(
+                                    net.kyori.adventure.key.Key.key("icesmp", school.getTypeId())),
+                            builder -> builder
+                                    .messageId("death.attack.icesmp_" + school.getTypeId())
+                                    .damageScaling(org.bukkit.damage.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER)
+                                    .exhaustion(0.1F));
+                }
+            } catch (final Throwable throwable) {
+                context.getLogger().error("Damage-type regisztráció hiba (a spellek vanília sebzésre esnek vissza): "
+                        + throwable, throwable);
             }
         }));
 
         context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> {
+            try {
             // Kulcsok: hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE — a runtime
             // (ProfessionRecipeBookListener) ugyanezekkel a kulcsokkal keresi vissza őket.
             register(event, "jegfog", "Jégfog", NamedTextColor.AQUA,
@@ -84,6 +94,23 @@ public final class IceSMPBootstrap implements PluginBootstrap {
                             .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(15, 10))
                             .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(45, 10))
                             .activeSlots(EquipmentSlotGroup.ARMOR));
+            // Iskola-counter enchantok a maradék iskolákra (a Fagypáncél/Főnixtoll
+            // párja) — mind mellvért-enchant, tekercs-recepttel szerezhető; egy
+            // páncélon EGY iskola-counter élhet (üllő-őr: SchoolCounterAnvilListener).
+            register(event, "ej_fatyol", "Éj-fátyol", NamedTextColor.DARK_PURPLE,
+                    ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
+            register(event, "arnyuzo", "Árnyűző", NamedTextColor.YELLOW,
+                    ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
+            register(event, "meregfojto", "Méregfojtó", NamedTextColor.DARK_GREEN,
+                    ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
+            register(event, "viharfogo", "Viharfogó", NamedTextColor.DARK_AQUA,
+                    ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
+            register(event, "kaosz_zabla", "Káosz-zabla", NamedTextColor.DARK_RED,
+                    ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
+            } catch (final Throwable throwable) {
+                context.getLogger().error("Enchant-regisztráció hiba (a signature/counter enchantok kimaradnak): "
+                        + throwable, throwable);
+            }
         }));
     }
 

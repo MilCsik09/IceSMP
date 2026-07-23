@@ -1585,6 +1585,26 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 
 ## Bolt-különlegességek és nevesített loot (6450–6463)
 
+### 6440 — Éj-fátyol tekercs
+- **Alap-item:** `minecraft:enchanted_book`
+- **Mi ez:** iskola-counter tekercs (szent mágia ellen) — üllőn mellvértre
+
+### 6441 — Árnyűző tekercs
+- **Alap-item:** `minecraft:enchanted_book`
+- **Mi ez:** iskola-counter tekercs (árnyékmágia ellen) — üllőn mellvértre
+
+### 6442 — Méregfojtó tekercs
+- **Alap-item:** `minecraft:enchanted_book`
+- **Mi ez:** iskola-counter tekercs (természetmágia ellen) — üllőn mellvértre
+
+### 6443 — Viharfogó tekercs
+- **Alap-item:** `minecraft:enchanted_book`
+- **Mi ez:** iskola-counter tekercs (viharmágia ellen) — üllőn mellvértre
+
+### 6444 — Káosz-zabla tekercs
+- **Alap-item:** `minecraft:enchanted_book`
+- **Mi ez:** iskola-counter tekercs (káoszmágia ellen) — üllőn mellvértre
+
 ### 6450 — Bokic-menti Sétapálca
 - **Fájl:** `shop_6450.png` &nbsp;|&nbsp; **Alap-item:** `STICK`
 - **Ábrázolás:** elegáns sétapálca arany fejjel — ránézésre úri bot, de a fej alatt penge sejlik

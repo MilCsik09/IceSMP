@@ -19,8 +19,10 @@
 - **Kombók és láncok**: konfigurált spell-párok/hármasok gyors egymásutánja cooldown-
   visszatérítést + finisher-bónuszt ad; a HUD jelzi a nyíló kombó-ablakot.
 - **8 varázs-iskola** (Tűz/Fagy/Szent/Árnyék/Természet/Vihar/Káosz/Ősmágia) saját
-  sebzés-típusokkal + iskola-ellenes enchantok (Fagypáncél, Főnixtoll) + Rúnavért
-  páncél-enchant (spell-rezisztencia, plafon 60%).
+  sebzés-típusokkal + **7 iskola-counter enchant** (Fagypáncél, Főnixtoll, Éj-fátyol,
+  Árnyűző, Méregfojtó, Viharfogó, Káosz-zabla — tekercs-receptek, egy páncélon EGY
+  counter élhet) + Rúnavért generikus páncél-enchant (spell-rezisztencia, plafon 60%);
+  a bootstrap-regisztráció védőhálóval (API-törésnél degradált, de élő indulás).
 - **Talent-fa**: 5 szintenként pont; stat-talentek (HP/sebzés/sebesség/XP), tier-kapuk,
   kasztonkénti tier2 build-pár + mind a 35 spec saját tier3 talentje; szakma-talentek.
   Bónusz-pont Emlékszilánkból (/emlek).
