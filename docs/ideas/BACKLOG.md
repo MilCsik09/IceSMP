@@ -539,11 +539,16 @@ szerver-oldali (RP nem kell), de NEM élő-configos: változás restart/reload-d
 A vanília `recipe`-szállítás szándékosan kimarad (a szakma-kapuzást kerülné meg),
 a game event registry fogyasztó nélkül halott regisztráció lenne.
 
-- **P5a Advancement-fa (IceSMP haladás-fül)** — fejezetek: Út a kasztig / Frakció-hűség /
-  Szakma-mesterség / Kazamaták / Lore-fejezetek; impossible-trigger + kódból grant;
-  magyar cím-leírás, item-ikon, toast. A leggyorsabb játékos-látható nyereség. 🟡⭐⭐⭐
-- **P5b Rejtett lore-advancementek** — hidden-spotok, Thanaopolis, Suttogó-leleplezés,
-  oltár-rituálék: „titkos" bejegyzések, csak megszerzéskor látszanak. 🟢⭐⭐
+- ✅ **P5a Advancement-fa (2026-07-23, KÉSZ)** — AdvancementService: 7 bejegyzés a stabil
+  Bukkit `loadAdvancement` úton (bájtkódból igazolt v1_21_R7), impossible-trigger + kódból
+  grant a meglévő rendszerek grant-pontjain (kaszt/spec/frakció/szakma-választás). Statikus
+  facade (AdvancementService.award), `advancements.enabled` kapcsoló, Folia-hop a játékos
+  szálára. RP nélkül működik. Bővíthető: további fejezetek (Kazamaták, Lore) a jövőbeli
+  grant-pontokból (dungeon-miniboss stb.), amikor azok tiszta site-ot adnak. 🟡⭐⭐⭐
+- ✅ **P5b Rejtett lore-advancementek (2026-07-23, KÉSZ)** — 2 hidden bejegyzés valódi
+  grant-tal: „A rontás megtörve" (rontás-mag megtörése, challenge-keret) + „Rejtett zug"
+  (hidden-spot felfedezés). Thanaopolis/Suttogó KIMARADT: nincs kód-szintű territory-id /
+  tiszta grant-site (Thanaopolis csak lore-név) — dísz-bejegyzést nem regisztrálunk. 🟢⭐⭐
 - **P5c Dungeon-belsők struktúraként + jigsaw** — melyseg/csontkripta szoba-készlet
   template_pool-ból, `/place`-szel telepíthető, processor-listával variálható —
   a világépítő munka egy része verziókezelt adattá válik. 🟡⭐⭐⭐

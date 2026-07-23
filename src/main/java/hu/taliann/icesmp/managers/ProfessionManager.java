@@ -129,6 +129,7 @@ public final class ProfessionManager implements PlayerStateCleanup {
 
         player.getPersistentDataContainer().set(slotKey(professionType.getCategory()),
                 PersistentDataType.STRING, professionType.getId());
+        AdvancementService.award(player, "profession_pick");
         return true;
     }
 

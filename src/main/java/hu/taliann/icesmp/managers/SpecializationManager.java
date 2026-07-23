@@ -126,6 +126,7 @@ public final class SpecializationManager {
 
         player.getPersistentDataContainer().set(classSpecKey, PersistentDataType.STRING, specialization.getId());
         applyClassSpecializationUnlocks(player);
+        AdvancementService.award(player, "first_spec");
         return true;
     }
 

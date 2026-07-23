@@ -110,6 +110,8 @@ public final class JobManager implements PlayerStateCleanup {
         pdc.set(jobPrimaryKey, PersistentDataType.STRING, job.getId());
         pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, 0);
         applyAutoUnlocks(player);
+        AdvancementService.award(player, "root");
+        AdvancementService.award(player, "first_class");
         return true;
     }
 

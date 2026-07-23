@@ -113,6 +113,10 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     public void setFaction(final UUID uuid, final FactionType factionType) {
         playerFactions.put(uuid, factionType == null ? FactionType.NEUTRAL : factionType);
         save();
+        final Player online = org.bukkit.Bukkit.getPlayer(uuid);
+        if (online != null) {
+            AdvancementService.award(online, "faction_join");
+        }
     }
 
     /**

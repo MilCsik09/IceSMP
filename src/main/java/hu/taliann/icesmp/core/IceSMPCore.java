@@ -239,6 +239,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.ChronicleManager chronicleManager;
     private final hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
     private final hu.taliann.icesmp.listeners.CorruptionAuraListener corruptionAuraListener;
+    private final hu.taliann.icesmp.managers.AdvancementService advancementService;
     private final hu.taliann.icesmp.managers.SeasonFinaleManager seasonFinaleManager;
     private final hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager;
     private final hu.taliann.icesmp.managers.BardManager bardManager;
@@ -370,6 +371,7 @@ public final class IceSMPCore {
         this.dungeonLootService = new hu.taliann.icesmp.managers.DungeonLootService(plugin, configManager,
                 messageManager, uniqueMaterialFactory, mobScalingManager);
         this.classHealthService = new hu.taliann.icesmp.managers.ClassHealthService(plugin, configManager, jobManager);
+        this.advancementService = new hu.taliann.icesmp.managers.AdvancementService(plugin, configManager);
         territoryProtectionService.setCombatTagManager(combatTagManager);
         warWindowManager.setCombatTagManager(combatTagManager);
         honorDuelManager.setCombatTagManager(combatTagManager);
@@ -821,6 +823,7 @@ public final class IceSMPCore {
         mobScalingManager.load();
         craftingRestrictionManager.load();
         professionRecipeCatalog.load();
+        advancementService.load();
         // Egy sérült fájl nem viheti el a többi manager betöltését (kaszkád-adatvesztés).
         for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
             try {

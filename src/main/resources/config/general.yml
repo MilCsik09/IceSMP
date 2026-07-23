@@ -13,6 +13,14 @@ settings:
   # zavaró. Állítsd false-ra, ha meg akarod hagyni a vanilla viselkedést.
   disable-locator-bar: true
 
+# P5a/P5b — natív IceSMP haladás-fül (advancement-fa). A bejegyzések a szerver-registrybe
+# töltődnek indításkor (Bukkit loadAdvancement), a kliens a szerverrel szinkronizálja —
+# resource pack NEM kell. Minden bejegyzést KÓD ad meg a meglévő rendszerek grant-pontjain
+# (kaszt-, spec-, frakció-, szakma-választás; rontás-tisztítás; hidden-spot). enabled=false
+# esetén a fa be sem töltődik (a grant-hívások no-opok). Csak indításkor olvasott.
+advancements:
+  enabled: true
+
 # Ülés (a GSit plugin kiváltása): /sit parancs + jobb-katt a lépcsőre/fél-lapra üres kézzel.
 sit:
   enabled: true

@@ -146,6 +146,7 @@ public final class HiddenSpotManager implements PersistentStore {
             return; // Már járt itt — csend (nem spammelünk minden checknél).
         }
         player.getPersistentDataContainer().set(visitedKey, PersistentDataType.BYTE, (byte) 1);
+        AdvancementService.award(player, "hidden_spot");
 
         final String name = spot.getString("name", spotId);
         final boolean first = discoveredBy.putIfAbsent(spotId, player.getUniqueId()) == null;

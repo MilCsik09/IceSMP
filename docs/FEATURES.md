@@ -270,6 +270,10 @@
   rang-rendezés, háború-színek, színkódolt ping); **lebegő sebzés-számok**;
   **halál-összegző** (utolsó 10 mp találatai); intro-címszekvencia új játékosnak;
   quest-toast értesítések; boss-bárok.
+- **Natív haladás-fül (advancementek)**: saját IceSMP fül a vanília Haladás-képernyőn
+  (loadAdvancement, RP nélkül) — mérföldkövek (első kaszt/spec/frakció/szakma) és
+  rejtett teljesítmények (rontás-tisztítás, hidden-spot); kódból granted, kikapcsolható
+  (`advancements.enabled`).
 - **Parancsok**: ~60 parancs magyar tab-complete-tel és hibaüzenetekkel;
   ranglisták (/leaderboard), /lore kódex-lapozó (frakciók/helyek történetei,
   alias-okkal), /kronika, /adomany közösségi láda.

@@ -476,6 +476,7 @@ public final class CorruptionManager implements PersistentStore {
         final World world = Bukkit.getWorld(worldName == null ? "" : worldName);
         active = false;
         save();
+        AdvancementService.award(cleanser, "cleanse");
         if (world != null) {
             final Location core = new Location(world, centerX, centerY, centerZ);
             // A mag régió-szálán vagyunk (az interakció ott futott) — a blokk-csere biztonságos.

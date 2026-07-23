@@ -65,6 +65,11 @@ A szerver **saját, natív** felületet ad (nem kell hozzá külső mod vagy res
   tablistádban és a fejük fölött. A **ping** is színkódolt.
 - **Lebegő sebzés-számok:** ütéskor a sebzés száma felugrik a célpont felett (alapból **csak te
   látod, amit te okozol** — configból állítható/kikapcsolható).
+- **Haladás-fül (natív advancementek):** a vanília **Haladás** képernyőn (alapból **L**) van egy
+  saját **IceSMP** fül — külső mod és resource pack nélkül. A mérföldköveid itt gyűlnek: első
+  kaszt, specializáció, frakció-csatlakozás, első szakma, és **rejtett** teljesítmények is (pl.
+  egy rontás-góc megtisztítása, egy titkos hely felfedezése). Minden bejegyzésnél **felugró
+  értesítést** kapsz.
 
 ---
 

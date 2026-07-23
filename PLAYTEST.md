@@ -824,6 +824,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (vérhold start/stop, világboss, invázió, karaván érkezés/távozás, Vad Hajsza, meteor, kincs,
       gyűjtögető buff, bőség, kihívás, kíséret, hangulat-esemény); a kezelősor (admin unclaim,
       NPC-kötések, quest admin lista) csak a megfelelő jogosultsággal látszik.
+- [ ] **P5a/P5b Haladás-fül (advancementek, ÚJ):** első induláskor a konzol kiírja
+      „IceSMP advancement-fa: N/7 bejegyzés él" (N=7, error nélkül — loadAdvancement él).
+      A **Haladás** képernyőn (L) van **IceSMP** fül `beacon` ikonnal. Grantek: **kaszt-választás**
+      → „Elhivatás" (+ a fül gyökere megjelenik) toast; **spec** → „Az út elágazik"; **frakció**
+      → „Hovatartozás"; **szakma** → „Mesterség kezdete". Rejtett: **rontás-mag megtörése** →
+      „A rontás megtörve" (challenge-keret); **hidden-spot felfedezés** → „Rejtett zug". Minden
+      grant felugró toastot ad, chat-broadcast NÉLKÜL. Már teljesített advancement újra nem toastol.
+      `advancements.enabled: false` (general.yml) + restart → a fül be sem töltődik, a grantek no-opok.
 - [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
 - [ ] **Natív tablist (ÚJ — TAB-kiváltás, a TAB.jar NÉLKÜL tesztelendő):**
