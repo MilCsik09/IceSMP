@@ -240,12 +240,12 @@ profession-recipes:
     profession: lumberjack
     level: 10
     learn: level
-    display-name: "Kővésett Fejsze"
+    display-name: "Vándorkovács Kőfejszéje"
     lore:
       - "&7Caldestera kovácsinasainak első próbája:"
       - "&7durva kő, de biztos kézzel faragva."
     category: "Szerszám"
-    result: { material: STONE_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:kovilta_fejsze" }
+    result: { material: STONE_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:kovilta_fejsze", attributes: [ "attack_damage:0.5" ] }
     ingredients: [ "COBBLESTONE:3", "STICK:2" ]
   faszen:
     profession: lumberjack
@@ -267,12 +267,12 @@ profession-recipes:
     profession: lumberjack
     level: 20
     learn: level
-    display-name: "Vasfejsze"
+    display-name: "Rönkhasító Céhfejsze"
     lore:
       - "&7A kovácscéhek szabvány szerint edzik,"
       - "&7hogy egyetlen favágó se álljon meg tőle."
     category: "Szerszám"
-    result: { material: IRON_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:vasfejsze" }
+    result: { material: IRON_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:vasfejsze", attributes: [ "attack_damage:1" ] }
     ingredients: [ "IRON_INGOT:3", "STICK:2" ]
   mangrove_deszka:
     profession: lumberjack
@@ -294,12 +294,12 @@ profession-recipes:
     profession: lumberjack
     level: 36
     learn: level
-    display-name: "Gyémántfejsze"
+    display-name: "Mesterkovács Gyémántfejszéje"
     lore:
       - "&7Csiszolt gyémántél, mely a Vasművek"
       - "&7Akadémiájának büszkesége az erdőkben."
     category: "Szerszám"
-    result: { material: DIAMOND_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_fejsze" }
+    result: { material: DIAMOND_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_fejsze", attributes: [ "attack_damage:2" ] }
     ingredients: [ "DIAMOND:3", "STICK:2" ]
   ezerarcu_gerenda:
     profession: lumberjack
@@ -329,7 +329,7 @@ profession-recipes:
     profession: armorer
     level: 8
     learn: level
-    display-name: "Vaskard"
+    display-name: "Céhkovács Vaspengéje"
     lore:
       - "&7Egyszerű, de megbízható penge —"
       - "&7a caldesterai kovácsműhelyek alapja."
@@ -340,34 +340,34 @@ profession-recipes:
     profession: armorer
     level: 10
     learn: level
-    display-name: "Vassisak"
+    display-name: "Céhőr Vassisakja"
     lore:
       - "&7Vastag vaslemez, mely a kovácscéhek"
       - "&7műhelyeiben nyeri el végső formáját."
     category: "Páncél"
-    result: { material: IRON_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_sisak" }
+    result: { material: IRON_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_sisak", attributes: [ "armor:1" ] }
     ingredients: [ "IRON_INGOT:5" ]
   vas_csizma:
     profession: armorer
     level: 10
     learn: level
-    display-name: "Vascsizma"
+    display-name: "Kovácsműhely Vasbakancsa"
     lore:
       - "&7Szilárd talp és pántok, hogy a viselője"
       - "&7bármely tárnában biztosan álljon lábán."
     category: "Páncél"
-    result: { material: IRON_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_csizma" }
+    result: { material: IRON_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_csizma", attributes: [ "armor:1" ] }
     ingredients: [ "IRON_INGOT:4" ]
   vas_lablemez:
     profession: armorer
     level: 12
     learn: level
-    display-name: "Vas Lábvért"
+    display-name: "Céhkovács Vas Lábvértje"
     lore:
       - "&7A Vasművek Akadémiájának szabott mintája,"
       - "&7mely minden csatában szolgálatot tesz."
     category: "Páncél"
-    result: { material: IRON_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_lablemez" }
+    result: { material: IRON_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:vas_lablemez", attributes: [ "armor:1" ] }
     ingredients: [ "IRON_INGOT:7" ]
   bastya_pajzs_recept:
     profession: armorer
@@ -384,45 +384,45 @@ profession-recipes:
     profession: armorer
     level: 22
     learn: level
-    display-name: "Gyémántkard"
+    display-name: "Csiszolt Gyémántpenge"
     lore:
       - "&7A legkeményebb kő élesíti, a kovácsmesterek"
       - "&7keze formálja tökéletes egyensúlyúvá."
     category: "Fegyver"
-    result: { material: DIAMOND_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_kard" }
+    result: { material: DIAMOND_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_kard", attributes: [ "attack_damage:2" ] }
     ingredients: [ "DIAMOND:2", "STICK:1" ]
   gyemant_sisak:
     profession: armorer
     level: 24
     learn: level
-    display-name: "Gyémántsisak"
+    display-name: "Csiszolt Gyémántsisak"
     lore:
       - "&7Csiszolt gyémántlemezek, melyeket csak a"
       - "&7Vasművek Akadémiájának mesterei értenek."
     category: "Páncél"
-    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_sisak" }
+    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_sisak", attributes: [ "armor:1", "armor_toughness:1" ] }
     ingredients: [ "DIAMOND:5" ]
   gyemant_mellvert:
     profession: armorer
     level: 26
     learn: level
-    display-name: "Gyémánt Mellvért"
+    display-name: "Ragyogó Gyémántvért"
     lore:
       - "&7A kovácscéhek legdrágább rendelése:"
       - "&7tömör gyémánt, mely visszaveri a pengét."
     category: "Páncél"
-    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_mellvert" }
+    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:gyemant_mellvert", attributes: [ "armor:2" ] }
     ingredients: [ "DIAMOND:8" ]
   haromagu_szigony:
     profession: armorer
     level: 30
     learn: level
-    display-name: "Háromágú Szigony"
+    display-name: "Halászcéh Szigonya"
     lore:
       - "&7A Bokic mélyéről merített erő,"
       - "&7mit csak a víz szellemei adnak kölcsön."
     category: "Fegyver"
-    result: { material: TRIDENT, amount: 1, affix-tier: crafted, item-model: "icesmp:haromagu_szigony" }
+    result: { material: TRIDENT, amount: 1, affix-tier: crafted, item-model: "icesmp:haromagu_szigony", attributes: [ "attack_damage:1" ] }
     ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2" ]
   sarkanyvert_recept:
     profession: armorer
@@ -440,23 +440,23 @@ profession-recipes:
     profession: armorer
     level: 42
     learn: blueprint
-    display-name: "Netherit Pallos"
+    display-name: "Kohóéj Netherit Pallos"
     lore:
       - "&7A Kárhozat Kapuja körül gyűjtött netherit"
       - "&7adja e pallos törhetetlen élét."
     category: "Fegyver (tervrajz)"
-    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_kard" }
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_kard", attributes: [ "attack_damage:3" ] }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:2", "STICK:1" ]
   netherit_sisak:
     profession: armorer
     level: 45
     learn: blueprint
-    display-name: "Netherit Csatasisak"
+    display-name: "Kohóéj Netherit Csatasisak"
     lore:
       - "&7A Nether-portál sötét fémjéből kovácsolva,"
       - "&7hogy viselője a csata hevében is álljon."
     category: "Páncél (tervrajz)"
-    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_sisak" }
+    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_sisak", attributes: [ "armor:2", "armor_toughness:1" ] }
     ingredients: [ "NETHERITE_INGOT:3", "DIAMOND:5" ]
 
   # =========================================================
@@ -686,7 +686,7 @@ profession-recipes:
     profession: fisherman
     level: 5
     learn: level
-    display-name: "Egyszerű Horgászbot"
+    display-name: "Nádvessző Horgászbot"
     lore:
       - "&7Egyszerű bot a Bokic partjáról,"
       - "&7de a víz szellemei így is figyelnek rá."
@@ -2705,25 +2705,25 @@ profession-recipes:
     profession: armorer
     level: 11
     learn: level
-    display-name: "Kovácsolt Láncing"
+    display-name: "Fonott Céhláncing"
     category: "Páncél"
-    result: { material: CHAINMAIL_CHESTPLATE, affix-tier: crafted, item-model: "icesmp:lancing" }
+    result: { material: CHAINMAIL_CHESTPLATE, affix-tier: crafted, item-model: "icesmp:lancing", attributes: [ "armor:1" ] }
     ingredients: [ "CHAIN:8", "IRON_INGOT:3", "unique:nyelbor:1" ]
   lancnadrag:
     profession: armorer
     level: 13
     learn: level
-    display-name: "Kovácsolt Láncnadrág"
+    display-name: "Fonott Céhláncnadrág"
     category: "Páncél"
-    result: { material: CHAINMAIL_LEGGINGS, affix-tier: crafted, item-model: "icesmp:lancnadrag" }
+    result: { material: CHAINMAIL_LEGGINGS, affix-tier: crafted, item-model: "icesmp:lancnadrag", attributes: [ "armor:1" ] }
     ingredients: [ "CHAIN:7", "IRON_INGOT:2", "unique:nyelbor:1" ]
   vas_lopancel:
     profession: armorer
     level: 17
     learn: level
-    display-name: "Vas Lópáncél"
+    display-name: "Málhás Vas Lópáncél"
     category: "Páncél"
-    result: { material: IRON_HORSE_ARMOR, item-model: "icesmp:vas_lopancel" }
+    result: { material: IRON_HORSE_ARMOR, item-model: "icesmp:vas_lopancel", attributes: [ "armor:2:body" ] }
     ingredients: [ "IRON_INGOT:7", "LEATHER:2", "unique:nyelbor:1" ]
     lore:
       - "A céh kovácsainak munkája:"
@@ -2749,7 +2749,7 @@ profession-recipes:
     profession: armorer
     level: 27
     learn: level
-    display-name: "Arany Lópáncél"
+    display-name: "Aranyfüst Lópáncél"
     category: "Páncél"
     result: { material: GOLDEN_HORSE_ARMOR, item-model: "icesmp:arany_lopancel", attributes: [ "armor:3:body" ] }
     ingredients: [ "GOLD_INGOT:7", "LEATHER:2", "unique:aranyfust_lemez:1" ]
@@ -2769,9 +2769,9 @@ profession-recipes:
     profession: armorer
     level: 37
     learn: level
-    display-name: "Gyémánt Lópáncél"
+    display-name: "Fényvésett Gyémánt Lópáncél"
     category: "Páncél"
-    result: { material: DIAMOND_HORSE_ARMOR, item-model: "icesmp:gyemant_lopancel" }
+    result: { material: DIAMOND_HORSE_ARMOR, item-model: "icesmp:gyemant_lopancel", attributes: [ "armor:4:body" ] }
     ingredients: [ "DIAMOND:7", "LEATHER:2", "unique:polirpaszta:1" ]
     lore:
       - "Ritkább, mint a jó lovas."
