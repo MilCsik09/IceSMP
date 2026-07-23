@@ -503,13 +503,19 @@ tételek a védőháló + a kihasználatlan potenciál.
 - ✅ **P4c Fagypáncél+Főnixtoll exkluzivitás** (megoldás: üllő-őr listener, MIND a 7 counterre) — nincs exclusiveWith: két azonos típusú
   mellvért üllőn összefésülve mindkét counter egy páncélra kerülhet. Döntés:
   exclusive-set vagy szándékosként dokumentálni. 🟢⭐
-- **P4d Dialog-registry felderítés (1.21.6+)** — natív szerver-oldali párbeszéd-ablakok:
-  a quest-dialógusok, a merchant_choice elágazás és a kaszt-választás megerősítés
-  kattintható natív UI-t kaphatna chat-sorok helyett. A legnagyobb potenciál —
-  2026-07-23: a szerver-build bájtkódjából igazolva TELJESEN elérhető az 1.21.11-en
-  (dialog-registry + minden típus/input/akció builder: Notice, Confirmation,
-  MultiAction, DialogList, ServerLinks; szöveg/szám/választó inputok; parancs-sablon
-  és custom-click akciók szerver-oldali kezelővel) — RP nélkül működik. 🟡⭐⭐⭐
+- **P4d Dialog-réteg — BUILD-FÜGGŐ (2026-07-23)** — natív szerver-oldali párbeszéd-ablakok:
+  quest-dialógus, kaszt-választás megerősítés, oltár-rituálé confirm, szabálykönyv.
+  **Registry-oldal IGAZOLT** (bájtkód): PaperDialogRegistryEntry builder base(DialogBase)
+  + type(DialogType); a típusok/inputok/akciók a jarban. **DE a MEGJELENÍTŐ út
+  (`Dialog.create(...)` factory + `Audience.showDialog(Dialog)` + válasz/custom-click
+  esemény) NEM ellenőrizhető offline**: az Adventure/Paper-API nincs a cache-elt
+  szerver-jarban, a bundled pluginok (FancyNpcs) saját NMS-packetet használnak, a
+  sandbox-javac pedig a Paper-API-t „külsőként" kiszűri — így egy elhibázott szignatúra
+  csak az ÉLES fordításnál derülne ki (a plugin NEM fordulna). P4e-vel szemben (ott a
+  DamageSource/DamageType már éles minta volt) itt TELJESEN új, verifikálhatatlan felület.
+  **Döntés: P4d az ELSŐ tétel, amint a gradle-build elérhető** (repo-hozzáférés) — ez az
+  egyetlen feladat, ahol a valódi fordítás tényleg kell. Addig NEM pusholunk vak,
+  fordítás-ellenőrzés nélküli unstable-API-kódot. 🟡⭐⭐⭐ (build-gate)
 - ✅ **P4e Környezeti damage-type-ok (2026-07-23, RÉSZBEN KÉSZ)** — MEGÉPÜLT az
   `icesmp:rontas`: a rontás-góc mag-aurája (CorruptionAuraListener, valódi fogyasztóval,
   saját magyar halál-üzenettel, `corruption.aura.*` élő-config, kikapcsolható). A
