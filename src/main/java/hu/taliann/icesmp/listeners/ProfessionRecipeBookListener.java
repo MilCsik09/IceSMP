@@ -280,8 +280,6 @@ public final class ProfessionRecipeBookListener implements Listener {
                 result.setItemMeta(meta);
             }
         }
-        // (A régi CMD-pecsét törölve: a recept-tárgyak ITEM_MODEL-t kapnak — result.item-model,
-        // a buildResult végén alkalmazva; a recept-id az icesmp:<id> modell-kulcs.)
         // Signature perk-tag: a perk listener a PDC-id alapján ismeri fel a tárgyat. A roll
         // ELŐTT kerül fel, mert a roll klónja a PDC-t is viszi.
         if (recipe.signature() != null && result.getItemMeta() != null) {
@@ -393,7 +391,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (consumableSection != null) {
             hu.taliann.icesmp.items.ItemDataFactory.applyRecipeConsumable(result, consumableSection);
         }
-        // ITEM_MODEL (modern RP-út, CMD helyett): result.item-model kulcsból (él-config).
+        // ITEM_MODEL (modern RP-út): result.item-model kulcsból (él-config).
         final String itemModel = configManager.getString(
                 "profession-recipes." + recipe.id() + ".result.item-model", "");
         if (!itemModel.isBlank()) {

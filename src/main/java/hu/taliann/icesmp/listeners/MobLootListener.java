@@ -217,7 +217,7 @@ public final class MobLootListener implements Listener {
                     item.setItemMeta(meta);
                 }
                 final ItemStack rolledNamed = affixService.roll(item, tier, false);
-                // ITEM_MODEL (CMD helyett) a roll UTÁN — a roll setItemMeta-ja különben törölné.
+                // ITEM_MODEL a roll UTÁN — a roll setItemMeta-ja különben törölné.
                 final Object namedModel = chosen.get("item-model");
                 if (namedModel != null && !String.valueOf(namedModel).isBlank()) {
                     hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(rolledNamed, String.valueOf(namedModel));

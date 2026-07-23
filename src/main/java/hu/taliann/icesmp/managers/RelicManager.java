@@ -96,9 +96,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "metelytepo",
                 Material.GOLDEN_AXE,
-                // 4101 — a relics.yml-ben dokumentált érték; az 1001 a Piros Tokennel osztozott,
-                // és a resource pack kedvéért minden CMD egyedi (lásd docs/RESOURCE_PACK_CMD.md).
-                4101,
                 "A Mételytépő",
                 "DARK_PURPLE",
                 List.of("&7A törpék rejtélyes civilizációjának...", "&7egy relikviája.")
@@ -108,7 +105,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "phoenix_wing",
                 Material.ELYTRA,
-                4201,
                 "Főnix-szárny",
                 "RED",
                 List.of("&7Perinfernicitas lángoló ereklyéje,", "&7Soleil főnixeinek tollából szőve.", "&7Viselőjét nem égeti tűz, és zuhanása", "&7lángviharban végződik.")
@@ -116,7 +112,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "frost_wing",
                 Material.ELYTRA,
-                4202,
                 "Zúzmara-szárny",
                 "AQUA",
                 List.of("&7Cryghaliris jeges ereklyéje, Kallan", "&7jégsárkányainak leheletével átitatva.", "&7Szárnyra kapva megfagyasztja", "&7a körülötte lévőket.")
@@ -124,7 +119,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "wander_wind",
                 Material.ELYTRA,
-                4203,
                 "Vándorszél",
                 "WHITE",
                 List.of("&7Ryanora & Caldestera szabad szele,", "&7Arkynn békés örökségének fuvallata.", "&7Gyorsabb sikló, és a föld", "&7sosem üti meg viselőjét.")
@@ -134,7 +128,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "eleftheria_konnye",
                 Material.HEART_OF_THE_SEA,
-                4205,
                 "Eleftheria Könnye",
                 "DARK_PURPLE",
                 List.of("&7Megkövült, éjfekete csepp; a Néma Királynő", "&7első suttogása hozta létre, magába zárva", "&7a Fa kínjait és a magányt.")
@@ -142,7 +135,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "bone_wing",
                 Material.ELYTRA,
-                4204,
                 "Csontszárny",
                 "DARK_GRAY",
                 List.of("&7A Káoszkor csontból szőtt szárnya, a", "&7Néma Királynő élőhalottainak maradványa.", "&7Éjjel a viselője maga is", "&7árnyékká válik.")
@@ -152,7 +144,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         registerRelic(
                 "sarkany_tojas",
                 Material.DRAGON_EGG,
-                4206,
                 "Sárkánytojás-töredék",
                 "LIGHT_PURPLE",
                 List.of("&7Egy sosem kelt sárkány álma, kőbe zárva.", "&7A Sárkányidéző kezében az Eszencia", "&7medre kitágul — másnak csak hideg kő.")
@@ -163,7 +154,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
     private void registerRelic(
             final String id,
             final Material hardcodedMaterial,
-            final int hardcodedCmd,
             final String defaultName,
             final String defaultColor,
             final List<String> defaultLore
@@ -213,8 +203,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 displayName,
                 displayColor,
                 lore,
-                hardcodedMaterial,
-                Math.max(0, hardcodedCmd)
+                hardcodedMaterial
         ));
         triggerConfigs.put(id.toLowerCase(Locale.ROOT), relicTriggers);
 

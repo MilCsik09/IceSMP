@@ -65,7 +65,7 @@ változatlanul a régi név-alapú logikával működnek (teljes visszafele-komp
 
 1. **AuMenus** — a menü-fájljai még a gyári példák; IceSMP-parancsokra kötve (console:
    `icesmp ...` akciók + `%icesmp_...%` lore-placeholderek) staff Java nélkül építhet új
-   front-endeket, a gameplay-logika a parancsokban marad (CLAUDE.md GUI-szabály).
+   front-endeket, a gameplay-logika a parancsokban marad (agent GUI-szabály).
 2. **AxAFKZone** — AFK-zóna jelzés átvétele: AFK-zónában az IceSMP passzív XP/erőforrás-regen
    szüneteltethető, hogy az AFK-jutalom ne legyen párhuzamos power-leveling exploit.
 3. **VillagerTradeEdit** — szakma-specifikus vendor-villagerek (recept/valuta-árak) a
@@ -88,7 +88,7 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
 | **MiniMOTD** | `MotdListener` + `config/motd.yml` — MiniMessage-formázás, IDŐALAPON rotálódó variánsok, {online}/{max} tokenek, max-player felülírás. (A MiniMOTD amúgy is gyári példa-configon állt.) | szabd testre a `motd.yml` variánsokat |
 | **AxAFKZone (+AxAPI)** | `AfkManager` + `config/afk.yml` — AFK-zónák (doboz), időzített valuta-jutalom (tudatos kis faucet, C3 monitorral figyelendő), bossbar-visszaszámláló, be-/kilépés üzenetek; PLUSZ globális AFK-detektálás és ⌚ AFK jelzés a tablistában (amit az AxAFKZone nem tudott) | vidd át a zóna-koordinátákat az `afk.yml`-be (a régi `AxAFKZone/zones/zome1.yml`-ből) |
-| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages kulcsok (CMD 6201/6202), súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
+| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages, ITEM_MODEL-es kulcsok, súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
 | **GSit** | `SitManager` — `/sit` parancs + jobb-katt lépcsőre/fél-lapra üres kézzel; kelés minden úton takarít (quit/halál/teleport/blokk-törés) | — |
 | **SModeration** | `ModerationManager` — restart-álló némítás (`/mute`/`/unmute`, offline is), chat-szűrő (CENSOR/BLOCK), spam-fék, privát-parancs tiltás némítottnak; PLUSZ `/report` + `/reports` bejelentő-rendszer admin-értesítéssel (`config/moderation.yml`, `icesmp.admin.moderation`) | szavak felvétele a `chat-filter.words` listába |
 | **InvSee++ (3 jar)** | `/invsee <név>` — READ-ONLY inventory + ender-láda pillanatkép-GUI; PLUSZ `/icesmp inspect <név>` teljes plugin-állapot riport (kaszt/erőforrás/statok/bűn/claim/questek/cooldownok) — `icesmp.admin.inspect`. Szerkesztés/clear/give nincs (ha kell, a jar maradhat, de betekintésre már nem) | — |

@@ -9,8 +9,7 @@ public record SimpleRelicDefinition(
         String displayName,
         String displayColor,
         List<String> lore,
-        Material material,
-        int customModelData
+        Material material
 ) implements RelicDefinition {
 }
 

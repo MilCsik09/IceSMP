@@ -35,7 +35,7 @@ relics:
       display-name: "Mételytépő"
       display-color: "&5"
       # A material itt dokumentáció: a tényleges értéket a kód adja (RelicManager.registerRelic).
-      # A megjelenés ITEM_MODEL-lel megy (icesmp:relic_<id>), nem CMD-vel — a RelicItemFactory állítja.
+      # A megjelenés ITEM_MODEL-lel megy (icesmp:relic_<id>) — a RelicItemFactory állítja.
       material: "GOLDEN_AXE"
       item-model: "icesmp:relic_metelytepo"
       lore:

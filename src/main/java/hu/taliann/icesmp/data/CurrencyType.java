@@ -9,19 +9,16 @@ import org.bukkit.Material;
  * data and commands keep working.
  */
 public enum CurrencyType {
-    RED(FactionType.RED, "Parázsló Parals", 1001),
-    BLUE(FactionType.BLUE, "Hópihér-veret", 1002),
-    NEUTRAL(FactionType.NEUTRAL, "Creutzér", 1003),
-    DARK(FactionType.DARK, "Csontveret", 1004);
+    RED(FactionType.RED, "Parázsló Parals"),
+    BLUE(FactionType.BLUE, "Hópihér-veret"),
+    NEUTRAL(FactionType.NEUTRAL, "Creutzér"),
+    DARK(FactionType.DARK, "Csontveret");
 
     private final FactionType factionType;
     private final String currencyName;
-    private final int customModelData;
-
-    CurrencyType(final FactionType factionType, final String currencyName, final int customModelData) {
+    CurrencyType(final FactionType factionType, final String currencyName) {
         this.factionType = factionType;
         this.currencyName = currencyName;
-        this.customModelData = customModelData;
     }
 
     public FactionType toFactionType() {
@@ -32,9 +29,6 @@ public enum CurrencyType {
         return currencyName;
     }
 
-    public int getCustomModelData() {
-        return customModelData;
-    }
 
     public Material getMaterial() {
         return Material.PAPER;

@@ -308,7 +308,7 @@ public final class ShopManager {
                     org.bukkit.persistence.PersistentDataType.STRING, signature);
         }
         stack.setItemMeta(meta);
-        // Resource pack horog: ITEM_MODEL (CMD helyett) a setItemMeta UTÁN — item-model configból.
+        // Resource pack horog: ITEM_MODEL a setItemMeta UTÁN — item-model configból.
         final String shopModel = item.getString("item-model", null);
         if (shopModel != null && !shopModel.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, shopModel);

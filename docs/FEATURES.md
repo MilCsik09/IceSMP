@@ -67,8 +67,8 @@
 
 ## 💰 Gazdaság
 
-- **4 frakció-valuta** (Vörös Talentum, Kék Talentum, Creutzér, Csontveret) — CMD-s
-  fizikai veretek több címletben.
+- **4 frakció-valuta** (Vörös Talentum, Kék Talentum, Creutzér, Csontveret) —
+  ITEM_MODEL-es fizikai veretek több címletben.
 - **SZENT SZABÁLY: a bank-számlára csak fizikai veret-befizetéssel kerülhet pénz** —
   minden jutalom fizikai tokenben érkezik (payOutTokens), a rendszer sosem "nyomtat"
   számlára. Gépi audittal igazoltan sértetlen.
@@ -234,13 +234,13 @@
 
 ## 🐾 Kísérők és extra rendszerek
 
-- **Pet-rendszer**: befogó-eszközök (CMD 5301-02) a Vadmesternek/Nekromantának;
+- **Pet-rendszer**: ITEM_MODEL-es befogó-eszközök a Vadmesternek/Nekromantának;
   rituálé-idézett állandó társ (Szentségtelen ghúl / Boszorkánymester démon —
-  kellék-drop CMD 5303-04, éjszakai rituálé, forma-fejlődés szinttel, +5 szint
+  egyedi kellék-dropok, éjszakai rituálé, forma-fejlődés szinttel, +5 szint
   idézett-prémium); pet-szint és plugin-vezérelt harc-asszisztencia; **Társ-GUI**
   (/pet): idézés/elbocsátás/átnevezés/állásmód-gombok; állásmódok (Támadás/Passzív/
   Maradj — parancs, GUI vagy sneak+jobb katt); halál után újraidézési cooldown;
-  **Társvért** (CMD 5305, ritka drop): +páncél/+életerő a társnak, újraidézve is
+  **Társvért** (ritka drop): +páncél/+életerő a társnak, újraidézve is
   megmarad; a gazda max-HP talentjeinek fele a társra száll; **Soulforge**
   (/soulforge): nekromanta minion-fejlesztés lélekkövekből.
 - **Party** (/party): meghívás, XP-megosztás, party-HP a HUD-on, personal-loot
@@ -250,7 +250,7 @@
 - **Parkour** (/parkour): pályák, idő-mérés, jutalom (limit-kérdés backlogon) —
   opcionális szabadidős tartalom, nem kötelező kaszt-út.
 - **Kazamaták**: kulcs-kapus DUNGEON zónák (melyseg/csontkripta kulcs-receptek,
-  CMD 6203-04), futam-passz, heti pecsét, +5 mob-szint; belső tartalom kézi építés.
+  ITEM_MODEL-es kulcsok), futam-passz, heti pecsét, +5 mob-szint; belső tartalom kézi építés.
 - **Krónika**: heti szerver-összefoglaló broadcast + /kronika visszaolvasás.
 - **AFK-rendszer**: AFK-jelölés, (kis) AFK-jutalom nappal, esemény-kizárások.
 - **Moderáció**: /report rendszer (30 napos retenció), mute, spam-szűrő, chat-log.
@@ -300,11 +300,10 @@
   async autosave, hibatűrő load/save (egy sérült fájl nem dönt kaszkádot),
   player-adatok PDC-ben; session-takarítás (nincs UUID-szivárgás).
 - **Gépi drift-ellenőrző** (scripts/check_consistency.py): YAML-épség, quest-
-  hivatkozások, CMD-regiszter lefedettség, jog-node regisztráció, /menu célok,
+  hivatkozások, ITEM_MODEL visszaesés-védelem, jog-node regisztráció, /menu célok,
   duplikált metódusok, tükör-repo drift — push előtt kötelező.
-- **Resource pack**: a CMD-regiszter (docs/RESOURCE_PACK_CMD.md, sávozott CMD-lista) a
-  KÜLSŐ pack-készítő specifikációja; magát a packet külön forrásban állítják elő (a
-  repóban nincs pack-artefaktum/generátor).
+- **Resource pack**: a `docs/RESOURCE_PACK_CMD.md` modern ITEM_MODEL manifest és
+  textúra-generálási specifikáció; magát a packet külön forrásban állítják elő.
 - **Integrációk** (mind opcionális, reflexiós híd): PlaceholderAPI (%icesmp_%
   placeholderek), LibsDisguises (druida-forma, kém, fekvés), FancyNpcs (quest-NPC-k),
   WorldGuard (spawn-guard), LuckPerms (chat-prefix, tablist-rang).

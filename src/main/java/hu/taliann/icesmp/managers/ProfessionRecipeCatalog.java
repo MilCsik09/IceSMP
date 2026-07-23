@@ -32,7 +32,7 @@ public final class ProfessionRecipeCatalog {
                          String affixTier, String uniqueResult, Map<Material, Integer> ingredients,
                          Map<String, Integer> uniqueIngredients, List<String> lore,
                          String signature, hu.taliann.icesmp.data.FactionType faction,
-                         boolean lootOnly, int customModelData, String job) {
+                         boolean lootOnly, String job) {
     }
 
     private final JavaPlugin plugin;
@@ -123,9 +123,6 @@ public final class ProfessionRecipeCatalog {
         // Loot-only: a tervrajz KIZÁRÓLAG világboss/nehéz esemény lootból eshet
         // (NPC-bolt/sima mob sosem adja) — csak blueprint-tanulású receptnél értelmes.
         final boolean lootOnly = blueprint && section.getBoolean("loot-only", false);
-        // Resource-pack horog: a nevesített/lore-os eredmény CustomModelData-t kaphat
-        // (result.custom-model-data) — a kiosztott értékek a docs/RESOURCE_PACK_CMD.md listán.
-        final int customModelData = Math.max(0, resultSection.getInt("custom-model-data", 0));
         // Kaszt-zárt recept: csak a megadott kaszt készítheti (pl. Varázsló-rúnák).
         final String job = section.getString("job", null);
         return new Recipe(id, profession, level, blueprint, displayName, category, result, amount,
@@ -133,7 +130,7 @@ public final class ProfessionRecipeCatalog {
                 uniqueResult == null || uniqueResult.isBlank() ? null : uniqueResult.toLowerCase(Locale.ROOT),
                 ingredients, uniqueIngredients, lore,
                 signature == null || signature.isBlank() ? null : signature.toLowerCase(Locale.ROOT), faction,
-                lootOnly, customModelData,
+                lootOnly,
                 job == null || job.isBlank() ? null : job.toLowerCase(Locale.ROOT));
     }
 

@@ -18,13 +18,35 @@
 - **Bootstrap registry layer** (`IceSMPBootstrap`, unstable Paper API): 8 spell-school damage types (`SpellSchool` enum, TUZ/FAGY/SZENT/ARNYEK/TERMESZET/VIHAR/KAOSZ/OSMAGIA) + 7 signature enchants + Rúnavért armor enchant. Spell damage flows through `SpellDamageUtil.damageBySpell` (school resolution: `spells.spell-schools.by-spell` → `by-class` → OSMAGIA); resist math in `SpellDamageListener` (Rúnavért per-level + school-counter enchants Fagypáncél/Főnixtoll, cap 0.6, no action-bar notice by design). Border-crossing listeners (dungeon/capital/territory) handle `PlayerTeleportEvent` + `VehicleMoveEvent` in addition to move — copy that pattern for any new border logic.
 - **Zone protection** (`TerritoryProtectionService` + `TerritoryProtectionListener`): per-zone-type rule set read from `territory.protection.rules.<type>.<rule>` — `build`, `interact`, `pvp`, `explosions`, `fire` (baked-in defaults: protected zones guard everything, faction land only `build` for non-members). A `true` rule = restricted; protected zones deny everyone, faction land only non-members. Extras fold into these keys: `build` also gates mob-grief/liquid-flow/piston in protected zones (`isTerrainProtectedAt`), `pvp` covers melee + projectile + pet + TNT + splash/lingering potions (`denyCombat`, attacker resolved via `resolveAttacker`), `explosions` also protects hanging/armour-stand decoration. Two bypass nodes: `icesmp.admin.territory.bypass` (everything incl. PvP) and `icesmp.territory.builder` (build+interact in protected zones, not PvP). PvP denial notice hops to the attacker's scheduler (Folia). Claim veto: `TerritoryManager.isClaimBlockedAt` blocks `/claim` in protected zones only.
 
+## Agent workflow
+- **Codex-first, Claude-compatible:** `AGENTS.md` is the active instruction file for Codex sessions. Keep `CLAUDE.md` as a synchronized compatibility shim for a future Claude Code rollback; any durable workflow rule changed here must be mirrored there in the same commit.
+- The repository's latest baseline is `master`; create feature work from the current master-equivalent branch and keep branch names tool-neutral unless the owner asks otherwise.
+- Do not add new tool-specific rules to gameplay docs. Put agent-only workflow in `AGENTS.md`, and only mirror the compatibility subset to `CLAUDE.md`.
+- If a future Claude Code session resumes work, it should read `CLAUDE.md` first, then treat `AGENTS.md` as the canonical source when the two disagree.
+
 ## Build & verify
 ```bash
 ./gradlew build      # plugin jar -> build/libs
 ./gradlew runServer  # local test server (run/ directory)
 ```
-- In sandboxed environments where Gradle cannot reach the repos, compile against the cached server libraries instead: `javac -d <out> -cp "$(find run/libraries -iname '*.jar' | tr '\n' ':')" <sources>` — exclude `integration/IceSMPPlaceholders.java` if the PlaceholderAPI jar is unavailable locally (it compiles in the real build).
-- **Always compile-verify before pushing.** The full source set must produce 0 errors.
+- Nincs teszt-suite; az ellenőrzés = hibátlan fordítás + kézi playtest (`PLAYTEST.md`).
+- **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve): a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss: `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van megadva, azt is lehet használni, de ne feltételezz fix `/opt/gradle` útvonalat.
+- In sandboxed environments where Gradle cannot reach the repos, compile against the cached server libraries instead: `javac -d <out> -cp "$(find run/libraries -iname '*.jar' | tr '\n' ':')" <sources>` — exclude `integration/IceSMPPlaceholders.java` if the PlaceholderAPI jar is unavailable locally (it compiles in the real build). Treat this as a rough preflight only; the full source set must still produce 0 errors in the real build before pushing.
+- **Before every push:** compile-verify AND run `python3 scripts/check_consistency.py` (quest refs, ITEM_MODEL regression guard, permission registration, /menu targets, mirror drift) — 0 FAIL required.
+
+## Docs and IceSMPGuides mirror
+- **MD policy:** create a new `.md` file only on explicit owner request. Update live audits in `docs/ideas/P2-gameplay-audit.md` in place; consolidate new ideas in `docs/ideas/BACKLOG.md`. `PLAYER_GUIDE.md` is only an index; the source of truth is `docs/player-guide/`.
+- **Definition of Done — every gameplay change propagates in the same commit:**
+  - new command → tab-complete + `/menu` tile (`CommandMenus`) + `docs/player-guide/14-parancsok.md` + permission node;
+  - new permission node → `Permissions.java` canonical map, otherwise `icesmp.admin.all` will not grant it;
+  - new config key → use-site read for live reload + ConfigMenuGUI when admin-tunable;
+  - new custom item → modern `ITEM_MODEL` (`item-model:` or `ItemDataFactory.applyItemModel`) + `docs/RESOURCE_PACK_CMD.md` manifest row; never add legacy numeric model data for new items;
+  - new quest NPC or territory id → add it to the P2 audit worldbuilding checklist;
+  - new system/mechanic → relevant `docs/player-guide/` page + `PLAYTEST.md` block + `docs/LORE_REFERENCE.md` row when lore-bound + README feature list if that list mentions it;
+  - every numeric docs claim must match `src/main/resources/config/*.yml`;
+  - before closing: compile verification + `python3 scripts/check_consistency.py` + IceSMPGuides mirror sync/check.
+- **IceSMPGuides mirror:** the public guide repo is `MilCsik09/IceSMPGuides`. Mirror the relevant docs after every affected docs change. Mapping: `PLAYTEST.md` ↔ guide root; `docs/player-guide/NN-*.md` ↔ guide root numbered files; `docs/RESOURCE_PACK_CMD.md`, `docs/EPITESZ_UTMUTATO.md`, `docs/TEASER.md`, `docs/PITCH.md`, `docs/FEATURES.md` ↔ guide root; `docs/LORE.md` + `docs/LORE_REFERENCE.md` ↔ `lore/`; `docs/ideas/*` ↔ `ideas/`; `docs/IDEAS.md` ↔ `ideas/README.md`.
+- Do **not** blindly overwrite IceSMPGuides files: the guide-side copies may contain tester-marker layers, so perform a content merge. `scripts/check_consistency.py` reports mirror drift when the IceSMPGuides checkout is available at its configured path (currently `/home/user/IceSMPGuides` in the checker).
 
 ## Folia rules (CRITICAL — see docs/ARCHITECTURE.md §4)
 - Events fire on the event entity's region thread. **Mutating (or reading PDC/inventory of) any OTHER entity — including `killer.sendMessage` — requires hopping to that entity's scheduler:** `target.getScheduler().run(plugin, task -> {...}, null)`. The kill-reward listeners, admin target-player subcommands, MarketGUI seller notice and SiegeWeapon remote explosion all follow this pattern — copy it.
@@ -43,7 +65,6 @@
 
 ## When adding features
 - Wire through `IceSMPCore` (construct → `load()` in `enable()` → `save()` in `disable()` for persistent stores).
-- Update the docs with every gameplay change: the relevant `docs/player-guide/` page (`PLAYER_GUIDE.md` is index-only), `PLAYTEST.md` checklist, and `README.md` if the feature list changes. The full same-commit propagation checklist (Definition of Done) lives in `CLAUDE.md`.
-- **Before every push:** compile-verify AND run `python3 scripts/check_consistency.py` (quest refs, CMD register, permission registration, /menu targets, mirror drift) — 0 FAIL required.
+- Update the docs with every gameplay change according to the Definition of Done in “Docs and IceSMPGuides mirror” above.
 - Comment policy: Java comments ONLY for constraints/invariants (why the code must be this way); no provenance tags, no narration. Config YAML comments are documentation and exempt.
-- Commit messages end with the `Co-Authored-By` + `Claude-Session` trailers used in this repo's history; push to the designated feature branch only.
+- Commit messages should remain compatible with the repo history: keep the existing `Co-Authored-By` + `Claude-Session` trailers unless the owner explicitly switches trailer policy. Push to the designated feature branch only.
