@@ -36,6 +36,23 @@ public final class HealthRegenListener implements Listener {
         }
     }
 
+    /**
+     * A kaszt-sebzés-profil a lövedékekre is jár: a nyíl/szigony sebzését az
+     * ATTACK_DAMAGE attribútum nem érinti, ezért a bónusz itt adódik hozzá — a
+     * cache-elt értékből (a lövő PDC-je a találat szálán nem érinthető).
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onRangedBonus(final EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof org.bukkit.entity.AbstractArrow projectile)
+                || !(projectile.getShooter() instanceof Player shooter)) {
+            return;
+        }
+        final double bonus = classHealthService.cachedDamageBonus(shooter.getUniqueId());
+        if (bonus > 0.0D) {
+            event.setDamage(event.getDamage() + bonus);
+        }
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDealtDamage(final EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player attacker) {

@@ -138,6 +138,9 @@ kimenetet és a szakma-„állomásokat" védik.
 
 ### ✨ Minőség és affixek (egyedi tárgyak)
 
+> 🔮 A WoW-módban (ha a szerver bekapcsolja) az affixek közt **Varázserő** is sorsolódhat —
+> %-ban növeli a spellek erejét (caster-gear).
+
 Minden mestermunka craftoláskor (és minden mob-loot tárgy) **véletlen raritást** és **random
 attribútum-affixeket** kap — így nincs két egyforma darab! A raritás egy **létrán** helyezkedik el
 (mint WoW-ban / Terraria reforge-ban): a jelző, a szín és az affixek illenek a raritáshoz, és a

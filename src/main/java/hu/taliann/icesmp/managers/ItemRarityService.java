@@ -53,16 +53,30 @@ public final class ItemRarityService {
             new Affix("armor_toughness", Attribute.ARMOR_TOUGHNESS, EquipmentSlotGroup.ARMOR, true, false),
             new Affix("movement_speed", Attribute.MOVEMENT_SPEED, EquipmentSlotGroup.ARMOR, true, false),
             new Affix("attack_damage", Attribute.ATTACK_DAMAGE, EquipmentSlotGroup.MAINHAND, false, true),
-            new Affix("attack_speed", Attribute.ATTACK_SPEED, EquipmentSlotGroup.MAINHAND, false, true));
+            new Affix("attack_speed", Attribute.ATTACK_SPEED, EquipmentSlotGroup.MAINHAND, false, true),
+            // Varázserő: nem vanília attribútum — PDC-ben él, a cast-kori erő-számítás
+            // olvassa (caster-gear). Páncélra ÉS kézbe is eshet.
+            new Affix("spell_power", null, EquipmentSlotGroup.ANY, true, true));
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final NamespacedKey qualityKey;
+    private final NamespacedKey spellPowerKey;
 
     public ItemRarityService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.qualityKey = new NamespacedKey(plugin, "masterwork_quality");
+        this.spellPowerKey = new NamespacedKey(plugin, "spell_power");
+    }
+
+    /** Egy tárgy Varázserő-affixe (%-pont), affix nélkül 0. */
+    public double spellPowerOf(final org.bukkit.inventory.ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+            return 0.0D;
+        }
+        return item.getItemMeta().getPersistentDataContainer()
+                .getOrDefault(spellPowerKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D);
     }
 
     public boolean isEnabled() {
@@ -102,6 +116,11 @@ public final class ItemRarityService {
 
         final List<Affix> eligible = new ArrayList<>();
         for (final Affix affix : AFFIXES) {
+            // A Varázserő a WoW-mód (health.enabled) része: kikapcsolt módban nem sorsolódik
+            // (a már kisorsolt példányok PDC-je megmarad, visszakapcsoláskor újra él).
+            if (affix.attribute() == null && !configManager.getBoolean("health.enabled", true)) {
+                continue;
+            }
             if (family == Family.ARMOR ? affix.forArmor() : affix.forHand()) {
                 eligible.add(affix);
             }
@@ -147,11 +166,20 @@ public final class ItemRarityService {
                 continue;
             }
             final String affixName = cfg.getString("name", affix.id());
-            meta.addAttributeModifier(affix.attribute(), new AttributeModifier(
-                    new NamespacedKey(plugin, "mw_" + affix.id() + "_" + i),
-                    amount, AttributeModifier.Operation.ADD_NUMBER, affix.slot()));
+            if (affix.attribute() == null) {
+                // Varázserő (%): PDC-érték, a spell-erő számítás összegzi a viselt darabokról.
+                final double stored = meta.getPersistentDataContainer()
+                        .getOrDefault(spellPowerKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D);
+                meta.getPersistentDataContainer().set(spellPowerKey,
+                        org.bukkit.persistence.PersistentDataType.DOUBLE, stored + amount);
+            } else {
+                meta.addAttributeModifier(affix.attribute(), new AttributeModifier(
+                        new NamespacedKey(plugin, "mw_" + affix.id() + "_" + i),
+                        amount, AttributeModifier.Operation.ADD_NUMBER, affix.slot()));
+            }
             final String sign = amount > 0.0D ? "+ " : "- ";
-            extraLore.add(Component.text("  " + sign + format(Math.abs(amount), decimals) + " " + affixName,
+            final String suffix = affix.attribute() == null ? "%" : "";
+            extraLore.add(Component.text("  " + sign + format(Math.abs(amount), decimals) + suffix + " " + affixName,
                     amount > 0.0D ? NamedTextColor.GRAY : NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         }
 

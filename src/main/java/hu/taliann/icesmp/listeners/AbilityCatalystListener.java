@@ -124,8 +124,25 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         final double perLevel = Math.max(0.0D, configManager.getDouble("spells.dynamic-scaling.per-level-percent", 0.5D));
         final double talentBonus = talentManager == null ? 0.0D : talentManager.getEffectTotal(player, "spell-power");
         final double cap = Math.max(0.0D, configManager.getDouble("spells.dynamic-scaling.max-bonus-percent", 50.0D));
-        final double bonusPercent = Math.min(cap, jobManager.getPrimaryLevel(player) * perLevel + Math.max(0.0D, talentBonus));
+        // Varázserő gear-affix: a viselt páncél + a főkéz PDC-jéből összegezve — a caster-gear
+        // így sebzést is ad (a közös plafon alatt); Ócska-roll negatív is lehet.
+        double gearBonus = 0.0D;
+        final hu.taliann.icesmp.managers.ItemRarityService rarity = this.itemRarityServiceRef;
+        if (rarity != null) {
+            for (final org.bukkit.inventory.ItemStack armor : player.getInventory().getArmorContents()) {
+                gearBonus += rarity.spellPowerOf(armor);
+            }
+            gearBonus += rarity.spellPowerOf(player.getInventory().getItemInMainHand());
+        }
+        final double bonusPercent = Math.max(-50.0D,
+                Math.min(cap, jobManager.getPrimaryLevel(player) * perLevel + Math.max(0.0D, talentBonus) + gearBonus));
         return 1.0D + bonusPercent / 100.0D;
+    }
+
+    private volatile hu.taliann.icesmp.managers.ItemRarityService itemRarityServiceRef;
+
+    public void setItemRarityService(final hu.taliann.icesmp.managers.ItemRarityService itemRarityService) {
+        this.itemRarityServiceRef = itemRarityService;
     }
 
     @EventHandler

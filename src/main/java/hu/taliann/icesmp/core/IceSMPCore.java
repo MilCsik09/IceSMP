@@ -486,6 +486,7 @@ public final class IceSMPCore {
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
                 catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager,
                 talentManager, messageManager, spellFavoritesManager);
+        abilityCatalystListener.setItemRarityService(itemRarityService);
         this.questBuilderListener = new hu.taliann.icesmp.listeners.QuestBuilderListener(plugin, questManager, messageManager);
         this.petManager = new PetManager(plugin, configManager, minionManager, specializationManager, messageManager);
         petManager.setJobManager(jobManager);

@@ -15,6 +15,9 @@ item-rarity:
     movement_speed:  { name: "Fürgeség",   min: 0.005, max: 0.02, decimals: 3 }
     attack_damage:   { name: "Élesség",    min: 0.5,   max: 3.0,  decimals: 1 }
     attack_speed:    { name: "Gyorsaság",  min: 0.1,   max: 0.6,  decimals: 2 }
+    # Varázserő: %-pont a spell-erő bónuszhoz (a spells.dynamic-scaling plafonja alatt) —
+    # a caster-gear ettől ad sebzést. CSAK a WoW-mód (health.enabled) alatt sorsolódik.
+    spell_power:     { name: "Varázserő",  min: 1.0,   max: 4.0,  decimals: 0 }
   # Közös RARITY-LÉTRA (WoW/Terraria-reforge stílus): Ócska (csak negatív!) -> Ereklye.
   # A raritás adja a színt, a NÉV-JELZŐT (a jelző illik a raritáshoz), az affixek SZÁMÁT, az
   # ERŐSSÉGET (value-multiplier — így az affix "fedi" a prefixet) és a negatív-esélyt.

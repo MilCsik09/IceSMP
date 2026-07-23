@@ -1264,6 +1264,24 @@ health:
     percent-per-tick: 5.0
     min-food: 6
   scale-heals: false
+  # Kaszt-sebzés-profilok (a WoW-érzés másik fele, ugyanezen fő-kapcsoló alatt):
+  # fizikai sebzés-bónusz = kaszt-szint × per-level (kézre attribútumként, nyílra/
+  # szigonyra a találatkor adódik hozzá). 50. szinten: fizikai kasztok +5, casterek
+  # +1.5 — ők a spell-erő szint-skálázást kapják helyette (spells.dynamic-scaling).
+  class-damage-profiles:
+    warrior: { per-level: 0.10 }
+    death_knight: { per-level: 0.10 }
+    demon_hunter: { per-level: 0.10 }
+    monk: { per-level: 0.09 }
+    assassin: { per-level: 0.09 }
+    paladin: { per-level: 0.08 }
+    archer: { per-level: 0.08 }
+    druid: { per-level: 0.07 }
+    shaman: { per-level: 0.05 }
+    evoker: { per-level: 0.04 }
+    wizard: { per-level: 0.03 }
+    warlock: { per-level: 0.03 }
+    priest: { per-level: 0.03 }
   scale-heals-cap: 2.5
   class-profiles:
     warrior: { base: 20, per-level: 0.6 }

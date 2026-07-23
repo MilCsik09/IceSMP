@@ -2094,3 +2094,17 @@ Jó tesztelést! ❄️
 - [ ] **PvE mérés:** a nagyobb játékos-HP mellett a magas szintű zónák nehézsége
       (mob damage-per-level 1.0) újraértékelendő — szükség esetén emelés.
 - [ ] **Admin-GUI:** /icesmp config menü új "HP-rendszer" kategória — kapcsolók élőben.
+
+## WoW-mód 2. ütem: sebzés-profilok + Varázserő gear-affix (tulaj-kérés, 2026-07-22)
+> ⚠️ ALAPBÓL KIKAPCSOLVA (health.enabled=false) — a teszthez kapcsold be.
+- [ ] **Kézi sebzés-skála:** 50-es Harcos gyémántkarddal +5 sebzést üt a szint-bónuszból
+      (attribútum, F3-mal ellenőrizhető); kikapcsolásnál élőben lekerül; casternél +1.5.
+- [ ] **Lövedék-skála:** a nyíl/számszeríj/szigony találata +szint-bónusz sebzést kap
+      (Íjász 50: +4); a bónusz a lövéskori cache-ből jön (kaszt-váltás után max 2 mp).
+- [ ] **Varázserő-affix:** WoW-módban a loot/craft gearre sorsolódhat (páncél ÉS fegyver;
+      "+N% Varázserő" lore); a spell-sebzés ennyivel nő (a dynamic-scaling 50%-plafonja
+      alatt); Ócska-rollon negatív lehet; KIKAPCSOLT módban NEM sorsolódik, de a már
+      létező példány visszakapcsoláskor újra hat.
+- [ ] **Halmozódás-ellenőrzés:** szint% + talent + Varázserő együtt sem lépi át a
+      spells.dynamic-scaling.max-bonus-percent plafont; a teljes szorzat a
+      total-power-cap (1.75) alatt marad.

@@ -26,8 +26,15 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
     private final ConfigManager configManager;
     private final JobManager jobManager;
     private final NamespacedKey classHealthKey;
+    private final NamespacedKey classDamageKey;
     /** játékos → az utolsó sebzés-kontaktus (adott VAGY kapott) epoch ms. */
     private final Map<UUID, Long> lastCombatAt = new ConcurrentHashMap<>();
+    /**
+     * játékos → az aktuális kaszt-sebzés bónusz. A lövedék-út (nyíl/szigony) a
+     * TALÁLAT esemény-szálán fut, ahol a lövő PDC-je nem érinthető — a cache-t az
+     * apply() tölti a játékos SAJÁT szálán, az olvasás bárhonnan biztonságos.
+     */
+    private final Map<UUID, Double> damageBonusCache = new ConcurrentHashMap<>();
 
     public ClassHealthService(final JavaPlugin plugin, final ConfigManager configManager,
                               final JobManager jobManager) {
@@ -35,6 +42,7 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
         this.configManager = configManager;
         this.jobManager = jobManager;
         this.classHealthKey = new NamespacedKey(plugin, "class_health_mod");
+        this.classDamageKey = new NamespacedKey(plugin, "class_damage_mod");
     }
 
     public boolean isEnabled() {
@@ -81,6 +89,36 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
                 player.setHealth(maxHealth.getValue());
             }
         }
+        // Kaszt-sebzés-profil (a WoW-érzés másik fele): a fizikai sebzés is nő a
+        // szinttel — a HP gyorsabban (0.25-0.6/szint), mint a sebzés (0.03-0.1/szint),
+        // így a TTK a szintekkel együtt is hosszabbodik.
+        final double damageTarget = isEnabled() ? damageBonusFor(player) : 0.0D;
+        final AttributeInstance attackDamage = player.getAttribute(Attribute.ATTACK_DAMAGE);
+        if (attackDamage != null) {
+            double currentDamage = 0.0D;
+            boolean damagePresent = false;
+            for (final AttributeModifier modifier : attackDamage.getModifiers()) {
+                if (classDamageKey.equals(modifier.getKey())) {
+                    currentDamage = modifier.getAmount();
+                    damagePresent = true;
+                    break;
+                }
+            }
+            if ((!damagePresent && damageTarget != 0.0D)
+                    || (damagePresent && Math.abs(currentDamage - damageTarget) > 1.0E-3D)) {
+                for (final AttributeModifier modifier : List.copyOf(attackDamage.getModifiers())) {
+                    if (classDamageKey.equals(modifier.getKey())) {
+                        attackDamage.removeModifier(modifier);
+                    }
+                }
+                if (damageTarget != 0.0D) {
+                    attackDamage.addModifier(new AttributeModifier(classDamageKey, damageTarget,
+                            AttributeModifier.Operation.ADD_NUMBER));
+                }
+            }
+        }
+        damageBonusCache.put(player.getUniqueId(), damageTarget);
+
         if (isEnabled() && configManager.getBoolean("health.display.normalize", true)) {
             final double scale = Math.max(2, configManager.getInt("health.display.hearts", 10)) * 2.0D;
             if (!player.isHealthScaled() || Math.abs(player.getHealthScale() - scale) > 1.0E-3D) {
@@ -90,6 +128,23 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
         } else if (player.isHealthScaled()) {
             player.setHealthScaled(false);
         }
+    }
+
+    /** A kaszt-sebzés-profil bónusza: szint × per-level; kaszt nélkül 0. */
+    private double damageBonusFor(final Player player) {
+        final hu.taliann.icesmp.data.JobType job = jobManager.getPrimaryJob(player);
+        if (job == null) {
+            return 0.0D;
+        }
+        final double perLevel = Math.max(0.0D, configManager.getDouble(
+                "health.class-damage-profiles." + job.getId() + ".per-level", 0.05D));
+        return jobManager.getPrimaryLevel(player) * perLevel;
+    }
+
+    /** A cache-elt sebzés-bónusz (bármely szálról olvasható — a lövedék-út innen dolgozik). */
+    public double cachedDamageBonus(final UUID playerId) {
+        final Double bonus = damageBonusCache.get(playerId);
+        return bonus == null ? 0.0D : bonus;
     }
 
     /** A kaszt-profil HP-többlete: (base − 20) + szint × per-level; kaszt nélkül 0. */
@@ -109,10 +164,9 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
      * játékosonként a saját régió-szálon.
      */
     public void tick() {
-        if (!isEnabled()) {
-            return;
-        }
-        final boolean regenEnabled = configManager.getBoolean("health.ooc-regen.enabled", true);
+        // Kikapcsolt rendszernél is fut az apply(): az szedi le élőben a korábban
+        // felrakott modifiereket és a szív-skálázást (a kapcsoló restart nélkül hat).
+        final boolean regenEnabled = isEnabled() && configManager.getBoolean("health.ooc-regen.enabled", true);
         final long delayMillis = Math.max(0L, configManager.getLong("health.ooc-regen.delay-seconds", 8L)) * 1000L;
         final double percent = Math.max(0.0D, configManager.getDouble("health.ooc-regen.percent-per-tick", 5.0D));
         final int minFood = configManager.getInt("health.ooc-regen.min-food", 6);
@@ -143,6 +197,7 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
             lastCombatAt.remove(playerId);
+            damageBonusCache.remove(playerId);
         }
     }
 }

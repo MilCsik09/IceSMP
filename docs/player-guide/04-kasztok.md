@@ -88,6 +88,15 @@ A maximális életerőd a **kasztod jellegével és szintjével nő** (a szívso
 
 \* a talentek és a Rúnavért ezen felül jönnek.
 
+A **sebzésed is nő a szinttel** (a WoW-mód másik fele): a fizikai kasztok kézi/íjas
+sebzése szintenként +0.08–0.10 (50-en: +4–5), a castereké +0.03–0.05 — ők cserébe a
+**spell-erő szint-skálázást** kapják (szintenként +0,5%, plafonig). A HP gyorsabban nő,
+mint a sebzés, így a harcok a szintekkel együtt is hosszabbodnak, nem rövidülnek.
+
+**A gear is számít:** a ritkaság-affixek (Szívósság, Élesség, Vértezet…) mellett a
+WoW-módban új **Varázserő** affix is eshet páncélra és fegyverre — %-ban növeli a
+spelljeid erejét, így a caster-felszerelés végre sebzést is ad, nem csak túlélést.
+
 - **Harcon kívüli regen:** ha 8 másodpercig nem ért és nem okoztál sebzést, az életerőd
   magától töltődik (2 másodpercenként a maximum 5%-a) — de csak ha nem vagy éhes
   (legalább 3 comb). Harcban továbbra is az étel, a gyógyítás és a pajzsok tartanak életben.
