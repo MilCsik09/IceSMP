@@ -1717,3 +1717,18 @@ Az ÚJ custom itemek nem integer CustomModelData-t kapnak, hanem **ITEM_MODEL** 
 | `mortengradi_keseru` | HONEY_BOTTLE | Mortengrádi Keserű (DARK) |
 | `vandor_pogacsaja` | BREAD | Vándor Pogácsája (étel) |
 | `halasz_fogasa` | COOKED_SALMON | Halász Fogása (étel) |
+| `hamvasztott_kave` | HONEY_BOTTLE | Hamvasztott Kávé (ital) |
+| `kofejto_sore` | HONEY_BOTTLE | Kőfejtő Söre (ital) |
+| `tengeresz_rum` | HONEY_BOTTLE | Tengerész Rum (ital) |
+| `arnyeklikor` | HONEY_BOTTLE | Árnyéklikőr (ital) |
+| `aranyfeny_mezsor` | HONEY_BOTTLE | Aranyfényű Mézsör (ital) |
+| `viharfi_almabor` | HONEY_BOTTLE | Viharfi Almabor (ital) |
+| `jegkiraly_parlat` | HONEY_BOTTLE | Jégkirály Párlata (ital) |
+| `szentelt_bor` | HONEY_BOTTLE | Szentelt Bor (ital) |
+| `pasztor_urucomb` | COOKED_MUTTON | Pásztor Ürücombja (étel) |
+| `erdei_gombapite` | PUMPKIN_PIE | Erdei Gomba Pite (étel) |
+| `banyasz_szalonna` | COOKED_PORKCHOP | Bányász Szalonnája (étel) |
+| `mezes_puszedli` | COOKIE | Mézes Puszedli (étel) |
+| `harcos_husos_tal` | COOKED_BEEF | Harcos Húsos Tála (étel) |
+| `tuzes_chili_tal` | COOKED_BEEF | Tüzes Chilis Tál (étel) |
+| `tengerek_gyongye` | COOKED_COD | Tengerek Gyöngye (étel) |

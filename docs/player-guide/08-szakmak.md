@@ -119,11 +119,12 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 
 > A receptek smaragd-alapanyaggal készülnek (hogy ne ütközzenek a vanilla receptekkel).
 
-**🍺 Szakács kocsma-italok és tájfogások** — a Szakács saját **italokat** (ivás-animációval!) és
-**ételeket** főz, mind rövid, nem-harci buffal: *Jéghegyi Sör* (regeneráció), *Parázs Pálinka*
-(tűzállóság + erő), *Caldesterai Gyógytea* (regeneráció), *Mortengrádi Keserű* (éjjellátás),
-*Vándor Pogácsája* (táplálék + sietség), *Halász Fogása* (vízlégzés). A pontos hatás-idő a
-szerveren hangolható.
+**🍺 Szakács kocsma-italok és tájfogások (20+ recept)** — a Szakács saját **italokat**
+(ivás-animációval!) és **ételeket** főz, mind rövid, nem-harci buffal. Ízelítő:
+*Jéghegyi Sör* (regeneráció), *Parázs Pálinka* (tűzállóság+erő), *Hamvasztott Kávé* (sietség),
+*Kőfejtő Söre* (ellenállás), *Tengerész Rum* (vízlégzés+ugrás), *Árnyéklikőr* (rövid láthatatlanság),
+*Aranyfényű Mézsör* (szerencse), *Szentelt Bor* (gyógyulás), *Pásztor Ürücombja*, *Bányász Szalonnája*
+(sietség), *Harcos Húsos Tála* (erő), *Tüzes Chilis Tál* (tűzállóság). A hatás-idők a szerveren hangolhatók.
 
 ### 🔒 Craft-korlátok (vanilla tárgyak)
 

@@ -4020,6 +4020,203 @@ profession-recipes:
         effects: [ "WATER_BREATHING:45:0" ]
     ingredients: [ "SALMON:2", "DRIED_KELP:2" ]
 
+  # --- P7 Szakács fogyaszthatók, 2. adag (italok + tájfogások) ---
+  hamvasztott_kave:
+    profession: cook
+    level: 8
+    learn: level
+    display-name: "Hamvasztott Kávé"
+    category: "Ital"
+    lore: [ "Feketére pörkölt babok forró főzete —", "elűzi az álmot a hosszú műszak előtt." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:hamvasztott_kave"
+      consumable: { animation: drink, seconds: 1.4, effects: [ "HASTE:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "COCOA_BEANS:2", "BLAZE_POWDER:1" ]
+  kofejto_sore:
+    profession: cook
+    level: 10
+    learn: level
+    display-name: "Kőfejtő Söre"
+    category: "Ital"
+    lore: [ "Sűrű, kenyérízű árpasör —", "a bányász háta ettől bírja a súlyt." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:kofejto_sore"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "RESISTANCE:20:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:3" ]
+  tengeresz_rum:
+    profession: cook
+    level: 12
+    learn: level
+    display-name: "Tengerész Rum"
+    category: "Ital"
+    lore: [ "Bokic-parti nádcukorból erjesztve —", "a hullámok közt is otthon a matróz." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:tengeresz_rum"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "WATER_BREATHING:60:0", "JUMP_BOOST:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "SUGAR:2", "KELP:2" ]
+  arnyeklikor:
+    profession: cook
+    level: 18
+    learn: level
+    display-name: "Árnyéklikőr"
+    category: "Ital"
+    lore: [ "A Kitaszítottak sötét párlata —", "egy pillanatra a szem elől is elrejt." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:arnyeklikor"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "INVISIBILITY:15:0", "SPEED:20:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:2", "FERMENTED_SPIDER_EYE:1" ]
+  aranyfeny_mezsor:
+    profession: cook
+    level: 9
+    learn: level
+    display-name: "Aranyfényű Mézsör"
+    category: "Ital"
+    lore: [ "Ryanora kereskedőinek méhsöre —", "aki issza, arra rámosolyog a szerencse." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:aranyfeny_mezsor"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "LUCK:60:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "HONEYCOMB:2", "GOLD_NUGGET:1" ]
+  viharfi_almabor:
+    profession: cook
+    level: 7
+    learn: level
+    display-name: "Viharfi Almabor"
+    category: "Ital"
+    lore: [ "A Vérszavanna gyümölcséből —", "friss korty, ami lábra állít." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:viharfi_almabor"
+      consumable: { animation: drink, seconds: 1.4, effects: [ "SPEED:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "SWEET_BERRIES:3", "SUGAR:1" ]
+  jegkiraly_parlat:
+    profession: cook
+    level: 14
+    learn: level
+    display-name: "Jégkirály Párlata"
+    category: "Ital"
+    lore: [ "Glatziendorf jégpincéjében érlelt —", "hideg nyugalom minden kortyban." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:jegkiraly_parlat"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "RESISTANCE:15:0", "SLOW_FALLING:30:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "SNOWBALL:2", "SUGAR:1" ]
+  szentelt_bor:
+    profession: cook
+    level: 16
+    learn: level
+    display-name: "Szentelt Bor"
+    category: "Ital"
+    lore: [ "A Fa virrasztóinak áldott bora —", "a seb gyorsabban hegged tőle." ]
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:szentelt_bor"
+      consumable: { animation: drink, seconds: 1.6, effects: [ "REGENERATION:10:1", "ABSORPTION:40:0" ] }
+    ingredients: [ "HONEY_BOTTLE:1", "GLISTERING_MELON_SLICE:1", "GLOW_BERRIES:2" ]
+  pasztor_urucomb:
+    profession: cook
+    level: 6
+    learn: level
+    display-name: "Pásztor Ürücombja"
+    category: "Étel"
+    lore: [ "Nyílt tűzön sült birkacomb —", "a pásztor egész nap fürgén jár tőle." ]
+    result:
+      material: COOKED_MUTTON
+      amount: 2
+      item-model: "icesmp:pasztor_urucomb"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 9.6, effects: [ "SPEED:20:0" ] }
+    ingredients: [ "MUTTON:2", "CARROT:1" ]
+  erdei_gombapite:
+    profession: cook
+    level: 8
+    learn: level
+    display-name: "Erdei Gomba Pite"
+    category: "Étel"
+    lore: [ "Vadon gombájából sült pite —", "az erdő gyógyító ereje van benne." ]
+    result:
+      material: PUMPKIN_PIE
+      amount: 2
+      item-model: "icesmp:erdei_gombapite"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 7.0, effects: [ "REGENERATION:15:0" ] }
+    ingredients: [ "PUMPKIN:1", "BROWN_MUSHROOM:2", "EGG:1", "SUGAR:1" ]
+  banyasz_szalonna:
+    profession: cook
+    level: 7
+    learn: level
+    display-name: "Bányász Szalonnája"
+    category: "Étel"
+    lore: [ "Faszén fölött füstölt szalonna —", "a csákány gyorsabban jár utána." ]
+    result:
+      material: COOKED_PORKCHOP
+      amount: 2
+      item-model: "icesmp:banyasz_szalonna"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 8.0, effects: [ "HASTE:25:0" ] }
+    ingredients: [ "PORKCHOP:2", "CHARCOAL:1" ]
+  mezes_puszedli:
+    profession: cook
+    level: 5
+    learn: level
+    display-name: "Mézes Puszedli"
+    category: "Étel"
+    lore: [ "Ropogós mézes aprósütemény —", "könnyűvé teszi a lépted." ]
+    result:
+      material: COOKIE
+      amount: 4
+      item-model: "icesmp:mezes_puszedli"
+      consumable: { animation: eat, seconds: 1.2, nutrition: 4, saturation: 3.0, effects: [ "JUMP_BOOST:20:0" ] }
+    ingredients: [ "WHEAT:2", "HONEYCOMB:1", "SUGAR:1" ]
+  harcos_husos_tal:
+    profession: cook
+    level: 11
+    learn: level
+    display-name: "Harcos Húsos Tála"
+    category: "Étel"
+    lore: [ "Bőséges hústál a csata előtt —", "erőt önt a kardforgató karba." ]
+    result:
+      material: COOKED_BEEF
+      amount: 2
+      item-model: "icesmp:harcos_husos_tal"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 9.0, effects: [ "STRENGTH:15:0" ] }
+    ingredients: [ "BEEF:2", "POTATO:1" ]
+  tuzes_chili_tal:
+    profession: cook
+    level: 13
+    learn: level
+    display-name: "Tüzes Chilis Tál"
+    category: "Étel"
+    lore: [ "Pyralingrad fűszerével izzított —", "a gyomrod tüze véd a lángtól." ]
+    result:
+      material: COOKED_BEEF
+      amount: 2
+      item-model: "icesmp:tuzes_chili_tal"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 8, saturation: 8.0, effects: [ "FIRE_RESISTANCE:30:0" ] }
+    ingredients: [ "BEEF:2", "BLAZE_POWDER:1" ]
+  tengerek_gyongye:
+    profession: cook
+    level: 12
+    learn: level
+    display-name: "Tengerek Gyöngye"
+    category: "Étel"
+    lore: [ "Prizmás körettel tálalt fogás —", "a mélyben is fürge a falatozó." ]
+    result:
+      material: COOKED_COD
+      amount: 2
+      item-model: "icesmp:tengerek_gyongye"
+      consumable: { animation: eat, seconds: 1.6, nutrition: 6, saturation: 6.0, effects: [ "DOLPHINS_GRACE:30:0", "WATER_BREATHING:45:0" ] }
+    ingredients: [ "COD:2", "PRISMARINE_SHARD:1" ]
+
 crafted-by:
   enabled: true
 
