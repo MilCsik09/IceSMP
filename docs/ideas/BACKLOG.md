@@ -564,6 +564,18 @@ a game event registry fogyasztó nélkül halott regisztráció lenne.
   szünet-menüből (a P4d dialog-réteg legolcsóbb első lépcsője). 🟢⭐⭐
 - **P5m Season-worldgen csomag** — új világrész-jegyek (biome/feature/structure_set)
   CSAK új chunkokban érvényesülnek — season-2 térkép-bővítéshez időzítve. 🔴⭐
-- **P5n Timeline-registry felderítés** — az 1.21.11-ben megjelent új data-registry
-  (`data/minecraft/timeline`): mire való, ad-e nekünk bármit — felderítendő,
-  mielőtt bármit építünk rá. 🔴⭐
+- ✅ **P5n Timeline-registry felderítés (2026-07-23, LEZÁRVA)** — az 1.21.11 `timeline`
+  data-registry a nap/hold-ciklus data-driven vezérlője: egy timeline `period_ticks`-en
+  belül kulcskockás (keyframe + ease) érték-görbéket ad ELŐRE DEFINIÁLT „track"-ekre
+  (day: sky/fog/cloud-szín, monsters_burn, sky_light_level, turtle-hatch; moon:
+  surface_slime_spawn_chance, moon_phase; early_game: can_pillager_patrol_spawn;
+  villager_schedule). **Verdikt: nekünk gyenge.** Indok: (1) NINCS Paper API-felület
+  (se PaperTimelineRegistryEntry-builder, se RegistryKey.TIMELINE — bájtkódból igazolt),
+  tehát KIZÁRÓLAG datapack-JSON, restart-kötött; (2) a track-készlet ZÁRT vanília-halmaz
+  — a motor csak a saját trackjeit olvassa, SAJÁT plugin-olvasott értéket NEM lehet
+  hozzáadni (nincs custom-track fogyasztó), csak a meglévő vanília-viselkedést
+  újragörbézni; (3) a hangulati trackek (ég/köd-szín) per-dimenzió globálisak, NEM
+  territórium/régió-lokálisak, így frakció-földenként nem színezhető. EGYETLEN reális
+  hasznosítás: a P5k instance-dimenzió kaphatna saját timeline-t (örök-éj / kárhozat-
+  szürkület hangulat a kazamata-világnak) — ezért P5k-hoz csatolva, önálló tételként
+  ELVETVE. 🔴⭐
