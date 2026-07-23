@@ -161,6 +161,11 @@ nincs. A damage-type iskolák (icesmp:tuz/fagy/szent/arnyek/termeszet/vihar/kaos
 kasztok mágia-eredetéhez kötődnek (kódex IV. — a kasztok mágiája); a besorolás configból
 hangolható (spells.spell-schools).
 
+Környezeti (nem-varázslat) damage-type — ugyanaz a szabály: regisztráció CSAK valódi
+fogyasztóval, saját magyar halál-üzenettel. Jelenleg: `icesmp:rontas` — a rontás-góc
+mag-aurája (kódex V., a Kárhozat Kapujából szivárgó rontás); a fogyasztó a
+CorruptionAuraListener, a hatókör/sebzés `corruption.aura.*` (world.yml, élő-config).
+
 | Enchant | Kánon-horgony | Funkció |
 |---|---|---|
 | Jégfog | Kallan jégsárkányainak harapása (kódex II.) | a Szeletelő nyila rövid lassítást harap |

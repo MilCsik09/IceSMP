@@ -163,6 +163,27 @@ public final class CorruptionManager implements PersistentStore {
         return Math.max(1, configManager.getInt("corruption.purge-kills-required", 15));
     }
 
+    /**
+     * A hely az aktív rontás-góc mag-aurájában van-e (a P4e {@code icesmp:rontas} DoT
+     * szűrője). Minden kulcs élőben olvasott. A hívó felelőssége, hogy a hely a saját
+     * régió-száljához tartozó játékosé legyen (a CorruptionAuraListener így hívja).
+     */
+    public boolean isInAura(final Location loc) {
+        if (!active || loc == null || loc.getWorld() == null
+                || !loc.getWorld().getName().equals(worldName)
+                || !configManager.getBoolean("corruption.aura.enabled", true)) {
+            return false;
+        }
+        final double auraRadius = Math.max(0.0D, configManager.getDouble("corruption.aura.radius", 5.0D));
+        if (auraRadius <= 0.0D) {
+            return false;
+        }
+        final double dx = loc.getX() - (centerX + 0.5D);
+        final double dz = loc.getZ() - (centerZ + 0.5D);
+        final double dy = loc.getY() - centerY;
+        return dx * dx + dz * dz + dy * dy <= auraRadius * auraRadius;
+    }
+
     /** A mag-blokk-e (a tisztítás-interakció szűrője; régió-lokális hívás). */
     public boolean isCoreBlock(final org.bukkit.block.Block block) {
         return active && block != null && block.getType() == Material.SCULK_CATALYST

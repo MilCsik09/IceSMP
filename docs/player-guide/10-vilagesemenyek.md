@@ -146,6 +146,11 @@ territóriumok környékén számíts rá leginkább! **Tisztítás:** ölj le e
 majd a magot **SHIFT + jobb kattintással** törd meg → loot, rövid regeneráció, és „a Fa
 fellélegzik”. Ha senki nem tisztítja, a zóna a plafonjáig nő, és onnan ontja a szörnyeket.
 
+> ⚠️ **A mag közelében a rontás beléd mar:** a sculk-magot körülvevő pár blokkos gyűrűben
+> **ismétlődő sebzést** kapsz (a *rontás* emészt, nem a szörnyek). Tehát a mag-törést vagy
+> **gyorsan** vidd véghez, vagy **gyógyítással**/társsal — nem lehet kényelmesen ácsorogni a
+> góc szívében. (A hatókör és a sebzés a szerveren hangolható, akár ki is kapcsolható.)
+
 ## Hangulat-események ✦
 
 Időnként apró, **légköri események** teszik élőbbé a világot (nem befolyásolják a balanszot):

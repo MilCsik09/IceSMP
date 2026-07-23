@@ -543,6 +543,14 @@ cultists:
 # Élőben olvasódik; a zóna restart-álló (corruption.yml).
 corruption:
   enabled: true
+  # P4e — mag-aura: aki az aktív góc MAGJÁHOZ (SCULK_CATALYST) közel áll, ismétlődő
+  # icesmp:rontas sebzést kap (saját magyar halál-üzenet). A tisztításnak így tétje
+  # van (gyorsan törd a magot, vagy hozz gyógyítást). Enyhe, hangolható, kikapcsolható.
+  aura:
+    enabled: true
+    radius: 5.0            # a mag-blokk körüli sugár blokkban (gömb), ahol éget
+    damage: 1.0            # sebzés tickenként (1.0 = fél szív)
+    interval-ticks: 40     # 40 tick = 2 mp
   # Personal-loot kiterjesztés: aki legalább contributor-min-kills korrupt fajzatot
   # irtott, a tisztításkor csökkentett saját gurítást kap (a mag-törőé a teljes loot).
   contributor-min-kills: 3

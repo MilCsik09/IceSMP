@@ -238,6 +238,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.WhisperManager whisperManager;
     private final hu.taliann.icesmp.managers.ChronicleManager chronicleManager;
     private final hu.taliann.icesmp.managers.CorruptionManager corruptionManager;
+    private final hu.taliann.icesmp.listeners.CorruptionAuraListener corruptionAuraListener;
     private final hu.taliann.icesmp.managers.SeasonFinaleManager seasonFinaleManager;
     private final hu.taliann.icesmp.managers.StrangerNpcManager strangerNpcManager;
     private final hu.taliann.icesmp.managers.BardManager bardManager;
@@ -298,6 +299,7 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask afkTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask healthTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask corruptionAuraTask;
     private final hu.taliann.icesmp.utils.TextAnimator textAnimator;
     private final hu.taliann.icesmp.managers.TablistManager tablistManager;
     private final hu.taliann.icesmp.managers.AfkManager afkManager;
@@ -424,6 +426,7 @@ public final class IceSMPCore {
         this.meteorEventManager = new MeteorEventManager(plugin, configManager, eventSpawnGuard, messageManager);
         wildHuntManager.setSpawnGuard(eventSpawnGuard);
         this.corruptionManager = new hu.taliann.icesmp.managers.CorruptionManager(plugin, configManager, mobScalingManager, eventSpawnGuard, messageManager, territoryManager, factionManager, seasonManager);
+        this.corruptionAuraListener = new hu.taliann.icesmp.listeners.CorruptionAuraListener(plugin, configManager, corruptionManager, messageManager);
         this.cultistEventManager = new hu.taliann.icesmp.managers.CultistEventManager(plugin, configManager,
                 mobScalingManager, eventSpawnGuard, territoryManager, corruptionManager, messageManager,
                 whisperManager, seasonManager);
@@ -836,6 +839,7 @@ public final class IceSMPCore {
         scheduleWorldEvents();
         scheduleHud();
         scheduleHealth();
+        scheduleCorruptionAura();
         schedulePetCombat();
         scheduleAutosave();
         // A visszaépítés saját, sűrű ütemén fut (látványos, fokozatos gyógyulás) —
@@ -1057,6 +1061,10 @@ public final class IceSMPCore {
             healthTask.cancel();
             healthTask = null;
         }
+        if (corruptionAuraTask != null) {
+            corruptionAuraTask.cancel();
+            corruptionAuraTask = null;
+        }
         if (afkTask != null) {
             afkTask.cancel();
             afkTask = null;
@@ -1225,6 +1233,13 @@ public final class IceSMPCore {
         final long healthTicks = Math.max(20L, configManager.getLong("health.ooc-regen.interval-ticks", 40L));
         healthTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> classHealthService.tick(), healthTicks, healthTicks);
+    }
+
+    /** Rontás-mag aura (P4e): a korrupt zóna magjában álló játékosok ismétlődő sebzése. */
+    private void scheduleCorruptionAura() {
+        final long auraTicks = Math.max(10L, configManager.getLong("corruption.aura.interval-ticks", 40L));
+        corruptionAuraTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin, task -> corruptionAuraListener.tick(), auraTicks, auraTicks);
     }
 
     /**
@@ -1434,6 +1449,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SpellDamageListener(configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CapitalLawListener(plugin, configManager, territoryManager, sinManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CorruptionListener(corruptionManager), plugin);
+        pluginManager.registerEvents(corruptionAuraListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StrangerListener(strangerNpcManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CampfireStoryListener(plugin, configManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);

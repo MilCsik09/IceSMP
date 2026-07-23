@@ -1,6 +1,7 @@
 # IceSMP üzenetek — world alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
   blood-moon-ended: <gray>🌙 A vérhold lenyugodott — a világ fellélegzik.</gray>
+  corruption-aura-death: <dark_gray>{victim} testét felemésztette a rontás.</dark_gray>
   blood-moon-started: <dark_red>🌕 VÉRHOLD! Ma éjjel a szörnyek erősebbek (+{bonus} szint), de a lelkük is értékesebb...</dark_red>
   events-bloodmoon-active: '&cVérhold tombol!'
   events-bloodmoon-already: '&7Már tombol a vérhold.'

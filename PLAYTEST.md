@@ -568,6 +568,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       magra → loot + 5 perc regeneráció + „a Fa fellélegzik" broadcast; a mag kézzel NEM
       bányászható. Restart-teszt: a zóna corruption.yml-ből visszaáll. Spawn-hely: a
       spawn-rules.corruption mátrix-sor szerint (városba nem nyílik).
+  - [ ] **P4e mag-aura (icesmp:rontas):** a magtól `corruption.aura.radius` (alap 5) blokkon
+        belül állva ~2 mp-enként fél szív sebzés; belépéskor kezdődik, kilépéskor megáll.
+        HALÁL ott → magyar üzenet: „… testét felemésztette a rontás." (NEM vanília halál-szöveg).
+        Creative/spectator MENTES. `corruption.aura.enabled=false` → azonnal (reload) megszűnik.
+        Élő-config: `damage`/`radius` állítása `/icesmp reload` után restart nélkül hat.
+        Bootstrap-log: a damage-type regisztrációja az első induláskor hibátlan (nincs error-sor).
 - [ ] **B42 Régészet (ÚJ — Tier S):** időnként gyanús homok/kavics lelőhely bukkan fel
       (broadcast + koordináta, `archeology.*`); ECSETTEL kiásva SZERVER-SAJÁT lelet esik
       (Emlékszilánk / Ősi Ereklyeszilánk / anyagok — sosem vanília cserép); 20 perc után a

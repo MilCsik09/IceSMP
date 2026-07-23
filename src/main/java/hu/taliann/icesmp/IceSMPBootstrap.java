@@ -57,6 +57,17 @@ public final class IceSMPBootstrap implements PluginBootstrap {
                                     .damageScaling(org.bukkit.damage.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER)
                                     .exhaustion(0.1F));
                 }
+                // Környezeti (nem-varázslat) damage-type-ok: nincs causing-entity, saját
+                // magyar halál-üzenettel (szerver-oldalról írjuk felül). Fogyasztó KÖTELEZŐ
+                // (nincs dísz-regisztráció): icesmp:rontas → a rontás-zóna mag-aurája
+                // (CorruptionAuraListener). A messageId a kliensen nem fordul, a listener írja.
+                event.registry().register(
+                        io.papermc.paper.registry.keys.DamageTypeKeys.create(
+                                net.kyori.adventure.key.Key.key("icesmp", "rontas")),
+                        builder -> builder
+                                .messageId("death.attack.icesmp_rontas")
+                                .damageScaling(org.bukkit.damage.DamageScaling.NEVER)
+                                .exhaustion(0.0F));
             } catch (final Throwable throwable) {
                 context.getLogger().error("Damage-type regisztráció hiba (a spellek vanília sebzésre esnek vissza): "
                         + throwable, throwable);
