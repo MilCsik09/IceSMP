@@ -227,7 +227,7 @@ RÉSZLETES vizuális leírást (mit ábrázoljon, színvilág, hangulat/lore).
 - **Színvilág:** arany-bronz; akcent: mélyvörös zászló
 - **Hangulat / lore:** a koronák földmérő-pálcája — territórium-határok admin-kijelöléséhez.
 
-## Unique szakma-anyagok (6000–6146)
+## Unique szakma-anyagok (6000–6146) — ⚠️ MIGRÁLVA ITEM_MODEL-re (lásd „ITEM_MODEL tárgyak”)
 
 ### 6000 — Tiszta Vasesszencia
 - **Fájl:** `u_tiszta_vasesszencia.png` &nbsp;|&nbsp; **Alap-item:** `IRON_NUGGET`
@@ -1885,7 +1885,18 @@ Az ÚJ custom itemek nem integer CustomModelData-t kapnak, hanem **ITEM_MODEL** 
 | `csontkripta_kulcsa` | TRIAL_KEY | A Csontkripta Kulcsa |
 
 
-### Egyedi anyagok — ⚠️ MIGRÁLVA ITEM_MODEL-re (lásd fentebb) (profession-materials)
+### Gyári itemek (factory)
+
+| Modell-id (`icesmp:`) | Mi ez |
+|---|---|
+| `siege_ram` | Ostromgép (faltörő kos) |
+| `blueprint` | Tervrajz (recept-tanuló) |
+| `money_pouch` | Talált erszény |
+| `catalyst_<kaszt-id>` | Kaszt-katalizátor kasztonként (pl. catalyst_wizard, catalyst_archer, catalyst_death_knight…) |
+| `currency_<red\|blue\|neutral\|dark>` | Frakció-valuta veret |
+| `capture_<beast\|necro\|heart\|seal>` | Pet-befogó eszköz típusonként |
+
+### Egyedi anyagok (profession-materials)
 
 | Modell-id (`icesmp:`) | Alap-item | Mi ez |
 |---|---|---|
