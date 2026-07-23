@@ -128,6 +128,9 @@ public final class CatalystItemFactory {
         meta.getPersistentDataContainer().set(isCatalystKey, PersistentDataType.BOOLEAN, true);
         meta.getPersistentDataContainer().set(uniqueIdKey, PersistentDataType.STRING, UUID.randomUUID().toString());
         itemStack.setItemMeta(meta);
+        // Saját cooldown-csoport (data-komponens, a setItemMeta UTÁN): a cast-cooldown-overlay
+        // így NEM sötétíti a játékos vele azonos Materialú vanília itemeit (kovakő/kürt/csemete…).
+        hu.taliann.icesmp.items.ItemDataFactory.applyUseCooldownGroup(itemStack, "catalyst", 0.5F);
         return itemStack;
     }
 

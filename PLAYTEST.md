@@ -850,6 +850,14 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       után a megfelelő rövid buff (pl. Sör→Regeneráció+Felszívódás, Pálinka→Tűzállóság+Erő,
       Pogácsa→táplálék+Sietség, Fogás→Vízlégzés). **ITEM_MODEL** (nem CMD): pack nélkül alap-item
       textúrát mutat, a `icesmp:<id>` modellt a külső pack adja. A buff-idők a receptből (config).
+- [ ] **P7 USE_COOLDOWN — katalizátor cooldown-bleed javítás (ÚJ):** tarts a hotbarban egy
+      pálca-katalizátort ÉS a vele AZONOS Materialú vanília itemet (pl. Homály-szilánk=FLINT →
+      sima kovakő; Sárkánykirály Kürtje=GOAT_HORN → sima kürt). Castolás után CSAK a katalizátor
+      sötétül el (cooldown-overlay), a vanília item NEM. (Melee-kard katalizátornál a kard
+      overlay-e változatlan.)
+- [ ] **P7 TOOLTIP_DISPLAY — affix-gear tiszta tooltip (ÚJ):** egy affix-rollos felszerelésen
+      NINCS többé a vanília „When in Main Hand: +X Attack Damage" blokk — a stat CSAK a saját
+      affix-lore-sorban (pl. „+ 12 Élesség") látszik, egyszer.
 - [ ] **P8e Alacsony-HP piros vignetta (ÚJ):** HP a küszöb (alap 30%) alá esve a képernyő
       szélén vörös vészköd jelenik meg; gyógyulva/küszöb fölé eltűnik. `hud.low-hp-vignette.enabled:
       false` → nem jön. A per-player világperem NEM okoz tényleges perem-hatást (nem lök vissza,

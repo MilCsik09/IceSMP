@@ -71,6 +71,33 @@ public final class ItemDataFactory {
         item.setData(DataComponentTypes.ITEM_MODEL, key);
     }
 
+    /**
+     * USE_COOLDOWN cooldown-CSOPORT: az item saját nevesített cooldown-csoportot kap, így a
+     * {@code player.setCooldown(itemStack, ticks)} / {@code setCooldown(Key, ticks)} CSAK az
+     * ehhez a csoporthoz tartozó itemeket sötétíti — NEM a vele azonos Materialú vanília itemeket.
+     * (A pálca-katalizátorok közönséges Materialt használnak: enélkül a castolás a játékos
+     * vanília kovakövét/kürtjét is cooldownra tette.) A {@code seconds} a natív-use auto-cooldownja;
+     * a tényleges cooldownt a hívó adja setCooldownnal.
+     */
+    public static void applyUseCooldownGroup(final ItemStack item, final String groupId, final float seconds) {
+        item.setData(DataComponentTypes.USE_COOLDOWN,
+                io.papermc.paper.datacomponent.item.UseCooldown.useCooldown(Math.max(0.05F, seconds))
+                        .cooldownGroup(Key.key(groupId.contains(":") ? groupId : "icesmp:" + groupId))
+                        .build());
+    }
+
+    /**
+     * TOOLTIP_DISPLAY — a vanília ATTRIBUTE_MODIFIERS tooltip-blokk elrejtése („When in Main Hand:
+     * +X …"). Az affix-gear a stat-ot amúgy is SAJÁT lore-sorban mutatja (a számmal), így a vanília
+     * blokk redundáns spam; elrejtése infó-veszteség nélkül tisztít.
+     */
+    public static void hideAttributeTooltip(final ItemStack item) {
+        item.setData(DataComponentTypes.TOOLTIP_DISPLAY,
+                io.papermc.paper.datacomponent.item.TooltipDisplay.tooltipDisplay()
+                        .addHiddenComponents(DataComponentTypes.ATTRIBUTE_MODIFIERS)
+                        .build());
+    }
+
     /** Táplálkozási érték: bármely item ehetővé tétele (új ételekhez). */
     public static void applyFood(final ItemStack item, final int nutrition, final float saturation,
                                  final boolean canAlwaysEat) {

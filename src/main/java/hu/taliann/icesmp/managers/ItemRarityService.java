@@ -196,6 +196,9 @@ public final class ItemRarityService {
                 .decoration(TextDecoration.ITALIC, false).append(baseName));
         meta.getPersistentDataContainer().set(qualityKey, PersistentDataType.STRING, rarity.id());
         rolled.setItemMeta(meta);
+        // A vanília attribútum-blokkot elrejtjük (a stat a fenti affix-lore-ban látszik) — a
+        // data-komponens a setItemMeta UTÁN, különben törlődne.
+        hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(rolled);
         return rolled;
     }
 

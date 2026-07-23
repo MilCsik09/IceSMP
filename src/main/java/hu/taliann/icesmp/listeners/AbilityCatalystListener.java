@@ -421,7 +421,9 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         if (held == null || held.getType().isAir()) {
             return;
         }
-        player.setCooldown(held.getType(), (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
+        // ItemStack-overload: a pálca-katalizátor SAJÁT cooldown-csoportját (USE_COOLDOWN) használja,
+        // a melee-kard (nincs komponens) marad a Material-alapú overlayen — így nincs vanília-item bleed.
+        player.setCooldown(held, (int) Math.min(Integer.MAX_VALUE, cooldownTicks));
     }
 
     /** Whether the player's previous cast forms a configured combo with this one. */

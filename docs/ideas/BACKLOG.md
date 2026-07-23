@@ -657,15 +657,18 @@ de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`
   RÉSZBEN KÉSZ az új tartalom is: recept-vezérelt consumable-spec (result.consumable) + első
   Szakács-adag (4 kocsma-ital DRINK-animációval + 2 tájfogás, ITEM_MODEL-lel). NYITVA: több
   étel/ital-adag, és a Süti-féle nem-potion effektek. 🟡⭐⭐⭐
-- **P7c USE_COOLDOWN (cooldown-csoportok)** — katalizátor/relikvia/tekercs KÖZÖS nevesített
-  cooldownt kap, kézi setCooldown-könyvelés nélkül (ma 17 get/4 set kézzel). 🟢⭐⭐
+- ✅ **P7c USE_COOLDOWN (KÉSZ a katalizátorra)** — a pálca-katalizátor saját cooldown-csoportot
+  kap (ItemDataFactory.applyUseCooldownGroup), a cast-overlay setCooldown(ItemStack)-re váltva:
+  a castolás NEM sötétíti többé a játékos vele azonos Materialú vanília itemeit. NYITVA:
+  relikvia/tekercs-aktívok, ha kap fix cooldownt. 🟢⭐⭐
 - **P7d DEATH_PROTECTION** — totem-viselkedés BÁRMELY itemen (relikvia, ami egyszer megment). 🟢⭐⭐
 - **P7e GLIDER** — elytra-viselkedés bármely itemen (relikvia-szárny listener nélkül). 🟢⭐⭐
 - **P7f BLOCKS_ATTACKS** — pajzs-viselkedés bármely itemen (parry relikvia). 🟢⭐
 - **P7g TOOL/WEAPON/DAMAGE_RESISTANT** — deklaratív bányász/harc-szabály (tűzálló item,
   saját ásás-sebesség). 🟢⭐
-- **P7h TOOLTIP_DISPLAY** — vanília tooltip-sorok elrejtése (tiszta unique-item tooltip,
-  az „amikor a főkézben" attribútum-spam nélkül). 🟢⭐⭐
+- ✅ **P7h TOOLTIP_DISPLAY (KÉSZ az affix-gearre)** — a vanília ATTRIBUTE_MODIFIERS blokk
+  elrejtve az affix-rollos felszerelésen (ItemDataFactory.hideAttributeTooltip); a stat a saját
+  affix-lore-sorban látszik, infó-veszteség nélkül. 🟢⭐⭐
 - **P7i CUSTOM_MODEL_DATA (új, több-értékű: float/flag/szín/string)** — gazdagabb RP-horog
   az integer-CMD helyett (a pack booleanből vezérelhet override-ot/animációt). 🟢⭐⭐
 - **P7j PROFILE** — saját fej-skin (NPC-fejek, kozmetikák) — ma nem használjuk. 🟢⭐
