@@ -43,6 +43,18 @@ quest-toast:
 onboarding:
   enabled: true
   first-quest: "onboarding_herald"
+  # P4d — natív üdvözlő-dialógus az első belépéskor (Mojang Dialog API, resource pack
+  # nem kell). Az intro-cím-szekvencia UTÁN jön (welcome-dialog-delay-ticks), hogy ne
+  # takarja. Kikapcsolható. A sorok MiniMessage-formátumúak.
+  welcome-dialog: true
+  welcome-dialog-delay-ticks: 80
+  welcome-dialog-title: "<gradient:#8ab4ff:#c9a3ff>Üdv az IceSMP-n!</gradient>"
+  welcome-dialog-lines:
+    - "<gray>A <white>Fa árnyékában</white> írod a legendád. Első lépések:</gray>"
+    - "<yellow>•</yellow> <white>/kaszt</white> — válassz hivatást (13 kaszt)."
+    - "<yellow>•</yellow> <white>/faction</white> — csatlakozz a négy hatalom egyikéhez."
+    - "<yellow>•</yellow> <white>/menu</white> — minden rendszer egy helyen."
+    - "<gray>A haladásodat a <white>Haladás</white> képernyőn (L) is követheted.</gray>"
 
 # ===== Közösségi célok (frakció-szintű, közös számláló) =====
 # Egy megosztott számláló, amibe egy frakció (vagy az egész szerver) minden

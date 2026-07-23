@@ -513,9 +513,13 @@ tételek a védőháló + a kihasználatlan potenciál.
   sandbox-javac pedig a Paper-API-t „külsőként" kiszűri — így egy elhibázott szignatúra
   csak az ÉLES fordításnál derülne ki (a plugin NEM fordulna). P4e-vel szemben (ott a
   DamageSource/DamageType már éles minta volt) itt TELJESEN új, verifikálhatatlan felület.
-  **Döntés: P4d az ELSŐ tétel, amint a gradle-build elérhető** (repo-hozzáférés) — ez az
-  egyetlen feladat, ahol a valódi fordítás tényleg kell. Addig NEM pusholunk vak,
-  fordítás-ellenőrzés nélküli unstable-API-kódot. 🟡⭐⭐⭐ (build-gate)
+  **FELOLDVA (2026-07-23): a valódi gradle-build elérhető, a teljes dialog-API bájtkódból
+  ÉS fordításból igazolt** (Dialog.create + DialogBase/DialogType/ActionButton builderek +
+  DialogAction.commandTemplate/customClick + Audience.showDialog/closeDialog, adventure 4.26.1).
+  MEGÉPÜLT az alap: `DialogService` (értesítő + megerősítő minta, szerver-oldali callback),
+  első felhasználás a natív üdvözlő-ablak (OnboardingListener, `onboarding.welcome-dialog`).
+  HÁTRALÉVŐ konverziók külön tételként lentebb (Quest Builder, ConfigMenu, quest-dialógus,
+  megerősítések). 🟡⭐⭐⭐
 - ✅ **P4e Környezeti damage-type-ok (2026-07-23, RÉSZBEN KÉSZ)** — MEGÉPÜLT az
   `icesmp:rontas`: a rontás-góc mag-aurája (CorruptionAuraListener, valódi fogyasztóval,
   saját magyar halál-üzenettel, `corruption.aura.*` élő-config, kikapcsolható). A
@@ -594,3 +598,46 @@ a game event registry fogyasztó nélkül halott regisztráció lenne.
   hasznosítás: a P5k instance-dimenzió kaphatna saját timeline-t (örök-éj / kárhozat-
   szürkület hangulat a kazamata-világnak) — ezért P5k-hoz csatolva, önálló tételként
   ELVETVE. 🔴⭐
+
+### P6 — Dialog-konverziók (2026-07-23, tulaj-ötlet: „sok menüt át lehetne tenni")
+
+FONTOS elhatárolás: a Dialog API NEM item-rács-GUI pótló. Amiben ERŐS: szöveg/szám/
+igen-nem/választó INPUT (űrlap), megerősítés, információs értesítő, elágazó gomb-listák,
+szerver-link lista. Amiben GYENGE (marad inventory-GUI): kattintható item-rács, drag-drop,
+élőben frissülő kijelző. A legnagyobb nyereség ott van, ahol MA chat- vagy anvil-inputot
+abuzálunk — az natívan, szerver-oldali válasz-kezeléssel sokkal jobb.
+
+**Kiemelt (ma chat/anvil-inputot használ — natív űrlapra cserélhető):**
+- **P6a Quest Builder** (`QuestBuilderListener`, ma „chatbe írt érték mentődik") — a mező-
+  szerkesztés TextInput/NumberRange/Boolean/SingleOption dialóg-űrlapra; a kapcsolók
+  (ismételhető/szezonális/objektíva-mód) checkbox-inputra; több-lépcsős MultiAction. A
+  legnagyobb UX-ugrás. 🟡⭐⭐⭐
+- **P6b ConfigMenu ingame szerkesztés** (`ConfigMenuGUI` + `/icesmp config set`, ma chat-
+  input az értékhez) — kulcs-szerkesztés natív input-dialóggal (szám/bool/szöveg típus
+  szerint), a `applyOverride` marad az írás egyetlen útja. 🟡⭐⭐
+- **P6c Quest-dialógus / NPC-beszéd** (ma chat-sorok + `/quest talk` fallback) — Notice/
+  MultiAction dialóg: a szöveg + válasz-gombok (elfogad/elutasít/kérdez) natív ablakban;
+  a gomb-akció a meglévő parancsokra megy (commandTemplate) — a gameplay a parancsban marad. 🟡⭐⭐⭐
+
+**Megerősítések (kockázatos/végleges akció — natív confirm-dialóg):**
+- **P6d Kaszt-választás megerősítés** (végleges, admin-visszaállítás) — a JobGUI k/spec-
+  választás elé confirm-ablak. 🟢⭐⭐
+- **P6e Frakció-váltás megerősítés** (fizetős + cooldown) — a költséget mutató confirm a
+  `/faction` váltás előtt. 🟢⭐⭐
+- **P6f Party-meghívás / bounty-elfogadás / vezeklés** — egyszeri igen/nem confirmök. 🟢⭐
+
+**Szám/szöveg-belépő al-folyamatok (item-GUI MARAD, csak a belépő lesz dialóg):**
+- **P6g Bank/valutaváltó összeg** — a MarketGUI/bank „mennyiség/ár" bekérése NumberRange-
+  inputra (a rács marad GUI). 🟢⭐⭐
+- **P6h Piac/aukció ár+darab** — eladáskor natív ár/darab űrlap. 🟢⭐⭐
+- **P6i Spellbook-keresés** (ma anvil/chat) — TextInput dialóg a spell-kereséshez. 🟢⭐
+- **P6j Report-űrlap** (`/report`) — kategória (SingleOption) + leírás (multiline TextInput). 🟢⭐
+
+**Info-ablakok (Notice/DialogList):**
+- **P6k Szabályzat / segítség** (`/szabalyzat`, `/segitseg`) — natív, lapozható info-ablak. 🟢⭐
+- **P6l Server-links dialóg + szünet-menü** (P5l) — Guides/Discord a ServerLinksType-ból. 🟢⭐⭐
+- **P6m /menu hub opció** — a `/menu` MultiAction-dialógként is (a jelenlegi GUI mellett,
+  opcionális) — csak ha a gomb-lista tényleg jobb, mint a rács. 🟢⭐
+
+Közös alap KÉSZ: `DialogService` (Notice + Confirm). A többi minta (MultiAction, input-
+űrlap, DialogList, commandTemplate-gomb) a P6a-nál épül ki előszőr, aztán újrahasznosul.

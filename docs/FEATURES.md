@@ -274,6 +274,10 @@
   (loadAdvancement, RP nélkül) — mérföldkövek (első kaszt/spec/frakció/szakma) és
   rejtett teljesítmények (rontás-tisztítás, hidden-spot); kódból granted, kikapcsolható
   (`advancements.enabled`).
+- **Natív párbeszéd-ablakok (Dialog API)**: szerver-oldali dialógusok RP nélkül
+  (`DialogService`: értesítő + megerősítő minta, szerver-oldali válasz-kezeléssel).
+  Első felhasználás: natív üdvözlő-ablak új játékosnak az első belépéskor
+  (`onboarding.welcome-dialog`, config-vezérelt tartalommal, kikapcsolható).
 - **Parancsok**: ~60 parancs magyar tab-complete-tel és hibaüzenetekkel;
   ranglisták (/leaderboard), /lore kódex-lapozó (frakciók/helyek történetei,
   alias-okkal), /kronika, /adomany közösségi láda.

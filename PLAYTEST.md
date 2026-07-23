@@ -832,6 +832,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       „A rontás megtörve" (challenge-keret); **hidden-spot felfedezés** → „Rejtett zug". Minden
       grant felugró toastot ad, chat-broadcast NÉLKÜL. Már teljesített advancement újra nem toastol.
       `advancements.enabled: false` (general.yml) + restart → a fül be sem töltődik, a grantek no-opok.
+- [ ] **P4d Natív dialógus (ÚJ):** ÚJ játékos első belépésekor (az intro-cím UTÁN,
+      `onboarding.welcome-dialog-delay-ticks`≈4 mp) natív **üdvözlő-ablak** ugrik fel
+      (cím + első-lépés sorok + „rendben" gomb) — resource pack NÉLKÜL. ESC/gomb bezárja.
+      `onboarding.welcome-dialog: false` → nem jön. Tartalom élő-configból
+      (`onboarding.welcome-dialog-title/-lines`, MiniMessage). Régi játékosnál NEM jelenik meg.
 - [ ] HUD oldalsáv: frakció, kasztok+szintek, szakmák, talentpontok, egyenleg, **Erő-csík**.
 - [ ] Bossbar (világboss/raid) megjelenik — és **nem** ütközik az Erő-csíkkal (az a sidebar-on van).
 - [ ] **Natív tablist (ÚJ — TAB-kiváltás, a TAB.jar NÉLKÜL tesztelendő):**
