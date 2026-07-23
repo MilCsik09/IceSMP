@@ -70,7 +70,11 @@ mutatják, hányadik szint kell hozzájuk.
 
 > A teljes képességlistát (mit tud, mennyibe kerül) lásd: [Képességek](05-kepessegek.md).
 
-## ❤️ Életerő: a kasztod alkata számít
+## ❤️ Életerő: a kasztod alkata számít *(jelenleg kikapcsolva)*
+
+> ⚠️ Ez a rendszer **egyelőre nem aktív** — az életerő mindenkinek a vanília 20 (10 szív),
+> a talentek módosítják. Az alábbi leírás a tervezett működés, amit a szerver egy későbbi
+> balansz-körben kapcsol be.
 
 A maximális életerőd a **kasztod jellegével és szintjével nő** (a szívsor közben mindig
 10 szív marad — a szívek "sűrűbbek" lesznek):

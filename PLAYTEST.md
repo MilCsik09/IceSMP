@@ -2076,6 +2076,8 @@ Jó tesztelést! ❄️
       (timings); idézésnél azonnal indul a követés, elbocsátás/halál/logout után leáll.
 
 ## HP/sebzés-skála (A17 1. ütem, tulaj-kérés, 2026-07-22)
+> ⚠️ ALAPBÓL KIKAPCSOLVA (tulaj-döntés): a teszthez előbb health.enabled=true +
+> scale-heals=true (config-GUI "HP-rendszer" kategória vagy /icesmp config set).
 - [ ] **Kaszt-HP-profil:** kaszt-választás után a max HP a szinttel nő (pl. Harcos 25.
       szint: 20+15=35; Varázsló 25. szint: 26.25); szint-lépés után legkésőbb 2 mp-en
       belül frissül; kaszt admin-resetnél visszaáll 20-ra; talent-HP ezen felül adódik.

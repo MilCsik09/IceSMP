@@ -117,7 +117,7 @@
   kap, és a szezonzárás teljes végeredmény-összegzőt hirdet.
 - **Kultista-zsákmány**: a portya/hírvivő/rítus-variánsok mobjai leölve saját
   loot-táblából dobnak (árnyékpor, emlékszilánk, ritkán Suttogás-meghívó).
-- **HP-rendszer (kaszt-HP-profilok)**: a max életerő a kaszt jellegével és
+- **HP-rendszer (kaszt-HP-profilok, KAPCSOLÓVAL — alapból KI)**: a max életerő a kaszt jellegével és
   szintjével nő (tank ~50 / caster ~32 az 50. szinten), a szívsor normalizálva
   10 szív marad; harcon kívüli regen (8 mp késleltetés, étel-küszöbbel); a
   direkt gyógyítások a maxHP-val arányosan skálázódnak (plafonig) — minden

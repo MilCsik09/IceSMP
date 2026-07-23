@@ -1246,7 +1246,11 @@ soulforge:
 # aránnyal skálázódnak (scale-heals, plafon: scale-heals-cap) — a heal nem
 # értéktelenedik el a nagyobb tavak mellett.
 health:
-  enabled: true
+  # IDEIGLENESEN KIKAPCSOLVA (tulaj-döntés, 2026-07-22): a kaszt-HP-profilok, a
+  # szívsor-normalizálás és a harcon kívüli regen alapból nem él — minden vanília.
+  # Visszakapcsolás: enabled: true (+ scale-heals: true) — restart nélkül,
+  # /icesmp reload vagy a config-GUI HP-kategóriája is átbillenti.
+  enabled: false
   display:
     normalize: true
     hearts: 10
@@ -1259,7 +1263,7 @@ health:
     interval-ticks: 40
     percent-per-tick: 5.0
     min-food: 6
-  scale-heals: true
+  scale-heals: false
   scale-heals-cap: 2.5
   class-profiles:
     warrior: { base: 20, per-level: 0.6 }

@@ -463,7 +463,8 @@ public final class ConfiguredSpell extends BaseSpell {
                 // a kaszt-HP-profilok mellett a fix heal relatíve elértéktelenedne.
                 double healScale = 1.0D;
                 final hu.taliann.icesmp.managers.ConfigManager config = balanceSource();
-                if (config != null && config.getBoolean("health.scale-heals", true)) {
+                if (config != null && config.getBoolean("health.enabled", true)
+                        && config.getBoolean("health.scale-heals", true)) {
                     healScale = Math.min(Math.max(1.0D, maxHealth.getValue() / 20.0D),
                             Math.max(1.0D, config.getDouble("health.scale-heals-cap", 2.5D)));
                 }
