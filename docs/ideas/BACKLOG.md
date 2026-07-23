@@ -509,7 +509,10 @@ tételek a védőháló + a kihasználatlan potenciál.
 - **P4d Dialog-registry felderítés (1.21.6+)** — natív szerver-oldali párbeszéd-ablakok:
   a quest-dialógusok, a merchant_choice elágazás és a kaszt-választás megerősítés
   kattintható natív UI-t kaphatna chat-sorok helyett. A legnagyobb potenciál —
-  ellenőrizendő a Paper 1.21.11 writable-registry lefedettség. 🔴⭐⭐⭐
+  2026-07-23: a szerver-build bájtkódjából igazolva TELJESEN elérhető az 1.21.11-en
+  (dialog-registry + minden típus/input/akció builder: Notice, Confirmation,
+  MultiAction, DialogList, ServerLinks; szöveg/szám/választó inputok; parancs-sablon
+  és custom-click akciók szerver-oldali kezelővel) — RP nélkül működik. 🟡⭐⭐⭐
 - **P4e Környezeti damage-type-ok** — saját halál-üzenetű típusok a rontás-zónának,
   Kárhozat-aurának, vérzés/átok DoT-oknak (olcsó regisztráció, erős hangulat). 🟢⭐⭐
 - **P4f RP-kötött registry-tartalom (világépítéssel együtt)** — banner-minta
@@ -520,3 +523,50 @@ tételek a védőháló + a kihasználatlan potenciál.
 - ✅ **P4g Upgrade-checklist tétel** (CLAUDE.md Build&verify) — verzió-bumpnál a bootstrap az első törési pont
   (unstable API): a PLAYTEST/upgrade-folyamatba explicit "bootstrap fordul + registry
   bejegyzések élnek" ellenőrzés. 🟢⭐
+
+### P5 — Datapack-réteg (2026-07-23, tulaj-kérés)
+
+Alap (bájtkódból igazolt): a bootstrap `DatapackRegistrar.discoverPack(...)`-kel a plugin
+jarjából datapack regisztrálható, még a világbetöltés előtt. A datapack teljesen
+szerver-oldali (RP nem kell), de NEM élő-configos: változás restart/reload-dal él.
+A vanília `recipe`-szállítás szándékosan kimarad (a szakma-kapuzást kerülné meg),
+a game event registry fogyasztó nélkül halott regisztráció lenne.
+
+- **P5a Advancement-fa (IceSMP haladás-fül)** — fejezetek: Út a kasztig / Frakció-hűség /
+  Szakma-mesterség / Kazamaták / Lore-fejezetek; impossible-trigger + kódból grant;
+  magyar cím-leírás, item-ikon, toast. A leggyorsabb játékos-látható nyereség. 🟡⭐⭐⭐
+- **P5b Rejtett lore-advancementek** — hidden-spotok, Thanaopolis, Suttogó-leleplezés,
+  oltár-rituálék: „titkos" bejegyzések, csak megszerzéskor látszanak. 🟢⭐⭐
+- **P5c Dungeon-belsők struktúraként + jigsaw** — melyseg/csontkripta szoba-készlet
+  template_pool-ból, `/place`-szel telepíthető, processor-listával variálható —
+  a világépítő munka egy része verziókezelt adattá válik. 🟡⭐⭐⭐
+- **P5d Vault-blokk a dungeon-kulcsokhoz** — a vanília vault natívan PER-PLAYER lootot
+  ad kulcs-itemért: a meglévő kulcs-sáv (CMD 6201+) + datapack loot-tábla — a
+  DungeonLootService láda-cooldown rétege mellé natív, csalásbiztos út. 🟡⭐⭐⭐
+- **P5e Trial spawner próbatermek** — kultista hullám-szobák saját spawner-konfiggal és
+  loot-táblával; ominous-változat a világesemény-réteghez kötve. 🟡⭐⭐
+- **P5f Vanília-töltelék loot-táblák datapackbe** — a dungeon-láda/kultista vanília-anyag
+  rétege loot_table-ként predikátumokkal; a unique-arányok kódban maradnak
+  (élő-config megőrizve). 🟢⭐⭐
+- **P5g Statikus ásatási helyszínek** — a B42 régészet dinamikus lelőhelyei mellé
+  rom-struktúrák előre elhelyezett gyanús blokkokkal + datapack loot-táblával
+  (a szerver-saját lelet-felülírás változatlanul él rájuk). 🟢⭐⭐
+- **P5h Enchant effect-komponensek (döntési pont)** — datapack-JSON enchantként a
+  Rúnavért/iskola-counterek NATÍV `damage_protection`-t kapnának a #icesmp:magia
+  damage-tagre (a Paper bootstrap-builder effects-et nem tud — bájtkódból igazolt).
+  Trade-off: natív+fix formula vs a mostani listener+élő-config százalék. 🟡⭐⭐
+- **P5i #icesmp:magia damage-type tag** — a 8 iskola-típus egy tagben: erre köthető
+  minden resist/immunitás (P5h előfeltétele; a SpellDamageListener is olvashatná). 🟢⭐⭐
+- **P5j Enchantment-provider a világesemény-moboknak** — kultista/miniboss gear
+  szint-skálázott natív enchantokkal (fogyasztó: EventSpawnGuard.prepare + spawn-út). 🟢⭐⭐
+- **P5k Dungeon-instance dimenzió** — dimension_type + worldgen datapackből: elkülönített
+  kazamata-világ (a season-2 End-nyitás kerete is lehet); a Folia-többvilág viselkedése
+  kiemelt playtest-pont. 🔴⭐⭐
+- **P5l Server-links dialógus + pause-menü** — ServerLinksType dialog +
+  #minecraft:pause_screen_additions tag: Guides/Discord linkek natívan a
+  szünet-menüből (a P4d dialog-réteg legolcsóbb első lépcsője). 🟢⭐⭐
+- **P5m Season-worldgen csomag** — új világrész-jegyek (biome/feature/structure_set)
+  CSAK új chunkokban érvényesülnek — season-2 térkép-bővítéshez időzítve. 🔴⭐
+- **P5n Timeline-registry felderítés** — az 1.21.11-ben megjelent új data-registry
+  (`data/minecraft/timeline`): mire való, ad-e nekünk bármit — felderítendő,
+  mielőtt bármit építünk rá. 🔴⭐
