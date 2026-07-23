@@ -58,6 +58,19 @@ public final class ItemDataFactory {
         item.setData(DataComponentTypes.CONSUMABLE, builder.build());
     }
 
+    /**
+     * ITEM_MODEL (1.21.4+) — string-alapú modell-id az integer-CMD helyett (a modern RP-út).
+     * A pack az {@code assets/<ns>/items/<path>.json}-t szállítja; nincs vanília-modell-szerkesztés,
+     * és az item Materialja független a megjelenéstől. Ismeretlen/üres kulcs → no-op.
+     */
+    public static void applyItemModel(final ItemStack item, final String modelId) {
+        if (modelId == null || modelId.isBlank()) {
+            return;
+        }
+        final Key key = Key.key(modelId.contains(":") ? modelId : "icesmp:" + modelId);
+        item.setData(DataComponentTypes.ITEM_MODEL, key);
+    }
+
     /** Táplálkozási érték: bármely item ehetővé tétele (új ételekhez). */
     public static void applyFood(final ItemStack item, final int nutrition, final float saturation,
                                  final boolean canAlwaysEat) {
@@ -66,6 +79,60 @@ public final class ItemDataFactory {
                 .saturation(Math.max(0.0F, saturation))
                 .canAlwaysEat(canAlwaysEat)
                 .build());
+    }
+
+    /**
+     * Recept-vezérelt fogyaszthatóság (új ételek/italok kód nélkül): a
+     * {@code result.consumable} YAML-blokkból épít FOOD (opcionális) + CONSUMABLE komponenst.
+     * Kulcsok: {@code animation} (eat|drink), {@code seconds}, {@code nutrition},
+     * {@code saturation}, {@code always-edible}, {@code effects} (lista: "TÍPUS:másodperc:szint").
+     * A tápérték csak akkor kerül fel, ha a {@code nutrition} meg van adva (>=0).
+     */
+    public static void applyRecipeConsumable(final ItemStack item,
+                                             final org.bukkit.configuration.ConfigurationSection section) {
+        final boolean drink = "drink".equalsIgnoreCase(section.getString("animation", "eat"));
+        final int nutrition = section.getInt("nutrition", -1);
+        if (nutrition >= 0) {
+            applyFood(item, nutrition, (float) section.getDouble("saturation", 0.0D),
+                    section.getBoolean("always-edible", false));
+        }
+        final List<PotionEffect> effects = new ArrayList<>();
+        for (final String token : section.getStringList("effects")) {
+            final PotionEffect parsed = parseEffect(token);
+            if (parsed != null) {
+                effects.add(parsed);
+            }
+        }
+        applyConsumable(item, drink ? ItemUseAnimation.DRINK : ItemUseAnimation.EAT,
+                drink ? DRINK_SOUND : EAT_SOUND,
+                (float) Math.max(0.1D, section.getDouble("seconds", drink ? 1.6D : 1.6D)),
+                section.getBoolean("particles", true), effects);
+    }
+
+    /** "TÍPUS:másodperc:szint" → PotionEffect (a szint opcionális, default 0). Ismeretlen típus → null. */
+    private static PotionEffect parseEffect(final String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        final String[] parts = token.split(":");
+        final PotionEffectType type = org.bukkit.Registry.EFFECT.get(
+                NamespacedKey.minecraft(parts[0].trim().toLowerCase(java.util.Locale.ROOT)));
+        if (type == null) {
+            return null;
+        }
+        int seconds = 30;
+        int amplifier = 0;
+        try {
+            if (parts.length > 1) {
+                seconds = Integer.parseInt(parts[1].trim());
+            }
+            if (parts.length > 2) {
+                amplifier = Integer.parseInt(parts[2].trim());
+            }
+        } catch (final NumberFormatException ignored) {
+            // Hibás szám → alapértékek maradnak (a recept-config hibája ne dobjon craftkor).
+        }
+        return new PotionEffect(type, Math.max(1, seconds) * 20, Math.max(0, amplifier), true, true, true);
     }
 
     /**

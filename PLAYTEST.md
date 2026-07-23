@@ -844,6 +844,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       A Tiltott kakaóbabos sütemény (lökés+partikel) VÁLTOZATLAN (listener-ág). A honvágy-
       kötelezettség (BLUE hal / RED tojás) változatlanul működik. `/icesmp reload` után az
       ÚJ craftok tükrözik a buff-időt (a komponens craft-időben olvassa a configot).
+- [ ] **P7 Szakács fogyaszthatók (ÚJ, recept-vezérelt CONSUMABLE + ITEM_MODEL):** a Szakács
+      craftolja: **Jéghegyi Sör / Parázs Pálinka / Caldesterai Gyógytea / Mortengrádi Keserű**
+      (ITALOK — ivás-animáció + hang!), **Vándor Pogácsája / Halász Fogása** (ÉTELEK). Ivás/evés
+      után a megfelelő rövid buff (pl. Sör→Regeneráció+Felszívódás, Pálinka→Tűzállóság+Erő,
+      Pogácsa→táplálék+Sietség, Fogás→Vízlégzés). **ITEM_MODEL** (nem CMD): pack nélkül alap-item
+      textúrát mutat, a `icesmp:<id>` modellt a külső pack adja. A buff-idők a receptből (config).
 - [ ] **P8e Alacsony-HP piros vignetta (ÚJ):** HP a küszöb (alap 30%) alá esve a képernyő
       szélén vörös vészköd jelenik meg; gyógyulva/küszöb fölé eltűnik. `hud.low-hp-vignette.enabled:
       false` → nem jön. A per-player világperem NEM okoz tényleges perem-hatást (nem lök vissza,

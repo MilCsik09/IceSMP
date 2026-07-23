@@ -119,6 +119,12 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 
 > A receptek smaragd-alapanyaggal készülnek (hogy ne ütközzenek a vanilla receptekkel).
 
+**🍺 Szakács kocsma-italok és tájfogások** — a Szakács saját **italokat** (ivás-animációval!) és
+**ételeket** főz, mind rövid, nem-harci buffal: *Jéghegyi Sör* (regeneráció), *Parázs Pálinka*
+(tűzállóság + erő), *Caldesterai Gyógytea* (regeneráció), *Mortengrádi Keserű* (éjjellátás),
+*Vándor Pogácsája* (táplálék + sietség), *Halász Fogása* (vízlégzés). A pontos hatás-idő a
+szerveren hangolható.
+
 ### 🔒 Craft-korlátok (vanilla tárgyak)
 
 Néhány **erős vanilla tárgy** is szakmához kötött — ez teszi értékessé a szakmákat és a köztük

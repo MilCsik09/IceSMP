@@ -3903,6 +3903,123 @@ profession-recipes:
     result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_csontkripta, custom-model-data: 6204 }
     ingredients: [ "ECHO_SHARD:3", "BONE_BLOCK:8", "unique:arnyekpor:2" ]
 
+  # ===== P7 — Szakács fogyaszthatók (data-component CONSUMABLE/FOOD, CMD 6500+) =====
+  # A result.consumable blokk vezérli a fogyasztást (kód nélkül): animation (eat|drink),
+  # seconds, nutrition, saturation, always-edible, effects ["TÍPUS:másodperc:szint"].
+  # Kocsma-italok (DRINK) + tájfogások — rövid, NEM harc-eldöntő buffok.
+  jeghegyi_sor:
+    profession: cook
+    level: 10
+    learn: level
+    display-name: "Jéghegyi Sör"
+    category: "Ital"
+    lore:
+      - "Cryghaliris kikötőinek jeges árpasöre —"
+      - "a Jégmezők népe erre esküszik hosszú éj után."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:jeghegyi_sor"
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects: [ "REGENERATION:20:0", "ABSORPTION:20:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:2", "SUGAR:1" ]
+  parazs_palinka:
+    profession: cook
+    level: 14
+    learn: level
+    display-name: "Parázs Pálinka"
+    category: "Ital"
+    lore:
+      - "Pyralingrad kohóiban érlelt tűzitalt —"
+      - "a torkod égeti, a bőröd viszont megvédi."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:parazs_palinka"
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects: [ "FIRE_RESISTANCE:45:0", "STRENGTH:30:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "BLAZE_POWDER:1", "NETHER_WART:1" ]
+  caldesterai_gyogytea:
+    profession: cook
+    level: 8
+    learn: level
+    display-name: "Caldesterai Gyógytea"
+    category: "Ital"
+    lore:
+      - "A Bokic-menti füvesasszonyok főzete —"
+      - "langyos korty, ami visszahozza az erőt."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:caldesterai_gyogytea"
+      consumable:
+        animation: drink
+        seconds: 1.4
+        effects: [ "REGENERATION:15:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "GLOW_BERRIES:2", "SUGAR:1" ]
+  mortengradi_keseru:
+    profession: cook
+    level: 12
+    learn: level
+    display-name: "Mortengrádi Keserű"
+    category: "Ital"
+    lore:
+      - "A Kitaszítottak keserű nedűje —"
+      - "az éjben lát, aki egyszer megissza."
+    result:
+      material: HONEY_BOTTLE
+      amount: 1
+      item-model: "icesmp:mortengradi_keseru"
+      consumable:
+        animation: drink
+        seconds: 1.6
+        effects: [ "NIGHT_VISION:90:0", "ABSORPTION:30:0" ]
+    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:1", "CRIMSON_FUNGUS:1" ]
+  vandor_pogacsaja:
+    profession: cook
+    level: 6
+    learn: level
+    display-name: "Vándor Pogácsája"
+    category: "Étel"
+    lore:
+      - "Útra való sós pogácsa — a lába alá"
+      - "sietséget ad az éhes vándornak."
+    result:
+      material: BREAD
+      amount: 3
+      item-model: "icesmp:vandor_pogacsaja"
+      consumable:
+        animation: eat
+        seconds: 1.4
+        nutrition: 6
+        saturation: 7.2
+        effects: [ "SPEED:20:0" ]
+    ingredients: [ "WHEAT:3", "EGG:1", "SUGAR:1" ]
+  halasz_fogasa:
+    profession: cook
+    level: 10
+    learn: level
+    display-name: "Halász Fogása"
+    category: "Étel"
+    lore:
+      - "Frissen sült fogás hínár-körettel —"
+      - "a víz alatt is otthon érzed magad tőle."
+    result:
+      material: COOKED_SALMON
+      amount: 2
+      item-model: "icesmp:halasz_fogasa"
+      consumable:
+        animation: eat
+        seconds: 1.6
+        nutrition: 6
+        saturation: 6.0
+        effects: [ "WATER_BREATHING:45:0" ]
+    ingredients: [ "SALMON:2", "DRIED_KELP:2" ]
+
 crafted-by:
   enabled: true
 

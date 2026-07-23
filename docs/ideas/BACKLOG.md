@@ -654,7 +654,9 @@ de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`
 - 🔄 **P7b CONSUMABLE + FOOD (FOLYAMATBAN)** — `ItemDataFactory` alap KÉSZ (általános
   applyConsumable/applyFood + signature-étel migráció). A 7 fix-effektű K6-étel buffja már
   a CONSUMABLE-ből jön (food_v2 jelölő, nincs dupla buff, régi ételek nem regresszálnak).
-  NYITVA: új ételek/italok tartalom (DRINK-animáció), és a Süti-féle nem-potion effektek. 🟡⭐⭐⭐
+  RÉSZBEN KÉSZ az új tartalom is: recept-vezérelt consumable-spec (result.consumable) + első
+  Szakács-adag (4 kocsma-ital DRINK-animációval + 2 tájfogás, ITEM_MODEL-lel). NYITVA: több
+  étel/ital-adag, és a Süti-féle nem-potion effektek. 🟡⭐⭐⭐
 - **P7c USE_COOLDOWN (cooldown-csoportok)** — katalizátor/relikvia/tekercs KÖZÖS nevesített
   cooldownt kap, kézi setCooldown-könyvelés nélkül (ma 17 get/4 set kézzel). 🟢⭐⭐
 - **P7d DEATH_PROTECTION** — totem-viselkedés BÁRMELY itemen (relikvia, ami egyszer megment). 🟢⭐⭐
@@ -691,8 +693,10 @@ de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`
 
 ### P8 — További modern felületek (2026-07-23, valódi build-felderítés, 2. kör)
 
-- **P8a ITEM_MODEL komponens (1.21.4)** — string-alapú item-modell az integer-CMD helyett
-  (modern RP-horog; a pack booleanból/override-ból dolgozhat). 🟢⭐⭐
+- 🔄 **P8a ITEM_MODEL komponens (HASZNÁLATBAN új itemekhez)** — ItemDataFactory.applyItemModel
+  + result.item-model a receptben; az ÚJ Szakács-fogyaszthatók már ITEM_MODEL-t kapnak (nem CMD).
+  A pack-készítő spec: RESOURCE_PACK_CMD.md „ITEM_MODEL tárgyak” szekció. NYITVA: a régi CMD-itemek
+  teljes migrációja (egyeztetve a külső pack-készítővel). 🟢⭐⭐
 - **P8b Resource-pack PUSH (`sendResourcePacks`/ResourcePackRequest)** — a pluginhez VAN pack,
   de soha nem toljuk ki → a CMD/textúrák csak kézi telepítéssel élnek. Kötelező/prompt-os
   push (UUID + hash + üzenet). Tényleges hiányosság, ha a pack éles. 🟡⭐⭐

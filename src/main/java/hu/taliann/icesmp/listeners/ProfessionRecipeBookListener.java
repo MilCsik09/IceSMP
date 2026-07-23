@@ -394,6 +394,18 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (recipe.signature() != null) {
             hu.taliann.icesmp.items.ItemDataFactory.applySignatureFoodConsumable(result, recipe.signature(), configManager);
         }
+        // Recept-vezérelt fogyaszthatóság (új ételek/italok): a result.consumable blokk él-configból.
+        final org.bukkit.configuration.ConfigurationSection consumableSection = configManager.getConfiguration()
+                .getConfigurationSection("profession-recipes." + recipe.id() + ".result.consumable");
+        if (consumableSection != null) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyRecipeConsumable(result, consumableSection);
+        }
+        // ITEM_MODEL (modern RP-út, CMD helyett): result.item-model kulcsból (él-config).
+        final String itemModel = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.item-model", "");
+        if (!itemModel.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(result, itemModel);
+        }
         return result;
     }
 }

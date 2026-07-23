@@ -99,18 +99,22 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   - új parancs → tab-complete + `/menu` csempe (CommandMenus) + `14-parancsok.md` + jog-node
   - új jog-node → `Permissions.java` canonical map (különben az admin.all nem adja meg!)
   - új config-kulcs → use-site olvasás (élő-config) + ha admin-hangolandó: ConfigMenuGUI
-  - új custom item → CMD + `docs/RESOURCE_PACK_CMD.md` regiszter-sor
+  - új custom item → **ITEM_MODEL** (modern; `item-model:`/`ItemDataFactory.applyItemModel`) +
+    `docs/RESOURCE_PACK_CMD.md` „ITEM_MODEL tárgyak" szekció-sor. (A régi CMD-sávos itemek migrálásig
+    maradnak; ÚJ itemnél már NEM adunk integer CMD-t.)
   - új quest-NPC / territory-id → a P2-audit világépítő-checklistjére is fel kell kerülnie
   - új rendszer/mechanika → érintett `docs/player-guide/` oldal + PLAYTEST-blokk +
     `LORE_REFERENCE.md` sor (ha lore-kötött) + README feature-lista, ha ott is szerepel
   - minden doksi-szám a configból származik, nem fejből
   - záráskor: fordítás-ellenőrzés + `scripts/check_consistency.py` + tükör-push
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
-- **CMD-szabály:** minden új custom/unique item CustomModelData-t kap, és fel KELL venni a
-  `docs/RESOURCE_PACK_CMD.md` regiszterbe (a resource pack készítő ebből dolgozik). Sávok:
+- **Item-megjelenés szabálya:** ÚJ custom/unique item **ITEM_MODEL** komponenst kap (string
+  modell-id az `icesmp:` névtérben; `result.item-model:` a receptben / `ItemDataFactory.applyItemModel`),
+  és fel KELL venni a `docs/RESOURCE_PACK_CMD.md` „ITEM_MODEL tárgyak" szekciójába (a resource pack
+  készítő ebből dolgozik). A **régi integer-CMD** itemek a migrálásig maradnak, sávjaik:
   1001+ pénz, 4101/4201+ relikvia, 5201+ katalizátor, 5301+ pet-eszköz, 5401 ostromgép, 5410+ kijelölő-pálca,
   6000+ unique anyag, 6201+ kulcs, 6210 tervrajz, 6300+ recept-tárgy, 6450+ bolt-különlegesség,
-  6460+ loot-nevesített.
+  6460+ loot-nevesített. (CMD→ITEM_MODEL teljes migráció: P7 alatt, egyeztetve a pack-készítővel.)
 - Minden gameplay-változásnál frissítsd a docsot: a megfelelő `docs/player-guide/` oldal (a `PLAYER_GUIDE.md` csak index, nem kell bővíteni), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.
 - Commit-üzenet: magyar, tömör tárgysor + felsorolásos törzs; a repo-ban használt `Co-Authored-By` + `Claude-Session` trailerekkel zárul. Csak a kijelölt feature-branchre pusholj.
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).

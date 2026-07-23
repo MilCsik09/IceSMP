@@ -1702,3 +1702,18 @@ A frakció-akcentek angol fordítása a prompthoz: RED=„glowing ember orange-r
 BLUE=„icy light blue and silver”, NEUTRAL=„merchant gold and amber”,
 DARK=„bone white, pitch black, with cold turquoise lich-glow accents”.
 
+
+## ITEM_MODEL tárgyak (modern, CMD helyett)
+
+Az ÚJ custom itemek nem integer CustomModelData-t kapnak, hanem **ITEM_MODEL** komponenst
+(string modell-id). A pack ezekhez az `assets/icesmp/items/<path>.json` modell-fájlt szállítja
+(nem a vanília alap-item override-listáját szerkeszti). A modell az `icesmp:` névtérben él.
+
+| Modell-id (`icesmp:`) | Alap-item | Mi ez |
+|---|---|---|
+| `jeghegyi_sor` | HONEY_BOTTLE | Jéghegyi Sör (BLUE kocsma-ital) |
+| `parazs_palinka` | HONEY_BOTTLE | Parázs Pálinka (RED tűzital) |
+| `caldesterai_gyogytea` | HONEY_BOTTLE | Caldesterai Gyógytea (NEUTRAL) |
+| `mortengradi_keseru` | HONEY_BOTTLE | Mortengrádi Keserű (DARK) |
+| `vandor_pogacsaja` | BREAD | Vándor Pogácsája (étel) |
+| `halasz_fogasa` | COOKED_SALMON | Halász Fogása (étel) |
