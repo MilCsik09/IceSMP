@@ -40,11 +40,13 @@ public final class IceSMPBootstrap implements PluginBootstrap {
         // A spell→iskola besorolás configból jön (spells.yml spell-schools) — a spellek a
         // SpellDamageUtil-on át ütnek; a message-id kliens-oldalon nem fordul, a magyar
         // halál-üzenetet a SpellDamageListener írja felül.
+        // A regisztráció a compose eseményen fut (nem a régi freeze-en): az 1.21.11-es
+        // szerver registry-providere már csak a compose horgot szolgálja ki.
         // Védőháló: az unstable registry-API verzió-bumpnál törhet — a hiba itt NEM
         // viheti el a szerver-indulást: a runtime minden regisztrációra fallbackkel
         // készül (SpellDamageUtil vanília sebzés; a signature-stamp kihagyja a
         // hiányzó enchantot), így degradáltan, de elindul a plugin.
-        context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.freeze().newHandler(event -> {
+        context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.compose().newHandler(event -> {
             try {
                 for (final hu.taliann.icesmp.data.SpellSchool school : hu.taliann.icesmp.data.SpellSchool.values()) {
                     event.registry().register(
@@ -61,7 +63,7 @@ public final class IceSMPBootstrap implements PluginBootstrap {
             }
         }));
 
-        context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> {
+        context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.compose().newHandler(event -> {
             try {
             // Kulcsok: hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE — a runtime
             // (ProfessionRecipeBookListener) ugyanezekkel a kulcsokkal keresi vissza őket.
@@ -119,7 +121,7 @@ public final class IceSMPBootstrap implements PluginBootstrap {
      * az in_enchanting_table tagnek); a megszerzés útja a signature craft. A leírás a
      * magyar lore-név — ezt látja a játékos a tooltipben.
      */
-    private static void register(final io.papermc.paper.registry.event.RegistryFreezeEvent<org.bukkit.enchantments.Enchantment, EnchantmentRegistryEntry.Builder> event,
+    private static void register(final io.papermc.paper.registry.event.RegistryComposeEvent<org.bukkit.enchantments.Enchantment, EnchantmentRegistryEntry.Builder> event,
                                  final String id, final String displayName, final NamedTextColor color,
                                  final io.papermc.paper.registry.tag.TagKey<org.bukkit.inventory.ItemType> supportedTag,
                                  final EquipmentSlotGroup slotGroup) {
