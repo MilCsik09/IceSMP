@@ -34,7 +34,7 @@ errors:
     were opening, A refund for your key has been given."
   # A list of available placeholders: {value}
   cannot-be-empty: "{prefix}<red>{value} cannot be empty!"
-  cannot-be-air: "{prefix}<red>You can""t use air silly!~"
+  cannot-be-air: "{prefix}<red>You can't use air silly!~"
   # A list of available placeholders: {crate}
   prize-error: "{prefix}<red>An error has occurred while trying to give you the prize in crate called <gold>{crate}<red>. Please contact the server owner and show them this error."
 # All messages related to players.
@@ -45,7 +45,7 @@ player:
     must-be-looking-at-block: "{prefix}<red>You must be looking at a block."
   # A list of available placeholders: {player}
   target-not-online: "{prefix}<red>{player} <gray>is not online."
-  target-same-player: "{prefix}<red>You can""""t use this command on yourself."
+  target-same-player: "{prefix}<red>You can't use this command on yourself."
   no-permission: "{prefix}<red>You do not have permission to use that command/menu!"
   # A list of available placeholders: {crate}
   inventory-not-empty: "{prefix}<red>Inventory is not empty, Please make room before opening <gold>{crate}."
@@ -237,7 +237,7 @@ command:
       no-virtual-keys: "{prefix}<bold><dark_gray>(<dark_red>!<dark_gray>)</bold> <gray>The player {player} does not have any keys."
       # A list of available placeholders: {player}, {crates_opened}
       virtual-keys-header:
-        - "<bold><dark_gray>(<gold>!<dark_gray>)</bold> <gray>List of {player}""s current
+        - "<bold><dark_gray>(<gold>!<dark_gray>)</bold> <gray>List of {player}'s current
           number of keys."
         - " <yellow> -> Total Crates Opened: <red>{crates_opened}"
         - ""

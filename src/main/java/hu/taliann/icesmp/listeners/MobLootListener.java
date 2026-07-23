@@ -217,7 +217,7 @@ public final class MobLootListener implements Listener {
                     item.setItemMeta(meta);
                 }
                 final ItemStack rolledNamed = affixService.roll(item, tier, false);
-                // ITEM_MODEL a roll UTÁN — a roll setItemMeta-ja különben törölné.
+                // Data components must stay after the rarity roll because the roll rewrites item meta.
                 final Object namedModel = chosen.get("item-model");
                 if (namedModel != null && !String.valueOf(namedModel).isBlank()) {
                     hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(rolledNamed, String.valueOf(namedModel));

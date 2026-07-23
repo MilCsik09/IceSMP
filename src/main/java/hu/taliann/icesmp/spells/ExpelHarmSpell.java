@@ -81,7 +81,6 @@ public final class ExpelHarmSpell extends BaseSpell {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE);
         meta.getPersistentDataContainer().set(stickTag, PersistentDataType.BOOLEAN, true);
         stack.setItemMeta(meta);
-        // Resource pack-hez: ITEM_MODEL a setItemMeta után.
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, "icesmp:spell_expel_harm");
         return stack;
     }

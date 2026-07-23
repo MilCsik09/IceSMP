@@ -391,7 +391,6 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (consumableSection != null) {
             hu.taliann.icesmp.items.ItemDataFactory.applyRecipeConsumable(result, consumableSection);
         }
-        // ITEM_MODEL (modern RP-út): result.item-model kulcsból (él-config).
         final String itemModel = configManager.getString(
                 "profession-recipes." + recipe.id() + ".result.item-model", "");
         if (!itemModel.isBlank()) {

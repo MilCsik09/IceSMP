@@ -121,8 +121,7 @@ public final class CatalystItemFactory {
         meta.getPersistentDataContainer().set(isCatalystKey, PersistentDataType.BOOLEAN, true);
         meta.getPersistentDataContainer().set(uniqueIdKey, PersistentDataType.STRING, UUID.randomUUID().toString());
         itemStack.setItemMeta(meta);
-        // Data-komponensek a setItemMeta UTÁN: kaszt-alapú ITEM_MODEL + saját
-        // cooldown-csoport (utóbbi: a cast-overlay NEM sötétíti a vele azonos Materialú vanília itemet).
+        // Data components must stay after setItemMeta; otherwise the meta round-trip clears them.
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack,
                 "icesmp:catalyst_" + (jobType == null ? "wizard" : jobType.getId()));
         hu.taliann.icesmp.items.ItemDataFactory.applyUseCooldownGroup(itemStack, "catalyst", 0.5F);
