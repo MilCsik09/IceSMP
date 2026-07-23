@@ -78,7 +78,7 @@ profession-recipes:
       - "&7A Vasművek Akadémiájának mesterei szerint"
       - "&7még a legmélyebb tárna is megnyílik előtte."
     category: "Szerszám"
-    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:tarnasz_csakany_recept" }
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:tarnasz_csakany_recept", enchant: "minecraft:efficiency:2" }
     ingredients: [ "DIAMOND:3", "EMERALD:2", "STICK:2" ]
   kvarc_finomitas:
     profession: miner
@@ -114,7 +114,7 @@ profession-recipes:
       - "&7A Kárhozat Kapujából szüremlő netherit"
       - "&7fejezi be ezt a mélybányász szerszámot."
     category: "Szerszám (tervrajz)"
-    result: { material: NETHERITE_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_csakany" }
+    result: { material: NETHERITE_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_csakany", enchant: "minecraft:efficiency:3" }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:3", "STICK:2" ]
 
   # =========================================================
@@ -319,7 +319,7 @@ profession-recipes:
       - "&7A Kárhozat Kapujának netheritjével edzve,"
       - "&7egyetlen fatörzs sem áll ellen neki."
     category: "Szerszám (tervrajz)"
-    result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_fejsze" }
+    result: { material: NETHERITE_AXE, amount: 1, affix-tier: crafted, item-model: "icesmp:netherit_fejsze", attributes: [ "attack_damage:3" ] }
     ingredients: [ "NETHERITE_INGOT:2", "DIAMOND:3", "STICK:2" ]
 
   # =========================================================
@@ -378,7 +378,7 @@ profession-recipes:
       - "&7Vasborítás és smaragd-veret — a kovácscéhek"
       - "&7bástyaként állítják a viselő elé."
     category: "Páncél"
-    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:bastya_pajzs_recept" }
+    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:bastya_pajzs_recept", attributes: [ "knockback_resistance:0.15" ] }
     ingredients: [ "IRON_INGOT:6", "EMERALD:2" ]
   gyemant_kard:
     profession: armorer
@@ -434,7 +434,7 @@ profession-recipes:
       - "&7Kallan jégsárkányainak pikkelye ihlette"
       - "&7hadi vért, a kovácscéhek büszkesége."
     category: "Páncél (tervrajz)"
-    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:sarkanyvert_recept" }
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:sarkanyvert_recept", attributes: [ "armor:2", "armor_toughness:1", "max_health:2" ] }
     ingredients: [ "NETHERITE_INGOT:4", "EMERALD_BLOCK:1" ]
   netherit_kard:
     profession: armorer
@@ -718,7 +718,7 @@ profession-recipes:
       - "&7Gyémánttal erősített nyél, mely a Bokic"
       - "&7legmélyebb sodrásában sem törik el."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:tartos_horgaszbot" }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:tartos_horgaszbot", enchant: "minecraft:unbreaking:2" }
     ingredients: [ "STICK:3", "STRING:2", "DIAMOND:1" ]
   tengeri_halkonzerv:
     profession: fisherman
@@ -753,7 +753,7 @@ profession-recipes:
       - "&7Arannyal és smaragddal díszített mesterbot —"
       - "&7a Bokic vizének szellemei is elismerik."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:mesteri_horgaszbot" }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:mesteri_horgaszbot", enchant: "minecraft:lure:2" }
     ingredients: [ "STICK:3", "STRING:2", "GOLD_INGOT:2", "EMERALD:1" ]
   legendas_horgaszbot:
     profession: fisherman
@@ -764,7 +764,7 @@ profession-recipes:
       - "&7Netherittel edzett zsinór, mely a Bokic"
       - "&7legrégebbi, legvadabb lakóit is kifogja."
     category: "Szerszám (tervrajz)"
-    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:legendas_horgaszbot" }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:legendas_horgaszbot", enchant: "minecraft:luck_of_the_sea:2" }
     ingredients: [ "STICK:3", "STRING:4", "NETHERITE_INGOT:1", "PRISMARINE_CRYSTALS:4" ]
   tengeristen_amulettje:
     profession: fisherman
@@ -939,7 +939,7 @@ profession-recipes:
       - "&7Tiszta Vasesszenciával itatott lemezek,"
       - "&7melyek szinte élővé teszik a páncélt."
     category: "Páncél"
-    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:esszencialt_vasvert" }
+    result: { material: DIAMOND_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:esszencialt_vasvert", attributes: [ "armor:2" ] }
     ingredients: [ "DIAMOND:6", "unique:tiszta_vasesszencia:3" ]
   runakovacsolt_penge:
     profession: armorer
@@ -950,7 +950,7 @@ profession-recipes:
       - "&7Rúnaporral kovácsolt penge, mely"
       - "&7az Akadémia elveszett tudását őrzi."
     category: "Fegyver (tervrajz)"
-    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:runakovacsolt_penge" }
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:runakovacsolt_penge", attributes: [ "attack_damage:3" ] }
     ingredients: [ "NETHERITE_INGOT:1", "unique:tiszta_vasesszencia:2", "unique:runapor:2" ]
 
   # =========================================================
@@ -967,7 +967,7 @@ profession-recipes:
       - "&7Egy káoszkori fenevad esszenciája"
       - "&7ivódott bele, vadságot kölcsönözve."
     category: "Páncél"
-    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:vadbor_pancel" }
+    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:vadbor_pancel", attributes: [ "armor:2" ] }
     ingredients: [ "DIAMOND:5", "unique:vad_esszencia:3" ]
   eszencias_fozet:
     profession: alchemist
@@ -1008,7 +1008,7 @@ profession-recipes:
       - "&7Fekete Villám Szilánkkal kovácsolva —"
       - "&7a Hu. 698-as ég hasadékának ereje él benne."
     category: "Fegyver (tervrajz)"
-    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:ereklye_penge" }
+    result: { material: NETHERITE_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:ereklye_penge", attributes: [ "attack_damage:3", "attack_speed:0.2" ] }
     ingredients: [ "NETHERITE_INGOT:2", "unique:osi_ereklyeszilank:1", "unique:szorny_mag:3" ]
 
   # =========================================================
@@ -1069,7 +1069,7 @@ profession-recipes:
       - "&7Rúnapor fénye vezeti a csákány élét"
       - "&7a legmélyebb tárnák sötétjében is."
     category: "Szerszám"
-    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:runafenyes_csakany" }
+    result: { material: DIAMOND_PICKAXE, amount: 1, affix-tier: crafted, item-model: "icesmp:runafenyes_csakany", enchant: "minecraft:efficiency:2" }
     ingredients: [ "DIAMOND:3", "STICK:2", "unique:runapor:2" ]
   ereklyeszilankos_banyasisak:
     profession: miner
@@ -1080,7 +1080,7 @@ profession-recipes:
       - "&7Fekete Villám Szilánk izzik a sisak mélyén,"
       - "&7megvilágítva a legsötétebb járatokat."
     category: "Páncél (tervrajz)"
-    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:ereklyeszilankos_banyasisak" }
+    result: { material: DIAMOND_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:ereklyeszilankos_banyasisak", attributes: [ "armor:1", "armor_toughness:1" ] }
     ingredients: [ "DIAMOND:5", "NETHERITE_INGOT:1", "unique:osi_ereklyeszilank:1" ]
   kivonatos_csontliszt_bomba:
     profession: herbalist
@@ -1123,7 +1123,7 @@ profession-recipes:
       - "&7Tiszta Vasesszenciával átitatott vaslemez,"
       - "&7mely szinte magától állja a csapásokat."
     category: "Páncél"
-    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:vasesszencias_pajzs" }
+    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:vasesszencias_pajzs", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "IRON_INGOT:4", "unique:tiszta_vasesszencia:2" ]
   rezvertezet_lablemez:
     profession: armorer
@@ -1134,7 +1134,7 @@ profession-recipes:
       - "&7Rezgő Rézötvözettel erősített lábvért,"
       - "&7mely sosem veszti fényét a csatában."
     category: "Páncél"
-    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:rezvertezet_lablemez" }
+    result: { material: DIAMOND_LEGGINGS, amount: 1, affix-tier: crafted, item-model: "icesmp:rezvertezet_lablemez", attributes: [ "armor:2" ] }
     ingredients: [ "DIAMOND:6", "unique:rezgo_rez_otvozet:3" ]
   vadolo_csizma:
     profession: armorer
@@ -1145,7 +1145,7 @@ profession-recipes:
       - "&7Vad Esszenciával itatott talp, mely"
       - "&7néma léptekkel követi a fenevadak nyomát."
     category: "Páncél"
-    result: { material: DIAMOND_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:vadolo_csizma" }
+    result: { material: DIAMOND_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:vadolo_csizma", attributes: [ "armor:1", "armor_toughness:1" ] }
     ingredients: [ "DIAMOND:4", "unique:vad_esszencia:2" ]
   szornyvert_mellveny:
     profession: armorer
@@ -1156,7 +1156,7 @@ profession-recipes:
       - "&7Egy Szörny Mag sötét ereje dobog"
       - "&7e mellvény netherit-lemezei alatt."
     category: "Páncél (tervrajz)"
-    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:szornyvert_mellveny" }
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:szornyvert_mellveny", attributes: [ "armor:2", "armor_toughness:1" ] }
     ingredients: [ "NETHERITE_INGOT:3", "unique:szorny_mag:3" ]
   kivonatos_regeneracio_fozet:
     profession: alchemist
@@ -1216,7 +1216,7 @@ profession-recipes:
       - "&7Rezgő Rézötvözet horgonyzza le e botot"
       - "&7a Bokic legerősebb sodrásában is."
     category: "Szerszám"
-    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:rezhorgany_horgaszbot" }
+    result: { material: FISHING_ROD, amount: 1, item-model: "icesmp:rezhorgany_horgaszbot", enchant: "minecraft:lure:1" }
     ingredients: [ "STICK:3", "STRING:2", "unique:rezgo_rez_otvozet:2" ]
   melytengeri_ereklyeszigony:
     profession: fisherman
@@ -1227,7 +1227,7 @@ profession-recipes:
       - "&7Fekete Villám Szilánk pulzál a szigony hegyén,"
       - "&7mit a mélytenger sötétjéből hoztak fel."
     category: "Fegyver (tervrajz)"
-    result: { material: TRIDENT, amount: 1, affix-tier: crafted, item-model: "icesmp:melytengeri_ereklyeszigony" }
+    result: { material: TRIDENT, amount: 1, affix-tier: crafted, item-model: "icesmp:melytengeri_ereklyeszigony", attributes: [ "attack_damage:2", "attack_speed:0.2" ] }
     ingredients: [ "PRISMARINE_SHARD:4", "PRISMARINE_CRYSTALS:2", "unique:osi_ereklyeszilank:1" ]
   gyogyerovel_dusitott_lakoma:
     profession: cook
@@ -1643,7 +1643,7 @@ profession-recipes:
       - "&7Sárkánycsont-lemezekkel erősített pajzs —"
       - "&7ami nekicsapódik, megdermed egy szívverésre."
     category: "Páncél"
-    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:sarkanycsont_pajzs" }
+    result: { material: SHIELD, amount: 1, affix-tier: crafted, item-model: "icesmp:sarkanycsont_pajzs", attributes: [ "knockback_resistance:0.1", "max_health:2" ] }
     ingredients: [ "SHIELD:1", "unique:sarkanycsont_szilank:1", "IRON_INGOT:4", "unique:nyelbor:1" ]
   viharuveg_lampas:
     profession: enchanter
@@ -1798,7 +1798,7 @@ profession-recipes:
       - "&7egy koronában — az utolsó kovácsmű,"
       - "&7amit a Mélység Népe hátrahagyott."
     category: "Legendás (tervrajz)"
-    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:melysegi_korona" }
+    result: { material: NETHERITE_HELMET, amount: 1, affix-tier: crafted, item-model: "icesmp:melysegi_korona", attributes: [ "armor:2", "armor_toughness:1" ] }
     ingredients: [ "unique:melysegi_borostyan:3", "unique:nema_kristaly:2", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2", "GOLD_BLOCK:4", "NETHERITE_INGOT:2" ]
   viharjaro_csizma:
     profession: armorer
@@ -1810,7 +1810,7 @@ profession-recipes:
       - "&7Aki viseli, a vihar előtt jár egy"
       - "&7lépéssel — és a vihar ezt tiszteli."
     category: "Legendás (tervrajz)"
-    result: { material: NETHERITE_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:viharjaro_csizma" }
+    result: { material: NETHERITE_BOOTS, amount: 1, affix-tier: crafted, item-model: "icesmp:viharjaro_csizma", attributes: [ "armor:2", "armor_toughness:1", "movement_speed:0.01" ] }
     ingredients: [ "unique:viharkvarc:4", "unique:fonixpihe:2", "unique:folyositoszer:1", "NETHERITE_INGOT:2", "DIAMOND_BLOCK:1" ]
   eleftheria_fatyla:
     profession: armorer
@@ -1824,7 +1824,7 @@ profession-recipes:
       - "&7vért — a Néma Királynő gyásza, páncéllá"
       - "&7kovácsolva. Viselni kegy. És teher."
     category: "Legendás (tervrajz)"
-    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:eleftheria_fatyla" }
+    result: { material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, item-model: "icesmp:eleftheria_fatyla", attributes: [ "armor:2", "armor_toughness:1", "knockback_resistance:0.1" ] }
     ingredients: [ "unique:lelekhamu:4", "unique:dermedt_konnycsepp:2", "unique:elso_csend_szilankja:1", "unique:folyositoszer:2", "NETHERITE_INGOT:3" ]
   # --- Vendor-anyag felhasználó kézműves darabok ---
   pecsetes_szerzodes:
@@ -1856,7 +1856,7 @@ profession-recipes:
       - "&7Csontenyvvel rétegelt, kötéllel erősített"
       - "&7íjkar — a Mélység Népe így készítette."
     category: "Fegyver"
-    result: { material: BOW, amount: 1, affix-tier: crafted, item-model: "icesmp:csontenyves_ijkar" }
+    result: { material: BOW, amount: 1, affix-tier: crafted, item-model: "icesmp:csontenyves_ijkar", enchant: "minecraft:power:2" }
     ingredients: [ "BOW:1", "unique:csontenyv:2", "unique:szavannafu_kotel:2", "unique:favedo_pac:1" ]
   gyongyhaz_talizman:
     profession: fisherman
@@ -2493,7 +2493,7 @@ profession-recipes:
     learn: level
     display-name: "Vadászíj"
     category: "Eszköz"
-    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:vadaszij" }
+    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:vadaszij", enchant: "minecraft:power:1" }
     ingredients: [ "STICK:3", "STRING:3", "unique:gyantaoldo:1" ]
   utazolada:
     profession: lumberjack
@@ -2592,7 +2592,7 @@ profession-recipes:
     learn: level
     display-name: "Erdőjáró Pajzs"
     category: "Eszköz"
-    result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:mefonott_pajzs" }
+    result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:mefonott_pajzs", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "OAK_PLANKS:6", "IRON_INGOT:1", "unique:favedo_pac:1" ]
   erdei_lampasoszlop:
     profession: lumberjack
@@ -2616,7 +2616,7 @@ profession-recipes:
     learn: level
     display-name: "Feszített Szaruíj"
     category: "Eszköz"
-    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:feszitett_szaru_ij" }
+    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:feszitett_szaru_ij", enchant: "minecraft:power:1" }
     ingredients: [ "STICK:3", "STRING:3", "BONE:4", "unique:csontenyv:1" ]
   gerendahid_elem:
     profession: lumberjack
@@ -2632,7 +2632,7 @@ profession-recipes:
     learn: level
     display-name: "Céhmesteri Számszeríj"
     category: "Eszköz"
-    result: { material: CROSSBOW, affix-tier: crafted, item-model: "icesmp:celkereszt_szamszerij" }
+    result: { material: CROSSBOW, affix-tier: crafted, item-model: "icesmp:celkereszt_szamszerij", enchant: "minecraft:quick_charge:1" }
     ingredients: [ "STICK:6", "IRON_INGOT:2", "STRING:4", "unique:merozsinor:1" ]
   viharallo_zsindely:
     profession: lumberjack
@@ -2675,7 +2675,7 @@ profession-recipes:
     learn: level
     display-name: "Vasfa Íj"
     category: "Ritkaság"
-    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:vasfa_ij" }
+    result: { material: BOW, affix-tier: crafted, item-model: "icesmp:vasfa_ij", enchant: "minecraft:power:2" }
     ingredients: [ "STICK:3", "STRING:3", "unique:kemenyfa_gerenda:2", "unique:holdezust_huzal:1" ]
     lore:
       - "A vasfa nem hajlik —"
@@ -2763,7 +2763,7 @@ profession-recipes:
     learn: level
     display-name: "Dudoros Hadipajzs"
     category: "Eszköz"
-    result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:pajzsdudor" }
+    result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:pajzsdudor", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "IRON_INGOT:3", "OAK_PLANKS:4", "unique:edzoolaj:1" ]
   gyemant_lopancel:
     profession: armorer
@@ -2783,7 +2783,7 @@ profession-recipes:
     learn: level
     display-name: "Rostélyos Csatasisak"
     category: "Páncél"
-    result: { material: DIAMOND_HELMET, affix-tier: crafted, item-model: "icesmp:pancelozott_sisakrostely" }
+    result: { material: DIAMOND_HELMET, affix-tier: crafted, item-model: "icesmp:pancelozott_sisakrostely", attributes: [ "armor:1", "armor_toughness:1" ] }
     ingredients: [ "DIAMOND:5", "CHAIN:2", "unique:edzoolaj:1", "unique:nyelbor:1" ]
   kovacsmesteri_sablon:
     profession: armorer
@@ -3339,7 +3339,7 @@ profession-recipes:
     learn: level
     display-name: "Úszókészlet"
     category: "Eszköz"
-    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:uszokeszlet" }
+    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:uszokeszlet", enchant: "minecraft:lure:1" }
     ingredients: [ "STICK:3", "STRING:2", "unique:parafa_uszo:1" ]
   polip_tinta:
     profession: fisherman
@@ -3371,7 +3371,7 @@ profession-recipes:
     learn: level
     display-name: "Halászcsizma"
     category: "Páncél"
-    result: { material: LEATHER_BOOTS, affix-tier: crafted, item-model: "icesmp:vizallo_csizma" }
+    result: { material: LEATHER_BOOTS, affix-tier: crafted, item-model: "icesmp:vizallo_csizma", attributes: [ "armor:1" ] }
     ingredients: [ "LEATHER:4", "unique:csalizsir:1" ]
   melyvizi_horog:
     profession: fisherman
@@ -3379,7 +3379,7 @@ profession-recipes:
     learn: level
     display-name: "Mélyvízi Horogsor"
     category: "Eszköz"
-    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:melyvizi_horog" }
+    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:melyvizi_horog", enchant: "minecraft:luck_of_the_sea:1" }
     ingredients: [ "STICK:3", "STRING:3", "IRON_NUGGET:4", "unique:horogkeszlet:1" ]
   tekno_pancel_apolas:
     profession: fisherman
@@ -3427,7 +3427,7 @@ profession-recipes:
     learn: level
     display-name: "Teknőspáncél-sisak"
     category: "Páncél"
-    result: { material: TURTLE_HELMET, affix-tier: crafted, item-model: "icesmp:teknos_sisak" }
+    result: { material: TURTLE_HELMET, affix-tier: crafted, item-model: "icesmp:teknos_sisak", attributes: [ "armor:1", "armor_toughness:1" ] }
     ingredients: [ "TURTLE_SCUTE:5", "unique:halofonal:1" ]
   viharjelzo_boja:
     profession: fisherman
@@ -3470,7 +3470,7 @@ profession-recipes:
     learn: level
     display-name: "Mesterhorgász Botja"
     category: "Eszköz"
-    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:mestermuves_bot" }
+    result: { material: FISHING_ROD, affix-tier: crafted, item-model: "icesmp:mestermuves_bot", enchant: "minecraft:luck_of_the_sea:2" }
     ingredients: [ "STICK:3", "STRING:3", "unique:horogkeszlet:2", "unique:parafa_uszo:1", "unique:csalizsir:1" ]
     lore:
       - "Azt beszélik, ez a bot már akkor"
@@ -3528,7 +3528,7 @@ profession-recipes:
     learn: level
     display-name: "A Bokic Áldása"
     category: "Ritkaság"
-    result: { material: TRIDENT, affix-tier: crafted, item-model: "icesmp:bokic_aldasa" }
+    result: { material: TRIDENT, affix-tier: crafted, item-model: "icesmp:bokic_aldasa", attributes: [ "attack_damage:2" ] }
     ingredients: [ "PRISMARINE_SHARD:16", "DIAMOND:4", "unique:elso_csend_szilankja:1", "unique:gyongyhaz_pikkely:3" ]
     lore:
       - "A folyó egyszer mindent visszaad."
@@ -3776,7 +3776,7 @@ profession-recipes:
     learn: level
     display-name: "Halászkalap"
     category: "Páncél"
-    result: { material: LEATHER_HELMET, affix-tier: crafted, item-model: "icesmp:halaszkalap" }
+    result: { material: LEATHER_HELMET, affix-tier: crafted, item-model: "icesmp:halaszkalap", attributes: [ "armor:1" ] }
     ingredients: [ "LEATHER:5", "unique:parafa_uszo:1" ]
   vizinoveny_ultetes:
     profession: fisherman
