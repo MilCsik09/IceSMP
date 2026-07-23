@@ -8,7 +8,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -16,13 +15,12 @@ import java.util.List;
 
 /**
  * Factory for crate-key items (native crate system, replaces CrazyCrates).
- * A key is a config-themed item (material/name/custom-model-data
+ * A key is a config-themed item (material/name/item-model
  * come from {@code config/crates.yml}) tagged with the {@code crate_key} PDC
  * key so {@link hu.taliann.icesmp.listeners.CrateListener} and
  * {@link hu.taliann.icesmp.managers.CrateManager} can identify which crate it
  * opens without parsing the display name.
  */
-@SuppressWarnings("deprecation")
 public final class CrateKeyFactory {
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.legacySection();
@@ -72,7 +70,6 @@ public final class CrateKeyFactory {
 
         meta.getPersistentDataContainer().set(crateKeyIdKey, PersistentDataType.STRING, crateId);
         itemStack.setItemMeta(meta);
-        // ITEM_MODEL (CMD helyett) a setItemMeta UTÁN: key-item-model configból, különben base-item.
         final String keyModel = configManager.getString(basePath + ".key-item-model", null);
         if (keyModel != null && !keyModel.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, keyModel);

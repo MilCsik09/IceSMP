@@ -393,8 +393,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Jéglánc:** pontosan max 2 célt fagyaszt (fő cél + legközelebbi 3 blokkon belül).
 - [ ] **Fagysugár (volt Fagyláz):** 2 blokk széles sugár, minden útba esőt fagyaszt. (A név-ütközések
       feloldva: Halállovag = Fagysugár, Sárkányidéző = Lánggolyó — a spec-spellek neve változatlan.)
-- [ ] **Spell-item CMD-k:** a Vadgomba (6101), Rúnakő (6102), Démoni Só (6103) és Kiűzés Botja (6104)
-      custom model datát hordoz — resource packkel a textúrájuk cserélhető (RESOURCE_PACK_CMD.md).
+- [ ] **Spell-item modellek:** a Vadgomba, Rúnakő, Démoni Só és Kiűzés Botja ITEM_MODEL-t hordoz — resource packkel a textúrájuk cserélhető (`docs/RESOURCE_PACK_CMD.md`).
 - [ ] **Megzavarás (rework):** mobokra is LÁTHATÓAN hat — a támadó mob leáll rólad (célpont-vesztés,
       10 mp-ig ismételve), lassabb és gyengébb; játékos-ellenfél megvakul (vakság+sötétség).
       A méreg-komponens kikerült (tiszta CC).
@@ -437,7 +436,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **Egyedi alapanyag védelem:** az egyedi szakma-alapanyagok (pl. Vasesszencia = IRON_NUGGET,
       Gyógy-kivonat = ehető GLOW_BERRIES) NEM használhatók normál módon: nem craftolhatók be,
       nem kovácsolhatók, nem tüzelők, nem ehetők, nem rakhatók le — csak a recept-könyvben. Van
-      saját CustomModelData-juk (6000–6013) és frappáns lore-juk.
+      saját ITEM_MODEL-jük és frappáns lore-juk.
 
 ### 4.8 Gazdaság ✅
 - [ ] `/bank deposit|withdraw|balance`, `/currency balance|pay|exchange|rates`, `/currency set` (admin).
@@ -848,7 +847,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       craftolja: **Jéghegyi Sör / Parázs Pálinka / Caldesterai Gyógytea / Mortengrádi Keserű**
       (ITALOK — ivás-animáció + hang!), **Vándor Pogácsája / Halász Fogása** (ÉTELEK). Ivás/evés
       után a megfelelő rövid buff (pl. Sör→Regeneráció+Felszívódás, Pálinka→Tűzállóság+Erő,
-      Pogácsa→táplálék+Sietség, Fogás→Vízlégzés). **ITEM_MODEL** (nem CMD): pack nélkül alap-item
+      Pogácsa→táplálék+Sietség, Fogás→Vízlégzés). **ITEM_MODEL**: pack nélkül alap-item
       textúrát mutat, a `icesmp:<id>` modellt a külső pack adja. A buff-idők a receptből (config).
 - [ ] **P7 USE_COOLDOWN — katalizátor cooldown-bleed javítás (ÚJ):** tarts a hotbarban egy
       pálca-katalizátort ÉS a vele AZONOS Materialú vanília itemet (pl. Homály-szilánk=FLINT →
@@ -1350,7 +1349,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] Hatás: tartós +20% max Lélekerő (player-PDC + join-kor töltött concurrent cache —
         a ResourceManager.max() szál-biztos szorzó-lookupon át olvassa). Kulcsok: `pakt.*`.
 - [ ] **E32 — Sárkánytojás-töredék (Sárkányidéző, ÚJ):**
-  - [ ] Új relikvia: `sarkany_tojas` (DRAGON_EGG, CMD 4206); amíg a tulajdonosa Sárkányidéző
+  - [ ] Új relikvia: `sarkany_tojas` (DRAGON_EGG, ITEM_MODEL `relic_sarkany_tojas`); amíg a tulajdonosa Sárkányidéző
         (EVOKER), az Eszencia-poolja +10% (`pakt.dragon-essence-bonus-percent`) — másnak
         csak presztízs-tárgy. A relikvia-szabályok (tulajdon, rablás) változatlanok.
 - [ ] **E1 — Lélek-kovács (Nekromanta, ÚJ):**
@@ -1362,7 +1361,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 - [ ] **E7 — Varázsló rúnaíró affinitás (ÚJ):**
   - [ ] A Varázsló minden rúna-hatást DUPLÁN olvas (`runes.wizard-affinity-multiplier` 2.0):
         él/bástya-százalék és láng/fagy-esély szorzódik.
-  - [ ] Visszhang Rúnája (CMD 6146, Varázsló-ZÁRT recept — új `job:` recept-mező +
+  - [ ] Visszhang Rúnája (ITEM_MODEL `runa_visszhang`, Varázsló-ZÁRT recept — új `job:` recept-mező +
         JobManager-ellenőrzés a craftban): találatkor eséllyel visszhang-csapás
         (+30% bónusz-sebzés, ENCHANT-partikel). Kulcsok: crafting.yml `runes.runa_visszhang.*`.
 - [ ] **B21 — Bestiárium / gyűjtő-album (ÚJ):**
@@ -1392,7 +1391,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         `/ceh info` (szint/XP/tagok/kassza), `/ceh lista` (top 10 XP szerint).
   - [ ] Függő meghívás kilépéskor takarítva (PlayerStateCleanup). Élő kulcsok: factions.yml `guilds.*`.
 - [ ] **B26 — Rúna-kovácsolás (ÚJ):**
-  - [ ] 6 rúna unique-materialként (CMD 6140-6145), Kovács/Bűvölő 26-42. szintű receptek
+  - [ ] 6 rúna unique-materialként (ITEM_MODEL `runa_*`), Kovács/Bűvölő 26-42. szintű receptek
         (runapor + tematikus unique + Rúnakréta kellék): Él (+közelharci sebzés%), Zápor
         (+lövedék-sebzés%, a nyíl örökli az íj rúnáját), Bástya (mellvért, -kapott sebzés%),
         Láng (gyújtás-esély), Fagy (lassítás-esély), Mohóság (erszény-drop esély bónusz).
@@ -1418,9 +1417,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         („szürke recept”). Szintlépéskor üzenet + hang, fokozatváltásnál külön üzenet.
   - [ ] **Fokozatok:** Inas (1–9) → Segéd → Legény → Mester → Nagymester → Legendás Mester (50);
         a szakma-GUI a szint mellett a fokozatot is mutatja.
-  - [ ] **CMD-regiszter:** MINDEN nevesített (lore-os) recept-eredmény CustomModelData-t visel
-        (6300–6438, 139 tárgy — a végtermék-eszközök is), a Kopott erszény 1010 — teljes lista: `docs/RESOURCE_PACK_CMD.md`
-        (resource pack készítéshez). Új custom item = új CMD + új sor a regiszterben!
+  - [ ] **ITEM_MODEL manifest:** minden nevesített (lore-os) recept-eredmény item-modelt visel; teljes lista: `docs/RESOURCE_PACK_CMD.md` (resource pack készítéshez). Új custom item = új `icesmp:<modell-id>` + új manifest sor.
 - [ ] **`/iceitem` admin item-adó (ÚJ):** `icesmp.admin.item` joggal
       `/iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]` — tab-complete
       mind az öt típus id-listájával. A `recept` út a teljes stamp-lánccal ad (signature-PDC,
@@ -1499,16 +1496,16 @@ Jó tesztelést! ❄️
       kereskedő-karaván szabad spawn.
 
 ## Kijelölő-pálcák (N24 — teszter-kérés)
-- [ ] **Birtokmérő pálca** (`/claim wand`, CMD 5410, STICK): bal katt blokkra = 1. sarok,
+- [ ] **Birtokmérő pálca** (`/claim wand`, ITEM_MODEL `selection_wand`, STICK): bal katt blokkra = 1. sarok,
       jobb katt = 2. sarok (méret+ár-előnézet chatben, átfedés-figyelmeztetéssel),
       SNEAK+jobb = foglalás (a /claim area teljes ár/limit-logikáján át). A kattintott
       BLOKK koordinátája megy a kijelölésbe (nem a játékos helye). A pálca-katt nem
       üt/nem nyit semmit (cancel).
-- [ ] **Határkijelölő pálca** (`/territory wand`, CMD 5411, BLAZE_ROD, admin-node):
+- [ ] **Határkijelölő pálca** (`/territory wand`, ITEM_MODEL `selection_wand_territory`, BLAZE_ROD, admin-node):
       bal katt = poligon-pont a kattintott blokkon, jobb katt = utolsó pont visszavonása,
       SNEAK+jobb = határ-előnézet (/territory show); létrehozás továbbra is
       /territory create-tel. Jog nélkül a pálca nem csinál semmit (hibaüzenet).
-- [ ] Tab-complete: `claim wand`, `territory wand`; CMD-regiszter: 5410-5411 felvéve.
+- [ ] Tab-complete: `claim wand`, `territory wand`; ITEM_MODEL manifest felvéve.
 
 ## N25/N27 — Esemény-spawnpontok és hely-horgony (teszter-kérés)
 - [ ] `/events spawnpoint add <world-boss|escort|caravan|any> [id]` az admin helyén
@@ -1647,8 +1644,7 @@ Jó tesztelést! ❄️
       kaszt_orokseg (hírnök; NETHERITE_INGOT + ENCHANTED_GOLDEN_APPLE + 2 ritka kulcs) —
       a 46-50-es sávnak van célja.
 - [ ] **Kazamata-starter:** 2 kulcs-recept (bűvölő 30/40: A Mélység Kulcsa
-      [dungeonkulcs_melyseg, CMD 6203], A Csontkripta Kulcsa [dungeonkulcs_csontkripta,
-      CMD 6204] — CMD-regiszterbe felvéve); új player-guide oldal (16-kazamatak.md).
+      [dungeonkulcs_melyseg, ITEM_MODEL `melyseg_kulcsa`], A Csontkripta Kulcsa [dungeonkulcs_csontkripta, ITEM_MODEL `csontkripta_kulcsa`] — manifestbe felvéve); új player-guide oldal (16-kazamatak.md).
       A zónákat az építészek hozzák létre (melyseg, csontkripta id-vel).
 - [ ] **Suttogó sötét-anyag:** a rítus-loot (és így a Suttogó-részesedés) mostantól
       árnyékport is adhat (unique:arnyekpor:2) — a guide ígérte sötét-mágiájú anyag él.
@@ -1670,7 +1666,7 @@ Jó tesztelést! ❄️
       gyógyfű-szüret (24 fű/virág) + méz-áldozat (3 mézesüveg deliver) — mind
       giver-npc-s, dialógussal, napi cooldownnal.
 - [ ] **Az Éjszaka Pengéje** (sötét szignatúra-recept, bűvölő 35): netherit kard +
-      4 árnyékpor + 2 echo-szilánk + 8 obszidián → crafted-affixes penge (CMD 6439,
+      4 árnyékpor + 2 echo-szilánk + 8 obszidián → crafted-affixes penge (ITEM_MODEL `ejszaka_pengeje`,
       regiszterben) — az árnyékpor sötét útról jön (rítus-loot / Suttogó-részesedés).
 
 ## Építész-kör: valós térkép + komp + portál-szabály (tulaj-döntések)
@@ -1963,8 +1959,8 @@ Jó tesztelést! ❄️
 - [ ] **Modell-váltás:** a Szentségtelen és a Boszorkánymester NEM befog, hanem IDÉZ —
       a tekercs nekik nem működik, a /pet item útmutatót ad; Vadmester/Nekromanta
       befogása változatlan.
-- [ ] **Kellék-beszerzés (kihívás):** Nyughatatlan Szív (CMD 5303) élőhalott-killből
-      3% (csak Szentségtelennek esik), Démon-pecsét (CMD 5304) boszorka/illager-killből
+- [ ] **Kellék-beszerzés (kihívás):** Nyughatatlan Szív (ITEM_MODEL `capture_heart`) élőhalott-killből
+      3% (csak Szentségtelennek esik), Démon-pecsét (ITEM_MODEL `capture_seal`) boszorka/illager-killből
       6% (csak Boszorkánymesternek).
 - [ ] **Rituálé:** kellékkel a kézben jobb-klikk, CSAK ÉJJEL (night-only) — lélek-
       részecskék + hang; a kellék elfogy; nappal hibaüzenet.
@@ -1989,7 +1985,7 @@ Jó tesztelést! ❄️
       a spell-idézett minionok állásmódja ettől független (entitás-PDC).
 - [ ] **Halál-cooldown:** a társ halála után 120 mp-ig (pets.companion.death-respawn-
       seconds) nem idézhető újra — a GUI mutatja a hátralévő időt; 0 = kikapcsolva.
-- [ ] **Társvért (CMD 5305):** 1% eséllyel esik szörny-killből társ-tartó kasztnak
+- [ ] **Társvért (ITEM_MODEL `capture_heart`/társ-felszerelés ikon):** 1% eséllyel esik szörny-killből társ-tartó kasztnak
       (csak amíg nincs felszerelve); jobb katt a SAJÁT kint lévő társon → +4 páncél
       +4 max-HP (pets.equipment.*), elfogy; újraidézés után is a társon marad;
       idegen mobra/másik játékos társára nem tehető fel.
@@ -2159,7 +2155,7 @@ Jó tesztelést! ❄️
       vissza, a signature-stamp kihagyja a hiányzó enchantot.
 - [ ] **5 új counter-enchant:** Éj-fátyol (szent), Árnyűző (árnyék), Méregfojtó
       (természet), Viharfogó (vihar), Káosz-zabla (káosz) — enchanter 38-as
-      tervrajz-receptek (CMD 6440-6444), enchantelt könyv, üllőn mellvértre; a
+      tervrajz-receptek (ITEM_MODEL manifestben), enchantelt könyv, üllőn mellvértre; a
       megfelelő iskola spell-sebzését szintenként 10%-kal csökkenti (magic-resist.
       school-per-level), a Rúnavérttel a 60% plafonig összeadódik.
 - [ ] **Counter-exkluzivitás:** két különböző iskola-counter NEM kerülhet egy

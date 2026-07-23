@@ -63,8 +63,6 @@ public final class UniqueMaterialFactory {
         meta.lore(lore);
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
-        // Resource-pack hook: ITEM_MODEL (CMD helyett) — a data-komponens a setItemMeta UTÁN.
-        // A modell-id a configból (item-model: "icesmp:<id>"); enélkül a base-item látszik.
         final String model = section.getString("item-model", null);
         if (model != null && !model.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, model);

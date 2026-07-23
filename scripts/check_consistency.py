@@ -4,7 +4,7 @@
 Azokat a konzisztencia-osztályokat ellenőrzi, amiket kézzel könnyű elfelejteni:
   1. minden config-YAML parse-olható
   2. quest-hivatkozások épek (next/requires-quest/crate-key/requires-faction/rotáció)
-  3. CustomModelData: minden használt CMD szerepel a docs/RESOURCE_PACK_CMD.md regiszterben
+  3. ITEM_MODEL: minden deklarált modell-id szerepel a docs/RESOURCE_PACK_CMD.md manifestben
   4. jogosultság-node-ok: minden kódban használt icesmp.admin.* regisztrálva van a
      Permissions.java-ban (FAIL — az icesmp.admin.all csak a regisztrált node-okat adja meg)
   5. /menu akció-célok (RUN:/OPEN:) létező parancsra mutatnak
@@ -77,24 +77,27 @@ for qid, q in quests.items():
     if q.get("rotation-group") and not q.get("repeatable"):
         warn(f"quests.yml {qid}: rotation-group tag repeatable nélkül")
 
-# ---------- 3. CMD-regiszter lefedettség ----------
-register = read(os.path.join(REPO, "docs/RESOURCE_PACK_CMD.md"))
-registered_cmds = set(int(m) for m in re.findall(r"\b([1-9]\d{3})\b", register))
-used = {}  # cmd -> [hol]
+# ---------- 3. ITEM_MODEL manifest-lefedettség + legacy drift-védelem ----------
+manifest = read(os.path.join(REPO, "docs/RESOURCE_PACK_CMD.md"))
+manifest_models = set(re.findall(r"\| `([a-z0-9_]+)` \|", manifest))
+used_models = {}
 for name, path in [(os.path.basename(p), p) for p in glob.glob(os.path.join(CFG, "*.yml"))]:
-    for m in re.finditer(r"(?:key-)?custom-model-data:\s*(\d+)", read(path)):
-        used.setdefault(int(m.group(1)), []).append(name)
+    for m in re.finditer(r"(?:key-)?item-model:\s*[\"']?([^\"'\s#}]+)", read(path)):
+        value = m.group(1)
+        model = value.split(":", 1)[1] if value.startswith("icesmp:") else value
+        if re.fullmatch(r"[a-z0-9_]+", model):
+            used_models.setdefault(model, set()).add(name)
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
     src = read(path)
-    for m in re.finditer(r"(?:setCustomModelData|customModelData)\(\s*(\d{4})\s*\)", src):
-        used.setdefault(int(m.group(1)), []).append(os.path.basename(path))
-for cmd, places in sorted(used.items()):
-    if cmd not in registered_cmds:
-        fail(f"CMD {cmd} használatban ({places[0]}), de HIÁNYZIK a docs/RESOURCE_PACK_CMD.md regiszterből")
+    for m in re.finditer(r"applyItemModel\([^;]*?\"icesmp:([a-z0-9_]+)\"", src, re.S):
+        model = m.group(1)
+        if not model.endswith("_"):
+            used_models.setdefault(model, set()).add(os.path.basename(path))
+for model, places in sorted(used_models.items()):
+    if model not in manifest_models:
+        fail(f"ITEM_MODEL '{model}' használatban ({sorted(places)[0]}), de hiányzik a docs/RESOURCE_PACK_CMD.md manifestből")
 
-# ---------- 3b. CMD→ITEM_MODEL migráció drift-védelem ----------
-# A teljes migráció után ÚJ item CMD-t NEM kaphat — ITEM_MODEL a szabály (ItemDataFactory.applyItemModel
-# / result.item-model / item-model config-kulcs). Bukjunk, ha bárki visszahoz CMD-t.
+# A teljes migráció után numerikus CustomModelData nem kerülhet vissza.
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
     src = read(path)
     if re.search(r"\.setCustomModelData(Component)?\s*\(", src):
@@ -203,6 +206,6 @@ for w in warns:
 for f_ in fails:
     print(f"✗ FAIL: {f_}")
 print(f"\nÖsszegzés: {len(fails)} FAIL, {len(warns)} WARN "
-      f"({len(quests)} quest, {len(used)} CMD, {len(used_perms)} jog-node, "
+      f"({len(quests)} quest, {len(used_models)} item-model, {len(used_perms)} jog-node, "
       f"{len(known_commands)} parancsnév ellenőrizve)")
 sys.exit(1 if fails else 0)

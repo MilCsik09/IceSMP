@@ -4,7 +4,7 @@
 # igényelnek (mint WoW-ban a "Spirit Dust" / Terrariában a köztes bárok). Ezek NEM sima itemek: a
 # recept-motor a PDC-tag alapján ismeri fel őket, és a plugin MINDEN normál felhasználásukat tiltja
 # (craft, kovácsolás, kemence-tüzelő, evés, lerakás) — CSAK a szakma recept-könyvben használhatók.
-# Van saját CustomModelData-juk is (resource pack egyedi textúrához).
+# Van saját item-model azonosítójuk is (resource pack egyedi textúrához).
 #
 # Használat a profession-recipes.yml-ben:
 #   - eredményként:   result: { unique: tiszta_vasesszencia }   (a material a megjelenítő ikon)
@@ -14,7 +14,7 @@
 #   <unique-id>:
 #     material: <ikon MATERIAL>
 #     display-name: "<megjelenő név>"
-#     item-model: "icesmp:<unique-id>"   # ITEM_MODEL (CMD helyett); a pack ehhez ad modellt
+#     item-model: "icesmp:<unique-id>"   # a pack ehhez ad modellt
 #     lore: [ "<sor>", ... ]
 profession-materials:
   # --- K9: Suttogás-meghívó (a Sötét Rítus kulcsa — éjjel, sculkon, magányosan, SHIFT+jobb katt) ---

@@ -59,7 +59,7 @@ public final class ItemDataFactory {
     }
 
     /**
-     * ITEM_MODEL (1.21.4+) — string-alapú modell-id az integer-CMD helyett (a modern RP-út).
+     * ITEM_MODEL (1.21.4+) — string-alapú modell-id a modern RP-úthoz.
      * A pack az {@code assets/<ns>/items/<path>.json}-t szállítja; nincs vanília-modell-szerkesztés,
      * és az item Materialja független a megjelenéstől. Ismeretlen/üres kulcs → no-op.
      */

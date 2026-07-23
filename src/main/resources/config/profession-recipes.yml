@@ -1879,7 +1879,7 @@ profession-recipes:
 # (stackelhető) eredményekre nem kerül. Élőben olvasódik.
   # =========================================================
   # --- Profession-mélyítés: szintlétra-receptek (1-50, minden szakma ~50 recept) ---
-  # --- A nevesített (lore-os) eredmények CMD-i: docs/RESOURCE_PACK_CMD.md ---
+  # --- A nevesített (lore-os) eredmények item-modeljei: docs/RESOURCE_PACK_CMD.md ---
   # =========================================================
 
   # --- miner (szintlétra) ---
@@ -3903,7 +3903,7 @@ profession-recipes:
     result: { material: TRIAL_KEY, amount: 1, signature: dungeonkulcs_csontkripta, item-model: "icesmp:csontkripta_kulcsa" }
     ingredients: [ "ECHO_SHARD:3", "BONE_BLOCK:8", "unique:arnyekpor:2" ]
 
-  # ===== P7 — Szakács fogyaszthatók (data-component CONSUMABLE/FOOD, CMD 6500+) =====
+  # ===== P7 — Szakács fogyaszthatók (data-component CONSUMABLE/FOOD + ITEM_MODEL) =====
   # A result.consumable blokk vezérli a fogyasztást (kód nélkül): animation (eat|drink),
   # seconds, nutrition, saturation, always-edible, effects ["TÍPUS:másodperc:szint"].
   # Kocsma-italok (DRINK) + tájfogások — rövid, NEM harc-eldöntő buffok.

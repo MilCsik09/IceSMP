@@ -192,7 +192,7 @@
   drag+close kezelt — dupe-rés nincs.
 - **Folia-fegyelem magas**: tiltott scheduler 0, sync teleport 0, a cross-entity hop
   minta szisztematikusan tartva és dokumentálva.
-- **Recept-katalógus ép**: 72/72 unique-hivatkozás él, CMD-ütközés nincs, üres szint-sáv
+- **Recept-katalógus ép**: 72/72 unique-hivatkozás él, ITEM_MODEL visszaesés nincs, üres szint-sáv
   nincs; stateful spellek clearPlayerState lefedettsége hiánytalan; stacking-sapkák
   (mastery/dynamic/resist) rétegenként rendben; mozgás-eventek és memória-növekedés
   tiszta; halál-gazdaság átgondolt (nincs frusztráció-spirál); szint-görbe 1-50 egyenletes;

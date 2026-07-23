@@ -17,8 +17,6 @@ public interface RelicDefinition {
 
     Material material();
 
-    int customModelData();
-
     default String description() {
         return "";
     }

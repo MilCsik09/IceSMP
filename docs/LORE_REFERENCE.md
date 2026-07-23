@@ -55,7 +55,7 @@ már a lore szerint működnek** — csak a nevek/valuták placeholderek.
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
 | Tárgyak Lelke (VIII.) | tárgy-raritás létra (Ócska→Ereklye), affixek, nevesített craft |
 | Vér Emlékezete (VIII.) | talentpontok + talentfák (kaszt- és szakma-szintből) |
-| Hű Társak (VIII.) | Vadmester befogott állat-társa / Nekromanta élőholt companionja, pet-szintezés; Szentségtelen ghúlja és Boszorkánymester démona rituálé-idézéssel (Nyughatatlan Szív CMD 5303 / Démon-pecsét CMD 5304, éjjel; forma-fejlődés `pets.summon.*`); állásmódok + Társ-GUI (`/pet`); Társvért (CMD 5305, `pets.equipment.*`) |
+| Hű Társak (VIII.) | Vadmester befogott állat-társa / Nekromanta élőholt companionja, pet-szintezés; Szentségtelen ghúlja és Boszorkánymester démona rituálé-idézéssel (Nyughatatlan Szív / Démon-pecsét, éjjel; forma-fejlődés `pets.summon.*`); állásmódok + Társ-GUI (`/pet`); Társvért (`pets.equipment.*`) |
 | Vének Tanácsa (III./IV.) | NEUTRAL heti tanács-szavazás: `CouncilManager` + `/tanacs` (`factions.council.*`) — a tanács véleményez, nem hirdet |
 | Hadi-ablak (IV.) | RED↔BLUE hadicselekmény-idősáv: `factions.war-window.*` (menetrend, ölésenkénti liga-pont, napi plafon, áldozat-cooldown); a szezonliga „war" pontforrása |
 | Égi Jelek (VIII.) | világesemények (vérhold, Bőség-idő, meteor/hulló csillag, északi fény, köd/szellemek, Vad Hajsza, karaván, kincs/gyűjtő-lázak, invázió/világboss, kollektív szerver-kihívás) — mind config-vezérelt; a spawn-helyeket esemény×védelem mátrix szabályozza (world-events.spawn-rules: territórium/claim/WG-régió/víz), az esemény-mobok nem zombisodnak és nappal sem égnek |
@@ -121,7 +121,7 @@ A tárgyak **kanonikus lore-szövege a kódexben él** ([LORE.md → A Legendás
 | Szellemszarvas-Bűbáj | NEUTRAL | hátas-hívó (K4) | ✅ implementálva: cooldownos ideiglenes gyors hátas (`signature.szarvas.*`) |
 | Hetedik Vérháború Rozsdás Pengéje | DARK/közös | mob-drop (K5) | ✅ implementálva: undead-only nevesített drop (loot.yml `named` sor), rarity-affixekkel |
 | Fekete Villám Szilánk | DARK/közös | crafting-alapanyag (K5) | ✅ implementálva: `profession-materials.osi_ereklyeszilank` display; magas-tier receptek hozzávalója |
-| Jégvirág-por / Parázsmag / Viharkvarc / Mélységi Borostyán | vegyes | köztes anyagok (2. hullám) | ✅ profession-materials (CMD 6005-6008); borostyán régészeti lelet is |
+| Jégvirág-por / Parázsmag / Viharkvarc / Mélységi Borostyán | vegyes | köztes anyagok (2. hullám) | ✅ profession-materials ITEM_MODEL-ek; borostyán régészeti lelet is |
 | Sárkánycsont-szilánk / Főnixpihe | BLUE/RED | mob/boss-drop anyagok (2. hullám) | ✅ loot.yml sorok (szilánk boss-only); a 2. hullám fegyver-receptjeinek hozzávalói |
 | Eleftheria Könnye | DARK/közös | relikvia (K5) | ✅ implementálva: egy-példányos relikvia + DARK-kapus rituálé-oltár (relics.yml) |
 | Megrontott Elit Páncél / Fekete Csont / A Néma Királynő Suttogása | DARK/közös | mob-drop (K5 + 2. hullám) | ✅ mindhárom implementálva: undead-only named drop sorok (a Suttogása boss-only, nagyon ritka) |
