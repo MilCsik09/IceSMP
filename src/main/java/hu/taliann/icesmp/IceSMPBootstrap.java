@@ -83,7 +83,7 @@ public final class IceSMPBootstrap implements PluginBootstrap {
             register(event, "vihartuz", "Vihartűz", NamedTextColor.GOLD,
                     ItemTypeTagKeys.ENCHANTABLE_CROSSBOW, EquipmentSlotGroup.MAINHAND);
             register(event, "verszomj", "Vérszomj", NamedTextColor.RED,
-                    ItemTypeTagKeys.ENCHANTABLE_SWORD, EquipmentSlotGroup.MAINHAND);
+                    ItemTypeTagKeys.ENCHANTABLE_SHARP_WEAPON, EquipmentSlotGroup.MAINHAND);
             register(event, "fagypancel", "Fagypáncél", NamedTextColor.AQUA,
                     ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
             register(event, "fonixtoll", "Főnixtoll", NamedTextColor.GOLD,

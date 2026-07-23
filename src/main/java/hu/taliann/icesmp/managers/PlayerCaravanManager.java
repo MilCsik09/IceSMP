@@ -110,7 +110,7 @@ public final class PlayerCaravanManager {
         convoyId = new UUID(0L, 0L); // placeholder, a spawn cseréli — az isActive() már igaz
 
         final Location target = chosen;
-        world.getRegionScheduler().run(plugin, target, task -> {
+        plugin.getServer().getRegionScheduler().run(plugin, target, task -> {
             final int y = world.getHighestBlockYAt(target.getBlockX(), target.getBlockZ()) + 1;
             target.setY(y);
             final Llama llama = world.spawn(target, Llama.class, mob -> {
@@ -185,7 +185,7 @@ public final class PlayerCaravanManager {
         if (id == null || where == null) {
             return;
         }
-        where.getWorld().getRegionScheduler().run(plugin, where, task -> {
+        plugin.getServer().getRegionScheduler().run(plugin, where, task -> {
             final org.bukkit.entity.Entity entity = Bukkit.getEntity(id);
             if (entity != null) {
                 entity.remove();

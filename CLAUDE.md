@@ -31,7 +31,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew runServer  # helyi tesztszerver (run/ könyvtár, 1.21.11)
 ```
 - Nincs teszt-suite; az ellenőrzés = hibátlan fordítás + kézi playtest (`PLAYTEST.md`).
-- Sandboxban, ahol a Gradle nem éri el a repókat: `javac`-kal fordíts a cache-elt szerver-libek ellen (`run/libraries`), vagy ha az sincs, `javac -sourcepath src/main/java` futtatással szűrd ki, hogy minden hiba külső függőségből jön-e (Bukkit/Adventure „cannot find symbol" elfogadható, minden más nem; ismert baseline-műtermék: 2×"does not override" a gui/*Holder-ben). **Push előtt mindig fordítás-ellenőrzés.**
+- **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve):
+  a VALÓDI build a mérvadó, NEM a sandbox-javac.** Rendszer-Gradle van telepítve:
+  `/opt/gradle/bin/gradle build --console=plain --no-daemon` (a projekt-wrapper 9.4.1-et
+  töltene a github releases-ről, ami tiltott lehet; a rendszer-Gradle 8.14.3 lefordítja).
+  Push előtt ha elérhető, EZ fusson.
+- **A sandbox-javac-szűrőnek IGAZOLT vakfoltjai vannak** (2026-07-23, valódi build tárta fel:
+  17 latens hiba maradt rejtve): a szűrő eldobja a `does not override`-ot ÉS a
+  `cannot find symbol: class ...`-t (belső osztályra is!), a `might not have been initialized`
+  (definite-assignment) hibák pedig a szimbólum-hibák MÖGÖTT rejtőznek (a javac a flow-analízist
+  csak feloldott szimbólumok után futtatja). Ezért egy külső típuson „elbukó" hívás (pl.
+  `entity.getScheduler().run(plugin, …)`) az argumentum-hibát (`plugin` nincs scope-ban) is
+  elrejti. **A sandbox-szűrő „0 belső hiba" NEM garantál fordulást — csak a valódi build az.**
+- Ha a Gradle NEM éri el a repókat: `javac -sourcepath src/main/java` + szűrő csak DURVA
+  előszűrő (a fenti vakfoltokkal); Bukkit/Adventure „cannot find symbol: variable/method"
+  külső hiba elfogadható, de a `class`-szimbólum és `does not override` hibákat KÉZZEL is
+  nézd át. Ismert baseline-műtermék: 2×"does not override" a gui/*Holder-ben.
 - Sandbox-buktatók: a magyar „idézőjelek" Java- ÉS Python-stringben is törnek (Java-ban ” zárójelet használj, Pythonban aposztrófos stringet); a cwd Bash-hívások közt visszaáll (`cd /home/user/IceSMP` mindig); minden YAML-szerkesztés után `python3 -c "import yaml; yaml.safe_load(...)"` ellenőrzés.
 - **Gépi drift-ellenőrzés — push előtt KÖTELEZŐ:** `python3 scripts/check_consistency.py`
   (YAML-ok, quest-hivatkozások, CMD-regiszter, jog-node-regisztráció, /menu célok,

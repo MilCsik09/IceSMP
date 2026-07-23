@@ -270,7 +270,8 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
             final int min = toInt(chosen.get("min"), 1);
             final int max = Math.max(min, toInt(chosen.get("max"), min));
             final int amount = min + ThreadLocalRandom.current().nextInt(max - min + 1);
-            final String type = String.valueOf(chosen.getOrDefault("type", "material")).toLowerCase(Locale.ROOT);
+            final Object typeValue = chosen.get("type");
+            final String type = (typeValue == null ? "material" : String.valueOf(typeValue)).toLowerCase(Locale.ROOT);
             if ("unique".equals(type)) {
                 final ItemStack item = uniqueMaterials.create(String.valueOf(chosen.get("id")), amount);
                 if (item != null) {

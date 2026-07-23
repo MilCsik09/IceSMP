@@ -117,7 +117,7 @@ public final class DarkUndeadAmbienceManager {
                 continue;
             }
             final Location target = new Location(world, x + 0.5D, 0.0D, z + 0.5D);
-            world.getRegionScheduler().run(plugin, target, task -> {
+            plugin.getServer().getRegionScheduler().run(plugin, target, task -> {
                 final int y = world.getHighestBlockYAt(x, z) + 1;
                 target.setY(y);
                 // Spawn-rules mátrix: a DARK territórium maga NEM tiltott (ez a lényeg),

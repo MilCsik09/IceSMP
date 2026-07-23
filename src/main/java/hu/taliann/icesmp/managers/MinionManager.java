@@ -30,11 +30,13 @@ public final class MinionManager {
         STAY      // frozen in place (AI off)
     }
 
+    private final JavaPlugin plugin;
     private final NamespacedKey minionOwnerKey;
     private final NamespacedKey minionStanceKey;
     private final Map<UUID, Set<UUID>> minionsByOwner = new ConcurrentHashMap<>();
 
     public MinionManager(final JavaPlugin plugin) {
+        this.plugin = plugin;
         this.minionOwnerKey = new NamespacedKey(plugin, "minion_owner");
         this.minionStanceKey = new NamespacedKey(plugin, "minion_stance");
     }

@@ -221,7 +221,7 @@ public final class EscortManager {
                         spawnTask -> spawnConvoy(fixedAnchor));
                 return true;
             }
-            final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
+            final List<Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
                 return false;
             }

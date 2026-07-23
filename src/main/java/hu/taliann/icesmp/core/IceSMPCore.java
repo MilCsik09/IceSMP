@@ -342,7 +342,6 @@ public final class IceSMPCore {
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
         factionManager.setSeasonManager(seasonManager);
-        questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
 
         this.territoryManager = new TerritoryManager(plugin);
         this.blockRegenService = new BlockRegenService(plugin, configManager);
@@ -361,7 +360,6 @@ public final class IceSMPCore {
         this.uniqueMaterialFactory = new hu.taliann.icesmp.items.UniqueMaterialFactory(plugin, configManager);
         this.moneyPouchItemFactory = new hu.taliann.icesmp.items.MoneyPouchItemFactory(plugin);
         this.guildManager = new hu.taliann.icesmp.managers.GuildManager(plugin, configManager, currencyManager, factionManager, messageManager);
-        this.playerCaravanManager = new hu.taliann.icesmp.managers.PlayerCaravanManager(plugin, configManager, factionTreasuryManager, factionManager, eventSpawnGuard, messageManager);
         this.bestiaryManager = new hu.taliann.icesmp.managers.BestiaryManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.resourceBonusService = new hu.taliann.icesmp.managers.ResourceBonusService(plugin, configManager, jobManager, relicManager);
         this.honorDuelManager = new hu.taliann.icesmp.managers.HonorDuelManager(plugin, configManager, sinManager, factionManager, seasonManager, messageManager);
@@ -384,7 +382,6 @@ public final class IceSMPCore {
         bloodMoonManager.setHolidayService(holidayService);
         invasionManager.setHolidayService(holidayService);
         this.cityGuardManager = new hu.taliann.icesmp.managers.CityGuardManager(plugin, configManager);
-        this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager, eventSpawnGuard);
         this.eventSpawnPointManager = new hu.taliann.icesmp.managers.EventSpawnPointManager(plugin, configManager);
         // Komp (építész-kérés): fix két-végpontú átkelő (óceán-átkelés híd helyett).
         this.ferryManager = new hu.taliann.icesmp.managers.FerryManager(plugin, configManager, currencyManager, factionManager, messageManager);
@@ -418,6 +415,10 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.managers.EventSpawnGuard(configManager, territoryManager, claimManager);
         worldBossManager.setSpawnGuard(eventSpawnGuard);
         invasionManager.setSpawnGuard(eventSpawnGuard);
+        // PlayerCaravan + DarkUndead az EventSpawnGuardot igényli — az a ClaimManager után
+        // épül, ezért itt (nem a saját blokkjukban) konstruáljuk őket.
+        this.playerCaravanManager = new hu.taliann.icesmp.managers.PlayerCaravanManager(plugin, configManager, factionTreasuryManager, factionManager, eventSpawnGuard, messageManager);
+        this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager, eventSpawnGuard);
         this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, eventSpawnGuard, messageManager);
         this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
         this.abundanceManager = new AbundanceManager(plugin, configManager, messageManager);
@@ -485,6 +486,7 @@ public final class IceSMPCore {
         this.shopManager.setCaravanStockSeed(caravanManager::getStockSeed);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
+        questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.spellFavoritesManager = new hu.taliann.icesmp.managers.SpellFavoritesManager(plugin);

@@ -92,7 +92,7 @@ public final class CityGuardManager {
     private void spawnGuard(final String id, final org.bukkit.configuration.ConfigurationSection guard,
                             final Location start) {
         final String name = guard == null ? id : guard.getString("name", "Városi őr");
-        start.getWorld().getRegionScheduler().run(plugin, start, task -> {
+        plugin.getServer().getRegionScheduler().run(plugin, start, task -> {
             final Villager villager = start.getWorld().spawn(start, Villager.class, mob -> {
                 mob.setAI(false);
                 mob.setInvulnerable(true);
@@ -112,7 +112,7 @@ public final class CityGuardManager {
         final int targetIndex = waypointIndex.getOrDefault(id, 1) % route.size();
         final Location target = route.get(targetIndex);
         // Léptetés az őr SAJÁT régió-szálán — a lookup + mozgatás is ott biztonságos.
-        target.getWorld().getRegionScheduler().run(plugin, target, task -> {
+        plugin.getServer().getRegionScheduler().run(plugin, target, task -> {
             final org.bukkit.entity.Entity entity = Bukkit.getEntity(entityId);
             if (entity == null || !entity.isValid()) {
                 guards.remove(id); // a következő tick újraspawnolja

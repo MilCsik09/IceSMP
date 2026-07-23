@@ -92,7 +92,7 @@ public final class BestiaryCommand implements BasicCommand {
     }
 
     @Override
-    public @NonNull java.util.Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack,
+    public java.util.@NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack,
                                                          final @NonNull String[] args) {
         return List.of();
     }

@@ -48,7 +48,7 @@ public final class ResourceBonusService implements Listener {
     public double maxMultiplier(final UUID playerId) {
         double multiplier = paktCache.getOrDefault(playerId, 1.0D);
         final String relicId = configManager.getString("pakt.dragon-relic-id", "sarkany_tojas");
-        final RelicManager.RelicOwnership ownership = relicManager.getOwnership(relicId);
+        final hu.taliann.icesmp.relics.RelicOwnership ownership = relicManager.getOwnership(relicId);
         if (ownership != null && playerId.equals(ownership.owner()) && isEvoker(playerId)) {
             multiplier *= 1.0D + Math.max(0.0D,
                     configManager.getDouble("pakt.dragon-essence-bonus-percent", 10.0D)) / 100.0D;

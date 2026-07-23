@@ -98,7 +98,6 @@ public final class DonationChestManager implements PersistentStore {
         }
     }
 
-    @Override
     /** Debounce-olt mentés: a donate/take a hívó régió-szálán nem blokkolhat lemez-I/O-n. */
     private void requestSave() {
         if (saveScheduled.compareAndSet(false, true)) {

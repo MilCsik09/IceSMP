@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * world-events tickről hopol. Minden küszöb/súly configból, élőben olvasva
  * (factions.whisper.*).
  */
-public final class WhisperManager implements hu.taliann.icesmp.storage.PlayerStateCleanup {
+public final class WhisperManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
