@@ -641,3 +641,48 @@ abuzálunk — az natívan, szerver-oldali válasz-kezeléssel sokkal jobb.
 
 Közös alap KÉSZ: `DialogService` (Notice + Confirm). A többi minta (MultiAction, input-
 űrlap, DialogList, commandTemplate-gomb) a P6a-nál épül ki előszőr, aztán újrahasznosul.
+
+### P7 — Modern, kihasználatlan Paper/MC API-k (2026-07-23, valódi build-felderítés)
+
+A valódi folia-api (1.21.11) + szerver-jar bájtkód-átvizsgálásából. Amit MA nem használunk,
+pedig kézzelfogható nyereség lenne. (A data-component API @Experimental → SuppressWarnings,
+de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`.)
+
+**[TOP] Data-component API (1.20.5+) — MA egyáltalán nem használjuk (PDC/ItemMeta helyett):**
+- **P7a EQUIPPABLE** — BÁRMELY item viselhető (kozmetikai kalap/korona, saját páncél-modell,
+  kamera-overlay). A frakció-kozmetikák és relikvia-viseletek aranybányája. 🟡⭐⭐⭐
+- **P7b CONSUMABLE + FOOD + USE_EFFECTS** — saját étel/ital deklaratívan: effekt, evés-
+  animáció, hang, partikel — a signature-étel LISTENEREK kiváltása. 🟡⭐⭐⭐
+- **P7c USE_COOLDOWN (cooldown-csoportok)** — katalizátor/relikvia/tekercs KÖZÖS nevesített
+  cooldownt kap, kézi setCooldown-könyvelés nélkül (ma 17 get/4 set kézzel). 🟢⭐⭐
+- **P7d DEATH_PROTECTION** — totem-viselkedés BÁRMELY itemen (relikvia, ami egyszer megment). 🟢⭐⭐
+- **P7e GLIDER** — elytra-viselkedés bármely itemen (relikvia-szárny listener nélkül). 🟢⭐⭐
+- **P7f BLOCKS_ATTACKS** — pajzs-viselkedés bármely itemen (parry relikvia). 🟢⭐
+- **P7g TOOL/WEAPON/DAMAGE_RESISTANT** — deklaratív bányász/harc-szabály (tűzálló item,
+  saját ásás-sebesség). 🟢⭐
+- **P7h TOOLTIP_DISPLAY** — vanília tooltip-sorok elrejtése (tiszta unique-item tooltip,
+  az „amikor a főkézben" attribútum-spam nélkül). 🟢⭐⭐
+- **P7i CUSTOM_MODEL_DATA (új, több-értékű: float/flag/szín/string)** — gazdagabb RP-horog
+  az integer-CMD helyett (a pack booleanből vezérelhet override-ot/animációt). 🟢⭐⭐
+- **P7j PROFILE** — saját fej-skin (NPC-fejek, kozmetikák) — ma nem használjuk. 🟢⭐
+- P7k ENCHANTMENT_GLINT_OVERRIDE (glint kényszerítés), CONTAINER/CONTAINER_LOOT (tároló-item),
+  JUKEBOX_PLAYABLE/INSTRUMENT/TRIM (RP-kötött) — kisebb nyeremények. 🟢⭐
+
+**[TOP] Új attribútumok (a ~35-ből csak 7-et használunk):**
+- **P7l SCALE** — entitás-MÉRET! Óriás világboss, zsugorító debuff-spell, pet-növekedés —
+  olcsó, nagy vizuális hatás. 🟡⭐⭐⭐
+- **P7m Mozgás-identitás:** GRAVITY (lebegtetés/toll-spell), STEP_HEIGHT (auto-lépcső),
+  MOVEMENT_EFFICIENCY/SNEAKING_SPEED/WATER_MOVEMENT_EFFICIENCY (kaszt/spec-identitás),
+  SAFE_FALL_DISTANCE/FALL_DAMAGE_MULTIPLIER. 🟢⭐⭐
+- **P7n Reach:** BLOCK_INTERACTION_RANGE/ENTITY_INTERACTION_RANGE (mágus-hosszabb hatótáv,
+  admin); MINING_EFFICIENCY/BLOCK_BREAK_SPEED (bányász-identitás); MAX_ABSORPTION
+  (pajzs-spell potion helyett); SWEEPING_DAMAGE_RATIO (harcos cleave); BURNING_TIME. 🟢⭐⭐
+- **P7o WAYPOINT_TRANSMIT/RECEIVE_RANGE (1.21.6 locator/waypoint)** — a locator-bart kikapcsoltuk,
+  de SZÁNDÉKOS party/frakció-jeladóként be lehetne kötni (csak a sajátjaidat látod). 🟢⭐⭐
+
+**Entitás/világ:**
+- **P7p Interaction-entitás** — kattintható hitbox MOB NÉLKÜL (quest-NPC, rituálé-oltár,
+  világ-gomb) — Folia-barát (nincs AI), és FÜGGETLENÍT a FancyNpcs-tól (az NPC-fallback
+  ellenálló-képesség folytatása). 🟡⭐⭐
+- **P7q HappyGhast (1.21.6)** — megülhető repülő hátas (frakció-léghajó / mount-jutalom). 🟢⭐
+- P7r Két-oldalas/izzó tábla-API, Bundle-tartalom — kisebb. 🟢⭐
