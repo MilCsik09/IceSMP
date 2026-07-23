@@ -1883,3 +1883,89 @@ Az ÚJ custom itemek nem integer CustomModelData-t kapnak, hanem **ITEM_MODEL** 
 | `melyseg_kulcsa` | TRIAL_KEY | A Mélység Kulcsa |
 | `ejszaka_pengeje` | NETHERITE_SWORD | Az Éjszaka Pengéje |
 | `csontkripta_kulcsa` | TRIAL_KEY | A Csontkripta Kulcsa |
+
+
+### Egyedi anyagok — ⚠️ MIGRÁLVA ITEM_MODEL-re (lásd fentebb) (profession-materials)
+
+| Modell-id (`icesmp:`) | Alap-item | Mi ez |
+|---|---|---|
+| `suttogas_meghivo` | ECHO_SHARD | &5Suttogás |
+| `emlekszilank` | AMETHYST_SHARD | &dOpálos Emlékszilánk |
+| `tiszta_vasesszencia` | IRON_NUGGET | &fTiszta Vasesszencia |
+| `gyogy_kivonat` | GLOW_BERRIES | &aGyógy-kivonat |
+| `rezgo_rez_otvozet` | COPPER_INGOT | &6Rezgő Rézötvözet |
+| `kemenyfa_gerenda` | STRIPPED_OAK_WOOD | &eKeményfa Gerenda |
+| `runapor` | GLOWSTONE_DUST | &bRúnapor |
+| `vad_esszencia` | PHANTOM_MEMBRANE | &2Vad Esszencia |
+| `szorny_mag` | ECHO_SHARD | &5Szörny Mag |
+| `arnyekpor` | SCULK_VEIN | &8Árnyékpor |
+| `osi_ereklyeszilank` | NETHER_STAR | &cFekete Villám Szilánk |
+| `jegviragpor` | SUGAR | &bJégvirág-por |
+| `parazsmag` | BLAZE_POWDER | &6Parázsmag |
+| `viharkvarc` | QUARTZ | &eViharkvarc |
+| `melysegi_borostyan` | RAW_GOLD | &6Mélységi Borostyán |
+| `sarkanycsont_szilank` | BONE | &fSárkánycsont-szilánk |
+| `fonixpihe` | FEATHER | &cFőnixpihe |
+| `holdezust_huzal` | CHAIN | &fHoldezüst Huzal |
+| `csontenyv` | BONE_MEAL | &eCsontenyv |
+| `sarkfeny_cseppko` | PRISMARINE_CRYSTALS | &bSarkfény-cseppkő |
+| `szavannafu_kotel` | VINE | &2Szavannafű-kötél |
+| `obszidian_szilank` | FLINT | &8Obszidián-szilánk |
+| `arnygomba` | CRIMSON_FUNGUS | &5Mortengradi Árnygomba |
+| `lelekhamu` | GUNPOWDER | &7Lélekhamu |
+| `aranyfust_lemez` | GOLD_NUGGET | &6Aranyfüst-lemez |
+| `gyongyhaz_pikkely` | PRISMARINE_SHARD | &bGyöngyház-pikkely |
+| `vandorfuszer` | COCOA_BEANS | &6Vándorfűszer |
+| `viaszpecset` | HONEYCOMB | &6Számvevő-pecsétviasz |
+| `lampaolaj` | GLOW_INK_SAC | &eFinomított Lámpaolaj |
+| `folyositoszer` | BLAZE_POWDER | &cKovács-folyósítószer |
+| `dermedt_konnycsepp` | GHAST_TEAR | &bDermedt Könnycsepp |
+| `karhozat_parazs` | FIRE_CHARGE | &4A Kapu Parazsa |
+| `nema_kristaly` | AMETHYST_SHARD | &5Néma Kristály |
+| `elso_csend_szilankja` | ECHO_SHARD | &0Az Első Csend Szilánkja |
+| `robbantopor` | GUNPOWDER | &cRobbantópor |
+| `tarnatamasz_szegecs` | IRON_NUGGET | &fTárnatámasz-szegecs |
+| `csillekenocs` | SLIME_BALL | &aCsillekenőcs |
+| `ercmoso_lug` | GLASS_BOTTLE | &eÉrcmosó-lúg |
+| `melysegi_iranytu` | COMPASS | &bMélységi Iránytű-tű |
+| `uvegfiola_keszlet` | GLASS_BOTTLE | &fÜvegfiola-készlet |
+| `aszalohalo` | COBWEB | &eAszalóháló |
+| `oltoviasz` | HONEYCOMB | &6Oltóviasz |
+| `tozegkocka` | PACKED_MUD | &8Tőzegkocka |
+| `permetezo_kanna` | BUCKET | &7Permetező-kanna |
+| `fenoko` | SMOOTH_STONE | &7Fenőkő |
+| `gyantaoldo` | HONEY_BOTTLE | &eGyantaoldó |
+| `acskapocs` | IRON_NUGGET | &fÁcskapocs |
+| `merozsinor` | STRING | &aMérőzsinór |
+| `favedo_pac` | INK_SAC | &8Favédő pác |
+| `edzoolaj` | MAGMA_CREAM | &6Edzőolaj |
+| `polirpaszta` | SUGAR | &fPolírpaszta |
+| `nyelbor` | LEATHER | &6Nyélbőr |
+| `fujtatobor` | RABBIT_HIDE | &eFújtatóbőr |
+| `desztillalt_esoviz` | GLASS_BOTTLE | &bDesztillált Esővíz |
+| `szuropapir` | PAPER | &fSzűrőpapír |
+| `katalizator_so` | GLOWSTONE_DUST | &eKatalizátor-só |
+| `olomdugo` | IRON_NUGGET | &7Ólomdugó |
+| `lombik_szen` | CHARCOAL | &8Lombik-szén |
+| `irnok_tinta` | INK_SAC | &0Írnok-tinta |
+| `pergamen_simito` | BONE | &fPergamen-simító |
+| `ezust_toll` | FEATHER | &7Ezüst-toll |
+| `runakreta` | CLAY_BALL | &bRúnakréta |
+| `viaszgyertya` | CANDLE | &eViasz-gyertya |
+| `horogkeszlet` | TRIPWIRE_HOOK | &7Horogkészlet |
+| `csalizsir` | SLIME_BALL | &eCsalizsír |
+| `halofonal` | STRING | &fHálófonal |
+| `parafa_uszo` | OAK_BUTTON | &6Parafa-úszó |
+| `sozott_csali` | DRIED_KELP | &aSózott csali |
+| `koso` | SUGAR | &fKősó |
+| `sutopergamen` | PAPER | &eSütőpergamen |
+| `ecet_eszencia` | HONEY_BOTTLE | &6Ecet-eszencia |
+| `fustoloforgacs` | STICK | &8Füstölőforgács |
+| `vaj` | HONEYCOMB | &eFriss Vaj |
+| `runa_elek` | AMETHYST_SHARD | &bÉl Rúnája |
+| `runa_zapor` | AMETHYST_SHARD | &bZápor Rúnája |
+| `runa_bastya` | AMETHYST_SHARD | &bBástya Rúnája |
+| `runa_lang` | AMETHYST_SHARD | &cLáng Rúnája |
+| `runa_fagy` | AMETHYST_SHARD | &bFagy Rúnája |
+| `runa_moho` | AMETHYST_SHARD | &6Mohóság Rúnája |
+| `runa_visszhang` | AMETHYST_SHARD | &dVisszhang Rúnája |

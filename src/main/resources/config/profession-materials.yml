@@ -14,14 +14,14 @@
 #   <unique-id>:
 #     material: <ikon MATERIAL>
 #     display-name: "<megjelenő név>"
-#     custom-model-data: <egyedi CMD>
+#     item-model: "icesmp:<unique-id>"   # ITEM_MODEL (CMD helyett); a pack ehhez ad modellt
 #     lore: [ "<sor>", ... ]
 profession-materials:
   # --- K9: Suttogás-meghívó (a Sötét Rítus kulcsa — éjjel, sculkon, magányosan, SHIFT+jobb katt) ---
   suttogas_meghivo:
     material: ECHO_SHARD
     display-name: "&5Suttogás"
-    custom-model-data: 6015
+    item-model: "icesmp:suttogas_meghivo"
     lore:
       - "&7Egy hang, amit csak te hallasz. Hívás,"
       - "&7amit nem lehet visszautasítani — csak követni."
@@ -30,7 +30,7 @@ profession-materials:
   emlekszilank:
     material: AMETHYST_SHARD
     display-name: "&dOpálos Emlékszilánk"
-    custom-model-data: 6014
+    item-model: "icesmp:emlekszilank"
     lore:
       - "&7Egy Felső elveszett emlékének kristálya —"
       - "&7romok mélyén, erős szörnyeknél rejtőzik."
@@ -39,7 +39,7 @@ profession-materials:
   tiszta_vasesszencia:
     material: IRON_NUGGET
     display-name: "&fTiszta Vasesszencia"
-    custom-model-data: 6000
+    item-model: "icesmp:tiszta_vasesszencia"
     lore:
       - "&7A Vasművek Akadémiájának titka:"
       - "&7ezerszer hajtogatott vas lelke."
@@ -47,7 +47,7 @@ profession-materials:
   gyogy_kivonat:
     material: GLOW_BERRIES
     display-name: "&aGyógy-kivonat"
-    custom-model-data: 6001
+    item-model: "icesmp:gyogy_kivonat"
     lore:
       - "&7A Bokic partján, hajnalban szedett"
       - "&7gyógyfüvek ragyogó párlata."
@@ -55,7 +55,7 @@ profession-materials:
   rezgo_rez_otvozet:
     material: COPPER_INGOT
     display-name: "&6Rezgő Rézötvözet"
-    custom-model-data: 6002
+    item-model: "icesmp:rezgo_rez_otvozet"
     lore:
       - "&7A Mélység Népe tárnáiból tanult ötvözet —"
       - "&7halkan zúg, ha rúna simítja."
@@ -63,7 +63,7 @@ profession-materials:
   kemenyfa_gerenda:
     material: STRIPPED_OAK_WOOD
     display-name: "&eKeményfa Gerenda"
-    custom-model-data: 6003
+    item-model: "icesmp:kemenyfa_gerenda"
     lore:
       - "&7A Bokic menti ősvadonban nőtt,"
       - "&7évszázados tölgy magja."
@@ -71,7 +71,7 @@ profession-materials:
   runapor:
     material: GLOWSTONE_DUST
     display-name: "&bRúnapor"
-    custom-model-data: 6004
+    item-model: "icesmp:runapor"
     lore:
       - "&7Szétmorzsolt rúnakő csilláma — az Akadémiák"
       - "&7elveszett rúna-tudásának nyers pora."
@@ -80,7 +80,7 @@ profession-materials:
   vad_esszencia:
     material: PHANTOM_MEMBRANE
     display-name: "&2Vad Esszencia"
-    custom-model-data: 6010
+    item-model: "icesmp:vad_esszencia"
     lore:
       - "&7A Káoszkor elvadult fenevadjának"
       - "&7dühe, mely legyőzött testéből száll el."
@@ -88,7 +88,7 @@ profession-materials:
   szorny_mag:
     material: ECHO_SHARD
     display-name: "&5Szörny Mag"
-    custom-model-data: 6011
+    item-model: "icesmp:szorny_mag"
     lore:
       - "&7Egy káoszkori szörny lüktető, sötét"
       - "&7szíve — még kihűlve is hatalmat rejt."
@@ -96,7 +96,7 @@ profession-materials:
   arnyekpor:
     material: SCULK_VEIN
     display-name: "&8Árnyékpor"
-    custom-model-data: 6012
+    item-model: "icesmp:arnyekpor"
     lore:
       - "&7A Néma Királynő suttogásának"
       - "&7megülepedett, éjfekete pora —"
@@ -105,7 +105,7 @@ profession-materials:
   osi_ereklyeszilank:
     material: NETHER_STAR
     display-name: "&cFekete Villám Szilánk"
-    custom-model-data: 6013
+    item-model: "icesmp:osi_ereklyeszilank"
     lore:
       - "&7Az a sötét energia pulzál benne, amely"
       - "&7Hu. 698-ban kettéhasította az eget,"
@@ -115,7 +115,7 @@ profession-materials:
   jegviragpor:
     material: SUGAR
     display-name: "&bJégvirág-por"
-    custom-model-data: 6005
+    item-model: "icesmp:jegviragpor"
     lore:
       - "&7A Jégmezők peremén nyíló jégvirág"
       - "&7szirma, mozsárban holdfénnyel törve."
@@ -123,7 +123,7 @@ profession-materials:
   parazsmag:
     material: BLAZE_POWDER
     display-name: "&6Parázsmag"
-    custom-model-data: 6006
+    item-model: "icesmp:parazsmag"
     lore:
       - "&7A Vérszavanna kihunyt tábortüzeiből"
       - "&7kikapart, még mindig lüktető szikra."
@@ -131,7 +131,7 @@ profession-materials:
   viharkvarc:
     material: QUARTZ
     display-name: "&eViharkvarc"
-    custom-model-data: 6007
+    item-model: "icesmp:viharkvarc"
     lore:
       - "&7Villámsújtotta sziklából fejtett kvarc —"
       - "&7a belsejében még ott remeg a vihar."
@@ -139,7 +139,7 @@ profession-materials:
   melysegi_borostyan:
     material: RAW_GOLD
     display-name: "&6Mélységi Borostyán"
-    custom-model-data: 6008
+    item-model: "icesmp:melysegi_borostyan"
     lore:
       - "&7A Mélység Népe tárnáinak gyantája,"
       - "&7kővé dermedt idő — néha egy-egy"
@@ -149,7 +149,7 @@ profession-materials:
   sarkanycsont_szilank:
     material: BONE
     display-name: "&fSárkánycsont-szilánk"
-    custom-model-data: 6016
+    item-model: "icesmp:sarkanycsont_szilank"
     lore:
       - "&7Kallan elhullott jégsárkányainak"
       - "&7csontja — hidegebb, mint a jég maga."
@@ -157,7 +157,7 @@ profession-materials:
   fonixpihe:
     material: FEATHER
     display-name: "&cFőnixpihe"
-    custom-model-data: 6017
+    item-model: "icesmp:fonixpihe"
     lore:
       - "&7Soleil főnixeinek pihéje — a hamu"
       - "&7nem fogja, a láng nem emészti."
@@ -166,7 +166,7 @@ profession-materials:
   holdezust_huzal:
     material: CHAIN
     display-name: "&fHoldezüst Huzal"
-    custom-model-data: 6018
+    item-model: "icesmp:holdezust_huzal"
     lore:
       - "&7Újhold éjjelén húzott ezüstszál —"
       - "&7csak akkor fénylik, ha senki sem nézi."
@@ -174,7 +174,7 @@ profession-materials:
   csontenyv:
     material: BONE_MEAL
     display-name: "&eCsontenyv"
-    custom-model-data: 6019
+    item-model: "icesmp:csontenyv"
     lore:
       - "&7A Mélység Népe régi receptje: lassan"
       - "&7főzött enyv, ami követ is köt fához."
@@ -182,7 +182,7 @@ profession-materials:
   sarkfeny_cseppko:
     material: PRISMARINE_CRYSTALS
     display-name: "&bSarkfény-cseppkő"
-    custom-model-data: 6021
+    item-model: "icesmp:sarkfeny_cseppko"
     lore:
       - "&7Az északi fény egy cseppje, ami barlang"
       - "&7mélyén kővé dermedt — még mindig táncol."
@@ -190,7 +190,7 @@ profession-materials:
   szavannafu_kotel:
     material: VINE
     display-name: "&2Szavannafű-kötél"
-    custom-model-data: 6022
+    item-model: "icesmp:szavannafu_kotel"
     lore:
       - "&7A Vérszavanna szívós füvéből sodort kötél —"
       - "&7a pásztorok szerint sárkányt is tartott már."
@@ -198,7 +198,7 @@ profession-materials:
   obszidian_szilank:
     material: FLINT
     display-name: "&8Obszidián-szilánk"
-    custom-model-data: 6023
+    item-model: "icesmp:obszidian_szilank"
     lore:
       - "&7A Kapu körüli mezőkről pattintott"
       - "&7fekete üveg — a napfényt is elnyeli."
@@ -206,7 +206,7 @@ profession-materials:
   arnygomba:
     material: CRIMSON_FUNGUS
     display-name: "&5Mortengradi Árnygomba"
-    custom-model-data: 6024
+    item-model: "icesmp:arnygomba"
     lore:
       - "&7Csak romok pincéiben nő, fény sosem"
       - "&7érte — a Kitaszítottak kenyérpótlója."
@@ -214,7 +214,7 @@ profession-materials:
   lelekhamu:
     material: GUNPOWDER
     display-name: "&7Lélekhamu"
-    custom-model-data: 6025
+    item-model: "icesmp:lelekhamu"
     lore:
       - "&7Kihunyt lélektűz maradéka. Hideg,"
       - "&7szürke — és mégis, néha megmoccan."
@@ -222,7 +222,7 @@ profession-materials:
   aranyfust_lemez:
     material: GOLD_NUGGET
     display-name: "&6Aranyfüst-lemez"
-    custom-model-data: 6026
+    item-model: "icesmp:aranyfust_lemez"
     lore:
       - "&7Leheletvékonyra vert arany, a caldesterai"
       - "&7ötvösnegyed büszkesége."
@@ -230,7 +230,7 @@ profession-materials:
   gyongyhaz_pikkely:
     material: PRISMARINE_SHARD
     display-name: "&bGyöngyház-pikkely"
-    custom-model-data: 6027
+    item-model: "icesmp:gyongyhaz_pikkely"
     lore:
       - "&7A Bokic vén pontyainak pikkelye —"
       - "&7a fény hét színére törik rajta."
@@ -238,7 +238,7 @@ profession-materials:
   vandorfuszer:
     material: COCOA_BEANS
     display-name: "&6Vándorfűszer"
-    custom-model-data: 6028
+    item-model: "icesmp:vandorfuszer"
     lore:
       - "&7Hét út pora, hét piac illata egy"
       - "&7zacskóban — a karavánok kincse."
@@ -247,7 +247,7 @@ profession-materials:
   viaszpecset:
     material: HONEYCOMB
     display-name: "&6Számvevő-pecsétviasz"
-    custom-model-data: 6020
+    item-model: "icesmp:viaszpecset"
     lore:
       - "&7A Bankárszövetség hivatalos viasza —"
       - "&7amit ez pecsétel, az megmásíthatatlan."
@@ -255,7 +255,7 @@ profession-materials:
   lampaolaj:
     material: GLOW_INK_SAC
     display-name: "&eFinomított Lámpaolaj"
-    custom-model-data: 6033
+    item-model: "icesmp:lampaolaj"
     lore:
       - "&7A caldesterai lámpagyújtogatók titkos"
       - "&7keveréke — tisztán, kormozás nélkül ég."
@@ -263,7 +263,7 @@ profession-materials:
   folyositoszer:
     material: BLAZE_POWDER
     display-name: "&cKovács-folyósítószer"
-    custom-model-data: 6034
+    item-model: "icesmp:folyositoszer"
     lore:
       - "&7A Vasművek Akadémiájának adalékszere:"
       - "&7nélküle a netherit nem veszi fel a rúnát."
@@ -272,7 +272,7 @@ profession-materials:
   dermedt_konnycsepp:
     material: GHAST_TEAR
     display-name: "&bDermedt Könnycsepp"
-    custom-model-data: 6029
+    item-model: "icesmp:dermedt_konnycsepp"
     lore:
       - "&7Azt mondják, Eleftheria sírt, mielőtt"
       - "&7elhallgatott. Ez itt bizonyíték."
@@ -280,7 +280,7 @@ profession-materials:
   karhozat_parazs:
     material: FIRE_CHARGE
     display-name: "&4A Kapu Parazsa"
-    custom-model-data: 6030
+    item-model: "icesmp:karhozat_parazs"
     lore:
       - "&7A Kárhozat Kapujából kisodródott parázs —"
       - "&7nem ég, nem alszik ki. Csak vár."
@@ -288,7 +288,7 @@ profession-materials:
   nema_kristaly:
     material: AMETHYST_SHARD
     display-name: "&5Néma Kristály"
-    custom-model-data: 6031
+    item-model: "icesmp:nema_kristaly"
     lore:
       - "&7Sculk-erek közt nőtt kristály. Ha a füledhez"
       - "&7tartod, hallod, hogy NEM szól semmit."
@@ -296,7 +296,7 @@ profession-materials:
   elso_csend_szilankja:
     material: ECHO_SHARD
     display-name: "&0Az Első Csend Szilánkja"
-    custom-model-data: 6032
+    item-model: "icesmp:elso_csend_szilankja"
     lore:
       - "&7Nem tudni, mi ez, sem honnan való. Csak"
       - "&7azt, hogy amikor a kezedbe veszed,"
@@ -306,7 +306,7 @@ profession-materials:
   robbantopor:
     material: GUNPOWDER
     display-name: "&cRobbantópor"
-    custom-model-data: 6100
+    item-model: "icesmp:robbantopor"
     lore:
       - "&7A Vasművek engedélyezett keveréke —"
       - "&7tárnát nyit, nem sírgödröt."
@@ -314,7 +314,7 @@ profession-materials:
   tarnatamasz_szegecs:
     material: IRON_NUGGET
     display-name: "&fTárnatámasz-szegecs"
-    custom-model-data: 6101
+    item-model: "icesmp:tarnatamasz_szegecs"
     lore:
       - "&7Szabvány szegecs a Mélység Népe"
       - "&7méretei szerint. Sosem enged."
@@ -322,7 +322,7 @@ profession-materials:
   csillekenocs:
     material: SLIME_BALL
     display-name: "&aCsillekenőcs"
-    custom-model-data: 6102
+    item-model: "icesmp:csillekenocs"
     lore:
       - "&7Ettől fut a csille hang nélkül —"
       - "&7a tárna tisztelete csendet kíván."
@@ -330,7 +330,7 @@ profession-materials:
   ercmoso_lug:
     material: GLASS_BOTTLE
     display-name: "&eÉrcmosó-lúg"
-    custom-model-data: 6103
+    item-model: "icesmp:ercmoso_lug"
     lore:
       - "&7Leoldja a meddőt az ércről,"
       - "&7és a kézről a tárnák szagát."
@@ -338,7 +338,7 @@ profession-materials:
   melysegi_iranytu:
     material: COMPASS
     display-name: "&bMélységi Iránytű-tű"
-    custom-model-data: 6104
+    item-model: "icesmp:melysegi_iranytu"
     lore:
       - "&7A mélyben nem észak felé mutat —"
       - "&7hazafelé. Az többet ér."
@@ -346,7 +346,7 @@ profession-materials:
   uvegfiola_keszlet:
     material: GLASS_BOTTLE
     display-name: "&fÜvegfiola-készlet"
-    custom-model-data: 6105
+    item-model: "icesmp:uvegfiola_keszlet"
     lore:
       - "&7Tucatnyi apró fiola — a kivonat"
       - "&7annyit ér, amennyit az üveg megőriz."
@@ -354,7 +354,7 @@ profession-materials:
   aszalohalo:
     material: COBWEB
     display-name: "&eAszalóháló"
-    custom-model-data: 6106
+    item-model: "icesmp:aszalohalo"
     lore:
       - "&7Finom szövésű háló a füvek"
       - "&7árnyékban szárításához."
@@ -362,7 +362,7 @@ profession-materials:
   oltoviasz:
     material: HONEYCOMB
     display-name: "&6Oltóviasz"
-    custom-model-data: 6107
+    item-model: "icesmp:oltoviasz"
     lore:
       - "&7A metszés sebét zárja — a kert"
       - "&7is gyógyul, nemcsak a beteg."
@@ -370,7 +370,7 @@ profession-materials:
   tozegkocka:
     material: PACKED_MUD
     display-name: "&8Tőzegkocka"
-    custom-model-data: 6108
+    item-model: "icesmp:tozegkocka"
     lore:
       - "&7A Bokic-láp fekete aranya —"
       - "&7ebben minden mag kicsírázik."
@@ -378,7 +378,7 @@ profession-materials:
   permetezo_kanna:
     material: BUCKET
     display-name: "&7Permetező-kanna"
-    custom-model-data: 6109
+    item-model: "icesmp:permetezo_kanna"
     lore:
       - "&7Rézfejű kanna finom permethez —"
       - "&7a harmatot utánozza, nem az esőt."
@@ -386,7 +386,7 @@ profession-materials:
   fenoko:
     material: SMOOTH_STONE
     display-name: "&7Fenőkő"
-    custom-model-data: 6110
+    item-model: "icesmp:fenoko"
     lore:
       - "&7Vízköszörült kő a Bokic partjáról —"
       - "&7az él tőle tanul énekelni."
@@ -394,7 +394,7 @@ profession-materials:
   gyantaoldo:
     material: HONEY_BOTTLE
     display-name: "&eGyantaoldó"
-    custom-model-data: 6111
+    item-model: "icesmp:gyantaoldo"
     lore:
       - "&7Leoldja a gyantát a fűrészről"
       - "&7és az alkut a kézfogásról."
@@ -402,7 +402,7 @@ profession-materials:
   acskapocs:
     material: IRON_NUGGET
     display-name: "&fÁcskapocs"
-    custom-model-data: 6112
+    item-model: "icesmp:acskapocs"
     lore:
       - "&7Kovácsolt kapocs — gerendát fog"
       - "&7össze, és tetőt tart, ha kell."
@@ -410,7 +410,7 @@ profession-materials:
   merozsinor:
     material: STRING
     display-name: "&aMérőzsinór"
-    custom-model-data: 6113
+    item-model: "icesmp:merozsinor"
     lore:
       - "&7Krétázott zsinór — az egyenes"
       - "&7vonal a mesterség fele."
@@ -418,7 +418,7 @@ profession-materials:
   favedo_pac:
     material: INK_SAC
     display-name: "&8Favédő pác"
-    custom-model-data: 6114
+    item-model: "icesmp:favedo_pac"
     lore:
       - "&7Sötét pác, mit az ácsok kevernek —"
       - "&7a fa tőle éli túl a telet."
@@ -426,7 +426,7 @@ profession-materials:
   edzoolaj:
     material: MAGMA_CREAM
     display-name: "&6Edzőolaj"
-    custom-model-data: 6115
+    item-model: "icesmp:edzoolaj"
     lore:
       - "&7Ebbe mártva sziszeg a penge —"
       - "&7a Vasművek előírása szerint."
@@ -434,7 +434,7 @@ profession-materials:
   polirpaszta:
     material: SUGAR
     display-name: "&fPolírpaszta"
-    custom-model-data: 6116
+    item-model: "icesmp:polirpaszta"
     lore:
       - "&7Finom csiszolópor — a tükörfény"
       - "&7nem hiúság, hanem minőségjelzés."
@@ -442,7 +442,7 @@ profession-materials:
   nyelbor:
     material: LEATHER
     display-name: "&6Nyélbőr"
-    custom-model-data: 6117
+    item-model: "icesmp:nyelbor"
     lore:
       - "&7Cserzett szíj markolat-tekeréshez —"
       - "&7a fegyver ott kezdődik, ahol a kéz."
@@ -450,7 +450,7 @@ profession-materials:
   fujtatobor:
     material: RABBIT_HIDE
     display-name: "&eFújtatóbőr"
-    custom-model-data: 6118
+    item-model: "icesmp:fujtatobor"
     lore:
       - "&7A kohó tüdeje — szakadt fújtatóval"
       - "&7nincs se láng, se legenda."
@@ -458,7 +458,7 @@ profession-materials:
   desztillalt_esoviz:
     material: GLASS_BOTTLE
     display-name: "&bDesztillált Esővíz"
-    custom-model-data: 6119
+    item-model: "icesmp:desztillalt_esoviz"
     lore:
       - "&7Háromszor párolt tavaszi eső —"
       - "&7a főzet lelke a tiszta víz."
@@ -466,7 +466,7 @@ profession-materials:
   szuropapir:
     material: PAPER
     display-name: "&fSzűrőpapír"
-    custom-model-data: 6120
+    item-model: "icesmp:szuropapir"
     lore:
       - "&7A zagyból ez választja ki az"
       - "&7esszenciát. És az igazságot."
@@ -474,7 +474,7 @@ profession-materials:
   katalizator_so:
     material: GLOWSTONE_DUST
     display-name: "&eKatalizátor-só"
-    custom-model-data: 6121
+    item-model: "icesmp:katalizator_so"
     lore:
       - "&7Egy csipet, és a főzet felgyorsul —"
       - "&7két csipet, és új laborod lesz."
@@ -482,7 +482,7 @@ profession-materials:
   olomdugo:
     material: IRON_NUGGET
     display-name: "&7Ólomdugó"
-    custom-model-data: 6122
+    item-model: "icesmp:olomdugo"
     lore:
       - "&7Nehéz dugó illékony esszenciákhoz —"
       - "&7ami bent van, bent is marad."
@@ -490,7 +490,7 @@ profession-materials:
   lombik_szen:
     material: CHARCOAL
     display-name: "&8Lombik-szén"
-    custom-model-data: 6123
+    item-model: "icesmp:lombik_szen"
     lore:
       - "&7Egyenletes lángot ad a lombik alá —"
       - "&7a türelem tüzelője."
@@ -498,7 +498,7 @@ profession-materials:
   irnok_tinta:
     material: INK_SAC
     display-name: "&0Írnok-tinta"
-    custom-model-data: 6124
+    item-model: "icesmp:irnok_tinta"
     lore:
       - "&7A Számvevők receptje szerint kevert"
       - "&7tinta — nem fakul, nem hazudik."
@@ -506,7 +506,7 @@ profession-materials:
   pergamen_simito:
     material: BONE
     display-name: "&fPergamen-simító"
-    custom-model-data: 6125
+    item-model: "icesmp:pergamen_simito"
     lore:
       - "&7Csontsimító a pergamenhez — rúna"
       - "&7csak sima lapra ül meg."
@@ -514,7 +514,7 @@ profession-materials:
   ezust_toll:
     material: FEATHER
     display-name: "&7Ezüst-toll"
-    custom-model-data: 6126
+    item-model: "icesmp:ezust_toll"
     lore:
       - "&7Ezüsthegyű toll — a fontos szavakat"
       - "&7nem bízzuk lúdtollra."
@@ -522,7 +522,7 @@ profession-materials:
   runakreta:
     material: CLAY_BALL
     display-name: "&bRúnakréta"
-    custom-model-data: 6127
+    item-model: "icesmp:runakreta"
     lore:
       - "&7Előrajzoló kréta rúnákhoz — a hiba"
       - "&7itt még letörölhető. Utána nem."
@@ -530,7 +530,7 @@ profession-materials:
   viaszgyertya:
     material: CANDLE
     display-name: "&eViasz-gyertya"
-    custom-model-data: 6128
+    item-model: "icesmp:viaszgyertya"
     lore:
       - "&7Méhviasz gyertya éjszakai munkához —"
       - "&7a rúna fénynél születik, de sötétben ég."
@@ -538,7 +538,7 @@ profession-materials:
   horogkeszlet:
     material: TRIPWIRE_HOOK
     display-name: "&7Horogkészlet"
-    custom-model-data: 6129
+    item-model: "icesmp:horogkeszlet"
     lore:
       - "&7Tucatnyi kovácsolt horog — a Bokic"
       - "&7pontya válogatós."
@@ -546,7 +546,7 @@ profession-materials:
   csalizsir:
     material: SLIME_BALL
     display-name: "&eCsalizsír"
-    custom-model-data: 6130
+    item-model: "icesmp:csalizsir"
     lore:
       - "&7Illatos zsír a csalira — a titkos"
       - "&7összetevőt a halak sem tudják."
@@ -554,7 +554,7 @@ profession-materials:
   halofonal:
     material: STRING
     display-name: "&fHálófonal"
-    custom-model-data: 6131
+    item-model: "icesmp:halofonal"
     lore:
       - "&7Viaszolt fonal hálókötéshez —"
       - "&7nem rohad, nem szakad, nem felejt."
@@ -562,7 +562,7 @@ profession-materials:
   parafa_uszo:
     material: OAK_BUTTON
     display-name: "&6Parafa-úszó"
-    custom-model-data: 6132
+    item-model: "icesmp:parafa_uszo"
     lore:
       - "&7Festett úszó — ha megbillen,"
       - "&7a víz alatt eldőlt valami."
@@ -570,7 +570,7 @@ profession-materials:
   sozott_csali:
     material: DRIED_KELP
     display-name: "&aSózott csali"
-    custom-model-data: 6133
+    item-model: "icesmp:sozott_csali"
     lore:
       - "&7Hordóban érlelt csali — messziről"
       - "&7érzik. A halak szerint finom."
@@ -578,7 +578,7 @@ profession-materials:
   koso:
     material: SUGAR
     display-name: "&fKősó"
-    custom-model-data: 6134
+    item-model: "icesmp:koso"
     lore:
       - "&7A Menedék sóbányáiból — étel"
       - "&7nélküle csak takarmány."
@@ -586,7 +586,7 @@ profession-materials:
   sutopergamen:
     material: PAPER
     display-name: "&eSütőpergamen"
-    custom-model-data: 6135
+    item-model: "icesmp:sutopergamen"
     lore:
       - "&7Viaszolt lap a kemencébe — a lepény"
       - "&7alja is megérdemli a tiszteletet."
@@ -594,7 +594,7 @@ profession-materials:
   ecet_eszencia:
     material: HONEY_BOTTLE
     display-name: "&6Ecet-eszencia"
-    custom-model-data: 6136
+    item-model: "icesmp:ecet_eszencia"
     lore:
       - "&7Hétszer erjesztett eszencia —"
       - "&7egy csepp tartósít, kettő büntet."
@@ -602,7 +602,7 @@ profession-materials:
   fustoloforgacs:
     material: STICK
     display-name: "&8Füstölőforgács"
-    custom-model-data: 6137
+    item-model: "icesmp:fustoloforgacs"
     lore:
       - "&7Válogatott keményfa-forgács —"
       - "&7a füst a láthatatlan fűszer."
@@ -610,7 +610,7 @@ profession-materials:
   vaj:
     material: HONEYCOMB
     display-name: "&eFriss Vaj"
-    custom-model-data: 6138
+    item-model: "icesmp:vaj"
     lore:
       - "&7A Bokic-parti tanyák köpült vaja —"
       - "&7amin ez megolvad, az már ünnep."
@@ -620,7 +620,7 @@ profession-materials:
   runa_elek:
     material: AMETHYST_SHARD
     display-name: "&bÉl Rúnája"
-    custom-model-data: 6140
+    item-model: "icesmp:runa_elek"
     lore:
       - "&7A Mélység Népének első kovács-jele."
       - "&7Fegyverre helyezve: +közelharci sebzés."
@@ -628,7 +628,7 @@ profession-materials:
   runa_zapor:
     material: AMETHYST_SHARD
     display-name: "&bZápor Rúnája"
-    custom-model-data: 6141
+    item-model: "icesmp:runa_zapor"
     lore:
       - "&7Nyílzáport suttog a húrba."
       - "&7Íjra/számszeríjra: +lövedék-sebzés."
@@ -636,7 +636,7 @@ profession-materials:
   runa_bastya:
     material: AMETHYST_SHARD
     display-name: "&bBástya Rúnája"
-    custom-model-data: 6142
+    item-model: "icesmp:runa_bastya"
     lore:
       - "&7Caldestera falainak emléke."
       - "&7Mellvértre: -kapott sebzés."
@@ -644,7 +644,7 @@ profession-materials:
   runa_lang:
     material: AMETHYST_SHARD
     display-name: "&cLáng Rúnája"
-    custom-model-data: 6143
+    item-model: "icesmp:runa_lang"
     lore:
       - "&7Soleil főnixeinek szikrája."
       - "&7Fegyverre: találatkor eséllyel meggyújt."
@@ -652,7 +652,7 @@ profession-materials:
   runa_fagy:
     material: AMETHYST_SHARD
     display-name: "&bFagy Rúnája"
-    custom-model-data: 6144
+    item-model: "icesmp:runa_fagy"
     lore:
       - "&7Kallan jégsárkányainak lehelete."
       - "&7Fegyverre: találatkor eséllyel lelassít."
@@ -660,7 +660,7 @@ profession-materials:
   runa_moho:
     material: AMETHYST_SHARD
     display-name: "&6Mohóság Rúnája"
-    custom-model-data: 6145
+    item-model: "icesmp:runa_moho"
     lore:
       - "&7A Bankárszövetség titkos vésete."
       - "&7Fegyverre: a szörnyek gyakrabban ejtenek erszényt."
@@ -668,7 +668,7 @@ profession-materials:
   runa_visszhang:
     material: AMETHYST_SHARD
     display-name: "&dVisszhang Rúnája"
-    custom-model-data: 6146
+    item-model: "icesmp:runa_visszhang"
     lore:
       - "&7Caldestera elveszett rúna-tudása —"
       - "&7csak a Varázsló olvassa hangosan."
