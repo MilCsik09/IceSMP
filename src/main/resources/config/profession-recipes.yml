@@ -16,7 +16,13 @@
 #     result:
 #       material: <MATERIAL>
 #       amount: <db>                     # alapból 1
-#       affix-tier: crafted              # HA szerepel, a kész tárgy egyedi minőséget + affixeket kap
+#       affix-tier: crafted              # HA szerepel, a kész tárgy egyedi minőséget + affixeket kap (random)
+#       attributes: [ "<attr>:<érték>[:<slot>[:<művelet>]]", ... ]   # explicit, DETERMINISZTIKUS stat
+#         # attr: attack_damage|attack_speed|attack_knockback|max_health|armor|armor_toughness|
+#         #       knockback_resistance|movement_speed|luck
+#         # slot (elhagyva a Materialból következik): mainhand|offhand|hand|head|chest|legs|feet|armor|body|any
+#         # művelet (alapból add): add | base (add_scalar) | mult (multiply_scalar_1, %)
+#         # a stat saját lore-sorként jelenik meg; affix-tier mellett a kettő összeadódik
 #     ingredients: [ "MATERIAL:db", ... ]
 profession-recipes:
 
@@ -328,7 +334,7 @@ profession-recipes:
       - "&7Egyszerű, de megbízható penge —"
       - "&7a caldesterai kovácsműhelyek alapja."
     category: "Fegyver"
-    result: { material: IRON_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:vaskard" }
+    result: { material: IRON_SWORD, amount: 1, affix-tier: crafted, item-model: "icesmp:vaskard", attributes: [ "attack_damage:1" ] }
     ingredients: [ "IRON_INGOT:2", "STICK:1" ]
   vas_sisak:
     profession: armorer
@@ -2745,7 +2751,7 @@ profession-recipes:
     learn: level
     display-name: "Arany Lópáncél"
     category: "Páncél"
-    result: { material: GOLDEN_HORSE_ARMOR, item-model: "icesmp:arany_lopancel" }
+    result: { material: GOLDEN_HORSE_ARMOR, item-model: "icesmp:arany_lopancel", attributes: [ "armor:3:body" ] }
     ingredients: [ "GOLD_INGOT:7", "LEATHER:2", "unique:aranyfust_lemez:1" ]
     lore:
       - "Aranyfüst-lemezzel futtatva —"

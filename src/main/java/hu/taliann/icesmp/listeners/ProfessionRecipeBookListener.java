@@ -379,6 +379,14 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (recipe.affixTier() != null && recipe.resultAmount() == 1) {
             result = affixService.roll(result, recipe.affixTier());
         }
+        // Explicit, determinisztikus attribútum-módosítók (result.attributes) — az affix-roll UTÁN,
+        // hogy a kettő összeadódjon. A stat saját lore-sorként jelenik meg, ezért a vanília
+        // attribútum-tooltipet elrejtjük (a roll affixnál már megtette; itt a nem-affix esetre kell).
+        final List<String> attrSpecs = configManager.getConfiguration()
+                .getStringList("profession-recipes." + recipe.id() + ".result.attributes");
+        if (hu.taliann.icesmp.items.ItemDataFactory.applyAttributeModifiers(result, attrSpecs)) {
+            hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(result);
+        }
         // P7 data-komponensek UTOLSÓnak (minden setItemMeta után) — a signature-ételek
         // fix-effektű buffja a CONSUMABLE-be kerül (a FactionFoodListener a food_v2 jelölő
         // alapján hagyja ki rájuk a legacy-buffot).
