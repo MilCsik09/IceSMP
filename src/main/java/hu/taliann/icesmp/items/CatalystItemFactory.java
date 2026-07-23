@@ -120,16 +120,14 @@ public final class CatalystItemFactory {
                 MINI_MESSAGE.deserialize("<dark_gray>Nem dobható el.</dark_gray>").decoration(TextDecoration.ITALIC, false)
         ));
 
-        final CustomModelDataComponent customModelDataComponent = meta.getCustomModelDataComponent();
-        customModelDataComponent.setFloats(List.of((float) theme.customModelData()));
-        meta.setCustomModelDataComponent(customModelDataComponent);
-
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(isCatalystKey, PersistentDataType.BOOLEAN, true);
         meta.getPersistentDataContainer().set(uniqueIdKey, PersistentDataType.STRING, UUID.randomUUID().toString());
         itemStack.setItemMeta(meta);
-        // Saját cooldown-csoport (data-komponens, a setItemMeta UTÁN): a cast-cooldown-overlay
-        // így NEM sötétíti a játékos vele azonos Materialú vanília itemeit (kovakő/kürt/csemete…).
+        // Data-komponensek a setItemMeta UTÁN: kaszt-alapú ITEM_MODEL (CMD helyett) + saját
+        // cooldown-csoport (utóbbi: a cast-overlay NEM sötétíti a vele azonos Materialú vanília itemet).
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack,
+                "icesmp:catalyst_" + (jobType == null ? "wizard" : jobType.getId()));
         hu.taliann.icesmp.items.ItemDataFactory.applyUseCooldownGroup(itemStack, "catalyst", 0.5F);
         return itemStack;
     }

@@ -56,11 +56,11 @@ public final class MoneyPouchItemFactory {
                         .decoration(TextDecoration.ITALIC, false),
                 Component.text("„Valaki elvesztette. Most a tiéd.”", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, true)));
-        meta.setCustomModelData(CUSTOM_MODEL_DATA);
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(valueKey, PersistentDataType.LONG, rounded);
         pdc.set(currencyKey, PersistentDataType.STRING, currency.name());
         stack.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, "icesmp:money_pouch");
         return stack;
     }
 

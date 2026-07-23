@@ -96,14 +96,8 @@ public final class CaptureItemFactory {
                 MINI.deserialize(spec).decoration(TextDecoration.ITALIC, false)));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         meta.getPersistentDataContainer().set(captureKey, PersistentDataType.STRING, tag);
-        meta.setCustomModelData(switch (tag) {
-            case "beast" -> 5301;
-            case "necro" -> 5302;
-            case "heart" -> 5303;
-            case "seal" -> 5304;
-            default -> 5305;
-        }); // docs/RESOURCE_PACK_CMD.md
         item.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, "icesmp:capture_" + tag);
         return item;
     }
 }

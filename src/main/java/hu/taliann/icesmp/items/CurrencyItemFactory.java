@@ -74,14 +74,12 @@ public final class CurrencyItemFactory {
         meta.displayName(serializer.deserialize(resolveDisplayName(currencyType)));
         meta.lore(List.of());
 
-        final CustomModelDataComponent customModelDataComponent = meta.getCustomModelDataComponent();
-        customModelDataComponent.setFloats(List.of((float) currencyType.getCustomModelData()));
-        meta.setCustomModelDataComponent(customModelDataComponent);
-
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(currencyTypeKey, PersistentDataType.STRING, currencyType.name());
 
         itemStack.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack,
+                "icesmp:currency_" + currencyType.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     private String resolveDisplayName(final CurrencyType currencyType) {
