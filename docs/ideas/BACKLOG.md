@@ -686,3 +686,22 @@ de éles-stabil; alkalmazás: `itemStack.setData(DataComponentTypes.X, builder)`
   ellenálló-képesség folytatása). 🟡⭐⭐
 - **P7q HappyGhast (1.21.6)** — megülhető repülő hátas (frakció-léghajó / mount-jutalom). 🟢⭐
 - P7r Két-oldalas/izzó tábla-API, Bundle-tartalom — kisebb. 🟢⭐
+
+### P8 — További modern felületek (2026-07-23, valódi build-felderítés, 2. kör)
+
+- **P8a ITEM_MODEL komponens (1.21.4)** — string-alapú item-modell az integer-CMD helyett
+  (modern RP-horog; a pack booleanból/override-ból dolgozhat). 🟢⭐⭐
+- **P8b Resource-pack PUSH (`sendResourcePacks`/ResourcePackRequest)** — a pluginhez VAN pack,
+  de soha nem toljuk ki → a CMD/textúrák csak kézi telepítéssel élnek. Kötelező/prompt-os
+  push (UUID + hash + üzenet). Tényleges hiányosság, ha a pack éles. 🟡⭐⭐
+- **P8c Egyedi fontok + negatív-térköz + `Component.font()` + `shadowColor` (1.21.4)** —
+  pixel-pontos GUI/HUD-grafika a packből (bossbar-keret, GUI-háttér az inventory-cím fontján,
+  színes szöveg-árnyék). RP-kötött, de nagy prezentációs ugrás. 🟡⭐⭐
+- **P8d openBook** — írott könyv mint pillanat-UI (lore-kódex, quest-napló olvasónézet). 🟢⭐
+- **P8e Per-player WorldBorder** — vizuális effekt: alacsony-HP piros vignetta, zóna-perem,
+  szűkülő PvP-aréna. 🟢⭐⭐
+- **P8f Block/BlockState PDC (TileState)** — adat közvetlenül a blokkon (rituálé-oltár,
+  claim-jelölő, kazamata-láda) külön UUID-map helyett. 🟢⭐
+- **P8g Teljes Brigadier (ArgumentTypes, tooltip-javaslatok)** — 50 BasicCommand; gazdagabb
+  argumentumok. Marginális (a BasicCommand elég), csak kényes parancsoknál. 🟢⭐
+- **P8h Structure API (StructureManager)** — programozott struktúra-lerakás (P5c kazamata). 🟡⭐⭐
