@@ -156,7 +156,12 @@ public final class ItemDataFactory {
             final AttributeModifier.Operation operation = parts.length >= 4
                     ? OPERATIONS.getOrDefault(parts[3].trim().toLowerCase(Locale.ROOT), AttributeModifier.Operation.ADD_NUMBER)
                     : AttributeModifier.Operation.ADD_NUMBER;
-            final NamespacedKey modifierKey = NamespacedKey.fromString("icesmp:attr_" + parts[0].trim().toLowerCase(Locale.ROOT) + "_" + index);
+            // A módosító-kulcs a Materialt IS hordozza: MC 1.21-ben az azonos id-jű módosítók
+            // ugyanazon attribútumon NEM összegződnek, így két külön viselt darab (sisak+mellvért)
+            // azonos statja csak egyszer számítana — a Material (=felszerelés-slot) egyedivé teszi.
+            final NamespacedKey modifierKey = NamespacedKey.fromString("icesmp:attr_"
+                    + item.getType().name().toLowerCase(Locale.ROOT) + "_"
+                    + parts[0].trim().toLowerCase(Locale.ROOT) + "_" + index);
             if (modifierKey == null) {
                 continue;
             }
