@@ -8,7 +8,14 @@ import io.papermc.paper.datacomponent.item.FoodProperties;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -17,6 +24,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * P7 — data-component réteg (1.20.5+). Deklaratív item-viselkedés a listener-kód helyett:
@@ -96,6 +104,164 @@ public final class ItemDataFactory {
                 io.papermc.paper.datacomponent.item.TooltipDisplay.tooltipDisplay()
                         .addHiddenComponents(DataComponentTypes.ATTRIBUTE_MODIFIERS)
                         .build());
+    }
+
+    /**
+     * Explicit, determinisztikus attribútum-módosítók egy custom itemre (a random affix-roll-tól
+     * függetlenül). Minden spec: {@code "<attribútum>:<érték>[:<slot>[:<művelet>]]"} — pl.
+     * {@code "attack_damage:2"}, {@code "max_health:4:chest"}, {@code "movement_speed:0.03:feet:add"}.
+     * A slot elhagyva a Materialból következik (kard→kéz, sisak→fej…); a művelet alapból add_number
+     * (skálás: {@code base}=add_scalar, {@code mult}=multiply_scalar_1). Ismeretlen attribútum/slot/
+     * szám a craftot NEM töri — az adott sort kihagyja. A stat SAJÁT lore-sorként jelenik meg (a
+     * vanília tooltip-blokkot a hívó a {@link #hideAttributeTooltip} data-komponenssel rejti el,
+     * a setItemMeta UTÁN).
+     *
+     * @return true, ha legalább egy módosító felkerült (ekkor a hívó hívja a hideAttributeTooltip-et)
+     */
+    public static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs) {
+        if (item == null || specs == null || specs.isEmpty()) {
+            return false;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        final List<Component> statLore = new ArrayList<>();
+        int index = 0;
+        boolean any = false;
+        for (final String raw : specs) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            final String[] parts = raw.trim().split(":");
+            if (parts.length < 2) {
+                continue;
+            }
+            final Attribute attribute = ATTRIBUTES.get(parts[0].trim().toLowerCase(Locale.ROOT));
+            if (attribute == null) {
+                continue;
+            }
+            final double amount;
+            try {
+                amount = Double.parseDouble(parts[1].trim());
+            } catch (final NumberFormatException ignored) {
+                continue;
+            }
+            if (amount == 0.0D) {
+                continue;
+            }
+            final EquipmentSlotGroup slot = parts.length >= 3 && !parts[2].isBlank()
+                    ? SLOTS.getOrDefault(parts[2].trim().toLowerCase(Locale.ROOT), inferSlot(item.getType()))
+                    : inferSlot(item.getType());
+            final AttributeModifier.Operation operation = parts.length >= 4
+                    ? OPERATIONS.getOrDefault(parts[3].trim().toLowerCase(Locale.ROOT), AttributeModifier.Operation.ADD_NUMBER)
+                    : AttributeModifier.Operation.ADD_NUMBER;
+            // A módosító-kulcs a Materialt IS hordozza: MC 1.21-ben az azonos id-jű módosítók
+            // ugyanazon attribútumon NEM összegződnek, így két külön viselt darab (sisak+mellvért)
+            // azonos statja csak egyszer számítana — a Material (=felszerelés-slot) egyedivé teszi.
+            final NamespacedKey modifierKey = NamespacedKey.fromString("icesmp:attr_"
+                    + item.getType().name().toLowerCase(Locale.ROOT) + "_"
+                    + parts[0].trim().toLowerCase(Locale.ROOT) + "_" + index);
+            if (modifierKey == null) {
+                continue;
+            }
+            meta.addAttributeModifier(attribute, new AttributeModifier(modifierKey, amount, operation, slot));
+            statLore.add(statLine(parts[0].trim().toLowerCase(Locale.ROOT), amount, operation));
+            any = true;
+            index++;
+        }
+        if (!any) {
+            return false;
+        }
+        final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+        lore.addAll(statLore);
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        return true;
+    }
+
+    private static final java.util.Map<String, Attribute> ATTRIBUTES = java.util.Map.ofEntries(
+            java.util.Map.entry("attack_damage", Attribute.ATTACK_DAMAGE),
+            java.util.Map.entry("attack_speed", Attribute.ATTACK_SPEED),
+            java.util.Map.entry("attack_knockback", Attribute.ATTACK_KNOCKBACK),
+            java.util.Map.entry("max_health", Attribute.MAX_HEALTH),
+            java.util.Map.entry("armor", Attribute.ARMOR),
+            java.util.Map.entry("armor_toughness", Attribute.ARMOR_TOUGHNESS),
+            java.util.Map.entry("knockback_resistance", Attribute.KNOCKBACK_RESISTANCE),
+            java.util.Map.entry("movement_speed", Attribute.MOVEMENT_SPEED),
+            java.util.Map.entry("luck", Attribute.LUCK));
+
+    private static final java.util.Map<String, EquipmentSlotGroup> SLOTS = java.util.Map.ofEntries(
+            java.util.Map.entry("mainhand", EquipmentSlotGroup.MAINHAND),
+            java.util.Map.entry("offhand", EquipmentSlotGroup.OFFHAND),
+            java.util.Map.entry("hand", EquipmentSlotGroup.HAND),
+            java.util.Map.entry("head", EquipmentSlotGroup.HEAD),
+            java.util.Map.entry("chest", EquipmentSlotGroup.CHEST),
+            java.util.Map.entry("legs", EquipmentSlotGroup.LEGS),
+            java.util.Map.entry("feet", EquipmentSlotGroup.FEET),
+            java.util.Map.entry("armor", EquipmentSlotGroup.ARMOR),
+            java.util.Map.entry("body", EquipmentSlotGroup.BODY),
+            java.util.Map.entry("any", EquipmentSlotGroup.ANY));
+
+    private static final java.util.Map<String, AttributeModifier.Operation> OPERATIONS = java.util.Map.of(
+            "add", AttributeModifier.Operation.ADD_NUMBER,
+            "base", AttributeModifier.Operation.ADD_SCALAR,
+            "mult", AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+
+    private static final java.util.Map<String, String> STAT_NAMES = java.util.Map.ofEntries(
+            java.util.Map.entry("attack_damage", "Támadóerő"),
+            java.util.Map.entry("attack_speed", "Támadási sebesség"),
+            java.util.Map.entry("attack_knockback", "Ütés-visszalökés"),
+            java.util.Map.entry("max_health", "Max. életerő"),
+            java.util.Map.entry("armor", "Páncél"),
+            java.util.Map.entry("armor_toughness", "Páncél-szívósság"),
+            java.util.Map.entry("knockback_resistance", "Visszalökés-ellenállás"),
+            java.util.Map.entry("movement_speed", "Sebesség"),
+            java.util.Map.entry("luck", "Szerencse"));
+
+    private static Component statLine(final String attrKey, final double amount, final AttributeModifier.Operation op) {
+        final boolean positive = amount > 0.0D;
+        final boolean percent = op != AttributeModifier.Operation.ADD_NUMBER;
+        final double shown = percent && op == AttributeModifier.Operation.MULTIPLY_SCALAR_1 ? amount * 100.0D : amount;
+        String num = String.format(Locale.ROOT, "%.2f", Math.abs(shown));
+        if (num.endsWith(".00")) {
+            num = num.substring(0, num.length() - 3);
+        } else if (num.endsWith("0")) {
+            num = num.substring(0, num.length() - 1);
+        }
+        final String label = STAT_NAMES.getOrDefault(attrKey, attrKey);
+        return Component.text("  " + (positive ? "+ " : "- ") + num + (percent ? "% " : " ") + label,
+                        positive ? NamedTextColor.GRAY : NamedTextColor.RED)
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
+    private static EquipmentSlotGroup inferSlot(final Material material) {
+        final String name = material.name();
+        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET") || name.equals("CARVED_PUMPKIN")) {
+            return EquipmentSlotGroup.HEAD;
+        }
+        if (name.endsWith("_CHESTPLATE") || name.equals("ELYTRA")) {
+            return EquipmentSlotGroup.CHEST;
+        }
+        if (name.endsWith("_LEGGINGS")) {
+            return EquipmentSlotGroup.LEGS;
+        }
+        if (name.endsWith("_BOOTS")) {
+            return EquipmentSlotGroup.FEET;
+        }
+        if (name.endsWith("_HORSE_ARMOR") || name.equals("WOLF_ARMOR")) {
+            return EquipmentSlotGroup.BODY;
+        }
+        if (name.endsWith("_SWORD") || name.endsWith("_AXE") || name.endsWith("_PICKAXE")
+                || name.endsWith("_SHOVEL") || name.endsWith("_HOE") || name.equals("TRIDENT")
+                || name.equals("BOW") || name.equals("CROSSBOW") || name.equals("MACE")
+                || name.equals("FISHING_ROD")) {
+            return EquipmentSlotGroup.MAINHAND;
+        }
+        if (name.equals("SHIELD")) {
+            return EquipmentSlotGroup.HAND;
+        }
+        return EquipmentSlotGroup.ANY;
     }
 
     /** Táplálkozási érték: bármely item ehetővé tétele (új ételekhez). */
