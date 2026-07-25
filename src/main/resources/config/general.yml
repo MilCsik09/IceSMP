@@ -319,6 +319,29 @@ parkour:
   # A futam megszakad gyöngy/refő-teleportra, elytrára és riptide-ra (mobilitás-fék).
   daily-reward-limit: 3
 
+# ===== Kill-jutalom előszűrő (MINDEN ölés-alapú jutalomra egyszerre) =====
+# A szűrők korábban listenerenként külön voltak megírva, ezért rendszertől függően hol
+# éltek, hol nem. Három jutalom-fajta (tier) van, és mindegyik más szűrő-készletet kap:
+#   FAUCET      (lélekkő, pénz-erszény, mob-loot, kazamata-lelet) — MINDEN szűrő
+#   PROGRESSION (kaszt-XP, lélekszilánk, pet-XP)                  — AFK + minion + survival
+#   TRACKING    (statisztika, quest-haladás, bestiárium, közös cél) — csak minion
+# Az alábbi kulcsokkal szűrőnként, GLOBÁLISAN kapcsolhatók ki (élő-config: /icesmp reload).
+kill-rewards:
+  # AFK-jelölt játékos ölése nem fizet (auto-farm fék). Ha nincs megadva, az örökölt
+  # afk.block-rewards értéke érvényes — a meglévő szerver-configok így nem váltanak viselkedést.
+  afk-block: true
+  # Spawner-mob nem fizet FAUCET-jutalmat (a pörgő spawner-farm ne legyen pénz/loot-nyomda).
+  # A progressziót (kaszt-XP) NEM fogja: a mob-farmos szintezés szándékos.
+  # false = a spawner-mobok is dobnak lootot/pénzt.
+  exclude-spawner-mobs: true
+  # Saját idézett minion/horda leölése egyetlen jutalmat sem fizet (önkiszolgáló csap fék).
+  # FIGYELEM: a TRACKING-tierre (ranglista, közösségi cél, quest-számláló) a minion-kizárás
+  # FELTÉTEL NÉLKÜL él — ez a kulcs csak a FAUCET/PROGRESSION jutalmakat engedi vissza.
+  exclude-minions: true
+  # Csak survival módú gyilkos kap FAUCET/PROGRESSION jutalmat (kreatív-teszt ne termeljen).
+  # A TRACKING (quest-haladás) kreatívban is megy, hogy adminként tesztelhető maradjon.
+  require-survival: true
+
 # ===== Combat-tag (harc-jelölés) =====
 combat:
   tag-enabled: true

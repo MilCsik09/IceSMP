@@ -51,17 +51,9 @@ public final class SoulShardListener implements Listener {
             return;
         }
 
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(event.getEntity(),
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
         if (killer == null) {
-            return;
-        }
-        // Saját minion nem lélek-forrás; AFK-parkolt farm sem termel szilánkot
-        // (a testvér-listenerek — Soulstone/ClassXp — ugyanígy fékeznek).
-        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(event.getEntity())) {
-            return;
-        }
-        final hu.taliann.icesmp.managers.AfkManager afkRef = afkManager;
-        if (afkRef != null && afkRef.isAfk(killer.getUniqueId())) {
             return;
         }
 

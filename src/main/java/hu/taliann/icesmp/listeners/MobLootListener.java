@@ -56,6 +56,13 @@ public final class MobLootListener implements Listener {
         this.uniqueMaterials = uniqueMaterials;
     }
 
+    /** A kill-előszűrő AFK-fékéhez (setterrel, mint a másik két opcionális manager itt). */
+    private volatile hu.taliann.icesmp.managers.AfkManager afkManager;
+
+    public void setAfkManager(final hu.taliann.icesmp.managers.AfkManager afkManager) {
+        this.afkManager = afkManager;
+    }
+
     /**
      * MONITOR: a horda-nyilvántartásból halálkor azonnal kikerül a mob (az isActive nem
      * ragadhat be) — a loot-ág (normál prioritás) előbb fut, így az invázió-jelölést még látja.
@@ -98,8 +105,11 @@ public final class MobLootListener implements Listener {
                 || invasionManager.isInvasionMob(entity.getUniqueId())
                 || wildHuntManager.isWildHunt(entity.getUniqueId());
 
-        // Ordinary mobs may require a player kill; boss/event mobs always yield their loot.
-        if (!bossTier && configManager.getBoolean("loot.require-player-kill", true) && entity.getKiller() == null) {
+        // Ordinary mobs may require a player kill; boss/event mobs always yield their loot
+        // (környezeti halál is dobja őket — ezért a FAUCET-előszűrő csak a sima mob-ágon fut).
+        if (!bossTier && configManager.getBoolean("loot.require-player-kill", true)
+                && hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+                        hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) == null) {
             return;
         }
 

@@ -1444,6 +1444,7 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.listeners.MobLootListener(configManager, itemRarityService, worldBossManager, invasionManager, wildHuntManager, blueprintItemFactory, professionRecipeCatalog, uniqueMaterialFactory);
         mobLootListener.setCursedGearService(cursedGearService);
         mobLootListener.setCultistEventManager(cultistEventManager);
+        mobLootListener.setAfkManager(afkManager);
         pluginManager.registerEvents(mobLootListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CursedGearListener(cursedGearService, messageManager), plugin);
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
@@ -1493,7 +1494,7 @@ public final class IceSMPCore {
                 }
             }
         }, plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobMoneyDropListener(plugin, configManager, mobScalingManager, moneyPouchItemFactory), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MobMoneyDropListener(plugin, configManager, mobScalingManager, moneyPouchItemFactory, afkManager), plugin);
         final hu.taliann.icesmp.listeners.DungeonGateListener dungeonGateListener =
                 new hu.taliann.icesmp.listeners.DungeonGateListener(plugin, configManager, territoryManager, messageManager);
         dungeonGateListener.setPartyManager(partyManager);
@@ -1532,6 +1533,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.PetGUIListener(petManager, messageManager), plugin);
         final PetXpListener petXpListener = new PetXpListener(plugin, petManager, configManager);
         petXpListener.setCaptureItemFactory(captureItemFactory);
+        petXpListener.setAfkManager(afkManager);
         pluginManager.registerEvents(petXpListener, plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);

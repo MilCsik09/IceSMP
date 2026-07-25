@@ -927,6 +927,18 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         belül a tablist aljára kerül; mozgásra azonnal vissza.
   - [ ] **AFK-jutalomkapu:** AFK-jelölt játékos mob-ölése NEM ad kaszt-XP-t/lélekkövet (auto-farm
         teszt: állj mob-farm mellé 3+ percig); az AFK-zóna időzített jutalma viszont jár.
+  - [ ] **Közös kill-jutalom előszűrő (`kill-rewards.*`):** MINDEN ölés-alapú jutalom ugyanazokon a
+        szűrőkön megy át, tier szerint. Ellenőrizd:
+        - **AFK-jelölten** (3+ perc) a mob-ölés nem ad kaszt-XP-t, lélekkövet, **pénz-erszényt ÉS
+          mob-lootot** sem (korábban az erszény/loot még jött);
+        - **spawner-mob** (rakj le spawnert) leölve nem dob erszényt/lootot, de **kaszt-XP-t igen**
+          (a farmos szintezés szándékos);
+        - **kreatív módban** ölve nincs FAUCET/PROGRESSION jutalom, de a **quest-haladás megy**
+          (admin-teszt maradjon lehetséges);
+        - **saját idézett minion** leölése semmit nem ad — sem lootot, sem XP-t, sem **quest-haladást,
+          ranglista-pontot, bestiárium-bejegyzést vagy közösségi cél-számlálót** (ez utóbbi négy
+          korábban pumpálható volt).
+        Mind a négy szűrő kikapcsolható: `/icesmp config menu` → „Kill-jutalom szűrők".
   - [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
         az utolsó találat után ~10 mp-cel eltűnik.
   - [ ] **Crate-rulett:** kulcs-nyitáskor pörgő GUI (~3,5 mp, lassul), a végén a tényleges

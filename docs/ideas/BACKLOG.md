@@ -380,17 +380,22 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   9 map egy osztályban, bontás javasolt.
 - **O22** 🟢 `MobLootListener.rollTable` duplikált gear-fallback — privát metódusba emelhető.
 - **O23** 🟢 `CrateManager.persist()` szinkron teljes-YAML írás — debounce-javítás a #9-cel együtt.
-- **O24** 🟡 `MobKillUtil.eligibleKill` közös kill-jutalom előszűrő — 19 listener eltérő AFK/minion-szűrése egységesítendő.
+- **O24** ✅ KÉSZ — `utils/MobKillUtil` közös kill-jutalom előszűrő 3 tierrel (FAUCET/PROGRESSION/
+  TRACKING); 12 listener átvezetve, a szűrők `kill-rewards.*` alatt globálisan kapcsolhatók
+  (ConfigMenuGUI: „Kill-jutalom szűrők"). Lezárt konzisztencia-hibák: az AFK-fék eddig csak 3
+  listenerben élt (a pénz-erszény és a mob-loot AFK-farmolható volt), a spawner-kizárás csak a
+  pénz-dropban, a minion-kizárás 3 helyen (a quest/ranglista/bestiárium/közösségi cél számlálói
+  saját idézett hordával pumpálhatók voltak), és a `SoulShardListener` AFK-féke egyáltalán nem
+  volt config-kapuzva (az `afk.block-rewards: false` sem kapcsolta ki).
 - **O25** 🟡 `DailyBudget` PDC-util — napi keret-minta 5+ helyen kézzel írva, közös `spend()` util kellene.
 - **O26** 🟡 `ErrorMessages.resolve` közös hibakulcs→default tábla — 11+ osztályban ismétlődő switch.
 - **O27** 🟡 `PeriodicChanceEvent` világesemény-ütemező váz — 5 manager azonos váza közös helperbe (O2/O6-tal együtt).
 - **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
-O-refaktor összefoglaló (2026-07-25-i kódellenőrzés): **KÉSZ** = O9 (DonationChestManager debounce)
-+ O5 (SpellTargetingUtil); **RÉSZBEN** = O1. A maradék **25 tétel nyitott** — kódban visszaellenőrizve,
-hogy egyik sem oldódott meg magától. A legnagyobb hozamú csomagok: a 6 közös-helper tétel
-(O4 `prefixAt` 20 fájl, O6 `WorldEventUtil`, O24 `MobKillUtil.eligibleKill`, O25 `DailyBudget`,
-O26 `ErrorMessages`, O27 `PeriodicChanceEvent`) — mind ugyanaz a minta: 5-20 helyen kézzel ismételt
-kód egy `utils/` osztályba. A `utils/` csomag MÁR LÉTEZIK (12 fájl), tehát nincs architektúra-akadály.
+O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
+(DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil);
+**RÉSZBEN** = O1. A közös-helper csomagból hátra van: O4 `prefixAt` (20 fájl),
+O6 `WorldEventUtil`, O25 `DailyBudget`, O26 `ErrorMessages`, O27 `PeriodicChanceEvent` —
+mind ugyanaz a minta: 5-20 helyen kézzel ismételt kód egy `utils/` osztályba.
 
 ## P — kormányzás, gazdaság-hurok és rework-jelöltek (2026-07-22, tulaj-kérés)
 

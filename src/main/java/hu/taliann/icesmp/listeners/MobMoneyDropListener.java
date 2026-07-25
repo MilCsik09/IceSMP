@@ -3,7 +3,6 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.items.MoneyPouchItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
-import org.bukkit.GameMode;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -26,21 +25,24 @@ public final class MobMoneyDropListener implements Listener {
     private final ConfigManager configManager;
     private final MobScalingManager mobScalingManager;
     private final MoneyPouchItemFactory pouchFactory;
+    private final hu.taliann.icesmp.managers.AfkManager afkManager;
     private final org.bukkit.NamespacedKey spawnerMobKey;
 
     public MobMoneyDropListener(final org.bukkit.plugin.java.JavaPlugin plugin,
                                 final ConfigManager configManager,
                                 final MobScalingManager mobScalingManager,
-                                final MoneyPouchItemFactory pouchFactory) {
+                                final MoneyPouchItemFactory pouchFactory,
+                                final hu.taliann.icesmp.managers.AfkManager afkManager) {
         this.configManager = configManager;
         this.mobScalingManager = mobScalingManager;
         this.pouchFactory = pouchFactory;
+        this.afkManager = afkManager;
         this.spawnerMobKey = new org.bukkit.NamespacedKey(plugin, "spawner_mob");
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onSpawn(final CreatureSpawnEvent event) {
-        // Spawner-mobot megjelölünk, hogy a farm ne legyen pénznyomda.
+        // A jelölést a MobKillUtil olvassa vissza minden FAUCET-jutalomnál (nem csak itt).
         if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER) {
             event.getEntity().getPersistentDataContainer().set(spawnerMobKey,
                     org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
@@ -50,18 +52,12 @@ public final class MobMoneyDropListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onDeath(final EntityDeathEvent event) {
         final LivingEntity entity = event.getEntity();
-        if (!(entity instanceof Monster)
-                || !configManager.getBoolean("mob-money-drop.enabled", true)
-                || entity.getPersistentDataContainer().has(spawnerMobKey,
-                        org.bukkit.persistence.PersistentDataType.BYTE)) {
+        if (!(entity instanceof Monster) || !configManager.getBoolean("mob-money-drop.enabled", true)) {
             return;
         }
-        final Player killer = entity.getKiller();
-        if (killer == null || killer.getGameMode() != GameMode.SURVIVAL) {
-            return;
-        }
-        // Saját idézett minion (nekromanta-horda stb.) leölése nem pénzcsap.
-        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(entity)) {
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);
+        if (killer == null) {
             return;
         }
         double chance = Math.max(0.0D, Math.min(100.0D,

@@ -28,7 +28,7 @@ public final class DailyQuestListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
         if (killer == null) {
             return;
         }

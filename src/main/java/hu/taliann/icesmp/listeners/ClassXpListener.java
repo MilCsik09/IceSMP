@@ -40,13 +40,9 @@ public final class ClassXpListener implements Listener {
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
         final LivingEntity entity = event.getEntity();
-        final Player killer = entity.getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
         if (killer == null) {
-            return;
-        }
-        // AFK-jelölt játékos nem termel kaszt-XP-t (auto-farm exploit-fék). (Map-olvasás — szál-biztos.)
-        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
-                && afkManager.isAfk(killer.getUniqueId())) {
             return;
         }
 

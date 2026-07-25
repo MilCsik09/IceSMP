@@ -30,12 +30,20 @@ public final class PetXpListener implements Listener {
         this.configManager = configManager;
     }
 
+    /** A kill-előszűrő AFK-fékéhez (setter: az AfkManager később épül a DI-sorrendben). */
+    private volatile hu.taliann.icesmp.managers.AfkManager afkManager;
+
+    public void setAfkManager(final hu.taliann.icesmp.managers.AfkManager afkManager) {
+        this.afkManager = afkManager;
+    }
+
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
         if (!(event.getEntity() instanceof Monster)) {
             return;
         }
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(event.getEntity(),
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
         if (killer == null) {
             return;
         }

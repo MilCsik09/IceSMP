@@ -50,13 +50,9 @@ public final class SoulstoneListener implements Listener {
         }
 
         final LivingEntity entity = event.getEntity();
-        final Player killer = entity.getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);
         if (killer == null) {
-            return;
-        }
-        // AFK-jelölt játékos nem kap lélekkő-dropot (auto-farm exploit-fék).
-        if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
-                && afkManager.isAfk(killer.getUniqueId())) {
             return;
         }
 

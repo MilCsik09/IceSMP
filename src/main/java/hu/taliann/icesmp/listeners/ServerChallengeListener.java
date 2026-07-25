@@ -30,7 +30,7 @@ public final class ServerChallengeListener implements Listener {
     /** Hostile mob slain by a player → SLAY progress. */
     @EventHandler(ignoreCancelled = true)
     public void onDeath(final EntityDeathEvent event) {
-        if (event.getEntity() instanceof Monster && event.getEntity().getKiller() != null) {
+        if (event.getEntity() instanceof Monster && hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity()) != null) {
             serverChallengeManager.record(ChallengeType.SLAY);
         }
     }

@@ -42,7 +42,7 @@ public final class PartyListener implements Listener {
                 || event.getEntity() instanceof Player) {
             return;
         }
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
         final int xp = event.getDroppedExp();
         if (killer == null || xp <= 0) {
             return;
