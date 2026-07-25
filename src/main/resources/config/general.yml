@@ -13,11 +13,16 @@ settings:
   # zavaró. Állítsd false-ra, ha meg akarod hagyni a vanilla viselkedést.
   disable-locator-bar: true
 
-# P5a/P5b — natív IceSMP haladás-fül (advancement-fa). A bejegyzések a szerver-registrybe
-# töltődnek indításkor (Bukkit loadAdvancement), a kliens a szerverrel szinkronizálja —
-# resource pack NEM kell. Minden bejegyzést KÓD ad meg a meglévő rendszerek grant-pontjain
-# (kaszt-, spec-, frakció-, szakma-választás; rontás-tisztítás; hidden-spot). enabled=false
-# esetén a fa be sem töltődik (a grant-hívások no-opok). Csak indításkor olvasott.
+# Natív IceSMP haladás-fül (advancement-fa, 20 csomópont 4 ágon: kaszt / frakció / szakma /
+# világ). A bejegyzéseket a JAR SAJÁT DATAPACKJE szállítja (a bootstrap DATAPACK_DISCOVERY
+# horgán, automatikusan engedélyezve), így a fa a kóddal együtt verziózódik és a kliens a
+# szerverrel szinkronizálja — resource pack NEM kell. Ha a datapack-felderítés hibázik, a
+# plugin a régi (deprecated) úton pótolja a hiányzó bejegyzéseket, és WARNING-ot logol.
+# Minden bejegyzést KÓD ad meg a meglévő rendszerek grant-pontjain (kaszt/spec/szakma-választás
+# és max szint, capstone-talent, frakció-belépés, koronázás, korona-átok max szint, megnyert
+# raid, vezeklés, mestermű-craft, rontás-tisztítás, rejtett hely, világboss, első relikvia,
+# rituálé, pet max szint, parkour). enabled=false esetén a grant-hívások no-opok.
+# Csak indításkor olvasott.
 advancements:
   enabled: true
 
@@ -302,6 +307,13 @@ campfire-story:
   radius: 3.5
   xp-reward: 8
   cooldown-minutes: 60
+  # Milyen eséllyel (%) hallja a játékos a SAJÁT frakciója változatát a világ történetéből.
+  # A frakciós készletek ugyanazokat az eseményeket mesélik el, de az ő elődeik hangján és
+  # elfogultságával — a rendszeres mesélő így négy nézőpontból ismerheti meg a világot.
+  # 0 = mindig a közös (semleges hangú) készlet. Frakció nélküli játékos mindig a közöset kapja.
+  faction-chance-percent: 50
+  # Saját mese-lista: ha NEM üres, KIZÁRÓLAG ez szól (a beépített közös + frakciós készletek
+  # helyett). Egy-egy sor MiniMessage-formátumú.
   stories: []
 
 # ===== D9 — Énekmondó (heti ballada a top-játékosokról) =====

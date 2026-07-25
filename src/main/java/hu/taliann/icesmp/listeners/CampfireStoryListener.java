@@ -33,8 +33,37 @@ public final class CampfireStoryListener implements Listener {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final hu.taliann.icesmp.managers.FactionManager factionManager;
     private final NamespacedKey cooldownKey;
     private final NamespacedKey pendingKey;
+
+    /**
+     * A mese kiválasztása. Kétféle készletből húz:
+     * <ul>
+     *   <li>a KÖZÖS {@link #STORIES} (a világ története, semleges hangon),</li>
+     *   <li>a játékos SAJÁT frakciójának készlete — ugyanazok az események, de az ő elődeik
+     *       hangján és elfogultságával.</li>
+     * </ul>
+     * A {@code campfire-story.faction-chance-percent} dönti el, milyen eséllyel jön a
+     * frakciós változat (0 = mindig a közös). Frakció nélküli játékos mindig a közöset kapja.
+     * Így a rendszeres mesélő a világ történetét NÉGY nézőpontból is megismerheti.
+     */
+    private net.kyori.adventure.text.Component pickStory(final org.bukkit.entity.Player player) {
+        final hu.taliann.icesmp.data.FactionType faction = factionManager == null
+                ? null : factionManager.getFaction(player.getUniqueId());
+        final String[] factionPool = faction == null ? null : FACTION_STORIES.get(faction);
+        final int factionChance = Math.max(0, Math.min(100,
+                configManager.getInt("campfire-story.faction-chance-percent", 50)));
+        if (factionPool != null && factionPool.length > 0
+                && ThreadLocalRandom.current().nextInt(100) < factionChance) {
+            final int index = ThreadLocalRandom.current().nextInt(factionPool.length);
+            return messageManager.getMessage(
+                    "campfire-story-" + faction.name().toLowerCase(java.util.Locale.ROOT) + "-" + (index + 1),
+                    factionPool[index]);
+        }
+        final int index = ThreadLocalRandom.current().nextInt(STORIES.length);
+        return messageManager.getMessage("campfire-story-" + (index + 1), STORIES[index]);
+    }
 
     /**
      * Sztori-sor variánsok. A messages-kulcs soronkénti: {@code campfire-story-<index+1>} —
@@ -108,11 +137,22 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „A komp viteldíja nem a révésznek kell. A víznek. Kérdezd meg, mi történt, amikor egyszer nem fizették ki.”</gray>"
     };
 
+    /**
+     * Frakciónkénti mese-készletek: ugyanazok az események a SAJÁT népük hangján és
+     * elfogultságával (a kánon forrása változatlanul a kódex). A messages-kulcs
+     * {@code campfire-story-<frakció>-<index+1>}, tehát minden sor külön átírható.
+     */
+    private static final java.util.Map<hu.taliann.icesmp.data.FactionType, String[]> FACTION_STORIES =
+            java.util.Map.of();
+
+
     public CampfireStoryListener(final JavaPlugin plugin, final ConfigManager configManager,
-                                 final MessageManager messageManager) {
+                                 final MessageManager messageManager,
+                                 final hu.taliann.icesmp.managers.FactionManager factionManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
+        this.factionManager = factionManager;
         this.cooldownKey = new NamespacedKey(plugin, "cd_campfire_story");
         this.pendingKey = new NamespacedKey(plugin, "campfire_story_pending");
     }
@@ -162,12 +202,11 @@ public final class CampfireStoryListener implements Listener {
             // Siker: sztori-sor + kis XP + hangulat; a cooldown CSAK most indul.
             player.getPersistentDataContainer().set(cooldownKey, PersistentDataType.LONG, System.currentTimeMillis());
             final List<String> custom = configManager.getStringList("campfire-story.stories");
-            if (custom.isEmpty()) {
-                final int index = ThreadLocalRandom.current().nextInt(STORIES.length);
-                player.sendMessage(messageManager.getMessage("campfire-story-" + (index + 1), STORIES[index]));
-            } else {
+            if (!custom.isEmpty()) {
                 player.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
                         .deserialize(custom.get(ThreadLocalRandom.current().nextInt(custom.size()))));
+            } else {
+                player.sendMessage(pickStory(player));
             }
             final int xp = Math.max(0, configManager.getInt("campfire-story.xp-reward", 8));
             if (xp > 0) {
