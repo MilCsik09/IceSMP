@@ -1316,6 +1316,7 @@ public final class IceSMPCore {
             relicManager.load();
             mobScalingManager.load();
             craftingRestrictionManager.load();
+            achievementManager.reload();
         });
         // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
         // leggyakoribb kulcsokhoz — az override-fájlba ír, restart nélkül él.

@@ -815,6 +815,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
       a gombok működnek, a kattintások nem visznek ki tárgyat a menüből.
+- [ ] **Elérések configból (`achievements.definitions`):** a 21 mérföldkő a `quests.yml`-ben él.
+      Teszt: vegyél fel egy ÚJ blokkot (pl. `metric: CLASS_LEVEL`, `threshold: 5`, `reward: 25`)
+      → `/icesmp reload` → az `/achievements` listában **azonnal megjelenik**, szerver-újraindítás
+      nélkül, és a küszöböt elérve a veret jár. Hibás sor (ismeretlen `metric` vagy nem pozitív
+      `threshold`) **kimarad és a konzol figyelmeztet** — a többi elérés ilyenkor is működik.
+      FIGYELEM: meglévő elérés **id-jét ne nevezd át** (a teljesítést a játékos PDC-je az id-n
+      tartja, átnevezés után újra kiosztódna).
 - [ ] **`/stats [név]` (ÚJ):** kiírja a statisztika-profilt (játékos-ölések, halálok, K/D,
       mob-ölések, elsütött spellek, teljesített questek); névvel másik (online vagy már látott)
       játékosé; a számlálók ölés/halál/cast/quest-teljesítés után nőnek és restart után megmaradnak.
