@@ -30,7 +30,7 @@ public final class JobAddXpSubcommand implements JobSubcommand {
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-addxp", "Admin XP hozzaadas a kaszthoz.");
+        return messageManager.get("messages.job-desc-addxp", "Admin XP hozzáadás a kaszthoz.");
     }
 
     @Override
@@ -52,7 +52,7 @@ public final class JobAddXpSubcommand implements JobSubcommand {
 
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA celjatekos nem erheto el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem érhető el online."));
             return true;
         }
 
@@ -60,12 +60,12 @@ public final class JobAddXpSubcommand implements JobSubcommand {
         try {
             amount = Integer.parseInt(args[1]);
         } catch (final NumberFormatException exception) {
-            sender.sendMessage(messageManager.get("messages.invalid-amount", "&cErvenytelen osszeg."));
+            sender.sendMessage(messageManager.get("messages.invalid-amount", "&cÉrvénytelen összeg."));
             return true;
         }
 
         if (amount <= 0) {
-            sender.sendMessage(messageManager.get("messages.amount-must-be-positive", "&cAz osszegnek pozitivnak kell lennie."));
+            sender.sendMessage(messageManager.get("messages.amount-must-be-positive", "&cAz összegnek pozitívnak kell lennie."));
             return true;
         }
 
@@ -74,7 +74,7 @@ public final class JobAddXpSubcommand implements JobSubcommand {
         // sender.sendMessage is safe from there.
         target.getScheduler().run(plugin, task -> {
             if (!jobManager.addXpToJob(target, amount)) {
-                sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA celpontnak nincs kasztja."));
+                sender.sendMessage(messageManager.get("messages.job-slot-not-set", "&cA célpontnak nincs kasztja."));
                 return;
             }
 
@@ -82,7 +82,7 @@ public final class JobAddXpSubcommand implements JobSubcommand {
             final int currentLevel = jobManager.getPrimaryLevel(target);
             sender.sendMessage(messageManager.get(
                     "messages.job-addxp-success",
-                    "&aXP hozzaadva: &f%s &7| +&f%s XP &7| Uj XP: &f%s &7| Szint: &f%s",
+                    "&aXP hozzáadva: &f%s &7| +&f%s XP &7| Új XP: &f%s &7| Szint: &f%s",
                     target.getName(),
                     amount,
                     currentXp,

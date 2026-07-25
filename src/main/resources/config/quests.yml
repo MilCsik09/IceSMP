@@ -1743,7 +1743,7 @@ quests:
         - "Érzed? Az erdő beteg. Valami rontás terjed a fák között."
       complete:
         - "Jó, hogy eljöttél. Szükségem lesz a segítségedre."
-    display-name: "Az Erdei Véne Hívása"
+    display-name: "Az Erdei Vénasszony Hívása"
     description: "Keresd fel az erdei vénasszonyt a szentélynél."
     objective:
       type: "TALK_TO_NPC"

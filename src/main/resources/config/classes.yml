@@ -896,7 +896,7 @@ talents:
         max-rank: 4
       # --- 3. szint: a hiányzó-szerep specek talentjei ---
       bark_mastery:
-        display-name: "Kéreg Mesteri"
+        display-name: "Kéreg Mestere"
         tier: 3
         requires-spec: "ironbark"
         requires-talent: "vitality"

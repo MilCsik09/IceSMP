@@ -246,7 +246,8 @@ public final class ShopManager {
         buyer.sendMessage(messageManager.get(
                 "shop-buy-success",
                 "&aVettél: &f%s x%s &7(%s %s).",
-                material.name(), amount, currencyManager.formatBalance(price), currency.getDisplayName()
+                item.getString("name", material.name()), amount,
+                currencyManager.formatBalance(price), currency.getDisplayName()
         ));
         return null;
     }

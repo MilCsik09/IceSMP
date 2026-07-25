@@ -59,7 +59,7 @@ public final class ProfessionRecipeListener implements Listener {
         hintThrottle.put(player.getUniqueId(), now);
         player.sendActionBar(messageManager.getMessage(
                 "profession-recipe-locked",
-                "<red>Ehhez {profession} {level}. szint kell.</red>",
+                "<red>Ehhez a(z) {profession} szakma {level}. szintje kell.</red>",
                 Map.of(
                         "profession", plainName(recipe),
                         "level", String.valueOf(recipe.requiredLevel())
@@ -76,7 +76,9 @@ public final class ProfessionRecipeListener implements Listener {
         hintThrottle.remove(event.getPlayer().getUniqueId());
     }
 
+    /** A szakma MAGYAR neve — az enum-név belső azonosító, nem játékos-szöveg. */
     private String plainName(final ProfessionRecipeManager.Recipe recipe) {
-        return recipe.profession().name().toLowerCase(java.util.Locale.ROOT);
+        return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(recipe.profession().getDisplayName());
     }
 }

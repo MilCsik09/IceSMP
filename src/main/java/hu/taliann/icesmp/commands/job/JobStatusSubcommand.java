@@ -31,7 +31,7 @@ public final class JobStatusSubcommand implements JobSubcommand {
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-status", "Jatekos kaszt allapotanak megtekintese (admin).");
+        return messageManager.get("messages.job-desc-status", "Játékos kaszt-állapotának megtekintése (admin).");
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class JobStatusSubcommand implements JobSubcommand {
 
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA celjatekos nem erheto el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem érhető el online."));
             return true;
         }
 

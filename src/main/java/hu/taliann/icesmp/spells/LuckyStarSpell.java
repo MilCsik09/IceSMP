@@ -20,7 +20,7 @@ public final class LuckyStarSpell extends BaseSpell {
     private final JavaPlugin plugin;
 
     public LuckyStarSpell(final JavaPlugin plugin, final MessageManager messageManager) {
-        super(messageManager, "lucky_star", "Lucky Star", 0, SpellCostType.XP, 0);
+        super(messageManager, "lucky_star", "Szerencsecsillag", 0, SpellCostType.XP, 0);
         this.plugin = plugin;
     }
 
@@ -37,7 +37,7 @@ public final class LuckyStarSpell extends BaseSpell {
         }
 
         ACTIVE_PLAYERS.put(player.getUniqueId(), System.currentTimeMillis());
-        player.sendMessage(resolveMessage("spell.lucky_star.on", "<gold>Lucky Star aktiv.</gold>"));
+        player.sendMessage(resolveMessage("spell.lucky_star.on", "<gold>Szerencsecsillag aktív.</gold>"));
         startDrainTask(player);
     }
 
@@ -99,9 +99,9 @@ public final class LuckyStarSpell extends BaseSpell {
     private void deactivate(final Player player, final boolean manual) {
         cleanup(player.getUniqueId());
         if (manual) {
-            player.sendMessage(resolveMessage("spell.lucky_star.off", "<gray>Lucky Star kikapcsolva.</gray>"));
+            player.sendMessage(resolveMessage("spell.lucky_star.off", "<gray>Szerencsecsillag kikapcsolva.</gray>"));
         } else {
-            player.sendMessage(resolveMessage("spell.lucky_star.off_no_xp", "<red>Lucky Star kikapcsolt: nincs eleg XP.</red>"));
+            player.sendMessage(resolveMessage("spell.lucky_star.off_no_xp", "<red>Szerencsecsillag kihunyt: elfogyott az XP-d.</red>"));
         }
     }
 }

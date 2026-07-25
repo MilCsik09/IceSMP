@@ -125,7 +125,7 @@ public final class DruidFormSpell extends BaseSpell {
         hu.taliann.icesmp.integration.DruidDisguise.apply(player, form.disguiseType);
         player.getWorld().spawnParticle(form.particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.6D, 0.4D, 0.02D);
         player.getWorld().playSound(player.getLocation(), form.sound, 1.0F, 1.0F);
-        player.sendMessage(resolveMessage("spell." + form.id + ".on", "<green>Felveszed a(z) " + form.defaultName + "t.</green>"));
+        player.sendMessage(resolveMessage("spell." + form.id + ".on", "<green>Felveszed a(z) " + form.defaultName + "át.</green>"));
     }
 
     private static void removeFormEffects(final Player player, final Form which) {

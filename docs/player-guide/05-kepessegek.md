@@ -337,7 +337,7 @@ a saját képességei.
 | **Tűzgolyó** | **Tűzgolyót** lősz, ami felrobban | 40 XP | 45 mp | 26 |
 | **Fagyrobbanás** | Körkörös **fagyasztás** + lassítás (6 blokk) | 60 XP | 90 mp | 28 |
 | **Mennykőcsapás** | **Villámot** hív a célpontra: 6 sebzés (18 blokk) | 80 XP | 120 mp | 30 |
-| **Lucky Star** | **40% eséllyel kivédesz** minden sebzést, amíg aktív (másodpercenként XP-t fogyaszt) | 0 XP | azonnali | 30 |
+| **Szerencsecsillag** | **40% eséllyel kivédesz** minden sebzést, amíg aktív (másodpercenként XP-t fogyaszt) | 0 XP | azonnali | 30 |
 | **Parázsvihar** | Tüzes terület: 2 sebzés + **felgyújt** (6 blokk) | 70 XP | 120 mp | 33 |
 | **Örvényrántás** | A célpontot **magadhoz rántod** (14 blokk) | 45 XP | 60 mp | 36 |
 | **Kőbőr** | Erős sebzéscsökkentés (de lelassulsz) | 60 XP | 150 mp | 39 |

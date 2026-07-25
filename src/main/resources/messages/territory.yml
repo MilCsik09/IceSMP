@@ -48,7 +48,7 @@ messages:
   territory-points-header: '&6Határpontok (&f%s&6):'
   territory-points-line: '&7 %s. &f%s, %s'
   territory-pvp-denied: '<red>⛨ {name} — biztonságos zóna, itt tilos a PvP.</red>'
-  territory-radius-too-large: '&cTúl nagy sugár (max '
+  territory-radius-too-large: '&cTúl nagy sugár (max 512).'
   territory-remove-success: '&aTerület törölve: &f%s'
   territory-remove-usage: '&cHasználat: /territory remove <azonosító>'
   territory-rename-success: '&aTerület átnevezve: &f%s &7(%s)'

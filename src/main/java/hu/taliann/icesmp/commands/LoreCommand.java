@@ -69,7 +69,7 @@ public final class LoreCommand implements BasicCommand {
             Map.entry("fa", List.of(
                     "&a&l— Az Élet Fája —",
                     "&7Asterlayna teste fölött nőtt, gyökerei a Mélység Népének csarnokaiig érnek.",
-                    "&7A Hetedik Vérháború megsebezte; azóta lassan, kín közt gyógyul — s vele",
+                    "&7A Hasadás napján repedt meg a törzse; azóta lassan, kín közt gyógyul — s vele",
                     "&7gyógyul a világ. A Lélekkapocs minden darabja az ő ajándéka.",
                     "&8Amíg a Fa áll, a Felsőknek van miért visszaemlékezniük.")),
             Map.entry("kapu", List.of(

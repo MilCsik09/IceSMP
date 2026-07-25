@@ -266,7 +266,7 @@ world-events:
     stagger-seconds: 4
     lines:
       - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
-      - "&6Válassz frakciót||&7Piros, Kék, Semleges vagy Sötét"
+      - "&6Válaszd az utadat||&7A Menedékben kezdesz — a Láng vagy a Fagy hív"
       - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
     # Opcionális filmszerű kameraút (ALAPBÓL KIKAPCSOLVA). Bekapcsoláskor a játékost
     # rövid időre spectator módba teszi, és végigviszi a waypointokon, majd visszaállítja

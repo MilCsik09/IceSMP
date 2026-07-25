@@ -203,6 +203,34 @@ except Exception as e:
     warn(f"recept-szint ellenőrzés kihagyva: {e}")
 
 # ---------- eredmény ----------
+# ===== YAML 1.1 boolean-kulcs csapda =====
+# Az idezojel NELKULI on/off/yes/no kulcsot a YAML 1.1 logikai ertekke alakitja, ezert a kod
+# sosem talalja meg a sort (nemán az inline defaultra esik vissza). Ez a hibaosztaly szemre
+# tokeletes YAML-ban is elrejtozik — gepi orre van szukseg.
+try:
+    import yaml as _yaml
+    _yml_files = (sorted(pathlib.Path(REPO, "src/main/resources/messages").glob("*.yml"))
+                  + sorted(pathlib.Path(REPO, "src/main/resources/config").glob("*.yml"))
+                  + [pathlib.Path(REPO, "src/main/resources/messages.yml")])
+    for _yf in _yml_files:
+        if not _yf.exists():
+            continue
+        _data = _yaml.safe_load(_yf.read_text(encoding="utf-8")) or {}
+
+        def _boolkeys(node, path=""):
+            if isinstance(node, dict):
+                for _k, _v in node.items():
+                    if isinstance(_k, bool):
+                        yield f"{path}.{_k}" if path else str(_k)
+                    yield from _boolkeys(_v, f"{path}.{_k}" if path else str(_k))
+
+        for _bad in _boolkeys(_data):
+            fail(f"YAML boolean-kulcs csapda: {_yf.name} -> '{_bad}' — a forrasban idezojel nelkuli "
+                 f"on/off/yes/no allt, a YAML logikai ertekke alakitotta, igy a kod SOSEM talalja meg "
+                 f"(tedd idezojelbe: 'on': / 'off':)")
+except Exception as e:
+    warn(f"YAML boolean-kulcs ellenorzes kihagyva: {e}")
+
 # ===== Advancement-drift: Java-lista <-> jar-datapack <-> valódi grant-pont =====
 # Négy dolognak kell egyeznie, különben néma funkció-veszteség lesz:
 #  1) minden AdvancementService NODES-id-hez legyen datapack-JSON (különben nem jelenik meg),

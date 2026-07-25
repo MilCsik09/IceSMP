@@ -73,7 +73,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
         final Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA celjatekos nem erheto el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem érhető el online."));
             return true;
         }
 
@@ -123,11 +123,11 @@ public final class JobAdminSubcommand implements JobSubcommand {
             abilityCatalystListener.resetAllSpellState(target);
             sender.sendMessage(messageManager.get(
                     "admin.job.reset-class.success",
-                    "&aKaszt teljesen alaphelyzetbe allitva (kaszt + spec + spellek): &f%s",
+                    "&aKaszt teljesen alaphelyzetbe állítva (kaszt + spec + varázslatok): &f%s",
                     target.getName()
             ));
             target.sendMessage(messageManager.get("admin.job.reset-class.notify",
-                    "&eEgy admin alaphelyzetbe allitotta a kasztodat — valassz ujat a /profile menubol."));
+                    "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
         }, null);
         return true;
     }
