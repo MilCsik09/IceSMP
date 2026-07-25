@@ -663,8 +663,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       célpont bűnszámlálója 0-ra áll (de bűnös marad); broadcast jelzi. 3 bűn alatt sima gyilkosság.
 - [ ] **Mester-lánc (NPC):** rakj ki egy FancyNpcs NPC-t `harcos_mester` néven; a `warrior_trial`
       után vedd fel a `warrior_mentor` questet, katt az NPC-re → a mentor-quest teljesül ÉS az NPC
-      azonnal ADJA a `warrior_master_trial`-t (❕ üzenet); az a `harcos_proba` pálya lefutásával
-      teljesül (a /parkour jutalom mellett quest-jutalom is jár).
+      azonnal ADJA a `warrior_master_trial`-t (❕ üzenet); az 20 megerősített (Lvl 2+) szörny
+      leölésével teljesül. Mind a 13 kasztnak van mentor+mester-próba lánca; a Boszorkánymesteré
+      a `pakt_mester` NPC-hez kötött (nincs külön `boszorkany_mester`).
 - [ ] **NPC-marker (per-player):** akinek felvehető questje van az NPC-nél → ARANY aura az NPC
       felett; akinek aktív TALK_TO_NPC questje szól hozzá → ZÖLD aura; egy harmadik játékos
       (feltétel nélkül) SEMMIT nem lát. A marker ~2 mp-enként pulzál, ~48 blokkos körzetben.

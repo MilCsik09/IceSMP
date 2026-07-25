@@ -203,6 +203,7 @@ public final class TalentGUI {
             case "attack-damage" -> "Sebzés";
             case "class-xp-bonus" -> "Kaszt XP";
             case "profession-xp-bonus" -> "Szakma XP";
+            case "spell-power" -> "Spell-erő";
             default -> effect;
         };
     }

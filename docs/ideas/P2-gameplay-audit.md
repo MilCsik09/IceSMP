@@ -7,6 +7,22 @@
 > leleteket kézzel is visszaellenőriztük a kódban. Az előző (P1) audit mind a 15 lelete lezárult
 > (részletek a git-történetben); ez a doksi az élő audit, helyben frissül. Státusz: a ✅ jelölt tételek javítva; a többi tulaj-döntésre vár.
 
+## Állapot-ellenőrzés (2026-07-25 review-kör)
+
+Nem új audit-kör, hanem a nyitottként listázott tételek **kódban való visszaellenőrzése** —
+a valódi Gradle-build hibátlan (`./gradlew build` = 0), `check_consistency.py` = 0 FAIL.
+Amit a kör lezárt: a 3 tükör-drift (a Guides-példányok még a legacy CMD-számokat írták az
+ITEM_MODEL-migráció után), 5 doksi-szám, a holt `*_proba` parkour-hivatkozások, és két tétel,
+ami már korábban javult, de nyitottként állt itt (reload-hook, LORE_REFERENCE-rések).
+
+**Kód-oldali nyitott tételek (mind megerősítve):** #18 relikvia-források, save()-szinkron
+(14 manager), ProtectionBridge flag-ellenőrzés, kalmár-karaván EventSpawnGuard +
+placeholder-UUID re-check, `/menu`-ből hiányzó `/tanacs`+`/komp`+`/faction war`,
+tanács-szavazás alt-védelem, ambient napi cap, parkour-ranglista, 41-53. napi sztori-lyuk +
+31 kapu nélküli rejtvény, WorldEventUtil-duplikáció, ClaimManager dirty-flag (a `util/`
+csomag még nem is létezik). **Világépítés:** 18 NPC + 4 territory-id + üres
+`hidden-spots.spots` + kazamata-belsők — változatlanul kihelyezésre vár.
+
 ## 🔴 Strukturális leletek
 
 ### Frakció / PvP
@@ -151,11 +167,15 @@
 - ✅ KÉSZ (P2-1. csomag: a Vásárjárás DELIVER_ITEMS objektívát kapott) — **NEUTRAL dupla heti kereskedő-quest:** az új `neutral_heti_vasarjaras` majdnem
   duplikálja a meglévő `neutral_heti_vasar`-t (2×120/hét közel ingyen; SAJÁT tartalom-
   hullám-4 hiba) → az új quest más objektívát kapjon.
-- **`/icesmp reload` három managernél nem él** (Relic/MobScaling/CraftingRestriction a
-  load()-ban cache-el — reload után elavult marad restartig) + reload-sikerüzenet korrupt
-  confignál is. → load() hívása a reload-ágban vagy use-site olvasás.
-- **save() szinkronizáltság inkonzisztens** (12 persistentStore-manager save-je nem
-  synchronized — konkurens mentésnél a régebbi snapshot nyerhet) → egységes synchronized.
+- ✅ KÉSZ (reload-hook: `IceSMPCore` a Relic/MobScaling/CraftingRestriction `load()`-ját
+  is meghívja) — **`/icesmp reload` három managernél nem élt.** MARADÉK (nyitott): a
+  reload-sikerüzenet korrupt confignál is kimegy — a `ConfigValidator.validate` csak logol,
+  a sender „sikeres újratöltés"-t lát.
+- **save() szinkronizáltság inkonzisztens** — 2026-07-25-i újraszámolás: **14** persistentStore-manager
+  `save()`-je nem synchronized (BlockRegenService, ChronicleManager, ClaimManager, CorruptionManager,
+  CrateManager, EconomyEventManager, ExchangeBoardManager, HiddenSpotManager, KingManager,
+  ParkourManager, SeasonFinaleManager, SeasonManager, StatsManager, TerritoryManager) —
+  konkurens mentésnél a régebbi snapshot nyerhet → egységes synchronized.
 - **WorldGuard-híd bármely régiót tiltottnak vesz** (flag-ellenőrzés nélkül) + a hidak
   lazy-init logja csak első használatkor jelez + dangling NPC-kötés mindenhol néma +
   LibsDisguises-hídak (druida/kém/fekvés) felülírják egymás álcáját.
@@ -164,17 +184,26 @@
   írják felül egymást; admin-alparancsok jog nélkül is látszanak a tab/help-ben.
 - ✅ KÉSZ (üzembiztonsági kör: köteg-szétterítés + pet-tick üresjárat-fék; a tényleges terhelés playtesten mérendő) — **worldEventsTask: ~35 tick() egy globál-szálas kötegben** 60s-enként (tüske-kockázat) +
   PetManager 4×/mp minden játékosra hop-ol pet nélkül is → mérendő playtesten.
-- **~13 napos sztori-lyuk a szezon 41-53. napján** (a Fa üzenete 40-ig, finálé 54-től) +
-  mind a 30 rejtvény kapu nélkül, 1. naptól kimeríthető (elő-terheltség visszaszökött).
+- **~13 napos sztori-lyuk a szezon 41-53. napján** — megerősítve (2026-07-25): a
+  `min/max-season-day` kapu MINDÖSSZE 3 questen él, mind 20-40 sávval; a finálé a
+  `world.season-finale.days: 7` miatt az utolsó 7 napé (54-60) → a 41-53. nap tartalom nélkül.
+  Plusz **mind a 31 rejtvény-quest kapu nélkül**, 1. naptól kimeríthető (elő-terheltség visszaszökött).
 - ✅ KÉSZ (B-csomag: kétlépcsős megerősítés a DARK-minta szerint, select-confirm-seconds) — **Kaszt-választás megerősítés nélkül** — a legdrágább (admin-only visszafordítható)
   döntés egyetlen kattintás; a DARK-belépés kétlépcsős mintája átvehető.
 - **Beszállító-hetik olcsó faucet** (4×90/hét percek alatt gyűjthető anyagért) — hangolás.
 
 ## 🟢 Polish (válogatás)
 
-- Doksi-számok: 12-kuldetesek "négy kaszt-próba" (valójában 13), közösségi cél "600 vas"
-  (config: 1500); PAPI-táblázatból hiányzik 2 placeholder; TalentGUI "spell-power"
-  címke lefordítatlan; lucky_star rejtett XP-drain ára nincs a config-kommentben.
+- ✅ KÉSZ (2026-07-25 review-kör) — Doksi-számok: 12-kuldetesek „négy kaszt-próba" → mind a 13
+  kaszt próbája táblázatba került; közösségi cél „600 vas" → 1500 (config); a PAPI-táblából
+  hiányzó 2 placeholder (`%icesmp_faction_color%`, `%icesmp_event%`) pótolva; a TalentGUI
+  `spell-power` címkéje lefordítva („Spell-erő" — ezzel mind a 6 talent-effekt fordított);
+  a lucky_star folyamatos XP-szivattyúja config-kommentet kapott.
+- ✅ KÉSZ (2026-07-25 review-kör) — **Holt parkour-hivatkozások:** a ROADMAP világépítő-listája és a
+  PLAYTEST mester-lánc blokkja `harcos_proba`/`ijasz_proba`/`varazslo_proba`/`orgyilkos_proba`
+  pályákat kért, de a configban ilyen pálya SEHOL nincs (a mester-próbák ölés/szelídítés/bűvölés/
+  olvasztás feladatok; az egyetlen hivatkozott pálya a `kezdo_parkour` az opcionális
+  akrobata-kihíváshoz). Mindkét doksi javítva.
 - Alvó funkciók: auto-start-territory és REACH_LEVEL objective 0 használattal; 4+.
   fejezet nem létezik (chapter-questek 4. szezontól mind zártak); rotation-daily-count
   fájl-sorrend-függő minta.
@@ -275,8 +304,8 @@
 
 A név-kánon (Thanaopolis/Radicora/Olethropyla/Mortengrad-items-only) gépi ellenőrzésen
 hibátlan; idővonal és frakció-attribúciók mindenhol helyesek; a LORE.md tisztaság-szabálya
-áll. Két referencia-rés: a Vének Tanácsa és a hadi-ablak hiányzik a LORE_REFERENCE
-lore→mechanika táblájából (+ zone-ramp fél mondat) — pótlandó.
+áll. ✅ A két referencia-rés LEZÁRVA: a Vének Tanácsa (59. sor), a hadi-ablak (60. sor) és a
+zone-ramp (39. sor) is benne van a LORE_REFERENCE lore→mechanika táblájában.
 
 ### Világépítő-checklist kiegészítés
 

@@ -77,9 +77,10 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
   konténer-fosztás +1, frakciótárs ölése +2). A **bűn-alapú fejvadász-rendszer** (fejpénz a
   körözöttekre, `/bounty` lista, igazságos kivégzés bűn nélkül) is **kész**.
-- 🔨 **Kaszt-questek felturbózása:** a plugin-oldal **kész** (TALK_TO_NPC + PARKOUR_TRIAL
-  objektívák, FancyNpcs-bridge, 4 kaszt mester-lánca configban) — a mester-NPC-k és
-  próbapályák kihelyezése a szerver-csapatra vár; utána jöhet a többi 9 kaszt lánca (config).
+- ⬜ **Kaszt-questek felturbózása — a plugin- ÉS config-oldal KÉSZ:** TALK_TO_NPC +
+  PARKOUR_TRIAL objektívák, FancyNpcs-bridge, és **mind a 13 kaszt** kezdő próbája +
+  kétlépcsős mester-lánca (mentor + mester-próba) a configban él. Ami hátra van: a
+  mester-NPC-k kihelyezése (szerver-csapat, lásd Világépítés).
 - 💡 **Quest-keretrendszer — kész bővítések:** 21 objektíva-típus, **több-objektívás questek**
   (ALL/SEQUENCE), ismétlődő + szezonális questek, NPC quest-adók napi rotációval, választós
   párbeszéd, tárgy/saját-frakció-valuta jutalom, **quest-napló GUI** (`/quest log`), teljes
@@ -149,10 +150,15 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
   Kitaszítottak/DARK fővárosa) — megépítése; `/territory` kijelölések,
   majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
   hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).
-- ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
-- ⬜ Kaszt-mester NPC-k (FancyNpcs: `harcos_mester`, `ijasz_mester`, `varazslo_mester`,
-  `orgyilkos_mester`) és a mester-próbapályák (`harcos_proba`, `ijasz_proba`,
-  `varazslo_proba`, `orgyilkos_proba`) kihelyezése a fővárosokban.
+- ⬜ Parkour-pályák (a questek egyetlen hivatkozott pályája a `kezdo_parkour` — az
+  akrobata-kihívás; a kaszt-fejlődés NEM függ parkourtól), rituálé-oltár helyszínek és
+  intro-kamera waypointok kihelyezése.
+- ⬜ A questek által megkövetelt **18 NPC** kihelyezése + `/npcbind` kötések: `hirnok`,
+  `vandor_kereskedo`, `erdei_venek`, `kovacs_mester`, `revesz`, `pakt_mester` (a
+  Boszorkánymester mester-láncát is ő adja) + 12 kaszt-mester (`harcos_mester`,
+  `ijasz_mester`, `varazslo_mester`, `orgyilkos_mester`, `druida_mester`, `paplovag_mester`,
+  `halallovag_mester`, `saman_mester`, `szerzetes_mester`, `pap_mester`, `demonvadasz_mester`,
+  `sarkany_mester`). A **13 mentor+mester-próba lánc configban KÉSZ** — csak a kihelyezés vár.
 
 ---
 
