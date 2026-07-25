@@ -573,6 +573,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
 
         recordOwnership(normalizedId, player.getUniqueId());
+        AdvancementService.award(player, "first_relic");
         return true;
     }
 

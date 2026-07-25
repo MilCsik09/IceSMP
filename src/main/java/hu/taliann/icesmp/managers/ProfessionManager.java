@@ -214,6 +214,9 @@ public final class ProfessionManager implements PlayerStateCleanup {
                         "<green>⚒ Szakma-szintlépés: <white>{profession}</white> — <gold>{level}. szint</gold> <gray>({rank})</gray></green>",
                         java.util.Map.of("profession", name,
                                 "level", String.valueOf(after), "rank", getRankName(after))));
+                if (after >= MAX_PROFESSION_LEVEL) {
+                    AdvancementService.award(player, "profession_master");
+                }
                 if (!getRankName(before).equals(getRankName(after))) {
                     player.sendMessage(messageManager.getMessage("profession-rank-up",
                             "<gold>🏅 Új fokozat: <white>{rank}</white>! A céh elismeri a munkádat.</gold>",

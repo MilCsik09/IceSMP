@@ -50,18 +50,52 @@ public final class AdvancementService {
     private static final List<Node> NODES = List.of(
             new Node("root", null, "IceSMP", "A Fa árnyékában írt legendád.",
                     "minecraft:beacon", "task", false, "minecraft:gui/advancements/backgrounds/stone"),
+
+            // --- Kaszt-ág ---
             new Node("first_class", "root", "Elhivatás", "Kasztot választottál — az utad elkezdődött.",
                     "minecraft:iron_sword", "task", false, null),
             new Node("first_spec", "first_class", "Az út elágazik", "Specializációt választottál: a mesterséged elmélyült.",
                     "minecraft:enchanted_book", "goal", false, null),
+            new Node("class_max", "first_spec", "A hivatás csúcsa", "Elérted a kasztod legmagasabb szintjét.",
+                    "minecraft:netherite_sword", "challenge", false, null),
+            new Node("capstone", "first_spec", "Zárókő", "Megvásároltad egy talent-fa capstone-jét.",
+                    "minecraft:amethyst_shard", "goal", false, null),
+
+            // --- Frakció-ág ---
             new Node("faction_join", "root", "Hovatartozás", "Csatlakoztál a négy hatalom egyikéhez.",
                     "minecraft:white_banner", "task", false, null),
+            new Node("crowned", "faction_join", "A korona súlya", "Megválasztottak a frakciód királyává.",
+                    "minecraft:golden_helmet", "challenge", false, null),
+            new Node("cursed_crown", "crowned", "Amit a Királynő számol", "Kitartottál a koronán a Néma Királynő teljes figyelméig.",
+                    "minecraft:soul_lantern", "challenge", true, null),
+            new Node("raid_win", "faction_join", "Hadizsákmány", "A frakciód megnyert egy raidet, és te ott voltál.",
+                    "minecraft:iron_axe", "goal", false, null),
+            new Node("redeemed", "faction_join", "Vezeklés", "Megtörted a Kitaszítottak örök paktumát — visszatértél.",
+                    "minecraft:totem_of_undying", "challenge", true, null),
+
+            // --- Szakma-ág ---
             new Node("profession_pick", "root", "Mesterség kezdete", "Beálltál egy szakma tanoncának.",
                     "minecraft:crafting_table", "task", false, null),
+            new Node("profession_master", "profession_pick", "A mester keze", "Egy szakmát a legmagasabb szintre vittél.",
+                    "minecraft:smithing_table", "challenge", false, null),
+            new Node("masterwork", "profession_pick", "Mestermű", "Olyan tárgyat készítettél, amit a Vasművek Akadémiája is elismerne.",
+                    "minecraft:anvil", "goal", false, null),
+
+            // --- Világ-ág ---
             new Node("cleanse", "root", "A rontás megtörve", "Megtörted egy rontás-góc magját — a Fa fellélegzik.",
                     "minecraft:echo_shard", "challenge", true, null),
             new Node("hidden_spot", "root", "Rejtett zug", "Rábukkantál a világ egyik titkos helyére.",
-                    "minecraft:spyglass", "goal", true, null));
+                    "minecraft:spyglass", "goal", true, null),
+            new Node("world_boss", "root", "Világfaló", "Részt vettél egy világboss elejtésében.",
+                    "minecraft:dragon_head", "challenge", false, null),
+            new Node("first_relic", "root", "Ereklye a kezedben", "Megszereztél egy relikviát — a régi világ egy darabját.",
+                    "minecraft:heart_of_the_sea", "goal", false, null),
+            new Node("first_ritual", "first_relic", "Az oltár válaszol", "Végigvittél egy rituálét egy oltárnál.",
+                    "minecraft:enchanting_table", "goal", false, null),
+            new Node("pet_bond", "root", "Hű Társ", "Társad a te oldalán érte el a legmagasabb szintet.",
+                    "minecraft:bone", "goal", false, null),
+            new Node("parkour", "root", "Akrobata", "Teljesítettél egy ügyességi pályát.",
+                    "minecraft:feather", "task", false, null));
 
     private static volatile AdvancementService instance;
 
@@ -75,29 +109,46 @@ public final class AdvancementService {
         instance = this;
     }
 
-    /** Enable-időben: a fa betöltése a szerver-registrybe (idempotens, a már meglévőt átugorja). */
+    /**
+     * Enable-időben: a fa MEGLÉTÉNEK ellenőrzése.
+     *
+     * <p>Az elsődleges út a jarból szállított datapack (a bootstrap {@code DATAPACK_DISCOVERY}
+     * horgán) — ilyenkor itt nincs mit tenni, csak megszámoljuk a bejegyzéseket. A tartalék út
+     * a régi, {@code @Deprecated} {@code loadAdvancement} hívás: CSAK azokra a csomópontokra
+     * fut, amiket a datapack nem hozott be (pl. ha a jar-URI felderítés elbukott). Így a
+     * modern útra migrálás nem tud néma funkció-veszteséget okozni.
+     */
     @SuppressWarnings("deprecation")
     public void load() {
         if (!configManager.getBoolean("advancements.enabled", true)) {
             return;
         }
-        int count = 0;
+        int fromDatapack = 0;
+        int fromFallback = 0;
         for (final Node node : NODES) {
             final NamespacedKey key = new NamespacedKey(NS, node.id());
             if (Bukkit.getAdvancement(key) != null) {
-                count++;
+                fromDatapack++;
                 continue;
             }
             try {
                 if (Bukkit.getUnsafe().loadAdvancement(key, buildJson(node)) != null) {
-                    count++;
+                    fromFallback++;
                 }
             } catch (final Throwable throwable) {
-                plugin.getLogger().warning("Advancement betöltés hiba (" + node.id() + "): " + throwable.getMessage());
+                plugin.getLogger().warning("Advancement tartalék-betöltés hiba (" + node.id() + "): "
+                        + throwable.getMessage());
             }
         }
-        loaded = count > 0;
-        plugin.getLogger().info("IceSMP advancement-fa: " + count + "/" + NODES.size() + " bejegyzés él.");
+        loaded = fromDatapack + fromFallback > 0;
+        if (fromFallback > 0) {
+            plugin.getLogger().warning("IceSMP advancement-fa: " + fromDatapack + " datapackből, "
+                    + fromFallback + " a DEPRECATED tartalék úton (" + NODES.size() + " összesen). "
+                    + "A datapack-felderítés nem hozta be mindet — érdemes a szerver-logot megnézni.");
+        } else {
+            plugin.getLogger().info("IceSMP advancement-fa: " + fromDatapack + "/" + NODES.size()
+                    + " bejegyzés a jar datapackjéből él.");
+        }
     }
 
     /** A statikus facade célpontja: a bejegyzés-kritérium teljesítése a játékos szálán. */

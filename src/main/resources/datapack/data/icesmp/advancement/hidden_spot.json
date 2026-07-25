@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:root",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:spyglass"
+    },
+    "title": {
+      "text": "Rejtett zug"
+    },
+    "description": {
+      "text": "Rábukkantál a világ egyik titkos helyére."
+    },
+    "frame": "goal",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": true
+  }
+}

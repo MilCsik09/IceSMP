@@ -207,6 +207,13 @@ public final class KingManager implements PersistentStore {
         votes.remove(faction);
         electionStart.put(faction, System.currentTimeMillis());
         save();
+        if (king != null) {
+            // Folia: a friss király más régió-szálon lehet — az award maga hopol a játékoshoz.
+            final org.bukkit.entity.Player crowned = Bukkit.getPlayer(king);
+            if (crowned != null) {
+                AdvancementService.award(crowned, "crowned");
+            }
+        }
     }
 
     /**

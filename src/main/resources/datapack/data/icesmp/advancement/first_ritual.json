@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:first_relic",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:enchanting_table"
+    },
+    "title": {
+      "text": "Az oltár válaszol"
+    },
+    "description": {
+      "text": "Végigvittél egy rituálét egy oltárnál."
+    },
+    "frame": "goal",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  }
+}

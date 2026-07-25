@@ -131,6 +131,9 @@ public final class JobManager implements PlayerStateCleanup {
         final PersistentDataContainer pdc = player.getPersistentDataContainer();
         pdc.set(jobPrimaryXpKey, PersistentDataType.INTEGER, Math.max(0, xp));
         applyAutoUnlocks(player);
+        if (getPrimaryLevel(player) >= MAX_JOB_LEVEL) {
+            AdvancementService.award(player, "class_max");
+        }
         if (xpChangeHook != null) {
             xpChangeHook.accept(player);
         }

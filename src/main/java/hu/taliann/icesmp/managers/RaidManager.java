@@ -448,6 +448,18 @@ public final class RaidManager {
 
         // Raid victory feeds the seasonal league standings.
         seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)), "raid");
+        // A győztes oldal jelentkezett harcosai kapják meg. A `fighters` snapshotot KELL
+        // használni: a participants map ennek a metódusnak az elején már kiürült, tehát az
+        // isParticipant() itt mindenkire false-t adna (a bejegyzés holt maradna).
+        for (final Map.Entry<UUID, FactionType> fighter : fighters.entrySet()) {
+            if (fighter.getValue() != winner) {
+                continue;
+            }
+            final org.bukkit.entity.Player online = Bukkit.getPlayer(fighter.getKey());
+            if (online != null) {
+                AdvancementService.award(online, "raid_win");
+            }
+        }
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
         applyWinnerBuff(winner);

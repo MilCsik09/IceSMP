@@ -83,6 +83,18 @@ public final class ItemRarityService {
         return configManager.getBoolean("item-rarity.enabled", true);
     }
 
+    /**
+     * A tárgyra rollott raritás-fok id-je (pl. {@code "legendas"}), vagy null, ha nincs rajta.
+     * A mestermű-mérföldkő ebből dönt, hogy a craft a létra felső fokát adta-e.
+     */
+    public String rarityIdOf(final org.bukkit.inventory.ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return null;
+        }
+        return item.getItemMeta().getPersistentDataContainer()
+                .get(qualityKey, PersistentDataType.STRING);
+    }
+
     /** Whether the item already carries a rolled rarity (so it is not re-rolled). */
     public boolean isRolled(final ItemStack item) {
         if (item == null || !item.hasItemMeta()) {

@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:root",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:white_banner"
+    },
+    "title": {
+      "text": "Hovatartozás"
+    },
+    "description": {
+      "text": "Csatlakoztál a négy hatalom egyikéhez."
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  }
+}

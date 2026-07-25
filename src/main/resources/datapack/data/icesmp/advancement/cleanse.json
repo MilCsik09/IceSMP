@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:root",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:echo_shard"
+    },
+    "title": {
+      "text": "A rontás megtörve"
+    },
+    "description": {
+      "text": "Megtörted egy rontás-góc magját — a Fa fellélegzik."
+    },
+    "frame": "challenge",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": true
+  }
+}

@@ -407,6 +407,13 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (!itemModel.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(result, itemModel);
         }
+        // Mestermű-mérföldkő: ha az affix-roll a létra felső fokát adta, az elismerést érdemel.
+        if (recipe.affixTier() != null && affixService != null) {
+            final String rolled = affixService.rarityIdOf(result);
+            if ("legendas".equals(rolled) || "ereklye".equals(rolled)) {
+                hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
+            }
+        }
         // result.rarity: a saját létra egy foka (ocska…ereklye) — tervezett itemnek, amely nem
         // esik át affix-rollon. Az affix-rollos gear a rollott fokot kapja az ItemRarityService-től.
         final String rarityId = configManager.getString(

@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:faction_join",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "text": "Vezeklés"
+    },
+    "description": {
+      "text": "Megtörted a Kitaszítottak örök paktumát — visszatértél."
+    },
+    "frame": "challenge",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": true
+  }
+}

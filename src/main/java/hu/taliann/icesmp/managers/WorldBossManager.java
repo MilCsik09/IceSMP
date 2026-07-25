@@ -738,6 +738,7 @@ public final class WorldBossManager {
         }
 
         seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
+        AdvancementService.award(killer, "world_boss");
 
         // Szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
         // régió-szálán fut, a drop ott biztonságos) + extra liga-pont + saját broadcast.

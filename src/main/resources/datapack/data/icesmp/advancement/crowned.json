@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:faction_join",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:golden_helmet"
+    },
+    "title": {
+      "text": "A korona súlya"
+    },
+    "description": {
+      "text": "Megválasztottak a frakciód királyává."
+    },
+    "frame": "challenge",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  }
+}

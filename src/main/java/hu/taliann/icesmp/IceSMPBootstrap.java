@@ -125,6 +125,41 @@ public final class IceSMPBootstrap implements PluginBootstrap {
                         + throwable, throwable);
             }
         }));
+
+        discoverDatapack(context);
+    }
+
+    /**
+     * A jarból szállított datapack felderítése (haladás-fa + toast-bejegyzések).
+     *
+     * <p><b>Miért itt és miért így:</b> a plugin-oldali advancementek korábban futásidőben,
+     * a {@code Bukkit.getUnsafe().loadAdvancement(...)} úton kerültek a szerver-registrybe.
+     * Az a metódus {@code @Deprecated} — MC/Paper-bumpnál ez az első törési pont. A
+     * {@code DATAPACK_DISCOVERY} lifecycle-event a támogatott út: a jarban lévő
+     * {@code /datapack} könyvtárat rendes datapackként ismerteti meg a szerverrel, így a fa
+     * a kóddal együtt verziózódik és nem kell registry-mutáció.
+     *
+     * <p>Fail-soft: ha a felderítés bármiért elbukik (jar-URI, világ-betöltési sorrend),
+     * csak logolunk — az {@code AdvancementService} enable-időben észreveszi, hogy a
+     * bejegyzések nincsenek ott, és a régi (deprecated) úton pótolja őket. A játékmenet
+     * egyik esetben sem sérül.
+     */
+    private static void discoverDatapack(final BootstrapContext context) {
+        context.getLifecycleManager().registerEventHandler(
+                io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.DATAPACK_DISCOVERY,
+                event -> {
+                    try {
+                        final java.net.URI jar = context.getPluginSource().toUri();
+                        final java.net.URI packUri = java.net.URI.create("jar:" + jar + "!/datapack");
+                        event.registrar().discoverPack(packUri, "icesmp", configurer -> configurer
+                                .title(Component.text("IceSMP", NamedTextColor.AQUA))
+                                .autoEnableOnServerStart(true));
+                    } catch (final Throwable throwable) {
+                        context.getLogger().warn(
+                                "Az IceSMP datapack (haladás-fa) felderítése nem sikerult: {} — "
+                                        + "a fa a tartalek uton tolt be.", throwable.toString());
+                    }
+                });
     }
 
     /**

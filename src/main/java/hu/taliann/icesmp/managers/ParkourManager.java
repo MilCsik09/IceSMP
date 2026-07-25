@@ -177,6 +177,7 @@ public final class ParkourManager implements PersistentStore {
         final double seconds = (System.currentTimeMillis() - run.startMillis()) / 1000.0D;
         // A parkour korlátlan pénz-faucet lenne: pályánként napi daily-reward-limit
         // alkalommal fizet, fölötte a futam teljesíthető, de veret nem jár.
+        AdvancementService.award(player, "parkour");
         final boolean paid = course.reward > 0 && tryConsumeDailyRun(player.getUniqueId(), run.courseId());
         if (paid) {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());

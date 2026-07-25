@@ -359,6 +359,12 @@ public final class TalentManager {
                 jobManager.unlockSpell(player, grantsSpell);
             }
         }
+        // Capstone = requires-spent kapuval védett talent; ennek megvásárlása mérföldkő.
+        final ConfigurationSection bought = getDefinitions(classPool) == null
+                ? null : getDefinitions(classPool).getConfigurationSection(talentId);
+        if (bought != null && bought.getInt("requires-spent", 0) > 0) {
+            AdvancementService.award(player, "capstone");
+        }
         return true;
     }
 

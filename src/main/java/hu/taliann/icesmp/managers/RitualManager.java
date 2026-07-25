@@ -195,6 +195,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             return;
         }
 
+        AdvancementService.award(player, "first_ritual");
         consume(player, sacrifices);
         if (cooldownSeconds > 0L) {
             cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())

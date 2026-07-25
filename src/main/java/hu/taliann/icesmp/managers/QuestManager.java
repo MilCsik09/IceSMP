@@ -1550,18 +1550,10 @@ public final class QuestManager implements PersistentStore {
         // Vanília advancement-toast a jobb felső sarokban (a chat-üzenet mellett).
         if (configManager.getBoolean("quest-toast.enabled", true)) {
             hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
-                    "✔ " + stripColors(getDisplayName(questId)), "minecraft:writable_book");
+                    hu.taliann.icesmp.utils.ToastUtil.Kind.QUEST);
         }
 
         advanceChain(player, quest);
-    }
-
-    /** A quest display-nevének lecsupaszítása a toast-JSON-hoz (§/& kódok nélkül). */
-    private static String stripColors(final String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.replaceAll("(?i)[§&][0-9a-fk-orx]", "");
     }
 
     /**

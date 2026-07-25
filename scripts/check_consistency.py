@@ -14,6 +14,7 @@ Kilépési kód: 0 = zöld (warningok lehetnek), 1 = legalább egy FAIL.
 """
 import os
 import re
+import pathlib
 import sys
 import glob
 
@@ -203,6 +204,43 @@ except Exception as e:
 # ---------- eredmény ----------
 for w in warns:
     print(f"⚠ WARN: {w}")
+# ===== Advancement-drift: Java-lista <-> jar-datapack <-> valódi grant-pont =====
+# Három dolognak kell egyeznie, különben néma funkció-veszteség lesz:
+#  1) minden AdvancementService NODES-id-hez legyen datapack-JSON (különben nem jelenik meg),
+#  2) minden datapack-JSON legyen a NODES-ban vagy toast (különben árva fájl a jarban),
+#  3) minden NODES-id-hez legyen VALÓDI award()-hívás (a "nincs holt bejegyzés" szabály).
+try:
+    _svc = (pathlib.Path(REPO) / "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java").read_text(encoding="utf-8")
+    _node_ids = set(re.findall(r'new Node\("([a-z_]+)"', _svc))
+    _adv_dir = pathlib.Path(REPO) / "src/main/resources/datapack/data/icesmp/advancement"
+    _files = {p_.stem for p_ in _adv_dir.glob("*.json")} if _adv_dir.is_dir() else set()
+    _toasts = {f_ for f_ in _files if f_.startswith("toast_")}
+    _tree_files = _files - _toasts
+    if not _files:
+        fail("a jar-datapack advancement-könyvtára üres vagy hiányzik "
+             "(src/main/resources/datapack/data/icesmp/advancement)")
+    for _missing in sorted(_node_ids - _tree_files):
+        fail(f"advancement '{_missing}' szerepel az AdvancementService NODES-ban, de NINCS "
+             f"datapack-JSON-ja — a bejegyzes nem jelenik meg a haladas-fulon")
+    for _orphan in sorted(_tree_files - _node_ids):
+        fail(f"advancement-JSON '{_orphan}.json' arva: nincs hozza NODES-bejegyzes")
+    # grant-pontok: az egesz forrasfaban keressuk az award("<id>") hivasokat
+    _granted = set()
+    for _j in (pathlib.Path(REPO) / "src/main/java").rglob("*.java"):
+        _granted |= set(re.findall(r'award\(\s*[A-Za-z_][\w.]*\s*,\s*"([a-z_]+)"\s*\)',
+                                   _j.read_text(encoding="utf-8", errors="ignore")))
+    for _dead in sorted(_node_ids - _granted):
+        fail(f"advancement '{_dead}' HOLT bejegyzes: nincs hozza AdvancementService.award() hivas")
+    # a toast-bejegyzesek a ToastUtil Kind enumjabol jonnek
+    _toast_src = (pathlib.Path(REPO) / "src/main/java/hu/taliann/icesmp/utils/ToastUtil.java").read_text(encoding="utf-8")
+    _kinds = set(re.findall(r'"(toast_[a-z_]+)"', _toast_src))
+    for _missing in sorted(_kinds - _toasts):
+        fail(f"toast-advancement '{_missing}' a ToastUtil Kind enumjaban van, de nincs datapack-JSON-ja")
+    for _orphan in sorted(_toasts - _kinds):
+        warn(f"toast-advancement JSON '{_orphan}.json' nincs hasznalatban a ToastUtil Kind enumjaban")
+except Exception as e:
+    warn(f"advancement-drift ellenorzes kihagyva: {e}")
+
 for f_ in fails:
     print(f"✗ FAIL: {f_}")
 print(f"\nÖsszegzés: {len(fails)} FAIL, {len(warns)} WARN "

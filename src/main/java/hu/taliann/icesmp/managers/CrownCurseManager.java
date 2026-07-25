@@ -177,6 +177,9 @@ public final class CrownCurseManager {
         final Integer announced = announcedLevel.get(king.getUniqueId());
         if (announced == null || announced < level) {
             announcedLevel.put(king.getUniqueId(), level);
+            if (level >= Math.max(1, configManager.getInt("factions.kings.crown-curse.max-level", 5))) {
+                AdvancementService.award(king, "cursed_crown");
+            }
             king.sendMessage(messageManager.getMessage("crown-curse-level",
                     "<dark_aqua>👑 A korona hidegebb lett. <gray>(A Néma Királynő figyelme: {level}/{max})</gray></dark_aqua>",
                     Map.of("level", String.valueOf(level),

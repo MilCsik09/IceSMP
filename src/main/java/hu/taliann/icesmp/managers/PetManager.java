@@ -436,6 +436,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         player.getPersistentDataContainer().set(xpKey, PersistentDataType.INTEGER, xp);
         if (leveled) {
             player.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
+            if (level >= maxLevel) {
+                AdvancementService.award(player, "pet_bond");
+            }
             final Mob pet = activePet(player);
             if (pet != null) {
                 applyBuffs(pet, level, false);
