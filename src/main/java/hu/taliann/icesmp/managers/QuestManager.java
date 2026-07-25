@@ -1645,7 +1645,7 @@ public final class QuestManager implements PersistentStore {
                         || current.requiresSinner())) {
                     specs.resetClassSpecialization(player);
                     player.sendMessage(messageManager.getMessage("penance-spec-reset",
-                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott. Új utat választhatsz.</yellow>"));
+                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott téged. Új utat választhatsz.</yellow>"));
                 }
             }
         }

@@ -80,7 +80,7 @@ messages:
   sinner.status: '<gray>{player}: bűnös: <white>{sinner}</white> | bűnök: <white>{count}</white> | sötét paktum: <white>{pact}</white></gray>'
   sinner.target-offline: <red>A célpont nem elérhető (offline).</red>
   sinner.theft-recorded: '<dark_purple>Bűnt követtél el: lopás a(z) {faction} frakció területén ({territory}). <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
-  sinner.usage: '<yellow>Használat: /sinner <játékos> <set|clear></yellow>'
+  sinner.usage: '<yellow>Használat: /sinner <játékos> <set|clear|add|status></yellow>'
   territory-build-denied: <red>Ez a(z) {faction} frakció területe — itt nem építhetsz.</red>
   territory-claim-success: '&aTerület kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)'
   territory-claim-usage: '&cHasználat: /territory claim <frakció> <azonosító> <sugár> [név...]'

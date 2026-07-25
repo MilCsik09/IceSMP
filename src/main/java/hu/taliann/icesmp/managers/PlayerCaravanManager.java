@@ -148,7 +148,7 @@ public final class PlayerCaravanManager {
             Bukkit.getServer().broadcast(messageManager.getMessage("pcaravan-arrived",
                     "<gold>🐫 A(z) <white>{faction}</white> szállítmánya CÉLBA ÉRT — a kassza <white>{reward}</white>-t kap (a kereskedők bőkezűek)!</gold>",
                     Map.of("faction", faction.getDisplayName(),
-                            "reward", String.valueOf(amount * multiplier))));
+                            "reward", String.format(java.util.Locale.ROOT, "%.0f", amount * multiplier))));
         }
     }
 

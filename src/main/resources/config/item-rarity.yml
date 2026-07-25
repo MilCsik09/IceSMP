@@ -473,7 +473,7 @@ item-rarity:
         - "Nincs olyan király vagy királynő, aki méltó volna hozzá."
   # Mob-loot alaptárgy-nevek family szerint (a jelző a raritásból jön).
   nouns:
-    weapon: [ "Penge", "Kard", "Fog", "Tőr", "Szablya", "Kard" ]
+    weapon: [ "Penge", "Kard", "Fog", "Tőr", "Szablya", "Pallos" ]
     armor: [ "Vért", "Páncél", "Sisak", "Pajzs", "Köntös" ]
     tool: [ "Szerszám", "Csákány", "Fejsze", "Véső" ]
   # A tier CSAK azt dönti el, mely raritások eshetnek és milyen súllyal (a raritás adja az erőt).

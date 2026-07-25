@@ -664,7 +664,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
 
         if (!canUse(player, itemStack)) {
-            player.sendMessage(TextUtil.color("&cEz a relic nem a tied."));
+            player.sendMessage(TextUtil.color("&cEz a relikvia nem a tiéd."));
             return false;
         }
 

@@ -135,7 +135,7 @@ public final class ProfessionRecipeGUI {
         }
         if (recipe.affixTier() != null) {
             lore.add(Component.empty());
-            lore.add(Component.text("✦ Egyedi (rolled) minőség + affixek", NamedTextColor.LIGHT_PURPLE)
+            lore.add(Component.text("✦ Sorsolt minőség + toldat-bónuszok", NamedTextColor.LIGHT_PURPLE)
                     .decoration(TextDecoration.ITALIC, false));
         }
         lore.add(Component.empty());

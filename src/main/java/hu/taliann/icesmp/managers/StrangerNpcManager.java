@@ -97,7 +97,7 @@ public final class StrangerNpcManager {
             "<dark_gray>„A csillag, ami a Fát ültette, még mindig ott van a földben. Néha kőként hullik vissza az égből.”</dark_gray>",
             "<dark_gray>„Az első évben megrepedt a világ. Azóta minden térkép egy seb két partja.”</dark_gray>",
             "<dark_gray>„Kétfelé szórtak minket, hogy ne öljük egymást. Ügyes terv volt. Hét háborúig működött.”</dark_gray>",
-            "<dark_gray>„A Kárhozat Kapuja nem bejárat. Kilépő. És nem a te oldaladról.”</dark_gray>",
+            "<dark_gray>„A Kárhozat Kapuja nem bejárat. Kifelé nyílik — és nem a te oldaladról.”</dark_gray>",
             "<dark_gray>„A rontás alulról nő. Ezért nem segít, ha felfelé nézel, amikor rossz szagot érzel.”</dark_gray>",
             "<dark_gray>„A Fa adott neked egy tárgyat, amit nem tudsz eldobni. Gondolkodj el rajta, miért nem.”</dark_gray>",
             "<dark_gray>„Ti visszatértek a halálból. Mi nem. Ez nem igazságtalanság — ez üzlet, és valaki fizeti.”</dark_gray>",

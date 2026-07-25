@@ -17,7 +17,7 @@ messages:
       unlock-all:
         notify: '&eEgy adminisztrátor minden varázslatot feloldott neked.'
         success: '&aAz összes varázslat feloldva: &f%s'
-      usage: /job admin <resetcd|unlockallskills|resetskills> <játékos>
+      usage: /job admin <resetcd|unlockallskills|resetskills|resetclass> <játékos>
   crafting:
     restricted: '&cEhhez a tárgyhoz &f{job} &ckaszt szükséges (min. &f{level}&c. szint).'
     restricted-any: '&cEhhez a tárgyhoz legalább &f{level}&c. szintű kaszt szükséges.'

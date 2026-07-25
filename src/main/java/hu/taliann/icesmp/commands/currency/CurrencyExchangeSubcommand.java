@@ -125,7 +125,7 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
 
         sender.sendMessage(messageManager.get(
                 "messages.currency-exchange-success",
-                "&aSikeres váltás: &e%s &f%s &7-> &a%s &f%s &7(| Árfolyam: %s, díj: %s%%)",
+                "&aSikeres váltás: &e%s &f%s &7-> &a%s &f%s &7(Árfolyam: %s, díj: %s%%)",
                 amount,
                 fromType.getDisplayName(),
                 received,

@@ -133,7 +133,7 @@ public final class CommandMenus {
                         grey("tegyél bele vagy vegyél ki bármit."), click())), "OPEN:adomany");
         put(inv, holder, 31, GuiUtil.icon(Material.CRAFTING_TABLE, title("Recept-könyv"),
                 List.of(grey("Szakma-receptek: tanult/zárolt lista,"),
-                        grey("egyedi (rolled) craftok egy kattintással."), click())), "OPEN:profession recipes");
+                        grey("sorsolt minőségű craftok egy kattintással."), click())), "OPEN:profession recipes");
         put(inv, holder, 32, GuiUtil.icon(Material.CHISELED_BOOKSHELF, title("Bestiárium"),
                 List.of(grey("A krónikás-lajstromod: fajok, receptek,"),
                         grey("territóriumok, bossok — mérföldkövekkel."), click())), "OPEN:bestiarium");

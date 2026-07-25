@@ -227,7 +227,7 @@ community-goals:
     reward-buff-minutes: 10
   blue_fish_market:
     faction: "BLUE"
-    display-name: "Kék Halpiac"
+    display-name: "A Fagy Halpiaca"
     objective:
       type: "COLLECT_ITEMS"
       materials:
@@ -1454,7 +1454,7 @@ quests:
   # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
   necromancer_initiation:
     display-name: "Sötét Beavatás"
-    description: "Zarándokolj el a Sötét romvárosba, és hajts végre rituálét az oltárnál."
+    description: "Zarándokolj el Thanaopolisba, a Holtak Városába, és hajts végre rituálét az oltárnál."
     requires-faction: "DARK"
     objective:
       type: "VISIT_TERRITORY"
@@ -1771,7 +1771,7 @@ quests:
         type: "KILL_MOBS"
         count: 15
         entity-type: "ZOMBIE"
-        description: "Romlott vadak"
+        description: "Rontott élőhalottak"
       2:
         type: "COLLECT_ITEMS"
         count: 20
@@ -2092,7 +2092,7 @@ quests:
         amount: 40
   # --- Frakció-questek ---
   red_supply_run:
-    display-name: "Piros Utánpótlás"
+    display-name: "A Láng Utánpótlása"
     description: "Gyűjts 40 vasat a Piros frakció hadigazdaságának."
     requires-faction: "RED"
     objective:
@@ -2329,7 +2329,7 @@ quests:
   # innentől a "next" mező viszi tovább automatikusan, lépésenként:
   #   1) onboarding_herald  — beszélj a hírnökkel (a kattintás ugyanitt nyitja meg
   #      a királyság-választó menüt is, ha a hírnök-NPC /npcbind <npc> faction-nel
-  #      be van kötve — nincs külön "válassz királyságot" objektíva-típus).
+  #      be van kötve — nincs külön "válassz királyságot" feladat-típus).
   #   2) onboarding_hunt    — ölj 5 szörnyet (első harc-lecke).
   #   3) onboarding_gather  — gyűjts 10 rönköt (első gyűjtögetés-lecke).
   # A hírnök-NPC-t a szerver-csapat helyezi ki FancyNpcs-szel "hirnok" belső

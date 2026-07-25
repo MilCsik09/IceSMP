@@ -104,7 +104,8 @@ public final class BuyerService {
         player.sendMessage(messageManager.getMessage("buyer-sold",
                 "<gold>🪙 Eladva: <white>{amount}× {item}</white> — <white>{value}× veret</white> a kezedbe. <gray>(Mai keretedből maradt: {left})</gray></gold>",
                 Map.of("amount", String.valueOf(sellable),
-                        "item", hand.getType().name().toLowerCase(Locale.ROOT).replace('_', ' '),
+                        "item", net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                                .plainText().serialize(hand.effectiveName()),
                         "value", String.valueOf(value),
                         "left", currencyManager.formatBalance(Math.max(0.0D, remaining - value)))));
     }

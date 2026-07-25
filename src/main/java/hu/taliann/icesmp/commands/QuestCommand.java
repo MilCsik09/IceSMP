@@ -97,7 +97,7 @@ public final class QuestCommand implements BasicCommand {
     private void handleAdminCreate(final CommandSender sender, final String[] args) {
         if (args.length < 5) {
             sender.sendMessage(messageManager.get("quest-admin-create-usage",
-                    "&cHasználat: /quest admin create <id> <objektíva-típus> <darab> <megjelenő név...>"));
+                    "&cHasználat: /quest admin create <id> <feladat-típus> <darab> <megjelenő név...>"));
             return;
         }
 
@@ -126,7 +126,7 @@ public final class QuestCommand implements BasicCommand {
     private void handleAdminAddObjective(final CommandSender sender, final String[] args) {
         if (args.length < 5) {
             sender.sendMessage(messageManager.get("quest-admin-addobjective-usage",
-                    "&cHasználat: /quest admin addobjective <id> <objektíva-típus> <darab> [leírás...]"));
+                    "&cHasználat: /quest admin addobjective <id> <feladat-típus> <darab> [leírás...]"));
             return;
         }
 
@@ -241,7 +241,7 @@ public final class QuestCommand implements BasicCommand {
         return switch (errorKey) {
             case "quest-admin-bad-id" -> "&cAz azonosító csak kisbetűt, számot és aláhúzást tartalmazhat.";
             case "quest-admin-exists" -> "&cMár létezik küldetés ezzel az azonosítóval.";
-            case "quest-admin-bad-objective" -> "&cIsmeretlen objektíva-típus. Elérhetők: "
+            case "quest-admin-bad-objective" -> "&cIsmeretlen feladat-típus. Elérhetők: "
                     + String.join(", ", QuestManager.OBJECTIVE_TYPES);
             case "quest-admin-bad-count" -> "&cA darabszámnak pozitív egész számnak kell lennie.";
             case "quest-admin-not-custom" -> "&cNincs ilyen admin-készítette küldetés (a configbeliek innen nem szerkeszthetők).";
@@ -254,9 +254,9 @@ public final class QuestCommand implements BasicCommand {
     private void sendAdminHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("quest-admin-help-header", "&6/quest admin &7- Küldetés-szerkesztő (Admin):"));
         sender.sendMessage(messageManager.get("quest-admin-help-create",
-                "&e/quest admin create <id> <objektíva> <darab> <név...> &7- Új küldetés."));
+                "&e/quest admin create <id> <feladat> <darab> <név...> &7- Új küldetés."));
         sender.sendMessage(messageManager.get("quest-admin-help-addobjective",
-                "&e/quest admin addobjective <id> <objektíva> <darab> [leírás...] &7- További feladat (több-objektívás quest)."));
+                "&e/quest admin addobjective <id> <feladat> <darab> [leírás...] &7- További feladat (több-feladatos küldetés)."));
         sender.sendMessage(messageManager.get("quest-admin-help-set",
                 "&e/quest admin set <id> <mező> <érték...> &7- Mező beállítása (feltételek, jutalmak, NPC, objectives-mode, dialogue.choices.N.text|quest...)."));
         sender.sendMessage(messageManager.get("quest-admin-help-delete", "&e/quest admin delete <id> &7- Küldetés törlése."));

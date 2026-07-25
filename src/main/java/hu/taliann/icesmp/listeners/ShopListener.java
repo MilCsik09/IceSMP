@@ -69,7 +69,7 @@ public final class ShopListener implements Listener {
     private String defaultErrorFor(final String errorKey) {
         return switch (errorKey) {
             case "shop-closed" -> "&cEz a bolt zárva van.";
-            case "shop-wrong-faction" -> "&cEbben a boltban csak a saját frakciója tagjai vásárolhatnak.";
+            case "shop-wrong-faction" -> "&cEbben a boltban csak a bolt frakciójának tagjai vásárolhatnak.";
             case "shop-item-gone" -> "&cEz a tétel már nem elérhető.";
             case "shop-insufficient" -> "&cNincs elég fedezet a bankodban ehhez a vásárláshoz.";
             default -> "&cA vásárlás nem sikerült.";

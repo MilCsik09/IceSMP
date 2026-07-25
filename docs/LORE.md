@@ -458,7 +458,7 @@ tudja, hány hever még belőlük a romok mélyén, s hány születik újjá a F
   kiegészítve emberfeletti erőt ád."
 - **I. Zhoris Lángnyelve** (kard) — „Ezt a pengét a Hetedik Vérháború napján kovácsolták a
   Vérszavanna legmélyén."
-- **Napfogyatkozás** (kard) — sötét lángpenge, a Lángoló Birodalom legendás fegyvere.
+- **Napfogyatkozás** (íj) — sötét obszidián-íj, a Lángoló Birodalom legendás fegyvere; nyila akkor harap a legmélyebbre, amikor a nap lehunyja szemét.
 - **Pyralingradi Ostrom-számszeríj** (nehéz ostromgép) — „Nem a papok áldása van rajta, hanem a
   Vérszavanna kohóinak súlya: két ember kellett, hogy felhúzzák, s a vasszálka egy egész sorral
   végzett." A Hetedik Vérháború ostromainak fegyvere — lassú, mint a homokvihar közeledése, de amit

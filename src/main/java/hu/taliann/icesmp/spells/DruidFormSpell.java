@@ -169,7 +169,7 @@ public final class DruidFormSpell extends BaseSpell {
 
     @Override
     public java.util.List<String> describe() {
-        return java.util.List.of(form.description, "Stance — újra elsütve visszaváltozol emberi alakba.");
+        return java.util.List.of(form.description, "Állásmód — újra elsütve visszaváltozol emberi alakba.");
     }
 
     @Override

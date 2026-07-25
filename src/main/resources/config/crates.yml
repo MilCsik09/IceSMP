@@ -39,7 +39,7 @@ crates:
       - {weight: 25, material: GOLDEN_APPLE, amount: 2}
       - {weight: 20, material: DIAMOND, amount: 2}
       - {weight: 10, material: NETHERITE_SCRAP, amount: 1}
-      - {weight: 5, material: DIAMOND_BLOCK, amount: 1, description: "&bDiamond blokk"}
+      - {weight: 5, material: DIAMOND_BLOCK, amount: 1, description: "&bGyémánttömb"}
 
   ritka:
     display-name: "&5Caldesterai Kincsesláda"
@@ -56,4 +56,4 @@ crates:
       - {weight: 20, material: ENCHANTED_GOLDEN_APPLE, amount: 1}
       - {weight: 15, material: NETHER_STAR, amount: 1}
       - {weight: 7, material: TOTEM_OF_UNDYING, amount: 1}
-      - {weight: 3, material: NETHERITE_BLOCK, amount: 1, description: "&5Netherite blokk"}
+      - {weight: 3, material: NETHERITE_BLOCK, amount: 1, description: "&5Netherit-tömb"}

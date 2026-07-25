@@ -271,7 +271,7 @@ messages:
       activated: <dark_green>Vad falka tör elő a vadonból, és melléd szegődik.</dark_green>
       name: Vad Falka
     wisplight:
-      name: Wisplight
+      name: Lidércfény
     wolf_call:
       activated: <dark_green>Hű farkas társ érkezik a hívásodra.</dark_green>
       name: Farkashívás

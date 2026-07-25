@@ -530,7 +530,7 @@ profession-recipes:
     profession: alchemist
     level: 38
     learn: blueprint
-    display-name: "Elnyúló Regeneráció Főzet"
+    display-name: "Elnyúló Regeneráció Főzete"
     category: "Ital (tervrajz)"
     result: { material: LINGERING_POTION, amount: 2 }
     ingredients: [ "GHAST_TEAR:2", "DRAGON_BREATH:1", "GLASS_BOTTLE:2" ]
@@ -705,7 +705,7 @@ profession-recipes:
     profession: fisherman
     level: 14
     learn: level
-    display-name: "Csiszolt Prismarine"
+    display-name: "Csiszolt Prizmarin"
     category: "Tengeri Alapanyag"
     result: { material: PRISMARINE, amount: 2 }
     ingredients: [ "PRISMARINE_SHARD:8" ]
@@ -1162,7 +1162,7 @@ profession-recipes:
     profession: alchemist
     level: 28
     learn: level
-    display-name: "Kivonatos Regeneráció Főzet"
+    display-name: "Kivonatos Regeneráció Főzete"
     category: "Ital"
     result: { material: POTION, amount: 3 }
     ingredients: [ "GLASS_BOTTLE:3", "NETHER_WART:1", "unique:gyogy_kivonat:2" ]
@@ -2621,7 +2621,7 @@ profession-recipes:
     level: 36
     learn: level
     display-name: "Erdőjáró Pajzs"
-    category: "Eszköz"
+    category: "Páncél"
     result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:mefonott_pajzs", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "OAK_PLANKS:6", "IRON_INGOT:1", "unique:favedo_pac:1" ]
   erdei_lampasoszlop:
@@ -2792,7 +2792,7 @@ profession-recipes:
     level: 31
     learn: level
     display-name: "Dudoros Hadipajzs"
-    category: "Eszköz"
+    category: "Páncél"
     result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:pajzsdudor", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "IRON_INGOT:3", "OAK_PLANKS:4", "unique:edzoolaj:1" ]
   gyemant_lopancel:
@@ -4016,7 +4016,7 @@ profession-recipes:
     profession: cook
     level: 12
     learn: level
-    display-name: "Mortengrádi Keserű"
+    display-name: "Mortengradi Keserű"
     category: "Ital"
     lore:
       - "A Kitaszítottak keserű nedűje —"

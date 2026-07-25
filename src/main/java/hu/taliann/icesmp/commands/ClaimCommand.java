@@ -106,7 +106,7 @@ public final class ClaimCommand implements BasicCommand {
             return;
         }
         player.sendMessage(messageManager.get("claim-unclaimed",
-                "&aChunk felszabadítva. &7(Az ár nem jár vissza — elégett.)"));
+                "&aTerület felszabadítva. &7(Az ár nem jár vissza — elégett.)"));
     }
 
     private void handleInfo(final Player player) {

@@ -86,7 +86,7 @@ public final class CrownCurseManager {
             },
             // 5. szint — nyílt ítélet: a lajstrom, a harmadik mondat, a Fa kínja.
             {
-                    "„Két mondatot kimondtam. Az első felébresztett. A második eltörölte a nemességet.”",
+                    "„Két mondatot kimondtam. Az első felkeltette a holtakat. A második eltörölte a nemességet.”",
                     "„A harmadik mondat még megvan. Tartogatom. Nem neked — de te is benne leszel.”",
                     "„A lajstromban van egy üres sor. Már a nevedet formálja.”",
                     "„Ne siess. Én sem sietek. Nekem a Hasadás óta volt időm gyakorolni a várakozást.”",

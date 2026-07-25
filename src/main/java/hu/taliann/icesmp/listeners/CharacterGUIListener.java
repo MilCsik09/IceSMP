@@ -169,7 +169,7 @@ public final class CharacterGUIListener implements Listener {
                     .append(Component.space()).append(profession.getDisplayName()));
         } else {
             fail(player, ctx.messageManager().getComponent("profession-gui-cannot",
-                    "&cEzt a szakmát most nem tanulhatod (a kategória helyed foglalt)."));
+                    "&cEzt a szakmát most nem tanulhatod — ebben a kategóriában már betöltötted a helyed."));
         }
         ProfessionGUI.open(player, ctx);
     }
@@ -216,7 +216,7 @@ public final class CharacterGUIListener implements Listener {
             case INSUFFICIENT_FUNDS -> {
                 fail(player, ctx.messageManager().getComponent(
                         "spec-respec-insufficient",
-                        "&cA respec ára &f%s %s&c, de csak &f%s&c van a bankodban.",
+                        "&cA visszaváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.",
                         ctx.currencyManager().formatBalance(outcome.cost()),
                         outcome.currency().getDisplayName(),
                         ctx.currencyManager().formatBalance(

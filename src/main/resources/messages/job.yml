@@ -21,7 +21,7 @@ messages:
   job-select-secondary-success: '&aMásodlagos kaszt kiválasztva:'
   job-spell-auto-unlocked: '&aÚj képesség feloldva: &e{spell} &7(szint {level})'
   job-unknown-subcommand: '&cIsmeretlen alparancs: &f%s'
-  job-usage-givecatalyst: /job givecatalyst <player>
+  job-usage-givecatalyst: /job givecatalyst <játékos>
   skilltree-back: '&cVissza a kasztokhoz'
   skilltree-no-class: '&cElőbb válassz kasztot!'
   skilltree-node-level: '&7Szükséges szint: &f%s'

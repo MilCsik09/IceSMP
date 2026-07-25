@@ -187,7 +187,7 @@ public final class FactionFoodListener implements Listener {
                         faction == FactionType.BLUE ? "faction-food-duty-blue" : "faction-food-duty-red",
                         faction == FactionType.BLUE
                                 ? "<gray>❄ Hiányzik az otthon íze — a Jégmezők népe halon él. Egyél halat!</gray>"
-                                : "<gray>🔥 Hiányzik az otthon íze — a Vérszavanna népe tojás-ételen él. Egyél rántottát!</gray>"));
+                                : "<gray>🔥 Hiányzik az otthon íze — a Vérszavanna népe tojás-ételen él. Egyél rántottát, sütőtökös pitét vagy tortát!</gray>"));
             }, null);
         }
     }

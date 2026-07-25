@@ -12,7 +12,7 @@ import java.util.UUID;
  * being edited (null while the objective picker is choosing a type for a brand
  * new quest), the current view and the slot→action bindings the listener
  * dispatches on. Actions are plain strings: FIELD:&lt;mező&gt;, TOGGLE:&lt;mező&gt;,
- * MODE, NEWOBJ, TYPE:&lt;objektíva&gt;, DELETE, CLOSE.
+ * MODE, NEWOBJ, TYPE:&lt;feladat&gt;, DELETE, CLOSE.
  */
 public final class QuestBuilderHolder implements InventoryHolder {
 

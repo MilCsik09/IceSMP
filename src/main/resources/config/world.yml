@@ -717,14 +717,14 @@ seasonal-events:
   remej:
     start: "10-25"
     end: "11-02"
-    greeting: "Rém-éj közeleg — a fátyol elvékonyodik, a tökfejek vigyorognak! (Vérhold-virrasztás)"
+    greeting: "Vérhold-virrasztás — a fátyol elvékonyodik: gyújtsatok fáklyát a küszöbön, és meséljetek hangosan!"
     # Ünnep-szorzók (HolidayService.override): az ablak alatt sűrűbb vérhold + invázió.
     blood-moon-chance-mult: "2.0"
     invasion-chance-mult: "1.5"
   erkezes_napja:
     start: "12-20"
     end: "12-27"
-    greeting: "Az Érkezés Napja — a Kapu fényei kigyúlnak, a kereskedők ajándék-kedvvel mérnek!"
+    greeting: "Az Érkezés Napja — a Fa alatt mécsesek gyúlnak a Felsők tiszteletére, s a kereskedők ajándék-kedvvel mérnek!"
   hasadas_napja:
     start: "03-21"
     end: "03-23"

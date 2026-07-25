@@ -96,7 +96,7 @@ public final class SeasonStoryTeller {
         final List<StatsManager.Entry> topRaid = statsManager.top(StatsManager.Category.RAID_KILLS, 1);
         if (!topRaid.isEmpty() && topRaid.get(0).raidKills() > 0) {
             lines.add(messageManager.getMessage("season-story-hero-raid",
-                    "<red>✦ A háború bajnokáról, <white>{player}</white>ról ({kills} raid-ölés) balladák születnek majd.</red>",
+                    "<red>✦ A háború bajnokáról — <white>{player}</white> ({kills} raid-ölés) — balladák születnek majd.</red>",
                     Map.of("player", topRaid.get(0).name(), "kills", String.valueOf(topRaid.get(0).raidKills()))));
         }
 

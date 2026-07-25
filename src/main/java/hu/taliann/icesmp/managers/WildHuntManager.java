@@ -34,7 +34,7 @@ public final class WildHuntManager {
     /** The elite beast roster; each firing picks one at random. */
     private enum Beast {
         ANCIENT_RAVAGER("Ősi Fenevad", EntityType.RAVAGER),
-        BONE_HUNTER("Csont Vadász", EntityType.WITHER_SKELETON),
+        BONE_HUNTER("Csontvadász", EntityType.WITHER_SKELETON),
         ELDER_MAGE("Vén Mágus", EntityType.EVOKER),
         INFERNAL_BRUTE("Pokoli Behemót", EntityType.PIGLIN_BRUTE);
 
@@ -320,7 +320,7 @@ public final class WildHuntManager {
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-started",
-                "&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz, ha {minutes} percen belül le tudod teríteni!",
+                "&4🐺 VAD HAJSZA — egy {beast} kóborol a vidéken ({world}: {x}, {z}); ritka zsákmányt őriz — a tiéd, ha {minutes} percen belül le tudod teríteni!",
                 Map.of(
                         "beast", beast.displayName,
                         "world", world.getName(),
