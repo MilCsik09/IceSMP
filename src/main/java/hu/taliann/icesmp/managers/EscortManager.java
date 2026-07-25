@@ -65,12 +65,19 @@ public final class EscortManager {
     public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
         this.spawnPointManager = spawnPointManager;
     }
-    /** Reserves the "active" state while a spawn is still hopping region threads. */
-    private volatile long spawnGraceUntil;
+    /**
+     * Időzítő + sorsolás + a spawn-lánc rezervációja. A rezervációt CAS nyeri meg, ezért a
+     * globál-szálas tick és a parancs-szálas forceStart közül biztosan csak az egyik indít
+     * konvojt (korábban mindkettő átcsúszhatott, és a második orphanná tette az elsőt).
+     */
+    private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
+            new hu.taliann.icesmp.utils.PeriodicChanceEvent();
+
+    /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul. */
+    private static final long SPAWN_GRACE_MILLIS = 10_000L;
     private volatile Location destination;
     private volatile double totalDistance;
     private volatile long expiresAt;
-    private volatile long nextAttemptAt;
     /** Escort-success perk: the caravan shop's bonus stock stays unlocked until this time. */
     private volatile long bonusStockUntil;
 
@@ -95,7 +102,7 @@ public final class EscortManager {
         this.mobScalingManager = mobScalingManager;
         this.messageManager = messageManager;
         this.spawnGuard = spawnGuard;
-        this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
+        this.schedule.delayNextAttempt(intervalMillis());
     }
 
     /** Whether an escort is currently under way. */
@@ -160,31 +167,29 @@ public final class EscortManager {
             }
             return;
         }
-        if (now < spawnGraceUntil) {
-            return; // A spawn is still hopping region threads.
+        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+        // (A kapu-ellenőrzés a sorsolás ELŐTT fut, hogy az időzítő ne fogyjon el hiába.)
+        final MajorEventGate gateRef = eventGate;
+        if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
+            return;
         }
-
-        if (now >= nextAttemptAt) {
-            nextAttemptAt = now + intervalMillis();
-            // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
-            final MajorEventGate gateRef = eventGate;
-            if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
-                return;
-            }
-            final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("escort.chance-percent", 30.0D)));
-            if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
-                start(null);
-            }
+        if (schedule.tryAttempt(intervalMillis(),
+                configManager.getDouble("escort.chance-percent", 30.0D), SPAWN_GRACE_MILLIS)
+                && !start(null)) {
+            schedule.release();
         }
     }
 
     /** Admin override: starts an escort now near the anchor (or a random player). */
-    public synchronized boolean forceStart(final Player anchor) {
-        if (isActive() || System.currentTimeMillis() < spawnGraceUntil) {
+    public boolean forceStart(final Player anchor) {
+        if (isActive() || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
             return false;
         }
-        return start(anchor);
+        if (start(anchor)) {
+            return true;
+        }
+        schedule.release();
+        return false;
     }
 
     /** Handles the convoy's death (from the death listener, on the convoy's region thread). */
@@ -208,9 +213,6 @@ public final class EscortManager {
     }
 
     private boolean start(final Player preferredAnchor) {
-        // Reserve the active state while the spawn hops threads (self-heals after 10s),
-        // so a second convoy can never start and orphan the first.
-        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
@@ -283,7 +285,9 @@ public final class EscortManager {
         destination = dest;
         totalDistance = Math.max(1.0D, horizontalDistance(start, dest));
         expiresAt = System.currentTimeMillis() + maxDurationMillis();
-        spawnGraceUntil = 0L;
+        // Az „aktív" állapot innentől kézzelfogható (convoyId + expiresAt), a rezerváció
+        // szerepe véget ért.
+        schedule.release();
 
         startConvoyDriver(convoy);
         updateBar(convoy, totalDistance);

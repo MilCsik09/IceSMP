@@ -357,7 +357,15 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
 
 - **O1** 🟡 RÉSZBEN KÉSZ — StatsManager láthatósági race: a számlálók (`kills`/`deaths`/`mobKills`/
   `spellCasts`/`questsCompleted`) már `AtomicInteger`-ek; NYITVA a `level` és a `raidKills` (sima `int`).
-- **O2** 🟡 Világesemény-managerek force-vs-tick race — admin force-parancs és periodikus tick ütközhet, orphan entitás.
+- **O2** ✅ KÉSZ — végigmérve mind a 12 rezervációt használó manageren (gépi ellenőrzés: melyik metódus
+  ÍRJA a grace-t, és `synchronized`-e). 10 helyes volt (a check-then-act a `synchronized` spawn/force
+  metóduson BELÜL fut), **2 kilógott, mindkettő javítva** a `PeriodicChanceEvent` CAS-rezervációjával:
+  (1) `EscortManager` — a `start()` NEM volt synchronized és rechecky nélkül írta a grace-t, a `tick()`
+  pedig sosem vette fel a zárat, így a tick és a `forceStart` **két konvojt** indíthatott, és a
+  `convoyId` csak a másodikat ismerte → az első orphan lett (élő láma + driver-task + boss-bar);
+  (2) `StrangerNpcManager` — se rezerváció, se „áll-e már egy" ellenőrzés (a `tick()` nem is nézte),
+  így két Idegen mutatkozhatott egyszerre, és a `shutdown()` csak az egyiket ismerte. (Örök orphan
+  itt nem keletkezett: minden Idegen 45 mp után a saját schedulerén despawnol.)
 - **O3** 🟢 SunDanceSpell recept-cache dupla felépítés — check-then-act, felesleges duplikált munka.
 - **O4** ✅ KÉSZ — `utils/TabCompleteUtil.prefixAt` (static importtal, a `GuiUtil` mintájára);
   mind a 20 privát példány törölve, 68 hívási hely változatlan. A `RelicCommand` példánya
@@ -416,21 +424,33 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   nevek**, nem hibakulcsok. Egy globális `ErrorMessages` tábla 177 magyar szöveget szakítana el a
   használati helyétől, miközben az override-réteget a `messages.yml` már megadja — ezért NEM
   csináljuk meg. (A `ClaimManager` switch-e sem tábla-duplikátum: az kulcs→ÜZENETKULCS leképezés.)
-- **O27** 🟡 `PeriodicChanceEvent` világesemény-ütemező váz — 5 manager azonos váza közös helperbe (O2/O6-tal együtt).
+- **O27** ✅ RÉSZBEN KÉSZ — `utils/PeriodicChanceEvent` megvan (időzítő + sorsolás + CAS-rezerváció,
+  öngyógyuló grace-szel), és a 2 hibás manager (Escort, StrangerNpc) rá van vezetve — ezzel az O2
+  lezárult. A maradék **10 manager átvezetése SZÁNDÉKOSAN nyitva**: mind bizonyítottan helyes
+  (synchronized spawn-on belüli recheck), a megspórolható kód ~6 sor/manager, viszont a változás
+  ÉLŐ esemény-ütemezésbe nyúlna 10 helyen, teszt-suite nélkül. Ha egyszer mégis, akkor
+  playtesttel egy körben, managerenként külön committal — nem vakon, kötegben.
 - **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
 O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
 (DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil),
 **O4** (TabCompleteUtil), **O25** (DailyBudget), **O26** (mérés alapján elvetve, 1 valódi duplikátum
-javítva), **O6** (TransientEntities — a horgony-rotáció maradt nyitva); **RÉSZBEN** = O1.
-A közös-helper csomagból hátra van: O27 `PeriodicChanceEvent` (5 manager azonos
-ütemező-váza — ez a legnagyobb és legkényesebb, mert a tick-ütemezésbe nyúl).
+javítva), **O6** (TransientEntities — a horgony-rotáció maradt nyitva), **O2** (2 valódi
+versenyhelyzet javítva); **RÉSZBEN** = O1, O27 (a helper megvan + a 2 hibás manager átvezetve;
+a 10 bizonyítottan helyes manager átvezetése szándékosan nyitva). A közös-helper csomag ezzel
+lezárva — új tétel nélkül nincs mit vinni belőle.
 
-**Mérleg (2026-07-25 helper-kör):** 4 új `utils/` osztály (MobKillUtil, TabCompleteUtil,
-DailyBudget, TransientEntities), ~35 hívási hely átvezetve, és 6 latens hiba lezárva, amit a
-duplikáció rejtett: AFK/spawner/minion-szűrők hiánya a jutalom-ágakon, a SoulShard AFK-fékének
-config-kapu nélküli állapota, a `RelicCommand` `Locale.ROOT` nélküli kisbetűsítése, a
-váltási keret újraindítással nullázhatósága, az „előbb könyvel, aztán ellenőriz" keret-hiba,
-és az `EscortManager` kivétel-védelem nélküli entitás-prune-ja.
+**Mérleg (2026-07-25 helper-kör):** 5 új `utils/` osztály (MobKillUtil, TabCompleteUtil,
+DailyBudget, TransientEntities, PeriodicChanceEvent), ~40 hívási hely átvezetve, és **8 latens
+hiba** lezárva, amit a duplikáció rejtett: AFK/spawner/minion-szűrők hiánya a jutalom-ágakon,
+a SoulShard AFK-fékének config-kapu nélküli állapota, a `RelicCommand` `Locale.ROOT` nélküli
+kisbetűsítése, a váltási keret újraindítással nullázhatósága, az „előbb könyvel, aztán
+ellenőriz" keret-hiba, az `EscortManager` kivétel-védelem nélküli entitás-prune-ja, valamint
+a két force-vs-tick versenyhelyzet (dupla konvoj, dupla Idegen).
+
+**Tanulság a következő körre:** a tételek fele MÉRÉSSEL derült ki pontatlannak (O26 „11+
+osztály" → 1 valódi duplikátum; O6 „5-8 hely" → a horgony-rotáció csak 2; O4 17 → 20 fájl).
+Új refaktor-tételt érdemes rögtön mérési paranccsal együtt felvenni, különben a becslés
+önállósodik.
 
 ## P — kormányzás, gazdaság-hurok és rework-jelöltek (2026-07-22, tulaj-kérés)
 

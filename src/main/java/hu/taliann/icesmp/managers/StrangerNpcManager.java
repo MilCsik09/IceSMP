@@ -41,7 +41,17 @@ public final class StrangerNpcManager {
     /** Setter-injected (a guard később épül a DI-sorrendben); null = nincs hely-korlát. */
     private volatile EventSpawnGuard spawnGuard;
 
-    private volatile long nextAttemptAt;
+    /**
+     * Az Idegen egyszerre CSAK EGY példányban mutatkozhat (a magányos, talányos alak a lényege).
+     * A spawn két szálon hopol, ezért az activeStrangerId csak a lánc végén áll be — addig a
+     * schedule rezervációja zárja ki, hogy a tick és a /events force két Idegent állítson.
+     */
+    private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
+            new hu.taliann.icesmp.utils.PeriodicChanceEvent();
+
+    /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul (öngyógyulás). */
+    private static final long SPAWN_GRACE_MILLIS = 10_000L;
+
     private volatile UUID activeStrangerId;
 
     /** Talányos sor-variánsok (messages-kulcs: stranger-line-1..6). */
@@ -100,19 +110,18 @@ public final class StrangerNpcManager {
         if (!configManager.getBoolean("world-events.stranger-npc.enabled", true)) {
             return;
         }
-        final long now = System.currentTimeMillis();
-        if (now < nextAttemptAt) {
-            return;
+        if (activeStrangerId != null) {
+            return; // Már áll egy Idegen — kettő sosem mutatkozhat egyszerre.
         }
-        nextAttemptAt = now + Math.max(1L,
+        final long intervalMillis = Math.max(1L,
                 configManager.getLong("world-events.stranger-npc.check-interval-minutes", 90L)) * 60_000L;
-        final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.stranger-npc.chance-percent", 6.0D)));
-        if (ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
+        if (!schedule.tryAttempt(intervalMillis,
+                configManager.getDouble("world-events.stranger-npc.chance-percent", 6.0D), SPAWN_GRACE_MILLIS)) {
             return;
         }
         final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
         if (online.isEmpty()) {
+            schedule.release();
             return;
         }
         spawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
@@ -120,15 +129,19 @@ public final class StrangerNpcManager {
 
     /** Admin-próba (/events stranger): azonnali felbukkanás a horgony közelében. */
     public boolean forceSpawn(final Player anchor) {
-        if (anchor == null) {
+        if (activeStrangerId != null || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
+            return false;
+        }
+        Player target = anchor;
+        if (target == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
+                schedule.release();
                 return false;
             }
-            spawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
-            return true;
+            target = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
-        spawnNear(anchor);
+        spawnNear(target);
         return true;
     }
 
@@ -158,7 +171,8 @@ public final class StrangerNpcManager {
         final EventSpawnGuard guard = spawnGuard;
         if (guard != null && (guard.isBlocked("stranger", spot)
                 || guard.isUnsafeSurface("stranger", world, x, z))) {
-            return; // Ma nem mutatkozik — a következő próba máshol keres.
+            schedule.release(); // Ma nem mutatkozik — a következő próba máshol keres.
+            return;
         }
         final WanderingTrader stranger = world.spawn(spot, WanderingTrader.class);
         stranger.getPersistentDataContainer().set(strangerKey, PersistentDataType.BYTE, (byte) 1);

@@ -783,6 +783,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ~45 mp-enként szörny-hullám támadja a konvojt; célba érve loot hullik + a karaván-bolt bónusz-készlete
       (`bonus-items`) egy időre elérhető; a konvoj halálakor/lejáratkor bukás. **Terep-teszt:** a kíséret-mob
       robbanása (ha van) **nem tör blokkot**; a konvoj/mobok reload után nem maradnak ott (nem perzisztens).
+      **Egyszerre-egy teszt:** aktív kíséret (vagy épp induló spawn-lánc) mellett az újabb
+      `/events escort` **false**-szal elhasal — sosem áll két konvoj (a második korábban
+      orphanná tette volna az elsőt).
 - [ ] **Meteor** (`/events meteor`): kráter jelenik meg érc-blokkokkal + broadcast a koordinátákkal; az érc
       kibányászható (valódi drop). **Terep-teszt (fontos):** `expire-minutes` után VAGY `/reload`/leállítás
       után a kráter **teljesen visszaáll** az eredeti terepre; `avoid-territory: true` mellett **nem** csapódik
@@ -1068,6 +1071,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       sort kapnak; jobb-katt NEM nyit kereskedést (elnyelve); 45 mp után lélek-köddel eltűnik.
       Természetes felbukkanás ritka (`stranger-npc.chance-percent` 6%/90 perc); spawn-rules
       mátrix-sor: `stranger`. NINCS semmilyen jutalom — ez szándékos.
+      **Egyszerre-egy teszt:** amíg áll egy Idegen, az újabb `/events stranger` **false**-szal
+      elhasal (nem lesz két alak), és a 45 mp-es köddé válás után megint indítható.
 - [ ] **D9 Énekmondó (ÚJ — Tier A):** nevezz el egy FancyNpcs-NPC-t `enekmondo`-nak (vagy írd
       át a `bard.npc-name`-et) → jobb-kattra a HETI ballada (top-1 szint/vagyon/raid sablon-
       variánsokkal; egész héten ugyanaz a dal, hétfőnként fordul). FancyNpcs nélkül nem elérhető.
