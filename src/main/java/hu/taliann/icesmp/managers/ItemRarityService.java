@@ -173,6 +173,9 @@ public final class ItemRarityService {
                 meta.getPersistentDataContainer().set(spellPowerKey,
                         org.bukkit.persistence.PersistentDataType.DOUBLE, stored + amount);
             } else {
+                // Az első explicit módosító felülírja a tárgy vanília attribute_modifiers komponensét,
+                // ezért az alap-statokat (kard sebzése, páncél védelme) előbb át kell menteni.
+                hu.taliann.icesmp.items.ItemDataFactory.seedDefaultAttributeModifiers(rolled, meta);
                 // A módosító-kulcs a Materialt IS hordozza: MC 1.21-ben az azonos id-jű módosítók
                 // ugyanazon attribútumon NEM összegződnek, így két külön viselt darab (sisak+mellvért)
                 // azonos affixe csak egyszer számítana — a Material (=felszerelés-slot) egyedivé teszi.
