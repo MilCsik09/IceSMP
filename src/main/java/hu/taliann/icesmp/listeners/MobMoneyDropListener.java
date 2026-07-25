@@ -82,26 +82,17 @@ public final class MobMoneyDropListener implements Listener {
         event.getDrops().add(pouchFactory.createRandom(amount));
     }
 
-    /** játékos -> (nap, mai összeg) — memóriában él (restartkor nullázódik, a capnek elég). */
-    private final java.util.Map<java.util.UUID, long[]> dailyEarned = new java.util.concurrent.ConcurrentHashMap<>();
-
     /**
      * Napi keret (mob-money-drop.daily-cap, 0 = korlátlan): a spawner-fék a darkroom-
      * farmokat nem fogja (NATURAL spawn), ezért ez a plafon zárja a végtelen csapot.
-     * Konkurrens map (a kill bármely régió-szálán futhat); a más-napi bejegyzések
-     * túlcsordulásnál söprődnek.
+     * Memóriás tároló, mert a halál-event a MOB régió-szálán fut — a gyilkos PDC-jébe
+     * innen nem írhatunk.
      */
+    private final hu.taliann.icesmp.utils.DailyBudget.InMemory<java.util.UUID> moneyBudget =
+            new hu.taliann.icesmp.utils.DailyBudget.InMemory<>(512);
+
     private boolean tryConsumeDailyBudget(final java.util.UUID playerId, final long amount) {
-        final double cap = configManager.getDouble("mob-money-drop.daily-cap", 300.0D);
-        if (cap <= 0.0D) {
-            return true;
-        }
-        final long today = System.currentTimeMillis() / 86_400_000L;
-        if (dailyEarned.size() > 512) {
-            dailyEarned.values().removeIf(entry -> entry[0] != today);
-        }
-        final long[] entry = dailyEarned.compute(playerId, (key, old) ->
-                old == null || old[0] != today ? new long[]{today, amount} : new long[]{today, old[1] + amount});
-        return entry[1] <= (long) cap;
+        return moneyBudget.tryConsume(playerId, amount,
+                configManager.getDouble("mob-money-drop.daily-cap", 300.0D));
     }
 }

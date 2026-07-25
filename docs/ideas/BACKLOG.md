@@ -389,15 +389,25 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   pénz-dropban, a minion-kizárás 3 helyen (a quest/ranglista/bestiárium/közösségi cél számlálói
   saját idézett hordával pumpálhatók voltak), és a `SoulShardListener` AFK-féke egyáltalán nem
   volt config-kapuzva (az `afk.block-rewards: false` sem kapcsolta ki).
-- **O25** 🟡 `DailyBudget` PDC-util — napi keret-minta 5+ helyen kézzel írva, közös `spend()` util kellene.
+- **O25** ✅ KÉSZ — `utils/DailyBudget`: nap-index, számláló-léptetés, plafon-vizsgálat és söprés egy
+  helyen. **Két tároló, mert a Folia rákényszerít:** `InMemory<K>` a kereszt-entitás eventekhez
+  (mob-halál a MOB szálán fut, a gyilkos PDC-jébe onnan nem írhatunk), PDC-s ág a játékos saját
+  szálán futó helyekhez (újraindítás-biztos). 7 hely átvezetve: lélekkő, mob-pénz, parkour
+  (memóriás); horgász-szerencse, kém-pont, Felvásárló, valuta-váltás (PDC-s). Két lelet:
+  (1) a régi implementációk fele ELŐBB könyvelt, majd ellenőrzött — egyetlen túllépés után a nap
+  hátralévő részében a beleférő kisebb összegeket is elutasította; a közös helper
+  ellenőriz-majd-könyvel. (2) A valuta-váltás keretje memóriában élt, tehát **újraindítással
+  nullázható volt** — pedig épp árfolyam-manipuláció ellen való; most PDC-ben él.
+  SZÁNDÉKOSAN kimaradt: `HonorDuelManager` + `ProfessionWeeklyGoalManager` (HETI bucket, más
+  periódus), `FactionTreasurySubcommand` (frakció-szintű közös számláló + DOUBLE pénz-pontosság —
+  a helper long-alapú, kerekítés-veszteség lenne).
 - **O26** 🟡 `ErrorMessages.resolve` közös hibakulcs→default tábla — 11+ osztályban ismétlődő switch.
 - **O27** 🟡 `PeriodicChanceEvent` világesemény-ütemező váz — 5 manager azonos váza közös helperbe (O2/O6-tal együtt).
 - **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
 O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
 (DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil),
-**O4** (TabCompleteUtil); **RÉSZBEN** = O1. A közös-helper csomagból hátra van:
-O6 `WorldEventUtil`, O25 `DailyBudget`, O26 `ErrorMessages`, O27 `PeriodicChanceEvent` —
-mind ugyanaz a minta: 5-20 helyen kézzel ismételt kód egy `utils/` osztályba.
+**O4** (TabCompleteUtil), **O25** (DailyBudget); **RÉSZBEN** = O1. A közös-helper csomagból hátra van:
+O6 `WorldEventUtil`, O26 `ErrorMessages`, O27 `PeriodicChanceEvent`.
 
 ## P — kormányzás, gazdaság-hurok és rework-jelöltek (2026-07-22, tulaj-kérés)
 

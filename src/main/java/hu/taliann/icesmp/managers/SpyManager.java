@@ -33,8 +33,6 @@ public final class SpyManager implements PlayerStateCleanup {
     private final SeasonManager seasonManager;
     private final TerritoryManager territoryManager;
     private final NamespacedKey cooldownKey;
-    private final NamespacedKey pointsDayKey;
-    private final NamespacedKey pointsCountKey;
     private final Map<UUID, Long> activeUntil = new ConcurrentHashMap<>();
 
     public SpyManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -49,8 +47,6 @@ public final class SpyManager implements PlayerStateCleanup {
         this.seasonManager = seasonManager;
         this.territoryManager = territoryManager;
         this.cooldownKey = new NamespacedKey(plugin, "spy_cooldown");
-        this.pointsDayKey = new NamespacedKey(plugin, "spy_points_day");
-        this.pointsCountKey = new NamespacedKey(plugin, "spy_points_count");
     }
 
     public boolean isSpying(final UUID playerId) {
@@ -115,16 +111,9 @@ public final class SpyManager implements PlayerStateCleanup {
             return; // nem ellenséges földön járt le az álca — nincs pont
         }
         final int dailyLimit = Math.max(0, configManager.getInt("spy.points-daily-limit", 2));
-        final long today = System.currentTimeMillis() / 86_400_000L;
-        final long storedDay = player.getPersistentDataContainer()
-                .getOrDefault(pointsDayKey, PersistentDataType.LONG, -1L);
-        final int usedToday = storedDay == today ? player.getPersistentDataContainer()
-                .getOrDefault(pointsCountKey, PersistentDataType.INTEGER, 0) : 0;
-        if (dailyLimit > 0 && usedToday >= dailyLimit) {
+        if (!hu.taliann.icesmp.utils.DailyBudget.tryConsumeOnOwnThread(player, "spy_points", dailyLimit, 1L)) {
             return;
         }
-        player.getPersistentDataContainer().set(pointsDayKey, PersistentDataType.LONG, today);
-        player.getPersistentDataContainer().set(pointsCountKey, PersistentDataType.INTEGER, usedToday + 1);
         seasonManager.addPoints(own, Math.max(0, configManager.getInt("spy.season-points", 2)), "spy");
         player.sendMessage(messageManager.getMessage("spy-mission-success",
                 "<dark_gray>🕵 A küldetés sikerült — a Suttogók feljegyezték az érdemed (liga-pont a frakciódnak).</dark_gray>"));

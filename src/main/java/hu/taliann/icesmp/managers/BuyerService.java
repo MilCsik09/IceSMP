@@ -2,11 +2,8 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.utils.MessageManager;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Locale;
 import java.util.Map;
@@ -29,10 +26,8 @@ public final class BuyerService {
     private final CurrencyManager currencyManager;
     private final hu.taliann.icesmp.managers.FactionManager factionManager;
     private final MessageManager messageManager;
-    private final NamespacedKey soldDayKey;
-    private final NamespacedKey soldValueKey;
 
-    public BuyerService(final JavaPlugin plugin, final ConfigManager configManager,
+    public BuyerService(final ConfigManager configManager,
                         final CurrencyManager currencyManager,
                         final hu.taliann.icesmp.managers.FactionManager factionManager,
                         final MessageManager messageManager) {
@@ -40,8 +35,6 @@ public final class BuyerService {
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.messageManager = messageManager;
-        this.soldDayKey = new NamespacedKey(plugin, "buyer_sold_day");
-        this.soldValueKey = new NamespacedKey(plugin, "buyer_sold_value");
     }
 
     /** A Felvásárló-NPC neve (a FancyNpcs interact-hook erre szűr, kisbetűsen). */
@@ -80,11 +73,7 @@ public final class BuyerService {
         }
 
         // Napi keret (PDC): a nap fordulásakor nullázódik; ami belefér, azt veszi meg.
-        final long today = System.currentTimeMillis() / 86_400_000L;
-        final long storedDay = player.getPersistentDataContainer()
-                .getOrDefault(soldDayKey, PersistentDataType.LONG, -1L);
-        double soldToday = storedDay == today ? player.getPersistentDataContainer()
-                .getOrDefault(soldValueKey, PersistentDataType.DOUBLE, 0.0D) : 0.0D;
+        final double soldToday = hu.taliann.icesmp.utils.DailyBudget.spentTodayOnOwnThread(player, "buyer");
         final double dailyCap = Math.max(0.0D, configManager.getDouble("buyer.daily-cap", 250.0D));
         final double remaining = dailyCap - soldToday;
         if (remaining < unitPrice) {
@@ -101,12 +90,16 @@ public final class BuyerService {
                     "<gray>🪙 „Ennyiért egy veretet sem adhatok — hozz belőle többet egyszerre!”</gray>"));
             return;
         }
+        // A keret könyvelése a kifizetés ELŐTT: ha a plafon időközben betelt, nem fizetünk.
+        if (!hu.taliann.icesmp.utils.DailyBudget.tryConsumeOnOwnThread(player, "buyer", dailyCap, value)) {
+            player.sendMessage(messageManager.getMessage("buyer-cap-reached",
+                    "<gray>🪙 „Mára kimerült a kasszám feléd — gyere vissza holnap!”</gray>"));
+            return;
+        }
         hand.setAmount(hand.getAmount() - sellable);
         final CurrencyType currency = CurrencyType.fromFactionType(
                 factionManager.getFaction(player.getUniqueId()));
         currencyManager.payOutTokens(player, currency, value);
-        player.getPersistentDataContainer().set(soldDayKey, PersistentDataType.LONG, today);
-        player.getPersistentDataContainer().set(soldValueKey, PersistentDataType.DOUBLE, soldToday + value);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_TRADE, 0.8F, 1.1F);
         player.sendMessage(messageManager.getMessage("buyer-sold",
                 "<gold>🪙 Eladva: <white>{amount}× {item}</white> — <white>{value}× veret</white> a kezedbe. <gray>(Mai keretedből maradt: {left})</gray></gold>",

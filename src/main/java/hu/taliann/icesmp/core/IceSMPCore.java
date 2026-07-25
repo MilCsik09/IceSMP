@@ -525,7 +525,7 @@ public final class IceSMPCore {
         // Énekmondó: a heti balladát a FancyNpcs interact-hook (registerNpcQuestBridge) köti a bárd-NPC-re.
         this.bardManager = new hu.taliann.icesmp.managers.BardManager(configManager, statsManager, messageManager);
         // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
-        this.buyerService = new hu.taliann.icesmp.managers.BuyerService(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.buyerService = new hu.taliann.icesmp.managers.BuyerService(configManager, currencyManager, factionManager, messageManager);
         // Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
         this.seasonMonumentManager = new hu.taliann.icesmp.managers.SeasonMonumentManager(plugin, configManager, statsManager);
         seasonManager.setMonumentManager(seasonMonumentManager);
