@@ -355,8 +355,9 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
 
 ## O — refaktor / technikai adósság
 
-- **O1** 🟡 RÉSZBEN KÉSZ — StatsManager láthatósági race: a számlálók (`kills`/`deaths`/`mobKills`/
-  `spellCasts`/`questsCompleted`) már `AtomicInteger`-ek; NYITVA a `level` és a `raidKills` (sima `int`).
+- **O1** ✅ KÉSZ — StatsManager: minden `Stat`-mező szál-biztos. A `raidKills` sima `int++` volt több
+  régió-szálról hívva, ami **konkurens raid-ölésnél ölést veszíthetett** (nem csak láthatósági késés) →
+  `AtomicInteger`; a csak-felülírt `name`/`level`/`wealth` `volatile`.
 - **O2** ✅ KÉSZ — végigmérve mind a 12 rezervációt használó manageren (gépi ellenőrzés: melyik metódus
   ÍRJA a grace-t, és `synchronized`-e). 10 helyes volt (a check-then-act a `synchronized` spawn/force
   metóduson BELÜL fut), **2 kilógott, mindkettő javítva** a `PeriodicChanceEvent` CAS-rezervációjával:
@@ -380,23 +381,31 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   NYITVA: a horgony-választás (`lastAnchorId`-rotáció) csak 2 managerben azonos
   (WorldBoss/Escort), a perc→millis „duplikáció" pedig 25 helyen egyetlen `* 60_000L`
   művelet — annak helper NEM javítana az olvashatóságon, ezért nem csináljuk.
-- **O7** 🟢 `QuestManager.handleTerritoryEnter` O(összes quest) — auto-start index-építés a lineáris keresés helyett.
-- **O8** 🟢 `RelicItemFactory` reflexiós metódus-scan cache — Method-referenciák lazy-init cache-elése.
+- **O7** ❌ ELVETVE (mérés) — csak territórium-VÁLTÁSKOR fut (nem mozgásonként), 160 quest
+  string-összehasonlítása. Mérhetetlen; az index-építés csak kódot adna.
+- **O8** ❌ ELVETVE (mérés) — a scan csak relikvia-item ÉPÍTÉSEKOR fut (admin-adás / rituálé), nem
+  hot path. Mérhetetlen.
 - **O10** 🟢 `FactionPassiveListener` korai kilépés sorrendje — damage-cause szűrés a faction-lookup elé.
-- **O11** 🟢 GUI close-cleanup hiánya 3 listenerben — ProfessionRecipeBook/QuestBuilder/Spellbook listener.
+- **O11** ❌ ELVETVE (mérés: a javítás REGRESSZIÓT okozna) — a 3 listenerből 2-ben nincs per-játékos
+  állapot, a `QuestBuilderListener` `prompts` mapja pedig quiten, kicken ÉS felhasználáskor törlődik
+  (nincs szivárgás). A prompt szándékosan CHAT-alapú, tehát túl kell élnie a GUI bezárását
+  („csukd be, írd be chatbe") — close-cleanup megtörné a folyamatot.
 - **O12** 🟢 `CommandMenus` körözési lista cross-region PDC-olvasás — SinManager memóriabeli snapshot-map kellene.
 - **O13** 🟢 Bank/exchange gate-ellenőrzés sorrendje — arg-validálás kerüljön a főváros-kapu elé.
 - **O14** 🟢 `RaidManager.participants` kilépéskori helyfoglalás — szándékos, de türelmi idős auto-kick fontolható.
 - **O15** 🟢 Escort-útpontok `getHighestBlockYAt` pontatlanság — lombkorona/víz felszín fölé kerülhet az útpont.
 - **O16** 🟢 Aukció — licit elérheti a buy-outot, GUI-tipp/üzenet-pontosítás hiányos.
-- **O17** 🟡 `CharacterGUIListener` — GUI-ba duplikált respec-logika, közös helperbe/RUN:-delegálásba kellene.
+- **O17** ✅ KÉSZ — `managers/RespecService`: a respec (feltétel → ár → atomi levonás → spec törlése →
+  talent-visszatérítés) EGY helyen fut, a parancs és a GUI csak megjelenít (saját szöveg/hang marad).
+  Pénzt mozgató út volt duplán megírva, és sértette a „gameplay-logika a parancsban" konvenciót.
 - **O18** 🟡 DisplayFx — nincs `max-per-player` entitás-plafon a claim-fal-scannél.
 - **O19** 🟢 `DisplayFxUtil.showOnlyTo` — `hideEntity` kereszt-száli hívása, szigorú Folia-szabály szerint hop kellene.
 - **O20** 🟢 Per-nézős fx-entitások skálázódása — aurora/claim-fal entitásszám a létszámmal nő, mérés indokolt.
 - **O21** 🟡 `AbilityCatalystListener` felelősség-szétbontás — **852** sor (2026-07-25: 774-ről nőtt),
   9 map egy osztályban, bontás javasolt.
 - **O22** 🟢 `MobLootListener.rollTable` duplikált gear-fallback — privát metódusba emelhető.
-- **O23** 🟢 `CrateManager.persist()` szinkron teljes-YAML írás — debounce-javítás a #9-cel együtt.
+- **O23** ❌ ELVETVE (mérés) — a `persist()` csak admin crate-lerakásnál/törlésnél és `save()`-nél fut,
+  és néhány sor blokk-koordinátát ír. Nem játékmenet-gyakoriságú, nincs mit debounce-olni.
 - **O24** ✅ KÉSZ — `utils/MobKillUtil` közös kill-jutalom előszűrő 3 tierrel (FAUCET/PROGRESSION/
   TRACKING); 12 listener átvezetve, a szűrők `kill-rewards.*` alatt globálisan kapcsolhatók
   (ConfigMenuGUI: „Kill-jutalom szűrők"). Lezárt konzisztencia-hibák: az AFK-fék eddig csak 3
@@ -430,7 +439,10 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   (synchronized spawn-on belüli recheck), a megspórolható kód ~6 sor/manager, viszont a változás
   ÉLŐ esemény-ütemezésbe nyúlna 10 helyen, teszt-suite nélkül. Ha egyszer mégis, akkor
   playtesttel egy körben, managerenként külön committal — nem vakon, kötegben.
-- **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
+- **O28** ✅ KÉSZ — a 21 elérés a `quests.yml` `achievements.definitions.*` alá került (küszöb, jutalom,
+  szöveg), reload-hookkal újraolvasva: **új elérés kód-módosítás nélkül**. A vagyon-elérés
+  „kölcsön-tőke" kijátszhatósága méréssel elhanyagolható: az elérés EGYSZER teljesíthető, tehát
+  legrosszabb esetben egy küszöb üthető be átmenetileg felfújt egyenleggel — nem ismételhető.
 O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
 (DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil),
 **O4** (TabCompleteUtil), **O25** (DailyBudget), **O26** (mérés alapján elvetve, 1 valódi duplikátum
