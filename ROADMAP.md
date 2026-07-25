@@ -3,9 +3,10 @@
 Ez az **egyetlen előre néző terv-dokumentum**. A megvalósult állapotot a
 [README.md](README.md) és a [PLAYER_GUIDE.md](PLAYER_GUIDE.md) írja le, az architektúrát a
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a tesztelést a [PLAYTEST.md](PLAYTEST.md).
-A kötetlen ötlet-gyűjtő a [docs/ideas/BACKLOG.md](docs/ideas/BACKLOG.md) (konszolidált,
-319 nyitott tétel munka/érték becsléssel, a technikai adósság az O-szekcióban) — ami
-onnan zöld utat kap, ide kerül tervezett tételként.
+A kötetlen ötlet-gyűjtő a [docs/ideas/BACKLOG.md](docs/ideas/BACKLOG.md) (konszolidált; a
+2026-07-22-i A-O konszolidáció 319 tétele óta a P1-P8 blokkokkal ~396 felsorolás-tételre nőtt,
+ebből 15 ✅ / 2 🔄 — munka/érték becsléssel, a technikai adósság az **O-szekcióban**, 25 nyitott
+tétellel) — ami onnan zöld utat kap, ide kerül tervezett tételként.
 (A korábbi terv-doksik — ideas.md, todo.md, CONTENT-PLAN, DEPTH-ROADMAP, a fázis-napló —
 megvalósultak és törölve lettek; a még nyitott pontjaik itt élnek tovább.)
 
@@ -23,9 +24,14 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
   - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
     enabled-enum sorsolás, mulandó entity biztonságos eltávolítása) 5-8 helyen duplikáltak — egy
-    közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes.
-  - `ClaimManager.save()` minden mutációnál a teljes claims.yml-t írja (sok ezer claimnél
-    parancs-késleltetés) — dirty-flag + késleltetett mentés a megoldás.
+    közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes (BACKLOG O6/O27).
+    Ugyanez a duplikáció-osztály: `prefixAt` 20 fájlban (O4), kill-jutalom előszűrő 19 listenerben
+    (O24), napi keret 5+ helyen (O25), hibakulcs→default switch 11+ osztályban (O26). A `utils/`
+    csomag már létezik (12 osztály, pl. `SpellTargetingUtil` — O5 így zárult le), tehát ez tisztán
+    mechanikus munka, nem architektúra-döntés.
+  - ✅ MEGOLDVA — `ClaimManager` már debounce-ol: a 8 mutációs pont mind a `requestSave()`-et hívja
+    (2 mp-es async coalescing flush a CurrencyManager mintájára), a szinkron teljes-fájl írás
+    csak leállításkor fut. Ugyanez a minta MÉG HIÁNYZIK a `CrateManager.persist()`-ből (O23).
   - Az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
     lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem). (A LootTable `MIN:MAX`
     elgépelései már betöltéskor log-figyelmeztetést adnak a ConfigValidatoron át — megoldva.)

@@ -14,7 +14,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~62 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~86 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -339,7 +339,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** ~298 Java-fájl, ~45 000 sor.
+- **Méret:** ~460 Java-fájl, ~77 000 sor; 86 `*Manager` osztály (a `managers/` csomag 106 fájl).
+  Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
+  items 11, relics 9, integration 7.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
   inline parancsok migrálásához a dispatch-bázis additív bővítése (default-subcommand + láthatósági
   predikátum); az `IceSMPCore` manager-építés factory-szétbontása (a `final` mezők miatt); a mentések
