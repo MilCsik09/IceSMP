@@ -206,6 +206,10 @@ public final class ItemRarityService {
         // A vanília attribútum-blokkot elrejtjük (a stat a fenti affix-lore-ban látszik) — a
         // data-komponens a setItemMeta UTÁN, különben törlődne.
         hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(rolled);
+        // A vanília RARITY a rollott fokot tükrözze, ne a Material alapértelmezését — így a
+        // vanília felületek a saját létránkkal konzisztensen kezelik a tárgyat.
+        hu.taliann.icesmp.items.ItemDataFactory.applyRarity(rolled,
+                hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rarity.id()));
         return rolled;
     }
 

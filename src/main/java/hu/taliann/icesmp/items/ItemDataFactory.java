@@ -95,6 +95,48 @@ public final class ItemDataFactory {
     }
 
     /**
+     * RARITY — a vanília ritkaság-komponens. A pluginnak saját, 7 fokú raritás-létrája van
+     * (Ócska…Ereklye), a vanília komponens viszont csak 4 fokot ismer; a leképezés az alábbi.
+     * Azért érdemes kitenni, hogy a vanília felületek (tooltip-kezelés, jövőbeli TOOLTIP_STYLE)
+     * a SAJÁT létránkkal konzisztensen viselkedjenek, ne a Material alapértelmezésével.
+     */
+    public static void applyRarity(final ItemStack item, final org.bukkit.inventory.ItemRarity rarity) {
+        if (item == null || rarity == null) {
+            return;
+        }
+        item.setData(DataComponentTypes.RARITY, rarity);
+    }
+
+    /**
+     * A 7 fokú saját létra leképezése a vanília 4 fokra. Ismeretlen id → COMMON (fail-safe:
+     * a craft nem törhet el egy elgépelt raritás-id-től).
+     */
+    public static org.bukkit.inventory.ItemRarity vanillaRarityOf(final String ladderId) {
+        if (ladderId == null) {
+            return org.bukkit.inventory.ItemRarity.COMMON;
+        }
+        return switch (ladderId.toLowerCase(java.util.Locale.ROOT)) {
+            case "nem_mindennapi" -> org.bukkit.inventory.ItemRarity.UNCOMMON;
+            case "ritka" -> org.bukkit.inventory.ItemRarity.RARE;
+            case "epikus", "legendas", "ereklye" -> org.bukkit.inventory.ItemRarity.EPIC;
+            default -> org.bukkit.inventory.ItemRarity.COMMON;
+        };
+    }
+
+    /**
+     * USE_REMAINDER — elfogyasztás/használat után a helyén MARADÓ tárgy (pl. ivás után üres kupa).
+     * Csak fogyasztható/használható itemen van értelme; a maradék a kézbe kerül vissza (ha nem fér,
+     * a vanília a földre dobja).
+     */
+    public static void applyUseRemainder(final ItemStack item, final ItemStack remainder) {
+        if (item == null || remainder == null || remainder.getType().isAir()) {
+            return;
+        }
+        item.setData(DataComponentTypes.USE_REMAINDER,
+                io.papermc.paper.datacomponent.item.UseRemainder.useRemainder(remainder));
+    }
+
+    /**
      * TOOLTIP_DISPLAY — a vanília ATTRIBUTE_MODIFIERS tooltip-blokk elrejtése („When in Main Hand:
      * +X …"). Az affix-gear a stat-ot amúgy is SAJÁT lore-sorban mutatja (a számmal), így a vanília
      * blokk redundáns spam; elrejtése infó-veszteség nélkül tisztít.

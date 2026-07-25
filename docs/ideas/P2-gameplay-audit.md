@@ -361,8 +361,16 @@ Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleg
    (pl. ostromfegyver: lassú, nagy sebzés).
 2. **Név-drift a loot és a kódex között:** a kódex „**Megrontott** Fekete Csont"-ot ír, a
    `loot.yml` „Fekete Csont"-ot ad. Egy szó, de a kánon-egyezés elve sérül.
-3. **Két lajstrom-tétel csak a lore-ban él:** „A Vasművek Akadémiájának Csákánya" (ma csak
-   recept-lore-sorokban) és „Asterlayna Gyümölcse" (a tiltott sütemény). → BACKLOG N2/N3.
+3. **Lajstrom-tételek implementációs állapota — pontosítva (2026-07-25):**
+   - „Pyralingradi Ostrom-számszeríj" — VALÓBAN hiányzott, ✅ ebben a körben implementálva
+     (nehéz ostromgép: Piercing V + 2,5 mp saját cooldown-csoport + súly-lassítás), és a kódex
+     két számszeríj-tétele megkülönböztetve (könnyű őr-fegyver vs. nehéz ostromgép).
+   - „Asterlayna Gyümölcse" — **MÁR IMPLEMENTÁLT**, csak más néven: *Tiltott Kakaóbabos Sütemény*
+     (`kakaobabos_sutemeny`), a lore-ja kimondja: „Caldestera cukrászai Asterlayna Gyümölcsének
+     hívják". A lelet a MÁSODIK olyan eset ebben a körben, ahol a kódex-névre keresés hamis
+     hiányt jelzett — **a mechanikára/játékbeli névre is rá kell keresni** (lásd 6. pont).
+   - „A Vasművek Akadémiájának Csákánya" — VALÓBAN hiányzik: a „Vasművek Akadémiája" hat helyen
+     szerepel, de mind raritás-flavor sor, nevesített csákány-item nincs. → BACKLOG N3.
 
 ### 🟡 Kánon a kódban, de a játékos felé nem jut el
 4. **A négy valuta kánon-neve** (Parázsló Parals, Hópihér-veret, Creutzér, Csontveret) él a
@@ -372,10 +380,14 @@ Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleg
    ez volt az EGYETLEN doksi, ami nem a kánont használta. ✅ javítva ebben a körben.
 
 ### 🔴 A kódex kimondja, a kód nem tudja (a legnagyobb lore-rés)
-6. **Caldestera fegyvermentessége.** A kódex szerint a 547-es Armageddon-ultimátum óta a Menedék
-   „szigorúan semleges és **fegyvermentes** föld", és a Vérhold-virrasztáson is „fegyver nélkül"
-   ülnek egy asztalhoz. A kódban ennek **nulla nyoma van**: a védett zóna csak a PvP-sebzést
-   tiltja. → BACKLOG **N1** (a review legerősebb ötlete: kánon-kötött, kicsi munka).
+6. ~~Caldestera fegyvermentessége~~ — **A LELET HIBÁS VOLT, visszavonva (2026-07-25).** A szabály
+   TELJESEN IMPLEMENTÁLT: `CapitalLawListener` (K10 — Caldestera városi törvényei),
+   `territory.capital-law.weapon-ban`: a nyílt fegyvert az őrség kiveszi a kézből (az inventoryba
+   kerül, nem vész el), a *Bokic-menti Sétapálca* a szándékos kiskapu, és `wanted-ban` mellett a
+   körözöttet a kapunál visszafordítja (*Hamisított Menlevél* a kivétel). A hibát az okozta, hogy
+   a keresés a lore szóhasználatára („fegyvermentes"/weapon-free) futott, nem a kód nevére
+   (capital-law) — **tanulság: a lore-rés keresésénél a MECHANIKÁRA is rá kell keresni, nem csak
+   a kódex szavaira.**
 7. **A Néma Királynő koronára szóló átka.** A kódex központi motívuma („a világ minden koronás
    főjét sírba vitte" + a négy Elveszett Uralkodó), a király-rendszer viszont teljesen
    lore-mentes. → BACKLOG **N4** (egyben beépített anti-örökös-király fék).

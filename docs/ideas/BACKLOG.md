@@ -172,19 +172,9 @@ PeriodicChanceEvent, RespecService). Ami tudatosan maradt:
 ## 4. Új ötletek (2026-07-25 review — a kódexből és a rendszer-leltárból)
 
 ### Lore-vezérelt (a kódex kimondja, a kód nem tudja)
-- **N1** `[TOP]` **Caldestera fegyvermentes menedék** — a kódex szerint a 547-es
-  Armageddon-ultimátum óta Caldestera „szigorúan semleges és **fegyvermentes** föld", és a
-  Vérhold-virrasztáson is „fegyver nélkül" ülnek egy asztalhoz. A kódban ennek **nyoma sincs**:
-  a védett zóna csak a PvP-sebzést tiltja, fegyverrel bárki flangálhat a Menedékben. Javaslat:
-  a semleges fővárosban a fegyver kézbe vétele figyelmeztetést, majd rövid „hüvelybe tett"
-  állapotot (`USE_COOLDOWN`-csoport) ad — nem büntetés, hanem *érezhető szabály*. Kánon-kötött,
-  kicsi munka, azonnal érezhető hangulat. 🟢⭐⭐⭐
-- **N2** **Asterlayna Gyümölcse** — a lajstromban szerepel („Aetrinita átka; fogyasztása tilos —
-  hacsak nem akarsz darabokban távozni a Városból"), a játékban nincs. A leírás maga a mechanika:
-  tiltott kakaóbabos sütemény, ami **Caldesterában elfogyasztva** kivet a Városból (teleport +
-  rövid debuff), máshol viszont értékes buffot ad. Az egyetlen olyan item, ami egy HELYEN tilos. 🟢⭐⭐
-- **N3** **A Vasművek Akadémiájának Csákánya** — a lajstrom NEUTRAL legendás csákánya, ma csak
-  recept-lore-sorokban létezik. Kézenfekvő cél: a Bányász 50. szintű mestermunka-questjének
+- **N3** **A Vasművek Akadémiájának Csákánya** — a lajstrom NEUTRAL legendás csákánya. Ellenőrizve:
+  a „Vasművek Akadémiája" hat helyen szerepel, de MIND raritás-**flavor sor** az `item-rarity.yml`-ben
+  — nevesített csákány-item nincs. Kézenfekvő cél: a Bányász 50. szintű mestermunka-questjének
   (J15) jutalma. 🟢⭐⭐
 - **N4** `[TOP]` **A Néma Királynő átka a koronán** — a kódex szerint Eleftheria átka „a világ
   minden koronás főjét sírba vitte", és négy Elveszett Uralkodó nevét a legendás tárgyak őrzik.

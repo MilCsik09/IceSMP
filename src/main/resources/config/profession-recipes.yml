@@ -1298,6 +1298,36 @@ profession-recipes:
     category: "Lángoló Birodalom (tervrajz)"
     result: { material: CROSSBOW, amount: 1, affix-tier: crafted, signature: pyralingradi_tuzkopo, item-model: "icesmp:pyralingradi_tuzkopo" }
     ingredients: [ "CROSSBOW:1", "BLAZE_ROD:4", "NETHERITE_INGOT:1", "unique:vad_esszencia:3" ]
+  pyralingradi_ostrom_szamszerij:
+    profession: armorer
+    level: 48
+    learn: blueprint
+    faction: RED
+    display-name: "Pyralingradi Ostrom-számszeríj"
+    lore:
+      - "&7Nem a papok áldása van rajta, hanem a"
+      - "&7Vérszavanna kohóinak súlya: két ember"
+      - "&7kellett, hogy felhúzzák."
+      - "&8Lassú, mint a homokvihar közeledése —"
+      - "&8de amit eltalál, azon átmegy."
+    category: "Lángoló Birodalom (tervrajz)"
+    # A tűzköpő PÁRJA, nem másolata: az a gyors őr-fegyver, ez a lassú ostromgép.
+    # A megkülönböztetés mechanikai is: Piercing V (egy vasszálka egy egész sorral végez),
+    # 2,5 mp saját cooldown-csoport (két ember húzza fel), és a súly mozgás-lassítás.
+    result:
+      material: CROSSBOW
+      amount: 1
+      affix-tier: crafted
+      signature: pyralingradi_ostrom_szamszerij
+      item-model: "icesmp:pyralingradi_ostrom_szamszerij"
+      rarity: legendas
+      enchant: "minecraft:piercing:5"
+      attributes:
+        - "movement_speed:-0.02:mainhand"
+      use-cooldown:
+        group: "ostrom_szamszerij"
+        seconds: 2.5
+    ingredients: [ "CROSSBOW:1", "NETHERITE_INGOT:2", "COPPER_BLOCK:4", "unique:melysegi_borostyan:2" ]
   verszavanna_agyara:
     profession: armorer
     level: 50

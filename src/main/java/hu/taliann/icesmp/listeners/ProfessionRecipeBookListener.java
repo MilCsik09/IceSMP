@@ -57,6 +57,7 @@ public final class ProfessionRecipeBookListener implements Listener {
     private final ProfessionRecipeCatalog catalog;
     private final ItemRarityService affixService;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
+    private final JavaPlugin plugin;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
@@ -72,6 +73,7 @@ public final class ProfessionRecipeBookListener implements Listener {
                                         final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
                                         final MessageManager messageManager, final FactionManager factionManager,
                                         final hu.taliann.icesmp.managers.ConfigManager configManager) {
+        this.plugin = plugin;
         this.professionManager = professionManager;
         this.catalog = catalog;
         this.affixService = affixService;
@@ -403,6 +405,36 @@ public final class ProfessionRecipeBookListener implements Listener {
                 "profession-recipes." + recipe.id() + ".result.item-model", "");
         if (!itemModel.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(result, itemModel);
+        }
+        // result.rarity: a saját létra egy foka (ocska…ereklye) — tervezett itemnek, amely nem
+        // esik át affix-rollon. Az affix-rollos gear a rollott fokot kapja az ItemRarityService-től.
+        final String rarityId = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.rarity", "");
+        if (!rarityId.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyRarity(result,
+                    hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rarityId));
+        }
+        // result.use-remainder: <MATERIAL> — használat után a helyén maradó tárgy (üres kupa stb.).
+        final String remainderName = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.use-remainder", "");
+        if (!remainderName.isBlank()) {
+            final org.bukkit.Material remainderMaterial = org.bukkit.Material.matchMaterial(remainderName);
+            if (remainderMaterial == null) {
+                plugin.getLogger().warning("profession-recipes." + recipe.id()
+                        + ".result.use-remainder: ismeretlen Material \"" + remainderName + "\" - kihagyva.");
+            } else {
+                hu.taliann.icesmp.items.ItemDataFactory.applyUseRemainder(result,
+                        new org.bukkit.inventory.ItemStack(remainderMaterial));
+            }
+        }
+        // result.use-cooldown: { group, seconds } — saját cooldown-csoport (lassú, „nehéz" fegyver
+        // vagy fogyóeszköz); a csoport miatt NEM sötétíti a vele azonos Materialú vanília itemeket.
+        final org.bukkit.configuration.ConfigurationSection cooldownSection = configManager.getConfiguration()
+                .getConfigurationSection("profession-recipes." + recipe.id() + ".result.use-cooldown");
+        if (cooldownSection != null) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyUseCooldownGroup(result,
+                    cooldownSection.getString("group", recipe.id()),
+                    (float) cooldownSection.getDouble("seconds", 1.0D));
         }
         return result;
     }

@@ -451,14 +451,19 @@ tudja, hány hever még belőlük a romok mélyén, s hány születik újjá a F
 - **Sárkány-pörkölt** — „A fagyhalál elleni egyetlen menedék."
 
 **A Lángoló Birodalom kincsei:**
-- **Pyralingradi Tűzköpő** (számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi vihar
-  sebességével csapnak le."
+- **Pyralingradi Tűzköpő** (könnyű számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi
+  vihar sebességével csapnak le." A tűzköpő a városfalak ŐREINEK fegyvere: egy szívdobbanás alatt
+  újratölthető, közelre való, gyors halál.
 - **A Vérszavanna Agyara** (kard) — „Kovácsolásakor a lángok fekete füstöt okádtak; baltával
   kiegészítve emberfeletti erőt ád."
 - **I. Zhoris Lángnyelve** (kard) — „Ezt a pengét a Hetedik Vérháború napján kovácsolták a
   Vérszavanna legmélyén."
 - **Napfogyatkozás** (kard) — sötét lángpenge, a Lángoló Birodalom legendás fegyvere.
-- **Pyralingradi Ostrom-számszeríj** — Soleil papjai áldották meg a Vérszavanna szívében.
+- **Pyralingradi Ostrom-számszeríj** (nehéz ostromgép) — „Nem a papok áldása van rajta, hanem a
+  Vérszavanna kohóinak súlya: két ember kellett, hogy felhúzzák, s a vasszálka egy egész sorral
+  végzett." A Hetedik Vérháború ostromainak fegyvere — lassú, mint a homokvihar közeledése, de amit
+  eltalál, azon átmegy. A tűzköpővel ellentétben senki nem hordja párbajra: ez a FALAK és a
+  csatarendek ellen készült.
 - **Főnix-Tollköpeny** — „I. Zhoris lángmadarainak tollaiból szőve; óv a hőségtől és a láva haragjától."
 - **Fűszeres Főnixtojás-Rántotta** — „Hamuban sült étel; tüze távol tartja a fagyos vidék bénító
   gyengeségét."
