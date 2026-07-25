@@ -113,11 +113,19 @@ public final class ItemDataFactory {
      * a rátett bónusz maradna. Idempotens: ha már van explicit lista, nem nyúl hozzá.
      */
     public static void seedDefaultAttributeModifiers(final ItemStack item, final ItemMeta meta) {
-        if (item == null || meta == null || meta.hasAttributeModifiers()) {
+        if (item == null) {
+            return;
+        }
+        seedDefaultAttributeModifiers(item.getType(), meta);
+    }
+
+    /** Ugyanaz Material-ból, ha a hívónak nincs kéznél ItemStack-je (pl. csak metát épít). */
+    public static void seedDefaultAttributeModifiers(final Material material, final ItemMeta meta) {
+        if (material == null || meta == null || meta.hasAttributeModifiers()) {
             return;
         }
         final com.google.common.collect.Multimap<Attribute, AttributeModifier> defaults =
-                item.getType().getDefaultAttributeModifiers();
+                material.getDefaultAttributeModifiers();
         if (defaults != null && !defaults.isEmpty()) {
             meta.setAttributeModifiers(com.google.common.collect.HashMultimap.create(defaults));
         }
