@@ -136,6 +136,15 @@ profession-materials:
       - "&7Villámsújtotta sziklából fejtett kvarc —"
       - "&7a belsejében még ott remeg a vihar."
       - "&8Bányász köztes alapanyag"
+  ures_kupa:
+    material: GLASS_BOTTLE
+    display-name: "&7Üres Kupa"
+    item-model: "icesmp:ures_kupa"
+    lore:
+      - "&7Kiürült kocsma-kupa. A csapos örül,"
+      - "&7ha visszakapja — új italt tölt bele."
+      - "&8Kocsma-hurok: minden ital ebbe készül,"
+      - "&8és megivás után ez marad a kezedben."
   melysegi_borostyan:
     material: RAW_GOLD
     display-name: "&6Mélységi Borostyán"

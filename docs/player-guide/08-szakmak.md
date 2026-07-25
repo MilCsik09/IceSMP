@@ -126,6 +126,11 @@ feltétel). Néhány mestermű (alapból **15. szinttől**):
 *Aranyfényű Mézsör* (szerencse), *Szentelt Bor* (gyógyulás), *Pásztor Ürücombja*, *Bányász Szalonnája*
 (sietség), *Harcos Húsos Tála* (erő), *Tüzes Chilis Tál* (tűzállóság). A hatás-idők a szerveren hangolhatók.
 
+> 🍺 **Kupa-hurok:** minden kocsma-ital **Üres Kupába** készül (Szakács 5. szint, üvegből), és
+> amikor megiszod, **a kupa a kezedben marad** — nem vész el. Ugyanazt a kupát újra és újra
+> megtöltheted, tehát a kocsma nem nyersanyag-nyelő: egyszer kell kupát csinálnod, utána a
+> hozzávaló csak az, amit az ital maga kér.
+
 ### 🔒 Craft-korlátok (vanilla tárgyak)
 
 Néhány **erős vanilla tárgy** is szakmához kötött — ez teszi értékessé a szakmákat és a köztük

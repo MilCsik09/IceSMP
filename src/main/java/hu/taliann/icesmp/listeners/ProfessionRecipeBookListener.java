@@ -26,6 +26,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -418,13 +419,21 @@ public final class ProfessionRecipeBookListener implements Listener {
         final String remainderName = configManager.getString(
                 "profession-recipes." + recipe.id() + ".result.use-remainder", "");
         if (!remainderName.isBlank()) {
-            final org.bukkit.Material remainderMaterial = org.bukkit.Material.matchMaterial(remainderName);
-            if (remainderMaterial == null) {
-                plugin.getLogger().warning("profession-recipes." + recipe.id()
-                        + ".result.use-remainder: ismeretlen Material \"" + remainderName + "\" - kihagyva.");
+            // Kétféle megadás: "unique:<id>" (bélyegzett saját tárgy, pl. üres kupa) vagy nyers Material.
+            org.bukkit.inventory.ItemStack remainder = null;
+            if (remainderName.toLowerCase(Locale.ROOT).startsWith("unique:")) {
+                remainder = uniqueMaterials.create(remainderName.substring("unique:".length()), 1);
             } else {
-                hu.taliann.icesmp.items.ItemDataFactory.applyUseRemainder(result,
-                        new org.bukkit.inventory.ItemStack(remainderMaterial));
+                final org.bukkit.Material remainderMaterial = org.bukkit.Material.matchMaterial(remainderName);
+                if (remainderMaterial != null) {
+                    remainder = new org.bukkit.inventory.ItemStack(remainderMaterial);
+                }
+            }
+            if (remainder == null) {
+                plugin.getLogger().warning("profession-recipes." + recipe.id()
+                        + ".result.use-remainder: feloldhatatlan \"" + remainderName + "\" - kihagyva.");
+            } else {
+                hu.taliann.icesmp.items.ItemDataFactory.applyUseRemainder(result, remainder);
             }
         }
         // result.use-cooldown: { group, seconds } — saját cooldown-csoport (lassú, „nehéz" fegyver

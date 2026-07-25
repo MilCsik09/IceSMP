@@ -860,6 +860,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       után a megfelelő rövid buff (pl. Sör→Regeneráció+Felszívódás, Pálinka→Tűzállóság+Erő,
       Pogácsa→táplálék+Sietség, Fogás→Vízlégzés). **ITEM_MODEL**: pack nélkül alap-item
       textúrát mutat, a `icesmp:<id>` modellt a külső pack adja. A buff-idők a receptből (config).
+- [ ] **Kupa-hurok (USE_REMAINDER, ÚJ):** craftolj **Üres Kupát** (Szakács 5, `GLASS:2` → 4 db),
+      abból bármelyik kocsma-italt (mind a 12 kér 1 kupát) → **megivás után az Üres Kupa a
+      kezedben marad** (nem sima üvegpalack, hanem a bélyegzett kupa!), és azonnal újra
+      felhasználható italhoz. Ellenőrizd, hogy tele hotbarnál sem vész el (a vanília a földre
+      dobja), és hogy a kupa a recept-könyvben hozzávalóként elfogy.
 - [ ] **P7 USE_COOLDOWN — katalizátor cooldown-bleed javítás (ÚJ):** tarts a hotbarban egy
       pálca-katalizátort ÉS a vele AZONOS Materialú vanília itemet (pl. Homály-szilánk=FLINT →
       sima kovakő; Sárkánykirály Kürtje=GOAT_HORN → sima kürt). Castolás után CSAK a katalizátor

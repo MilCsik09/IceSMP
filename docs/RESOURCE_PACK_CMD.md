@@ -315,6 +315,12 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** vasszürke; akcent: rozsdabarna folt
 - **Hangulat / lore:** Kovácsolt kapocs — gerendát fog össze, és tetőt tart, ha kell. Favágó kellék (csak boltból)
 
+### `ures_kupa` — Üres Kupa
+- **Fájl:** `ures_kupa.png` &nbsp;|&nbsp; **Alap-item:** `GLASS_BOTTLE`
+- **Ábrázolás:** zömök, füles ivókupa vastag zöldes üvegből, alján maradék-karc és halvány folt, felül csorba perem — üres, nem csillog
+- **Színvilág:** halvány zöldes üveg; akcent: karcolt szürke perem
+- **Hangulat / lore:** Kiürült kocsma-kupa; a csapos örül, ha visszakapja. Kocsma-hurok: minden ital ebbe készül, és megivás után ez marad a kézben (USE_REMAINDER). Szakács-recept (Ital kategória, 5. szint).
+
 ### `aranyfust_lemez` — Aranyfüst-lemez
 - **Fájl:** `aranyfust_lemez.png` &nbsp;|&nbsp; **Alap-item:** `GOLD_NUGGET`
 - **Ábrázolás:** kalapált, fényes fémlemez
