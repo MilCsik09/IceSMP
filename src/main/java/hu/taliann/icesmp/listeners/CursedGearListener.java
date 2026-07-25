@@ -97,6 +97,60 @@ public final class CursedGearListener implements Listener {
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.4F, 1.6F);
     }
 
+    /**
+     * Zárja a felvétel-megerősítés kiskapuját: az {@code InventoryClickEvent} CSAK a
+     * páncél-slot kattintását és a shift-felvételt látja, a legtermészetesebb módot — az
+     * armor JOBB-KATTAL felvételét — nem. Ezen az úton az átkozott páncél megerősítés nélkül
+     * került fel, és onnan már a levétel-zár tartotta bent.
+     *
+     * <p>Az {@code EntityEquipmentChangedEvent} MINDEN felszerelés-váltást lát, függetlenül
+     * attól, hogyan történt. Az event nem cancel-elhető, ezért a felkerült átkozott darabot
+     * visszavesszük (az inventoryba, tele hátizsáknál a földre) — a megerősítés-ablak
+     * szemantikája változatlan: az első kísérlet figyelmeztet, a második 5 mp-en belül vállal.
+     *
+     * <p>Folia: az event az entitás SAJÁT régió-szálán fut, tehát az inventory-írás itt biztonságos.
+     */
+    @EventHandler
+    public void onEquipmentChanged(final io.papermc.paper.event.entity.EntityEquipmentChangedEvent event) {
+        if (!(event.getEntity() instanceof Player player) || !cursedGearService.isEnabled()) {
+            return;
+        }
+        final long now = System.currentTimeMillis();
+        equipConfirmUntil.values().removeIf(until -> until < now);
+        final Long confirmedUntil = equipConfirmUntil.get(player.getUniqueId());
+        if (confirmedUntil != null && confirmedUntil > now) {
+            equipConfirmUntil.remove(player.getUniqueId());
+            return; // Megerősítve — a felvétel megtörténhet.
+        }
+        boolean reverted = false;
+        for (final Map.Entry<org.bukkit.inventory.EquipmentSlot,
+                io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange> change
+                : event.getEquipmentChanges().entrySet()) {
+            final org.bukkit.inventory.EquipmentSlot slot = change.getKey();
+            if (slot == org.bukkit.inventory.EquipmentSlot.HAND
+                    || slot == org.bukkit.inventory.EquipmentSlot.OFF_HAND) {
+                continue; // A kézben tartás nem „viselés" — az átok a páncél-slotokra szól.
+            }
+            final ItemStack equipped = change.getValue().newItem();
+            if (equipped == null || equipped.getType().isAir() || !cursedGearService.isCursed(equipped)) {
+                continue;
+            }
+            final ItemStack copy = equipped.clone();
+            player.getEquipment().setItem(slot, null);
+            for (final ItemStack overflow : player.getInventory().addItem(copy).values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+            }
+            reverted = true;
+        }
+        if (!reverted) {
+            return;
+        }
+        equipConfirmUntil.put(player.getUniqueId(), now + 5_000L);
+        player.sendActionBar(messageManager.getMessage("cursed-gear-confirm",
+                "<dark_red>☠ Ez a tárgy ÁTKOZOTT: felvéve nem veheted le szabadon! Vedd fel újra 5 mp-en belül, ha vállalod.</dark_red>"));
+        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.4F, 1.6F);
+    }
+
     private static boolean isArmorPiece(final ItemStack item) {
         final String name = item.getType().name();
         return name.endsWith("_HELMET") || name.endsWith("_CHESTPLATE")

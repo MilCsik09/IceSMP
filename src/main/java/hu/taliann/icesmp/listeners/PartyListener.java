@@ -80,6 +80,27 @@ public final class PartyListener implements Listener {
         }
     }
 
+    /**
+     * A csapattárs-ütés MEGELŐZÉSE, nem a sebzés visszavonása: a
+     * {@code PrePlayerAttackEntityEvent} a csapás előtt fut, így a lengés egyáltalán nem
+     * történik meg — nincs elhasznált swing, nincs knockback, nincs fegyver-kopás, és a
+     * játékos rögtön visszajelzést kap. A sebzés-szintű őr (onDamage) SZÁNDÉKOSAN marad
+     * mellette: a lövedékek és a spell-sebzés nem ezen az eventen jönnek.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onPreAttack(final io.papermc.paper.event.player.PrePlayerAttackEntityEvent event) {
+        if (!partyManager.isEnabled() || !(event.getAttacked() instanceof Player victim)) {
+            return;
+        }
+        final Player attacker = event.getPlayer();
+        if (!partyManager.isSameParty(attacker.getUniqueId(), victim.getUniqueId())) {
+            return;
+        }
+        event.setCancelled(true);
+        attacker.sendActionBar(net.kyori.adventure.text.Component.text("🛡 Csapattársat nem üthetsz.",
+                net.kyori.adventure.text.format.NamedTextColor.GRAY));
+    }
+
     /** The attacking player behind a damage source: direct hit or a shot projectile. */
     private Player resolveAttacker(final Entity damager) {
         if (damager instanceof Player player) {
