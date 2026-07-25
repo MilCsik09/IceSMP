@@ -339,12 +339,16 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
 - **Jarból szállított datapack (`DATAPACK_DISCOVERY`):** a bootstrap a jar `/datapack`
   könyvtárát rendes datapackként ismerteti meg a szerverrel (`autoEnableOnServerStart`), így
-  a 20 csomópontos IceSMP haladás-fa és a 3 fix toast-bejegyzés a KÓDDAL EGYÜTT verziózódik,
+  a 22 csomópontos IceSMP haladás-fa és a 3 fix toast-bejegyzés a KÓDDAL EGYÜTT verziózódik,
   futásidejű registry-mutáció nélkül. Az `AdvancementService` enable-időben csak ellenőriz;
   ha a felderítés elbukott, a régi (`@Deprecated Bukkit.getUnsafe()`) úton pótolja a hiányzó
-  bejegyzéseket, és WARNING-ot logol. Új csomópont = NODES-bejegyzés + datapack-JSON +
-  VALÓDI `AdvancementService.award(...)` hívás — a hármas egyezést a
-  `scripts/check_consistency.py` gépiesen ellenőrzi (hiányzó JSON, árva JSON, holt bejegyzés).
+  bejegyzéseket, és WARNING-ot logol. A fa-bejegyzések `show_toast:false` +
+  `announce_to_chat:false` (a visszajelzés a rendszerek saját chat-üzenete, az ünneplő toast a
+  külön `ToastUtil`-réteg) — a tartalék út JSON-generátora is ezt írja, hogy a két betöltési
+  út ugyanúgy viselkedjen. Új csomópont = NODES-bejegyzés + `python3 scripts/gen_advancements.py`
+  (a JSON-ok EGYETLEN forrása a Java NODES lista) + VALÓDI `AdvancementService.award(...)`
+  hívás — a `scripts/check_consistency.py` négyesével ellenőrzi: hiányzó JSON, árva JSON,
+  holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
 - **Méret:** ~460 Java-fájl, ~77 000 sor; 86 `*Manager` osztály (a `managers/` csomag 106 fájl).

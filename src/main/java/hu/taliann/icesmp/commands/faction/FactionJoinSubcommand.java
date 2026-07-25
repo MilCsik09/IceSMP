@@ -159,6 +159,9 @@ public final class FactionJoinSubcommand implements FactionSubcommand {
                 factionManager.recordSeasonSwitch(player); // ingyenes út is a szezon-plafonba számít
             }
             sinManager.sealDarkPact(player);
+            // Ugyanaz a bejegyzés, mint a kényszerű száműzetésnél: a „redeemed" ennek a
+            // gyereke, e nélkül az önként belépő vezeklése szülő nélküli csomópontra érkezne.
+            hu.taliann.icesmp.managers.AdvancementService.award(player, "exiled");
             sender.sendMessage(messageManager.get(
                     "messages.faction-dark-pact-sealed",
                     "&5A sötét paktum megköttetett. A bűnöd mostantól örökre veled marad."

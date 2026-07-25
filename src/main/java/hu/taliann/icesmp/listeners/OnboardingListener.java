@@ -96,7 +96,7 @@ public final class OnboardingListener implements Listener {
         final List<String> lines = raw.isEmpty() ? List.of(
                 "<gray>A <white>Fa árnyékában</white> írod a legendád. Első lépések:</gray>",
                 "<yellow>•</yellow> <white>/kaszt</white> — válassz hivatást (13 kaszt).",
-                "<yellow>•</yellow> <white>/faction</white> — csatlakozz a négy hatalom egyikéhez.",
+                "<yellow>•</yellow> <white>/faction</white> — a Menedékben kezdesz — állj a Láng vagy a Fagy zászlaja alá.",
                 "<yellow>•</yellow> <white>/menu</white> — minden rendszer egy helyen.",
                 "<gray>A haladásodat a <white>Haladás</white> képernyőn (L) is követheted.</gray>") : raw;
         final List<Component> body = lines.stream().map(mm::deserialize).toList();

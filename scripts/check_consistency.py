@@ -15,6 +15,7 @@ Kilépési kód: 0 = zöld (warningok lehetnek), 1 = legalább egy FAIL.
 import os
 import re
 import pathlib
+import subprocess
 import sys
 import glob
 
@@ -202,13 +203,13 @@ except Exception as e:
     warn(f"recept-szint ellenőrzés kihagyva: {e}")
 
 # ---------- eredmény ----------
-for w in warns:
-    print(f"⚠ WARN: {w}")
 # ===== Advancement-drift: Java-lista <-> jar-datapack <-> valódi grant-pont =====
-# Három dolognak kell egyeznie, különben néma funkció-veszteség lesz:
+# Négy dolognak kell egyeznie, különben néma funkció-veszteség lesz:
 #  1) minden AdvancementService NODES-id-hez legyen datapack-JSON (különben nem jelenik meg),
 #  2) minden datapack-JSON legyen a NODES-ban vagy toast (különben árva fájl a jarban),
-#  3) minden NODES-id-hez legyen VALÓDI award()-hívás (a "nincs holt bejegyzés" szabály).
+#  3) minden NODES-id-hez legyen VALÓDI award()-hívás (a "nincs holt bejegyzés" szabály),
+#  4) a JSON TARTALMA is egyezzen a NODES-sal (cím/leírás/ikon/szülő/rejtettség) — egy
+#     Java-oldali átírás e nélkül némán elavult JSON-t hagyna a jarban.
 try:
     _svc = (pathlib.Path(REPO) / "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java").read_text(encoding="utf-8")
     _node_ids = set(re.findall(r'new Node\("([a-z_]+)"', _svc))
@@ -238,9 +239,16 @@ try:
         fail(f"toast-advancement '{_missing}' a ToastUtil Kind enumjaban van, de nincs datapack-JSON-ja")
     for _orphan in sorted(_toasts - _kinds):
         warn(f"toast-advancement JSON '{_orphan}.json' nincs hasznalatban a ToastUtil Kind enumjaban")
+    # tartalom-drift: a generator sajat --check modja mondja meg, naprakesz-e minden JSON
+    _gen = subprocess.run([sys.executable, str(pathlib.Path(REPO) / "scripts/gen_advancements.py"), "--check"],
+                          capture_output=True, text=True)
+    if _gen.returncode != 0:
+        fail("advancement-JSON tartalom-drift — " + (_gen.stdout or _gen.stderr).strip().replace("\n", "; "))
 except Exception as e:
     warn(f"advancement-drift ellenorzes kihagyva: {e}")
 
+for w in warns:
+    print(f"⚠ WARN: {w}")
 for f_ in fails:
     print(f"✗ FAIL: {f_}")
 print(f"\nÖsszegzés: {len(fails)} FAIL, {len(warns)} WARN "

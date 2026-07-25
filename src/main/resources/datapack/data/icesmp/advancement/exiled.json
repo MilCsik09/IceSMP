@@ -1,5 +1,5 @@
 {
-  "parent": "icesmp:exiled",
+  "parent": "icesmp:faction_join",
   "criteria": {
     "granted": {
       "trigger": "minecraft:impossible"
@@ -12,13 +12,13 @@
   ],
   "display": {
     "icon": {
-      "id": "minecraft:totem_of_undying"
+      "id": "minecraft:wither_skeleton_skull"
     },
     "title": {
-      "text": "Vezeklés"
+      "text": "Kitaszítva"
     },
     "description": {
-      "text": "Megtörted a Kitaszítottak örök paktumát — visszatértél."
+      "text": "Bűnök vezettek a Néma Királynő népe közé — és a paktum örök."
     },
     "frame": "challenge",
     "show_toast": false,

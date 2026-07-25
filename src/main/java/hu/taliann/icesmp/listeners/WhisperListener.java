@@ -137,6 +137,8 @@ public final class WhisperListener implements Listener {
             player.setHealth(Math.max(1.0D, player.getHealth() - hpCost));
         }
         whisperManager.makeWhisperer(player);
+        // Rejtett, toast/chat-mentes bejegyzés — a Suttogó-státusz titkos marad.
+        hu.taliann.icesmp.managers.AdvancementService.award(player, "whisperer");
         player.addPotionEffect(new org.bukkit.potion.PotionEffect(
                 org.bukkit.potion.PotionEffectType.BLINDNESS, 2 * 20, 0, false, false, false));
         player.getWorld().spawnParticle(Particle.SQUID_INK, player.getLocation().add(0.0D, 1.0D, 0.0D), 40, 0.5D, 0.8D, 0.5D, 0.02D);

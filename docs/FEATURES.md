@@ -270,10 +270,11 @@
   rang-rendezés, háború-színek, színkódolt ping); **lebegő sebzés-számok**;
   **halál-összegző** (utolsó 10 mp találatai); intro-címszekvencia új játékosnak;
   quest-toast értesítések; boss-bárok.
-- **Natív haladás-fül (advancementek)**: saját IceSMP fül a vanília Haladás-képernyőn
-  (loadAdvancement, RP nélkül) — mérföldkövek (első kaszt/spec/frakció/szakma) és
-  rejtett teljesítmények (rontás-tisztítás, hidden-spot); kódból granted, kikapcsolható
-  (`advancements.enabled`).
+- **Natív haladás-fül (advancementek)**: saját IceSMP fül a vanília Haladás-képernyőn — a fát a
+  jar SAJÁT datapackje szállítja (`DatapackRegistrar`, RP és külső mod nélkül), tehát a kóddal
+  együtt verziózódik. 22 csomópont négy ágon: mérföldkövek (első kaszt/spec/frakció/szakma) és
+  rejtett teljesítmények (rontás-tisztítás, hidden-spot, Suttogó-rítus, száműzetés, vezeklés);
+  kódból granted, csendben (se toast, se chat), kikapcsolható (`advancements.enabled`).
 - **Natív párbeszéd-ablakok (Dialog API)**: szerver-oldali dialógusok RP nélkül
   (`DialogService`: értesítő + megerősítő minta, szerver-oldali válasz-kezeléssel).
   Első felhasználás: natív üdvözlő-ablak új játékosnak az első belépéskor

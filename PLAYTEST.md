@@ -834,14 +834,6 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (vérhold start/stop, világboss, invázió, karaván érkezés/távozás, Vad Hajsza, meteor, kincs,
       gyűjtögető buff, bőség, kihívás, kíséret, hangulat-esemény); a kezelősor (admin unclaim,
       NPC-kötések, quest admin lista) csak a megfelelő jogosultsággal látszik.
-- [ ] **P5a/P5b Haladás-fül (advancementek, ÚJ):** első induláskor a konzol kiírja
-      „IceSMP advancement-fa: N/7 bejegyzés él" (N=7, error nélkül — loadAdvancement él).
-      A **Haladás** képernyőn (L) van **IceSMP** fül `beacon` ikonnal. Grantek: **kaszt-választás**
-      → „Elhivatás" (+ a fül gyökere megjelenik) toast; **spec** → „Az út elágazik"; **frakció**
-      → „Hovatartozás"; **szakma** → „Mesterség kezdete". Rejtett: **rontás-mag megtörése** →
-      „A rontás megtörve" (challenge-keret); **hidden-spot felfedezés** → „Rejtett zug". Minden
-      grant felugró toastot ad, chat-broadcast NÉLKÜL. Már teljesített advancement újra nem toastol.
-      `advancements.enabled: false` (general.yml) + restart → a fül be sem töltődik, a grantek no-opok.
 - [ ] **P4d Natív dialógus (ÚJ):** ÚJ játékos első belépésekor (az intro-cím UTÁN,
       `onboarding.welcome-dialog-delay-ticks`≈4 mp) natív **üdvözlő-ablak** ugrik fel
       (cím + első-lépés sorok + „rendben" gomb) — resource pack NÉLKÜL. ESC/gomb bezárja.
@@ -1123,17 +1115,47 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         a hősök dicsérete ELŐTT hangzik el — `/events`-független, az `enekmondo` NPC-nél),
       - **a korona átka** (40 suttogás, szintenként más — csak királynak).
 - [ ] **Haladás-fül (ÚJ, jarból szállított datapack):** a szerver indulásakor a logban jelenjen
-      meg, hogy a fa a **jar datapackjéből** él (`IceSMP advancement-fa: 20/20 bejegyzés a jar
+      meg, hogy a fa a **jar datapackjéből** él (`IceSMP advancement-fa: 22/22 bejegyzés a jar
       datapackjéből él`). Ha WARNING jön „DEPRECATED tartalék úton" szöveggel, a
       datapack-felderítés hibázott — a fa akkor is működik, de nézd meg a bootstrap-logot.
-      Ellenőrizd `/datapack list`-tel, hogy az `icesmp` pack **engedélyezve** van.
-- [ ] **A 20 csomópont grant-pontja:** mindegyik a saját eseményén jár, egyik sem holt.
+      Ellenőrizd `/datapack list`-tel, hogy az `icesmp` pack **engedélyezve** van. A **Haladás**
+      képernyőn (L) legyen **IceSMP** fül `beacon` ikonnal. `advancements.enabled: false`
+      (general.yml) + restart → a grantek no-opok.
+- [ ] **A fa-bejegyzések NEM toastolnak és NEM írnak chatbe** (`show_toast:false`,
+      `announce_to_chat:false` mindegyik JSON-ban): a visszajelzést az adott rendszer saját
+      chat-üzenete adja, az ünneplő toast pedig a külön, három fix toast-bejegyzés (lásd lentebb).
+      Ellenőrizd, hogy egy fa-grant (pl. kaszt-választás) NEM ugrik fel a sarokban.
+- [ ] **Hovatartozás vs. Kitaszítva (ÚJ, a világ tényleges szerkezete):** a világban NÉGY
+      hatalom van, de a játékos csak HÁROM közül választhat — a Menedékben KEZD (a NEUTRAL az
+      alapértelmezett frakció), onnan a Lánghoz vagy a Fagyhoz állhat. A Kitaszítottak közé nem
+      lépni lehet, hanem KERÜLNI. Ezt a fa is így mondja el: `faction_join` („Kikötöttél az
+      egyik hatalom mellett") → alatta a REJTETT `exiled` („Bűnök vezettek a Néma Királynő népe
+      közé") → alatta a `redeemed` („Megtörted az örök paktumot"). Ellenőrizd, hogy a
+      `faction_join` szövege SEHOL nem állítja, hogy négyből választhatsz.
+- [ ] **A Kitaszítottakhoz HÁROM út vezet, és MIND a `exiled` bejegyzést adja** (e nélkül a
+      `redeemed` szülő nélküli csomópontra érkezne):
+      1. **bűn-küszöb:** vigyél fel egy játékost 4 bűnre (`/sinner <j> add`) → automatikus
+         száműzetés + **Kitaszítva**; majd a vezeklés-lánccal → **Vezeklés**.
+      2. **Suttogó-lelepleződés (K9):** a gyanú a küszöbig → `expose()` a bűn-pipeline-on át
+         száműz → **Kitaszítva** (a Suttogó-út a bűn-küszöbön keresztül fut, nem külön ágon).
+      3. **önkéntes paktum:** bűnösként `/faction join dark` (kétlépcsős megerősítés) →
+         **Kitaszítva** akkor is, ha a bűn-küszöböt még nem érte el.
+- [ ] **„Akit a csend befogadott" (ÚJ, REJTETT — a Suttogó-státusz titka):** a Sötét Rítus
+      sikere (éjjel + sculkon + magányosan + vér-áldozat) adja a `whisperer` bejegyzést.
+      **Titok-ellenőrzés:** a granthez NEM tartozik chat-broadcast és NEM ugrik fel toast,
+      tehát a közelben lévő játékosok semmit nem látnak belőle; a bejegyzés a saját
+      haladás-fülön is rejtett keretben van. Lelepleződés után a státusz elveszik, de a
+      megszerzett bejegyzés (jogosan) megmarad — az emlék nem törlődik.
+- [ ] **A 22 csomópont grant-pontja:** mindegyik a saját eseményén jár, egyik sem holt.
       Sorra: kaszt-választás (`root`+Elhivatás) • spec-választás • max kaszt-szint •
-      capstone-talent vásárlása • frakció-belépés • királlyá választás • a korona-átok max
-      szintje • megnyert raid (CSAK a győztes oldal jelentkezett harcosainak!) • vezeklés
-      (DARK-paktum megtörése) • szakma-választás • szakma max szint • mestermű-craft
-      (Legendás/Ereklye roll) • rontás-góc megtörése • rejtett hely • világboss • első
-      relikvia • rituálé • pet max szint • parkour-futam.
+      capstone-talent vásárlása • frakció-belépés • Suttogó-rítus (rejtett) • Kitaszítottak
+      (három út, lásd feljebb) • királlyá választás • a korona-átok max szintje • megnyert raid
+      (CSAK a győztes oldal jelentkezett harcosainak!) • vezeklés (DARK-paktum megtörése) •
+      szakma-választás • szakma max szint • mestermű-craft (Legendás/Ereklye roll) • rontás-góc
+      megtörése • rejtett hely • világboss • első relikvia • rituálé • pet max szint •
+      parkour-futam. Gépi ellenőrzés: `python3 scripts/check_consistency.py` FAIL-el holt
+      bejegyzésre, árva JSON-ra ÉS tartalom-driftre (a JSON-ok generátora:
+      `python3 scripts/gen_advancements.py`).
 - [ ] **Toast (ÚJ, fix bejegyzések):** quest-teljesítéskor felugrik a „Küldetés teljesítve"
       toast, és **ismételten is** (nem csak egyszer — a bejegyzés visszavonódik). A quest NEVE
       a chat-üzenetben van, nem a toaston. A haladás-fülön a toast-bejegyzések NEM látszanak

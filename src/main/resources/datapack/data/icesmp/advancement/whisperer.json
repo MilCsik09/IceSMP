@@ -1,5 +1,5 @@
 {
-  "parent": "icesmp:exiled",
+  "parent": "icesmp:faction_join",
   "criteria": {
     "granted": {
       "trigger": "minecraft:impossible"
@@ -12,15 +12,15 @@
   ],
   "display": {
     "icon": {
-      "id": "minecraft:totem_of_undying"
+      "id": "minecraft:sculk_catalyst"
     },
     "title": {
-      "text": "Vezeklés"
+      "text": "Akit a csend befogadott"
     },
     "description": {
-      "text": "Megtörted a Kitaszítottak örök paktumát — visszatértél."
+      "text": "Éjjel, sculkon, magányosan — a Suttogás megszólalt hozzád. Őrizd a titkot."
     },
-    "frame": "challenge",
+    "frame": "goal",
     "show_toast": false,
     "announce_to_chat": false,
     "hidden": true

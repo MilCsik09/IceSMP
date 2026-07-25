@@ -83,6 +83,7 @@ public final class SinManager {
     private void exileToDark(final Player player) {
         factionManager.setFaction(player.getUniqueId(), FactionType.DARK);
         sealDarkPact(player);
+        AdvancementService.award(player, "exiled");
         player.sendMessage(messageManager.getMessage(
                 "sinner.exiled",
                 "<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: a Kitaszítottak közé száműztek. A paktum örök.</dark_purple>"
