@@ -285,6 +285,7 @@ public final class IceSMPCore {
     private final SoulShardManager soulShardManager;
     private final RitualManager ritualManager;
     private final ExchangeBoardManager exchangeBoardManager;
+    private final hu.taliann.icesmp.managers.RespecService respecService;
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
     private final HudManager hudManager;
@@ -514,9 +515,13 @@ public final class IceSMPCore {
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // pakt-oltár
         hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // statikus híd
         this.exchangeBoardManager = new ExchangeBoardManager(plugin, configManager, exchangeRateService);
+        // A respec EGYETLEN végrehajtója (a parancs és a GUI is ezt hívja) — a TalentManager
+        // után épül, mert a talentpont-visszatérítéshez kell.
+        this.respecService = new hu.taliann.icesmp.managers.RespecService(
+                specializationManager, talentManager, currencyManager, factionManager);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
-                catalystItemFactory, spellRegistry, configManager);
+                catalystItemFactory, spellRegistry, configManager, respecService);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.chronicleManager = new hu.taliann.icesmp.managers.ChronicleManager(plugin, configManager, statsManager, seasonManager, messageManager);
         // Korszakváltás-narratíva: a szezonzárás hookja (a StatsManager itt már él).
@@ -1352,7 +1357,7 @@ public final class IceSMPCore {
         plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
         plugin.registerCommand("pet", "Társ (befogó item, idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, captureItemFactory, messageManager));
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(plugin, professionManager, messageManager, professionRecipeBookListener, professionRecipeCatalog, blueprintItemFactory));
-        plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(plugin, specializationManager, jobManager, professionManager, currencyManager, factionManager, talentManager, messageManager));
+        plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(plugin, specializationManager, jobManager, professionManager, currencyManager, messageManager, respecService));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
         final TerritoryCommand territoryCommand = new TerritoryCommand(plugin, territoryManager, messageManager);
         territoryCommand.setDungeonLootService(dungeonLootService);

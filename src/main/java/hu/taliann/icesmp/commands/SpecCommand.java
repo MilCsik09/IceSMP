@@ -1,17 +1,14 @@
 package hu.taliann.icesmp.commands;
 
 import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
-import hu.taliann.icesmp.data.CurrencyType;
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.data.SpecializationType;
 import hu.taliann.icesmp.managers.CurrencyManager;
-import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.RespecService;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
-import hu.taliann.icesmp.managers.TalentManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -36,21 +33,18 @@ public final class SpecCommand implements BasicCommand {
     private final JobManager jobManager;
     private final ProfessionManager professionManager;
     private final CurrencyManager currencyManager;
-    private final FactionManager factionManager;
-    private final TalentManager talentManager;
+    private final RespecService respecService;
     private final MessageManager messageManager;
 
     public SpecCommand(final JavaPlugin plugin, final SpecializationManager specializationManager, final JobManager jobManager,
                        final ProfessionManager professionManager, final CurrencyManager currencyManager,
-                       final FactionManager factionManager, final TalentManager talentManager,
-                       final MessageManager messageManager) {
+                       final MessageManager messageManager, final RespecService respecService) {
         this.plugin = plugin;
         this.specializationManager = specializationManager;
         this.jobManager = jobManager;
         this.professionManager = professionManager;
         this.currencyManager = currencyManager;
-        this.factionManager = factionManager;
-        this.talentManager = talentManager;
+        this.respecService = respecService;
         this.messageManager = messageManager;
     }
 
@@ -87,46 +81,26 @@ public final class SpecCommand implements BasicCommand {
             return;
         }
 
-        final boolean classRespec = "class".equalsIgnoreCase(args[1]);
-        if (classRespec && specializationManager.getClassSpecialization(player) == null) {
-            sender.sendMessage(messageManager.get("spec-respec-nothing", "&cNincs mit visszaváltani: nincs ilyen specializációd."));
-            return;
-        }
-        if (!classRespec && specializationManager.getProfessionSpecialization(player) == null) {
-            sender.sendMessage(messageManager.get("spec-respec-nothing", "&cNincs mit visszaváltani: nincs ilyen specializációd."));
-            return;
-        }
-
-        final double cost = specializationManager.getRespecCost();
-        final FactionType faction = factionManager.getFaction(player.getUniqueId());
-        final CurrencyType currency = CurrencyType.fromFactionType(faction);
-        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
-        if (cost > 0.0D && !currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
-            sender.sendMessage(messageManager.get(
+        final RespecService.Outcome outcome =
+                respecService.respec(player, "class".equalsIgnoreCase(args[1]));
+        switch (outcome.status()) {
+            case NOTHING_TO_RESPEC -> sender.sendMessage(messageManager.get(
+                    "spec-respec-nothing", "&cNincs mit visszaváltani: nincs ilyen specializációd."));
+            case INSUFFICIENT_FUNDS -> sender.sendMessage(messageManager.get(
                     "spec-respec-insufficient",
                     "&cA respec ára &f%s %s&c, de csak &f%s&c van a bankodban.",
-                    currencyManager.formatBalance(cost),
-                    currency.getDisplayName(),
-                    currencyManager.formatBalance(currencyManager.getBalance(player, currency))
+                    currencyManager.formatBalance(outcome.cost()),
+                    outcome.currency().getDisplayName(),
+                    currencyManager.formatBalance(currencyManager.getBalance(player, outcome.currency()))
             ));
-            return;
+            case OK -> sender.sendMessage(messageManager.get(
+                    "spec-respec-success",
+                    "&aSpecializáció visszaváltva &7(ár: &f%s %s&7, visszakapott talentpont: &f%s&7)&a. Újra választhatsz a /spec choose paranccsal.",
+                    currencyManager.formatBalance(outcome.cost()),
+                    outcome.currency().getDisplayName(),
+                    outcome.refundedTalentPoints()
+            ));
         }
-        int refundedPoints = 0;
-        if (classRespec) {
-            specializationManager.resetClassSpecialization(player);
-            // Spec-locked talents lapse with the dropped spec; their points return to the pool.
-            refundedPoints = talentManager.refundUnavailableTalents(player, true);
-        } else {
-            specializationManager.resetProfessionSpecialization(player);
-        }
-
-        sender.sendMessage(messageManager.get(
-                "spec-respec-success",
-                "&aSpecializáció visszaváltva &7(ár: &f%s %s&7, visszakapott talentpont: &f%s&7)&a. Újra választhatsz a /spec choose paranccsal.",
-                currencyManager.formatBalance(cost),
-                currency.getDisplayName(),
-                refundedPoints
-        ));
     }
 
     private void handleList(final CommandSender sender) {

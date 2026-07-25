@@ -29,5 +29,6 @@ public record CharacterMenuContext(
         SinManager sinManager,
         CatalystItemFactory catalystItemFactory,
         SpellRegistry spellRegistry,
-        ConfigManager configManager) {
+        ConfigManager configManager,
+        hu.taliann.icesmp.managers.RespecService respecService) {
 }
