@@ -63,7 +63,7 @@ public final class DonationChestListener implements Listener {
         final String errorKey = donationChestManager.donateHeldItem(player);
         if (errorKey != null) {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
-            player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey),
+            player.sendMessage(messageManager.get(errorKey, hu.taliann.icesmp.managers.DonationChestManager.defaultErrorFor(errorKey),
                     Map.of("limit", String.valueOf(donationChestManager.getMaxPerPlayer()))));
             reopen(player, holder.getPage());
             return;
@@ -97,16 +97,6 @@ public final class DonationChestListener implements Listener {
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.2F);
         player.sendMessage(messageManager.get("donation-take-success", "&aElvettél egy adományt az adomány-ládából."));
         reopen(player, holder.getPage());
-    }
-
-    private String defaultErrorFor(final String errorKey) {
-        return switch (errorKey) {
-            case "donation-chest-disabled" -> "&cAz adomány-láda jelenleg ki van kapcsolva.";
-            case "donation-no-item" -> "&cNincs tárgy a kezedben — ezt adományoznád?";
-            case "donation-chest-full" -> "&cAz adomány-láda megtelt — próbáld később, ha valaki elvitt valamit.";
-            case "donation-per-player-limit" -> "&cElérted a saját adomány-limitedet ebben a ládában (&f{limit} tétel&c).";
-            default -> "&cAz adományozás nem sikerült.";
-        };
     }
 
     private void reopen(final Player player, final int page) {

@@ -192,4 +192,19 @@ public final class DonationChestManager implements PersistentStore {
         requestSave();
         return entry.item();
     }
+
+    /**
+     * A {@code donate}/{@code takeEntry} hibakulcsainak magyar alapszövege. A tábla itt él, a
+     * kulcsok keletkezési helyén — a parancs és a GUI-listener ugyanezt hívja, így nem
+     * csúszhatnak szét (korábban mindkettő saját, kézzel szinkronban tartott másolatot vitt).
+     */
+    public static String defaultErrorFor(final String errorKey) {
+        return switch (errorKey == null ? "" : errorKey) {
+            case "donation-chest-disabled" -> "&cAz adomány-láda jelenleg ki van kapcsolva.";
+            case "donation-no-item" -> "&cNincs tárgy a kezedben — ezt adományoznád?";
+            case "donation-chest-full" -> "&cAz adomány-láda megtelt — próbáld később, ha valaki elvitt valamit.";
+            case "donation-per-player-limit" -> "&cElérted a saját adomány-limitedet ebben a ládában (&f{limit} tétel&c).";
+            default -> "&cAz adományozás nem sikerült.";
+        };
+    }
 }

@@ -401,13 +401,21 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   SZÁNDÉKOSAN kimaradt: `HonorDuelManager` + `ProfessionWeeklyGoalManager` (HETI bucket, más
   periódus), `FactionTreasurySubcommand` (frakció-szintű közös számláló + DOUBLE pénz-pontosság —
   a helper long-alapú, kerekítés-veszteség lenne).
-- **O26** 🟡 `ErrorMessages.resolve` közös hibakulcs→default tábla — 11+ osztályban ismétlődő switch.
+- **O26** ✅ LEZÁRVA (a tétel premisszája hibás volt) — a „11+ osztályban ismétlődő switch" méréssel
+  nem áll: **177 hibakulcs ~20 osztályban, de csak EGY duplikált tábla** volt (a DonationChest 5
+  bejegyzése bájtra azonosan a parancsban ÉS a GUI-listenerben — ez átkerült a
+  `DonationChestManager.defaultErrorFor`-ba, a kulcsok keletkezési helyére). A többi tábla
+  domain-diszjunkt: a „duplikációnak" látszó kulcsok (accept/list/info/kick/leave…) **alparancs-
+  nevek**, nem hibakulcsok. Egy globális `ErrorMessages` tábla 177 magyar szöveget szakítana el a
+  használati helyétől, miközben az override-réteget a `messages.yml` már megadja — ezért NEM
+  csináljuk meg. (A `ClaimManager` switch-e sem tábla-duplikátum: az kulcs→ÜZENETKULCS leképezés.)
 - **O27** 🟡 `PeriodicChanceEvent` világesemény-ütemező váz — 5 manager azonos váza közös helperbe (O2/O6-tal együtt).
 - **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
 O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
 (DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil),
-**O4** (TabCompleteUtil), **O25** (DailyBudget); **RÉSZBEN** = O1. A közös-helper csomagból hátra van:
-O6 `WorldEventUtil`, O26 `ErrorMessages`, O27 `PeriodicChanceEvent`.
+**O4** (TabCompleteUtil), **O25** (DailyBudget), **O26** (mérés alapján elvetve, 1 valódi duplikátum
+javítva); **RÉSZBEN** = O1. A közös-helper csomagból hátra van: O6 `WorldEventUtil`,
+O27 `PeriodicChanceEvent`.
 
 ## P — kormányzás, gazdaság-hurok és rework-jelöltek (2026-07-22, tulaj-kérés)
 
