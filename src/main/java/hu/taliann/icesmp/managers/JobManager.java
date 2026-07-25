@@ -180,7 +180,8 @@ public final class JobManager implements PlayerStateCleanup {
                 player.sendMessage(messageManager.getMessage(
                         "job-spell-auto-unlocked",
                         "&aÚj képesség feloldva: &e{spell} &7(szint {level})",
-                        Map.of("spell", spellId.toLowerCase(Locale.ROOT), "level", String.valueOf(requiredLevel))
+                        Map.of("spell", messageManager.get("spell." + spellId.toLowerCase(Locale.ROOT) + ".name",
+                                spellId.toLowerCase(Locale.ROOT)), "level", String.valueOf(requiredLevel))
                 ));
             }
         }

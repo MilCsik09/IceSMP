@@ -252,10 +252,10 @@ public final class CommandMenus {
                                 + " (jelenlegi valutádban)", NamedTextColor.GOLD)),
                         label("Várakozás két váltás közt", Component.text(
                                 (long) ctx.factionManager().getSwitchCooldownHours() + " óra", NamedTextColor.WHITE)),
-                        grey("A Menedékből bárhová, s a Kitaszítottak"),
-                        grey("bárhonnan ingyenes a váltás."),
-                        Component.text("A passzívák azonnal cserélődnek,", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
-                        Component.text("közé a bűn visz — a paktum örök.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
+                        grey("A Menedékből bárhová ingyenes a váltás."),
+                        grey("A passzívák azonnal cserélődnek."),
+                        Component.text("A Kitaszítottak közé nem lépni lehet:", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
+                        Component.text("a bűn visz oda — és a paktum örök.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
 
         putJoinButtons(inv, holder, player, ctx, current, "Váltás");
 

@@ -192,7 +192,7 @@ public final class CharacterGUIListener implements Listener {
                     "talent-spend-success",
                     "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
                     Map.of(
-                            "talent", node.id(),
+                            "talent", talentDisplayName(ctx, node),
                             "rank", String.valueOf(ctx.talentManager().getRank(player, node.classPool(), node.id())),
                             "points", String.valueOf(ctx.talentManager().getAvailablePoints(player, node.classPool()))
                     )));
@@ -271,5 +271,15 @@ public final class CharacterGUIListener implements Listener {
         } else if (holder instanceof TalentHolder talentHolder) {
             talentHolder.setInventory(null);
         }
+    }
+
+    /** A talent MAGYAR neve a definícióból — a node.id() belső azonosító, nem játékos-szöveg. */
+    private static String talentDisplayName(final hu.taliann.icesmp.gui.CharacterMenuContext ctx,
+                                            final hu.taliann.icesmp.gui.TalentGUI.Node node) {
+        final org.bukkit.configuration.ConfigurationSection definitions =
+                ctx.talentManager().getDefinitions(node.classPool());
+        final org.bukkit.configuration.ConfigurationSection talent =
+                definitions == null ? null : definitions.getConfigurationSection(node.id());
+        return talent == null ? node.id() : talent.getString("display-name", node.id());
     }
 }

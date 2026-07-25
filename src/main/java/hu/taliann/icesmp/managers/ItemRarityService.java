@@ -210,7 +210,7 @@ public final class ItemRarityService {
         final String adjective = randomName && !rarity.adjectives().isEmpty()
                 ? rarity.adjectives().get(ThreadLocalRandom.current().nextInt(rarity.adjectives().size())) + " " : "";
         final Component baseName = randomName ? Component.text(adjective + nounFor(family, rolled.getType()))
-                : (meta.hasDisplayName() ? meta.displayName() : Component.text(prettyName(rolled.getType())));
+                : (meta.hasDisplayName() ? meta.displayName() : Component.translatable(rolled.getType()));
         meta.displayName(Component.text("[" + rarity.name() + "] ", colorOf(rarity.color()))
                 .decoration(TextDecoration.ITALIC, false).append(baseName));
         meta.getPersistentDataContainer().set(qualityKey, PersistentDataType.STRING, rarity.id());
