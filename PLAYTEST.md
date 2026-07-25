@@ -264,9 +264,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       **Sötét Rítus:** éjjel, SCULK-blokkon állva, EGYEDÜL (16 blokkon belül nincs más játékos),
       SHIFT+jobb katt a meghívóval → vér-áldozat (−6 HP) + Suttogó-státusz (rejtett!). Ha valaki a
       közelben van: a rítus meghiúsul, a szemtanúk Tanú-tokent kapnak, a jelölt nagy gyanút.
-      **Titkos csatorna:** `/suttogas <üzenet>` — csak Suttogók látják; kívülállónak „csak a szél zúg".
+      **Titkos csatorna:** `/suttogas <üzenet>` — a rejtett Suttogók **ÉS a Kitaszítottak (DARK)**
+      látják; kívülállónak „csak a szél zúg". Teszt: egy DARK-játékos kapja meg a Suttogó üzenetét,
+      és ő maga is tudjon írni bele; egy RED/BLUE/NEUTRAL nem-Suttogó semmit ne lásson.
+      `factions.whisper.dark-hears-channel: false` + `/icesmp reload` → a DARK kiesik a csatornából.
+      **A titok ára:** a csatorna-sor kiírja a feladó nevét, tehát a DARK-játékos MEGTUDJA, ki
+      Suttogó — ellenőrizd, hogy ez tudatos döntés marad (nyílt chatbe kiszivárogtathatja).
       **Gyanú:** rajtakapott testvérgyilkosság (+40) és rajtakapott rítus (+50) növeli; a szemtanúk
-      `/suttogas vad <játékos>` váddal (+15, csak IGAZI Suttogóra hat, tokent fogyaszt) nyomozhatnak;
+      `/suttogas vád <játékos>` váddal (+15, csak IGAZI Suttogóra hat, tokent fogyaszt) nyomozhatnak
+      (a `vad` és `accuse` alak is működik — ne kelljen ékezetet gépelni);
       10 percenként −5 csillapodás. **Lelepleződés** (100 pont): fény-dráma + broadcast + 4 bűn →
       a bűn-küszöb a meglévő száműzetéssel a Kitaszítottak közé taszít. Kulcsok: `factions.whisper.*`.
 - [ ] **K5 Káoszkor-loot:** élőhalott mobból (zombi/csontváz) eshet a Rozsdás Penge / Megrontott
@@ -1107,9 +1113,16 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (14 / 117 / 547), a Hetedik Vérháború és a 698-as Káoszkor, a Felsők megérkezése (978).
       Cél: a játékosnak NE kelljen kódexet olvasnia. Ülj le sokszor (cooldownt vedd 0-ra
       teszthez) és ellenőrizd, hogy tényleg váltakoznak, nem 5-6 sor forog.
+      **Frakciós nézőpont (ÚJ):** a közös 62 sor MELLETT minden frakciónak van saját, 22 soros
+      készlete — UGYANAZOK az események a saját népük hangján és elfogultságával, frakció-színnel
+      (Láng=piros, Fagy=aqua, Menedék=arany, Kitaszítottak=lila). A
+      `campfire-story.faction-chance-percent` (alap: 50) dönti el, milyen eséllyel jön a frakciós
+      változat. Teszt: ülj le sokszor UGYANAZZAL a játékossal, majd frakciót váltva — a mesék
+      hangja és színe váltson; 0-ra állítva CSAK a közös készlet jöjjön. Minden sor külön
+      átírható a `campfire-story-<frakció>-<n>` kulccsal.
 - [ ] **Sztori-csatornák összesítve (ÚJ):** a világ történetét négy ingame felület tanítja,
-      összesen **~170 sorban** — ellenőrizd, hogy mind él:
-      - **tábortűz** (62 sor, ismételhető, ingyen — a fő csatorna),
+      összesen **~255 sorban** — ellenőrizd, hogy mind él:
+      - **tábortűz** (62 közös sor + 4×22 frakciós = 150, ismételhető, ingyen — a fő csatorna),
       - **a Rejtélyes Idegen** (45 talányos sor, `/events stranger`),
       - **a bárd heti krónika-versszaka** (20 fejezet: MINDEN héten más szelet az idővonalból,
         a hősök dicsérete ELŐTT hangzik el — `/events`-független, az `enekmondo` NPC-nél),

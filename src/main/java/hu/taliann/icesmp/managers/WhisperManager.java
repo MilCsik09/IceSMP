@@ -114,6 +114,30 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         return whispererCache.contains(playerId);
     }
 
+    /**
+     * Hallja-e a csatornát: a rejtett Suttogók MELLETT a Kitaszítottak is — ők a Néma Királynő
+     * NYÍLT népe, ugyanannak a hálózatnak a másik fele. A frakció-olvasás konkurens map, ezért
+     * bármely régió-szálról hívható (a PDC-alapú {@link #isWhisperer} nem az).
+     *
+     * <p>Következmény, amivel számolni kell: a csatorna-sor kiírja a feladó nevét, tehát a
+     * Kitaszítottak MEGTUDJÁK, ki Suttogó a látható frakciókban. Ez szándékos (a hálózat ismeri
+     * a sajátjait), de kikapcsolható, ha túl erős szivárgásnak bizonyul.
+     */
+    public boolean canHearWhispersCached(final UUID playerId) {
+        return whispererCache.contains(playerId)
+                || darkHears() && factionManager.getFaction(playerId) == FactionType.DARK;
+    }
+
+    /** Ugyanaz, de a PDC az igazság forrása — a játékos SAJÁT szálán hívandó. */
+    public boolean canHearWhispers(final Player player) {
+        return isWhisperer(player)
+                || darkHears() && factionManager.getFaction(player.getUniqueId()) == FactionType.DARK;
+    }
+
+    private boolean darkHears() {
+        return configManager.getBoolean("factions.whisper.dark-hears-channel", true);
+    }
+
     /** A játékos Suttogó-e (rejtett státusz; a játékos SAJÁT szálán olvasandó). */
     public boolean isWhisperer(final Player player) {
         return player.getPersistentDataContainer().getOrDefault(whispererKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
@@ -215,22 +239,23 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     }
 
     /**
-     * Suttogó-üzenet kézbesítése: minden online Suttogónak, ki-ki a SAJÁT régió-szálán
-     * (a feladó ellenőrzése a hívó oldalán történt). A csatorna kívülről láthatatlan.
+     * Suttogó-üzenet kézbesítése: minden online Suttogónak ÉS Kitaszítottnak, ki-ki a SAJÁT
+     * régió-szálán (a feladó ellenőrzése a hívó oldalán történt). A csatorna a hálózaton
+     * kívülről láthatatlan.
      */
     public void deliverWhisper(final Player sender, final String message) {
         final net.kyori.adventure.text.Component line = messageManager.getMessage(
                 "whisper-chat-line",
                 "<dark_purple>✧ Suttogás</dark_purple> <gray>{sender}:</gray> <light_purple>{message}</light_purple>",
                 Map.of("sender", sender.getName(), "message", message));
-        // Csak a cache szerinti Suttogókra (+ a feladóra) hopolunk — a többség kimarad.
+        // Csak a hálózat tagjaira (+ a feladóra) hopolunk — a többség kimarad.
         for (final Player online : List.copyOf(Bukkit.getOnlinePlayers())) {
-            if (!whispererCache.contains(online.getUniqueId())
+            if (!canHearWhispersCached(online.getUniqueId())
                     && !online.getUniqueId().equals(sender.getUniqueId())) {
                 continue;
             }
             online.getScheduler().run(plugin, task -> {
-                if (isWhisperer(online) || online.getUniqueId().equals(sender.getUniqueId())) {
+                if (canHearWhispers(online) || online.getUniqueId().equals(sender.getUniqueId())) {
                     online.sendMessage(line);
                     online.playSound(online.getLocation(), Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.4F, 1.6F);
                 }

@@ -51,7 +51,7 @@ jelenti, hogy **elhagyható**.
 | `/spec respec <class\|profession>` | | Specializáció visszaváltása |
 | `/talent` / `/talent spend <class\|profession> <talent>` | `talents`, `talentfa` | Talentek |
 | `/emlek` / `/emlek xp\|talent\|spec\|lore` | `memory`, `emlekek` | Emlékszilánk-beváltás: kaszt-XP / talentpont / spec-kapu / emlék-töredék |
-| `/suttogas <üzenet>` / `/suttogas vad <játékos>` | `sutt` | A Suttogók titkos csatornája / tanú-vád (K9) |
+| `/suttogas <üzenet>` / `/suttogas vád <játékos>` | `sutt` | A Suttogók (és a Kitaszítottak) titkos csatornája / tanú-vád (K9). A vád-alparancs `vad` és `accuse` alakban is megy, hogy ne kelljen ékezetet gépelni |
 | `/lore <téma>` | `kodex` | A kódex lapjai chatben (frakciók, a Fa, a Kapu, a Suttogók) |
 | `/kronika` | `chronicle` | Az utolsó Heti Krónika visszaolvasása (liga-állás, toplisták) |
 | `/profession join <szakma>` / `/profession info` | `prof`, `szakma` | Szakmák |

@@ -142,6 +142,13 @@ factions:
     betrayal-suspicion: 40.0     # rajtakapott testvérgyilkosság (Suttogóként)
     caught-rite-suspicion: 50.0  # rajtakapott Sötét Rítus (a rítus meg is hiúsul)
     accuse-suspicion: 15.0       # egy tanú-vád súlya (csak valódi Suttogóra hat)
+    # A Kitaszítottak is hallják (és használhatják) a Suttogás-csatornát: ők a Néma Királynő
+    # NYÍLT népe, a rejtett Suttogók pedig ugyanannak a hálózatnak a másik fele.
+    # FIGYELEM — ennek ára van: a csatorna-sor kiírja a feladó nevét, tehát a Kitaszítottak
+    # MEGTUDJÁK, ki Suttogó a látható frakciókban, és ezt kiszivárogtathatják a nyílt chatbe.
+    # false = a csatorna csak a rejtett Suttogóké (a titok szigorúbb, a hálózat viszont
+    # kettészakad, és a DARK-játékosnak nincs mit tennie a Suttogókkal).
+    dark-hears-channel: true
     # Suttogó-erősítés: éjjel az élőhalottak a felesküdötteket sem támadják (rejtett,
     # éjszakai ízelítő a DARK-passzívából — a figyelmes szemtanúnak árulkodó jel!).
     night-undead-truce: true

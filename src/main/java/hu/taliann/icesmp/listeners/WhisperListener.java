@@ -87,7 +87,7 @@ public final class WhisperListener implements Listener {
 
         if (!whisperManager.canBecomeWhisperer(player)) {
             player.sendMessage(messageManager.get("whisper-rite-invalid",
-                    "&7A Suttogás nem szól hozzád — vagy már hallod, vagy a Királynő már a magáénak tud."));
+                    "&7A Suttogás nem szól hozzád — vagy már hallod, vagy a Királynő már a magáénak tud téged."));
             return;
         }
         // Éjjel (vagy örök félhomályú dimenzióban)…
@@ -101,7 +101,7 @@ public final class WhisperListener implements Listener {
         final Material below = player.getLocation().clone().add(0.0D, -0.5D, 0.0D).getBlock().getType();
         if (below != Material.SCULK && below != Material.SCULK_CATALYST) {
             player.sendMessage(messageManager.get("whisper-rite-ground",
-                    "&7A meghívó hideg marad — a Suttogás a mélység burjánzó sötétjét (sculk) kívánja a lábad alá."));
+                    "&7A meghívó hideg marad — a Suttogás a mélység burjánzó sötétjét kívánja a lábad alá. &8(sculk vagy sculk-katalizátor blokkon állj)"));
             return;
         }
         // …és MAGÁNYOSAN. Ha mégis lát valaki: a rítus meghiúsul, a szemtanúk Tanú-tokent kapnak.
@@ -113,7 +113,7 @@ public final class WhisperListener implements Listener {
                 whisperManager.grantWitnessToken(witness.getUniqueId());
                 witness.getScheduler().run(plugin, task -> witness.sendMessage(messageManager.getMessage(
                         "whisper-witness-rite",
-                        "<dark_purple>👁 Sötét rítust láttál… A vádhoz: <white>/suttogas vad {player}</white> (amíg az emlék friss).</dark_purple>",
+                        "<dark_purple>👁 Sötét rítust láttál… A vádhoz: <white>/suttogas vád {player}</white> (amíg az emlék friss).</dark_purple>",
                         Map.of("player", player.getName()))), null);
             }
         }
@@ -145,7 +145,7 @@ public final class WhisperListener implements Listener {
         player.playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.8F, 0.4F);
         player.playSound(player.getLocation(), Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 1.0F, 0.6F);
         player.sendMessage(messageManager.get("whisper-rite-success",
-                "&5✧ A vércsepp a sculkba szivárog… és a sötét MEGSZÓLAL. Mostantól hallod a Suttogást (&f/suttogas <üzenet>&5). Őrizd a titkot — a lelepleződés a Kitaszítottak közé taszít."));
+                "&5✧ A vércsepp a burjánzó sötétbe szivárog… és a mélység MEGSZÓLAL. Mostantól hallod a Suttogást (&f/suttogas <üzenet>&5). Őrizd a titkot — a lelepleződés a Kitaszítottak közé taszít."));
     }
 
     // ==================== Rajtakapott árulás ====================
@@ -176,7 +176,7 @@ public final class WhisperListener implements Listener {
                 whisperManager.grantWitnessToken(witness.getUniqueId());
                 witness.getScheduler().run(plugin, task -> witness.sendMessage(messageManager.getMessage(
                         "whisper-witness-betrayal",
-                        "<dark_purple>👁 Testvérgyilkosságot láttál… Ha Suttogót sejtesz: <white>/suttogas vad {player}</white>.</dark_purple>",
+                        "<dark_purple>👁 Testvérgyilkosságot láttál… Ha Suttogót sejtesz: <white>/suttogas vád {player}</white>.</dark_purple>",
                         Map.of("player", killer.getName()))), null);
             }
         }

@@ -151,6 +151,13 @@ derül ki.
 - ha **rajtakapnak** egy rítuson vagy egy **áruláson** (frakciótárs hátbaszúrása);
 - ha a **gyanú** ellened gyűlik, míg át nem üt a bélyeg.
 
+**A csatorna.** A hálózatnak saját, kívülről láthatatlan beszélgetése van
+(`/suttogas <üzenet>`): ezt a rejtett Suttogók **és a Kitaszítottak** is hallják — ők a Néma
+Királynő *nyílt* népe, a Suttogók pedig ugyanannak a hálózatnak a rejtett fele. Aki nem tartozik
+bele, annak a parancs semmit nem árul el. **Vigyázz:** a csatorna kiírja a feladó nevét, tehát a
+Kitaszítottak megtudják, ki Suttogó a látható frakciókban — a titkod annyira biztonságos, amennyire
+a Királynő népe hallgatni tud.
+
 **Mi jár érte?** A Királynő gondoskodik a híveiről:
 - ha a kósza kultisták ügye **beteljesül** (egy rítus lefut vagy egy hírvivő célba ér), minden
   felesküdött Suttogó **gyanúja csillapodik**, és **titkos tárgy-részesedést** kap a hálózattól;
