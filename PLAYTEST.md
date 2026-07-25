@@ -1190,11 +1190,27 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       szezon nem kerül kőbe.
 - [ ] **B54 Átkozott felszerelés (ÚJ — Tier A):** világboss/event-boss loot ~8%-a Átkozott
       (sötétvörös lore-sor): viselve darabonként +10% kimenő sebzés (cap +40%), de a
-      páncél-slotból NEM vehető ki („Az átok nem ereszt…"). Felvételkor az első kattintás
-      figyelmeztet, csak az 5 mp-en belüli második erősít meg. Levétel: építs Átok-törés
-      oltárt (CRYING_OBSIDIAN mag + 3×3 obszidián talp, áldozat: 8 ametiszt + 1 ghast-könny)
-      → SHIFT+jobb-katt → minden viselt/kézben tartott átok megtörik, a tárgy megmarad.
+      páncél-slotból NEM vehető ki („Az átok nem ereszt…"). Felvételkor az első kísérlet
+      figyelmeztet, csak a `confirm-seconds`-on (alap: 5) belüli második erősít meg. Levétel:
+      építs Átok-törés oltárt (CRYING_OBSIDIAN mag + 3×3 obszidián talp, áldozat: 8 ametiszt +
+      1 ghast-könny) → SHIFT+jobb-katt → minden viselt/kézben tartott átok megtörik, a tárgy megmarad.
       Kulcsok: `item-rarity.cursed.*`, rituálé: `rituals.atok_tores`.
+- [ ] **B54 — a felvétel MINDHÁROM útja külön tesztelendő** (két megerősítés-kapu együtt
+      dolgozik: az `InventoryClickEvent` és az `EntityEquipmentChangedEvent`, és a kettő
+      korábban kioltotta egymást — ez a visszaesés-teszt):
+      1. **jobb-katt** kézből (a legtermészetesebb út) → 1. kísérlet: a darab lekerül és
+         visszakerül a hátizsákba + figyelmeztetés; 2. kísérlet 5 mp-en belül → **FELMARAD**.
+      2. **shift-katt** a hátizsákban → 1. kísérlet: cancel + figyelmeztetés; 2. kísérlet
+         5 mp-en belül → **FELMARAD** (nem szabad, hogy azonnal visszakerüljön a hátizsákba!).
+      3. **kurzorral a páncél-slotba tétel** → ugyanaz, mint a 2.
+      **A hurok-tünet, amit keresünk:** ha a darab a megerősítés UTÁN is visszakerül a
+      hátizsákba és újra jön a figyelmeztetés, akkor a két kapu ismét ugyanazt a jelzést
+      fogyasztja — a felvétel ilyenkor SEMELYIK úton nem sikerül.
+      **Tele hátizsákkal:** a visszavett darab a földre esik — ellenőrizd, hogy ez CSAK a
+      megerősítés előtti (elutasított) kísérletnél történhet meg, mert viselt átkozott darab
+      földre kerülése a levétel-zárat is megtörné.
+      **Nem átkozott páncél** fel-le vétele semmilyen üzenetet ne adjon, és NE fogyassza el egy
+      folyamatban lévő átkozott-megerősítést sem.
 - [ ] **F13/F14/F15 Gazdasági események (ÚJ — Tier A):** a kereslet-sokk mellett most
       **pánik** is jöhet (~35% eséllyel a sorsolt esemény lefelé üt: x0.6-0.8, piros
       broadcast, a lecsengése „A pánik elült…"); **konjunktúra**: ritkán fél órára egy

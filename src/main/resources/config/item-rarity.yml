@@ -498,3 +498,6 @@ item-rarity:
     chance: 0.08
     damage-bonus-per-piece: 0.1
     damage-bonus-cap: 0.4
+    # Tudatos felvétel: az első felhelyezési kísérlet csak figyelmeztet, és ennyi másodpercen
+    # belüli MÁSODIK kísérlet erősíti meg (az átkozott páncél utána már nem vehető le szabadon).
+    confirm-seconds: 5
