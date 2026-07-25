@@ -251,8 +251,19 @@ használjuk (6 komponens: `ATTRIBUTE_MODIFIERS`, `CONSUMABLE`, `FOOD`, `ITEM_MOD
   Folia-barát, az entitás régió-szálán fut. 🟡⭐⭐
 
 ### Egyéb modern felületek
-- **P5 Datapack-réteg** (`io.papermc.paper.datapack`) — a `DatapackRegistrar`-ral saját
-  recept/loot/struktúra-adat szállítható a jarból. 🟡⭐⭐
+- **P5 Datapack-réteg — PONTOSÍTVA (2026-07-25).** A P5a/P5b **leszállt**: az `AdvancementService`
+  7 csomópontos natív haladás-fája (+ a `ToastUtil` quest-toastjai) data-driven advancement
+  JSON-ként él, és a Bukkit ezeket a VILÁG automatikusan generált datapackjébe teszi
+  (`<world>/datapacks/bukkit/`, „Data pack for resources provided by Bukkit plugins").
+  Tehát datapack-formában és -mechanizmussal működik — csak nem a jar szállítja.
+  **Ami NYITOTT:** a betöltés a `Bukkit.getUnsafe()` úton megy, ami az API-ban `@Deprecated`
+  (MC/Paper-bumpnál ez az első törési pont). A modern, támogatott alternatíva a
+  `io.papermc.paper.datapack.DatapackRegistrar`: a jar szállítana saját datapacket
+  (advancement + recept + loot + struktúra egy helyen). 🟡⭐⭐
+  **Playteszten ellenőrizendő:** a `ToastUtil` MINDEN toasthoz véletlen kulcsú advancementet
+  tölt be; ha a `removeAdvancement` a lemezről nem törli, a fájlok quest-teljesítésenként
+  szaporodnak a bukkit-datapackben. Ha igen, a javítás egy FIX kulcsú, újrahasznosított
+  toast-advancement. 🟢⭐⭐
 - **P8b Resource-pack PUSH** (`sendResourcePacks`) — **a legjobb érték/munka arány a listán:**
   a 265 ITEM_MODEL kész és manifestelt, de a szerver soha nem tolja ki a packet, ezért az
   **egész vizuális réteg alszik**, amíg valaki kézzel nem telepíti. 🟡⭐⭐⭐

@@ -11,9 +11,19 @@ import java.util.List;
 
 /**
  * P5a/P5b — natív, szerver-oldali IceSMP haladás-fül (advancement-fa). A bejegyzéseket
- * a stabil {@code Bukkit.getUnsafe().loadAdvancement(kulcs, json)} úton töltjük be
- * (data-driven advancement JSON, a szerver a klienssel szinkronizálja — resource pack
- * NEM kell). Minden bejegyzés {@code minecraft:impossible} triggerű: KIZÁRÓLAG kódból
+ * data-driven advancement JSON-ként töltjük be a {@code Bukkit.getUnsafe().loadAdvancement(kulcs, json)}
+ * úton (a szerver a klienssel szinkronizálja — resource pack NEM kell).
+ *
+ * <p><b>Hova kerülnek valójában:</b> a Bukkit a plugin-oldali advancementeket a VILÁG
+ * automatikusan generált datapackjébe teszi ({@code <world>/datapacks/bukkit/}, leírása:
+ * „Data pack for resources provided by Bukkit plugins"). Tehát a fa datapack-formában és
+ * -mechanizmussal él, csak nem a jar szállítja: futásidőben íródik.
+ *
+ * <p><b>FIGYELEM — nem stabil API:</b> a {@code Bukkit.getUnsafe()} az API-ban
+ * {@code @Deprecated}. Ma működik, de MC/Paper-bumpnál ez az első törési pont; a modern,
+ * támogatott alternatíva a {@code io.papermc.paper.datapack.DatapackRegistrar} (a jar szállít
+ * saját datapacket). A {@link #load} ezért teljesen fail-soft: ha az út elbukik, a haladás-fül
+ * egyszerűen nem jelenik meg, a játékmenet érintetlen. Minden bejegyzés {@code minecraft:impossible} triggerű: KIZÁRÓLAG kódból
  * kapja meg a játékos ({@link #award}), a meglévő rendszerek grant-pontjain.
  *
  * <p>Szabály: NINCS holt bejegyzés — minden advancementhez tartozik valódi grant-hívás.

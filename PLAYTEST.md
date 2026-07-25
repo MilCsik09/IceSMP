@@ -1122,6 +1122,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       - **a bárd heti krónika-versszaka** (20 fejezet: MINDEN héten más szelet az idővonalból,
         a hősök dicsérete ELŐTT hangzik el — `/events`-független, az `enekmondo` NPC-nél),
       - **a korona átka** (40 suttogás, szintenként más — csak királynak).
+- [ ] **Advancement-fa + toast-szaporodás ellenőrzés (ÚJ):** az IceSMP haladás-fül a világ
+      `datapacks/bukkit/` datapackjébe töltődik. Ellenőrizd: (1) a 7 csomópont megjelenik a
+      haladás-fülön (`root`/Elhivatás/Az út elágazik/Hovatartozás/Mesterség kezdete/A rontás
+      megtörve/Rejtett zug), és mind a saját grant-pontján kapható meg;
+      (2) **teljesíts 20-30 questet**, majd nézd meg a `<world>/datapacks/bukkit/` méretét és
+      fájlszámát — a toast-advancementek véletlen kulcsúak, tehát ha NEM törlődnek a lemezről,
+      a szám nőni fog. Ha nő, jelezd: fix kulcsú toast-advancementre kell váltani.
 - [ ] **A38 Spawn-élmény (ÚJ — Tier A):** állíts be `world-events.intro.first-join-spawn`-t
       ("world,x,y,z[,yaw,pitch]") → az ELSŐ belépő oda teleportál, és csak utána indul az
       intro; visszatérő belépésnél rövid, halk üdvözlő title + csengő hang

@@ -22,7 +22,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * konzol-warn jelzi.
  *
  * <p>A rejtett advancement ({@code hidden:true, show_toast:true, announce_to_chat:false})
- * nem szennyezi az advancement-képernyőt, és ~1 mp után nyomtalanul eltűnik a registryből.
+ * nem szennyezi az advancement-képernyőt, és ~1 mp után eltűnik a registryből.
+ *
+ * <p><b>Ellenőrizendő playteszten:</b> a Bukkit a betöltött advancementeket a világ
+ * {@code datapacks/bukkit/} datapackjébe írja, és itt MINDEN toast egyedi, véletlen kulcsot
+ * kap (toast-onként egy bejegyzés). Ha a {@code removeAdvancement} nem törli a lemezről is,
+ * a fájlok quest-teljesítésenként szaporodnak. Ha ez bebizonyosodik, a megoldás egy FIX
+ * kulcsú, újrahasznosított toast-advancement (a cím cseréjéhez újratöltéssel), nem a
+ * véletlen kulcs.
  */
 public final class ToastUtil {
 
