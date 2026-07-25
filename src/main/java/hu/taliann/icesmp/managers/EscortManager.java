@@ -154,7 +154,7 @@ public final class EscortManager {
         if (isActive()) {
             if (now >= expiresAt) {
                 fail("escort-failed-timeout");
-            } else if (!convoyValid()) {
+            } else if (!hu.taliann.icesmp.utils.TransientEntities.isAlive(convoyId)) {
                 // Died without our listener catching it (e.g. void) — settle as lost.
                 fail("escort-failed-died");
             }
@@ -201,7 +201,7 @@ public final class EscortManager {
 
     /** Despawns the convoy and any live wave mobs on plugin disable. */
     public void shutdown() {
-        removeEntity(convoyId);
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, convoyId);
         convoyId = null;
         clearWaves();
         hideBarFromAll();
@@ -388,10 +388,7 @@ public final class EscortManager {
         final int level = Math.max(1, configManager.getInt("escort.wave-level", 3));
 
         // Bounded tracking: drop entries whose mobs are already gone.
-        waveMobs.removeIf(id -> {
-            final Entity existing = Bukkit.getEntity(id);
-            return existing == null || !existing.isValid();
-        });
+        waveMobs.removeIf(id -> !hu.taliann.icesmp.utils.TransientEntities.isAlive(id));
 
         for (int i = 0; i < count; i++) {
             final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
@@ -459,7 +456,7 @@ public final class EscortManager {
         if (id == null) {
             return; // The driver already settled it (success) — no contradictory broadcast.
         }
-        removeEntity(id);
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         destination = null;
         clearWaves();
         hideBarFromAll();
@@ -487,39 +484,12 @@ public final class EscortManager {
 
     private void clearWaves() {
         for (final UUID id : waveMobs) {
-            removeEntity(id);
+            hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         }
         waveMobs.clear();
     }
 
     /** Best-effort, Folia-safe removal on the entity's own region thread. */
-    private void removeEntity(final UUID id) {
-        if (id == null) {
-            return;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid()) {
-                entity.getScheduler().run(plugin, task -> entity.remove(), null);
-            }
-        } catch (final Exception ignored) {
-            // Region/scheduler unavailable (shutdown) — non-persistent entities don't survive a restart.
-        }
-    }
-
-    private boolean convoyValid() {
-        final UUID id = convoyId;
-        if (id == null) {
-            return false;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            return entity != null && entity.isValid();
-        } catch (final Exception exception) {
-            return true; // Region unavailable — assume alive rather than failing the escort.
-        }
-    }
-
     private static double horizontalDistance(final Location a, final Location b) {
         final double dx = a.getX() - b.getX();
         final double dz = a.getZ() - b.getZ();

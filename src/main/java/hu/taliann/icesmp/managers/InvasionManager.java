@@ -232,30 +232,13 @@ public final class InvasionManager {
         if (activeMobs.isEmpty()) {
             return false;
         }
-        activeMobs.removeIf(id -> {
-            try {
-                final Entity existing = Bukkit.getEntity(id);
-                return existing == null || !existing.isValid();
-            } catch (final Exception exception) {
-                return false; // Régió nem elérhető erről a szálról — döntsön a következő hívás.
-            }
-        });
+        activeMobs.removeIf(id -> !hu.taliann.icesmp.utils.TransientEntities.isAlive(id));
         return !activeMobs.isEmpty();
     }
 
     public void shutdown() {
         nextAttemptAt = 0L;
-        for (final UUID id : activeMobs) {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid()) {
-                try {
-                    entity.remove();
-                } catch (final Exception ignored) {
-                    // Region/thread unavailable during shutdown — leave it.
-                }
-            }
-        }
-        activeMobs.clear();
+        hu.taliann.icesmp.utils.TransientEntities.removeAllOnShutdown(activeMobs);
     }
 
     private void spawnWave(final Location center) {

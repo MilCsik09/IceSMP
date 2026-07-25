@@ -405,17 +405,7 @@ public final class CultistEventManager {
 
     /** Leállításkor: a hívek despawnja (best effort). */
     public void shutdown() {
-        for (final UUID id : cultists) {
-            try {
-                final Entity entity = Bukkit.getEntity(id);
-                if (entity != null && entity.isValid()) {
-                    entity.remove();
-                }
-            } catch (final Exception ignored) {
-                // shutdown közben a régió már nem elérhető
-            }
-        }
-        cultists.clear();
+        hu.taliann.icesmp.utils.TransientEntities.removeAllOnShutdown(cultists);
         active = false;
     }
 }

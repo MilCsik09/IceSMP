@@ -129,7 +129,7 @@ public final class WildHuntManager {
 
         final long now = System.currentTimeMillis();
         if (beastId != null) {
-            if (now >= expiresAt || !beastValid()) {
+            if (now >= expiresAt || !hu.taliann.icesmp.utils.TransientEntities.isAlive(beastId)) {
                 escape();
             }
             return;
@@ -248,7 +248,7 @@ public final class WildHuntManager {
 
     /** Removes the beast on plugin disable / expiry. */
     public void shutdown() {
-        removeEntityById(beastId);
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, beastId);
         beastId = null;
     }
 
@@ -337,37 +337,9 @@ public final class WildHuntManager {
         if (!claimSettlement()) {
             return; // The death listener won the race — the slain path already settled it.
         }
-        removeEntityById(id);
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "wild-hunt-escaped", "&7🐺 A Vad Hajsza fenevadja eltűnt a vadonban — a zsákmány veszve."));
-    }
-
-    private void removeEntityById(final UUID id) {
-        if (id == null) {
-            return;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid()) {
-                // Folia: entity removal must run on its own region thread.
-                entity.getScheduler().run(plugin, task -> entity.remove(), null);
-            }
-        } catch (final Exception ignored) {
-            // Region/scheduler unavailable (shutdown) — the non-persistent beast won't survive a restart.
-        }
-    }
-
-    private boolean beastValid() {
-        final UUID id = beastId;
-        if (id == null) {
-            return false;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            return entity != null && entity.isValid();
-        } catch (final Exception exception) {
-            return true; // Region unavailable — assume alive rather than despawning it.
-        }
     }
 
     private long intervalMillis() {

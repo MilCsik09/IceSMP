@@ -265,14 +265,7 @@ public final class CorruptionManager implements PersistentStore {
             });
         }
         for (final UUID id : corruptMobs) {
-            try {
-                final Entity entity = Bukkit.getEntity(id);
-                if (entity != null && entity.isValid()) {
-                    entity.getScheduler().run(plugin, task -> entity.remove(), null);
-                }
-            } catch (final Exception ignored) {
-                // Régió nem elérhető — kósza mob marad, a takarítás-szabály kezeli.
-            }
+            hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         }
         corruptMobs.clear();
         save();
@@ -547,16 +540,6 @@ public final class CorruptionManager implements PersistentStore {
 
     /** Despawn a plugin leállásakor (a zóna-állapot perzisztens, a mobok nem). */
     public void shutdown() {
-        for (final UUID id : corruptMobs) {
-            try {
-                final Entity entity = Bukkit.getEntity(id);
-                if (entity != null && entity.isValid()) {
-                    entity.remove();
-                }
-            } catch (final Exception ignored) {
-                // Shutdown közben a régió már nem elérhető — kósza mob.
-            }
-        }
-        corruptMobs.clear();
+        hu.taliann.icesmp.utils.TransientEntities.removeAllOnShutdown(corruptMobs);
     }
 }

@@ -364,7 +364,14 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   `Locale.ROOT` NÉLKÜL kisbetűsített — tr_TR szerver-locale-on az „I" prefix-szűrése csendben
   elromlott volna; a közös helper ezt is lezárja.
 - **O5** ✅ KÉSZ — spell-célzás közös helperbe emelve (`SpellTargetingUtil`, 31 hívó fájl).
-- **O6** 🟡 Világesemény-közös minták (`WorldEventUtil`) — horgony-választás/idő-konverzió/entitás-eltávolítás közös helperbe.
+- **O6** ✅ RÉSZBEN KÉSZ — `utils/TransientEntities` (`removeById` Folia-hoppal, `removeAllOnShutdown`,
+  `removeOnShutdown`, `isAlive` fail-open szemantikával); 9 hely átvezetve 6 managerben
+  (Corruption/Cultist/Invasion/Escort/WildHunt/WorldBoss), −123/+14 sor. Lelet: az
+  `EscortManager` hulla-prune-ja kivétel-védelem NÉLKÜL kérdezte az entitást (régió-hiba
+  esetén a wave-kezelés dobott volna) — a közös `isAlive` fail-open ága ezt lezárja.
+  NYITVA: a horgony-választás (`lastAnchorId`-rotáció) csak 2 managerben azonos
+  (WorldBoss/Escort), a perc→millis „duplikáció" pedig 25 helyen egyetlen `* 60_000L`
+  művelet — annak helper NEM javítana az olvashatóságon, ezért nem csináljuk.
 - **O7** 🟢 `QuestManager.handleTerritoryEnter` O(összes quest) — auto-start index-építés a lineáris keresés helyett.
 - **O8** 🟢 `RelicItemFactory` reflexiós metódus-scan cache — Method-referenciák lazy-init cache-elése.
 - **O10** 🟢 `FactionPassiveListener` korai kilépés sorrendje — damage-cause szűrés a faction-lookup elé.
@@ -414,8 +421,16 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
 O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
 (DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil),
 **O4** (TabCompleteUtil), **O25** (DailyBudget), **O26** (mérés alapján elvetve, 1 valódi duplikátum
-javítva); **RÉSZBEN** = O1. A közös-helper csomagból hátra van: O6 `WorldEventUtil`,
-O27 `PeriodicChanceEvent`.
+javítva), **O6** (TransientEntities — a horgony-rotáció maradt nyitva); **RÉSZBEN** = O1.
+A közös-helper csomagból hátra van: O27 `PeriodicChanceEvent` (5 manager azonos
+ütemező-váza — ez a legnagyobb és legkényesebb, mert a tick-ütemezésbe nyúl).
+
+**Mérleg (2026-07-25 helper-kör):** 4 új `utils/` osztály (MobKillUtil, TabCompleteUtil,
+DailyBudget, TransientEntities), ~35 hívási hely átvezetve, és 6 latens hiba lezárva, amit a
+duplikáció rejtett: AFK/spawner/minion-szűrők hiánya a jutalom-ágakon, a SoulShard AFK-fékének
+config-kapu nélküli állapota, a `RelicCommand` `Locale.ROOT` nélküli kisbetűsítése, a
+váltási keret újraindítással nullázhatósága, az „előbb könyvel, aztán ellenőriz" keret-hiba,
+és az `EscortManager` kivétel-védelem nélküli entitás-prune-ja.
 
 ## P — kormányzás, gazdaság-hurok és rework-jelöltek (2026-07-22, tulaj-kérés)
 

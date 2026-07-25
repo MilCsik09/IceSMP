@@ -221,14 +221,7 @@ public final class WorldBossManager {
         if (id == null) {
             return;
         }
-        final Entity boss = Bukkit.getEntity(id);
-        if (boss != null && boss.isValid()) {
-            try {
-                boss.remove();
-            } catch (final Exception ignored) {
-                // Region/thread unavailable during shutdown — leave it; it is at worst a stray mob.
-            }
-        }
+        hu.taliann.icesmp.utils.TransientEntities.removeOnShutdown(id);
     }
 
     /** Periodic spawn attempt on the global world-events tick. */
