@@ -107,6 +107,31 @@ public final class ItemDataFactory {
     }
 
     /**
+     * A vanília alap-attribútumok (kard sebzése/ütemé, páncél védelme) átmentése a metába, MIELŐTT
+     * bármilyen egyedi módosítót adnánk hozzá. Az ELSŐ explicit módosító felülírja a tárgy teljes
+     * {@code attribute_modifiers} komponensét — enélkül a vaskard elveszítené a +6 sebzését, és csak
+     * a rátett bónusz maradna. Idempotens: ha már van explicit lista, nem nyúl hozzá.
+     */
+    public static void seedDefaultAttributeModifiers(final ItemStack item, final ItemMeta meta) {
+        if (item == null) {
+            return;
+        }
+        seedDefaultAttributeModifiers(item.getType(), meta);
+    }
+
+    /** Ugyanaz Material-ból, ha a hívónak nincs kéznél ItemStack-je (pl. csak metát épít). */
+    public static void seedDefaultAttributeModifiers(final Material material, final ItemMeta meta) {
+        if (material == null || meta == null || meta.hasAttributeModifiers()) {
+            return;
+        }
+        final com.google.common.collect.Multimap<Attribute, AttributeModifier> defaults =
+                material.getDefaultAttributeModifiers();
+        if (defaults != null && !defaults.isEmpty()) {
+            meta.setAttributeModifiers(com.google.common.collect.HashMultimap.create(defaults));
+        }
+    }
+
+    /**
      * Explicit, determinisztikus attribútum-módosítók egy custom itemre (a random affix-roll-tól
      * függetlenül). Minden spec: {@code "<attribútum>:<érték>[:<slot>[:<művelet>]]"} — pl.
      * {@code "attack_damage:2"}, {@code "max_health:4:chest"}, {@code "movement_speed:0.03:feet:add"}.
@@ -165,6 +190,7 @@ public final class ItemDataFactory {
             if (modifierKey == null) {
                 continue;
             }
+            seedDefaultAttributeModifiers(item, meta);
             meta.addAttributeModifier(attribute, new AttributeModifier(modifierKey, amount, operation, slot));
             statLore.add(statLine(parts[0].trim().toLowerCase(Locale.ROOT), amount, operation));
             any = true;
@@ -221,8 +247,10 @@ public final class ItemDataFactory {
 
     private static Component statLine(final String attrKey, final double amount, final AttributeModifier.Operation op) {
         final boolean positive = amount > 0.0D;
+        // ADD_SCALAR és MULTIPLY_SCALAR_1 is törtben adja meg a szorzót (0.1 = +10%), ezért mindkettőt
+        // százalékra váltjuk — különben a tooltip tizedére hazudná a tényleges hatást.
         final boolean percent = op != AttributeModifier.Operation.ADD_NUMBER;
-        final double shown = percent && op == AttributeModifier.Operation.MULTIPLY_SCALAR_1 ? amount * 100.0D : amount;
+        final double shown = percent ? amount * 100.0D : amount;
         String num = String.format(Locale.ROOT, "%.2f", Math.abs(shown));
         if (num.endsWith(".00")) {
             num = num.substring(0, num.length() - 3);

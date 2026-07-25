@@ -150,8 +150,10 @@ public final class RelicItemFactory {
             meta.setTool(tool);
         }
 
-        meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE);
-        meta.removeAttributeModifier(Attribute.ATTACK_SPEED);
+        // A lenti bónuszok a vanília alapra ÉPÜLNEK RÁ (arany balta 7 + 5 = 12 összsebzés), ezért az
+        // alap-módosítókat át kell menteni: az első explicit módosító különben felülírná a tárgy
+        // teljes attribute_modifiers komponensét, és csak a bónusz maradna.
+        hu.taliann.icesmp.items.ItemDataFactory.seedDefaultAttributeModifiers(definition.material(), meta);
 
         final double defaultDamage = switch (definition.material()) {
             case NETHERITE_AXE -> 10.0D;
