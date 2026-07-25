@@ -555,7 +555,29 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       dőlt sor „Készítette: <név>" + PDC (crafted_by/crafted_at); a piacra téve is megmarad
       (márkajelzés). Bulk (stackelhető) eredményen NINCS (stack-törés ellen). Kapcsoló:
       `crafted-by.enabled` (profession-recipes.yml). Régi, címke nélküli itemek hibátlanul
-      működnek tovább.
+      működnek tovább. **Bélyeg-kivétel:** a STACKELHETŐ unique-alkatrészre (affix nélkül, pl.
+      `ures_kupa`) NEM kerül bélyeg — különben a craftolt és a visszakapott példány két külön
+      kupacban állna. Teszt: craftolj kupát, majd igyál meg egy italt → a visszakapott üres kupa
+      a craftolttal EGY stackbe álljon.
+- [ ] **Új recept-eredmény kulcsok (ÚJ):** a katalógus három új `result` mezőt ismer —
+      ellenőrizd mindhármat:
+      - **`rarity`** → a tárgy vanília raritás-színt kap a tooltipben (a saját raritás-létránk
+        `ItemDataFactory.vanillaRarityOf` szerint képezve le a 4 vanília fokra);
+      - **`use-remainder`** (`unique:<id>` alakot is elfogad) → a tárgy elfogyasztása után a
+        megadott tárgy marad a kézben. Kocsma-kör: `ures_kupa` → ital (pl. `jeghegyi_sor`) →
+        megivás → **ugyanaz az üres kupa** kerül vissza, tehát a kupa körbe-körbe járhat;
+      - **`use-cooldown`** (`{group, seconds}`) → a használat után a megadott csoport minden
+        tárgya visszatöltés alatt van (a vanília cooldown-animáció látszik).
+- [ ] **Hozzávaló-fedezet = hozzávaló-fogyás (ÚJ, visszaesés-teszt):** a készlet-ellenőrzés és a
+      levonás UGYANAZT a szűrőt használja, ezért **identitással bíró** tárgy (unique, signature,
+      „Készítette"-bélyeg, saját név vagy lore) hozzávalóként NEM számít és NEM is fogy el;
+      a sérült/kopott szerszám viszont igen (számít ÉS fogy).
+      **A hiba, amit keresünk:** ha egy craftolt tárgy fedezi a saját receptje plain hozzávalóját,
+      de nem fogy el, akkor a hozzávaló INGYEN van (65 recept eredménye osztozik anyagon a saját
+      plain hozzávalójával — pl. minden kocsma-ital `HONEY_BOTTLE`, a signature-fegyverek `BOW`/
+      `CROSSBOW`/`NETHERITE_SWORD`). Teszt: legyen a hátizsákban CSAK egy craftolt Jéghegyi Sör
+      (plain mézes üveg nélkül) → a Jéghegyi Sör receptje NE legyen craftolható. Ugyanez egy
+      elkészült Kallan Szeletelőjével a `kallan_szeletelo` receptre.
 - [ ] **D18 `/lore` kódex-parancs (ÚJ — Tier S):** `/lore` felsorolja a témákat;
       `/lore lang|fagy|menedek|kitaszitottak|fa|kapu|suttogok` (aliasok: red/blue/neutral/dark
       stb.) 5 sor kánon-szöveget ír chatbe; a szövegek messages-kulcsból felülírhatók

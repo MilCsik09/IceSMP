@@ -15,6 +15,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -62,6 +64,22 @@ public final class PlayerSessionCleanupListener implements Listener {
         this.spellRegistry = spellRegistry;
     }
 
+    /**
+     * A játékmód-tükör feltöltése: a join a játékos SAJÁT régió-szálán fut, tehát a
+     * {@code getGameMode()} itt biztonságosan olvasható. Innentől a jutalom-előszűrő
+     * (az áldozat szálán) a tükörből olvas, nem a másik entitásból.
+     */
+    @EventHandler
+    public void onPlayerJoin(final PlayerJoinEvent event) {
+        hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer());
+    }
+
+    /** A váltás az ÚJ értékkel érkezik, ezért nem a játékosból olvassuk, hanem az eventből. */
+    @EventHandler
+    public void onGameModeChange(final PlayerGameModeChangeEvent event) {
+        hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer().getUniqueId(), event.getNewGameMode());
+    }
+
     @EventHandler
     public void onPlayerQuit(final PlayerQuitEvent event) {
         cleanupPlayerState(event.getPlayer().getUniqueId());
@@ -74,6 +92,8 @@ public final class PlayerSessionCleanupListener implements Listener {
 
     public void cleanupPlayerState(final UUID playerId) {
         final Player player = Bukkit.getPlayer(playerId);
+
+        hu.taliann.icesmp.utils.GameModeCache.remove(playerId);
 
         for (final PlayerStateCleanup owner : stateOwners) {
             owner.clearPlayerState(playerId);

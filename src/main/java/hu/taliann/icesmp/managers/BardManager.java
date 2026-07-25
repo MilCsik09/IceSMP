@@ -46,13 +46,13 @@ public final class BardManager {
             "<gold>🎵 „A Néma Királynő két szót szólt: az elsőre felébredt, a másodikra elfogyott a nemesség. Harmadikat még nem mondott.”</gold>",
             "<gold>🎵 „Négy uralkodó nevét őrzi a lajstrom: Zhoris a lángmadarak ura, Miinus a sárkánykirály örököse, s a két hadvezér, Benedictus és Lineata.”</gold>",
             "<gold>🎵 „Zhoris köpenye főnixtollból szőtt, Miinus haragja acélba vert — s a fegyver máig öl, de a kéz, mely tartotta, nincs többé.”</gold>",
-            "<gold>🎵 „Benedictus és Lineata büszke seregei ma is rójják az utakat — csak lassabban, és nem parancsra.”</gold>",
+            "<gold>🎵 „Benedictus és Lineata büszke seregei ma is róják az utakat — csak lassabban, és nem parancsra.”</gold>",
             "<gold>🎵 „Kilencszázhetvennyolcban új nép jött a Fa alá: a Felsők. Ti vagytok azok — s a halál nálatok csak késés.”</gold>",
             "<gold>🎵 „A Fa ajándékot ad, ha először nyúlsz az erő felé: tárgyat, amit eldobni nem tudsz. Lélekkapocs a neve.”</gold>",
             "<gold>🎵 „A Kárhozat Kapuja nem ajtó, hanem seb — és a sebbe nem nyúl az, aki élni akar.”</gold>",
             "<gold>🎵 „Radicora az ó-Caldestera: minden ház áll még benne, csak lakó nincs hozzá.”</gold>",
             "<gold>🎵 „Thanaopolist a régi világ Mortengradnak hívta — a nevet ma már csak a vének receptjei őrzik.”</gold>",
-            "<gold>🎵 „A vérhold nem baljós jel, jó népek: az Ő fordulása álmában. Ennyi elég, hogy a világ megbilljen.”</gold>",
+            "<gold>🎵 „A vérhold nem baljós jel, jó népek: az Ő fordulása álmában. Ennyi elég, hogy a világ megbillenjen.”</gold>",
             "<gold>🎵 „A Suttogók nem messze élnek. Nappal veled esznek, éjjel másra hallgatnak — s nem mindig tudják, mikor döntöttek.”</gold>",
     };
 

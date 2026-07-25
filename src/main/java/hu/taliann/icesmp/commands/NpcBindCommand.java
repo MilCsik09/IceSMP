@@ -249,5 +249,4 @@ public final class NpcBindCommand implements BasicCommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
 }

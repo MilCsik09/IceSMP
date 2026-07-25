@@ -91,7 +91,7 @@ public final class StrangerNpcManager {
             "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>",
             "<dark_gray>„A Számvevők a pénzt írják. A Könyv a döntéseket. Csak az egyiket lehet visszafizetni.”</dark_gray>",
             "<dark_gray>„Négy uralkodó neve maradt fenn: Zhoris, Miinus, Benedictus, Lineata. Kérdezd meg, hol vannak.”</dark_gray>",
-            "<dark_gray>„Nyolc évszázada nem halt meg koronás fő öregségben. Ezt nevezik ők rendnek.”</dark_gray>",
+            "<dark_gray>„Majd’ három évszázada nem halt meg koronás fő öregségben. Ezt nevezik ők rendnek.”</dark_gray>",
             "<dark_gray>„A Fának négy gyermeke volt. Hármat imádnak. A negyediket kifelejtették — de ő emlékszik.”</dark_gray>",
             "<dark_gray>„Soleil lángot vitt, Kallan pikkelyt, Arkynn erdőt. Eleftheria csendet kapott. Melyik ajándék tartott ki?”</dark_gray>",
             "<dark_gray>„A csillag, ami a Fát ültette, még mindig ott van a földben. Néha kőként hullik vissza az égből.”</dark_gray>",
@@ -130,7 +130,7 @@ public final class StrangerNpcManager {
         if (!configManager.getBoolean("world-events.stranger-npc.enabled", true)) {
             return;
         }
-        if (activeStrangerId != null) {
+        if (strangerStanding()) {
             return; // Már áll egy Idegen — kettő sosem mutatkozhat egyszerre.
         }
         final long intervalMillis = Math.max(1L,
@@ -149,7 +149,7 @@ public final class StrangerNpcManager {
 
     /** Admin-próba (/events stranger): azonnali felbukkanás a horgony közelében. */
     public boolean forceSpawn(final Player anchor) {
-        if (activeStrangerId != null || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
+        if (strangerStanding() || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
             return false;
         }
         Player target = anchor;
@@ -238,7 +238,28 @@ public final class StrangerNpcManager {
                 stranger.remove();
             }
             activeStrangerId = null;
-        }, null, despawnTicks);
+            // A retired-callback KÖTELEZŐ: ha az Idegent a késleltetés lejárta előtt eltávolítják
+            // (megölik, /kill, chunk-eltávolítás), a task retire-el és sosem fut le — enélkül a
+            // mező örökre beragadna, és az esemény szerver-újraindításig leállna.
+        }, () -> activeStrangerId = null, despawnTicks);
+    }
+
+    /**
+     * Áll-e még Idegen. A mező önmagában nem elég: a retired-callback mellett ez a MÁSODIK
+     * védőháló, mert nem minden eltávolítási út vált ki retire-t (pl. az entitás nem betöltött
+     * régióban szűnik meg). Ha a mező be van állítva, de az entitás már nincs, a kapu magától
+     * felnyílik — így az esemény nem tud véglegesen leállni.
+     */
+    private boolean strangerStanding() {
+        final UUID id = activeStrangerId;
+        if (id == null) {
+            return false;
+        }
+        if (hu.taliann.icesmp.utils.TransientEntities.isAlive(id)) {
+            return true;
+        }
+        activeStrangerId = null;
+        return false;
     }
 
     /** Leállás-takarítás: az élő Idegen nem maradhat a világban. */

@@ -3,7 +3,6 @@ package hu.taliann.icesmp.utils;
 import hu.taliann.icesmp.managers.AfkManager;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.MinionManager;
-import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -16,8 +15,10 @@ import org.bukkit.persistence.PersistentDataType;
  * függően hol éltek, hol nem — ugyanaz az ölés az egyik jutalmat kifizette, a másikat nem.
  * A {@link RewardKind} tier dönti el, egy jutalom-fajta melyik szűrőket kapja.
  *
- * <p>Folia: minden hívás az áldozat régió-szálán fut (EntityDeathEvent), és csak az áldozat
- * PDC-jét + a gyilkos memóriabeli állapotát olvassa — nincs kereszt-száli entitás-érintés.
+ * <p>Folia: minden hívás az áldozat régió-szálán fut (EntityDeathEvent). Az áldozat PDC-je itt
+ * biztonságos, a GYILKOSRÓL viszont semmit nem olvasunk közvetlenül — ő másik régió-szálhoz
+ * tartozhat. A játékmód a {@link GameModeCache} konkurens tükréből, az AFK-állapot az
+ * {@code AfkManager} UUID-kulcsos map-jéből jön, tehát nincs kereszt-száli entitás-érintés.
  */
 public final class MobKillUtil {
 
@@ -72,7 +73,10 @@ public final class MobKillUtil {
             return null;
         }
         if (kind != RewardKind.TRACKING) {
-            if (requireSurvival(configManager) && killer.getGameMode() != GameMode.SURVIVAL) {
+            // A játékmód a konkurens tükörből jön: a gyilkos MÁSIK régió-szálhoz tartozhat, a
+            // getGameMode() közvetlen olvasása idegen entitás érintése lenne. A döntés nem
+            // odázható el (a listenerek a halál-eventben, helyben döntenek a jutalomról).
+            if (requireSurvival(configManager) && !GameModeCache.isSurvival(killer.getUniqueId())) {
                 return null;
             }
             // Az afkManager a DI-sorrendben később épül, mint néhány listener — a null itt

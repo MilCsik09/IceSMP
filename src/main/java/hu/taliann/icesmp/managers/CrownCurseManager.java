@@ -66,7 +66,7 @@ public final class CrownCurseManager {
             {
                     "„I. Zhoris a lángmadarai tollából köpenyt szőtt. Melegen tartotta. Nem elég melegen.”",
                     "„V. Miinus haragját acélba kovácsolták. A harag megmaradt. A kéz nem.”",
-                    "„I. Benedictus és I. Lineata büszke seregei ma is rójják az utakat. Csak lassabban.”",
+                    "„I. Benedictus és I. Lineata büszke seregei ma is róják az utakat. Csak lassabban.”",
                     "„Zhoris is ezt hitte. Miinus is. Mindketten a lajstromban vannak.”",
                     "„Tudod, mi a közös a legendás fegyverekben? Mind egy halott nevét viseli.”",
                     "„A sárkánykirály örököse nem sárkánytól halt meg. Csak megvárta a reggelt.”",
@@ -89,7 +89,7 @@ public final class CrownCurseManager {
                     "„Két mondatot kimondtam. Az első felébresztett. A második eltörölte a nemességet.”",
                     "„A harmadik mondat még megvan. Tartogatom. Nem neked — de te is benne leszel.”",
                     "„A lajstromban van egy üres sor. Már a nevedet formálja.”",
-                    "„Ne siess. Én sem sietek. Nekem hatszáz évem volt gyakorolni a várakozást.”",
+                    "„Ne siess. Én sem sietek. Nekem a Hasadás óta volt időm gyakorolni a várakozást.”",
                     "„Érzed? Ez nem a tél. Ez én vagyok, ahogy közelebb hajolok.”",
                     "„A koronát leteheted. A koronát MINDIG le lehet tenni. Ezt szokták a legkésőbb megérteni.”",
                     "„Amit a Fa kínjából magamba zártam, azt most rajtad keresztül számolom vissza.”",

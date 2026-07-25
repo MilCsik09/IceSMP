@@ -1556,7 +1556,7 @@ public final class IceSMPCore {
         sinListener.setWarWindowManager(warWindowManager); // hadi-ablak: RED↔BLUE kill nem bűn
         pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CombatTagListener(combatTagManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(dungeonLootService, territoryManager, configManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(afkManager, dungeonLootService, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.HealthRegenListener(classHealthService), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SchoolCounterAnvilListener(), plugin);

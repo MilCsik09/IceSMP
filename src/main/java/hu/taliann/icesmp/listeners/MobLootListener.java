@@ -91,7 +91,11 @@ public final class MobLootListener implements Listener {
         // nem esnek át (dupla-drop fék).
         final hu.taliann.icesmp.managers.CultistEventManager cultists = this.cultistEventManagerRef;
         if (cultists != null && cultists.isCultist(entity)) {
-            if (entity.getKiller() != null && ThreadLocalRandom.current().nextDouble()
+            // A kultista-loot ugyanolyan érték-csap, mint a sima mob-loot: a közös FAUCET-előszűrőn
+            // kell átmennie (survival-kapu, AFK-fék, spawner-kizárás), különben ez az ág kiskapu.
+            if (hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+                    hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) != null
+                    && ThreadLocalRandom.current().nextDouble()
                     < configManager.getDouble("cultists.loot.chance", 0.35D)) {
                 final ItemStack cultDrop = rollTable("cultists.loot", ItemRarityService.TIER_DROP, entity);
                 if (cultDrop != null) {

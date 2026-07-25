@@ -159,7 +159,7 @@ public final class ProfessionRecipeBookListener implements Listener {
             return;
         }
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            player.getInventory().removeItem(new ItemStack(entry.getKey(), entry.getValue()));
+            consumePlain(player, entry.getKey(), entry.getValue());
         }
         consumeUnique(player, recipe);
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
@@ -206,15 +206,56 @@ public final class ProfessionRecipeBookListener implements Listener {
         return true;
     }
 
-    /** Counts plain items of a material, EXCLUDING unique materials that share the base type. */
+    /**
+     * Hozzávalónak elfogadható-e a tárgy. A kopás/sérülés NEM zavar (a használt szerszám is jó
+     * hozzávaló), de bármilyen IDENTITÁS-jel kizárja: unique-material, PDC-bélyeg (signature,
+     * „Készítette”), saját név vagy lore. Az ilyen tárgyak nem tűnhetnek el hozzávalóként.
+     *
+     * <p>KRITIKUS: a készlet-számolás és a fogyasztás UGYANEZT a predikátumot használja. Amíg a
+     * számolás csak típust nézett, a fogyasztás pedig {@code removeItem}-mel (azaz
+     * {@code isSimilar}-ral) dolgozott, a kettő szétcsúszott: a saját craftolt tárgyad (és minden
+     * sérült szerszám) FEDEZTE a hozzávalót, de a levonás nem találta meg — így a hozzávaló ingyen
+     * maradt. 65 recept eredménye osztozik anyagon a saját plain hozzávalójával, ezért ez
+     * receptek tucatjain volt kihasználható.
+     */
+    private boolean isPlainIngredient(final ItemStack item, final Material material) {
+        if (item == null || item.getType() != material || uniqueMaterials.idOf(item) != null) {
+            return false;
+        }
+        if (!item.hasItemMeta()) {
+            return true;
+        }
+        final org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        return !meta.hasDisplayName() && !meta.hasLore() && meta.getPersistentDataContainer().isEmpty();
+    }
+
+    /** Counts plain items of a material, EXCLUDING anything that carries identity. */
     private int countPlain(final Player player, final Material material) {
         int count = 0;
         for (final ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material && uniqueMaterials.idOf(item) == null) {
+            if (isPlainIngredient(item, material)) {
                 count += item.getAmount();
             }
         }
         return count;
+    }
+
+    /** Levonás pontosan azokból a tárgyakból, amiket a {@link #countPlain} beszámított. */
+    private void consumePlain(final Player player, final Material material, final int amount) {
+        int remaining = amount;
+        final ItemStack[] contents = player.getInventory().getContents();
+        for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
+            final ItemStack item = contents[slot];
+            if (!isPlainIngredient(item, material)) {
+                continue;
+            }
+            final int take = Math.min(remaining, item.getAmount());
+            item.setAmount(item.getAmount() - take);
+            if (item.getAmount() <= 0) {
+                player.getInventory().setItem(slot, null);
+            }
+            remaining -= take;
+        }
     }
 
     private int countUnique(final Player player, final String uniqueId) {
@@ -356,7 +397,14 @@ public final class ProfessionRecipeBookListener implements Listener {
         // a NEVES/gear eredmények PDC-ben és lore-sorban viszik a készítő nevét — a piacon is
         // megmarad, márkajelzésként. Bulk (lore nélküli, stackelhető) eredményre nem kerül,
         // hogy a stackelést ne törje. A roll ELŐTT fut (a roll a lore alá fűzi az affixokat).
-        if (configManager.getBoolean("crafted-by.enabled", true)
+        //
+        // A STACKELHETŐ unique-ALKATRÉSZ is kimarad (affix nélkül): ezekből ugyanaz a tárgy más
+        // úton is a játékoshoz kerülhet (pl. USE_REMAINDER-ként visszakapott üres kupa), és a
+        // bélyeg a két példányt összeférhetetlenné tenné — két külön kupa-kupac állna a
+        // hátizsákban ugyanabból a tárgyból.
+        final boolean stackableComponent = recipe.uniqueResult() != null
+                && recipe.affixTier() == null && result.getMaxStackSize() > 1;
+        if (configManager.getBoolean("crafted-by.enabled", true) && !stackableComponent
                 && (recipe.affixTier() != null || (recipe.lore() != null && !recipe.lore().isEmpty()))) {
             final ItemMeta craftedMeta = result.getItemMeta();
             if (craftedMeta != null) {
