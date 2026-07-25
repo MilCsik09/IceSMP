@@ -285,6 +285,7 @@ public final class IceSMPCore {
     private final SoulShardManager soulShardManager;
     private final RitualManager ritualManager;
     private final ExchangeBoardManager exchangeBoardManager;
+    private final hu.taliann.icesmp.managers.CrownCurseManager crownCurseManager;
     private final hu.taliann.icesmp.managers.RespecService respecService;
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
@@ -515,6 +516,10 @@ public final class IceSMPCore {
         ritualManager.setPaktDependencies(resourceBonusService, uniqueMaterialFactory); // pakt-oltár
         hu.taliann.icesmp.spells.SummonMinionsSpell.setSoulforge(soulforgeManager); // statikus híd
         this.exchangeBoardManager = new ExchangeBoardManager(plugin, configManager, exchangeRateService);
+        // A Néma Királynő átka a koronán: a szint a trónon töltött időből számolódik (a
+        // KingManager tartja), ezért nincs saját perzisztenciája.
+        this.crownCurseManager = new hu.taliann.icesmp.managers.CrownCurseManager(
+                plugin, configManager, kingManager, messageManager);
         // A respec EGYETLEN végrehajtója (a parancs és a GUI is ezt hívja) — a TalentManager
         // után épül, mert a talentpont-visszatérítéshez kell.
         this.respecService = new hu.taliann.icesmp.managers.RespecService(
@@ -1165,6 +1170,7 @@ public final class IceSMPCore {
                 exchangeBoardManager::tick,
                 statsManager::tick,
                 achievementManager::tick,
+                crownCurseManager::tick,
                 marketManager::tickAuctions,
                 caravanManager::tick,
                 ambientEventManager::tick,

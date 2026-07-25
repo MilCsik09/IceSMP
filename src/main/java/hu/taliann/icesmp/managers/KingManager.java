@@ -209,6 +209,19 @@ public final class KingManager implements PersistentStore {
         save();
     }
 
+    /**
+     * A jelenlegi király trónon töltött ideje millisben (0, ha nincs király).
+     * A korona-átok szintje ebből számolódik — trónfosztáskor/újraválasztáskor az
+     * electionStart nullázódik, tehát az átok magától tisztul (nincs külön állapot).
+     */
+    public long millisOnThrone(final FactionType faction) {
+        if (faction == null || kings.get(faction) == null) {
+            return 0L;
+        }
+        final Long start = electionStart.get(faction);
+        return start == null ? 0L : Math.max(0L, System.currentTimeMillis() - start);
+    }
+
     private void resetExpiredTerm(final FactionType faction) {
         final long termDays = Math.max(1L, configManager.getLong("factions.kings.term-days", 7L));
         final long start = electionStart.computeIfAbsent(faction, key -> System.currentTimeMillis());

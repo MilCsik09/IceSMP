@@ -201,6 +201,28 @@ factions:
     term-days: 7
     excluded:
       - "NEUTRAL"
+    # ===== A Néma Királynő átka a koronán (kódex IV. + Az Elveszett Uralkodók) =====
+    # Eleftheria átka „a világ minden koronás főjét sírba vitte" — a hosszú uralkodás ezért
+    # érezhetően kockázatos. Az átok szintje a TRÓNON TÖLTÖTT IDŐBŐL számolódik, nincs külön
+    # állapota: trónfosztáskor/újraválasztáskor magától tisztul.
+    # Az alsó szintek CSAK hangulat (suttogás + lich-türkiz derengés a korona körül);
+    # a tét a stakes-from-level fokon kezdődik. Beépített fék az örökös királyra.
+    crown-curse:
+      enabled: true
+      # Ennyi trónon töltött óránként lép egy szintet (24 óra = a 7 napos ciklus alatt max 5-ig ér).
+      hours-per-level: 24
+      max-level: 5
+      # Ettől a szinttől van TÉT (alatta pusztán hangulat).
+      stakes-from-level: 3
+      # Esély, hogy egy tick-en a Királynő suttog a királynak (%).
+      whisper-percent: 12
+      # Tét 1: a korona elszívja az életerőt — HUNGER-rel leáll a TERMÉSZETES regeneráció
+      # (nem sebez és nem halálos: sebezhetőbbé tesz, de nem indít büntetés-spirált).
+      weaken-healing: true
+      effect-seconds: 30
+      # Tét 2: a közeli, CÉLTALAN élőhalottak a koronát keresik (aktív célpontot nem vesz el).
+      undead-attraction: true
+      attraction-radius: 24.0
   # ===== Raid =====
   # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
   # A raid felkészüléssel indul (warmup): mindkét oldal harcosai a

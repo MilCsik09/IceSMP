@@ -954,7 +954,19 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
           ranglista-pontot, bestiárium-bejegyzést vagy közösségi cél-számlálót** (ez utóbbi négy
           korábban pumpálható volt).
         Mind a négy szűrő kikapcsolható: `/icesmp config menu` → „Kill-jutalom szűrők".
-  - [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
+  - [ ] **A korona átka (ÚJ, `factions.kings.crown-curse`):** ültess trónra egy királyt, majd
+      állítsd `hours-per-level: 0`-ra… nem lehet (min. 1) — teszthez vedd `hours-per-level: 1`-re
+      és `/icesmp reload`. Egy óra trónon = 1 szint. Ellenőrizd:
+      - a szint-lépés EGYSZER szól („A korona hidegebb lett", szint/max),
+      - minden szinten lich-türkiz derengés a korona (fej) körül,
+      - `whisper-percent` szerint néha a Királynő suttog (a szinttel egyre nyíltabban),
+      - `stakes-from-level` (alap 3) ALATT semmi tét — csak hangulat,
+      - fölötte: HUNGER (leáll a természetes regeneráció) + a közeli CÉLTALAN élőhalottak a
+        királyt kezdik célozni (aktív célpontot NEM vesz el tőlük),
+      - trónfosztás/újraválasztás után az átok **nullázódik** (nincs külön állapota: a
+        trónon töltött időből számol),
+      - a nem-király játékosokra semmi nem hat, és `enabled: false` mindent kikapcsol.
+- [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
         az utolsó találat után ~10 mp-cel eltűnik.
   - [ ] **Crate-rulett:** kulcs-nyitáskor pörgő GUI (~3,5 mp, lassul), a végén a tényleges
         nyeremény áll meg; a GUI IDŐ ELŐTTI bezárása esetén is jár a nyeremény; kapcsoló:
