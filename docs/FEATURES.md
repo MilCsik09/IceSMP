@@ -67,7 +67,7 @@
 
 ## 💰 Gazdaság
 
-- **4 frakció-valuta** (Vörös Talentum, Kék Talentum, Creutzér, Csontveret) —
+- **4 frakció-valuta** (Parázsló Parals, Hópihér-veret, Creutzér, Csontveret) —
   ITEM_MODEL-es fizikai veretek több címletben.
 - **SZENT SZABÁLY: a bank-számlára csak fizikai veret-befizetéssel kerülhet pénz** —
   minden jutalom fizikai tokenben érkezik (payOutTokens), a rendszer sosem "nyomtat"

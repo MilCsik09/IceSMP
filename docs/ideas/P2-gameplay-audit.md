@@ -337,3 +337,45 @@ zone-ramp (39. sor) is benne van a LORE_REFERENCE lore→mechanika táblájában
    kivezetés), #24 kazamata-loot modell, közösségi célok szezon-viselkedése.
 4. **Playtest-mérés (nem kód):** tablist/worldEventsTask/petTask időzítés 50-60 fővel;
    Íjász/Orgyilkos valós DPS (a papír-metrika vak a DoT/vanília rétegre).
+
+## FÜGGELÉK — Lore-integritás és tartalom-illeszkedés review (2026-07-25)
+
+Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleges tartalma.
+
+### ✅ Ami hibátlan
+- **A 13 Lélekkapocs-név** (Caldesterai Rúnakódex … Sárkányvér-fiola) **bájtra egyezik** a kódex
+  függelékével és a `LORE_REFERENCE` táblájával — a `CatalystItemFactory` a kánont követi.
+- **Mortengrad-szabály áll:** a bukás előtti név KIZÁRÓLAG item-nevekben (Mortengradi Hamukenyér,
+  Mortengradi Árnygomba) és egy config-kommentben szerepel — élő helymegnevezésként soha.
+- **Frakció-attribúció:** a 19 frakció-kötött quest egyike sem hordoz idegen frakció
+  lore-jegyeit (gépi ellenőrzés: kánon-kulcsszó-készlet frakciónként).
+- **Tárgy-tónus:** 436 recept-név, **nulla** anakronizmus/placeholder; a regiszter végig
+  fantasy-magyar.
+- **A lajstrom 24/27 tétele létezik a játékban** (a legendás tárgyak túlnyomó része implementált).
+
+### 🔴 Lore-integritási hibák
+1. **Duplikált lajstrom-tétel:** a kódex KÉT pyralingradi számszeríjat sorol, gyakorlatilag azonos
+   leírással — „**Pyralingradi Tűzköpő** (számszeríj) — Soleil papjai áldották meg" ÉS
+   „**Pyralingradi Ostrom-számszeríj** — Soleil papjai áldották meg a Vérszavanna szívében".
+   Az első implementált, a második sehol. → a kettő egyesítése VAGY a második megkülönböztetése
+   (pl. ostromfegyver: lassú, nagy sebzés).
+2. **Név-drift a loot és a kódex között:** a kódex „**Megrontott** Fekete Csont"-ot ír, a
+   `loot.yml` „Fekete Csont"-ot ad. Egy szó, de a kánon-egyezés elve sérül.
+3. **Két lajstrom-tétel csak a lore-ban él:** „A Vasművek Akadémiájának Csákánya" (ma csak
+   recept-lore-sorokban) és „Asterlayna Gyümölcse" (a tiltott sütemény). → BACKLOG N2/N3.
+
+### 🟡 Kánon a kódban, de a játékos felé nem jut el
+4. **A négy valuta kánon-neve** (Parázsló Parals, Hópihér-veret, Creutzér, Csontveret) él a
+   `CurrencyType`-ban és a lore-ban, de a **`03-valuta-gazdasag.md` egyszer sem nevezi meg őket** —
+   végig „valuta"/„veret" generikusan. A játékos a saját frakció-valutájának nevét nem tanulja meg.
+5. **`docs/FEATURES.md` elavult placeholder-neveket írt** („Vörös Talentum", „Kék Talentum") —
+   ez volt az EGYETLEN doksi, ami nem a kánont használta. ✅ javítva ebben a körben.
+
+### 🔴 A kódex kimondja, a kód nem tudja (a legnagyobb lore-rés)
+6. **Caldestera fegyvermentessége.** A kódex szerint a 547-es Armageddon-ultimátum óta a Menedék
+   „szigorúan semleges és **fegyvermentes** föld", és a Vérhold-virrasztáson is „fegyver nélkül"
+   ülnek egy asztalhoz. A kódban ennek **nulla nyoma van**: a védett zóna csak a PvP-sebzést
+   tiltja. → BACKLOG **N1** (a review legerősebb ötlete: kánon-kötött, kicsi munka).
+7. **A Néma Királynő koronára szóló átka.** A kódex központi motívuma („a világ minden koronás
+   főjét sírba vitte" + a négy Elveszett Uralkodó), a király-rendszer viszont teljesen
+   lore-mentes. → BACKLOG **N4** (egyben beépített anti-örökös-király fék).

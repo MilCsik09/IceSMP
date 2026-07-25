@@ -6,8 +6,16 @@ elmagyarázzuk.
 
 ## A pénzed: tokenek és a bank
 
-Minden frakciónak saját **token**-je (érméje) van: Piros, Kék, Semleges, Sötét. A pénzed
-**kétféleképp** létezhet:
+Minden frakciónak saját **verete** (érméje) van, és mindegyiknek saját neve is:
+
+| Frakció | A valuta neve |
+|---|---|
+| 🔥 Perinfernicitas (Piros) | **Parázsló Parals** |
+| ❄️ Cryghaliris (Kék) | **Hópihér-veret** |
+| ⚖️ Ryanora & Caldestera (Semleges) | **Creutzér** |
+| 💀 A Kitaszítottak (Sötét) | **Csontveret** |
+
+A pénzed **kétféleképp** létezhet:
 
 - **Fizikai itemként** — token a táskádban (papír-szerű tárgy).
 - **Banki egyenlegként** — egy szám, ami nálad „be van fizetve".

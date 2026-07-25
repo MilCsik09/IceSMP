@@ -53,7 +53,7 @@ loot:
       - { type: named, weight: 5, undead-only: true, item: IRON_SWORD, item-model: "icesmp:loot_rozsdas_penge", name: "&8A Hetedik Vérháború Rozsdás Pengéje", lore: [ "&7Egykor I. Benedictus vagy I. Lineata seregéé;", "&7ma csak Eleftheria néma haragja hajtja." ] }
       - { type: named, weight: 4, undead-only: true, item: CHAINMAIL_CHESTPLATE, item-model: "icesmp:loot_elit_pancel", name: "&8Megrontott Elit Páncél", lore: [ "&7Az eltűnt nemesek dicsőségének maradványa;", "&7a sötét mágia védi oszladozó viselőjét." ] }
       # --- 2. hullám: további Káoszkor-drop (undead-only) ---
-      - { type: named, weight: 3, undead-only: true, item: BONE, item-model: "icesmp:loot_fekete_csont", name: "&8Fekete Csont", lore: [ "&7Nem ég el, nem törik, nem felejt.", "&7A Káoszkor éjjelén minden csont", "&7megjegyezte, kié volt egykor." ] }
+      - { type: named, weight: 3, undead-only: true, item: BONE, item-model: "icesmp:loot_fekete_csont", name: "&8Megrontott Fekete Csont", lore: [ "&7Nem ég el, nem törik, nem felejt.", "&7A Káoszkor éjjelén minden csont", "&7megjegyezte, kié volt egykor." ] }
   # Ritka tervrajz-drop: egy blueprint-recept (profession-recipes learn: blueprint) megtanulására.
   blueprint-drop:
     chance: 0.002       # sima szörny: 0.2%
