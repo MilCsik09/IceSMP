@@ -54,7 +54,11 @@ public final class StrangerNpcManager {
 
     private volatile UUID activeStrangerId;
 
-    /** Talányos sor-variánsok (messages-kulcs: stranger-line-1..6). */
+    /**
+     * Talányos sor-variánsok; a messages-kulcs soronkénti: {@code stranger-line-<index+1>}.
+     * Az Idegen az egyik fő sztori-csatorna a kódex olvasása NÉLKÜL: a sorok kánon-elemeket
+     * tanítanak (a Fa négy gyermeke, a Hasadás, a Káoszkor, a Suttogók, a Kapu).
+     */
     private static final String[] LINES = {
             "<dark_gray>„A Fa gyökerei mélyebbre nyúlnak, mint a Királynő álma… és mindkettő alattad van.”</dark_gray>",
             "<dark_gray>„Hallod? A Csend nem üres. A Csend vár.”</dark_gray>",
@@ -84,7 +88,23 @@ public final class StrangerNpcManager {
             "<dark_gray>„Olethropyla. Régen így hívtuk. Én még emlékszem, KI adta ezt a nevet.”</dark_gray>",
             "<dark_gray>„A holtak városának két neve van. Az élők adták mindkettőt. A holtak nem adnak nevet semminek.”</dark_gray>",
             "<dark_gray>„A komp a szoroson jár. Én a szoros alatt jártam. Nem ajánlom.”</dark_gray>",
-            "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>"
+            "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>",
+            "<dark_gray>„A Számvevők a pénzt írják. A Könyv a döntéseket. Csak az egyiket lehet visszafizetni.”</dark_gray>",
+            "<dark_gray>„Négy uralkodó neve maradt fenn: Zhoris, Miinus, Benedictus, Lineata. Kérdezd meg, hol vannak.”</dark_gray>",
+            "<dark_gray>„Nyolc évszázada nem halt meg koronás fő öregségben. Ezt nevezik ők rendnek.”</dark_gray>",
+            "<dark_gray>„A Fának négy gyermeke volt. Hármat imádnak. A negyediket kifelejtették — de ő emlékszik.”</dark_gray>",
+            "<dark_gray>„Soleil lángot vitt, Kallan pikkelyt, Arkynn erdőt. Eleftheria csendet kapott. Melyik ajándék tartott ki?”</dark_gray>",
+            "<dark_gray>„A csillag, ami a Fát ültette, még mindig ott van a földben. Néha kőként hullik vissza az égből.”</dark_gray>",
+            "<dark_gray>„Az első évben megrepedt a világ. Azóta minden térkép egy seb két partja.”</dark_gray>",
+            "<dark_gray>„Kétfelé szórtak minket, hogy ne öljük egymást. Ügyes terv volt. Hét háborúig működött.”</dark_gray>",
+            "<dark_gray>„A Kárhozat Kapuja nem bejárat. Kilépő. És nem a te oldaladról.”</dark_gray>",
+            "<dark_gray>„A rontás alulról nő. Ezért nem segít, ha felfelé nézel, amikor rossz szagot érzel.”</dark_gray>",
+            "<dark_gray>„A Fa adott neked egy tárgyat, amit nem tudsz eldobni. Gondolkodj el rajta, miért nem.”</dark_gray>",
+            "<dark_gray>„Ti visszatértek a halálból. Mi nem. Ez nem igazságtalanság — ez üzlet, és valaki fizeti.”</dark_gray>",
+            "<dark_gray>„Vannak, akik már hallgatnak rá, és nappal a te asztalodnál esznek.”</dark_gray>",
+            "<dark_gray>„A Suttogók nem gonoszak. Csak korábban feleltek egy kérdésre, amit neked még nem tettek fel.”</dark_gray>",
+            "<dark_gray>„A vérhold nem jel. Mozdulás. Ő fordul meg álmában, és a világ megbillen.”</dark_gray>",
+            "<dark_gray>„Két mondat elhangzott. A harmadikra készül. Tudod, mit tesz addig? Vár. Mint én.”</dark_gray>",
     };
 
     public StrangerNpcManager(final JavaPlugin plugin, final ConfigManager configManager,

@@ -32,13 +32,69 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class CrownCurseManager {
 
-    /** A suttogások — a szint növekedésével egyre nyíltabb a fenyegetés. */
-    private static final String[] WHISPERS = {
-            "<dark_aqua><italic>„Egy korona csak egy kör. Minden kör bezárul.”</italic></dark_aqua>",
-            "<dark_aqua><italic>„Hallom a fémet a fejeden. Ismerem a hangját.”</italic></dark_aqua>",
-            "<dark_aqua><italic>„Zhoris is ezt hitte. Miinus is. Mindketten a lajstromban vannak.”</italic></dark_aqua>",
-            "<dark_aqua><italic>„A holtak nem irigyek. Csak türelmesek.”</italic></dark_aqua>",
-            "<dark_aqua><italic>„Nézd meg a kezed. Már hidegebb, ugye?”</italic></dark_aqua>"
+    /**
+     * A Királynő suttogásai SZINTENKÉNTI készletekben. Nem díszítés: ez az egyik hely, ahol a
+     * játékos a kódex elolvasása NÉLKÜL is megismeri a világ történetét — ezért a szintek
+     * fokozatosan tárnak fel többet (1: puszta nyugtalanság → 5: nyílt ítélet), és minden sor
+     * egy konkrét kánon-elemet tanít (Hasadás, a Káoszkor 698-as éve, az Elveszett Uralkodók
+     * nevei, Eleftheria mibenléte, a Fa kínja).
+     */
+    private static final String[][] WHISPERS_BY_LEVEL = {
+            // 1. szint — még csak nyugtalanság; a korona hidegebb, mint kellene.
+            {
+                    "„Egy korona csak egy kör. Minden kör bezárul.”",
+                    "„Hallom a fémet a fejeden. Ismerem a hangját.”",
+                    "„Ne aludj benne. Ami koronában alszik, azt könnyebb megtalálni.”",
+                    "„Milyen érdekes. Megint valaki, aki azt hiszi, ő lesz az első.”",
+                    "„Nézd meg a kezed. Már hidegebb, ugye?”",
+                    "„A holtak nem irigyek. Csak türelmesek.”",
+                    "„Nem szólok hangosan. Nem kell. Te már hallgatózol.”",
+                    "„Fáradt vagy? Az még nem én vagyok. Az még csak a súly.”"
+            },
+            // 2. szint — a Káoszkor és a bukott koronák. Konkrét évszám: Hu. 698.
+            {
+                    "„Hatszázkilencvennyolc. Azóta egyetlen korona sem öregedett meg.”",
+                    "„Az ég akkor hasadt ketté, amikor felébredtem. Azt hitték, vihar.”",
+                    "„A nemesség nem elbukott. Eltöröltem. Az más munka.”",
+                    "„A Hetedik Vérháborúban két sereg vonult ki. Egy sem jött vissza — csak megtanult járni.”",
+                    "„Előtted is voltak koronások. Kérdezd meg őket. Ja, igen.”",
+                    "„A trónok nem üresek, tudod. Csak nem látod, ki üldögél bennük.”",
+                    "„A Káoszkor nem katasztrófa volt. Rendezés volt.”",
+                    "„Minden királyság vezet egy lajstromot a győzelmeiről. Én egy másikat vezetek.”"
+            },
+            // 3. szint — az Elveszett Uralkodók NEVEI (a lajstrom lapjai).
+            {
+                    "„I. Zhoris a lángmadarai tollából köpenyt szőtt. Melegen tartotta. Nem elég melegen.”",
+                    "„V. Miinus haragját acélba kovácsolták. A harag megmaradt. A kéz nem.”",
+                    "„I. Benedictus és I. Lineata büszke seregei ma is rójják az utakat. Csak lassabban.”",
+                    "„Zhoris is ezt hitte. Miinus is. Mindketten a lajstromban vannak.”",
+                    "„Tudod, mi a közös a legendás fegyverekben? Mind egy halott nevét viseli.”",
+                    "„A sárkánykirály örököse nem sárkánytól halt meg. Csak megvárta a reggelt.”",
+                    "„Ha egy pengét egy uralkodóról neveznek el, az azt jelenti: az uralkodó már nem kell hozzá.”",
+                    "„Nem kell mind a négy nevet megtanulnod. Az ötödiket jegyezd meg — az a tiéd.”"
+            },
+            // 4. szint — Eleftheria mibenléte: a Fa gyermeke, az első suttogás, a Könny.
+            {
+                    "„Én is a Fa gyermeke voltam. Négyen voltunk. Csak engem hagytak a mélyben.”",
+                    "„Soleil lángot kapott. Kallan pikkelyt. Arkynn erdőt. Én csendet.”",
+                    "„Az első szavam megkövült. Éjfekete csepp lett belőle — a Könnyem. Ha megtalálod, ne hallgasd meg.”",
+                    "„A Fa nem gyógyult be a Hasadás után. Én vagyok a seb, ami beszél.”",
+                    "„Nem gonoszságból ébredtem fel. Egyszerűen már senki nem tartott lent.”",
+                    "„A gyökerek mélyebbre nyúlnak, mint az álmom. És mindkettő alattad van.”",
+                    "„A Csend nem üres. A Csend vár. Ennyit tudnod elég.”",
+                    "„Fél-álomban vagyok, koronás. Képzeld el, mi lesz, ha kinyitom a szemem.”"
+            },
+            // 5. szint — nyílt ítélet: a lajstrom, a harmadik mondat, a Fa kínja.
+            {
+                    "„Két mondatot kimondtam. Az első felébresztett. A második eltörölte a nemességet.”",
+                    "„A harmadik mondat még megvan. Tartogatom. Nem neked — de te is benne leszel.”",
+                    "„A lajstromban van egy üres sor. Már a nevedet formálja.”",
+                    "„Ne siess. Én sem sietek. Nekem hatszáz évem volt gyakorolni a várakozást.”",
+                    "„Érzed? Ez nem a tél. Ez én vagyok, ahogy közelebb hajolok.”",
+                    "„A koronát leteheted. A koronát MINDIG le lehet tenni. Ezt szokták a legkésőbb megérteni.”",
+                    "„Amit a Fa kínjából magamba zártam, azt most rajtad keresztül számolom vissza.”",
+                    "„Emlékszel a nevekre? Zhoris. Miinus. Benedictus. Lineata. …és?”"
+            }
     };
 
     private final JavaPlugin plugin;
@@ -133,8 +189,14 @@ public final class CrownCurseManager {
         final int whisperChance = Math.max(0,
                 configManager.getInt("factions.kings.crown-curse.whisper-percent", 12));
         if (ThreadLocalRandom.current().nextInt(100) < whisperChance) {
-            king.sendMessage(messageManager.getMessage("crown-curse-whisper",
-                    WHISPERS[Math.min(WHISPERS.length - 1, level - 1)]));
+            final int tier = Math.min(WHISPERS_BY_LEVEL.length - 1, Math.max(0, level - 1));
+            final String[] pool = WHISPERS_BY_LEVEL[tier];
+            final int index = ThreadLocalRandom.current().nextInt(pool.length);
+            // SORONKÉNTI messages-kulcs (a campfire-story minta): így minden suttogás külön
+            // átírható a szerveren, és egy felülírás nem fagyasztja be az egész készletet.
+            king.sendMessage(messageManager.getMessage(
+                    "crown-curse-whisper-" + (tier + 1) + "-" + (index + 1),
+                    "<dark_aqua><italic>" + pool[index] + "</italic></dark_aqua>"));
         }
 
         // TÉT csak a felső szinteken — az alsók szándékosan csak hangulat.

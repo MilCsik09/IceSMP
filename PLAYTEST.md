@@ -959,7 +959,12 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       és `/icesmp reload`. Egy óra trónon = 1 szint. Ellenőrizd:
       - a szint-lépés EGYSZER szól („A korona hidegebb lett", szint/max),
       - minden szinten lich-türkiz derengés a korona (fej) körül,
-      - `whisper-percent` szerint néha a Királynő suttog (a szinttel egyre nyíltabban),
+      - `whisper-percent` szerint a Királynő suttog: **szintenként SAJÁT 8-soros készlet**
+        (össz. 40 sor), és a szintek fokozatosan tárnak fel többet a történetből —
+        1: puszta nyugtalanság → 2: a Káoszkor és a 698-as év → 3: az Elveszett Uralkodók
+        NEVEI (Zhoris, Miinus, Benedictus, Lineata) → 4: Eleftheria mibenléte (a Fa negyedik
+        gyermeke, az első suttogás, a Könny) → 5: nyílt ítélet (a lajstrom, a harmadik mondat).
+        Ellenőrizd, hogy magasabb szinten NEM jönnek vissza az alacsonyabb szint sorai,
       - `stakes-from-level` (alap 3) ALATT semmi tét — csak hangulat,
       - fölötte: HUNGER (leáll a természetes regeneráció) + a közeli CÉLTALAN élőhalottak a
         királyt kezdik célozni (aktív célpontot NEM vesz el tőlük),
@@ -1105,6 +1110,18 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ülők „X mesél a tűznél…" action bart látnak); elsétálva megszakad, nincs jutalom;
       cooldown 60 perc (PDC `cd_campfire_story` — csak SIKERES mesélés indítja). Kulcsok:
       `campfire-story.*` (general.yml), saját sztori-lista a `stories` kulccsal.
+      **Sztori-átadás (bővítve):** a készlet **62 sor**, és végigmeséli a kódexet — Teremtés
+      (Asterlayna, Aetrinita, a négy gyermek), Hasadás (Hu. 1.), a három birodalom alapítása
+      (14 / 117 / 547), a Hetedik Vérháború és a 698-as Káoszkor, a Felsők megérkezése (978).
+      Cél: a játékosnak NE kelljen kódexet olvasnia. Ülj le sokszor (cooldownt vedd 0-ra
+      teszthez) és ellenőrizd, hogy tényleg váltakoznak, nem 5-6 sor forog.
+- [ ] **Sztori-csatornák összesítve (ÚJ):** a világ történetét négy ingame felület tanítja,
+      összesen **~170 sorban** — ellenőrizd, hogy mind él:
+      - **tábortűz** (62 sor, ismételhető, ingyen — a fő csatorna),
+      - **a Rejtélyes Idegen** (45 talányos sor, `/events stranger`),
+      - **a bárd heti krónika-versszaka** (20 fejezet: MINDEN héten más szelet az idővonalból,
+        a hősök dicsérete ELŐTT hangzik el — `/events`-független, az `enekmondo` NPC-nél),
+      - **a korona átka** (40 suttogás, szintenként más — csak királynak).
 - [ ] **A38 Spawn-élmény (ÚJ — Tier A):** állíts be `world-events.intro.first-join-spawn`-t
       ("world,x,y,z[,yaw,pitch]") → az ELSŐ belépő oda teleportál, és csak utána indul az
       intro; visszatérő belépésnél rövid, halk üdvözlő title + csengő hang

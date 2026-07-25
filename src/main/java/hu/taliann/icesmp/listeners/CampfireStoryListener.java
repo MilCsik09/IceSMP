@@ -36,7 +36,13 @@ public final class CampfireStoryListener implements Listener {
     private final NamespacedKey cooldownKey;
     private final NamespacedKey pendingKey;
 
-    /** Sztori-sor variánsok (messages-kulcs: campfire-story-1..6; config-listával bővíthető). */
+    /**
+     * Sztori-sor variánsok. A messages-kulcs soronkénti: {@code campfire-story-<index+1>} —
+     * a tömb bővítése automatikusan új kulcsot ad, kód-módosítás nélkül. Ez az EGYIK
+     * fő csatorna, amin a játékos a kódex elolvasása nélkül is megismeri a világ történetét,
+     * ezért a készlet szándékosan bő és kánon-hű (Teremtés, Hasadás, a három birodalom,
+     * a Hetedik Vérháború, a Felsők kora).
+     */
     private static final String[] STORIES = {
             "<gray>🔥 „…és amikor a Fa első gyökere vizet ért, a jég megtanult énekelni. Így mesélik a régiek.”</gray>",
             "<gray>🔥 „A Vérháborúk előtt a két nép egy tűznél ült — mint most mi. A tűz emlékszik.”</gray>",
@@ -64,6 +70,31 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „A Kitaszítottak közt több a becsület, mint a fővárosban. Csak ott senki se írja fel.”</gray>",
             "<gray>🔥 „Az Első Csendről nem mesélünk. Ez a mese. Vége.”</gray>",
             "<gray>🔥 „A Fa egyik gyökere állítólag a tábortüzek alatt fut. Ezért melegszik át a történet is.”</gray>",
+            "<gray>🔥 „Asterlayna nem lezuhant, fiam. Leszállt. A különbség egy szó, és ezen ment el az Első Háború.”</gray>",
+            "<gray>🔥 „A csillag helyén kikelt egy mag. Abból lett a Fa. Aetrinita a neve — de ne mondd ki hangosan éhesen.”</gray>",
+            "<gray>🔥 „A Fának négy gyermeke volt: Soleil a láng, Kallan a pikkely, Arkynn az erdő… és a negyedik.”</gray>",
+            "<gray>🔥 „A negyedik gyermek nevét mindenki ismeri, és senki nem mondja ki. Ennyit a nevekről.”</gray>",
+            "<gray>🔥 „Az első esztendőben megrepedt a Fa, és az emberiséget a világ két sarkába szórta. Ezt hívják Hasadásnak.”</gray>",
+            "<gray>🔥 „Asterobourgh elbukott, és aznap kezdődött az időszámítás. Minden dátum egy sebtől számol.”</gray>",
+            "<gray>🔥 „Miért fázik Északon és éget Délen? Mert a Hasadáskor a világ két végén kaptunk földet, nem otthont.”</gray>",
+            "<gray>🔥 „Pyralingradot a tizennegyedik évben alapították. Glatziendorfot a száztizenhetedikben. Száz év a különbség, és még mindig egymást méregetik.”</gray>",
+            "<gray>🔥 „Az ötszáznegyvenhetedik évben Caldestera letette a fegyvert. Örökre. Ezért nem viszel bele kardot ma sem.”</gray>",
+            "<gray>🔥 „Az Armageddon-ultimátum után a Menedék semleges lett. Nem gyávaságból: hatodik háború után a semlegesség a legdrágább döntés.”</gray>",
+            "<gray>🔥 „Ryanora és Caldestera nem királyság, fiam. Megegyezés. Azért törékenyebb — és azért tart ki mégis.”</gray>",
+            "<gray>🔥 „A hatszázkilencvennyolcadik évben kettéhasadt az ég. Utána nem volt több koronás öregember.”</gray>",
+            "<gray>🔥 „A Néma Királynő két mondatot mondott. Az elsőre felébredt. A másodikra eltűnt a nemesség.”</gray>",
+            "<gray>🔥 „Azt mondják, van egy harmadik mondat is. Ezért nem alszik jól, aki koronát visel.”</gray>",
+            "<gray>🔥 „A Káoszkor nem véget ért, fiam. Csak megszoktuk. Ez a kettő nem ugyanaz.”</gray>",
+            "<gray>🔥 „Kilencszázhetvennyolcban jöttetek meg a Fa alá. A Felsők. Azóta változik minden — jó irányba is.”</gray>",
+            "<gray>🔥 „Tudod, miért bírja a te fajtád, amit mi nem? Mert nálatok a halál csak késés. Nálunk befejezés.”</gray>",
+            "<gray>🔥 „A Lélekkapocs a Fa ajándéka: el nem dobod, el nem cserélik, kohóban se ég el. Ilyen ajándékot ma már nem adnak.”</gray>",
+            "<gray>🔥 „A Kárhozat Kapuja nem ajtó. Seb. És a sebek nem szeretik, ha nyúlkálnak bennük.”</gray>",
+            "<gray>🔥 „A rontás-gócok nem az égből esnek. Alulról nőnek, mint a gomba. Ezért nem lehet őket lebombázni.”</gray>",
+            "<gray>🔥 „Radicora az ó-Caldestera. Ott áll még minden — csak lakó nincs hozzá.”</gray>",
+            "<gray>🔥 „Négy királyság, négy pénz, egy Fa. Számold össze: valami mindig kevés lesz.”</gray>",
+            "<gray>🔥 „A Suttogók nem árulók. Csak korábban választottak, mint te. És rosszabbat.”</gray>",
+            "<gray>🔥 „A vérhold nem baljós jel, fiam. Az a Királynő, ahogy megfordul álmában.”</gray>",
+            "<gray>🔥 „Ha a Fa fényköréből kifelé indulsz, minden lépéssel öregebb szörnyekbe futsz. A Fa nem véd — csak ismer.”</gray>",
             "<gray>🔥 „Pyralingrad kohói sosem hűlnek ki. Egyszer kihűltek. Arról az évről nincs krónika.”</gray>",
             "<gray>🔥 „A Szellemszarvas nem hátas. Vendéglátó. Sose sarkantyúzd.”</gray>",
             "<gray>🔥 „Minden térképen van egy fehér folt. Nem azért, mert nem jártak ott. Azért, mert visszajöttek, és nem rajzolták be.”</gray>",
