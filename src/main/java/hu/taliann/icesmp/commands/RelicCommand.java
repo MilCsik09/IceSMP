@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -85,10 +86,6 @@ public final class RelicCommand implements BasicCommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase() : "";
-    }
 
     private void handleList(final CommandSender sender) {
         final String relicList = relicManager.getDefinitions().stream()

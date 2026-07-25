@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
@@ -876,7 +877,4 @@ public final class TerritoryCommand implements BasicCommand {
                 .toList();
     }
 
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }

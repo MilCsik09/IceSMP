@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
@@ -329,7 +330,4 @@ public final class SpecCommand implements BasicCommand {
     }
 
     /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }

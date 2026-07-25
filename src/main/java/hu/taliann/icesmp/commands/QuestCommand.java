@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.listeners.QuestBuilderListener;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -508,10 +509,6 @@ public final class QuestCommand implements BasicCommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 
     private Collection<String> suggestAdmin(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {

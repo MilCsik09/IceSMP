@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.currency;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -159,10 +160,6 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 
     /** játékos -> (nap, ma váltott forrás-összeg) — memóriában él, a keretnek elég. */
     private final java.util.Map<java.util.UUID, long[]> dailyExchanged =
@@ -183,5 +180,4 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
                 old == null || old[0] != today ? new long[]{today, amount} : new long[]{today, old[1] + amount});
     }
 }
-
 

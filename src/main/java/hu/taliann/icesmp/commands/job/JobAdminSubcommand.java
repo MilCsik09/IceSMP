@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.job;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
@@ -155,9 +156,5 @@ public final class JobAdminSubcommand implements JobSubcommand {
     }
 
     /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }
-
 

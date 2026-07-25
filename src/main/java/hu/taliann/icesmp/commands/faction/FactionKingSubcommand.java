@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.faction;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.FactionTreasuryManager;
@@ -220,7 +221,4 @@ public final class FactionKingSubcommand implements FactionSubcommand {
     }
 
     /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }

@@ -359,8 +359,10 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
   `spellCasts`/`questsCompleted`) már `AtomicInteger`-ek; NYITVA a `level` és a `raidKills` (sima `int`).
 - **O2** 🟡 Világesemény-managerek force-vs-tick race — admin force-parancs és periodikus tick ütközhet, orphan entitás.
 - **O3** 🟢 SunDanceSpell recept-cache dupla felépítés — check-then-act, felesleges duplikált munka.
-- **O4** 🟡 `prefixAt` helper **20** fájlban duplikálva (2026-07-25: 17-ről nőtt) — tab-complete
-  segédfüggvény közös helperbe emelendő.
+- **O4** ✅ KÉSZ — `utils/TabCompleteUtil.prefixAt` (static importtal, a `GuiUtil` mintájára);
+  mind a 20 privát példány törölve, 68 hívási hely változatlan. A `RelicCommand` példánya
+  `Locale.ROOT` NÉLKÜL kisbetűsített — tr_TR szerver-locale-on az „I" prefix-szűrése csendben
+  elromlott volna; a közös helper ezt is lezárja.
 - **O5** ✅ KÉSZ — spell-célzás közös helperbe emelve (`SpellTargetingUtil`, 31 hívó fájl).
 - **O6** 🟡 Világesemény-közös minták (`WorldEventUtil`) — horgony-választás/idő-konverzió/entitás-eltávolítás közös helperbe.
 - **O7** 🟢 `QuestManager.handleTerritoryEnter` O(összes quest) — auto-start index-építés a lineáris keresés helyett.
@@ -392,8 +394,8 @@ N-review összefoglaló: N16, N17, N18, N24, N25, N25b, N27 KÉSZ; N26 tulaj-dö
 - **O27** 🟡 `PeriodicChanceEvent` világesemény-ütemező váz — 5 manager azonos váza közös helperbe (O2/O6-tal együtt).
 - **O28** 🟡 Elérés-küszöbök configba (AchievementManager) — hardcode-olt tábla + vagyon-elérés kölcsön-tőke kijátszhatóság.
 O-refaktor összefoglaló (2026-07-25-i kódellenőrzés + helper-kör): **KÉSZ** = O9
-(DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil);
-**RÉSZBEN** = O1. A közös-helper csomagból hátra van: O4 `prefixAt` (20 fájl),
+(DonationChestManager debounce), O5 (SpellTargetingUtil), **O24** (MobKillUtil),
+**O4** (TabCompleteUtil); **RÉSZBEN** = O1. A közös-helper csomagból hátra van:
 O6 `WorldEventUtil`, O25 `DailyBudget`, O26 `ErrorMessages`, O27 `PeriodicChanceEvent` —
 mind ugyanaz a minta: 5-20 helyen kézzel ismételt kód egy `utils/` osztályba.
 

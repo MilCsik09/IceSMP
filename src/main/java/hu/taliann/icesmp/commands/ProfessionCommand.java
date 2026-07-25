@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.ProfessionCategory;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.managers.ProfessionManager;
@@ -404,10 +405,6 @@ public final class ProfessionCommand implements BasicCommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 
     private List<String> primaryProfessionIds(final String rawPrefix) {
         final String prefix = rawPrefix == null ? "" : rawPrefix.toLowerCase(Locale.ROOT);
