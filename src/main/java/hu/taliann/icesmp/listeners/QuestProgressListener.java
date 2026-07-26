@@ -6,6 +6,7 @@ import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.Location;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,7 +15,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityBreedEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
@@ -25,12 +25,10 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Routes gameplay events into the quest framework's progress tracking.
- * (Territory visits arrive through the TerritoryListener, level changes
- * through the JobManager XP-change hook, NPC talks/deliveries through the
- * FancyNpcs bridge, parkour finishes through the ParkourManager hook.)
- */
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
+/** Routes final gameplay events into quest and community-goal progress. */
 public final class QuestProgressListener implements Listener {
 
     private final JavaPlugin plugin;
@@ -56,9 +54,6 @@ public final class QuestProgressListener implements Listener {
         if (killer == null || event.getEntity() instanceof Player) {
             return;
         }
-
-        // Read the event entity's data on its own region thread, then hop onto the killer's
-        // scheduler — handleKill mutates the killer (quest progress, messages). Folia-safe.
         final var entityType = event.getEntityType();
         final int level = mobScalingManager.getLevel(event.getEntity());
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
@@ -72,26 +67,17 @@ public final class QuestProgressListener implements Listener {
         }, null);
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
-        // Creative farm-guard (same as GatheringBuffListener): creative/spectator breaks
-        // must not progress quests or community goals.
         final org.bukkit.GameMode mode = event.getPlayer().getGameMode();
         if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) {
             return;
         }
         questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
-        communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS", event.getBlock().getType().name(), 1);
+        communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS",
+                event.getBlock().getType().name(), 1);
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
@@ -100,51 +86,36 @@ public final class QuestProgressListener implements Listener {
         }
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    /** Fish is accounted at its source event, never at an originless ground pickup. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
-        if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
-            questManager.handleFish(event.getPlayer());
+        if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) {
+            return;
+        }
+        questManager.handleFish(event.getPlayer());
+        if (!(event.getCaught() instanceof Item caught)) {
+            return;
+        }
+        final var stack = caught.getItemStack();
+        if (stack.getType().isAir() || stack.getAmount() <= 0) {
+            return;
+        }
+        if (communityGoalManager.contributeOnce(event.getPlayer(), "COLLECT_ITEMS",
+                stack.getType().name(), stack.getAmount(), caught.getUniqueId())) {
+            questManager.handleCollect(event.getPlayer(), stack.getType(), stack.getAmount());
         }
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(final BlockPlaceEvent event) {
         questManager.handlePlaceBlock(event.getPlayer(), event.getBlock().getType());
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onItemPickup(final EntityPickupItemEvent event) {
-        if (!(event.getEntity() instanceof Player player)) {
-            return;
-        }
-        // A játékos SAJÁT inventoryából a földre került tárgy felvétele nem gyűjtés: e nélkül
-        // ugyanaz a stack ledobva-felvéve korlátlanul növelte a gyűjtő-questet és az ismételhető
-        // közösségi célt (a dobás új entitást hoz létre, ezért UUID-dedup nem fogja meg).
-        if (hu.taliann.icesmp.utils.ItemProvenance.isPlayerDropped(event.getItem())) {
-            return;
-        }
-        // Csak a TÉNYLEGESEN átkerült darab számít: tele hátizsáknál a stack egy része a földön
-        // marad (getRemaining), a teljes stackméret könyvelése túlszámolás lenne.
-        final var type = event.getItem().getItemStack().getType();
-        final int transferred = event.getItem().getItemStack().getAmount() - event.getRemaining();
-        if (transferred <= 0) {
-            return;
-        }
-        questManager.handleCollect(player, type, transferred);
-        communityGoalManager.contribute(player, "COLLECT_ITEMS", type.name(), transferred);
-    }
+    /*
+     * Ground pickup deliberately does not progress COLLECT_ITEMS. A pickup has no trustworthy
+     * origin after container, craft, place/break, merge and split transformations. Source events
+     * that consume inputs or create a resource call the durable contribution path instead.
+     */
 
     @EventHandler
     public void onPlayerKill(final PlayerDeathEvent event) {
@@ -152,8 +123,6 @@ public final class QuestProgressListener implements Listener {
         if (killer == null || killer.getUniqueId().equals(event.getEntity().getUniqueId())) {
             return;
         }
-
-        // PlayerDeathEvent runs on the VICTIM's region; quest progress mutates the killer.
         killer.getScheduler().run(plugin, task -> {
             questManager.handlePlayerKill(killer);
             communityGoalManager.contribute(killer, "KILL_PLAYERS", null, 1);
@@ -165,34 +134,39 @@ public final class QuestProgressListener implements Listener {
         if (!(event.getBreeder() instanceof Player breeder)) {
             return;
         }
-
-        // The event fires on the animal's region; the breeding player stands beside it,
-        // but hop to their scheduler anyway — quest progress mutates the player's PDC.
         final var entityType = event.getEntityType();
-        breeder.getScheduler().run(plugin, task -> questManager.handleBreed(breeder, entityType), null);
+        breeder.getScheduler().run(plugin,
+                task -> questManager.handleBreed(breeder, entityType), null);
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEnchant(final EnchantItemEvent event) {
         questManager.handleEnchant(event.getEnchanter());
     }
 
-    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
-    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
-    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
-    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onConsume(final PlayerItemConsumeEvent event) {
         questManager.handleConsume(event.getPlayer(), event.getItem().getType());
     }
 
-    @EventHandler(ignoreCancelled = true)
+    /** Smelt output is a source event with consumed input and a deterministic callback receipt. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSmelt(final FurnaceExtractEvent event) {
         questManager.handleSmelt(event.getPlayer(), event.getItemType(), event.getItemAmount());
+        if (event.getItemAmount() <= 0) {
+            return;
+        }
+        final String identity = event.getPlayer().getUniqueId() + "|smelt|"
+                + event.getBlock().getWorld().getUID() + '|'
+                + event.getBlock().getX() + '|' + event.getBlock().getY() + '|'
+                + event.getBlock().getZ() + '|' + event.getItemType().name() + '|'
+                + event.getItemAmount() + '|' + System.identityHashCode(event);
+        final UUID contributionId = UUID.nameUUIDFromBytes(
+                identity.getBytes(StandardCharsets.UTF_8));
+        if (communityGoalManager.contributeOnce(event.getPlayer(), "COLLECT_ITEMS",
+                event.getItemType().name(), event.getItemAmount(), contributionId)) {
+            questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount());
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -200,11 +174,9 @@ public final class QuestProgressListener implements Listener {
         if (!(event.getOwner() instanceof Player tamer)) {
             return;
         }
-
-        // The event fires on the animal's region; the tamer stands beside it, but the
-        // quest progress mutates the player's PDC — hop to their scheduler.
         final var entityType = event.getEntityType();
-        tamer.getScheduler().run(plugin, task -> questManager.handleTame(tamer, entityType), null);
+        tamer.getScheduler().run(plugin,
+                task -> questManager.handleTame(tamer, entityType), null);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -214,17 +186,13 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
-        // Only re-check on block-level movement (same hot-path guard as the TerritoryListener).
-        // Az Y is számít: a biome-ok 1.18 óta függőlegesen is rétegesek (barlang-biome-ok),
-        // ezért a csak X/Z-re szűrő kapu az egy oszlopban lefelé haladó felfedezőt kihagyta.
         final Location from = event.getFrom();
         final Location to = event.getTo();
-        if (to == null
-                || (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()
-                    && from.getBlockY() == to.getBlockY())) {
+        if (to == null || (from.getBlockX() == to.getBlockX()
+                && from.getBlockZ() == to.getBlockZ()
+                && from.getBlockY() == to.getBlockY())) {
             return;
         }
-
         questManager.handleBiomeVisit(event.getPlayer(),
                 to.getBlock().getBiome().getKey().toString());
     }
