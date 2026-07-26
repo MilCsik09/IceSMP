@@ -10,7 +10,6 @@ import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -246,7 +245,7 @@ public final class ItemGiveCommand implements BasicCommand {
      * This method is called from the target player's entity thread. A different player sender must
      * receive the message on their own entity scheduler; console senders are safe to notify directly.
      */
-    private void sendFromTargetThread(final CommandSender sender, final Player target, final Component message) {
+    private void sendFromTargetThread(final CommandSender sender, final Player target, final String message) {
         if (sender instanceof Player player && !player.getUniqueId().equals(target.getUniqueId())) {
             player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
             return;
