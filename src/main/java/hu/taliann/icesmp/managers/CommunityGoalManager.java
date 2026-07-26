@@ -35,6 +35,15 @@ public final class CommunityGoalManager implements PersistentStore {
     private record AppliedContribution(boolean changed, List<Completion> completions) {
     }
 
+    /**
+     * Tartós kifizetés-outbox bejegyzés. A számláló csökkentése és a forrás-nyugta MÁR tartós,
+     * mielőtt a jutalom kifizetődne — enélkül egy crash a kifizetés közben úgy hagyná a világot,
+     * hogy a nyugta miatt az esemény sosem játszódik újra, a kincstár/szezon/buff jutalom viszont
+     * elmarad. A bejegyzés a kifizetés UTÁN, külön tartós írással tűnik el.
+     */
+    private record PendingCompletion(String goalId, boolean serverWide, FactionType faction, int count) {
+    }
+
     private static final int MAX_COMPLETIONS_PER_CONTRIBUTION = 3;
     private static final long RECEIPT_RETENTION_MILLIS = TimeUnit.DAYS.toMillis(7L);
     private static final int MAX_RECEIPTS = 50_000;
@@ -49,6 +58,8 @@ public final class CommunityGoalManager implements PersistentStore {
     private final Map<String, Long> progress = new ConcurrentHashMap<>();
     /** Source-event UUID -> durable claim time. */
     private final Map<String, Long> contributionReceipts = new ConcurrentHashMap<>();
+    /** Még ki nem fizetett, de már tartósan könyvelt teljesítések (a manager monitora védi). */
+    private final List<PendingCompletion> pendingCompletions = new ArrayList<>();
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     public CommunityGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -104,6 +115,29 @@ public final class CommunityGoalManager implements PersistentStore {
             }
         }
         pruneReceipts(System.currentTimeMillis());
+
+        pendingCompletions.clear();
+        final ConfigurationSection outbox = yaml.getConfigurationSection("pending-completions");
+        if (outbox != null) {
+            for (final String key : outbox.getKeys(false)) {
+                final String goalId = outbox.getString(key + ".goal-id");
+                final int count = outbox.getInt(key + ".count", 0);
+                if (goalId == null || goalId.isBlank() || count <= 0) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Érvénytelen függő közösségi kifizetés: " + key);
+                    return;
+                }
+                final String factionName = outbox.getString(key + ".faction");
+                pendingCompletions.add(new PendingCompletion(goalId,
+                        outbox.getBoolean(key + ".server-wide", false),
+                        factionName == null ? null : FactionType.fromInput(factionName), count));
+            }
+        }
+        if (!pendingCompletions.isEmpty()) {
+            plugin.getLogger().warning("Közösségi cél: " + pendingCompletions.size()
+                    + " függő kifizetés a legutóbbi leállásból — újrajátszás.");
+            flushPendingCompletions();
+        }
     }
 
     @Override
@@ -119,6 +153,14 @@ public final class CommunityGoalManager implements PersistentStore {
         }
         for (final Map.Entry<String, Long> entry : contributionReceipts.entrySet()) {
             yaml.set("contribution-receipts." + entry.getKey(), entry.getValue());
+        }
+        for (int index = 0; index < pendingCompletions.size(); index++) {
+            final PendingCompletion pending = pendingCompletions.get(index);
+            final String base = "pending-completions." + index;
+            yaml.set(base + ".goal-id", pending.goalId());
+            yaml.set(base + ".server-wide", pending.serverWide());
+            yaml.set(base + ".faction", pending.faction() == null ? null : pending.faction().name());
+            yaml.set(base + ".count", pending.count());
         }
         try {
             YamlStore.saveAtomic(storageFile, yaml);
@@ -147,11 +189,14 @@ public final class CommunityGoalManager implements PersistentStore {
     public synchronized void resetForNewSeason() {
         final Map<String, Long> oldProgress = new HashMap<>(progress);
         final Map<String, Long> oldReceipts = new HashMap<>(contributionReceipts);
+        final List<PendingCompletion> oldPending = new ArrayList<>(pendingCompletions);
         progress.clear();
         contributionReceipts.clear();
+        pendingCompletions.clear();
         if (!saveStrict()) {
             progress.putAll(oldProgress);
             contributionReceipts.putAll(oldReceipts);
+            pendingCompletions.addAll(oldPending);
         }
     }
 
@@ -172,12 +217,17 @@ public final class CommunityGoalManager implements PersistentStore {
             requestSave();
             return;
         }
+        // A visszagörgetés INDEX szerint vágja le a most hozzáadottakat: azonos cél-id alapján
+        // törölve egy korábbi crashből ottmaradt függő kifizetést is elvinnénk.
+        final int outboxMark = pendingCompletions.size();
+        enqueueCompletions(applied.completions());
         if (!saveStrict()) {
             progress.clear();
             progress.putAll(before);
+            pendingCompletions.subList(outboxMark, pendingCompletions.size()).clear();
             return;
         }
-        payCompletions(applied.completions());
+        flushPendingCompletions();
     }
 
     /**
@@ -202,13 +252,16 @@ public final class CommunityGoalManager implements PersistentStore {
         contributionReceipts.put(receipt, now);
         final AppliedContribution applied = applyContribution(
                 player, objectiveType, materialOrEntity, amount);
+        final int outboxMark = pendingCompletions.size();
+        enqueueCompletions(applied.completions());
         if (!saveStrict()) {
             progress.clear();
             progress.putAll(before);
             contributionReceipts.remove(receipt);
+            pendingCompletions.subList(outboxMark, pendingCompletions.size()).clear();
             return false;
         }
-        payCompletions(applied.completions());
+        flushPendingCompletions();
         return true;
     }
 
@@ -272,11 +325,46 @@ public final class CommunityGoalManager implements PersistentStore {
         return new AppliedContribution(changed, List.copyOf(completions));
     }
 
-    private void payCompletions(final List<Completion> completions) {
+    /**
+     * A teljesítéseket az OUTBOXBA teszi (a hívó ezután írja ki tartósan a közös fájl-képet),
+     * majd kifizeti és a bejegyzést külön írással eltünteti. Crash a kifizetés közben = a
+     * bejegyzés a lemezen marad, és a következő indulás {@link #flushPendingCompletions()}-ja
+     * újrajátssza — a jutalom nem veszhet el.
+     */
+    private void enqueueCompletions(final List<Completion> completions) {
         for (final Completion completion : completions) {
-            for (int index = 0; index < completion.count(); index++) {
-                completeGoal(completion.goal(), completion.serverWide(), completion.goalFaction());
+            pendingCompletions.add(new PendingCompletion(completion.goal().getName(),
+                    completion.serverWide(), completion.goalFaction(), completion.count()));
+        }
+    }
+
+    /** Kifizeti és tartósan eltünteti a függő teljesítéseket. */
+    private void flushPendingCompletions() {
+        if (pendingCompletions.isEmpty()) {
+            return;
+        }
+        final ConfigurationSection goals = goalsSection();
+        final List<PendingCompletion> batch = new ArrayList<>(pendingCompletions);
+        for (final PendingCompletion pending : batch) {
+            final ConfigurationSection goal = goals == null ? null
+                    : goals.getConfigurationSection(pending.goalId());
+            if (goal == null) {
+                plugin.getLogger().warning("Függő közösségi kifizetés kihagyva: a(z) "
+                        + pending.goalId() + " cél már nincs a configban.");
+                continue;
             }
+            for (int index = 0; index < pending.count(); index++) {
+                completeGoal(goal, pending.serverWide(), pending.faction());
+            }
+        }
+        pendingCompletions.removeAll(batch);
+        if (!saveStrict()) {
+            // A kifizetés megtörtént, de a nyugtázás nem: a bejegyzés visszakerül, így a
+            // következő indulás újra megpróbálja. Inkább ismételt (idempotens irányba hangolt)
+            // kifizetés, mint néma elmaradás — a logban nyoma marad.
+            pendingCompletions.addAll(batch);
+            plugin.getLogger().severe("A közösségi kifizetés nyugtázása nem sikerült — a függő "
+                    + "bejegyzések maradnak, a következő indulás újrajátssza őket.");
         }
     }
 

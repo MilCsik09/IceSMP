@@ -262,23 +262,44 @@ public final class MarketManager implements PersistentStore {
         }
 
         for (final String idKey : section.getKeys(false)) {
+            // A tétel MÉRVADÓ tárgy-állapot: a hibás bejegyzés némán átugorva tárgy-vesztést és
+            // (licites aukciónál) zárolt escrow elárvulását okozná. A YamlStore csak a
+            // szintaktikai hibát fogja meg; a szemantikait itt kell karanténba tenni.
+            final UUID id;
+            final UUID seller;
             try {
-                final UUID id = UUID.fromString(idKey);
-                final UUID seller = UUID.fromString(section.getString(idKey + ".seller", ""));
+                id = UUID.fromString(idKey);
+                seller = UUID.fromString(section.getString(idKey + ".seller", ""));
+            } catch (final IllegalArgumentException invalid) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                        "Értelmezhetetlen piaci tétel-azonosító vagy eladó: " + idKey);
+                return;
+            }
+            {
                 final CurrencyType currency = CurrencyType.fromInput(section.getString(idKey + ".currency", ""));
                 final ItemStack item = section.getItemStack(idKey + ".item");
                 if (currency == null || item == null || item.getType() == Material.AIR) {
-                    continue;
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Hiányzó vagy érvénytelen valuta/tárgy a(z) " + idKey + " piaci tételnél");
+                    return;
                 }
 
-                // A malformed bidder id must not discard the whole listing (the item
-                // would vanish) — degrade to "no bid" and keep the auction alive.
+                // A hibás licitáló-azonosító CSAK akkor süllyeszthető „nincs licit"-re, ha nincs
+                // is zárolt összeg — különben a licitáló pénze gazdátlanul maradna bent.
                 UUID bidderId = null;
-                try {
-                    final String bidderRaw = section.getString(idKey + ".highest-bidder", "");
-                    bidderId = bidderRaw.isEmpty() ? null : UUID.fromString(bidderRaw);
-                } catch (final IllegalArgumentException ignored) {
-                    bidderId = null;
+                final String bidderRaw = section.getString(idKey + ".highest-bidder", "");
+                if (!bidderRaw.isEmpty()) {
+                    try {
+                        bidderId = UUID.fromString(bidderRaw);
+                    } catch (final IllegalArgumentException invalid) {
+                        YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                "Értelmezhetetlen licitáló-azonosító a(z) " + idKey + " aukciónál");
+                        return;
+                    }
+                } else if (section.getDouble(idKey + ".highest-bid", 0.0D) > 0.0D) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Zárolt licit licitáló nélkül a(z) " + idKey + " aukciónál");
+                    return;
                 }
                 listings.put(id, new Listing(
                         id,
@@ -295,8 +316,6 @@ public final class MarketManager implements PersistentStore {
                         section.getString(idKey + ".highest-bidder-name", null),
                         section.getDouble(idKey + ".buy-out", 0.0D)
                 ));
-            } catch (final IllegalArgumentException ignored) {
-                // Skip malformed entries.
             }
         }
     }
@@ -308,14 +327,18 @@ public final class MarketManager implements PersistentStore {
         }
 
         for (final String playerKey : deliveries.getKeys(false)) {
+            final UUID owner;
             try {
-                final UUID owner = UUID.fromString(playerKey);
-                final List<ItemStack> items = readItems(deliveries.getList(playerKey));
-                if (!items.isEmpty()) {
-                    pendingDeliveries.put(owner, items);
-                }
-            } catch (final IllegalArgumentException ignored) {
-                // Skip malformed entries.
+                owner = UUID.fromString(playerKey);
+            } catch (final IllegalArgumentException invalid) {
+                // A várólistás tétel is mérvadó tárgy-állapot: némán eldobva elveszne.
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                        "Értelmezhetetlen tulajdonos-azonosító a várólistán: " + playerKey);
+                return;
+            }
+            final List<ItemStack> items = readItems(deliveries.getList(playerKey));
+            if (!items.isEmpty()) {
+                pendingDeliveries.put(owner, items);
             }
         }
     }
@@ -499,11 +522,14 @@ public final class MarketManager implements PersistentStore {
         seller.getPersistentDataContainer().set(takeAckKey(entry), PersistentDataType.STRING,
                 entry.id().toString());
         seller.getInventory().setItemInMainHand(null);
-        persistPlayer(seller);
+        final boolean itemSidePersisted = persistPlayer(seller);
 
         listings.put(id, listing);
-        if (commitState(entry, false)) {
+        if (commitState(entry, false) && itemSidePersisted) {
             finish(entry);
+        } else if (!itemSidePersisted) {
+            plugin.getLogger().warning("A piaci listázás tárgy-oldala nem lett azonnal tartós ("
+                    + entry.id() + ") — a napló nyitva marad, a következő indulás dönt a jelzőből.");
         } else {
             plugin.getLogger().severe("A piaci listázás commitja nem sikerült (" + entry.id()
                     + ") — a napló nyitva marad, a következő indulás helyreállítja.");
@@ -894,8 +920,12 @@ public final class MarketManager implements PersistentStore {
             final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
             leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
         }
-        persistPlayer(player);
-        finish(entry);
+        if (persistPlayer(player)) {
+            finish(entry);
+        } else {
+            plugin.getLogger().warning("A piaci kézbesítés tárgy-oldala nem lett azonnal tartós ("
+                    + entry.id() + ") — a napló nyitva marad, a következő indulás dönt a jelzőből.");
+        }
         return items.size();
     }
 
@@ -1072,22 +1102,31 @@ public final class MarketManager implements PersistentStore {
     /**
      * Azonnali playerdata-kiírás: az inventory-változás és a hozzá tartozó PDC-jelző így
      * egyetlen fájlba kerül, tehát a helyreállítás a jelzőből biztosan tudja, hogy a
-     * tárgy-oldal tartós-e. Ha a mentés nem megy, a HELYESSÉG nem sérül — a jelző csak
-     * később (a következő playerdata-mentéssel) válik tartóssá, és addig a helyreállítás
-     * a biztonságos (nem duplikáló) irányt választja.
+     * tárgy-oldal tartós-e.
+     *
+     * <p>A visszatérési érték KÖTELEZŐEN vizsgálandó: sikertelen mentésnél a jelző és az
+     * inventory-változás csak a memóriában él, ezért a naplót NEM szabad lezárni. Lezárva egy
+     * közbejövő crash a listázásnál duplikációt (a tétel a lemezen, a tárgy a kézben), a
+     * kézbesítésnél tárgy-vesztést okozna (a piac már nem tartozik vele, a játékos meg nem
+     * mentette el). Nyitva hagyva a következő indulás a jelzőből dönt — akkorra a kilépés
+     * amúgy is kiírta a playerdatát.
+     *
+     * @return true, ha a playerdata bizonyítottan lemezre került
      */
-    private void persistPlayer(final Player player) {
+    private boolean persistPlayer(final Player player) {
         if (!playerSaveSupported) {
-            return;
+            return false;
         }
         try {
             player.saveData();
+            return true;
         } catch (final RuntimeException | LinkageError failure) {
             // Egyszer próbálkozunk: ha a platform nem engedi a célzott playerdata-írást,
             // a további hívások csak a logot szemetelnék.
             playerSaveSupported = false;
             plugin.getLogger().warning("A piac nem tudja azonnal kiírni a játékos-adatot, a "
                     + "megerősítés a következő playerdata-mentésig tolódik: " + failure);
+            return false;
         }
     }
 
@@ -1117,8 +1156,12 @@ public final class MarketManager implements PersistentStore {
             final boolean committed = isCommitted(entry);
             switch (entry.type()) {
                 case TYPE_BUY, TYPE_BID, TYPE_SETTLE -> {
-                    repairMoney(entry, committed);
-                    finish(entry);
+                    // A napló CSAK akkor zárható, ha MINDEN célérték tartósan elérve — különben
+                    // a következő indulás már nem próbálhatná újra, és a hibás egyenleg
+                    // véglegesen legitimálódna.
+                    if (repairMoney(entry, committed)) {
+                        finish(entry);
+                    }
                 }
                 case TYPE_LIST -> deferToOwner(entry, committed);
                 case TYPE_DELIVER -> {
@@ -1181,16 +1224,20 @@ public final class MarketManager implements PersistentStore {
      * tranzakció UTÁNI, egyébként az ELŐTTI állapot. Absztolút célérték = idempotens
      * helyreállítás (a többszöri lefutás nem visz kétszer pénzt).
      */
-    private void repairMoney(final TransactionJournal.Entry entry, final boolean forward) {
+    private boolean repairMoney(final TransactionJournal.Entry entry, final boolean forward) {
         final ConfigurationSection money = entry.data().getConfigurationSection("money");
         if (money == null) {
-            return;
+            return true;
         }
 
+        boolean allReached = true;
         for (final String index : money.getKeys(false)) {
             final UUID player = parseUuid(money.getString(index + ".player"));
             final CurrencyType currency = CurrencyType.fromInput(money.getString(index + ".currency", ""));
             if (player == null || currency == null) {
+                plugin.getLogger().severe("Piac-helyreállítás: értelmezhetetlen egyenleg-bejegyzés ("
+                        + entry.type() + " " + entry.id() + ", " + index + ") — a napló NYITVA marad.");
+                allReached = false;
                 continue;
             }
 
@@ -1207,13 +1254,16 @@ public final class MarketManager implements PersistentStore {
                 currencyManager.addToBalance(player, currency, difference);
             } else if (!currencyManager.deductFromBalance(player, currency, -difference)) {
                 plugin.getLogger().severe("Piac-helyreállítás: " + player + " egyenlege ("
-                        + currency.name() + ") nem fedezte a korrekciót — kézi ellenőrzés kell.");
+                        + currency.name() + ") nem fedezte a korrekciót — a napló NYITVA marad, "
+                        + "a következő indulás újrapróbálja (kézi ellenőrzés ajánlott).");
+                allReached = false;
                 continue;
             }
             plugin.getLogger().warning("Piac-helyreállítás: " + player + " " + currency.name()
                     + " egyenlege korrigálva " + currencyManager.formatBalance(current) + " -> "
                     + currencyManager.formatBalance(target) + " (" + entry.type() + ")");
         }
+        return allReached;
     }
 
     /**

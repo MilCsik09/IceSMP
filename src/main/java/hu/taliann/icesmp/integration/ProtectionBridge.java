@@ -45,6 +45,9 @@ public final class ProtectionBridge {
     /** Amíg ez a jövőben van, a hídat hibásnak tekintjük (megszakító nyitva). */
     private static volatile long brokenUntil;
     private static final AtomicInteger failures = new AtomicInteger();
+    /** Megszakító-trip után a lejáratkor a reflexiós láncot ÚJRA fel kell oldani. */
+    private static final java.util.concurrent.atomic.AtomicBoolean needsReinit =
+            new java.util.concurrent.atomic.AtomicBoolean();
 
     private static Object regionContainer;
     private static Object regionQuery;
@@ -79,14 +82,8 @@ public final class ProtectionBridge {
         if (location == null || location.getWorld() == null) {
             return Boolean.FALSE;
         }
-        if (!initialised) {
-            initialise();
-        }
-        if (!installed) {
-            return Boolean.FALSE;
-        }
-        if (breakerOpen()) {
-            return null;
+        if (!ready()) {
+            return unavailableAnswer();
         }
         try {
             final Object adapted = adaptLocationMethod.invoke(null, location);
@@ -110,14 +107,8 @@ public final class ProtectionBridge {
         if (world == null) {
             return Boolean.FALSE;
         }
-        if (!initialised) {
-            initialise();
-        }
-        if (!installed) {
-            return Boolean.FALSE;
-        }
-        if (breakerOpen()) {
-            return null;
+        if (!ready()) {
+            return unavailableAnswer();
         }
         if (cuboidConstructor == null || managerOverlapMethod == null) {
             // Régebbi/átalakított WG-API: a box-lekérdezés nem áll rendelkezésre.
@@ -146,23 +137,66 @@ public final class ProtectionBridge {
 
     /** Whether WorldGuard is present and the bridge is currently answering. */
     public static boolean isHealthy() {
-        if (!initialised) {
-            initialise();
-        }
-        return installed && !breakerOpen();
+        return ready();
+    }
+
+    /**
+     * A válasz, amikor a híd nem tud kérdezni: WorldGuard NÉLKÜL ez biztos „nincs régió",
+     * megszakító alatt viszont „nem tudom" — a hívó dönti el a saját kockázat-irányát.
+     */
+    private static Boolean unavailableAnswer() {
+        return installed ? null : Boolean.FALSE;
     }
 
     private static boolean breakerOpen() {
         return System.currentTimeMillis() < brokenUntil;
     }
 
+    /**
+     * Whether the bridge may answer now. A megszakító lejártakor ÚJRA FELOLDJA a reflexiós
+     * láncot: egy WorldGuard-reload érvényteleníti a cache-elt {@code regionQuery}/
+     * {@code regionContainer} objektumokat, és azokkal a lejárat után is ugyanaz a hiba jönne —
+     * a híd a szerver-újraindításig hibás maradt volna (claim fail-closed, esemény fail-open).
+     */
+    private static boolean ready() {
+        if (!initialised) {
+            initialise();
+        }
+        if (breakerOpen()) {
+            return false;
+        }
+        if (needsReinit.compareAndSet(true, false)) {
+            reinitialise();
+        }
+        return installed;
+    }
+
+    /** Eldobja a cache-elt reflexiós láncot, és a következő igényre újra feloldja. */
+    private static synchronized void reinitialise() {
+        initialised = false;
+        installed = false;
+        regionContainer = null;
+        regionQuery = null;
+        adaptLocationMethod = null;
+        adaptWorldMethod = null;
+        getApplicableRegionsMethod = null;
+        sizeMethod = null;
+        containerGetMethod = null;
+        managerOverlapMethod = null;
+        blockVectorAtMethod = null;
+        cuboidConstructor = null;
+        initialise();
+    }
+
     private static void tripBreaker(final Throwable throwable) {
         brokenUntil = System.currentTimeMillis() + BREAKER_MILLIS;
+        needsReinit.set(true);
         final int count = failures.incrementAndGet();
         if (count == 1 || count % LOG_EVERY_FAILURES == 0) {
             Bukkit.getLogger().warning("[IceSMP] WorldGuard-lekérdezés hibázott ("
                     + throwable.getClass().getSimpleName() + ", " + count + ". alkalom) — a híd "
-                    + (BREAKER_MILLIS / 1000L) + " másodpercre kikapcsol, utána újra próbálja. "
+                    + (BREAKER_MILLIS / 1000L) + " másodpercre kikapcsol, majd ÚJRA FELOLDJA a "
+                    + "WG-hivatkozásokat (reload után a régiek elavulnak). "
                     + "Amíg hibás, a claim-átfedés ellenőrzés ELUTASÍT (fail-closed).");
         }
     }

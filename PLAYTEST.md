@@ -2659,3 +2659,29 @@ Jó tesztelést! ❄️
 - [ ] **Watchdog (beragadt esemény):** ha egy esemény `isActive()`-ja beragadna, a
       `world-events.orchestration.max-active-minutes` (alap 60) lejárta után a többi nagy
       esemény ismét indulhat magától — nem kell szerver-újraindítás.
+
+## PR-review javítások: tartósság-bizonyíték és megszakító-gyógyulás (2026-07-26)
+- [ ] **Sikertelen playerdata-mentés nem zárja a naplót (P0):** a `MarketManager.persistPlayer`
+      hibája után a `market-journal.yml` bejegyzés NYITVA marad (logban figyelmeztetés).
+      Teszt: listázz, majd nézd meg a naplót — ha a mentés bukott, a bejegyzés ott van, és a
+      következő indulás a jelzőből dönt. **Sosem fordulhat elő, hogy a tétel a lemezen van ÉS a
+      tárgy a kézben (dupe), vagy hogy a piac már nem tartozik a tárggyal, de a játékos sem
+      mentette el (vesztés).**
+- [ ] **Sikertelen pénz-helyreállítás újrapróbálható (P1):** crash után olyan helyreállítással,
+      ahol a levonás nem fedezett → a log SEVERE sort ad, a napló-bejegyzés MEGMARAD, és a
+      KÖVETKEZŐ indulás újra megpróbálja (eddig véglegesen legitimálódott az eltérő egyenleg).
+- [ ] **Sérült market.yml nem dob el tételt (P1):** rontsd el egy tétel valutáját/tárgyát, egy
+      eladó-UUID-t, vagy hagyj zárolt licitet licitáló nélkül → az indulás MEGSZAKAD karantén-
+      másolattal (eddig némán átugrotta, és a tárgy/escrow elveszett).
+- [ ] **WorldGuard-reload után a híd magához tér (P1):** `/wg reload` (vagy a WG plugin
+      újratöltése) közben futtass claim-ellenőrzést → a híd hibát logol és 60 mp-re kikapcsol,
+      **utána viszont ÚJRA feloldja a WG-hivatkozásokat**, és ismét helyesen válaszol. Nem marad
+      hibás a szerver-újraindításig. Amíg hibás, a `/claim` elutasít (fail-closed).
+- [ ] **Spell-provenancia migráció szint-helyes (P2):** olyan játékossal, aki egy MAGASABB
+      szintű kaszt-spellt talentből/specből kapott meg, a backfill NEM ír rá `BASE` forrást →
+      a talent/spec elvesztésekor a spell is elmegy (eddig véglegesen nála maradt). Ellenőrizd
+      azt is, hogy idegen kaszt specének táblája nem attribútál (Varázslónak nincs Harcos-spece).
+- [ ] **Közösségi jutalom crash-biztos (P1):** állítsd a célt 1-re, teljesítsd, és a kifizetés
+      pillanatában `kill -9`. Újraindításkor a log „N függő kifizetés — újrajátszás" sort ad,
+      és a kincstár/szezon/buff jutalom MEGÉRKEZIK (eddig a nyugta miatt az esemény nem
+      játszódott újra, a jutalom pedig elmaradt). A jutalom nem duplázódik, ha nem volt crash.

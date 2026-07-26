@@ -445,8 +445,15 @@ public final class JobManager implements PlayerStateCleanup {
             final ConfigurationSection baseSection = configManager.getConfiguration()
                     .getConfigurationSection("classes." + job.getId() + ".spell-unlocks");
             if (baseSection != null) {
+                // CSAK a már elért szintű kaszt-spell számít BASE forrásnak. A követelmény
+                // ellenőrzése nélkül egy magasabb szintű spell — amit a játékos ideiglenesen
+                // talentből/specből kapott — BASE grantet kapna, és a respec/lejárat után
+                // véglegesen nála maradna.
+                final int level = getPrimaryLevel(player);
                 for (final String spellId : baseSection.getKeys(false)) {
-                    baseSpells.add(spellId.toLowerCase(Locale.ROOT));
+                    if (level >= baseSection.getInt(spellId, Integer.MAX_VALUE)) {
+                        baseSpells.add(spellId.toLowerCase(Locale.ROOT));
+                    }
                 }
             }
         }
@@ -455,6 +462,14 @@ public final class JobManager implements PlayerStateCleanup {
                 .getConfigurationSection("specializations");
         if (specs != null) {
             for (final String specId : specs.getKeys(false)) {
+                // CSAK a játékos SAJÁT kasztjához tartozó spec jöhetett szóba: egy Varázslónak
+                // sosem lehetett Harcos-spece, ezért idegen spec táblája nem attribútálhat.
+                // Enélkül egy quest-jutalom is SPEC-forrást kapna, és a respec elvenné.
+                final hu.taliann.icesmp.data.SpecializationType spec =
+                        hu.taliann.icesmp.data.SpecializationType.fromId(specId);
+                if (job == null || spec == null || spec.getParentJob() != job) {
+                    continue;
+                }
                 final ConfigurationSection unlockSection = specs.getConfigurationSection(specId + ".spell-unlocks");
                 if (unlockSection == null) {
                     continue;
