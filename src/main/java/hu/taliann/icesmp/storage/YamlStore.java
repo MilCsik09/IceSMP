@@ -17,54 +17,41 @@ import java.util.logging.Logger;
  * The single, shared YAML persistence primitive for the whole plugin.
  *
  * <p>Every manager writes its data file through {@link #saveAtomic(File, YamlConfiguration)} so the
- * (previously copy-pasted) safe-write logic lives in exactly one place: the config is written to a
- * temp file and then atomically renamed over the target. This guarantees a crash or a concurrent
- * write can never leave a half-written/truncated data file behind.
+ * safe-write logic lives in exactly one place: the config is written to a unique temp file and
+ * then atomically renamed over the target.
  *
- * <p>Kept as a tiny static utility (rather than a base class) so adopting it is a one-line change in
- * each manager and never disturbs their constructors, fields or load logic.
- *
- * <p><b>Sérült fájl elleni védelem:</b> a {@code hu.taliann.icesmp.storage.YamlStore.loadTracked(File, org.bukkit.Bukkit.getLogger())}
- * FAIL-OPEN — hibás YAML-nál nem dob kivételt, csak naplóz, és ÜRES konfigurációt ad vissza. Így a
- * manager üres alapállapottal indult, a következő autosave pedig szabályos, de üres fájlt írt a
- * kézzel még javítható adat FÖLÉ: teljes játékos-, gazdasági vagy világállapot veszhetett el, miközben
- * a szerver látszólag rendben elindult. Ezért:
- * <ul>
- *   <li>az állapotfájlokat a {@link #loadTracked(File, Logger)} olvassa, ami VALÓDI parse-hibát
- *       észlel ({@code loadFromString}), karantén-másolatot készít és megjelöli a fájlt;</li>
- *   <li>a {@link #saveAtomic} MEGTAGADJA a megjelölt fájl írását, tehát a sérült, de meglévő adat
- *       nem íródhat felül — az operátornak van mit visszaállítania.</li>
- * </ul>
+ * <p><b>Critical state contract:</b> a malformed persistent state file is never replaced by an
+ * empty in-memory configuration. {@link #loadTracked(File, Logger)} quarantines the bytes, marks
+ * the path unhealthy and throws {@link CorruptStateFileError}. The error intentionally escapes
+ * the core's per-store {@code RuntimeException} recovery and aborts plugin enable; running without
+ * claims, ownerships, balances or moderation state would be a fail-open security boundary.
  */
 public final class YamlStore {
 
-    /**
-     * Azok az állapotfájlok, amiknek a betöltése PARSE-HIBÁRA futott. A mentés ezekre tiltott.
-     * Statikus, mert a store-ok is statikusan hívják a primitívet, és a tiltásnak a teljes
-     * futásra kell érvényesnek lennie (egyetlen sikeres újratöltés oldja fel).
-     */
+    /** Paths whose last load failed. Writes remain forbidden until a later successful parse. */
     private static final Set<String> loadFailed = ConcurrentHashMap.newKeySet();
-    /** Fájlonként egyszer naplózunk elutasított mentést — különben az autosave elárasztja a logot. */
+    /** Log a refused write once per path so autosave cannot flood the console. */
     private static final Map<String, Boolean> refusalLogged = new ConcurrentHashMap<>();
 
     private YamlStore() {
     }
 
     /**
-     * Állapotfájl betöltése VALÓDI parse-hiba-észleléssel.
+     * Loads an authoritative state file with strict parse handling.
      *
-     * <p>Sikeres parse esetén a fájl feloldódik a tiltás alól (kézi javítás után újratöltéssel
-     * visszaáll a normál működés). Hibás YAML esetén karantén-másolat készül
-     * ({@code <név>.corrupt-<időbélyeg>}), a fájl megjelölődik, és ÜRES konfiguráció tér vissza —
-     * a hívó meglévő logikája változatlanul fut, de a {@link #saveAtomic} már nem írja felül.
+     * <p>A successful parse clears a previous unhealthy marker. A parse or read failure creates a
+     * timestamped quarantine copy, keeps writes blocked and raises a fatal startup error. Returning
+     * an empty configuration here is forbidden because many managers clear their maps before load.
      *
-     * @return a betöltött konfiguráció, vagy üres konfiguráció parse-hiba esetén
+     * @return the parsed configuration; an absent file is a healthy empty configuration
+     * @throws CorruptStateFileError when existing bytes cannot be read or parsed
      */
     public static YamlConfiguration loadTracked(final File file, final Logger logger) {
         final String key = file.getAbsolutePath();
         final YamlConfiguration yaml = new YamlConfiguration();
         if (!file.exists()) {
             loadFailed.remove(key);
+            refusalLogged.remove(key);
             return yaml;
         }
         try {
@@ -74,16 +61,16 @@ public final class YamlStore {
             return yaml;
         } catch (final InvalidConfigurationException | IOException | RuntimeException failure) {
             loadFailed.add(key);
-            logger.severe("SÉRÜLT állapotfájl: " + file.getName() + " — " + failure.getMessage());
+            logger.severe("SÉRÜLT kritikus állapotfájl: " + file.getName() + " — " + failure.getMessage());
             quarantine(file, logger);
-            logger.severe("A(z) " + file.getName() + " MENTÉSE LETILTVA, hogy a meglévő adat ne "
-                    + "íródjon felül. Javítsd a fájlt (vagy állítsd vissza a karantén-másolatból), "
-                    + "majd /icesmp reload vagy újraindítás.");
-            return new YamlConfiguration();
+            logger.severe("Az IceSMP indulása MEGSZAKAD. A(z) " + file.getName()
+                    + " mentése letiltva marad; javítsd a fájlt vagy állítsd vissza a karanténból, "
+                    + "majd indítsd újra a szervert.");
+            throw new CorruptStateFileError(file, failure);
         }
     }
 
-    /** Karantén-másolat a sérült fájlról, hogy a kézi javításhoz legyen mit elővenni. */
+    /** Creates a byte-preserving quarantine copy for operator recovery. */
     private static void quarantine(final File file, final Logger logger) {
         final File copy = new File(file.getParentFile(),
                 file.getName() + ".corrupt-" + Instant.now().toEpochMilli());
@@ -96,33 +83,35 @@ public final class YamlStore {
         }
     }
 
-    /** Betöltés-hibás állapotfájl-e (a mentés ezért tiltott). */
+    /** Whether the latest load of this path failed and writes are therefore forbidden. */
     public static boolean isLoadFailed(final File file) {
         return loadFailed.contains(file.getAbsolutePath());
     }
 
     /**
-     * Atomically writes {@code yaml} to {@code file}: it is written to a UNIQUE temp file and then
-     * atomically renamed over the target (with a plain-replace fallback on filesystems that do not
-     * support atomic moves). The unique temp name means concurrent callers on the same file — some
-     * managers' {@code save()} is not synchronised — never clobber a shared temp; each writes its
-     * own and the last rename wins with a complete, valid file. The temp is always cleaned up.
+     * Atomically writes {@code yaml} to {@code file}.
      *
-     * @throws IOException if the write fails — callers keep their existing try/catch logging
+     * <p>The method never reports success when persistence was refused. A load-failed path throws
+     * {@link IOException}, allowing transaction callers to keep their WAL/commit witness intact.
+     *
+     * @throws IOException if the write fails or the path is blocked after a failed load
      */
     public static void saveAtomic(final File file, final YamlConfiguration yaml) throws IOException {
-        if (loadFailed.contains(file.getAbsolutePath())) {
-            // A betöltés parse-hibára futott, tehát a memóriabeli állapot ÜRES vagy részleges.
-            // A mentés itt véglegesen elvinné a lemezen még megvan adatot.
-            if (refusalLogged.putIfAbsent(file.getAbsolutePath(), Boolean.TRUE) == null) {
-                // Bukkit-független logger: a primitív a szerver-életciklustól akkor is működik,
-                // ha a Bukkit.server még/már nincs beállítva (shutdown-mentés, teszt).
-                Logger.getLogger("IceSMP").severe("Mentés MEGTAGADVA: " + file.getName()
-                        + " betöltése sérült volt — az adat felülírása adatvesztés lenne.");
+        final String key = file.getAbsolutePath();
+        if (loadFailed.contains(key)) {
+            final String message = "Mentés MEGTAGADVA: " + file.getName()
+                    + " betöltése sérült volt — az adat felülírása adatvesztés lenne.";
+            if (refusalLogged.putIfAbsent(key, Boolean.TRUE) == null) {
+                Logger.getLogger("IceSMP").severe(message);
             }
-            return;
+            throw new IOException(message);
         }
-        final File tempFile = new File(file.getParentFile(),
+
+        final File parent = file.getParentFile();
+        if (parent != null) {
+            Files.createDirectories(parent.toPath());
+        }
+        final File tempFile = new File(parent,
                 file.getName() + "." + System.nanoTime() + ".tmp");
         try {
             yaml.save(tempFile);
@@ -130,11 +119,9 @@ public final class YamlStore {
                 Files.move(tempFile.toPath(), file.toPath(),
                         StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (final IOException atomicFailure) {
-                // Filesystem may not support atomic moves; fall back to a plain replace.
                 Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         } finally {
-            // No-op when the move succeeded (temp already gone); removes a partial temp on failure.
             Files.deleteIfExists(tempFile.toPath());
         }
     }
