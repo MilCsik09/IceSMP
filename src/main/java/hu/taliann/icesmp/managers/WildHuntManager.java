@@ -328,6 +328,7 @@ public final class WildHuntManager {
         mob.setCustomNameVisible(true);
         mobScalingManager.forceLevel(mob, Math.max(1,
                 configManager.getInt("wild-hunt.beast-level", 8)));
+        hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
         beastId = mob.getUniqueId();
         expiresAt = System.currentTimeMillis() + expireMillis();
         spawnGraceUntil = 0L;

@@ -78,6 +78,10 @@ public final class CommunityGoalManager implements PersistentStore {
                 if (!(raw instanceof Number number) || number.longValue() < 0L) {
                     YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                             "Érvénytelen community progress: " + key);
+                    // A failCorrupt mindig dob, de void: a fordító a minta-kötést csak akkor
+                    // látja biztosan hozzárendeltnek, ha ez az ág megszakad (a CurrencyManager
+                    // ugyanígy return-öl minden failCorrupt után).
+                    continue;
                 }
                 progress.put(key.toLowerCase(Locale.ROOT), number.longValue());
             }

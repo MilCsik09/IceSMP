@@ -439,6 +439,24 @@ próbálták megdönteni. Mind a négyre kifogás érkezett — a leleteket kéz
 | `CRIT-07` | ✅ MEGTARTVA + javítva | A megnevezett tünet (a gyilkos főkéz-olvasása az áldozat szálán) tényleg megszűnt. Két hamis szerződés javítva: a `dropSeed` már NEM kever `nanoTime`-ot (a kill-szintű determinizmus tényleg áll), a `claimOnce` retesz pedig kill-szintű (áldozat-UUID + csatorna) — példány-szinten a `MobLootListener` két kontextusa kétszer fizethetett volna. A pozíció-alapú megosztás (párt-XP, Vad Hajsza) NEM lett átvezetve: a javadoc hatóköre most ezt kimondja, a tétel nyitva marad. |
 | `CRIT-08` | ❌ VISSZAVONVA | Az ellenőrző bizonyított REGRESSZIÓT: a fail-open `isAlive` miatt az `InvasionManager.isActive()` örökre `true`-ba ragadhatott (nincs lejárati bélyeg), és a `MajorEventGate`-en át a world-boss / Vad Hajsza / kíséret / kultisták TERMÉSZETES indítását is letiltotta szerver-újraindításig; a minion-cap felszabadulása GC-függővé vált. A régi kód ugyanott helyes választ adott. Szál-helyességi kockázatot cseréltünk volna korlátlan, csak restarttal oldható gameplay-deadlockra — a `TransientEntities`/`MinionManager` visszaállt, a be nem kötött listener törölve. A tétel NYITVA marad. |
 
+**P0-A…F kör integrálva (2026-07-26, `agent/p0-fixes` → beolvasztva):** hét további csomag
+érkezett külön ágon (fail-closed sérült-state betöltés, piac/wallet fail-stop kapu, block-regen
+tokenes recovery, tartós contribution receipt, Folia kill-pillanatkép + scheduleres párt-jutalom,
+mulandó entitás életciklus + esemény-watchdog). Az integráció előtti ellenőrzés HÁROM blokkolót
+talált — mindhármat javítottam a beolvasztással egy körben:
+
+| Lelet | Mi volt | Javítás |
+|---|---|---|
+| Nem fordult | `CommunityGoalManager:82` — a `failCorrupt` mindig dob, de `void`, ezért a minta-kötés (`raw instanceof Number number`) nem volt biztosan hozzárendelve. `./gradlew compileJava` = exit 1. | Az ág megszakítása a `failCorrupt` után (a `CurrencyManager` ugyanezt a `return`-mintát követi). |
+| Esemény-halál minden induláskor | Az új `isAlive` FAIL-CLOSED, de az `EscortManager` (konvoj + hullám-mobok), a `WildHuntManager` (fenevad) és a `StrangerNpcManager` (NPC) sosem hívott `register`-t → a saját entitásuk már a következő tickben halottnak látszott, az esemény azonnal lezárult, a mobok gazdátlanul maradtak. | Négy `TransientEntities.register(...)` hívás a spawn-utakra + **új gépi őr** (`transient-liveness`): aki `isAlive`-ot hív, annak regisztrálnia is kell. |
+| Checker piros | A csomagtérkép-számok nem követték az új fájlokat (`managers/` 109, `storage/` 6, `utils/` 21). | Mért értékek szinkronban; a méret-adatok is (477 fájl / ~82 000 sor). |
+
+A `CRIT-07` maradéka (párt-XP, Vad Hajsza personal loot) az új `PartyRewardResolver`-rel
+lezárult: tagonkénti scheduler-hop + számláló-alapú join, 4 tickes határidővel. A `CRIT-08`
+a korábban visszavont változatnál jobb megoldást kapott: heartbeat-alapú `Handle` az entitás
+saját ütemezőjén (nincs `Bukkit.getEntity`), fail-CLOSED liveness, és a `MajorEventGate`
+watchdogja mint második védőháló a beragadt esemény ellen.
+
 **Tanulság a delegálásról:** a subagent-jelentések `build_result`/`checker_result` mezői
 mindhárom megtartott tételnél elavultak vagy vacuumok voltak („3 up-to-date" = a `compileJava`
 nem is futott). A leletet MINDIG a fő-agent futtatja újra — és a párhuzamos agentek egymás

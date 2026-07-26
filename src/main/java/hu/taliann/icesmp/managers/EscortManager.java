@@ -288,6 +288,9 @@ public final class EscortManager {
             }
         });
 
+        // A liveness fail-CLOSED: regisztráció nélkül a konvoj a következő tickben halottnak
+        // látszana, és az esemény azonnal „a konvoj elesett" eredménnyel zárulna.
+        hu.taliann.icesmp.utils.TransientEntities.register(plugin, convoy);
         convoyId = convoy.getUniqueId();
         destination = dest;
         totalDistance = Math.max(1.0D, horizontalDistance(start, dest));
@@ -424,6 +427,7 @@ public final class EscortManager {
             mob.setPersistent(false);
             mobScalingManager.forceLevel(mob, level);
             mob.setTarget(convoy);
+            hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
             waveMobs.add(mob.getUniqueId());
         }
 

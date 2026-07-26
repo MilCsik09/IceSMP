@@ -203,6 +203,7 @@ public final class StrangerNpcManager {
         stranger.setDespawnDelay(0);
         stranger.customName(messageManager.getMessage("stranger-name", "<dark_gray>Az Idegen</dark_gray>"));
         stranger.setCustomNameVisible(true);
+        hu.taliann.icesmp.utils.TransientEntities.register(plugin, stranger);
         activeStrangerId = stranger.getUniqueId();
 
         world.playSound(spot, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.8F, 0.6F);

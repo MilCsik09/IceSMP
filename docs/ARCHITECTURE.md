@@ -35,7 +35,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 108 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 109 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 114 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
@@ -43,9 +43,9 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 11 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
-| `storage/` | 4 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
+| `storage/` | 6 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 20 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `utils/` | 21 | `MessageManager`, `ExperienceUtil`, egyebek. |
 | `integration/` | 7 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -256,6 +256,28 @@ A teljes kódbázist átnéztük Folia-kompatibilitásra; **nulla sértés**. A 
 **Ökölszabály új kódhoz:** ha entitást/játékost/világot érintesz egy esemény-kezelőn KÍVÜLi
 kontextusból (tick, callback, másik entitás), előbb hopp az adott entitás/régió ütemezőjére.
 
+### 4.2 Mulandó entitások életciklusa — `utils/TransientEntities`
+
+A világesemény-managerek UUID-kulcsú listákat tartanak (konvoj, hordamobok, fenevad, kultisták,
+minionok), és tudniuk kell, él-e még az entitás. A `Bukkit.getEntity(uuid)` + `isValid()` páros
+erre **nem használható**: globális tickről idegen régió entitását olvasná.
+
+- **`register(plugin, entity)`** — az entitás SAJÁT ütemezőjén heartbeatet indít (`runAtFixedRate`),
+  és eltárolja a `Handle`-t (id + generáció + scheduler). A `runAtFixedRate` visszavonás-callbackje
+  (Folia akkor hívja, ha az entitás megszűnik) nyugdíjazza a handle-t.
+- **`isAlive(id)`** — tisztán memóriabeli, atomi olvasás: él a handle, és a heartbeat friss-e.
+  **FAIL-CLOSED: ismeretlen id = halott.** Ez szándékos — egy fail-open liveness beragadhat
+  „örökké él" állapotba, és a `MajorEventGate`-en át az összes nagy eseményt letilthatja.
+- **`removeById(plugin, id)`** — a tárolt scheduleren távolít el; nincs globális UUID-keresés.
+
+**KÖTELEZŐ invariáns:** ha egy manager `isAlive`-ot hív, a spawn-útján `register`-t IS kell hívnia.
+Regisztráció nélkül a saját entitása azonnal halottnak látszik, és az esemény a következő tickben
+lezárul (a `check_consistency.py` `transient-liveness` őre ezt FAIL-lel fogja meg).
+
+**Második védőháló:** a `MajorEventGate` watchdogja (`world-events.orchestration.max-active-minutes`,
+alap 60) egy beragadt `isActive()`-ot egy idő után figyelmen kívül hagy — így egyetlen elveszett
+életciklus-visszajelzés sem tilthatja le a többi eseményt szerver-újraindításig.
+
 ---
 
 ## 5. Bővítési receptek
@@ -367,7 +389,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 473 Java-fájl, ~80 000 sor; 87 `*Manager` osztály (a `managers/` csomag 108 fájl).
+- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 109 fájl).
   Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
   items 11, relics 9, integration 7.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék

@@ -485,6 +485,26 @@ try:
 except Exception as e:
     warn(f"slot-visszaeses ellenorzes kihagyva: {e}")
 
+# ===== Transient-entitas liveness: aki kerdez, annak regisztralnia is kell =====
+# A TransientEntities.isAlive FAIL-CLOSED: ismeretlen id = halott. Ha egy manager kerdezi a
+# liveness-t, de a spawn-utjan nem hiv register()-t, az entitas MAR a kovetkezo tickben
+# halottnak latszik — az esemeny (karavan, Vad Hajsza, Idegen) azonnal lezarul, a mobok pedig
+# gazdatlanul a vilagban maradnak.
+try:
+    _alive_files, _register_files = set(), set()
+    for _jp in pathlib.Path(JAVA).rglob("*.java"):
+        _src = _jp.read_text(encoding="utf-8", errors="ignore")
+        if "TransientEntities.isAlive" in _src:
+            _alive_files.add(_jp.name)
+        if "TransientEntities.register" in _src:
+            _register_files.add(_jp.name)
+    for _name in sorted(_alive_files - _register_files):
+        fail(f"transient-liveness: {_name} — TransientEntities.isAlive(...)-ot hiv, de sehol nem "
+             f"regisztral (TransientEntities.register). A liveness fail-closed, ezert a sajat "
+             f"entitasa azonnal halottnak latszik")
+except Exception as e:
+    warn(f"transient-liveness ellenorzes kihagyva: {e}")
+
 # ===== Vagyon-definicio: EGYETLEN forras =====
 # A ranglista/bard/kronika a DEFAULT valutat olvasta, az elerések az osszeget — ugyanaz a
 # jatekos mas vagyont mutatott a ket helyen (RED/BLUE/DARK egyenleg be sem szamitott).

@@ -2601,3 +2601,61 @@ Jó tesztelést! ❄️
 - [ ] **Ismert korlát (nyitott):** kereszt-régiós ölésnél a PÁRT-XP megosztás és a Vad Hajsza
       személyes lootja némán elmaradhat (pozíció-olvasás az áldozat szálán, fail-open) — ezt
       külön kör zárja, nem regresszió.
+
+## P0-A…F csomagok: fail-closed perzisztencia és Folia-életciklus (2026-07-26)
+> Ezek a csomagok az adatvesztés és a szál-helyesség ellen dolgoznak. Több teszt NYERS
+> leállítást (`kill -9`) kér — külön teszt-világon futtasd, és előtte mentsd a `plugins/IceSMP`-t.
+
+### P0-A — sérült állapotfájl fail-closed
+- [ ] **Indulás megszakad:** állítsd le a szervert, írj szemetet a `plugins/IceSMP/currency-balances.yml`-be,
+      indíts újra → a log SEVERE sorban nevezi a fájlt, karantén-másolat készül, és az IceSMP
+      **NEM indul el** (nem fut tovább üres egyenlegekkel). A karantén visszaállítása után indul.
+- [ ] **Szemantikai sérülés is fogja:** ép YAML, de negatív egyenleg / nem-UUID kulcs →
+      ugyanaz a fail-closed viselkedés (nem csak a parse-hiba számít).
+- [ ] **A közösségi cél számlálója is:** negatív `progress` érték a `community-goals.yml`-ben →
+      indulás megszakad, nem nullázza némán a célt.
+
+### P0-B — piac/wallet fail-stop
+- [ ] **Napló nem írható → a művelet elmarad:** `chmod 500 plugins/IceSMP`, majd `/market sell 100`
+      → érthető magyar hibaüzenet („a tranzakció-napló most nem írható"), a tárgy a kézben MARAD.
+      Ugyanez a GUI-vásárlásnál. Jogosultság visszaadása után minden működik.
+- [ ] **Wallet-commit a napló törlése ELŐTT:** vásárlás közbeni `kill -9` után az egyenleg és a
+      tárgy MINDIG egy irányba zárul — sosem fordulhat elő, hogy a vevőnél a tárgy ÉS a pénze is.
+
+### P0-C — block-regen tokenes recovery
+- [ ] **Teli láda + kill -9:** védett zónában robbants rá egy 3 felismerhető tárgyat tartalmazó
+      ládára, 2 percen belül `kill -9` → újraindítás után a láda PONTOSAN a három tárggyal épül
+      vissza (se több — a duplikáció is hiba —, se kevesebb).
+- [ ] **Nincs dupe-farm:** írásvédett data-könyvtár mellett a láda **egyszer** épül vissza, NEM
+      töltődik újra másodpercenként.
+
+### P0-D — forrás-eseményes gyűjtés + contribution receipt
+- [ ] **Ledob–felvesz nem duplázza:** `COLLECT_ITEMS` közösségi célnál dobd el és vedd fel
+      ugyanazt a stacket többször → a számláló CSAK egyszer nő.
+- [ ] **Olvasztás/horgászat egyszer számít:** kemencéből kivett és kifogott tétel is pontosan
+      egyszer könyvelődik, `kill -9` + újraindítás után sem ismétlődik (tartós receipt).
+
+### P0-E — Folia kill-pillanatkép + scheduleres párt-jutalom
+- [ ] **Kereszt-régiós párt-XP:** két párttag távoli régiókban; öld meg a mobot úgy, hogy a
+      másik tag a megosztási sugáron BELÜL, de MÁSIK régióban legyen → mindkettő megkapja az
+      osztott XP-t (korábban a megosztás némán elmaradt), és a konzolon nincs szál-hiba.
+- [ ] **Sugáron kívüli tag nem kap:** a sugáron kívüli párttag nem kap részt; a teljes XP a
+      gyilkosnál marad (nincs XP-nyomtatás és nincs veszteség).
+- [ ] **Offline/kilépő tag:** ölés után azonnal lépjen ki az egyik tag → nincs konzol-hiba, a
+      többiek megkapják a részüket (a 4 tickes határidő lezárja az aggregációt).
+
+### P0-F — mulandó entitás életciklus + esemény-watchdog
+- [ ] **Karaván-kíséret VÉGIGFUT:** `/events escort` → a konvoj elindul és célba ér (NEM zárul
+      le azonnal „a konvoj elesett" üzenettel). Ez a regisztráció-teszt: a liveness fail-closed,
+      így regisztráció nélkül az esemény az első tickben elhalna.
+- [ ] **Vad Hajsza VÉGIGFUT:** `/events wildhunt` → a fenevad életben marad a lejáratig vagy a
+      leöléséig (nem „megszökik" azonnal).
+- [ ] **Idegen NPC marad:** `/events stranger` → az NPC a beállított ideig áll, nem tűnik el
+      azonnal és nem spawnol újra ismételten.
+- [ ] **Halál azonnal felszabadít:** öld meg a Vad Hajsza fenevadát → az esemény azonnal zárul,
+      és rögtön indítható új nagy esemény (nem kell megvárni a watchdogot).
+- [ ] **Minion-cap azonnal ürül:** idézd meg a maximális minion-számot, öld meg az egyiket →
+      1-2 másodpercen belül idézhető új (nem GC-függő).
+- [ ] **Watchdog (beragadt esemény):** ha egy esemény `isActive()`-ja beragadna, a
+      `world-events.orchestration.max-active-minutes` (alap 60) lejárta után a többi nagy
+      esemény ismét indulhat magától — nem kell szerver-újraindítás.
