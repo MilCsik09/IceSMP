@@ -164,8 +164,7 @@ public final class AchievementManager {
             case CLASS_LEVEL -> jobManager.getPrimaryLevel(player);
             // Vagyon = az ÖSSZES valuta-egyenleg összege (a default-valutás olvasás a
             // RED/BLUE/DARK játékosokat kizárta volna a vagyon-elérésekből).
-            case WEALTH -> currencyManager.getBalances(player).values().stream()
-                    .mapToDouble(Double::doubleValue).sum();
+            case WEALTH -> currencyManager.getTotalBalance(player);
             case RAID_KILLS -> statsManager.getRaidKills(player.getUniqueId());
             case PROFESSION_LEVEL -> totalProfessionLevel(player);
             case DAILY_STREAK -> dailyQuestManager.getStreak(player);

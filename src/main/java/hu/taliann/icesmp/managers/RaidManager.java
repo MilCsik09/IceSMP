@@ -539,21 +539,13 @@ public final class RaidManager implements PersistentStore {
             return;
         }
 
-        final org.bukkit.World world = Bukkit.getWorld(territory.world());
-        if (world == null) {
+        // Captured zones never carry capital status into the conqueror's hands — a faction's
+        // capital is its own seat, not a war trophy. Csak a TULAJDONOS változik: az újra-
+        // definiálás elvesztette a függőleges sávot (a felszíni/föld alatti zóna teljes
+        // világmagasságúvá vált a foglalással).
+        if (territoryManager.setOwner(territory.id(), conqueror,
+                hu.taliann.icesmp.data.TerritoryType.FACTION) == null) {
             return;
-        }
-
-        // Captured zones never carry capital status into the conqueror's hands —
-        // a faction's capital is its own seat, not a war trophy. A polygon boundary
-        // (e.g. a besieged city wall) is preserved so the exact shape transfers too.
-        if (territory.isPolygon()) {
-            territoryManager.definePolygon(territory.id(), conqueror, territory.name(),
-                    hu.taliann.icesmp.data.TerritoryType.FACTION, territory.world(), territory.polygon());
-        } else {
-            territoryManager.define(territory.id(), conqueror, territory.name(),
-                    hu.taliann.icesmp.data.TerritoryType.FACTION,
-                    new Location(world, territory.x(), 0.0D, territory.z()), territory.radius());
         }
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-territory-captured",

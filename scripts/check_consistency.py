@@ -485,6 +485,21 @@ try:
 except Exception as e:
     warn(f"slot-visszaeses ellenorzes kihagyva: {e}")
 
+# ===== Vagyon-definicio: EGYETLEN forras =====
+# A ranglista/bard/kronika a DEFAULT valutat olvasta, az elerések az osszeget — ugyanaz a
+# jatekos mas vagyont mutatott a ket helyen (RED/BLUE/DARK egyenleg be sem szamitott).
+try:
+    for _jp in pathlib.Path(JAVA).rglob("*.java"):
+        if _jp.name == "CurrencyManager.java":
+            continue
+        _src = _jp.read_text(encoding="utf-8", errors="ignore")
+        if re.search(r"getBalances\([^)]*\)\s*\.values\(\)\s*\.stream\(\)", _src, re.S):
+            fail(f"vagyon-definicio: {_jp.name} — kezi valuta-osszegzes; hasznald a "
+                 f"CurrencyManager.getTotalBalance(player)-t, hogy minden fogyaszto UGYANAZT "
+                 f"a vagyont lassa")
+except Exception as e:
+    warn(f"vagyon-definicio ellenorzes kihagyva: {e}")
+
 # ===== ARCHITECTURE.md csomagterkep: a fajlszamok a fajlrendszerbol jonnek =====
 # A tabla evekig kezzel kovette a kodot, ezert minden sora elmaradt (managers 62 vs 108,
 # utils 3 vs 20). Ez a guard a tabla ELSO szamat a csomag tenyleges .java-szamahoz meri.

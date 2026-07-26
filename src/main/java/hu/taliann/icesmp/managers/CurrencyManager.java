@@ -187,6 +187,25 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         return getStoredBalance(player.getUniqueId(), resolvedType);
     }
 
+    /**
+     * The player's TOTAL wealth: the sum of every currency balance. This is the ONE canonical
+     * definition — the leaderboard/bard/chronicle read the default currency only, so the same
+     * player showed a different fortune in the ranking than in the wealth achievements (a
+     * RED/BLUE/DARK player's balance did not even count).
+     *
+     * @return the summed balance across all currencies
+     */
+    public double getTotalBalance(final Player player) {
+        if (player == null) {
+            return 0.0D;
+        }
+        double total = 0.0D;
+        for (final CurrencyType currencyType : CurrencyType.values()) {
+            total += getBalance(player, currencyType);
+        }
+        return total;
+    }
+
     public Map<FactionType, Double> getBalances(final Player player) {
         final EnumMap<FactionType, Double> balancesByFaction = new EnumMap<>(FactionType.class);
         for (final CurrencyType currencyType : CurrencyType.values()) {

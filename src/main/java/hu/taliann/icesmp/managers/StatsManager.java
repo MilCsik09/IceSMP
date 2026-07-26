@@ -130,7 +130,7 @@ public final class StatsManager implements PersistentStore {
         final Stat stat = stats.computeIfAbsent(player.getUniqueId(), key -> new Stat());
         stat.name = player.getName();
         stat.level = jobManager.getPrimaryLevel(player);
-        stat.wealth = currencyManager.getBalance(player);
+        stat.wealth = currencyManager.getTotalBalance(player);
     }
 
     /** The player's recorded raid-kill count (0 if none). */

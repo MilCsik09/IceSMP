@@ -139,6 +139,7 @@ public final class AdvancementService {
         }
         int fromDatapack = 0;
         int fromFallback = 0;
+        final List<String> missing = new java.util.ArrayList<>();
         for (final Node node : NODES) {
             final NamespacedKey key = new NamespacedKey(NS, node.id());
             if (Bukkit.getAdvancement(key) != null) {
@@ -148,13 +149,25 @@ public final class AdvancementService {
             try {
                 if (Bukkit.getUnsafe().loadAdvancement(key, buildJson(node)) != null) {
                     fromFallback++;
+                    continue;
                 }
             } catch (final Throwable throwable) {
                 plugin.getLogger().warning("Advancement tartalék-betöltés hiba (" + node.id() + "): "
                         + throwable.getMessage());
             }
+            missing.add(node.id());
         }
-        loaded = fromDatapack + fromFallback > 0;
+        // TÉTELES állapot: egyetlen betöltött bejegyzés is „loaded"-nak számított, közben a
+        // hiányzó node-ok award-jai NÉMÁN no-opoltak — a részleges pack sikeres indulásnak
+        // látszott. Hiányos fa = a rendszer KIKAPCSOL, és a log megnevezi a hiányzókat.
+        loaded = missing.isEmpty() && fromDatapack + fromFallback == NODES.size();
+        if (!missing.isEmpty()) {
+            plugin.getLogger().severe("IceSMP advancement-fa HIÁNYOS (" + (NODES.size() - missing.size())
+                    + "/" + NODES.size() + ") — a rendszer KIKAPCSOLT, hogy ne némán vesszenek el a "
+                    + "bejegyzések. Hiányzó: " + String.join(", ", missing)
+                    + ". A datapack a jar-ból telepítődik a világ datapack-könyvtárába.");
+            return;
+        }
         if (fromFallback > 0) {
             plugin.getLogger().warning("IceSMP advancement-fa: " + fromDatapack + " datapackből, "
                     + fromFallback + " a DEPRECATED tartalék úton (" + NODES.size() + " összesen). "
@@ -169,6 +182,11 @@ public final class AdvancementService {
     public static void award(final Player player, final String id) {
         final AdvancementService service = instance;
         if (service == null || !service.loaded || player == null) {
+            return;
+        }
+        // Élő kulcs: a kikapcsolás azonnal hasson (a loaded flag csak az indulási állapot;
+        // a visszakapcsoláshoz viszont /icesmp reload kell, mert a fa regisztrációja indulási).
+        if (!service.configManager.getBoolean("advancements.enabled", true)) {
             return;
         }
         service.grant(player, id);

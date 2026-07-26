@@ -2517,3 +2517,27 @@ Jó tesztelést! ❄️
 - [ ] **Gépi őrök:** `python3 scripts/check_consistency.py` FAIL-el, ha (a) egy
       `unlockSpell(...)` forrás nélkül hív, (b) valahol `removeFaction(...)` törli a
       frakció-hozzárendelést, (c) kéz-kiürítést közvetlenül `addItem` követ.
+
+## Mélyaudit-kör: territórium-átadás, advancement-fa, vagyon, WG-híd (2026-07-26)
+- [ ] **Raid-foglalás megőrzi a függőleges sávot (DEEP-MED-07):** adj egy frakcióterületnek
+      Y-sávot (`/territory sety <id> 60 90`), raideld el → a győztes frakcióé lesz, DE a
+      terület Y-sávja MEGMARAD (`/territory info <id>` — eddig teljes világmagasságúvá vált),
+      és a poligon-alak/rádiusz/középpont is változatlan; a főváros-státusz nem száll át.
+- [ ] **Hiányos advancement-fa KIKAPCSOL (MED-10):** töröld ki EGY advancement-JSON-t a világ
+      datapack-könyvtárából, indítsd újra → a log SEVERE sorban NEVESÍTI a hiányzó
+      bejegyzés(eke)t, és az advancement-rendszer kikapcsol (nem oszt némán semmit).
+      A teljes pack visszaállítása után újraindításnál minden bejegyzés él.
+- [ ] **Advancement élő kikapcsolás:** `/icesmp config set advancements.enabled false` →
+      innentől nem jön toast/bejegyzés (eddig a betöltött fa tovább osztott);
+      visszakapcsolás után `/icesmp reload` kell (a fa regisztrációja indulási).
+- [ ] **Egységes vagyon (MED-08):** adj a játékosnak EGYSZERRE többféle valutát (pl. 500
+      Parals + 300 Creutzér). A `/toplista vagyon`, a heti krónika/bárdi ének és a
+      vagyon-elérés UGYANAZT az összeget mutatja (az összes valuta összegét) — eddig a
+      ranglista csak a default valutát nézte.
+- [ ] **Claim-átfedés valódi metszés (HIGH-20):** hozz létre WorldGuardban egy KICSI régiót
+      (pl. 5×5) úgy, hogy ne essen chunk-középre, és egy másikat eltérő Y-magasságban →
+      a `/claim` a környező területre ELUTASÍT (eddig a mintapontok közt átcsúszott).
+- [ ] **WG-híd megszakító (HIGH-20):** ha a WG-lekérdezés hibázik (pl. WG-reload közben), a
+      log figyelmeztet, a claim-ellenőrzés 60 másodpercig ELUTASÍT (fail-closed), utána a
+      híd magától újra próbálkozik — NEM marad végleg kikapcsolva. WorldGuard NÉLKÜL a
+      claim továbbra is engedélyezett (nincs régió, amit védeni kell).
