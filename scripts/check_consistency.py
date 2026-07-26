@@ -380,6 +380,13 @@ try:
                                 "LINES")
     _stores = None
     _core = read(os.path.join(REPO, "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"))
+    _dev_item_manager = read(os.path.join(
+        REPO, "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java"))
+    if "YamlConfiguration.loadConfiguration(stateFile)" in _dev_item_manager:
+        fail("DevItemManager: fail-open YamlConfiguration.loadConfiguration(stateFile) használat")
+    if "YamlStore.loadTracked(stateFile" not in _dev_item_manager:
+        fail("DevItemManager: hiányzik a strict YamlStore.loadTracked(stateFile, ...) betöltés")
+
     _sm = re.search(r"persistentStores\s*=\s*List\.of\((.*?)\);", _core, re.S)
     if not _sm:
         fail("IceSMPCore: a persistentStores List.of(...) bekötés nem értelmezhető")

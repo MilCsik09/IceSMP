@@ -63,6 +63,8 @@ public final class DevItemManager implements PersistentStore {
     private final ProfessionRecipeBookListener recipeBuilder;
     private final DevItemFactory itemFactory;
     private final File stateFile;
+    /** Protects compound persisted-state transitions from mixed async snapshots. */
+    private final Object stateLock = new Object();
 
     /** The item is restored only after its first successful admin issuance. */
     private final AtomicBoolean issued = new AtomicBoolean();
@@ -112,8 +114,8 @@ public final class DevItemManager implements PersistentStore {
         final String raw = configManager.getString(BASE + ".owner-uuid", DEFAULT_OWNER.toString());
         try {
             return UUID.fromString(raw);
-        } catch (final IllegalArgumentException ignored) {
-            return DEFAULT_OWNER;
+        } catch (final IllegalArgumentException invalid) {
+            throw new IllegalStateException("dev-items.yml: érvénytelen owner-uuid: " + raw, invalid);
         }
     }
 
@@ -192,10 +194,12 @@ public final class DevItemManager implements PersistentStore {
 
         removeAllBingulusItems(target);
         target.getInventory().setItem(reusableSlot, itemFactory.createBingulus(ownerUuid(), instanceId));
-        issued.set(true);
-        rewardInventoryNoticeSent.set(false);
-        restoreInventoryNoticeSent.set(false);
-        lastActiveNanos.set(0L);
+        synchronized (stateLock) {
+            issued.set(true);
+            rewardInventoryNoticeSent.set(false);
+            restoreInventoryNoticeSent.set(false);
+            lastActiveNanos.set(0L);
+        }
         requestSave();
         return true;
     }
@@ -292,8 +296,11 @@ public final class DevItemManager implements PersistentStore {
 
         final long intervalMillis = Math.max(1L,
                 configManager.getLong(BASE + ".reward-interval-seconds", 600L)) * 1000L;
-        final long progressed = progressMillis.updateAndGet(current ->
-                Math.min(intervalMillis, current + elapsedMillis));
+        final long progressed;
+        synchronized (stateLock) {
+            progressed = progressMillis.updateAndGet(current ->
+                    Math.min(intervalMillis, current + elapsedMillis));
+        }
         if (progressed < intervalMillis) {
             return;
         }
@@ -308,8 +315,10 @@ public final class DevItemManager implements PersistentStore {
                 return;
             }
             rewardConfigWarningSent.set(false);
-            pendingRarity.set(pending.rarity());
-            pendingEntry.set(pending.entry());
+            synchronized (stateLock) {
+                pendingRarity.set(pending.rarity());
+                pendingEntry.set(pending.entry());
+            }
         }
 
         ItemStack reward = pendingItem.get();
@@ -321,7 +330,9 @@ public final class DevItemManager implements PersistentStore {
                 requestSave();
                 return;
             }
-            pendingItem.set(reward.clone());
+            synchronized (stateLock) {
+                pendingItem.set(reward.clone());
+            }
             requestSave();
         } else {
             reward = reward.clone();
@@ -340,7 +351,9 @@ public final class DevItemManager implements PersistentStore {
             // The capacity check and add happen on the same entity thread, so this is only a defensive
             // fallback for API/component edge cases. Preserve the exact remaining part rather than drop it.
             final ItemStack remainder = combineLeftovers(leftovers.values());
-            pendingItem.set(remainder);
+            synchronized (stateLock) {
+                pendingItem.set(remainder);
+            }
             if (rewardInventoryNoticeSent.compareAndSet(false, true)) {
                 owner.sendMessage(messageManager.get("dev-item.inventory-full",
                         "&eA Csodálatos Bingulus jutalma várakozik. Szabadíts fel egy helyet az inventorydban!"));
@@ -349,10 +362,12 @@ public final class DevItemManager implements PersistentStore {
             return;
         }
 
-        rewardInventoryNoticeSent.set(false);
-        progressMillis.set(0L);
-        clearPendingReward();
-        updatePityAfter(pending.rarity());
+        synchronized (stateLock) {
+            rewardInventoryNoticeSent.set(false);
+            progressMillis.set(0L);
+            clearPendingReward();
+            updatePityAfter(pending.rarity());
+        }
         announce(owner, pending.rarity(), reward);
         requestSave();
     }
@@ -433,7 +448,13 @@ public final class DevItemManager implements PersistentStore {
             player.getEnderChest().setItem(slot, null);
         }
 
-        if (authoritativeCopySeen && issued.compareAndSet(false, true)) {
+        boolean discoveredIssued = false;
+        if (authoritativeCopySeen) {
+            synchronized (stateLock) {
+                discoveredIssued = issued.compareAndSet(false, true);
+            }
+        }
+        if (discoveredIssued) {
             requestSave();
         }
         if (found) {
@@ -483,15 +504,19 @@ public final class DevItemManager implements PersistentStore {
     }
 
     private PendingReward pendingReward() {
-        final String rarity = pendingRarity.get();
-        final String entry = pendingEntry.get();
-        return rarity.isBlank() || entry.isBlank() ? null : new PendingReward(rarity, entry);
+        synchronized (stateLock) {
+            final String rarity = pendingRarity.get();
+            final String entry = pendingEntry.get();
+            return rarity.isBlank() || entry.isBlank() ? null : new PendingReward(rarity, entry);
+        }
     }
 
     private void clearPendingReward() {
-        pendingRarity.set("");
-        pendingEntry.set("");
-        pendingItem.set(null);
+        synchronized (stateLock) {
+            pendingRarity.set("");
+            pendingEntry.set("");
+            pendingItem.set(null);
+        }
     }
 
     private PendingReward rollPendingReward() {
@@ -505,16 +530,18 @@ public final class DevItemManager implements PersistentStore {
     }
 
     private String forcedMinimumRarity() {
-        if (sinceLegendary.get() >= pityThreshold("legendas", 1000)) {
-            return "legendas";
+        synchronized (stateLock) {
+            if (sinceLegendary.get() >= pityThreshold("legendas", 1000)) {
+                return "legendas";
+            }
+            if (sinceEpic.get() >= pityThreshold("epikus", 150)) {
+                return "epikus";
+            }
+            if (sinceRare.get() >= pityThreshold("ritka", 30)) {
+                return "ritka";
+            }
+            return "kozonseges";
         }
-        if (sinceEpic.get() >= pityThreshold("epikus", 150)) {
-            return "epikus";
-        }
-        if (sinceRare.get() >= pityThreshold("ritka", 30)) {
-            return "ritka";
-        }
-        return "kozonseges";
     }
 
     private int pityThreshold(final String rarity, final int fallback) {
@@ -688,10 +715,12 @@ public final class DevItemManager implements PersistentStore {
     }
 
     private void updatePityAfter(final String rarity) {
-        final int rank = rankOf(rarity);
-        updateCounter(sinceRare, rank >= rankOf("ritka"));
-        updateCounter(sinceEpic, rank >= rankOf("epikus"));
-        updateCounter(sinceLegendary, rank >= rankOf("legendas"));
+        synchronized (stateLock) {
+            final int rank = rankOf(rarity);
+            updateCounter(sinceRare, rank >= rankOf("ritka"));
+            updateCounter(sinceEpic, rank >= rankOf("epikus"));
+            updateCounter(sinceLegendary, rank >= rankOf("legendas"));
+        }
     }
 
     private void updateCounter(final AtomicInteger counter, final boolean reset) {
@@ -753,11 +782,21 @@ public final class DevItemManager implements PersistentStore {
 
     private void reconcileConfiguredOwner() {
         final UUID current = ownerUuid();
-        final UUID previous = boundOwner.getAndSet(current);
-        if (previous == null || previous.equals(current)) {
-            return;
+        final UUID previous;
+        synchronized (stateLock) {
+            previous = boundOwner.get();
+            if (previous == null) {
+                boundOwner.set(current);
+                return;
+            }
+            if (previous.equals(current)) {
+                return;
+            }
+            // Owner identity and the reset instance must be one snapshot boundary. Otherwise an
+            // async save can persist the new owner together with the old owner's singleton state.
+            boundOwner.set(current);
+            resetRuntimeState();
         }
-        resetRuntimeState();
         plugin.getLogger().info("Csodálatos Bingulus: tulajdonos változott (" + previous + " → " + current
                 + "), az instance és a jutalomprogressz alaphelyzetbe állt.");
         requestSave();
@@ -834,26 +873,43 @@ public final class DevItemManager implements PersistentStore {
     }
 
     private void resetRuntimeState() {
-        issued.set(false);
-        instanceId = UUID.randomUUID();
-        progressMillis.set(0L);
-        clearPendingReward();
-        sinceRare.set(0);
-        sinceEpic.set(0);
-        sinceLegendary.set(0);
-        rewardInventoryNoticeSent.set(false);
-        restoreInventoryNoticeSent.set(false);
-        lastActiveNanos.set(0L);
+        synchronized (stateLock) {
+            issued.set(false);
+            instanceId = UUID.randomUUID();
+            progressMillis.set(0L);
+            clearPendingReward();
+            sinceRare.set(0);
+            sinceEpic.set(0);
+            sinceLegendary.set(0);
+            rewardInventoryNoticeSent.set(false);
+            restoreInventoryNoticeSent.set(false);
+            lastActiveNanos.set(0L);
+        }
     }
 
-    private UUID parseUuid(final String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
+    private DevItemStateCodec.Snapshot stateSnapshot() {
+        synchronized (stateLock) {
+            final UUID persistedOwner = boundOwner.get() == null ? ownerUuid() : boundOwner.get();
+            return new DevItemStateCodec.Snapshot(persistedOwner, issued.get(), instanceId,
+                    progressMillis.get(), pendingRarity.get(), pendingEntry.get(), pendingItem.get(),
+                    sinceRare.get(), sinceEpic.get(), sinceLegendary.get());
         }
-        try {
-            return UUID.fromString(raw);
-        } catch (final IllegalArgumentException ignored) {
-            return null;
+    }
+
+    private void applySnapshot(final DevItemStateCodec.Snapshot snapshot) {
+        synchronized (stateLock) {
+            instanceId = snapshot.instanceId();
+            issued.set(snapshot.issued());
+            progressMillis.set(snapshot.progressMillis());
+            pendingRarity.set(snapshot.pendingRarity());
+            pendingEntry.set(snapshot.pendingEntry());
+            pendingItem.set(snapshot.pendingItem());
+            sinceRare.set(snapshot.sinceRare());
+            sinceEpic.set(snapshot.sinceEpic());
+            sinceLegendary.set(snapshot.sinceLegendary());
+            rewardInventoryNoticeSent.set(false);
+            restoreInventoryNoticeSent.set(false);
+            lastActiveNanos.set(0L);
         }
     }
 
@@ -868,59 +924,32 @@ public final class DevItemManager implements PersistentStore {
             return;
         }
 
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(stateFile);
-        final UUID savedOwner = parseUuid(yaml.getString("bingulus.owner", ""));
-        if (savedOwner != null && !savedOwner.equals(configuredOwner)) {
+        final YamlConfiguration yaml = YamlStore.loadTracked(stateFile, plugin.getLogger());
+        final DevItemStateCodec.Snapshot loaded;
+        try {
+            loaded = DevItemStateCodec.decode(yaml);
+        } catch (final IllegalArgumentException invalidState) {
+            YamlStore.failCorrupt(stateFile, plugin.getLogger(), invalidState.getMessage());
+            throw new AssertionError("unreachable");
+        }
+
+        if (!loaded.owner().equals(configuredOwner)) {
             resetRuntimeState();
             boundOwner.set(configuredOwner);
             plugin.getLogger().info("Csodálatos Bingulus: a mentett tulajdonos eltér a konfigurálttól; "
                     + "tiszta instance indul.");
+            save();
             validateConfiguration();
             return;
         }
 
-        final String rawInstance = yaml.getString("bingulus.instance", "");
-        try {
-            instanceId = rawInstance.isBlank() ? UUID.randomUUID() : UUID.fromString(rawInstance);
-        } catch (final IllegalArgumentException ignored) {
-            instanceId = UUID.randomUUID();
-        }
-        issued.set(yaml.getBoolean("bingulus.issued", false));
-        progressMillis.set(Math.max(0L, yaml.getLong("bingulus.progress-millis", 0L)));
-        pendingRarity.set(yaml.getString("bingulus.pending.rarity", ""));
-        pendingEntry.set(yaml.getString("bingulus.pending.entry", ""));
-        pendingItem.set(yaml.getItemStack("bingulus.pending.item"));
-        sinceRare.set(Math.max(0, yaml.getInt("bingulus.pity.since-rare", 0)));
-        sinceEpic.set(Math.max(0, yaml.getInt("bingulus.pity.since-epic", 0)));
-        sinceLegendary.set(Math.max(0, yaml.getInt("bingulus.pity.since-legendary", 0)));
-        rewardInventoryNoticeSent.set(false);
-        restoreInventoryNoticeSent.set(false);
-        lastActiveNanos.set(0L);
-
-        if (!issued.get()) {
-            progressMillis.set(0L);
-            clearPendingReward();
-            sinceRare.set(0);
-            sinceEpic.set(0);
-            sinceLegendary.set(0);
-        }
+        applySnapshot(loaded);
         validateConfiguration();
     }
 
     @Override
     public synchronized void save() {
-        final YamlConfiguration yaml = new YamlConfiguration();
-        yaml.set("bingulus.owner", ownerUuid().toString());
-        yaml.set("bingulus.issued", issued.get());
-        yaml.set("bingulus.instance", instanceId.toString());
-        yaml.set("bingulus.progress-millis", progressMillis.get());
-        yaml.set("bingulus.pending.rarity", pendingRarity.get());
-        yaml.set("bingulus.pending.entry", pendingEntry.get());
-        final ItemStack exactPending = pendingItem.get();
-        yaml.set("bingulus.pending.item", exactPending == null ? null : exactPending.clone());
-        yaml.set("bingulus.pity.since-rare", sinceRare.get());
-        yaml.set("bingulus.pity.since-epic", sinceEpic.get());
-        yaml.set("bingulus.pity.since-legendary", sinceLegendary.get());
+        final YamlConfiguration yaml = DevItemStateCodec.encode(stateSnapshot());
         try {
             YamlStore.saveAtomic(stateFile, yaml);
         } catch (final IOException exception) {
