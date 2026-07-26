@@ -375,6 +375,10 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         boolean ownershipChanged = false;
         final java.util.Set<String> seenRelics = new java.util.HashSet<>();
 
+        // EGYETLEN bejárás. A PlayerInventory#getContents() a TELJES slotteret adja
+        // (0-35 tár, 36-39 páncél, 40 offhand) — ezért van külön getStorageContents().
+        // Külön páncél-/offhand-kör ugyanazt a tárgyat látta másodszor, és a közös
+        // seenRelics miatt a VISELT relikviát duplikátumként törölte: egy relog elvitte.
         for (int slot = 0; slot < contents.length; slot++) {
             final ItemStack itemStack = contents[slot];
             final RelicDefinition definition = identify(itemStack);
@@ -419,68 +423,6 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                     && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
                 ownerships.put(relicId, new RelicOwnership(playerId, now));
                 ownershipChanged = true;
-            }
-        }
-
-        // A VISELT páncél (a 6 relikviából 4 elytra!) és az offhand is része a
-        // sweepnek — korábban a getContents() csak a 36 fő slotot látta, így a viselt szárny
-        // sosem évült el, nem frissült és a dedup sem érte el.
-        final ItemStack[] armor = inventory.getArmorContents();
-        boolean armorChanged = false;
-        for (int slot = 0; slot < armor.length; slot++) {
-            final ItemStack itemStack = armor[slot];
-            final RelicDefinition definition = identify(itemStack);
-            if (definition == null) {
-                continue;
-            }
-            final String relicId = definition.id().toLowerCase(Locale.ROOT);
-            final RelicOwnership ownership = ownerships.get(relicId);
-            if (isExpiredFor(relicId, ownership)) {
-                armor[slot] = null;
-                armorChanged = true;
-                ownerships.remove(relicId);
-                lostSince.remove(relicId);
-                ownershipChanged = true;
-                playExpiryEffect(player);
-                sendExpiryMessage(player, definition);
-                continue;
-            }
-            if (!seenRelics.add(relicId)) {
-                armor[slot] = null;
-                armorChanged = true;
-                continue;
-            }
-            final UUID itemOwner = itemFactory.getOwner(itemStack);
-            if ((itemOwner == null || itemOwner.equals(playerId))
-                    && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
-                ownerships.put(relicId, new RelicOwnership(playerId, now));
-                ownershipChanged = true;
-            }
-        }
-        if (armorChanged) {
-            inventory.setArmorContents(armor);
-        }
-        final ItemStack offhand = inventory.getItemInOffHand();
-        final RelicDefinition offhandDefinition = identify(offhand);
-        if (offhandDefinition != null) {
-            final String relicId = offhandDefinition.id().toLowerCase(Locale.ROOT);
-            final RelicOwnership ownership = ownerships.get(relicId);
-            if (isExpiredFor(relicId, ownership)) {
-                inventory.setItemInOffHand(null);
-                ownerships.remove(relicId);
-                lostSince.remove(relicId);
-                ownershipChanged = true;
-                playExpiryEffect(player);
-                sendExpiryMessage(player, offhandDefinition);
-            } else if (!seenRelics.add(relicId)) {
-                inventory.setItemInOffHand(null);
-            } else {
-                final UUID itemOwner = itemFactory.getOwner(offhand);
-                if ((itemOwner == null || itemOwner.equals(playerId))
-                        && (ownership == null || ownership.owner().equals(playerId) || isExpiredFor(relicId, ownership))) {
-                    ownerships.put(relicId, new RelicOwnership(playerId, now));
-                    ownershipChanged = true;
-                }
             }
         }
 
@@ -729,29 +671,11 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             changed = true;
         }
 
+        // A getContents() a páncél- és offhand-slotokat IS tartalmazza, ezért a viselt
+        // relikviák (a szárnyak jellemzően a mellvért-slotban élnek) itt frissülnek — külön
+        // páncél-/offhand-kör csak duplikált munka lenne.
         if (changed) {
             inventory.setContents(contents);
-        }
-
-        // A viselt páncél és az offhand relikviái is frissülnek (a szárnyak
-        // jellemzően a mellvért-slotban élnek — korábban sosem kaptak kozmetikai frissítést).
-        final ItemStack[] armor = inventory.getArmorContents();
-        boolean armorChanged = false;
-        for (final ItemStack itemStack : armor) {
-            final RelicDefinition definition = identify(itemStack);
-            if (definition != null) {
-                itemFactory.refresh(itemStack, definition);
-                armorChanged = true;
-            }
-        }
-        if (armorChanged) {
-            inventory.setArmorContents(armor);
-        }
-        final ItemStack offhand = inventory.getItemInOffHand();
-        final RelicDefinition offhandDefinition = identify(offhand);
-        if (offhandDefinition != null) {
-            itemFactory.refresh(offhand, offhandDefinition);
-            inventory.setItemInOffHand(offhand);
         }
     }
 

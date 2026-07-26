@@ -1210,6 +1210,19 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Viselt relikvia NEM tűnhet el relognál (ÚJ — kiadásblokkoló volt):** a belépési
+      relikvia-sweep MOST egyetlen bejárás. A `PlayerInventory#getContents()` a teljes slotteret
+      adja (0-35 tár, 36-39 páncél, 40 offhand), ezért a korábbi külön páncél-/offhand-kör
+      ugyanazt a tárgyat látta másodszor, és a közös duplikátum-szűrő a VISELT relikviát törölte.
+      **Teszt (mind a 6 relikviára, de főleg a 4 elytrára):**
+      1. vedd FEL a relikvia-elytrát (mellvért-slot), lépj ki, lépj vissza → **maradjon meg**;
+      2. ugyanez offhandbe fogott relikviával;
+      3. ugyanez páncél-slotos relikviával;
+      4. **valódi duplikátum**-teszt: adj magadnak KÉT példányt ugyanabból a relikviából (egyet
+         viselve, egyet a tárban) → relog után pontosan EGY maradjon;
+      5. **lejárat**: állítsd a relikvia inaktivitás-elenyészését azonnalira → a VISELT példány is
+         évüljön el (a sweep a páncél-slotot is eléri, nem csak a tárat);
+      6. a kozmetikai frissítés (név/lore újraírás) a viselt darabon is fusson le.
 - [ ] **Visszavont akció NEM jutalmaz (ÚJ — kiadásblokkoló volt):** a progressz-listenerek
       (quest, napi, szakma-XP, szerver-kihívás, gyűjtő-buff) `MONITOR` prioritáson könyvelnek, a
       védelem (claim/territórium/unique) `HIGH`/`HIGHEST`-en cancel-el. Korábban a `NORMAL`
