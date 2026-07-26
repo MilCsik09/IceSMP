@@ -30,20 +30,32 @@ jobs:
           path: work
           fetch-depth: 0
 
-      - name: Reassemble DEV-item patch for byte-level preflight
+      - name: Capture DEV-item patch staging byte-for-byte
         shell: bash
         run: |
-          set -euo pipefail
-          cat runner/.github/audit-patches/dev-item-recovery.mbox.b64.* \
-            | base64 --decode > /tmp/dev-item-recovery.mbox
-          sha256sum /tmp/dev-item-recovery.mbox | tee /tmp/dev-item-recovery.meta
+          set -u
+          : > /tmp/dev-item-recovery.meta
+          for part in runner/.github/audit-patches/dev-item-recovery.mbox.b64.*; do
+            sha256sum "$part" | tee -a /tmp/dev-item-recovery.meta
+            wc -c "$part" | tee -a /tmp/dev-item-recovery.meta
+          done
+          cat runner/.github/audit-patches/dev-item-recovery.mbox.b64.* > /tmp/dev-item-recovery.combined.b64
+          sha256sum /tmp/dev-item-recovery.combined.b64 | tee -a /tmp/dev-item-recovery.meta
+          wc -c /tmp/dev-item-recovery.combined.b64 | tee -a /tmp/dev-item-recovery.meta
+          set +e
+          base64 --decode /tmp/dev-item-recovery.combined.b64 > /tmp/dev-item-recovery.mbox
+          decode_result=$?
+          set -e
+          echo "decode_rc=$decode_result" | tee -a /tmp/dev-item-recovery.meta
+          sha256sum /tmp/dev-item-recovery.mbox | tee -a /tmp/dev-item-recovery.meta
           wc -c /tmp/dev-item-recovery.mbox | tee -a /tmp/dev-item-recovery.meta
 
-      - name: Upload reconstructed DEV-item patch
+      - name: Upload reconstructed DEV-item patch diagnostics
         uses: actions/upload-artifact@v4
         with:
           name: dev-item-recovery-mbox-preflight
           path: |
+            /tmp/dev-item-recovery.combined.b64
             /tmp/dev-item-recovery.mbox
             /tmp/dev-item-recovery.meta
           if-no-files-found: error
@@ -53,6 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          grep -Fxq 'decode_rc=0' /tmp/dev-item-recovery.meta
           echo '184dbe1097f06479505e1ac073e35eb511ec2551443e658e24de0fc5aac3cd78  /tmp/dev-item-recovery.mbox' \
             | sha256sum --check --strict
           test "$(wc -c < /tmp/dev-item-recovery.mbox)" -eq 43056
