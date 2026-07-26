@@ -1,9 +1,11 @@
-
 # IceSMP konfiguráció — örökös, tulajdonoshoz kötött DEV itemek.
 dev-items:
   csodalatos_bingulus:
     enabled: true
     owner-uuid: "eb80c20f-092a-4d76-bd44-d168c91ea9e2"
+
+    # Az első példányt admin adja ki: /iceitem dev csodalatos_bingulus 1 <játékos>.
+    # Ettől kezdve az instance perzisztens, és elvesztés/halál/restart után visszaállítható.
     auto-restore: true
     check-interval-ticks: 20
     reward-interval-seconds: 600
