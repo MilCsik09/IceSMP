@@ -55,6 +55,9 @@ public final class DevItemFactory {
             lore.add(LEGACY.deserialize(line).decoration(TextDecoration.ITALIC, false));
         }
         meta.lore(lore.isEmpty() ? null : lore);
+        // Native max_stack_size prevents even temporary stacking; the manager still enforces one
+        // authoritative instance as the server-side anti-duplication boundary.
+        meta.setMaxStackSize(1);
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(itemIdKey, PersistentDataType.STRING, BINGULUS_ID);
