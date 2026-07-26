@@ -52,7 +52,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         plugin.getDataFolder().mkdirs();
     }
 
-    /** Parses into a temporary immutable candidate and swaps live state only after full validation. */
+    /** Parses into a temporary candidate and swaps live state only after full validation. */
     public void load() {
         final CurrencyType loadedDefault = resolveDefaultCurrencyType();
         final YamlConfiguration configuration = YamlStore.loadTracked(storageFile, plugin.getLogger());
@@ -78,7 +78,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                 for (final CurrencyType currency : CurrencyType.values()) {
                     final Object raw = playerSection.get(currency.name());
                     if (raw == null) {
-                        continue; // backward-compatible missing currency = zero
+                        continue;
                     }
                     if (!(raw instanceof Number number)) {
                         YamlStore.failCorrupt(storageFile, plugin.getLogger(),
@@ -103,16 +103,25 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         }
     }
 
-    /** Synchronous durable flush. A failure propagates; callers must not report success afterwards. */
+    /** Synchronous durable flush. A failure propagates to the transaction caller. */
     public void save() {
         if (!flushToDisk()) {
             throw unavailable("A wallet mentése piaci tranzakció közben zárolva van.");
         }
     }
 
-    /** Schedules a debounced flush; it waits until the current market journal gate closes. */
+    /**
+     * Debounced save during ordinary gameplay. During journal recovery the current thread owns the
+     * wallet gate, therefore the repair MUST be written synchronously before the journal entry can
+     * be removed. This closes the crash window where recovery mutated memory, deleted the WAL entry,
+     * and died before the delayed wallet flush.
+     */
     public void requestSave() {
         if (YamlStore.hasCriticalWriteFailure()) {
+            return;
+        }
+        if (TransactionJournal.isRecoveryOwnerThread()) {
+            save();
             return;
         }
         if (saveScheduled.compareAndSet(false, true)) {
@@ -127,8 +136,6 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                 return;
             }
             if (!flushToDisk()) {
-                // A journal gate is normally held only for a few synchronous file writes. Do not
-                // take a partial wallet snapshot from another thread; retry after it closes.
                 scheduleFlushAttempt(1L);
                 return;
             }

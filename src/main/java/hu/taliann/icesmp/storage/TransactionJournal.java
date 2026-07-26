@@ -22,20 +22,12 @@ public final class TransactionJournal {
 
     private static final int FORMAT_VERSION = 1;
     private static final Set<String> KNOWN_TYPES = Set.of("LIST", "BUY", "BID", "SETTLE", "DELIVER");
-
-    /**
-     * Global wallet mutation gate. MarketManager is synchronized, therefore one journal entry is
-     * active at a time; the gate also serializes unrelated regional wallet mutations against the
-     * interval between money snapshot creation and durable journal completion.
-     */
     private static final Object CURRENCY_GATE = new Object();
     private static UUID activeTransaction;
     private static Thread activeOwner;
-    /** Financial entries being repaired during startup/reload; blocks unrelated wallet edits. */
     private static final Set<UUID> recoveryMoneyEntries = new HashSet<>();
 
     public static final class Entry {
-
         private final UUID id;
         private final String type;
         private final long createdAt;
@@ -49,26 +41,14 @@ public final class TransactionJournal {
             this.data = data;
         }
 
-        public UUID id() {
-            return id;
-        }
-
-        public String type() {
-            return type;
-        }
-
-        public long createdAt() {
-            return createdAt;
-        }
-
-        public ConfigurationSection data() {
-            return data;
-        }
+        public UUID id() { return id; }
+        public String type() { return type; }
+        public long createdAt() { return createdAt; }
+        public ConfigurationSection data() { return data; }
     }
 
     private final File file;
     private final Logger logger;
-    /** Open entries in insertion order; guarded by this journal's monitor. */
     private final Map<UUID, Entry> entries = new LinkedHashMap<>();
     private volatile boolean healthy = true;
 
@@ -76,44 +56,35 @@ public final class TransactionJournal {
         this.file = file;
         this.logger = logger;
         YamlStore.registerCriticalWrite(file);
-        // This journal is specifically the market coordinator. A market.yml write failure must
-        // abort the same gameplay call rather than return false and then deliver the item anyway.
         YamlStore.registerCriticalWrite(new File(file.getParentFile(), "market.yml"));
     }
 
-    /** Loads and semantically validates every open entry; one invalid entry fails the whole store. */
     public synchronized void load() {
         clearCurrencyGate();
         entries.clear();
         recoveryMoneyEntries.clear();
         final YamlConfiguration yaml = YamlStore.loadTracked(file, logger);
         healthy = true;
-
         final int version = yaml.getInt("format-version", FORMAT_VERSION);
         if (version != FORMAT_VERSION) {
             YamlStore.failCorrupt(file, logger, "Ismeretlen tranzakciós naplóverzió: " + version);
         }
-
         final ConfigurationSection section = yaml.getConfigurationSection("entries");
         if (section == null) {
             return;
         }
-
         final Set<UUID> seen = new HashSet<>();
         for (final String idKey : section.getKeys(false)) {
             final UUID id;
             try {
                 id = UUID.fromString(idKey);
             } catch (final IllegalArgumentException invalidId) {
-                YamlStore.failCorrupt(file, logger,
-                        "Érvénytelen tranzakcióazonosító: " + idKey);
+                YamlStore.failCorrupt(file, logger, "Érvénytelen tranzakcióazonosító: " + idKey);
                 return;
             }
             if (!seen.add(id)) {
-                YamlStore.failCorrupt(file, logger,
-                        "Duplikált tranzakcióazonosító: " + id);
+                YamlStore.failCorrupt(file, logger, "Duplikált tranzakcióazonosító: " + id);
             }
-
             final String type = section.getString(idKey + ".type", "").trim();
             final long createdAt = section.getLong(idKey + ".created-at", 0L);
             final ConfigurationSection stored = section.getConfigurationSection(idKey + ".data");
@@ -121,7 +92,6 @@ public final class TransactionJournal {
                 YamlStore.failCorrupt(file, logger,
                         "Hiányos/ismeretlen naplóbejegyzés: " + id + " (type=" + type + ")");
             }
-
             final YamlConfiguration data = new YamlConfiguration();
             copyValues(stored, data, "");
             final Entry entry = new Entry(id, type, createdAt, data);
@@ -131,7 +101,6 @@ public final class TransactionJournal {
                 recoveryMoneyEntries.add(id);
             }
         }
-
         if (!recoveryMoneyEntries.isEmpty()) {
             synchronized (CURRENCY_GATE) {
                 activeTransaction = null;
@@ -140,7 +109,6 @@ public final class TransactionJournal {
         }
     }
 
-    /** Creates an entry and closes the wallet mutation gate before money snapshots are recorded. */
     public Entry create(final String type) {
         if (!KNOWN_TYPES.contains(type)) {
             throw new IllegalArgumentException("Ismeretlen tranzakciótípus: " + type);
@@ -161,7 +129,6 @@ public final class TransactionJournal {
         return entry;
     }
 
-    /** Persists an entry before any market, wallet or inventory mutation may happen. */
     public synchronized boolean prepare(final Entry entry) {
         if (!ownsCurrencyGate(entry) || !isHealthy()) {
             releaseCurrencyGate(entry);
@@ -177,7 +144,6 @@ public final class TransactionJournal {
         return false;
     }
 
-    /** Removes an entry durably; the currency gate opens only after disk deletion succeeds. */
     public synchronized boolean complete(final Entry entry) {
         final Entry removed = entries.remove(entry.id());
         if (removed == null) {
@@ -192,19 +158,9 @@ public final class TransactionJournal {
         return false;
     }
 
-    public synchronized List<Entry> pending() {
-        return List.copyOf(entries.values());
-    }
+    public synchronized List<Entry> pending() { return List.copyOf(entries.values()); }
+    public boolean isHealthy() { return healthy && !YamlStore.hasCriticalWriteFailure(); }
 
-    public boolean isHealthy() {
-        return healthy && !YamlStore.hasCriticalWriteFailure();
-    }
-
-    /**
-     * Executes a complete wallet mutation while atomically checking the transaction gate. A
-     * mutation that started before a market transaction finishes first; one arriving afterwards
-     * is rejected unless it belongs to the journal-owning thread.
-     */
     public static <T> T withCurrencyMutationPermit(final Supplier<T> action, final T deniedValue) {
         synchronized (CURRENCY_GATE) {
             if (YamlStore.hasCriticalWriteFailure()) {
@@ -225,11 +181,17 @@ public final class TransactionJournal {
         }, Boolean.FALSE);
     }
 
+    /** True only on the thread currently repairing durable financial journal entries. */
+    public static boolean isRecoveryOwnerThread() {
+        synchronized (CURRENCY_GATE) {
+            return !recoveryMoneyEntries.isEmpty() && activeOwner == Thread.currentThread();
+        }
+    }
+
     private boolean flush() {
         if (YamlStore.isLoadFailed(file) || YamlStore.hasCriticalWriteFailure()) {
             return false;
         }
-
         final YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("format-version", FORMAT_VERSION);
         for (final Entry entry : entries.values()) {
@@ -238,7 +200,6 @@ public final class TransactionJournal {
             yaml.set(base + ".created-at", entry.createdAt());
             copyValues(entry.data, yaml, base + ".data.");
         }
-
         try {
             YamlStore.saveAtomic(file, yaml);
             return true;
