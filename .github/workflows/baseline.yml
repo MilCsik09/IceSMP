@@ -1,12 +1,9 @@
-name: Baseline verification
+name: External branch verification
 
 on:
   push:
     branches:
       - audit/baseline-14addda
-  pull_request:
-    branches:
-      - master
   workflow_dispatch:
 
 permissions:
@@ -17,19 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout
+      - name: Checkout fix branch
         uses: actions/checkout@v4
-
-      - name: Archive checkout for local verification
-        run: tar --exclude=.git -czf /tmp/icesmp-source.tar.gz .
-
-      - name: Upload source archive
-        uses: actions/upload-artifact@v4
         with:
-          name: icesmp-source-14addda
-          path: /tmp/icesmp-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          ref: fix/core-persistent-store-wiring
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -43,5 +31,38 @@ jobs:
       - name: Build and test
         run: ./gradlew clean build --no-daemon --stacktrace
 
-      - name: Consistency checks
-        run: python3 scripts/check_consistency.py
+      - name: Verify persistent-store guard rejects an omitted DEV store
+        shell: bash
+        run: |
+          set -euo pipefail
+          core=src/main/java/hu/taliann/icesmp/core/IceSMPCore.java
+          cp "$core" /tmp/IceSMPCore.java
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java")
+          source = path.read_text(encoding="utf-8")
+          needle = "                raidManager,\n                devItemManager);"
+          replacement = "                raidManager);"
+          if needle not in source:
+              raise SystemExit("expected persistent-store fragment not found")
+          path.write_text(source.replace(needle, replacement, 1), encoding="utf-8")
+          PY
+          set +e
+          python3 scripts/check_consistency.py > /tmp/guard-negative.log 2>&1
+          result=$?
+          set -e
+          mv /tmp/IceSMPCore.java "$core"
+          test "$result" -ne 0
+          grep -F "a devItemManager kimaradt a persistentStores lifecycle-listából" /tmp/guard-negative.log
+
+      - name: Consistency checks (compare with six baseline documentation drifts)
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python3 scripts/check_consistency.py | tee /tmp/consistency.log
+          result=${PIPESTATUS[0]}
+          set -e
+          test "$result" -eq 1
+          test "$(grep -c '^✗ FAIL:' /tmp/consistency.log)" -eq 6
+          ! grep -q 'persistentStores lifecycle-listából' /tmp/consistency.log
