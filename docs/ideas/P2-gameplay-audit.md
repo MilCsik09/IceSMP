@@ -391,3 +391,41 @@ Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleg
 7. **A Néma Királynő koronára szóló átka.** A kódex központi motívuma („a világ minden koronás
    főjét sírba vitte" + a négy Elveszett Uralkodó), a király-rendszer viszont teljesen
    lore-mentes. → BACKLOG **N4** (egyben beépített anti-örökös-király fék).
+
+## Külső mélyaudit feldolgozása (HEAD 5ada41d, 121 technikai + 17 doksi/lore lelet)
+
+**LEZÁRVA (mind: valódi build + `check_consistency.py` + PLAYTEST-blokk + tükrözés):**
+
+| Lelet | Lényeg |
+|---|---|
+| `CRIT-01` | Fail-open YAML-betöltés → az autosave üres fájlt írt a javítható adat fölé. Karantén + mentés-tiltás; valódi sérült YAML-lal végigmérve. |
+| `CRIT-03` | Rituálé-áldozat check–consume rés (átnevezett áldozat fedezte, de nem fogyott). Közös `PlainIngredients` szerződés. |
+| `CRIT-04` | A `getContents()` mind a 41 slotot adja → a külön páncél-kör a VISELT relikviát törölte relognál. Egyetlen bejárás. |
+| `DEEP-CRIT-01` | `COLLECT_ITEMS` ledob–felvesz visszajátszás (a dobás új entitást hoz létre). `ItemProvenance` az entitáson + `getRemaining()`. |
+| `DEEP-CRIT-02` | A védelem HIGH/HIGHEST-en cancel-elt, a progressz NORMAL-on könyvelt → tiltott akció is jutalmazott. 19 handler MONITOR-ra. |
+| `DEEP-HIGH-02` | Eldobható minion halála leállította az élő társat (azonosság-ellenőrzés a mutáció után volt). |
+| `DEEP-HIGH-03` | Főzet-XP `InventoryAction` nélkül → ismételt kattintás fizetett. |
+| `DEEP-HIGH-04` | A heti szakma-cél az `addXpFor` boolean-je nélkül töltődött. |
+| `DEEP-HIGH-06` | Elérés-azonosító casing-eltérés → minden tickben újra fizetett. |
+| `DEEP-HIGH-08` | Quest `next`-ciklus → végtelen jutalom-hurok. Checker-szabály + futásidejű mélység-korlát. |
+| `DEEP-HIGH-09` | A céhtagság túlélte a frakcióváltást. Egyeztetés KÖZPONTILAG a `setFaction`-ban. |
+| `DEEP-HIGH-01` (rész) | A pet-rítus main-hand szűrő nélkül kétszer futott és két kelléket fogyasztott. |
+| `DEEP-HIGH-05` (rész) | `/emlek xp` kaszt nélkül elvitte a szilánkot (a grant boolean-je elveszett). |
+| `D-01`–`D-05`, `D-12` | A doksi többet állított, mint amit a kód tud (blocker-státusz, launch-készség, mért méret-számok, 4 hiányzó DARK-spec, „hét birodalom"). |
+
+**Öt új gépi őr a `check_consistency.py`-ban** (mind bite-tesztelve): listener-prioritás-mátrix •
+`removeItem(new ItemStack(...))` tilalom • quest `next`-gráf ciklus • YAML boolean-kulcs csapda •
+advancement tartalom-drift.
+
+**MÉG NYITOTT — architekturális, több fájlt érintő tételek:**
+- `CRIT-06`: piac/wallet/inventory tartós tranzakció (idempotens write-ahead log; nem hoz be új
+  futásidejű függőséget, szemben az auditban javasolt SQLite-tal).
+- `CRIT-05`: tile-entity block-regen write-ahead journal (`PENDING → APPLYING → APPLIED`).
+- `CRIT-07` teljes: a `MobKillUtil` immutable `KillContext` DTO-ra + a gyilkos minden olvasása az
+  ő `EntityScheduler`-én (8 hívó listener). A `GameModeCache` csak a játékmód-olvasást zárta.
+- `CRIT-08`: `TransientEntities` + a rá épülő 9 world-event manager régió-lokális életciklusa.
+- `DEEP-HIGH-01` teljes (`PetSummonTransaction`), `DEEP-HIGH-07` (relikvia keep-ledger),
+  `HIGH-16`–`19` (raid/frakcióváltás/király/spec állapotgépek), a `DEEP-MED-*` és `MED-*` sáv.
+
+**Sorrend-javaslat a folytatáshoz:** `CRIT-06` → `CRIT-05` → `CRIT-07` → `CRIT-08` → `HIGH-16..19`.
+Mindegyik ugyanazzal a ritmussal: kézi igazolás a kódban → javítás → gépi őr → PLAYTEST-blokk → push.
