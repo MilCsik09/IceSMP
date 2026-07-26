@@ -41,7 +41,14 @@ public final class CommunityGoalManager implements PersistentStore {
      * hogy a nyugta miatt az esemény sosem játszódik újra, a kincstár/szezon/buff jutalom viszont
      * elmarad. A bejegyzés a kifizetés UTÁN, külön tartós írással tűnik el.
      */
-    private record PendingCompletion(String goalId, boolean serverWide, FactionType faction, int count) {
+    private record PendingCompletion(UUID completionId, String goalId, String displayName,
+                                     boolean serverWide, FactionType faction,
+                                     double treasuryReward, int seasonPoints, int buffMinutes) {
+
+        /** Cél-store-onként stabil, egyszeri művelet-azonosító. */
+        String grantId(final String target, final FactionType applyTo) {
+            return "community:" + completionId + ':' + target + ':' + applyTo.name();
+        }
     }
 
     private static final int MAX_COMPLETIONS_PER_CONTRIBUTION = 3;
@@ -120,17 +127,36 @@ public final class CommunityGoalManager implements PersistentStore {
         final ConfigurationSection outbox = yaml.getConfigurationSection("pending-completions");
         if (outbox != null) {
             for (final String key : outbox.getKeys(false)) {
+                final String rawId = outbox.getString(key + ".completion-id");
                 final String goalId = outbox.getString(key + ".goal-id");
-                final int count = outbox.getInt(key + ".count", 0);
-                if (goalId == null || goalId.isBlank() || count <= 0) {
+                if (rawId == null || goalId == null || goalId.isBlank()) {
                     YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                             "Érvénytelen függő közösségi kifizetés: " + key);
                     return;
                 }
+                final UUID completionId;
+                try {
+                    completionId = UUID.fromString(rawId);
+                } catch (final IllegalArgumentException invalid) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Értelmezhetetlen kifizetés-azonosító: " + key);
+                    return;
+                }
                 final String factionName = outbox.getString(key + ".faction");
-                pendingCompletions.add(new PendingCompletion(goalId,
-                        outbox.getBoolean(key + ".server-wide", false),
-                        factionName == null ? null : FactionType.fromInput(factionName), count));
+                final FactionType faction = factionName == null
+                        ? null : FactionType.fromInput(factionName);
+                final boolean serverWide = outbox.getBoolean(key + ".server-wide", false);
+                if (!serverWide && faction == null) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Frakció-célzott kifizetés frakció nélkül: " + key);
+                    return;
+                }
+                pendingCompletions.add(new PendingCompletion(completionId, goalId,
+                        outbox.getString(key + ".display-name", "Közösségi cél"),
+                        serverWide, faction,
+                        Math.max(0.0D, outbox.getDouble(key + ".treasury-reward", 0.0D)),
+                        Math.max(0, outbox.getInt(key + ".season-points", 0)),
+                        Math.max(0, outbox.getInt(key + ".buff-minutes", 0))));
             }
         }
         if (!pendingCompletions.isEmpty()) {
@@ -157,10 +183,14 @@ public final class CommunityGoalManager implements PersistentStore {
         for (int index = 0; index < pendingCompletions.size(); index++) {
             final PendingCompletion pending = pendingCompletions.get(index);
             final String base = "pending-completions." + index;
+            yaml.set(base + ".completion-id", pending.completionId().toString());
             yaml.set(base + ".goal-id", pending.goalId());
+            yaml.set(base + ".display-name", pending.displayName());
             yaml.set(base + ".server-wide", pending.serverWide());
             yaml.set(base + ".faction", pending.faction() == null ? null : pending.faction().name());
-            yaml.set(base + ".count", pending.count());
+            yaml.set(base + ".treasury-reward", pending.treasuryReward());
+            yaml.set(base + ".season-points", pending.seasonPoints());
+            yaml.set(base + ".buff-minutes", pending.buffMinutes());
         }
         try {
             YamlStore.saveAtomic(storageFile, yaml);
@@ -333,39 +363,88 @@ public final class CommunityGoalManager implements PersistentStore {
      */
     private void enqueueCompletions(final List<Completion> completions) {
         for (final Completion completion : completions) {
-            pendingCompletions.add(new PendingCompletion(completion.goal().getName(),
-                    completion.serverWide(), completion.goalFaction(), completion.count()));
+            final ConfigurationSection goal = completion.goal();
+            // A jutalom PILLANATKÉPE kerül a naplóba, nem csak a cél azonosítója: egy közben
+            // átírt vagy törölt config-bejegyzés különben eltérő — vagy elveszett — újrajátszást
+            // adna. Egy teljesítés = egy bejegyzés, ezért a count-ot itt bontjuk szét.
+            for (int index = 0; index < completion.count(); index++) {
+                pendingCompletions.add(new PendingCompletion(UUID.randomUUID(),
+                        goal.getName(),
+                        goal.getString("display-name", "Közösségi cél"),
+                        completion.serverWide(), completion.goalFaction(),
+                        Math.max(0.0D, goal.getDouble("reward-treasury", 0.0D)),
+                        Math.max(0, configManager.getInt("community-goals.season-points", 8)),
+                        Math.max(0, goal.getInt("reward-buff-minutes", 0))));
+            }
         }
     }
 
-    /** Kifizeti és tartósan eltünteti a függő teljesítéseket. */
+    /**
+     * Kifizeti és tartósan eltünteti a függő teljesítéseket. Minden gazdasági hatás a cél-store
+     * SAJÁT idempotens útján megy (a nyugta az egyenleggel/pontokkal egyetlen atomi fájl-képbe
+     * kerül), ezért a bejegyzés CSAK akkor törölhető, ha minden cél visszaigazolta magát —
+     * enélkül a nyugtázás és a cél-store tényleges mentése közti crash elveszítette vagy
+     * (nem idempotens újrajátszással) duplázta a jutalmat.
+     */
     private void flushPendingCompletions() {
         if (pendingCompletions.isEmpty()) {
             return;
         }
-        final ConfigurationSection goals = goalsSection();
-        final List<PendingCompletion> batch = new ArrayList<>(pendingCompletions);
-        for (final PendingCompletion pending : batch) {
-            final ConfigurationSection goal = goals == null ? null
-                    : goals.getConfigurationSection(pending.goalId());
-            if (goal == null) {
-                plugin.getLogger().warning("Függő közösségi kifizetés kihagyva: a(z) "
-                        + pending.goalId() + " cél már nincs a configban.");
-                continue;
-            }
-            for (int index = 0; index < pending.count(); index++) {
-                completeGoal(goal, pending.serverWide(), pending.faction());
+        final List<PendingCompletion> settled = new ArrayList<>();
+        for (final PendingCompletion pending : new ArrayList<>(pendingCompletions)) {
+            if (applyCompletion(pending)) {
+                settled.add(pending);
             }
         }
-        pendingCompletions.removeAll(batch);
+        if (settled.isEmpty()) {
+            return;
+        }
+        pendingCompletions.removeAll(settled);
         if (!saveStrict()) {
-            // A kifizetés megtörtént, de a nyugtázás nem: a bejegyzés visszakerül, így a
-            // következő indulás újra megpróbálja. Inkább ismételt (idempotens irányba hangolt)
-            // kifizetés, mint néma elmaradás — a logban nyoma marad.
-            pendingCompletions.addAll(batch);
+            // A hatások idempotensek (grant-id), ezért a visszakerülő bejegyzés újrajátszása
+            // NEM duplázza a jutalmat — csak a naplót tisztítja majd le a következő indulás.
+            pendingCompletions.addAll(settled);
             plugin.getLogger().severe("A közösségi kifizetés nyugtázása nem sikerült — a függő "
-                    + "bejegyzések maradnak, a következő indulás újrajátssza őket.");
+                    + "bejegyzések maradnak; az újrajátszás idempotens, nem fizet kétszer.");
         }
+    }
+
+    /**
+     * Egy teljesítés kifizetése. A hirdetés és a buff best-effort (ismételve is ártalmatlan),
+     * a kincstár és a szezon-pont viszont grant-azonosítóhoz kötött.
+     *
+     * @return true, ha MINDEN tartós hatás visszaigazolt
+     */
+    private boolean applyCompletion(final PendingCompletion pending) {
+        final List<FactionType> targets = pending.serverWide()
+                ? List.of(FactionType.values()) : List.of(pending.faction());
+        boolean allAcked = true;
+        if (pending.treasuryReward() > 0.0D) {
+            for (final FactionType faction : targets) {
+                if (!treasuryManager.depositOnce(pending.grantId("treasury", faction),
+                        faction, pending.treasuryReward())) {
+                    allAcked = false;
+                }
+            }
+        }
+        if (pending.seasonPoints() > 0) {
+            final String source = pending.serverWide() ? "community-server" : "community";
+            for (final FactionType faction : targets) {
+                if (!seasonManager.addPointsOnce(pending.grantId("season", faction),
+                        faction, pending.seasonPoints(), source)) {
+                    allAcked = false;
+                }
+            }
+        }
+        if (!allAcked) {
+            plugin.getLogger().severe("Közösségi kifizetés RÉSZBEN sikerült (" + pending.goalId()
+                    + ", " + pending.completionId() + ") — a bejegyzés marad, az újrajátszás "
+                    + "a hiányzó felet pótolja (a már megtörtént rész nem ismétlődik).");
+            return false;
+        }
+        announceCompletion(pending);
+        applyBuff(pending);
+        return true;
     }
 
     private void pruneReceipts(final long now) {
@@ -383,59 +462,37 @@ public final class CommunityGoalManager implements PersistentStore {
                 .forEach(contributionReceipts::remove);
     }
 
-    private void completeGoal(final ConfigurationSection goal, final boolean serverWide,
-                              final FactionType goalFaction) {
-        final String displayName = goal.getString("display-name", "Közösségi cél");
+    /** Hirdetés a pillanatképből (ismételve is ártalmatlan, nem gazdasági hatás). */
+    private void announceCompletion(final PendingCompletion pending) {
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "community-goal-completed",
                 "<gold>🏛 Közösségi cél teljesítve: <white>{goal}</white>! {who}</gold>",
                 Map.of(
-                        "goal", displayName,
-                        "who", serverWide ? "Az egész szerver összefogott!"
-                                : "A(z) " + goalFaction.getDisplayName() + " frakció diadala!"
+                        "goal", pending.displayName(),
+                        "who", pending.serverWide() ? "Az egész szerver összefogott!"
+                                : "A(z) " + pending.faction().getDisplayName() + " frakció diadala!"
                 )
         ));
+    }
 
-        final double treasuryReward = Math.max(0.0D,
-                goal.getDouble("reward-treasury", 0.0D));
-        if (treasuryReward > 0.0D) {
-            if (serverWide) {
-                for (final FactionType faction : FactionType.values()) {
-                    treasuryManager.deposit(faction, treasuryReward);
-                }
-            } else {
-                treasuryManager.deposit(goalFaction, treasuryReward);
-            }
+    /** Buff a pillanatképből: átmeneti hatás, ezért nem kap grant-nyugtát. */
+    private void applyBuff(final PendingCompletion pending) {
+        if (pending.buffMinutes() <= 0) {
+            return;
         }
-
-        final int seasonPoints = Math.max(0,
-                configManager.getInt("community-goals.season-points", 8));
-        if (seasonPoints > 0) {
-            if (serverWide) {
-                for (final FactionType faction : FactionType.values()) {
-                    seasonManager.addPoints(faction, seasonPoints, "community-server");
-                }
-            } else {
-                seasonManager.addPoints(goalFaction, seasonPoints, "community");
+        final int durationTicks = pending.buffMinutes() * 60 * 20;
+        for (final Player online : Bukkit.getOnlinePlayers()) {
+            if (!pending.serverWide() && factionManager.getFaction(
+                    online.getUniqueId()) != pending.faction()) {
+                continue;
             }
-        }
-
-        final int buffMinutes = Math.max(0, goal.getInt("reward-buff-minutes", 0));
-        if (buffMinutes > 0) {
-            final int durationTicks = buffMinutes * 60 * 20;
-            for (final Player online : Bukkit.getOnlinePlayers()) {
-                if (!serverWide && factionManager.getFaction(
-                        online.getUniqueId()) != goalFaction) {
-                    continue;
-                }
-                online.getScheduler().run(plugin, task -> {
-                    online.addPotionEffect(new PotionEffect(
-                            PotionEffectType.STRENGTH, durationTicks, 0, false, true, true));
-                    online.addPotionEffect(new PotionEffect(
-                            PotionEffectType.HERO_OF_THE_VILLAGE,
-                            durationTicks, 0, false, true, true));
-                }, null);
-            }
+            online.getScheduler().run(plugin, task -> {
+                online.addPotionEffect(new PotionEffect(
+                        PotionEffectType.STRENGTH, durationTicks, 0, false, true, true));
+                online.addPotionEffect(new PotionEffect(
+                        PotionEffectType.HERO_OF_THE_VILLAGE,
+                        durationTicks, 0, false, true, true));
+            }, null);
         }
     }
 }

@@ -39,26 +39,25 @@ public final class ProtectionBridge {
     /** Ennyi egymást követő hiba után szólunk a logban is (a spam ellen). */
     private static final int LOG_EVERY_FAILURES = 5;
 
-    private static volatile boolean initialised;
-    /** A WG jelen van ÉS a reflexiós lánc feloldódott. */
-    private static volatile boolean installed;
-    /** Amíg ez a jövőben van, a hídat hibásnak tekintjük (megszakító nyitva). */
+    /**
+     * A feloldott reflexiós lánc IMMUTABLE pillanatképe. A lekérdezések ezt kapják meg egy
+     * darabban, ezért sosem láthatnak félig kiürített mezőket egy újra-feloldás közben — a
+     * korábbi, mezőnkénti nullázás alatt egy másik régió-szál „nincs régió"-t kapott volna,
+     * azaz a claim-ellenőrzés rövid időre fail-OPEN lett.
+     */
+    private record Chain(Object regionContainer, Object regionQuery, Method adaptLocation,
+                         Method adaptWorld, Method applicableRegions, Method size,
+                         Method containerGet, Method managerOverlap, Method blockVectorAt,
+                         Constructor<?> cuboid) {
+    }
+
+    /** null = még nem (vagy már nem) feloldott lánc. */
+    private static volatile Chain chain;
+    /** A WorldGuard plugin nincs jelen — ez NEM hiba, hanem biztos „nincs régió". */
+    private static volatile boolean absent;
+    /** Amíg ez a jövőben van, nem kérdezünk (megszakító nyitva). */
     private static volatile long brokenUntil;
     private static final AtomicInteger failures = new AtomicInteger();
-    /** Megszakító-trip után a lejáratkor a reflexiós láncot ÚJRA fel kell oldani. */
-    private static final java.util.concurrent.atomic.AtomicBoolean needsReinit =
-            new java.util.concurrent.atomic.AtomicBoolean();
-
-    private static Object regionContainer;
-    private static Object regionQuery;
-    private static Method adaptLocationMethod;
-    private static Method adaptWorldMethod;
-    private static Method getApplicableRegionsMethod;
-    private static Method sizeMethod;
-    private static Method containerGetMethod;
-    private static Method managerOverlapMethod;
-    private static Method blockVectorAtMethod;
-    private static Constructor<?> cuboidConstructor;
 
     private ProtectionBridge() {
     }
@@ -82,14 +81,15 @@ public final class ProtectionBridge {
         if (location == null || location.getWorld() == null) {
             return Boolean.FALSE;
         }
-        if (!ready()) {
+        final Chain resolved = acquire();
+        if (resolved == null) {
             return unavailableAnswer();
         }
         try {
-            final Object adapted = adaptLocationMethod.invoke(null, location);
-            final Object regionSet = getApplicableRegionsMethod.invoke(regionQuery, adapted);
+            final Object adapted = resolved.adaptLocation().invoke(null, location);
+            final Object regionSet = resolved.applicableRegions().invoke(resolved.regionQuery(), adapted);
             failures.set(0);
-            return ((Number) sizeMethod.invoke(regionSet)).intValue() > 0;
+            return ((Number) resolved.size().invoke(regionSet)).intValue() > 0;
         } catch (final Throwable throwable) {
             tripBreaker(throwable);
             return null;
@@ -107,28 +107,29 @@ public final class ProtectionBridge {
         if (world == null) {
             return Boolean.FALSE;
         }
-        if (!ready()) {
+        final Chain resolved = acquire();
+        if (resolved == null) {
             return unavailableAnswer();
         }
-        if (cuboidConstructor == null || managerOverlapMethod == null) {
+        if (resolved.cuboid() == null || resolved.managerOverlap() == null) {
             // Régebbi/átalakított WG-API: a box-lekérdezés nem áll rendelkezésre.
             return null;
         }
         try {
-            final Object weWorld = adaptWorldMethod.invoke(null, world);
-            final Object manager = containerGetMethod.invoke(regionContainer, weWorld);
+            final Object weWorld = resolved.adaptWorld().invoke(null, world);
+            final Object manager = resolved.containerGet().invoke(resolved.regionContainer(), weWorld);
             if (manager == null) {
                 failures.set(0);
                 return Boolean.FALSE; // a világban nincs region-manager = nincs régió
             }
-            final Object min = blockVectorAtMethod.invoke(null,
+            final Object min = resolved.blockVectorAt().invoke(null,
                     Math.min(minX, maxX), world.getMinHeight(), Math.min(minZ, maxZ));
-            final Object max = blockVectorAtMethod.invoke(null,
+            final Object max = resolved.blockVectorAt().invoke(null,
                     Math.max(minX, maxX), world.getMaxHeight(), Math.max(minZ, maxZ));
-            final Object probe = cuboidConstructor.newInstance("icesmp_claim_probe", min, max);
-            final Object regionSet = managerOverlapMethod.invoke(manager, probe);
+            final Object probe = resolved.cuboid().newInstance("icesmp_claim_probe", min, max);
+            final Object regionSet = resolved.managerOverlap().invoke(manager, probe);
             failures.set(0);
-            return ((Number) sizeMethod.invoke(regionSet)).intValue() > 0;
+            return ((Number) resolved.size().invoke(regionSet)).intValue() > 0;
         } catch (final Throwable throwable) {
             tripBreaker(throwable);
             return null;
@@ -137,78 +138,70 @@ public final class ProtectionBridge {
 
     /** Whether WorldGuard is present and the bridge is currently answering. */
     public static boolean isHealthy() {
-        return ready();
+        return acquire() != null;
     }
 
     /**
      * A válasz, amikor a híd nem tud kérdezni: WorldGuard NÉLKÜL ez biztos „nincs régió",
-     * megszakító alatt viszont „nem tudom" — a hívó dönti el a saját kockázat-irányát.
+     * megszakító alatt vagy sikertelen feloldás után viszont „nem tudom" — a hívó dönti el a
+     * saját kockázat-irányát (a claim elutasít, az esemény-spawn átmegy).
      */
     private static Boolean unavailableAnswer() {
-        return installed ? null : Boolean.FALSE;
-    }
-
-    private static boolean breakerOpen() {
-        return System.currentTimeMillis() < brokenUntil;
+        return absent ? Boolean.FALSE : null;
     }
 
     /**
-     * Whether the bridge may answer now. A megszakító lejártakor ÚJRA FELOLDJA a reflexiós
-     * láncot: egy WorldGuard-reload érvényteleníti a cache-elt {@code regionQuery}/
-     * {@code regionContainer} objektumokat, és azokkal a lejárat után is ugyanaz a hiba jönne —
-     * a híd a szerver-újraindításig hibás maradt volna (claim fail-closed, esemény fail-open).
+     * A használható lánc, vagy null ha most nem tudunk kérdezni. EGY zár alatt dönt és old fel,
+     * ezért nincs félig-kész állapot; a sikertelen feloldás ÚJ backoffot nyit, tehát a híd nem
+     * ragad be véglegesen fail-open állapotba (a régi kód egyetlen bukott újra-inicializálás
+     * után szerver-újraindításig hallgatott).
      */
-    private static boolean ready() {
-        if (!initialised) {
-            initialise();
+    private static synchronized Chain acquire() {
+        if (System.currentTimeMillis() < brokenUntil) {
+            return null;
         }
-        if (breakerOpen()) {
-            return false;
+        final Chain existing = chain;
+        if (existing != null) {
+            return existing;
         }
-        if (needsReinit.compareAndSet(true, false)) {
-            reinitialise();
+        if (!Bukkit.getPluginManager().isPluginEnabled("WorldGuard")) {
+            absent = true;
+            return null;
         }
-        return installed;
-    }
-
-    /** Eldobja a cache-elt reflexiós láncot, és a következő igényre újra feloldja. */
-    private static synchronized void reinitialise() {
-        initialised = false;
-        installed = false;
-        regionContainer = null;
-        regionQuery = null;
-        adaptLocationMethod = null;
-        adaptWorldMethod = null;
-        getApplicableRegionsMethod = null;
-        sizeMethod = null;
-        containerGetMethod = null;
-        managerOverlapMethod = null;
-        blockVectorAtMethod = null;
-        cuboidConstructor = null;
-        initialise();
+        absent = false;
+        final Chain resolved = resolveChain();
+        if (resolved == null) {
+            // Sikertelen feloldás: új backoff, hogy a következő ablakban ÚJRA próbáljuk.
+            brokenUntil = System.currentTimeMillis() + BREAKER_MILLIS;
+            return null;
+        }
+        chain = resolved;
+        return resolved;
     }
 
     private static void tripBreaker(final Throwable throwable) {
         brokenUntil = System.currentTimeMillis() + BREAKER_MILLIS;
-        needsReinit.set(true);
+        // A lánc eldobása: a következő ablakban újra feloldjuk. Egy WorldGuard-reload
+        // érvényteleníti a cache-elt regionQuery/regionContainer objektumokat, azokkal a
+        // lejárat után is ugyanaz a hiba jönne.
+        chain = null;
         final int count = failures.incrementAndGet();
         if (count == 1 || count % LOG_EVERY_FAILURES == 0) {
             Bukkit.getLogger().warning("[IceSMP] WorldGuard-lekérdezés hibázott ("
                     + throwable.getClass().getSimpleName() + ", " + count + ". alkalom) — a híd "
                     + (BREAKER_MILLIS / 1000L) + " másodpercre kikapcsol, majd ÚJRA FELOLDJA a "
-                    + "WG-hivatkozásokat (reload után a régiek elavulnak). "
-                    + "Amíg hibás, a claim-átfedés ellenőrzés ELUTASÍT (fail-closed).");
+                    + "WG-hivatkozásokat. Amíg nem tud válaszolni, a claim-átfedés ellenőrzés "
+                    + "ELUTASÍT (fail-closed).");
         }
     }
 
-    private static synchronized void initialise() {
-        if (initialised) {
-            return;
-        }
-        initialised = true;
-        if (!Bukkit.getPluginManager().isPluginEnabled("WorldGuard")) {
-            return;
-        }
+    /** @return a feloldott lánc, vagy null ha a reflexiós feloldás nem sikerült */
+    private static Chain resolveChain() {
+        final Object container;
+        final Object query;
+        final Method adaptLocation;
+        final Method applicableRegions;
+        final Method size;
         try {
             // Resolve every Method from the PUBLIC WorldGuard API types — resolving from
             // implementation classes risks IllegalAccessException on non-public impls.
@@ -225,48 +218,53 @@ public final class ProtectionBridge {
                 getRegionContainer = platform.getClass().getMethod("getRegionContainer");
                 getRegionContainer.setAccessible(true);
             }
-            regionContainer = getRegionContainer.invoke(platform);
+            container = getRegionContainer.invoke(platform);
             final Class<?> containerClass = Class.forName("com.sk89q.worldguard.protection.regions.RegionContainer");
-            regionQuery = containerClass.getMethod("createQuery").invoke(regionContainer);
+            query = containerClass.getMethod("createQuery").invoke(container);
 
             final Class<?> bukkitAdapter = Class.forName("com.sk89q.worldguard.bukkit.BukkitAdapter");
-            adaptLocationMethod = bukkitAdapter.getMethod("adapt", Location.class);
+            adaptLocation = bukkitAdapter.getMethod("adapt", Location.class);
             final Class<?> weLocation = Class.forName("com.sk89q.worldedit.util.Location");
-            getApplicableRegionsMethod = Class.forName("com.sk89q.worldguard.protection.regions.RegionQuery")
+            applicableRegions = Class.forName("com.sk89q.worldguard.protection.regions.RegionQuery")
                     .getMethod("getApplicableRegions", weLocation);
-            sizeMethod = Class.forName("com.sk89q.worldguard.protection.ApplicableRegionSet")
+            size = Class.forName("com.sk89q.worldguard.protection.ApplicableRegionSet")
                     .getMethod("size");
-
-            installed = true;
-            Bukkit.getLogger().info("[IceSMP] WorldGuard-híd bekapcsolva: a meteor/kincs események kerülik a WG-régiókat.");
         } catch (final Throwable throwable) {
-            installed = false;
-            Bukkit.getLogger().warning("[IceSMP] WorldGuard jelen van, de a régió-ellenőrző híd nem indult ("
-                    + throwable.getClass().getSimpleName() + ") — az események NEM kerülik a WG-régiókat.");
-            return;
+            Bukkit.getLogger().warning("[IceSMP] WorldGuard jelen van, de a régió-ellenőrző híd nem "
+                    + "oldható fel (" + throwable.getClass().getSimpleName() + ") — újrapróbálás "
+                    + (BREAKER_MILLIS / 1000L) + " másodperc múlva; addig a claim-ellenőrzés elutasít.");
+            return null;
         }
 
         // A box-lekérdezés OPCIONÁLIS képesség: ha ez a lánc nem oldódik fel, a pont-lekérdezés
         // akkor is él (a claim-ellenőrzés ilyenkor „nem tudom"-ot kap és elutasít).
+        Method adaptWorld = null;
+        Method containerGet = null;
+        Method blockVectorAt = null;
+        Constructor<?> cuboid = null;
+        Method managerOverlap = null;
         try {
             final Class<?> weWorldClass = Class.forName("com.sk89q.worldedit.world.World");
-            adaptWorldMethod = Class.forName("com.sk89q.worldguard.bukkit.BukkitAdapter")
+            adaptWorld = Class.forName("com.sk89q.worldguard.bukkit.BukkitAdapter")
                     .getMethod("adapt", World.class);
-            containerGetMethod = Class.forName("com.sk89q.worldguard.protection.regions.RegionContainer")
+            containerGet = Class.forName("com.sk89q.worldguard.protection.regions.RegionContainer")
                     .getMethod("get", weWorldClass);
             final Class<?> blockVectorClass = Class.forName("com.sk89q.worldedit.math.BlockVector3");
-            blockVectorAtMethod = blockVectorClass.getMethod("at", int.class, int.class, int.class);
-            cuboidConstructor = Class.forName("com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion")
+            blockVectorAt = blockVectorClass.getMethod("at", int.class, int.class, int.class);
+            cuboid = Class.forName("com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion")
                     .getConstructor(String.class, blockVectorClass, blockVectorClass);
-            managerOverlapMethod = Class.forName("com.sk89q.worldguard.protection.managers.RegionManager")
+            managerOverlap = Class.forName("com.sk89q.worldguard.protection.managers.RegionManager")
                     .getMethod("getApplicableRegions",
                             Class.forName("com.sk89q.worldguard.protection.regions.ProtectedRegion"));
         } catch (final Throwable throwable) {
-            cuboidConstructor = null;
-            managerOverlapMethod = null;
+            cuboid = null;
+            managerOverlap = null;
             Bukkit.getLogger().warning("[IceSMP] A WorldGuard box-átfedés lekérdezés nem áll rendelkezésre ("
                     + throwable.getClass().getSimpleName() + ") — a claim-átfedés ellenőrzés elutasít, "
                     + "amíg ez nem oldódik meg (fail-closed).");
         }
+        Bukkit.getLogger().info("[IceSMP] WorldGuard-híd feloldva: a claim- és esemény-ellenőrzés él.");
+        return new Chain(container, query, adaptLocation, adaptWorld, applicableRegions, size,
+                containerGet, managerOverlap, blockVectorAt, cuboid);
     }
 }

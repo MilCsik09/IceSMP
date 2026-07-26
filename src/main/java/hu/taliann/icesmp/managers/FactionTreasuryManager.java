@@ -36,6 +36,14 @@ public final class FactionTreasuryManager implements PersistentStore {
     private final MessageManager messageManager;
     private final File storageFile;
     private final Map<FactionType, Double> balances = new ConcurrentHashMap<>();
+    /**
+     * Már alkalmazott, azonosítóhoz kötött jóváírások. A bejegyzés az egyenleggel EGY atomi
+     * fájl-képbe kerül, ezért a hívó (pl. a közösségi cél kifizetés-outboxa) pontosan egyszeri
+     * alkalmazást kap: a napló-nyugtázás és az egyenleg-írás közti crash nem duplázhat.
+     */
+    private final Map<String, Long> appliedGrants = new ConcurrentHashMap<>();
+    /** A nyugta-halmaz felső korlátja (a régi bejegyzések kiesnek). */
+    private static final int MAX_APPLIED_GRANTS = 20_000;
     private final Map<FactionType, Double> taxRates = new ConcurrentHashMap<>();
     /**
      * Unpaid citizen tax per player (hátralék): when a wallet can't cover the tax due
@@ -71,6 +79,7 @@ public final class FactionTreasuryManager implements PersistentStore {
 
     public void load() {
         balances.clear();
+        appliedGrants.clear();
 
         if (!storageFile.exists()) {
             return;
@@ -133,6 +142,12 @@ public final class FactionTreasuryManager implements PersistentStore {
                 }
             }
 
+            final ConfigurationSection grants = yaml.getConfigurationSection("applied-grants");
+            if (grants != null) {
+                for (final String key : grants.getKeys(false)) {
+                    appliedGrants.put(key, grants.getLong(key, System.currentTimeMillis()));
+                }
+            }
             plugin.getLogger().info("Loaded faction treasury balances.");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load faction treasury: " + exception.getMessage());
@@ -155,6 +170,11 @@ public final class FactionTreasuryManager implements PersistentStore {
     }
 
     public synchronized void save() {
+        writeState();
+    }
+
+    /** @return true, ha az atomi írás sikerült (a jóváírás commit-pontja ezt kéri) */
+    private synchronized boolean writeState() {
         final YamlConfiguration yaml = new YamlConfiguration();
         for (final Map.Entry<FactionType, Double> entry : balances.entrySet()) {
             yaml.set("treasury." + entry.getKey().name(), entry.getValue());
@@ -172,11 +192,16 @@ public final class FactionTreasuryManager implements PersistentStore {
                 yaml.set("tax-evasion-strikes." + entry.getKey(), entry.getValue());
             }
         }
+        for (final Map.Entry<String, Long> entry : appliedGrants.entrySet()) {
+            yaml.set("applied-grants." + entry.getKey(), entry.getValue());
+        }
 
         try {
             YamlStore.saveAtomic(storageFile, yaml);
+            return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save faction treasury: " + exception.getMessage());
+            return false;
         }
     }
 
@@ -213,6 +238,58 @@ public final class FactionTreasuryManager implements PersistentStore {
             requestSave();
         }
         return applied;
+    }
+
+    /**
+     * Idempotens jóváírás: ugyanazzal a {@code grantId}-val többször meghívva PONTOSAN egyszer
+     * változtatja az egyenleget, és a nyugtát az egyenleggel egyetlen atomi írásban rögzíti.
+     *
+     * @param grantId a hívó stabil, egyszeri művelet-azonosítója
+     * @return true, ha az állapot tartósan alkalmazva van (vagy már korábban az volt)
+     */
+    public synchronized boolean depositOnce(final String grantId, final FactionType faction,
+                                            final double amount) {
+        if (grantId == null || grantId.isBlank()) {
+            return false;
+        }
+        if (appliedGrants.containsKey(grantId)) {
+            return true;
+        }
+        if (faction == null || !Double.isFinite(amount) || amount <= 0.0D) {
+            return false;
+        }
+        final Double previous = balances.get(faction);
+        balances.merge(faction, amount, Double::sum);
+        appliedGrants.put(grantId, System.currentTimeMillis());
+        pruneAppliedGrants();
+        if (saveNow()) {
+            return true;
+        }
+        // A tartós írás nem sikerült: visszaállunk, hogy a hívó újrapróbálhassa.
+        appliedGrants.remove(grantId);
+        if (previous == null) {
+            balances.remove(faction);
+        } else {
+            balances.put(faction, previous);
+        }
+        return false;
+    }
+
+    private void pruneAppliedGrants() {
+        if (appliedGrants.size() <= MAX_APPLIED_GRANTS) {
+            return;
+        }
+        appliedGrants.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .limit(appliedGrants.size() - MAX_APPLIED_GRANTS)
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(appliedGrants::remove);
+    }
+
+    /** Szinkron mentés a jóváírás commit-pontjához (a sérült fájlt a YamlStore amúgy sem írja). */
+    private boolean saveNow() {
+        return !YamlStore.isLoadFailed(storageFile) && writeState();
     }
 
     public void deposit(final FactionType faction, final double amount) {

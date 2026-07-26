@@ -301,20 +301,35 @@ public final class MarketManager implements PersistentStore {
                             "Zárolt licit licitáló nélkül a(z) " + idKey + " aukciónál");
                     return;
                 }
+                // A licit-invariáns KÉTIRÁNYÚ: licitáló pontosan akkor van, ha zárolt összeg is.
+                final double highestBid = section.getDouble(idKey + ".highest-bid", 0.0D);
+                if (bidderId != null && !(highestBid > 0.0D)) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Licitáló zárolt összeg nélkül a(z) " + idKey + " aukciónál");
+                    return;
+                }
+                final double price = section.getDouble(idKey + ".price", 1.0D);
+                final double buyOut = section.getDouble(idKey + ".buy-out", 0.0D);
+                if (!isFiniteNonNegative(price) || !isFiniteNonNegative(highestBid)
+                        || !isFiniteNonNegative(buyOut)) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Nem véges vagy negatív összeg a(z) " + idKey + " piaci tételnél");
+                    return;
+                }
                 listings.put(id, new Listing(
                         id,
                         seller,
                         section.getString(idKey + ".seller-name", "?"),
-                        Math.max(0.01D, section.getDouble(idKey + ".price", 1.0D)),
+                        Math.max(0.01D, price),
                         currency,
                         item,
                         section.getLong(idKey + ".created-at", System.currentTimeMillis()),
                         section.getBoolean(idKey + ".auction", false),
                         section.getLong(idKey + ".ends-at", 0L),
-                        section.getDouble(idKey + ".highest-bid", 0.0D),
+                        highestBid,
                         bidderId,
                         section.getString(idKey + ".highest-bidder-name", null),
-                        section.getDouble(idKey + ".buy-out", 0.0D)
+                        buyOut
                 ));
             }
         }
@@ -336,10 +351,11 @@ public final class MarketManager implements PersistentStore {
                         "Értelmezhetetlen tulajdonos-azonosító a várólistán: " + playerKey);
                 return;
             }
-            final List<ItemStack> items = readItems(deliveries.getList(playerKey));
-            if (!items.isEmpty()) {
-                pendingDeliveries.put(owner, items);
+            final List<ItemStack> items = readItemsStrict(deliveries.getList(playerKey), playerKey);
+            if (items == null) {
+                return;
             }
+            pendingDeliveries.put(owner, items);
         }
     }
 
@@ -1176,13 +1192,15 @@ public final class MarketManager implements PersistentStore {
             }
         }
 
-        // Csak a MÉG nyitott bejegyzések tanú-azonosítóira van szükség.
+        // MINDEN még nyitott bejegyzés tanúját meg kell tartani — nem csak a játékosra
+        // halasztottakét. A sikertelen (de commitolt) pénz-helyreállítás bejegyzése is nyitva
+        // marad; ha a tanúja kiesne a következő market.yml-mentésből, a KÖVETKEZŐ indulás már
+        // „nem commitolt"-nak látná, és a commitolt célérték újrapróbálása helyett
+        // VISSZAFORGATNA.
         final Set<String> keep = new HashSet<>();
-        for (final List<TransactionJournal.Entry> entries : playerRecoveries.values()) {
-            for (final TransactionJournal.Entry entry : entries) {
-                keep.add(entry.id().toString());
-                keep.add(resolutionKey(entry));
-            }
+        for (final TransactionJournal.Entry entry : journal.pending()) {
+            keep.add(entry.id().toString());
+            keep.add(resolutionKey(entry));
         }
         committedTxns.retainAll(keep);
         requestSave();
@@ -1399,6 +1417,35 @@ public final class MarketManager implements PersistentStore {
             }
         }
         return items;
+    }
+
+    /**
+     * A várólistás tárgylista SZIGORÚ beolvasása: minden elemet validál, és bármely hibás
+     * elemnél karanténba tesz. A szűrő {@link #readItems} néma eldobása itt tárgy-vesztés:
+     * egy részben sérült listából egyes tárgyak nyomtalanul eltűntek, a többi betöltődött.
+     *
+     * @return a validált lista, vagy null ha a betöltés megszakadt (failCorrupt dobott)
+     */
+    private List<ItemStack> readItemsStrict(final List<?> raw, final String where) {
+        if (raw == null || raw.isEmpty()) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Üres vagy hiányzó várólista-tárgylista: " + where);
+            return null;
+        }
+        final List<ItemStack> items = new ArrayList<>();
+        for (final Object entry : raw) {
+            if (!(entry instanceof ItemStack item) || item.getType().isAir() || item.getAmount() <= 0) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                        "Érvénytelen tárgy a várólistán: " + where);
+                return null;
+            }
+            items.add(item);
+        }
+        return items;
+    }
+
+    private static boolean isFiniteNonNegative(final double value) {
+        return Double.isFinite(value) && value >= 0.0D;
     }
 
     private UUID parseUuid(final String raw) {

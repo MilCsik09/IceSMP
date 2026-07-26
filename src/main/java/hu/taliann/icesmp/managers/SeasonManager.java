@@ -42,6 +42,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     private final FactionManager factionManager;
     private final File storageFile;
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
+    /**
+     * Már alkalmazott, azonosítóhoz kötött pont-jóváírások. A bejegyzés a pontokkal EGY atomi
+     * fájl-képbe kerül, ezért a hívó (kifizetés-outbox) pontosan egyszeri alkalmazást kap.
+     */
+    private final Map<String, Long> appliedGrants = new ConcurrentHashMap<>();
+    private static final int MAX_APPLIED_GRANTS = 20_000;
     /** J9 — fejezet-sorszám: a szezon = story-fejezet; váltáskor nő, perzisztens. */
     private volatile int seasonNumber = 1;
     /** G16 — nagydöntő-hétvége: bejelentés-flag (szezononként egyszer, volatilis). */
@@ -69,6 +75,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     public void load() {
         points.clear();
+        appliedGrants.clear();
         seasonStart = System.currentTimeMillis();
 
         if (!storageFile.exists()) {
@@ -80,6 +87,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             seasonStart = yaml.getLong("season.start", System.currentTimeMillis());
             seasonNumber = Math.max(1, yaml.getInt("season.number", 1));
+            final ConfigurationSection grants = yaml.getConfigurationSection("season.applied-grants");
+            if (grants != null) {
+                for (final String key : grants.getKeys(false)) {
+                    appliedGrants.put(key, grants.getLong(key, System.currentTimeMillis()));
+                }
+            }
             final ConfigurationSection pointsSection = yaml.getConfigurationSection("season.points");
             if (pointsSection != null) {
                 for (final String factionKey : pointsSection.getKeys(false)) {
@@ -103,6 +116,11 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     public void save() {
+        writeState();
+    }
+
+    /** @return true, ha az atomi írás sikerült (a pont-jóváírás commit-pontja ezt kéri) */
+    private synchronized boolean writeState() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("season.start", seasonStart);
@@ -110,15 +128,57 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             for (final Map.Entry<FactionType, Integer> entry : points.entrySet()) {
                 yaml.set("season.points." + entry.getKey().name(), entry.getValue());
             }
+            for (final Map.Entry<String, Long> entry : appliedGrants.entrySet()) {
+                yaml.set("season.applied-grants." + entry.getKey(), entry.getValue());
+            }
             if (!pendingChampionSpoils.isEmpty()) {
                 yaml.set("season.pending-champion-spoils",
                         pendingChampionSpoils.stream().map(java.util.UUID::toString).toList());
             }
 
             YamlStore.saveAtomic(storageFile, yaml);
+            return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season.yml: " + exception.getMessage());
+            return false;
         }
+    }
+
+    /**
+     * Idempotens pont-jóváírás: ugyanazzal a {@code grantId}-val többször meghívva PONTOSAN
+     * egyszer pontoz, és a nyugtát a pontokkal egyetlen atomi írásban rögzíti.
+     *
+     * @return true, ha az állapot tartósan alkalmazva van (vagy már korábban az volt)
+     */
+    public synchronized boolean addPointsOnce(final String grantId, final FactionType faction,
+                                              final int amount, final String source) {
+        if (grantId == null || grantId.isBlank()) {
+            return false;
+        }
+        if (appliedGrants.containsKey(grantId)) {
+            return true;
+        }
+        final Integer previous = points.get(faction);
+        addPoints(faction, amount, source);
+        appliedGrants.put(grantId, System.currentTimeMillis());
+        if (appliedGrants.size() > MAX_APPLIED_GRANTS) {
+            appliedGrants.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue())
+                    .limit(appliedGrants.size() - MAX_APPLIED_GRANTS)
+                    .map(Map.Entry::getKey)
+                    .toList()
+                    .forEach(appliedGrants::remove);
+        }
+        if (!YamlStore.isLoadFailed(storageFile) && writeState()) {
+            return true;
+        }
+        appliedGrants.remove(grantId);
+        if (previous == null) {
+            points.remove(faction);
+        } else {
+            points.put(faction, previous);
+        }
+        return false;
     }
 
     public int getPoints(final FactionType faction) {
