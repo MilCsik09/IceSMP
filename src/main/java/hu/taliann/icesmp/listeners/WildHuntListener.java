@@ -6,11 +6,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 
-/**
- * Awards the Wild Hunt loot to the player who slays the elite beast. The death
- * event fires on the beast's own region thread, so {@link WildHuntManager#onSlain}
- * drops the loot at the death location without a hop.
- */
+import java.util.UUID;
+
+/** Wild Hunt combat bridge; only immutable player ids cross the beast region boundary. */
 public final class WildHuntListener implements Listener {
 
     private final WildHuntManager wildHuntManager;
@@ -25,14 +23,11 @@ public final class WildHuntListener implements Listener {
         if (!wildHuntManager.isWildHunt(dead.getUniqueId())) {
             return;
         }
-        wildHuntManager.onSlain(dead.getKiller(), dead.getLocation());
+        final var killer = dead.getKiller();
+        final UUID killerId = killer == null ? null : killer.getUniqueId();
+        wildHuntManager.onSlain(killerId, dead.getLocation());
     }
 
-    /**
-     * Personal-loot kiterjesztés: minden játékos, aki a fenevadat sebzi, résztvevővé
-     * válik (leölésnél csökkentett saját gurítást kap). A damage-event a fenevad
-     * régió-szálán fut; a jelölés konkurens halmazba ír (szál-biztos).
-     */
     @EventHandler(ignoreCancelled = true)
     public void onDamage(final org.bukkit.event.entity.EntityDamageByEntityEvent event) {
         if (!wildHuntManager.isWildHunt(event.getEntity().getUniqueId())) {

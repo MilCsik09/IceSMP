@@ -50,21 +50,25 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
-        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
-        if (killer == null || event.getEntity() instanceof Player) {
+        if (event.getEntity() instanceof Player) {
+            return;
+        }
+        final var kill = hu.taliann.icesmp.utils.MobKillUtil
+                .eligibleTrackingKill(event.getEntity());
+        if (kill == null) {
             return;
         }
         final var entityType = event.getEntityType();
         final int level = mobScalingManager.getLevel(event.getEntity());
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
-        killer.getScheduler().run(plugin, task -> {
+        kill.runOnKiller(plugin, killer -> {
             questManager.handleKill(killer, entityType, level);
             communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1);
             if (worldBoss) {
                 questManager.handleBossKill(killer);
                 communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1);
             }
-        }, null);
+        });
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -86,7 +90,6 @@ public final class QuestProgressListener implements Listener {
         }
     }
 
-    /** Fish is accounted at its source event, never at an originless ground pickup. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) {
@@ -111,21 +114,20 @@ public final class QuestProgressListener implements Listener {
         questManager.handlePlaceBlock(event.getPlayer(), event.getBlock().getType());
     }
 
-    /*
-     * Ground pickup deliberately does not progress COLLECT_ITEMS. A pickup has no trustworthy
-     * origin after container, craft, place/break, merge and split transformations. Source events
-     * that consume inputs or create a resource call the durable contribution path instead.
-     */
-
     @EventHandler
     public void onPlayerKill(final PlayerDeathEvent event) {
         final Player killer = event.getEntity().getKiller();
         if (killer == null || killer.getUniqueId().equals(event.getEntity().getUniqueId())) {
             return;
         }
-        killer.getScheduler().run(plugin, task -> {
-            questManager.handlePlayerKill(killer);
-            communityGoalManager.contribute(killer, "KILL_PLAYERS", null, 1);
+        final UUID killerId = killer.getUniqueId();
+        final Player online = org.bukkit.Bukkit.getPlayer(killerId);
+        if (online == null) {
+            return;
+        }
+        online.getScheduler().run(plugin, task -> {
+            questManager.handlePlayerKill(online);
+            communityGoalManager.contribute(online, "KILL_PLAYERS", null, 1);
         }, null);
     }
 
@@ -149,7 +151,6 @@ public final class QuestProgressListener implements Listener {
         questManager.handleConsume(event.getPlayer(), event.getItem().getType());
     }
 
-    /** Smelt output is a source event with consumed input and a deterministic callback receipt. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSmelt(final FurnaceExtractEvent event) {
         questManager.handleSmelt(event.getPlayer(), event.getItemType(), event.getItemAmount());
