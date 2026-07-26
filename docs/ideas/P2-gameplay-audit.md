@@ -412,10 +412,21 @@ Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleg
 | `DEEP-HIGH-01` (rész) | A pet-rítus main-hand szűrő nélkül kétszer futott és két kelléket fogyasztott. |
 | `DEEP-HIGH-05` (rész) | `/emlek xp` kaszt nélkül elvitte a szilánkot (a grant boolean-je elveszett). |
 | `D-01`–`D-05`, `D-12` | A doksi többet állított, mint amit a kód tud (blocker-státusz, launch-készség, mért méret-számok, 4 hiányzó DARK-spec, „hét birodalom"). |
+| `D-06`, `D-09`, `DEEP-LORE-01` | A kódex a tényleges mechanikát mondja: relikvia-halál három módja, Arkynn mérge Eleftheriától, blokk-pontos claim. |
+| `D-07` | Az ARCHITECTURE.md két helyen mondott ellenkezőt a spell-reloadról. A kód él: minden `spell-balance.*` kulcs LIVE_READ, RESTART_ONLY csak a szerkezet (regisztráció, tick-periódus, konstruktor-cache). |
+| `D-08` | „Minden esemény-spawn a mátrixon" túlzó volt: a kapu pont-mintavételes és a WG-híd fail-open. Az escort ráadásul CSAK az indulópontot ellenőrizte — most az útvonal 25/50/75/100%-át is, 8 irány-próbával. |
+| `D-10` | Radicora/Ó-Caldestera és a modern Caldestera földrajzilag elválasztva (szoros + komp); az onboarding a Fa tövéből Radicorába, onnan Caldesterába küld. |
+| `D-13` | Az Ereklye-flavor egyediség-állítása kivéve (a ritkaság ismételhetően generálódik). |
+| `D-14` (rész) | A kézzel karbantartott számok GÉPI ŐRT kaptak (a VERSION_MATRIX.md helyett — új .md csak tulaj-kérésre): a mért drift 473/87/31/150/45 volt a doksi 460/86/17/37/28-ával szemben. |
+| `DEEP-LORE-02` | A tábortűz Asterlayna-sora szóbeszéd-jelölést kapott; a forrás-javadocban rögzítve, hogy a tábortűz világon belüli narrátor, kánon-eltéréshez kötelező a hedge. |
+| `DEEP-LORE-03` | `/lore radicora` valódi szócikk (nem csendes átirányítás a `menedek`-re). |
+| `L-REV-01` | A Királyok Átka egységesítve mindenhol: nem „nem hat", hanem „a sírban nem tarthat" + a korona szorít, míg viselik. |
+| `L-REV-02` | A Fa eredete a `/lore fa`-ban is a csillagszilánk (a „teste fölött nőtt" ellentmondott a kódexnek). |
 
-**Öt új gépi őr a `check_consistency.py`-ban** (mind bite-tesztelve): listener-prioritás-mátrix •
+**Nyolc új gépi őr a `check_consistency.py`-ban** (mind bite-tesztelve): listener-prioritás-mátrix •
 `removeItem(new ItemStack(...))` tilalom • quest `next`-gráf ciklus • YAML boolean-kulcs csapda •
-advancement tartalom-drift.
+advancement tartalom-drift • doksi-szám ↔ mért érték • ARCHITECTURE.md csomagtérkép ↔ fájlrendszer •
+`/lore` téma-hármas (tab-complete ↔ szócikk ↔ usage-sor ↔ alias-cél).
 
 **MÉG NYITOTT — architekturális, több fájlt érintő tételek:**
 - `CRIT-06`: piac/wallet/inventory tartós tranzakció (idempotens write-ahead log; nem hoz be új

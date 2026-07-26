@@ -355,6 +355,106 @@ try:
 except Exception as e:
     warn(f"advancement-drift ellenorzes kihagyva: {e}")
 
+# ===== Meret- es tartalom-szamok: a doksi szamai a KODBOL szarmazzanak =====
+# A "471 Java-fajl / 87 manager / 37 tabortuz-mese" tipusu allitasok kezzel karbantartottak
+# voltak, ezert minden korben driftelnek (a valosag 473/87/150 volt, mire ez a guard megszuletett).
+# A ~-os allitasoknak sav jar, a pontos daraszamoknak egzakt egyezes.
+try:
+    _java_files = list((pathlib.Path(REPO) / "src/main/java").rglob("*.java"))
+    _measured = {
+        "java-fajl": len(_java_files),
+        "manager": len([p for p in _java_files if p.name.endswith("Manager.java")]),
+    }
+
+    def _count_literals(path, array_name):
+        _src = read(os.path.join(REPO, path))
+        _m = (re.search(re.escape(array_name) + r"\s*=\s*\{(.*?)\n\s*\};", _src, re.S)
+              or re.search(re.escape(array_name) + r"\s*=\s*List\.of\((.*?)\n\s*\);", _src, re.S))
+        if not _m:
+            return None
+        return len(re.findall(r'"(?:[^"\\]|\\.)*"', _m.group(1)))
+
+    _campfire = _count_literals("src/main/java/hu/taliann/icesmp/listeners/CampfireStoryListener.java",
+                                "STORIES")
+    _stranger = _count_literals("src/main/java/hu/taliann/icesmp/managers/StrangerNpcManager.java",
+                                "LINES")
+    _stores = None
+    _core = read(os.path.join(REPO, "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"))
+    _sm = re.search(r"persistentStores\s*=\s*List\.of\((.*?)\);", _core, re.S)
+    if _sm:
+        _stores = len([x for x in re.split(r",", _sm.group(1)) if x.strip()])
+
+    # (fajl, regex, mert ertek, tolerancia szazalekban) — 0 tolerancia = egzakt
+    _CLAIMS = [
+        ("CLAUDE.md", r"~?(\d+)\s*Java-fájl", _measured["java-fajl"], 3),
+        ("CLAUDE.md", r"(\d+)\s*manager", _measured["manager"], 0),
+        ("docs/ARCHITECTURE.md", r"(\d+) Java-fájl", _measured["java-fajl"], 3),
+        ("docs/ARCHITECTURE.md", r"(\d+) `\*Manager` osztály", _measured["manager"], 0),
+        ("docs/FEATURES.md", r"(\d+) Java-fájl", _measured["java-fajl"], 3),
+        ("docs/FEATURES.md", r"(\d+) manager", _measured["manager"], 0),
+        ("docs/FEATURES.md", r"\((\d+) kóbor mondat\)", _stranger, 0),
+        ("docs/FEATURES.md", r"tábortűz-mesék \((\d+) közös", _campfire, 0),
+        ("docs/ARCHITECTURE.md", r"a (\d+) fájlt-író store", _stores, 0),
+    ]
+    for _path, _pattern, _real, _tol in _CLAIMS:
+        if _real is None:
+            warn(f"szam-guard: {_path} / {_pattern} — a mert ertek nem allt elo, kihagyva")
+            continue
+        _full = os.path.join(REPO, _path)
+        if not os.path.exists(_full):
+            continue
+        _hit = re.search(_pattern, read(_full))
+        if not _hit:
+            warn(f"szam-guard: {_path} — a '{_pattern}' allitas eltunt; ha szandekos, vedd ki a guardbol")
+            continue
+        _claimed = int(_hit.group(1))
+        _limit = _real * _tol / 100.0
+        if abs(_claimed - _real) > _limit:
+            fail(f"szam-drift: {_path} {_claimed}-et allit, a mert ertek {_real} "
+                 f"(tolerancia: ±{_tol}% = {_limit:.0f}) — a doksi szama a kodbol szarmazzon")
+except Exception as e:
+    warn(f"szam-drift ellenorzes kihagyva: {e}")
+
+# ===== ARCHITECTURE.md csomagterkep: a fajlszamok a fajlrendszerbol jonnek =====
+# A tabla evekig kezzel kovette a kodot, ezert minden sora elmaradt (managers 62 vs 108,
+# utils 3 vs 20). Ez a guard a tabla ELSO szamat a csomag tenyleges .java-szamahoz meri.
+try:
+    _arch = read(os.path.join(REPO, "docs/ARCHITECTURE.md"))
+    for _pkg, _claim in re.findall(r"^\|\s*`([a-z]+)/`\s*\|\s*(\d+)", _arch, re.M):
+        _dir = pathlib.Path(JAVA, "hu/taliann/icesmp", _pkg)
+        if not _dir.is_dir():
+            fail(f"csomagterkep: `{_pkg}/` szerepel az ARCHITECTURE.md tablajaban, de nincs ilyen csomag")
+            continue
+        _real = len(list(_dir.rglob("*.java")))
+        if int(_claim) != _real:
+            fail(f"csomagterkep-drift: ARCHITECTURE.md `{_pkg}/` {_claim} fajlt allit, "
+                 f"a valosag {_real}")
+except Exception as e:
+    warn(f"csomagterkep ellenorzes kihagyva: {e}")
+
+# ===== /lore: minden temanak legyen tartalma, tab-complete-je ES usage-sora =====
+# A `radicora` tema letezett a normalize() aliasai kozott, de nem volt sajat szocikke: csendben
+# a `menedek` altalanos frakcio-osszefoglalojara iranyitott. A harom lista egyutt mozogjon.
+try:
+    _lore_src = read(os.path.join(JAVA, "hu/taliann/icesmp/commands/LoreCommand.java"))
+    _topics_block = re.search(r"TOPICS\s*=\s*List\.of\((.*?)\);", _lore_src, re.S)
+    _topics = set(re.findall(r'"([a-z0-9-]+)"', _topics_block.group(1))) if _topics_block else set()
+    _entries = set(re.findall(r'Map\.entry\(\s*"([a-z0-9-]+)"', _lore_src))
+    _usage = re.search(r"/lore <([a-z0-9|-]+)>", _lore_src)
+    _usage_topics = set(_usage.group(1).split("|")) if _usage else set()
+    for _t in sorted(_topics - _entries):
+        fail(f"/lore tema '{_t}' szerepel a TOPICS-ban, de nincs DEFAULTS-szocikke")
+    for _t in sorted(_entries - _topics):
+        fail(f"/lore szocikk '{_t}' letezik, de nincs a TOPICS tab-complete listaban")
+    for _t in sorted(_entries - _usage_topics):
+        fail(f"/lore szocikk '{_t}' nincs benne a lore-usage sorban (a jatekos nem tud rola)")
+    # alias-cel: minden normalize()-cel legyen valodi szocikk
+    for _target in set(re.findall(r'->\s*"([a-z0-9-]+)";', _lore_src)):
+        if _target not in _entries:
+            fail(f"/lore alias '{_target}'-ra mutat, de nincs ilyen szocikk — a parancs csendben mast adna")
+except Exception as e:
+    warn(f"/lore tema-ellenorzes kihagyva: {e}")
+
 for w in warns:
     print(f"⚠ WARN: {w}")
 for f_ in fails:

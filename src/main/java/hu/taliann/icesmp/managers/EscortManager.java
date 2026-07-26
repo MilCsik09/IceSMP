@@ -75,6 +75,8 @@ public final class EscortManager {
 
     /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul. */
     private static final long SPAWN_GRACE_MILLIS = 10_000L;
+    /** Hány véletlen irányt próbálunk, amíg védelem-mentes útvonalat találunk. */
+    private static final int ROUTE_ATTEMPTS = 8;
     private volatile Location destination;
     private volatile double totalDistance;
     private volatile long expiresAt;
@@ -250,20 +252,25 @@ public final class EscortManager {
 
         // Route: from the anchor's spot toward a random compass direction, config distance away.
         final double distance = Math.max(40.0D, configManager.getDouble("escort.route-distance", 150.0D));
-        final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
         final int startX = origin.getBlockX();
         final int startZ = origin.getBlockZ();
-        final int destX = startX + (int) Math.round(Math.cos(angle) * distance);
-        final int destZ = startZ + (int) Math.round(Math.sin(angle) * distance);
 
         final Location start = topOf(world, startX, startZ);
-        final Location dest = new Location(world, destX + 0.5D, 0.0D, destZ + 0.5D);
-
         // Spawn-rules: a konvoj se induljon territórium/claim/WG-régió belsejéből vagy vízről.
         if (spawnGuard.isBlocked("escort", start)
                 || spawnGuard.isUnsafeSurface("escort", world, startX, startZ)) {
             return; // védett/vizes indulópont — a következő intervallum máshol próbálkozik
         }
+
+        // A konvoj VÉGIG megy az útvonalon, ezért nem elég az indulópontot ellenőrizni:
+        // több irányt próbálunk, és csak olyan útvonalat fogadunk el, amelynek a mintavett
+        // pontjai (cél + közbenső szakaszok) is védelem-mentesek.
+        final Location dest = pickRoute(world, start, distance);
+        if (dest == null) {
+            return; // minden próbált irány védett területen vezetett át — később, máshol
+        }
+        final int destX = dest.getBlockX();
+        final int destZ = dest.getBlockZ();
 
         final Llama convoy = world.spawn(start, Llama.class, spawned -> {
             spawned.setPersistent(false);
@@ -493,7 +500,39 @@ public final class EscortManager {
         waveMobs.clear();
     }
 
-    /** Best-effort, Folia-safe removal on the entity's own region thread. */
+    /**
+     * Picks a route endpoint whose sampled points all clear the spawn-rules. Tries
+     * several random headings; each candidate is sampled at fixed fractions of the
+     * route so a leg that crosses a town/claim is rejected, not just a protected
+     * endpoint. The samples reuse the START's Y: the guard's zone lookups are
+     * height-aware, and probing the real surface Y of a far column would mean
+     * reading blocks owned by another region thread.
+     *
+     * @return the accepted destination, or null when every heading was blocked
+     */
+    private Location pickRoute(final World world, final Location start, final double distance) {
+        final double[] fractions = {1.0D, 0.75D, 0.5D, 0.25D};
+        for (int attempt = 0; attempt < ROUTE_ATTEMPTS; attempt++) {
+            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+            final double dx = Math.cos(angle) * distance;
+            final double dz = Math.sin(angle) * distance;
+            boolean clear = true;
+            for (final double fraction : fractions) {
+                final Location sample = new Location(world,
+                        start.getX() + dx * fraction, start.getY(), start.getZ() + dz * fraction);
+                if (spawnGuard.isBlocked("escort", sample)) {
+                    clear = false;
+                    break;
+                }
+            }
+            if (clear) {
+                return new Location(world,
+                        Math.round(start.getX() + dx) + 0.5D, 0.0D, Math.round(start.getZ() + dz) + 0.5D);
+            }
+        }
+        return null;
+    }
+
     private static double horizontalDistance(final Location a, final Location b) {
         final double dx = a.getX() - b.getX();
         final double dz = a.getZ() - b.getZ();

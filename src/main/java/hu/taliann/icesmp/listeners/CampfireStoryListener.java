@@ -69,8 +69,13 @@ public final class CampfireStoryListener implements Listener {
      * Sztori-sor variánsok. A messages-kulcs soronkénti: {@code campfire-story-<index+1>} —
      * a tömb bővítése automatikusan új kulcsot ad, kód-módosítás nélkül. Ez az EGYIK
      * fő csatorna, amin a játékos a kódex elolvasása nélkül is megismeri a világ történetét,
-     * ezért a készlet szándékosan bő és kánon-hű (Teremtés, Hasadás, a három birodalom,
-     * a Hetedik Vérháború, a Felsők kora).
+     * ezért a készlet szándékosan bő (Teremtés, Hasadás, a három birodalom, a Hetedik
+     * Vérháború, a Felsők kora).
+     *
+     * <p>A tábortűz VILÁGON BELÜLI narrátor, nem a kódex hangja: ha egy sor a
+     * {@code docs/LORE.md} kánonjától eltér, kötelező a szóbeszéd-jelölés („azt beszélik",
+     * „van, aki azt tartja", „egy öreg szerint") — objektív kijelentésként megfogalmazott
+     * ellentmondás a kánont írja át a játékos fejében.
      */
     private static final String[] STORIES = {
             "<gray>🔥 „…és amikor a Fa első gyökere vizet ért, a jég megtanult énekelni. Így mesélik a régiek.”</gray>",
@@ -99,7 +104,7 @@ public final class CampfireStoryListener implements Listener {
             "<gray>🔥 „A Kitaszítottak közt több a becsület, mint a fővárosban. Csak ott senki se írja fel.”</gray>",
             "<gray>🔥 „Az Első Csendről nem mesélünk. Ez a mese. Vége.”</gray>",
             "<gray>🔥 „A Fa egyik gyökere állítólag a tábortüzek alatt fut. Ezért melegszik át a történet is.”</gray>",
-            "<gray>🔥 „Asterlayna nem lezuhant, fiam. Leszállt. A különbség egy szó, és ezen ment el az Első Háború.”</gray>",
+            "<gray>🔥 „Van, aki azt tartja: Asterlayna nem lezuhant, hanem leszállt. Szép mese — de a háborút nem ez indította, hanem a méreg meg a láng haragja.”</gray>",
             "<gray>🔥 „A csillag helyén kikelt egy mag. Abból lett a Fa. Aetrinita a neve — de ne mondd ki hangosan éhesen.”</gray>",
             "<gray>🔥 „A Fának négy gyermeke volt: Soleil a láng, Kallan a pikkely, Arkynn az erdő… és a negyedik.”</gray>",
             "<gray>🔥 „A negyedik gyermek nevét mindenki ismeri, és senki nem mondja ki. Ennyit a nevekről.”</gray>",
@@ -238,7 +243,7 @@ public final class CampfireStoryListener implements Listener {
                             "<dark_purple>🔥 „Caldestera letette a fegyvert, és tiszta kezet mutat. A Botera-negyed hátsó pultján mégis a mi Csontveretünk csörög.”</dark_purple>",
                             "<dark_purple>🔥 „Amit ők a Királynő átkának hívnak, mi számadásnak. Egyetlen éjszaka volt, két könyvben — s a nemesség nem jött vissza.”</dark_purple>",
                             "<dark_purple>🔥 „Kilencszázhetvennyolcban jöttetek meg, emlék nélkül, s a Fa értetek nyúlt. Hozzánk a fénye sosem ér el.”</dark_purple>",
-                            "<dark_purple>🔥 „A Királyok Átka a te fejeden nem fog, ezért trónt már csak ti emelhettek. Gondold meg, kinek a székére ülsz vissza.”</dark_purple>"
+                            "<dark_purple>🔥 „A Királyok Átka téged sem hagy ki — csak a sírban nem tarthat, mert a Fa visszahív. A korona viszont fogja a fejed, míg viseled.”</dark_purple>"
                     }
             );
 

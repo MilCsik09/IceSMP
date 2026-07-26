@@ -4,7 +4,7 @@
 > de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
 > kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
 > életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
-> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 471 Java-fájl / 87 manager.
+> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 473 Java-fájl / 87 manager.
 
 ## ⚔ Kasztok és képességek
 
@@ -173,11 +173,13 @@
   (sculk-terjedés, irtó-részesedés), régészet (brush-lelőhelyek), játékos-karaván
   (szállítmány-kockázat), kalmár-karaván, bőség-ablak, gyűjtő-buff, szerver-kihívás
   (per-player skálázott), rejtett helyek (D8), ambient-események (kültéri jutalom),
-  Idegen NPC (28 kóbor mondat), tábortűz-mesék (37 lore-történet).
+  Idegen NPC (45 kóbor mondat), tábortűz-mesék (62 közös + 4×22 frakció-hangú sor).
 - **Broadcast-diéta**: a nagy események globális hírek, a személyes léptékűek csak
   a helyszín környékén hallatszanak (LocalAnnounce, Folia-biztos).
 - **EventSpawnGuard**: minden esemény-spawn közös kapun — territory/claim/WG mátrix
-  eseményenként, felszín-biztonság, mob-előkészítés (zombisodás/égés ellen).
+  eseményenként, felszín-biztonság, mob-előkészítés (zombisodás/égés ellen). A kapu a
+  jelölt spawn-pontokat vizsgálja (a karaván-útvonalat mintavételesen), nem blokkonként
+  garantált korlát; a WorldGuard-híd WG nélkül vagy hiba után fail-open.
 - **Mob-skálázás**: távolság-alapú szint + **zóna-rámpa** (a legközelebbi biztonságos
   zóna szélétől 250 blokk/szint — a 13k-ra lévő fővárosok környéke is kezdőbarát);
   DARK-földön +2 szint és az élőhalott nappal sem ég; Thanaopolis élőhalott-populáció

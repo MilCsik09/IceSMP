@@ -2434,3 +2434,32 @@ Jó tesztelést! ❄️
 - [ ] **DARK-specek ellen:** Árnyűző mellvértben a Szentségtelen/Csontpap árny-spelljei
       ~10%-kal kisebbet ütnek; Méregfojtó a Pestishozó természet-spelljei ellen.
 - [ ] **Enchant-asztal tiszta:** az új enchantok sem jönnek enchant-asztalról.
+
+## Mélyaudit-kör: lore-kánon, /lore Radicora, escort-útvonal (2026-07-26)
+- [ ] **`/lore radicora` VALÓDI szócikk:** `/lore radicora` (aliasok: `o-caldestera`,
+      `ocaldestera`, `gyokerek`) Radicora/Ó-Caldestera 6 sorát adja — NEM a `menedek`
+      általános frakció-összefoglalóját. `/lore` usage-sora és a tab-complete is
+      felsorolja. Ismeretlen téma (`/lore izelabda`) továbbra is a usage-sort adja,
+      nem csendben más szócikket.
+- [ ] **`/lore fa` eredet-javítás:** a Fa „Asterlayna lelkének utolsó
+      csillagszilánkjából kelt ki" — nem „a teste fölött nőtt" (a kódex szerint a
+      teste semmivé foszlott).
+- [ ] **`/lore menedek` földrajz:** Ryanora ősi szíve a Fa tövében (Radicora), a mai
+      főváros Caldestera a szoroson túl, komppal — a két hely nem keverhető össze.
+- [ ] **Tábortűz kánon-hűség:** az Asterlayna-leszállás sora már szóbeszédként szól
+      („Van, aki azt tartja…") és nem írja át az Első Háború okát; a DARK Királyok
+      Átka-sor sem azt mondja, hogy a Felsőkre nem hat, hanem hogy a sírban nem
+      tarthatja őket, viszont a korona szorít, míg viselik.
+- [ ] **Escort-útvonal spawn-guard:** `/events escort` — a konvoj nem CSAK védelem-mentes
+      pontról indul, hanem az útvonala mintavett pontjai (25/50/75/100%) is védelem-
+      mentesek. Teszt: vegyél fel egy claimet/territóriumot az anchor mellé úgy, hogy a
+      lehetséges célok többsége bele essen → a konvoj vagy más irányba indul, vagy
+      (ha mind a 8 próbált irány védett) ebben az intervallumban nem indul el egy sem.
+      A `world-events.spawn-rules.escort.*` mátrix-sor kikapcsolásával a korlát megszűnik.
+- [ ] **Ereklye-flavor:** a legendás flavor-sorok között NEM szerepel egyediség-állítás
+      („Egyetlen darab létezik belőle") — a ritkaság ismételhetően generálódik, egyediséget
+      csak a nevesített, ID-zett relikvia állít.
+- [ ] **Gépi őrök (nem ingame, de a körhöz tartozik):** `python3 scripts/check_consistency.py`
+      FAIL-el, ha (a) egy doksi-szám elszakad a mért értéktől (Java-fájl/manager/store/
+      tábortűz-mese/Idegen-sor), (b) az ARCHITECTURE.md csomagtérkép fájlszáma driftel,
+      (c) egy `/lore` téma tab-complete/szócikk/usage-sor hármasa szétcsúszik.

@@ -34,19 +34,19 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
-| `core/` | 1 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 62 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 67 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
-| `spells/` | 38 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 32 (+ al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 31 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
-| `data/` | 11 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
-| `relics/` | 6 (+ `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
-| `items/` | 7 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
-| `storage/` | 2 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
+| `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
+| `managers/` | 108 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 114 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
+| `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `gui/` | 42 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
+| `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
+| `items/` | 11 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
+| `storage/` | 4 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 3 | `MessageManager`, `ExperienceUtil`, egyebek. |
-| `integration/` | 5 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
+| `utils/` | 20 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `integration/` | 7 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
 
@@ -117,13 +117,14 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   `particle`, `sound`, `aoe`, `target`, `friendly`…). A számok automatikusan a `describe()`-ba kerülnek.
 - **`SpellCatalog`**: a kaszt-/spec-spellkészletek deklaratív regisztrációja (`ConfiguredSpell`-ekből).
 - **Egyedi (bespoke) spellek**: ha a hatás nem fér a builderbe (pl. `HideSpell`), `extends BaseSpell`.
-- **Config-driven balansz-felülbírálás** (`config/spells-balance.yml`): `IceSMPCore.applySpellBalanceOverrides()`
-  az `enable()`-ben, `configManager.load()` után egyszer lefut, és minden `ConfiguredSpell`-re alkalmazza
-  a `spell-balance.<id>` alatti kulcsokat (`ConfiguredSpell.withBalanceOverrides`, immutable copy). Mivel a
-  spellek csak indításkor regisztrálódnak, a deklaratívak esetén a fájl módosítása után szerver-újraindítás
-  kell (`/icesmp reload` nem elég). A bespoke (stateful) spellek ezzel szemben a `BaseSpell.balance()` /
-  `balanceInt()` segédeken keresztül cast-időben olvassák ugyanezt a fájlt, ezért rájuk a `/icesmp reload`
-  is azonnal hat.
+- **Config-driven balansz-felülbírálás** (`config/spells-balance.yml`): a `spell-balance.<id>.*` kulcsok
+  **LIVE_READ**-ek — a `ConfiguredSpell` accessorai (`getDamage`, `getRange`, `getRadius`, …) és a bespoke
+  spellek `BaseSpell.balance()` / `balanceInt()` segédei is CAST-időben olvassák a configot, ezért
+  `/icesmp reload` után restart nélkül élnek. A `IceSMPCore.applySpellBalanceOverrides()` (`enable()`,
+  `configManager.load()` után) csak az indulási log és az ismeretlen spell-id figyelmeztetés miatt fut le
+  (`ConfiguredSpell.withBalanceOverrides`, immutable copy). **RESTART_ONLY** marad, ami nem érték, hanem
+  szerkezet: a spell-regisztráció maga (új spell/unlock-lista), a scheduler-tick periódusok és a
+  konstruktorban cache-elt értékek.
 
 ### 3.6 GUI — közös helperek + adat-vezérelt menük
 - **`GuiUtil`**: közös item-/lore-építők (`icon`, `filler`, `fill`, `label`, `accent`, `grey`).
@@ -351,7 +352,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 471 Java-fájl, ~79 000 sor; 87 `*Manager` osztály (a `managers/` csomag 108 fájl).
+- **Méret:** 473 Java-fájl, ~80 000 sor; 87 `*Manager` osztály (a `managers/` csomag 108 fájl).
   Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
   items 11, relics 9, integration 7.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
