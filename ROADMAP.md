@@ -17,9 +17,14 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 ## Nyitott fejlesztések
 
 ### Ismert hibák / technikai kockázatok
-- Jelenleg nincs nyitott, reprodukált technikai blocker. A legutóbbi auditban talált Folia
-  célpont-scheduler hibák, az Angry Chicken cross-region damager kockázata és az orb Java 21
-  build-környezete javítva lett; playtesten továbbra is figyeljétek a konzolt
+- **NYITOTT KIADÁSBLOKKOLÓK VANNAK.** A legutóbbi mélyaudit több közvetlen Folia
+  ownership-hibát, gazdasági exploitot és félbe-lezáródó eseményt talált. Lezárva: a fail-open
+  YAML-betöltés (karantén + mentés-tiltás), a szakma- és rituálé-hozzávaló check–consume rése, a
+  viselt relikvia relog-vesztése, a visszavont akciók jutalmazása, a gyűjtés-progressz
+  visszajátszása, a quest-lánc ciklus, a céh–frakció egyeztetés és több jutalom-faucet.
+  **Még nyitott:** piac/wallet/inventory tartós tranzakció, tile-entity block-regen
+  write-ahead journal, a `MobKillUtil` teljes UUID/snapshot átterve és a `TransientEntities`-re
+  épülő world-event életciklus. Playtesten figyeljétek a konzolt
   `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 - **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
   - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
@@ -50,8 +55,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   frakciónként (`/territory setspawn <frakció>`); új játékos a Semleges Királyság spawnján
   jelenik meg, frakcióválasztáskor teleport az új királyság spawnjára, ágy/horgony nélkül a
   saját frakció spawnján éledsz újra. **Frakciót váltani (join ÉS leave) csak a semleges
-  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` is teljes értékű
-  fizetős váltás (a leave+join ingyenes kerülőút megszűnt), és `/npcbind <npc> faction`
+  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` fizetős váltásnak
+  szánt (a leave+join ingyenes kerülőút azonban a frakciórekord törlése miatt MÉG NYITOTT — lásd a
+  kiadásblokkolókat), és `/npcbind <npc> faction`
   királyság-választó hírnök-NPC-t köt. További ötlet: váltás-megerősítő GUI a hírnöknél.
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
   bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),

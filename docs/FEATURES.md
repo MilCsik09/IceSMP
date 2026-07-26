@@ -1,8 +1,10 @@
 # IceSMP — Teljes funkció-leltár (belső bemutató)
 
 > Minden rendszer és mechanika egy helyen, belső "mutogatásra". Technikai mélységű,
-> de teljes. Állapot: 2026-07-22 — kód-oldalon launch-kész, élő playtest előtt.
-> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, ~300 Java-fájl / 60+ manager.
+> de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
+> kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
+> életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
+> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 471 Java-fájl / 87 manager.
 
 ## ⚔ Kasztok és képességek
 

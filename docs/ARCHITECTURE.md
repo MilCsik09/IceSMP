@@ -14,7 +14,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~86 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~87 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -87,7 +87,7 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 17 fájlt-író manager implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 31 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
 
@@ -351,7 +351,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** ~460 Java-fájl, ~77 000 sor; 86 `*Manager` osztály (a `managers/` csomag 106 fájl).
+- **Méret:** 471 Java-fájl, ~79 000 sor; 87 `*Manager` osztály (a `managers/` csomag 108 fájl).
   Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
   items 11, relics 9, integration 7.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
