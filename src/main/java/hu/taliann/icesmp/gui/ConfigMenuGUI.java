@@ -145,6 +145,18 @@ public final class ConfigMenuGUI {
                         List.of("reclaim", "keep", "drop")),
                 Entry.toggle("relics.wings.faction-locked-pickup", "Szárny frakció-zár (felvétel)"),
                 Entry.toggle("relics.pvp-transfer.enabled", "Fegyver-relikvia PvP-átvétel"))));
+        categories.put("devitemek", new Category("devitemek", "DEV itemek", Material.HEART_OF_THE_SEA, List.of(
+                Entry.toggle("dev-items.csodalatos_bingulus.auto-restore", "Bingulus automatikus visszaállítása"),
+                Entry.integer("dev-items.csodalatos_bingulus.reward-interval-seconds", "Jutalom-időköz (mp)", 60, 60, 86400),
+                Entry.number("dev-items.csodalatos_bingulus.rarity-weights.kozonseges", "Közönséges súly", 1, 0, 10000),
+                Entry.number("dev-items.csodalatos_bingulus.rarity-weights.nem_mindennapi", "Nem mindennapi súly", 1, 0, 10000),
+                Entry.number("dev-items.csodalatos_bingulus.rarity-weights.ritka", "Ritka súly", 0.5, 0, 10000),
+                Entry.number("dev-items.csodalatos_bingulus.rarity-weights.epikus", "Epikus súly", 0.1, 0, 10000),
+                Entry.number("dev-items.csodalatos_bingulus.rarity-weights.legendas", "Legendás súly", 0.1, 0, 10000),
+                Entry.number("dev-items.csodalatos_bingulus.rarity-weights.ereklye", "Ereklye súly", 0.1, 0, 10000),
+                Entry.integer("dev-items.csodalatos_bingulus.pity.ritka.after-rolls", "Ritka pity (sorsolás)", 5, 1, 100000),
+                Entry.integer("dev-items.csodalatos_bingulus.pity.epikus.after-rolls", "Epikus pity (sorsolás)", 10, 1, 100000),
+                Entry.integer("dev-items.csodalatos_bingulus.pity.legendas.after-rolls", "Legendás pity (sorsolás)", 50, 1, 100000))));
         categories.put("emlek", new Category("emlek", "Emlékszilánkok", Material.AMETHYST_SHARD, List.of(
                 Entry.integer("memory-shards.xp-amount", "XP-csomag mérete", 50, 1, 1000000),
                 Entry.integer("memory-shards.costs.xp", "XP-beváltás ára (szilánk)", 1, 1, 100),

@@ -164,3 +164,9 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 ---
 
 ➡️ Tovább: [Party (csapat)](15-csapat.md) • [Vissza a tartalomhoz](README.md)
+
+
+### DEV item tesztelése
+
+- `/iceitem dev csodalatos_bingulus 1 <játékos>` — a Csodálatos Bingulus hiteles példányának
+  kiadása. Csak a `dev-items.yml`-ben rögzített tulajdonos lehet célpont; jog: `icesmp.admin.item`.

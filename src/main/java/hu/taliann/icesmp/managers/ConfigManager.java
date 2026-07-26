@@ -22,7 +22,7 @@ public final class ConfigManager {
     private static final String[] CONFIG_FILES = {
             "general", "economy", "factions", "classes", "spells", "spells-balance",
             "professions", "quests", "world", "relics", "pets", "crafting", "crates", "afk", "moderation",
-            "item-rarity", "loot", "motd", "profession-materials", "profession-recipes", "tablist"
+            "item-rarity", "loot", "motd", "profession-materials", "profession-recipes", "tablist", "dev-items"
     };
 
     private final JavaPlugin plugin;

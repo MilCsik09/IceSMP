@@ -2715,3 +2715,24 @@ Jó tesztelést! ❄️
 - [ ] **Config-változás nem téríti el a replayt:** hagyj függő kifizetést, majd írd át (vagy
       töröld) a cél `reward-treasury` értékét a configban, és indíts újra → a kifizetés a
       MENTETT pillanatkép szerint történik (a törölt cél jutalma sem veszik el).
+
+## Csodálatos Bingulus — örökös DEV item
+
+Teszt-tulajdonos UUID: `eb80c20f-092a-4d76-bd44-d168c91ea9e2`.
+
+Gyorsítás teszthez:
+
+```text
+/icesmp config set dev-items.csodalatos_bingulus.reward-interval-seconds 10
+/icesmp reload
+/iceitem dev csodalatos_bingulus 1 <tulajdonos>
+```
+
+- [ ] A tárgy csak a konfigurált UUID-jű játékosnak adható.
+- [ ] Saját inventoryn belül mozgatható, de nem dobható el és nem rakható ládába/ender chestbe.
+- [ ] Halál után visszatér; más játékos nem tudja megtartani vagy felvenni.
+- [ ] Offline állapotban és a tárgy hiányakor nem halad a jutalomóra.
+- [ ] Telt inventorynál a kisorsolt jutalom várakozik, nem esik a földre és nem sorsolódik újra.
+- [ ] A vanilla, `unique:`, `recipe:` és `blueprint:` jutalmak működnek.
+- [ ] Két másolt Bingulus sem gyorsítja a jutalmazást; a manager egy hiteles példányt hagy meg.
+- [ ] Restart után megmarad a rész-progressz, a pending jutalom és a pity-számláló.

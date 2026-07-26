@@ -214,6 +214,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.BlueprintItemFactory blueprintItemFactory;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterialFactory;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
+    private final hu.taliann.icesmp.managers.DevItemManager devItemManager;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
@@ -391,6 +392,8 @@ public final class IceSMPCore {
         worldBossManager.setSpawnPointManager(eventSpawnPointManager); // hely-horgony
         this.professionRecipeBookListener = new hu.taliann.icesmp.listeners.ProfessionRecipeBookListener(plugin,
                 professionManager, professionRecipeCatalog, itemRarityService, uniqueMaterialFactory, messageManager, factionManager, configManager);
+        this.devItemManager = new hu.taliann.icesmp.managers.DevItemManager(plugin, configManager, messageManager,
+                uniqueMaterialFactory, professionRecipeCatalog, blueprintItemFactory, professionRecipeBookListener);
         this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
@@ -593,6 +596,7 @@ public final class IceSMPCore {
                 councilManager,
                 dungeonLootService,
                 raidManager);
+                devItemManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -861,6 +865,7 @@ public final class IceSMPCore {
         scheduleHealth();
         scheduleCorruptionAura();
         schedulePetCombat();
+        devItemManager.start();
         scheduleAutosave();
         // A visszaépítés saját, sűrű ütemén fut (látványos, fokozatos gyógyulás) —
         // a 60 mp-es világesemény-tick ehhez túl durva.
@@ -1109,6 +1114,7 @@ public final class IceSMPCore {
         spyManager.shutdown();
         cultistEventManager.shutdown();
         totemManager.shutdown();
+        devItemManager.shutdown();
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
@@ -1325,6 +1331,7 @@ public final class IceSMPCore {
             mobScalingManager.load();
             craftingRestrictionManager.load();
             achievementManager.reload();
+            devItemManager.refreshOnlineOwner();
         });
         // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
         // leggyakoribb kulcsokhoz — az override-fájlba ír, restart nélkül él.
@@ -1405,10 +1412,11 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.LoreCommand(messageManager));
         plugin.registerCommand("kronika", "Az utolsó Heti Krónika visszaolvasása", List.of("chronicle"),
                 new hu.taliann.icesmp.commands.KronikaCommand(chronicleManager, messageManager));
-        plugin.registerCommand("iceitem", "Plugin-item kiadása (admin): unique/recept/relikvia/tervrajz/erszeny",
+        plugin.registerCommand("iceitem", "Plugin-item kiadása (admin): unique/recept/relikvia/tervrajz/erszeny/dev",
                 List.of("iitem", "icegive"),
                 new hu.taliann.icesmp.commands.ItemGiveCommand(plugin, uniqueMaterialFactory, professionRecipeCatalog,
-                        professionRecipeBookListener, relicManager, blueprintItemFactory, messageManager, moneyPouchItemFactory));
+                        professionRecipeBookListener, relicManager, blueprintItemFactory, messageManager,
+                        moneyPouchItemFactory, devItemManager));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -1464,6 +1472,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DevItemProtectionListener(plugin, devItemManager), plugin);
         final FactionPassiveListener factionPassiveListener = new FactionPassiveListener(factionManager, configManager);
         factionPassiveListener.setWhisperManager(whisperManager); // Suttogó éjszakai élőhalott-békesség
         pluginManager.registerEvents(factionPassiveListener, plugin);
