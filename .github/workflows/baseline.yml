@@ -10,77 +10,24 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout verification assets
-        uses: actions/checkout@v4
-        with:
-          ref: audit/baseline-14addda
-          path: runner
-
-      - name: Checkout DEV-item target branch
+      - name: Checkout fixed DEV-item recovery head
         uses: actions/checkout@v4
         with:
           ref: fix/dev-item-recovery
-          path: work
           fetch-depth: 0
 
-      - name: Capture DEV-item patch staging byte-for-byte
-        shell: bash
-        run: |
-          set -u
-          : > /tmp/dev-item-recovery.meta
-          for part in runner/.github/audit-patches/dev-item-recovery.mbox.b64.*; do
-            sha256sum "$part" | tee -a /tmp/dev-item-recovery.meta
-            wc -c "$part" | tee -a /tmp/dev-item-recovery.meta
-          done
-          cat runner/.github/audit-patches/dev-item-recovery.mbox.b64.* > /tmp/dev-item-recovery.combined.b64
-          sha256sum /tmp/dev-item-recovery.combined.b64 | tee -a /tmp/dev-item-recovery.meta
-          wc -c /tmp/dev-item-recovery.combined.b64 | tee -a /tmp/dev-item-recovery.meta
-          set +e
-          base64 --decode /tmp/dev-item-recovery.combined.b64 > /tmp/dev-item-recovery.mbox
-          decode_result=$?
-          set -e
-          echo "decode_rc=$decode_result" | tee -a /tmp/dev-item-recovery.meta
-          sha256sum /tmp/dev-item-recovery.mbox | tee -a /tmp/dev-item-recovery.meta
-          wc -c /tmp/dev-item-recovery.mbox | tee -a /tmp/dev-item-recovery.meta
-
-      - name: Upload reconstructed DEV-item patch diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: dev-item-recovery-mbox-preflight
-          path: |
-            /tmp/dev-item-recovery.combined.b64
-            /tmp/dev-item-recovery.mbox
-            /tmp/dev-item-recovery.meta
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Publish the reviewed two-commit DEV-item patch
+      - name: Verify exact ancestry, commits and branch scope
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fxq 'decode_rc=0' /tmp/dev-item-recovery.meta
-          echo '184dbe1097f06479505e1ac073e35eb511ec2551443e658e24de0fc5aac3cd78  /tmp/dev-item-recovery.mbox' \
-            | sha256sum --check --strict
-          test "$(wc -c < /tmp/dev-item-recovery.mbox)" -eq 43056
-
-          cd work
-          git config user.name 'IceSMP audit bot'
-          git config user.email 'actions@users.noreply.github.com'
-          commit_count=$(git rev-list --count 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD)
-          if [ "$commit_count" -eq 0 ]; then
-            git am /tmp/dev-item-recovery.mbox
-          elif [ "$commit_count" -ne 2 ]; then
-            echo "Unexpected target-branch commit count: $commit_count" >&2
-            exit 1
-          fi
-
+          test "$(git rev-parse HEAD)" = '92b12140318f412932766603ab905d44c259774e'
           test "$(git rev-list --count 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD)" -eq 2
           git log --reverse --format='%s' 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD > /tmp/dev-item-subjects
           printf '%s\n' \
@@ -98,11 +45,8 @@ jobs:
           test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java'
           test "${files[4]}" = 'src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java'
 
-          git push origin HEAD:fix/dev-item-recovery
-
       - name: Apply PR 26 prerequisite for verification only
         shell: bash
-        working-directory: work
         run: |
           set -euo pipefail
           git fetch origin fix/core-persistent-store-wiring
@@ -117,16 +61,12 @@ jobs:
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-        with:
-          root-directory: work
 
       - name: Run targeted DEV-item state regression
-        working-directory: work
         run: python3 scripts/test_dev_item_state.py
 
       - name: Build and run repository checks
         shell: bash
-        working-directory: work
         run: |
           set -o pipefail
           ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/dev-item-build.log
@@ -142,7 +82,6 @@ jobs:
 
       - name: Consistency checks against the recorded baseline
         shell: bash
-        working-directory: work
         run: |
           set -euo pipefail
           set +e
