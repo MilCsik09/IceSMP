@@ -199,6 +199,8 @@ public final class MarketGUIListener implements Listener {
             case "market-already-highest" -> "&cMár te vagy a legmagasabb licitáló.";
             case "market-bid-too-low" -> "&cA licit nem éri el a minimum következő licitet.";
             case "market-auction-use-bid" -> "&cEz aukciós tétel — licitálni lehet rá.";
+            case "market-journal-unavailable" ->
+                    "&cA piac tranzakció-naplója most nem írható — a művelet biztonsági okból elmaradt. Próbáld újra kicsit később.";
             default -> "&cA vásárlás nem sikerült.";
         };
     }

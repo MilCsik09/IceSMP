@@ -87,9 +87,8 @@ public final class DungeonLootListener implements Listener {
         // kockázatnak a sima mob-looton felül is legyen hozadéka).
         // A kazamata-lelet FAUCET-tier (új értéket termel), ezért a közös előszűrőn megy át:
         // survival-kapu, AFK-fék, spawner- és minion-kizárás — enélkül ez az ág kiskapu volt.
-        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(event.getEntity(),
-                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);
-        if (killer == null) {
+        if (hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(event.getEntity(),
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) == null) {
             return;
         }
         final Territory zone = territoryManager.getTerritoryAt(event.getEntity().getLocation());

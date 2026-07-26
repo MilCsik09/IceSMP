@@ -2541,3 +2541,63 @@ Jó tesztelést! ❄️
       log figyelmeztet, a claim-ellenőrzés 60 másodpercig ELUTASÍT (fail-closed), utána a
       híd magától újra próbálkozik — NEM marad végleg kikapcsolva. WorldGuard NÉLKÜL a
       claim továbbra is engedélyezett (nincs régió, amit védeni kell).
+
+## P0 kiadásblokkolók: block-regen napló + piaci tranzakció-napló + kill-kontextus (2026-07-26)
+> Ezek a blokk-visszaépítés, a piac és a mob-jutalom TARTÓSSÁGI/szál-helyességi javításai.
+> A tesztek nyers leállítást (`kill -9`) is kérnek — külön teszt-világon futtasd.
+
+### Block-regen write-ahead napló (CRIT-05)
+- [ ] **Tartalom-vesztés:** `territory.protection.regen.tile-entity-explode: true`, védett zónában
+      tegyél egy ládába 3 jól felismerhető tárgyat, robbants rá TNT-vel, majd 2 percen belül
+      `kill -9` (NEM `/stop`). Újraindítás után a láda visszaépül, PONTOSAN a három tárggyal
+      (a duplikáció is hiba).
+- [ ] **Örök lyuk:** `regen.delay-seconds: 20`, robbants ki ~30 blokkos falszakaszt, majd 25 s
+      múlva — MIKÖZBEN épül vissza — `/stop`. Újraindulás után a fal maradéka is visszaépül.
+- [ ] **Napló-hiba fail-safe (NINCS dupe-farm):** `chmod 500 plugins/IceSMP`, majd robbants rá
+      egy TELI ládára. A láda sértetlenül él túl (óvó rúna-effekt), a logban napló-hiba.
+      **KRITIKUS:** ha a láda MÉGIS visszaépül, egyszer épül vissza — NEM töltődik újra
+      másodpercenként (az ismételt világ-mutáció korlátlan tárgy-duplikáció lenne).
+- [ ] **Hiányzó világ:** robbants külön világban, `/stop`, nevezd át a világ mappáját, indíts
+      újra → világonként EGY warning, a rekordok a block-regen.yml-ben MEGVANNAK. Visszanevezés
+      + újraindítás után a blokkok visszaépülnek. `/icesmp reload` után a warning újra jöhet.
+- [ ] **Napló-tisztulás:** ~10 blokk kirobbantása, teljes visszaépülés, `/stop` → a
+      `block-regen.yml` `pending` szakasza ÜRES, a `block-regen.wal.rotated` NEM létezik.
+- [ ] **Sérült checkpoint:** rontsd el a `block-regen.yml`-t, indíts újra → karantén-másolat +
+      mentés-tiltás a logban, a robbanások tovább működnek, a `.wal` nő (rekord nem vész el).
+
+### Piaci tranzakció-napló (CRIT-06)
+- [ ] **Tiszta út:** `/market sell 100` → a tárgy eltűnik a kézből, a tétel a GUI-ban van, és a
+      `market-journal.yml` a művelet UTÁN ÜRES.
+- [ ] **Vásárlás:** A listáz 100-ért, B megveszi → B bankjából a kiírt összeg, A-nak a 10% díj
+      után 90, a tárgy B-nél, a napló üres.
+- [ ] **Crash vásárlás közben:** `kill -9` közvetlenül egy vásárlás után. Újraindítás: VAGY a
+      tárgy B-nél van ÉS A pénzt kapott, VAGY a tétel visszaáll és B pénze megvan — köztes
+      állapot nincs. **Sosem fordulhat elő, hogy B megkapja a tárgyat és a pénze is visszajön.**
+- [ ] **Crash listázás közben:** listázás után azonnal `kill -9`. Belépéskor EGY üzenet, és a
+      tárgy PONTOSAN egy helyen van (inventory VAGY piaci tétel).
+- [ ] **Két nyitott listázás (tranzakciónkénti jelző):** írásvédett napló mellett próbálj két
+      különböző tárgyat listázni, majd oldd fel és indíts újra → MINDKÉT tárgy előkerül
+      (egy közös jelző esetén a második felülírta volna az elsőt, és az elveszett volna).
+- [ ] **Rejtett tétel nem foglal helyet:** helyreállításra váró (még meg nem erősített) tétel
+      NEM számít bele a `market.max-listings-per-player` limitbe, és nem okoz hamis
+      „élő licites aukció nem vonható vissza" hibát.
+- [ ] **Sérült napló:** szemetet a `market-journal.yml`-be, újraindítás → `/market sell`
+      ELUTASÍT érthető magyar üzenettel („a tranzakció-napló most nem írható"), a GUI-vásárlás
+      is, az aukció-lezárás halasztódik; pénz és tárgy érintetlen.
+- [ ] **Aukció escrow:** A aukciót indít, B licitál, C túllicitál → B visszakapja a zárolt
+      licitet, C-től a nagyobb összeg levonva. Nyers leállítás + újraindítás: az egyenlegek
+      ugyanezek.
+
+### Kill-kontextus és jutalom-utak (CRIT-07)
+- [ ] **Kereszt-régiós ölés:** íjjal/spellel ölj mobot távoli régióban → az erszény/lélekkő/
+      kazamata-drop a MOB helyén, a kaszt-XP/lélekszilánk/pet-XP nálad, konzol-hiba NINCS.
+- [ ] **Nincs dupla erszény:** rúnás fegyver, `mob-money-drop.chance-percent: 100` + bónusz 50
+      → ölésenként PONTOSAN egy erszény.
+- [ ] **Kill-szintű retesz:** ugyanaz az ölés két jutalom-csatornán sem fizet kétszer (a retesz
+      az áldozat UUID-jéhez kötött, nem a kontextus-példányhoz).
+- [ ] **Kijelentkezés a hop előtt:** ölj mobot és AZONNAL lépj ki → nincs konzol-hiba.
+- [ ] **Előszűrők:** kreatívban / AFK-ban / spawner-mobra / saját minionra a FAUCET-jutalmak
+      nem fizetnek; spawner-mobnál a kaszt-XP és pet-XP IGEN.
+- [ ] **Ismert korlát (nyitott):** kereszt-régiós ölésnél a PÁRT-XP megosztás és a Vad Hajsza
+      személyes lootja némán elmaradhat (pozíció-olvasás az áldozat szálán, fail-open) — ezt
+      külön kör zárja, nem regresszió.

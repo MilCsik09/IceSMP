@@ -428,15 +428,40 @@ Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleg
 advancement tartalom-drift • doksi-szám ↔ mért érték • ARCHITECTURE.md csomagtérkép ↔ fájlrendszer •
 `/lore` téma-hármas (tab-complete ↔ szócikk ↔ usage-sor ↔ alias-cél).
 
-**MÉG NYITOTT — architekturális, több fájlt érintő tételek:**
-- `CRIT-06`: piac/wallet/inventory tartós tranzakció (idempotens write-ahead log; nem hoz be új
-  futásidejű függőséget, szemben az auditban javasolt SQLite-tal).
-- `CRIT-05`: tile-entity block-regen write-ahead journal (`PENDING → APPLYING → APPLIED`).
-- `CRIT-07` teljes: a `MobKillUtil` immutable `KillContext` DTO-ra + a gyilkos minden olvasása az
-  ő `EntityScheduler`-én (8 hívó listener). A `GameModeCache` csak a játékmód-olvasást zárta.
-- `CRIT-08`: `TransientEntities` + a rá épülő 9 world-event manager régió-lokális életciklusa.
-- `DEEP-HIGH-01` teljes (`PetSummonTransaction`), `DEEP-HIGH-07` (relikvia keep-ledger),
-  `HIGH-16`–`19` (raid/frakcióváltás/király/spec állapotgépek), a `DEEP-MED-*` és `MED-*` sáv.
+**P0-kör (2026-07-26, több-agentes implementáció + adversariális ellenőrzés):** a négy maradék
+kiadásblokkolót külön agentek írták diszjunkt fájlkészleteken, majd független ellenőrzők
+próbálták megdönteni. Mind a négyre kifogás érkezett — a leleteket kézzel visszaigazoltam:
 
-**Sorrend-javaslat a folytatáshoz:** `CRIT-06` → `CRIT-05` → `CRIT-07` → `CRIT-08` → `HIGH-16..19`.
+| Tétel | Döntés | Miért |
+|---|---|---|
+| `CRIT-05` | ✅ MEGTARTVA + javítva | A napló-architektúra kód-szinten helyes (a replay-sorrend, a zár-sorrend és a legacy-kompatibilitás végigkövethető). Az ellenőrző igaza volt egy ÚJ hibában: a `commit` bukása a teljes régió-taskot osztotta ki újra, ami a konténer NBT-jét is újra lerakta → korlátlan tárgy-duplikáció írásvédett lemeznél. Külön `restored` állapot: a világ-mutáció nem ismételhető, csak a véglegesítés. A `queue.contains` őr a késve lefutó, beragadt taskot is kizárja. Az érvénytelen blockdata ága most MEGNEVEZI az elvesző konténer-tartalmat. |
+| `CRIT-06` | ✅ MEGTARTVA + javítva | Két valóban kiváltható út zárva: (1) a `complete()` eldobta a lemez-írás eredményét, a `finish()` pedig feltétel nélkül a tanút — ebből „ingyen vásárlás" lett (a tárgy a vevőnél, a pénz visszaforgatva). Most a `complete()` booleant ad, és a tanú csak bizonyított lemez-törlés után esik ki. (2) Az egy-slotos átvétel-jelző helyett TRANZAKCIÓNKÉNTI PDC-kulcs — a második listázás eddig felülírta az elsőt, és a tárgy véglegesen elveszett. Plusz: a rejtett tétel nem foglal helyet a listázás-limitben, és a napló-hiba érthető magyar üzenetet ad (nem generikus „nem sikerült"). |
+| `CRIT-07` | ✅ MEGTARTVA + javítva | A megnevezett tünet (a gyilkos főkéz-olvasása az áldozat szálán) tényleg megszűnt. Két hamis szerződés javítva: a `dropSeed` már NEM kever `nanoTime`-ot (a kill-szintű determinizmus tényleg áll), a `claimOnce` retesz pedig kill-szintű (áldozat-UUID + csatorna) — példány-szinten a `MobLootListener` két kontextusa kétszer fizethetett volna. A pozíció-alapú megosztás (párt-XP, Vad Hajsza) NEM lett átvezetve: a javadoc hatóköre most ezt kimondja, a tétel nyitva marad. |
+| `CRIT-08` | ❌ VISSZAVONVA | Az ellenőrző bizonyított REGRESSZIÓT: a fail-open `isAlive` miatt az `InvasionManager.isActive()` örökre `true`-ba ragadhatott (nincs lejárati bélyeg), és a `MajorEventGate`-en át a world-boss / Vad Hajsza / kíséret / kultisták TERMÉSZETES indítását is letiltotta szerver-újraindításig; a minion-cap felszabadulása GC-függővé vált. A régi kód ugyanott helyes választ adott. Szál-helyességi kockázatot cseréltünk volna korlátlan, csak restarttal oldható gameplay-deadlockra — a `TransientEntities`/`MinionManager` visszaállt, a be nem kötött listener törölve. A tétel NYITVA marad. |
+
+**Tanulság a delegálásról:** a subagent-jelentések `build_result`/`checker_result` mezői
+mindhárom megtartott tételnél elavultak vagy vacuumok voltak („3 up-to-date" = a `compileJava`
+nem is futott). A leletet MINDIG a fő-agent futtatja újra — és a párhuzamos agentek egymás
+fájljait is pirosra vihetik, ezért a zöld ellenőrzés csak az INTEGRÁCIÓ után értelmezhető.
+
+**MÉG NYITOTT — architekturális, több fájlt érintő tételek:**
+- `CRIT-08`: `TransientEntities` + a rá épülő world-event managerek régió-lokális életciklusa.
+  A naiv fail-open változat VISSZAVONVA (lásd a P0-kör táblát). A helyes megoldás feltétele:
+  (a) minden világesemény-mob `track()`-elve legyen, (b) a halál/despawn/chunk-unload
+  eltávolítás-jelzés BE legyen kötve, (c) az `InvasionManager` kapjon lejárati bélyeget, hogy a
+  liveness-hiba SOSE tudjon esemény-deadlockot okozni. Fail-open liveness csak (a)+(b)+(c) mellett
+  biztonságos.
+- `CRIT-07` maradék: a pozíció-alapú jutalom-megosztás (`PartyManager.getNearbyMembers`,
+  `WildHuntManager.distributePersonalLoot`) még élő `Player`-t kap és az áldozat szálán olvas
+  pozíciót — kereszt-régiós ölésnél a párt-XP/personal loot némán elmarad (fail-open try/catch).
+  Ehhez a tagonkénti scheduler-hop + számláló-alapú join kell.
+- `CRIT-06` maradék (nem exploit, de teljesítés): a `tickAuctions` aukciónként TELJES
+  `currencyManager.save()`-et végez a MarketManager monitorát tartva, a globális szálon —
+  sok egyszerre lejáró aukciónál akadás. Kötegelt commit kell.
+- `DEEP-HIGH-01` teljes (`PetSummonTransaction`), `MED-14` (loot NaN/súly-normalizálás + a
+  kultista-loot közös eligibility), `HIGH-21` (claim-vizualizáció idegen régió), és a maradék
+  `DEEP-MED-*`/`MED-*`/`DEEP-LOW-*` tételek.
+
+**Sorrend-javaslat a folytatáshoz:** `CRIT-07` maradék (párt/Wild Hunt pozíció-hop) →
+`CRIT-08` a fenti (a)+(b)+(c) feltételekkel → `DEEP-HIGH-01` → `MED-14`.
 Mindegyik ugyanazzal a ritmussal: kézi igazolás a kódban → javítás → gépi őr → PLAYTEST-blokk → push.

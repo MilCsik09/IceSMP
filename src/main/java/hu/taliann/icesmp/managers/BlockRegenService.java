@@ -1,20 +1,20 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.BlockRegenJournal;
 import hu.taliann.icesmp.storage.PersistentStore;
-import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.TileState;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -23,28 +23,46 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * és az ostrom-rombolás így látványosan megtörténhetnek anélkül, hogy maradandó kárt
  * vagy zsákmányt adnának.
  *
- * Tile-entity blokkot (láda, kemence, spawner…) SOSEM veszünk fel: azok tartalmát nem
- * pillanatképezzük, ezért azokat a hívó köteles érintetlenül hagyni.
+ * Tile-entity blokkot csak bekapcsolt NBT-pillanatképpel veszünk fel; egyébként a hívó
+ * köteles érintetlenül hagyni.
  *
- * A várólista perzisztens (block-regen.yml): restart közben esedékessé váló
- * visszaépítés sem vész el — nem marad örök lyuk a városfalban.
+ * A várólista írás-előre naplón (BlockRegenJournal) keresztül perzisztens: a pillanatkép
+ * a konténer kiürítése ELŐTT kerül tartósan lemezre, és a rekord csak a sikeres
+ * visszaépítés véglegesítése után törlődik. Így sem összeomlás, sem leállás nem vihet el
+ * ládatartalmat, és nem marad örök lyuk a városfalban.
  */
 public final class BlockRegenService implements PersistentStore {
 
-
-
-    private record Entry(String world, int x, int y, int z, String blockData, String extra, long restoreAt) {
-    }
+    /** Kiosztott, de le nem futott régió-task felszabadítása (kirakott világ, leállás). */
+    private static final long IN_FLIGHT_TIMEOUT_MILLIS = 60_000L;
+    /** Halasztás, ha a pozíció még foglalt (élőlény) vagy nincs támasza. */
+    private static final long RETRY_MILLIS = 1_000L;
+    /** Halasztás, amíg a rekord világa nincs betöltve — a rekordot SOSEM dobjuk el. */
+    private static final long WORLD_WAIT_MILLIS = 30_000L;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final File storageFile;
-    private final Queue<Entry> queue = new ConcurrentLinkedQueue<>();
+    private final BlockRegenJournal journal;
+    private final Queue<BlockRegenJournal.Record> queue = new ConcurrentLinkedQueue<>();
+    /** id → kiosztás ideje: a régió-taskra adott rekord nem osztható ki újra. */
+    private final Map<Long, Long> inFlight = new ConcurrentHashMap<>();
+    /** id → újrapróbálás ideje: a halasztott rekord nem foglalja a menet-kvótát. */
+    private final Map<Long, Long> retryAfter = new ConcurrentHashMap<>();
+    /** Világonként egyszer naplózunk hiányzó világot — különben a tick elárasztja a logot. */
+    private final java.util.Set<String> missingWorldLogged = ConcurrentHashMap.newKeySet();
+    /**
+     * Már visszaépült rekordok. A világ-mutáció NEM ismételhető: napló-hiba után csak a
+     * véglegesítést próbáljuk újra. Enélkül a `commit` bukása a TELJES régió-taskot osztotta
+     * ki újra, amely feltétel nélkül újra lerakta az eredeti NBT-t — írásvédett data-könyvtár
+     * vagy tele lemez mellett a láda másodpercenként újratöltődött (korlátlan tárgy-duplikáció).
+     * Ugyanez zárja a késve lefutó, beragadt régió-taskot is: az nem írja át másodszor a blokkot.
+     */
+    private final java.util.Set<Long> restored = ConcurrentHashMap.newKeySet();
 
     public BlockRegenService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
-        this.storageFile = new File(plugin.getDataFolder(), "block-regen.yml");
+        this.journal = new BlockRegenJournal(plugin.getDataFolder(), plugin.getLogger());
     }
 
     public boolean isEnabled() {
@@ -137,7 +155,14 @@ public final class BlockRegenService implements PersistentStore {
                 plugin.getLogger().warning("Tile-entity pillanatkép hiba (" + block.getType() + "): " + ex);
                 return false; // pillanatkép nélkül inkább rúna-védelem, mint adatvesztés
             }
-            // A robbanás ne szórja ki a tartalmat: a pillanatkép UTÁN kiürítjük.
+            // Írás-előre napló: a pillanatkép ELŐBB tartósan (fsync-kelve) lemezre kerül,
+            // és CSAK utána ürül a konténer. A kiürítés után a tartalom egyetlen példánya
+            // a rekord, ezért napló-hiba esetén inkább nem robban a láda, mint hogy a
+            // tartalma nyomtalanul elvesszen.
+            final BlockRegenJournal.Record tileRecord = newRecord(block, extra, delayMillis);
+            if (!journal.appendPending(tileRecord, true)) {
+                return false;
+            }
             // Dupla ládánál CSAK a saját fél ürülhet — a getInventory() a közös
             // inventoryt adná, és a túlélő fél tartalma is elveszne.
             // getState(false): az ÉLŐ állapotot ürítjük, nem egy pillanatkép-másolatot —
@@ -147,15 +172,29 @@ public final class BlockRegenService implements PersistentStore {
             } else if (block.getState(false) instanceof org.bukkit.inventory.InventoryHolder holder) {
                 holder.getInventory().clear();
             }
-            queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
-                    block.getBlockData().getAsString(), extra, System.currentTimeMillis() + delayMillis));
-            pendingShield.add(posKey(block));
+            enqueue(tileRecord, block);
             return true;
         }
-        queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
-                block.getBlockData().getAsString(), null, System.currentTimeMillis() + delayMillis));
-        pendingShield.add(posKey(block));
+        // Sima blokknál a napló-bejegyzés hozzáfűzése elég (fsync nélkül): a blokk-adat
+        // nem megsemmisülő tartalom, egy elveszett jelölés legfeljebb ismételt
+        // visszaépítést okoz, a robbanás forró útja pedig nem áll meg lemez-szinkronra.
+        final BlockRegenJournal.Record record = newRecord(block, null, delayMillis);
+        if (!journal.appendPending(record, false)) {
+            return false;
+        }
+        enqueue(record, block);
         return true;
+    }
+
+    private BlockRegenJournal.Record newRecord(final Block block, final String extra, final long delayMillis) {
+        return new BlockRegenJournal.Record(journal.nextId(), block.getWorld().getName(),
+                block.getX(), block.getY(), block.getZ(), block.getBlockData().getAsString(),
+                extra, System.currentTimeMillis() + delayMillis);
+    }
+
+    private void enqueue(final BlockRegenJournal.Record record, final Block block) {
+        queue.add(record);
+        pendingShield.add(posKey(block));
     }
 
     /** pozíció → pajzs lejárta — a frissen visszaépített blokkot a fizika nem bánthatja. */
@@ -237,7 +276,7 @@ public final class BlockRegenService implements PersistentStore {
         return pendingShield.contains(posKey(block));
     }
 
-    private static String posKey(final Entry e) {
+    private static String posKey(final BlockRegenJournal.Record e) {
         return e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z();
     }
 
@@ -307,9 +346,13 @@ public final class BlockRegenService implements PersistentStore {
         final long historyWindow = Math.max(30L, configManager.getLong(
                 "territory.protection.regen.recapture-window-seconds", 600L)) * 1000L;
         captureHistory.values().removeIf(v -> now - v[1] > historyWindow);
-        final List<Entry> due = new ArrayList<>();
-        for (final Entry e : queue) {
-            if (e.restoreAt() <= now) {
+        retryAfter.values().removeIf(until -> until <= now);
+        // A régió-task elmaradhat (kirakott világ, leállás alatti kiosztás); a visszaépítés
+        // idempotens, ezért a beragadt kiosztás felszabadítása és újrapróbálása biztonságos.
+        inFlight.values().removeIf(since -> now - since > IN_FLIGHT_TIMEOUT_MILLIS);
+        final List<BlockRegenJournal.Record> due = new ArrayList<>();
+        for (final BlockRegenJournal.Record e : queue) {
+            if (e.restoreAt() <= now && !inFlight.containsKey(e.id()) && !retryAfter.containsKey(e.id())) {
                 due.add(e);
                 if (due.size() >= blocksPerPass()) {
                     break;
@@ -319,39 +362,61 @@ public final class BlockRegenService implements PersistentStore {
         if (due.isEmpty()) {
             return;
         }
-        queue.removeAll(due);
         // Alulról felfelé: a gravitációs blokk (homok, kavics) nem hullik ki a fal aljából.
-        due.sort(Comparator.comparingInt(Entry::y));
-        for (final Entry e : due) {
+        due.sort(Comparator.comparingInt(BlockRegenJournal.Record::y));
+        for (final BlockRegenJournal.Record e : due) {
             final World world = Bukkit.getWorld(e.world());
             if (world == null) {
-                pendingShield.remove(posKey(e));
+                // A világ nincs (még) betöltve: a rekord MARAD — eldobva a fal véglegesen
+                // lyukas maradna, a ládatartalom pedig visszahozhatatlan lenne.
+                retryAfter.put(e.id(), now + WORLD_WAIT_MILLIS);
+                if (missingWorldLogged.add(e.world())) {
+                    plugin.getLogger().warning("A(z) " + e.world() + " világ nincs betöltve — a "
+                            + "blokk-visszaépítés vár rá (a rekordok megmaradnak).");
+                }
                 continue;
             }
+            if (!missingWorldLogged.isEmpty()) {
+                missingWorldLogged.remove(e.world()); // újratöltött világ újra naplózhat
+            }
             final Location loc = new Location(world, e.x(), e.y(), e.z());
+            inFlight.put(e.id(), now);
+            journal.markApplying(e.id());
             Bukkit.getRegionScheduler().run(plugin, loc, task -> {
+                // Már véglegesített rekord (pl. késve lefutó, beragadt task): nincs mit tenni.
+                if (!queue.contains(e)) {
+                    inFlight.remove(e.id());
+                    retryAfter.remove(e.id());
+                    return;
+                }
+                // Már visszaépült, csak a napló-véglegesítés maradt el: CSAK azt próbáljuk
+                // újra — a világ-mutáció ismétlése konténernél tárgy-duplikáció lenne.
+                if (restored.contains(e.id())) {
+                    if (!commit(e)) {
+                        defer(e);
+                    }
+                    return;
+                }
                 try {
                     final org.bukkit.block.data.BlockData data = Bukkit.createBlockData(e.blockData());
                     final Block target = world.getBlockAt(e.x(), e.y(), e.z());
                     // Befalazás-védelem: élőlényre (játékosra!) sosem építünk rá —
-                    // amíg valaki a pozícióban áll, a blokk a sor végén várakozik.
+                    // amíg valaki a pozícióban áll, a blokk várakozik.
                     if (!target.getLocation().toCenterLocation().getNearbyLivingEntities(0.9D).isEmpty()) {
-                        queue.add(new Entry(e.world(), e.x(), e.y(), e.z(),
-                                e.blockData(), e.extra(), e.restoreAt()));
+                        defer(e);
                         return;
                     }
                     // Támasz-ellenőrzés: gravitációs blokk csak szilárd alapra, rátett
                     // blokk (fáklya, tábla, gomb…) csak létező támaszra kerül vissza —
                     // különben a következő fizika-frissítés leejtené/lepattintaná.
-                    // Amíg nincs támasz, a sor végére kerül; a grace lejárta után
-                    // mindenképp visszakerül (a sor nem ragadhat be körkörös függésen).
+                    // Amíg nincs támasz, halasztjuk; a grace lejárta után mindenképp
+                    // visszakerül (a sor nem ragadhat be körkörös függésen).
                     if (now - e.restoreAt() <= supportGraceMillis()) {
                         final boolean unsupported = data.getMaterial().hasGravity()
                                 ? !target.getRelative(org.bukkit.block.BlockFace.DOWN).isSolid()
                                 : !data.isSupported(loc);
                         if (unsupported) {
-                            queue.add(new Entry(e.world(), e.x(), e.y(), e.z(),
-                                    e.blockData(), e.extra(), e.restoreAt()));
+                            defer(e);
                             return;
                         }
                     }
@@ -359,7 +424,7 @@ public final class BlockRegenService implements PersistentStore {
                     // vissza (a közben odarakott blokk drop nélkül tűnik el — hadszíntér).
                     target.setBlockData(data, false);
                     restoreExtra(target, e.extra());
-                    pendingShield.remove(posKey(target));
+                    restored.add(e.id());
                     final long shield = physicsShieldMillis();
                     if (shield > 0L) {
                         physicsShield.put(posKey(target), System.currentTimeMillis() + shield);
@@ -371,12 +436,49 @@ public final class BlockRegenService implements PersistentStore {
                                 0.8F + (float) (Math.random() * 0.4D));
                         world.spawnParticle(org.bukkit.Particle.CLOUD, fx, 4, 0.25D, 0.25D, 0.25D, 0.01D);
                     }
-                } catch (final IllegalArgumentException ignored) {
-                    // Érvénytelenné vált blockdata (pl. verzióváltás) — kihagyjuk.
-                    pendingShield.remove(posKey(e));
+                    // A rekord CSAK a sikeres visszaépítés ÉS a napló véglegesítő írása
+                    // után kerül ki a sorból: e kettő között bármikor megszakadhat a
+                    // folyamat, a replay ilyenkor idempotensen újrafuttatja.
+                    if (!commit(e)) {
+                        defer(e);
+                    }
+                } catch (final IllegalArgumentException invalid) {
+                    // Érvénytelenné vált blockdata (pl. verzióváltás): ez a rekord SOSEM
+                    // épülhet vissza, ezért véglegesítjük — különben örökké újrapróbálná.
+                    // A tile-entity pillanatképe ilyenkor elveszik: a log NEVEZZE MEG a
+                    // helyet, hogy az admin kézzel pótolhassa a láda tartalmát.
+                    plugin.getLogger().warning("Visszaépíthetetlen blokk-adat kihagyva ("
+                            + e.blockData() + " @ " + e.world() + " " + e.x() + "," + e.y() + "," + e.z()
+                            + (e.extra() == null ? "" : "; a tárolt konténer-tartalom ELVESZIK")
+                            + "): " + invalid.getMessage());
+                    if (!commit(e)) {
+                        defer(e);
+                    }
                 }
             });
         }
+    }
+
+    /**
+     * Véglegesítés: a napló APPLIED-jelölése után a rekord kikerül a sorból. Napló-hiba
+     * esetén false — a rekord marad, a visszaépítés (idempotens) újrapróbálódik.
+     */
+    private boolean commit(final BlockRegenJournal.Record record) {
+        if (!journal.markApplied(record)) {
+            return false;
+        }
+        queue.remove(record);
+        pendingShield.remove(posKey(record));
+        inFlight.remove(record.id());
+        retryAfter.remove(record.id());
+        restored.remove(record.id());
+        return true;
+    }
+
+    /** Halasztás: a retryAfter ELŐBB áll be, különben a tick azonnal újra kiosztaná. */
+    private void defer(final BlockRegenJournal.Record record) {
+        retryAfter.put(record.id(), System.currentTimeMillis() + RETRY_MILLIS);
+        inFlight.remove(record.id());
     }
 
     /** A tile-entity pillanatkép visszatöltése (konténer-tartalom / tábla-szöveg). */
@@ -397,53 +499,38 @@ public final class BlockRegenService implements PersistentStore {
         }
     }
 
+    /**
+     * A napló replay-e: a félbehagyott (APPLYING) rekord ugyanúgy sorba kerül, mint a
+     * PENDING — a visszaépítés idempotens, ezért az újrafutás ugyanabba az állapotba visz.
+     */
     @Override
     public void load() {
         queue.clear();
         pendingShield.clear();
-        if (!storageFile.exists()) {
-            return;
-        }
-        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
-        for (final java.util.Map<?, ?> raw : yaml.getMapList("pending")) {
-            try {
-                queue.add(new Entry(String.valueOf(raw.get("world")),
-                        ((Number) raw.get("x")).intValue(), ((Number) raw.get("y")).intValue(),
-                        ((Number) raw.get("z")).intValue(), String.valueOf(raw.get("data")),
-                        raw.get("extra") == null ? null : String.valueOf(raw.get("extra")),
-                        ((Number) raw.get("at")).longValue()));
-
-            } catch (final RuntimeException ignored) {
-                // Sérült sor — a többi bejegyzés attól még betölt.
-            }
-        }
-        for (final Entry e : queue) {
-            pendingShield.add(posKey(e));
+        inFlight.clear();
+        retryAfter.clear();
+        restored.clear();
+        // /icesmp reload után a hiányzó világ újra figyelmeztethet (különben egyszer szólt,
+        // aztán soha).
+        missingWorldLogged.clear();
+        for (final BlockRegenJournal.Record record : journal.loadAll()) {
+            queue.add(record);
+            pendingShield.add(posKey(record));
         }
     }
 
+    /**
+     * Checkpoint + napló-rotáció. Leállításkor ez a drain: MINDEN élő rekord (a már
+     * kiosztott, de le nem futott visszaépítések is) a checkpointba kerül, mert a sorból
+     * csak a véglegesített rekord tűnik el.
+     */
     @Override
     public void save() {
-        final YamlConfiguration yaml = new YamlConfiguration();
-        final List<java.util.Map<String, Object>> out = new ArrayList<>();
-        for (final Entry e : queue) {
-            final java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
-            row.put("world", e.world());
-            row.put("x", e.x());
-            row.put("y", e.y());
-            row.put("z", e.z());
-            row.put("data", e.blockData());
-            if (e.extra() != null) {
-                row.put("extra", e.extra());
-            }
-            row.put("at", e.restoreAt());
-            out.add(row);
-        }
-        yaml.set("pending", out);
         try {
-            YamlStore.saveAtomic(storageFile, yaml);
+            // A sort MAGÁT adjuk át: a pillanatkép a napló zárolása alatt készül.
+            journal.checkpoint(queue);
         } catch (final java.io.IOException e) {
-            plugin.getLogger().severe("block-regen.yml mentési hiba: " + e);
+            plugin.getLogger().severe("block-regen checkpoint mentési hiba: " + e);
         }
     }
 }

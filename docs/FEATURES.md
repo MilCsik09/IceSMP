@@ -149,7 +149,9 @@
   indulási késleltetéssel (robbanás/ostrom/szabad bontás külön kulcs); blokkonként
   anyag-hű lerakás-hang + porfelhő; támasz-tudatos sorrend (gravitációs blokk csak
   alapra, fáklya csak falra — grace után kényszer); élőlényre SOSEM épül rá
-  (befalazás-védelem); restart-biztos perzisztens várólista (block-regen.yml).
+  (befalazás-védelem); crash-biztos várólista **write-ahead naplóval** (block-regen.yml
+  checkpoint + block-regen.wal napló): a láda NBT-pillanatképe már a kiürítés ELŐTT lemezre
+  kerül, és a rekord csak a sikeres visszaépítés véglegesítése után tűnik el.
 - **Tile-entity-k**: alapból "óvó rúnák" effekttel sérthetetlenek; kapcsolható
   teljes NBT-út (struktúra-pillanatkép): láda/shulker-tartalom, tábla-szöveg,
   fej-textúra, zászló-minta, spawner — robbanáskor semmi nem szóródik ki, minden

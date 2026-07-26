@@ -281,6 +281,8 @@ public final class MarketCommand implements BasicCommand {
             case "market-too-many-listings" -> "&cElérted a maximális tétel-számot a piacon.";
             case "amount-must-be-positive" -> "&cAz összegnek pozitívnak kell lennie.";
             case "market-relic-not-tradeable" -> "&cA relikviák nem bocsáthatók piacra — a börze a szilánkoké és az unique anyagoké.";
+            case "market-journal-unavailable" ->
+                    "&cA piac tranzakció-naplója most nem írható — a művelet biztonsági okból elmaradt. Próbáld újra kicsit később.";
             default -> "&cA listázás nem sikerült.";
         };
     }

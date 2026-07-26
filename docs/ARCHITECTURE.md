@@ -90,6 +90,21 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 - **`storage/PersistentStore { load(); save(); }`**: a 32 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
+- **Write-ahead napló (WAL) — ahol a mentés-időpont nem elég:** két rendszernek a következő
+  autosave-ig sem szabad kockáztatnia, mert közben a világból/inventoryból már eltűnt valami.
+  - **`storage/BlockRegenJournal`** (block-regen.yml checkpoint + `block-regen.wal` hozzáfűzéses
+    napló): a `PENDING → APPLYING → APPLIED` átmenetek soronként; a tile-entity NBT-pillanatképe
+    **fsync-elve** kerül lemezre a konténer kiürítése ELŐTT (napló-hiba = a blokk nem robban ki).
+    A rekord csak a sikeres visszaépítés + APPLIED-írás után esik ki. Indulásnál replay:
+    checkpoint → rotált napló → aktív napló. A már visszaépült rekord világ-mutációja **nem
+    ismételhető** (különben a konténer újratöltődne — tárgy-duplikáció).
+  - **`storage/TransactionJournal`** (market-journal.yml): a piaci művelet leírása (érintett
+    egyenlegek a művelet ELŐTTI absztolút értékkel + tárgy-pillanatkép) lemezre kerül, mielőtt
+    bármi módosulna; a commit-pont a valuta-fájl, majd a market.yml szinkron írása — utóbbi
+    hordozza a **tanút** (a commitolt tranzakció-azonosítót). A `complete()` visszatérési értéke
+    KÖTELEZŐEN vizsgálandó: tanút csak akkor dobunk el, ha a bejegyzés bizonyítottan eltűnt a
+    lemezről is. Az átvétel-jelző PDC-kulcsa **tranzakciónkénti** (egy közös kulcs a második
+    listázásnál felülírta volna az elsőt, és a tárgy elveszett volna).
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.

@@ -9,7 +9,6 @@ import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.utils.UndeadUtil;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -50,9 +49,10 @@ public final class SoulstoneListener implements Listener {
         }
 
         final LivingEntity entity = event.getEntity();
-        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
-                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);
-        if (killer == null) {
+        final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
+                hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
+                        hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);
+        if (kill == null) {
             return;
         }
 
@@ -62,7 +62,7 @@ public final class SoulstoneListener implements Listener {
         // Folia-biztos a mob régió-szálán is.)
         if (!configManager.getBoolean("currency.soul-drop.dark-undead-drops", false)
                 && UndeadUtil.isUndead(entity)
-                && factionManager.getFaction(killer.getUniqueId()) == FactionType.DARK) {
+                && factionManager.getFaction(kill.killerId()) == FactionType.DARK) {
             return;
         }
 
@@ -77,7 +77,7 @@ public final class SoulstoneListener implements Listener {
                 configManager.getDouble("currency.soul-drop.chance-percent", 25.0D)
                         * bloodMoonManager.getSoulDropMultiplier()));
         // Ritka variáns: emelt lélekkő-esély (rare-variant.soul-chance-multiplier).
-        if (hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(event.getEntity()) != null) {
+        if (hu.taliann.icesmp.managers.MobScalingManager.rareVariantOf(entity) != null) {
             chancePercent = Math.min(100.0D, chancePercent * Math.max(1.0D,
                     configManager.getDouble("rare-variant.soul-chance-multiplier", 2.0D)));
         }
@@ -87,7 +87,7 @@ public final class SoulstoneListener implements Listener {
 
         final int maxAmount = Math.max(1, configManager.getInt("currency.soul-drop.max-amount", 5));
         final int amount = Math.min(maxAmount, mobLevel - minLevel + 1);
-        if (!tryConsumeDailyBudget(killer.getUniqueId(), amount)) {
+        if (!tryConsumeDailyBudget(kill.killerId(), amount)) {
             return;
         }
         event.getDrops().add(currencyManager.createCurrencyItem(CurrencyType.DARK, amount));

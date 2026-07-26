@@ -93,7 +93,7 @@ public final class MobLootListener implements Listener {
         if (cultists != null && cultists.isCultist(entity)) {
             // A kultista-loot ugyanolyan érték-csap, mint a sima mob-loot: a közös FAUCET-előszűrőn
             // kell átmennie (survival-kapu, AFK-fék, spawner-kizárás), különben ez az ág kiskapu.
-            if (hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+            if (hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
                     hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) != null
                     && ThreadLocalRandom.current().nextDouble()
                     < configManager.getDouble("cultists.loot.chance", 0.35D)) {
@@ -112,7 +112,7 @@ public final class MobLootListener implements Listener {
         // Ordinary mobs may require a player kill; boss/event mobs always yield their loot
         // (környezeti halál is dobja őket — ezért a FAUCET-előszűrő csak a sima mob-ágon fut).
         if (!bossTier && configManager.getBoolean("loot.require-player-kill", true)
-                && hu.taliann.icesmp.utils.MobKillUtil.eligibleKiller(entity,
+                && hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
                         hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) == null) {
             return;
         }
