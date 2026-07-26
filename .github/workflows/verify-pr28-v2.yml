@@ -27,7 +27,26 @@ jobs:
         uses: gradle/actions/wrapper-validation@v4
 
       - name: Full Gradle build and JUnit tests
-        run: ./gradlew clean build --no-daemon --stacktrace
+        id: gradle
+        shell: bash
+        run: |
+          set +e
+          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr28-v2-gradle-log
+          path: /tmp/gradle.log
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Require successful Gradle build
+        run: test "${{ steps.gradle.outputs.status }}" -eq 0
 
       - name: Consistency delta against branch baseline
         shell: bash
