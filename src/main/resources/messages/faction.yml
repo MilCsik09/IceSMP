@@ -31,6 +31,7 @@ messages:
   faction-left: '&6Kiléptél a frakcióból.'
   faction-raid-already-active: '&cMár zajlik egy raid.'
   faction-raid-already-joined: '&7Már jelentkeztél ebbe a raidbe.'
+  faction-raid-combat-locked: '&cA harci szakasz már megkezdődött — nevezni csak a felkészülés alatt lehet.'
   faction-raid-combat-start: '<red>⚔ A raid harci szakasza megkezdődött ({attackerCount} vs {defenderCount})!{zone}</red>'
   faction-raid-ended: '<gold>⚔ A raid véget ért! Győztes: <white>{winner}</white> ({attackerPoints} - {defenderPoints} pont). Hadizsákmány: <white>{spoils}</white> a(z) {loser} kasszájából.</gold>'
   faction-raid-holding-point: '<gold>⚑ Pontot tartasz a(z) {territory} középpontján! (+{points})</gold>'
@@ -59,10 +60,10 @@ messages:
   faction-tax-evasion: '&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked. Törleszd a hátralékod, mielőtt a bűneid súlya a Kitaszítottak közé taszít!'
   faction-treasury-header: '&6Frakciókasszák:'
   faction-treasury-insufficient: '&cNincs ennyi a frakciókasszában.'
-  faction-treasury-king-only: '&cA kasszából csak a frakció királya (vagy admin) vehet ki.'
+  faction-treasury-king-only: '&cA kasszából csak a frakció királya (a Menedékben: a Vének Tanácsa) vagy admin vehet ki.'
   faction-treasury-line: '&e%s&7: &f%s'
   faction-treasury-own: '&6A(z) &f%s &6frakció kasszája: &f%s'
-  faction-treasury-withdraw-success: '&aKivét a kasszából: &f%s %s &7(a bankodba került).'
+  faction-treasury-withdraw-success: '&aKivét a kasszából: &f%s %s &7(veretben, a kezedbe).'
   siege-not-raid: <red>Az ostromágyú csak raid alatt működik.</red>
   sinner-marked: '&5A Mételytépő igazságot látott: &cBűnös lettél!'
   sinner.add-success: '<green>Bűn rögzítve: <white>{player}</white> <gray>(bűnök: <white>{count}</white>)</gray></green>'
@@ -80,7 +81,7 @@ messages:
   sinner.status: '<gray>{player}: bűnös: <white>{sinner}</white> | bűnök: <white>{count}</white> | sötét paktum: <white>{pact}</white></gray>'
   sinner.target-offline: <red>A célpont nem elérhető (offline).</red>
   sinner.theft-recorded: '<dark_purple>Bűnt követtél el: lopás a(z) {faction} frakció területén ({territory}). <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
-  sinner.usage: '<yellow>Használat: /sinner <játékos> <set|clear></yellow>'
+  sinner.usage: '<yellow>Használat: /sinner <játékos> <set|clear|add|status></yellow>'
   territory-build-denied: <red>Ez a(z) {faction} frakció területe — itt nem építhetsz.</red>
   territory-claim-success: '&aTerület kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)'
   territory-claim-usage: '&cHasználat: /territory claim <frakció> <azonosító> <sugár> [név...]'

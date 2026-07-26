@@ -100,7 +100,7 @@ public final class IceSMPCommand implements BasicCommand {
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+            sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
             return;
         }
 
@@ -120,7 +120,7 @@ public final class IceSMPCommand implements BasicCommand {
 
         if (args.length >= 1 && "config".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission(CONFIG_PERMISSION)) {
-                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
                 return;
             }
             handleConfig(sender, args);
@@ -129,7 +129,7 @@ public final class IceSMPCommand implements BasicCommand {
 
         if (args.length >= 1 && "inspect".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission(INSPECT_PERMISSION)) {
-                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultsagod erre a parancsra."));
+                sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogosultságod erre a parancsra."));
                 return;
             }
             handleInspect(sender, args);
@@ -336,7 +336,7 @@ public final class IceSMPCommand implements BasicCommand {
         ConfigValidator.validate(configManager, plugin.getLogger());
 
         sender.sendMessage(messageManager.get("admin.icesmp.config.set-success",
-                "&aBeállítva: &6%s &7= &f%s &7(%s). A legtöbb érték azonnal él; a szerverindításkor beépülők (pl. deklaratív spell-értékek) újraindítást igényelnek. A config-ellenőrző figyelmeztetései a konzolon.",
+                "&aBeállítva: &6%s &7= &f%s &7(%s). A legtöbb érték azonnal él (a spell-balansz is); újraindítás csak a szerkezethez kell: új parancs/listener/spell regisztrációja és a scheduler-időzítések. A config-ellenőrző figyelmeztetései a konzolon.",
                 key, String.valueOf(parsed), parsed.getClass().getSimpleName()));
     }
 

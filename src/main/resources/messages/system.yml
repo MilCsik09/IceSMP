@@ -2,12 +2,12 @@
 messages:
   ability-activated: '&dKépesség aktiválva!'
   ability-cooldown: '&cA képesség töltődik: &f%s &cmp maradék'
-  honor-eye-activated: '&dHonor Eye: &bA bűnösök &dfelfedve!'
+  honor-eye-activated: '&dBecsületszem: &bA bűnösök &dfelfedve!'
   honor-eye-subtitle: '&fA bűnösök nem rejtőzhetnek el'
   honor-eye-title: '&eBECSÜLETSZEM'
-  justice-activated: '&dJustice &faktiválva!'
+  justice-activated: '&dÍtélet &faktiválva!'
   justice-subtitle: '&dAz ítélet végrehajtva'
-  justice-title: <red>JUSTICE</red>
+  justice-title: <red>ÍTÉLET</red>
   no-target: '&7Nincs célpont a látómeződben.'
   # Natív láda-rendszer (IDEAS B8, CrazyCrates kiváltása) — /crate parancsok és CrateListener.
   crate-usage-buy: '&cHasználat: /crate buy <láda-id> [darab]'
@@ -48,7 +48,7 @@ messages:
         bank:
           deposit:
             hover: Kattints az összes fizikai valuta beváltásához.
-            label: DEPOSIT ALL
+            label: ÖSSZES BEFIZETÉSE
           tip: '<dark_gray>Tipp: ezek élő műveletek, a /profile újranyitása frissíti az egyenleget.</dark_gray>'
           title: <gold><b>Bank műveletek</b></gold>
           withdraw-blue:

@@ -32,6 +32,8 @@ RP nélküli teszthez cseréld őket a configban sima szövegre.
 | `%icesmp_balance%` | IceSMP-valutaegyenleg (formázva) |
 | `%icesmp_resource%`, `_max`, `_percent`, `_name`, `_bar` | Erő-forrás (Mana/Düh/…) |
 | `%icesmp_party_size%`, `%icesmp_party_1..5%` | party-tagok soronként |
+| `%icesmp_faction_color%` | a frakció puszta színkódja (`§c`/`§9`/`§7`/`§8`) — nametag/tab-prefix végére fűzve |
+| `%icesmp_event%` | az aktív világesemények egy sorban (max 2 név + `+N`) |
 
 *(A tab-nevek frakció-színét natívan a TablistManager adja — a fenti placeholderek csak
 külső megjelenítőknek, pl. BlueMap/Discord-hidaknak kellenek.)*

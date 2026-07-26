@@ -863,7 +863,7 @@ talents:
         per-rank: 0.6
         max-rank: 3
       fel_fury:
-        display-name: "Fel Düh"
+        display-name: "Kárhozat Dühe"
         tier: 3
         requires-spec: "havoc"
         requires-talent: "power"
@@ -896,7 +896,7 @@ talents:
         max-rank: 4
       # --- 3. szint: a hiányzó-szerep specek talentjei ---
       bark_mastery:
-        display-name: "Kéreg Mesteri"
+        display-name: "Kéreg Mestere"
         tier: 3
         requires-spec: "ironbark"
         requires-talent: "vitality"
@@ -1136,7 +1136,7 @@ talents:
         per-rank: 1.5
         max-rank: 3
       fel_power:
-        display-name: "Fel Hatalom"
+        display-name: "Kárhozat Hatalma"
         tier: 2
         requires-job: "demon_hunter"
         requires-talent: "power"

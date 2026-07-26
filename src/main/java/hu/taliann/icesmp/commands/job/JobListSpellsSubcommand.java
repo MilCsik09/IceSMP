@@ -28,7 +28,7 @@ public final class JobListSpellsSubcommand implements JobSubcommand {
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-listspells", "Regisztralt varazslatok listazasa (admin).");
+        return messageManager.get("messages.job-desc-listspells", "Regisztrált varázslatok listázása (admin).");
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class JobListSpellsSubcommand implements JobSubcommand {
                 .toList();
 
         if (spells.isEmpty()) {
-            sender.sendMessage(messageManager.get("messages.job-listspells-empty", "&eNincsenek regisztralt varazslatok."));
+            sender.sendMessage(messageManager.get("messages.job-listspells-empty", "&eNincsenek regisztrált varázslatok."));
             return true;
         }
 
@@ -64,7 +64,7 @@ public final class JobListSpellsSubcommand implements JobSubcommand {
 
         sender.sendMessage(messageManager.get(
                 "messages.job-listspells-result",
-                "&6Regisztralt varazslatok (%s): &e%s",
+                "&6Regisztrált varázslatok (%s): &e%s",
                 spells.size(),
                 joiner
         ));

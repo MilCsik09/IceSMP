@@ -316,11 +316,14 @@ public final class MobScalingManager {
         final boolean albino = java.util.concurrent.ThreadLocalRandom.current().nextBoolean();
         entity.getPersistentDataContainer().set(RARE_VARIANT_KEY,
                 org.bukkit.persistence.PersistentDataType.STRING, albino ? "albino" : "arnyek");
-        final String base = entity.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
-        entity.customName(net.kyori.adventure.text.Component.text(
-                (albino ? "✦ Albínó " : "☽ Árnyék-") + base,
+        // A fej fölött ÁLLANDÓAN látszó név: a nyers EntityType enum-név belső azonosító, ezért
+        // fordítható komponenst adunk — a kliens a SAJÁT nyelvén írja ki a mob nevét.
+        final net.kyori.adventure.text.format.NamedTextColor variantColor =
                 albino ? net.kyori.adventure.text.format.NamedTextColor.WHITE
-                        : net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
+                        : net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE;
+        entity.customName(net.kyori.adventure.text.Component
+                .text(albino ? "✦ Albínó " : "☽ Árnyék-", variantColor)
+                .append(net.kyori.adventure.text.Component.translatable(entity.getType()).color(variantColor)));
         entity.setCustomNameVisible(true);
         if (albino) {
             entity.addPotionEffect(new org.bukkit.potion.PotionEffect(

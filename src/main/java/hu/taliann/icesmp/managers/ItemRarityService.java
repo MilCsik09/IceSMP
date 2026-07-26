@@ -83,6 +83,18 @@ public final class ItemRarityService {
         return configManager.getBoolean("item-rarity.enabled", true);
     }
 
+    /**
+     * A tárgyra rollott raritás-fok id-je (pl. {@code "legendas"}), vagy null, ha nincs rajta.
+     * A mestermű-mérföldkő ebből dönt, hogy a craft a létra felső fokát adta-e.
+     */
+    public String rarityIdOf(final org.bukkit.inventory.ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return null;
+        }
+        return item.getItemMeta().getPersistentDataContainer()
+                .get(qualityKey, PersistentDataType.STRING);
+    }
+
     /** Whether the item already carries a rolled rarity (so it is not re-rolled). */
     public boolean isRolled(final ItemStack item) {
         if (item == null || !item.hasItemMeta()) {
@@ -198,7 +210,7 @@ public final class ItemRarityService {
         final String adjective = randomName && !rarity.adjectives().isEmpty()
                 ? rarity.adjectives().get(ThreadLocalRandom.current().nextInt(rarity.adjectives().size())) + " " : "";
         final Component baseName = randomName ? Component.text(adjective + nounFor(family, rolled.getType()))
-                : (meta.hasDisplayName() ? meta.displayName() : Component.text(prettyName(rolled.getType())));
+                : (meta.hasDisplayName() ? meta.displayName() : Component.translatable(rolled.getType()));
         meta.displayName(Component.text("[" + rarity.name() + "] ", colorOf(rarity.color()))
                 .decoration(TextDecoration.ITALIC, false).append(baseName));
         meta.getPersistentDataContainer().set(qualityKey, PersistentDataType.STRING, rarity.id());
@@ -206,6 +218,10 @@ public final class ItemRarityService {
         // A vanília attribútum-blokkot elrejtjük (a stat a fenti affix-lore-ban látszik) — a
         // data-komponens a setItemMeta UTÁN, különben törlődne.
         hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(rolled);
+        // A vanília RARITY a rollott fokot tükrözze, ne a Material alapértelmezését — így a
+        // vanília felületek a saját létránkkal konzisztensen kezelik a tárgyat.
+        hu.taliann.icesmp.items.ItemDataFactory.applyRarity(rolled,
+                hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rarity.id()));
         return rolled;
     }
 

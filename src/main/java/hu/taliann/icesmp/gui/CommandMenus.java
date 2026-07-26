@@ -133,7 +133,7 @@ public final class CommandMenus {
                         grey("tegyél bele vagy vegyél ki bármit."), click())), "OPEN:adomany");
         put(inv, holder, 31, GuiUtil.icon(Material.CRAFTING_TABLE, title("Recept-könyv"),
                 List.of(grey("Szakma-receptek: tanult/zárolt lista,"),
-                        grey("egyedi (rolled) craftok egy kattintással."), click())), "OPEN:profession recipes");
+                        grey("sorsolt minőségű craftok egy kattintással."), click())), "OPEN:profession recipes");
         put(inv, holder, 32, GuiUtil.icon(Material.CHISELED_BOOKSHELF, title("Bestiárium"),
                 List.of(grey("A krónikás-lajstromod: fajok, receptek,"),
                         grey("territóriumok, bossok — mérföldkövekkel."), click())), "OPEN:bestiarium");
@@ -252,10 +252,10 @@ public final class CommandMenus {
                                 + " (jelenlegi valutádban)", NamedTextColor.GOLD)),
                         label("Várakozás két váltás közt", Component.text(
                                 (long) ctx.factionManager().getSwitchCooldownHours() + " óra", NamedTextColor.WHITE)),
-                        grey("A Menedékből bárhová, s a Kitaszítottak"),
-                        grey("bárhonnan ingyenes a váltás."),
-                        Component.text("A passzívák azonnal cserélődnek,", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
-                        Component.text("közé a bűn visz — a paktum örök.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
+                        grey("A Menedékből bárhová ingyenes a váltás."),
+                        grey("A passzívák azonnal cserélődnek."),
+                        Component.text("A Kitaszítottak közé nem lépni lehet:", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
+                        Component.text("a bűn visz oda — és a paktum örök.", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))), null);
 
         putJoinButtons(inv, holder, player, ctx, current, "Váltás");
 

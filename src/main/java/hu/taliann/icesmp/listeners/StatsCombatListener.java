@@ -52,7 +52,7 @@ public final class StatsCombatListener implements Listener {
         if (event.getEntity() instanceof Player) {
             return;
         }
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
         if (killer != null) {
             statsManager.recordMobKill(killer.getUniqueId());
         }

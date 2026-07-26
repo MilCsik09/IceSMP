@@ -5,7 +5,6 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.SoulShardManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import org.bukkit.entity.Monster;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -51,27 +50,20 @@ public final class SoulShardListener implements Listener {
             return;
         }
 
-        final Player killer = event.getEntity().getKiller();
-        if (killer == null) {
-            return;
-        }
-        // Saját minion nem lélek-forrás; AFK-parkolt farm sem termel szilánkot
-        // (a testvér-listenerek — Soulstone/ClassXp — ugyanígy fékeznek).
-        if (hu.taliann.icesmp.managers.MinionManager.isMinionTagged(event.getEntity())) {
-            return;
-        }
-        final hu.taliann.icesmp.managers.AfkManager afkRef = afkManager;
-        if (afkRef != null && afkRef.isAfk(killer.getUniqueId())) {
+        final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
+                hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(event.getEntity(),
+                        hu.taliann.icesmp.utils.MobKillUtil.RewardKind.PROGRESSION, configManager, afkManager);
+        if (kill == null) {
             return;
         }
 
         // Folia: the death event runs on the mob's region thread; the killer is a DIFFERENT entity —
         // even the spec check reads its PDC. Hop first, then check + award on the killer's thread.
-        killer.getScheduler().run(plugin, task -> {
+        kill.runOnKiller(plugin, killer -> {
             if (specializationManager.getClassSpecialization(killer) != SpecializationType.NECROMANCER) {
                 return;
             }
             soulShardManager.addShards(killer, Math.max(0, configManager.getInt("souls.shards-per-kill", 1)));
-        }, null);
+        });
     }
 }

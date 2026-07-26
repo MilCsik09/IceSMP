@@ -530,7 +530,7 @@ profession-recipes:
     profession: alchemist
     level: 38
     learn: blueprint
-    display-name: "Elnyúló Regeneráció Főzet"
+    display-name: "Elnyúló Regeneráció Főzete"
     category: "Ital (tervrajz)"
     result: { material: LINGERING_POTION, amount: 2 }
     ingredients: [ "GHAST_TEAR:2", "DRAGON_BREATH:1", "GLASS_BOTTLE:2" ]
@@ -705,7 +705,7 @@ profession-recipes:
     profession: fisherman
     level: 14
     learn: level
-    display-name: "Csiszolt Prismarine"
+    display-name: "Csiszolt Prizmarin"
     category: "Tengeri Alapanyag"
     result: { material: PRISMARINE, amount: 2 }
     ingredients: [ "PRISMARINE_SHARD:8" ]
@@ -1162,7 +1162,7 @@ profession-recipes:
     profession: alchemist
     level: 28
     learn: level
-    display-name: "Kivonatos Regeneráció Főzet"
+    display-name: "Kivonatos Regeneráció Főzete"
     category: "Ital"
     result: { material: POTION, amount: 3 }
     ingredients: [ "GLASS_BOTTLE:3", "NETHER_WART:1", "unique:gyogy_kivonat:2" ]
@@ -1298,6 +1298,36 @@ profession-recipes:
     category: "Lángoló Birodalom (tervrajz)"
     result: { material: CROSSBOW, amount: 1, affix-tier: crafted, signature: pyralingradi_tuzkopo, item-model: "icesmp:pyralingradi_tuzkopo" }
     ingredients: [ "CROSSBOW:1", "BLAZE_ROD:4", "NETHERITE_INGOT:1", "unique:vad_esszencia:3" ]
+  pyralingradi_ostrom_szamszerij:
+    profession: armorer
+    level: 48
+    learn: blueprint
+    faction: RED
+    display-name: "Pyralingradi Ostrom-számszeríj"
+    lore:
+      - "&7Nem a papok áldása van rajta, hanem a"
+      - "&7Vérszavanna kohóinak súlya: két ember"
+      - "&7kellett, hogy felhúzzák."
+      - "&8Lassú, mint a homokvihar közeledése —"
+      - "&8de amit eltalál, azon átmegy."
+    category: "Lángoló Birodalom (tervrajz)"
+    # A tűzköpő PÁRJA, nem másolata: az a gyors őr-fegyver, ez a lassú ostromgép.
+    # A megkülönböztetés mechanikai is: Piercing V (egy vasszálka egy egész sorral végez),
+    # 2,5 mp saját cooldown-csoport (két ember húzza fel), és a súly mozgás-lassítás.
+    result:
+      material: CROSSBOW
+      amount: 1
+      affix-tier: crafted
+      signature: pyralingradi_ostrom_szamszerij
+      item-model: "icesmp:pyralingradi_ostrom_szamszerij"
+      rarity: legendas
+      enchant: "minecraft:piercing:5"
+      attributes:
+        - "movement_speed:-0.02:mainhand"
+      use-cooldown:
+        group: "ostrom_szamszerij"
+        seconds: 2.5
+    ingredients: [ "CROSSBOW:1", "NETHERITE_INGOT:2", "COPPER_BLOCK:4", "unique:melysegi_borostyan:2" ]
   verszavanna_agyara:
     profession: armorer
     level: 50
@@ -2591,7 +2621,7 @@ profession-recipes:
     level: 36
     learn: level
     display-name: "Erdőjáró Pajzs"
-    category: "Eszköz"
+    category: "Páncél"
     result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:mefonott_pajzs", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "OAK_PLANKS:6", "IRON_INGOT:1", "unique:favedo_pac:1" ]
   erdei_lampasoszlop:
@@ -2762,7 +2792,7 @@ profession-recipes:
     level: 31
     learn: level
     display-name: "Dudoros Hadipajzs"
-    category: "Eszköz"
+    category: "Páncél"
     result: { material: SHIELD, affix-tier: crafted, item-model: "icesmp:pajzsdudor", attributes: [ "knockback_resistance:0.1" ] }
     ingredients: [ "IRON_INGOT:3", "OAK_PLANKS:4", "unique:edzoolaj:1" ]
   gyemant_lopancel:
@@ -3913,6 +3943,18 @@ profession-recipes:
   # A result.consumable blokk vezérli a fogyasztást (kód nélkül): animation (eat|drink),
   # seconds, nutrition, saturation, always-edible, effects ["TÍPUS:másodperc:szint"].
   # Kocsma-italok (DRINK) + tájfogások — rövid, NEM harc-eldöntő buffok.
+  ures_kupa:
+    profession: cook
+    level: 5
+    learn: level
+    display-name: "Üres Kupa"
+    category: "Ital"
+    lore:
+      - "Egyszerű ivókupa — a kocsma alapja."
+      - "Minden ital ebbe készül, és megivás"
+      - "után ez marad a kezedben."
+    result: { material: GLASS_BOTTLE, amount: 4, unique: ures_kupa, item-model: "icesmp:ures_kupa" }
+    ingredients: [ "GLASS:2" ]
   jeghegyi_sor:
     profession: cook
     level: 10
@@ -3925,12 +3967,13 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:jeghegyi_sor"
       consumable:
         animation: drink
         seconds: 1.6
         effects: [ "REGENERATION:20:0", "ABSORPTION:20:0" ]
-    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:2", "SUGAR:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:2", "SUGAR:1", "unique:ures_kupa:1" ]
   parazs_palinka:
     profession: cook
     level: 14
@@ -3938,17 +3981,18 @@ profession-recipes:
     display-name: "Parázs Pálinka"
     category: "Ital"
     lore:
-      - "Pyralingrad kohóiban érlelt tűzitalt —"
+      - "Pyralingrad kohóiban érlelt tűzital —"
       - "a torkod égeti, a bőröd viszont megvédi."
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:parazs_palinka"
       consumable:
         animation: drink
         seconds: 1.6
         effects: [ "FIRE_RESISTANCE:45:0", "STRENGTH:30:0" ]
-    ingredients: [ "HONEY_BOTTLE:1", "BLAZE_POWDER:1", "NETHER_WART:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "BLAZE_POWDER:1", "NETHER_WART:1", "unique:ures_kupa:1" ]
   caldesterai_gyogytea:
     profession: cook
     level: 8
@@ -3961,17 +4005,18 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:caldesterai_gyogytea"
       consumable:
         animation: drink
         seconds: 1.4
         effects: [ "REGENERATION:15:0" ]
-    ingredients: [ "HONEY_BOTTLE:1", "GLOW_BERRIES:2", "SUGAR:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "GLOW_BERRIES:2", "SUGAR:1", "unique:ures_kupa:1" ]
   mortengradi_keseru:
     profession: cook
     level: 12
     learn: level
-    display-name: "Mortengrádi Keserű"
+    display-name: "Mortengradi Keserű"
     category: "Ital"
     lore:
       - "A Kitaszítottak keserű nedűje —"
@@ -3979,12 +4024,13 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:mortengradi_keseru"
       consumable:
         animation: drink
         seconds: 1.6
         effects: [ "NIGHT_VISION:90:0", "ABSORPTION:30:0" ]
-    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:1", "CRIMSON_FUNGUS:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:1", "CRIMSON_FUNGUS:1", "unique:ures_kupa:1" ]
   vandor_pogacsaja:
     profession: cook
     level: 6
@@ -4037,9 +4083,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:hamvasztott_kave"
       consumable: { animation: drink, seconds: 1.4, effects: [ "HASTE:30:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "COCOA_BEANS:2", "BLAZE_POWDER:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "COCOA_BEANS:2", "BLAZE_POWDER:1", "unique:ures_kupa:1" ]
   kofejto_sore:
     profession: cook
     level: 10
@@ -4050,9 +4097,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:kofejto_sore"
       consumable: { animation: drink, seconds: 1.6, effects: [ "RESISTANCE:20:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:3" ]
+    ingredients: [ "HONEY_BOTTLE:1", "WHEAT:3", "unique:ures_kupa:1" ]
   tengeresz_rum:
     profession: cook
     level: 12
@@ -4063,9 +4111,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:tengeresz_rum"
       consumable: { animation: drink, seconds: 1.6, effects: [ "WATER_BREATHING:60:0", "JUMP_BOOST:30:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "SUGAR:2", "KELP:2" ]
+    ingredients: [ "HONEY_BOTTLE:1", "SUGAR:2", "KELP:2", "unique:ures_kupa:1" ]
   arnyeklikor:
     profession: cook
     level: 18
@@ -4076,9 +4125,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:arnyeklikor"
       consumable: { animation: drink, seconds: 1.6, effects: [ "INVISIBILITY:15:0", "SPEED:20:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:2", "FERMENTED_SPIDER_EYE:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "INK_SAC:2", "FERMENTED_SPIDER_EYE:1", "unique:ures_kupa:1" ]
   aranyfeny_mezsor:
     profession: cook
     level: 9
@@ -4089,9 +4139,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:aranyfeny_mezsor"
       consumable: { animation: drink, seconds: 1.6, effects: [ "LUCK:60:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "HONEYCOMB:2", "GOLD_NUGGET:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "HONEYCOMB:2", "GOLD_NUGGET:1", "unique:ures_kupa:1" ]
   viharfi_almabor:
     profession: cook
     level: 7
@@ -4102,9 +4153,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:viharfi_almabor"
       consumable: { animation: drink, seconds: 1.4, effects: [ "SPEED:30:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "SWEET_BERRIES:3", "SUGAR:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "SWEET_BERRIES:3", "SUGAR:1", "unique:ures_kupa:1" ]
   jegkiraly_parlat:
     profession: cook
     level: 14
@@ -4115,9 +4167,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:jegkiraly_parlat"
       consumable: { animation: drink, seconds: 1.6, effects: [ "RESISTANCE:15:0", "SLOW_FALLING:30:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "SNOWBALL:2", "SUGAR:1" ]
+    ingredients: [ "HONEY_BOTTLE:1", "SNOWBALL:2", "SUGAR:1", "unique:ures_kupa:1" ]
   szentelt_bor:
     profession: cook
     level: 16
@@ -4128,9 +4181,10 @@ profession-recipes:
     result:
       material: HONEY_BOTTLE
       amount: 1
+      use-remainder: "unique:ures_kupa"
       item-model: "icesmp:szentelt_bor"
       consumable: { animation: drink, seconds: 1.6, effects: [ "REGENERATION:10:1", "ABSORPTION:40:0" ] }
-    ingredients: [ "HONEY_BOTTLE:1", "GLISTERING_MELON_SLICE:1", "GLOW_BERRIES:2" ]
+    ingredients: [ "HONEY_BOTTLE:1", "GLISTERING_MELON_SLICE:1", "GLOW_BERRIES:2", "unique:ures_kupa:1" ]
   pasztor_urucomb:
     profession: cook
     level: 6

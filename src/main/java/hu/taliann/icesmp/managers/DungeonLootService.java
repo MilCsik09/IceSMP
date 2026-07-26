@@ -311,7 +311,7 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
             return;
         }
         final org.bukkit.configuration.file.YamlConfiguration yaml =
-                org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(storageFile);
+                hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final var chestSection = yaml.getConfigurationSection("chests");
         if (chestSection != null) {
             for (final String key : chestSection.getKeys(false)) {

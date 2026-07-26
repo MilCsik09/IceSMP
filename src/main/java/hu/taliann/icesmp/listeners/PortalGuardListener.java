@@ -66,7 +66,7 @@ public final class PortalGuardListener implements Listener {
         event.setCancelled(true);
         event.getPlayer().sendActionBar(messageManager.getMessage(
                 "end-portal-blocked",
-                "<dark_purple>⛩ A Vég kapuja némán mered rád — a pecsétjét még nem törte fel senki. (Az End egy későbbi fejezetben nyílik meg.)</dark_purple>"));
+                "<dark_purple>⛩ A Vég kapuja némán mered rád — a pecsétjét még nem törte fel senki. (A Vég egy későbbi fejezetben nyílik meg.)</dark_purple>"));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -81,6 +81,6 @@ public final class PortalGuardListener implements Listener {
         event.setCancelled(true);
         event.getPlayer().sendActionBar(messageManager.getMessage(
                 "end-portal-blocked",
-                "<dark_purple>⛩ A Vég kapuja némán mered rád — a pecsétjét még nem törte fel senki. (Az End egy későbbi fejezetben nyílik meg.)</dark_purple>"));
+                "<dark_purple>⛩ A Vég kapuja némán mered rád — a pecsétjét még nem törte fel senki. (A Vég egy későbbi fejezetben nyílik meg.)</dark_purple>"));
     }
 }

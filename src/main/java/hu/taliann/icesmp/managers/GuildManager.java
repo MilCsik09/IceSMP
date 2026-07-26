@@ -74,7 +74,7 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection root = yaml.getConfigurationSection("guilds");
         if (root == null) {
             return;
@@ -262,6 +262,47 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         }
         save();
         return null;
+    }
+
+    /**
+     * Frakcióváltás utáni egyeztetés: a céh definíció szerint EGY frakción belüli szervezet, ezért
+     * más frakcióba lépve a tagság megszűnik.
+     *
+     * <p>Enélkül a váltó játékos az ellenséges oldalról vezethette tovább a régi frakció céhét, az
+     * ott teljesített questjei a régi céh XP-jét növelték, és a céhkasszát a RÉGI frakció
+     * valutájában kezelhette — a tagsági plafon és a céh politikai szerepe így megkerülhető volt.
+     *
+     * <p>Vezető esetén az irányítás a legrégebbi másik tagra száll; ha nincs másik tag, a céh
+     * megszűnik (a kasszája vele együtt — üres céhet nem tartunk fenn).
+     *
+     * @return a céh neve, amiből a játékos kilépett, vagy {@code null}, ha nem volt mit egyeztetni
+     */
+    public synchronized String reconcileFaction(final UUID playerId, final FactionType newFaction) {
+        final Guild guild = getGuild(playerId);
+        if (guild == null || guild.faction == newFaction) {
+            return null;
+        }
+        final String name = guild.name;
+        guild.members.remove(playerId);
+        memberGuild.remove(playerId);
+        if (playerId.equals(guild.leader)) {
+            if (guild.members.isEmpty()) {
+                guilds.remove(guild.id);
+            } else {
+                guild.leader = guild.members.get(0);
+            }
+        }
+        save();
+        // A játékos SAJÁT szálán értesítünk (Folia): a váltást kiváltó parancs futhat máshol.
+        final org.bukkit.entity.Player online = org.bukkit.Bukkit.getPlayer(playerId);
+        if (online != null) {
+            online.getScheduler().run(plugin, task -> online.sendMessage(messageManager.getMessage(
+                    "guild-left-on-faction-switch",
+                    "<gold>⚜ A céh a frakcióval együtt marad: kiléptél a(z) <white>{guild}</white> "
+                            + "céhből, mert az egy másik hatalom szervezete.</gold>",
+                    java.util.Map.of("guild", name))), null);
+        }
+        return name;
     }
 
     public synchronized String kick(final Player leader, final UUID targetId) {

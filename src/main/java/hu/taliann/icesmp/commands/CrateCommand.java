@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.managers.CrateManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
@@ -262,7 +263,4 @@ public final class CrateCommand implements BasicCommand {
         return List.of();
     }
 
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }

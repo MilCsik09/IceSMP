@@ -47,7 +47,7 @@ messages:
   claim-protected: '&c✖ Ez a terület claimelve van ({owner}).'
   claim-show: '&7Claim-határok kirajzolva pár másodpercre (zöld=sajátod, láng=másé, komposzt=szabad chunk).'
   claim-success-free: '&aTerület lefoglalva! (&f%s&a birtokod van — még az ingyenes keretből)'
-  claim-success-paid: '&aTerület lefoglalva! (&f%s&a birtokod van) Ár: &f%s&a (elégett — money sink).'
+  claim-success-paid: '&aTerület lefoglalva! (&f%s&a birtokod van) Ár: &f%s&a (a díj elégett — nem kerül senkihez).'
   claim-trust-self: '&cMagadat nem kell megbíznod.'
   claim-trusted: '&aMegbízott hozzáadva minden claimedhez: &f%s'
   claim-unclaimed: '&aChunk felszabadítva. &7(Az ár nem jár vissza — elégett.)'

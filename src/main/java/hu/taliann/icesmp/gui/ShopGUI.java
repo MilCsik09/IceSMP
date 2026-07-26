@@ -5,6 +5,7 @@ import hu.taliann.icesmp.managers.ShopManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -81,7 +82,14 @@ public final class ShopGUI {
         lore.add(messageManager.getMessage("shop-lore-buy", "&eKattints a vásárláshoz!"));
         meta.lore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
-        meta.displayName(Component.text(material.name(), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        // A bolt-tétel konfigurált neve nyer; enélkül a KLIENS saját nyelvű tárgyneve —
+        // a nyers Material enum-név belső azonosító, annak nincs helye a magyar boltban.
+        final String configuredName = item.getString("name");
+        meta.displayName(configuredName != null && !configuredName.isBlank()
+                ? LegacyComponentSerializer.legacyAmpersand().deserialize(configuredName)
+                        .decoration(TextDecoration.ITALIC, false)
+                : Component.translatable(material).color(NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, false));
         display.setItemMeta(meta);
         return display;
     }

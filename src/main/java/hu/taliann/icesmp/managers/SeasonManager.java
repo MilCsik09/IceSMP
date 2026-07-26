@@ -1,9 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.storage.PersistentStore;
-
 import hu.taliann.icesmp.storage.YamlStore;
-
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -27,11 +25,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Seasonal league: factions earn points from raid
- * victories and world boss kills over a configurable season. When the season
- * ends, the leading faction is crowned champion and its treasury receives the
- * season reward; points reset and a new season begins. State persists to
- * season.yml; expiry is checked on the global world-events tick.
+ * Seasonal league: factions earn points from raid victories and world boss kills over a
+ * configurable season. State persists to season.yml; expiry is checked on the global tick.
  */
 public final class SeasonManager implements PersistentStore, org.bukkit.event.Listener {
 
@@ -41,22 +36,28 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     private final FactionTreasuryManager treasuryManager;
     private final FactionManager factionManager;
     private final File storageFile;
+    /** Minden pont/nyugta mutáció, snapshot, tartós írás és rollback közös monitora. */
+    private final Object stateLock = new Object();
     private final Map<FactionType, Integer> points = new ConcurrentHashMap<>();
+    /**
+     * Már alkalmazott, azonosítóhoz kötött pont-jóváírások. A bejegyzés a pontokkal EGY atomi
+     * fájl-képbe kerül, ezért a hívó (kifizetés-outbox) pontosan egyszeri alkalmazást kap.
+     */
+    private final Map<String, Long> appliedGrants = new ConcurrentHashMap<>();
+    // Grant-nyugtát nem szabad véges darabszám alapján kidobni: egy hosszan függő outbox
+    // későbbi replaye különben újra alkalmazhatná a már kifizetett rész-jutalmat.
     /** J9 — fejezet-sorszám: a szezon = story-fejezet; váltáskor nő, perzisztens. */
     private volatile int seasonNumber = 1;
     /** G16 — nagydöntő-hétvége: bejelentés-flag (szezononként egyszer, volatilis). */
     private volatile boolean grandFinaleAnnounced;
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
-    /**
-     * Gameplay-audit: a szezonzáráskor OFFLINE bajnok-tagok függő jutalma (perzisztens) —
-     * belépéskor kapják meg a tárgy-jutalmat, ahogy a profession-weekly pending mintája.
-     */
+    /** Offline bajnok-tagok függő tárgyjutalma. */
     private final java.util.Set<java.util.UUID> pendingChampionSpoils = ConcurrentHashMap.newKeySet();
-
     private volatile long seasonStart = System.currentTimeMillis();
 
     public SeasonManager(final JavaPlugin plugin, final ConfigManager configManager,
-                         final MessageManager messageManager, final FactionTreasuryManager treasuryManager,
+                         final MessageManager messageManager,
+                         final FactionTreasuryManager treasuryManager,
                          final FactionManager factionManager) {
         this.plugin = plugin;
         this.configManager = configManager;
@@ -68,41 +69,57 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     public void load() {
-        points.clear();
-        seasonStart = System.currentTimeMillis();
+        synchronized (stateLock) {
+            points.clear();
+            appliedGrants.clear();
+            seasonStart = System.currentTimeMillis();
 
-        if (!storageFile.exists()) {
-            save();
-            return;
-        }
+            if (!storageFile.exists()) {
+                writeStateLocked();
+                return;
+            }
 
-        try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
-            seasonStart = yaml.getLong("season.start", System.currentTimeMillis());
-            seasonNumber = Math.max(1, yaml.getInt("season.number", 1));
-            final ConfigurationSection pointsSection = yaml.getConfigurationSection("season.points");
-            if (pointsSection != null) {
-                for (final String factionKey : pointsSection.getKeys(false)) {
-                    final FactionType faction = FactionType.fromInput(factionKey);
-                    if (faction != null) {
-                        points.put(faction, Math.max(0, pointsSection.getInt(factionKey, 0)));
+            try {
+                final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
+                seasonStart = yaml.getLong("season.start", System.currentTimeMillis());
+                seasonNumber = Math.max(1, yaml.getInt("season.number", 1));
+                final ConfigurationSection grants = yaml.getConfigurationSection("season.applied-grants");
+                if (grants != null) {
+                    for (final String key : grants.getKeys(false)) {
+                        appliedGrants.put(key, grants.getLong(key, System.currentTimeMillis()));
                     }
                 }
-            }
-            pendingChampionSpoils.clear();
-            for (final String uuid : yaml.getStringList("season.pending-champion-spoils")) {
-                try {
-                    pendingChampionSpoils.add(java.util.UUID.fromString(uuid));
-                } catch (final IllegalArgumentException ignored) {
-                    // Sérült bejegyzés — kihagyjuk.
+                final ConfigurationSection pointsSection = yaml.getConfigurationSection("season.points");
+                if (pointsSection != null) {
+                    for (final String factionKey : pointsSection.getKeys(false)) {
+                        final FactionType faction = FactionType.fromInput(factionKey);
+                        if (faction != null) {
+                            points.put(faction, Math.max(0, pointsSection.getInt(factionKey, 0)));
+                        }
+                    }
                 }
+                pendingChampionSpoils.clear();
+                for (final String uuid : yaml.getStringList("season.pending-champion-spoils")) {
+                    try {
+                        pendingChampionSpoils.add(java.util.UUID.fromString(uuid));
+                    } catch (final IllegalArgumentException ignored) {
+                        // Sérült bejegyzés — kihagyjuk.
+                    }
+                }
+            } catch (final Exception exception) {
+                plugin.getLogger().severe("Failed to load season.yml: " + exception.getMessage());
             }
-        } catch (final Exception exception) {
-            plugin.getLogger().severe("Failed to load season.yml: " + exception.getMessage());
         }
     }
 
     public void save() {
+        synchronized (stateLock) {
+            writeStateLocked();
+        }
+    }
+
+    /** A hívónak tartania kell a stateLock monitort. */
+    private boolean writeStateLocked() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("season.start", seasonStart);
@@ -110,37 +127,174 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             for (final Map.Entry<FactionType, Integer> entry : points.entrySet()) {
                 yaml.set("season.points." + entry.getKey().name(), entry.getValue());
             }
+            for (final Map.Entry<String, Long> entry : appliedGrants.entrySet()) {
+                yaml.set("season.applied-grants." + entry.getKey(), entry.getValue());
+            }
             if (!pendingChampionSpoils.isEmpty()) {
                 yaml.set("season.pending-champion-spoils",
                         pendingChampionSpoils.stream().map(java.util.UUID::toString).toList());
             }
 
             YamlStore.saveAtomic(storageFile, yaml);
+            return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season.yml: " + exception.getMessage());
+            return false;
         }
     }
 
-    public int getPoints(final FactionType faction) {
-        return faction == null ? 0 : points.getOrDefault(faction, 0);
+    /**
+     * Kompatibilis idempotens pont-jóváírás: a live szabályok szerint kiszámított deltát ugyanazon
+     * lock alatt alkalmazza. No-opot nem ACK-ol, mert az később jogos jutalmat zárhatna le.
+     */
+    public boolean addPointsOnce(final String grantId, final FactionType faction,
+                                 final int amount, final String source) {
+        synchronized (stateLock) {
+            if (grantId == null || grantId.isBlank()) {
+                return false;
+            }
+            if (appliedGrants.containsKey(grantId)) {
+                return true;
+            }
+            final int exactDelta = calculatePointsDeltaLocked(faction, amount, source);
+            if (exactDelta <= 0) {
+                return false;
+            }
+            return addExactPointsOnceLocked(grantId, faction, exactDelta);
+        }
     }
 
     /**
-     * G16 — a nagydöntő-ablak: a szezon utolsó `top2-window-hours` órája (alap 48 —
-     * a záró hétvége). Ekkor a top2 frakció pont-jóváírásai duplán számítanak.
+     * A teljesítés pillanatában kiszámítja a VÉGLEGES, frakcióra alkalmazandó deltát. Ezt kell az
+     * outbox immutable pillanatképébe írni; replaykor már nem szabad újraszámolni.
      */
+    public int calculatePointsDelta(final FactionType faction, final int amount,
+                                    final String source) {
+        synchronized (stateLock) {
+            return calculatePointsDeltaLocked(faction, amount, source);
+        }
+    }
+
+    /** Több frakció végleges deltáját egyetlen konzisztens season-state snapshot alatt számolja. */
+    public Map<FactionType, Integer> calculatePointsDeltas(
+            final Iterable<FactionType> factions, final int amount, final String source) {
+        if (factions == null) {
+            return Map.of();
+        }
+        synchronized (stateLock) {
+            final java.util.EnumMap<FactionType, Integer> deltas =
+                    new java.util.EnumMap<>(FactionType.class);
+            for (final FactionType faction : factions) {
+                final int delta = calculatePointsDeltaLocked(faction, amount, source);
+                if (delta > 0) {
+                    deltas.put(faction, delta);
+                }
+            }
+            return Map.copyOf(deltas);
+        }
+    }
+
+    private int calculatePointsDeltaLocked(final FactionType faction, final int amount,
+                                            final String source) {
+        if (faction == null || amount <= 0
+                || !configManager.getBoolean("world-events.season.enabled", true)) {
+            return 0;
+        }
+        final String sourceKey = source == null || source.isBlank() ? "other" : source;
+        final double weight = Math.max(0.0D, configManager.getDouble(
+                "world-events.season.source-weights." + sourceKey + "."
+                        + faction.name().toLowerCase(java.util.Locale.ROOT), 1.0D));
+        final long weightedLong = Math.round(amount * weight);
+        if (weightedLong <= 0L) {
+            return 0;
+        }
+        final int weighted = (int) Math.min(Integer.MAX_VALUE, weightedLong);
+
+        // A két idő-szorzó nem szorzódik össze; a nagyobbik érvényesül.
+        final SeasonFinaleManager finaleRef = seasonFinale;
+        double timeMultiplier = finaleRef == null
+                ? 1.0D : Math.max(1.0D, finaleRef.leaguePointMultiplier());
+        if (isGrandFinaleWindowLocked() && topTwoLocked().contains(faction)) {
+            timeMultiplier = Math.max(timeMultiplier, Math.max(1.0D,
+                    configManager.getDouble(
+                            "world-events.season-finale.top2-point-multiplier", 2.0D)));
+        }
+        final long scaledLong = Math.round(weighted * timeMultiplier);
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(weighted, scaledLong));
+    }
+
+    /**
+     * Immutable outboxból érkező exact-delta alkalmazása. Sem configot, sem időablakot, sem
+     * ranglistát nem olvas újra; a nyugta és a pont egyetlen atomi fájlképbe kerül.
+     */
+    public boolean addExactPointsOnce(final String grantId, final FactionType faction,
+                                      final int exactDelta) {
+        synchronized (stateLock) {
+            return addExactPointsOnceLocked(grantId, faction, exactDelta);
+        }
+    }
+
+    private boolean addExactPointsOnceLocked(final String grantId, final FactionType faction,
+                                             final int exactDelta) {
+        if (grantId == null || grantId.isBlank() || faction == null || exactDelta <= 0) {
+            return false;
+        }
+        if (appliedGrants.containsKey(grantId)) {
+            return true;
+        }
+
+        final Integer previous = points.get(faction);
+        mergeExactPointsLocked(faction, exactDelta);
+        appliedGrants.put(grantId, System.currentTimeMillis());
+        if (!YamlStore.isLoadFailed(storageFile) && writeStateLocked()) {
+            return true;
+        }
+
+        appliedGrants.remove(grantId);
+        if (previous == null) {
+            points.remove(faction);
+        } else {
+            points.put(faction, previous);
+        }
+        return false;
+    }
+
+    private void mergeExactPointsLocked(final FactionType faction, final int delta) {
+        final long sum = (long) points.getOrDefault(faction, 0) + delta;
+        points.put(faction, (int) Math.min(Integer.MAX_VALUE, sum));
+    }
+
+    public int getPoints(final FactionType faction) {
+        synchronized (stateLock) {
+            return faction == null ? 0 : points.getOrDefault(faction, 0);
+        }
+    }
+
+    /** G16 — a nagydöntő-ablak: a szezon utolsó konfigurált órái. */
     public boolean isGrandFinaleWindow() {
+        synchronized (stateLock) {
+            return isGrandFinaleWindowLocked();
+        }
+    }
+
+    private boolean isGrandFinaleWindowLocked() {
         if (!configManager.getBoolean("world-events.season-finale.top2-enabled", true)) {
             return false;
         }
         final long windowMillis = Math.max(1, configManager.getInt(
                 "world-events.season-finale.top2-window-hours", 48)) * 3_600_000L;
-        final long remaining = getSeasonEndMillis() - System.currentTimeMillis();
+        final long remaining = getSeasonEndMillisLocked() - System.currentTimeMillis();
         return remaining > 0 && remaining <= windowMillis;
     }
 
-    /** A liga-tábla első két helyezettje (pont szerint csökkenő). */
+    /** A liga-tábla első két helyezettje. */
     public java.util.List<FactionType> topTwo() {
+        synchronized (stateLock) {
+            return topTwoLocked();
+        }
+    }
+
+    private java.util.List<FactionType> topTwoLocked() {
         return points.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
                 .limit(2)
@@ -150,11 +304,14 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     /** G16 — az ablak nyíltakor egyszeri szerver-broadcast a párosítással. */
     private void announceGrandFinale() {
-        if (grandFinaleAnnounced || !isGrandFinaleWindow()) {
-            return;
+        final java.util.List<FactionType> top;
+        synchronized (stateLock) {
+            if (grandFinaleAnnounced || !isGrandFinaleWindowLocked()) {
+                return;
+            }
+            grandFinaleAnnounced = true;
+            top = topTwoLocked();
         }
-        grandFinaleAnnounced = true;
-        final java.util.List<FactionType> top = topTwo();
         if (top.size() < 2) {
             return;
         }
@@ -164,82 +321,64 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 Map.of("first", top.get(0).getDisplayName(), "second", top.get(1).getDisplayName())));
     }
 
-    /** J9 — az aktuális fejezet (szezon) sorszáma; a quest `chapter:` mező erre szűr. */
-    /** A futó szezon hányadik napja (1-től; a quests min/max-season-day kapuja használja). */
+    /** A futó szezon hányadik napja (1-től). */
     public int getSeasonDay() {
-        return (int) Math.max(1L, (System.currentTimeMillis() - seasonStart) / 86_400_000L + 1L);
+        synchronized (stateLock) {
+            return (int) Math.max(1L,
+                    (System.currentTimeMillis() - seasonStart) / 86_400_000L + 1L);
+        }
     }
 
     public int getSeasonNumber() {
-        return seasonNumber;
+        synchronized (stateLock) {
+            return seasonNumber;
+        }
     }
 
-    /** A futó szezon kezdő-bélyege — stabil szezon-azonosító (a hossz élő átírása sem mozdítja). */
+    /** A futó szezon kezdő-bélyege. */
     public long getSeasonStart() {
-        return seasonStart;
+        synchronized (stateLock) {
+            return seasonStart;
+        }
     }
 
     public long getSeasonEndMillis() {
-        final long lengthDays = Math.max(1L, configManager.getLong("world-events.season.length-days", 60L));
+        synchronized (stateLock) {
+            return getSeasonEndMillisLocked();
+        }
+    }
+
+    private long getSeasonEndMillisLocked() {
+        final long lengthDays = Math.max(1L,
+                configManager.getLong("world-events.season.length-days", 60L));
         return seasonStart + (lengthDays * 24L * 60L * 60L * 1000L);
     }
 
-    /**
-     * Awards league points to a faction (raid victory, world boss kill...).
-     *
-     * @param faction the scoring faction
-     * @param amount the points
-     */
     public void addPoints(final FactionType faction, final int amount) {
         addPoints(faction, amount, "other");
     }
 
-    /**
-     * Awards league points from a named source. A tulaj-döntés szerinti aszimmetrikus
-     * liga: a 2+1+1 frakció-felállásban mindenki a SAJÁT identitás-útján pontoz
-     * erősebben — a forrás-súlyt a world-events.season.source-weights.&lt;forrás&gt;.&lt;frakció&gt;
-     * mátrix adja (default 1.0; 0 = a forrás nem ér pontot annak a frakciónak).
-     * A súly a NYERS pontra hat, a B33/G16 idő-szorzók UTÁNA jönnek.
-     *
-     * @param faction the scoring faction
-     * @param amount the raw points
-     * @param source the point source key (raid, world-boss, community, cleanse, duel, spy…)
-     */
+    /** Awards league points from a named source. */
     public void addPoints(final FactionType faction, final int amount, final String source) {
-        if (faction == null || amount <= 0
-                || !configManager.getBoolean("world-events.season.enabled", true)) {
-            return;
+        final int exactDelta;
+        synchronized (stateLock) {
+            exactDelta = calculatePointsDeltaLocked(faction, amount, source);
+            if (exactDelta <= 0) {
+                return;
+            }
+            mergeExactPointsLocked(faction, exactDelta);
         }
-        final double weight = Math.max(0.0D, configManager.getDouble(
-                "world-events.season.source-weights." + source + "."
-                        + faction.name().toLowerCase(java.util.Locale.ROOT), 1.0D));
-        final int weighted = (int) Math.round(amount * weight);
-        if (weighted <= 0) {
-            return;
-        }
-
-        // A két idő-szorzó NEM szorzódik össze (×4-es hógolyó lenne a záró
-        // 48 órában) — a NAGYOBBIK érvényesül: végítélet-hét max ×2 VAGY top2-nagydöntő
-        // ×2, együtt is legfeljebb ×2 (a forrás-súllyal együtt max ×3).
-        final SeasonFinaleManager finaleRef = seasonFinale;
-        double timeMultiplier = finaleRef == null ? 1.0D : Math.max(1.0D, finaleRef.leaguePointMultiplier());
-        if (isGrandFinaleWindow() && topTwo().contains(faction)) {
-            timeMultiplier = Math.max(timeMultiplier, Math.max(1.0D,
-                    configManager.getDouble("world-events.season-finale.top2-point-multiplier", 2.0D)));
-        }
-        final int scaled = Math.max(weighted, (int) Math.round(weighted * timeMultiplier));
-        points.merge(faction, scaled, Integer::sum);
         requestSave();
     }
 
-    /** Setter-injected finálé-eszkaláció (a finálé-manager később épül a DI-sorrendben). */
+    /** Setter-injected finálé-eszkaláció. */
     private volatile SeasonFinaleManager seasonFinale;
 
     public void setSeasonFinale(final SeasonFinaleManager seasonFinale) {
         this.seasonFinale = seasonFinale;
     }
 
-    /** Setter-injected korszakváltás-narrátor (a StatsManager később épül a DI-sorrendben). */
+    /** Setter-injected korszakváltás-narrátor. */
     private volatile Runnable seasonResetHook;
 
     public void setSeasonResetHook(final Runnable seasonResetHook) {
@@ -259,7 +398,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         this.monumentManager = monumentManager;
     }
 
-    /** Debounced async flush: point awards can burst (raid payouts), one write covers them all. */
+    /** Debounced async flush. */
     private void requestSave() {
         if (saveScheduled.compareAndSet(false, true)) {
             plugin.getServer().getAsyncScheduler().runDelayed(plugin, task -> {
@@ -279,10 +418,29 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             return;
         }
 
+        // A közösségi outbox a szezonzárás tartós kapuja. Ha részleges payout vagy íráshiba
+        // maradt, a hook kivételt dob, ezért nem osztunk bajnoki jutalmat és nem nullázzuk a
+        // régi szezon pontjait; a következő tick biztonságosan újrapróbálja.
+        final Runnable resetHook = this.seasonResetHook;
+        if (resetHook != null) {
+            try {
+                resetHook.run();
+            } catch (final RuntimeException blocked) {
+                plugin.getLogger().severe("Szezonzárás elhalasztva: " + blocked.getMessage());
+                return;
+            }
+        }
+
+        final java.util.Map<FactionType, Integer> closingPoints;
+        synchronized (stateLock) {
+            closingPoints = new java.util.EnumMap<>(FactionType.class);
+            closingPoints.putAll(points);
+        }
+
         FactionType champion = null;
         int best = 0;
         boolean tie = false;
-        for (final Map.Entry<FactionType, Integer> entry : points.entrySet()) {
+        for (final Map.Entry<FactionType, Integer> entry : closingPoints.entrySet()) {
             if (entry.getValue() > best) {
                 champion = entry.getKey();
                 best = entry.getValue();
@@ -292,9 +450,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             }
         }
 
-        // Záró-összegző MINDENKINEK: 60 nap liga-munka nem érhet véget visszajelzés
-        // nélkül a mezőny 3/4-ének.
-        final java.util.List<Map.Entry<FactionType, Integer>> standings = points.entrySet().stream()
+        final java.util.List<Map.Entry<FactionType, Integer>> standings = closingPoints.entrySet().stream()
                 .filter(entry -> entry.getValue() > 0)
                 .sorted(Map.Entry.<FactionType, Integer>comparingByValue().reversed())
                 .toList();
@@ -304,7 +460,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                 if (i > 0) {
                     summary.append(" <gray>•</gray> ");
                 }
-                summary.append(i + 1).append(". ").append(standings.get(i).getKey().getDisplayName())
+                summary.append(i + 1).append(". ")
+                        .append(standings.get(i).getKey().getDisplayName())
                         .append(" <gray>(").append(standings.get(i).getValue()).append(")</gray>");
             }
             Bukkit.getServer().broadcast(messageManager.getMessage(
@@ -313,24 +470,23 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     Map.of("standings", summary.toString())));
         }
 
-        // A korszakváltás-narratíva a pont-reset ELŐTT gyűjti a statisztikát.
         final SeasonStoryTeller storyRef = storyTeller;
         if (champion == null || tie || best <= 0) {
             Bukkit.getServer().broadcast(messageManager.getMessage(
                     "season-ended-no-champion",
-                    "<gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>"
-            ));
+                    "<gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>"));
             if (storyRef != null) {
                 storyRef.tellTransition(null);
             }
         } else {
-            final double reward = Math.max(0.0D, configManager.getDouble("world-events.season.treasury-reward", 1000.0D));
+            final double reward = Math.max(0.0D,
+                    configManager.getDouble("world-events.season.treasury-reward", 1000.0D));
             if (reward > 0.0D) {
                 treasuryManager.deposit(champion, reward);
-                // Lépcsőzetes jutalom: a 2-3. hely is kap (fél/negyed kassza) — a
-                // winner-takes-all a mezőny nagyját motiválatlanul hagyná.
-                final java.util.List<Double> ratios = configManager.getDoubleList("world-events.season.runner-up-ratios");
-                final java.util.List<Double> liveRatios = ratios.isEmpty() ? java.util.List.of(0.5D, 0.25D) : ratios;
+                final java.util.List<Double> ratios = configManager.getDoubleList(
+                        "world-events.season.runner-up-ratios");
+                final java.util.List<Double> liveRatios = ratios.isEmpty()
+                        ? java.util.List.of(0.5D, 0.25D) : ratios;
                 for (int i = 1; i < standings.size() && i - 1 < liveRatios.size(); i++) {
                     final double share = reward * Math.max(0.0D, liveRatios.get(i - 1));
                     if (share > 0.0D) {
@@ -345,57 +501,57 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     Map.of(
                             "champion", champion.getDisplayName(),
                             "points", String.valueOf(best),
-                            "reward", String.valueOf(reward)
-                    )
-            ));
+                            "reward", String.valueOf(reward))));
 
-            // Member-facing spoils: the champion faction's online members get a victory buff,
-            // configured item rewards and a celebratory firework — each on their own region thread.
             awardChampionMembers(champion);
             if (storyRef != null) {
                 storyRef.tellTransition(champion);
             }
-            // A bajnok kőbe vésve — a pont-reset ELŐTT (a hős-toplista még érvényes).
             final SeasonMonumentManager monumentRef = monumentManager;
             if (monumentRef != null) {
                 monumentRef.recordSeason(champion);
             }
         }
 
-        points.clear();
-        seasonStart = System.currentTimeMillis();
-        // Új fejezet nyílik: a fejezet-questek (chapter: N) ehhez a sorszámhoz kötődnek.
-        seasonNumber++;
-        // A szezonhoz kötött társ-rendszerek (pl. közösségi célok) is tiszta lappal indulnak.
-        final Runnable resetHook = this.seasonResetHook;
-        if (resetHook != null) {
-            resetHook.run();
+        final int openedChapter;
+        synchronized (stateLock) {
+            // A closing snapshot után érkező pontok már az új szezon eseményei. Mivel minden
+            // pontmutáció ugyanazon lockon fut és csak növel, a snapshot feletti többletet
+            // átvisszük, nem töröljük el egy versenyhelyzetben.
+            final java.util.EnumMap<FactionType, Integer> carry =
+                    new java.util.EnumMap<>(FactionType.class);
+            for (final FactionType faction : FactionType.values()) {
+                final int current = points.getOrDefault(faction, 0);
+                final int closed = closingPoints.getOrDefault(faction, 0);
+                if (current > closed) {
+                    carry.put(faction, current - closed);
+                }
+            }
+            points.clear();
+            points.putAll(carry);
+            seasonStart = System.currentTimeMillis();
+            seasonNumber++;
+            openedChapter = seasonNumber;
+            grandFinaleAnnounced = false;
         }
-        grandFinaleAnnounced = false; // az új szezon nagydöntője újra hirdethető
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-chapter-opened",
                 "<gold>📖 Új fejezet nyílik a krónikában: <white>{chapter}. fejezet</white> — a régi fejezet küldetései lezárultak, újak várnak!</gold>",
-                Map.of("chapter", String.valueOf(seasonNumber))));
+                Map.of("chapter", String.valueOf(openedChapter))));
         save();
     }
 
-    /**
-     * Grants the champion faction's online members their season spoils: a
-     * victory buff, any configured reward items, and a celebratory firework.
-     * Runs from tick() on the global scheduler, so every player mutation and
-     * the firework spawn hop to that player's own region thread (Folia).
-     *
-     * @param champion the winning faction
-     */
+    /** Grants the champion faction's online members their season spoils. */
     private void awardChampionMembers(final FactionType champion) {
-        final int buffMinutes = Math.max(0, configManager.getInt("world-events.season.champion-buff-minutes", 30));
-        final java.util.List<String> rewardItems = configManager.getStringList("world-events.season.champion-reward-items");
-        final boolean firework = configManager.getBoolean("world-events.season.champion-firework", true);
+        final int buffMinutes = Math.max(0,
+                configManager.getInt("world-events.season.champion-buff-minutes", 30));
+        final java.util.List<String> rewardItems = configManager.getStringList(
+                "world-events.season.champion-reward-items");
+        final boolean firework = configManager.getBoolean(
+                "world-events.season.champion-firework", true);
 
-        // Az OFFLINE bajnok-tagok se maradjanak ki — a tárgy-jutalmuk
-        // függőbe kerül (perzisztens), belépéskor kapják meg (a buff/tűzijáték nem
-        // időszerű már, az csak az ünneplés pillanatáé).
-        for (final Map.Entry<java.util.UUID, FactionType> member : factionManager.getFactionAssignments().entrySet()) {
+        for (final Map.Entry<java.util.UUID, FactionType> member
+                : factionManager.getFactionAssignments().entrySet()) {
             if (member.getValue() == champion && Bukkit.getPlayer(member.getKey()) == null) {
                 pendingChampionSpoils.add(member.getKey());
             }
@@ -409,9 +565,12 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             online.getScheduler().run(plugin, task -> {
                 if (buffMinutes > 0) {
                     final int durationTicks = buffMinutes * 60 * 20;
-                    online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, durationTicks, 0, false, true, true));
-                    online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, durationTicks, 0, false, true, true));
-                    online.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, durationTicks, 0, false, true, true));
+                    online.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
+                            durationTicks, 0, false, true, true));
+                    online.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
+                            durationTicks, 0, false, true, true));
+                    online.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE,
+                            durationTicks, 0, false, true, true));
                 }
 
                 giveRewardItems(online, rewardItems);
@@ -422,31 +581,26 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
                 online.sendMessage(messageManager.getMessage(
                         "season-champion-member",
-                        "<gold>🏆 A frakciód lett a szezon bajnoka — fogadd a győzelmi jutalmadat!</gold>"
-                ));
+                        "<gold>🏆 A frakciód lett a szezon bajnoka — fogadd a győzelmi jutalmadat!</gold>"));
             }, null);
         }
     }
 
-    /**
-     * Gameplay-audit: a szezonzáráskor offline maradt bajnok-tag belépéskor kapja meg
-     * a tárgy-jutalmát. A join-event a játékos saját régió-szálán fut — az inventory-írás
-     * ott biztonságos.
-     */
+    /** Offline bajnok-tag belépéskor kapja meg a tárgy-jutalmát. */
     @org.bukkit.event.EventHandler
     public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
         if (!pendingChampionSpoils.remove(event.getPlayer().getUniqueId())) {
             return;
         }
-        giveRewardItems(event.getPlayer(), configManager.getStringList("world-events.season.champion-reward-items"));
+        giveRewardItems(event.getPlayer(), configManager.getStringList(
+                "world-events.season.champion-reward-items"));
         event.getPlayer().sendMessage(messageManager.getMessage(
                 "season-champion-member-late",
-                "<gold>🏆 A frakciód megnyerte az előző szezont — a győzelmi jutalmad megőriztük, fogadd!</gold>"
-        ));
+                "<gold>🏆 A frakciód megnyerte az előző szezont — a győzelmi jutalmad megőriztük, fogadd!</gold>"));
         requestSave();
     }
 
-    /** Hands over the configured "MATERIAL:AMOUNT" reward items, dropping any overflow. */
+    /** Hands over the configured MATERIAL:AMOUNT reward items, dropping overflow. */
     private void giveRewardItems(final Player player, final java.util.List<String> rewardItems) {
         for (final String entry : rewardItems) {
             final String[] parts = entry.split(":");
@@ -462,12 +616,14 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                     // Malformed amount: give one.
                 }
             }
-            final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(new ItemStack(material, amount));
-            leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+            final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(
+                    new ItemStack(material, amount));
+            leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(
+                    player.getLocation(), item));
         }
     }
 
-    /** Spawns a short celebratory firework at the player (must run on the player's region thread). */
+    /** Spawns a short celebratory firework at the player. */
     private void spawnCelebrationFirework(final Player player) {
         final Firework firework = player.getWorld().spawn(player.getLocation(), Firework.class);
         final FireworkMeta meta = firework.getFireworkMeta();

@@ -117,10 +117,14 @@ public final class HonorDuelManager implements PlayerStateCleanup {
         // Folia: az accept az ELFOGADÓ szálán fut — a kihívó PDC-jét a SAJÁT
         // régió-szálán írjuk (cross-region PDC-írás tilos).
         challenger.getScheduler().run(plugin, task -> {
-            challenger.getPersistentDataContainer().set(weekKey, PersistentDataType.LONG, week);
-            final int used = challenger.getPersistentDataContainer()
-                    .getOrDefault(countKey, PersistentDataType.INTEGER, 0);
-            challenger.getPersistentDataContainer().set(countKey, PersistentDataType.INTEGER, used + 1);
+            final var pdc = challenger.getPersistentDataContainer();
+            // A hét-váltást a számláló ELŐTT kell eldönteni: a hét-kulcs korai átírása után
+            // a beolvasott count még az ELŐZŐ hétből származott, tehát az új hét első
+            // párbaja a régi fogyásról indult.
+            final long storedWeek = pdc.getOrDefault(weekKey, PersistentDataType.LONG, -1L);
+            final int used = storedWeek == week ? pdc.getOrDefault(countKey, PersistentDataType.INTEGER, 0) : 0;
+            pdc.set(weekKey, PersistentDataType.LONG, week);
+            pdc.set(countKey, PersistentDataType.INTEGER, used + 1);
         }, null);
         final long end = System.currentTimeMillis()
                 + Math.max(30, configManager.getInt("honor-duel.window-seconds", 180)) * 1000L;
@@ -132,6 +136,9 @@ public final class HonorDuelManager implements PlayerStateCleanup {
     }
 
     public boolean declined(final Player target) {
+        // A lejárat-bélyeget IS el kell dobni: enélkül a visszautasítás után a célpont a
+        // kihívás lejáratáig „duel-pending" hibát kapott minden új felkérésre.
+        pendingExpiry.remove(target.getUniqueId());
         return pending.remove(target.getUniqueId()) != null;
     }
 

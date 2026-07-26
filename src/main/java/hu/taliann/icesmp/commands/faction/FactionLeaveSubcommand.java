@@ -86,7 +86,11 @@ public final class FactionLeaveSubcommand implements FactionSubcommand {
         }
 
         final boolean leavingDark = currentFaction == FactionType.DARK;
-        factionManager.removeFaction(player.getUniqueId());
+        // EXPLICIT Semleges, nem a bejegyzés törlése: a törölt hozzárendelést a következő
+        // /faction join „első választásnak" látta, ezért a leave+join páros megkerülte a
+        // semleges-főváros kaput, a szezon-hajrá zárát és a váltás-cooldownt. „Nincs
+        // bejegyzés" mostantól csak a valóban új játékos állapota.
+        factionManager.setFaction(player.getUniqueId(), FactionType.NEUTRAL);
         final hu.taliann.icesmp.managers.SpecializationManager specs = this.specializationManager;
         if (leavingDark && specs != null && specs.resetDarkGatedSpecialization(player)) {
             player.sendMessage(messageManager.get("messages.dark-spec-lost",

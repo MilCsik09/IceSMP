@@ -41,10 +41,24 @@ public final class StrangerNpcManager {
     /** Setter-injected (a guard később épül a DI-sorrendben); null = nincs hely-korlát. */
     private volatile EventSpawnGuard spawnGuard;
 
-    private volatile long nextAttemptAt;
+    /**
+     * Az Idegen egyszerre CSAK EGY példányban mutatkozhat (a magányos, talányos alak a lényege).
+     * A spawn két szálon hopol, ezért az activeStrangerId csak a lánc végén áll be — addig a
+     * schedule rezervációja zárja ki, hogy a tick és a /events force két Idegent állítson.
+     */
+    private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
+            new hu.taliann.icesmp.utils.PeriodicChanceEvent();
+
+    /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul (öngyógyulás). */
+    private static final long SPAWN_GRACE_MILLIS = 10_000L;
+
     private volatile UUID activeStrangerId;
 
-    /** Talányos sor-variánsok (messages-kulcs: stranger-line-1..6). */
+    /**
+     * Talányos sor-variánsok; a messages-kulcs soronkénti: {@code stranger-line-<index+1>}.
+     * Az Idegen az egyik fő sztori-csatorna a kódex olvasása NÉLKÜL: a sorok kánon-elemeket
+     * tanítanak (a Fa négy gyermeke, a Hasadás, a Káoszkor, a Suttogók, a Kapu).
+     */
     private static final String[] LINES = {
             "<dark_gray>„A Fa gyökerei mélyebbre nyúlnak, mint a Királynő álma… és mindkettő alattad van.”</dark_gray>",
             "<dark_gray>„Hallod? A Csend nem üres. A Csend vár.”</dark_gray>",
@@ -74,7 +88,23 @@ public final class StrangerNpcManager {
             "<dark_gray>„Olethropyla. Régen így hívtuk. Én még emlékszem, KI adta ezt a nevet.”</dark_gray>",
             "<dark_gray>„A holtak városának két neve van. Az élők adták mindkettőt. A holtak nem adnak nevet semminek.”</dark_gray>",
             "<dark_gray>„A komp a szoroson jár. Én a szoros alatt jártam. Nem ajánlom.”</dark_gray>",
-            "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>"
+            "<dark_gray>„Ha legközelebb találkozunk, ne köszönj. Úgy tovább beszélgethetünk.”</dark_gray>",
+            "<dark_gray>„A Számvevők a pénzt írják. A Könyv a döntéseket. Csak az egyiket lehet visszafizetni.”</dark_gray>",
+            "<dark_gray>„Négy uralkodó neve maradt fenn: Zhoris, Miinus, Benedictus, Lineata. Kérdezd meg, hol vannak.”</dark_gray>",
+            "<dark_gray>„Majd’ három évszázada nem halt meg koronás fő öregségben. Ezt nevezik ők rendnek.”</dark_gray>",
+            "<dark_gray>„A Fának négy gyermeke volt. Hármat imádnak. A negyediket kifelejtették — de ő emlékszik.”</dark_gray>",
+            "<dark_gray>„Soleil lángot vitt, Kallan pikkelyt, Arkynn erdőt. Eleftheria csendet kapott. Melyik ajándék tartott ki?”</dark_gray>",
+            "<dark_gray>„A csillag, ami a Fát ültette, még mindig ott van a földben. Néha kőként hullik vissza az égből.”</dark_gray>",
+            "<dark_gray>„Az első évben megrepedt a világ. Azóta minden térkép egy seb két partja.”</dark_gray>",
+            "<dark_gray>„Kétfelé szórtak minket, hogy ne öljük egymást. Ügyes terv volt. Hét háborúig működött.”</dark_gray>",
+            "<dark_gray>„A Kárhozat Kapuja nem bejárat. Kifelé nyílik — és nem a te oldaladról.”</dark_gray>",
+            "<dark_gray>„A rontás alulról nő. Ezért nem segít, ha felfelé nézel, amikor rossz szagot érzel.”</dark_gray>",
+            "<dark_gray>„A Fa adott neked egy tárgyat, amit nem tudsz eldobni. Gondolkodj el rajta, miért nem.”</dark_gray>",
+            "<dark_gray>„Ti visszatértek a halálból. Mi nem. Ez nem igazságtalanság — ez üzlet, és valaki fizeti.”</dark_gray>",
+            "<dark_gray>„Vannak, akik már hallgatnak rá, és nappal a te asztalodnál esznek.”</dark_gray>",
+            "<dark_gray>„A Suttogók nem gonoszak. Csak korábban feleltek egy kérdésre, amit neked még nem tettek fel.”</dark_gray>",
+            "<dark_gray>„A vérhold nem jel. Mozdulás. Ő fordul meg álmában, és a világ megbillen.”</dark_gray>",
+            "<dark_gray>„Két mondat elhangzott. A harmadikra készül. Tudod, mit tesz addig? Vár. Mint én.”</dark_gray>",
     };
 
     public StrangerNpcManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -100,19 +130,18 @@ public final class StrangerNpcManager {
         if (!configManager.getBoolean("world-events.stranger-npc.enabled", true)) {
             return;
         }
-        final long now = System.currentTimeMillis();
-        if (now < nextAttemptAt) {
-            return;
+        if (strangerStanding()) {
+            return; // Már áll egy Idegen — kettő sosem mutatkozhat egyszerre.
         }
-        nextAttemptAt = now + Math.max(1L,
+        final long intervalMillis = Math.max(1L,
                 configManager.getLong("world-events.stranger-npc.check-interval-minutes", 90L)) * 60_000L;
-        final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("world-events.stranger-npc.chance-percent", 6.0D)));
-        if (ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
+        if (!schedule.tryAttempt(intervalMillis,
+                configManager.getDouble("world-events.stranger-npc.chance-percent", 6.0D), SPAWN_GRACE_MILLIS)) {
             return;
         }
         final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
         if (online.isEmpty()) {
+            schedule.release();
             return;
         }
         spawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
@@ -120,15 +149,19 @@ public final class StrangerNpcManager {
 
     /** Admin-próba (/events stranger): azonnali felbukkanás a horgony közelében. */
     public boolean forceSpawn(final Player anchor) {
-        if (anchor == null) {
+        if (strangerStanding() || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
+            return false;
+        }
+        Player target = anchor;
+        if (target == null) {
             final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
+                schedule.release();
                 return false;
             }
-            spawnNear(online.get(ThreadLocalRandom.current().nextInt(online.size())));
-            return true;
+            target = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
-        spawnNear(anchor);
+        spawnNear(target);
         return true;
     }
 
@@ -158,7 +191,8 @@ public final class StrangerNpcManager {
         final EventSpawnGuard guard = spawnGuard;
         if (guard != null && (guard.isBlocked("stranger", spot)
                 || guard.isUnsafeSurface("stranger", world, x, z))) {
-            return; // Ma nem mutatkozik — a következő próba máshol keres.
+            schedule.release(); // Ma nem mutatkozik — a következő próba máshol keres.
+            return;
         }
         final WanderingTrader stranger = world.spawn(spot, WanderingTrader.class);
         stranger.getPersistentDataContainer().set(strangerKey, PersistentDataType.BYTE, (byte) 1);
@@ -169,6 +203,7 @@ public final class StrangerNpcManager {
         stranger.setDespawnDelay(0);
         stranger.customName(messageManager.getMessage("stranger-name", "<dark_gray>Az Idegen</dark_gray>"));
         stranger.setCustomNameVisible(true);
+        hu.taliann.icesmp.utils.TransientEntities.register(plugin, stranger);
         activeStrangerId = stranger.getUniqueId();
 
         world.playSound(spot, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 0.8F, 0.6F);
@@ -204,7 +239,28 @@ public final class StrangerNpcManager {
                 stranger.remove();
             }
             activeStrangerId = null;
-        }, null, despawnTicks);
+            // A retired-callback KÖTELEZŐ: ha az Idegent a késleltetés lejárta előtt eltávolítják
+            // (megölik, /kill, chunk-eltávolítás), a task retire-el és sosem fut le — enélkül a
+            // mező örökre beragadna, és az esemény szerver-újraindításig leállna.
+        }, () -> activeStrangerId = null, despawnTicks);
+    }
+
+    /**
+     * Áll-e még Idegen. A mező önmagában nem elég: a retired-callback mellett ez a MÁSODIK
+     * védőháló, mert nem minden eltávolítási út vált ki retire-t (pl. az entitás nem betöltött
+     * régióban szűnik meg). Ha a mező be van állítva, de az entitás már nincs, a kapu magától
+     * felnyílik — így az esemény nem tud véglegesen leállni.
+     */
+    private boolean strangerStanding() {
+        final UUID id = activeStrangerId;
+        if (id == null) {
+            return false;
+        }
+        if (hu.taliann.icesmp.utils.TransientEntities.isAlive(id)) {
+            return true;
+        }
+        activeStrangerId = null;
+        return false;
     }
 
     /** Leállás-takarítás: az élő Idegen nem maradhat a világban. */

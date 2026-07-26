@@ -68,8 +68,10 @@ A szerver **saját, natív** felületet ad (nem kell hozzá külső mod vagy res
 - **Haladás-fül (natív advancementek):** a vanília **Haladás** képernyőn (alapból **L**) van egy
   saját **IceSMP** fül — külső mod és resource pack nélkül. A mérföldköveid itt gyűlnek: első
   kaszt, specializáció, frakció-csatlakozás, első szakma, és **rejtett** teljesítmények is (pl.
-  egy rontás-góc megtisztítása, egy titkos hely felfedezése). Minden bejegyzésnél **felugró
-  értesítést** kapsz.
+  egy rontás-góc megtisztítása, egy titkos hely felfedezése). A bejegyzések **csendben**
+  érkeznek — nincs felugró értesítés és nincs chat-hirdetés, mert néhány közülük olyan titok,
+  amit nem szeretnél a szomszédod orrára kötni. Amit teljesítettél, arról a rendszer amúgy is
+  szól neked a chaten; a fülre azért érdemes benézni, hogy meglásd, **mi van még hátra**.
 
 ---
 

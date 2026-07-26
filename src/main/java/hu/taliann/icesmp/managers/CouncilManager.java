@@ -139,7 +139,7 @@ public final class CouncilManager implements PersistentStore {
             return;
         }
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             // Csak a FUTÓ hét szavazatai élnek túl egy restartot.
             if (yaml.getLong("week", -1L) != weekKey) {
                 return;

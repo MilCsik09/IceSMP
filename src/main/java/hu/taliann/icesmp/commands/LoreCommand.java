@@ -19,7 +19,7 @@ import java.util.Map;
 public final class LoreCommand implements BasicCommand {
 
     private static final List<String> TOPICS = List.of(
-            "lang", "fagy", "menedek", "kitaszitottak", "fa", "kapu", "suttogok",
+            "lang", "fagy", "menedek", "radicora", "kitaszitottak", "fa", "kapu", "suttogok",
             "melyseg", "korszakok", "bokic");
 
     /** Téma → (messages-kulcs-prefix, sorok inline defaultja). A szövegek a kódexből (docs/LORE.md). */
@@ -56,10 +56,17 @@ public final class LoreCommand implements BasicCommand {
                     "&8Ami egyszer jéggé lett, azt Cryghaliris sosem engedi el.")),
             Map.entry("menedek", List.of(
                     "&f&l— Ryanora & Caldestera, a Menedék —",
-                    "&7A Bokic-mente gazdag völgye, Arkynn békés öröksége. Caldestera kapuin belül",
-                    "&7tilos a fegyver — a Bankárszövetség Creutzérje beszél helyette. Vándor, itt",
-                    "&7nem kérdezik, honnan jöttél; csak azt, mit hoztál a piacra.",
+                    "&7A Bokic-mente gazdag völgye, Arkynn békés öröksége. Ryanora ősi szíve a Fa",
+                    "&7tövében, Radicorában maradt; a mai főváros, &fCaldestera&7 a szoroson túl épült,",
+                    "&7komppal érhető el. Kapuin belül tilos a fegyver — a Creutzér beszél helyette.",
                     "&8A béke is üzlet. Caldesterában a legjobb üzlet.")),
+            Map.entry("radicora", List.of(
+                    "&2&l— Radicora, Ó-Caldestera —",
+                    "&7„A gyökerek városa” — a Fa tövében álló régi főváros megkopott, de el nem múló",
+                    "&7magja. Itt maradtak az igaz követők, akik szerint a Fa hallgatása nem közöny",
+                    "&7volt, hanem bölcsesség; innen indul minden újonnan ébredt Felső első útja,",
+                    "&7s innen visz a komp a szoroson át a mai Caldesterába.",
+                    "&8Ryanora két arca: az egyik a jövőt építi, a másik a gyökeret őrzi.")),
             Map.entry("kitaszitottak", List.of(
                     "&8&l— A Kitaszítottak —",
                     "&7Thanaopolis romjai közt élnek, akiket a bűn vagy a Suttogás a falakon kívülre",
@@ -68,8 +75,9 @@ public final class LoreCommand implements BasicCommand {
                     "&8A kitaszítottat nem a sötét választotta. Csak a sötét fogadta be.")),
             Map.entry("fa", List.of(
                     "&a&l— Az Élet Fája —",
-                    "&7Asterlayna teste fölött nőtt, gyökerei a Mélység Népének csarnokaiig érnek.",
-                    "&7A Hetedik Vérháború megsebezte; azóta lassan, kín közt gyógyul — s vele",
+                    "&7Asterlayna lelkének utolsó csillagszilánkjából kelt ki; gyökerei a Mélység",
+                    "&7Népének csarnokaiig érnek.",
+                    "&7A Hasadás napján repedt meg a törzse; azóta lassan, kín közt gyógyul — s vele",
                     "&7gyógyul a világ. A Lélekkapocs minden darabja az ő ajándéka.",
                     "&8Amíg a Fa áll, a Felsőknek van miért visszaemlékezniük.")),
             Map.entry("kapu", List.of(
@@ -98,7 +106,7 @@ public final class LoreCommand implements BasicCommand {
         final List<String> defaults = DEFAULTS.get(topic);
         if (defaults == null) {
             sender.sendMessage(messageManager.get("lore-usage",
-                    "&7A kódex lapjai: &f/lore <lang|fagy|menedek|kitaszitottak|fa|kapu|suttogok|melyseg|korszakok|bokic>"));
+                    "&7A kódex lapjai: &f/lore <lang|fagy|menedek|radicora|kitaszitottak|fa|kapu|suttogok|melyseg|korszakok|bokic>"));
             return;
         }
         for (int i = 0; i < defaults.size(); i++) {
@@ -111,7 +119,8 @@ public final class LoreCommand implements BasicCommand {
         return switch (raw.toLowerCase(Locale.ROOT)) {
             case "red", "piros", "perinfernicitas" -> "lang";
             case "blue", "kek", "cryghaliris" -> "fagy";
-            case "neutral", "semleges", "ryanora", "caldestera", "radicora" -> "menedek";
+            case "neutral", "semleges", "ryanora", "caldestera" -> "menedek";
+            case "o-caldestera", "ocaldestera", "gyokerek" -> "radicora";
             case "dark", "sotet", "thanaopolis", "mortengrad", "kitaszitott" -> "kitaszitottak";
             case "eletfa", "elet-fa" -> "fa";
             case "karhozat", "doom", "olethropyla" -> "kapu";

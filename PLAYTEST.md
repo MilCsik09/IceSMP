@@ -264,9 +264,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       **Sötét Rítus:** éjjel, SCULK-blokkon állva, EGYEDÜL (16 blokkon belül nincs más játékos),
       SHIFT+jobb katt a meghívóval → vér-áldozat (−6 HP) + Suttogó-státusz (rejtett!). Ha valaki a
       közelben van: a rítus meghiúsul, a szemtanúk Tanú-tokent kapnak, a jelölt nagy gyanút.
-      **Titkos csatorna:** `/suttogas <üzenet>` — csak Suttogók látják; kívülállónak „csak a szél zúg".
+      **Titkos csatorna:** `/suttogas <üzenet>` — a rejtett Suttogók **ÉS a Kitaszítottak (DARK)**
+      látják; kívülállónak „csak a szél zúg". Teszt: egy DARK-játékos kapja meg a Suttogó üzenetét,
+      és ő maga is tudjon írni bele; egy RED/BLUE/NEUTRAL nem-Suttogó semmit ne lásson.
+      `factions.whisper.dark-hears-channel: false` + `/icesmp reload` → a DARK kiesik a csatornából.
+      **A titok ára:** a csatorna-sor kiírja a feladó nevét, tehát a DARK-játékos MEGTUDJA, ki
+      Suttogó — ellenőrizd, hogy ez tudatos döntés marad (nyílt chatbe kiszivárogtathatja).
       **Gyanú:** rajtakapott testvérgyilkosság (+40) és rajtakapott rítus (+50) növeli; a szemtanúk
-      `/suttogas vad <játékos>` váddal (+15, csak IGAZI Suttogóra hat, tokent fogyaszt) nyomozhatnak;
+      `/suttogas vád <játékos>` váddal (+15, csak IGAZI Suttogóra hat, tokent fogyaszt) nyomozhatnak
+      (a `vad` és `accuse` alak is működik — ne kelljen ékezetet gépelni);
       10 percenként −5 csillapodás. **Lelepleződés** (100 pont): fény-dráma + broadcast + 4 bűn →
       a bűn-küszöb a meglévő száműzetéssel a Kitaszítottak közé taszít. Kulcsok: `factions.whisper.*`.
 - [ ] **K5 Káoszkor-loot:** élőhalott mobból (zombi/csontváz) eshet a Rozsdás Penge / Megrontott
@@ -549,7 +555,29 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       dőlt sor „Készítette: <név>" + PDC (crafted_by/crafted_at); a piacra téve is megmarad
       (márkajelzés). Bulk (stackelhető) eredményen NINCS (stack-törés ellen). Kapcsoló:
       `crafted-by.enabled` (profession-recipes.yml). Régi, címke nélküli itemek hibátlanul
-      működnek tovább.
+      működnek tovább. **Bélyeg-kivétel:** a STACKELHETŐ unique-alkatrészre (affix nélkül, pl.
+      `ures_kupa`) NEM kerül bélyeg — különben a craftolt és a visszakapott példány két külön
+      kupacban állna. Teszt: craftolj kupát, majd igyál meg egy italt → a visszakapott üres kupa
+      a craftolttal EGY stackbe álljon.
+- [ ] **Új recept-eredmény kulcsok (ÚJ):** a katalógus három új `result` mezőt ismer —
+      ellenőrizd mindhármat:
+      - **`rarity`** → a tárgy vanília raritás-színt kap a tooltipben (a saját raritás-létránk
+        `ItemDataFactory.vanillaRarityOf` szerint képezve le a 4 vanília fokra);
+      - **`use-remainder`** (`unique:<id>` alakot is elfogad) → a tárgy elfogyasztása után a
+        megadott tárgy marad a kézben. Kocsma-kör: `ures_kupa` → ital (pl. `jeghegyi_sor`) →
+        megivás → **ugyanaz az üres kupa** kerül vissza, tehát a kupa körbe-körbe járhat;
+      - **`use-cooldown`** (`{group, seconds}`) → a használat után a megadott csoport minden
+        tárgya visszatöltés alatt van (a vanília cooldown-animáció látszik).
+- [ ] **Hozzávaló-fedezet = hozzávaló-fogyás (ÚJ, visszaesés-teszt):** a készlet-ellenőrzés és a
+      levonás UGYANAZT a szűrőt használja, ezért **identitással bíró** tárgy (unique, signature,
+      „Készítette"-bélyeg, saját név vagy lore) hozzávalóként NEM számít és NEM is fogy el;
+      a sérült/kopott szerszám viszont igen (számít ÉS fogy).
+      **A hiba, amit keresünk:** ha egy craftolt tárgy fedezi a saját receptje plain hozzávalóját,
+      de nem fogy el, akkor a hozzávaló INGYEN van (65 recept eredménye osztozik anyagon a saját
+      plain hozzávalójával — pl. minden kocsma-ital `HONEY_BOTTLE`, a signature-fegyverek `BOW`/
+      `CROSSBOW`/`NETHERITE_SWORD`). Teszt: legyen a hátizsákban CSAK egy craftolt Jéghegyi Sör
+      (plain mézes üveg nélkül) → a Jéghegyi Sör receptje NE legyen craftolható. Ugyanez egy
+      elkészült Kallan Szeletelőjével a `kallan_szeletelo` receptre.
 - [ ] **D18 `/lore` kódex-parancs (ÚJ — Tier S):** `/lore` felsorolja a témákat;
       `/lore lang|fagy|menedek|kitaszitottak|fa|kapu|suttogok` (aliasok: red/blue/neutral/dark
       stb.) 5 sor kánon-szöveget ír chatbe; a szövegek messages-kulcsból felülírhatók
@@ -663,8 +691,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       célpont bűnszámlálója 0-ra áll (de bűnös marad); broadcast jelzi. 3 bűn alatt sima gyilkosság.
 - [ ] **Mester-lánc (NPC):** rakj ki egy FancyNpcs NPC-t `harcos_mester` néven; a `warrior_trial`
       után vedd fel a `warrior_mentor` questet, katt az NPC-re → a mentor-quest teljesül ÉS az NPC
-      azonnal ADJA a `warrior_master_trial`-t (❕ üzenet); az a `harcos_proba` pálya lefutásával
-      teljesül (a /parkour jutalom mellett quest-jutalom is jár).
+      azonnal ADJA a `warrior_master_trial`-t (❕ üzenet); az 20 megerősített (Lvl 2+) szörny
+      leölésével teljesül. Mind a 13 kasztnak van mentor+mester-próba lánca; a Boszorkánymesteré
+      a `pakt_mester` NPC-hez kötött (nincs külön `boszorkany_mester`).
 - [ ] **NPC-marker (per-player):** akinek felvehető questje van az NPC-nél → ARANY aura az NPC
       felett; akinek aktív TALK_TO_NPC questje szól hozzá → ZÖLD aura; egy harmadik játékos
       (feltétel nélkül) SEMMIT nem lát. A marker ~2 mp-enként pulzál, ~48 blokkos körzetben.
@@ -782,6 +811,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ~45 mp-enként szörny-hullám támadja a konvojt; célba érve loot hullik + a karaván-bolt bónusz-készlete
       (`bonus-items`) egy időre elérhető; a konvoj halálakor/lejáratkor bukás. **Terep-teszt:** a kíséret-mob
       robbanása (ha van) **nem tör blokkot**; a konvoj/mobok reload után nem maradnak ott (nem perzisztens).
+      **Egyszerre-egy teszt:** aktív kíséret (vagy épp induló spawn-lánc) mellett az újabb
+      `/events escort` **false**-szal elhasal — sosem áll két konvoj (a második korábban
+      orphanná tette volna az elsőt).
 - [ ] **Meteor** (`/events meteor`): kráter jelenik meg érc-blokkokkal + broadcast a koordinátákkal; az érc
       kibányászható (valódi drop). **Terep-teszt (fontos):** `expire-minutes` után VAGY `/reload`/leállítás
       után a kráter **teljesen visszaáll** az eredeti terepre; `avoid-territory: true` mellett **nem** csapódik
@@ -811,6 +843,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
 ### 4.14 GUI-k és HUD ✅
 - [ ] `/menu`, `/profile`, `/spellbook`, `/market`, `/leaderboard`, `/achievements`, `/daily` megnyílik,
       a gombok működnek, a kattintások nem visznek ki tárgyat a menüből.
+- [ ] **Elérések configból (`achievements.definitions`):** a 21 mérföldkő a `quests.yml`-ben él.
+      Teszt: vegyél fel egy ÚJ blokkot (pl. `metric: CLASS_LEVEL`, `threshold: 5`, `reward: 25`)
+      → `/icesmp reload` → az `/achievements` listában **azonnal megjelenik**, szerver-újraindítás
+      nélkül, és a küszöböt elérve a veret jár. Hibás sor (ismeretlen `metric` vagy nem pozitív
+      `threshold`) **kimarad és a konzol figyelmeztet** — a többi elérés ilyenkor is működik.
+      FIGYELEM: meglévő elérés **id-jét ne nevezd át** (a teljesítést a játékos PDC-je az id-n
+      tartja, átnevezés után újra kiosztódna).
 - [ ] **`/stats [név]` (ÚJ):** kiírja a statisztika-profilt (játékos-ölések, halálok, K/D,
       mob-ölések, elsütött spellek, teljesített questek); névvel másik (online vagy már látott)
       játékosé; a számlálók ölés/halál/cast/quest-teljesítés után nőnek és restart után megmaradnak.
@@ -823,14 +862,6 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       (vérhold start/stop, világboss, invázió, karaván érkezés/távozás, Vad Hajsza, meteor, kincs,
       gyűjtögető buff, bőség, kihívás, kíséret, hangulat-esemény); a kezelősor (admin unclaim,
       NPC-kötések, quest admin lista) csak a megfelelő jogosultsággal látszik.
-- [ ] **P5a/P5b Haladás-fül (advancementek, ÚJ):** első induláskor a konzol kiírja
-      „IceSMP advancement-fa: N/7 bejegyzés él" (N=7, error nélkül — loadAdvancement él).
-      A **Haladás** képernyőn (L) van **IceSMP** fül `beacon` ikonnal. Grantek: **kaszt-választás**
-      → „Elhivatás" (+ a fül gyökere megjelenik) toast; **spec** → „Az út elágazik"; **frakció**
-      → „Hovatartozás"; **szakma** → „Mesterség kezdete". Rejtett: **rontás-mag megtörése** →
-      „A rontás megtörve" (challenge-keret); **hidden-spot felfedezés** → „Rejtett zug". Minden
-      grant felugró toastot ad, chat-broadcast NÉLKÜL. Már teljesített advancement újra nem toastol.
-      `advancements.enabled: false` (general.yml) + restart → a fül be sem töltődik, a grantek no-opok.
 - [ ] **P4d Natív dialógus (ÚJ):** ÚJ játékos első belépésekor (az intro-cím UTÁN,
       `onboarding.welcome-dialog-delay-ticks`≈4 mp) natív **üdvözlő-ablak** ugrik fel
       (cím + első-lépés sorok + „rendben" gomb) — resource pack NÉLKÜL. ESC/gomb bezárja.
@@ -849,6 +880,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       után a megfelelő rövid buff (pl. Sör→Regeneráció+Felszívódás, Pálinka→Tűzállóság+Erő,
       Pogácsa→táplálék+Sietség, Fogás→Vízlégzés). **ITEM_MODEL**: pack nélkül alap-item
       textúrát mutat, a `icesmp:<id>` modellt a külső pack adja. A buff-idők a receptből (config).
+- [ ] **Kupa-hurok (USE_REMAINDER, ÚJ):** craftolj **Üres Kupát** (Szakács 5, `GLASS:2` → 4 db),
+      abból bármelyik kocsma-italt (mind a 12 kér 1 kupát) → **megivás után az Üres Kupa a
+      kezedben marad** (nem sima üvegpalack, hanem a bélyegzett kupa!), és azonnal újra
+      felhasználható italhoz. Ellenőrizd, hogy tele hotbarnál sem vész el (a vanília a földre
+      dobja), és hogy a kupa a recept-könyvben hozzávalóként elfogy.
 - [ ] **P7 USE_COOLDOWN — katalizátor cooldown-bleed javítás (ÚJ):** tarts a hotbarban egy
       pálca-katalizátort ÉS a vele AZONOS Materialú vanília itemet (pl. Homály-szilánk=FLINT →
       sima kovakő; Sárkánykirály Kürtje=GOAT_HORN → sima kürt). Castolás után CSAK a katalizátor
@@ -926,7 +962,36 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         belül a tablist aljára kerül; mozgásra azonnal vissza.
   - [ ] **AFK-jutalomkapu:** AFK-jelölt játékos mob-ölése NEM ad kaszt-XP-t/lélekkövet (auto-farm
         teszt: állj mob-farm mellé 3+ percig); az AFK-zóna időzített jutalma viszont jár.
-  - [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
+  - [ ] **Közös kill-jutalom előszűrő (`kill-rewards.*`):** MINDEN ölés-alapú jutalom ugyanazokon a
+        szűrőkön megy át, tier szerint. Ellenőrizd:
+        - **AFK-jelölten** (3+ perc) a mob-ölés nem ad kaszt-XP-t, lélekkövet, **pénz-erszényt ÉS
+          mob-lootot** sem (korábban az erszény/loot még jött);
+        - **spawner-mob** (rakj le spawnert) leölve nem dob erszényt/lootot, de **kaszt-XP-t igen**
+          (a farmos szintezés szándékos);
+        - **kreatív módban** ölve nincs FAUCET/PROGRESSION jutalom, de a **quest-haladás megy**
+          (admin-teszt maradjon lehetséges);
+        - **saját idézett minion** leölése semmit nem ad — sem lootot, sem XP-t, sem **quest-haladást,
+          ranglista-pontot, bestiárium-bejegyzést vagy közösségi cél-számlálót** (ez utóbbi négy
+          korábban pumpálható volt).
+        Mind a négy szűrő kikapcsolható: `/icesmp config menu` → „Kill-jutalom szűrők".
+  - [ ] **A korona átka (ÚJ, `factions.kings.crown-curse`):** ültess trónra egy királyt, majd
+      állítsd `hours-per-level: 0`-ra… nem lehet (min. 1) — teszthez vedd `hours-per-level: 1`-re
+      és `/icesmp reload`. Egy óra trónon = 1 szint. Ellenőrizd:
+      - a szint-lépés EGYSZER szól („A korona hidegebb lett", szint/max),
+      - minden szinten lich-türkiz derengés a korona (fej) körül,
+      - `whisper-percent` szerint a Királynő suttog: **szintenként SAJÁT 8-soros készlet**
+        (össz. 40 sor), és a szintek fokozatosan tárnak fel többet a történetből —
+        1: puszta nyugtalanság → 2: a Káoszkor és a 698-as év → 3: az Elveszett Uralkodók
+        NEVEI (Zhoris, Miinus, Benedictus, Lineata) → 4: Eleftheria mibenléte (a Fa negyedik
+        gyermeke, az első suttogás, a Könny) → 5: nyílt ítélet (a lajstrom, a harmadik mondat).
+        Ellenőrizd, hogy magasabb szinten NEM jönnek vissza az alacsonyabb szint sorai,
+      - `stakes-from-level` (alap 3) ALATT semmi tét — csak hangulat,
+      - fölötte: HUNGER (leáll a természetes regeneráció) + a közeli CÉLTALAN élőhalottak a
+        királyt kezdik célozni (aktív célpontot NEM vesz el tőlük),
+      - trónfosztás/újraválasztás után az átok **nullázódik** (nincs külön állapota: a
+        trónon töltött időből számol),
+      - a nem-király játékosokra semmi nem hat, és `enabled: false` mindent kikapcsol.
+- [ ] **Célpont-sor:** harc-fókuszban az oldalsáv tetején „🎯 <célpont>" (játékosnál élet-sávval),
         az utolsó találat után ~10 mp-cel eltűnik.
   - [ ] **Crate-rulett:** kulcs-nyitáskor pörgő GUI (~3,5 mp, lassul), a végén a tényleges
         nyeremény áll meg; a GUI IDŐ ELŐTTI bezárása esetén is jár a nyeremény; kapcsoló:
@@ -1055,6 +1120,8 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       sort kapnak; jobb-katt NEM nyit kereskedést (elnyelve); 45 mp után lélek-köddel eltűnik.
       Természetes felbukkanás ritka (`stranger-npc.chance-percent` 6%/90 perc); spawn-rules
       mátrix-sor: `stranger`. NINCS semmilyen jutalom — ez szándékos.
+      **Egyszerre-egy teszt:** amíg áll egy Idegen, az újabb `/events stranger` **false**-szal
+      elhasal (nem lesz két alak), és a 45 mp-es köddé válás után megint indítható.
 - [ ] **D9 Énekmondó (ÚJ — Tier A):** nevezz el egy FancyNpcs-NPC-t `enekmondo`-nak (vagy írd
       át a `bard.npc-name`-et) → jobb-kattra a HETI ballada (top-1 szint/vagyon/raid sablon-
       variánsokkal; egész héten ugyanaz a dal, hétfőnként fordul). FancyNpcs nélkül nem elérhető.
@@ -1063,6 +1130,73 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       ülők „X mesél a tűznél…" action bart látnak); elsétálva megszakad, nincs jutalom;
       cooldown 60 perc (PDC `cd_campfire_story` — csak SIKERES mesélés indítja). Kulcsok:
       `campfire-story.*` (general.yml), saját sztori-lista a `stories` kulccsal.
+      **Sztori-átadás (bővítve):** a készlet **62 sor**, és végigmeséli a kódexet — Teremtés
+      (Asterlayna, Aetrinita, a négy gyermek), Hasadás (Hu. 1.), a három birodalom alapítása
+      (14 / 117 / 547), a Hetedik Vérháború és a 698-as Káoszkor, a Felsők megérkezése (978).
+      Cél: a játékosnak NE kelljen kódexet olvasnia. Ülj le sokszor (cooldownt vedd 0-ra
+      teszthez) és ellenőrizd, hogy tényleg váltakoznak, nem 5-6 sor forog.
+      **Frakciós nézőpont (ÚJ):** a közös 62 sor MELLETT minden frakciónak van saját, 22 soros
+      készlete — UGYANAZOK az események a saját népük hangján és elfogultságával, frakció-színnel
+      (Láng=piros, Fagy=aqua, Menedék=arany, Kitaszítottak=lila). A
+      `campfire-story.faction-chance-percent` (alap: 50) dönti el, milyen eséllyel jön a frakciós
+      változat. Teszt: ülj le sokszor UGYANAZZAL a játékossal, majd frakciót váltva — a mesék
+      hangja és színe váltson; 0-ra állítva CSAK a közös készlet jöjjön. Minden sor külön
+      átírható a `campfire-story-<frakció>-<n>` kulccsal.
+- [ ] **Sztori-csatornák összesítve (ÚJ):** a világ történetét négy ingame felület tanítja,
+      összesen **~255 sorban** — ellenőrizd, hogy mind él:
+      - **tábortűz** (62 közös sor + 4×22 frakciós = 150, ismételhető, ingyen — a fő csatorna),
+      - **a Rejtélyes Idegen** (45 talányos sor, `/events stranger`),
+      - **a bárd heti krónika-versszaka** (20 fejezet: MINDEN héten más szelet az idővonalból,
+        a hősök dicsérete ELŐTT hangzik el — `/events`-független, az `enekmondo` NPC-nél),
+      - **a korona átka** (40 suttogás, szintenként más — csak királynak).
+- [ ] **Haladás-fül (ÚJ, jarból szállított datapack):** a szerver indulásakor a logban jelenjen
+      meg, hogy a fa a **jar datapackjéből** él (`IceSMP advancement-fa: 22/22 bejegyzés a jar
+      datapackjéből él`). Ha WARNING jön „DEPRECATED tartalék úton" szöveggel, a
+      datapack-felderítés hibázott — a fa akkor is működik, de nézd meg a bootstrap-logot.
+      Ellenőrizd `/datapack list`-tel, hogy az `icesmp` pack **engedélyezve** van. A **Haladás**
+      képernyőn (L) legyen **IceSMP** fül `beacon` ikonnal. `advancements.enabled: false`
+      (general.yml) + restart → a grantek no-opok.
+- [ ] **A fa-bejegyzések NEM toastolnak és NEM írnak chatbe** (`show_toast:false`,
+      `announce_to_chat:false` mindegyik JSON-ban): a visszajelzést az adott rendszer saját
+      chat-üzenete adja, az ünneplő toast pedig a külön, három fix toast-bejegyzés (lásd lentebb).
+      Ellenőrizd, hogy egy fa-grant (pl. kaszt-választás) NEM ugrik fel a sarokban.
+- [ ] **Hovatartozás vs. Kitaszítva (ÚJ, a világ tényleges szerkezete):** a világban NÉGY
+      hatalom van, de a játékos csak HÁROM közül választhat — a Menedékben KEZD (a NEUTRAL az
+      alapértelmezett frakció), onnan a Lánghoz vagy a Fagyhoz állhat. A Kitaszítottak közé nem
+      lépni lehet, hanem KERÜLNI. Ezt a fa is így mondja el: `faction_join` („Kikötöttél az
+      egyik hatalom mellett") → alatta a REJTETT `exiled` („Bűnök vezettek a Néma Királynő népe
+      közé") → alatta a `redeemed` („Megtörted az örök paktumot"). Ellenőrizd, hogy a
+      `faction_join` szövege SEHOL nem állítja, hogy négyből választhatsz.
+- [ ] **A Kitaszítottakhoz HÁROM út vezet, és MIND a `exiled` bejegyzést adja** (e nélkül a
+      `redeemed` szülő nélküli csomópontra érkezne):
+      1. **bűn-küszöb:** vigyél fel egy játékost 4 bűnre (`/sinner <j> add`) → automatikus
+         száműzetés + **Kitaszítva**; majd a vezeklés-lánccal → **Vezeklés**.
+      2. **Suttogó-lelepleződés (K9):** a gyanú a küszöbig → `expose()` a bűn-pipeline-on át
+         száműz → **Kitaszítva** (a Suttogó-út a bűn-küszöbön keresztül fut, nem külön ágon).
+      3. **önkéntes paktum:** bűnösként `/faction join dark` (kétlépcsős megerősítés) →
+         **Kitaszítva** akkor is, ha a bűn-küszöböt még nem érte el.
+- [ ] **„Akit a csend befogadott" (ÚJ, REJTETT — a Suttogó-státusz titka):** a Sötét Rítus
+      sikere (éjjel + sculkon + magányosan + vér-áldozat) adja a `whisperer` bejegyzést.
+      **Titok-ellenőrzés:** a granthez NEM tartozik chat-broadcast és NEM ugrik fel toast,
+      tehát a közelben lévő játékosok semmit nem látnak belőle; a bejegyzés a saját
+      haladás-fülön is rejtett keretben van. Lelepleződés után a státusz elveszik, de a
+      megszerzett bejegyzés (jogosan) megmarad — az emlék nem törlődik.
+- [ ] **A 22 csomópont grant-pontja:** mindegyik a saját eseményén jár, egyik sem holt.
+      Sorra: kaszt-választás (`root`+Elhivatás) • spec-választás • max kaszt-szint •
+      capstone-talent vásárlása • frakció-belépés • Suttogó-rítus (rejtett) • Kitaszítottak
+      (három út, lásd feljebb) • királlyá választás • a korona-átok max szintje • megnyert raid
+      (CSAK a győztes oldal jelentkezett harcosainak!) • vezeklés (DARK-paktum megtörése) •
+      szakma-választás • szakma max szint • mestermű-craft (Legendás/Ereklye roll) • rontás-góc
+      megtörése • rejtett hely • világboss • első relikvia • rituálé • pet max szint •
+      parkour-futam. Gépi ellenőrzés: `python3 scripts/check_consistency.py` FAIL-el holt
+      bejegyzésre, árva JSON-ra ÉS tartalom-driftre (a JSON-ok generátora:
+      `python3 scripts/gen_advancements.py`).
+- [ ] **Toast (ÚJ, fix bejegyzések):** quest-teljesítéskor felugrik a „Küldetés teljesítve"
+      toast, és **ismételten is** (nem csak egyszer — a bejegyzés visszavonódik). A quest NEVE
+      a chat-üzenetben van, nem a toaston. A haladás-fülön a toast-bejegyzések NEM látszanak
+      (rejtettek). **Szaporodás-ellenőrzés:** teljesíts 20-30 questet, majd nézd meg a
+      `<world>/datapacks/bukkit/` fájlszámát — MOST már nem nőhet, mert nincs futásidejű
+      advancement-betöltés (a régi megoldás véletlen kulcsokat használt).
 - [ ] **A38 Spawn-élmény (ÚJ — Tier A):** állíts be `world-events.intro.first-join-spawn`-t
       ("world,x,y,z[,yaw,pitch]") → az ELSŐ belépő oda teleportál, és csak utána indul az
       intro; visszatérő belépésnél rövid, halk üdvözlő title + csengő hang
@@ -1076,13 +1210,149 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Eldobható minion halála nem állítja le az élő társat (ÚJ):** a permanens társ és a rövid
+      életű spell-minion ugyanazt a tulajdonos-jelölést viseli, és a halál-kezelő ELŐBB bontotta a
+      gazda-kulcsos állapotot (aktív társ, harci cél), csak utána ellenőrizte az azonosságot.
+      **Teszt:** idézd meg a permanens társat, majd idézz egy eldobható minion-hordát és hagyd
+      meghalni → a társ **maradjon aktív és vezérelhető** (harci cél, állásmód); ezután a TÁRS
+      haláljakor jöjjön a „társad elesett" üzenet és a respawn-cooldown.
+- [ ] **Pet-rítus nem fut kétszer (ÚJ):** egy fizikai jobb kattintás main- ÉS off-hand eventet is
+      ad, a rítus viszont mindkettőben a main-handet olvasta → 2+ darabos stacknél KÉT ritka
+      kelléket fogyasztott. **Teszt:** tarts 2 Nyughatatlan Szívet (vagy Démon-pecsétet), futtasd a
+      rítust → pontosan EGY fogyjon el.
+- [ ] **Emlék-XP nem viszi el a szilánkot kaszt nélkül (ÚJ):** a `/emlek xp` előbb elvette a
+      szilánkokat, és az XP-jóváírás boolean-je elveszett — kaszt nélkül a játékos elveszítette a
+      ritka szilánkokat, mégis sikert olvasott. **Teszt:** kaszt NÉLKÜL `/emlek xp` → érthető
+      elutasítás, és a szilánkok **maradjanak meg**; kaszttal a beváltás menjen és adjon XP-t.
+- [ ] **Elérés-azonosító kanonizálás (ÚJ):** a megszerzett elérések listája PDC-ből visszaolvasva
+      kisbetűsít, a tárolás viszont a config eredeti casingjét használta — egy `RichOne` azonosítójú
+      elérés így MINDEN periodikus tickben újra kifizette a jutalmát.
+      **Teszt:** vegyél fel a `quests.yml` `achievements.definitions` alá egy nagybetűs azonosítót
+      (pl. `TesztElereny`) → indításnál a konzol figyelmeztessen, és a sor maradjon KI (különben
+      ismételt jutalmat adna); a 21 shippelt elérés (mind kanonikus) változatlanul működjön, és egy
+      már megszerzett elérés NE fizessen újra a stats-tick körökben.
+- [ ] **Főzet-XP csak VALÓDI kivételre (ÚJ):** a főzőállvány eredmény-slotjaiban a puszta
+      „van benne főzet" korábban XP-t adott, ezért a bent maradó főzetre ismételt kattintás
+      korlátlan Alkimista-XP-t és heti szakma-cél haladást termelt. Most csak a tényleges kivétel
+      számít. **Teszt:** kattints a kész főzetre inkompatibilis kurzorral (no-op) → **ne** kapj
+      XP-t; kattints rá üres kurzorral (kivétel) → kapj; a most üres slotra kattintva ne kapj újra;
+      shift-kattintás és hotbar-csere is fizessen (azok is kivételek).
+- [ ] **Heti szakma-cél csak a SAJÁT szakmádtól tölthető (ÚJ):** korábban egy nem-bányász
+      ércbontása is töltötte a Bányász-céh heti közös célját, mert a listener eldobta a
+      XP-jóváírás eredményét. **Teszt:** olyan játékossal, akinek NINCS bányász szakmája, törj
+      ércet → se személyes XP, se heti cél-haladás; bányászként ugyanez mindkettőt adja.
+- [ ] **Quest-lánc ciklus nem futhat végtelen jutalom-hurokba (ÚJ):** egy önmagára (vagy körben)
+      mutató, repeatable, nulla cooldownos, már teljesített `REACH_LEVEL` quest az
+      `accept → complete → reward → advanceChain → accept` láncot végtelenszer futtatta volna.
+      Két védelem: a `check_consistency.py` FAIL-el a `next`-gráf bármely ciklusára (push előtt
+      kiderül), futásidőben pedig 16-os mélység-korlát áll, SEVERE naplóval.
+      **Teszt:** `/quest admin set <id> next <ugyanaz az id>` → a checker akadjon meg; ha mégis
+      élesbe kerül, a konzolban „Quest-lánc mélység-korlát" sor legyen, és a szerver ne álljon meg.
+- [ ] **Céhtagság nem éli túl a frakcióváltást (ÚJ):** a céh egy frakción belüli szervezet, mégis
+      az ellenséges oldalra váltó játékos tovább vezethette a régi frakció céhét, az ott teljesített
+      questjei a régi céh XP-jét növelték, és a kasszát a RÉGI frakció valutájában kezelhette.
+      Az egyeztetés KÖZPONTILAG a `setFaction`-ban fut, tehát minden út érvényes.
+      **Teszt mind a négy úton** (`/faction join`, `/faction leave`, admin `/faction set`,
+      bűn-száműzetés, vezeklés):
+      1. tagként válts frakciót → lépj ki a céhből, és kapj róla üzenetet;
+      2. **vezetőként** válts → az irányítás a legrégebbi másik tagra szálljon;
+      3. **egyedüli vezetőként** válts → a céh szűnjön meg (ne maradjon üres, gazdátlan céh);
+      4. váltás után a `/ceh info` ne mutasson tagságot, a quest-teljesítés ne töltse a régi céhet,
+         és a `/ceh befizet` ne menjen.
+- [ ] **Gyűjtés nem játszható vissza (ÚJ — kiadásblokkoló volt):** a `COLLECT_ITEMS` progressz a
+      felvett stack méretét könyvelte, és mivel a DOBÁS mindig új item-entitást hoz létre (új UUID),
+      ugyanazzal a fizikai stackkel korlátlanul növelhető volt a gyűjtő-quest ÉS az ismételhető
+      közösségi cél — utóbbi minden körben kifizette a teljes treasury-, liga- és buff-jutalmat.
+      **Teszt:**
+      1. vegyél fel egy vasrudat gyűjtő questet (vagy legyen aktív ilyen közösségi cél);
+      2. tarts magadnál egy stacket, dobd le, vedd fel — **a haladás NE nőjön**, akárhányszor
+         ismételed;
+      3. **pingpong-teszt:** dobd le, és MÁSIK játékos vegye fel → nála se nőjön;
+      4. **halál-teszt:** halj meg (ne legyen keep-inventory), majd vedd fel a saját dropodat →
+         ne nőjön (a halál-dropokat egy tickkel később, a halál helye körül jelöljük meg);
+      5. **legitim út:** bányássz/ölj újat, és úgy vedd fel → **nőjön** a haladás;
+      6. **tele hátizsák:** hagyj egy szabad helyet, és vegyél fel egy 64-es stacket → csak a
+         TÉNYLEGESEN átkerült darab számítson (nem a teljes 64);
+      7. `keep-inventory` bekapcsolva halálnál ne jelöljön semmit (nincs is drop).
+- [ ] **Sérült állapotfájl NEM írható felül (ÚJ — kiadásblokkoló volt):** a
+      `YamlConfiguration.loadConfiguration(File)` FAIL-OPEN — hibás YAML-nál nem dob kivételt,
+      csak naplóz és ÜRES konfigurációt ad. Így a manager üres állapottal indult, a következő
+      autosave pedig szabályos, de üres fájlt írt a kézzel még javítható adat FÖLÉ.
+      Mind a 33 állapotfájl-betöltés a védett `YamlStore.loadTracked` úton megy.
+      **Teszt (pl. `currency.yml`, `market.yml`, `claims.yml`):**
+      1. állítsd le a szervert, tegyél a fájlba szintaktikailag hibás YAML-t (pl. tabulátor);
+      2. indíts → a konzolban `SÉRÜLT állapotfájl: <név>` + `Karantén-másolat: <név>.corrupt-<ms>`
+         + `MENTÉSE LETILTVA` SEVERE sorok;
+      3. várd meg az autosave-et, majd állítsd le szabályosan → a **sérült fájl VÁLTOZATLAN**
+         (nem íródott felül), és ott van mellette a `.corrupt-` másolat;
+      4. javítsd a fájlt, indíts újra → az adat betöltődik, a mentés újra működik (a jelölés
+         sikeres parse-ra feloldódik).
+      **FIGYELEM:** a `config/` és `messages/` fájlok SZÁNDÉKOSAN maradtak fail-openen — egy
+      hibás config ne akadályozza meg a szerver indulását, és azokat sosem írjuk vissza.
+- [ ] **Rituálé-áldozat NEM kerülhető meg (ÚJ — kiadásblokkoló volt):** az áldozat-ellenőrzés és
+      a fogyasztás MOST ugyanazt a predikátumot használja (`PlainIngredients`) — korábban az
+      ellenőrzés típus szerint számolt, a levonás viszont meta-egyezést kért, ezért egy
+      **átnevezett** (üllőn elnevezett) áldozat fedezte a követelményt, de nem fogyott el:
+      a relikvia-idézés, tisztítás, paktum, buff és hazateleport INGYEN, korlátlanul ismételhető volt.
+      **Teszt minden rituálé-típusra** (`relic`, `cleanse`, `buff`, `home`, `uncurse`, `pakt`):
+      1. nevezd át üllőn a konfigurált áldozatot → a rituálé **NE induljon el**
+         („Hiányoznak az áldozati tárgyak");
+      2. sima, névtelen áldozattal induljon el, és az áldozat **fogyjon is el**;
+      3. **kopott/sérült** áldozat (ha szerszám) számítson ÉS fogyjon;
+      4. unique-material NE fedezze a sima anyag-követelményt;
+      5. a konzolban NE legyen „Rituálé-áldozat nem fogyott el" SEVERE sor — az invariáns-sértést jelez.
+      Ugyanez a szerződés védi a szakma-craftot; gépi őr: a `check_consistency.py` FAIL-el minden
+      `removeItem(new ItemStack(...))` visszaesésre.
+- [ ] **Viselt relikvia NEM tűnhet el relognál (ÚJ — kiadásblokkoló volt):** a belépési
+      relikvia-sweep MOST egyetlen bejárás. A `PlayerInventory#getContents()` a teljes slotteret
+      adja (0-35 tár, 36-39 páncél, 40 offhand), ezért a korábbi külön páncél-/offhand-kör
+      ugyanazt a tárgyat látta másodszor, és a közös duplikátum-szűrő a VISELT relikviát törölte.
+      **Teszt (mind a 6 relikviára, de főleg a 4 elytrára):**
+      1. vedd FEL a relikvia-elytrát (mellvért-slot), lépj ki, lépj vissza → **maradjon meg**;
+      2. ugyanez offhandbe fogott relikviával;
+      3. ugyanez páncél-slotos relikviával;
+      4. **valódi duplikátum**-teszt: adj magadnak KÉT példányt ugyanabból a relikviából (egyet
+         viselve, egyet a tárban) → relog után pontosan EGY maradjon;
+      5. **lejárat**: állítsd a relikvia inaktivitás-elenyészését azonnalira → a VISELT példány is
+         évüljön el (a sweep a páncél-slotot is eléri, nem csak a tárat);
+      6. a kozmetikai frissítés (név/lore újraírás) a viselt darabon is fusson le.
+- [ ] **Visszavont akció NEM jutalmaz (ÚJ — kiadásblokkoló volt):** a progressz-listenerek
+      (quest, napi, szakma-XP, szerver-kihívás, gyűjtő-buff) `MONITOR` prioritáson könyvelnek, a
+      védelem (claim/territórium/unique) `HIGH`/`HIGHEST`-en cancel-el. Korábban a `NORMAL`
+      prioritás miatt a progressz a visszavonás ELŐTT megtörtént.
+      **Teszt:** állj MÁS játékos claimjébe (nincs törési jogod), és törj ismételten ércet/termést:
+      1. a blokk NE törjön el (a védelem cancel-el);
+      2. szakma-XP, quest-, napi-, közösségi és szerver-kihívás haladás **NE** nőjön;
+      3. aktív Bányász-láz / Termés-óra alatt **NE** essen bónusz-drop a védett blokkból
+         (ez korábban valódi tárgy-duplikációt adott);
+      4. ugyanez tiltott blokk-lerakással és védett unique fogyóeszközzel.
+      **Kontroll:** a SAJÁT claimedben ugyanezek az akciók továbbra is adjanak XP-t, haladást és
+      bónusz-dropot — a MONITOR nem szüntetheti meg a legitim jutalmat.
+      Gépi őr: `scripts/check_consistency.py` FAIL-el, ha egy progressz-handler visszakerül
+      alacsonyabb prioritásra.
 - [ ] **B54 Átkozott felszerelés (ÚJ — Tier A):** világboss/event-boss loot ~8%-a Átkozott
       (sötétvörös lore-sor): viselve darabonként +10% kimenő sebzés (cap +40%), de a
-      páncél-slotból NEM vehető ki („Az átok nem ereszt…"). Felvételkor az első kattintás
-      figyelmeztet, csak az 5 mp-en belüli második erősít meg. Levétel: építs Átok-törés
-      oltárt (CRYING_OBSIDIAN mag + 3×3 obszidián talp, áldozat: 8 ametiszt + 1 ghast-könny)
-      → SHIFT+jobb-katt → minden viselt/kézben tartott átok megtörik, a tárgy megmarad.
+      páncél-slotból NEM vehető ki („Az átok nem ereszt…"). Felvételkor az első kísérlet
+      figyelmeztet, csak a `confirm-seconds`-on (alap: 5) belüli második erősít meg. Levétel:
+      építs Átok-törés oltárt (CRYING_OBSIDIAN mag + 3×3 obszidián talp, áldozat: 8 ametiszt +
+      1 ghast-könny) → SHIFT+jobb-katt → minden viselt/kézben tartott átok megtörik, a tárgy megmarad.
       Kulcsok: `item-rarity.cursed.*`, rituálé: `rituals.atok_tores`.
+- [ ] **B54 — a felvétel MINDHÁROM útja külön tesztelendő** (két megerősítés-kapu együtt
+      dolgozik: az `InventoryClickEvent` és az `EntityEquipmentChangedEvent`, és a kettő
+      korábban kioltotta egymást — ez a visszaesés-teszt):
+      1. **jobb-katt** kézből (a legtermészetesebb út) → 1. kísérlet: a darab lekerül és
+         visszakerül a hátizsákba + figyelmeztetés; 2. kísérlet 5 mp-en belül → **FELMARAD**.
+      2. **shift-katt** a hátizsákban → 1. kísérlet: cancel + figyelmeztetés; 2. kísérlet
+         5 mp-en belül → **FELMARAD** (nem szabad, hogy azonnal visszakerüljön a hátizsákba!).
+      3. **kurzorral a páncél-slotba tétel** → ugyanaz, mint a 2.
+      **A hurok-tünet, amit keresünk:** ha a darab a megerősítés UTÁN is visszakerül a
+      hátizsákba és újra jön a figyelmeztetés, akkor a két kapu ismét ugyanazt a jelzést
+      fogyasztja — a felvétel ilyenkor SEMELYIK úton nem sikerül.
+      **Tele hátizsákkal:** a visszavett darab a földre esik — ellenőrizd, hogy ez CSAK a
+      megerősítés előtti (elutasított) kísérletnél történhet meg, mert viselt átkozott darab
+      földre kerülése a levétel-zárat is megtörné.
+      **Nem átkozott páncél** fel-le vétele semmilyen üzenetet ne adjon, és NE fogyassza el egy
+      folyamatban lévő átkozott-megerősítést sem.
 - [ ] **F13/F14/F15 Gazdasági események (ÚJ — Tier A):** a kereslet-sokk mellett most
       **pánik** is jöhet (~35% eséllyel a sorsolt esemény lefelé üt: x0.6-0.8, piros
       broadcast, a lecsengése „A pánik elült…"); **konjunktúra**: ritkán fél órára egy
@@ -2165,6 +2435,286 @@ Jó tesztelést! ❄️
       ~10%-kal kisebbet ütnek; Méregfojtó a Pestishozó természet-spelljei ellen.
 - [ ] **Enchant-asztal tiszta:** az új enchantok sem jönnek enchant-asztalról.
 
+## Mélyaudit-kör: lore-kánon, /lore Radicora, escort-útvonal (2026-07-26)
+- [ ] **`/lore radicora` VALÓDI szócikk:** `/lore radicora` (aliasok: `o-caldestera`,
+      `ocaldestera`, `gyokerek`) Radicora/Ó-Caldestera 6 sorát adja — NEM a `menedek`
+      általános frakció-összefoglalóját. `/lore` usage-sora és a tab-complete is
+      felsorolja. Ismeretlen téma (`/lore izelabda`) továbbra is a usage-sort adja,
+      nem csendben más szócikket.
+- [ ] **`/lore fa` eredet-javítás:** a Fa „Asterlayna lelkének utolsó
+      csillagszilánkjából kelt ki" — nem „a teste fölött nőtt" (a kódex szerint a
+      teste semmivé foszlott).
+- [ ] **`/lore menedek` földrajz:** Ryanora ősi szíve a Fa tövében (Radicora), a mai
+      főváros Caldestera a szoroson túl, komppal — a két hely nem keverhető össze.
+- [ ] **Tábortűz kánon-hűség:** az Asterlayna-leszállás sora már szóbeszédként szól
+      („Van, aki azt tartja…") és nem írja át az Első Háború okát; a DARK Királyok
+      Átka-sor sem azt mondja, hogy a Felsőkre nem hat, hanem hogy a sírban nem
+      tarthatja őket, viszont a korona szorít, míg viselik.
+- [ ] **Escort-útvonal spawn-guard:** `/events escort` — a konvoj nem CSAK védelem-mentes
+      pontról indul, hanem az útvonala mintavett pontjai (25/50/75/100%) is védelem-
+      mentesek. Teszt: vegyél fel egy claimet/territóriumot az anchor mellé úgy, hogy a
+      lehetséges célok többsége bele essen → a konvoj vagy más irányba indul, vagy
+      (ha mind a 8 próbált irány védett) ebben az intervallumban nem indul el egy sem.
+      A `world-events.spawn-rules.escort.*` mátrix-sor kikapcsolásával a korlát megszűnik.
+- [ ] **Ereklye-flavor:** a legendás flavor-sorok között NEM szerepel egyediség-állítás
+      („Egyetlen darab létezik belőle") — a ritkaság ismételhetően generálódik, egyediséget
+      csak a nevesített, ID-zett relikvia állít.
+- [ ] **Gépi őrök (nem ingame, de a körhöz tartozik):** `python3 scripts/check_consistency.py`
+      FAIL-el, ha (a) egy doksi-szám elszakad a mért értéktől (Java-fájl/manager/store/
+      tábortűz-mese/Idegen-sor), (b) az ARCHITECTURE.md csomagtérkép fájlszáma driftel,
+      (c) egy `/lore` téma tab-complete/szócikk/usage-sor hármasa szétcsúszik.
+
+## Mélyaudit-kör: állapotgépek (spell-provenancia, frakció, király, raid) 2026-07-26
+- [ ] **Spec-reset nem halmoz (HIGH-19):** válassz kaszt-specet, szintezz addig, hogy a spec
+      spelljei feloldódjanak (`/spell lista`), majd `/spec respec class` → a spec spelljei
+      ELTŰNNEK a listából. Válassz másik specet: csak AZ ő spelljei jönnek. A kaszt-szintből
+      járó spellek MINDIG megmaradnak.
+- [ ] **Talent-visszavonás forrásérzékeny (MED-07):** ha egy talent olyan spellt ad, amit a
+      kaszt-szint IS ad, a talent elvesztésekor (spec-váltás → `refundUnavailableTalents`)
+      a spell MEGMARAD. Ha csak a talent adta, eltűnik.
+- [ ] **Admin-feloldás sérthetetlen:** `/job admin unlockallskills <játékos>` után egy
+      spec-respec NEM veszi el a spelleket (ADMIN forrás).
+- [ ] **Régi (provenancia előtti) mentés:** olyan játékossal, aki a frissítés ELŐTT halmozott
+      össze két spec spellkészletét, az első `/spec respec class` letakarítja a régi spec
+      spelljeit is (a backfill visszamenőleg forráshoz kötötte őket).
+- [ ] **Frakció-kilépés nem kerülőút (HIGH-17):** RED-ként `/faction leave` (fizetős, kapus)
+      → utána `/faction join blue` a világ közepén: az **elutasítás** a semleges-főváros kapura
+      hivatkozik. Szezon-hajrában (`factions.switch.lockout-final-days` ablakban) a leave utáni
+      join is TILOS. Új játékos első `/faction join`-ja továbbra is ingyenes és kapu nélküli.
+- [ ] **Király-mandátum a koronázástól (HIGH-18):** `factions.kings.term-days: 1` +
+      szavazás a ciklus vége felé → a friss király mandátuma a koronázástól számol (nem esik
+      le azonnal), a korona-átok szintje 0-ról indul (`/faction king info`), a szavazólap
+      kiürül, és a `crowned` haladás-bejegyzés MEGJÖN (eddig csak admin-koronázásnál jött).
+      Restart után a mandátum nem indul újra (reign-start a kings.yml-ben).
+- [ ] **Raid-nevezés csak felkészülésben (HIGH-16):** raid hirdetés → várd meg a harci szakasz
+      kezdetét → `/faction raid join` → „a harci szakasz már megkezdődött" hibát ad.
+- [ ] **Raid-díj visszatérítés restartnál (HIGH-16):** hirdess raidet (kassza csökken a
+      nevezési díjjal), majd állítsd le a szervert → a broadcast a visszatérítést is említi,
+      és a frakciókassza visszakapja a díjat (`/faction treasury`).
+- [ ] **Raid-cooldown restart-álló (HIGH-16):** raid vége után azonnal restart → a
+      `/faction raid start` továbbra is cooldown-hibát ad (raids.yml).
+- [ ] **Fegyvertilalom offhandben is (DEEP-MED-10):** offhandbe vett karddal állj be
+      Caldesterába → az őrség azt is elrakja. Töltsd tele a hátizsákot (csak az aktív slot
+      legyen szabad) → a fegyver NEM kerül vissza a kezedbe; helyette „tele a hátizsákod"
+      figyelmeztetést kapsz.
+- [ ] **Párbaj heti számláló (DEEP-MED-11):** `honor-duel.weekly-limit: 2` — használd el a
+      heti kettőt, várd meg a hét-váltást (vagy állítsd át a rendszeridőt) → az új hét első
+      párbaja elfogadható. Visszautasítás (`/parbaj nem`) után a kihívó AZONNAL kihívhatja
+      újra ugyanazt a játékost (nincs „duel-pending" a lejáratig).
+- [ ] **Közösségi cél maradéka átvisz (DEEP-LOW-02):** állíts célt 10-re, adj be 8-at, majd
+      egy 64-es stacket → a cél teljesül, és a következő ciklus NEM 0-ról, hanem a maradékkal
+      indul (`/celok`); egy hozzájárulás legfeljebb 3 ciklust zár le.
+- [ ] **Függőleges biome-progressz (DEEP-LOW-01):** barlang-biome quest (`EXPLORE_BIOME`,
+      pl. lush_caves) — ásd le magad EGY oszlopban a barlang-biome-ba: a progressz megjön
+      (eddig csak X/Z elmozdulásra futott az ellenőrzés).
+- [ ] **AFK-kikapcsolás takarít (DEEP-LOW-03):** állj AFK-zónába (bossbar látszik), majd
+      `/icesmp config set afk.enabled false` → a bossbar eltűnik, a zóna-időzítő nullázódik,
+      és az AFK-státusz megszűnik (nem ragad bent).
+- [ ] **Relikvia keep-mód recovery (DEEP-HIGH-07):** `relics.passive-death.mode: keep` —
+      halj meg passzív relikviával, majd respawn ELŐTT lépj ki. Visszajelentkezés után a
+      relikvia a rituálé-oltárnál ÚJRAIDÉZHETŐ (a tulajdon él, nem ragadt be). Ha viszont
+      normálisan respawnolsz, a tárgy visszakerül ÉS az oltár NEM ad második példányt.
+- [ ] **Gépi őrök:** `python3 scripts/check_consistency.py` FAIL-el, ha (a) egy
+      `unlockSpell(...)` forrás nélkül hív, (b) valahol `removeFaction(...)` törli a
+      frakció-hozzárendelést, (c) kéz-kiürítést közvetlenül `addItem` követ.
+
+## Mélyaudit-kör: territórium-átadás, advancement-fa, vagyon, WG-híd (2026-07-26)
+- [ ] **Raid-foglalás megőrzi a függőleges sávot (DEEP-MED-07):** adj egy frakcióterületnek
+      Y-sávot (`/territory sety <id> 60 90`), raideld el → a győztes frakcióé lesz, DE a
+      terület Y-sávja MEGMARAD (`/territory info <id>` — eddig teljes világmagasságúvá vált),
+      és a poligon-alak/rádiusz/középpont is változatlan; a főváros-státusz nem száll át.
+- [ ] **Hiányos advancement-fa KIKAPCSOL (MED-10):** töröld ki EGY advancement-JSON-t a világ
+      datapack-könyvtárából, indítsd újra → a log SEVERE sorban NEVESÍTI a hiányzó
+      bejegyzés(eke)t, és az advancement-rendszer kikapcsol (nem oszt némán semmit).
+      A teljes pack visszaállítása után újraindításnál minden bejegyzés él.
+- [ ] **Advancement élő kikapcsolás:** `/icesmp config set advancements.enabled false` →
+      innentől nem jön toast/bejegyzés (eddig a betöltött fa tovább osztott);
+      visszakapcsolás után `/icesmp reload` kell (a fa regisztrációja indulási).
+- [ ] **Egységes vagyon (MED-08):** adj a játékosnak EGYSZERRE többféle valutát (pl. 500
+      Parals + 300 Creutzér). A `/toplista vagyon`, a heti krónika/bárdi ének és a
+      vagyon-elérés UGYANAZT az összeget mutatja (az összes valuta összegét) — eddig a
+      ranglista csak a default valutát nézte.
+- [ ] **Claim-átfedés valódi metszés (HIGH-20):** hozz létre WorldGuardban egy KICSI régiót
+      (pl. 5×5) úgy, hogy ne essen chunk-középre, és egy másikat eltérő Y-magasságban →
+      a `/claim` a környező területre ELUTASÍT (eddig a mintapontok közt átcsúszott).
+- [ ] **WG-híd megszakító (HIGH-20):** ha a WG-lekérdezés hibázik (pl. WG-reload közben), a
+      log figyelmeztet, a claim-ellenőrzés 60 másodpercig ELUTASÍT (fail-closed), utána a
+      híd magától újra próbálkozik — NEM marad végleg kikapcsolva. WorldGuard NÉLKÜL a
+      claim továbbra is engedélyezett (nincs régió, amit védeni kell).
+
+## P0 kiadásblokkolók: block-regen napló + piaci tranzakció-napló + kill-kontextus (2026-07-26)
+> Ezek a blokk-visszaépítés, a piac és a mob-jutalom TARTÓSSÁGI/szál-helyességi javításai.
+> A tesztek nyers leállítást (`kill -9`) is kérnek — külön teszt-világon futtasd.
+
+### Block-regen write-ahead napló (CRIT-05)
+- [ ] **Tartalom-vesztés:** `territory.protection.regen.tile-entity-explode: true`, védett zónában
+      tegyél egy ládába 3 jól felismerhető tárgyat, robbants rá TNT-vel, majd 2 percen belül
+      `kill -9` (NEM `/stop`). Újraindítás után a láda visszaépül, PONTOSAN a három tárggyal
+      (a duplikáció is hiba).
+- [ ] **Örök lyuk:** `regen.delay-seconds: 20`, robbants ki ~30 blokkos falszakaszt, majd 25 s
+      múlva — MIKÖZBEN épül vissza — `/stop`. Újraindulás után a fal maradéka is visszaépül.
+- [ ] **Napló-hiba fail-safe (NINCS dupe-farm):** `chmod 500 plugins/IceSMP`, majd robbants rá
+      egy TELI ládára. A láda sértetlenül él túl (óvó rúna-effekt), a logban napló-hiba.
+      **KRITIKUS:** ha a láda MÉGIS visszaépül, egyszer épül vissza — NEM töltődik újra
+      másodpercenként (az ismételt világ-mutáció korlátlan tárgy-duplikáció lenne).
+- [ ] **Hiányzó világ:** robbants külön világban, `/stop`, nevezd át a világ mappáját, indíts
+      újra → világonként EGY warning, a rekordok a block-regen.yml-ben MEGVANNAK. Visszanevezés
+      + újraindítás után a blokkok visszaépülnek. `/icesmp reload` után a warning újra jöhet.
+- [ ] **Napló-tisztulás:** ~10 blokk kirobbantása, teljes visszaépülés, `/stop` → a
+      `block-regen.yml` `pending` szakasza ÜRES, a `block-regen.wal.rotated` NEM létezik.
+- [ ] **Sérült checkpoint:** rontsd el a `block-regen.yml`-t, indíts újra → karantén-másolat +
+      mentés-tiltás a logban, a robbanások tovább működnek, a `.wal` nő (rekord nem vész el).
+
+### Piaci tranzakció-napló (CRIT-06)
+- [ ] **Tiszta út:** `/market sell 100` → a tárgy eltűnik a kézből, a tétel a GUI-ban van, és a
+      `market-journal.yml` a művelet UTÁN ÜRES.
+- [ ] **Vásárlás:** A listáz 100-ért, B megveszi → B bankjából a kiírt összeg, A-nak a 10% díj
+      után 90, a tárgy B-nél, a napló üres.
+- [ ] **Crash vásárlás közben:** `kill -9` közvetlenül egy vásárlás után. Újraindítás: VAGY a
+      tárgy B-nél van ÉS A pénzt kapott, VAGY a tétel visszaáll és B pénze megvan — köztes
+      állapot nincs. **Sosem fordulhat elő, hogy B megkapja a tárgyat és a pénze is visszajön.**
+- [ ] **Crash listázás közben:** listázás után azonnal `kill -9`. Belépéskor EGY üzenet, és a
+      tárgy PONTOSAN egy helyen van (inventory VAGY piaci tétel).
+- [ ] **Két nyitott listázás (tranzakciónkénti jelző):** írásvédett napló mellett próbálj két
+      különböző tárgyat listázni, majd oldd fel és indíts újra → MINDKÉT tárgy előkerül
+      (egy közös jelző esetén a második felülírta volna az elsőt, és az elveszett volna).
+- [ ] **Rejtett tétel nem foglal helyet:** helyreállításra váró (még meg nem erősített) tétel
+      NEM számít bele a `market.max-listings-per-player` limitbe, és nem okoz hamis
+      „élő licites aukció nem vonható vissza" hibát.
+- [ ] **Sérült napló:** szemetet a `market-journal.yml`-be, újraindítás → `/market sell`
+      ELUTASÍT érthető magyar üzenettel („a tranzakció-napló most nem írható"), a GUI-vásárlás
+      is, az aukció-lezárás halasztódik; pénz és tárgy érintetlen.
+- [ ] **Aukció escrow:** A aukciót indít, B licitál, C túllicitál → B visszakapja a zárolt
+      licitet, C-től a nagyobb összeg levonva. Nyers leállítás + újraindítás: az egyenlegek
+      ugyanezek.
+
+### Kill-kontextus és jutalom-utak (CRIT-07)
+- [ ] **Kereszt-régiós ölés:** íjjal/spellel ölj mobot távoli régióban → az erszény/lélekkő/
+      kazamata-drop a MOB helyén, a kaszt-XP/lélekszilánk/pet-XP nálad, konzol-hiba NINCS.
+- [ ] **Nincs dupla erszény:** rúnás fegyver, `mob-money-drop.chance-percent: 100` + bónusz 50
+      → ölésenként PONTOSAN egy erszény.
+- [ ] **Kill-szintű retesz:** ugyanaz az ölés két jutalom-csatornán sem fizet kétszer (a retesz
+      az áldozat UUID-jéhez kötött, nem a kontextus-példányhoz).
+- [ ] **Kijelentkezés a hop előtt:** ölj mobot és AZONNAL lépj ki → nincs konzol-hiba.
+- [ ] **Előszűrők:** kreatívban / AFK-ban / spawner-mobra / saját minionra a FAUCET-jutalmak
+      nem fizetnek; spawner-mobnál a kaszt-XP és pet-XP IGEN.
+- [ ] **Ismert korlát (nyitott):** kereszt-régiós ölésnél a PÁRT-XP megosztás és a Vad Hajsza
+      személyes lootja némán elmaradhat (pozíció-olvasás az áldozat szálán, fail-open) — ezt
+      külön kör zárja, nem regresszió.
+
+## P0-A…F csomagok: fail-closed perzisztencia és Folia-életciklus (2026-07-26)
+> Ezek a csomagok az adatvesztés és a szál-helyesség ellen dolgoznak. Több teszt NYERS
+> leállítást (`kill -9`) kér — külön teszt-világon futtasd, és előtte mentsd a `plugins/IceSMP`-t.
+
+### P0-A — sérült állapotfájl fail-closed
+- [ ] **Indulás megszakad:** állítsd le a szervert, írj szemetet a `plugins/IceSMP/currency-balances.yml`-be,
+      indíts újra → a log SEVERE sorban nevezi a fájlt, karantén-másolat készül, és az IceSMP
+      **NEM indul el** (nem fut tovább üres egyenlegekkel). A karantén visszaállítása után indul.
+- [ ] **Szemantikai sérülés is fogja:** ép YAML, de negatív egyenleg / nem-UUID kulcs →
+      ugyanaz a fail-closed viselkedés (nem csak a parse-hiba számít).
+- [ ] **A közösségi cél számlálója is:** negatív `progress` érték a `community-goals.yml`-ben →
+      indulás megszakad, nem nullázza némán a célt.
+
+### P0-B — piac/wallet fail-stop
+- [ ] **Napló nem írható → a művelet elmarad:** `chmod 500 plugins/IceSMP`, majd `/market sell 100`
+      → érthető magyar hibaüzenet („a tranzakció-napló most nem írható"), a tárgy a kézben MARAD.
+      Ugyanez a GUI-vásárlásnál. Jogosultság visszaadása után minden működik.
+- [ ] **Wallet-commit a napló törlése ELŐTT:** vásárlás közbeni `kill -9` után az egyenleg és a
+      tárgy MINDIG egy irányba zárul — sosem fordulhat elő, hogy a vevőnél a tárgy ÉS a pénze is.
+
+### P0-C — block-regen tokenes recovery
+- [ ] **Teli láda + kill -9:** védett zónában robbants rá egy 3 felismerhető tárgyat tartalmazó
+      ládára, 2 percen belül `kill -9` → újraindítás után a láda PONTOSAN a három tárggyal épül
+      vissza (se több — a duplikáció is hiba —, se kevesebb).
+- [ ] **Nincs dupe-farm:** írásvédett data-könyvtár mellett a láda **egyszer** épül vissza, NEM
+      töltődik újra másodpercenként.
+
+### P0-D — forrás-eseményes gyűjtés + contribution receipt
+- [ ] **Ledob–felvesz nem duplázza:** `COLLECT_ITEMS` közösségi célnál dobd el és vedd fel
+      ugyanazt a stacket többször → a számláló CSAK egyszer nő.
+- [ ] **Olvasztás/horgászat egyszer számít:** kemencéből kivett és kifogott tétel is pontosan
+      egyszer könyvelődik, `kill -9` + újraindítás után sem ismétlődik (tartós receipt).
+
+### P0-E — Folia kill-pillanatkép + scheduleres párt-jutalom
+- [ ] **Kereszt-régiós párt-XP:** két párttag távoli régiókban; öld meg a mobot úgy, hogy a
+      másik tag a megosztási sugáron BELÜL, de MÁSIK régióban legyen → mindkettő megkapja az
+      osztott XP-t (korábban a megosztás némán elmaradt), és a konzolon nincs szál-hiba.
+- [ ] **Sugáron kívüli tag nem kap:** a sugáron kívüli párttag nem kap részt; a teljes XP a
+      gyilkosnál marad (nincs XP-nyomtatás és nincs veszteség).
+- [ ] **Offline/kilépő tag:** ölés után azonnal lépjen ki az egyik tag → nincs konzol-hiba, a
+      többiek megkapják a részüket (a 4 tickes határidő lezárja az aggregációt).
+
+### P0-F — mulandó entitás életciklus + esemény-watchdog
+- [ ] **Karaván-kíséret VÉGIGFUT:** `/events escort` → a konvoj elindul és célba ér (NEM zárul
+      le azonnal „a konvoj elesett" üzenettel). Ez a regisztráció-teszt: a liveness fail-closed,
+      így regisztráció nélkül az esemény az első tickben elhalna.
+- [ ] **Vad Hajsza VÉGIGFUT:** `/events wildhunt` → a fenevad életben marad a lejáratig vagy a
+      leöléséig (nem „megszökik" azonnal).
+- [ ] **Idegen NPC marad:** `/events stranger` → az NPC a beállított ideig áll, nem tűnik el
+      azonnal és nem spawnol újra ismételten.
+- [ ] **Halál azonnal felszabadít:** öld meg a Vad Hajsza fenevadát → az esemény azonnal zárul,
+      és rögtön indítható új nagy esemény (nem kell megvárni a watchdogot).
+- [ ] **Minion-cap azonnal ürül:** idézd meg a maximális minion-számot, öld meg az egyiket →
+      1-2 másodpercen belül idézhető új (nem GC-függő).
+- [ ] **Watchdog (beragadt esemény):** ha egy esemény `isActive()`-ja beragadna, a
+      `world-events.orchestration.max-active-minutes` (alap 60) lejárta után a többi nagy
+      esemény ismét indulhat magától — nem kell szerver-újraindítás.
+
+## PR-review javítások: tartósság-bizonyíték és megszakító-gyógyulás (2026-07-26)
+- [ ] **Sikertelen playerdata-mentés nem zárja a naplót (P0):** a `MarketManager.persistPlayer`
+      hibája után a `market-journal.yml` bejegyzés NYITVA marad (logban figyelmeztetés).
+      Teszt: listázz, majd nézd meg a naplót — ha a mentés bukott, a bejegyzés ott van, és a
+      következő indulás a jelzőből dönt. **Sosem fordulhat elő, hogy a tétel a lemezen van ÉS a
+      tárgy a kézben (dupe), vagy hogy a piac már nem tartozik a tárggyal, de a játékos sem
+      mentette el (vesztés).**
+- [ ] **Sikertelen pénz-helyreállítás újrapróbálható (P1):** crash után olyan helyreállítással,
+      ahol a levonás nem fedezett → a log SEVERE sort ad, a napló-bejegyzés MEGMARAD, és a
+      KÖVETKEZŐ indulás újra megpróbálja (eddig véglegesen legitimálódott az eltérő egyenleg).
+- [ ] **Sérült market.yml nem dob el tételt (P1):** rontsd el egy tétel valutáját/tárgyát, egy
+      eladó-UUID-t, vagy hagyj zárolt licitet licitáló nélkül → az indulás MEGSZAKAD karantén-
+      másolattal (eddig némán átugrotta, és a tárgy/escrow elveszett).
+- [ ] **WorldGuard-reload után a híd magához tér (P1):** `/wg reload` (vagy a WG plugin
+      újratöltése) közben futtass claim-ellenőrzést → a híd hibát logol és 60 mp-re kikapcsol,
+      **utána viszont ÚJRA feloldja a WG-hivatkozásokat**, és ismét helyesen válaszol. Nem marad
+      hibás a szerver-újraindításig. Amíg hibás, a `/claim` elutasít (fail-closed).
+- [ ] **Spell-provenancia migráció szint-helyes (P2):** olyan játékossal, aki egy MAGASABB
+      szintű kaszt-spellt talentből/specből kapott meg, a backfill NEM ír rá `BASE` forrást →
+      a talent/spec elvesztésekor a spell is elmegy (eddig véglegesen nála maradt). Ellenőrizd
+      azt is, hogy idegen kaszt specének táblája nem attribútál (Varázslónak nincs Harcos-spece).
+- [ ] **Közösségi jutalom crash-biztos (P1):** állítsd a célt 1-re, teljesítsd, és a kifizetés
+      pillanatában `kill -9`. Újraindításkor a log „N függő kifizetés — újrajátszás" sort ad,
+      és a kincstár/szezon/buff jutalom MEGÉRKEZIK (eddig a nyugta miatt az esemény nem
+      játszódott újra, a jutalom pedig elmaradt). A jutalom nem duplázódik, ha nem volt crash.
+
+## PR-re-review javítások: tanú-megtartás, szigorú betöltés, idempotens kifizetés (2026-07-26)
+- [ ] **Commitolt helyreállítás tanúja megmarad:** ha egy commitolt BUY/BID/SETTLE javítása
+      nem sikerül (fedezetlen levonás), a bejegyzés nyitva marad, ÉS a tanúja bent marad a
+      `market.yml`-ben. Teszt: a következő indulás **előre** (a commitolt célértékre) próbálja
+      újra, nem visszaforgat. Ellenőrzés: a `committed-txn` lista tartalmazza a nyitott
+      bejegyzés azonosítóját.
+- [ ] **Várólistás tárgylista szigorú:** rontsd el egy `pending-deliveries` lista EGY elemét
+      (pl. írj bele stringet), indíts újra → az indulás MEGSZAKAD karantén-másolattal.
+      Eddig az az egy elem nyomtalanul eltűnt, a lista többi tárgya betöltődött.
+- [ ] **Kétirányú licit-invariáns:** licitáló ZÁROLT ÖSSZEG NÉLKÜL, illetve nem véges/negatív
+      ár, licit vagy buy-out érték szintén indulás-megszakítást ad.
+- [ ] **WG-híd nincs fail-open ablak újra-feloldás közben:** WorldGuard-reload alatt futtass
+      párhuzamosan claim-ellenőrzést → **egyetlen** `/claim` sem mehet át azon, hogy a híd
+      félig-kész állapotot mutat („nincs régió"). Amíg nem tud válaszolni, elutasít.
+- [ ] **Bukott újra-feloldás után is próbálkozik:** ha a WG épp reload közben van és az újra-
+      feloldás elbukik, a log újabb 60 mp-es ablakot jelez, és a híd a következő ablakban
+      ISMÉT próbál — nem marad hallgatásban a szerver-újraindításig.
+- [ ] **Közösségi kifizetés PONTOSAN egyszer (idempotens):** teljesítsd a célt, majd
+      `kill -9` a kifizetés közben. Újraindításkor a log „függő kifizetés — újrajátszás" sort
+      ad, és a kincstár/szezon-pont **pontosan egyszer** növekszik (se elmaradás, se duplázás).
+      Ellenőrzés: `faction-treasury.yml` → `applied-grants`, `season.yml` → `season.applied-grants`
+      tartalmazza a `community:<id>:treasury:<FRAKCIÓ>` / `:season:` azonosítót; ismételt
+      indítás után az összeg NEM nő tovább.
+- [ ] **Részleges kifizetés pótlódik:** ha a kincstár-írás sikerül, a szezon-írás nem (pl.
+      írásvédett `season.yml`), a log RÉSZBEN-sikert jelez, a bejegyzés MARAD, és a jogosultság
+      visszaadása után az újrajátszás CSAK a szezon-pontot pótolja — a kincstár nem kap újra.
+- [ ] **Config-változás nem téríti el a replayt:** hagyj függő kifizetést, majd írd át (vagy
+      töröld) a cél `reward-treasury` értékét a configban, és indíts újra → a kifizetés a
+      MENTETT pillanatkép szerint történik (a törölt cél jutalma sem veszik el).
 
 ## Csodálatos Bingulus — örökös DEV item
 

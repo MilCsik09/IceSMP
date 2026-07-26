@@ -123,7 +123,7 @@ public final class GuildCommand implements BasicCommand {
                 }
                 reply(player, guildManager.deposit(player, amount), "guild-deposited",
                         "<gold>⚜ Befizetve a céh-kasszába: <white>{amount}</white>.</gold>",
-                        Map.of("amount", String.valueOf(amount)));
+                        Map.of("amount", String.format(java.util.Locale.ROOT, "%.0f", amount)));
             }
             case "info" -> {
                 final GuildManager.Guild guild = guildManager.getGuild(player.getUniqueId());

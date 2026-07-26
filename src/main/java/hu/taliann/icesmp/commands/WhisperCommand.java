@@ -48,21 +48,32 @@ public final class WhisperCommand implements BasicCommand {
             player.sendMessage(messageManager.get("whisper-disabled", "&7A Suttogás most néma."));
             return;
         }
-        if (args.length >= 2 && ("vad".equalsIgnoreCase(args[0]) || "accuse".equalsIgnoreCase(args[0]))) {
+        if (args.length >= 2 && isAccuseKeyword(args[0])) {
             accuse(player, args[1]);
             return;
         }
         if (args.length == 0) {
             player.sendMessage(messageManager.get("whisper-usage",
-                    "&7/suttogas <üzenet> &8— titkos csatorna &7| /suttogas vad <játékos> &8— tanú-vád"));
+                    "&7/suttogas <üzenet> &8— titkos csatorna &7| /suttogas vád <játékos> &8— tanú-vád"));
             return;
         }
-        if (!whisperManager.isWhisperer(player)) {
+        if (!whisperManager.canHearWhispers(player)) {
             // Kívülállónak a csatorna nem létezik — a válasz szándékosan semmitmondó.
             player.sendMessage(messageManager.get("whisper-not-heard", "&8…csak a szél zúg."));
             return;
         }
         whisperManager.deliverWhisper(player, String.join(" ", args));
+    }
+
+    /**
+     * A vád-alparancs elfogadott alakjai. Az ékezetes „vád" a KIÍRT forma (ékezet nélkül a szó
+     * magyarul mást jelent), de az ékezet nélküli és az angol alak is működik, hogy ne kelljen
+     * ékezetet gépelni chat-parancsban.
+     */
+    private static boolean isAccuseKeyword(final String argument) {
+        return "vád".equalsIgnoreCase(argument)
+                || "vad".equalsIgnoreCase(argument)
+                || "accuse".equalsIgnoreCase(argument);
     }
 
     private void accuse(final Player accuser, final String targetName) {
@@ -73,7 +84,10 @@ public final class WhisperCommand implements BasicCommand {
         }
         final Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            accuser.sendMessage(messageManager.get("player-not-found", "&cNincs ilyen játékos online."));
+            // A shippelt messages/profession.yml-ben ez a kulcs %s-t tartalmaz — argumentum
+            // nélkül a formázás kimarad, és a játékos a nyers %s-t látná.
+            accuser.sendMessage(messageManager.get("player-not-found",
+                    "&cNincs ilyen online játékos: &f%s", targetName));
             return;
         }
         whisperManager.consumeWitnessToken(accuser.getUniqueId());
@@ -88,9 +102,9 @@ public final class WhisperCommand implements BasicCommand {
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
-            return List.of("vad");
+            return List.of("vád");
         }
-        if (args.length == 2 && "vad".equalsIgnoreCase(args[0])) {
+        if (args.length == 2 && isAccuseKeyword(args[0])) {
             return Bukkit.getOnlinePlayers().stream().map(Player::getName)
                     .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
                     .map(String::valueOf).toList();

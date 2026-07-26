@@ -83,6 +83,7 @@ public final class SinManager {
     private void exileToDark(final Player player) {
         factionManager.setFaction(player.getUniqueId(), FactionType.DARK);
         sealDarkPact(player);
+        AdvancementService.award(player, "exiled");
         player.sendMessage(messageManager.getMessage(
                 "sinner.exiled",
                 "<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: a Kitaszítottak közé száműztek. A paktum örök.</dark_purple>"
@@ -164,6 +165,7 @@ public final class SinManager {
         player.getPersistentDataContainer().remove(sinnerKey);
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1.0F, 1.4F);
         player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0.0D, 1.0D, 0.0D), 60, 0.5D, 0.8D, 0.5D, 0.05D);
+        AdvancementService.award(player, "redeemed");
         player.sendMessage(messageManager.getMessage(
                 "sinner.pact-broken",
                 "<gold>A vezeklésed teljes: a sötét paktum megtört, bűneid feloldozást nyertek.</gold>"

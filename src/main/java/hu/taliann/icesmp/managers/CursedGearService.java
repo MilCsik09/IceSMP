@@ -103,6 +103,11 @@ public final class CursedGearService {
         return Math.max(0.0D, configManager.getDouble("item-rarity.cursed.damage-bonus-cap", 0.4D));
     }
 
+    /** A tudatos-felvétel megerősítés-ablaka millisecundumban (konfigból, élőben). */
+    public long confirmMillis() {
+        return Math.max(1L, configManager.getLong("item-rarity.cursed.confirm-seconds", 5L)) * 1000L;
+    }
+
     /**
      * Átok-törés (az oltár {@code uncurse} rituáléja): a flag törlődik, az átok-sorok
      * helyére a megtört átok emléke kerül — a tárgy megtartja az erejét jelző nevét,

@@ -35,6 +35,12 @@ public final class PetCaptureListener implements Listener {
                 && event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
             return;
         }
+        // Egy fizikai jobb kattintás MAIN- és OFF-HAND eventet is ad, a rítus viszont mindkettőben
+        // a main-handet olvasta: elég nagy stacknél ugyanaz a rítus kétszer futott és KÉT ritka
+        // kelléket fogyasztott.
+        if (event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
         final Player player = event.getPlayer();
         final ItemStack hand = player.getInventory().getItemInMainHand();
         final boolean heart = captureItemFactory.isHeartItem(hand);

@@ -146,7 +146,7 @@ item-rarity:
         - "A raktárkészlet gerince."
         - "Kopott, de kitart még egy darabig."
         - "Alapfelszerelés — se több, se kevesebb."
-        - "Nem kelt feltűnést, de nem is csal csalódást."
+        - "Nem kelt feltűnést, de nem is okoz csalódást."
         - "Egyszerű kovácsmunka, tisztes áron."
         - "Egy közlegény fegyvere, nem egy hősé."
         - "A hétköznapi élet vasból font háttere."
@@ -340,7 +340,7 @@ item-rarity:
         - "Pyralingrad krónikásai külön fejezetet szenteltek neki."
         - "A Suttogók is óva intenek attól, aki magára haragítja e fegyver gazdáját."
         - "Caldestera múzeumában is csak másolat látható belőle."
-        - "Egy király esküje kötődik hozzá, mit már senki sem emlékszik pontosan."
+        - "Egy király esküje kötődik hozzá, amire már senki sem emlékszik pontosan."
         - "Az arany erezete mintha sosem fakulna."
         - "Aki egyszer a kezébe fogta, többé nem felejti az érzést."
     legendas:
@@ -377,10 +377,10 @@ item-rarity:
         - "Egy korszakban egy ha születik."
         - "Az eltűnt nemesség fénykorából."
         - "I. Benedictus koronázási szertartásán villant fel utoljára."
-        - "I. Lineata uralkodásának egyetlen fennmaradt jelképe."
+        - "I. Lineata uralkodásának jelképei közül való."
         - "A Néma Királynő átka sem tudta megrontani."
         - "Az Élet Fája gyökerei alatt kovácsolták, mielőtt a Hasadás bekövetkezett."
-        - "Kallan és Soleil egyetlen közös hagyatéka, még a testvérháború előttről."
+        - "Kallan és Soleil közös hagyatékából, még a testvérháború előttről."
         - "Asterlayna lezuhanásának éjszakáján született a legendája."
         - "A Hetedik Vérháború végét ezzel pecsételték meg."
         - "Azóta sem született hozzá fogható, mióta a nemesség eltűnt."
@@ -393,7 +393,7 @@ item-rarity:
         - "Nincs olyan bárd, aki ne ismerné a legendáját."
         - "Fénye önmagában elegendő, hogy sereget riasszon el."
         - "A birtoklásáért birodalmak háborúztak egykor."
-        - "Egyetlen létező példány — több sosem lesz belőle."
+        - "Ilyet ma már egyetlen kohó sem tudna újrakovácsolni."
         - "A neve önmagában félelmet és tiszteletet parancsol."
         - "Minden generáció újra elmeséli a történetét."
         - "Nem eszköz többé, hanem jelkép."
@@ -405,7 +405,7 @@ item-rarity:
         - "Pyralingrad és Glatziendorf trónjai egyaránt hivatkoznak rá krónikáikban."
         - "Az Armageddon-ultimátum óta sem született hozzá fogható."
         - "Aki forgatja, az egész Káoszkor emlékezetébe vésődik."
-        - "A hét birodalom közül egyik sem tagadná meg tőle a tiszteletet."
+        - "A négy hatalom közül egyik sem tagadná meg tőle a tiszteletet."
         - "Egyetlen pengéje egy egész sereg csatakiáltását idézi."
     ereklye:
       name: "Ereklye"
@@ -444,10 +444,10 @@ item-rarity:
         - "Aetrinita gyökereiből nőtt ki, mielőtt bármely birodalom létezett volna."
         - "Eleftheria, Soleil, Kallan és Arkynn korából származó ritkaság."
         - "A Hasadás pillanatában szenvedte el az első repedést — és mégis épen maradt."
-        - "A Néma Királynő ébredése előtti világ egyetlen tanúja."
+        - "A Néma Királynő ébredése előtti világ tanúja."
         - "Azelőttről való, hogy a nemesség eltűnt volna a föld színéről."
-        - "Kallan és Soleil testvérháborújának egyetlen túlélő ereklyéje."
-        - "Arkynn népének utolsó, meg nem fosztott kincse."
+        - "Kallan és Soleil testvérháborúját is túlélte."
+        - "Arkynn népének kincsei közül, amit a fosztogatás nem talált meg."
         - "A világ három birodalma együtt sem tudná újra megalkotni."
         - "Azt beszélik, maga Aetrinita formálta emberi kézzel."
         - "Régebbi, mint Asterobourgh romjai — régebbi, mint a birodalmak."
@@ -461,7 +461,7 @@ item-rarity:
         - "Aki birtokolja, a végzet eszközévé válik."
         - "A világ formálódott körülötte, nem fordítva."
         - "Ereje túlmutat minden halandó fogalmán."
-        - "Egyetlen darab létezik belőle — és talán soha nem is lesz több."
+        - "Ahányan ilyet találtak, annyi legenda szól róluk."
         - "A mítosz és valóság határán létezik."
         - "Aki ránéz, megérzi: ez több, mint tárgy — ez történelem."
         - "Még Asterlayna zuhanása előtti csillagfényt őriz magában."
@@ -473,7 +473,7 @@ item-rarity:
         - "Nincs olyan király vagy királynő, aki méltó volna hozzá."
   # Mob-loot alaptárgy-nevek family szerint (a jelző a raritásból jön).
   nouns:
-    weapon: [ "Penge", "Kard", "Fog", "Tőr", "Szablya", "Kard" ]
+    weapon: [ "Penge", "Kard", "Fog", "Tőr", "Szablya", "Pallos" ]
     armor: [ "Vért", "Páncél", "Sisak", "Pajzs", "Köntös" ]
     tool: [ "Szerszám", "Csákány", "Fejsze", "Véső" ]
   # A tier CSAK azt dönti el, mely raritások eshetnek és milyen súllyal (a raritás adja az erőt).
@@ -498,3 +498,6 @@ item-rarity:
     chance: 0.08
     damage-bonus-per-piece: 0.1
     damage-bonus-cap: 0.4
+    # Tudatos felvétel: az első felhelyezési kísérlet csak figyelmeztet, és ennyi másodpercen
+    # belüli MÁSODIK kísérlet erősíti meg (az átkozott páncél utána már nem vehető le szabadon).
+    confirm-seconds: 5

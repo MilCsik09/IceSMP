@@ -1,7 +1,5 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.data.CurrencyType;
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.data.SpecializationType;
@@ -171,7 +169,7 @@ public final class CharacterGUIListener implements Listener {
                     .append(Component.space()).append(profession.getDisplayName()));
         } else {
             fail(player, ctx.messageManager().getComponent("profession-gui-cannot",
-                    "&cEzt a szakmát most nem tanulhatod (a kategória helyed foglalt)."));
+                    "&cEzt a szakmát most nem tanulhatod — ebben a kategóriában már betöltötted a helyed."));
         }
         ProfessionGUI.open(player, ctx);
     }
@@ -194,7 +192,7 @@ public final class CharacterGUIListener implements Listener {
                     "talent-spend-success",
                     "&aTalent fejlesztve: &e{talent} &7(rang: &f{rank}&7) | Maradék pont: &f{points}",
                     Map.of(
-                            "talent", node.id(),
+                            "talent", talentDisplayName(ctx, node),
                             "rank", String.valueOf(ctx.talentManager().getRank(player, node.classPool(), node.id())),
                             "points", String.valueOf(ctx.talentManager().getAvailablePoints(player, node.classPool()))
                     )));
@@ -207,44 +205,35 @@ public final class CharacterGUIListener implements Listener {
 
     /** Respecs the class or profession specialization for the faction-currency cost. */
     private void respec(final Player player, final boolean classPool) {
-        final boolean hasSpec = classPool
-                ? ctx.specializationManager().getClassSpecialization(player) != null
-                : ctx.specializationManager().getProfessionSpecialization(player) != null;
-        if (!hasSpec) {
-            fail(player, ctx.messageManager().getComponent("spec-respec-nothing",
-                    "&cNincs mit visszaváltani: nincs ilyen specializációd."));
-            return;
+        final hu.taliann.icesmp.managers.RespecService.Outcome outcome =
+                ctx.respecService().respec(player, classPool);
+        switch (outcome.status()) {
+            case NOTHING_TO_RESPEC -> {
+                fail(player, ctx.messageManager().getComponent("spec-respec-nothing",
+                        "&cNincs mit visszaváltani: nincs ilyen specializációd."));
+                return;
+            }
+            case INSUFFICIENT_FUNDS -> {
+                fail(player, ctx.messageManager().getComponent(
+                        "spec-respec-insufficient",
+                        "&cA visszaváltás ára &f%s %s&c, de csak &f%s&c van a bankodban.",
+                        ctx.currencyManager().formatBalance(outcome.cost()),
+                        outcome.currency().getDisplayName(),
+                        ctx.currencyManager().formatBalance(
+                                ctx.currencyManager().getBalance(player, outcome.currency()))));
+                return;
+            }
+            case OK -> {
+                player.playSound(player.getLocation(), Sound.BLOCK_GRINDSTONE_USE, 1.0F, 1.0F);
+                player.sendMessage(ctx.messageManager().getComponent(
+                        "spec-respec-success",
+                        "&aSpecializáció visszaváltva &7(ár: &f%s %s&7, visszakapott talentpont: &f%s&7)&a.",
+                        ctx.currencyManager().formatBalance(outcome.cost()),
+                        outcome.currency().getDisplayName(),
+                        outcome.refundedTalentPoints()));
+                SpecGUI.open(player, ctx);
+            }
         }
-
-        final double cost = ctx.specializationManager().getRespecCost();
-        final FactionType faction = ctx.factionManager().getFaction(player.getUniqueId());
-        final CurrencyType currency = CurrencyType.fromFactionType(faction);
-        // Atomic deduct (no get+set race): a concurrent balance write can't be lost.
-        if (cost > 0.0D && !ctx.currencyManager().deductFromBalance(player.getUniqueId(), currency, cost)) {
-            fail(player, ctx.messageManager().getComponent(
-                    "spec-respec-insufficient",
-                    "&cA respec ára &f%s %s&c, de csak &f%s&c van a bankodban.",
-                    ctx.currencyManager().formatBalance(cost),
-                    currency.getDisplayName(),
-                    ctx.currencyManager().formatBalance(ctx.currencyManager().getBalance(player, currency))));
-            return;
-        }
-        int refunded = 0;
-        if (classPool) {
-            ctx.specializationManager().resetClassSpecialization(player);
-            refunded = ctx.talentManager().refundUnavailableTalents(player, true);
-        } else {
-            ctx.specializationManager().resetProfessionSpecialization(player);
-        }
-
-        player.playSound(player.getLocation(), Sound.BLOCK_GRINDSTONE_USE, 1.0F, 1.0F);
-        player.sendMessage(ctx.messageManager().getComponent(
-                "spec-respec-success",
-                "&aSpecializáció visszaváltva &7(ár: &f%s %s&7, visszakapott talentpont: &f%s&7)&a.",
-                ctx.currencyManager().formatBalance(cost),
-                currency.getDisplayName(),
-                refunded));
-        SpecGUI.open(player, ctx);
     }
 
     private void click(final Player player) {
@@ -282,5 +271,15 @@ public final class CharacterGUIListener implements Listener {
         } else if (holder instanceof TalentHolder talentHolder) {
             talentHolder.setInventory(null);
         }
+    }
+
+    /** A talent MAGYAR neve a definícióból — a node.id() belső azonosító, nem játékos-szöveg. */
+    private static String talentDisplayName(final hu.taliann.icesmp.gui.CharacterMenuContext ctx,
+                                            final hu.taliann.icesmp.gui.TalentGUI.Node node) {
+        final org.bukkit.configuration.ConfigurationSection definitions =
+                ctx.talentManager().getDefinitions(node.classPool());
+        final org.bukkit.configuration.ConfigurationSection talent =
+                definitions == null ? null : definitions.getConfigurationSection(node.id());
+        return talent == null ? node.id() : talent.getString("display-name", node.id());
     }
 }

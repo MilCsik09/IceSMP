@@ -3,9 +3,10 @@
 Ez az **egyetlen előre néző terv-dokumentum**. A megvalósult állapotot a
 [README.md](README.md) és a [PLAYER_GUIDE.md](PLAYER_GUIDE.md) írja le, az architektúrát a
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a tesztelést a [PLAYTEST.md](PLAYTEST.md).
-A kötetlen ötlet-gyűjtő a [docs/ideas/BACKLOG.md](docs/ideas/BACKLOG.md) (konszolidált,
-319 nyitott tétel munka/érték becsléssel, a technikai adósság az O-szekcióban) — ami
-onnan zöld utat kap, ide kerül tervezett tételként.
+A kötetlen ötlet-gyűjtő a [docs/ideas/BACKLOG.md](docs/ideas/BACKLOG.md) (konszolidált; a
+2026-07-22-i A-O konszolidáció 319 tétele óta a P1-P8 blokkokkal ~396 felsorolás-tételre nőtt,
+ebből 15 ✅ / 2 🔄 — munka/érték becsléssel, a technikai adósság az **O-szekcióban**, 25 nyitott
+tétellel) — ami onnan zöld utat kap, ide kerül tervezett tételként.
 (A korábbi terv-doksik — ideas.md, todo.md, CONTENT-PLAN, DEPTH-ROADMAP, a fázis-napló —
 megvalósultak és törölve lettek; a még nyitott pontjaik itt élnek tovább.)
 
@@ -16,16 +17,30 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 ## Nyitott fejlesztések
 
 ### Ismert hibák / technikai kockázatok
-- Jelenleg nincs nyitott, reprodukált technikai blocker. A legutóbbi auditban talált Folia
-  célpont-scheduler hibák, az Angry Chicken cross-region damager kockázata és az orb Java 21
-  build-környezete javítva lett; playtesten továbbra is figyeljétek a konzolt
-  `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
+- **NYITOTT KIADÁSBLOKKOLÓK VANNAK.** A legutóbbi mélyaudit több közvetlen Folia
+  ownership-hibát, gazdasági exploitot és félbe-lezáródó eseményt talált. Lezárva: a fail-open
+  YAML-betöltés (karantén + mentés-tiltás), a szakma- és rituálé-hozzávaló check–consume rése, a
+  viselt relikvia relog-vesztése, a visszavont akciók jutalmazása, a gyűjtés-progressz
+  visszajátszása, a quest-lánc ciklus, a céh–frakció egyeztetés és több jutalom-faucet.
+  Lezárult továbbá a piac/wallet/inventory tartós tranzakció (`storage/TransactionJournal`) és a
+  tile-entity block-regen write-ahead journal (`storage/BlockRegenJournal`), valamint a
+  `MobKillUtil` immutable `KillContext` átterve a FAUCET/PROGRESSION jutalom-utakon.
+  **Még nyitott:** a `TransientEntities`-re épülő world-event életciklus (a naiv fail-open
+  változat vissza lett vonva, mert esemény-deadlockot okozott — a feltételek a
+  `docs/ideas/P2-gameplay-audit.md`-ben), és a pozíció-alapú jutalom-megosztás (párt-XP, Vad
+  Hajsza personal loot), ami még az áldozat szálán olvas pozíciót. Playtesten figyeljétek a
+  konzolt `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 - **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
   - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
     enabled-enum sorsolás, mulandó entity biztonságos eltávolítása) 5-8 helyen duplikáltak — egy
-    közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes.
-  - `ClaimManager.save()` minden mutációnál a teljes claims.yml-t írja (sok ezer claimnél
-    parancs-késleltetés) — dirty-flag + késleltetett mentés a megoldás.
+    közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes (BACKLOG O6/O27).
+    Ugyanez a duplikáció-osztály: `prefixAt` 20 fájlban (O4), kill-jutalom előszűrő 19 listenerben
+    (O24), napi keret 5+ helyen (O25), hibakulcs→default switch 11+ osztályban (O26). A `utils/`
+    csomag már létezik (12 osztály, pl. `SpellTargetingUtil` — O5 így zárult le), tehát ez tisztán
+    mechanikus munka, nem architektúra-döntés.
+  - ✅ MEGOLDVA — `ClaimManager` már debounce-ol: a 8 mutációs pont mind a `requestSave()`-et hívja
+    (2 mp-es async coalescing flush a CurrencyManager mintájára), a szinkron teljes-fájl írás
+    csak leállításkor fut. Ugyanez a minta MÉG HIÁNYZIK a `CrateManager.persist()`-ből (O23).
   - Az escort/kincs `getHighestBlockYAt` lombkorona/víz felett kozmetikailag pontatlan
     lehet (a kincs/meteor már védve, az escort-konvoj útpontjai nem). (A LootTable `MIN:MAX`
     elgépelései már betöltéskor log-figyelmeztetést adnak a ConfigValidatoron át — megoldva.)
@@ -44,8 +59,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   frakciónként (`/territory setspawn <frakció>`); új játékos a Semleges Királyság spawnján
   jelenik meg, frakcióválasztáskor teleport az új királyság spawnjára, ágy/horgony nélkül a
   saját frakció spawnján éledsz újra. **Frakciót váltani (join ÉS leave) csak a semleges
-  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` is teljes értékű
-  fizetős váltás (a leave+join ingyenes kerülőút megszűnt), és `/npcbind <npc> faction`
+  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` fizetős váltásnak
+  szánt (a leave+join ingyenes kerülőút azonban a frakciórekord törlése miatt MÉG NYITOTT — lásd a
+  kiadásblokkolókat), és `/npcbind <npc> faction`
   királyság-választó hírnök-NPC-t köt. További ötlet: váltás-megerősítő GUI a hírnöknél.
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
   bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),
@@ -66,7 +82,7 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   **personal loot** a plugin-eseményekből (Vad Hajsza, kincs), párton belüli PvP tiltva, és **party-HUD**
   (a HUD-oldalsávon „— Csapat —" szekció: tagnév + színkódolt élet-sáv + 👑 vezető-jelölés, csak csapatban
   látszik). További ötlet: party-célpont jelölés, party-waypoint.
-- 💡 **Natív claim + chat-formázó — kész:** chunk-alapú terület-claim (első 3 ingyen, utána égetett
+- 💡 **Natív claim + chat-formázó — kész:** **blokk-pontos** terület-claim (első 3 ingyen, utána égetett
   frakció-valuta ár — money sink; trust; robbanás-védelem; raid-lootable kapcsoló; a meteor/kincs
   események kerülik) a SimpleClaimSystem kiváltására, és natív chat-formázó (LP-prefix + frakció-színes
   név) a LuckPermsChatFormatterFolia kiváltására. A piston/tűz/folyadék edge-case védelem **kész**
@@ -77,9 +93,10 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 - 💡 **Bűn-rendszer finomítás:** a lopás/árulás detektálás **kész** (idegen territóriumban
   konténer-fosztás +1, frakciótárs ölése +2). A **bűn-alapú fejvadász-rendszer** (fejpénz a
   körözöttekre, `/bounty` lista, igazságos kivégzés bűn nélkül) is **kész**.
-- 🔨 **Kaszt-questek felturbózása:** a plugin-oldal **kész** (TALK_TO_NPC + PARKOUR_TRIAL
-  objektívák, FancyNpcs-bridge, 4 kaszt mester-lánca configban) — a mester-NPC-k és
-  próbapályák kihelyezése a szerver-csapatra vár; utána jöhet a többi 9 kaszt lánca (config).
+- ⬜ **Kaszt-questek felturbózása — a plugin- ÉS config-oldal KÉSZ:** TALK_TO_NPC +
+  PARKOUR_TRIAL objektívák, FancyNpcs-bridge, és **mind a 13 kaszt** kezdő próbája +
+  kétlépcsős mester-lánca (mentor + mester-próba) a configban él. Ami hátra van: a
+  mester-NPC-k kihelyezése (szerver-csapat, lásd Világépítés).
 - 💡 **Quest-keretrendszer — kész bővítések:** 21 objektíva-típus, **több-objektívás questek**
   (ALL/SEQUENCE), ismétlődő + szezonális questek, NPC quest-adók napi rotációval, választós
   párbeszéd, tárgy/saját-frakció-valuta jutalom, **quest-napló GUI** (`/quest log`), teljes
@@ -149,10 +166,15 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
   Kitaszítottak/DARK fővárosa) — megépítése; `/territory` kijelölések,
   majd `/territory setspawn <frakció>` mind a 4 királyság-spawnra + a királyság-választó
   hírnök-NPC kihelyezése a semleges fővárosban (`/npcbind <npc> faction`).
-- ⬜ Parkour-pályák, rituálé-oltár helyszínek és intro-kamera waypointok kihelyezése.
-- ⬜ Kaszt-mester NPC-k (FancyNpcs: `harcos_mester`, `ijasz_mester`, `varazslo_mester`,
-  `orgyilkos_mester`) és a mester-próbapályák (`harcos_proba`, `ijasz_proba`,
-  `varazslo_proba`, `orgyilkos_proba`) kihelyezése a fővárosokban.
+- ⬜ Parkour-pályák (a questek egyetlen hivatkozott pályája a `kezdo_parkour` — az
+  akrobata-kihívás; a kaszt-fejlődés NEM függ parkourtól), rituálé-oltár helyszínek és
+  intro-kamera waypointok kihelyezése.
+- ⬜ A questek által megkövetelt **18 NPC** kihelyezése + `/npcbind` kötések: `hirnok`,
+  `vandor_kereskedo`, `erdei_venek`, `kovacs_mester`, `revesz`, `pakt_mester` (a
+  Boszorkánymester mester-láncát is ő adja) + 12 kaszt-mester (`harcos_mester`,
+  `ijasz_mester`, `varazslo_mester`, `orgyilkos_mester`, `druida_mester`, `paplovag_mester`,
+  `halallovag_mester`, `saman_mester`, `szerzetes_mester`, `pap_mester`, `demonvadasz_mester`,
+  `sarkany_mester`). A **13 mentor+mester-próba lánc configban KÉSZ** — csak a kihelyezés vár.
 
 ---
 

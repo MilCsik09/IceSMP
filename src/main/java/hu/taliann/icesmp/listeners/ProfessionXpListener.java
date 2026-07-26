@@ -11,6 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
@@ -103,15 +104,23 @@ public final class ProfessionXpListener implements Listener {
         }
         final double bonusPercent = Math.max(0.0D, talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
-        professionManager.addXpFor(player, profession, totalXp);
-        // A termelt XP a szakma-céh heti közös célját is tölti.
+        // Az addXpFor false-t ad, ha a játékos NEM gyakorolja ezt a szakmát (nem kapott XP-t).
+        // A heti közös cél csak valódi jóváírásra tölthető, különben egy nem-bányász
+        // ércbontása is töltötte a Bányász-céh heti célját (szakma-identitás nélküli farm).
+        if (!professionManager.addXpFor(player, profession, totalXp)) {
+            return;
+        }
         final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
         if (weeklyRef != null) {
             weeklyRef.add(player, profession, totalXp);
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
         // Creative farm-guard (same as GatheringBuffListener): no profession XP for
@@ -143,7 +152,11 @@ public final class ProfessionXpListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerHarvestBlock(final PlayerHarvestBlockEvent event) {
         if (!isSurvival(event.getPlayer())) {
             return;
@@ -155,7 +168,11 @@ public final class ProfessionXpListener implements Listener {
         return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
@@ -167,7 +184,11 @@ public final class ProfessionXpListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSmithItem(final SmithItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
@@ -176,7 +197,11 @@ public final class ProfessionXpListener implements Listener {
         awardXp(player, ProfessionType.ARMORER, "professions.xp.smithing", 15);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEnchantItem(final EnchantItemEvent event) {
         if (!isSurvival(event.getEnchanter())) {
             return;
@@ -184,7 +209,30 @@ public final class ProfessionXpListener implements Listener {
         awardXp(event.getEnchanter(), ProfessionType.ENCHANTER, "professions.xp.enchanting", 10);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    /**
+     * Azok az {@link org.bukkit.event.inventory.InventoryAction} értékek, amelyek a kattintott
+     * slotból TÉNYLEGESEN elvisznek tárgyat. A többi (NOTHING, PLACE_*, CLONE_STACK, UNKNOWN)
+     * nem kivétel, tehát nem fizethet.
+     */
+    private static final java.util.Set<org.bukkit.event.inventory.InventoryAction> TAKE_ACTIONS =
+            java.util.Set.of(
+                    org.bukkit.event.inventory.InventoryAction.PICKUP_ALL,
+                    org.bukkit.event.inventory.InventoryAction.PICKUP_HALF,
+                    org.bukkit.event.inventory.InventoryAction.PICKUP_SOME,
+                    org.bukkit.event.inventory.InventoryAction.PICKUP_ONE,
+                    org.bukkit.event.inventory.InventoryAction.MOVE_TO_OTHER_INVENTORY,
+                    org.bukkit.event.inventory.InventoryAction.HOTBAR_SWAP,
+                    org.bukkit.event.inventory.InventoryAction.HOTBAR_MOVE_AND_READD,
+                    org.bukkit.event.inventory.InventoryAction.SWAP_WITH_CURSOR,
+                    org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR,
+                    org.bukkit.event.inventory.InventoryAction.DROP_ONE_SLOT,
+                    org.bukkit.event.inventory.InventoryAction.DROP_ALL_SLOT);
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBrewedPotionPickup(final InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) {
             return;
@@ -203,11 +251,21 @@ public final class ProfessionXpListener implements Listener {
         if (clicked == null || !POTIONS.contains(clicked.getType())) {
             return;
         }
+        // CSAK a tényleges kivétel fizet. A puszta „potion van a result-slotban" nem elég: a
+        // no-op kattintás (NOTHING, inkompatibilis kurzor), a klónozás és a bent maradó főzetre
+        // ismételt kattintás korlátlan Alkimista-XP-t és heti cél-hozzájárulást adott.
+        if (!TAKE_ACTIONS.contains(event.getAction())) {
+            return;
+        }
 
         awardXp(player, ProfessionType.ALCHEMIST, "professions.xp.brewing", 12);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) {
             return;

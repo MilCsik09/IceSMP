@@ -188,7 +188,7 @@ public final class GatheringBuffManager {
         return switch (buff) {
             case MINING_RUSH -> "&e⛏ BÁNYÁSZ-LÁZ! A következő {minutes} percben az érc-blokkok bónusz nyersanyagot adhatnak.";
             case HARVEST_HOUR -> "&a🌾 TERMÉS-ÓRA! A következő {minutes} percben a beérett termés bónusz hozamot adhat.";
-            case FISHING_FRENZY -> "&b🎣 HALÁSZATI LÁZ! A következő {minutes} percben nagyobb a víz zsákmánya.";
+            case FISHING_FRENZY -> "&b🎣 HORGÁSZ-LÁZ! A következő {minutes} percben nagyobb a víz zsákmánya.";
             case XP_HOUR -> "&d✦ TAPASZTALAT-ÓRA! A következő {minutes} percben több XP-t kapsz mindenből.";
         };
     }

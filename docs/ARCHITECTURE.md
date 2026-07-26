@@ -14,7 +14,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~62 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~87 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -34,19 +34,19 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
-| `core/` | 1 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 62 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 67 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
-| `spells/` | 38 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 32 (+ al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 31 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
-| `data/` | 11 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
-| `relics/` | 6 (+ `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
-| `items/` | 7 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
-| `storage/` | 2 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
+| `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
+| `managers/` | 109 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 114 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
+| `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `gui/` | 42 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
+| `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
+| `items/` | 11 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
+| `storage/` | 6 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 3 | `MessageManager`, `ExperienceUtil`, egyebek. |
-| `integration/` | 5 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
+| `utils/` | 21 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `integration/` | 7 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
 
@@ -87,9 +87,24 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 17 fájlt-író manager implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 32 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
+- **Write-ahead napló (WAL) — ahol a mentés-időpont nem elég:** két rendszernek a következő
+  autosave-ig sem szabad kockáztatnia, mert közben a világból/inventoryból már eltűnt valami.
+  - **`storage/BlockRegenJournal`** (block-regen.yml checkpoint + `block-regen.wal` hozzáfűzéses
+    napló): a `PENDING → APPLYING → APPLIED` átmenetek soronként; a tile-entity NBT-pillanatképe
+    **fsync-elve** kerül lemezre a konténer kiürítése ELŐTT (napló-hiba = a blokk nem robban ki).
+    A rekord csak a sikeres visszaépítés + APPLIED-írás után esik ki. Indulásnál replay:
+    checkpoint → rotált napló → aktív napló. A már visszaépült rekord világ-mutációja **nem
+    ismételhető** (különben a konténer újratöltődne — tárgy-duplikáció).
+  - **`storage/TransactionJournal`** (market-journal.yml): a piaci művelet leírása (érintett
+    egyenlegek a művelet ELŐTTI absztolút értékkel + tárgy-pillanatkép) lemezre kerül, mielőtt
+    bármi módosulna; a commit-pont a valuta-fájl, majd a market.yml szinkron írása — utóbbi
+    hordozza a **tanút** (a commitolt tranzakció-azonosítót). A `complete()` visszatérési értéke
+    KÖTELEZŐEN vizsgálandó: tanút csak akkor dobunk el, ha a bejegyzés bizonyítottan eltűnt a
+    lemezről is. Az átvétel-jelző PDC-kulcsa **tranzakciónkénti** (egy közös kulcs a második
+    listázásnál felülírta volna az elsőt, és a tárgy elveszett volna).
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.
@@ -117,13 +132,14 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   `particle`, `sound`, `aoe`, `target`, `friendly`…). A számok automatikusan a `describe()`-ba kerülnek.
 - **`SpellCatalog`**: a kaszt-/spec-spellkészletek deklaratív regisztrációja (`ConfiguredSpell`-ekből).
 - **Egyedi (bespoke) spellek**: ha a hatás nem fér a builderbe (pl. `HideSpell`), `extends BaseSpell`.
-- **Config-driven balansz-felülbírálás** (`config/spells-balance.yml`): `IceSMPCore.applySpellBalanceOverrides()`
-  az `enable()`-ben, `configManager.load()` után egyszer lefut, és minden `ConfiguredSpell`-re alkalmazza
-  a `spell-balance.<id>` alatti kulcsokat (`ConfiguredSpell.withBalanceOverrides`, immutable copy). Mivel a
-  spellek csak indításkor regisztrálódnak, a deklaratívak esetén a fájl módosítása után szerver-újraindítás
-  kell (`/icesmp reload` nem elég). A bespoke (stateful) spellek ezzel szemben a `BaseSpell.balance()` /
-  `balanceInt()` segédeken keresztül cast-időben olvassák ugyanezt a fájlt, ezért rájuk a `/icesmp reload`
-  is azonnal hat.
+- **Config-driven balansz-felülbírálás** (`config/spells-balance.yml`): a `spell-balance.<id>.*` kulcsok
+  **LIVE_READ**-ek — a `ConfiguredSpell` accessorai (`getDamage`, `getRange`, `getRadius`, …) és a bespoke
+  spellek `BaseSpell.balance()` / `balanceInt()` segédei is CAST-időben olvassák a configot, ezért
+  `/icesmp reload` után restart nélkül élnek. A `IceSMPCore.applySpellBalanceOverrides()` (`enable()`,
+  `configManager.load()` után) csak az indulási log és az ismeretlen spell-id figyelmeztetés miatt fut le
+  (`ConfiguredSpell.withBalanceOverrides`, immutable copy). **RESTART_ONLY** marad, ami nem érték, hanem
+  szerkezet: a spell-regisztráció maga (új spell/unlock-lista), a scheduler-tick periódusok és a
+  konstruktorban cache-elt értékek.
 
 ### 3.6 GUI — közös helperek + adat-vezérelt menük
 - **`GuiUtil`**: közös item-/lore-építők (`icon`, `filler`, `fill`, `label`, `accent`, `grey`).
@@ -240,6 +256,28 @@ A teljes kódbázist átnéztük Folia-kompatibilitásra; **nulla sértés**. A 
 **Ökölszabály új kódhoz:** ha entitást/játékost/világot érintesz egy esemény-kezelőn KÍVÜLi
 kontextusból (tick, callback, másik entitás), előbb hopp az adott entitás/régió ütemezőjére.
 
+### 4.2 Mulandó entitások életciklusa — `utils/TransientEntities`
+
+A világesemény-managerek UUID-kulcsú listákat tartanak (konvoj, hordamobok, fenevad, kultisták,
+minionok), és tudniuk kell, él-e még az entitás. A `Bukkit.getEntity(uuid)` + `isValid()` páros
+erre **nem használható**: globális tickről idegen régió entitását olvasná.
+
+- **`register(plugin, entity)`** — az entitás SAJÁT ütemezőjén heartbeatet indít (`runAtFixedRate`),
+  és eltárolja a `Handle`-t (id + generáció + scheduler). A `runAtFixedRate` visszavonás-callbackje
+  (Folia akkor hívja, ha az entitás megszűnik) nyugdíjazza a handle-t.
+- **`isAlive(id)`** — tisztán memóriabeli, atomi olvasás: él a handle, és a heartbeat friss-e.
+  **FAIL-CLOSED: ismeretlen id = halott.** Ez szándékos — egy fail-open liveness beragadhat
+  „örökké él" állapotba, és a `MajorEventGate`-en át az összes nagy eseményt letilthatja.
+- **`removeById(plugin, id)`** — a tárolt scheduleren távolít el; nincs globális UUID-keresés.
+
+**KÖTELEZŐ invariáns:** ha egy manager `isAlive`-ot hív, a spawn-útján `register`-t IS kell hívnia.
+Regisztráció nélkül a saját entitása azonnal halottnak látszik, és az esemény a következő tickben
+lezárul (a `check_consistency.py` `transient-liveness` őre ezt FAIL-lel fogja meg).
+
+**Második védőháló:** a `MajorEventGate` watchdogja (`world-events.orchestration.max-active-minutes`,
+alap 60) egy beragadt `isActive()`-ot egy idő után figyelmen kívül hagy — így egyetlen elveszett
+életciklus-visszajelzés sem tilthatja le a többi eseményt szerver-újraindításig.
+
 ---
 
 ## 5. Bővítési receptek
@@ -337,9 +375,23 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   viselkedés NEM itt él (SignatureItemListener); a craft-stamp kulcsa `signature.custom-enchants`.
   Bővíthető: damage-type/banner-minta/trim regisztráció ugyanígt; MobEffect (bájital-effekt) NEM
   regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
+- **Jarból szállított datapack (`DATAPACK_DISCOVERY`):** a bootstrap a jar `/datapack`
+  könyvtárát rendes datapackként ismerteti meg a szerverrel (`autoEnableOnServerStart`), így
+  a 22 csomópontos IceSMP haladás-fa és a 3 fix toast-bejegyzés a KÓDDAL EGYÜTT verziózódik,
+  futásidejű registry-mutáció nélkül. Az `AdvancementService` enable-időben csak ellenőriz;
+  ha a felderítés elbukott, a régi (`@Deprecated Bukkit.getUnsafe()`) úton pótolja a hiányzó
+  bejegyzéseket, és WARNING-ot logol. A fa-bejegyzések `show_toast:false` +
+  `announce_to_chat:false` (a visszajelzés a rendszerek saját chat-üzenete, az ünneplő toast a
+  külön `ToastUtil`-réteg) — a tartalék út JSON-generátora is ezt írja, hogy a két betöltési
+  út ugyanúgy viselkedjen. Új csomópont = NODES-bejegyzés + `python3 scripts/gen_advancements.py`
+  (a JSON-ok EGYETLEN forrása a Java NODES lista) + VALÓDI `AdvancementService.award(...)`
+  hívás — a `scripts/check_consistency.py` négyesével ellenőrzi: hiányzó JSON, árva JSON,
+  holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** ~298 Java-fájl, ~45 000 sor.
+- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 109 fájl).
+  Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
+  items 11, relics 9, integration 7.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
   inline parancsok migrálásához a dispatch-bázis additív bővítése (default-subcommand + láthatósági
   predikátum); az `IceSMPCore` manager-építés factory-szétbontása (a `final` mezők miatt); a mentések

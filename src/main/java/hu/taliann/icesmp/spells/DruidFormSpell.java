@@ -125,7 +125,7 @@ public final class DruidFormSpell extends BaseSpell {
         hu.taliann.icesmp.integration.DruidDisguise.apply(player, form.disguiseType);
         player.getWorld().spawnParticle(form.particle, player.getLocation().add(0.0D, 1.0D, 0.0D), 30, 0.4D, 0.6D, 0.4D, 0.02D);
         player.getWorld().playSound(player.getLocation(), form.sound, 1.0F, 1.0F);
-        player.sendMessage(resolveMessage("spell." + form.id + ".on", "<green>Felveszed a(z) " + form.defaultName + "t.</green>"));
+        player.sendMessage(resolveMessage("spell." + form.id + ".on", "<green>Felveszed a(z) " + form.defaultName + "át.</green>"));
     }
 
     private static void removeFormEffects(final Player player, final Form which) {
@@ -169,7 +169,7 @@ public final class DruidFormSpell extends BaseSpell {
 
     @Override
     public java.util.List<String> describe() {
-        return java.util.List.of(form.description, "Stance — újra elsütve visszaváltozol emberi alakba.");
+        return java.util.List.of(form.description, "Állásmód — újra elsütve visszaváltozol emberi alakba.");
     }
 
     @Override

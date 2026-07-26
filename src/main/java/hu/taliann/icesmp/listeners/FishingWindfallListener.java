@@ -58,20 +58,9 @@ public final class FishingWindfallListener implements Listener {
         final long amount = Math.max(1L, Math.round(min + ThreadLocalRandom.current().nextDouble() * (max - min)));
         // Napi keret (fishing-windfall.daily-cap, 0 = korlátlan) — az auto-klikkes
         // horgász-farm féke; a PDC-számláló a játékos saját régió-szálán íródik.
-        final double cap = configManager.getDouble("fishing-windfall.daily-cap", 150.0D);
-        if (cap > 0.0D) {
-            final org.bukkit.NamespacedKey dayKey = org.bukkit.NamespacedKey.fromString("icesmp:windfall_day");
-            final org.bukkit.NamespacedKey sumKey = org.bukkit.NamespacedKey.fromString("icesmp:windfall_sum");
-            final long today = System.currentTimeMillis() / 86_400_000L;
-            final long storedDay = player.getPersistentDataContainer()
-                    .getOrDefault(dayKey, org.bukkit.persistence.PersistentDataType.LONG, -1L);
-            final long earned = storedDay == today ? player.getPersistentDataContainer()
-                    .getOrDefault(sumKey, org.bukkit.persistence.PersistentDataType.LONG, 0L) : 0L;
-            if (earned + amount > (long) cap) {
-                return;
-            }
-            player.getPersistentDataContainer().set(dayKey, org.bukkit.persistence.PersistentDataType.LONG, today);
-            player.getPersistentDataContainer().set(sumKey, org.bukkit.persistence.PersistentDataType.LONG, earned + amount);
+        if (!hu.taliann.icesmp.utils.DailyBudget.tryConsumeOnOwnThread(player, "windfall",
+                configManager.getDouble("fishing-windfall.daily-cap", 150.0D), amount)) {
+            return;
         }
         final ItemStack pouch = pouchFactory.createRandom(amount);
         for (final ItemStack overflow : player.getInventory().addItem(pouch).values()) {

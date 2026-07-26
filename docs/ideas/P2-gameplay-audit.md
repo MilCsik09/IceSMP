@@ -7,6 +7,22 @@
 > leleteket kézzel is visszaellenőriztük a kódban. Az előző (P1) audit mind a 15 lelete lezárult
 > (részletek a git-történetben); ez a doksi az élő audit, helyben frissül. Státusz: a ✅ jelölt tételek javítva; a többi tulaj-döntésre vár.
 
+## Állapot-ellenőrzés (2026-07-25 review-kör)
+
+Nem új audit-kör, hanem a nyitottként listázott tételek **kódban való visszaellenőrzése** —
+a valódi Gradle-build hibátlan (`./gradlew build` = 0), `check_consistency.py` = 0 FAIL.
+Amit a kör lezárt: a 3 tükör-drift (a Guides-példányok még a legacy CMD-számokat írták az
+ITEM_MODEL-migráció után), 5 doksi-szám, a holt `*_proba` parkour-hivatkozások, és két tétel,
+ami már korábban javult, de nyitottként állt itt (reload-hook, LORE_REFERENCE-rések).
+
+**Kód-oldali nyitott tételek (mind megerősítve):** #18 relikvia-források, save()-szinkron
+(14 manager), ProtectionBridge flag-ellenőrzés, kalmár-karaván EventSpawnGuard +
+placeholder-UUID re-check, `/menu`-ből hiányzó `/tanacs`+`/komp`+`/faction war`,
+tanács-szavazás alt-védelem, ambient napi cap, parkour-ranglista, 41-53. napi sztori-lyuk +
+31 kapu nélküli rejtvény, WorldEventUtil-duplikáció, ClaimManager dirty-flag (a `util/`
+csomag még nem is létezik). **Világépítés:** 18 NPC + 4 territory-id + üres
+`hidden-spots.spots` + kazamata-belsők — változatlanul kihelyezésre vár.
+
 ## 🔴 Strukturális leletek
 
 ### Frakció / PvP
@@ -151,11 +167,15 @@
 - ✅ KÉSZ (P2-1. csomag: a Vásárjárás DELIVER_ITEMS objektívát kapott) — **NEUTRAL dupla heti kereskedő-quest:** az új `neutral_heti_vasarjaras` majdnem
   duplikálja a meglévő `neutral_heti_vasar`-t (2×120/hét közel ingyen; SAJÁT tartalom-
   hullám-4 hiba) → az új quest más objektívát kapjon.
-- **`/icesmp reload` három managernél nem él** (Relic/MobScaling/CraftingRestriction a
-  load()-ban cache-el — reload után elavult marad restartig) + reload-sikerüzenet korrupt
-  confignál is. → load() hívása a reload-ágban vagy use-site olvasás.
-- **save() szinkronizáltság inkonzisztens** (12 persistentStore-manager save-je nem
-  synchronized — konkurens mentésnél a régebbi snapshot nyerhet) → egységes synchronized.
+- ✅ KÉSZ (reload-hook: `IceSMPCore` a Relic/MobScaling/CraftingRestriction `load()`-ját
+  is meghívja) — **`/icesmp reload` három managernél nem élt.** MARADÉK (nyitott): a
+  reload-sikerüzenet korrupt confignál is kimegy — a `ConfigValidator.validate` csak logol,
+  a sender „sikeres újratöltés"-t lát.
+- **save() szinkronizáltság inkonzisztens** — 2026-07-25-i újraszámolás: **14** persistentStore-manager
+  `save()`-je nem synchronized (BlockRegenService, ChronicleManager, ClaimManager, CorruptionManager,
+  CrateManager, EconomyEventManager, ExchangeBoardManager, HiddenSpotManager, KingManager,
+  ParkourManager, SeasonFinaleManager, SeasonManager, StatsManager, TerritoryManager) —
+  konkurens mentésnél a régebbi snapshot nyerhet → egységes synchronized.
 - **WorldGuard-híd bármely régiót tiltottnak vesz** (flag-ellenőrzés nélkül) + a hidak
   lazy-init logja csak első használatkor jelez + dangling NPC-kötés mindenhol néma +
   LibsDisguises-hídak (druida/kém/fekvés) felülírják egymás álcáját.
@@ -164,17 +184,26 @@
   írják felül egymást; admin-alparancsok jog nélkül is látszanak a tab/help-ben.
 - ✅ KÉSZ (üzembiztonsági kör: köteg-szétterítés + pet-tick üresjárat-fék; a tényleges terhelés playtesten mérendő) — **worldEventsTask: ~35 tick() egy globál-szálas kötegben** 60s-enként (tüske-kockázat) +
   PetManager 4×/mp minden játékosra hop-ol pet nélkül is → mérendő playtesten.
-- **~13 napos sztori-lyuk a szezon 41-53. napján** (a Fa üzenete 40-ig, finálé 54-től) +
-  mind a 30 rejtvény kapu nélkül, 1. naptól kimeríthető (elő-terheltség visszaszökött).
+- **~13 napos sztori-lyuk a szezon 41-53. napján** — megerősítve (2026-07-25): a
+  `min/max-season-day` kapu MINDÖSSZE 3 questen él, mind 20-40 sávval; a finálé a
+  `world.season-finale.days: 7` miatt az utolsó 7 napé (54-60) → a 41-53. nap tartalom nélkül.
+  Plusz **mind a 31 rejtvény-quest kapu nélkül**, 1. naptól kimeríthető (elő-terheltség visszaszökött).
 - ✅ KÉSZ (B-csomag: kétlépcsős megerősítés a DARK-minta szerint, select-confirm-seconds) — **Kaszt-választás megerősítés nélkül** — a legdrágább (admin-only visszafordítható)
   döntés egyetlen kattintás; a DARK-belépés kétlépcsős mintája átvehető.
 - **Beszállító-hetik olcsó faucet** (4×90/hét percek alatt gyűjthető anyagért) — hangolás.
 
 ## 🟢 Polish (válogatás)
 
-- Doksi-számok: 12-kuldetesek "négy kaszt-próba" (valójában 13), közösségi cél "600 vas"
-  (config: 1500); PAPI-táblázatból hiányzik 2 placeholder; TalentGUI "spell-power"
-  címke lefordítatlan; lucky_star rejtett XP-drain ára nincs a config-kommentben.
+- ✅ KÉSZ (2026-07-25 review-kör) — Doksi-számok: 12-kuldetesek „négy kaszt-próba" → mind a 13
+  kaszt próbája táblázatba került; közösségi cél „600 vas" → 1500 (config); a PAPI-táblából
+  hiányzó 2 placeholder (`%icesmp_faction_color%`, `%icesmp_event%`) pótolva; a TalentGUI
+  `spell-power` címkéje lefordítva („Spell-erő" — ezzel mind a 6 talent-effekt fordított);
+  a lucky_star folyamatos XP-szivattyúja config-kommentet kapott.
+- ✅ KÉSZ (2026-07-25 review-kör) — **Holt parkour-hivatkozások:** a ROADMAP világépítő-listája és a
+  PLAYTEST mester-lánc blokkja `harcos_proba`/`ijasz_proba`/`varazslo_proba`/`orgyilkos_proba`
+  pályákat kért, de a configban ilyen pálya SEHOL nincs (a mester-próbák ölés/szelídítés/bűvölés/
+  olvasztás feladatok; az egyetlen hivatkozott pálya a `kezdo_parkour` az opcionális
+  akrobata-kihíváshoz). Mindkét doksi javítva.
 - Alvó funkciók: auto-start-territory és REACH_LEVEL objective 0 használattal; 4+.
   fejezet nem létezik (chapter-questek 4. szezontól mind zártak); rotation-daily-count
   fájl-sorrend-függő minta.
@@ -275,8 +304,8 @@
 
 A név-kánon (Thanaopolis/Radicora/Olethropyla/Mortengrad-items-only) gépi ellenőrzésen
 hibátlan; idővonal és frakció-attribúciók mindenhol helyesek; a LORE.md tisztaság-szabálya
-áll. Két referencia-rés: a Vének Tanácsa és a hadi-ablak hiányzik a LORE_REFERENCE
-lore→mechanika táblájából (+ zone-ramp fél mondat) — pótlandó.
+áll. ✅ A két referencia-rés LEZÁRVA: a Vének Tanácsa (59. sor), a hadi-ablak (60. sor) és a
+zone-ramp (39. sor) is benne van a LORE_REFERENCE lore→mechanika táblájában.
 
 ### Világépítő-checklist kiegészítés
 
@@ -308,3 +337,149 @@ lore→mechanika táblájából (+ zone-ramp fél mondat) — pótlandó.
    kivezetés), #24 kazamata-loot modell, közösségi célok szezon-viselkedése.
 4. **Playtest-mérés (nem kód):** tablist/worldEventsTask/petTask időzítés 50-60 fővel;
    Íjász/Orgyilkos valós DPS (a papír-metrika vak a DoT/vanília rétegre).
+
+## FÜGGELÉK — Lore-integritás és tartalom-illeszkedés review (2026-07-25)
+
+Gépi összevetés: a kódex (`LORE.md`) állításai ↔ a config/kód tényleges tartalma.
+
+### ✅ Ami hibátlan
+- **A 13 Lélekkapocs-név** (Caldesterai Rúnakódex … Sárkányvér-fiola) **bájtra egyezik** a kódex
+  függelékével és a `LORE_REFERENCE` táblájával — a `CatalystItemFactory` a kánont követi.
+- **Mortengrad-szabály áll:** a bukás előtti név KIZÁRÓLAG item-nevekben (Mortengradi Hamukenyér,
+  Mortengradi Árnygomba) és egy config-kommentben szerepel — élő helymegnevezésként soha.
+- **Frakció-attribúció:** a 19 frakció-kötött quest egyike sem hordoz idegen frakció
+  lore-jegyeit (gépi ellenőrzés: kánon-kulcsszó-készlet frakciónként).
+- **Tárgy-tónus:** 436 recept-név, **nulla** anakronizmus/placeholder; a regiszter végig
+  fantasy-magyar.
+- **A lajstrom 24/27 tétele létezik a játékban** (a legendás tárgyak túlnyomó része implementált).
+
+### 🔴 Lore-integritási hibák
+1. **Duplikált lajstrom-tétel:** a kódex KÉT pyralingradi számszeríjat sorol, gyakorlatilag azonos
+   leírással — „**Pyralingradi Tűzköpő** (számszeríj) — Soleil papjai áldották meg" ÉS
+   „**Pyralingradi Ostrom-számszeríj** — Soleil papjai áldották meg a Vérszavanna szívében".
+   Az első implementált, a második sehol. → a kettő egyesítése VAGY a második megkülönböztetése
+   (pl. ostromfegyver: lassú, nagy sebzés).
+2. **Név-drift a loot és a kódex között:** a kódex „**Megrontott** Fekete Csont"-ot ír, a
+   `loot.yml` „Fekete Csont"-ot ad. Egy szó, de a kánon-egyezés elve sérül.
+3. **Lajstrom-tételek implementációs állapota — pontosítva (2026-07-25):**
+   - „Pyralingradi Ostrom-számszeríj" — VALÓBAN hiányzott, ✅ ebben a körben implementálva
+     (nehéz ostromgép: Piercing V + 2,5 mp saját cooldown-csoport + súly-lassítás), és a kódex
+     két számszeríj-tétele megkülönböztetve (könnyű őr-fegyver vs. nehéz ostromgép).
+   - „Asterlayna Gyümölcse" — **MÁR IMPLEMENTÁLT**, csak más néven: *Tiltott Kakaóbabos Sütemény*
+     (`kakaobabos_sutemeny`), a lore-ja kimondja: „Caldestera cukrászai Asterlayna Gyümölcsének
+     hívják". A lelet a MÁSODIK olyan eset ebben a körben, ahol a kódex-névre keresés hamis
+     hiányt jelzett — **a mechanikára/játékbeli névre is rá kell keresni** (lásd 6. pont).
+   - „A Vasművek Akadémiájának Csákánya" — VALÓBAN hiányzik: a „Vasművek Akadémiája" hat helyen
+     szerepel, de mind raritás-flavor sor, nevesített csákány-item nincs. → BACKLOG N3.
+
+### 🟡 Kánon a kódban, de a játékos felé nem jut el
+4. **A négy valuta kánon-neve** (Parázsló Parals, Hópihér-veret, Creutzér, Csontveret) él a
+   `CurrencyType`-ban és a lore-ban, de a **`03-valuta-gazdasag.md` egyszer sem nevezi meg őket** —
+   végig „valuta"/„veret" generikusan. A játékos a saját frakció-valutájának nevét nem tanulja meg.
+5. **`docs/FEATURES.md` elavult placeholder-neveket írt** („Vörös Talentum", „Kék Talentum") —
+   ez volt az EGYETLEN doksi, ami nem a kánont használta. ✅ javítva ebben a körben.
+
+### 🔴 A kódex kimondja, a kód nem tudja (a legnagyobb lore-rés)
+6. ~~Caldestera fegyvermentessége~~ — **A LELET HIBÁS VOLT, visszavonva (2026-07-25).** A szabály
+   TELJESEN IMPLEMENTÁLT: `CapitalLawListener` (K10 — Caldestera városi törvényei),
+   `territory.capital-law.weapon-ban`: a nyílt fegyvert az őrség kiveszi a kézből (az inventoryba
+   kerül, nem vész el), a *Bokic-menti Sétapálca* a szándékos kiskapu, és `wanted-ban` mellett a
+   körözöttet a kapunál visszafordítja (*Hamisított Menlevél* a kivétel). A hibát az okozta, hogy
+   a keresés a lore szóhasználatára („fegyvermentes"/weapon-free) futott, nem a kód nevére
+   (capital-law) — **tanulság: a lore-rés keresésénél a MECHANIKÁRA is rá kell keresni, nem csak
+   a kódex szavaira.**
+7. **A Néma Királynő koronára szóló átka.** A kódex központi motívuma („a világ minden koronás
+   főjét sírba vitte" + a négy Elveszett Uralkodó), a király-rendszer viszont teljesen
+   lore-mentes. → BACKLOG **N4** (egyben beépített anti-örökös-király fék).
+
+## Külső mélyaudit feldolgozása (HEAD 5ada41d, 121 technikai + 17 doksi/lore lelet)
+
+**LEZÁRVA (mind: valódi build + `check_consistency.py` + PLAYTEST-blokk + tükrözés):**
+
+| Lelet | Lényeg |
+|---|---|
+| `CRIT-01` | Fail-open YAML-betöltés → az autosave üres fájlt írt a javítható adat fölé. Karantén + mentés-tiltás; valódi sérült YAML-lal végigmérve. |
+| `CRIT-03` | Rituálé-áldozat check–consume rés (átnevezett áldozat fedezte, de nem fogyott). Közös `PlainIngredients` szerződés. |
+| `CRIT-04` | A `getContents()` mind a 41 slotot adja → a külön páncél-kör a VISELT relikviát törölte relognál. Egyetlen bejárás. |
+| `DEEP-CRIT-01` | `COLLECT_ITEMS` ledob–felvesz visszajátszás (a dobás új entitást hoz létre). `ItemProvenance` az entitáson + `getRemaining()`. |
+| `DEEP-CRIT-02` | A védelem HIGH/HIGHEST-en cancel-elt, a progressz NORMAL-on könyvelt → tiltott akció is jutalmazott. 19 handler MONITOR-ra. |
+| `DEEP-HIGH-02` | Eldobható minion halála leállította az élő társat (azonosság-ellenőrzés a mutáció után volt). |
+| `DEEP-HIGH-03` | Főzet-XP `InventoryAction` nélkül → ismételt kattintás fizetett. |
+| `DEEP-HIGH-04` | A heti szakma-cél az `addXpFor` boolean-je nélkül töltődött. |
+| `DEEP-HIGH-06` | Elérés-azonosító casing-eltérés → minden tickben újra fizetett. |
+| `DEEP-HIGH-08` | Quest `next`-ciklus → végtelen jutalom-hurok. Checker-szabály + futásidejű mélység-korlát. |
+| `DEEP-HIGH-09` | A céhtagság túlélte a frakcióváltást. Egyeztetés KÖZPONTILAG a `setFaction`-ban. |
+| `DEEP-HIGH-01` (rész) | A pet-rítus main-hand szűrő nélkül kétszer futott és két kelléket fogyasztott. |
+| `DEEP-HIGH-05` (rész) | `/emlek xp` kaszt nélkül elvitte a szilánkot (a grant boolean-je elveszett). |
+| `D-01`–`D-05`, `D-12` | A doksi többet állított, mint amit a kód tud (blocker-státusz, launch-készség, mért méret-számok, 4 hiányzó DARK-spec, „hét birodalom"). |
+| `D-06`, `D-09`, `DEEP-LORE-01` | A kódex a tényleges mechanikát mondja: relikvia-halál három módja, Arkynn mérge Eleftheriától, blokk-pontos claim. |
+| `D-07` | Az ARCHITECTURE.md két helyen mondott ellenkezőt a spell-reloadról. A kód él: minden `spell-balance.*` kulcs LIVE_READ, RESTART_ONLY csak a szerkezet (regisztráció, tick-periódus, konstruktor-cache). |
+| `D-08` | „Minden esemény-spawn a mátrixon" túlzó volt: a kapu pont-mintavételes és a WG-híd fail-open. Az escort ráadásul CSAK az indulópontot ellenőrizte — most az útvonal 25/50/75/100%-át is, 8 irány-próbával. |
+| `D-10` | Radicora/Ó-Caldestera és a modern Caldestera földrajzilag elválasztva (szoros + komp); az onboarding a Fa tövéből Radicorába, onnan Caldesterába küld. |
+| `D-13` | Az Ereklye-flavor egyediség-állítása kivéve (a ritkaság ismételhetően generálódik). |
+| `D-14` (rész) | A kézzel karbantartott számok GÉPI ŐRT kaptak (a VERSION_MATRIX.md helyett — új .md csak tulaj-kérésre): a mért drift 473/87/31/150/45 volt a doksi 460/86/17/37/28-ával szemben. |
+| `DEEP-LORE-02` | A tábortűz Asterlayna-sora szóbeszéd-jelölést kapott; a forrás-javadocban rögzítve, hogy a tábortűz világon belüli narrátor, kánon-eltéréshez kötelező a hedge. |
+| `DEEP-LORE-03` | `/lore radicora` valódi szócikk (nem csendes átirányítás a `menedek`-re). |
+| `L-REV-01` | A Királyok Átka egységesítve mindenhol: nem „nem hat", hanem „a sírban nem tarthat" + a korona szorít, míg viselik. |
+| `L-REV-02` | A Fa eredete a `/lore fa`-ban is a csillagszilánk (a „teste fölött nőtt" ellentmondott a kódexnek). |
+
+**Nyolc új gépi őr a `check_consistency.py`-ban** (mind bite-tesztelve): listener-prioritás-mátrix •
+`removeItem(new ItemStack(...))` tilalom • quest `next`-gráf ciklus • YAML boolean-kulcs csapda •
+advancement tartalom-drift • doksi-szám ↔ mért érték • ARCHITECTURE.md csomagtérkép ↔ fájlrendszer •
+`/lore` téma-hármas (tab-complete ↔ szócikk ↔ usage-sor ↔ alias-cél).
+
+**P0-kör (2026-07-26, több-agentes implementáció + adversariális ellenőrzés):** a négy maradék
+kiadásblokkolót külön agentek írták diszjunkt fájlkészleteken, majd független ellenőrzők
+próbálták megdönteni. Mind a négyre kifogás érkezett — a leleteket kézzel visszaigazoltam:
+
+| Tétel | Döntés | Miért |
+|---|---|---|
+| `CRIT-05` | ✅ MEGTARTVA + javítva | A napló-architektúra kód-szinten helyes (a replay-sorrend, a zár-sorrend és a legacy-kompatibilitás végigkövethető). Az ellenőrző igaza volt egy ÚJ hibában: a `commit` bukása a teljes régió-taskot osztotta ki újra, ami a konténer NBT-jét is újra lerakta → korlátlan tárgy-duplikáció írásvédett lemeznél. Külön `restored` állapot: a világ-mutáció nem ismételhető, csak a véglegesítés. A `queue.contains` őr a késve lefutó, beragadt taskot is kizárja. Az érvénytelen blockdata ága most MEGNEVEZI az elvesző konténer-tartalmat. |
+| `CRIT-06` | ✅ MEGTARTVA + javítva | Két valóban kiváltható út zárva: (1) a `complete()` eldobta a lemez-írás eredményét, a `finish()` pedig feltétel nélkül a tanút — ebből „ingyen vásárlás" lett (a tárgy a vevőnél, a pénz visszaforgatva). Most a `complete()` booleant ad, és a tanú csak bizonyított lemez-törlés után esik ki. (2) Az egy-slotos átvétel-jelző helyett TRANZAKCIÓNKÉNTI PDC-kulcs — a második listázás eddig felülírta az elsőt, és a tárgy véglegesen elveszett. Plusz: a rejtett tétel nem foglal helyet a listázás-limitben, és a napló-hiba érthető magyar üzenetet ad (nem generikus „nem sikerült"). |
+| `CRIT-07` | ✅ MEGTARTVA + javítva | A megnevezett tünet (a gyilkos főkéz-olvasása az áldozat szálán) tényleg megszűnt. Két hamis szerződés javítva: a `dropSeed` már NEM kever `nanoTime`-ot (a kill-szintű determinizmus tényleg áll), a `claimOnce` retesz pedig kill-szintű (áldozat-UUID + csatorna) — példány-szinten a `MobLootListener` két kontextusa kétszer fizethetett volna. A pozíció-alapú megosztás (párt-XP, Vad Hajsza) NEM lett átvezetve: a javadoc hatóköre most ezt kimondja, a tétel nyitva marad. |
+| `CRIT-08` | ❌ VISSZAVONVA | Az ellenőrző bizonyított REGRESSZIÓT: a fail-open `isAlive` miatt az `InvasionManager.isActive()` örökre `true`-ba ragadhatott (nincs lejárati bélyeg), és a `MajorEventGate`-en át a world-boss / Vad Hajsza / kíséret / kultisták TERMÉSZETES indítását is letiltotta szerver-újraindításig; a minion-cap felszabadulása GC-függővé vált. A régi kód ugyanott helyes választ adott. Szál-helyességi kockázatot cseréltünk volna korlátlan, csak restarttal oldható gameplay-deadlockra — a `TransientEntities`/`MinionManager` visszaállt, a be nem kötött listener törölve. A tétel NYITVA marad. |
+
+**P0-A…F kör integrálva (2026-07-26, `agent/p0-fixes` → beolvasztva):** hét további csomag
+érkezett külön ágon (fail-closed sérült-state betöltés, piac/wallet fail-stop kapu, block-regen
+tokenes recovery, tartós contribution receipt, Folia kill-pillanatkép + scheduleres párt-jutalom,
+mulandó entitás életciklus + esemény-watchdog). Az integráció előtti ellenőrzés HÁROM blokkolót
+talált — mindhármat javítottam a beolvasztással egy körben:
+
+| Lelet | Mi volt | Javítás |
+|---|---|---|
+| Nem fordult | `CommunityGoalManager:82` — a `failCorrupt` mindig dob, de `void`, ezért a minta-kötés (`raw instanceof Number number`) nem volt biztosan hozzárendelve. `./gradlew compileJava` = exit 1. | Az ág megszakítása a `failCorrupt` után (a `CurrencyManager` ugyanezt a `return`-mintát követi). |
+| Esemény-halál minden induláskor | Az új `isAlive` FAIL-CLOSED, de az `EscortManager` (konvoj + hullám-mobok), a `WildHuntManager` (fenevad) és a `StrangerNpcManager` (NPC) sosem hívott `register`-t → a saját entitásuk már a következő tickben halottnak látszott, az esemény azonnal lezárult, a mobok gazdátlanul maradtak. | Négy `TransientEntities.register(...)` hívás a spawn-utakra + **új gépi őr** (`transient-liveness`): aki `isAlive`-ot hív, annak regisztrálnia is kell. |
+| Checker piros | A csomagtérkép-számok nem követték az új fájlokat (`managers/` 109, `storage/` 6, `utils/` 21). | Mért értékek szinkronban; a méret-adatok is (477 fájl / ~82 000 sor). |
+
+A `CRIT-07` maradéka (párt-XP, Vad Hajsza personal loot) az új `PartyRewardResolver`-rel
+lezárult: tagonkénti scheduler-hop + számláló-alapú join, 4 tickes határidővel. A `CRIT-08`
+a korábban visszavont változatnál jobb megoldást kapott: heartbeat-alapú `Handle` az entitás
+saját ütemezőjén (nincs `Bukkit.getEntity`), fail-CLOSED liveness, és a `MajorEventGate`
+watchdogja mint második védőháló a beragadt esemény ellen.
+
+**Tanulság a delegálásról:** a subagent-jelentések `build_result`/`checker_result` mezői
+mindhárom megtartott tételnél elavultak vagy vacuumok voltak („3 up-to-date" = a `compileJava`
+nem is futott). A leletet MINDIG a fő-agent futtatja újra — és a párhuzamos agentek egymás
+fájljait is pirosra vihetik, ezért a zöld ellenőrzés csak az INTEGRÁCIÓ után értelmezhető.
+
+**MÉG NYITOTT — architekturális, több fájlt érintő tételek:**
+- `CRIT-08`: `TransientEntities` + a rá épülő world-event managerek régió-lokális életciklusa.
+  A naiv fail-open változat VISSZAVONVA (lásd a P0-kör táblát). A helyes megoldás feltétele:
+  (a) minden világesemény-mob `track()`-elve legyen, (b) a halál/despawn/chunk-unload
+  eltávolítás-jelzés BE legyen kötve, (c) az `InvasionManager` kapjon lejárati bélyeget, hogy a
+  liveness-hiba SOSE tudjon esemény-deadlockot okozni. Fail-open liveness csak (a)+(b)+(c) mellett
+  biztonságos.
+- `CRIT-07` maradék: a pozíció-alapú jutalom-megosztás (`PartyManager.getNearbyMembers`,
+  `WildHuntManager.distributePersonalLoot`) még élő `Player`-t kap és az áldozat szálán olvas
+  pozíciót — kereszt-régiós ölésnél a párt-XP/personal loot némán elmarad (fail-open try/catch).
+  Ehhez a tagonkénti scheduler-hop + számláló-alapú join kell.
+- `CRIT-06` maradék (nem exploit, de teljesítés): a `tickAuctions` aukciónként TELJES
+  `currencyManager.save()`-et végez a MarketManager monitorát tartva, a globális szálon —
+  sok egyszerre lejáró aukciónál akadás. Kötegelt commit kell.
+- `DEEP-HIGH-01` teljes (`PetSummonTransaction`), `MED-14` (loot NaN/súly-normalizálás + a
+  kultista-loot közös eligibility), `HIGH-21` (claim-vizualizáció idegen régió), és a maradék
+  `DEEP-MED-*`/`MED-*`/`DEEP-LOW-*` tételek.
+
+**Sorrend-javaslat a folytatáshoz:** `CRIT-07` maradék (párt/Wild Hunt pozíció-hop) →
+`CRIT-08` a fenti (a)+(b)+(c) feltételekkel → `DEEP-HIGH-01` → `MED-14`.
+Mindegyik ugyanazzal a ritmussal: kézi igazolás a kódban → javítás → gépi őr → PLAYTEST-blokk → push.

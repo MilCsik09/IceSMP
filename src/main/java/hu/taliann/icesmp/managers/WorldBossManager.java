@@ -221,14 +221,7 @@ public final class WorldBossManager {
         if (id == null) {
             return;
         }
-        final Entity boss = Bukkit.getEntity(id);
-        if (boss != null && boss.isValid()) {
-            try {
-                boss.remove();
-            } catch (final Exception ignored) {
-                // Region/thread unavailable during shutdown — leave it; it is at worst a stray mob.
-            }
-        }
+        hu.taliann.icesmp.utils.TransientEntities.removeOnShutdown(id);
     }
 
     /** Periodic spawn attempt on the global world-events tick. */
@@ -745,6 +738,7 @@ public final class WorldBossManager {
         }
 
         seasonManager.addPoints(faction, Math.max(0, configManager.getInt("world-events.world-boss.season-points", 10)), "world-boss");
+        AdvancementService.award(killer, "world_boss");
 
         // Szezonboss: egyedi loot-tábla gurul a tetem helyén (a halál-esemény a boss
         // régió-szálán fut, a drop ott biztonságos) + extra liga-pont + saját broadcast.

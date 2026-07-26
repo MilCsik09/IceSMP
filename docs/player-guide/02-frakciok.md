@@ -14,6 +14,10 @@ választasz, a plugin **odateleportál az új királyságod spawnjára**, és ha
 respawn-horgonyod, halál után is a **saját királyságod spawnján** éledsz újra — így mindig
 tudod, hol a fővárosod.
 
+A `/faction leave` kilépés **Semlegesbe helyez** (nem „frakció nélküli" állapotba): a következő
+belépésre így is a semleges-főváros kapu, a szezon-hajrá zára és a váltás-cooldown vonatkozik —
+a leave+join páros nem kerülőút.
+
 A **Menedékből bárhová ingyen** válthatsz, és a **Kitaszítottak közé lépés is mindig ingyenes**
 (annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Láng↔Fagy,
 illetve vissza a Menedékbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi
@@ -150,6 +154,13 @@ derül ki.
 - ha **közterületen, mások szeme láttára használsz sötét mágiát** (vagy Suttogó-tárgyat);
 - ha **rajtakapnak** egy rítuson vagy egy **áruláson** (frakciótárs hátbaszúrása);
 - ha a **gyanú** ellened gyűlik, míg át nem üt a bélyeg.
+
+**A csatorna.** A hálózatnak saját, kívülről láthatatlan beszélgetése van
+(`/suttogas <üzenet>`): ezt a rejtett Suttogók **és a Kitaszítottak** is hallják — ők a Néma
+Királynő *nyílt* népe, a Suttogók pedig ugyanannak a hálózatnak a rejtett fele. Aki nem tartozik
+bele, annak a parancs semmit nem árul el. **Vigyázz:** a csatorna kiírja a feladó nevét, tehát a
+Kitaszítottak megtudják, ki Suttogó a látható frakciókban — a titkod annyira biztonságos, amennyire
+a Királynő népe hallgatni tud.
 
 **Mi jár érte?** A Királynő gondoskodik a híveiről:
 - ha a kósza kultisták ügye **beteljesül** (egy rítus lefut vagy egy hírvivő célba ér), minden

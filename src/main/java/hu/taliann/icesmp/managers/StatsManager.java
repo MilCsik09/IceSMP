@@ -40,10 +40,13 @@ public final class StatsManager implements PersistentStore {
     public enum Category { LEVEL, WEALTH, RAID_KILLS }
 
     private static final class Stat {
-        private String name = "?";
-        private int level;
-        private double wealth;
-        private int raidKills;
+        // Minden mezőt több régió-szál ír/olvas (ranglista-frissítés, raid-ölés, /stats):
+        // a ranglista-mezők volatile-ok (csak felülírás), a SZÁMLÁLÓK atomiak — a raidKills
+        // korábban sima int++ volt, ami konkurens raid-ölésnél elveszíthetett ölést.
+        private volatile String name = "?";
+        private volatile int level;
+        private volatile double wealth;
+        private final AtomicInteger raidKills = new AtomicInteger();
         // /stats profile counters — written from arbitrary region threads.
         private final AtomicInteger kills = new AtomicInteger();
         private final AtomicInteger deaths = new AtomicInteger();
@@ -72,7 +75,7 @@ public final class StatsManager implements PersistentStore {
             return;
         }
 
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("players");
         if (section == null) {
             return;
@@ -85,7 +88,7 @@ public final class StatsManager implements PersistentStore {
                 stat.name = section.getString(key + ".name", "?");
                 stat.level = section.getInt(key + ".level", 0);
                 stat.wealth = section.getDouble(key + ".wealth", 0.0D);
-                stat.raidKills = section.getInt(key + ".raid-kills", 0);
+                stat.raidKills.set(section.getInt(key + ".raid-kills", 0));
                 stat.kills.set(section.getInt(key + ".kills", 0));
                 stat.deaths.set(section.getInt(key + ".deaths", 0));
                 stat.mobKills.set(section.getInt(key + ".mob-kills", 0));
@@ -106,7 +109,7 @@ public final class StatsManager implements PersistentStore {
                 yaml.set(base + ".name", stat.name);
                 yaml.set(base + ".level", stat.level);
                 yaml.set(base + ".wealth", stat.wealth);
-                yaml.set(base + ".raid-kills", stat.raidKills);
+                yaml.set(base + ".raid-kills", stat.raidKills.get());
                 yaml.set(base + ".kills", stat.kills.get());
                 yaml.set(base + ".deaths", stat.deaths.get());
                 yaml.set(base + ".mob-kills", stat.mobKills.get());
@@ -127,13 +130,13 @@ public final class StatsManager implements PersistentStore {
         final Stat stat = stats.computeIfAbsent(player.getUniqueId(), key -> new Stat());
         stat.name = player.getName();
         stat.level = jobManager.getPrimaryLevel(player);
-        stat.wealth = currencyManager.getBalance(player);
+        stat.wealth = currencyManager.getTotalBalance(player);
     }
 
     /** The player's recorded raid-kill count (0 if none). */
     public int getRaidKills(final UUID playerId) {
         final Stat stat = stats.get(playerId);
-        return stat == null ? 0 : stat.raidKills;
+        return stat == null ? 0 : stat.raidKills.get();
     }
 
     public void recordRaidKill(final Player player) {
@@ -142,7 +145,7 @@ public final class StatsManager implements PersistentStore {
         }
         final Stat stat = stats.computeIfAbsent(player.getUniqueId(), key -> new Stat());
         stat.name = player.getName();
-        stat.raidKills++;
+        stat.raidKills.incrementAndGet();
     }
 
     // ===== /stats profil-számlálók =====
@@ -262,7 +265,7 @@ public final class StatsManager implements PersistentStore {
         final Comparator<Stat> comparator = switch (category) {
             case LEVEL -> Comparator.comparingInt((Stat s) -> s.level);
             case WEALTH -> Comparator.comparingDouble((Stat s) -> s.wealth);
-            case RAID_KILLS -> Comparator.comparingInt((Stat s) -> s.raidKills);
+            case RAID_KILLS -> Comparator.comparingInt((Stat s) -> s.raidKills.get());
         };
 
         final List<Entry> rows = new ArrayList<>();
@@ -270,7 +273,7 @@ public final class StatsManager implements PersistentStore {
                 .sorted(Map.Entry.comparingByValue(comparator.reversed()))
                 .limit(Math.max(1, limit))
                 .forEach(e -> rows.add(new Entry(e.getKey(), e.getValue().name, e.getValue().level,
-                        e.getValue().wealth, e.getValue().raidKills)));
+                        e.getValue().wealth, e.getValue().raidKills.get())));
         return rows;
     }
 }

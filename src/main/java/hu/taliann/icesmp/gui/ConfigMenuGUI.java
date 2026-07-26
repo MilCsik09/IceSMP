@@ -104,6 +104,11 @@ public final class ConfigMenuGUI {
                 Entry.toggle("nether-portal.allow-creation", "Nether-portál gyújtás engedett"),
                 Entry.toggle("mob-scaling.zone-ramp.enabled", "Zóna-rámpás mob-szint"),
                 Entry.integer("mob-scaling.zone-ramp.blocks-per-level", "Rámpa (blokk/szint)", 50, 1, 5000))));
+        categories.put("killjutalom", new Category("killjutalom", "Kill-jutalom szűrők", Material.ROTTEN_FLESH, List.of(
+                Entry.toggle("kill-rewards.afk-block", "AFK-jelölt ölése nem fizet"),
+                Entry.toggle("kill-rewards.exclude-spawner-mobs", "Spawner-mob nem dob lootot/pénzt"),
+                Entry.toggle("kill-rewards.exclude-minions", "Saját minion ölése nem fizet"),
+                Entry.toggle("kill-rewards.require-survival", "Csak survival gyilkos kap jutalmat"))));
         categories.put("hadiablak", new Category("hadiablak", "Hadi-ablak", Material.IRON_SWORD, List.of(
                 Entry.toggle("factions.war-window.enabled", "Hadi-ablak (RED↔BLUE ölés nem bűn)"),
                 Entry.integer("factions.war-window.points-per-kill", "Liga-pont ölésenként", 1, 0, 100),

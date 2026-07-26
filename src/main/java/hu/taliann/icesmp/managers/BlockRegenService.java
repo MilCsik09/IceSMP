@@ -1,87 +1,139 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.BlockRegenJournal;
 import hu.taliann.icesmp.storage.PersistentStore;
-import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.block.TileState;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * "A világ visszagyógyul" — rombolás/robbanás után a blokkok pontosan az eredeti
- * állapotukba épülnek vissza, drop nélkül (nincs dupe-út). A védett zónák robbanásai
- * és az ostrom-rombolás így látványosan megtörténhetnek anélkül, hogy maradandó kárt
- * vagy zsákmányt adnának.
+ * Restores protected blocks without drops.
  *
- * Tile-entity blokkot (láda, kemence, spawner…) SOSEM veszünk fel: azok tartalmát nem
- * pillanatképezzük, ezért azokat a hívó köteles érintetlenül hagyni.
- *
- * A várólista perzisztens (block-regen.yml): restart közben esedékessé váló
- * visszaépítés sem vész el — nem marad örök lyuk a városfalban.
+ * <p>For tile entities the WAL remains open after the live restore. The block receives a token and
+ * the current JVM boot id in its TileState PDC. The record is marked APPLIED only after either
+ * {@code World.save(true)} has flushed the marker/content pair or the token is observed under a
+ * different process boot id after restart. This removes both crash directions:
+ * <ul>
+ *   <li>no replay of an already durable container snapshot (item duplication);</li>
+ *   <li>no durable APPLIED marker before the restored chunk itself is durable (item loss).</li>
+ * </ul>
  */
-public final class BlockRegenService implements PersistentStore {
+public final class BlockRegenService implements PersistentStore, Listener {
 
-
-
-    private record Entry(String world, int x, int y, int z, String blockData, String extra, long restoreAt) {
+    private enum MarkerStatus {
+        NONE,
+        CURRENT_BOOT,
+        PRIOR_BOOT
     }
+
+    private record SnapshotPayload(String token, byte[] bytes) {
+    }
+
+    private static final long IN_FLIGHT_TIMEOUT_MILLIS = 60_000L;
+    private static final long RETRY_MILLIS = 1_000L;
+    private static final long PERSISTENCE_PROOF_RETRY_MILLIS = 30_000L;
+    private static final long WORLD_WAIT_MILLIS = 30_000L;
+    private static final String NBT_PREFIX = "nbt:";
+    private static final String NBT_V2_PREFIX = "nbt2:";
+    private static final NamespacedKey REGEN_TOKEN =
+            new NamespacedKey("icesmp", "block_regen_token");
+    private static final NamespacedKey REGEN_BOOT =
+            new NamespacedKey("icesmp", "block_regen_boot");
+    private static final String PROCESS_BOOT = processBootId();
+
+    public static final String DEBRIS_TAG = "icesmp_debris";
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final File storageFile;
-    private final Queue<Entry> queue = new ConcurrentLinkedQueue<>();
+    private final BlockRegenJournal journal;
+    private final Queue<BlockRegenJournal.Record> queue = new ConcurrentLinkedQueue<>();
+    private final Map<Long, Long> inFlight = new ConcurrentHashMap<>();
+    private final Map<Long, Long> retryAfter = new ConcurrentHashMap<>();
+    private final Set<Long> applyingMarked = ConcurrentHashMap.newKeySet();
+    private final Set<Long> invalidRecordLogged = ConcurrentHashMap.newKeySet();
+    private final Set<Long> restoreFailureLogged = ConcurrentHashMap.newKeySet();
+    private final Set<Long> persistenceProofInFlight = ConcurrentHashMap.newKeySet();
+    private final Set<String> missingWorldLogged = ConcurrentHashMap.newKeySet();
+    private final Map<String, Long> physicsShield = new ConcurrentHashMap<>();
+    private final Set<String> pendingShield = ConcurrentHashMap.newKeySet();
+    private final Map<String, long[]> captureHistory = new ConcurrentHashMap<>();
 
     public BlockRegenService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
-        this.storageFile = new File(plugin.getDataFolder(), "block-regen.yml");
+        this.journal = new BlockRegenJournal(plugin.getDataFolder(), plugin.getLogger());
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public boolean isEnabled() {
         return configManager.getBoolean("territory.protection.regen.enabled", true);
     }
 
-    /**
-     * Zónánkénti regen-kapcsoló (territory.protection.regen.zones.<típus>): védett
-     * zónákban alapból BE, frakcióföldön és a vadonban alapból KI.
-     */
     public boolean isZoneRegenEnabled(final String zoneKey) {
         final boolean def = !"wilderness".equals(zoneKey) && !"faction".equals(zoneKey);
         return configManager.getBoolean("territory.protection.regen.zones." + zoneKey, def);
     }
 
     public long explosionDelayMillis() {
-        return Math.max(5L, configManager.getLong("territory.protection.regen.delay-seconds", 180L)) * 1000L;
+        return Math.max(5L,
+                configManager.getLong("territory.protection.regen.delay-seconds", 180L)) * 1000L;
     }
 
-    /** Hány tickenként fut a visszaépítő menet (indításkor olvasott kulcs). */
     public long restoreIntervalTicks() {
-        return Math.max(1L, configManager.getLong("territory.protection.regen.restore-interval-ticks", 10L));
+        return Math.max(1L,
+                configManager.getLong("territory.protection.regen.restore-interval-ticks", 10L));
     }
 
-    /** Menetenként ennyi blokk kerül vissza — ez adja a visszaépülés "tempóját". */
     public int blocksPerPass() {
-        return Math.max(1, configManager.getInt("territory.protection.regen.blocks-per-pass", 3));
+        return Math.max(1,
+                configManager.getInt("territory.protection.regen.blocks-per-pass", 3));
     }
 
-    /** Ennyi mp várakozás után a támasz nélküli blokk is visszakerül (sor-beragadás ellen). */
     private long supportGraceMillis() {
         return Math.max(5L, configManager.getLong(
                 "territory.protection.regen.support-grace-seconds", 120L)) * 1000L;
     }
 
     public boolean isSiegeBreakEnabled() {
-        return configManager.getBoolean("territory.protection.regen.player-break.siege-enabled", true);
+        return configManager.getBoolean(
+                "territory.protection.regen.player-break.siege-enabled", true);
     }
 
     public long siegeBreakDelayMillis() {
@@ -90,7 +142,8 @@ public final class BlockRegenService implements PersistentStore {
     }
 
     public boolean isAlwaysBreakEnabled() {
-        return configManager.getBoolean("territory.protection.regen.player-break.always-enabled", false);
+        return configManager.getBoolean(
+                "territory.protection.regen.player-break.always-enabled", false);
     }
 
     public long alwaysBreakDelayMillis() {
@@ -98,130 +151,113 @@ public final class BlockRegenService implements PersistentStore {
                 "territory.protection.regen.player-break.always-delay-seconds", 120L)) * 1000L;
     }
 
-    /**
-     * Felveszi a blokkot a visszaépülési sorba a JELENLEGI állapotával. Tile-entity
-     * blokkra false — azt a hívó ne engedje elpusztulni.
-     */
     public boolean capture(final Block block, final long delayMillis) {
         return capture(block, delayMillis, true);
     }
 
-    /** A kézi (ostrom-)bontás loopGuarded=false-szal hívja: a szándékos újra-bontás nem hurok. */
     public boolean capture(final Block block, final long delayMillis, final boolean loopGuarded) {
-        // TNT sosem kerül a sorba: lánc-robbanásban elfogy, visszaépítve ingyen-TNT +
-        // végtelen robbanás-hurok lenne. (A listában marad, tehát a lánc él.)
-        if (block.getType() == org.bukkit.Material.TNT) {
+        if (!journal.isHealthy() || block.getType() == org.bukkit.Material.TNT) {
             return false;
         }
         if (isPending(block)) {
-            return true; // már sorban áll (pl. robbanás + fizika-esemény dupla-jelzése)
+            return true;
         }
         if (loopGuarded && isRecaptureLooping(block)) {
-            return false; // valami folyton újrarombolja (pl. vízfolyás) — elengedjük
+            return false;
         }
+
         if (block.getState() instanceof TileState) {
             if (!isTileEntityExplodeEnabled()) {
                 return false;
             }
-            // Generikus NBT-út: 1x1x1 struktúra-pillanatkép — a blokk TELJES NBT-jét
-            // viszi (láda/shulker-tartalom, tábla-szöveg, fej-textúra, zászló-minta,
-            // spawner-beállítás, lektorna-könyv…), verziófüggetlen szerializálással.
             final String extra;
             try {
-                final org.bukkit.structure.Structure snap = Bukkit.getStructureManager().createStructure();
-                snap.fill(block.getLocation(), new org.bukkit.util.BlockVector(1, 1, 1), false);
-                final java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
-                Bukkit.getStructureManager().saveStructure(bytes, snap);
-                extra = "nbt:" + java.util.Base64.getEncoder().encodeToString(bytes.toByteArray());
-            } catch (final java.io.IOException | RuntimeException ex) {
-                plugin.getLogger().warning("Tile-entity pillanatkép hiba (" + block.getType() + "): " + ex);
-                return false; // pillanatkép nélkül inkább rúna-védelem, mint adatvesztés
+                final org.bukkit.structure.Structure snapshot =
+                        Bukkit.getStructureManager().createStructure();
+                snapshot.fill(block.getLocation(), new org.bukkit.util.BlockVector(1, 1, 1), false);
+                final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                Bukkit.getStructureManager().saveStructure(bytes, snapshot);
+                extra = NBT_V2_PREFIX + UUID.randomUUID() + ':'
+                        + Base64.getEncoder().encodeToString(bytes.toByteArray());
+            } catch (final IOException | RuntimeException failure) {
+                plugin.getLogger().warning("Tile-entity pillanatkép hiba ("
+                        + block.getType() + "): " + failure);
+                return false;
             }
-            // A robbanás ne szórja ki a tartalmat: a pillanatkép UTÁN kiürítjük.
-            // Dupla ládánál CSAK a saját fél ürülhet — a getInventory() a közös
-            // inventoryt adná, és a túlélő fél tartalma is elveszne.
-            // getState(false): az ÉLŐ állapotot ürítjük, nem egy pillanatkép-másolatot —
-            // különben a robbanás a valódi tartalmat szórná ki (dupe a visszaépítéssel).
-            if (block.getState(false) instanceof org.bukkit.block.Chest chest) {
+
+            final BlockRegenJournal.Record record = newRecord(block, extra, delayMillis);
+            if (!journal.appendPending(record, true)) {
+                return false;
+            }
+            // Clear only after the snapshot is fsynced. A double chest must clear its own half.
+            if (block.getState(false) instanceof Chest chest) {
                 chest.getBlockInventory().clear();
-            } else if (block.getState(false) instanceof org.bukkit.inventory.InventoryHolder holder) {
+            } else if (block.getState(false) instanceof InventoryHolder holder) {
                 holder.getInventory().clear();
             }
-            queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
-                    block.getBlockData().getAsString(), extra, System.currentTimeMillis() + delayMillis));
-            pendingShield.add(posKey(block));
+            enqueue(record, block);
             return true;
         }
-        queue.add(new Entry(block.getWorld().getName(), block.getX(), block.getY(), block.getZ(),
-                block.getBlockData().getAsString(), null, System.currentTimeMillis() + delayMillis));
-        pendingShield.add(posKey(block));
+
+        final BlockRegenJournal.Record record = newRecord(block, null, delayMillis);
+        if (!journal.appendPending(record, false)) {
+            return false;
+        }
+        enqueue(record, block);
         return true;
     }
 
-    /** pozíció → pajzs lejárta — a frissen visszaépített blokkot a fizika nem bánthatja. */
-    private final java.util.Map<String, Long> physicsShield = new java.util.concurrent.ConcurrentHashMap<>();
-    /** A sorban álló (kráter-) pozíciók gyors-lookup másolata — a pajzs rájuk is kiterjed. */
-    private final java.util.Set<String> pendingShield = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private BlockRegenJournal.Record newRecord(final Block block, final String extra,
+                                                final long delayMillis) {
+        return new BlockRegenJournal.Record(journal.nextId(), block.getWorld().getName(),
+                block.getX(), block.getY(), block.getZ(), block.getBlockData().getAsString(),
+                extra, System.currentTimeMillis() + delayMillis);
+    }
 
-    /** A pajzs-rendszer fő-kapcsolója — kikapcsolva a régi megoldás (hurok-fék) él. */
+    private void enqueue(final BlockRegenJournal.Record record, final Block block) {
+        queue.add(record);
+        pendingShield.add(posKey(block));
+    }
+
     private boolean isShieldEnabled() {
-        return configManager.getBoolean("territory.protection.regen.physics-shield-enabled", true);
+        return configManager.getBoolean(
+                "territory.protection.regen.physics-shield-enabled", true);
     }
 
-    private static String posKey(final Block block) {
-        return block.getWorld().getName() + ';' + block.getX() + ';' + block.getY() + ';' + block.getZ();
-    }
-
-    /** A visszaépített blokk fizika-pajzsot kap ennyi mp-re (0 = nincs pajzs). */
     private long physicsShieldMillis() {
         return Math.max(0L, configManager.getLong(
                 "territory.protection.regen.physics-shield-seconds", 300L)) * 1000L;
     }
 
-    /**
-     * Igaz, ha a pozíció fizika-pajzs alatt áll: a rá ható fizika-eseményeket
-     * (frissítés, folyadék-befolyás, fizika-törés) a listener cancel-eli — a
-     * visszaépített fáklyát a víz el sem érheti, a homok nem eshet le.
-     */
-    /** A frissen VISSZAÉPÍTETT blokk időzített pajzsa (fáklya-védelem a fal záródásáig). */
     public boolean isRestoredShielded(final Block block) {
         if (physicsShield.isEmpty() || !isShieldEnabled()) {
-            return false; // gyors-út: pajzs nélkül a sűrű physics-event ára nulla
+            return false;
         }
-        final Long until = physicsShield.get(posKey(block));
+        final String key = posKey(block);
+        final Long until = physicsShield.get(key);
         if (until == null) {
             return false;
         }
         if (until <= System.currentTimeMillis()) {
-            physicsShield.remove(posKey(block));
+            physicsShield.remove(key);
             return false;
         }
         return true;
     }
 
-    /**
-     * Kráter-pozíció (visszaépülésre vár): a folyadék BEfolyhat (természetes látvány),
-     * de innen TOVÁBB nem terjedhet — a fal mögötti eredeti légterek nem ázhatnak el.
-     */
     public boolean isCraterPos(final Block block) {
-        return !pendingShield.isEmpty() && isShieldEnabled() && pendingShield.contains(posKey(block));
+        return !pendingShield.isEmpty() && isShieldEnabled()
+                && pendingShield.contains(posKey(block));
     }
 
-    /** pozíció → [felvételek száma, ablak kezdete] — az újrarombolási hurok féke. */
-    private final java.util.Map<String, long[]> captureHistory = new java.util.concurrent.ConcurrentHashMap<>();
-
-    /**
-     * Igaz, ha a pozíció rövid időn belül túl sokszor került a sorba — ilyenkor a
-     * visszaépítés feladja (pl. fáklyát folyton elmos a víz), különben capture→restore→
-     * rombolás→capture végtelen kör pörögne.
-     */
     private boolean isRecaptureLooping(final Block block) {
         final long windowMillis = Math.max(30L, configManager.getLong(
                 "territory.protection.regen.recapture-window-seconds", 600L)) * 1000L;
         final int maxRecaptures = Math.max(1, configManager.getInt(
                 "territory.protection.regen.max-recaptures", 3));
         final long now = System.currentTimeMillis();
-        final long[] entry = captureHistory.computeIfAbsent(posKey(block), k -> new long[]{0L, now});
+        final long[] entry = captureHistory.computeIfAbsent(
+                posKey(block), ignored -> new long[]{0L, now});
         synchronized (entry) {
             if (now - entry[1] > windowMillis) {
                 entry[0] = 0L;
@@ -232,218 +268,504 @@ public final class BlockRegenService implements PersistentStore {
         }
     }
 
-    /** Pozíció-alapú dedupe O(1)-ben — a pendingShield pontosan a sorban álló pozíciók halmaza. */
     public boolean isPending(final Block block) {
         return pendingShield.contains(posKey(block));
     }
 
-    private static String posKey(final Entry e) {
-        return e.world() + ';' + e.x() + ';' + e.y() + ';' + e.z();
-    }
-
-    /** Tile-entity robbanás (NBT-pillanatképpel) — alapból KI, a rúna-védelem él. */
     public boolean isTileEntityExplodeEnabled() {
-        return configManager.getBoolean("territory.protection.regen.tile-entity-explode", false);
+        return configManager.getBoolean(
+                "territory.protection.regen.tile-entity-explode", false);
     }
 
-    /** A robbanást túlélő tile-entity "óvó rúnái" — látvány+hang, hogy ne tűnjön bugnak. */
     public void playWardEffect(final Block block) {
         final Location fx = block.getLocation().add(0.5D, 0.5D, 0.5D);
-        block.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT, fx, 25, 0.4D, 0.4D, 0.4D, 0.5D);
-        block.getWorld().playSound(fx, org.bukkit.Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.7F, 1.6F);
+        block.getWorld().spawnParticle(
+                org.bukkit.Particle.ENCHANT, fx, 25, 0.4D, 0.4D, 0.4D, 0.5D);
+        block.getWorld().playSound(
+                fx, org.bukkit.Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.7F, 1.6F);
     }
 
-    /** Igaz, ha a blokk tile-entity — robbanás-listából eleve ki kell venni. */
     public static boolean isTileEntity(final Block block) {
         return block.getState() instanceof TileState;
     }
 
-    /** A törmelék-entitások jelölése — landoláskor porladnak, sosem raknak le blokkot. */
-    public static final String DEBRIS_TAG = "icesmp_debris";
-
-    /**
-     * Kozmetikai törmelék: a kirobbant blokk másolata FallingBlockként repül ki a
-     * robbanás középpontjából — pattog/csúszik a vanília fizikával, majd pár másodperc
-     * után porfelhővel eltűnik. Tisztán látvány, se blokk-lerakás, se drop.
-     */
     public void spawnDebris(final Block block, final Location center) {
         if (!configManager.getBoolean("territory.protection.regen.debris-enabled", true)) {
             return;
         }
-        // Csak a blokkok debris-percent %-a válik repülő törmelékké (látvány-sűrűség fék).
-        final double percent = configManager.getDouble("territory.protection.regen.debris-percent", 100.0D);
+        final double percent = configManager.getDouble(
+                "territory.protection.regen.debris-percent", 100.0D);
         if (Math.random() * 100.0D >= percent) {
             return;
         }
         final Location from = block.getLocation().add(0.5D, 0.5D, 0.5D);
-        final org.bukkit.util.Vector dir = from.toVector().subtract(center.toVector());
-        if (dir.lengthSquared() < 0.01D) {
-            dir.setY(1.0D);
+        final org.bukkit.util.Vector direction =
+                from.toVector().subtract(center.toVector());
+        if (direction.lengthSquared() < 0.01D) {
+            direction.setY(1.0D);
         }
-        final double power = configManager.getDouble("territory.protection.regen.debris-launch-power", 0.6D);
-        final org.bukkit.entity.FallingBlock debris = block.getWorld().spawnFallingBlock(from, block.getBlockData());
+        final double power = configManager.getDouble(
+                "territory.protection.regen.debris-launch-power", 0.6D);
+        final org.bukkit.entity.FallingBlock debris =
+                block.getWorld().spawnFallingBlock(from, block.getBlockData());
         debris.setDropItem(false);
         debris.setCancelDrop(true);
         debris.addScoreboardTag(DEBRIS_TAG);
-        debris.setVelocity(dir.normalize().multiply(power)
-                .add(new org.bukkit.util.Vector(0.0D, 0.35D + Math.random() * 0.2D, 0.0D)));
-        final long lifetimeTicks = Math.max(20L,
-                configManager.getLong("territory.protection.regen.debris-lifetime-seconds", 4L) * 20L);
+        debris.setVelocity(direction.normalize().multiply(power)
+                .add(new org.bukkit.util.Vector(
+                        0.0D, 0.35D + Math.random() * 0.2D, 0.0D)));
+        final long lifetimeTicks = Math.max(20L, configManager.getLong(
+                "territory.protection.regen.debris-lifetime-seconds", 4L) * 20L);
         debris.getScheduler().runDelayed(plugin, task -> {
             if (debris.isValid()) {
                 debris.getWorld().spawnParticle(org.bukkit.Particle.BLOCK_CRUMBLE,
-                        debris.getLocation(), 12, 0.2D, 0.2D, 0.2D, block.getBlockData());
+                        debris.getLocation(), 12, 0.2D, 0.2D, 0.2D,
+                        block.getBlockData());
                 debris.remove();
             }
         }, null, lifetimeTicks);
     }
 
-    /** A globál-tickről hívva: az esedékes blokkok visszaépítése (alulról felfelé). */
     public void tick() {
+        if (!journal.isHealthy()) {
+            return;
+        }
         final long now = System.currentTimeMillis();
-        // Lejárt pajzs/history bejegyzések periodikus seprése — a forró eseménykezelő
-        // utakról kikerült minden takarítás.
         physicsShield.values().removeIf(until -> until <= now);
         final long historyWindow = Math.max(30L, configManager.getLong(
                 "territory.protection.regen.recapture-window-seconds", 600L)) * 1000L;
-        captureHistory.values().removeIf(v -> now - v[1] > historyWindow);
-        final List<Entry> due = new ArrayList<>();
-        for (final Entry e : queue) {
-            if (e.restoreAt() <= now) {
-                due.add(e);
+        captureHistory.values().removeIf(value -> now - value[1] > historyWindow);
+        retryAfter.values().removeIf(until -> until <= now);
+        inFlight.values().removeIf(since -> now - since > IN_FLIGHT_TIMEOUT_MILLIS);
+
+        final List<BlockRegenJournal.Record> due = new ArrayList<>();
+        for (final BlockRegenJournal.Record record : queue) {
+            if (record.restoreAt() <= now && !inFlight.containsKey(record.id())
+                    && !retryAfter.containsKey(record.id())
+                    && !persistenceProofInFlight.contains(record.id())) {
+                due.add(record);
                 if (due.size() >= blocksPerPass()) {
                     break;
                 }
             }
         }
-        if (due.isEmpty()) {
-            return;
-        }
-        queue.removeAll(due);
-        // Alulról felfelé: a gravitációs blokk (homok, kavics) nem hullik ki a fal aljából.
-        due.sort(Comparator.comparingInt(Entry::y));
-        for (final Entry e : due) {
-            final World world = Bukkit.getWorld(e.world());
-            if (world == null) {
-                pendingShield.remove(posKey(e));
-                continue;
-            }
-            final Location loc = new Location(world, e.x(), e.y(), e.z());
-            Bukkit.getRegionScheduler().run(plugin, loc, task -> {
-                try {
-                    final org.bukkit.block.data.BlockData data = Bukkit.createBlockData(e.blockData());
-                    final Block target = world.getBlockAt(e.x(), e.y(), e.z());
-                    // Befalazás-védelem: élőlényre (játékosra!) sosem építünk rá —
-                    // amíg valaki a pozícióban áll, a blokk a sor végén várakozik.
-                    if (!target.getLocation().toCenterLocation().getNearbyLivingEntities(0.9D).isEmpty()) {
-                        queue.add(new Entry(e.world(), e.x(), e.y(), e.z(),
-                                e.blockData(), e.extra(), e.restoreAt()));
-                        return;
-                    }
-                    // Támasz-ellenőrzés: gravitációs blokk csak szilárd alapra, rátett
-                    // blokk (fáklya, tábla, gomb…) csak létező támaszra kerül vissza —
-                    // különben a következő fizika-frissítés leejtené/lepattintaná.
-                    // Amíg nincs támasz, a sor végére kerül; a grace lejárta után
-                    // mindenképp visszakerül (a sor nem ragadhat be körkörös függésen).
-                    if (now - e.restoreAt() <= supportGraceMillis()) {
-                        final boolean unsupported = data.getMaterial().hasGravity()
-                                ? !target.getRelative(org.bukkit.block.BlockFace.DOWN).isSolid()
-                                : !data.isSupported(loc);
-                        if (unsupported) {
-                            queue.add(new Entry(e.world(), e.x(), e.y(), e.z(),
-                                    e.blockData(), e.extra(), e.restoreAt()));
-                            return;
-                        }
-                    }
-                    // Mindig felülírunk: a világ PONTOSAN a rombolás előtti állapotba tér
-                    // vissza (a közben odarakott blokk drop nélkül tűnik el — hadszíntér).
-                    target.setBlockData(data, false);
-                    restoreExtra(target, e.extra());
-                    pendingShield.remove(posKey(target));
-                    final long shield = physicsShieldMillis();
-                    if (shield > 0L) {
-                        physicsShield.put(posKey(target), System.currentTimeMillis() + shield);
-                    }
-                    if (configManager.getBoolean("territory.protection.regen.restore-effects-enabled", true)) {
-                        // Anyag-hű "gyógyulás": a blokk saját lerakás-hangja + kis porfelhő.
-                        final Location fx = loc.clone().add(0.5D, 0.5D, 0.5D);
-                        world.playSound(fx, data.getSoundGroup().getPlaceSound(), 0.6F,
-                                0.8F + (float) (Math.random() * 0.4D));
-                        world.spawnParticle(org.bukkit.Particle.CLOUD, fx, 4, 0.25D, 0.25D, 0.25D, 0.01D);
-                    }
-                } catch (final IllegalArgumentException ignored) {
-                    // Érvénytelenné vált blockdata (pl. verzióváltás) — kihagyjuk.
-                    pendingShield.remove(posKey(e));
-                }
-            });
+        due.sort(Comparator.comparingInt(BlockRegenJournal.Record::y));
+        for (final BlockRegenJournal.Record record : due) {
+            dispatch(record, now);
         }
     }
 
-    /** A tile-entity pillanatkép visszatöltése (konténer-tartalom / tábla-szöveg). */
-    private void restoreExtra(final Block block, final String extra) {
-        if (extra == null) {
-            return;
-        }
-        if (extra.startsWith("nbt:")) {
-            try {
-                final org.bukkit.structure.Structure snap = Bukkit.getStructureManager().loadStructure(
-                        new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(extra.substring(4))));
-                snap.place(block.getLocation(), false, org.bukkit.block.structure.StructureRotation.NONE,
-                        org.bukkit.block.structure.Mirror.NONE, 0, 1.0F, new java.util.Random());
-            } catch (final java.io.IOException | RuntimeException ex) {
-                plugin.getLogger().warning("Tile-entity visszaállítás hiba: " + ex);
+    private void dispatch(final BlockRegenJournal.Record record, final long now) {
+        final World world = Bukkit.getWorld(record.world());
+        if (world == null) {
+            retryAfter.put(record.id(), now + WORLD_WAIT_MILLIS);
+            if (missingWorldLogged.add(record.world())) {
+                plugin.getLogger().warning("A(z) " + record.world()
+                        + " világ nincs betöltve — a blokk-visszaépítés vár rá.");
             }
             return;
         }
+        missingWorldLogged.remove(record.world());
+        final Location location =
+                new Location(world, record.x(), record.y(), record.z());
+        inFlight.put(record.id(), now);
+        if (applyingMarked.add(record.id()) && !journal.markApplying(record)) {
+            applyingMarked.remove(record.id());
+            defer(record, RETRY_MILLIS);
+            return;
+        }
+
+        Bukkit.getRegionScheduler().run(plugin, location, task -> {
+            if (!queue.contains(record)) {
+                clearInFlight(record);
+                return;
+            }
+            final Block target =
+                    world.getBlockAt(record.x(), record.y(), record.z());
+
+            if (record.extra() != null) {
+                final MarkerStatus marker = markerStatus(target, record);
+                if (marker == MarkerStatus.PRIOR_BOOT) {
+                    if (!commit(record)) {
+                        defer(record, RETRY_MILLIS);
+                    }
+                    return;
+                }
+                if (marker == MarkerStatus.CURRENT_BOOT) {
+                    requestPersistenceProof(record, world, location);
+                    return;
+                }
+            }
+
+            restore(record, world, location, target);
+        });
+    }
+
+    private void restore(final BlockRegenJournal.Record record, final World world,
+                         final Location location, final Block target) {
+        try {
+            final org.bukkit.block.data.BlockData data =
+                    Bukkit.createBlockData(record.blockData());
+            if (!target.getLocation().toCenterLocation()
+                    .getNearbyLivingEntities(0.9D).isEmpty()) {
+                defer(record, RETRY_MILLIS);
+                return;
+            }
+            final long now = System.currentTimeMillis();
+            if (now - record.restoreAt() <= supportGraceMillis()) {
+                final boolean unsupported = data.getMaterial().hasGravity()
+                        ? !target.getRelative(org.bukkit.block.BlockFace.DOWN).isSolid()
+                        : !data.isSupported(location);
+                if (unsupported) {
+                    defer(record, RETRY_MILLIS);
+                    return;
+                }
+            }
+
+            target.setBlockData(data, false);
+            if (record.extra() != null && !restoreExtra(target, record)) {
+                defer(record, RETRY_MILLIS);
+                return;
+            }
+            invalidRecordLogged.remove(record.id());
+            restoreFailureLogged.remove(record.id());
+            applyRestoreEffects(world, location, data);
+            final long shield = physicsShieldMillis();
+            if (shield > 0L) {
+                physicsShield.put(posKey(target), System.currentTimeMillis() + shield);
+            }
+
+            if (record.extra() != null) {
+                requestPersistenceProof(record, world, location);
+            } else if (!commit(record)) {
+                defer(record, RETRY_MILLIS);
+            }
+        } catch (final IllegalArgumentException invalid) {
+            if (invalidRecordLogged.add(record.id())) {
+                plugin.getLogger().severe("Visszaépíthetetlen blokk-adat MEGTARTVA kézi "
+                        + "javításhoz (" + record.blockData() + " @ " + record.world() + " "
+                        + record.x() + "," + record.y() + "," + record.z() + "): "
+                        + invalid.getMessage());
+            }
+            defer(record, PERSISTENCE_PROOF_RETRY_MILLIS);
+        }
+    }
+
+    private boolean restoreExtra(final Block block,
+                                 final BlockRegenJournal.Record record) {
+        final SnapshotPayload payload;
+        try {
+            payload = snapshotPayload(record);
+        } catch (final RuntimeException malformed) {
+            if (restoreFailureLogged.add(record.id())) {
+                plugin.getLogger().severe("Tile-entity pillanatkép sérült, a rekord MEGMARAD ("
+                        + record.world() + " " + record.x() + "," + record.y() + ","
+                        + record.z() + "): " + malformed.getMessage());
+            }
+            return false;
+        }
+
+        try {
+            // A failed/partial previous placement may already have populated the live container.
+            // Clear it before replay so retry is replacement, never additive duplication.
+            if (block.getState(false) instanceof Chest chest) {
+                chest.getBlockInventory().clear();
+            } else if (block.getState(false) instanceof InventoryHolder holder) {
+                holder.getInventory().clear();
+            }
+
+            final org.bukkit.structure.Structure snapshot =
+                    Bukkit.getStructureManager().loadStructure(
+                            new ByteArrayInputStream(payload.bytes()));
+            snapshot.place(block.getLocation(), false,
+                    org.bukkit.block.structure.StructureRotation.NONE,
+                    org.bukkit.block.structure.Mirror.NONE,
+                    0, 1.0F, new Random());
+
+            if (!(block.getState(false) instanceof TileState tile)) {
+                throw new IllegalStateException(
+                        "A struktúra-visszaállítás után nincs TileState.");
+            }
+            tile.getPersistentDataContainer().set(
+                    REGEN_TOKEN, PersistentDataType.STRING, payload.token());
+            tile.getPersistentDataContainer().set(
+                    REGEN_BOOT, PersistentDataType.STRING, PROCESS_BOOT);
+            if (!tile.update(true, false)) {
+                throw new IllegalStateException("A TileState marker update(false)-t adott.");
+            }
+            return true;
+        } catch (final IOException | RuntimeException failure) {
+            if (restoreFailureLogged.add(record.id())) {
+                plugin.getLogger().severe("Tile-entity visszaállítás hiba, a rekord MEGMARAD ("
+                        + record.world() + " " + record.x() + "," + record.y() + ","
+                        + record.z() + "): " + failure);
+            }
+            return false;
+        }
+    }
+
+    private MarkerStatus markerStatus(final Block block,
+                                      final BlockRegenJournal.Record record) {
+        final SnapshotPayload payload;
+        try {
+            payload = snapshotPayload(record);
+        } catch (final RuntimeException malformed) {
+            return MarkerStatus.NONE;
+        }
+        if (!(block.getState(false) instanceof TileState tile)) {
+            return MarkerStatus.NONE;
+        }
+        final String token = tile.getPersistentDataContainer().get(
+                REGEN_TOKEN, PersistentDataType.STRING);
+        if (!payload.token().equals(token)) {
+            return MarkerStatus.NONE;
+        }
+        final String boot = tile.getPersistentDataContainer().get(
+                REGEN_BOOT, PersistentDataType.STRING);
+        if (boot == null) {
+            return MarkerStatus.NONE;
+        }
+        return PROCESS_BOOT.equals(boot)
+                ? MarkerStatus.CURRENT_BOOT : MarkerStatus.PRIOR_BOOT;
+    }
+
+    private SnapshotPayload snapshotPayload(final BlockRegenJournal.Record record) {
+        final String extra = record.extra();
+        if (extra == null) {
+            throw new IllegalArgumentException("hiányzó extra");
+        }
+        if (extra.startsWith(NBT_V2_PREFIX)) {
+            final int tokenEnd = extra.indexOf(':', NBT_V2_PREFIX.length());
+            if (tokenEnd < 0) {
+                throw new IllegalArgumentException("hiányzó nbt2 token");
+            }
+            final String token = extra.substring(NBT_V2_PREFIX.length(), tokenEnd);
+            UUID.fromString(token);
+            final byte[] bytes = Base64.getDecoder().decode(extra.substring(tokenEnd + 1));
+            if (bytes.length == 0) {
+                throw new IllegalArgumentException("üres nbt2 snapshot");
+            }
+            return new SnapshotPayload(token, bytes);
+        }
+        if (extra.startsWith(NBT_PREFIX)) {
+            final byte[] bytes = Base64.getDecoder().decode(extra.substring(NBT_PREFIX.length()));
+            if (bytes.length == 0) {
+                throw new IllegalArgumentException("üres legacy NBT snapshot");
+            }
+            final String identity = record.world() + ';' + record.x() + ';' + record.y()
+                    + ';' + record.z() + ';' + record.restoreAt() + ';' + extra;
+            final String token = UUID.nameUUIDFromBytes(
+                    identity.getBytes(StandardCharsets.UTF_8)).toString();
+            return new SnapshotPayload(token, bytes);
+        }
+        throw new IllegalArgumentException("ismeretlen extra formátum");
+    }
+
+
+    /**
+     * Saves and flushes the world on the global-region scheduler, then returns to the owning
+     * region to verify the token and durably close the WAL entry. Interactions with pending
+     * positions are cancelled by this listener until that proof completes.
+     */
+    private void requestPersistenceProof(final BlockRegenJournal.Record record,
+                                         final World world, final Location location) {
+        clearInFlight(record);
+        if (!persistenceProofInFlight.add(record.id())) {
+            retryAfter.put(record.id(),
+                    System.currentTimeMillis() + PERSISTENCE_PROOF_RETRY_MILLIS);
+            return;
+        }
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            try {
+                world.save(true);
+            } catch (final RuntimeException failure) {
+                persistenceProofInFlight.remove(record.id());
+                if (restoreFailureLogged.add(record.id())) {
+                    plugin.getLogger().severe("A világ tartós flush-a sikertelen, a block-regen "
+                            + "rekord MEGMARAD (" + record.world() + "): " + failure);
+                }
+                defer(record, PERSISTENCE_PROOF_RETRY_MILLIS);
+                return;
+            }
+            Bukkit.getRegionScheduler().run(plugin, location, regionTask -> {
+                persistenceProofInFlight.remove(record.id());
+                if (!queue.contains(record)) {
+                    clearInFlight(record);
+                    return;
+                }
+                final Block target = world.getBlockAt(
+                        record.x(), record.y(), record.z());
+                if (markerStatus(target, record) == MarkerStatus.NONE) {
+                    defer(record, RETRY_MILLIS);
+                    return;
+                }
+                if (!commit(record)) {
+                    defer(record, RETRY_MILLIS);
+                }
+            });
+        });
+    }
+
+    // ==================== pending-position isolation ====================
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingBreak(final BlockBreakEvent event) {
+        if (isPending(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingPlace(final BlockPlaceEvent event) {
+        if (isPending(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingInteract(final PlayerInteractEvent event) {
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK
+                && event.getClickedBlock() != null
+                && isPending(event.getClickedBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingInventoryMove(final InventoryMoveItemEvent event) {
+        final Location source = event.getSource().getLocation();
+        final Location destination = event.getDestination().getLocation();
+        if (isPending(source) || isPending(destination)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingEntityExplosion(final EntityExplodeEvent event) {
+        event.blockList().removeIf(this::isPending);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingBlockExplosion(final BlockExplodeEvent event) {
+        event.blockList().removeIf(this::isPending);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingLiquid(final BlockFromToEvent event) {
+        if (isPending(event.getBlock()) || isPending(event.getToBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingPistonExtend(final BlockPistonExtendEvent event) {
+        if (pistonTouchesPending(event.getBlocks(), event.getDirection())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPendingPistonRetract(final BlockPistonRetractEvent event) {
+        if (pistonTouchesPending(event.getBlocks(), event.getDirection().getOppositeFace())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean pistonTouchesPending(final List<Block> blocks,
+                                         final org.bukkit.block.BlockFace movement) {
+        for (final Block block : blocks) {
+            if (isPending(block) || isPending(block.getRelative(movement))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isPending(final Location location) {
+        return location != null && location.getWorld() != null
+                && pendingShield.contains(location.getWorld().getName() + ';'
+                + location.getBlockX() + ';' + location.getBlockY() + ';'
+                + location.getBlockZ());
+    }
+
+    private void applyRestoreEffects(final World world, final Location location,
+                                     final org.bukkit.block.data.BlockData data) {
+        if (!configManager.getBoolean(
+                "territory.protection.regen.restore-effects-enabled", true)) {
+            return;
+        }
+        final Location effect = location.clone().add(0.5D, 0.5D, 0.5D);
+        world.playSound(effect, data.getSoundGroup().getPlaceSound(), 0.6F,
+                0.8F + (float) (Math.random() * 0.4D));
+        world.spawnParticle(org.bukkit.Particle.CLOUD,
+                effect, 4, 0.25D, 0.25D, 0.25D, 0.01D);
+    }
+
+    private boolean commit(final BlockRegenJournal.Record record) {
+        if (!journal.markApplied(record)) {
+            return false;
+        }
+        queue.remove(record);
+        pendingShield.remove(posKey(record));
+        clearInFlight(record);
+        applyingMarked.remove(record.id());
+        invalidRecordLogged.remove(record.id());
+        restoreFailureLogged.remove(record.id());
+        return true;
+    }
+
+    private void defer(final BlockRegenJournal.Record record, final long delayMillis) {
+        retryAfter.put(record.id(), System.currentTimeMillis() + delayMillis);
+        inFlight.remove(record.id());
+    }
+
+    private void clearInFlight(final BlockRegenJournal.Record record) {
+        inFlight.remove(record.id());
+        retryAfter.remove(record.id());
+    }
+
+    private static String posKey(final Block block) {
+        return block.getWorld().getName() + ';' + block.getX()
+                + ';' + block.getY() + ';' + block.getZ();
+    }
+
+    private static String posKey(final BlockRegenJournal.Record record) {
+        return record.world() + ';' + record.x()
+                + ';' + record.y() + ';' + record.z();
+    }
+
+    private static String processBootId() {
+        final String identity = ManagementFactory.getRuntimeMXBean().getStartTime()
+                + ":" + ManagementFactory.getRuntimeMXBean().getName();
+        return UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     @Override
     public void load() {
         queue.clear();
         pendingShield.clear();
-        if (!storageFile.exists()) {
-            return;
-        }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
-        for (final java.util.Map<?, ?> raw : yaml.getMapList("pending")) {
-            try {
-                queue.add(new Entry(String.valueOf(raw.get("world")),
-                        ((Number) raw.get("x")).intValue(), ((Number) raw.get("y")).intValue(),
-                        ((Number) raw.get("z")).intValue(), String.valueOf(raw.get("data")),
-                        raw.get("extra") == null ? null : String.valueOf(raw.get("extra")),
-                        ((Number) raw.get("at")).longValue()));
-
-            } catch (final RuntimeException ignored) {
-                // Sérült sor — a többi bejegyzés attól még betölt.
-            }
-        }
-        for (final Entry e : queue) {
-            pendingShield.add(posKey(e));
+        inFlight.clear();
+        retryAfter.clear();
+        applyingMarked.clear();
+        invalidRecordLogged.clear();
+        restoreFailureLogged.clear();
+        persistenceProofInFlight.clear();
+        missingWorldLogged.clear();
+        for (final BlockRegenJournal.Record record : journal.loadAll()) {
+            queue.add(record);
+            pendingShield.add(posKey(record));
         }
     }
 
     @Override
     public void save() {
-        final YamlConfiguration yaml = new YamlConfiguration();
-        final List<java.util.Map<String, Object>> out = new ArrayList<>();
-        for (final Entry e : queue) {
-            final java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
-            row.put("world", e.world());
-            row.put("x", e.x());
-            row.put("y", e.y());
-            row.put("z", e.z());
-            row.put("data", e.blockData());
-            if (e.extra() != null) {
-                row.put("extra", e.extra());
-            }
-            row.put("at", e.restoreAt());
-            out.add(row);
-        }
-        yaml.set("pending", out);
         try {
-            YamlStore.saveAtomic(storageFile, yaml);
-        } catch (final java.io.IOException e) {
-            plugin.getLogger().severe("block-regen.yml mentési hiba: " + e);
+            journal.checkpoint(queue);
+        } catch (final IOException failure) {
+            plugin.getLogger().severe(
+                    "block-regen checkpoint mentési hiba: " + failure);
+            throw new IllegalStateException(
+                    "A block-regen journal checkpointja nem írható.", failure);
         }
     }
 }

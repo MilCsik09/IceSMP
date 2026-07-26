@@ -153,14 +153,14 @@ public final class QuestBuilderListener implements Listener {
             prompts.put(player.getUniqueId(),
                     new Prompt(PromptKind.NEW_COUNT, holder.getNewQuestId(), null, type, 0));
             player.sendMessage(messageManager.get("quest-builder-prompt-count",
-                    "&eÍrd be a chatbe a(z) &f%s &eobjektíva darabszámát &7(megszakítás: 'mégse')",
+                    "&eÍrd be a chatbe a(z) &f%s &efeladat darabszámát &7(megszakítás: 'mégse')",
                     QuestBuilderGUI.typeName(type)));
             return;
         }
         prompts.put(player.getUniqueId(),
                 new Prompt(PromptKind.ADD_COUNT, holder.getQuestId(), null, type, 0));
         player.sendMessage(messageManager.get("quest-builder-prompt-count",
-                "&eÍrd be a chatbe a(z) &f%s &eobjektíva darabszámát &7(megszakítás: 'mégse')",
+                "&eÍrd be a chatbe a(z) &f%s &efeladat darabszámát &7(megszakítás: 'mégse')",
                 QuestBuilderGUI.typeName(type)));
     }
 

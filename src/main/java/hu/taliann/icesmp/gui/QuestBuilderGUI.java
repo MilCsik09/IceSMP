@@ -143,7 +143,7 @@ public final class QuestBuilderGUI {
         holder.putAction(16, "MODE");
 
         inventory.setItem(41, buildObjectiveSummary(questManager, questId));
-        inventory.setItem(42, icon(Material.ANVIL, accent("Új objektíva"), List.of(
+        inventory.setItem(42, icon(Material.ANVIL, accent("Új feladat"), List.of(
                 grey("További feladat hozzáadása ehhez a questhez."),
                 grey("» Kattints a típus-választóhoz"))));
         holder.putAction(42, "NEWOBJ");
@@ -197,7 +197,7 @@ public final class QuestBuilderGUI {
                 }
             }
         }
-        lore.add(grey("Az objektíva-részletek (materials, entity-type...)"));
+        lore.add(grey("A feladat részletei (materials, entity-type...)"));
         lore.add(grey("a /quest admin set <id> objective.<mező> paranccsal."));
         return icon(Material.TARGET,
                 Component.text("Objektívák", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false), lore);
@@ -213,8 +213,8 @@ public final class QuestBuilderGUI {
                 player.getUniqueId(), questId, newQuestId, QuestBuilderHolder.View.TYPE_PICKER);
         final Inventory inventory = Bukkit.createInventory(holder, 36,
                 Component.text(newQuestId != null
-                        ? "Új quest — objektíva típusa"
-                        : "Új objektíva — típus", NamedTextColor.DARK_AQUA));
+                        ? "Új quest — feladat típusa"
+                        : "Új feladat — típus", NamedTextColor.DARK_AQUA));
         holder.setInventory(inventory);
         GuiUtil.fill(inventory);
 

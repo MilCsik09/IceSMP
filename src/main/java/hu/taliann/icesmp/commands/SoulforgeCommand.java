@@ -73,7 +73,7 @@ public final class SoulforgeCommand implements BasicCommand {
                     cost < 0 ? "&8(MAX)" : "&7(következő: &f" + cost + "&7 szilánk — /soulforge fejleszt " + branch.name().toLowerCase(Locale.ROOT) + ")"));
         }
         player.sendMessage(messageManager.get("soulforge-hint",
-                "&8Élet: +8%%/rang minion-HP • Sebzés: +6%%/rang • Létszám: extra idézés-slot (max +3)"));
+                "&8Élet: +8%/rang idézett-társ HP • Sebzés: +6%/rang • Létszám: extra idézés-slot (max +3)"));
     }
 
     private static SoulforgeManager.Branch parseBranch(final String raw) {

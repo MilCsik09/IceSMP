@@ -65,12 +65,21 @@ public final class EscortManager {
     public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
         this.spawnPointManager = spawnPointManager;
     }
-    /** Reserves the "active" state while a spawn is still hopping region threads. */
-    private volatile long spawnGraceUntil;
+    /**
+     * Időzítő + sorsolás + a spawn-lánc rezervációja. A rezervációt CAS nyeri meg, ezért a
+     * globál-szálas tick és a parancs-szálas forceStart közül biztosan csak az egyik indít
+     * konvojt (korábban mindkettő átcsúszhatott, és a második orphanná tette az elsőt).
+     */
+    private final hu.taliann.icesmp.utils.PeriodicChanceEvent schedule =
+            new hu.taliann.icesmp.utils.PeriodicChanceEvent();
+
+    /** A két szál-hop kivárása; lejáratkor a rezerváció magától felszabadul. */
+    private static final long SPAWN_GRACE_MILLIS = 10_000L;
+    /** Hány véletlen irányt próbálunk, amíg védelem-mentes útvonalat találunk. */
+    private static final int ROUTE_ATTEMPTS = 8;
     private volatile Location destination;
     private volatile double totalDistance;
     private volatile long expiresAt;
-    private volatile long nextAttemptAt;
     /** Escort-success perk: the caravan shop's bonus stock stays unlocked until this time. */
     private volatile long bonusStockUntil;
 
@@ -95,7 +104,7 @@ public final class EscortManager {
         this.mobScalingManager = mobScalingManager;
         this.messageManager = messageManager;
         this.spawnGuard = spawnGuard;
-        this.nextAttemptAt = System.currentTimeMillis() + intervalMillis();
+        this.schedule.delayNextAttempt(intervalMillis());
     }
 
     /** Whether an escort is currently under way. */
@@ -154,37 +163,35 @@ public final class EscortManager {
         if (isActive()) {
             if (now >= expiresAt) {
                 fail("escort-failed-timeout");
-            } else if (!convoyValid()) {
+            } else if (!hu.taliann.icesmp.utils.TransientEntities.isAlive(convoyId)) {
                 // Died without our listener catching it (e.g. void) — settle as lost.
                 fail("escort-failed-died");
             }
             return;
         }
-        if (now < spawnGraceUntil) {
-            return; // A spawn is still hopping region threads.
+        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
+        // (A kapu-ellenőrzés a sorsolás ELŐTT fut, hogy az időzítő ne fogyjon el hiába.)
+        final MajorEventGate gateRef = eventGate;
+        if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
+            return;
         }
-
-        if (now >= nextAttemptAt) {
-            nextAttemptAt = now + intervalMillis();
-            // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
-            final MajorEventGate gateRef = eventGate;
-            if (gateRef != null && !gateRef.mayStartNaturally("escort")) {
-                return;
-            }
-            final double chance = Math.max(0.0D, Math.min(100.0D,
-                    configManager.getDouble("escort.chance-percent", 30.0D)));
-            if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
-                start(null);
-            }
+        if (schedule.tryAttempt(intervalMillis(),
+                configManager.getDouble("escort.chance-percent", 30.0D), SPAWN_GRACE_MILLIS)
+                && !start(null)) {
+            schedule.release();
         }
     }
 
     /** Admin override: starts an escort now near the anchor (or a random player). */
-    public synchronized boolean forceStart(final Player anchor) {
-        if (isActive() || System.currentTimeMillis() < spawnGraceUntil) {
+    public boolean forceStart(final Player anchor) {
+        if (isActive() || !schedule.tryForce(SPAWN_GRACE_MILLIS)) {
             return false;
         }
-        return start(anchor);
+        if (start(anchor)) {
+            return true;
+        }
+        schedule.release();
+        return false;
     }
 
     /** Handles the convoy's death (from the death listener, on the convoy's region thread). */
@@ -201,16 +208,13 @@ public final class EscortManager {
 
     /** Despawns the convoy and any live wave mobs on plugin disable. */
     public void shutdown() {
-        removeEntity(convoyId);
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, convoyId);
         convoyId = null;
         clearWaves();
         hideBarFromAll();
     }
 
     private boolean start(final Player preferredAnchor) {
-        // Reserve the active state while the spawn hops threads (self-heals after 10s),
-        // so a second convoy can never start and orphan the first.
-        spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         Player anchor = preferredAnchor;
         if (anchor == null) {
             // Hely-horgony: admin-pont vagy random koordináta, ha a config úgy mondja.
@@ -248,20 +252,25 @@ public final class EscortManager {
 
         // Route: from the anchor's spot toward a random compass direction, config distance away.
         final double distance = Math.max(40.0D, configManager.getDouble("escort.route-distance", 150.0D));
-        final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
         final int startX = origin.getBlockX();
         final int startZ = origin.getBlockZ();
-        final int destX = startX + (int) Math.round(Math.cos(angle) * distance);
-        final int destZ = startZ + (int) Math.round(Math.sin(angle) * distance);
 
         final Location start = topOf(world, startX, startZ);
-        final Location dest = new Location(world, destX + 0.5D, 0.0D, destZ + 0.5D);
-
         // Spawn-rules: a konvoj se induljon territórium/claim/WG-régió belsejéből vagy vízről.
         if (spawnGuard.isBlocked("escort", start)
                 || spawnGuard.isUnsafeSurface("escort", world, startX, startZ)) {
             return; // védett/vizes indulópont — a következő intervallum máshol próbálkozik
         }
+
+        // A konvoj VÉGIG megy az útvonalon, ezért nem elég az indulópontot ellenőrizni:
+        // több irányt próbálunk, és csak olyan útvonalat fogadunk el, amelynek a mintavett
+        // pontjai (cél + közbenső szakaszok) is védelem-mentesek.
+        final Location dest = pickRoute(world, start, distance);
+        if (dest == null) {
+            return; // minden próbált irány védett területen vezetett át — később, máshol
+        }
+        final int destX = dest.getBlockX();
+        final int destZ = dest.getBlockZ();
 
         final Llama convoy = world.spawn(start, Llama.class, spawned -> {
             spawned.setPersistent(false);
@@ -279,11 +288,16 @@ public final class EscortManager {
             }
         });
 
+        // A liveness fail-CLOSED: regisztráció nélkül a konvoj a következő tickben halottnak
+        // látszana, és az esemény azonnal „a konvoj elesett" eredménnyel zárulna.
+        hu.taliann.icesmp.utils.TransientEntities.register(plugin, convoy);
         convoyId = convoy.getUniqueId();
         destination = dest;
         totalDistance = Math.max(1.0D, horizontalDistance(start, dest));
         expiresAt = System.currentTimeMillis() + maxDurationMillis();
-        spawnGraceUntil = 0L;
+        // Az „aktív" állapot innentől kézzelfogható (convoyId + expiresAt), a rezerváció
+        // szerepe véget ért.
+        schedule.release();
 
         startConvoyDriver(convoy);
         updateBar(convoy, totalDistance);
@@ -388,10 +402,7 @@ public final class EscortManager {
         final int level = Math.max(1, configManager.getInt("escort.wave-level", 3));
 
         // Bounded tracking: drop entries whose mobs are already gone.
-        waveMobs.removeIf(id -> {
-            final Entity existing = Bukkit.getEntity(id);
-            return existing == null || !existing.isValid();
-        });
+        waveMobs.removeIf(id -> !hu.taliann.icesmp.utils.TransientEntities.isAlive(id));
 
         for (int i = 0; i < count; i++) {
             final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
@@ -416,6 +427,7 @@ public final class EscortManager {
             mob.setPersistent(false);
             mobScalingManager.forceLevel(mob, level);
             mob.setTarget(convoy);
+            hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
             waveMobs.add(mob.getUniqueId());
         }
 
@@ -459,7 +471,7 @@ public final class EscortManager {
         if (id == null) {
             return; // The driver already settled it (success) — no contradictory broadcast.
         }
-        removeEntity(id);
+        hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         destination = null;
         clearWaves();
         hideBarFromAll();
@@ -487,37 +499,42 @@ public final class EscortManager {
 
     private void clearWaves() {
         for (final UUID id : waveMobs) {
-            removeEntity(id);
+            hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id);
         }
         waveMobs.clear();
     }
 
-    /** Best-effort, Folia-safe removal on the entity's own region thread. */
-    private void removeEntity(final UUID id) {
-        if (id == null) {
-            return;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid()) {
-                entity.getScheduler().run(plugin, task -> entity.remove(), null);
+    /**
+     * Picks a route endpoint whose sampled points all clear the spawn-rules. Tries
+     * several random headings; each candidate is sampled at fixed fractions of the
+     * route so a leg that crosses a town/claim is rejected, not just a protected
+     * endpoint. The samples reuse the START's Y: the guard's zone lookups are
+     * height-aware, and probing the real surface Y of a far column would mean
+     * reading blocks owned by another region thread.
+     *
+     * @return the accepted destination, or null when every heading was blocked
+     */
+    private Location pickRoute(final World world, final Location start, final double distance) {
+        final double[] fractions = {1.0D, 0.75D, 0.5D, 0.25D};
+        for (int attempt = 0; attempt < ROUTE_ATTEMPTS; attempt++) {
+            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+            final double dx = Math.cos(angle) * distance;
+            final double dz = Math.sin(angle) * distance;
+            boolean clear = true;
+            for (final double fraction : fractions) {
+                final Location sample = new Location(world,
+                        start.getX() + dx * fraction, start.getY(), start.getZ() + dz * fraction);
+                if (spawnGuard.isBlocked("escort", sample)) {
+                    clear = false;
+                    break;
+                }
             }
-        } catch (final Exception ignored) {
-            // Region/scheduler unavailable (shutdown) — non-persistent entities don't survive a restart.
+            if (clear) {
+                return new Location(world,
+                        Math.round(start.getX() + dx) + 0.5D, 0.0D, Math.round(start.getZ() + dz) + 0.5D);
+            }
         }
-    }
-
-    private boolean convoyValid() {
-        final UUID id = convoyId;
-        if (id == null) {
-            return false;
-        }
-        try {
-            final Entity entity = Bukkit.getEntity(id);
-            return entity != null && entity.isValid();
-        } catch (final Exception exception) {
-            return true; // Region unavailable — assume alive rather than failing the escort.
-        }
+        return null;
     }
 
     private static double horizontalDistance(final Location a, final Location b) {

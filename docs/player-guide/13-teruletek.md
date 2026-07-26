@@ -86,6 +86,14 @@ A védelem a „hátsó ajtókat" is lefedi: védett zónában a **mob-grief** (
 > Ha valahol nem tudsz blokkot lerakni/törni: vagy egy másik frakció területén állsz, vagy egy
 > védett zónában (főváros/védett város).
 
+### Caldestera városi törvénye
+
+A semleges fővárosban **nyílt fegyvert egyik kezedben sem** tarthatsz (kard, balta, szigony,
+íj, számszeríj, buzogány — az **offhand is** beleszámít): az őrség elrakatja a hátizsákodba,
+egy kijelölt, nem aktív slotba. Ha a hátizsákod tele van, nem dobja el és nem is teszi vissza
+a kezedbe — **helyet kell csinálnod**, addig figyelmeztetést kapsz. Körözötteket a kapunál
+visszafordít az őrség (hacsak nincs náluk menlevél).
+
 ## Saját birtok — terület-claim 🏠
 
 A **claim** a te személyes, védett földed — frakciótól függetlenül bárki claimelhet.

@@ -27,12 +27,15 @@ public final class DungeonLootListener implements Listener {
     private final DungeonLootService lootService;
     private final TerritoryManager territoryManager;
     private final ConfigManager configManager;
+    private final hu.taliann.icesmp.managers.AfkManager afkManager;
 
-    public DungeonLootListener(final DungeonLootService lootService, final TerritoryManager territoryManager,
+    public DungeonLootListener(final hu.taliann.icesmp.managers.AfkManager afkManager,
+                               final DungeonLootService lootService, final TerritoryManager territoryManager,
                                final ConfigManager configManager) {
         this.lootService = lootService;
         this.territoryManager = territoryManager;
         this.configManager = configManager;
+        this.afkManager = afkManager;
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -82,8 +85,10 @@ public final class DungeonLootListener implements Listener {
         }
         // Bónusz mob-drop a kazamatán belül (csak játékos-kill; a kapu mögötti
         // kockázatnak a sima mob-looton felül is legyen hozadéka).
-        final Player killer = event.getEntity().getKiller();
-        if (killer == null) {
+        // A kazamata-lelet FAUCET-tier (új értéket termel), ezért a közös előszűrőn megy át:
+        // survival-kapu, AFK-fék, spawner- és minion-kizárás — enélkül ez az ág kiskapu volt.
+        if (hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(event.getEntity(),
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) == null) {
             return;
         }
         final Territory zone = territoryManager.getTerritoryAt(event.getEntity().getLocation());

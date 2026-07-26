@@ -164,7 +164,7 @@ public final class QuestManager implements PersistentStore {
         }
 
         try {
-            customQuests = YamlConfiguration.loadConfiguration(customQuestsFile);
+            customQuests = hu.taliann.icesmp.storage.YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
             plugin.getLogger().info("Loaded " + getCustomQuestIds().size() + " admin-created quest(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load custom-quests.yml: " + exception.getMessage());
@@ -1550,18 +1550,10 @@ public final class QuestManager implements PersistentStore {
         // Vanília advancement-toast a jobb felső sarokban (a chat-üzenet mellett).
         if (configManager.getBoolean("quest-toast.enabled", true)) {
             hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
-                    "✔ " + stripColors(getDisplayName(questId)), "minecraft:writable_book");
+                    hu.taliann.icesmp.utils.ToastUtil.Kind.QUEST);
         }
 
         advanceChain(player, quest);
-    }
-
-    /** A quest display-nevének lecsupaszítása a toast-JSON-hoz (§/& kódok nélkül). */
-    private static String stripColors(final String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.replaceAll("(?i)[§&][0-9a-fk-orx]", "");
     }
 
     /**
@@ -1572,9 +1564,41 @@ public final class QuestManager implements PersistentStore {
      * need an NPC visit or territory crossing between every link — e.g. the
      * first-join onboarding chain.
      */
+    /**
+     * Lánc-mélység a HÍVÁSI VEREMBEN. A quest elfogadása azonnal újraértékeli a REACH_LEVEL
+     * célokat, ezért egy már teljesített, önmagára (vagy körben) mutató, repeatable, nulla
+     * cooldownos quest az {@code accept → complete → reward → advanceChain → accept} láncot
+     * végtelenszer futtatná: sokszoros jutalom, majd StackOverflowError és a régió-szál blokkolása.
+     * ThreadLocal, mert a lánc mindig EGY régió-szálon, egy hívási veremben fut.
+     */
+    private static final ThreadLocal<Integer> chainDepth = ThreadLocal.withInitial(() -> 0);
+    private static final int MAX_CHAIN_DEPTH = 16;
+
     private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
         final String next = completedQuest.getString("next");
-        if (next == null || next.isBlank() || getAcceptBlocker(player, next) != null || !accept(player, next)) {
+        if (next == null || next.isBlank()) {
+            return;
+        }
+        final int depth = chainDepth.get();
+        if (depth >= MAX_CHAIN_DEPTH) {
+            plugin.getLogger().severe("Quest-lánc mélység-korlát (" + MAX_CHAIN_DEPTH + ") elérve a(z) '"
+                    + next + "' questnél — valószínűleg ciklus a next-gráfban (" + player.getName() + ").");
+            return;
+        }
+        chainDepth.set(depth + 1);
+        try {
+            advanceChainStep(player, next);
+        } finally {
+            if (depth == 0) {
+                chainDepth.remove();
+            } else {
+                chainDepth.set(depth);
+            }
+        }
+    }
+
+    private void advanceChainStep(final Player player, final String next) {
+        if (getAcceptBlocker(player, next) != null || !accept(player, next)) {
             return;
         }
 
@@ -1632,7 +1656,8 @@ public final class QuestManager implements PersistentStore {
 
         final String unlockSpell = quest.getString("rewards.unlock-spell");
         if (unlockSpell != null && !unlockSpell.isBlank()) {
-            jobManager.unlockSpell(player, unlockSpell);
+            jobManager.unlockSpell(player, unlockSpell,
+                    JobManager.SOURCE_QUEST_PREFIX + quest.getName().toLowerCase(Locale.ROOT));
         }
 
         // Crate-key reward: "<crateId>:<darab>", pl. "koznapi:1".
@@ -1653,7 +1678,7 @@ public final class QuestManager implements PersistentStore {
                         || current.requiresSinner())) {
                     specs.resetClassSpecialization(player);
                     player.sendMessage(messageManager.getMessage("penance-spec-reset",
-                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott. Új utat választhatsz.</yellow>"));
+                            "<yellow>A vezekléssel a sötét út is lezárult: a specializációd elhagyott téged. Új utat választhatsz.</yellow>"));
                 }
             }
         }

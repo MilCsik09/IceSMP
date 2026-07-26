@@ -108,7 +108,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection territoriesSection = yaml.getConfigurationSection("territories");
             if (territoriesSection == null) {
                 rebuildIndex();
@@ -204,7 +204,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("spawns");
         if (section == null) {
             return;
@@ -404,6 +404,31 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         final int hi = Math.max(minY, maxY);
         final Territory updated = new Territory(existing.id(), existing.faction(), existing.name(), existing.type(),
                 existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(), lo, hi);
+        territories.put(existing.id(), updated);
+        rebuildIndex();
+        save();
+        return updated;
+    }
+
+    /**
+     * Ownership change WITHOUT re-definition: the shape (circle radius or polygon), the world,
+     * the centre and the vertical band all stay as they were. The raid capture used to call
+     * {@code define}/{@code definePolygon} instead, and those base paths build a full-height
+     * zone — a surface-only or underground zone silently became world-height on capture,
+     * changing protection, PvP, mob rules and capital law with it.
+     *
+     * @param type the new zone type (a captured zone is never a capital)
+     * @return the updated zone, or null if unknown
+     */
+    public synchronized Territory setOwner(final String id, final FactionType faction, final TerritoryType type) {
+        final Territory existing = getById(id);
+        if (existing == null || faction == null || type == null) {
+            return null;
+        }
+        demotePreviousCapital(type, faction, existing.id());
+        final Territory updated = new Territory(existing.id(), faction, existing.name(), type,
+                existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(),
+                existing.minY(), existing.maxY());
         territories.put(existing.id(), updated);
         rebuildIndex();
         save();

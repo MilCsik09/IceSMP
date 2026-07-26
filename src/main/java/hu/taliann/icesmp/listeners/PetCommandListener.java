@@ -53,7 +53,7 @@ public final class PetCommandListener implements Listener {
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8F, 1.3F);
         player.sendActionBar(messageManager.getMessage(
                 "pet-stance",
-                "<gray>Társ parancs: <gold>{stance}</gold></gray>",
+                "<gray>A társ parancsa: <gold>{stance}</gold></gray>",
                 Map.of("stance", stanceLabel(stance))
         ));
     }

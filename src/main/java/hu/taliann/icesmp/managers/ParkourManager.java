@@ -67,7 +67,7 @@ public final class ParkourManager implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("courses");
         if (section == null) {
             return;
@@ -177,6 +177,7 @@ public final class ParkourManager implements PersistentStore {
         final double seconds = (System.currentTimeMillis() - run.startMillis()) / 1000.0D;
         // A parkour korlátlan pénz-faucet lenne: pályánként napi daily-reward-limit
         // alkalommal fizet, fölötte a futam teljesíthető, de veret nem jár.
+        AdvancementService.award(player, "parkour");
         final boolean paid = course.reward > 0 && tryConsumeDailyRun(player.getUniqueId(), run.courseId());
         if (paid) {
             final FactionType faction = factionManager.getFaction(player.getUniqueId());
@@ -221,20 +222,12 @@ public final class ParkourManager implements PersistentStore {
         return true;
     }
 
-    /** játékos+pálya -> (nap, mai jutalmazott futamok) — memóriában él, a capnek elég. */
-    private final Map<String, long[]> dailyRewardedRuns = new ConcurrentHashMap<>();
+    /** A keret PÁLYÁNKÉNT külön fogy, ezért a kulcs „játékos|pálya" (nem csak az UUID). */
+    private final hu.taliann.icesmp.utils.DailyBudget.InMemory<String> dailyRewardedRuns =
+            new hu.taliann.icesmp.utils.DailyBudget.InMemory<>(1024);
 
     private boolean tryConsumeDailyRun(final UUID playerId, final String courseId) {
-        final int limit = configManager.getInt("parkour.daily-reward-limit", 3);
-        if (limit <= 0) {
-            return true;
-        }
-        final long today = System.currentTimeMillis() / 86_400_000L;
-        if (dailyRewardedRuns.size() > 1024) {
-            dailyRewardedRuns.values().removeIf(entry -> entry[0] != today);
-        }
-        final long[] entry = dailyRewardedRuns.compute(playerId + "|" + courseId, (key, old) ->
-                old == null || old[0] != today ? new long[]{today, 1L} : new long[]{today, old[1] + 1L});
-        return entry[1] <= limit;
+        return dailyRewardedRuns.tryConsume(playerId + "|" + courseId, 1L,
+                configManager.getInt("parkour.daily-reward-limit", 3));
     }
 }

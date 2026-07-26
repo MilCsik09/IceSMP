@@ -102,7 +102,9 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
             }
             Bukkit.getServer().broadcast(messageManager.getMessage("profession-weekly-done",
                     "<gold>⚒ A(z) <white>{profession}</white> szakma-céh teljesítette a heti közös célt (<white>{total}</white> egység)! A hozzájárulók jutalma úton van.</gold>",
-                    Map.of("profession", profession.getId(), "total", String.valueOf(entry.getValue().get()))));
+                    Map.of("profession", net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                            .plainText().serialize(profession.getDisplayName()),
+                            "total", String.valueOf(entry.getValue().get()))));
             final Map<UUID, AtomicLong> profContribs = contributors.getOrDefault(profession, Map.of());
             for (final Map.Entry<UUID, AtomicLong> contributor : profContribs.entrySet()) {
                 if (contributor.getValue().get() < minContribution || rewardXp <= 0) {
@@ -151,7 +153,7 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         week = yaml.getLong("week", currentWeek());
         final ConfigurationSection counterSection = yaml.getConfigurationSection("counters");
         if (counterSection != null) {

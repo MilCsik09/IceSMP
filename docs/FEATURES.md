@@ -1,8 +1,10 @@
 # IceSMP — Teljes funkció-leltár (belső bemutató)
 
 > Minden rendszer és mechanika egy helyen, belső "mutogatásra". Technikai mélységű,
-> de teljes. Állapot: 2026-07-22 — kód-oldalon launch-kész, élő playtest előtt.
-> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, ~300 Java-fájl / 60+ manager.
+> de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
+> kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
+> életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
+> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 477 Java-fájl / 87 manager.
 
 ## ⚔ Kasztok és képességek
 
@@ -67,7 +69,7 @@
 
 ## 💰 Gazdaság
 
-- **4 frakció-valuta** (Vörös Talentum, Kék Talentum, Creutzér, Csontveret) —
+- **4 frakció-valuta** (Parázsló Parals, Hópihér-veret, Creutzér, Csontveret) —
   ITEM_MODEL-es fizikai veretek több címletben.
 - **SZENT SZABÁLY: a bank-számlára csak fizikai veret-befizetéssel kerülhet pénz** —
   minden jutalom fizikai tokenben érkezik (payOutTokens), a rendszer sosem "nyomtat"
@@ -97,7 +99,8 @@
 - **Zóna-szabály mátrix**: build/interact/pvp/explosions/fire zónatípusonként
   configból; admin- és builder-bypass node-ok; PvP-tiltás kiterjed potion/TNT/pet
   forrásokra is.
-- **Claim-rendszer** (/claim): chunk-alapú birtok, trust-lista, konténer-védelem,
+- **Claim-rendszer** (/claim): **blokk-pontos** birtok (`/claim pos1|pos2|area`, Y-sávval; a
+  `/claim` gyorsfoglalás 16×16-os oszlopot ad), trust-lista, konténer-védelem,
   piston/tűz/folyadék/robbanás-védelem, raid-fosztogatás kapu (csak konténer,
   csak regisztrált támadónak), belépés-jelzés action-baron.
 - **Fővárosi törvény**: fegyver-tilalom a semleges fővárosban (Sétapálca rejtett
@@ -146,7 +149,9 @@
   indulási késleltetéssel (robbanás/ostrom/szabad bontás külön kulcs); blokkonként
   anyag-hű lerakás-hang + porfelhő; támasz-tudatos sorrend (gravitációs blokk csak
   alapra, fáklya csak falra — grace után kényszer); élőlényre SOSEM épül rá
-  (befalazás-védelem); restart-biztos perzisztens várólista (block-regen.yml).
+  (befalazás-védelem); crash-biztos várólista **write-ahead naplóval** (block-regen.yml
+  checkpoint + block-regen.wal napló): a láda NBT-pillanatképe már a kiürítés ELŐTT lemezre
+  kerül, és a rekord csak a sikeres visszaépítés véglegesítése után tűnik el.
 - **Tile-entity-k**: alapból "óvó rúnák" effekttel sérthetetlenek; kapcsolható
   teljes NBT-út (struktúra-pillanatkép): láda/shulker-tartalom, tábla-szöveg,
   fej-textúra, zászló-minta, spawner — robbanáskor semmi nem szóródik ki, minden
@@ -170,11 +175,13 @@
   (sculk-terjedés, irtó-részesedés), régészet (brush-lelőhelyek), játékos-karaván
   (szállítmány-kockázat), kalmár-karaván, bőség-ablak, gyűjtő-buff, szerver-kihívás
   (per-player skálázott), rejtett helyek (D8), ambient-események (kültéri jutalom),
-  Idegen NPC (28 kóbor mondat), tábortűz-mesék (37 lore-történet).
+  Idegen NPC (45 kóbor mondat), tábortűz-mesék (62 közös + 4×22 frakció-hangú sor).
 - **Broadcast-diéta**: a nagy események globális hírek, a személyes léptékűek csak
   a helyszín környékén hallatszanak (LocalAnnounce, Folia-biztos).
 - **EventSpawnGuard**: minden esemény-spawn közös kapun — territory/claim/WG mátrix
-  eseményenként, felszín-biztonság, mob-előkészítés (zombisodás/égés ellen).
+  eseményenként, felszín-biztonság, mob-előkészítés (zombisodás/égés ellen). A kapu a
+  jelölt spawn-pontokat vizsgálja (a karaván-útvonalat mintavételesen), nem blokkonként
+  garantált korlát; a WorldGuard-híd WG nélkül vagy hiba után fail-open.
 - **Mob-skálázás**: távolság-alapú szint + **zóna-rámpa** (a legközelebbi biztonságos
   zóna szélétől 250 blokk/szint — a 13k-ra lévő fővárosok környéke is kezdőbarát);
   DARK-földön +2 szint és az élőhalott nappal sem ég; Thanaopolis élőhalott-populáció
@@ -270,10 +277,11 @@
   rang-rendezés, háború-színek, színkódolt ping); **lebegő sebzés-számok**;
   **halál-összegző** (utolsó 10 mp találatai); intro-címszekvencia új játékosnak;
   quest-toast értesítések; boss-bárok.
-- **Natív haladás-fül (advancementek)**: saját IceSMP fül a vanília Haladás-képernyőn
-  (loadAdvancement, RP nélkül) — mérföldkövek (első kaszt/spec/frakció/szakma) és
-  rejtett teljesítmények (rontás-tisztítás, hidden-spot); kódból granted, kikapcsolható
-  (`advancements.enabled`).
+- **Natív haladás-fül (advancementek)**: saját IceSMP fül a vanília Haladás-képernyőn — a fát a
+  jar SAJÁT datapackje szállítja (`DatapackRegistrar`, RP és külső mod nélkül), tehát a kóddal
+  együtt verziózódik. 22 csomópont négy ágon: mérföldkövek (első kaszt/spec/frakció/szakma) és
+  rejtett teljesítmények (rontás-tisztítás, hidden-spot, Suttogó-rítus, száműzetés, vezeklés);
+  kódból granted, csendben (se toast, se chat), kikapcsolható (`advancements.enabled`).
 - **Natív párbeszéd-ablakok (Dialog API)**: szerver-oldali dialógusok RP nélkül
   (`DialogService`: értesítő + megerősítő minta, szerver-oldali válasz-kezeléssel).
   Első felhasználás: natív üdvözlő-ablak új játékosnak az első belépéskor

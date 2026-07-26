@@ -31,7 +31,8 @@ Minden harcos frakció (Piros / Kék / Sötét — a Semleges kivételével) **k
   ha a védőnek nincs területe, kötetlen, csak-ölés raid lesz.
 - **Felkészülés (alapból 2 perc):** mindkét oldal harcosai jelentkeznek — `/faction raid join`
   (alapból **max 10 fő/oldal**; a hirdető király automatikusan bekerül). `/faction raid status`
-  mutatja az állást.
+  mutatja az állást. **Nevezni CSAK ebben a szakaszban lehet** — a harc megkezdése után már
+  nem lehet beállni egy megviselt oldal ellen.
 - **Harci szakasz (alapból 15 perc):** csak a **jelentkezett harcosok közti ölés** szentesített
   (nem bűn) és **pontozó** (alapból 5 pont) — területhez kötött raidnél csak akkor ér pontot,
   ha az áldozat a **raid-zónán belül** esik el. Aki nem jelentkezett, arra a békeidős

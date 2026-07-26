@@ -26,6 +26,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -57,6 +58,7 @@ public final class ProfessionRecipeBookListener implements Listener {
     private final ProfessionRecipeCatalog catalog;
     private final ItemRarityService affixService;
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
+    private final JavaPlugin plugin;
     private final MessageManager messageManager;
     private final FactionManager factionManager;
     private final hu.taliann.icesmp.managers.ConfigManager configManager;
@@ -72,6 +74,7 @@ public final class ProfessionRecipeBookListener implements Listener {
                                         final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
                                         final MessageManager messageManager, final FactionManager factionManager,
                                         final hu.taliann.icesmp.managers.ConfigManager configManager) {
+        this.plugin = plugin;
         this.professionManager = professionManager;
         this.catalog = catalog;
         this.affixService = affixService;
@@ -156,7 +159,14 @@ public final class ProfessionRecipeBookListener implements Listener {
             return;
         }
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            player.getInventory().removeItem(new ItemStack(entry.getKey(), entry.getValue()));
+            if (!hu.taliann.icesmp.utils.PlainIngredients.consume(
+                    player, entry.getKey(), entry.getValue(), uniqueMaterials)) {
+                // A hasIngredients UGYANEZT a predikátumot használta ugyanezen a szálon,
+                // ezért ide nem szabad eljutni: ha mégis, a hozzávaló ingyen maradna.
+                plugin.getLogger().severe("Craft-hozzávaló nem fogyott el: "
+                        + recipe.id() + " / " + entry.getKey() + " x" + entry.getValue());
+                return;
+            }
         }
         consumeUnique(player, recipe);
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
@@ -191,7 +201,8 @@ public final class ProfessionRecipeBookListener implements Listener {
 
     private boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            if (countPlain(player, entry.getKey()) < entry.getValue()) {
+            if (hu.taliann.icesmp.utils.PlainIngredients.count(
+                    player, entry.getKey(), uniqueMaterials) < entry.getValue()) {
                 return false;
             }
         }
@@ -201,17 +212,6 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
         }
         return true;
-    }
-
-    /** Counts plain items of a material, EXCLUDING unique materials that share the base type. */
-    private int countPlain(final Player player, final Material material) {
-        int count = 0;
-        for (final ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material && uniqueMaterials.idOf(item) == null) {
-                count += item.getAmount();
-            }
-        }
-        return count;
     }
 
     private int countUnique(final Player player, final String uniqueId) {
@@ -353,7 +353,14 @@ public final class ProfessionRecipeBookListener implements Listener {
         // a NEVES/gear eredmények PDC-ben és lore-sorban viszik a készítő nevét — a piacon is
         // megmarad, márkajelzésként. Bulk (lore nélküli, stackelhető) eredményre nem kerül,
         // hogy a stackelést ne törje. A roll ELŐTT fut (a roll a lore alá fűzi az affixokat).
-        if (configManager.getBoolean("crafted-by.enabled", true)
+        //
+        // A STACKELHETŐ unique-ALKATRÉSZ is kimarad (affix nélkül): ezekből ugyanaz a tárgy más
+        // úton is a játékoshoz kerülhet (pl. USE_REMAINDER-ként visszakapott üres kupa), és a
+        // bélyeg a két példányt összeférhetetlenné tenné — két külön kupa-kupac állna a
+        // hátizsákban ugyanabból a tárgyból.
+        final boolean stackableComponent = recipe.uniqueResult() != null
+                && recipe.affixTier() == null && result.getMaxStackSize() > 1;
+        if (configManager.getBoolean("crafted-by.enabled", true) && !stackableComponent
                 && (recipe.affixTier() != null || (recipe.lore() != null && !recipe.lore().isEmpty()))) {
             final ItemMeta craftedMeta = result.getItemMeta();
             if (craftedMeta != null) {
@@ -403,6 +410,51 @@ public final class ProfessionRecipeBookListener implements Listener {
                 "profession-recipes." + recipe.id() + ".result.item-model", "");
         if (!itemModel.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(result, itemModel);
+        }
+        // Mestermű-mérföldkő: ha az affix-roll a létra felső fokát adta, az elismerést érdemel.
+        if (recipe.affixTier() != null && affixService != null) {
+            final String rolled = affixService.rarityIdOf(result);
+            if ("legendas".equals(rolled) || "ereklye".equals(rolled)) {
+                hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
+            }
+        }
+        // result.rarity: a saját létra egy foka (ocska…ereklye) — tervezett itemnek, amely nem
+        // esik át affix-rollon. Az affix-rollos gear a rollott fokot kapja az ItemRarityService-től.
+        final String rarityId = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.rarity", "");
+        if (!rarityId.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyRarity(result,
+                    hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rarityId));
+        }
+        // result.use-remainder: <MATERIAL> — használat után a helyén maradó tárgy (üres kupa stb.).
+        final String remainderName = configManager.getString(
+                "profession-recipes." + recipe.id() + ".result.use-remainder", "");
+        if (!remainderName.isBlank()) {
+            // Kétféle megadás: "unique:<id>" (bélyegzett saját tárgy, pl. üres kupa) vagy nyers Material.
+            org.bukkit.inventory.ItemStack remainder = null;
+            if (remainderName.toLowerCase(Locale.ROOT).startsWith("unique:")) {
+                remainder = uniqueMaterials.create(remainderName.substring("unique:".length()), 1);
+            } else {
+                final org.bukkit.Material remainderMaterial = org.bukkit.Material.matchMaterial(remainderName);
+                if (remainderMaterial != null) {
+                    remainder = new org.bukkit.inventory.ItemStack(remainderMaterial);
+                }
+            }
+            if (remainder == null) {
+                plugin.getLogger().warning("profession-recipes." + recipe.id()
+                        + ".result.use-remainder: feloldhatatlan \"" + remainderName + "\" - kihagyva.");
+            } else {
+                hu.taliann.icesmp.items.ItemDataFactory.applyUseRemainder(result, remainder);
+            }
+        }
+        // result.use-cooldown: { group, seconds } — saját cooldown-csoport (lassú, „nehéz" fegyver
+        // vagy fogyóeszköz); a csoport miatt NEM sötétíti a vele azonos Materialú vanília itemeket.
+        final org.bukkit.configuration.ConfigurationSection cooldownSection = configManager.getConfiguration()
+                .getConfigurationSection("profession-recipes." + recipe.id() + ".result.use-cooldown");
+        if (cooldownSection != null) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyUseCooldownGroup(result,
+                    cooldownSection.getString("group", recipe.id()),
+                    (float) cooldownSection.getDouble("seconds", 1.0D));
         }
         return result;
     }

@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.job;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpellRegistry;
 import hu.taliann.icesmp.spells.Spell;
@@ -37,7 +38,7 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
 
     @Override
     public String description() {
-        return messageManager.get("messages.job-desc-unlockspell", "Varazslat feloldasa egy jatekosnak (admin).");
+        return messageManager.get("messages.job-desc-unlockspell", "Varázslat feloldása egy játékosnak (admin).");
     }
 
     @Override
@@ -59,13 +60,13 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
 
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA celjatekos nem erheto el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem érhető el online."));
             return true;
         }
 
         final Spell spell = spellRegistry.getById(args[1]);
         if (spell == null) {
-            sender.sendMessage(messageManager.get("messages.job-unknown-spell", "&cIsmeretlen varazslat: &f%s", args[1]));
+            sender.sendMessage(messageManager.get("messages.job-unknown-spell", "&cIsmeretlen varázslat: &f%s", args[1]));
             return true;
         }
 
@@ -73,14 +74,15 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
         // thread (the target may be in a different region than the admin). sender.sendMessage is safe
         // from there.
         target.getScheduler().run(plugin, task -> {
-            if (!jobManager.unlockSpell(target, spell.getId())) {
-                sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked", "&eEz a varazslat mar fel van oldva."));
+            if (!jobManager.unlockSpell(target, spell.getId(),
+                    hu.taliann.icesmp.managers.JobManager.SOURCE_ADMIN)) {
+                sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked", "&eEz a varázslat már fel van oldva."));
                 return;
             }
 
             sender.sendMessage(messageManager.get(
                     "messages.job-unlockspell-success",
-                    "&aVarazslat feloldva: &f%s &7-> &e%s",
+                    "&aVarázslat feloldva: &f%s &7-> &e%s",
                     target.getName(),
                     spell.getId()
             ));
@@ -113,9 +115,5 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }
 

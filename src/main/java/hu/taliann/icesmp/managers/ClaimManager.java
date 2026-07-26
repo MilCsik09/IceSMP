@@ -399,7 +399,15 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                     return "claim-in-territory";
                 }
             }
-            if (blockRegion && ProtectionBridge.isProtected(probe)) {
+        }
+
+        // A WG-átfedés VALÓDI box-metszés a világ teljes magasságán: a pont-mintavétel
+        // (chunk-közép + sarkok, tengerszinten) átengedte a minták közé eső kicsi/keskeny
+        // és a más magasságban lévő régiót. FAIL-CLOSED: ha a híd épp hibás („nem tudom"),
+        // inkább elutasítjuk a claimet, mint hogy spawn/kazamata/admin-épület fölé kerüljön.
+        if (blockRegion) {
+            final Boolean overlap = ProtectionBridge.queryRegionOverlap(world, minX, minZ, maxX, maxZ);
+            if (overlap == null || overlap) {
                 return "claim-in-protected-region";
             }
         }
@@ -851,7 +859,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             rebuildIndex();
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("claims");
         if (section == null) {
             rebuildIndex();

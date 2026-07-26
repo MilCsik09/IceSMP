@@ -16,6 +16,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import hu.taliann.icesmp.storage.PersistentStore;
+import hu.taliann.icesmp.storage.YamlStore;
+import org.bukkit.configuration.file.YamlConfiguration;
+
 /**
  * Raid system:
  * a faction king declares a raid against another faction for an entry fee paid
@@ -31,14 +35,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * for their side. When the timer ends, the side with more points wins the
  * configured percentage of the loser's treasury; if the ATTACKER wins a
  * territory-bound raid, the claim itself changes hands (losing its capital
- * status). Runtime-only state; all timers run on the global region scheduler
+ * status). A futó raid runtime-állapot (restartkor visszatérítéssel zárul), a lánc-raid
+ * cooldown-bélyege viszont perzisztens — csak memóriában a restart ingyen új hadüzenetet
+ * adott a királynak. All timers run on the global region scheduler
  * (Paper + Folia), hopping to each player's own thread for entity access.</p>
  */
-public final class RaidManager {
+public final class RaidManager implements PersistentStore {
 
     /** Snapshot of the running raid ({@code territoryId} null = unbound raid). */
     public record ActiveRaid(FactionType attacker, FactionType defender, String territoryId,
-                             long combatStartsAtMillis, long endsAtMillis) {
+                             long combatStartsAtMillis, long endsAtMillis, double entryFee) {
 
         public boolean inWarmup() {
             return System.currentTimeMillis() < combatStartsAtMillis;
@@ -79,6 +85,28 @@ public final class RaidManager {
         this.seasonManager = seasonManager;
         this.territoryManager = territoryManager;
         this.messageManager = messageManager;
+    }
+
+    /** A lánc-raid cooldown bélyegét tartja: a futó raid maga NEM folytatható restart után. */
+    @Override
+    public void load() {
+        final java.io.File file = new java.io.File(plugin.getDataFolder(), "raids.yml");
+        if (!file.exists()) {
+            return;
+        }
+        final YamlConfiguration yaml = YamlStore.loadTracked(file, plugin.getLogger());
+        lastRaidEndedAt = yaml.getLong("last-raid-ended-at", 0L);
+    }
+
+    @Override
+    public void save() {
+        try {
+            final YamlConfiguration yaml = new YamlConfiguration();
+            yaml.set("last-raid-ended-at", lastRaidEndedAt);
+            YamlStore.saveAtomic(new java.io.File(plugin.getDataFolder(), "raids.yml"), yaml);
+        } catch (final java.io.IOException exception) {
+            plugin.getLogger().severe("Failed to save raids.yml: " + exception.getMessage());
+        }
     }
 
     public ActiveRaid getActiveRaid() {
@@ -213,7 +241,8 @@ public final class RaidManager {
         activeRaid = new ActiveRaid(attacker, defender,
                 territory == null ? null : territory.id(),
                 now + (warmupMinutes * 60_000L),
-                now + ((warmupMinutes + durationMinutes) * 60_000L));
+                now + ((warmupMinutes + durationMinutes) * 60_000L),
+                entryCost);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-started",
@@ -267,6 +296,12 @@ public final class RaidManager {
 
         if (participants.containsKey(player.getUniqueId())) {
             return "faction-raid-already-joined";
+        }
+
+        // Nevezni CSAK a felkészülési szakaszban lehet: a harc közbeni belépő friss
+        // felszereléssel, sértetlenül állt be egy megviselt oldal ellen.
+        if (!raid.inWarmup()) {
+            return "faction-raid-combat-locked";
         }
 
         if (countParticipants(side) >= maxPerSide()) {
@@ -415,6 +450,7 @@ public final class RaidManager {
         }
 
         lastRaidEndedAt = System.currentTimeMillis();
+        save();
         activeRaid = null;
         cancelTasks();
 
@@ -448,6 +484,18 @@ public final class RaidManager {
 
         // Raid victory feeds the seasonal league standings.
         seasonManager.addPoints(winner, Math.max(0, configManager.getInt("factions.raid.season-points", 5)), "raid");
+        // A győztes oldal jelentkezett harcosai kapják meg. A `fighters` snapshotot KELL
+        // használni: a participants map ennek a metódusnak az elején már kiürült, tehát az
+        // isParticipant() itt mindenkire false-t adna (a bejegyzés holt maradna).
+        for (final Map.Entry<UUID, FactionType> fighter : fighters.entrySet()) {
+            if (fighter.getValue() != winner) {
+                continue;
+            }
+            final org.bukkit.entity.Player online = Bukkit.getPlayer(fighter.getKey());
+            if (online != null) {
+                AdvancementService.award(online, "raid_win");
+            }
+        }
 
         // Victor's spoils buff: a temporary boon for the winning faction's online members.
         applyWinnerBuff(winner);
@@ -491,21 +539,13 @@ public final class RaidManager {
             return;
         }
 
-        final org.bukkit.World world = Bukkit.getWorld(territory.world());
-        if (world == null) {
+        // Captured zones never carry capital status into the conqueror's hands — a faction's
+        // capital is its own seat, not a war trophy. Csak a TULAJDONOS változik: az újra-
+        // definiálás elvesztette a függőleges sávot (a felszíni/föld alatti zóna teljes
+        // világmagasságúvá vált a foglalással).
+        if (territoryManager.setOwner(territory.id(), conqueror,
+                hu.taliann.icesmp.data.TerritoryType.FACTION) == null) {
             return;
-        }
-
-        // Captured zones never carry capital status into the conqueror's hands —
-        // a faction's capital is its own seat, not a war trophy. A polygon boundary
-        // (e.g. a besieged city wall) is preserved so the exact shape transfers too.
-        if (territory.isPolygon()) {
-            territoryManager.definePolygon(territory.id(), conqueror, territory.name(),
-                    hu.taliann.icesmp.data.TerritoryType.FACTION, territory.world(), territory.polygon());
-        } else {
-            territoryManager.define(territory.id(), conqueror, territory.name(),
-                    hu.taliann.icesmp.data.TerritoryType.FACTION,
-                    new Location(world, territory.x(), 0.0D, territory.z()), territory.radius());
         }
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "faction-raid-territory-captured",
@@ -557,16 +597,25 @@ public final class RaidManager {
         }
     }
 
-    /** Cancels the pending timers on plugin disable. */
+    /**
+     * Cancels the pending timers on plugin disable. A raid killed by the restart REFUNDS
+     * its entry fee to the attacker\'s treasury: the fee buys a decided siege, and a
+     * result-less cancellation would silently keep the king\'s money.
+     */
     public void shutdown() {
         final ActiveRaid raid = activeRaid;
         if (raid != null) {
+            if (raid.entryFee() > 0.0D) {
+                treasuryManager.deposit(raid.attacker(), raid.entryFee());
+            }
             // Restart alatt a menet nem folytatható — legalább ne némán vesszen el.
             Bukkit.getServer().broadcast(messageManager.getMessage("raid-cancelled-restart",
-                    "<yellow>⚔ A folyamatban lévő ostrom a szerver újraindulása miatt eredmény nélkül zárult — a krónikák nem jegyzik.</yellow>"));
+                    "<yellow>⚔ A folyamatban lévő ostrom a szerver újraindulása miatt eredmény nélkül zárult — "
+                            + "a krónikák nem jegyzik, a nevezési díj visszakerült a kasszába.</yellow>"));
         }
         cancelTasks();
         activeRaid = null;
         participants.clear();
+        save();
     }
 }

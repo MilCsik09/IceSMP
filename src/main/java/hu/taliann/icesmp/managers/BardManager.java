@@ -27,6 +27,35 @@ public final class BardManager {
     private final StatsManager statsManager;
     private final MessageManager messageManager;
 
+    /**
+     * Krónika-versszakok: a bárd MINDEN héten mást mesél a világ történetéből (a heti index
+     * választ), így a rendszeres játékos a kódex elolvasása nélkül, hétről hétre megismeri a
+     * teljes idővonalat — a Teremtéstől a Felsők koráig. A messages-kulcs soronkénti
+     * ({@code bard-chronicle-<index+1>}), tehát a készlet bővítése kód-módosítás nélkül él.
+     */
+    private static final String[] CHRONICLE_VERSES = {
+            "<gold>🎵 „Hallgassátok: hajdan egy csillag szállt le, Asterlayna volt a neve — s ahol földet ért, ott kelt ki a Fa.”</gold>",
+            "<gold>🎵 „Aetrinitának hívták a Fát, s négy gyermeket nevelt: lángot, pikkelyt, erdőt… és csendet.”</gold>",
+            "<gold>🎵 „Soleil volt a láng, Kallan a pikkely, Arkynn az erdő ura — s a negyediket ma nem nevezem meg.”</gold>",
+            "<gold>🎵 „Az első esztendőben megrepedt a Fa, és Asterobourgh elbukott — ezt hívják Hasadásnak, s innen számol minden év.”</gold>",
+            "<gold>🎵 „A népet a világ két sarkába szórták: egyiket a jég vette, másikat a láng. Így lett a testvérből határ.”</gold>",
+            "<gold>🎵 „Tizennégyben Pyralingrad kőfala nőtt, száztizenhétben Glatziendorf jege csillant — s a két város azóta méregeti egymást.”</gold>",
+            "<gold>🎵 „Ötszáznegyvenhétben, hat háború után, Caldestera letette a fegyvert örökre — s azóta a Menedékbe kardot nem viszünk.”</gold>",
+            "<gold>🎵 „Ryanora és Caldestera nem korona, hanem kézfogás. Ezért törik könnyebben — és ezért tart mégis.”</gold>",
+            "<gold>🎵 „Hatszázkilencvennyolcban kettéhasadt az ég, s felébredt, aki a mélyben várt. Az a Káoszkor első napja volt.”</gold>",
+            "<gold>🎵 „A Néma Királynő két mondatot szólt: az elsőre felkeltek a holtak, a másodikra elfogyott a nemesség. Harmadikat még nem mondott.”</gold>",
+            "<gold>🎵 „Négy uralkodó nevét őrzi a lajstrom: Zhoris a lángmadarak ura, Miinus a sárkánykirály örököse, s a két hadvezér, Benedictus és Lineata.”</gold>",
+            "<gold>🎵 „Zhoris köpenye főnixtollból szőtt, Miinus haragja acélba vert — s a fegyver máig öl, de a kéz, mely tartotta, nincs többé.”</gold>",
+            "<gold>🎵 „Benedictus és Lineata büszke seregei ma is róják az utakat — csak lassabban, és nem parancsra.”</gold>",
+            "<gold>🎵 „Kilencszázhetvennyolcban új nép jött a Fa alá: a Felsők. Ti vagytok azok — s a halál nálatok csak késés.”</gold>",
+            "<gold>🎵 „A Fa ajándékot ad, ha először nyúlsz az erő felé: tárgyat, amit eldobni nem tudsz. Lélekkapocs a neve.”</gold>",
+            "<gold>🎵 „A Kárhozat Kapuja nem ajtó, hanem seb — és a sebbe nem nyúl az, aki élni akar.”</gold>",
+            "<gold>🎵 „Radicora az Ó-Caldestera: megkopott házai közt a Fa igaz követői élnek — ott nyitja szemét minden új Felső.”</gold>",
+            "<gold>🎵 „Thanaopolist a régi világ Mortengradnak hívta — a nevet ma már csak a vének receptjei őrzik.”</gold>",
+            "<gold>🎵 „A vérhold nem baljós jel, jó népek: az Ő fordulása álmában. Ennyi elég, hogy a világ megbillenjen.”</gold>",
+            "<gold>🎵 „A Suttogók nem messze élnek. Nappal veled esznek, éjjel másra hallgatnak — s nem mindig tudják, mikor döntöttek.”</gold>",
+    };
+
     /** Nyitány-variánsok (messages-kulcs: bard-opener-1..3). */
     private static final String[] OPENERS = {
             "<light_purple>🎵 „Gyertek közelebb, halljátok hát — a hét balladáját húzom!”</light_purple>",
@@ -51,7 +80,7 @@ public final class BardManager {
     };
     /** Vagyon-hős variánsok. */
     private static final String[] WEALTH_VERSES = {
-            "<green>🎵 „S az arany? Az arany {player} zsebében csörög — {value}-t számoltak a Számvevők, s elpirultak!”</green>",
+            "<green>🎵 „S az arany? Az arany {player} zsebében csörög — {value} érmét számoltak a Számvevők, s elpirultak!”</green>",
             "<green>🎵 „A Bankárszövetség kedvence, {player} — {value} fénylik a könyvekben a neve mellett!”</green>",
             "<green>🎵 „Ócska garas nem hull nyomában — {player} kincse {value}, így szól a fáma!”</green>",
             "<green>🎵 „Caldestera kapuja aranytól ragyog — {player} számláján {value} csillog!”</green>",
@@ -120,6 +149,9 @@ public final class BardManager {
         final long week = weekIndex();
         final List<Component> song = new ArrayList<>();
         song.add(verse("bard-opener", OPENERS, week, 0, null, null));
+        // Heti krónika-versszak: a világ történetének egy szelete, hetente más. Ez a
+        // sztori-átadás fő csatornája a hősök dicsérete mellett.
+        song.add(verse("bard-chronicle", CHRONICLE_VERSES, week, 7, null, null));
 
         final List<StatsManager.Entry> topLevel = statsManager.top(StatsManager.Category.LEVEL, 1);
         if (!topLevel.isEmpty()) {

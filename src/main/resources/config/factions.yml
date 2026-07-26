@@ -142,6 +142,13 @@ factions:
     betrayal-suspicion: 40.0     # rajtakapott testvérgyilkosság (Suttogóként)
     caught-rite-suspicion: 50.0  # rajtakapott Sötét Rítus (a rítus meg is hiúsul)
     accuse-suspicion: 15.0       # egy tanú-vád súlya (csak valódi Suttogóra hat)
+    # A Kitaszítottak is hallják (és használhatják) a Suttogás-csatornát: ők a Néma Királynő
+    # NYÍLT népe, a rejtett Suttogók pedig ugyanannak a hálózatnak a másik fele.
+    # FIGYELEM — ennek ára van: a csatorna-sor kiírja a feladó nevét, tehát a Kitaszítottak
+    # MEGTUDJÁK, ki Suttogó a látható frakciókban, és ezt kiszivárogtathatják a nyílt chatbe.
+    # false = a csatorna csak a rejtett Suttogóké (a titok szigorúbb, a hálózat viszont
+    # kettészakad, és a DARK-játékosnak nincs mit tennie a Suttogókkal).
+    dark-hears-channel: true
     # Suttogó-erősítés: éjjel az élőhalottak a felesküdötteket sem támadják (rejtett,
     # éjszakai ízelítő a DARK-passzívából — a figyelmes szemtanúnak árulkodó jel!).
     night-undead-truce: true
@@ -201,6 +208,28 @@ factions:
     term-days: 7
     excluded:
       - "NEUTRAL"
+    # ===== A Néma Királynő átka a koronán (kódex IV. + Az Elveszett Uralkodók) =====
+    # Eleftheria átka „a világ minden koronás főjét sírba vitte" — a hosszú uralkodás ezért
+    # érezhetően kockázatos. Az átok szintje a TRÓNON TÖLTÖTT IDŐBŐL számolódik, nincs külön
+    # állapota: trónfosztáskor/újraválasztáskor magától tisztul.
+    # Az alsó szintek CSAK hangulat (suttogás + lich-türkiz derengés a korona körül);
+    # a tét a stakes-from-level fokon kezdődik. Beépített fék az örökös királyra.
+    crown-curse:
+      enabled: true
+      # Ennyi trónon töltött óránként lép egy szintet (24 óra = a 7 napos ciklus alatt max 5-ig ér).
+      hours-per-level: 24
+      max-level: 5
+      # Ettől a szinttől van TÉT (alatta pusztán hangulat).
+      stakes-from-level: 3
+      # Esély, hogy egy tick-en a Királynő suttog a királynak (%).
+      whisper-percent: 12
+      # Tét 1: a korona elszívja az életerőt — HUNGER-rel leáll a TERMÉSZETES regeneráció
+      # (nem sebez és nem halálos: sebezhetőbbé tesz, de nem indít büntetés-spirált).
+      weaken-healing: true
+      effect-seconds: 30
+      # Tét 2: a közeli, CÉLTALAN élőhalottak a koronát keresik (aktív célpontot nem vesz el).
+      undead-attraction: true
+      attraction-radius: 24.0
   # ===== Raid =====
   # Csak a király hirdethet raidet; a nevezési díj a kasszából megy (money sink).
   # A raid felkészüléssel indul (warmup): mindkét oldal harcosai a

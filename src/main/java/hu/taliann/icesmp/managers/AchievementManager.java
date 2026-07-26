@@ -39,7 +39,8 @@ public final class AchievementManager {
     private final DailyQuestManager dailyQuestManager;
     private final MessageManager messageManager;
     private final NamespacedKey earnedKey;
-    private final List<Achievement> achievements;
+    /** Reloadra build-then-swap cserélődik; a tick több régió-szálról olvassa. */
+    private volatile List<Achievement> achievements = List.of();
 
     public AchievementManager(final JavaPlugin plugin, final ConfigManager configManager, final JobManager jobManager,
                               final CurrencyManager currencyManager, final ProfessionManager professionManager,
@@ -55,35 +56,63 @@ public final class AchievementManager {
         this.dailyQuestManager = dailyQuestManager;
         this.messageManager = messageManager;
         this.earnedKey = new NamespacedKey(plugin, "achievements");
-        this.achievements = List.of(
-                // Raid-killek
-                new Achievement("first_blood", "Első Vér", "Szerezz 1 raid-killt.", Metric.RAID_KILLS, 1, 50),
-                new Achievement("skirmisher", "Csatadöntő", "Szerezz 10 raid-killt.", Metric.RAID_KILLS, 10, 200),
-                new Achievement("warlord", "Hadúr", "Szerezz 25 raid-killt.", Metric.RAID_KILLS, 25, 500),
-                new Achievement("war_hero", "Háborús Hős", "Szerezz 100 raid-killt.", Metric.RAID_KILLS, 100, 2000),
-                // Kaszt-szint
-                new Achievement("apprentice", "Tanonc", "Érd el a 10. kaszt-szintet.", Metric.CLASS_LEVEL, 10, 75),
-                new Achievement("veteran", "Veterán", "Érd el a 25. kaszt-szintet.", Metric.CLASS_LEVEL, 25, 200),
-                new Achievement("champion", "Bajnok", "Érd el a 40. kaszt-szintet.", Metric.CLASS_LEVEL, 40, 600),
-                new Achievement("legend", "Legenda", "Érd el az 50. (max) kaszt-szintet.", Metric.CLASS_LEVEL, 50, 1000),
-                // Vagyon
-                new Achievement("saver", "Megtakarító", "Gyűjts össze 250 valutát.", Metric.WEALTH, 250, 50),
-                new Achievement("well_off", "Tehetős", "Gyűjts össze 1000 valutát.", Metric.WEALTH, 1000, 100),
-                new Achievement("magnate", "Mágnás", "Gyűjts össze 10000 valutát.", Metric.WEALTH, 10000, 750),
-                new Achievement("croesus", "Krőzus", "Gyűjts össze 50000 valutát.", Metric.WEALTH, 50000, 2500),
-                // Szakma
-                new Achievement("tradesman", "Szakmunkás", "Érj el 25 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 25, 150),
-                new Achievement("craftsman", "Iparos", "Érj el 50 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 50, 350),
-                new Achievement("artisan", "Mesterember", "Érj el 100 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 100, 800),
-                new Achievement("grandmaster", "Nagymester", "Érj el 200 össz-szakmaszintet.", Metric.PROFESSION_LEVEL, 200, 2000),
-                // Magasabb fokozatok
-                new Achievement("warmaster", "Hadvezér", "Szerezz 50 raid-killt.", Metric.RAID_KILLS, 50, 1000),
-                new Achievement("gold_mountain", "Aranyhegy", "Gyűjts össze 100000 valutát.", Metric.WEALTH, 100000, 5000),
-                // Napi sorozat (streak)
-                new Achievement("persistent", "Kitartó", "Érj el 3 napos napi-sorozatot.", Metric.DAILY_STREAK, 3, 100),
-                new Achievement("dedicated", "Elszánt", "Érj el 7 napos napi-sorozatot.", Metric.DAILY_STREAK, 7, 300),
-                new Achievement("obsessed", "Megszállott", "Érj el 30 napos napi-sorozatot.", Metric.DAILY_STREAK, 30, 1500)
-        );
+        reload();
+    }
+
+    /**
+     * Az elérés-lista újraépítése a configból ({@code achievements.definitions.*}).
+     * A tick játékosonként fut, ezért a listát NEM olvassuk minden hívásnál — a
+     * {@code /icesmp reload} hívja újra (a Relic/MobScaling minta szerint).
+     */
+    public void reload() {
+        final org.bukkit.configuration.ConfigurationSection section =
+                configManager.getConfiguration() == null ? null
+                        : configManager.getConfiguration().getConfigurationSection("achievements.definitions");
+        if (section == null) {
+            plugin.getLogger().warning("achievements.definitions hianyzik a configbol - nincs elereny.");
+            this.achievements = List.of();
+            return;
+        }
+        final List<Achievement> parsed = new java.util.ArrayList<>();
+        for (final String rawId : section.getKeys(false)) {
+            final org.bukkit.configuration.ConfigurationSection entry = section.getConfigurationSection(rawId);
+            if (entry == null) {
+                continue;
+            }
+            // KANONIKUS id. A megszerzett-lista PDC-ből visszaolvasva kisbetűsít, a tárolás viszont
+            // a config eredeti casingjét használta: egy „RichOne" id mentés után „richone" lett, a
+            // contains("RichOne") hamis maradt, és a periodikus tick MINDEN körben újra kifizette a
+            // jutalmat. A vessző pedig szét is hasította volna a CSV-t.
+            final String id = rawId.toLowerCase(java.util.Locale.ROOT);
+            if (!id.matches("[a-z0-9_]+")) {
+                plugin.getLogger().warning("achievements." + rawId + ": az azonosito csak [a-z0-9_] "
+                        + "karaktereket tartalmazhat - a sor kimarad (kulonben ismetelt jutalmat adna).");
+                continue;
+            }
+            final String metricName = entry.getString("metric", "");
+            final Metric metric;
+            try {
+                metric = Metric.valueOf(metricName.toUpperCase(java.util.Locale.ROOT));
+            } catch (final IllegalArgumentException exception) {
+                plugin.getLogger().warning("achievements." + id + ": ismeretlen metric \"" + metricName
+                        + "\" - a sor kimarad. Ervenyes: CLASS_LEVEL, WEALTH, RAID_KILLS, PROFESSION_LEVEL, DAILY_STREAK.");
+                continue;
+            }
+            final double threshold = entry.getDouble("threshold", -1.0D);
+            if (threshold <= 0.0D) {
+                plugin.getLogger().warning("achievements." + id + ": a threshold hianyzik vagy nem pozitiv - a sor kimarad.");
+                continue;
+            }
+            parsed.add(new Achievement(id,
+                    entry.getString("name", id),
+                    entry.getString("description", ""),
+                    metric,
+                    threshold,
+                    Math.max(0L, entry.getLong("reward", 0L))));
+        }
+        // Küszöb szerint növekvő: a HUD/GUI így a következő mérföldkövet mutatja elöl.
+        parsed.sort(java.util.Comparator.comparingDouble(Achievement::threshold));
+        this.achievements = List.copyOf(parsed);
     }
 
     public boolean isEnabled() {
@@ -135,8 +164,7 @@ public final class AchievementManager {
             case CLASS_LEVEL -> jobManager.getPrimaryLevel(player);
             // Vagyon = az ÖSSZES valuta-egyenleg összege (a default-valutás olvasás a
             // RED/BLUE/DARK játékosokat kizárta volna a vagyon-elérésekből).
-            case WEALTH -> currencyManager.getBalances(player).values().stream()
-                    .mapToDouble(Double::doubleValue).sum();
+            case WEALTH -> currencyManager.getTotalBalance(player);
             case RAID_KILLS -> statsManager.getRaidKills(player.getUniqueId());
             case PROFESSION_LEVEL -> totalProfessionLevel(player);
             case DAILY_STREAK -> dailyQuestManager.getStreak(player);

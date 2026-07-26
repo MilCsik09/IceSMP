@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:root",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:heart_of_the_sea"
+    },
+    "title": {
+      "text": "Ereklye a kezedben"
+    },
+    "description": {
+      "text": "Megszereztél egy relikviát — a régi világ egy darabját."
+    },
+    "frame": "goal",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  }
+}

@@ -60,7 +60,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
 
             for (final String uuidKey : yaml.getKeys(false)) {
                 try {
@@ -110,9 +110,25 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     /** @param factionType the faction to set (null defaults to NEUTRAL) */
+    /**
+     * Setter-injektált: a frakcióváltás a céhtagságot is egyezteti. A hívás KÖZPONTILAG itt van,
+     * nem a parancsokban — így minden út (belépés, kilépés, admin-beállítás, száműzetés, vezeklés)
+     * egyeztet, és egy új út sem tudja kihagyni.
+     */
+    private volatile hu.taliann.icesmp.managers.GuildManager guildManager;
+
+    public void setGuildManager(final hu.taliann.icesmp.managers.GuildManager guildManager) {
+        this.guildManager = guildManager;
+    }
+
     public void setFaction(final UUID uuid, final FactionType factionType) {
-        playerFactions.put(uuid, factionType == null ? FactionType.NEUTRAL : factionType);
+        final FactionType target = factionType == null ? FactionType.NEUTRAL : factionType;
+        playerFactions.put(uuid, target);
         save();
+        final hu.taliann.icesmp.managers.GuildManager guildRef = guildManager;
+        if (guildRef != null) {
+            guildRef.reconcileFaction(uuid, target);
+        }
         final Player online = org.bukkit.Bukkit.getPlayer(uuid);
         if (online != null) {
             AdvancementService.award(online, "faction_join");
@@ -245,6 +261,12 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         return seasons.getSeasonEndMillis() - System.currentTimeMillis() <= lockoutDays * 86_400_000L;
     }
 
+    /**
+     * Erases the assignment entirely, putting the player back into the "never chose"
+     * state. NOT for /faction leave: a missing record reads as a free FIRST join, which
+     * skips the neutral-capital gate, the season lockout and the switch cooldown — leaving
+     * must record an explicit {@link FactionType#NEUTRAL} instead. Admin/test resets only.
+     */
     public void removeFaction(final UUID uuid) {
         if (uuid == null) {
             return;

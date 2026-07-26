@@ -6,6 +6,7 @@ import org.bukkit.entity.Animals;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -28,7 +29,7 @@ public final class DailyQuestListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
         if (killer == null) {
             return;
         }
@@ -45,14 +46,22 @@ public final class DailyQuestListener implements Listener {
         killer.getScheduler().run(plugin, task -> dailyQuestManager.handle(killer, objective), null);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
             dailyQuestManager.handle(event.getPlayer(), "CATCH_FISH");
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
         // Creative farm-guard (same as GatheringBuffListener): creative/spectator breaks

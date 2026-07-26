@@ -91,11 +91,11 @@ public final class SpellDamageListener implements Listener {
         final Player killer = event.getEntity().getKiller();
         final Component message = killer != null
                 ? messageManager.getMessage("spell-death-by-caster",
-                        "<gray>{victim} elemésztette {killer} {school}ja.</gray>",
+                        "<gray>{killer} elemésztette {victim} életét a(z) {school} erejével.</gray>",
                         Map.of("victim", event.getEntity().getName(), "killer", killer.getName(),
                                 "school", school.getDisplayName()))
                 : messageManager.getMessage("spell-death",
-                        "<gray>{victim} elemésztette a {school}.</gray>",
+                        "<gray>{victim} életét elemésztette a(z) {school}.</gray>",
                         Map.of("victim", event.getEntity().getName(), "school", school.getDisplayName()));
         event.deathMessage(message);
     }

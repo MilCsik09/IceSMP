@@ -24,7 +24,7 @@ public final class CorruptionListener implements Listener {
     @EventHandler
     public void onCorruptMobDeath(final EntityDeathEvent event) {
         if (corruptionManager.isCorruptMob(event.getEntity().getUniqueId())
-                && event.getEntity().getKiller() != null) {
+                && hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity()) != null) {
             corruptionManager.recordPurgeKill(event.getEntity().getKiller().getUniqueId());
         }
     }

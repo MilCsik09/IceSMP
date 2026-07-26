@@ -26,7 +26,7 @@ public final class ShadowburnSpell extends BaseSpell {
     private final JavaPlugin plugin;
 
     public ShadowburnSpell(final JavaPlugin plugin, final MessageManager messageManager) {
-        super(messageManager, "shadowburn", "Átok Nyúl", 90, SpellCostType.XP, 35);
+        super(messageManager, "shadowburn", "Átoknyúl", 90, SpellCostType.XP, 35);
         this.plugin = plugin;
     }
 

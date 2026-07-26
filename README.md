@@ -71,14 +71,14 @@ visszatérülnek):
 | Varázsló | 🌊 Elementalista • 💀 **Nekromanta** (csak bűnösként, Sötét frakcióval!) |
 | Harcos | 🩸 Berserker • 🛡 Védelmező |
 | Íjász | 🎯 Mesterlövész • 🐺 Vadmester |
-| Orgyilkos | ☠ Méregkeverő • 👻 Fantom |
+| Orgyilkos | ☠ Méregkeverő • 👻 Fantom • 🦠 **Pestishozó** (csak bűnösként, Sötét frakcióval!) |
 | Druida | 🐾 Vadőr • 🌙 Holdjós • 🌳 Védelmező • 💚 Helyreállító |
 | Paplovag | ☀️ Szentlélek • ⚖️ Megtorló • 🛡 Védő |
-| Halállovag | 🩸 Vérlovag • ❄️ Fagylovag |
+| Halállovag | 🩸 Vérlovag • ❄️ Fagylovag • 🧟 **Szentségtelen** (csak bűnösként, Sötét frakcióval!) |
 | Sámán | ⚡ Elemi • 🔨 Erősítő • 🌊 Hullámhívó |
 | Szerzetes | 💨 Szélfutó • 🍺 Sörfőző • 🌫️ Ködszövő |
-| Pap | 🙏 Fegyelem • 🌑 Árnyék |
-| Boszorkánymester | 🍂 Átok • 🔥 Pusztítás |
+| Pap | 🙏 Fegyelem • 🌑 Árnyék • 🦴 **Csontpap** (csak bűnösként, Sötét frakcióval!) |
+| Boszorkánymester | 🍂 Átok • 🔥 Pusztítás • 👁 **Demonológus** (csak bűnösként, Sötét frakcióval!) |
 | Démonvadász | 💥 Tombolás • 🛡 Bosszú |
 | Sárkányidéző | 🔥 Perzselés • 💧 Megőrzés |
 

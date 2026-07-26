@@ -51,23 +51,13 @@ public final class DonationChestCommand implements BasicCommand {
     private void handleAdd(final Player player) {
         final String errorKey = donationChestManager.donateHeldItem(player);
         if (errorKey != null) {
-            player.sendMessage(messageManager.get(errorKey, defaultErrorFor(errorKey),
+            player.sendMessage(messageManager.get(errorKey, hu.taliann.icesmp.managers.DonationChestManager.defaultErrorFor(errorKey),
                     Map.of("limit", String.valueOf(donationChestManager.getMaxPerPlayer()))));
             return;
         }
 
         player.sendMessage(messageManager.get("donation-add-success",
                 "&aA kezedben tartott tárgyat az adomány-ládába tetted — bárki elveheti."));
-    }
-
-    private String defaultErrorFor(final String errorKey) {
-        return switch (errorKey) {
-            case "donation-chest-disabled" -> "&cAz adomány-láda jelenleg ki van kapcsolva.";
-            case "donation-no-item" -> "&cNincs tárgy a kezedben — ezt adományoznád?";
-            case "donation-chest-full" -> "&cAz adomány-láda megtelt — próbáld később, ha valaki elvitt valamit.";
-            case "donation-per-player-limit" -> "&cElérted a saját adomány-limitedet ebben a ládában (&f{limit} tétel&c).";
-            default -> "&cAz adományozás nem sikerült.";
-        };
     }
 
     @Override

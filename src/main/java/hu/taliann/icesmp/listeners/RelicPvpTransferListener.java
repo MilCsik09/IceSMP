@@ -38,9 +38,11 @@ public final class RelicPvpTransferListener implements Listener {
 
     /**
      * Halál-stash a passzív relikviákhoz: a nem-fegyver relikvia halálkor NEM esik a földre
-     * (bárki felkapná és a tulajdonos számára örökre elveszne — audit-hiba), hanem
-     * respawnkor visszakerül a gazdájához. Kilépés respawn előtt = a stash elvész (ritka;
-     * ugyanaz a kompromisszum, mint a Lélekkapocs-védelemnél).
+     * (bárki felkapná és a tulajdonos számára örökre elveszne), hanem respawnkor visszakerül
+     * a gazdájához. A stash csak memóriában él, ezért a halál pillanatában a relikvia
+     * TARTÓS „elveszett" jelölést is kap: ha a játékos respawn előtt kilép (vagy a szerver
+     * elszáll), a tárgy nem tűnik el végleg — a tulaj újraidézheti az oltárnál. A jelölést a
+     * sikeres respawn-kézbesítés törli, különben a visszakapott tárgy MELLÉ is idézhetne egyet.
      */
     private final Map<java.util.UUID, List<ItemStack>> keptRelics = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -77,6 +79,7 @@ public final class RelicPvpTransferListener implements Listener {
                     return false;
                 }
                 kept.add(drop);
+                relicManager.markLost(definition.id());
                 return true;
             });
             if (!kept.isEmpty()) {
@@ -139,14 +142,34 @@ public final class RelicPvpTransferListener implements Listener {
             event.getPlayer().getInventory().addItem(itemStack).values()
                     .forEach(left -> event.getPlayer().getWorld()
                             .dropItemNaturally(event.getPlayer().getLocation(), left));
+            // A tárgy fizikailag visszakerült: a halálkori „elveszett" jelölést törölni KELL,
+            // különben az oltárnál egy második példány is idézhető lenne mellé.
+            final RelicDefinition definition = relicManager.identify(itemStack);
+            if (definition != null) {
+                relicManager.clearLost(definition.id());
+            }
         }
         event.getPlayer().sendMessage(messageManager.getMessage(
                 "relic.death-kept",
                 "<gold>✦ A relikviád hű maradt hozzád — a halál sem választott el tőle.</gold>"));
     }
 
+    /**
+     * Respawn előtti kilépés: a memóriabeli stash elvész, de a halálkor kiadott tartós
+     * „elveszett" jelölés életben tartja a tulajdont — a relikvia az oltárnál újraidézhető.
+     */
     @EventHandler
     public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
-        keptRelics.remove(event.getPlayer().getUniqueId());
+        final List<ItemStack> kept = keptRelics.remove(event.getPlayer().getUniqueId());
+        if (kept == null || kept.isEmpty()) {
+            return;
+        }
+        for (final ItemStack itemStack : kept) {
+            final RelicDefinition definition = relicManager.identify(itemStack);
+            if (definition != null) {
+                plugin.getLogger().info("Relikvia-stash elvesztve respawn előtti kilépéssel ("
+                        + definition.id() + ") — a tulajdon él, az oltárnál újraidézhető.");
+            }
+        }
     }
 }

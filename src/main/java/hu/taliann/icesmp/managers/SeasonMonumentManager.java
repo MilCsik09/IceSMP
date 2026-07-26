@@ -63,7 +63,7 @@ public final class SeasonMonumentManager implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         seasonIndex = yaml.getInt("season-index", 0);
         lines.addAll(yaml.getStringList("lines"));
         final String rawId = yaml.getString("display-uuid", "");

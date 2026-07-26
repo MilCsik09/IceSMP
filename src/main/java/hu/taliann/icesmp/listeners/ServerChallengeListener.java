@@ -8,6 +8,7 @@ import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -30,13 +31,17 @@ public final class ServerChallengeListener implements Listener {
     /** Hostile mob slain by a player → SLAY progress. */
     @EventHandler(ignoreCancelled = true)
     public void onDeath(final EntityDeathEvent event) {
-        if (event.getEntity() instanceof Monster && event.getEntity().getKiller() != null) {
+        if (event.getEntity() instanceof Monster && hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity()) != null) {
             serverChallengeManager.record(ChallengeType.SLAY);
         }
     }
 
     /** Ore mined / mature crop harvested by a survival player → MINE / HARVEST progress. */
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
         if (!isSurvival(player) || !event.isDropItems()) {

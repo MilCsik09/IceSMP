@@ -26,6 +26,147 @@ daily-quests:
 achievements:
   enabled: true
 
+  # Elérések (mérföldkövek). ÚJ elérés = új blokk ide, kód-módosítás NÉLKÜL; a lista
+  # `/icesmp reload`-ra újraolvasódik. Kulcs = az elérés azonosítója (a teljesítést a
+  # játékos PDC-je ezen az id-n tartja — meglévő id-t ezért NE nevezz át, mert a
+  # már kiosztott elérés újra kiosztódna).
+  #   metric:    CLASS_LEVEL | WEALTH | RAID_KILLS | PROFESSION_LEVEL | DAILY_STREAK
+  #   threshold: ezt az értéket elérve teljesül
+  #   reward:    fizikai veret a játékos frakció-valutájában (0 = nincs pénz-jutalom)
+  # Ismeretlen metric / hiányzó mező esetén az adott sor kimarad és a konzol figyelmeztet.
+  definitions:
+    # --- Raid-killek ---
+    first_blood:
+      name: "Első Vér"
+      description: "Szerezz 1 raid-killt."
+      metric: "RAID_KILLS"
+      threshold: 1
+      reward: 50
+    skirmisher:
+      name: "Csatadöntő"
+      description: "Szerezz 10 raid-killt."
+      metric: "RAID_KILLS"
+      threshold: 10
+      reward: 200
+    warlord:
+      name: "Hadúr"
+      description: "Szerezz 25 raid-killt."
+      metric: "RAID_KILLS"
+      threshold: 25
+      reward: 500
+    warmaster:
+      name: "Hadvezér"
+      description: "Szerezz 50 raid-killt."
+      metric: "RAID_KILLS"
+      threshold: 50
+      reward: 1000
+    war_hero:
+      name: "Háborús Hős"
+      description: "Szerezz 100 raid-killt."
+      metric: "RAID_KILLS"
+      threshold: 100
+      reward: 2000
+    # --- Kaszt-szint ---
+    apprentice:
+      name: "Tanonc"
+      description: "Érd el a 10. kaszt-szintet."
+      metric: "CLASS_LEVEL"
+      threshold: 10
+      reward: 75
+    veteran:
+      name: "Veterán"
+      description: "Érd el a 25. kaszt-szintet."
+      metric: "CLASS_LEVEL"
+      threshold: 25
+      reward: 200
+    champion:
+      name: "Bajnok"
+      description: "Érd el a 40. kaszt-szintet."
+      metric: "CLASS_LEVEL"
+      threshold: 40
+      reward: 600
+    legend:
+      name: "Legenda"
+      description: "Érd el az 50. (max) kaszt-szintet."
+      metric: "CLASS_LEVEL"
+      threshold: 50
+      reward: 1000
+    # --- Vagyon (a mért érték a bank-egyenlegek ÖSSZEGE, minden valutában) ---
+    saver:
+      name: "Megtakarító"
+      description: "Gyűjts össze 250 valutát."
+      metric: "WEALTH"
+      threshold: 250
+      reward: 50
+    well_off:
+      name: "Tehetős"
+      description: "Gyűjts össze 1000 valutát."
+      metric: "WEALTH"
+      threshold: 1000
+      reward: 100
+    magnate:
+      name: "Mágnás"
+      description: "Gyűjts össze 10000 valutát."
+      metric: "WEALTH"
+      threshold: 10000
+      reward: 750
+    croesus:
+      name: "Krőzus"
+      description: "Gyűjts össze 50000 valutát."
+      metric: "WEALTH"
+      threshold: 50000
+      reward: 2500
+    gold_mountain:
+      name: "Aranyhegy"
+      description: "Gyűjts össze 100000 valutát."
+      metric: "WEALTH"
+      threshold: 100000
+      reward: 5000
+    # --- Szakma (össz-szakmaszint) ---
+    tradesman:
+      name: "Szakmunkás"
+      description: "Érj el 25 össz-szakmaszintet."
+      metric: "PROFESSION_LEVEL"
+      threshold: 25
+      reward: 150
+    craftsman:
+      name: "Iparos"
+      description: "Érj el 50 össz-szakmaszintet."
+      metric: "PROFESSION_LEVEL"
+      threshold: 50
+      reward: 350
+    artisan:
+      name: "Mesterember"
+      description: "Érj el 100 össz-szakmaszintet."
+      metric: "PROFESSION_LEVEL"
+      threshold: 100
+      reward: 800
+    grandmaster:
+      name: "Nagymester"
+      description: "Érj el 200 össz-szakmaszintet."
+      metric: "PROFESSION_LEVEL"
+      threshold: 200
+      reward: 2000
+    # --- Napi sorozat (streak) ---
+    persistent:
+      name: "Kitartó"
+      description: "Érj el 3 napos napi-sorozatot."
+      metric: "DAILY_STREAK"
+      threshold: 3
+      reward: 100
+    dedicated:
+      name: "Elszánt"
+      description: "Érj el 7 napos napi-sorozatot."
+      metric: "DAILY_STREAK"
+      threshold: 7
+      reward: 300
+    obsessed:
+      name: "Megszállott"
+      description: "Érj el 30 napos napi-sorozatot."
+      metric: "DAILY_STREAK"
+      threshold: 30
+      reward: 1500
+
 # ===== Onboarding-lánc (IDEAS A5): auto-induló bevezető küldetéssor =====
 # Egy vadonatúj játékos ELSŐ belépésekor (Player#hasPlayedBefore() == false)
 # automatikusan felkerül a "first-quest" — a többi láncszem a quests.<id>.next
@@ -52,7 +193,7 @@ onboarding:
   welcome-dialog-lines:
     - "<gray>A <white>Fa árnyékában</white> írod a legendád. Első lépések:</gray>"
     - "<yellow>•</yellow> <white>/kaszt</white> — válassz hivatást (13 kaszt)."
-    - "<yellow>•</yellow> <white>/faction</white> — csatlakozz a négy hatalom egyikéhez."
+    - "<yellow>•</yellow> <white>/faction</white> — a Menedékben kezdesz — állj a Láng vagy a Fagy zászlaja alá."
     - "<yellow>•</yellow> <white>/menu</white> — minden rendszer egy helyen."
     - "<gray>A haladásodat a <white>Haladás</white> képernyőn (L) is követheted.</gray>"
 
@@ -86,7 +227,7 @@ community-goals:
     reward-buff-minutes: 10
   blue_fish_market:
     faction: "BLUE"
-    display-name: "Kék Halpiac"
+    display-name: "A Fagy Halpiaca"
     objective:
       type: "COLLECT_ITEMS"
       materials:
@@ -1313,7 +1454,7 @@ quests:
   # --- Nekromanta beavatás: zarándoklat a Sötét romvárosba ---
   necromancer_initiation:
     display-name: "Sötét Beavatás"
-    description: "Zarándokolj el a Sötét romvárosba, és hajts végre rituálét az oltárnál."
+    description: "Zarándokolj el Thanaopolisba, a Holtak Városába, és hajts végre rituálét az oltárnál."
     requires-faction: "DARK"
     objective:
       type: "VISIT_TERRITORY"
@@ -1602,7 +1743,7 @@ quests:
         - "Érzed? Az erdő beteg. Valami rontás terjed a fák között."
       complete:
         - "Jó, hogy eljöttél. Szükségem lesz a segítségedre."
-    display-name: "Az Erdei Véne Hívása"
+    display-name: "Az Erdei Vénasszony Hívása"
     description: "Keresd fel az erdei vénasszonyt a szentélynél."
     objective:
       type: "TALK_TO_NPC"
@@ -1630,7 +1771,7 @@ quests:
         type: "KILL_MOBS"
         count: 15
         entity-type: "ZOMBIE"
-        description: "Romlott vadak"
+        description: "Rontott élőhalottak"
       2:
         type: "COLLECT_ITEMS"
         count: 20
@@ -1951,7 +2092,7 @@ quests:
         amount: 40
   # --- Frakció-questek ---
   red_supply_run:
-    display-name: "Piros Utánpótlás"
+    display-name: "A Láng Utánpótlása"
     description: "Gyűjts 40 vasat a Piros frakció hadigazdaságának."
     requires-faction: "RED"
     objective:
@@ -2188,7 +2329,7 @@ quests:
   # innentől a "next" mező viszi tovább automatikusan, lépésenként:
   #   1) onboarding_herald  — beszélj a hírnökkel (a kattintás ugyanitt nyitja meg
   #      a királyság-választó menüt is, ha a hírnök-NPC /npcbind <npc> faction-nel
-  #      be van kötve — nincs külön "válassz királyságot" objektíva-típus).
+  #      be van kötve — nincs külön "válassz királyságot" feladat-típus).
   #   2) onboarding_hunt    — ölj 5 szörnyet (első harc-lecke).
   #   3) onboarding_gather  — gyűjts 10 rönköt (első gyűjtögetés-lecke).
   # A hírnök-NPC-t a szerver-csapat helyezi ki FancyNpcs-szel "hirnok" belső

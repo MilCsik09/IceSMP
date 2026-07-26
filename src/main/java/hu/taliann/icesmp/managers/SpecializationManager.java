@@ -174,8 +174,19 @@ public final class SpecializationManager {
         resetProfessionSpecialization(player);
     }
 
+    /**
+     * Drops the class specialization AND takes back the spells it granted. Without the
+     * revoke a player could stack every specialization's full spell set by choosing,
+     * resetting and choosing again; a spell that the class level or a talent also granted
+     * survives, because the revoke keys off the recorded grant source.
+     */
     public void resetClassSpecialization(final Player player) {
         player.getPersistentDataContainer().remove(classSpecKey);
+        // Csak a kaszt-spec ad spellt (specializations.<id>.spell-unlocks), és egyszerre
+        // egy élhet — ezért MINDEN SPEC:* grant elvonható; a régi, már resetelt specek
+        // ottmaradt bejegyzéseit is ez takarítja el (backfill utáni halmozás-tisztítás).
+        jobManager.backfillSpellGrants(player);
+        jobManager.revokeGrantsFrom(player, source -> source.startsWith(JobManager.SOURCE_SPEC_PREFIX));
     }
 
     public void resetProfessionSpecialization(final Player player) {
@@ -218,11 +229,16 @@ public final class SpecializationManager {
         final int level = jobManager.getPrimaryLevel(player);
         for (final String spellId : unlockSection.getKeys(false)) {
             final int requiredLevel = unlockSection.getInt(spellId, Integer.MAX_VALUE);
-            if (level < requiredLevel || jobManager.hasUnlockedSpell(player, spellId)) {
+            if (level < requiredLevel) {
                 continue;
             }
 
-            if (jobManager.unlockSpell(player, spellId)) {
+            // A már feloldott spellre is RÁ KELL írni a spec forrását (az unlockSpell ilyenkor
+            // csak a forrást rögzíti és false-t ad): enélkül a máshonnan — pl. questből —
+            // korábban megkapott spellt a spec-reset nem tudta visszavenni, tehát a
+            // specializációk spellkészlete tovább halmozódott.
+            if (jobManager.unlockSpell(player, spellId,
+                    JobManager.SOURCE_SPEC_PREFIX + specialization.getId())) {
                 player.sendMessage(messageManager.getMessage(
                         "spec-spell-unlocked",
                         "&5Specializációs képesség feloldva: &e{spell} &7(szint {level})",

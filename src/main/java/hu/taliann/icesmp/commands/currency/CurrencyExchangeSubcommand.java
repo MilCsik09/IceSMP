@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.currency;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -95,7 +96,8 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
         // Napi váltási keret: a tömeges kivét-visszaváltás árfolyam-manipuláció féke
         // (0 = kikapcsolva). A keret a forrás-összegben számol.
         final long dailyLimit = configManager.getLong("currency.dynamic-exchange.daily-limit", 200L);
-        if (dailyLimit > 0L && exchangedToday(player.getUniqueId()) + amount > dailyLimit) {
+        if (dailyLimit > 0L && hu.taliann.icesmp.utils.DailyBudget
+                .spentTodayOnOwnThread(player, "exchange") + amount > dailyLimit) {
             sender.sendMessage(messageManager.get("messages.currency-exchange-daily-limit",
                     "&cA mai váltási kereted (%s) ehhez már kevés — holnap folytathatod.", String.valueOf(dailyLimit)));
             return true;
@@ -118,11 +120,12 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
             sender.sendMessage(messageManager.get("messages.currency-exchange-failed", "&cA váltás nem sikerült, valószínűleg nincs elég egyenleged."));
             return true;
         }
-        recordExchange(player.getUniqueId(), amount);
+        // A keret csak a SIKERES váltás után könyvelődik (a meghiúsult kísérlet nem fogyaszt).
+        hu.taliann.icesmp.utils.DailyBudget.tryConsumeOnOwnThread(player, "exchange", dailyLimit, amount);
 
         sender.sendMessage(messageManager.get(
                 "messages.currency-exchange-success",
-                "&aSikeres váltás: &e%s &f%s &7-> &a%s &f%s &7(| Árfolyam: %s, díj: %s%%)",
+                "&aSikeres váltás: &e%s &f%s &7-> &a%s &f%s &7(Árfolyam: %s, díj: %s%%)",
                 amount,
                 fromType.getDisplayName(),
                 received,
@@ -159,29 +162,5 @@ public final class CurrencyExchangeSubcommand implements CurrencySubcommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
-
-    /** játékos -> (nap, ma váltott forrás-összeg) — memóriában él, a keretnek elég. */
-    private final java.util.Map<java.util.UUID, long[]> dailyExchanged =
-            new java.util.concurrent.ConcurrentHashMap<>();
-
-    private long exchangedToday(final java.util.UUID playerId) {
-        final long today = System.currentTimeMillis() / 86_400_000L;
-        final long[] entry = dailyExchanged.get(playerId);
-        return entry != null && entry[0] == today ? entry[1] : 0L;
-    }
-
-    private void recordExchange(final java.util.UUID playerId, final long amount) {
-        final long today = System.currentTimeMillis() / 86_400_000L;
-        if (dailyExchanged.size() > 512) {
-            dailyExchanged.values().removeIf(entry -> entry[0] != today);
-        }
-        dailyExchanged.compute(playerId, (key, old) ->
-                old == null || old[0] != today ? new long[]{today, amount} : new long[]{today, old[1] + amount});
-    }
 }
-
 

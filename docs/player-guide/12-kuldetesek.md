@@ -85,13 +85,13 @@ lehet mindig a **saját frakciód valutája** — így pl. a Piros frakció tagj
 
 A küldetések mellett vannak **szerver-szintű, közösségi célok** is: egy **megosztott számláló**,
 amibe egy frakció (vagy az egész szerver) **minden tagja** beleszámít — pl. „a Piros frakció
-együtt gyűjtsön **600 vasat**”. Ezt **nem** kell külön felvenned: **automatikusan gyűlik**,
+együtt gyűjtsön **1500 vasat**”. Ezt **nem** kell külön felvenned: **automatikusan gyűlik**,
 ahogy a normál játék közben teljesíted a hozzá tartozó tevékenységet. Amikor a cél elkészül,
 az **egész frakció jutalmat kap a kasszába** + egy rövid **buffot**, majd a cél **újraindul**.
 
 ## Kaszt-próbák (a kezdő küldetések)
 
-Négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**.
+**Mind a 13 kasztnak** van kezdő próbája. Jutalom: **200 kaszt-XP**.
 
 | Küldetés | Kaszt | Feladat |
 |---|---|---|
@@ -99,6 +99,15 @@ Négy kezdő kaszt-próba van a konfigurációban. Jutalom: **200 kaszt-XP**.
 | **Az Íjász Próbája** | Íjász | Vadássz le **12 szörnyet** |
 | **A Varázsló Próbája** | Varázsló | Szedj **10 virágot** |
 | **Az Orgyilkos Próbája** | Orgyilkos | Ölj meg **10 szörnyet** |
+| **A Druida Próbája** | Druida | Szaporíts **5 állatot** |
+| **A Paplovag Próbája** | Paplovag | Ölj meg **15 szörnyet** |
+| **A Halállovag Próbája** | Halállovag | Ölj meg **15 szörnyet** |
+| **A Sámán Próbája** | Sámán | Vágj ki **10 rönköt** |
+| **A Szerzetes Próbája** | Szerzetes | Ölj meg **15 szörnyet** |
+| **A Pap Próbája** | Pap | Bányássz **10 fénykövet** |
+| **A Boszorkánymester Próbája** | Boszorkánymester | Ölj meg **15 szörnyet** |
+| **A Démonvadász Próbája** | Démonvadász | Ölj meg **15 szörnyet** |
+| **A Sárkányidéző Próbája** | Sárkányidéző | Bányássz **10 ametiszt-fürtöt** |
 
 ## Mester-próbák (NPC-s láncok) 🧭
 

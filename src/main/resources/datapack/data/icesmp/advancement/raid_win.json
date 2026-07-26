@@ -1,0 +1,28 @@
+{
+  "parent": "icesmp:faction_join",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_axe"
+    },
+    "title": {
+      "text": "Hadizsákmány"
+    },
+    "description": {
+      "text": "A frakciód megnyert egy raidet, és te ott voltál."
+    },
+    "frame": "goal",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  }
+}

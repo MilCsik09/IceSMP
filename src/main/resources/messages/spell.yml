@@ -159,10 +159,12 @@ messages:
     life_drain:
       name: Életszívás
     lucky_star:
-      name: Lucky Star
-      true: <gold>Lucky Star aktív.</gold>
-      false: <gray>Lucky Star kikapcsolva.</gray>
-      off_no_xp: '<red>Lucky Star kikapcsolt: elfogyott az XP-d!</red>'
+      name: Szerencsecsillag
+      # Az 'on'/'off' kulcsot IDÉZŐJELBE kell tenni: a YAML 1.1 az idézőjel nélküli
+      # alakot logikai értékké alakítja, és a kód sosem találná meg a sort.
+      'on': <gold>Szerencsecsillag aktív.</gold>
+      'off': <gray>Szerencsecsillag kikapcsolva.</gray>
+      off_no_xp: '<red>Szerencsecsillag kihunyt: elfogyott az XP-d!</red>'
     mana_dart:
       name: Mana Nyíl
     masterful_shot:
@@ -269,7 +271,7 @@ messages:
       activated: <dark_green>Vad falka tör elő a vadonból, és melléd szegődik.</dark_green>
       name: Vad Falka
     wisplight:
-      name: Wisplight
+      name: Lidércfény
     wolf_call:
       activated: <dark_green>Hű farkas társ érkezik a hívásodra.</dark_green>
       name: Farkashívás

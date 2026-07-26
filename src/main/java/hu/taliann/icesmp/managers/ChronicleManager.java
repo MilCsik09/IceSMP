@@ -76,7 +76,7 @@ public final class ChronicleManager implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         lastPublishedAt = yaml.getLong("last-published", 0L);
         lastIssue = List.copyOf(yaml.getStringList("last-issue"));
     }

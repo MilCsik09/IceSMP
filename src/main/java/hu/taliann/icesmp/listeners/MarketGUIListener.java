@@ -166,7 +166,10 @@ public final class MarketGUIListener implements Listener {
         // Folia: the outbid player may be in another region — hop to their scheduler.
         final Player outbid = Bukkit.getPlayer(outcome.previousBidder());
         if (outbid != null) {
-            final String itemName = listing.item().getType().name();
+            // effectiveName(): a saját név, ha van; különben a fordítható típusnév — a nyers
+            // enum-név („DIAMOND_SWORD”) belső azonosító, nem való játékos-üzenetbe.
+            final String itemName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                    .plainText().serialize(listing.item().effectiveName());
             outbid.getScheduler().run(plugin, task -> outbid.sendMessage(messageManager.getMessage(
                     "market-outbid-notice",
                     "&cTúllicitáltak (&f{item}&c) — a zárolt licited visszakerült a bankodba.",
@@ -196,6 +199,8 @@ public final class MarketGUIListener implements Listener {
             case "market-already-highest" -> "&cMár te vagy a legmagasabb licitáló.";
             case "market-bid-too-low" -> "&cA licit nem éri el a minimum következő licitet.";
             case "market-auction-use-bid" -> "&cEz aukciós tétel — licitálni lehet rá.";
+            case "market-journal-unavailable" ->
+                    "&cA piac tranzakció-naplója most nem írható — a művelet biztonsági okból elmaradt. Próbáld újra kicsit később.";
             default -> "&cA vásárlás nem sikerült.";
         };
     }

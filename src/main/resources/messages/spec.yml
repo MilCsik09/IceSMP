@@ -16,7 +16,7 @@ messages:
   spec-info-class: '&6Kaszt specializáció: '
   spec-info-none: '&7nincs'
   spec-info-profession: '&6Szakma specializáció: '
-  spec-list-class-header: '&6Kaszt specializációk (szint %s-tól):'
+  spec-list-class-header: '&6Kaszt specializációk &7(minimum szint: &f%s&7):'
   spec-list-no-class: '&7Nincs elsődleges kasztod.'
   spec-list-no-profession: '&7Nincs szakmád.'
   spec-list-profession-header: '&6Szakma specializációk (szint %s-tól):'

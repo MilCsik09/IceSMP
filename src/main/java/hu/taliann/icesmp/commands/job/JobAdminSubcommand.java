@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.job;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.listeners.AbilityCatalystListener;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
@@ -72,7 +73,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
 
         final Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) {
-            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA celjatekos nem erheto el online."));
+            sender.sendMessage(messageManager.get("messages.target-player-offline", "&cA céljátékos nem érhető el online."));
             return true;
         }
 
@@ -92,8 +93,10 @@ public final class JobAdminSubcommand implements JobSubcommand {
             }
 
             if ("unlockallskills".equals(action)) {
-                final List<String> allSpellIds = spellRegistry.getAll().stream().map(Spell::getId).toList();
-                jobManager.setUnlockedSpellIds(target, allSpellIds);
+                // Az ADMIN forrás sosem esik automatikus visszavonás alá (spec/talent reset).
+                for (final Spell spell : spellRegistry.getAll()) {
+                    jobManager.unlockSpell(target, spell.getId(), hu.taliann.icesmp.managers.JobManager.SOURCE_ADMIN);
+                }
                 sender.sendMessage(messageManager.get(
                         "admin.job.unlock-all.success",
                         "&aAz osszes varazslat feloldva: &f%s",
@@ -104,6 +107,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
             }
 
             if ("resetskills".equals(action)) {
+                jobManager.clearSpellGrants(target);
                 jobManager.setUnlockedSpellIds(target, List.of());
                 abilityCatalystListener.resetAllSpellState(target);
                 sender.sendMessage(messageManager.get(
@@ -122,11 +126,11 @@ public final class JobAdminSubcommand implements JobSubcommand {
             abilityCatalystListener.resetAllSpellState(target);
             sender.sendMessage(messageManager.get(
                     "admin.job.reset-class.success",
-                    "&aKaszt teljesen alaphelyzetbe allitva (kaszt + spec + spellek): &f%s",
+                    "&aKaszt teljesen alaphelyzetbe állítva (kaszt + spec + varázslatok): &f%s",
                     target.getName()
             ));
             target.sendMessage(messageManager.get("admin.job.reset-class.notify",
-                    "&eEgy admin alaphelyzetbe allitotta a kasztodat — valassz ujat a /profile menubol."));
+                    "&eEgy adminisztrátor alaphelyzetbe állította a kasztodat — válassz újat a /profile menüből."));
         }, null);
         return true;
     }
@@ -154,10 +158,5 @@ public final class JobAdminSubcommand implements JobSubcommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }
-
 

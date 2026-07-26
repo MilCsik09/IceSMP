@@ -30,7 +30,7 @@ public final class BestiaryListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onKill(final EntityDeathEvent event) {
-        final Player killer = event.getEntity().getKiller();
+        final Player killer = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKiller(event.getEntity());
         if (killer == null) {
             return;
         }

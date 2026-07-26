@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands.faction;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.managers.FactionManager;
@@ -153,6 +154,8 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
             case "faction-raid-not-party" -> "&cA frakciód nem hadviselő fél ebben a raidben.";
             case "faction-raid-already-joined" -> "&7Már jelentkeztél ebbe a raidbe.";
             case "faction-raid-side-full" -> "&cA te oldalad hadserege már megtelt.";
+            case "faction-raid-combat-locked" ->
+                    "&cA harci szakasz már megkezdődött — nevezni csak a felkészülés alatt lehet.";
             default -> "&cA raid művelet nem sikerült.";
         };
     }
@@ -186,8 +189,4 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }

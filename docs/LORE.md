@@ -95,9 +95,10 @@ a köznép negyedei akáciából épülnek, s a falakat a szavanna fehér kövei
 
 Akik nem emeltek kezet senkire, azok a Fa közelében, a **Bokic-folyónál** maradhattak; ők **Arkynn**
 békés örökségének őrzői. A vidéket, amely a Bokic két partján a Fa árnyékáig nyúlik, **Ryanorának**
-hívják — ez Arkynn békés országa, szelíd dombok, gázlók és tanyák földje. Szíve és fővárosa
-**Caldestera**: a világ kereskedelmi és tudományos központja — tölgy, tégla és kvarc gazdag, polgári
-városa —, ahol misztikus, sebeslábú szarvasokon járnak az utcák népei, s ahol a világ minden táján
+hívják — ez Arkynn békés országa, szelíd dombok, gázlók és tanyák földje. Ősi szíve a Fa tövében
+állt; mai fővárosa a szoroson túl épült **Caldestera**: a világ kereskedelmi és tudományos központja
+— tölgy, tégla és kvarc gazdag, polgári városa —, ahol misztikus, sebeslábú szarvasokon járnak az
+utcák népei, s ahol a világ minden táján
 elfogadott **Creutzér** csörög az erszényekben. A hatodik vérháború borzalmai után,
 a Hasadás utáni 547. évben a város bölcsei kimondták az **Armageddon-ultimátumot**: a Menedék örökre
 lemondott a fegyverekről, s azóta szigorúan **semleges és fegyvermentes** föld — hogy maradjon a
@@ -105,9 +106,9 @@ világnak legalább egyetlen sarka, ahol nem folyik vér.
 
 Ám a nagy háborúk után a Menedék népe maga is meghasonlott. Sokan nem tudták megbocsátani a
 Fának, hogy a vérontás éveiben **nem avatkozott közbe** — hogy némán állt, míg a világ égett.
-E csalódottak fogták vagyonukat és tudományukat, s a vizeken túl, messze a Fa árnyékától **új
+E csalódottak fogták vagyonukat és tudományukat, s a szoroson túl, messze a Fa árnyékától **új
 várost emeltek**: ez a mai **Caldestera**, a kereskedelem és a tudás ragyogó fővárosa, ahová ma
-komp hordja az utazót a szoroson át. A Fa tövében pedig ott maradtak az **igaz követők** — akik
+komp hordja az utazót a vízen át. A Fa tövében pedig ott maradtak az **igaz követők** — akik
 úgy tartják, a Fa hallgatása nem közöny volt, hanem bölcsesség. Az ő szerény, vénséges
 településük **Radicora** — „a gyökerek városa", ahogy a régiek nyelvén mondják; a nép ajkán
 egyszerűen csak Ó-Caldestera. A régi főváros megkopott, de el nem múló magja ez, ahol ma is minden
@@ -137,9 +138,11 @@ széthullottak, az utakat élőhalottak lepték el, s az átok minden új vezet�
 Felsők**. A legenda szerint az eltűnt királyok és főurak dicsőséges leszármazottai vagytok, akiket maga
 a Fa mentett meg, hogy új rendet hozzatok a káoszba.
 
-A **Királyok Átka** — amely a Néma Királynő szavára minden új uralkodót sírba vitt — a Fa kegyeltjeire,
-a Felsőkre **nem hat**. Egyedül ők emelhetnek új trónt, foglalhatnak vissza földet és vezethetik újra a
-birodalmakat: ezért a jelen minden királya, minden területfoglalása, minden háborúja a Felsők keze
+A **Királyok Átka** — amely a Néma Királynő szavára minden új uralkodót sírba vitt — a Fa kegyeltjeit,
+a Felsőket **nem tarthatja végleg a sírban**: Aetrinita mindig visszahívja őket. Ám az átok rájuk is
+kapaszkodik: a korona magára vonja a Néma Királynő figyelmét, s minél hosszabban viselik, annál
+erősebben szorít. Ezért egyedül ők emelhetnek új trónt, foglalhatnak vissza földet és vezethetik újra a
+birodalmakat: a jelen minden királya, minden területfoglalása, minden háborúja a Felsők keze
 nyomán születik. Ám vérvonal nem maradt, amely trónt örökíthetne — a nemességet az átok egy szálig
 eltörölte —, ezért az új kor királyát nem a születés, hanem **a Felsők közös szava emeli**: a birodalom
 népe maga kiáltja ki, kit ültet a trónra, s kit taszít le róla. A világ sorsa mostantól a ti
@@ -151,8 +154,9 @@ A Felsők nem palotában, nem csatatéren ébrednek, hanem **az Élet Fája alat
 érinthetetlen pontján, amelyet a nép csak **Szent Zónának** nevez. E hely a Fa oltalma alatt áll:
 fegyver ott nem emelkedhet, vér ott nem folyhat, s az emlékvesztett vándor biztonságban tér magához.
 Ám a Fa csak a kezdetet adja; otthont nem. Innen minden Felsőnek **zarándokútra** kell kelnie a
-legközelebbi élő város, **Caldestera** felé — a Menedék semleges kapui mögé —, hogy onnan válassza
-meg, melyik birodalom ügyét szolgálja, s hol kovácsolja ki új sorsát.
+legközelebbi élő város, a Fa tövében álló **Radicora** (Ó-Caldestera) felé, s onnan tovább — a
+kompon a szoroson át — a Menedék mai fővárosába, **Caldesterába**, hogy megválassza, melyik birodalom
+ügyét szolgálja, s hol kovácsolja ki új sorsát.
 
 A Fa oltalma azonban nem ér véget az ébredéssel. Amikor egy Felső elesik, teste porrá lesz, de a
 lelkét az **Élet Fája** — bár maga is megsebezve — makacsul visszahívja az élők közé: újra testet ölt
@@ -253,7 +257,7 @@ Hasadékának"** hívja, s ahová a Felsők a legjobb nyersanyagért járnak,
 s ahol a birodalmak törvénye nem ér el: ott bármely zászló szabadon ronthat a másikra.
 
 **Caldestera alvilága.** Caldestera békés, semleges és gazdag főváros — ám a felszín alatt nem
-makulátlan. **Arkynn** egykori mérge, amely megrontotta őt és népét, nem tűnt el nyomtalanul: a
+makulátlan. Az **Arkynnt egykor megmérgező** kór — Eleftheria mérge — nem tűnt el nyomtalanul: a
 Menedék népének lelkében **kapzsiság és korrupció** formájában él tovább. Bár a városban szigorúan
 tilos fegyvert viselni, a **Botera-negyed** sikátoraiban virágzik a feketepiac: a legügyesebb
 csempészek ártalmatlannak tűnő tárgyakba rejtett fegyvereket juttatnak a falak közé, kicselezve a
@@ -397,7 +401,11 @@ Káoszkorban semmi sem végleges.
 
 **Az Oltárok és az Ereklyék Törvénye.** A világban kevés valódi **Ereklye** maradt — a Fa gyermekeinek
 korából való, egyetlen példányban létező hatalmak. Az Ereklye nem tűr osztozást: egyszerre csak egy
-kézben lakhat, s ha gazdája méltatlanná válik rá — vagy elhull —, az Ereklye új hordozót keres. A
+kézben lakhat — de nem minden Ereklye viselkedik egyformán, ha a gazdája elhull. A **harci
+Ereklyék vérrel öröklődnek**: aki a viselőjét legyőzi, a kezébe kapja őket. A **gazdához kötődő
+Ereklyék** nem cserélnek urat a halálban: visszahúzódnak a rejtekükbe, és a régi tulajdonos
+idézheti vissza őket. Végül minden Ereklye **elenyészik**, ha sokáig senki nem viseli — akkor a
+tulajdonjog felszabadul, és az Ereklye új hordozót keres. A
 **rituálé-oltárok** — a régi hit kőbe rakott szentélyei — pedig azoknak nyílnak meg, akik ismerik a
 helyes áldozatot: rajtuk keresztül szól a világ a Felsőkhöz.
 
@@ -451,14 +459,19 @@ tudja, hány hever még belőlük a romok mélyén, s hány születik újjá a F
 - **Sárkány-pörkölt** — „A fagyhalál elleni egyetlen menedék."
 
 **A Lángoló Birodalom kincsei:**
-- **Pyralingradi Tűzköpő** (számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi vihar
-  sebességével csapnak le."
+- **Pyralingradi Tűzköpő** (könnyű számszeríj) — „Soleil papjai áldották meg; lövedékei a sivatagi
+  vihar sebességével csapnak le." A tűzköpő a városfalak ŐREINEK fegyvere: egy szívdobbanás alatt
+  újratölthető, közelre való, gyors halál.
 - **A Vérszavanna Agyara** (kard) — „Kovácsolásakor a lángok fekete füstöt okádtak; baltával
   kiegészítve emberfeletti erőt ád."
 - **I. Zhoris Lángnyelve** (kard) — „Ezt a pengét a Hetedik Vérháború napján kovácsolták a
   Vérszavanna legmélyén."
-- **Napfogyatkozás** (kard) — sötét lángpenge, a Lángoló Birodalom legendás fegyvere.
-- **Pyralingradi Ostrom-számszeríj** — Soleil papjai áldották meg a Vérszavanna szívében.
+- **Napfogyatkozás** (íj) — sötét obszidián-íj, a Lángoló Birodalom legendás fegyvere; nyila akkor harap a legmélyebbre, amikor a nap lehunyja szemét.
+- **Pyralingradi Ostrom-számszeríj** (nehéz ostromgép) — „Nem a papok áldása van rajta, hanem a
+  Vérszavanna kohóinak súlya: két ember kellett, hogy felhúzzák, s a vasszálka egy egész sorral
+  végzett." A Hetedik Vérháború ostromainak fegyvere — lassú, mint a homokvihar közeledése, de amit
+  eltalál, azon átmegy. A tűzköpővel ellentétben senki nem hordja párbajra: ez a FALAK és a
+  csatarendek ellen készült.
 - **Főnix-Tollköpeny** — „I. Zhoris lángmadarainak tollaiból szőve; óv a hőségtől és a láva haragjától."
 - **Fűszeres Főnixtojás-Rántotta** — „Hamuban sült étel; tüze távol tartja a fagyos vidék bénító
   gyengeségét."

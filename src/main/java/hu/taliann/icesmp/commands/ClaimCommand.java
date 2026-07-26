@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.commands;
 
+import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.gui.ClaimTrustGUI;
 import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
@@ -105,7 +106,7 @@ public final class ClaimCommand implements BasicCommand {
             return;
         }
         player.sendMessage(messageManager.get("claim-unclaimed",
-                "&aChunk felszabadítva. &7(Az ár nem jár vissza — elégett.)"));
+                "&aTerület felszabadítva. &7(Az ár nem jár vissza — elégett.)"));
     }
 
     private void handleInfo(final Player player) {
@@ -319,8 +320,4 @@ public final class ClaimCommand implements BasicCommand {
         return List.of();
     }
 
-    /** Az adott pozíción gépelés alatt álló szó (kisbetűsítve), vagy üres, ha még el sem kezdték. */
-    private static String prefixAt(final String[] args, final int index) {
-        return args.length > index ? args[index].toLowerCase(Locale.ROOT) : "";
-    }
 }

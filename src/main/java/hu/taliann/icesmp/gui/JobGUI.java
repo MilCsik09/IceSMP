@@ -35,7 +35,7 @@ public final class JobGUI {
             return;
         }
 
-        final Component title = messageManager.getComponent("messages.job-gui-title", "&3\u00bb Kasztok es Szakmak \u00ab");
+        final Component title = messageManager.getComponent("messages.job-gui-title", "&3\u00bb Kasztok és Szakmák \u00ab");
         final JobGUIHolder holder = new JobGUIHolder(viewer.getUniqueId());
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
@@ -144,7 +144,7 @@ public final class JobGUI {
         if (primary == jobType) {
             return List.of(
                     roleLine,
-                    messageManager.getComponent("messages.job-gui-lore-primary", "&aElsodleges kasztod"),
+                    messageManager.getComponent("messages.job-gui-lore-primary", "&aElsődleges kasztod"),
                     messageManager.getComponent(
                             "messages.job-gui-lore-level-line",
                             "&7Szint: &f%s&7/&f%s",
@@ -163,7 +163,7 @@ public final class JobGUI {
         // A class is already chosen (and it isn't this one) — the player can't change it anymore.
         return List.of(
                 roleLine,
-                messageManager.getComponent("messages.job-gui-lore-already-have", "&cMar van kasztod."),
+                messageManager.getComponent("messages.job-gui-lore-already-have", "&cMár van kasztod."),
                 messageManager.getComponent("messages.job-gui-lore-no-change", "&7Jelenleg nem modosithato.")
         );
     }

@@ -3,28 +3,46 @@ package hu.taliann.icesmp.utils;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.advancement.Advancement;
+import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Vanília advancement-toast felugratása tetszőleges címmel (quest-teljesítés
- * ünneplése a jobb felső sarokban). Nincs first-class toast API — a bevett plugin-trükköt
- * használjuk: egyszer használatos, rejtett advancement betöltése futásidőben, odaítélés,
- * majd visszavonás és eltávolítás.
+ * Vanília advancement-toast felugratása a jobb felső sarokban (quest-teljesítés, mérföldkő,
+ * felfedezés ünneplése).
  *
- * <p><b>Folia-lépcsők:</b> az advancement-registry módosítása (load/remove) a GLOBAL region
- * scheduleren fut; az odaítélés/visszavonás (a játékos advancement-progressje) a játékos
- * SAJÁT régió-szálán. A teljes folyamat try/catch — ha a szerver-implementáció elutasítja,
- * a toast egyszerűen elmarad (a chat-üzenet a fő visszajelzés, ez csak dísz), és egyszeri
- * konzol-warn jelzi.
+ * <p><b>Hogyan:</b> a jar datapackje három REJTETT, {@code show_toast:true} advancementet
+ * szállít ({@code icesmp:toast_quest|toast_milestone|toast_discovery}); a toast megjelenítése
+ * = a bejegyzés odaítélése, majd azonnali visszavonása, hogy legközelebb újra felugorhasson.
+ * A rejtett bejegyzés nem szennyezi a haladás-fület.
  *
- * <p>A rejtett advancement ({@code hidden:true, show_toast:true, announce_to_chat:false})
- * nem szennyezi az advancement-képernyőt, és ~1 mp után nyomtalanul eltűnik a registryből.
+ * <p><b>Miért nem dinamikus a cím:</b> korábban minden toast SAJÁT, véletlen kulcsú
+ * advancementet töltött be futásidőben a {@code @Deprecated Bukkit.getUnsafe()} úton, hogy a
+ * cím a quest neve lehessen. Ennek két baja volt: (1) nem támogatott API-ra épült, (2) a
+ * Bukkit a betöltött bejegyzéseket a világ {@code datapacks/bukkit/} packjébe írja, tehát a
+ * véletlen kulcsok ott halmozódhattak. A konkrét megnevezés amúgy is ott van, ahol a játékos
+ * olvassa: a chat-üzenetben — a toast mindig csak dísz volt.
+ *
+ * <p><b>Folia:</b> az odaítélés/visszavonás a JÁTÉKOS advancement-progresszét írja, ezért a
+ * játékos saját régió-szálán fut. Ha a datapack nem töltött be (nincs ilyen advancement), a
+ * toast némán elmarad — a chat-üzenet a fő visszajelzés.
  */
 public final class ToastUtil {
+
+    /** Toast-fajták: a datapack fix bejegyzéseihez képeznek le. */
+    public enum Kind {
+        QUEST("toast_quest"),
+        MILESTONE("toast_milestone"),
+        DISCOVERY("toast_discovery");
+
+        private final String advancementId;
+
+        Kind(final String advancementId) {
+            this.advancementId = advancementId;
+        }
+    }
 
     private static final AtomicBoolean warned = new AtomicBoolean(false);
 
@@ -36,85 +54,36 @@ public final class ToastUtil {
      *
      * @param plugin a plugin
      * @param player a címzett
-     * @param title a toast címe (szín-kódok nélkül — a hívó felelőssége a lecsupaszítás)
-     * @param iconMaterialKey a toast ikonja minecraft-item kulcsként (pl. "minecraft:writable_book")
+     * @param kind melyik fix toast-bejegyzés (a cím ebből jön, a datapackből)
      */
-    public static void show(final JavaPlugin plugin, final Player player, final String title,
-                            final String iconMaterialKey) {
-        final NamespacedKey key = new NamespacedKey(plugin,
-                "toast_" + UUID.randomUUID().toString().substring(0, 8));
-        final String json = "{\"criteria\":{\"trigger\":{\"trigger\":\"minecraft:impossible\"}},"
-                + "\"display\":{\"icon\":{\"id\":\"" + iconMaterialKey + "\"},"
-                + "\"title\":{\"text\":\"" + escapeJson(title) + "\"},"
-                + "\"description\":{\"text\":\"\"},"
-                + "\"frame\":\"goal\",\"announce_to_chat\":false,\"show_toast\":true,\"hidden\":true}}";
-
-        Bukkit.getGlobalRegionScheduler().run(plugin, loadTask -> {
-            final Advancement advancement;
-            try {
-                advancement = Bukkit.getUnsafe().loadAdvancement(key, json);
-            } catch (final Throwable throwable) {
-                warnOnce(plugin, throwable);
-                return;
+    public static void show(final JavaPlugin plugin, final Player player, final Kind kind) {
+        if (player == null || kind == null) {
+            return;
+        }
+        final Advancement advancement = Bukkit.getAdvancement(new NamespacedKey("icesmp", kind.advancementId));
+        if (advancement == null) {
+            warnOnce(plugin);
+            return;
+        }
+        player.getScheduler().run(plugin, awardTask -> {
+            final AdvancementProgress progress = player.getAdvancementProgress(advancement);
+            for (final String criterion : progress.getRemainingCriteria()) {
+                progress.awardCriteria(criterion);
             }
-            if (advancement == null) {
-                return;
-            }
-            player.getScheduler().run(plugin, awardTask -> {
-                try {
-                    player.getAdvancementProgress(advancement).awardCriteria("trigger");
-                } catch (final Throwable throwable) {
-                    warnOnce(plugin, throwable);
-                    cleanup(plugin, key);
-                    return;
+            // A visszavonás UTÁN ugorhat fel újra legközelebb; 1 mp-et hagyunk a kliensnek.
+            player.getScheduler().runDelayed(plugin, revokeTask -> {
+                final AdvancementProgress current = player.getAdvancementProgress(advancement);
+                for (final String criterion : current.getAwardedCriteria()) {
+                    current.revokeCriteria(criterion);
                 }
-                // 1 mp múlva visszavonás (a toast már kiment) + registry-takarítás.
-                player.getScheduler().runDelayed(plugin, revokeTask -> {
-                    try {
-                        player.getAdvancementProgress(advancement).revokeCriteria("trigger");
-                    } catch (final Throwable ignored) {
-                        // A játékos időközben elmehetett — a takarítás akkor is fut.
-                    }
-                    cleanup(plugin, key);
-                }, () -> cleanup(plugin, key), 20L);
-            }, () -> cleanup(plugin, key));
-        });
+            }, null, 20L);
+        }, null);
     }
 
-    private static void cleanup(final JavaPlugin plugin, final NamespacedKey key) {
-        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
-            try {
-                Bukkit.getUnsafe().removeAdvancement(key);
-            } catch (final Throwable ignored) {
-                // Már nincs a registryben — rendben.
-            }
-        });
-    }
-
-    private static void warnOnce(final JavaPlugin plugin, final Throwable throwable) {
+    private static void warnOnce(final JavaPlugin plugin) {
         if (warned.compareAndSet(false, true)) {
-            plugin.getLogger().warning("A quest-toast nem támogatott ezen a szerver-implementáción ("
-                    + throwable.getClass().getSimpleName() + ") — a toastok kimaradnak, a chat-üzenet marad.");
+            plugin.getLogger().warning("A toast-advancementek nincsenek betöltve (icesmp datapack) — "
+                    + "a toastok kimaradnak, a chat-üzenet marad. Ellenőrizd a datapack-felderítést a logban.");
         }
-    }
-
-    private static String escapeJson(final String text) {
-        final StringBuilder out = new StringBuilder(text.length());
-        for (int i = 0; i < text.length(); i++) {
-            final char c = text.charAt(i);
-            switch (c) {
-                case '"' -> out.append("\\\"");
-                case '\\' -> out.append("\\\\");
-                case '\n' -> out.append("\\n");
-                default -> {
-                    if (c < 0x20) {
-                        out.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        out.append(c);
-                    }
-                }
-            }
-        }
-        return out.toString();
     }
 }
