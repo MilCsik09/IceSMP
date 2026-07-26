@@ -79,6 +79,38 @@ for qid, q in quests.items():
     if q.get("rotation-group") and not q.get("repeatable"):
         warn(f"quests.yml {qid}: rotation-group tag repeatable nélkül")
 
+# ---------- 2b. quest next-gráf: CIKLUS tilos ----------
+# Egy önmagára (vagy körben) mutató, repeatable, nulla cooldownos, már teljesített REACH_LEVEL
+# quest az accept -> complete -> reward -> advanceChain -> accept láncot végtelenszer futtatná:
+# sokszoros jutalom, majd StackOverflowError. Futásidőben mélység-korlát fogja, de a ciklust
+# MÁR ITT ki kell szűrni, mert a korlát csak tünetet kezel.
+_next_edges = {qid: q.get("next") for qid, q in quests.items()
+               if isinstance(q, dict) and q.get("next")}
+_state = {}
+
+
+def _find_cycle(node, path):
+    _state[node] = 1
+    nxt = _next_edges.get(node)
+    if nxt in _next_edges or nxt in quests:
+        if _state.get(nxt) == 1:
+            return path + [nxt]
+        if _state.get(nxt, 0) == 0 and nxt is not None:
+            found = _find_cycle(nxt, path + [nxt])
+            if found:
+                return found
+    _state[node] = 2
+    return None
+
+
+for _qid in list(_next_edges):
+    if _state.get(_qid, 0) == 0:
+        _cycle = _find_cycle(_qid, [_qid])
+        if _cycle:
+            fail("quests.yml next-gráf CIKLUS: " + " -> ".join(_cycle)
+                 + " — a lánc végtelen jutalom-hurokba futhat")
+            break
+
 # ---------- 3. ITEM_MODEL manifest-lefedettség + legacy drift-védelem ----------
 manifest = read(os.path.join(REPO, "docs/RESOURCE_PACK_CMD.md"))
 manifest_models = set(re.findall(r"^### `([a-z0-9_]+)`", manifest, re.M)) | set(re.findall(r"\| `([a-z0-9_]+)` \|", manifest))

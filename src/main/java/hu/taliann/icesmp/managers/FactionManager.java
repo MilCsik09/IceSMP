@@ -110,9 +110,25 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     /** @param factionType the faction to set (null defaults to NEUTRAL) */
+    /**
+     * Setter-injektált: a frakcióváltás a céhtagságot is egyezteti. A hívás KÖZPONTILAG itt van,
+     * nem a parancsokban — így minden út (belépés, kilépés, admin-beállítás, száműzetés, vezeklés)
+     * egyeztet, és egy új út sem tudja kihagyni.
+     */
+    private volatile hu.taliann.icesmp.managers.GuildManager guildManager;
+
+    public void setGuildManager(final hu.taliann.icesmp.managers.GuildManager guildManager) {
+        this.guildManager = guildManager;
+    }
+
     public void setFaction(final UUID uuid, final FactionType factionType) {
-        playerFactions.put(uuid, factionType == null ? FactionType.NEUTRAL : factionType);
+        final FactionType target = factionType == null ? FactionType.NEUTRAL : factionType;
+        playerFactions.put(uuid, target);
         save();
+        final hu.taliann.icesmp.managers.GuildManager guildRef = guildManager;
+        if (guildRef != null) {
+            guildRef.reconcileFaction(uuid, target);
+        }
         final Player online = org.bukkit.Bukkit.getPlayer(uuid);
         if (online != null) {
             AdvancementService.award(online, "faction_join");

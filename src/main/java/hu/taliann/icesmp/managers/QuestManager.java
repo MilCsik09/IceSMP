@@ -1564,9 +1564,41 @@ public final class QuestManager implements PersistentStore {
      * need an NPC visit or territory crossing between every link — e.g. the
      * first-join onboarding chain.
      */
+    /**
+     * Lánc-mélység a HÍVÁSI VEREMBEN. A quest elfogadása azonnal újraértékeli a REACH_LEVEL
+     * célokat, ezért egy már teljesített, önmagára (vagy körben) mutató, repeatable, nulla
+     * cooldownos quest az {@code accept → complete → reward → advanceChain → accept} láncot
+     * végtelenszer futtatná: sokszoros jutalom, majd StackOverflowError és a régió-szál blokkolása.
+     * ThreadLocal, mert a lánc mindig EGY régió-szálon, egy hívási veremben fut.
+     */
+    private static final ThreadLocal<Integer> chainDepth = ThreadLocal.withInitial(() -> 0);
+    private static final int MAX_CHAIN_DEPTH = 16;
+
     private void advanceChain(final Player player, final ConfigurationSection completedQuest) {
         final String next = completedQuest.getString("next");
-        if (next == null || next.isBlank() || getAcceptBlocker(player, next) != null || !accept(player, next)) {
+        if (next == null || next.isBlank()) {
+            return;
+        }
+        final int depth = chainDepth.get();
+        if (depth >= MAX_CHAIN_DEPTH) {
+            plugin.getLogger().severe("Quest-lánc mélység-korlát (" + MAX_CHAIN_DEPTH + ") elérve a(z) '"
+                    + next + "' questnél — valószínűleg ciklus a next-gráfban (" + player.getName() + ").");
+            return;
+        }
+        chainDepth.set(depth + 1);
+        try {
+            advanceChainStep(player, next);
+        } finally {
+            if (depth == 0) {
+                chainDepth.remove();
+            } else {
+                chainDepth.set(depth);
+            }
+        }
+    }
+
+    private void advanceChainStep(final Player player, final String next) {
+        if (getAcceptBlocker(player, next) != null || !accept(player, next)) {
             return;
         }
 

@@ -456,6 +456,7 @@ public final class IceSMPCore {
         // A loot-táblák "unique:<id>" sorai a UniqueMaterialFactory-n át épülnek (statikus híd).
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
         professionManager.setMessageManager(messageManager); // szintlépés/fokozat üzenetek
+        factionManager.setGuildManager(guildManager);
         questManager.setGuildManager(guildManager); // quest-teljesítés céh-XP
         professionRecipeBookListener.setBestiaryManager(bestiaryManager); // recept-lajstrom
         professionRecipeBookListener.setJobManager(jobManager); // kaszt-zárt receptek

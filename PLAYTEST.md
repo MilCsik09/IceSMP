@@ -1210,6 +1210,34 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Főzet-XP csak VALÓDI kivételre (ÚJ):** a főzőállvány eredmény-slotjaiban a puszta
+      „van benne főzet" korábban XP-t adott, ezért a bent maradó főzetre ismételt kattintás
+      korlátlan Alkimista-XP-t és heti szakma-cél haladást termelt. Most csak a tényleges kivétel
+      számít. **Teszt:** kattints a kész főzetre inkompatibilis kurzorral (no-op) → **ne** kapj
+      XP-t; kattints rá üres kurzorral (kivétel) → kapj; a most üres slotra kattintva ne kapj újra;
+      shift-kattintás és hotbar-csere is fizessen (azok is kivételek).
+- [ ] **Heti szakma-cél csak a SAJÁT szakmádtól tölthető (ÚJ):** korábban egy nem-bányász
+      ércbontása is töltötte a Bányász-céh heti közös célját, mert a listener eldobta a
+      XP-jóváírás eredményét. **Teszt:** olyan játékossal, akinek NINCS bányász szakmája, törj
+      ércet → se személyes XP, se heti cél-haladás; bányászként ugyanez mindkettőt adja.
+- [ ] **Quest-lánc ciklus nem futhat végtelen jutalom-hurokba (ÚJ):** egy önmagára (vagy körben)
+      mutató, repeatable, nulla cooldownos, már teljesített `REACH_LEVEL` quest az
+      `accept → complete → reward → advanceChain → accept` láncot végtelenszer futtatta volna.
+      Két védelem: a `check_consistency.py` FAIL-el a `next`-gráf bármely ciklusára (push előtt
+      kiderül), futásidőben pedig 16-os mélység-korlát áll, SEVERE naplóval.
+      **Teszt:** `/quest admin set <id> next <ugyanaz az id>` → a checker akadjon meg; ha mégis
+      élesbe kerül, a konzolban „Quest-lánc mélység-korlát" sor legyen, és a szerver ne álljon meg.
+- [ ] **Céhtagság nem éli túl a frakcióváltást (ÚJ):** a céh egy frakción belüli szervezet, mégis
+      az ellenséges oldalra váltó játékos tovább vezethette a régi frakció céhét, az ott teljesített
+      questjei a régi céh XP-jét növelték, és a kasszát a RÉGI frakció valutájában kezelhette.
+      Az egyeztetés KÖZPONTILAG a `setFaction`-ban fut, tehát minden út érvényes.
+      **Teszt mind a négy úton** (`/faction join`, `/faction leave`, admin `/faction set`,
+      bűn-száműzetés, vezeklés):
+      1. tagként válts frakciót → lépj ki a céhből, és kapj róla üzenetet;
+      2. **vezetőként** válts → az irányítás a legrégebbi másik tagra szálljon;
+      3. **egyedüli vezetőként** válts → a céh szűnjön meg (ne maradjon üres, gazdátlan céh);
+      4. váltás után a `/ceh info` ne mutasson tagságot, a quest-teljesítés ne töltse a régi céhet,
+         és a `/ceh befizet` ne menjen.
 - [ ] **Gyűjtés nem játszható vissza (ÚJ — kiadásblokkoló volt):** a `COLLECT_ITEMS` progressz a
       felvett stack méretét könyvelte, és mivel a DOBÁS mindig új item-entitást hoz létre (új UUID),
       ugyanazzal a fizikai stackkel korlátlanul növelhető volt a gyűjtő-quest ÉS az ismételhető
