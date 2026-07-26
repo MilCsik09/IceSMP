@@ -1210,6 +1210,21 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Gyűjtés nem játszható vissza (ÚJ — kiadásblokkoló volt):** a `COLLECT_ITEMS` progressz a
+      felvett stack méretét könyvelte, és mivel a DOBÁS mindig új item-entitást hoz létre (új UUID),
+      ugyanazzal a fizikai stackkel korlátlanul növelhető volt a gyűjtő-quest ÉS az ismételhető
+      közösségi cél — utóbbi minden körben kifizette a teljes treasury-, liga- és buff-jutalmat.
+      **Teszt:**
+      1. vegyél fel egy vasrudat gyűjtő questet (vagy legyen aktív ilyen közösségi cél);
+      2. tarts magadnál egy stacket, dobd le, vedd fel — **a haladás NE nőjön**, akárhányszor
+         ismételed;
+      3. **pingpong-teszt:** dobd le, és MÁSIK játékos vegye fel → nála se nőjön;
+      4. **halál-teszt:** halj meg (ne legyen keep-inventory), majd vedd fel a saját dropodat →
+         ne nőjön (a halál-dropokat egy tickkel később, a halál helye körül jelöljük meg);
+      5. **legitim út:** bányássz/ölj újat, és úgy vedd fel → **nőjön** a haladás;
+      6. **tele hátizsák:** hagyj egy szabad helyet, és vegyél fel egy 64-es stacket → csak a
+         TÉNYLEGESEN átkerült darab számítson (nem a teljes 64);
+      7. `keep-inventory` bekapcsolva halálnál ne jelöljön semmit (nincs is drop).
 - [ ] **Sérült állapotfájl NEM írható felül (ÚJ — kiadásblokkoló volt):** a
       `YamlConfiguration.loadConfiguration(File)` FAIL-OPEN — hibás YAML-nál nem dob kivételt,
       csak naplóz és ÜRES konfigurációt ad. Így a manager üres állapottal indult, a következő

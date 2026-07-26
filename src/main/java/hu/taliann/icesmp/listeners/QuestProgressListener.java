@@ -126,12 +126,24 @@ public final class QuestProgressListener implements Listener {
     // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onItemPickup(final EntityPickupItemEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            final var type = event.getItem().getItemStack().getType();
-            final int amount = event.getItem().getItemStack().getAmount();
-            questManager.handleCollect(player, type, amount);
-            communityGoalManager.contribute(player, "COLLECT_ITEMS", type.name(), amount);
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
         }
+        // A játékos SAJÁT inventoryából a földre került tárgy felvétele nem gyűjtés: e nélkül
+        // ugyanaz a stack ledobva-felvéve korlátlanul növelte a gyűjtő-questet és az ismételhető
+        // közösségi célt (a dobás új entitást hoz létre, ezért UUID-dedup nem fogja meg).
+        if (hu.taliann.icesmp.utils.ItemProvenance.isPlayerDropped(event.getItem())) {
+            return;
+        }
+        // Csak a TÉNYLEGESEN átkerült darab számít: tele hátizsáknál a stack egy része a földön
+        // marad (getRemaining), a teljes stackméret könyvelése túlszámolás lenne.
+        final var type = event.getItem().getItemStack().getType();
+        final int transferred = event.getItem().getItemStack().getAmount() - event.getRemaining();
+        if (transferred <= 0) {
+            return;
+        }
+        questManager.handleCollect(player, type, transferred);
+        communityGoalManager.contribute(player, "COLLECT_ITEMS", type.name(), transferred);
     }
 
     @EventHandler
