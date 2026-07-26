@@ -1,15 +1,18 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.items.BlueprintItemFactory;
+import hu.taliann.icesmp.items.DevItemFactory;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
+import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.RelicManager;
-import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -71,7 +74,7 @@ public final class ItemGiveCommand implements BasicCommand {
 
     @Override
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
-        final var sender = commandSourceStack.getSender();
+        final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
             sender.sendMessage(messageManager.get("no-permission", "&cNincs jogosultságod ehhez."));
             return;
@@ -109,7 +112,7 @@ public final class ItemGiveCommand implements BasicCommand {
             return;
         }
 
-        final int give = amount;
+        final int give = "dev".equals(type) ? 1 : amount;
         switch (type) {
             case "unique" -> {
                 if (!uniqueMaterials.isDefined(id)) {
@@ -161,7 +164,7 @@ public final class ItemGiveCommand implements BasicCommand {
                     for (int i = 0; i < give; i++) {
                         final ItemStack stack = recipeBookListener.buildResult(target, recipe);
                         if (stack == null) {
-                            sender.sendMessage(messageManager.get("admin.iceitem.build-failed",
+                            sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.build-failed",
                                     "&cA recept eredménye nem építhető fel: &f%s", id));
                             return;
                         }
@@ -180,14 +183,18 @@ public final class ItemGiveCommand implements BasicCommand {
                     if (relicManager.giveRelic(target, id, give, true)) {
                         confirm(sender, target, id, give);
                     } else {
-                        sender.sendMessage(messageManager.get("admin.iceitem.relic-failed",
+                        sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.relic-failed",
                                 "&cA relikvia nem adható ki: &f%s", id));
                     }
                 }, null);
             }
             case "dev" -> {
-                if (!hu.taliann.icesmp.items.DevItemFactory.BINGULUS_ID.equals(id)
-                        || !devItemManager.isOwner(target)) {
+                if (!DevItemFactory.BINGULUS_ID.equals(id)) {
+                    sender.sendMessage(messageManager.get("admin.iceitem.unknown-id",
+                            "&cIsmeretlen azonosító: &f%s &7(tab-complete segít)", id));
+                    return;
+                }
+                if (!devItemManager.isOwner(target)) {
                     sender.sendMessage(messageManager.get("dev-item.wrong-owner",
                             "&cA Csodálatos Bingulus kizárólag a beállított tulajdonosnak adható."));
                     return;
@@ -196,7 +203,7 @@ public final class ItemGiveCommand implements BasicCommand {
                     if (devItemManager.giveToOwner(target)) {
                         confirm(sender, target, "Csodálatos Bingulus", 1);
                     } else {
-                        sender.sendMessage(messageManager.get("dev-item.give-failed",
+                        sendFromTargetThread(sender, target, messageManager.get("dev-item.give-failed",
                                 "&cA Csodálatos Bingulus nem adható át: a tulajdonos inventoryja tele van."));
                     }
                 }, null);
@@ -229,10 +236,22 @@ public final class ItemGiveCommand implements BasicCommand {
                 .forEach(left -> target.getWorld().dropItemNaturally(target.getLocation(), left));
     }
 
-    private void confirm(final org.bukkit.command.CommandSender sender, final Player target,
+    private void confirm(final CommandSender sender, final Player target,
                          final String name, final int amount) {
-        sender.sendMessage(messageManager.get("admin.iceitem.given",
+        sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.given",
                 "&a✔ Kiadva: &e%s &7×%s &a→ &f%s", name, String.valueOf(amount), target.getName()));
+    }
+
+    /**
+     * This method is called from the target player's entity thread. A different player sender must
+     * receive the message on their own entity scheduler; console senders are safe to notify directly.
+     */
+    private void sendFromTargetThread(final CommandSender sender, final Player target, final Component message) {
+        if (sender instanceof Player player && !player.getUniqueId().equals(target.getUniqueId())) {
+            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+            return;
+        }
+        sender.sendMessage(message);
     }
 
     @Override
@@ -252,12 +271,14 @@ public final class ItemGiveCommand implements BasicCommand {
                 case "recept", "tervrajz" -> filter(catalog.allIds(), args[1]);
                 case "relikvia" -> filter(relicManager.getDefinitions().stream()
                         .map(definition -> definition.id().toLowerCase(Locale.ROOT)).toList(), args[1]);
-                case "dev" -> filter(List.of(hu.taliann.icesmp.items.DevItemFactory.BINGULUS_ID), args[1]);
+                case "dev" -> filter(List.of(DevItemFactory.BINGULUS_ID), args[1]);
                 default -> List.of();
             };
         }
         if (args.length == 3) {
-            return filter(List.of("1", "8", "16", "64"), args[2]);
+            return "dev".equalsIgnoreCase(args[0])
+                    ? filter(List.of("1"), args[2])
+                    : filter(List.of("1", "8", "16", "64"), args[2]);
         }
         if (args.length == 4) {
             return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[3]);
