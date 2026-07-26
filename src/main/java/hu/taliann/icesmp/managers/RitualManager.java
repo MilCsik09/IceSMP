@@ -196,7 +196,12 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         }
 
         AdvancementService.award(player, "first_ritual");
-        consume(player, sacrifices);
+        if (!consume(player, sacrifices)) {
+            // A hasAll UGYANEZT a predikátumot használta ugyanezen a szálon, ezért ide nem
+            // szabad eljutni: ha mégis, a rituálé áldozat nélkül futott le.
+            plugin.getLogger().severe("Rituálé-áldozat nem fogyott el: " + ritualId
+                    + " (" + player.getName() + ")");
+        }
         if (cooldownSeconds > 0L) {
             cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())
                     .put(ritualId, System.currentTimeMillis() + cooldownSeconds * 1000L);
@@ -473,7 +478,11 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
 
     private boolean hasAll(final Player player, final Map<Material, Integer> sacrifices) {
         for (final Map.Entry<Material, Integer> entry : sacrifices.entrySet()) {
-            if (!player.getInventory().contains(entry.getKey(), entry.getValue())) {
+            // Ugyanaz a predikátum, mint a fogyasztásban: az Inventory#contains típus szerint
+            // számolt, a removeItem viszont meta-egyezést kért — a nevesített/bélyegzett tárgy
+            // így fedezte az áldozatot, de nem fogyott el, és a rituálé INGYEN lefutott.
+            if (hu.taliann.icesmp.utils.PlainIngredients.count(
+                    player, entry.getKey(), uniqueMaterialFactory) < entry.getValue()) {
                 return false;
             }
         }
@@ -483,9 +492,20 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         return true;
     }
 
-    private void consume(final Player player, final Map<Material, Integer> sacrifices) {
+    /**
+     * Az áldozatok atomikus fogyasztása.
+     *
+     * @return true, ha MINDEN áldozat elfogyott; false esetén a hatás már lefutott, ezért a
+     *         hívónak legalább naplóznia kell — enélkül a rituálé költség nélkül ismételhető
+     */
+    private boolean consume(final Player player, final Map<Material, Integer> sacrifices) {
+        boolean allConsumed = true;
         for (final Map.Entry<Material, Integer> entry : sacrifices.entrySet()) {
-            player.getInventory().removeItem(new ItemStack(entry.getKey(), entry.getValue()));
+            if (!hu.taliann.icesmp.utils.PlainIngredients.consume(
+                    player, entry.getKey(), entry.getValue(), uniqueMaterialFactory)) {
+                allConsumed = false;
+            }
         }
+        return allConsumed;
     }
 }

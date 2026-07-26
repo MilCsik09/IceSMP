@@ -1210,6 +1210,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Rituálé-áldozat NEM kerülhető meg (ÚJ — kiadásblokkoló volt):** az áldozat-ellenőrzés és
+      a fogyasztás MOST ugyanazt a predikátumot használja (`PlainIngredients`) — korábban az
+      ellenőrzés típus szerint számolt, a levonás viszont meta-egyezést kért, ezért egy
+      **átnevezett** (üllőn elnevezett) áldozat fedezte a követelményt, de nem fogyott el:
+      a relikvia-idézés, tisztítás, paktum, buff és hazateleport INGYEN, korlátlanul ismételhető volt.
+      **Teszt minden rituálé-típusra** (`relic`, `cleanse`, `buff`, `home`, `uncurse`, `pakt`):
+      1. nevezd át üllőn a konfigurált áldozatot → a rituálé **NE induljon el**
+         („Hiányoznak az áldozati tárgyak");
+      2. sima, névtelen áldozattal induljon el, és az áldozat **fogyjon is el**;
+      3. **kopott/sérült** áldozat (ha szerszám) számítson ÉS fogyjon;
+      4. unique-material NE fedezze a sima anyag-követelményt;
+      5. a konzolban NE legyen „Rituálé-áldozat nem fogyott el" SEVERE sor — az invariáns-sértést jelez.
+      Ugyanez a szerződés védi a szakma-craftot; gépi őr: a `check_consistency.py` FAIL-el minden
+      `removeItem(new ItemStack(...))` visszaesésre.
 - [ ] **Viselt relikvia NEM tűnhet el relognál (ÚJ — kiadásblokkoló volt):** a belépési
       relikvia-sweep MOST egyetlen bejárás. A `PlayerInventory#getContents()` a teljes slotteret
       adja (0-35 tár, 36-39 páncél, 40 offhand), ezért a korábbi külön páncél-/offhand-kör

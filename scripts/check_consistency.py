@@ -203,6 +203,21 @@ except Exception as e:
     warn(f"recept-szint ellenőrzés kihagyva: {e}")
 
 # ---------- eredmény ----------
+# ===== check-consume elteres: meta-erzekeny levonas tipus-alapu ellenorzes mellett =====
+# A removeItem(new ItemStack(material, amount)) isSimilar-t (tipus + META) egyeztet, mig a
+# keszlet-ellenorzesek tipus szerint szamoltak. Emiatt a nevesitett/belyegzett/serult targy
+# FEDEZTE a hozzavalot, de a levonas nem talalta meg — a hozzavalo ingyen maradt (szakma-craft
+# ES ritualé-aldozat). A kozos szerzodes: hu.taliann.icesmp.utils.PlainIngredients.
+try:
+    for _jp in pathlib.Path(REPO, "src/main/java").rglob("*.java"):
+        _src = _jp.read_text(encoding="utf-8", errors="ignore")
+        if "removeItem(new ItemStack(" in _src:
+            fail(f"check-consume elteres: {_jp.name} — removeItem(new ItemStack(...)) meta-erzekeny "
+                 f"levonas; hasznald a PlainIngredients.consume(...)-t, hogy a szamolas es a "
+                 f"fogyasztas UGYANAZT a predikatumot hasznalja")
+except Exception as e:
+    warn(f"check-consume ellenorzes kihagyva: {e}")
+
 # ===== Listener-prioritas matrix: progressz NEM elozheti meg a vedelmet =====
 # A Bukkit sorrend LOWEST -> LOW -> NORMAL -> HIGH -> HIGHEST -> MONITOR. A vedelmi listenerek
 # HIGH/HIGHEST prioritason cancel-elnek, ezert egy NORMAL prioritasu progressz-handler MAR

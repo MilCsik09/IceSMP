@@ -159,7 +159,14 @@ public final class ProfessionRecipeBookListener implements Listener {
             return;
         }
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            consumePlain(player, entry.getKey(), entry.getValue());
+            if (!hu.taliann.icesmp.utils.PlainIngredients.consume(
+                    player, entry.getKey(), entry.getValue(), uniqueMaterials)) {
+                // A hasIngredients UGYANEZT a predikátumot használta ugyanezen a szálon,
+                // ezért ide nem szabad eljutni: ha mégis, a hozzávaló ingyen maradna.
+                plugin.getLogger().severe("Craft-hozzávaló nem fogyott el: "
+                        + recipe.id() + " / " + entry.getKey() + " x" + entry.getValue());
+                return;
+            }
         }
         consumeUnique(player, recipe);
         for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
@@ -194,7 +201,8 @@ public final class ProfessionRecipeBookListener implements Listener {
 
     private boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            if (countPlain(player, entry.getKey()) < entry.getValue()) {
+            if (hu.taliann.icesmp.utils.PlainIngredients.count(
+                    player, entry.getKey(), uniqueMaterials) < entry.getValue()) {
                 return false;
             }
         }
@@ -204,58 +212,6 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
         }
         return true;
-    }
-
-    /**
-     * Hozzávalónak elfogadható-e a tárgy. A kopás/sérülés NEM zavar (a használt szerszám is jó
-     * hozzávaló), de bármilyen IDENTITÁS-jel kizárja: unique-material, PDC-bélyeg (signature,
-     * „Készítette”), saját név vagy lore. Az ilyen tárgyak nem tűnhetnek el hozzávalóként.
-     *
-     * <p>KRITIKUS: a készlet-számolás és a fogyasztás UGYANEZT a predikátumot használja. Amíg a
-     * számolás csak típust nézett, a fogyasztás pedig {@code removeItem}-mel (azaz
-     * {@code isSimilar}-ral) dolgozott, a kettő szétcsúszott: a saját craftolt tárgyad (és minden
-     * sérült szerszám) FEDEZTE a hozzávalót, de a levonás nem találta meg — így a hozzávaló ingyen
-     * maradt. 65 recept eredménye osztozik anyagon a saját plain hozzávalójával, ezért ez
-     * receptek tucatjain volt kihasználható.
-     */
-    private boolean isPlainIngredient(final ItemStack item, final Material material) {
-        if (item == null || item.getType() != material || uniqueMaterials.idOf(item) != null) {
-            return false;
-        }
-        if (!item.hasItemMeta()) {
-            return true;
-        }
-        final org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
-        return !meta.hasDisplayName() && !meta.hasLore() && meta.getPersistentDataContainer().isEmpty();
-    }
-
-    /** Counts plain items of a material, EXCLUDING anything that carries identity. */
-    private int countPlain(final Player player, final Material material) {
-        int count = 0;
-        for (final ItemStack item : player.getInventory().getContents()) {
-            if (isPlainIngredient(item, material)) {
-                count += item.getAmount();
-            }
-        }
-        return count;
-    }
-
-    /** Levonás pontosan azokból a tárgyakból, amiket a {@link #countPlain} beszámított. */
-    private void consumePlain(final Player player, final Material material, final int amount) {
-        int remaining = amount;
-        final ItemStack[] contents = player.getInventory().getContents();
-        for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
-            final ItemStack item = contents[slot];
-            if (!isPlainIngredient(item, material)) {
-                continue;
-            }
-            final int take = Math.min(remaining, item.getAmount());
-            item.setAmount(item.getAmount() - take);
-            if (item.getAmount() <= 0) {
-                player.getInventory().setItem(slot, null);
-            }
-            remaining -= take;
-        }
     }
 
     private int countUnique(final Player player, final String uniqueId) {
