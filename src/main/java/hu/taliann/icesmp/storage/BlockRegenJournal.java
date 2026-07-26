@@ -2,13 +2,16 @@ package hu.taliann.icesmp.storage;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -23,28 +26,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
- * A blokk-visszaépítés írás-előre naplója (write-ahead log + checkpoint).
+ * Strict write-ahead journal for block regeneration.
  *
- * <p>A visszaépítendő blokk pillanatképe egy rombolás ELŐTT nem létező adat: a konténer
- * tartalma a kiürítés után CSAK a rekordban él. Ezért a rekord előbb tartósan lemezre kerül,
- * és csak utána szabad a világban bármit elpusztítani. A napló két fájlból áll:
- * <ul>
- *   <li>{@code block-regen.yml} — checkpoint: az élő rekordok teljes halmaza, a
- *       {@link YamlStore#saveAtomic} atomi írásával (operátor számára olvasható);</li>
- *   <li>{@code block-regen.wal} — hozzáfűzéses napló: a checkpoint óta történt változások
- *       ({@code P} = új rekord, {@code A} = visszaépítés indul, {@code D} = véglegesítve).</li>
- * </ul>
- *
- * <p>Állapotgép: PENDING (P) → APPLYING (A) → APPLIED (D). A replay CSAK a D-vel véglegesített
- * rekordot dobja el; a PENDING és az APPLYING egyaránt újra sorba kerül, mert a visszaépítés
- * idempotens (ugyanaz a blokk-adat és ugyanaz az NBT-pillanatkép kerül vissza), így a
- * félbehagyott restore újraindítás után biztonságosan újrafut.
+ * <p>Tile-entity snapshots are fsynced before the live container is cleared. Malformed
+ * checkpoint/WAL data is authoritative-state corruption: it is quarantined and plugin enable
+ * aborts instead of silently dropping the only copy of a container snapshot.
  */
 public final class BlockRegenJournal {
 
-    /** A rekord életciklusa; véglegesnek KIZÁRÓLAG az APPLIED számít. */
     public enum State {
-
         PENDING('P'),
         APPLYING('A'),
         APPLIED('D');
@@ -56,7 +46,7 @@ public final class BlockRegenJournal {
         }
 
         static State of(final String value) {
-            if (value.length() != 1) {
+            if (value == null || value.length() != 1) {
                 return null;
             }
             for (final State state : values()) {
@@ -68,12 +58,10 @@ public final class BlockRegenJournal {
         }
     }
 
-    /** Egy visszaépítendő blokk: pozíció + blokk-adat + opcionális NBT-pillanatkép. */
     public record Record(long id, String world, int x, int y, int z,
                          String blockData, String extra, long restoreAt) {
     }
 
-    /** Mezőválasztó: sem a világnév, sem a blokk-adat, sem a Base64-NBT nem tartalmazhat tabot. */
     private static final char SEP = '\t';
     private static final String NO_EXTRA = "-";
     private static final int PENDING_FIELDS = 9;
@@ -82,15 +70,11 @@ public final class BlockRegenJournal {
     private final File walFile;
     private final File rotatedFile;
     private final Logger logger;
-    /** A napló-írások és a checkpoint-rotáció sorosítása (régió-szálakról is hívjuk). */
     private final Object writeLock = new Object();
-    /**
-     * A checkpointok sorosítása. Külön zár, hogy a (lassú) YAML-írás alatt a régió-szálak
-     * hozzáfűzése ne álljon meg; a zár-sorrend mindig checkpointLock → writeLock.
-     */
     private final Object checkpointLock = new Object();
     private final AtomicLong idSequence = new AtomicLong();
     private FileChannel wal;
+    private volatile boolean healthy = true;
     private boolean writeFailureLogged;
 
     public BlockRegenJournal(final File dataFolder, final Logger logger) {
@@ -100,18 +84,20 @@ public final class BlockRegenJournal {
         this.logger = logger;
     }
 
-    /** Egyedi rekord-azonosító; a betöltés a lemezen látott legnagyobb id-re állítja a számlálót. */
     public long nextId() {
         return idSequence.incrementAndGet();
     }
 
-    /**
-     * A teljes élő rekordhalmaz: checkpoint, majd a rotált és az aktív napló replay-e.
-     * A sorrend kötött — a friss napló felülírja a checkpointot, a D-jelölések pedig
-     * mindkét naplóból érvényesek a checkpointban szereplő rekordokra is.
-     */
+    public boolean isHealthy() {
+        return healthy && !YamlStore.isLoadFailed(checkpointFile)
+                && !YamlStore.isLoadFailed(walFile) && !YamlStore.isLoadFailed(rotatedFile);
+    }
+
     public List<Record> loadAll() {
         synchronized (writeLock) {
+            closeChannel();
+            healthy = true;
+            writeFailureLogged = false;
             final Map<Long, Record> live = new LinkedHashMap<>();
             final Set<Long> applied = new HashSet<>();
             readCheckpoint(live);
@@ -132,68 +118,55 @@ public final class BlockRegenJournal {
         }
     }
 
-    /**
-     * Új rekord tartós rögzítése. A {@code durable} rekordnál (NBT-pillanatkép) a hívás
-     * csak fsync UTÁN tér vissza: a hívó ezután pusztíthatja a blokkot. False esetén a
-     * hívó NEM üríthet és NEM rombolhat — a napló nélkül a tartalom nyomtalanul elveszne.
-     */
     public boolean appendPending(final Record record, final boolean durable) {
-        if (hasSeparator(record.world()) || hasSeparator(record.blockData())
-                || (record.extra() != null && hasSeparator(record.extra()))) {
-            logger.severe("block-regen napló: a rekord mezője tabot/újsort tartalmaz, "
-                    + "a blokk nem kerül a visszaépítő sorba (" + record.world() + ')');
+        if (!validRecord(record)) {
+            logger.severe("block-regen napló: érvénytelen rekord, a blokk nem kerül a sorba ("
+                    + (record == null ? "null" : record.world()) + ')');
             return false;
         }
-        final StringBuilder line = new StringBuilder(96);
-        line.append(State.PENDING.marker).append(SEP).append(record.id())
-                .append(SEP).append(record.world())
-                .append(SEP).append(record.x())
-                .append(SEP).append(record.y())
-                .append(SEP).append(record.z())
-                .append(SEP).append(record.restoreAt())
-                .append(SEP).append(record.blockData())
-                .append(SEP).append(record.extra() == null ? NO_EXTRA : record.extra())
-                .append('\n');
-        return append(line.toString(), durable);
-    }
-
-    /** A visszaépítés megkezdésének jelölése; elvesztése csak idempotens újrafutást okoz. */
-    public void markApplying(final long id) {
-        append(State.APPLYING.marker + String.valueOf(SEP) + id + '\n', false);
+        final String line = State.PENDING.marker + String.valueOf(SEP) + record.id()
+                + SEP + record.world()
+                + SEP + record.x()
+                + SEP + record.y()
+                + SEP + record.z()
+                + SEP + record.restoreAt()
+                + SEP + record.blockData()
+                + SEP + (record.extra() == null ? NO_EXTRA : record.extra())
+                + '\n';
+        return append(line, durable);
     }
 
     /**
-     * Véglegesítés: a rekordot a hívó CSAK akkor törölheti a sorból, ha ez true-t adott.
-     * Az fsync-et a tartalom-hordozó (NBT-s) rekordhoz kötjük — sima blokknál egy elveszett
-     * jelölés legfeljebb ugyanannak a blokk-adatnak az ismételt visszaírását okozza.
+     * The APPLYING marker is durable for tile entities. World mutation must not start when this
+     * write fails; otherwise the only snapshot and the live world could diverge without evidence.
      */
+    public boolean markApplying(final Record record) {
+        return record != null && append(State.APPLYING.marker + String.valueOf(SEP)
+                + record.id() + '\n', record.extra() != null);
+    }
+
     public boolean markApplied(final Record record) {
-        return append(State.APPLIED.marker + String.valueOf(SEP) + record.id() + '\n',
-                record.extra() != null);
+        return record != null && append(State.APPLIED.marker + String.valueOf(SEP)
+                + record.id() + '\n', record.extra() != null);
     }
 
-    /**
-     * Checkpoint: az élő rekordok teljes halmaza egy atomi YAML-írásban, utána a napló
-     * rotációja. A rotált naplót CSAK a sikeres checkpoint-írás után dobjuk el, különben
-     * a benne lévő rekordok egyetlen példánya tűnne el.
-     *
-     * @param live az ÉLŐ (nem lemásolt) rekordgyűjtemény — a pillanatkép a zárolás alatt készül
-     */
-    public void checkpoint(final Collection<Record> live) throws IOException {
-        if (YamlStore.isLoadFailed(checkpointFile)) {
-            // A YamlStore megtagadja a sérült checkpoint felülírását. Ilyenkor a naplót sem
-            // rotáljuk: a rekordok egyetlen tartós példánya a WAL-ban van, az nem dobható el.
-            return;
+    public void checkpoint(final Collection<Record> liveRecords) throws IOException {
+        if (!isHealthy()) {
+            throw new IOException("A block-regen journal hibás állapotban van.");
         }
         synchronized (checkpointLock) {
             final Map<Long, Record> merged = new LinkedHashMap<>();
             final Set<Long> applied = new HashSet<>();
             synchronized (writeLock) {
-                // A pillanatkép a napló-zárolás ALATT készül, és a rotált naplót is
-                // beolvasztja: így sem a párhuzamosan hozzáfűzött, sem a sorba még be nem
-                // tett rekord nem eshet ki a checkpointból.
-                for (final Record record : live) {
-                    merged.put(record.id(), record);
+                for (final Record record : liveRecords) {
+                    if (!validRecord(record)) {
+                        throw new IOException("Érvénytelen élő block-regen rekord: "
+                                + (record == null ? "null" : record.id()));
+                    }
+                    final Record previous = merged.put(record.id(), record);
+                    if (previous != null && !previous.equals(record)) {
+                        throw new IOException("Ütköző block-regen rekordazonosító: " + record.id());
+                    }
                 }
                 rotate();
                 replay(rotatedFile, merged, applied);
@@ -201,6 +174,7 @@ public final class BlockRegenJournal {
             for (final Long id : applied) {
                 merged.remove(id);
             }
+
             final YamlConfiguration yaml = new YamlConfiguration();
             final List<Map<String, Object>> rows = new ArrayList<>();
             for (final Record record : merged.values()) {
@@ -219,7 +193,9 @@ public final class BlockRegenJournal {
             }
             yaml.set("pending", rows);
             YamlStore.saveAtomic(checkpointFile, yaml);
-            Files.deleteIfExists(rotatedFile.toPath());
+            if (Files.deleteIfExists(rotatedFile.toPath())) {
+                forceDirectory(rotatedFile.getParentFile());
+            }
         }
     }
 
@@ -229,20 +205,37 @@ public final class BlockRegenJournal {
         }
         final YamlConfiguration yaml = YamlStore.loadTracked(checkpointFile, logger);
         long legacyId = 0L;
+        int rowIndex = 0;
         for (final Map<?, ?> raw : yaml.getMapList("pending")) {
+            rowIndex++;
             try {
-                // A napló előtti fájlokban nincs id: negatív azonosítót adunk, így sosem
-                // ütközik a friss (pozitív) sorszámokkal.
+                final Object worldRaw = raw.get("world");
+                final Object xRaw = raw.get("x");
+                final Object yRaw = raw.get("y");
+                final Object zRaw = raw.get("z");
+                final Object dataRaw = raw.get("data");
+                final Object atRaw = raw.get("at");
+                if (!(xRaw instanceof Number x) || !(yRaw instanceof Number y)
+                        || !(zRaw instanceof Number z) || !(atRaw instanceof Number at)
+                        || worldRaw == null || dataRaw == null) {
+                    throw new IllegalArgumentException("hiányzó/hibás mező");
+                }
                 final long id = raw.get("id") instanceof Number number ? number.longValue() : --legacyId;
-                out.put(id, new Record(id, String.valueOf(raw.get("world")),
-                        ((Number) raw.get("x")).intValue(),
-                        ((Number) raw.get("y")).intValue(),
-                        ((Number) raw.get("z")).intValue(),
-                        String.valueOf(raw.get("data")),
+                final Record record = new Record(id, String.valueOf(worldRaw),
+                        x.intValue(), y.intValue(), z.intValue(), String.valueOf(dataRaw),
                         raw.get("extra") == null ? null : String.valueOf(raw.get("extra")),
-                        ((Number) raw.get("at")).longValue()));
-            } catch (final RuntimeException ignored) {
-                // Sérült sor — a többi rekord attól még betölt.
+                        at.longValue());
+                if (!validRecord(record)) {
+                    throw new IllegalArgumentException("érvénytelen rekord");
+                }
+                final Record previous = out.put(id, record);
+                if (previous != null && !previous.equals(record)) {
+                    throw new IllegalArgumentException("duplikált/ütköző id");
+                }
+            } catch (final RuntimeException invalid) {
+                YamlStore.failCorrupt(checkpointFile, logger,
+                        "Érvénytelen block-regen checkpoint sor #" + rowIndex + ": "
+                                + invalid.getMessage());
             }
         }
     }
@@ -251,54 +244,101 @@ public final class BlockRegenJournal {
         if (!file.exists()) {
             return;
         }
-        int broken = 0;
-        try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isEmpty()) {
+        final byte[] bytes;
+        try {
+            bytes = Files.readAllBytes(file.toPath());
+        } catch (final IOException failure) {
+            YamlStore.failCorrupt(file, logger,
+                    "block-regen napló olvasási hiba: " + failure.getMessage());
+            return;
+        }
+        if (bytes.length == 0) {
+            return;
+        }
+
+        final String text;
+        try {
+            final CharBuffer decoded = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes));
+            text = decoded.toString();
+        } catch (final CharacterCodingException invalidUtf8) {
+            YamlStore.failCorrupt(file, logger, "A WAL nem érvényes UTF-8.");
+            return;
+        }
+
+        final boolean terminated = bytes[bytes.length - 1] == (byte) '\n';
+        final String[] lines = text.split("\n", -1);
+        for (int index = 0; index < lines.length; index++) {
+            String line = lines[index];
+            if (line.endsWith("\r")) {
+                line = line.substring(0, line.length() - 1);
+            }
+            if (line.isEmpty()) {
+                continue;
+            }
+            final boolean finalTornLine = index == lines.length - 1 && !terminated;
+            try {
+                replayLine(line, live, applied);
+            } catch (final RuntimeException malformed) {
+                if (finalTornLine) {
+                    logger.warning("block-regen napló: félbeszakadt utolsó sor figyelmen kívül "
+                            + "hagyva (" + file.getName() + ").");
                     continue;
                 }
-                final String[] parts = line.split("\t", -1);
-                final State state = State.of(parts[0]);
-                if (state == null) {
-                    broken++;
-                    continue;
+                YamlStore.failCorrupt(file, logger,
+                        "Érvénytelen WAL sor #" + (index + 1) + ": " + malformed.getMessage());
+            }
+        }
+    }
+
+    private void replayLine(final String line, final Map<Long, Record> live,
+                            final Set<Long> applied) {
+        final String[] parts = line.split("\t", -1);
+        final State state = parts.length == 0 ? null : State.of(parts[0]);
+        if (state == null) {
+            throw new IllegalArgumentException("ismeretlen állapotjel");
+        }
+        switch (state) {
+            case PENDING -> {
+                if (parts.length != PENDING_FIELDS) {
+                    throw new IllegalArgumentException("hibás PENDING mezőszám");
                 }
-                try {
-                    switch (state) {
-                        case PENDING -> {
-                            if (parts.length < PENDING_FIELDS) {
-                                broken++;
-                            } else {
-                                final long id = Long.parseLong(parts[1]);
-                                live.put(id, new Record(id, parts[2],
-                                        Integer.parseInt(parts[3]), Integer.parseInt(parts[4]),
-                                        Integer.parseInt(parts[5]), parts[7],
-                                        NO_EXTRA.equals(parts[8]) ? null : parts[8],
-                                        Long.parseLong(parts[6])));
-                            }
-                        }
-                        case APPLYING -> {
-                            // Félbehagyott visszaépítés: a rekord marad, a replay újrafuttatja.
-                        }
-                        case APPLIED -> applied.add(Long.parseLong(parts[1]));
-                    }
-                } catch (final RuntimeException malformed) {
-                    broken++;
+                final long id = Long.parseLong(parts[1]);
+                final Record record = new Record(id, parts[2],
+                        Integer.parseInt(parts[3]), Integer.parseInt(parts[4]),
+                        Integer.parseInt(parts[5]), parts[7],
+                        NO_EXTRA.equals(parts[8]) ? null : parts[8],
+                        Long.parseLong(parts[6]));
+                if (!validRecord(record)) {
+                    throw new IllegalArgumentException("érvénytelen PENDING rekord");
+                }
+                final Record previous = live.put(id, record);
+                if (previous != null && !previous.equals(record)) {
+                    throw new IllegalArgumentException("ütköző PENDING id: " + id);
                 }
             }
-        } catch (final IOException failure) {
-            logger.severe("block-regen napló olvasási hiba (" + file.getName() + "): " + failure);
-        }
-        if (broken > 0) {
-            // Összeomlás közben félbe maradt utolsó sor a normális eset; többnél már gyanús.
-            logger.warning("block-regen napló: " + broken + " értelmezhetetlen sor ("
-                    + file.getName() + ") — kihagyva.");
+            case APPLYING -> {
+                if (parts.length != 2) {
+                    throw new IllegalArgumentException("hibás APPLYING mezőszám");
+                }
+                Long.parseLong(parts[1]);
+            }
+            case APPLIED -> {
+                if (parts.length != 2) {
+                    throw new IllegalArgumentException("hibás APPLIED mezőszám");
+                }
+                applied.add(Long.parseLong(parts[1]));
+            }
         }
     }
 
     private boolean append(final String line, final boolean durable) {
         synchronized (writeLock) {
+            if (!healthy) {
+                return false;
+            }
             try {
                 final FileChannel channel = channel();
                 final ByteBuffer buffer = ByteBuffer.wrap(line.getBytes(StandardCharsets.UTF_8));
@@ -311,10 +351,11 @@ public final class BlockRegenJournal {
                 writeFailureLogged = false;
                 return true;
             } catch (final IOException failure) {
+                healthy = false;
                 if (!writeFailureLogged) {
                     writeFailureLogged = true;
-                    logger.severe("block-regen napló írási hiba — a blokk-visszaépítés "
-                            + "pillanatképei nem rögzíthetők: " + failure);
+                    logger.severe("block-regen napló írási hiba — a visszaépítés leáll, "
+                            + "amíg a szerver kontrolláltan újra nem indul: " + failure);
                 }
                 closeChannel();
                 return false;
@@ -324,12 +365,16 @@ public final class BlockRegenJournal {
 
     private FileChannel channel() throws IOException {
         if (wal == null || !wal.isOpen()) {
-            final File parent = walFile.getParentFile();
+            final File parent = walFile.getAbsoluteFile().getParentFile();
             if (parent != null) {
-                parent.mkdirs();
+                Files.createDirectories(parent.toPath());
             }
+            final boolean existed = walFile.exists();
             wal = FileChannel.open(walFile.toPath(), StandardOpenOption.CREATE,
                     StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+            if (!existed) {
+                forceDirectory(parent);
+            }
         }
         return wal;
     }
@@ -339,17 +384,29 @@ public final class BlockRegenJournal {
         if (!walFile.exists()) {
             return;
         }
+        final File parent = walFile.getAbsoluteFile().getParentFile();
         if (rotatedFile.exists()) {
-            // Egy korábbi checkpoint megszakadt, a rotált napló még él: NEM írjuk felül,
-            // hanem a végére fűzünk, különben a benne lévő rekordok elvesznének.
-            try (OutputStream out = Files.newOutputStream(rotatedFile.toPath(),
-                    StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-                Files.copy(walFile.toPath(), out);
+            try (FileChannel out = FileChannel.open(rotatedFile.toPath(),
+                    StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+                 FileChannel in = FileChannel.open(walFile.toPath(), StandardOpenOption.READ)) {
+                long position = 0L;
+                while (position < in.size()) {
+                    position += in.transferTo(position, in.size() - position, out);
+                }
+                out.force(true);
             }
             Files.delete(walFile.toPath());
+            forceDirectory(parent);
             return;
         }
-        Files.move(walFile.toPath(), rotatedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        try {
+            Files.move(walFile.toPath(), rotatedFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (final AtomicMoveNotSupportedException unsupported) {
+            Files.move(walFile.toPath(), rotatedFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+        }
+        forceDirectory(parent);
     }
 
     private void closeChannel() {
@@ -359,9 +416,27 @@ public final class BlockRegenJournal {
         try {
             wal.close();
         } catch (final IOException ignored) {
-            // A csatorna a következő íráskor újranyílik.
+            // The next controlled restart/reload reopens it.
         }
         wal = null;
+    }
+
+    private static void forceDirectory(final File directory) throws IOException {
+        if (directory == null) {
+            return;
+        }
+        try (FileChannel channel = FileChannel.open(directory.toPath(), StandardOpenOption.READ)) {
+            channel.force(true);
+        } catch (final AccessDeniedException | UnsupportedOperationException unsupported) {
+            // Windows and some providers do not expose fsync-capable directory channels.
+        }
+    }
+
+    private static boolean validRecord(final Record record) {
+        return record != null && record.id() != 0L && record.restoreAt() > 0L
+                && !hasSeparator(record.world()) && !record.world().isBlank()
+                && !hasSeparator(record.blockData()) && !record.blockData().isBlank()
+                && (record.extra() == null || !hasSeparator(record.extra()));
     }
 
     private static boolean hasSeparator(final String value) {
