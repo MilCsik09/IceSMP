@@ -415,6 +415,76 @@ try:
 except Exception as e:
     warn(f"szam-drift ellenorzes kihagyva: {e}")
 
+# ===== Spell-feloldas provenancia: minden grant nevezze meg a forrasat =====
+# Forras nelkul a spec-reset nem tudta visszavenni a sajat spelljeit (a specek hatarlan
+# halmozhatoak lettek), a talent-visszavonas pedig elvitte a kaszt-szintbol IS jaro spellt.
+# A ket-argumentumu unlockSpell csak legacy fallback (SOURCE_LEGACY) — uj hivo ne hasznalja.
+try:
+    def _top_level_args(text, open_index):
+        """Argumentumok a nyito zarojeltol a hozza tartozo CSUKOTIG (beagyazott hivasokkal)."""
+        depth, buf, args = 0, "", []
+        for index in range(open_index, len(text)):
+            char = text[index]
+            if char in "([":
+                depth += 1
+                if depth == 1:
+                    continue
+            elif char in ")]":
+                depth -= 1
+                if depth == 0:
+                    args.append(buf)
+                    return args
+            if char == "," and depth == 1:
+                args.append(buf)
+                buf = ""
+            else:
+                buf += char
+        return args
+
+    for _jp in pathlib.Path(JAVA).rglob("*.java"):
+        if _jp.name == "JobManager.java":
+            continue  # a delegalo ket-argumentumu overload itt EL
+        _src = _jp.read_text(encoding="utf-8", errors="ignore")
+        for _match in re.finditer(r"unlockSpell\(", _src):
+            _args = _top_level_args(_src, _match.end() - 1)
+            if len([a for a in _args if a.strip()]) < 3:
+                fail(f"spell-provenancia: {_jp.name} — unlockSpell(...) forras nelkul; adj meg "
+                     f"SOURCE_BASE/SOURCE_ADMIN vagy SPEC:/TALENT:/QUEST: prefixet, kulonben a "
+                     f"reset nem tudja forrasonkent visszavonni")
+except Exception as e:
+    warn(f"spell-provenancia ellenorzes kihagyva: {e}")
+
+# ===== Frakcio-elhagyas: a hozzarendelest NEM szabad torolni =====
+# A torolt bejegyzest a kovetkezo /faction join „elso valasztasnak" latta, ezert a leave+join
+# paros megkerulte a semleges-fovaros kaput, a szezon-hajra zarat es a valtas-cooldownt.
+try:
+    for _jp in pathlib.Path(JAVA).rglob("*.java"):
+        if _jp.name in ("FactionManager.java",):
+            continue
+        _src = _jp.read_text(encoding="utf-8", errors="ignore")
+        if re.search(r"\.removeFaction\(", _src):
+            fail(f"frakcio-allapot: {_jp.name} — removeFaction(...) torli a hozzarendelest; "
+                 f"a kilepes EXPLICIT setFaction(..., FactionType.NEUTRAL) legyen")
+except Exception as e:
+    warn(f"frakcio-allapot ellenorzes kihagyva: {e}")
+
+# ===== Kez-kiuritesre kovetkezo addItem: a targy visszakerulhet UGYANABBA a slotba =====
+# Tele hataizsaknal az addItem egyetlen ures helye eppen az imenti kiuritett aktiv hotbar-slot,
+# ezert a fegyver-tilalom uzenetet kapott jatekos kezeben MARADT a fegyver.
+try:
+    for _jp in pathlib.Path(JAVA).rglob("*.java"):
+        _lines = _jp.read_text(encoding="utf-8", errors="ignore").split("\n")
+        for _i, _line in enumerate(_lines):
+            if not re.search(r"setItemIn(Main|Off)Hand\(\s*null\s*\)", _line):
+                continue
+            _window = "\n".join(_lines[_i:_i + 4])
+            if ".addItem(" in _window:
+                fail(f"slot-visszaeses: {_jp.name}:{_i + 1} — kez-kiuritest kozvetlenul addItem "
+                     f"kovet; a targy tele inventorynal ugyanoda kerulhet vissza. Hasznalj "
+                     f"kijelolt, nem aktiv storage slotot (setItem(index, ...))")
+except Exception as e:
+    warn(f"slot-visszaeses ellenorzes kihagyva: {e}")
+
 # ===== ARCHITECTURE.md csomagterkep: a fajlszamok a fajlrendszerbol jonnek =====
 # A tabla evekig kezzel kovette a kodot, ezert minden sora elmaradt (managers 62 vs 108,
 # utils 3 vs 20). Ez a guard a tabla ELSO szamat a csomag tenyleges .java-szamahoz meri.

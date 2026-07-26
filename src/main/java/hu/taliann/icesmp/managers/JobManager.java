@@ -30,10 +30,24 @@ public final class JobManager implements PlayerStateCleanup {
     private final NamespacedKey jobPrimaryKey;
     private final NamespacedKey jobPrimaryXpKey;
     private final NamespacedKey unlockedSpellsKey;
+    private final NamespacedKey spellGrantsKey;
     // A megszűnt másodlagos-kaszt rendszer PDC-kulcsai: már semmi sem olvassa őket, de a
     // resetClass letakarítja a régi játékosokról maradt bejegyzéseket.
     private final NamespacedKey legacySecondaryKey;
     private final NamespacedKey legacySecondaryXpKey;
+
+    /** Feloldás-forrás: a kaszt szintlépése. */
+    public static final String SOURCE_BASE = "BASE";
+    /** Feloldás-forrás: admin-parancs. Sosem vonja vissza automatikus reset. */
+    public static final String SOURCE_ADMIN = "ADMIN";
+    /** Specializációs forrás prefixe — a spec-reset EZT vonja vissza. */
+    public static final String SOURCE_SPEC_PREFIX = "SPEC:";
+    /** Talent-forrás prefixe — a talent-visszavonás EZT vonja vissza. */
+    public static final String SOURCE_TALENT_PREFIX = "TALENT:";
+    /** Quest-forrás prefixe. */
+    public static final String SOURCE_QUEST_PREFIX = "QUEST:";
+    /** Ismeretlen eredetű, még provenancia előtt kapott feloldás — automatikusan nem vonható vissza. */
+    public static final String SOURCE_LEGACY = "LEGACY";
 
     public JobManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final MessageManager messageManager, final FactionManager factionManager) {
@@ -43,6 +57,7 @@ public final class JobManager implements PlayerStateCleanup {
         this.jobPrimaryKey = new NamespacedKey(plugin, "job_primary");
         this.jobPrimaryXpKey = new NamespacedKey(plugin, "job_primary_xp");
         this.unlockedSpellsKey = new NamespacedKey(plugin, "unlocked_spells");
+        this.spellGrantsKey = new NamespacedKey(plugin, "spell_grants");
         this.legacySecondaryKey = new NamespacedKey(plugin, "job_secondary");
         this.legacySecondaryXpKey = new NamespacedKey(plugin, "job_secondary_xp");
     }
@@ -172,11 +187,17 @@ public final class JobManager implements PlayerStateCleanup {
         final int level = getPrimaryLevel(player);
         for (final String spellId : unlockSection.getKeys(false)) {
             final int requiredLevel = unlockSection.getInt(spellId, Integer.MAX_VALUE);
-            if (level < requiredLevel || hasUnlockedSpell(player, spellId)) {
+            if (level < requiredLevel) {
+                continue;
+            }
+            // A forrás akkor is rögzül, ha a spellt már más adta: így a talent/spec visszavonás
+            // nem viszi el a kaszt-szintből is járó képességet.
+            if (hasUnlockedSpell(player, spellId)) {
+                addGrantSource(player, spellId.toLowerCase(Locale.ROOT), SOURCE_BASE);
                 continue;
             }
 
-            if (unlockSpell(player, spellId)) {
+            if (unlockSpell(player, spellId, SOURCE_BASE)) {
                 player.sendMessage(messageManager.getMessage(
                         "job-spell-auto-unlocked",
                         "&aÚj képesség feloldva: &e{spell} &7(szint {level})",
@@ -237,12 +258,30 @@ public final class JobManager implements PlayerStateCleanup {
     }
 
     public boolean unlockSpell(final Player player, final String spellId) {
+        return unlockSpell(player, spellId, SOURCE_LEGACY);
+    }
+
+    /**
+     * Unlocks a spell and RECORDS which system granted it. Without provenance a spec/talent
+     * reset could only guess: the spec reset left its own spells behind (so specs stacked
+     * without limit), while the talent revoke stripped a spell the class level had also
+     * granted. Every automatic revoke path keys off this record.
+     *
+     * @param spellId the spell to unlock
+     * @param source  {@link #SOURCE_BASE}/{@link #SOURCE_ADMIN}, or a prefixed source
+     *                ({@code SPEC:<id>}, {@code TALENT:<id>}, {@code QUEST:<id>})
+     * @return true if the spell was newly unlocked (false = already had it; the source is
+     *         still recorded, so a second grantor keeps it alive when the first is revoked)
+     */
+    public boolean unlockSpell(final Player player, final String spellId, final String source) {
         if (spellId == null || spellId.isBlank()) {
             return false;
         }
 
-        final List<String> unlocked = new ArrayList<>(getUnlockedSpellIds(player));
         final String normalized = spellId.trim().toLowerCase();
+        addGrantSource(player, normalized, source);
+
+        final List<String> unlocked = new ArrayList<>(getUnlockedSpellIds(player));
         if (unlocked.contains(normalized)) {
             return false;
         }
@@ -250,6 +289,205 @@ public final class JobManager implements PlayerStateCleanup {
         unlocked.add(normalized);
         setUnlockedSpellIds(player, unlocked);
         return true;
+    }
+
+    /**
+     * Drops one grantor's claim on a spell and removes the spell only when no other
+     * grantor is left. A spell the class level ALSO granted survives a talent respec.
+     *
+     * @return true when the spell itself was removed from the unlocked list
+     */
+    public boolean revokeGrant(final Player player, final String spellId, final String source) {
+        if (spellId == null || spellId.isBlank()) {
+            return false;
+        }
+        final String normalized = spellId.trim().toLowerCase();
+        final Map<String, Set<String>> grants = readGrants(player);
+        final Set<String> sources = grants.get(normalized);
+        if (sources != null) {
+            sources.remove(source);
+            if (sources.isEmpty()) {
+                grants.remove(normalized);
+            }
+            writeGrants(player, grants);
+            if (sources.isEmpty() && !grants.containsKey(normalized)) {
+                return removeUnlockedSpell(player, normalized);
+            }
+            return false;
+        }
+        // Provenancia előtti feloldás: nincs mit forrásonként mérlegelni, a hívó akarata dönt.
+        return removeUnlockedSpell(player, normalized);
+    }
+
+    /**
+     * Revokes every grant whose source matches the predicate (e.g. every {@code SPEC:*}
+     * source except the specialization still held). A spell kept alive by another source
+     * stays unlocked.
+     *
+     * @return the spell ids that actually lost their last source and were removed
+     */
+    public List<String> revokeGrantsFrom(final Player player, final java.util.function.Predicate<String> sourceMatches) {
+        final Map<String, Set<String>> grants = readGrants(player);
+        final List<String> removed = new ArrayList<>();
+        boolean changed = false;
+        for (final Map.Entry<String, Set<String>> entry : new ArrayList<>(grants.entrySet())) {
+            if (!entry.getValue().removeIf(sourceMatches)) {
+                continue;
+            }
+            changed = true;
+            if (entry.getValue().isEmpty()) {
+                grants.remove(entry.getKey());
+                removed.add(entry.getKey());
+            }
+        }
+        if (changed) {
+            writeGrants(player, grants);
+        }
+        for (final String spellId : removed) {
+            removeUnlockedSpell(player, spellId);
+        }
+        return List.copyOf(removed);
+    }
+
+    /** Drops the whole provenance record (admin spell-wipe: nothing is granted any more). */
+    public void clearSpellGrants(final Player player) {
+        player.getPersistentDataContainer().remove(spellGrantsKey);
+    }
+
+    /** The recorded grant sources of a spell (empty when the grant predates provenance). */
+    public Set<String> getGrantSources(final Player player, final String spellId) {
+        if (spellId == null || spellId.isBlank()) {
+            return Set.of();
+        }
+        final Set<String> sources = readGrants(player).get(spellId.trim().toLowerCase());
+        return sources == null ? Set.of() : Set.copyOf(sources);
+    }
+
+    private boolean removeUnlockedSpell(final Player player, final String normalized) {
+        final List<String> unlocked = new ArrayList<>(getUnlockedSpellIds(player));
+        if (!unlocked.removeIf(id -> id.equalsIgnoreCase(normalized))) {
+            return false;
+        }
+        setUnlockedSpellIds(player, unlocked);
+        return true;
+    }
+
+    private void addGrantSource(final Player player, final String normalized, final String source) {
+        final String cleanSource = source == null || source.isBlank() ? SOURCE_LEGACY : source.trim();
+        final Map<String, Set<String>> grants = readGrants(player);
+        if (grants.computeIfAbsent(normalized, key -> new LinkedHashSet<>()).add(cleanSource)) {
+            writeGrants(player, grants);
+        }
+    }
+
+    /** PDC-formátum: {@code spellId=SRC1|SRC2;spellId2=SRC}. */
+    private Map<String, Set<String>> readGrants(final Player player) {
+        final Map<String, Set<String>> grants = new java.util.LinkedHashMap<>();
+        final String raw = player.getPersistentDataContainer().get(spellGrantsKey, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) {
+            return grants;
+        }
+        for (final String entry : raw.split(";")) {
+            final int split = entry.indexOf('=');
+            if (split <= 0) {
+                continue;
+            }
+            final String spellId = entry.substring(0, split).trim().toLowerCase();
+            if (spellId.isEmpty()) {
+                continue;
+            }
+            final Set<String> sources = grants.computeIfAbsent(spellId, key -> new LinkedHashSet<>());
+            for (final String source : entry.substring(split + 1).split("\\|")) {
+                if (!source.isBlank()) {
+                    sources.add(source.trim());
+                }
+            }
+        }
+        return grants;
+    }
+
+    private void writeGrants(final Player player, final Map<String, Set<String>> grants) {
+        final PersistentDataContainer pdc = player.getPersistentDataContainer();
+        if (grants.isEmpty()) {
+            pdc.remove(spellGrantsKey);
+            return;
+        }
+        final StringBuilder builder = new StringBuilder();
+        for (final Map.Entry<String, Set<String>> entry : grants.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(';');
+            }
+            builder.append(entry.getKey()).append('=').append(String.join("|", entry.getValue()));
+        }
+        if (builder.length() == 0) {
+            pdc.remove(spellGrantsKey);
+            return;
+        }
+        pdc.set(spellGrantsKey, PersistentDataType.STRING, builder.toString());
+    }
+
+    /**
+     * One-time provenance backfill for players who unlocked spells before the grant record
+     * existed: the class' own {@code spell-unlocks} become {@link #SOURCE_BASE}, a spell listed
+     * by some specialization's unlock table becomes that {@code SPEC:<id>} source (so a reset
+     * can finally take back what the spec gave), everything else stays
+     * {@link #SOURCE_LEGACY} and is never auto-revoked. Writes the player's PDC — call on the
+     * player's own region thread.
+     */
+    public void backfillSpellGrants(final Player player) {
+        final List<String> unlocked = getUnlockedSpellIds(player);
+        if (unlocked.isEmpty() || configManager.getConfiguration() == null) {
+            return;
+        }
+        final Map<String, Set<String>> grants = readGrants(player);
+        final JobType job = getPrimaryJob(player);
+        final Set<String> baseSpells = new LinkedHashSet<>();
+        if (job != null) {
+            final ConfigurationSection baseSection = configManager.getConfiguration()
+                    .getConfigurationSection("classes." + job.getId() + ".spell-unlocks");
+            if (baseSection != null) {
+                for (final String spellId : baseSection.getKeys(false)) {
+                    baseSpells.add(spellId.toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        final Map<String, String> specSpells = new java.util.LinkedHashMap<>();
+        final ConfigurationSection specs = configManager.getConfiguration()
+                .getConfigurationSection("specializations");
+        if (specs != null) {
+            for (final String specId : specs.getKeys(false)) {
+                final ConfigurationSection unlockSection = specs.getConfigurationSection(specId + ".spell-unlocks");
+                if (unlockSection == null) {
+                    continue;
+                }
+                for (final String spellId : unlockSection.getKeys(false)) {
+                    specSpells.putIfAbsent(spellId.toLowerCase(Locale.ROOT), specId);
+                }
+            }
+        }
+
+        boolean changed = false;
+        for (final String spellId : unlocked) {
+            if (grants.containsKey(spellId)) {
+                continue;
+            }
+            final String source;
+            if (baseSpells.contains(spellId)) {
+                source = SOURCE_BASE;
+            } else if (specSpells.containsKey(spellId)) {
+                source = SOURCE_SPEC_PREFIX + specSpells.get(spellId);
+            } else {
+                source = SOURCE_LEGACY;
+            }
+            grants.computeIfAbsent(spellId, key -> new LinkedHashSet<>()).add(source);
+            changed = true;
+        }
+        if (changed) {
+            writeGrants(player, grants);
+        }
     }
 
     /**
@@ -265,6 +503,7 @@ public final class JobManager implements PlayerStateCleanup {
         pdc.remove(jobPrimaryKey);
         pdc.remove(jobPrimaryXpKey);
         pdc.remove(unlockedSpellsKey);
+        pdc.remove(spellGrantsKey);
         // Legacy tisztítás: a megszűnt másodlagos-kaszt bejegyzések eltávolítása régi játékosokról.
         pdc.remove(legacySecondaryKey);
         pdc.remove(legacySecondaryXpKey);

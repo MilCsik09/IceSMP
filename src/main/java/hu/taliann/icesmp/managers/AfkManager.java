@@ -113,16 +113,36 @@ public final class AfkManager implements PlayerStateCleanup {
      * refresh their boss-bar.
      */
     public void tick() {
+        // Kikapcsolás vagy kiürült zónalista után NEM elég visszatérni: a bent lévő játékos
+        // zóna-állapota, időzítője és bossbarja bent ragadt, és az isAfk() továbbra is
+        // AFK-nak látta. A kapcsoló-átmenetnél mindenkit ki KELL zónázni.
         if (!configManager.getBoolean("afk.enabled", true)) {
+            releaseAllZones();
             return;
         }
         final List<Zone> zones = loadZones();
         if (zones.isEmpty()) {
+            releaseAllZones();
             return;
         }
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> tickPlayer(player, zones), null);
         }
+    }
+
+    /** Minden zónában lévő online játékos elengedése a SAJÁT régió-szálán (Folia). */
+    private void releaseAllZones() {
+        if (currentZone.isEmpty()) {
+            return;
+        }
+        for (final Player player : Bukkit.getOnlinePlayers()) {
+            if (!currentZone.containsKey(player.getUniqueId())) {
+                continue;
+            }
+            player.getScheduler().run(plugin, task -> onZoneLeave(player), null);
+        }
+        // Offline/eltűnt játékosok maradék bejegyzései: a bossbar velük már nem él.
+        currentZone.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
     }
 
     /** Runs entirely on the player's own region thread (scheduled by {@link #tick()}). */

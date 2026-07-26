@@ -14,6 +14,10 @@ választasz, a plugin **odateleportál az új királyságod spawnjára**, és ha
 respawn-horgonyod, halál után is a **saját királyságod spawnján** éledsz újra — így mindig
 tudod, hol a fővárosod.
 
+A `/faction leave` kilépés **Semlegesbe helyez** (nem „frakció nélküli" állapotba): a következő
+belépésre így is a semleges-főváros kapu, a szezon-hajrá zára és a váltás-cooldown vonatkozik —
+a leave+join páros nem kerülőút.
+
 A **Menedékből bárhová ingyen** válthatsz, és a **Kitaszítottak közé lépés is mindig ingyenes**
 (annak a bűnös-feltétel + az örök paktum az ára). Minden más frakcióváltás (Láng↔Fagy,
 illetve vissza a Menedékbe — a `/faction leave` kilépés is ugyanígy fizetős!) a **jelenlegi

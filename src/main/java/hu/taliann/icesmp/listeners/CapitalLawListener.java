@@ -19,6 +19,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -142,20 +143,71 @@ public final class CapitalLawListener implements Listener {
         }
     }
 
-    /** Nyílt fegyver a kézben → az őrség elrakatja (a kéz kiürül, a fegyver az inventoryba kerül). */
+    /**
+     * Nyílt fegyver bármelyik kézben → az őrség elrakatja. MINDKÉT kezet nézi (az offhand
+     * eddig szabad kerülőút volt), és a fegyvert KIJELÖLT, nem aktív tároló-slotba teszi:
+     * az {@code addItem} tele hátizsáknál az egyetlen üres helyet — az épp kiürített aktív
+     * hotbar-slotot — találta meg, tehát a tiltó üzenet után a fegyver kézben maradt.
+     * Ha nincs szabad slot, nem dobjuk el és nem hazudunk sikert: a játékos helyet csinál.
+     */
     private void enforceWeaponBan(final Player player) {
         if (!configManager.getBoolean("territory.capital-law.weapon-ban", true)) {
             return;
         }
-        final ItemStack hand = player.getInventory().getItemInMainHand();
-        if (hand.getType().isAir() || !isWeapon(hand.getType())) {
-            return;
+        final org.bukkit.inventory.PlayerInventory inventory = player.getInventory();
+        boolean stowed = false;
+        boolean noRoom = false;
+
+        for (final org.bukkit.inventory.EquipmentSlot slot
+                : List.of(org.bukkit.inventory.EquipmentSlot.HAND, org.bukkit.inventory.EquipmentSlot.OFF_HAND)) {
+            final ItemStack held = slot == org.bukkit.inventory.EquipmentSlot.HAND
+                    ? inventory.getItemInMainHand() : inventory.getItemInOffHand();
+            if (held.getType().isAir() || !isWeapon(held.getType())) {
+                continue;
+            }
+            final int target = firstFreeStorageSlot(inventory);
+            if (target < 0) {
+                noRoom = true;
+                continue;
+            }
+            if (slot == org.bukkit.inventory.EquipmentSlot.HAND) {
+                inventory.setItemInMainHand(null);
+            } else {
+                inventory.setItemInOffHand(null);
+            }
+            inventory.setItem(target, held);
+            stowed = true;
         }
-        player.getInventory().setItemInMainHand(null);
-        player.getInventory().addItem(hand).values()
-                .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
-        player.sendActionBar(messageManager.getMessage("capital-law-weapon",
-                "<red>⛨ Caldesterában tilos a nyílt fegyver — az őrség elrakatta.</red>"));
+
+        if (stowed) {
+            player.sendActionBar(messageManager.getMessage("capital-law-weapon",
+                    "<red>⛨ Caldesterában tilos a nyílt fegyver — az őrség elrakatta.</red>"));
+        }
+        if (noRoom) {
+            player.sendActionBar(messageManager.getMessage("capital-law-weapon-no-room",
+                    "<red>⛨ Caldesterában tilos a nyílt fegyver — de tele a hátizsákod. "
+                            + "Csinálj helyet, különben az őrség nem lesz ilyen türelmes.</red>"));
+        }
+    }
+
+    /**
+     * Az első üres tároló-slot az AKTÍV hotbar-slot kihagyásával (0-35; a páncél- és
+     * offhand-slotok nem tároló-helyek).
+     *
+     * @return a slot indexe, vagy -1 ha nincs szabad hely
+     */
+    private static int firstFreeStorageSlot(final org.bukkit.inventory.PlayerInventory inventory) {
+        final int active = inventory.getHeldItemSlot();
+        final ItemStack[] storage = inventory.getStorageContents();
+        for (int slot = 0; slot < storage.length; slot++) {
+            if (slot == active) {
+                continue;
+            }
+            if (storage[slot] == null || storage[slot].getType().isAir()) {
+                return slot;
+            }
+        }
+        return -1;
     }
 
     /** Fegyver-anyagok (a Sétapálca BOT — a szabály szándékosan nem látja: ez a kiskapu). */

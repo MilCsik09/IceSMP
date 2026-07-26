@@ -348,8 +348,8 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
     }
 
-    /** Az elveszett-jelölés törlése (sikeres újraidézés / új tulajdonos). */
-    private void clearLost(final String relicId) {
+    /** Az elveszett-jelölés törlése (sikeres újraidézés / új tulajdonos / visszakapott tárgy). */
+    public void clearLost(final String relicId) {
         if (relicId != null && lostSince.remove(relicId.toLowerCase(Locale.ROOT)) != null) {
             save();
         }

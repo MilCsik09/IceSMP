@@ -154,6 +154,8 @@ public final class FactionRaidSubcommand implements FactionSubcommand {
             case "faction-raid-not-party" -> "&cA frakciód nem hadviselő fél ebben a raidben.";
             case "faction-raid-already-joined" -> "&7Már jelentkeztél ebbe a raidbe.";
             case "faction-raid-side-full" -> "&cA te oldalad hadserege már megtelt.";
+            case "faction-raid-combat-locked" ->
+                    "&cA harci szakasz már megkezdődött — nevezni csak a felkészülés alatt lehet.";
             default -> "&cA raid művelet nem sikerült.";
         };
     }

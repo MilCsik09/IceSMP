@@ -101,6 +101,10 @@ feketekő szentély) **csak a Kitaszítottak (DARK) frakcióval** aktiválható.
 - A **passzív relikvia** (szárnyak, Eleftheria Könnye) **köddé válik** — nem esik le, senki sem
   veheti fel. A kötés viszont él: **csak te idézheted újra** a rituálé-oltárnál (az áldozat újra
   kell!). Ha **~3 napon belül** nem idézed újra, a relikvia **mindenkinek felszabadul** — siess.
+- Ha az admin a **megőrző (`keep`) módot** állította be, a passzív relikvia **respawnkor
+  visszakerül hozzád**. Ha még a respawn előtt kilépsz (vagy elszáll a szerver), a tárgy
+  nem tűnik el véglegesen: a kötés akkor is „elveszett" jelölést kap, tehát ugyanúgy
+  **újraidézheted az oltárnál**.
 - Aktív tulajdonosként az oltár nem ad második példányt — egy relikvia, egy gazda, egy tárgy.
 
 ➡️ Tovább: [Világesemények](10-vilagesemenyek.md) • [Vissza a tartalomhoz](README.md)

@@ -43,6 +43,10 @@ Ha mégis más irányt szeretnél, a Specializáció menü **Respec** gombjával
 (alapból 100), és a specializációhoz kötött **talentpontjaid automatikusan visszatérülnek**,
 hogy újra elköltsd őket. Utána új irányt választhatsz.
 
+> A respec **elveszi a régi specializáció spelljeit** is — a specek nem halmozhatók. Ami a
+> kaszt-szintedből vagy egy talentből jár, azt megtartod: minden feloldás megjegyzi, honnan
+> kapta a spellt, és csak a saját forrása vonhatja vissza.
+
 > A szakmáknak **is** vannak specializációi, ugyanígy működnek (lásd a [Szakmák](08-szakmak.md)
 > oldalt). Egyszerre egy kaszt-spec **és** egy szakma-spec lehet aktív.
 

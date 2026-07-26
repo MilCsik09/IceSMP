@@ -276,7 +276,7 @@ public final class TalentManager {
                 final ConfigurationSection section = definitions == null ? null : definitions.getConfigurationSection(entry.getKey());
                 final String grantsSpell = section == null ? null : section.getString("grants-spell");
                 if (grantsSpell != null && !grantsSpell.isBlank()) {
-                    revokeGrantedSpell(player, grantsSpell);
+                    revokeGrantedSpell(player, grantsSpell, entry.getKey());
                 }
                 iterator.remove();
             }
@@ -356,7 +356,8 @@ public final class TalentManager {
         if (currentRank == 0) {
             final String grantsSpell = talentSection.getString("grants-spell");
             if (grantsSpell != null && !grantsSpell.isBlank()) {
-                jobManager.unlockSpell(player, grantsSpell);
+                jobManager.unlockSpell(player, grantsSpell,
+                        JobManager.SOURCE_TALENT_PREFIX + normalizedId);
             }
         }
         // Capstone = requires-spent kapuval védett talent; ennek megvásárlása mérföldkő.
@@ -435,11 +436,21 @@ public final class TalentManager {
         return total;
     }
 
-    private void revokeGrantedSpell(final Player player, final String spellId) {
-        final java.util.List<String> unlocked = new java.util.ArrayList<>(jobManager.getUnlockedSpellIds(player));
-        if (unlocked.removeIf(id -> id.equalsIgnoreCase(spellId))) {
-            jobManager.setUnlockedSpellIds(player, unlocked);
+    /**
+     * Only THIS talent's claim on the spell is dropped: a spell the class level or a
+     * specialization also granted stays unlocked (a source-blind removal used to strip it).
+     * A grant that predates the provenance record and is attributable to no other system
+     * (backfill left it {@code LEGACY}) belongs to the lapsing talent, so it goes.
+     */
+    private void revokeGrantedSpell(final Player player, final String spellId, final String talentId) {
+        jobManager.backfillSpellGrants(player);
+        final java.util.Set<String> sources = jobManager.getGrantSources(player, spellId);
+        if (sources.isEmpty() || sources.equals(java.util.Set.of(JobManager.SOURCE_LEGACY))) {
+            jobManager.revokeGrant(player, spellId, JobManager.SOURCE_LEGACY);
+            return;
         }
+        jobManager.revokeGrant(player, spellId,
+                JobManager.SOURCE_TALENT_PREFIX + talentId.trim().toLowerCase(java.util.Locale.ROOT));
     }
 
     private void saveRanks(final Player player, final boolean classPool, final Map<String, Integer> ranks) {

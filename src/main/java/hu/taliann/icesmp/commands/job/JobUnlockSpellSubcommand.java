@@ -74,7 +74,8 @@ public final class JobUnlockSpellSubcommand implements JobSubcommand {
         // thread (the target may be in a different region than the admin). sender.sendMessage is safe
         // from there.
         target.getScheduler().run(plugin, task -> {
-            if (!jobManager.unlockSpell(target, spell.getId())) {
+            if (!jobManager.unlockSpell(target, spell.getId(),
+                    hu.taliann.icesmp.managers.JobManager.SOURCE_ADMIN)) {
                 sender.sendMessage(messageManager.get("messages.job-spell-already-unlocked", "&eEz a varázslat már fel van oldva."));
                 return;
             }

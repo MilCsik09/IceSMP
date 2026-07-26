@@ -591,7 +591,8 @@ public final class IceSMPCore {
                 professionWeeklyGoalManager,
                 eventSpawnPointManager,
                 councilManager,
-                dungeonLootService);
+                dungeonLootService,
+                raidManager);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);

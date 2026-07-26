@@ -38,6 +38,12 @@ public final class KingManager implements PersistentStore {
     private final Map<FactionType, UUID> kings = new ConcurrentHashMap<>();
     private final Map<FactionType, Map<UUID, UUID>> votes = new ConcurrentHashMap<>();
     private final Map<FactionType, Long> electionStart = new ConcurrentHashMap<>();
+    /**
+     * A koronázás pillanata — a mandátum ÉS a korona-átok EBBŐL számol, nem az
+     * {@code electionStart}-ból. Egyetlen közös időalapon a későn megválasztott király
+     * azonnal magas átokszinttel és elfogyott mandátummal indult volna.
+     */
+    private final Map<FactionType, Long> reignStart = new ConcurrentHashMap<>();
 
     public KingManager(final JavaPlugin plugin, final ConfigManager configManager,
                        final FactionManager factionManager, final MessageManager messageManager) {
@@ -53,6 +59,7 @@ public final class KingManager implements PersistentStore {
         kings.clear();
         votes.clear();
         electionStart.clear();
+        reignStart.clear();
 
         if (!storageFile.exists()) {
             return;
@@ -81,6 +88,12 @@ public final class KingManager implements PersistentStore {
                 }
 
                 electionStart.put(faction, kingsSection.getLong(factionKey + ".election-start", System.currentTimeMillis()));
+                if (kings.containsKey(faction)) {
+                    // Visszafelé kompatibilis: a reign-start nélküli régi mentésnél az
+                    // election-start az egyetlen ismert időalap.
+                    reignStart.put(faction, kingsSection.getLong(factionKey + ".reign-start",
+                            electionStart.getOrDefault(faction, System.currentTimeMillis())));
+                }
 
                 final ConfigurationSection votesSection = kingsSection.getConfigurationSection(factionKey + ".votes");
                 if (votesSection != null) {
@@ -112,6 +125,10 @@ public final class KingManager implements PersistentStore {
                     yaml.set(basePath + ".king", king.toString());
                 }
                 yaml.set(basePath + ".election-start", electionStart.getOrDefault(faction, System.currentTimeMillis()));
+                final Long reign = reignStart.get(faction);
+                if (king != null && reign != null) {
+                    yaml.set(basePath + ".reign-start", reign);
+                }
                 for (final Map.Entry<UUID, UUID> vote : votes.getOrDefault(faction, Map.of()).entrySet()) {
                     yaml.set(basePath + ".votes." + vote.getKey(), vote.getValue().toString());
                 }
@@ -195,17 +212,33 @@ public final class KingManager implements PersistentStore {
      * @param king the new king, or null to clear the throne
      */
     public void setKing(final FactionType faction, final UUID king) {
+        crown(faction, king);
+    }
+
+    /**
+     * The ONE crowning transaction, used by the vote count and the admin command alike:
+     * seat (or clear) the king, wipe the ballot, restart BOTH clocks and persist — then
+     * award. The elected path used to skip the clock restart, the ballot wipe, the save and
+     * the advancement, so a voted-in king inherited the election's elapsed time (instant
+     * crown curse + an already-spent mandate) and a crash could lose the coronation.
+     *
+     * @param king the new king, or null to empty the throne
+     */
+    private void crown(final FactionType faction, final UUID king) {
         if (faction == null) {
             return;
         }
 
+        final long now = System.currentTimeMillis();
         if (king == null) {
             kings.remove(faction);
+            reignStart.remove(faction);
         } else {
             kings.put(faction, king);
+            reignStart.put(faction, now);
         }
         votes.remove(faction);
-        electionStart.put(faction, System.currentTimeMillis());
+        electionStart.put(faction, now);
         save();
         if (king != null) {
             // Folia: a friss király más régió-szálon lehet — az award maga hopol a játékoshoz.
@@ -218,23 +251,30 @@ public final class KingManager implements PersistentStore {
 
     /**
      * A jelenlegi király trónon töltött ideje millisben (0, ha nincs király).
-     * A korona-átok szintje ebből számolódik — trónfosztáskor/újraválasztáskor az
-     * electionStart nullázódik, tehát az átok magától tisztul (nincs külön állapot).
+     * A korona-átok szintje ebből számolódik — trónfosztáskor/koronázáskor a
+     * reignStart újraindul, tehát az átok magától tisztul (nincs külön állapot).
      */
     public long millisOnThrone(final FactionType faction) {
         if (faction == null || kings.get(faction) == null) {
             return 0L;
         }
-        final Long start = electionStart.get(faction);
+        final Long start = reignStart.get(faction);
         return start == null ? 0L : Math.max(0L, System.currentTimeMillis() - start);
     }
 
+    /**
+     * A mandátum a koronázástól fut (király esetén), üres trónnál a szavazási ciklus
+     * kezdetétől — így az elévült szavazólap akkor is nullázódik, ha senkit sem koronáztak.
+     */
     private void resetExpiredTerm(final FactionType faction) {
         final long termDays = Math.max(1L, configManager.getLong("factions.kings.term-days", 7L));
-        final long start = electionStart.computeIfAbsent(faction, key -> System.currentTimeMillis());
+        final long start = kings.get(faction) != null
+                ? reignStart.computeIfAbsent(faction, key -> System.currentTimeMillis())
+                : electionStart.computeIfAbsent(faction, key -> System.currentTimeMillis());
         if (System.currentTimeMillis() - start > termDays * 24L * 60L * 60L * 1000L) {
             votes.remove(faction);
             electionStart.put(faction, System.currentTimeMillis());
+            reignStart.remove(faction);
             // A ciklus lejárt = a korona is lejárt: enélkül egy inaktív király örökre
             // trónon maradna, mert új min-votes jelölt sosem gyűlik össze ellene.
             if (configManager.getBoolean("factions.kings.dethrone-on-expiry", true)
@@ -269,7 +309,7 @@ public final class KingManager implements PersistentStore {
             return;
         }
 
-        kings.put(faction, leader);
+        crown(faction, leader);
 
         // Folia: the server-wide broadcast and the (potentially blocking) offline-name lookup
         // must not run on the voting player's region thread — hop to the global region scheduler.

@@ -1656,7 +1656,8 @@ public final class QuestManager implements PersistentStore {
 
         final String unlockSpell = quest.getString("rewards.unlock-spell");
         if (unlockSpell != null && !unlockSpell.isBlank()) {
-            jobManager.unlockSpell(player, unlockSpell);
+            jobManager.unlockSpell(player, unlockSpell,
+                    JobManager.SOURCE_QUEST_PREFIX + quest.getName().toLowerCase(Locale.ROOT));
         }
 
         // Crate-key reward: "<crateId>:<darab>", pl. "koznapi:1".

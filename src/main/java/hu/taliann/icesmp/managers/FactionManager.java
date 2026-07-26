@@ -261,6 +261,12 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         return seasons.getSeasonEndMillis() - System.currentTimeMillis() <= lockoutDays * 86_400_000L;
     }
 
+    /**
+     * Erases the assignment entirely, putting the player back into the "never chose"
+     * state. NOT for /faction leave: a missing record reads as a free FIRST join, which
+     * skips the neutral-capital gate, the season lockout and the switch cooldown — leaving
+     * must record an explicit {@link FactionType#NEUTRAL} instead. Admin/test resets only.
+     */
     public void removeFaction(final UUID uuid) {
         if (uuid == null) {
             return;

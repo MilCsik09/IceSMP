@@ -45,6 +45,12 @@ public final class CommunityGoalManager implements PersistentStore {
     private final SeasonManager seasonManager;
     private final File storageFile;
     private final Map<String, Long> progress = new ConcurrentHashMap<>();
+    /**
+     * Egy hozzájárulás legfeljebb ennyi ciklust zárhat le: egy elgépelt (nevetségesen
+     * alacsony) cél-szám vagy egy admin-adta óriási mennyiség különben egyetlen eventben
+     * szórná ki a jutalmat végtelen sokszor.
+     */
+    private static final int MAX_COMPLETIONS_PER_CONTRIBUTION = 3;
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     public CommunityGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -176,10 +182,20 @@ public final class CommunityGoalManager implements PersistentStore {
             return;
         }
 
-        // Completed: reset the shared counter and pay out (the payout is worth an immediate flush).
-        progress.put(goalId, 0L);
+        // Completed: a maradék ÁTVISZ a következő ciklusra (1499/1500-nál egy 64-es stack
+        // 63 egységét dobta el a nullázás), és egy nagy hozzájárulás több ciklust is
+        // rendezhet — a kifizetés-ismétlést szigorú felső korlát fogja meg.
+        long remaining = current;
+        int completions = 0;
+        while (remaining >= target && completions < MAX_COMPLETIONS_PER_CONTRIBUTION) {
+            remaining -= target;
+            completions++;
+        }
+        progress.put(goalId, remaining);
         save();
-        completeGoal(goal, serverWide, goalFaction);
+        for (int index = 0; index < completions; index++) {
+            completeGoal(goal, serverWide, goalFaction);
+        }
     }
 
     private void completeGoal(final ConfigurationSection goal, final boolean serverWide, final FactionType goalFaction) {

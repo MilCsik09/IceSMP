@@ -31,6 +31,7 @@ messages:
   faction-left: '&6Kiléptél a frakcióból.'
   faction-raid-already-active: '&cMár zajlik egy raid.'
   faction-raid-already-joined: '&7Már jelentkeztél ebbe a raidbe.'
+  faction-raid-combat-locked: '&cA harci szakasz már megkezdődött — nevezni csak a felkészülés alatt lehet.'
   faction-raid-combat-start: '<red>⚔ A raid harci szakasza megkezdődött ({attackerCount} vs {defenderCount})!{zone}</red>'
   faction-raid-ended: '<gold>⚔ A raid véget ért! Győztes: <white>{winner}</white> ({attackerPoints} - {defenderPoints} pont). Hadizsákmány: <white>{spoils}</white> a(z) {loser} kasszájából.</gold>'
   faction-raid-holding-point: '<gold>⚑ Pontot tartasz a(z) {territory} középpontján! (+{points})</gold>'

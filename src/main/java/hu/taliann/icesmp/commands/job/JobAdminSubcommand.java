@@ -93,8 +93,10 @@ public final class JobAdminSubcommand implements JobSubcommand {
             }
 
             if ("unlockallskills".equals(action)) {
-                final List<String> allSpellIds = spellRegistry.getAll().stream().map(Spell::getId).toList();
-                jobManager.setUnlockedSpellIds(target, allSpellIds);
+                // Az ADMIN forrás sosem esik automatikus visszavonás alá (spec/talent reset).
+                for (final Spell spell : spellRegistry.getAll()) {
+                    jobManager.unlockSpell(target, spell.getId(), hu.taliann.icesmp.managers.JobManager.SOURCE_ADMIN);
+                }
                 sender.sendMessage(messageManager.get(
                         "admin.job.unlock-all.success",
                         "&aAz osszes varazslat feloldva: &f%s",
@@ -105,6 +107,7 @@ public final class JobAdminSubcommand implements JobSubcommand {
             }
 
             if ("resetskills".equals(action)) {
+                jobManager.clearSpellGrants(target);
                 jobManager.setUnlockedSpellIds(target, List.of());
                 abilityCatalystListener.resetAllSpellState(target);
                 sender.sendMessage(messageManager.get(

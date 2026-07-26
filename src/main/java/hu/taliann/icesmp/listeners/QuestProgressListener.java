@@ -215,10 +215,13 @@ public final class QuestProgressListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
         // Only re-check on block-level movement (same hot-path guard as the TerritoryListener).
+        // Az Y is számít: a biome-ok 1.18 óta függőlegesen is rétegesek (barlang-biome-ok),
+        // ezért a csak X/Z-re szűrő kapu az egy oszlopban lefelé haladó felfedezőt kihagyta.
         final Location from = event.getFrom();
         final Location to = event.getTo();
         if (to == null
-                || (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ())) {
+                || (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()
+                    && from.getBlockY() == to.getBlockY())) {
             return;
         }
 
