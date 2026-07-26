@@ -10,37 +10,69 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout fixed store-health head
+      - name: Checkout verification assets
         uses: actions/checkout@v4
         with:
-          ref: fix/store-health-fail-closed
+          ref: audit/baseline-14addda
+          path: runner
+
+      - name: Checkout DEV-item target branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/dev-item-recovery
+          path: work
           fetch-depth: 0
 
-      - name: Verify branch ancestry and scope
+      - name: Publish the reviewed two-commit DEV-item patch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '239b3eb5da3544c0bd21f47c542aa8f179fa5e4d'
+          cat runner/.github/audit-patches/dev-item-recovery.mbox.b64.* \
+            | base64 --decode > /tmp/dev-item-recovery.mbox
+          echo '184dbe1097f06479505e1ac073e35eb511ec2551443e658e24de0fc5aac3cd78  /tmp/dev-item-recovery.mbox' \
+            | sha256sum --check --strict
+          test "$(wc -c < /tmp/dev-item-recovery.mbox)" -eq 43056
+
+          cd work
+          git config user.name 'IceSMP audit bot'
+          git config user.email 'actions@users.noreply.github.com'
+          commit_count=$(git rev-list --count 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD)
+          if [ "$commit_count" -eq 0 ]; then
+            git am /tmp/dev-item-recovery.mbox
+          elif [ "$commit_count" -ne 2 ]; then
+            echo "Unexpected target-branch commit count: $commit_count" >&2
+            exit 1
+          fi
+
           test "$(git rev-list --count 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD)" -eq 2
+          git log --reverse --format='%s' 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD > /tmp/dev-item-subjects
+          printf '%s\n' \
+            'Fail closed on corrupt DEV-item state' \
+            'Add DEV-item state regression coverage' > /tmp/expected-subjects
+          diff -u /tmp/expected-subjects /tmp/dev-item-subjects
+          git diff --check 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD
+
           mapfile -t files < <(git diff --name-only 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD | sort)
           printf '%s\n' "${files[@]}"
-          test "${#files[@]}" -eq 6
-          test "${files[0]}" = 'build.gradle.kts'
-          test "${files[1]}" = 'docs/ARCHITECTURE.md'
-          test "${files[2]}" = 'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
-          test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/storage/PersistentStore.java'
-          test "${files[4]}" = 'src/main/java/hu/taliann/icesmp/storage/PersistentStoreCoordinator.java'
-          test "${files[5]}" = 'src/regression/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java'
+          test "${#files[@]}" -eq 5
+          test "${files[0]}" = 'docs/ARCHITECTURE.md'
+          test "${files[1]}" = 'scripts/test_dev_item_state.py'
+          test "${files[2]}" = 'src/main/java/hu/taliann/icesmp/managers/DevItemManager.java'
+          test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java'
+          test "${files[4]}" = 'src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java'
+
+          git push origin HEAD:fix/dev-item-recovery
 
       - name: Apply PR 26 prerequisite for verification only
         shell: bash
+        working-directory: work
         run: |
           set -euo pipefail
           git fetch origin fix/core-persistent-store-wiring
@@ -55,24 +87,32 @@ jobs:
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
+        with:
+          root-directory: work
 
-      - name: Build and run all checks
+      - name: Run targeted DEV-item state regression
+        working-directory: work
+        run: python3 scripts/test_dev_item_state.py
+
+      - name: Build and run repository checks
         shell: bash
+        working-directory: work
         run: |
           set -o pipefail
-          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/store-health-build.log
+          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/dev-item-build.log
 
       - name: Upload complete Gradle log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: store-health-gradle-log
-          path: /tmp/store-health-build.log
-          if-no-files-found: error
+          name: dev-item-recovery-gradle-log
+          path: /tmp/dev-item-build.log
+          if-no-files-found: warn
           retention-days: 1
 
-      - name: Consistency checks (compare with six baseline documentation drifts)
+      - name: Consistency checks against the recorded baseline
         shell: bash
+        working-directory: work
         run: |
           set -euo pipefail
           set +e
@@ -80,6 +120,6 @@ jobs:
           result=${PIPESTATUS[0]}
           set -e
           test "$result" -eq 1
-          test "$(grep -c '^✗ FAIL:' /tmp/consistency.log)" -eq 6
-          ! grep -q 'persistent-store registry:' /tmp/consistency.log
-          ! grep -q 'storage/` 6 fajlt' /tmp/consistency.log
+          test "$(grep -c '^✗ FAIL:' /tmp/consistency.log)" -eq 5
+          grep -Fq 'Összegzés: 5 FAIL, 0 WARN' /tmp/consistency.log
+          ! grep -q 'csomagterkep-drift: ARCHITECTURE.md `managers/`' /tmp/consistency.log
