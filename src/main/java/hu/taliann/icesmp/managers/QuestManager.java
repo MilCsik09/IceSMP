@@ -164,7 +164,7 @@ public final class QuestManager implements PersistentStore {
         }
 
         try {
-            customQuests = YamlConfiguration.loadConfiguration(customQuestsFile);
+            customQuests = hu.taliann.icesmp.storage.YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
             plugin.getLogger().info("Loaded " + getCustomQuestIds().size() + " admin-created quest(s).");
         } catch (final Exception exception) {
             plugin.getLogger().severe("Failed to load custom-quests.yml: " + exception.getMessage());

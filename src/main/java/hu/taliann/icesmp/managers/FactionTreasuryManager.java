@@ -77,7 +77,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection section = yaml.getConfigurationSection("treasury");
             if (section == null) {
                 return;

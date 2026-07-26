@@ -69,7 +69,7 @@ public final class DonationChestManager implements PersistentStore {
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection section = yaml.getConfigurationSection("entries");
             if (section != null) {
                 for (final String idKey : section.getKeys(false)) {

@@ -74,7 +74,7 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection root = yaml.getConfigurationSection("guilds");
         if (root == null) {
             return;

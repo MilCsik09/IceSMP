@@ -60,7 +60,7 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
             return;
         }
 
-        final YamlConfiguration configuration = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration configuration = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection playersSection = configuration.getConfigurationSection("players");
         if (playersSection == null) {
             return;

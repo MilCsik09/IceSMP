@@ -60,7 +60,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
 
             for (final String uuidKey : yaml.getKeys(false)) {
                 try {

@@ -65,7 +65,7 @@ public final class CommunityGoalManager implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("progress");
         if (section != null) {
             for (final String key : section.getKeys(false)) {

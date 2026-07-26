@@ -74,7 +74,7 @@ public final class SeasonFinaleManager implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         announcedSeasonStart = yaml.getLong("announced-season", 0L);
         lastAnnouncedDay = yaml.getInt("last-announced-day", 0);
         bossSpawnedSeasonStart = yaml.getLong("boss-spawned-season", 0L);

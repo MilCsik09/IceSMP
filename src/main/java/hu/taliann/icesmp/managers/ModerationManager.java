@@ -92,7 +92,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection section = yaml.getConfigurationSection("mutes");
             if (section != null) {
                 for (final String uuidRaw : section.getKeys(false)) {

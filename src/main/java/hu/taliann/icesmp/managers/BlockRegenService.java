@@ -404,7 +404,7 @@ public final class BlockRegenService implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         for (final java.util.Map<?, ?> raw : yaml.getMapList("pending")) {
             try {
                 queue.add(new Entry(String.valueOf(raw.get("world")),

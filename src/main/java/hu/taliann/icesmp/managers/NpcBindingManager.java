@@ -64,7 +64,7 @@ public final class NpcBindingManager implements PersistentStore {
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection section = yaml.getConfigurationSection("bindings");
             if (section != null) {
                 for (final String npcName : section.getKeys(false)) {

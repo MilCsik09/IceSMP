@@ -69,7 +69,7 @@ public final class ExchangeBoardManager implements PersistentStore {
             return;
         }
 
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("boards");
         if (section == null) {
             return;

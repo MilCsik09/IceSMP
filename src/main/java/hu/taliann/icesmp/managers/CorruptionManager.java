@@ -94,7 +94,7 @@ public final class CorruptionManager implements PersistentStore {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         if (!yaml.getBoolean("active", false)) {
             return;
         }

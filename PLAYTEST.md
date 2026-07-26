@@ -1210,6 +1210,21 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Sérült állapotfájl NEM írható felül (ÚJ — kiadásblokkoló volt):** a
+      `YamlConfiguration.loadConfiguration(File)` FAIL-OPEN — hibás YAML-nál nem dob kivételt,
+      csak naplóz és ÜRES konfigurációt ad. Így a manager üres állapottal indult, a következő
+      autosave pedig szabályos, de üres fájlt írt a kézzel még javítható adat FÖLÉ.
+      Mind a 33 állapotfájl-betöltés a védett `YamlStore.loadTracked` úton megy.
+      **Teszt (pl. `currency.yml`, `market.yml`, `claims.yml`):**
+      1. állítsd le a szervert, tegyél a fájlba szintaktikailag hibás YAML-t (pl. tabulátor);
+      2. indíts → a konzolban `SÉRÜLT állapotfájl: <név>` + `Karantén-másolat: <név>.corrupt-<ms>`
+         + `MENTÉSE LETILTVA` SEVERE sorok;
+      3. várd meg az autosave-et, majd állítsd le szabályosan → a **sérült fájl VÁLTOZATLAN**
+         (nem íródott felül), és ott van mellette a `.corrupt-` másolat;
+      4. javítsd a fájlt, indíts újra → az adat betöltődik, a mentés újra működik (a jelölés
+         sikeres parse-ra feloldódik).
+      **FIGYELEM:** a `config/` és `messages/` fájlok SZÁNDÉKOSAN maradtak fail-openen — egy
+      hibás config ne akadályozza meg a szerver indulását, és azokat sosem írjuk vissza.
 - [ ] **Rituálé-áldozat NEM kerülhető meg (ÚJ — kiadásblokkoló volt):** az áldozat-ellenőrzés és
       a fogyasztás MOST ugyanazt a predikátumot használja (`PlainIngredients`) — korábban az
       ellenőrzés típus szerint számolt, a levonás viszont meta-egyezést kért, ezért egy

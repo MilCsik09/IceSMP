@@ -59,7 +59,7 @@ public final class KingManager implements PersistentStore {
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection kingsSection = yaml.getConfigurationSection("kings");
             if (kingsSection == null) {
                 return;

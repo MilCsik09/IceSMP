@@ -108,7 +108,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             final ConfigurationSection territoriesSection = yaml.getConfigurationSection("territories");
             if (territoriesSection == null) {
                 rebuildIndex();
@@ -204,7 +204,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("spawns");
         if (section == null) {
             return;

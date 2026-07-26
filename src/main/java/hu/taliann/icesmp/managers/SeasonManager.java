@@ -77,7 +77,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
             seasonStart = yaml.getLong("season.start", System.currentTimeMillis());
             seasonNumber = Math.max(1, yaml.getInt("season.number", 1));
             final ConfigurationSection pointsSection = yaml.getConfigurationSection("season.points");

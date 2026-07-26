@@ -60,7 +60,7 @@ public final class EconomyEventManager implements PersistentStore {
             return;
         }
 
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final CurrencyType currency = CurrencyType.fromInput(yaml.getString("event.currency", ""));
         final long endsAt = yaml.getLong("event.ends-at", 0L);
         if (currency != null && endsAt > System.currentTimeMillis()) {

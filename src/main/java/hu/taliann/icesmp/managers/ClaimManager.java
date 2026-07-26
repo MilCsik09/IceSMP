@@ -851,7 +851,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             rebuildIndex();
             return;
         }
-        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(storageFile);
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
         final ConfigurationSection section = yaml.getConfigurationSection("claims");
         if (section == null) {
             rebuildIndex();

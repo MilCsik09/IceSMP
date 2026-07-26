@@ -240,7 +240,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         }
 
         try {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(ownershipFile);
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(ownershipFile, plugin.getLogger());
             final ConfigurationSection ownershipSection = yaml.getConfigurationSection("ownerships");
             if (ownershipSection == null) {
                 return;
