@@ -74,9 +74,19 @@ public final class AchievementManager {
             return;
         }
         final List<Achievement> parsed = new java.util.ArrayList<>();
-        for (final String id : section.getKeys(false)) {
-            final org.bukkit.configuration.ConfigurationSection entry = section.getConfigurationSection(id);
+        for (final String rawId : section.getKeys(false)) {
+            final org.bukkit.configuration.ConfigurationSection entry = section.getConfigurationSection(rawId);
             if (entry == null) {
+                continue;
+            }
+            // KANONIKUS id. A megszerzett-lista PDC-ből visszaolvasva kisbetűsít, a tárolás viszont
+            // a config eredeti casingjét használta: egy „RichOne" id mentés után „richone" lett, a
+            // contains("RichOne") hamis maradt, és a periodikus tick MINDEN körben újra kifizette a
+            // jutalmat. A vessző pedig szét is hasította volna a CSV-t.
+            final String id = rawId.toLowerCase(java.util.Locale.ROOT);
+            if (!id.matches("[a-z0-9_]+")) {
+                plugin.getLogger().warning("achievements." + rawId + ": az azonosito csak [a-z0-9_] "
+                        + "karaktereket tartalmazhat - a sor kimarad (kulonben ismetelt jutalmat adna).");
                 continue;
             }
             final String metricName = entry.getString("metric", "");

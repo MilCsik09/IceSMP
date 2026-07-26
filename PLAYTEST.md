@@ -1210,6 +1210,13 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Elérés-azonosító kanonizálás (ÚJ):** a megszerzett elérések listája PDC-ből visszaolvasva
+      kisbetűsít, a tárolás viszont a config eredeti casingjét használta — egy `RichOne` azonosítójú
+      elérés így MINDEN periodikus tickben újra kifizette a jutalmát.
+      **Teszt:** vegyél fel a `quests.yml` `achievements.definitions` alá egy nagybetűs azonosítót
+      (pl. `TesztElereny`) → indításnál a konzol figyelmeztessen, és a sor maradjon KI (különben
+      ismételt jutalmat adna); a 21 shippelt elérés (mind kanonikus) változatlanul működjön, és egy
+      már megszerzett elérés NE fizessen újra a stats-tick körökben.
 - [ ] **Főzet-XP csak VALÓDI kivételre (ÚJ):** a főzőállvány eredmény-slotjaiban a puszta
       „van benne főzet" korábban XP-t adott, ezért a bent maradó főzetre ismételt kattintás
       korlátlan Alkimista-XP-t és heti szakma-cél haladást termelt. Most csak a tényleges kivétel
