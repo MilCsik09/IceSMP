@@ -1,0 +1,40 @@
+name: Verify PR 28 v2
+
+on:
+  pull_request:
+    branches:
+      - fix/dev-item-state-validation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Full Gradle build and JUnit tests
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Consistency delta against branch baseline
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/check_consistency.py | tee /tmp/consistency.log
+          status=${PIPESTATUS[0]}
+          set -e
+          grep -F "Összegzés: 5 FAIL, 0 WARN" /tmp/consistency.log
+          test "$status" -eq 1
