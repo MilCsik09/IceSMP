@@ -99,7 +99,8 @@
 - **Zóna-szabály mátrix**: build/interact/pvp/explosions/fire zónatípusonként
   configból; admin- és builder-bypass node-ok; PvP-tiltás kiterjed potion/TNT/pet
   forrásokra is.
-- **Claim-rendszer** (/claim): chunk-alapú birtok, trust-lista, konténer-védelem,
+- **Claim-rendszer** (/claim): **blokk-pontos** birtok (`/claim pos1|pos2|area`, Y-sávval; a
+  `/claim` gyorsfoglalás 16×16-os oszlopot ad), trust-lista, konténer-védelem,
   piston/tűz/folyadék/robbanás-védelem, raid-fosztogatás kapu (csak konténer,
   csak regisztrált támadónak), belépés-jelzés action-baron.
 - **Fővárosi törvény**: fegyver-tilalom a semleges fővárosban (Sétapálca rejtett

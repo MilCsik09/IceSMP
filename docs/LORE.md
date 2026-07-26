@@ -253,7 +253,7 @@ Hasadékának"** hívja, s ahová a Felsők a legjobb nyersanyagért járnak,
 s ahol a birodalmak törvénye nem ér el: ott bármely zászló szabadon ronthat a másikra.
 
 **Caldestera alvilága.** Caldestera békés, semleges és gazdag főváros — ám a felszín alatt nem
-makulátlan. **Arkynn** egykori mérge, amely megrontotta őt és népét, nem tűnt el nyomtalanul: a
+makulátlan. Az **Arkynnt egykor megmérgező** kór — Eleftheria mérge — nem tűnt el nyomtalanul: a
 Menedék népének lelkében **kapzsiság és korrupció** formájában él tovább. Bár a városban szigorúan
 tilos fegyvert viselni, a **Botera-negyed** sikátoraiban virágzik a feketepiac: a legügyesebb
 csempészek ártalmatlannak tűnő tárgyakba rejtett fegyvereket juttatnak a falak közé, kicselezve a
@@ -397,7 +397,11 @@ Káoszkorban semmi sem végleges.
 
 **Az Oltárok és az Ereklyék Törvénye.** A világban kevés valódi **Ereklye** maradt — a Fa gyermekeinek
 korából való, egyetlen példányban létező hatalmak. Az Ereklye nem tűr osztozást: egyszerre csak egy
-kézben lakhat, s ha gazdája méltatlanná válik rá — vagy elhull —, az Ereklye új hordozót keres. A
+kézben lakhat — de nem minden Ereklye viselkedik egyformán, ha a gazdája elhull. A **harci
+Ereklyék vérrel öröklődnek**: aki a viselőjét legyőzi, a kezébe kapja őket. A **gazdához kötődő
+Ereklyék** nem cserélnek urat a halálban: visszahúzódnak a rejtekükbe, és a régi tulajdonos
+idézheti vissza őket. Végül minden Ereklye **elenyészik**, ha sokáig senki nem viseli — akkor a
+tulajdonjog felszabadul, és az Ereklye új hordozót keres. A
 **rituálé-oltárok** — a régi hit kőbe rakott szentélyei — pedig azoknak nyílnak meg, akik ismerik a
 helyes áldozatot: rajtuk keresztül szól a világ a Felsőkhöz.
 

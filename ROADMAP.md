@@ -78,7 +78,7 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   **personal loot** a plugin-eseményekből (Vad Hajsza, kincs), párton belüli PvP tiltva, és **party-HUD**
   (a HUD-oldalsávon „— Csapat —" szekció: tagnév + színkódolt élet-sáv + 👑 vezető-jelölés, csak csapatban
   látszik). További ötlet: party-célpont jelölés, party-waypoint.
-- 💡 **Natív claim + chat-formázó — kész:** chunk-alapú terület-claim (első 3 ingyen, utána égetett
+- 💡 **Natív claim + chat-formázó — kész:** **blokk-pontos** terület-claim (első 3 ingyen, utána égetett
   frakció-valuta ár — money sink; trust; robbanás-védelem; raid-lootable kapcsoló; a meteor/kincs
   események kerülik) a SimpleClaimSystem kiváltására, és natív chat-formázó (LP-prefix + frakció-színes
   név) a LuckPermsChatFormatterFolia kiváltására. A piston/tűz/folyadék edge-case védelem **kész**
