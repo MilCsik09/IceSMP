@@ -1210,6 +1210,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Eldobható minion halála nem állítja le az élő társat (ÚJ):** a permanens társ és a rövid
+      életű spell-minion ugyanazt a tulajdonos-jelölést viseli, és a halál-kezelő ELŐBB bontotta a
+      gazda-kulcsos állapotot (aktív társ, harci cél), csak utána ellenőrizte az azonosságot.
+      **Teszt:** idézd meg a permanens társat, majd idézz egy eldobható minion-hordát és hagyd
+      meghalni → a társ **maradjon aktív és vezérelhető** (harci cél, állásmód); ezután a TÁRS
+      haláljakor jöjjön a „társad elesett" üzenet és a respawn-cooldown.
+- [ ] **Pet-rítus nem fut kétszer (ÚJ):** egy fizikai jobb kattintás main- ÉS off-hand eventet is
+      ad, a rítus viszont mindkettőben a main-handet olvasta → 2+ darabos stacknél KÉT ritka
+      kelléket fogyasztott. **Teszt:** tarts 2 Nyughatatlan Szívet (vagy Démon-pecsétet), futtasd a
+      rítust → pontosan EGY fogyjon el.
+- [ ] **Emlék-XP nem viszi el a szilánkot kaszt nélkül (ÚJ):** a `/emlek xp` előbb elvette a
+      szilánkokat, és az XP-jóváírás boolean-je elveszett — kaszt nélkül a játékos elveszítette a
+      ritka szilánkokat, mégis sikert olvasott. **Teszt:** kaszt NÉLKÜL `/emlek xp` → érthető
+      elutasítás, és a szilánkok **maradjanak meg**; kaszttal a beváltás menjen és adjon XP-t.
 - [ ] **Elérés-azonosító kanonizálás (ÚJ):** a megszerzett elérések listája PDC-ből visszaolvasva
       kisbetűsít, a tárolás viszont a config eredeti casingjét használta — egy `RichOne` azonosítójú
       elérés így MINDEN periodikus tickben újra kifizette a jutalmát.

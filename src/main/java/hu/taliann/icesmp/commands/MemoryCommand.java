@@ -88,11 +88,24 @@ public final class MemoryCommand implements BasicCommand {
     }
 
     private void redeemXp(final Player player) {
+        // ELŐBB a jóváírás feltétele, csak UTÁNA a fizetés: az addXpToJob kaszt nélkül false-t ad,
+        // és a boolean elvesztésével a játékos elveszítette a ritka szilánkokat, mégis sikert olvasott.
+        if (!jobManager.hasPrimaryJob(player)) {
+            player.sendMessage(messageManager.get("memory-no-class",
+                    "&cElőbb kaszt kell, hogy legyen mibe visszaemlékezned (&f/menu&c → Kaszt)."));
+            return;
+        }
         final int cost = costOf("xp", 3);
         if (!consumeShards(player, cost)) {
             return;
         }
-        jobManager.addXpToJob(player, xpAmount());
+        if (!jobManager.addXpToJob(player, xpAmount())) {
+            // Ide nem szabad eljutni (a feltételt fentebb ellenőriztük ugyanezen a szálon):
+            // ha mégis, a szilánk elfogyott volna jóváírás nélkül.
+            java.util.logging.Logger.getLogger("IceSMP").severe(
+                    "Emlék-XP jóváírás elbukott a feltétel-ellenőrzés után: " + player.getName());
+            return;
+        }
         remembered(player, messageManager.get("memory-redeemed-xp",
                 "&d✦ Emlékek törnek fel — &f+%s kaszt-XP&d. A kéz emlékszik, amit az elme elfelejtett.", xpAmount()));
     }

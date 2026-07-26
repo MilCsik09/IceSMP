@@ -289,17 +289,22 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             return;
         }
         final UUID deadId = dead.getUniqueId();
-        activeOwners.remove(ownerId);
-        combatTargets.remove(ownerId);
+        // A halott entitás kulcsán álló állapot mindig törölhető.
         attackReady.remove(deadId);
 
         final Player owner = Bukkit.getPlayer(ownerId);
         if (owner == null) {
             return; // offline: the stale entityKey resolves to a dead UUID harmlessly on next summon
         }
+        // A GAZDA kulcsán álló állapotot (aktív társ, harci cél) CSAK azonosság-ellenőrzés UTÁN
+        // szabad bontani: a permanens társ és a rövid életű spell-minion ugyanazt a tulajdonos-
+        // jelölést viseli, ezért egy eldobható minion halála leállította volna az ÉLŐ társ
+        // vezérlését. Az ellenőrzés a gazda PDC-jét olvassa, tehát a gazda saját szálán fut.
         owner.getScheduler().run(plugin, task -> {
             final String raw = owner.getPersistentDataContainer().get(entityKey, PersistentDataType.STRING);
             if (deadId.toString().equals(raw)) {
+                activeOwners.remove(ownerId);
+                combatTargets.remove(ownerId);
                 owner.getPersistentDataContainer().remove(entityKey);
                 // A halálnak tétje van: újraidézés csak cooldown után.
                 final long cd = Math.max(0L, configManager.getLong(
