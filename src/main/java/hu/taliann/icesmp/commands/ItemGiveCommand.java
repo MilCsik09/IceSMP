@@ -1,14 +1,17 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.items.BlueprintItemFactory;
+import hu.taliann.icesmp.items.DevItemFactory;
 import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
+import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.RelicManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,15 +32,16 @@ import java.util.Locale;
  *       (signature-PDC, custom enchant, crafted-by, affix-roll — {@code buildResult});</li>
  *   <li><b>relikvia:</b> RelicManager.giveRelic force-móddal (tulajdon-átírással);</li>
  *   <li><b>tervrajz:</b> a recept tervrajz-itemje ({@code BlueprintItemFactory}).</li>
+ *   <li><b>dev:</b> örökös, tulajdonoshoz kötött DEV item ({@code DevItemManager}).</li>
  * </ul>
- * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]} —
+ * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]} —
  * játékos nélkül a kiadó kapja. Jog: {@code icesmp.admin.item}. Folia: másik játékosnak
  * adáskor a CÉL saját régió-schedulerén fut az inventory-írás.
  */
 public final class ItemGiveCommand implements BasicCommand {
 
     public static final String PERMISSION = "icesmp.admin.item";
-    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz", "erszeny");
+    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz", "erszeny", "dev");
 
     private final JavaPlugin plugin;
     private final UniqueMaterialFactory uniqueMaterials;
@@ -47,13 +51,15 @@ public final class ItemGiveCommand implements BasicCommand {
     private final BlueprintItemFactory blueprintFactory;
     private final MessageManager messageManager;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory;
+    private final DevItemManager devItemManager;
 
     public ItemGiveCommand(final JavaPlugin plugin, final UniqueMaterialFactory uniqueMaterials,
                            final ProfessionRecipeCatalog catalog,
                            final ProfessionRecipeBookListener recipeBookListener,
                            final RelicManager relicManager, final BlueprintItemFactory blueprintFactory,
                            final MessageManager messageManager,
-                           final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory) {
+                           final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory,
+                           final DevItemManager devItemManager) {
         this.plugin = plugin;
         this.uniqueMaterials = uniqueMaterials;
         this.catalog = catalog;
@@ -62,18 +68,19 @@ public final class ItemGiveCommand implements BasicCommand {
         this.blueprintFactory = blueprintFactory;
         this.messageManager = messageManager;
         this.moneyPouchFactory = moneyPouchFactory;
+        this.devItemManager = devItemManager;
     }
 
     @Override
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
-        final var sender = commandSourceStack.getSender();
+        final CommandSender sender = commandSourceStack.getSender();
         if (!sender.hasPermission(PERMISSION)) {
             sender.sendMessage(messageManager.get("no-permission", "&cNincs jogosultságod ehhez."));
             return;
         }
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
             return;
         }
         final String type = args[0].toLowerCase(Locale.ROOT);
@@ -104,7 +111,7 @@ public final class ItemGiveCommand implements BasicCommand {
             return;
         }
 
-        final int give = amount;
+        final int give = "dev".equals(type) ? 1 : amount;
         switch (type) {
             case "unique" -> {
                 if (!uniqueMaterials.isDefined(id)) {
@@ -156,7 +163,7 @@ public final class ItemGiveCommand implements BasicCommand {
                     for (int i = 0; i < give; i++) {
                         final ItemStack stack = recipeBookListener.buildResult(target, recipe);
                         if (stack == null) {
-                            sender.sendMessage(messageManager.get("admin.iceitem.build-failed",
+                            sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.build-failed",
                                     "&cA recept eredménye nem építhető fel: &f%s", id));
                             return;
                         }
@@ -175,8 +182,28 @@ public final class ItemGiveCommand implements BasicCommand {
                     if (relicManager.giveRelic(target, id, give, true)) {
                         confirm(sender, target, id, give);
                     } else {
-                        sender.sendMessage(messageManager.get("admin.iceitem.relic-failed",
+                        sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.relic-failed",
                                 "&cA relikvia nem adható ki: &f%s", id));
+                    }
+                }, null);
+            }
+            case "dev" -> {
+                if (!DevItemFactory.BINGULUS_ID.equals(id)) {
+                    sender.sendMessage(messageManager.get("admin.iceitem.unknown-id",
+                            "&cIsmeretlen azonosító: &f%s &7(tab-complete segít)", id));
+                    return;
+                }
+                if (!devItemManager.isOwner(target)) {
+                    sender.sendMessage(messageManager.get("dev-item.wrong-owner",
+                            "&cA Csodálatos Bingulus kizárólag a beállított tulajdonosnak adható."));
+                    return;
+                }
+                target.getScheduler().run(plugin, task -> {
+                    if (devItemManager.giveToOwner(target)) {
+                        confirm(sender, target, "Csodálatos Bingulus", 1);
+                    } else {
+                        sendFromTargetThread(sender, target, messageManager.get("dev-item.give-failed",
+                                "&cA Csodálatos Bingulus nem adható át: a tulajdonos inventoryja tele van."));
                     }
                 }, null);
             }
@@ -198,7 +225,7 @@ public final class ItemGiveCommand implements BasicCommand {
                 }, null);
             }
             default -> sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
         }
     }
 
@@ -208,10 +235,22 @@ public final class ItemGiveCommand implements BasicCommand {
                 .forEach(left -> target.getWorld().dropItemNaturally(target.getLocation(), left));
     }
 
-    private void confirm(final org.bukkit.command.CommandSender sender, final Player target,
+    private void confirm(final CommandSender sender, final Player target,
                          final String name, final int amount) {
-        sender.sendMessage(messageManager.get("admin.iceitem.given",
+        sendFromTargetThread(sender, target, messageManager.get("admin.iceitem.given",
                 "&a✔ Kiadva: &e%s &7×%s &a→ &f%s", name, String.valueOf(amount), target.getName()));
+    }
+
+    /**
+     * This method is called from the target player's entity thread. A different player sender must
+     * receive the message on their own entity scheduler; console senders are safe to notify directly.
+     */
+    private void sendFromTargetThread(final CommandSender sender, final Player target, final String message) {
+        if (sender instanceof Player player && !player.getUniqueId().equals(target.getUniqueId())) {
+            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+            return;
+        }
+        sender.sendMessage(message);
     }
 
     @Override
@@ -231,11 +270,14 @@ public final class ItemGiveCommand implements BasicCommand {
                 case "recept", "tervrajz" -> filter(catalog.allIds(), args[1]);
                 case "relikvia" -> filter(relicManager.getDefinitions().stream()
                         .map(definition -> definition.id().toLowerCase(Locale.ROOT)).toList(), args[1]);
+                case "dev" -> filter(List.of(DevItemFactory.BINGULUS_ID), args[1]);
                 default -> List.of();
             };
         }
         if (args.length == 3) {
-            return filter(List.of("1", "8", "16", "64"), args[2]);
+            return "dev".equalsIgnoreCase(args[0])
+                    ? filter(List.of("1"), args[2])
+                    : filter(List.of("1", "8", "16", "64"), args[2]);
         }
         if (args.length == 4) {
             return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[3]);

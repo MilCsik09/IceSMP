@@ -1898,3 +1898,10 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - Új itemnél a config/kód `item-model` értéke legyen `icesmp:<modell-id>`; ugyanez a `<modell-id>` a blokk-fejlécben és a PNG fájlnevében.
 - Minden élő modell-id kapjon egy `### \`<modell-id>\` — Név` blokkot (a `scripts/check_consistency.py` ezt ellenőrzi); a blokk adja meg az Alap-itemet, Ábrázolást, Színvilágot és a Hangulat/lore sort.
 - A leírás legyen tárgyra szabott; faction/lore-kötött tárgy a Globális paletta akcensét viselje, DARK-nál a hideg türkiz lich-fényt.
+
+
+### `csodalatos_bingulus` — Csodálatos Bingulus
+- **Fájl:** `csodalatos_bingulus.png` &nbsp;|&nbsp; **Alap-item:** `HEART_OF_THE_SEA`
+- **Ábrázolás:** különös, gömbölyű, jóindulatú kis tengeri-mágikus lény vagy mag; két apró szemmel, körülötte csillagpor-szilánkokkal
+- **Színvilág:** világos lila és rózsaszín; akcent: prizmarin-türkiz és fehér csillanás
+- **Hangulat / lore:** Bence örökös DEV iteme; játékos, csodálatos és kissé értelmezhetetlen — 10 aktív percenként ajándékot „talál”.
