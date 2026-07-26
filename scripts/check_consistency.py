@@ -381,8 +381,13 @@ try:
     _stores = None
     _core = read(os.path.join(REPO, "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"))
     _sm = re.search(r"persistentStores\s*=\s*List\.of\((.*?)\);", _core, re.S)
-    if _sm:
-        _stores = len([x for x in re.split(r",", _sm.group(1)) if x.strip()])
+    if not _sm:
+        fail("IceSMPCore: a persistentStores List.of(...) bekötés nem értelmezhető")
+    else:
+        _store_entries = [x.strip() for x in re.split(r",", _sm.group(1)) if x.strip()]
+        _stores = len(_store_entries)
+        if "devItemManager" not in _store_entries:
+            fail("IceSMPCore: a devItemManager kimaradt a persistentStores lifecycle-listából")
 
     # (fajl, regex, mert ertek, tolerancia szazalekban) — 0 tolerancia = egzakt
     _CLAIMS = [
