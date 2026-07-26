@@ -16,10 +16,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -38,12 +41,22 @@ public final class CommunityGoalManager implements PersistentStore {
     /**
      * Tartós kifizetés-outbox bejegyzés. A számláló csökkentése és a forrás-nyugta MÁR tartós,
      * mielőtt a jutalom kifizetődne — enélkül egy crash a kifizetés közben úgy hagyná a világot,
-     * hogy a nyugta miatt az esemény sosem játszódik újra, a kincstár/szezon/buff jutalom viszont
+     * hogy a nyugta miatt az esemény sosem játszódik újra, a kincstár/szezon jutalom viszont
      * elmarad. A bejegyzés a kifizetés UTÁN, külön tartós írással tűnik el.
+     *
+     * <p>A szezonpont nem nyers config-értékként, hanem a teljesítés pillanatában kiszámított,
+     * frakciónkénti végleges delta formájában kerül a pillanatképbe. A replay ezért nem függ a
+     * későbbi season-enabled/source-weight/finale/top2 állapottól.</p>
      */
     private record PendingCompletion(UUID completionId, String goalId, String displayName,
                                      boolean serverWide, FactionType faction,
-                                     double treasuryReward, int seasonPoints, int buffMinutes) {
+                                     double treasuryReward,
+                                     Map<FactionType, Integer> seasonDeltas,
+                                     int buffMinutes) {
+
+        private PendingCompletion {
+            seasonDeltas = Map.copyOf(seasonDeltas);
+        }
 
         /** Cél-store-onként stabil, egyszeri művelet-azonosító. */
         String grantId(final String target, final FactionType applyTo) {
@@ -97,8 +110,7 @@ public final class CommunityGoalManager implements PersistentStore {
                     YamlStore.failCorrupt(storageFile, plugin.getLogger(),
                             "Érvénytelen community progress: " + key);
                     // A failCorrupt mindig dob, de void: a fordító a minta-kötést csak akkor
-                    // látja biztosan hozzárendeltnek, ha ez az ág megszakad (a CurrencyManager
-                    // ugyanígy return-öl minden failCorrupt után).
+                    // látja biztosan hozzárendeltnek, ha ez az ág megszakad.
                     continue;
                 }
                 progress.put(key.toLowerCase(Locale.ROOT), number.longValue());
@@ -125,6 +137,7 @@ public final class CommunityGoalManager implements PersistentStore {
 
         pendingCompletions.clear();
         final ConfigurationSection outbox = yaml.getConfigurationSection("pending-completions");
+        final Set<UUID> seenCompletionIds = new HashSet<>();
         if (outbox != null) {
             for (final String key : outbox.getKeys(false)) {
                 final String rawId = outbox.getString(key + ".completion-id");
@@ -142,6 +155,11 @@ public final class CommunityGoalManager implements PersistentStore {
                             "Értelmezhetetlen kifizetés-azonosító: " + key);
                     return;
                 }
+                if (!seenCompletionIds.add(completionId)) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Duplikált közösségi completion-id az outboxban: " + completionId);
+                    return;
+                }
                 final String factionName = outbox.getString(key + ".faction");
                 final FactionType faction = factionName == null
                         ? null : FactionType.fromInput(factionName);
@@ -151,12 +169,32 @@ public final class CommunityGoalManager implements PersistentStore {
                             "Frakció-célzott kifizetés frakció nélkül: " + key);
                     return;
                 }
+
+                final Object rawTreasury = outbox.get(key + ".treasury-reward");
+                final double treasuryReward = rawTreasury == null ? 0.0D
+                        : rawTreasury instanceof Number number ? number.doubleValue() : Double.NaN;
+                if (!Double.isFinite(treasuryReward) || treasuryReward < 0.0D) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Érvénytelen treasury jutalom a függő kifizetésben: " + key);
+                    return;
+                }
+
+                final Object rawBuff = outbox.get(key + ".buff-minutes");
+                final double buffValue = rawBuff == null ? 0.0D
+                        : rawBuff instanceof Number number ? number.doubleValue() : Double.NaN;
+                if (!Double.isFinite(buffValue) || buffValue < 0.0D
+                        || buffValue > Integer.MAX_VALUE || buffValue != Math.rint(buffValue)) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Érvénytelen buff-idő a függő kifizetésben: " + key);
+                    return;
+                }
+                final int buffMinutes = (int) buffValue;
+
+                final Map<FactionType, Integer> seasonDeltas = readSeasonDeltas(
+                        outbox, key, serverWide, faction);
                 pendingCompletions.add(new PendingCompletion(completionId, goalId,
                         outbox.getString(key + ".display-name", "Közösségi cél"),
-                        serverWide, faction,
-                        Math.max(0.0D, outbox.getDouble(key + ".treasury-reward", 0.0D)),
-                        Math.max(0, outbox.getInt(key + ".season-points", 0)),
-                        Math.max(0, outbox.getInt(key + ".buff-minutes", 0))));
+                        serverWide, faction, treasuryReward, seasonDeltas, buffMinutes));
             }
         }
         if (!pendingCompletions.isEmpty()) {
@@ -164,6 +202,43 @@ public final class CommunityGoalManager implements PersistentStore {
                     + " függő kifizetés a legutóbbi leállásból — újrajátszás.");
             flushPendingCompletions();
         }
+    }
+
+    private Map<FactionType, Integer> readSeasonDeltas(final ConfigurationSection outbox,
+                                                       final String key,
+                                                       final boolean serverWide,
+                                                       final FactionType targetFaction) {
+        final EnumMap<FactionType, Integer> deltas = new EnumMap<>(FactionType.class);
+        final ConfigurationSection section = outbox.getConfigurationSection(key + ".season-deltas");
+        if (section == null) {
+            // A régi nyers season-points rekordot nem szabad live configgal újraszámolni: az
+            // pontosan azt a replay-driftet hozná vissza, amelyet az immutable snapshot lezár.
+            if (outbox.getInt(key + ".season-points", 0) > 0) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                        "Legacy, nem immutable season-points outbox-bejegyzés: " + key);
+            }
+            return Map.of();
+        }
+
+        for (final String factionKey : section.getKeys(false)) {
+            final FactionType faction = FactionType.fromInput(factionKey);
+            final Object raw = section.get(factionKey);
+            final double value = raw instanceof Number number
+                    ? number.doubleValue() : Double.NaN;
+            if (faction == null || !Double.isFinite(value) || value <= 0.0D
+                    || value > Integer.MAX_VALUE || value != Math.rint(value)) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                        "Érvénytelen immutable szezonpont-delta: " + key + "/" + factionKey);
+                continue;
+            }
+            if (!serverWide && faction != targetFaction) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                        "Más frakcióra mutató szezonpont-delta frakció-célzott outboxban: " + key);
+                continue;
+            }
+            deltas.put(faction, (int) value);
+        }
+        return Map.copyOf(deltas);
     }
 
     @Override
@@ -189,7 +264,9 @@ public final class CommunityGoalManager implements PersistentStore {
             yaml.set(base + ".server-wide", pending.serverWide());
             yaml.set(base + ".faction", pending.faction() == null ? null : pending.faction().name());
             yaml.set(base + ".treasury-reward", pending.treasuryReward());
-            yaml.set(base + ".season-points", pending.seasonPoints());
+            for (final Map.Entry<FactionType, Integer> delta : pending.seasonDeltas().entrySet()) {
+                yaml.set(base + ".season-deltas." + delta.getKey().name(), delta.getValue());
+            }
             yaml.set(base + ".buff-minutes", pending.buffMinutes());
         }
         try {
@@ -217,16 +294,27 @@ public final class CommunityGoalManager implements PersistentStore {
     }
 
     public synchronized void resetForNewSeason() {
+        // A szezonzárás kapuja: előbb minden korábbi completion tartós cél-ACK-ja legyen meg.
+        // Ha egy cél-store még íráshibás, kivétellel visszatartjuk a SeasonManager resetjét;
+        // így egy előző szezonhoz tartozó exact delta nem csúszhat át az új szezon pontjaiba.
+        flushPendingCompletions();
+        if (!pendingCompletions.isEmpty()) {
+            plugin.getLogger().severe("A szezonzárás elhalasztva: " + pendingCompletions.size()
+                    + " közösségi kifizetés még nincs minden cél-store-ban tartósan ACK-olva.");
+            throw new IllegalStateException("Pending community payouts block season reset");
+        }
+
         final Map<String, Long> oldProgress = new HashMap<>(progress);
         final Map<String, Long> oldReceipts = new HashMap<>(contributionReceipts);
-        final List<PendingCompletion> oldPending = new ArrayList<>(pendingCompletions);
         progress.clear();
         contributionReceipts.clear();
-        pendingCompletions.clear();
+        // Az outbox nem szezon-progress, ezért itt soha nem töröljük. A kapu miatt ezen a
+        // ponton normálisan üres, de egy párhuzamos új-szezonos contribution később szabadon
+        // létrehozhat új bejegyzést.
         if (!saveStrict()) {
             progress.putAll(oldProgress);
             contributionReceipts.putAll(oldReceipts);
-            pendingCompletions.addAll(oldPending);
+            throw new IllegalStateException("Community season reset persistence failed");
         }
     }
 
@@ -359,21 +447,29 @@ public final class CommunityGoalManager implements PersistentStore {
      * A teljesítéseket az OUTBOXBA teszi (a hívó ezután írja ki tartósan a közös fájl-képet),
      * majd kifizeti és a bejegyzést külön írással eltünteti. Crash a kifizetés közben = a
      * bejegyzés a lemezen marad, és a következő indulás {@link #flushPendingCompletions()}-ja
-     * újrajátssza — a jutalom nem veszhet el.
+     * újrajátssza — a tartós jutalom nem veszhet el.
      */
     private void enqueueCompletions(final List<Completion> completions) {
         for (final Completion completion : completions) {
             final ConfigurationSection goal = completion.goal();
+            final List<FactionType> targets = completion.serverWide()
+                    ? List.of(FactionType.values()) : List.of(completion.goalFaction());
+            final String source = completion.serverWide() ? "community-server" : "community";
+            final int rawSeasonPoints = Math.max(0,
+                    configManager.getInt("community-goals.season-points", 8));
+
             // A jutalom PILLANATKÉPE kerül a naplóba, nem csak a cél azonosítója: egy közben
-            // átírt vagy törölt config-bejegyzés különben eltérő — vagy elveszett — újrajátszást
-            // adna. Egy teljesítés = egy bejegyzés, ezért a count-ot itt bontjuk szét.
+            // átírt/törölt config, eltelt fináléablak vagy megváltozott top2 különben eltérő
+            // újrajátszást adna. Egy teljesítés = egy bejegyzés, ezért a count-ot itt bontjuk szét.
             for (int index = 0; index < completion.count(); index++) {
+                final Map<FactionType, Integer> seasonDeltas =
+                        seasonManager.calculatePointsDeltas(targets, rawSeasonPoints, source);
                 pendingCompletions.add(new PendingCompletion(UUID.randomUUID(),
                         goal.getName(),
                         goal.getString("display-name", "Közösségi cél"),
                         completion.serverWide(), completion.goalFaction(),
                         Math.max(0.0D, goal.getDouble("reward-treasury", 0.0D)),
-                        Math.max(0, configManager.getInt("community-goals.season-points", 8)),
+                        seasonDeltas,
                         Math.max(0, goal.getInt("reward-buff-minutes", 0))));
             }
         }
@@ -382,9 +478,7 @@ public final class CommunityGoalManager implements PersistentStore {
     /**
      * Kifizeti és tartósan eltünteti a függő teljesítéseket. Minden gazdasági hatás a cél-store
      * SAJÁT idempotens útján megy (a nyugta az egyenleggel/pontokkal egyetlen atomi fájl-képbe
-     * kerül), ezért a bejegyzés CSAK akkor törölhető, ha minden cél visszaigazolta magát —
-     * enélkül a nyugtázás és a cél-store tényleges mentése közti crash elveszítette vagy
-     * (nem idempotens újrajátszással) duplázta a jutalmat.
+     * kerül), ezért a bejegyzés CSAK akkor törölhető, ha minden cél visszaigazolta magát.
      */
     private void flushPendingCompletions() {
         if (pendingCompletions.isEmpty()) {
@@ -401,8 +495,8 @@ public final class CommunityGoalManager implements PersistentStore {
         }
         pendingCompletions.removeAll(settled);
         if (!saveStrict()) {
-            // A hatások idempotensek (grant-id), ezért a visszakerülő bejegyzés újrajátszása
-            // NEM duplázza a jutalmat — csak a naplót tisztítja majd le a következő indulás.
+            // A tartós hatások idempotensek (grant-id), ezért a visszakerülő bejegyzés
+            // újrajátszása nem duplázza a jutalmat.
             pendingCompletions.addAll(settled);
             plugin.getLogger().severe("A közösségi kifizetés nyugtázása nem sikerült — a függő "
                     + "bejegyzések maradnak; az újrajátszás idempotens, nem fizet kétszer.");
@@ -410,8 +504,10 @@ public final class CommunityGoalManager implements PersistentStore {
     }
 
     /**
-     * Egy teljesítés kifizetése. A hirdetés és a buff best-effort (ismételve is ártalmatlan),
-     * a kincstár és a szezon-pont viszont grant-azonosítóhoz kötött.
+     * Egy teljesítés kifizetése. A kincstár és a szezonpont tartós, pontosan egyszeri hatás.
+     * A hirdetés és az online játékosokra ütemezett, átmeneti buff tudatosan NEM része ennek a
+     * durability-szerződésnek: crash az ütemezés és a region-task futása között elveszítheti őket,
+     * cserébe nem tarthatják nyitva az economic outboxot és nem replayelhetők korlátlanul.
      *
      * @return true, ha MINDEN tartós hatás visszaigazolt
      */
@@ -427,13 +523,10 @@ public final class CommunityGoalManager implements PersistentStore {
                 }
             }
         }
-        if (pending.seasonPoints() > 0) {
-            final String source = pending.serverWide() ? "community-server" : "community";
-            for (final FactionType faction : targets) {
-                if (!seasonManager.addPointsOnce(pending.grantId("season", faction),
-                        faction, pending.seasonPoints(), source)) {
-                    allAcked = false;
-                }
+        for (final Map.Entry<FactionType, Integer> delta : pending.seasonDeltas().entrySet()) {
+            if (!seasonManager.addExactPointsOnce(pending.grantId("season", delta.getKey()),
+                    delta.getKey(), delta.getValue())) {
+                allAcked = false;
             }
         }
         if (!allAcked) {
@@ -475,7 +568,7 @@ public final class CommunityGoalManager implements PersistentStore {
         ));
     }
 
-    /** Buff a pillanatképből: átmeneti hatás, ezért nem kap grant-nyugtát. */
+    /** Buff a pillanatképből: átmeneti, best-effort hatás, ezért nem kap grant-nyugtát. */
     private void applyBuff(final PendingCompletion pending) {
         if (pending.buffMinutes() <= 0) {
             return;
