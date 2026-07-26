@@ -1,4 +1,3 @@
-# verification rerun: store-health source-set commit published
 name: External branch verification
 
 on:
@@ -11,71 +10,37 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout verification assets
-        uses: actions/checkout@v4
-        with:
-          ref: audit/baseline-14addda
-          path: runner
-
-      - name: Checkout target branch
+      - name: Checkout fixed store-health head
         uses: actions/checkout@v4
         with:
           ref: fix/store-health-fail-closed
-          path: work
           fetch-depth: 0
 
-      - name: Publish reviewed store-health commits
+      - name: Verify branch ancestry and scope
         shell: bash
         run: |
           set -euo pipefail
-          cat runner/.github/audit-patches/store-health.patch.b64.* \
-            | base64 --decode > /tmp/store-health.patch
-          echo '229f0850b38e378ccc6ff94c42f8f76b10bbc8f02772c3858ce21654c722d484  /tmp/store-health.patch' \
-            | sha256sum --check --strict
-          base64 --decode runner/.github/audit-patches/store-health-source-set.patch.b64 \
-            > /tmp/store-health-source-set.patch
-          echo 'a337af3d44977a325811b51a922ed3d763d31fa97e5a4afb689ab4787cf5ac8c  /tmp/store-health-source-set.patch' \
-            | sha256sum --check --strict
-          cd work
-          git config user.name 'IceSMP audit bot'
-          git config user.email 'actions@users.noreply.github.com'
-          if git apply --check /tmp/store-health.patch; then
-            git apply /tmp/store-health.patch
-            git add build.gradle.kts docs/ARCHITECTURE.md \
-              src/main/java/hu/taliann/icesmp/core/IceSMPCore.java \
-              src/main/java/hu/taliann/icesmp/storage/PersistentStore.java \
-              src/main/java/hu/taliann/icesmp/storage/PersistentStoreCoordinator.java \
-              src/test/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java
-            git diff --cached --check
-            git commit -m 'Fail closed on persistent store load failures'
-          elif ! git apply --reverse --check /tmp/store-health.patch; then
-            echo 'Primary patch is neither applicable nor already applied.' >&2
-            exit 1
-          fi
-          if git apply --check /tmp/store-health-source-set.patch; then
-            git apply /tmp/store-health-source-set.patch
-            git add build.gradle.kts \
-              src/test/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java \
-              src/regression/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java
-            git diff --cached --check
-            git commit -m 'Run store regression outside the JUnit source set'
-          elif ! git apply --reverse --check /tmp/store-health-source-set.patch; then
-            echo 'Source-set patch is neither applicable nor already applied.' >&2
-            exit 1
-          fi
+          test "$(git rev-parse HEAD)" = '239b3eb5da3544c0bd21f47c542aa8f179fa5e4d'
           test "$(git rev-list --count 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD)" -eq 2
-          git push origin HEAD:fix/store-health-fail-closed
+          mapfile -t files < <(git diff --name-only 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD | sort)
+          printf '%s\n' "${files[@]}"
+          test "${#files[@]}" -eq 6
+          test "${files[0]}" = 'build.gradle.kts'
+          test "${files[1]}" = 'docs/ARCHITECTURE.md'
+          test "${files[2]}" = 'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
+          test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/storage/PersistentStore.java'
+          test "${files[4]}" = 'src/main/java/hu/taliann/icesmp/storage/PersistentStoreCoordinator.java'
+          test "${files[5]}" = 'src/regression/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java'
 
       - name: Apply PR 26 prerequisite for verification only
         shell: bash
-        working-directory: work
         run: |
           set -euo pipefail
           git fetch origin fix/core-persistent-store-wiring
@@ -90,12 +55,9 @@ jobs:
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-        with:
-          root-directory: work
 
       - name: Build and run all checks
         shell: bash
-        working-directory: work
         run: |
           set -o pipefail
           ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/store-health-build.log
@@ -111,7 +73,6 @@ jobs:
 
       - name: Consistency checks (compare with six baseline documentation drifts)
         shell: bash
-        working-directory: work
         run: |
           set -euo pipefail
           set +e
@@ -122,20 +83,3 @@ jobs:
           test "$(grep -c '^✗ FAIL:' /tmp/consistency.log)" -eq 6
           ! grep -q 'persistent-store registry:' /tmp/consistency.log
           ! grep -q 'storage/` 6 fajlt' /tmp/consistency.log
-
-      - name: Verify coherent target-branch scope
-        shell: bash
-        working-directory: work
-        run: |
-          set -euo pipefail
-          git reset --hard HEAD
-          git clean -fd
-          mapfile -t files < <(git diff --name-only 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..fix/store-health-fail-closed | sort)
-          printf '%s\n' "${files[@]}"
-          test "${#files[@]}" -eq 6
-          test "${files[0]}" = 'build.gradle.kts'
-          test "${files[1]}" = 'docs/ARCHITECTURE.md'
-          test "${files[2]}" = 'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
-          test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/storage/PersistentStore.java'
-          test "${files[4]}" = 'src/main/java/hu/taliann/icesmp/storage/PersistentStoreCoordinator.java'
-          test "${files[5]}" = 'src/regression/java/hu/taliann/icesmp/storage/PersistentStoreCoordinatorRegressionTest.java'
