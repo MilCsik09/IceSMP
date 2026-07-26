@@ -3,8 +3,6 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.items.DevItemFactory;
 import hu.taliann.icesmp.managers.DevItemManager;
 import org.bukkit.Material;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -20,6 +18,7 @@ import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -105,13 +104,21 @@ public final class DevItemProtectionListener implements Listener {
         }
     }
 
+    /**
+     * Cancel every entity interaction while the DEV item is held. This covers item frames and armour
+     * stands, but also item-consuming interactions such as handing the stack to an allay.
+     */
     @EventHandler
     public void onEntityInteract(final PlayerInteractEntityEvent event) {
-        final ItemStack held = event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND
-                ? event.getPlayer().getInventory().getItemInMainHand()
-                : event.getPlayer().getInventory().getItemInOffHand();
-        if ((event.getRightClicked() instanceof ItemFrame || event.getRightClicked() instanceof ArmorStand)
-                && factory.isDevItem(held)) {
+        if (factory.isDevItem(itemInHand(event.getPlayer(), event.getHand()))) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Some entities fire the more specific at-entity event with its own handler list. */
+    @EventHandler
+    public void onEntityInteractAt(final PlayerInteractAtEntityEvent event) {
+        if (factory.isDevItem(itemInHand(event.getPlayer(), event.getHand()))) {
             event.setCancelled(true);
         }
     }
@@ -196,5 +203,11 @@ public final class DevItemProtectionListener implements Listener {
         if (!(event.getClickedInventory() instanceof PlayerInventory)) {
             event.setCancelled(true);
         }
+    }
+
+    private static ItemStack itemInHand(final Player player, final org.bukkit.inventory.EquipmentSlot hand) {
+        return hand == org.bukkit.inventory.EquipmentSlot.HAND
+                ? player.getInventory().getItemInMainHand()
+                : player.getInventory().getItemInOffHand();
     }
 }
