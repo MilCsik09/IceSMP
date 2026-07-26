@@ -8,6 +8,7 @@ import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -71,7 +72,11 @@ public final class QuestProgressListener implements Listener {
         }, null);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         // Creative farm-guard (same as GatheringBuffListener): creative/spectator breaks
         // must not progress quests or community goals.
@@ -83,7 +88,11 @@ public final class QuestProgressListener implements Listener {
         communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS", event.getBlock().getType().name(), 1);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
             final var result = event.getRecipe().getResult();
@@ -91,19 +100,31 @@ public final class QuestProgressListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
             questManager.handleFish(event.getPlayer());
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(final BlockPlaceEvent event) {
         questManager.handlePlaceBlock(event.getPlayer(), event.getBlock().getType());
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onItemPickup(final EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player) {
             final var type = event.getItem().getItemStack().getType();
@@ -139,12 +160,20 @@ public final class QuestProgressListener implements Listener {
         breeder.getScheduler().run(plugin, task -> questManager.handleBreed(breeder, entityType), null);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEnchant(final EnchantItemEvent event) {
         questManager.handleEnchant(event.getEnchanter());
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onConsume(final PlayerItemConsumeEvent event) {
         questManager.handleConsume(event.getPlayer(), event.getItem().getType());
     }

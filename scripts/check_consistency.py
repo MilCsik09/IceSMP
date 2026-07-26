@@ -203,6 +203,39 @@ except Exception as e:
     warn(f"recept-szint ellenőrzés kihagyva: {e}")
 
 # ---------- eredmény ----------
+# ===== Listener-prioritas matrix: progressz NEM elozheti meg a vedelmet =====
+# A Bukkit sorrend LOWEST -> LOW -> NORMAL -> HIGH -> HIGHEST -> MONITOR. A vedelmi listenerek
+# HIGH/HIGHEST prioritason cancel-elnek, ezert egy NORMAL prioritasu progressz-handler MAR
+# konyvelt, mire a vedelem visszavonta az akciot (tiltott tores is adott XP-t/questet). Az
+# ignoreCancelled=true csak a KORABBI cancel ellen ved. A megfigyelo progressz-handlereknek
+# ezert MONITOR prioritason kell futniuk.
+_PROGRESS_LISTENERS = ["QuestProgressListener", "DailyQuestListener", "ProfessionXpListener",
+                       "ServerChallengeListener", "GatheringBuffListener"]
+_CANCELLABLE = {"BlockBreakEvent", "BlockPlaceEvent", "CraftItemEvent", "PlayerFishEvent",
+                "EntityPickupItemEvent", "PlayerHarvestBlockEvent", "SmithItemEvent",
+                "EnchantItemEvent", "InventoryClickEvent", "PlayerItemConsumeEvent"}
+try:
+    for _name in _PROGRESS_LISTENERS:
+        _lp = pathlib.Path(REPO, "src/main/java/hu/taliann/icesmp/listeners", _name + ".java")
+        if not _lp.is_file():
+            warn(f"listener-prioritas: {_name}.java nem talalhato")
+            continue
+        _lines = _lp.read_text(encoding="utf-8").split("\n")
+        for _i, _l in enumerate(_lines):
+            if "@EventHandler" not in _l or "MONITOR" in _l:
+                continue
+            _j = _i + 1
+            while _j < len(_lines) and not _lines[_j].strip():
+                _j += 1
+            _sig = _lines[_j] if _j < len(_lines) else ""
+            _m = re.search(r"final\s+([A-Za-z]+Event)\s+event", _sig)
+            if _m and _m.group(1) in _CANCELLABLE:
+                fail(f"listener-prioritas: {_name}.java:{_i + 1} — {_m.group(1)} handler NEM MONITOR "
+                     f"prioritason fut, igy a vedelem (HIGH/HIGHEST) cancel-je ELOTT konyvel "
+                     f"(tiltott akcio is jutalmazna)")
+except Exception as e:
+    warn(f"listener-prioritas ellenorzes kihagyva: {e}")
+
 # ===== YAML 1.1 boolean-kulcs csapda =====
 # Az idezojel NELKULI on/off/yes/no kulcsot a YAML 1.1 logikai ertekke alakitja, ezert a kod
 # sosem talalja meg a sort (nemán az inline defaultra esik vissza). Ez a hibaosztaly szemre

@@ -9,6 +9,7 @@ import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
@@ -32,7 +33,11 @@ public final class GatheringBuffListener implements Listener {
     }
 
     /** Mining rush → bonus ore drops; harvest hour → bonus mature-crop drops. */
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
         final Player player = event.getPlayer();
         if (!isSurvival(player) || !event.isDropItems()) {
@@ -62,7 +67,11 @@ public final class GatheringBuffListener implements Listener {
     }
 
     /** Fishing frenzy → a chance to reel in a second copy of the catch. */
-    @EventHandler(ignoreCancelled = true)
+    // MONITOR: a védelmi réteg HIGH/HIGHEST prioritáson cancel-el, ezért NORMAL-on a
+    // progresszt még a visszavonás ELŐTT könyveltük volna — a tiltott törés/lerakás így
+    // XP-t és quest-haladást adott. MONITOR-on az event végleges állapota már ismert,
+    // és az ignoreCancelled valóban kizárja a visszavont akciót. Itt NEM módosítunk eventet.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH
                 || gatheringBuffManager.getActive() != GatheringBuff.FISHING_FRENZY

@@ -1210,6 +1210,20 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       („A Korszakok Könyve" + sorszám + bajnok + top-3 hős); a lista korszakonként bővül
       (max-lines), restart-álló (monument.yml + perzisztens TextDisplay). Bajnok nélküli
       szezon nem kerül kőbe.
+- [ ] **Visszavont akció NEM jutalmaz (ÚJ — kiadásblokkoló volt):** a progressz-listenerek
+      (quest, napi, szakma-XP, szerver-kihívás, gyűjtő-buff) `MONITOR` prioritáson könyvelnek, a
+      védelem (claim/territórium/unique) `HIGH`/`HIGHEST`-en cancel-el. Korábban a `NORMAL`
+      prioritás miatt a progressz a visszavonás ELŐTT megtörtént.
+      **Teszt:** állj MÁS játékos claimjébe (nincs törési jogod), és törj ismételten ércet/termést:
+      1. a blokk NE törjön el (a védelem cancel-el);
+      2. szakma-XP, quest-, napi-, közösségi és szerver-kihívás haladás **NE** nőjön;
+      3. aktív Bányász-láz / Termés-óra alatt **NE** essen bónusz-drop a védett blokkból
+         (ez korábban valódi tárgy-duplikációt adott);
+      4. ugyanez tiltott blokk-lerakással és védett unique fogyóeszközzel.
+      **Kontroll:** a SAJÁT claimedben ugyanezek az akciók továbbra is adjanak XP-t, haladást és
+      bónusz-dropot — a MONITOR nem szüntetheti meg a legitim jutalmat.
+      Gépi őr: `scripts/check_consistency.py` FAIL-el, ha egy progressz-handler visszakerül
+      alacsonyabb prioritásra.
 - [ ] **B54 Átkozott felszerelés (ÚJ — Tier A):** világboss/event-boss loot ~8%-a Átkozott
       (sötétvörös lore-sor): viselve darabonként +10% kimenő sebzés (cap +40%), de a
       páncél-slotból NEM vehető ki („Az átok nem ereszt…"). Felvételkor az első kísérlet
