@@ -1,0 +1,134 @@
+
+# IceSMP konfiguráció — örökös, tulajdonoshoz kötött DEV itemek.
+dev-items:
+  csodalatos_bingulus:
+    enabled: true
+    owner-uuid: "eb80c20f-092a-4d76-bd44-d168c91ea9e2"
+    auto-restore: true
+    check-interval-ticks: 20
+    reward-interval-seconds: 600
+
+    item:
+      material: HEART_OF_THE_SEA
+      display-name: "&d&lCsodálatos Bingulus"
+      item-model: "icesmp:csodalatos_bingulus"
+      lore:
+        - "&7A valóság legcsodálatosabb"
+        - "&7és legbingulusabb teremtménye."
+        - ""
+        - "&d✦ &710 aktív percenként jutalmat ad."
+        - "&8Örökös DEV item — nem relikvia."
+        - "&8Nem dobható el és nem tárolható el."
+
+    # Először rarity sorsolódik, utána az adott rarity saját súlyozott táblája.
+    rarity-weights:
+      kozonseges: 60.0
+      nem_mindennapi: 27.0
+      ritka: 9.0
+      epikus: 3.0
+      legendas: 0.9
+      ereklye: 0.1
+
+    # Balszerencse-védelem: ennyi, a szintet el nem érő jutalom után a következő
+    # sorsolás legalább az adott ritkaságú.
+    pity:
+      ritka:
+        after-rolls: 30
+      epikus:
+        after-rolls: 150
+      legendas:
+        after-rolls: 1000
+
+    # entry formátumok:
+    #   MATERIAL[:DARAB] / MATERIAL:MIN:MAX
+    #   unique:<profession-material-id>[:DARAB]
+    #   recipe:<profession-recipe-id>
+    #   blueprint:<profession-recipe-id>
+    # Relikvia szándékosan nem engedélyezett.
+    rewards:
+      kozonseges:
+        iron:
+          entry: "IRON_INGOT:3:8"
+          weight: 28
+        gold:
+          entry: "GOLD_INGOT:2:5"
+          weight: 20
+        xp:
+          entry: "EXPERIENCE_BOTTLE:4:10"
+          weight: 22
+        vasesszencia:
+          entry: "unique:tiszta_vasesszencia:2"
+          weight: 15
+        gyogykivonat:
+          entry: "unique:gyogy_kivonat:2"
+          weight: 15
+
+      nem_mindennapi:
+        diamond:
+          entry: "DIAMOND:1:2"
+          weight: 25
+        pearl:
+          entry: "ENDER_PEARL:3:6"
+          weight: 20
+        runapor:
+          entry: "unique:runapor:2"
+          weight: 20
+        viharkvarc:
+          entry: "unique:viharkvarc:1"
+          weight: 15
+        holdezust:
+          entry: "unique:holdezust_huzal:1"
+          weight: 10
+        parazsmag:
+          entry: "unique:parazsmag:1"
+          weight: 10
+
+      ritka:
+        debris:
+          entry: "ANCIENT_DEBRIS:1"
+          weight: 25
+        apple:
+          entry: "GOLDEN_APPLE:1"
+          weight: 20
+        vad_esszencia:
+          entry: "unique:vad_esszencia:1"
+          weight: 20
+        arnyekpor:
+          entry: "unique:arnyekpor:1"
+          weight: 20
+        borostyan:
+          entry: "unique:melysegi_borostyan:1"
+          weight: 15
+
+      epikus:
+        szorny_mag:
+          entry: "unique:szorny_mag:1"
+          weight: 35
+        fonixpihe:
+          entry: "unique:fonixpihe:1"
+          weight: 25
+        sarkanycsont:
+          entry: "unique:sarkanycsont_szilank:1"
+          weight: 20
+        tarnasz_csakany:
+          entry: "recipe:tarnasz_csakany_recept"
+          weight: 20
+
+      legendas:
+        netherit_tervrajz:
+          entry: "blueprint:netherit_csakany"
+          weight: 45
+        orokzold_tervrajz:
+          entry: "blueprint:orokzold_sarj"
+          weight: 35
+        osi_szilank:
+          entry: "unique:osi_ereklyeszilank:1"
+          weight: 20
+
+      ereklye:
+        osi_szilankok:
+          entry: "unique:osi_ereklyeszilank:2"
+          weight: 65
+        netherit_csakany:
+          entry: "recipe:netherit_csakany"
+          weight: 35

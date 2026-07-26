@@ -104,3 +104,14 @@ feketekő szentély) **csak a Kitaszítottak (DARK) frakcióval** aktiválható.
 - Aktív tulajdonosként az oltár nem ad második példányt — egy relikvia, egy gazda, egy tárgy.
 
 ➡️ Tovább: [Világesemények](10-vilagesemenyek.md) • [Vissza a tartalomhoz](README.md)
+
+
+## DEV itemek — Csodálatos Bingulus
+
+A **DEV itemek nem relikviák**: személyhez kötött, egyedi fejlesztői tárgyak, ezért nem járnak le,
+nem szabadulnak fel inaktivitás miatt, és PvP-ben sem kerülnek új tulajdonoshoz.
+
+A **Csodálatos Bingulus** Bence örökös DEV iteme. Amíg a tulajdonosa online van, és a Bingulus a
+saját inventoryjában található, 10 aktív percenként sorsol egy jutalomritkaságot, majd az adott
+kategóriából vanilla vagy IceSMP-s saját itemet ad. Nem dobható el, nem helyezhető tárolóba, és
+halál vagy szerver-újraindítás után automatikusan visszatér a tulajdonosához.

@@ -5,6 +5,7 @@ import hu.taliann.icesmp.items.UniqueMaterialFactory;
 import hu.taliann.icesmp.listeners.ProfessionRecipeBookListener;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.RelicManager;
+import hu.taliann.icesmp.managers.DevItemManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -29,15 +30,16 @@ import java.util.Locale;
  *       (signature-PDC, custom enchant, crafted-by, affix-roll — {@code buildResult});</li>
  *   <li><b>relikvia:</b> RelicManager.giveRelic force-móddal (tulajdon-átírással);</li>
  *   <li><b>tervrajz:</b> a recept tervrajz-itemje ({@code BlueprintItemFactory}).</li>
+ *   <li><b>dev:</b> örökös, tulajdonoshoz kötött DEV item ({@code DevItemManager}).</li>
  * </ul>
- * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]} —
+ * Használat: {@code /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]} —
  * játékos nélkül a kiadó kapja. Jog: {@code icesmp.admin.item}. Folia: másik játékosnak
  * adáskor a CÉL saját régió-schedulerén fut az inventory-írás.
  */
 public final class ItemGiveCommand implements BasicCommand {
 
     public static final String PERMISSION = "icesmp.admin.item";
-    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz", "erszeny");
+    private static final List<String> TYPES = List.of("unique", "recept", "relikvia", "tervrajz", "erszeny", "dev");
 
     private final JavaPlugin plugin;
     private final UniqueMaterialFactory uniqueMaterials;
@@ -47,13 +49,15 @@ public final class ItemGiveCommand implements BasicCommand {
     private final BlueprintItemFactory blueprintFactory;
     private final MessageManager messageManager;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory;
+    private final DevItemManager devItemManager;
 
     public ItemGiveCommand(final JavaPlugin plugin, final UniqueMaterialFactory uniqueMaterials,
                            final ProfessionRecipeCatalog catalog,
                            final ProfessionRecipeBookListener recipeBookListener,
                            final RelicManager relicManager, final BlueprintItemFactory blueprintFactory,
                            final MessageManager messageManager,
-                           final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory) {
+                           final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchFactory,
+                           final DevItemManager devItemManager) {
         this.plugin = plugin;
         this.uniqueMaterials = uniqueMaterials;
         this.catalog = catalog;
@@ -62,6 +66,7 @@ public final class ItemGiveCommand implements BasicCommand {
         this.blueprintFactory = blueprintFactory;
         this.messageManager = messageManager;
         this.moneyPouchFactory = moneyPouchFactory;
+        this.devItemManager = devItemManager;
     }
 
     @Override
@@ -73,7 +78,7 @@ public final class ItemGiveCommand implements BasicCommand {
         }
         if (args.length < 2) {
             sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
             return;
         }
         final String type = args[0].toLowerCase(Locale.ROOT);
@@ -180,6 +185,22 @@ public final class ItemGiveCommand implements BasicCommand {
                     }
                 }, null);
             }
+            case "dev" -> {
+                if (!hu.taliann.icesmp.items.DevItemFactory.BINGULUS_ID.equals(id)
+                        || !devItemManager.isOwner(target)) {
+                    sender.sendMessage(messageManager.get("dev-item.wrong-owner",
+                            "&cA Csodálatos Bingulus kizárólag a beállított tulajdonosnak adható."));
+                    return;
+                }
+                target.getScheduler().run(plugin, task -> {
+                    if (devItemManager.giveToOwner(target)) {
+                        confirm(sender, target, "Csodálatos Bingulus", 1);
+                    } else {
+                        sender.sendMessage(messageManager.get("dev-item.give-failed",
+                                "&cA Csodálatos Bingulus nem adható át: a tulajdonos inventoryja tele van."));
+                    }
+                }, null);
+            }
             case "tervrajz" -> {
                 if (catalog.get(id) == null) {
                     sender.sendMessage(messageManager.get("admin.iceitem.unknown-id",
@@ -198,7 +219,7 @@ public final class ItemGiveCommand implements BasicCommand {
                 }, null);
             }
             default -> sender.sendMessage(messageManager.get("admin.iceitem.usage",
-                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny> <id> [darab] [játékos]"));
+                    "&cHasználat: /iceitem <unique|recept|relikvia|tervrajz|erszeny|dev> <id> [darab] [játékos]"));
         }
     }
 
@@ -231,6 +252,7 @@ public final class ItemGiveCommand implements BasicCommand {
                 case "recept", "tervrajz" -> filter(catalog.allIds(), args[1]);
                 case "relikvia" -> filter(relicManager.getDefinitions().stream()
                         .map(definition -> definition.id().toLowerCase(Locale.ROOT)).toList(), args[1]);
+                case "dev" -> filter(List.of(hu.taliann.icesmp.items.DevItemFactory.BINGULUS_ID), args[1]);
                 default -> List.of();
             };
         }
