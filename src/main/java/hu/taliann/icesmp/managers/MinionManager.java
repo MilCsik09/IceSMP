@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.managers;
 
-import org.bukkit.Bukkit;
+import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
@@ -14,20 +14,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Manager for summoned minions (necromancer undead, beast master animals).
- * Minions are marked with a 'minion_owner' PDC tag (loyalty) and a
- * 'minion_stance' tag (player-controlled behaviour). An in-memory registry of
- * minion UUIDs per owner backs the per-player summon cap; it lazily prunes
- * dead/despawned minions, so no death listener is required.
- */
+/** Manager for summoned minions with UUID-only lifecycle tracking. */
 public final class MinionManager {
 
-    /** Pet stances cycled by the owner. */
     public enum Stance {
-        ACTIVE,   // attacks enemies (default)
-        PASSIVE,  // keeps its AI but never picks a target
-        STAY      // frozen in place (AI off)
+        ACTIVE,
+        PASSIVE,
+        STAY
     }
 
     private final JavaPlugin plugin;
@@ -41,44 +34,40 @@ public final class MinionManager {
         this.minionStanceKey = new NamespacedKey(plugin, "minion_stance");
     }
 
-    /**
-     * Tags a freshly summoned minion with its owner, registers it for the
-     * summon cap, and sets the default ACTIVE stance.
-     *
-     * @param minion the summoned mob
-     * @param owner the summoner
-     */
     public void tag(final Mob minion, final UUID owner) {
         if (minion == null || owner == null) {
             return;
         }
-
-        minion.getPersistentDataContainer().set(minionOwnerKey, PersistentDataType.STRING, owner.toString());
-        minion.getPersistentDataContainer().set(minionStanceKey, PersistentDataType.STRING, Stance.ACTIVE.name());
-        minionsByOwner.computeIfAbsent(owner, key -> ConcurrentHashMap.newKeySet()).add(minion.getUniqueId());
+        minion.getPersistentDataContainer().set(
+                minionOwnerKey, PersistentDataType.STRING, owner.toString());
+        minion.getPersistentDataContainer().set(
+                minionStanceKey, PersistentDataType.STRING, Stance.ACTIVE.name());
+        // Explicit registration is idempotent and also covers platforms whose CUSTOM spawn event was
+        // observed before this plugin's lifecycle listener became active during a hot reload.
+        TransientEntities.register(plugin, minion);
+        minionsByOwner.computeIfAbsent(owner,
+                key -> ConcurrentHashMap.newKeySet()).add(minion.getUniqueId());
     }
 
     public boolean isMinion(final Entity entity) {
         return getOwner(entity) != null;
     }
 
-    /** Statikus minion-teszt DI nélkül (kill-jutalom listenereknek: saját idézett ne fizessen). */
     public static boolean isMinionTagged(final Entity entity) {
         return entity != null && entity.getPersistentDataContainer().has(
-                org.bukkit.NamespacedKey.fromString("icesmp:minion_owner"), PersistentDataType.STRING);
+                NamespacedKey.fromString("icesmp:minion_owner"),
+                PersistentDataType.STRING);
     }
 
-    /** @return the owner UUID of the minion, or null if the entity is not a minion */
     public UUID getOwner(final Entity entity) {
         if (entity == null) {
             return null;
         }
-
-        final String rawOwner = entity.getPersistentDataContainer().get(minionOwnerKey, PersistentDataType.STRING);
+        final String rawOwner = entity.getPersistentDataContainer().get(
+                minionOwnerKey, PersistentDataType.STRING);
         if (rawOwner == null || rawOwner.isBlank()) {
             return null;
         }
-
         try {
             return UUID.fromString(rawOwner);
         } catch (final IllegalArgumentException exception) {
@@ -95,12 +84,11 @@ public final class MinionManager {
         if (entity == null) {
             return Stance.ACTIVE;
         }
-
-        final String raw = entity.getPersistentDataContainer().get(minionStanceKey, PersistentDataType.STRING);
+        final String raw = entity.getPersistentDataContainer().get(
+                minionStanceKey, PersistentDataType.STRING);
         if (raw == null) {
             return Stance.ACTIVE;
         }
-
         try {
             return Stance.valueOf(raw.toUpperCase(Locale.ROOT));
         } catch (final IllegalArgumentException exception) {
@@ -108,22 +96,14 @@ public final class MinionManager {
         }
     }
 
-    /**
-     * Cycles a minion's stance (ACTIVE → PASSIVE → STAY → ACTIVE) and applies
-     * the immediate effect: STAY freezes the AI, the others enable it; PASSIVE
-     * and STAY also drop the current target.
-     *
-     * @param minion the minion to retune
-     * @return the new stance
-     */
     public Stance cycleStance(final Mob minion) {
         final Stance next = switch (getStance(minion)) {
             case ACTIVE -> Stance.PASSIVE;
             case PASSIVE -> Stance.STAY;
             case STAY -> Stance.ACTIVE;
         };
-
-        minion.getPersistentDataContainer().set(minionStanceKey, PersistentDataType.STRING, next.name());
+        minion.getPersistentDataContainer().set(
+                minionStanceKey, PersistentDataType.STRING, next.name());
         minion.setAI(next != Stance.STAY);
         if (next != Stance.ACTIVE) {
             minion.setTarget(null);
@@ -131,43 +111,31 @@ public final class MinionManager {
         return next;
     }
 
-    /**
-     * Counts an owner's currently alive minions, pruning stale registry entries.
-     *
-     * @param owner the summoner
-     * @return the number of valid, living minions
-     */
-    /** A tulaj ÖSSZES élő minionját/társát eltávolítja (entitás-szál hoppal). */
     public void removeAllOwned(final UUID owner) {
         final Set<UUID> ids = minionsByOwner.remove(owner);
         if (ids == null) {
             return;
         }
         for (final UUID id : ids) {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid()) {
-                entity.getScheduler().run(plugin, task -> entity.remove(), null);
-            }
+            TransientEntities.removeById(plugin, id);
         }
     }
 
+    /** Pure UUID/atomic liveness query; no cross-region entity access. */
     public int countActive(final UUID owner) {
         final Set<UUID> ids = minionsByOwner.get(owner);
         if (ids == null || ids.isEmpty()) {
             return 0;
         }
-
         int alive = 0;
         for (final UUID id : new HashSet<>(ids)) {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid() && isMinion(entity)) {
+            if (TransientEntities.isAlive(id)) {
                 alive++;
             } else {
                 ids.remove(id);
             }
         }
-        if (alive == 0 && ids.isEmpty()) {
-            // Drop the owner key too, so one-time summoners don't linger in the registry forever.
+        if (ids.isEmpty()) {
             minionsByOwner.remove(owner, ids);
         }
         return alive;

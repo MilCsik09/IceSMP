@@ -5,55 +5,68 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 
-/**
- * Gameplay-audit: figyelem-orchestráció — a NAGY, mob-spawnoló PvE-események
- * (világboss, invázió, vad hajsza, kíséret, kultisták) természetes sorsolása
- * kapuzott: ha már fut egy másik nagy esemény, az új sorsolás kimarad, így a
- * szerver figyelme nem forgácsolódik szét. Admin-parancs (forceStart) mindig
- * átmegy — a kapu CSAK a természetes indítást fogja vissza. Az aktív-állapot
- * ellenőrzők a core-ban regisztrálódnak; minden kulcs élőben olvasódik.
- */
+/** Bounded orchestration gate for large PvE events. */
 public final class MajorEventGate {
 
-    /** A default major-lista (world-events.orchestration.major-events felülírhatja). */
     private static final List<String> DEFAULT_MAJORS =
             List.of("world-boss", "invasion", "wild-hunt", "escort", "cultists");
 
     private final ConfigManager configManager;
     private final Map<String, BooleanSupplier> activeChecks = new ConcurrentHashMap<>();
+    /** First instant at which the supplier continuously reported active. */
+    private final Map<String, Long> activeSince = new ConcurrentHashMap<>();
 
     public MajorEventGate(final ConfigManager configManager) {
         this.configManager = configManager;
     }
 
-    /** Core-oldali regisztráció: eseménykulcs → "épp aktív?" ellenőrző (volatile olvasás). */
     public void register(final String eventKey, final BooleanSupplier activeCheck) {
         activeChecks.put(eventKey, activeCheck);
+        activeSince.remove(eventKey);
     }
 
     /**
-     * Indulhat-e MOST természetes sorsolásból az adott nagy esemény. false, ha az
-     * orchestráció él, az esemény a major-listán van, és egy MÁSIK listás esemény
-     * éppen fut. A managerek a saját sorsolásuk elején hívják (global tick szál).
-     *
-     * @param eventKey a kérdező esemény kulcsa (pl. "world-boss")
-     * @return true, ha a természetes indítás mehet
+     * A lost lifecycle callback may leave one manager's volatile flag stuck. Such a stale supplier
+     * must not deadlock every other event forever: after the configurable watchdog limit it is
+     * ignored until it reports inactive once. Normal event lifetimes are well below the 60-minute
+     * default.
      */
     public boolean mayStartNaturally(final String eventKey) {
         if (!configManager.getBoolean("world-events.orchestration.enabled", true)) {
             return true;
         }
-        final List<String> configured = configManager.getStringList("world-events.orchestration.major-events");
+        final List<String> configured = configManager.getStringList(
+                "world-events.orchestration.major-events");
         final List<String> majors = configured.isEmpty() ? DEFAULT_MAJORS : configured;
         if (!majors.contains(eventKey)) {
             return true;
         }
+        final long now = System.currentTimeMillis();
+        final long watchdogMillis = Math.max(5L, configManager.getLong(
+                "world-events.orchestration.max-active-minutes", 60L)) * 60_000L;
         for (final String other : majors) {
             if (other.equals(eventKey)) {
                 continue;
             }
             final BooleanSupplier check = activeChecks.get(other);
-            if (check != null && check.getAsBoolean()) {
+            if (check == null) {
+                activeSince.remove(other);
+                continue;
+            }
+            final boolean active;
+            try {
+                active = check.getAsBoolean();
+            } catch (final RuntimeException failure) {
+                // An unreadable foreign lifecycle is not proof that an event is active.
+                activeSince.remove(other);
+                continue;
+            }
+            if (!active) {
+                activeSince.remove(other);
+                continue;
+            }
+            final long since = activeSince.computeIfAbsent(other, ignored -> now);
+            if (now - since <= watchdogMillis) {
                 return false;
             }
         }

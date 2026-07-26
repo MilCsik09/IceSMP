@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.TransientEntities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -21,23 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * N25b — Kultista esemény (teszter-ötlet, lore: a Néma Királynő kósza hívei a Kapu
- * körül gyülekeznek — kódex V./VII.). Három változat, súlyozott sorsolással:
- * <ul>
- *   <li><b>TÁMADÁS:</b> kis kultista portya (akolitusok + pengék) ront a horgony-pontra
- *       — az utolsó leölése zárja, broadcast dicséri az irtókat.</li>
- *   <li><b>RÍTUS:</b> a hívek kört állnak és kántálnak; ha rite-minutes alatt nem
- *       irtják ki MINDET, a rítus beteljesül és eséllyel RONTÁS-GÓC nyílik a helyszínen
- *       (CorruptionManager.forceSpawnAt) — megszakítva viszont loot hullik.</li>
- *   <li><b>HÍRVIVŐ:</b> magányos csuklyás alak indul a Kitaszítottak földje felé —
- *       követhető; leölve elejti az üzenetét (loot), különben eltűnik a homályban.</li>
- * </ul>
- * Horgony: az N25 spawnpont-rendszer ("cultists" kulcs) → játékos-fallback. Minden
- * spawn a spawn-rules mátrixon és EventSpawnGuard.prepare-en megy át. Folia: tick a
- * globális schedulerről, spawn a helyszín régió-szálán, a hírvivő léptetése a saját
- * entity-schedulerén (halálkor magától nyugdíjazódik). Élő kulcsok: cultists.*.
- */
+/** Cultist world event with bounded, UUID-only lifecycle tracking. */
 public final class CultistEventManager {
 
     private final JavaPlugin plugin;
@@ -50,29 +36,25 @@ public final class CultistEventManager {
     private final WhisperManager whisperManager;
     private final SeasonManager seasonManager;
     private final org.bukkit.NamespacedKey markKey;
-
     private final Set<UUID> cultists = ConcurrentHashMap.newKeySet();
+
     private volatile boolean active;
     private volatile String variant = "";
     private volatile Location riteSite;
     private volatile long riteEndsAt;
     private volatile long nextAttemptAt;
     private volatile long spawnGraceUntil;
-    /** N25 — setterrel kötve. */
     private volatile EventSpawnPointManager spawnPointManager;
-
-
-    /** Orchestráció-kapu (setterrel kötve; null = nincs kapuzás). */
     private volatile MajorEventGate eventGate;
 
-    public void setEventGate(final MajorEventGate eventGate) {
-        this.eventGate = eventGate;
-    }
-
-    public CultistEventManager(final JavaPlugin plugin, final ConfigManager configManager,
-                               final MobScalingManager mobScalingManager, final EventSpawnGuard spawnGuard,
-                               final TerritoryManager territoryManager, final CorruptionManager corruptionManager,
-                               final MessageManager messageManager, final WhisperManager whisperManager,
+    public CultistEventManager(final JavaPlugin plugin,
+                               final ConfigManager configManager,
+                               final MobScalingManager mobScalingManager,
+                               final EventSpawnGuard spawnGuard,
+                               final TerritoryManager territoryManager,
+                               final CorruptionManager corruptionManager,
+                               final MessageManager messageManager,
+                               final WhisperManager whisperManager,
                                final SeasonManager seasonManager) {
         this.plugin = plugin;
         this.configManager = configManager;
@@ -86,25 +68,38 @@ public final class CultistEventManager {
         this.markKey = new org.bukkit.NamespacedKey(plugin, "cultist_mob");
     }
 
-    public void setSpawnPointManager(final EventSpawnPointManager spawnPointManager) {
+    public void setEventGate(final MajorEventGate eventGate) {
+        this.eventGate = eventGate;
+    }
+
+    public void setSpawnPointManager(
+            final EventSpawnPointManager spawnPointManager) {
         this.spawnPointManager = spawnPointManager;
     }
 
-    /** Fut-e éppen kultista esemény (orchestráció-kapu / menü). */
+    /** Pure atomic lifecycle query used by MajorEventGate. */
     public boolean isActive() {
+        if (!active) {
+            return false;
+        }
+        cultists.removeIf(id -> !TransientEntities.isAlive(id));
+        if (cultists.isEmpty()) {
+            synchronized (this) {
+                if (active && cultists.isEmpty()) {
+                    active = false;
+                    riteEndsAt = 0L;
+                    riteSite = null;
+                }
+            }
+        }
         return active;
     }
 
     public boolean isCultist(final Entity entity) {
-        return entity.getPersistentDataContainer().has(markKey,
-                org.bukkit.persistence.PersistentDataType.BYTE);
+        return entity != null && entity.getPersistentDataContainer().has(
+                markKey, PersistentDataType.BYTE);
     }
 
-    /**
-     * Pontosan egy lezáró ág nyerhet: az utolsó hívő halála (mob régió-szál) és a
-     * rítus-határidő (globál tick) versenyét ez a csere dönti el — dupla kifizetés
-     * és ellentmondó broadcast ellen.
-     */
     private synchronized boolean claimClose() {
         if (!active) {
             return false;
@@ -113,50 +108,66 @@ public final class CultistEventManager {
         return true;
     }
 
-    /** A közös halál-listener hívja (a mob régió-szálán). */
     public void onDeath(final UUID entityId) {
-        if (!cultists.remove(entityId) || !active) {
+        if (entityId == null) {
             return;
         }
-        if (cultists.isEmpty() && claimClose()) {
-            final String key = "rite".equals(variant) ? "cultists-rite-broken"
-                    : "courier".equals(variant) ? "cultists-courier-slain" : "cultists-routed";
-            final String def = switch (variant) {
-                case "rite" -> "<green>🕯 A rítus megszakadt — a kántálás elhal, és a kör közepén ott marad, amit a hívek a Királynőnek szántak…</green>";
-                case "courier" -> "<green>🕯 A hírvivő elesett — az üzenete sosem ér a Kapuhoz.</green>";
-                default -> "<green>🕯 A kultista portyát szétszórtátok — a suttogás ma elhallgat.</green>";
-            };
-            if ("rite".equals(variant)) {
-                dropRiteLoot();
-            }
-            Bukkit.getServer().broadcast(messageManager.getMessage(key, def));
+        final boolean removed = cultists.remove(entityId);
+        TransientEntities.markGone(entityId);
+        if (!removed || !active || !cultists.isEmpty() || !claimClose()) {
+            return;
         }
+        final String current = variant;
+        final String key = "rite".equals(current) ? "cultists-rite-broken"
+                : "courier".equals(current)
+                ? "cultists-courier-slain" : "cultists-routed";
+        final String fallback = switch (current) {
+            case "rite" -> "<green>🕯 A rítus megszakadt — a kántálás elhal, és a kör közepén ott marad, amit a hívek a Királynőnek szántak…</green>";
+            case "courier" -> "<green>🕯 A hírvivő elesett — az üzenete sosem ér a Kapuhoz.</green>";
+            default -> "<green>🕯 A kultista portyát szétszórtátok — a suttogás ma elhallgat.</green>";
+        };
+        if ("rite".equals(current)) {
+            dropRiteLoot();
+        }
+        broadcast(key, fallback);
+        resetTransientState();
     }
 
     private void dropRiteLoot() {
-        final Location site = riteSite;
+        final Location site = riteSite == null ? null : riteSite.clone();
         if (site == null || site.getWorld() == null) {
             return;
         }
         plugin.getServer().getRegionScheduler().run(plugin, site, task -> {
-            for (final org.bukkit.inventory.ItemStack loot
-                    : LootTable.roll(configManager, "cultists.rite-loot",
-                            Math.max(1, configManager.getInt("cultists.rite-loot-rolls", 3)))) {
+            for (final org.bukkit.inventory.ItemStack loot : LootTable.roll(
+                    configManager, "cultists.rite-loot",
+                    Math.max(1, configManager.getInt(
+                            "cultists.rite-loot-rolls", 3)))) {
                 site.getWorld().dropItemNaturally(site, loot);
             }
-            site.getWorld().playSound(site, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.3F);
+            site.getWorld().playSound(site,
+                    Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0F, 1.3F);
         });
     }
 
-    /** Periodikus driver a world-events tickről (global scheduler). */
     public void tick() {
         if (!configManager.getBoolean("cultists.enabled", true)) {
+            if (active) {
+                shutdown();
+            }
             return;
         }
         final long now = System.currentTimeMillis();
         if (active) {
-            // Rítus-határidő: ha él még hív, a rítus beteljesül.
-            if ("rite".equals(variant) && riteEndsAt > 0L && now >= riteEndsAt && !cultists.isEmpty()) {
+            cultists.removeIf(id -> !TransientEntities.isAlive(id));
+            if (cultists.isEmpty()) {
+                if (claimClose()) {
+                    resetTransientState();
+                }
+                return;
+            }
+            if ("rite".equals(variant) && riteEndsAt > 0L
+                    && now >= riteEndsAt) {
                 completeRite();
             }
             return;
@@ -164,248 +175,287 @@ public final class CultistEventManager {
         if (now < nextAttemptAt || now < spawnGraceUntil) {
             return;
         }
-        nextAttemptAt = now + Math.max(1L, configManager.getLong("cultists.interval-minutes", 100L)) * 60_000L;
-        // Orchestráció: ha másik nagy PvE-esemény fut, ez a természetes sorsolás kimarad.
-        final MajorEventGate gateRef = eventGate;
-        if (gateRef != null && !gateRef.mayStartNaturally("cultists")) {
+        nextAttemptAt = now + Math.max(1L, configManager.getLong(
+                "cultists.interval-minutes", 100L)) * 60_000L;
+        final MajorEventGate gate = eventGate;
+        if (gate != null && !gate.mayStartNaturally("cultists")) {
             return;
         }
         final double chance = Math.max(0.0D, Math.min(100.0D,
                 configManager.getDouble("cultists.chance-percent", 30.0D)));
-        if (ThreadLocalRandom.current().nextDouble(100.0D) >= chance) {
-            return;
+        if (ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
+            forceStart(null);
         }
-        forceStart(null);
     }
 
-    /** Admin/tick indítás; false = már fut vagy nincs horgony. */
     public synchronized boolean forceStart(final Player preferredAnchor) {
         if (active || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
         final String picked = pickVariant();
-        // Hely-horgony, aztán játékos-fallback.
-        final EventSpawnPointManager pointsRef = spawnPointManager;
-        final Location fixedAnchor = preferredAnchor != null || pointsRef == null
-                ? null : pointsRef.resolveAnchorLocation("cultists");
-        if (fixedAnchor != null) {
-            plugin.getServer().getRegionScheduler().run(plugin, fixedAnchor,
-                    task -> spawnVariant(picked, fixedAnchor));
+        final EventSpawnPointManager points = spawnPointManager;
+        final Location fixed = preferredAnchor != null || points == null
+                ? null : points.resolveAnchorLocation("cultists");
+        if (fixed != null) {
+            plugin.getServer().getRegionScheduler().run(plugin, fixed,
+                    task -> spawnVariant(picked, fixed));
             return true;
         }
         Player anchor = preferredAnchor;
         if (anchor == null) {
-            final List<? extends Player> online = List.copyOf(Bukkit.getOnlinePlayers());
+            final List<? extends Player> online =
+                    List.copyOf(Bukkit.getOnlinePlayers());
             if (online.isEmpty()) {
+                spawnGraceUntil = 0L;
                 return false;
             }
             anchor = online.get(ThreadLocalRandom.current().nextInt(online.size()));
         }
         final Player target = anchor;
-        final int offset = Math.max(16, configManager.getInt("cultists.spawn-offset", 48));
+        final int offset = Math.max(16,
+                configManager.getInt("cultists.spawn-offset", 48));
         target.getScheduler().run(plugin, task -> {
             final Location base = target.getLocation().clone().add(
                     ThreadLocalRandom.current().nextDouble(-offset, offset), 0.0D,
                     ThreadLocalRandom.current().nextDouble(-offset, offset));
             plugin.getServer().getRegionScheduler().run(plugin, base,
                     spawn -> spawnVariant(picked, base));
-        }, null);
+        }, () -> spawnGraceUntil = 0L);
         return true;
     }
 
     private String pickVariant() {
-        final int attack = Math.max(0, configManager.getInt("cultists.variant-weights.attack", 40));
-        final int rite = Math.max(0, configManager.getInt("cultists.variant-weights.rite", 35));
-        final int courier = Math.max(0, configManager.getInt("cultists.variant-weights.courier", 25));
+        final int attack = Math.max(0,
+                configManager.getInt("cultists.variant-weights.attack", 40));
+        final int rite = Math.max(0,
+                configManager.getInt("cultists.variant-weights.rite", 35));
+        final int courier = Math.max(0,
+                configManager.getInt("cultists.variant-weights.courier", 25));
         final int total = Math.max(1, attack + rite + courier);
         final int roll = ThreadLocalRandom.current().nextInt(total);
-        return roll < attack ? "attack" : roll < attack + rite ? "rite" : "courier";
+        return roll < attack ? "attack"
+                : roll < attack + rite ? "rite" : "courier";
     }
 
-    /** A helyszín régió-szálán fut: guard-ellenőrzés + a változat felállítása. */
     private void spawnVariant(final String picked, final Location base) {
         final World world = base.getWorld();
         if (world == null) {
+            spawnGraceUntil = 0L;
             return;
         }
         final int x = base.getBlockX();
         final int z = base.getBlockZ();
-        final int y = world.getHighestBlockYAt(x, z) + 1;
-        final Location site = new Location(world, x + 0.5D, y, z + 0.5D);
-        if (spawnGuard.isBlocked("cultists", site) || spawnGuard.isUnsafeSurface("cultists", world, x, z)) {
-            return; // következő intervallum, máshol
+        final Location site = new Location(world, x + 0.5D,
+                world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
+        if (spawnGuard.isBlocked("cultists", site)
+                || spawnGuard.isUnsafeSurface("cultists", world, x, z)) {
+            spawnGraceUntil = 0L;
+            return;
         }
         cultists.clear();
         variant = picked;
-        riteSite = "rite".equals(picked) ? site : null;
+        riteSite = "rite".equals(picked) ? site.clone() : null;
         riteEndsAt = "rite".equals(picked)
-                ? System.currentTimeMillis() + Math.max(1, configManager.getInt("cultists.rite-minutes", 6)) * 60_000L : 0L;
-        active = true;
+                ? System.currentTimeMillis() + Math.max(1,
+                configManager.getInt("cultists.rite-minutes", 6)) * 60_000L : 0L;
 
-        switch (picked) {
-            case "rite" -> {
-                final int count = Math.max(2, configManager.getInt("cultists.rite-count", 3));
-                for (int i = 0; i < count; i++) {
-                    final double angle = (Math.PI * 2.0D / count) * i;
-                    spawnCultist(world, site.clone().add(Math.cos(angle) * 3.0D, 0.0D, Math.sin(angle) * 3.0D),
-                            i == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
-                            i == 0 ? "Kultista főpap" : "Kultista őrző");
-                }
-                world.playSound(site, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD, 1.5F, 0.6F);
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.SOUL, site, 30, 2.0D, 1.0D, 2.0D, 0.02D);
-                Bukkit.getServer().broadcast(messageManager.getMessage("cultists-rite-started",
-                        "<dark_purple>🕯 A Néma Királynő hívei RÍTUSBA kezdtek ({world}: {x}, {z})! Szakítsd meg, mielőtt beteljesül — különben a rontás gyökeret ver…</dark_purple>",
-                        Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z))));
+        if ("rite".equals(picked)) {
+            final int count = Math.max(2,
+                    configManager.getInt("cultists.rite-count", 3));
+            for (int index = 0; index < count; index++) {
+                final double angle = Math.PI * 2.0D * index / count;
+                spawnCultist(world, site.clone().add(
+                                Math.cos(angle) * 3.0D, 0.0D,
+                                Math.sin(angle) * 3.0D),
+                        index == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
+                        index == 0 ? "Kultista főpap" : "Kultista őrző");
             }
-            case "courier" -> {
-                spawnCourier(world, site);
-                Bukkit.getServer().broadcast(messageManager.getMessage("cultists-courier-seen",
-                        "<dark_purple>🕯 Csuklyás HÍRVIVŐT láttak ({world}: {x}, {z} felől) — a Kitaszítottak földje felé oson. Kövesd vagy állítsd meg, mielőtt eltűnik!</dark_purple>",
-                        Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z))));
+            world.playSound(site, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD,
+                    1.5F, 0.6F);
+            hu.taliann.icesmp.utils.ParticleUtil.spawn(
+                    world, Particle.SOUL, site, 30,
+                    2.0D, 1.0D, 2.0D, 0.02D);
+            broadcast("cultists-rite-started",
+                    "<dark_purple>🕯 A Néma Királynő hívei RÍTUSBA kezdtek ({world}: {x}, {z})! Szakítsd meg, mielőtt beteljesül — különben a rontás gyökeret ver…</dark_purple>",
+                    Map.of("world", world.getName(), "x", String.valueOf(x),
+                            "z", String.valueOf(z)));
+        } else if ("courier".equals(picked)) {
+            spawnCourier(world, site);
+            broadcast("cultists-courier-seen",
+                    "<dark_purple>🕯 Csuklyás HÍRVIVŐT láttak ({world}: {x}, {z} felől) — a Kitaszítottak földje felé oson. Kövesd vagy állítsd meg, mielőtt eltűnik!</dark_purple>",
+                    Map.of("world", world.getName(), "x", String.valueOf(x),
+                            "z", String.valueOf(z)));
+        } else {
+            final int count = Math.max(2,
+                    configManager.getInt("cultists.attack-count", 4));
+            for (int index = 0; index < count; index++) {
+                spawnCultist(world, site.clone().add(
+                                ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D),
+                                0.0D,
+                                ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D)),
+                        index == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
+                        index == 0 ? "Kultista akolitus" : "Kultista penge");
             }
-            default -> {
-                final int count = Math.max(2, configManager.getInt("cultists.attack-count", 4));
-                for (int i = 0; i < count; i++) {
-                    spawnCultist(world, site.clone().add(
-                                    ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D), 0.0D,
-                                    ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D)),
-                            i == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
-                            i == 0 ? "Kultista akolitus" : "Kultista penge");
-                }
-                world.playSound(site, Sound.ENTITY_VINDICATOR_CELEBRATE, 1.2F, 0.7F);
-                Bukkit.getServer().broadcast(messageManager.getMessage("cultists-attack-started",
-                        "<dark_purple>🕯 Kultista PORTYA tört elő a homályból ({world}: {x}, {z})! A Királynő hívei nem kegyelmeznek — szórd szét őket!</dark_purple>",
-                        Map.of("world", world.getName(), "x", String.valueOf(x), "z", String.valueOf(z))));
-            }
+            world.playSound(site, Sound.ENTITY_VINDICATOR_CELEBRATE,
+                    1.2F, 0.7F);
+            broadcast("cultists-attack-started",
+                    "<dark_purple>🕯 Kultista PORTYA tört elő a homályból ({world}: {x}, {z})! A Királynő hívei nem kegyelmeznek — szórd szét őket!</dark_purple>",
+                    Map.of("world", world.getName(), "x", String.valueOf(x),
+                            "z", String.valueOf(z)));
+        }
+        active = !cultists.isEmpty();
+        spawnGraceUntil = 0L;
+        if (!active) {
+            resetTransientState();
         }
     }
 
-    private void spawnCultist(final World world, final Location where, final EntityType type, final String name) {
-        final int floorY = world.getHighestBlockYAt(where.getBlockX(), where.getBlockZ()) + 1;
-        where.setY(floorY);
+    private void spawnCultist(final World world, final Location where,
+                              final EntityType type, final String name) {
+        where.setY(world.getHighestBlockYAt(
+                where.getBlockX(), where.getBlockZ()) + 1);
         final Entity spawned = world.spawnEntity(where, type);
         if (!(spawned instanceof Mob mob)) {
             spawned.remove();
             return;
         }
+        prepareCultist(mob, name);
+    }
+
+    private void prepareCultist(final Mob mob, final String name) {
         EventSpawnGuard.prepare(mob);
-        mob.getPersistentDataContainer().set(markKey, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+        mob.getPersistentDataContainer().set(
+                markKey, PersistentDataType.BYTE, (byte) 1);
         mob.setPersistent(false);
         mob.setRemoveWhenFarAway(false);
-        mob.customName(Component.text("🕯 " + name, NamedTextColor.DARK_PURPLE));
+        mob.customName(Component.text("🕯 " + name,
+                NamedTextColor.DARK_PURPLE));
         mob.setCustomNameVisible(true);
-        mobScalingManager.forceLevel(mob, Math.max(1, configManager.getInt("cultists.mob-level", 5)));
+        mobScalingManager.forceLevel(mob, Math.max(1,
+                configManager.getInt("cultists.mob-level", 5)));
+        TransientEntities.register(plugin, mob);
         cultists.add(mob.getUniqueId());
     }
 
-    /** Hírvivő: a legközelebbi DARK territórium (vagy random irány) felé lépked. */
     private void spawnCourier(final World world, final Location site) {
         final Entity spawned = world.spawnEntity(site, EntityType.VINDICATOR);
         if (!(spawned instanceof Mob courier)) {
             spawned.remove();
             return;
         }
-        EventSpawnGuard.prepare(courier);
-        courier.getPersistentDataContainer().set(markKey, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
-        courier.setPersistent(false);
-        courier.setRemoveWhenFarAway(false);
-        courier.customName(Component.text("🕯 Kultista hírvivő", NamedTextColor.DARK_PURPLE));
-        courier.setCustomNameVisible(true);
-        mobScalingManager.forceLevel(courier, Math.max(1, configManager.getInt("cultists.mob-level", 5)));
-        cultists.add(courier.getUniqueId());
-
-        // Cél: a legközelebbi DARK territórium középpontja; ha nincs, random irány messze.
+        prepareCultist(courier, "Kultista hírvivő");
         Location goal = null;
         double best = Double.MAX_VALUE;
         for (final hu.taliann.icesmp.data.Territory territory : territoryManager.all()) {
             if (territory.faction() == hu.taliann.icesmp.data.FactionType.DARK
                     && territory.world().equals(world.getName())) {
-                final double dist = Math.pow(territory.x() - site.getX(), 2) + Math.pow(territory.z() - site.getZ(), 2);
-                if (dist < best) {
-                    best = dist;
-                    goal = new Location(world, territory.x(), site.getY(), territory.z());
+                final double distance = Math.pow(territory.x() - site.getX(), 2)
+                        + Math.pow(territory.z() - site.getZ(), 2);
+                if (distance < best) {
+                    best = distance;
+                    goal = new Location(world, territory.x(),
+                            site.getY(), territory.z());
                 }
             }
         }
         if (goal == null) {
-            final double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
-            goal = site.clone().add(Math.cos(angle) * 300.0D, 0.0D, Math.sin(angle) * 300.0D);
+            final double angle = ThreadLocalRandom.current()
+                    .nextDouble(Math.PI * 2.0D);
+            goal = site.clone().add(
+                    Math.cos(angle) * 300.0D, 0.0D,
+                    Math.sin(angle) * 300.0D);
         }
         final Location target = goal;
-        final long lifetimeTicks = Math.max(1, configManager.getInt("cultists.courier-lifetime-minutes", 8)) * 60L * 20L;
+        final long lifetimeMillis = Math.max(1,
+                configManager.getInt("cultists.courier-lifetime-minutes", 8))
+                * 60_000L;
         final long spawnedAt = System.currentTimeMillis();
-        // Léptetés + élettartam a hírvivő SAJÁT schedulerén (halálkor magától áll le).
         courier.getScheduler().runAtFixedRate(plugin, task -> {
             if (!courier.isValid()) {
                 task.cancel();
                 return;
             }
-            if ((System.currentTimeMillis() - spawnedAt) / 50L >= lifetimeTicks
+            if (System.currentTimeMillis() - spawnedAt >= lifetimeMillis
                     || courier.getLocation().distanceSquared(target) < 25.0D) {
-                // Elért/eltűnt: köddé válik — az üzenet a Kapuhoz jutott.
-                cultists.remove(courier.getUniqueId());
-                active = false;
-                courier.getWorld().playSound(courier.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 0.6F);
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(courier.getWorld(), Particle.SQUID_INK,
-                        courier.getLocation(), 20, 0.5D, 1.0D, 0.5D, 0.02D);
+                final UUID id = courier.getUniqueId();
+                cultists.remove(id);
+                claimClose();
+                courier.getWorld().playSound(courier.getLocation(),
+                        Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 0.6F);
+                hu.taliann.icesmp.utils.ParticleUtil.spawn(
+                        courier.getWorld(), Particle.SQUID_INK,
+                        courier.getLocation(), 20,
+                        0.5D, 1.0D, 0.5D, 0.02D);
                 courier.remove();
-                Bukkit.getServer().broadcast(messageManager.getMessage("cultists-courier-escaped",
-                        "<dark_purple>🕯 A hírvivő eltűnt a homályban — az üzenete célba ért. A Suttogók ma elégedettek…</dark_purple>"));
+                TransientEntities.markGone(id);
+                broadcast("cultists-courier-escaped",
+                        "<dark_purple>🕯 A hírvivő eltűnt a homályban — az üzenete célba ért. A Suttogók ma elégedettek…</dark_purple>");
                 rewardCultSuccess();
+                resetTransientState();
                 task.cancel();
                 return;
             }
             courier.getPathfinder().moveTo(target, 1.15D);
-        }, null, 20L, 60L);
+        }, () -> {
+            cultists.remove(courier.getUniqueId());
+            TransientEntities.markGone(courier.getUniqueId());
+        }, 20L, 60L);
     }
 
-    /** A rítus beteljesül: hívek köddé válnak, eséllyel rontás-góc nyílik a helyszínen. */
     private synchronized void completeRite() {
         if (!"rite".equals(variant) || !claimClose()) {
             return;
         }
         riteEndsAt = 0L;
-        for (final UUID id : cultists) {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity != null && entity.isValid()) {
-                entity.getScheduler().run(plugin, task -> {
-                    hu.taliann.icesmp.utils.ParticleUtil.spawn(entity.getWorld(), Particle.SQUID_INK,
-                            entity.getLocation(), 15, 0.4D, 1.0D, 0.4D, 0.02D);
-                    entity.remove();
-                }, null);
-            }
+        for (final UUID id : List.copyOf(cultists)) {
+            TransientEntities.removeById(plugin, id);
         }
         cultists.clear();
-        Bukkit.getServer().broadcast(messageManager.getMessage("cultists-rite-complete",
-                "<dark_purple>🕯 A rítus BETELJESÜLT — a kántálás elhal, és a föld megremeg a hívek lába alatt…</dark_purple>"));
-        final Location site = riteSite;
+        broadcast("cultists-rite-complete",
+                "<dark_purple>🕯 A rítus BETELJESÜLT — a kántálás elhal, és a föld megremeg a hívek lába alatt…</dark_purple>");
+        final Location site = riteSite == null ? null : riteSite.clone();
         final double chance = Math.max(0.0D, Math.min(100.0D,
-                configManager.getDouble("cultists.rite-corruption-chance", 60.0D)));
-        if (site != null && ThreadLocalRandom.current().nextDouble(100.0D) < chance) {
+                configManager.getDouble(
+                        "cultists.rite-corruption-chance", 60.0D)));
+        if (site != null && ThreadLocalRandom.current()
+                .nextDouble(100.0D) < chance) {
             corruptionManager.forceSpawnAt(site);
         }
         rewardCultSuccess();
+        resetTransientState();
     }
 
-    /**
-     * Suttogó-crossover: a BETELJESÜLT kultista esemény (rítus / célba érő hírvivő)
-     * a rejtett hálózatnak dolgozik — minden felesküdött Suttogó gyanúja csillapodik
-     * (privát üzenettel), a DARK frakció pedig liga-pontot kap ("cult" forrás). Így a
-     * védelem is valódi játék-cél: a Suttogóknak és a Kitaszítottaknak MEGÉRI kiállni
-     * a hívek mellé, az irtóknak pedig megakadályozni. Nem farmolható: az esemény
-     * természetes sorsolású, játékos nem tudja kiváltani.
-     */
     private void rewardCultSuccess() {
         whisperManager.rewardFaithful(Math.max(0.0D,
-                configManager.getDouble("cultists.whisper-suspicion-relief", 15.0D)));
+                configManager.getDouble(
+                        "cultists.whisper-suspicion-relief", 15.0D)));
         seasonManager.addPoints(hu.taliann.icesmp.data.FactionType.DARK,
-                Math.max(0, configManager.getInt("cultists.success-season-points", 3)), "cult");
+                Math.max(0, configManager.getInt(
+                        "cultists.success-season-points", 3)), "cult");
     }
 
-    /** Leállításkor: a hívek despawnja (best effort). */
     public void shutdown() {
-        hu.taliann.icesmp.utils.TransientEntities.removeAllOnShutdown(cultists);
+        TransientEntities.removeAllOnShutdown(cultists);
         active = false;
+        resetTransientState();
+    }
+
+    private void resetTransientState() {
+        riteEndsAt = 0L;
+        riteSite = null;
+        variant = "";
+        spawnGraceUntil = 0L;
+    }
+
+    private void broadcast(final String key, final String fallback) {
+        broadcast(key, fallback, Map.of());
+    }
+
+    private void broadcast(final String key, final String fallback,
+                           final Map<String, String> placeholders) {
+        Bukkit.getGlobalRegionScheduler().run(plugin, task ->
+                Bukkit.getServer().broadcast(messageManager.getMessage(
+                        key, fallback, placeholders)));
     }
 }
