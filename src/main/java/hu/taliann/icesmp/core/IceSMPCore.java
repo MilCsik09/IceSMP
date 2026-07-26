@@ -167,6 +167,8 @@ import hu.taliann.icesmp.spells.SpellCatalog;
 import hu.taliann.icesmp.spells.SunDanceSpell;
 import hu.taliann.icesmp.spells.VenomStrikeSpell;
 import hu.taliann.icesmp.spells.WisplightSpell;
+import hu.taliann.icesmp.storage.PersistentStore;
+import hu.taliann.icesmp.storage.PersistentStoreCoordinator;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -291,7 +293,9 @@ public final class IceSMPCore {
     private final CharacterMenuContext characterMenuContext;
     private final CommandMenuContext commandMenuContext;
     private final HudManager hudManager;
-    private final List<hu.taliann.icesmp.storage.PersistentStore> persistentStores;
+    private final List<PersistentStore> persistentStores;
+    private final PersistentStoreCoordinator storeCoordinator;
+    private volatile boolean enableCompleted;
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
@@ -597,6 +601,7 @@ public final class IceSMPCore {
                 dungeonLootService,
                 raidManager);
                 devItemManager);
+        this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
             questManager.handleRaidWin(fighter);
@@ -845,15 +850,9 @@ public final class IceSMPCore {
         craftingRestrictionManager.load();
         professionRecipeCatalog.load();
         advancementService.load();
-        // Egy sérült fájl nem viheti el a többi manager betöltését (kaszkád-adatvesztés).
-        for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
-            try {
-                store.load();
-            } catch (final RuntimeException e) {
-                plugin.getLogger().severe("Store load() hiba (" + store.getClass().getSimpleName()
-                        + ") — a manager alapállapotból indul: " + e);
-            }
-        }
+        // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
+        // letting later gameplay run against an empty/default manager and overwrite the evidence.
+        storeCoordinator.loadAll();
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
@@ -876,6 +875,8 @@ public final class IceSMPCore {
         registerNpcQuestBridge();
         applyWorldGameRules();
 
+        // Only a fully assembled runtime may execute stateful shutdown or common persistence.
+        enableCompleted = true;
         plugin.getLogger().info("IceSMP core enabled.");
         plugin.getLogger().info("Available factions: " + factionManager.describeAvailableFactions());
     }
@@ -1057,6 +1058,18 @@ public final class IceSMPCore {
      * Disables the plugin core by saving all manager data.
      */
     public void disable() {
+        if (!enableCompleted) {
+            plugin.getLogger().severe("IceSMP enable did not complete — skipping stateful manager shutdown "
+                    + "and persistent-store writes to protect the last durable state.");
+            return;
+        }
+        // Atomically wait for any running common autosave and close its gate before shutdown hooks
+        // start mutating manager state.
+        if (!storeCoordinator.beginShutdown()) {
+            plugin.getLogger().severe("Persistent-store lifecycle is not ready for shutdown; refusing writes.");
+            return;
+        }
+        enableCompleted = false;
         if (taxTask != null) {
             taxTask.cancel();
             taxTask = null;
@@ -1118,14 +1131,8 @@ public final class IceSMPCore {
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
-        // Egy hibázó save() nem akadályozhatja meg a többi store mentését.
-        for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
-            try {
-                store.save();
-            } catch (final RuntimeException e) {
-                plugin.getLogger().severe("Store save() hiba (" + store.getClass().getSimpleName() + "): " + e);
-            }
-        }
+        storeCoordinator.saveForShutdown(failure -> plugin.getLogger().severe("Store save() hiba ("
+                + failure.store().getClass().getSimpleName() + "): " + failure.cause()));
         ProfileGUI.closeAll();
 
         // Then clean up live player session state (HUD teams, restored armor, caches).
@@ -1149,13 +1156,11 @@ public final class IceSMPCore {
             return;
         }
         Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> {
-            for (final hu.taliann.icesmp.storage.PersistentStore store : persistentStores) {
-                try {
-                    store.save();
-                } catch (final RuntimeException e) {
-                    plugin.getLogger().warning("Autosave hiba (" + store.getClass().getSimpleName() + "): " + e);
-                }
+            if (!enableCompleted) {
+                return;
             }
+            storeCoordinator.saveAll(failure -> plugin.getLogger().warning("Autosave hiba ("
+                    + failure.store().getClass().getSimpleName() + "): " + failure.cause()));
         }, minutes, minutes, java.util.concurrent.TimeUnit.MINUTES);
     }
 

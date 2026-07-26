@@ -41,3 +41,15 @@ tasks {
         }
     }
 }
+
+val persistentStoreRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs dependency-free persistent-store lifecycle regression tests."
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.storage.PersistentStoreCoordinatorRegressionTest")
+}
+
+tasks.check {
+    dependsOn(persistentStoreRegressionTest)
+}
