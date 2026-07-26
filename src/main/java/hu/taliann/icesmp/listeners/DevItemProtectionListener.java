@@ -6,11 +6,13 @@ import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
@@ -19,6 +21,8 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
@@ -73,6 +77,24 @@ public final class DevItemProtectionListener implements Listener {
                 || itemOwner == null || !itemOwner.equals(player.getUniqueId())) {
             event.setCancelled(true);
             event.getItem().remove();
+        }
+    }
+
+    /**
+     * Denies the held item's own right-click behaviour while still allowing the clicked block to
+     * handle the interaction (for example opening a chest while holding the Bingulus).
+     */
+    @EventHandler
+    public void onUse(final PlayerInteractEvent event) {
+        if (factory.isDevItem(event.getItem())) {
+            event.setUseItemInHand(Event.Result.DENY);
+        }
+    }
+
+    @EventHandler
+    public void onConsume(final PlayerItemConsumeEvent event) {
+        if (factory.isDevItem(event.getItem())) {
+            event.setCancelled(true);
         }
     }
 
@@ -160,8 +182,17 @@ public final class DevItemProtectionListener implements Listener {
             return;
         }
 
-        // In the normal player inventory screen, movement is allowed only between PlayerInventory
-        // slots (hotbar, storage, armour/offhand). Crafting/result/outside slots remain forbidden.
+        // In the normal player-inventory screen a shift-click from PlayerInventory targets the 2x2
+        // crafting matrix. That destination is not represented by getClickedInventory(), therefore it
+        // needs an explicit action guard rather than relying only on the clicked inventory type.
+        if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                && factory.isDevItem(current)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // Movement is allowed only between actual PlayerInventory slots (hotbar, storage,
+        // armour/offhand). Crafting/result/outside slots remain forbidden.
         if (!(event.getClickedInventory() instanceof PlayerInventory)) {
             event.setCancelled(true);
         }
