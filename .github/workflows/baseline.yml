@@ -80,8 +80,20 @@ jobs:
           root-directory: work
 
       - name: Build and run all checks
+        shell: bash
         working-directory: work
-        run: ./gradlew clean build --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/store-health-build.log
+
+      - name: Upload complete Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-health-gradle-log
+          path: /tmp/store-health-build.log
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Consistency checks (compare with six baseline documentation drifts)
         shell: bash
