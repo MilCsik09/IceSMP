@@ -80,13 +80,18 @@ public final class DevItemProtectionListener implements Listener {
     }
 
     /**
-     * Denies the held item's own right-click behaviour while still allowing the clicked block to
-     * handle the interaction (for example opening a chest while holding the Bingulus).
+     * Denies the held item's own right-click behaviour while still allowing harmless block use
+     * (for example opening a chest). A decorated pot is special: its block interaction itself can
+     * swallow an arbitrary held item without opening an inventory, therefore it is cancelled fully.
      */
     @EventHandler
     public void onUse(final PlayerInteractEvent event) {
-        if (factory.isDevItem(event.getItem())) {
-            event.setUseItemInHand(Event.Result.DENY);
+        if (!factory.isDevItem(event.getItem())) {
+            return;
+        }
+        event.setUseItemInHand(Event.Result.DENY);
+        if (event.getClickedBlock() != null && event.getClickedBlock().getType() == Material.DECORATED_POT) {
+            event.setCancelled(true);
         }
     }
 
