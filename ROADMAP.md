@@ -22,10 +22,14 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   YAML-betöltés (karantén + mentés-tiltás), a szakma- és rituálé-hozzávaló check–consume rése, a
   viselt relikvia relog-vesztése, a visszavont akciók jutalmazása, a gyűjtés-progressz
   visszajátszása, a quest-lánc ciklus, a céh–frakció egyeztetés és több jutalom-faucet.
-  **Még nyitott:** piac/wallet/inventory tartós tranzakció, tile-entity block-regen
-  write-ahead journal, a `MobKillUtil` teljes UUID/snapshot átterve és a `TransientEntities`-re
-  épülő world-event életciklus. Playtesten figyeljétek a konzolt
-  `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
+  Lezárult továbbá a piac/wallet/inventory tartós tranzakció (`storage/TransactionJournal`) és a
+  tile-entity block-regen write-ahead journal (`storage/BlockRegenJournal`), valamint a
+  `MobKillUtil` immutable `KillContext` átterve a FAUCET/PROGRESSION jutalom-utakon.
+  **Még nyitott:** a `TransientEntities`-re épülő world-event életciklus (a naiv fail-open
+  változat vissza lett vonva, mert esemény-deadlockot okozott — a feltételek a
+  `docs/ideas/P2-gameplay-audit.md`-ben), és a pozíció-alapú jutalom-megosztás (párt-XP, Vad
+  Hajsza personal loot), ami még az áldozat szálán olvas pozíciót. Playtesten figyeljétek a
+  konzolt `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 - **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
   - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
     enabled-enum sorsolás, mulandó entity biztonságos eltávolítása) 5-8 helyen duplikáltak — egy

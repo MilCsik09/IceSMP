@@ -229,10 +229,14 @@ public final class SpecializationManager {
         final int level = jobManager.getPrimaryLevel(player);
         for (final String spellId : unlockSection.getKeys(false)) {
             final int requiredLevel = unlockSection.getInt(spellId, Integer.MAX_VALUE);
-            if (level < requiredLevel || jobManager.hasUnlockedSpell(player, spellId)) {
+            if (level < requiredLevel) {
                 continue;
             }
 
+            // A már feloldott spellre is RÁ KELL írni a spec forrását (az unlockSpell ilyenkor
+            // csak a forrást rögzíti és false-t ad): enélkül a máshonnan — pl. questből —
+            // korábban megkapott spellt a spec-reset nem tudta visszavenni, tehát a
+            // specializációk spellkészlete tovább halmozódott.
             if (jobManager.unlockSpell(player, spellId,
                     JobManager.SOURCE_SPEC_PREFIX + specialization.getId())) {
                 player.sendMessage(messageManager.getMessage(

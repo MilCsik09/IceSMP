@@ -190,13 +190,9 @@ public final class JobManager implements PlayerStateCleanup {
             if (level < requiredLevel) {
                 continue;
             }
-            // A forrás akkor is rögzül, ha a spellt már más adta: így a talent/spec visszavonás
-            // nem viszi el a kaszt-szintből is járó képességet.
-            if (hasUnlockedSpell(player, spellId)) {
-                addGrantSource(player, spellId.toLowerCase(Locale.ROOT), SOURCE_BASE);
-                continue;
-            }
-
+            // A forrás akkor is rögzül, ha a spellt már más adta (az unlockSpell ilyenkor csak
+            // a forrást írja be és false-t ad): így a talent/spec visszavonás nem viszi el a
+            // kaszt-szintből IS járó képességet.
             if (unlockSpell(player, spellId, SOURCE_BASE)) {
                 player.sendMessage(messageManager.getMessage(
                         "job-spell-auto-unlocked",

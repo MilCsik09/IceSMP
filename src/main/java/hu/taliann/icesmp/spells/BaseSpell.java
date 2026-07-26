@@ -7,8 +7,9 @@ public abstract class BaseSpell implements Spell {
     /**
      * Balansz-forrás a statikus (kódolt) spellek cast-időbeni felülbírálásaihoz
      * (spell-balance.&lt;id&gt;.&lt;kulcs&gt;). Az IceSMPCore injektálja enable()-kor;
-     * mivel a kiolvasás cast-időben történik, a statikus spellek felülbírálására
-     * a /icesmp reload is azonnal hat (a deklaratívakéra továbbra is restart kell).
+     * mivel a kiolvasás cast-időben történik, a /icesmp reload a statikus ÉS a deklaratív
+     * spellek felülbírálására is azonnal hat (a ConfiguredSpell accessorai ugyanígy élőben
+     * olvasnak). Restart csak a spell-REGISZTRÁCIÓHOZ kell, nem az értékekhez.
      */
     private static volatile hu.taliann.icesmp.managers.ConfigManager balanceSource;
 
