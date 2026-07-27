@@ -95,21 +95,27 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   Autosave és shutdown csak a teljesen betöltött registryt írhatja, egymással szerializálva.
 - **Write-ahead napló (WAL) — ahol a mentés-időpont nem elég:** két rendszernek a következő
   autosave-ig sem szabad kockáztatnia, mert közben a világból/inventoryból már eltűnt valami.
-  - **`storage/BlockRegenJournal`** (block-regen.yml checkpoint + `block-regen.wal` hozzáfűzéses
-    napló): a `PENDING → APPLYING → APPLIED` átmenetek soronként; a tile-entity NBT-pillanatképe
-    **fsync-elve** kerül lemezre a konténer kiürítése ELŐTT (napló-hiba = a blokk nem robban ki).
-    A rekord csak a sikeres visszaépítés + APPLIED-írás után esik ki. Indulásnál replay:
-    checkpoint → rotált napló → aktív napló. A már visszaépült rekord világ-mutációja **nem
-    ismételhető** (különben a konténer újratöltődne — tárgy-duplikáció).
-  - **`storage/TransactionJournal`** (market-journal.yml): a piaci művelet leírása (érintett
-    egyenlegek a művelet ELŐTTI absztolút értékkel + tárgy-pillanatkép) lemezre kerül, mielőtt
-    bármi módosulna; a commit-pont a valuta-fájl, majd a market.yml szinkron írása — utóbbi
-    hordozza a **tanút** (a commitolt tranzakció-azonosítót). A `complete()` visszatérési értéke
-    KÖTELEZŐEN vizsgálandó: tanút csak akkor dobunk el, ha a bejegyzés bizonyítottan eltűnt a
-    lemezről is. Az átvétel-jelző PDC-kulcsa **tranzakciónkénti** (egy közös kulcs a második
-    listázásnál felülírta volna az elsőt, és a tárgy elveszett volna).
+  - **`storage/BlockRegenJournal`** (block-regen.yml checkpoint + `block-regen.wal`):
+    a tile-entity snapshot tartósan lemezre kerül a konténer kiürítése előtt, és a pending
+    rekordok restart után újrapróbálhatók. Az `APPLYING/APPLIED` átmenet csökkenti az elvesző
+    restore-ok esélyét, de valódi Folia + process-kill fault-injection nélkül nem állítunk
+    pontosan-egyszeri konténer-NBT alkalmazást.
+  - **`storage/TransactionJournal`** (market-journal.yml): a prepare és a szigorú séma
+    jelentősen csökkenti a félbehagyott listing/pénz/item műveletek elvesztését, és normál
+    restartnál recoveryt ad. A wallet, market YAML és player inventory között nincs formális
+    több-store atomicitás vagy exactly-once bizonyítás; a globális currency gate külön
+    egyszerűsítési és runtime-validációs scope.
+
 
   - **Szezon–community generation commit** (`season.yml` → `community-goals.yml`): a community store tartós `season.number` markerrel jelöli, melyik szezonhoz tartozik a progressz. A zárás a community monitor alatt előbb rendezi az outboxot, majd commitolja az új `season.yml` generációt, és csak ezután nullázza/menti a community progresszt. Crash a két commit között egyetlen generációnyi marker-lemaradást hagy; bootkor ez idempotens resetként reconciliálódik. Függő régi payout, előreszaladt vagy több generációt átugró marker fail-closed.
+
+
+- **DEV-item jutalom — arányos pending/retry modell:** a pontosan kisorsolt tárgy a
+  `dev-items-state.yml` egyetlen pending rekordjába kerül, mielőtt az inventoryhoz érnénk.
+  Teljes inventory vagy normál restart esetén ugyanaz a jutalom újrapróbálható; sikeres átadáskor
+  a pending rekord szinkron mentéssel törlődik. Nincs külön grant-UUID, player-PDC nyugta vagy
+  saját playerdata-commit protokoll. Emiatt nem állítunk formális exactly-once garanciát az
+  inventory-módosítás és a pending törlése közötti erőszakos process-kill ablakra.
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.
@@ -243,9 +249,10 @@ Szabályok:
 - A `runDelayed` *retired-callbackjét* add meg, ha az állapotot vissza kell állítani akkor is, ha a
   task lejár, mielőtt lefutna (lásd `HideSpell` páncél-visszaállítás).
 
-### 4.1 Audit-állapot (baseline — ŐRIZD MEG)
-A teljes kódbázist átnéztük Folia-kompatibilitásra; **nulla sértés**. A bevált minták, amelyeket
-új kódnál is tartani kell:
+### 4.1 Folia audit-állapot (statikus baseline)
+A központi scheduler-minták sokat javultak, de ez nem teljes runtime-garancia. A party
+proximity/reward és más több-régiós hívási láncok valódi Folia tesztet igényelnek. A bevált
+minták, amelyeket új kódnál is tartani kell:
 - **Nincs** legacy `Bukkit.getScheduler()` / `BukkitRunnable` / `runTask*` / nyers `Thread`/`Timer`/`Executor`.
 - **Nincs** szinkron `teleport(...)` — mindenhol `teleportAsync(...)`.
 - **Globális ismétlődő tickek** (`IceSMPCore`: world-events, HUD, pet, adó, gazdaság-esemény) csak
