@@ -12,7 +12,6 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCES = [
     ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java",
-    ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemRewardTransition.java",
     ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java",
     ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemRewardTransitionRegressionTest.java",
     ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemRewardRegressionSuite.java",
