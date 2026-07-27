@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 import textwrap
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path.cwd()
 PR32 = "1459df4443a656b9a2906d54004e04e11a8ac433"
 FILES_FROM_PR32 = [
     "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
