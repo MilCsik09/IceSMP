@@ -87,7 +87,7 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 32 fájlt-író store implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 33 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
 - **Write-ahead napló (WAL) — ahol a mentés-időpont nem elég:** két rendszernek a következő
