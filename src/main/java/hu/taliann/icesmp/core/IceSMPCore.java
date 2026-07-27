@@ -409,7 +409,7 @@ public final class IceSMPCore {
                 currencyManager, factionManager, sinManager, seasonManager);
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager, seasonManager);
-        seasonManager.setSeasonResetHook(communityGoalManager::resetForNewSeason);
+        seasonManager.setSeasonTransitionCoordinator(communityGoalManager::commitSeasonTransition);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
         shopManager.setWhisperManager(whisperManager); // Suttogó feketepiac-kedvezmény
         this.npcBindingManager = new NpcBindingManager(plugin);

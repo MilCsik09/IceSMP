@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 /** Server-wide community goals with durable one-shot contribution receipts. */
 public final class CommunityGoalManager implements PersistentStore {
@@ -81,6 +82,10 @@ public final class CommunityGoalManager implements PersistentStore {
     /** Még ki nem fizetett, de már tartósan könyvelt teljesítések (a manager monitora védi). */
     private final List<PendingCompletion> pendingCompletions = new ArrayList<>();
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
+    /** Season generation owning the current progress/receipt maps. */
+    private int progressSeasonNumber = 1;
+    /** Sticky local gate after a post-season-commit reset write failed. */
+    private boolean seasonTransitionBlocked;
 
     public CommunityGoalManager(final JavaPlugin plugin, final ConfigManager configManager,
                                 final FactionManager factionManager,
@@ -94,6 +99,7 @@ public final class CommunityGoalManager implements PersistentStore {
         this.messageManager = messageManager;
         this.seasonManager = seasonManager;
         this.storageFile = new File(plugin.getDataFolder(), "community-goals.yml");
+        YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
 
@@ -101,7 +107,9 @@ public final class CommunityGoalManager implements PersistentStore {
     public synchronized void load() {
         progress.clear();
         contributionReceipts.clear();
+        seasonTransitionBlocked = false;
         final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
+        final Integer storedSeasonNumber = readStoredSeasonNumber(yaml);
         final ConfigurationSection section = yaml.getConfigurationSection("progress");
         if (section != null) {
             for (final String key : section.getKeys(false)) {
@@ -197,11 +205,55 @@ public final class CommunityGoalManager implements PersistentStore {
                         serverWide, faction, treasuryReward, seasonDeltas, buffMinutes));
             }
         }
+        final int activeSeason = seasonManager.getSeasonNumber();
+        final CommunitySeasonState.LoadAction loadAction;
+        try {
+            loadAction = CommunitySeasonState.reconcileOnLoad(
+                    storedSeasonNumber, activeSeason, !pendingCompletions.isEmpty());
+        } catch (final IllegalArgumentException | IllegalStateException invalid) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(), invalid.getMessage());
+            return;
+        }
+
+        progressSeasonNumber = activeSeason;
+        if (loadAction == CommunitySeasonState.LoadAction.RESET_TO_CURRENT) {
+            // season.yml was already committed, but the process stopped before community-goals.yml
+            // could acknowledge the reset. Replaying this clear is idempotent and deliberately
+            // happens before any old outbox can be applied to the newly opened season.
+            progress.clear();
+            contributionReceipts.clear();
+            persistSeasonAlignmentOrThrow("crash recovery after season commit");
+        } else if (loadAction == CommunitySeasonState.LoadAction.INITIALISE_CURRENT) {
+            // Migration from the pre-marker format preserves all progress and only adds the owner
+            // generation. It must itself be durable before gameplay resumes.
+            persistSeasonAlignmentOrThrow("legacy community season marker migration");
+        }
+
         if (!pendingCompletions.isEmpty()) {
             plugin.getLogger().warning("Közösségi cél: " + pendingCompletions.size()
                     + " függő kifizetés a legutóbbi leállásból — újrajátszás.");
             flushPendingCompletions();
         }
+    }
+
+    private Integer readStoredSeasonNumber(final YamlConfiguration yaml) {
+        if (!yaml.contains("season.number")) {
+            return null;
+        }
+        final Object raw = yaml.get("season.number");
+        if (!(raw instanceof Number number)) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "A community season marker nem szám");
+            return null;
+        }
+        final double value = number.doubleValue();
+        if (!Double.isFinite(value) || value < 1.0D || value > Integer.MAX_VALUE
+                || value != Math.rint(value)) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                    "Érvénytelen community season marker");
+            return null;
+        }
+        return (int) value;
     }
 
     private Map<FactionType, Integer> readSeasonDeltas(final ConfigurationSection outbox,
@@ -249,6 +301,7 @@ public final class CommunityGoalManager implements PersistentStore {
     /** Writes receipts and counters in the same atomic file image. */
     private boolean saveStrict() {
         final YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("season.number", progressSeasonNumber);
         for (final Map.Entry<String, Long> entry : progress.entrySet()) {
             yaml.set("progress." + entry.getKey(), entry.getValue());
         }
@@ -293,28 +346,66 @@ public final class CommunityGoalManager implements PersistentStore {
                 : configManager.getConfiguration().getConfigurationSection("community-goals");
     }
 
-    public synchronized void resetForNewSeason() {
-        // A szezonzárás kapuja: előbb minden korábbi completion tartós cél-ACK-ja legyen meg.
-        // Ha egy cél-store még íráshibás, kivétellel visszatartjuk a SeasonManager resetjét;
-        // így egy előző szezonhoz tartozó exact delta nem csúszhat át az új szezon pontjaiba.
-        flushPendingCompletions();
-        if (!pendingCompletions.isEmpty()) {
-            plugin.getLogger().severe("A szezonzárás elhalasztva: " + pendingCompletions.size()
-                    + " közösségi kifizetés még nincs minden cél-store-ban tartósan ACK-olva.");
-            throw new IllegalStateException("Pending community payouts block season reset");
+    /**
+     * Serializes the old community generation, the durable season commit and the community reset.
+     * Every contribution method uses this manager monitor, so no Folia contribution can land in
+     * the gap between the closing standings snapshot and the new community generation.
+     *
+     * <p>The callback MUST commit season.yml before returning {@code true}. Only then is the
+     * community marker advanced and its progress cleared. A crash in between is recovered during
+     * {@link #load()} from the one-generation marker lag.</p>
+     */
+    public synchronized boolean commitSeasonTransition(final int closingSeason,
+                                                        final int openedSeason,
+                                                        final BooleanSupplier seasonCommit) {
+        if (seasonTransitionBlocked) {
+            throw new IllegalStateException(
+                    "Community season transition is blocked by an earlier persistence failure");
+        }
+        if (seasonCommit == null) {
+            throw new IllegalArgumentException("seasonCommit callback is required");
         }
 
-        final Map<String, Long> oldProgress = new HashMap<>(progress);
-        final Map<String, Long> oldReceipts = new HashMap<>(contributionReceipts);
+        // Read-only/durable payout gate: unlike the old preflight, this does NOT clear progress.
+        flushPendingCompletions();
+        try {
+            CommunitySeasonState.validateTransition(progressSeasonNumber, closingSeason,
+                    openedSeason, !pendingCompletions.isEmpty());
+        } catch (final IllegalArgumentException | IllegalStateException blocked) {
+            plugin.getLogger().severe("A szezonzárás elhalasztva: " + blocked.getMessage());
+            throw blocked;
+        }
+
+        // This callback performs the season snapshot, side effects and durable season.yml commit
+        // while the community monitor is still held. Contributions therefore block instead of
+        // crossing from reset community progress into the old league standings.
+        if (!seasonCommit.getAsBoolean()) {
+            return false;
+        }
+
         progress.clear();
         contributionReceipts.clear();
-        // Az outbox nem szezon-progress, ezért itt soha nem töröljük. A kapu miatt ezen a
-        // ponton normálisan üres, de egy párhuzamos új-szezonos contribution később szabadon
-        // létrehozhat új bejegyzést.
-        if (!saveStrict()) {
-            progress.putAll(oldProgress);
-            contributionReceipts.putAll(oldReceipts);
-            throw new IllegalStateException("Community season reset persistence failed");
+        progressSeasonNumber = openedSeason;
+        persistSeasonAlignmentOrThrow("post-commit community season reset");
+        return true;
+    }
+
+    private void persistSeasonAlignmentOrThrow(final String operation) {
+        try {
+            if (!saveStrict()) {
+                seasonTransitionBlocked = true;
+                throw new IllegalStateException(operation + " persistence failed");
+            }
+        } catch (final RuntimeException | Error failure) {
+            seasonTransitionBlocked = true;
+            throw failure;
+        }
+    }
+
+    private void ensureContributionsEnabled() {
+        if (seasonTransitionBlocked) {
+            throw new IllegalStateException(
+                    "Community contributions are blocked until season-state recovery");
         }
     }
 
@@ -325,6 +416,7 @@ public final class CommunityGoalManager implements PersistentStore {
     /** Ordinary non-economic event contribution; completion is durable before rewards run. */
     public synchronized void contribute(final Player player, final String objectiveType,
                                         final String materialOrEntity, final int amount) {
+        ensureContributionsEnabled();
         final Map<String, Long> before = new HashMap<>(progress);
         final AppliedContribution applied = applyContribution(
                 player, objectiveType, materialOrEntity, amount);
@@ -356,6 +448,7 @@ public final class CommunityGoalManager implements PersistentStore {
     public synchronized boolean contributeOnce(final Player player, final String objectiveType,
                                                 final String materialOrEntity, final int amount,
                                                 final UUID contributionId) {
+        ensureContributionsEnabled();
         if (player == null || contributionId == null || amount <= 0) {
             return false;
         }
