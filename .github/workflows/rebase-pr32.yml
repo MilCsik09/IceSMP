@@ -1,0 +1,51 @@
+name: Rebase PR 32 onto latest master
+
+on:
+  pull_request:
+    branches: [master]
+    types: [synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  rebase-and-verify:
+    if: github.event.pull_request.head.ref == 'fix/dev-item-recovery'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/dev-item-recovery
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Merge latest master
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'OpenAI GPT-5.6 Thinking'
+          git config user.email 'noreply@openai.com'
+          git fetch origin master
+          if ! git merge --no-commit --no-ff origin/master; then
+            if git diff --name-only --diff-filter=U | grep -qx 'docs/ARCHITECTURE.md'; then
+              git checkout --ours -- docs/ARCHITECTURE.md
+              python3 - <<'PY'
+          from pathlib import Path
+          p=Path('docs/ARCHITECTURE.md')
+          t=p.read_text(encoding='utf-8')
+          t=t.replace('a 32 fájlt-író store','a 33 fájlt-író store')
+          t=t.replace('| `storage/` | 6 |','| `storage/` | 7 |')
+          p.write_text(t,encoding='utf-8')
+          PY
+              git add docs/ARCHITECTURE.md
+            fi
+            test -z "$(git diff --name-only --diff-filter=U)"
+          fi
+          git rm .github/workflows/rebase-pr32.yml
+          git add -A
+          git commit -m 'Merge latest master into DEV item recovery fix'
+      - run: python3 scripts/test_dev_item_state.py
+      - run: ./gradlew clean build --no-daemon --stacktrace
+      - run: git push origin HEAD:fix/dev-item-recovery
