@@ -8,12 +8,17 @@ public final class DevItemStateDataRegressionTest {
     private static final UUID OWNER = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID NEW_OWNER = UUID.fromString("22222222-2222-2222-2222-222222222222");
     private static final UUID INSTANCE = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID GRANT = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
     private DevItemStateDataRegressionTest() {
     }
 
     public static void main(final String[] args) {
-        transferPreservesSingletonAndProgress();
+        transferPreservesSingletonProgressAndRecordedRecipient();
+        pendingRecipientCanBeReassignedWithoutChangingGrant();
+        durableReceiptAcknowledgesInsteadOfRedelivering();
+        missingReceiptRequiresDelivery();
+        unrelatedPlayerCannotConsumeTheGrant();
         markIssuedPreservesSingletonIdentity();
         malformedUuidIsRejected();
         negativeProgressAndPityAreRejected();
@@ -22,11 +27,8 @@ public final class DevItemStateDataRegressionTest {
         System.out.println("DevItemStateData regression tests passed.");
     }
 
-    private static void transferPreservesSingletonAndProgress() {
-        final DevItemStateData original = new DevItemStateData(
-                OWNER, INSTANCE, true, 42_000L,
-                "epikus", "material:diamond", true,
-                7, 11, 13);
+    private static void transferPreservesSingletonProgressAndRecordedRecipient() {
+        final DevItemStateData original = pendingState();
 
         final DevItemStateData transferred = original.transferTo(NEW_OWNER);
 
@@ -37,14 +39,48 @@ public final class DevItemStateDataRegressionTest {
         check(transferred.pendingRarity().equals("epikus"), "owner transfer must preserve pending rarity");
         check(transferred.pendingEntry().equals("material:diamond"), "owner transfer must preserve pending entry");
         check(transferred.pendingItemPresent(), "owner transfer must preserve the exact pending item marker");
+        check(transferred.pendingGrantId().equals(GRANT), "owner transfer must preserve the stable grant id");
+        check(transferred.pendingRecipient().equals(OWNER),
+                "an unresolved grant must remain bound to the previously recorded recipient");
         check(transferred.rollsSinceRare() == 7, "owner transfer must preserve rare pity");
         check(transferred.rollsSinceEpic() == 11, "owner transfer must preserve epic pity");
         check(transferred.rollsSinceLegendary() == 13, "owner transfer must preserve legendary pity");
     }
 
+    private static void pendingRecipientCanBeReassignedWithoutChangingGrant() {
+        final DevItemStateData reassigned = pendingState().reassignPendingRecipient(GRANT, NEW_OWNER);
+
+        check(reassigned.pendingRecipient().equals(NEW_OWNER), "the verified recipient may be rebound");
+        check(reassigned.pendingGrantId().equals(GRANT), "recipient rebinding must not mint another grant");
+        check(reassigned.pendingEntry().equals("material:diamond"), "the exact reward identity must survive rebinding");
+        expectThrows(IllegalStateException.class,
+                () -> pendingState().reassignPendingRecipient(UUID.randomUUID(), NEW_OWNER));
+    }
+
+    private static void durableReceiptAcknowledgesInsteadOfRedelivering() {
+        check(DevItemStateData.deliveryDecision(GRANT, OWNER, OWNER, GRANT.toString())
+                        == DevItemStateData.DeliveryDecision.ACKNOWLEDGE,
+                "a matching playerdata receipt must suppress replay delivery");
+    }
+
+    private static void missingReceiptRequiresDelivery() {
+        check(DevItemStateData.deliveryDecision(GRANT, OWNER, OWNER, null)
+                        == DevItemStateData.DeliveryDecision.DELIVER,
+                "a missing receipt means the durable outbox still owes the reward");
+        check(DevItemStateData.deliveryDecision(GRANT, OWNER, OWNER, UUID.randomUUID().toString())
+                        == DevItemStateData.DeliveryDecision.DELIVER,
+                "a receipt for another grant cannot acknowledge this reward");
+    }
+
+    private static void unrelatedPlayerCannotConsumeTheGrant() {
+        check(DevItemStateData.deliveryDecision(GRANT, OWNER, NEW_OWNER, GRANT.toString())
+                        == DevItemStateData.DeliveryDecision.WAIT_FOR_RECORDED_RECIPIENT,
+                "even a matching string on another player must not acknowledge the recorded recipient's grant");
+    }
+
     private static void markIssuedPreservesSingletonIdentity() {
         final DevItemStateData unissued = new DevItemStateData(
-                OWNER, INSTANCE, false, 0L, "", "", false, 0, 0, 0);
+                OWNER, INSTANCE, false, 0L, "", "", false, null, null, 0, 0, 0);
 
         final DevItemStateData issued = unissued.markIssued();
 
@@ -64,37 +100,57 @@ public final class DevItemStateDataRegressionTest {
 
     private static void negativeProgressAndPityAreRejected() {
         expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, -1L, "", "", false, 0, 0, 0));
+                () -> new DevItemStateData(OWNER, INSTANCE, true, -1L,
+                        "", "", false, null, null, 0, 0, 0));
         expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L, "", "", false, -1, 0, 0));
+                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L,
+                        "", "", false, null, null, -1, 0, 0));
         expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L, "", "", false, 0, -1, 0));
+                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L,
+                        "", "", false, null, null, 0, -1, 0));
         expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L, "", "", false, 0, 0, -1));
+                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L,
+                        "", "", false, null, null, 0, 0, -1));
     }
 
     private static void partialPendingRewardIsRejected() {
         expectThrows(IllegalArgumentException.class,
                 () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "ritka", "", false, 0, 0, 0));
+                        "ritka", "", false, null, null, 0, 0, 0));
         expectThrows(IllegalArgumentException.class,
                 () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "ritka", "material:diamond", false, 0, 0, 0));
+                        "ritka", "material:diamond", false, GRANT, OWNER, 0, 0, 0));
         expectThrows(IllegalArgumentException.class,
                 () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "", "", true, 0, 0, 0));
+                        "ritka", "material:diamond", true, null, OWNER, 0, 0, 0));
+        expectThrows(IllegalArgumentException.class,
+                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
+                        "ritka", "material:diamond", true, GRANT, null, 0, 0, 0));
+        expectThrows(IllegalArgumentException.class,
+                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
+                        "", "", true, GRANT, OWNER, 0, 0, 0));
+        expectThrows(IllegalArgumentException.class,
+                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
+                        "", "", false, GRANT, OWNER, 0, 0, 0));
     }
 
     private static void unissuedStateCannotCarryEarnedProgress() {
         expectThrows(IllegalArgumentException.class,
                 () -> new DevItemStateData(OWNER, INSTANCE, false, 1L,
-                        "", "", false, 0, 0, 0));
+                        "", "", false, null, null, 0, 0, 0));
         expectThrows(IllegalArgumentException.class,
                 () -> new DevItemStateData(OWNER, INSTANCE, false, 0L,
-                        "ritka", "material:diamond", true, 0, 0, 0));
+                        "ritka", "material:diamond", true, GRANT, OWNER, 0, 0, 0));
         expectThrows(IllegalArgumentException.class,
                 () -> new DevItemStateData(OWNER, INSTANCE, false, 0L,
-                        "", "", false, 1, 0, 0));
+                        "", "", false, null, null, 1, 0, 0));
+    }
+
+    private static DevItemStateData pendingState() {
+        return new DevItemStateData(
+                OWNER, INSTANCE, true, 42_000L,
+                "epikus", "material:diamond", true, GRANT, OWNER,
+                7, 11, 13);
     }
 
     private static <T extends Throwable> T expectThrows(final Class<T> type, final ThrowingRunnable action) {
