@@ -1,0 +1,97 @@
+name: Bootstrap DEV-item simplification
+
+on:
+  push:
+    branches:
+      - agent/bootstrap-simplify-dev-item-20260727
+
+permissions:
+  contents: write
+
+jobs:
+  simplify-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, simplify, verify, and publish focused branch
+        shell: bash
+        env:
+          MASTER_SHA: b6db9d21d12a2944b67925a5fe9228b4e76b9b04
+          FINAL_BRANCH: agent/simplify-dev-item-recovery
+          BOOTSTRAP_BRANCH: agent/bootstrap-simplify-dev-item-20260727
+        run: |
+          set -euo pipefail
+          cp scripts/bootstrap_simplify_dev_item.py /tmp/bootstrap_simplify_dev_item.py
+
+          git config user.name "OpenAI Codex"
+          git config user.email "codex@openai.com"
+          git switch --detach "$MASTER_SHA"
+
+          BASE_MANAGER_LINES=$(wc -l < src/main/java/hu/taliann/icesmp/managers/DevItemManager.java)
+          BASE_STATE_LINES=$(wc -l < src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java)
+
+          ./gradlew clean build --no-daemon --stacktrace
+          python3 scripts/check_consistency.py
+          python3 scripts/test_dev_item_state.py
+
+          git switch -c "$FINAL_BRANCH"
+          python3 /tmp/bootstrap_simplify_dev_item.py
+
+          ./gradlew clean build --no-daemon --stacktrace
+          python3 scripts/check_consistency.py
+          python3 scripts/test_dev_item_state.py
+
+          BRANCH_MANAGER_LINES=$(wc -l < src/main/java/hu/taliann/icesmp/managers/DevItemManager.java)
+          BRANCH_STATE_LINES=$(wc -l < src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java)
+          ADDED_LINES=$(git diff --numstat "$MASTER_SHA" | awk '{a += $1} END {print a + 0}')
+          DELETED_LINES=$(git diff --numstat "$MASTER_SHA" | awk '{d += $2} END {print d + 0}')
+
+          export BASE_MANAGER_LINES BASE_STATE_LINES BRANCH_MANAGER_LINES BRANCH_STATE_LINES ADDED_LINES DELETED_LINES
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path('docs/audits/IceSMP_audit_update_b6db9d2.md')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              '{{BASE_MANAGER_LINES}}': os.environ['BASE_MANAGER_LINES'],
+              '{{BRANCH_MANAGER_LINES}}': os.environ['BRANCH_MANAGER_LINES'],
+              '{{BASE_STATE_LINES}}': os.environ['BASE_STATE_LINES'],
+              '{{BRANCH_STATE_LINES}}': os.environ['BRANCH_STATE_LINES'],
+              '{{ADDED_LINES}}': os.environ['ADDED_LINES'],
+              '{{DELETED_LINES}}': os.environ['DELETED_LINES'],
+              '{{BASE_BUILD}}': 'PASS',
+              '{{BASE_CONSISTENCY}}': 'PASS',
+              '{{BASE_DEV_TEST}}': 'PASS',
+              '{{BRANCH_BUILD}}': 'PASS',
+              '{{BRANCH_CONSISTENCY}}': 'PASS',
+              '{{BRANCH_DEV_TEST}}': 'PASS',
+          }
+          for old, new in replacements.items():
+              text = text.replace(old, new)
+          if '{{' in text:
+              raise SystemExit('Unresolved audit placeholder remains')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git add \
+            src/main/java/hu/taliann/icesmp/managers/DevItemManager.java \
+            src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java \
+            src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java \
+            scripts/test_dev_item_state.py \
+            docs/ARCHITECTURE.md \
+            docs/audits/IceSMP_audit_update_b6db9d2.md
+          git commit -m "Simplify DEV-item reward recovery"
+          git push origin "HEAD:refs/heads/$FINAL_BRANCH"
+          git push origin --delete "$BOOTSTRAP_BRANCH" || true
