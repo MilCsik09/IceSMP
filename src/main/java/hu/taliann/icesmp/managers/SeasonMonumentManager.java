@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -43,8 +45,10 @@ public final class SeasonMonumentManager implements PersistentStore {
     private final File storageFile;
 
     private final List<String> lines = new ArrayList<>();
+    private final Map<String, Long> appliedGrants = new LinkedHashMap<>();
     private volatile int seasonIndex;
     private volatile UUID displayId;
+    private volatile FactionType lastChampion;
 
     public SeasonMonumentManager(final JavaPlugin plugin, final ConfigManager configManager,
                                  final StatsManager statsManager) {
@@ -52,54 +56,107 @@ public final class SeasonMonumentManager implements PersistentStore {
         this.configManager = configManager;
         this.statsManager = statsManager;
         this.storageFile = new File(plugin.getDataFolder(), "monument.yml");
+        YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
 
     @Override
     public synchronized void load() {
         lines.clear();
+        appliedGrants.clear();
         seasonIndex = 0;
         displayId = null;
+        lastChampion = null;
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
-        seasonIndex = yaml.getInt("season-index", 0);
+        final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
+        seasonIndex = yaml.getInt("season-index", -1);
+        if (seasonIndex < 0) {
+            YamlStore.failCorrupt(storageFile, plugin.getLogger(), "Érvénytelen monument season-index");
+            return;
+        }
         lines.addAll(yaml.getStringList("lines"));
+        final String rawChampion = yaml.getString("last-champion", "");
+        if (!rawChampion.isBlank()) {
+            lastChampion = FactionType.fromInput(rawChampion);
+            if (lastChampion == null) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(), "Érvénytelen monument champion");
+                return;
+            }
+        }
+        final org.bukkit.configuration.ConfigurationSection grants =
+                yaml.getConfigurationSection("applied-grants");
+        if (grants != null) {
+            for (final String key : grants.getKeys(false)) {
+                final long timestamp = grants.getLong(key, -1L);
+                if (key.isBlank() || timestamp <= 0L) {
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Érvénytelen monument applied-grant: " + key);
+                    return;
+                }
+                appliedGrants.put(key, timestamp);
+            }
+        }
         final String rawId = yaml.getString("display-uuid", "");
         if (!rawId.isBlank()) {
             try {
                 displayId = UUID.fromString(rawId);
-            } catch (final IllegalArgumentException ignored) {
-                displayId = null;
+            } catch (final IllegalArgumentException invalid) {
+                YamlStore.failCorrupt(storageFile, plugin.getLogger(), "Érvénytelen monument display UUID");
+                return;
             }
+        }
+        if (lastChampion != null) {
+            plugin.getServer().getGlobalRegionScheduler().runDelayed(
+                    plugin, task -> refreshMonument(lastChampion), 1L);
         }
     }
 
     @Override
     public synchronized void save() {
+        if (!writeStateLocked()) {
+            plugin.getLogger().severe("Failed to save monument.yml");
+        }
+    }
+
+    private boolean writeStateLocked() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("season-index", seasonIndex);
             yaml.set("lines", List.copyOf(lines));
             yaml.set("display-uuid", displayId == null ? "" : displayId.toString());
+            yaml.set("last-champion", lastChampion == null ? "" : lastChampion.name());
+            for (final Map.Entry<String, Long> entry : appliedGrants.entrySet()) {
+                yaml.set("applied-grants." + entry.getKey(), entry.getValue());
+            }
             YamlStore.saveAtomic(storageFile, yaml);
+            return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save monument.yml: " + exception.getMessage());
+            return false;
         }
     }
 
-    /**
-     * Egy lezárt korszak megörökítése (a SeasonManager szezonzárás-hookja hívja, a
-     * pont-reset ELŐTT — a hős-toplista még az érvényes állást tükrözi).
-     *
-     * @param champion a bajnok frakció (null = bajnok nélküli korszak, nem kerül kőbe)
-     */
-    public synchronized void recordSeason(final FactionType champion) {
-        if (!configManager.getBoolean("season-monument.enabled", true) || champion == null) {
-            return;
+    /** Idempotently records a closed season before refreshing its physical projection. */
+    public synchronized boolean recordSeasonOnce(final String grantId, final int closedSeason,
+                                                 final FactionType champion) {
+        if (grantId == null || grantId.isBlank() || closedSeason < 1 || champion == null) {
+            return false;
         }
-        seasonIndex++;
+        if (appliedGrants.containsKey(grantId)) {
+            return true;
+        }
+        if (!configManager.getBoolean("season-monument.enabled", true)) {
+            return true;
+        }
+
+        final int previousIndex = seasonIndex;
+        final UUID previousDisplay = displayId;
+        final FactionType previousChampion = lastChampion;
+        final List<String> previousLines = List.copyOf(lines);
+        seasonIndex = Math.max(seasonIndex + 1, closedSeason);
+        lastChampion = champion;
         final StringBuilder heroes = new StringBuilder();
         final List<StatsManager.Entry> top = statsManager.top(StatsManager.Category.LEVEL, 3);
         for (int i = 0; i < top.size(); i++) {
@@ -108,14 +165,24 @@ public final class SeasonMonumentManager implements PersistentStore {
                 heroes.append(", ");
             }
         }
-        lines.add(seasonIndex + ". korszak — " + champion.getDisplayName()
+        lines.add(closedSeason + ". korszak — " + champion.getDisplayName()
                 + (heroes.isEmpty() ? "" : " — Hősök: " + heroes));
         final int maxLines = Math.max(1, configManager.getInt("season-monument.max-lines", 12));
         while (lines.size() > maxLines) {
             lines.remove(0);
         }
-        save();
+        appliedGrants.put(grantId, System.currentTimeMillis());
+        if (!writeStateLocked()) {
+            appliedGrants.remove(grantId);
+            seasonIndex = previousIndex;
+            displayId = previousDisplay;
+            lastChampion = previousChampion;
+            lines.clear();
+            lines.addAll(previousLines);
+            return false;
+        }
         refreshMonument(champion);
+        return true;
     }
 
     /** A fizikai emlékmű frissítése (talapzat-banner + hologram) a hely régió-szálán. */
@@ -152,8 +219,10 @@ public final class SeasonMonumentManager implements PersistentStore {
                         spawned.setSeeThrough(false);
                         spawned.setDefaultBackground(false);
                     });
-            displayId = display.getUniqueId();
-            save();
+            synchronized (SeasonMonumentManager.this) {
+                displayId = display.getUniqueId();
+                writeStateLocked();
+            }
             world.playSound(base, org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 0.8F);
         });
     }
