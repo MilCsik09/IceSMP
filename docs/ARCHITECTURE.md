@@ -35,7 +35,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 109 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 111 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 114 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
