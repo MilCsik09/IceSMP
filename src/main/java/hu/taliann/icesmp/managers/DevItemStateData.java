@@ -3,10 +3,7 @@ package hu.taliann.icesmp.managers;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Immutable, Bukkit-free DEV-item state metadata used to validate durable snapshots before they
- * are applied to the live manager.
- */
+/** Immutable, Bukkit-free metadata validation for the DEV-item durable snapshot. */
 record DevItemStateData(
         UUID owner,
         UUID instanceId,
@@ -47,46 +44,6 @@ record DevItemStateData(
 
     boolean hasPendingReward() {
         return pendingItemPresent;
-    }
-
-    DevItemStateData transferTo(final UUID newOwner) {
-        return new DevItemStateData(Objects.requireNonNull(newOwner, "newOwner"), instanceId, issued,
-                progressMillis, pendingRarity, pendingEntry, pendingItemPresent,
-                rollsSinceRare, rollsSinceEpic, rollsSinceLegendary);
-    }
-
-    DevItemStateData markIssued() {
-        if (issued) {
-            return this;
-        }
-        return new DevItemStateData(owner, instanceId, true, progressMillis,
-                pendingRarity, pendingEntry, pendingItemPresent,
-                rollsSinceRare, rollsSinceEpic, rollsSinceLegendary);
-    }
-
-    /**
-     * PR #33 persisted a grant UUID and recipient while a playerdata receipt protocol was active.
-     * A receipt-backed pending reward may already be present in the player's inventory even though
-     * the YAML ACK is missing. The simpler pending/retry model therefore refuses to guess and asks
-     * for one-time operator reconciliation instead of silently duplicating or deleting the reward.
-     */
-    static void validateLegacyReceiptMigration(final boolean hasPendingReward,
-                                                final String rawGrantId,
-                                                final String rawRecipient) {
-        final String grantId = Objects.requireNonNull(rawGrantId, "rawGrantId").trim();
-        final String recipient = Objects.requireNonNull(rawRecipient, "rawRecipient").trim();
-        final boolean hasGrant = !grantId.isBlank();
-        final boolean hasRecipient = !recipient.isBlank();
-        if (hasGrant != hasRecipient) {
-            throw new IllegalArgumentException("legacy grant-id and recipient must both be present or absent");
-        }
-        if (hasGrant) {
-            if (!hasPendingReward) {
-                throw new IllegalArgumentException("legacy DEV reward receipt metadata exists without a pending reward");
-            }
-            throw new IllegalArgumentException(
-                    "legacy receipt-backed pending DEV reward requires one-time manual reconciliation");
-        }
     }
 
     static UUID requireUuid(final String raw, final String field) {
