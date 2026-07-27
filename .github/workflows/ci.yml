@@ -58,6 +58,11 @@ jobs:
           echo "Base commit: $BASE_SHA"
           echo "Head commit: $HEAD_SHA"
 
+      - name: Check patch whitespace
+        run: >-
+          git diff --check
+          "${{ steps.refs.outputs.base_sha }}...${{ steps.refs.outputs.head_sha }}"
+
       - name: Clean build
         shell: bash
         run: |
