@@ -48,23 +48,27 @@ public final class DevItemManager implements PersistentStore {
     private static final String BASE = "dev-items." + DevItemFactory.BINGULUS_ID;
     private static final List<String> RARITY_ORDER = List.of(
             "kozonseges", "nem_mindennapi", "ritka", "epikus", "legendas", "ereklye");
+    private static final DevItemRewardTransition.ExactItemPolicy<ItemStack> ITEM_POLICY =
+            new DevItemRewardTransition.ExactItemPolicy<>() {
+                @Override
+                public ItemStack copy(final ItemStack item) {
+                    return item == null ? null : item.clone();
+                }
+
+                @Override
+                public boolean isValid(final ItemStack item) {
+                    return item != null && !item.getType().isAir() && item.getAmount() > 0;
+                }
+
+                @Override
+                public boolean same(final ItemStack left, final ItemStack right) {
+                    return left != null && right != null
+                            && left.getAmount() == right.getAmount()
+                            && left.isSimilar(right);
+                }
+            };
 
     private record WeightedValue(String value, double weight) {
-    }
-
-    private record PendingReward(String rarity, String entry) {
-    }
-
-    /** In-memory rollback snapshot; it is not another durable protocol layer. */
-    private record PendingStateSnapshot(
-            long progressMillis,
-            String rarity,
-            String entry,
-            ItemStack item,
-            int sinceRare,
-            int sinceEpic,
-            int sinceLegendary
-    ) {
     }
 
     private final JavaPlugin plugin;
@@ -90,17 +94,15 @@ public final class DevItemManager implements PersistentStore {
     private final AtomicInteger sinceLegendary = new AtomicInteger();
     private final AtomicBoolean rewardInventoryNoticeSent = new AtomicBoolean();
     private final AtomicBoolean restoreInventoryNoticeSent = new AtomicBoolean();
-    private final AtomicBoolean ownerTickQueued = new AtomicBoolean();
+    private final DevItemRewardTransition.TickGate ownerTickGate =
+            new DevItemRewardTransition.TickGate();
     private final AtomicLong lastActiveNanos = new AtomicLong();
     private final AtomicReference<UUID> boundOwner = new AtomicReference<>();
-    private final AtomicBoolean ownerMigrationPending = new AtomicBoolean();
     private final AtomicBoolean rewardConfigWarningSent = new AtomicBoolean();
     private final AtomicBoolean stateHealthWarningSent = new AtomicBoolean();
 
-    /** Coalesces immediate state saves without allowing concurrent writes to the same YAML file. */
-    private final AtomicBoolean saveQueued = new AtomicBoolean();
-    private final AtomicBoolean saveAgain = new AtomicBoolean();
-
+    /** Monotonic live-owner fence. Read and mutated only while holding stateLock. */
+    private long ownerGeneration;
     private volatile UUID instanceId = UUID.randomUUID();
     private volatile ScheduledTask tickTask;
     private volatile long scheduledTicks = -1L;
@@ -146,11 +148,7 @@ public final class DevItemManager implements PersistentStore {
     }
 
     public void start() {
-        // A config-driven owner transfer is applied in-memory during strict load, but it becomes
-        // visible to players only after the preserved instance/progress snapshot is durably written.
-        if (ownerMigrationPending.get()) {
-            persistLoadedOwnerMigration();
-        }
+        // Offline config changes are committed before the new owner becomes live.
         reconcileConfiguredOwner();
         validateConfiguration();
         rescheduleTickTask();
@@ -165,7 +163,7 @@ public final class DevItemManager implements PersistentStore {
             current.cancel();
         }
         lastActiveNanos.set(0L);
-        ownerTickQueued.set(false);
+        ownerTickGate.exit();
     }
 
     /**
@@ -220,11 +218,21 @@ public final class DevItemManager implements PersistentStore {
             return false;
         }
 
-        // Commit the issued singleton before touching the live inventory. A crash after this point
-        // is recoverable by auto-restore; a failed commit cannot leak an untracked authentic item.
+        final DevItemRewardTransition.OwnerFence expectedFence = currentOwnerFence(target.getUniqueId());
+        if (expectedFence == null) {
+            return false;
+        }
+        // Commit issued=true before the authentic item becomes visible.
         markIssuedDurably();
+        if (!isCurrentOwnerFence(expectedFence, target.getUniqueId())) {
+            return false;
+        }
         removeAllBingulusItems(target);
         target.getInventory().setItem(reusableSlot, itemFactory.createBingulus(ownerUuid(), instanceId));
+        if (!isCurrentOwnerFence(expectedFence, target.getUniqueId())) {
+            removeAllBingulusItems(target);
+            return false;
+        }
         rewardInventoryNoticeSent.set(false);
         restoreInventoryNoticeSent.set(false);
         lastActiveNanos.set(0L);
@@ -233,23 +241,19 @@ public final class DevItemManager implements PersistentStore {
 
     private void markIssuedDurably() {
         synchronized (this) {
+            final DevItemRewardTransition.State<ItemStack> rewardState;
+            final YamlConfiguration snapshot;
             synchronized (stateLock) {
                 if (issued.get()) {
                     return;
                 }
-                issued.set(true);
+                rewardState = rewardStateLocked();
+                snapshot = snapshotYamlLocked(rewardState, true);
             }
-            try {
-                final YamlConfiguration snapshot;
-                synchronized (stateLock) {
-                    snapshot = snapshotYamlLocked();
-                }
-                writeSnapshot(snapshot);
-            } catch (final RuntimeException | Error failure) {
-                synchronized (stateLock) {
-                    issued.set(false);
-                }
-                throw failure;
+            // Publish issued=true only after the durable snapshot succeeds.
+            writeSnapshot(snapshot);
+            synchronized (stateLock) {
+                issued.set(true);
             }
         }
     }
@@ -315,27 +319,33 @@ public final class DevItemManager implements PersistentStore {
             lastActiveNanos.set(0L);
             return;
         }
-        if (!ownerTickQueued.compareAndSet(false, true)) {
+        if (!ownerTickGate.tryEnter()) {
             return;
         }
         owner.getScheduler().run(plugin, task -> {
             try {
                 tickOwner(owner);
             } finally {
-                ownerTickQueued.set(false);
+                ownerTickGate.exit();
             }
         }, () -> {
-            ownerTickQueued.set(false);
+            ownerTickGate.exit();
             lastActiveNanos.set(0L);
         });
     }
 
     private void tickOwner(final Player owner) {
-        if (!owner.isOnline() || !isOwner(owner) || !issued.get()) {
+        if (!owner.isOnline() || !issued.get()) {
             lastActiveNanos.set(0L);
             return;
         }
         if (!ensureAuthoritativeItem(owner, autoRestoreEnabled(), false)) {
+            lastActiveNanos.set(0L);
+            return;
+        }
+        final DevItemRewardTransition.OwnerFence expectedFence =
+                currentOwnerFence(owner.getUniqueId());
+        if (expectedFence == null) {
             lastActiveNanos.set(0L);
             return;
         }
@@ -352,45 +362,52 @@ public final class DevItemManager implements PersistentStore {
 
         final long intervalMillis = Math.max(1L,
                 configManager.getLong(BASE + ".reward-interval-seconds", 600L)) * 1000L;
-        final long progressed;
-        synchronized (stateLock) {
-            progressed = progressMillis.updateAndGet(current ->
-                    Math.min(intervalMillis, current + elapsedMillis));
+        final DevItemRewardTransition.State<ItemStack> progressedState;
+        synchronized (this) {
+            synchronized (stateLock) {
+                final DevItemRewardTransition.State<ItemStack> current = rewardStateLocked();
+                if (!current.fence().equals(expectedFence)) {
+                    return;
+                }
+                progressedState = DevItemRewardTransition.advanceProgress(
+                        current, expectedFence, elapsedMillis, intervalMillis, ITEM_POLICY);
+                applyRewardStateLocked(progressedState);
+            }
         }
-        if (progressed < intervalMillis) {
+        if (progressedState.progressMillis() < intervalMillis) {
             return;
         }
 
-        PendingReward pending = pendingReward();
-        ItemStack reward;
+        DevItemRewardTransition.Pending<ItemStack> pending = progressedState.pending();
         if (pending == null) {
-            pending = rollPendingReward();
-            if (pending == null) {
+            final String rarity = weightedRarity(forcedMinimumRarity());
+            final String entry = rarity == null ? null : weightedEntry(rarity);
+            if (entry == null) {
                 if (rewardConfigWarningSent.compareAndSet(false, true)) {
-                    plugin.getLogger().warning("Csodálatos Bingulus: nincs kisorsolható, érvényes jutalom a konfigurációban.");
+                    plugin.getLogger().warning(
+                            "Csodálatos Bingulus: nincs kisorsolható, érvényes jutalom a konfigurációban.");
                 }
                 return;
             }
             rewardConfigWarningSent.set(false);
-            reward = resolveReward(owner, pending.entry());
-            if (reward == null || reward.getType().isAir()) {
-                plugin.getLogger().warning("Csodálatos Bingulus: nem építhető jutalom: " + pending.entry());
+            final ItemStack rolled = resolveReward(owner, entry);
+            if (!ITEM_POLICY.isValid(rolled)) {
+                plugin.getLogger().warning("Csodálatos Bingulus: nem építhető jutalom: " + entry);
                 return;
             }
-            // A single pending snapshot is the recovery source of truth. It is written before the
-            // inventory can observe the item, so a normal restart can retry the exact same roll.
-            pending = preparePendingRewardDurably(pending, reward);
-        } else {
-            synchronized (stateLock) {
-                final ItemStack exactPending = pendingItem.get();
-                if (exactPending == null || exactPending.getType().isAir()
-                        || exactPending.getAmount() <= 0) {
-                    throw new IllegalStateException("A pending DEV-item jutalom metaadata és ItemStack állapota eltér.");
-                }
-                reward = exactPending.clone();
+            final DevItemRewardTransition.Pending<ItemStack> proposed =
+                    DevItemRewardTransition.pending(rarity, entry, rolled, ITEM_POLICY,
+                            value -> rankOf(value) >= 0);
+            pending = preparePendingRewardDurably(expectedFence, proposed);
+            if (pending == null) {
+                return;
             }
         }
 
+        final ItemStack reward = ITEM_POLICY.copy(pending.exactItem());
+        if (!isCurrentOwnerFence(expectedFence, owner.getUniqueId())) {
+            return;
+        }
         if (!canFit(owner.getInventory(), reward)) {
             if (rewardInventoryNoticeSent.compareAndSet(false, true)) {
                 owner.sendMessage(messageManager.get("dev-item.inventory-full",
@@ -402,8 +419,6 @@ public final class DevItemManager implements PersistentStore {
         final ItemStack[] inventoryBefore = cloneStorageContents(owner.getInventory());
         final Map<Integer, ItemStack> leftovers = owner.getInventory().addItem(reward.clone());
         if (!leftovers.isEmpty()) {
-            // Capacity validation and mutation run on the same entity scheduler. Restore the complete
-            // pre-delivery inventory if the API still reports a remainder.
             owner.getInventory().setStorageContents(inventoryBefore);
             if (rewardInventoryNoticeSent.compareAndSet(false, true)) {
                 owner.sendMessage(messageManager.get("dev-item.inventory-full",
@@ -413,7 +428,7 @@ public final class DevItemManager implements PersistentStore {
         }
 
         try {
-            if (!completePendingRewardDurably(pending)) {
+            if (!completePendingRewardDurably(expectedFence, owner.getUniqueId(), pending)) {
                 owner.getInventory().setStorageContents(inventoryBefore);
                 return;
             }
@@ -477,7 +492,7 @@ public final class DevItemManager implements PersistentStore {
             }
         }
 
-        // A DEV item cannot live in an ender chest. Legacy/bugged copies are removed and, if this
+        // A DEV item cannot live in an ender chest. Forbidden copies are removed and, if this
         // was the authoritative copy, restored into the personal inventory below.
         for (int slot = 0; slot < player.getEnderChest().getSize(); slot++) {
             final ItemStack item = player.getEnderChest().getItem(slot);
@@ -549,26 +564,21 @@ public final class DevItemManager implements PersistentStore {
         }
     }
 
-    private PendingReward pendingReward() {
-        synchronized (stateLock) {
-            return pendingRewardLocked();
-        }
-    }
-
-    private PendingReward pendingRewardLocked() {
+    private DevItemRewardTransition.Pending<ItemStack> pendingRewardLocked() {
         final String rarity = pendingRarity.get();
         final String entry = pendingEntry.get();
         final ItemStack item = pendingItem.get();
         final boolean hasRarity = !rarity.isBlank();
         final boolean hasEntry = !entry.isBlank();
-        final boolean hasItem = item != null && !item.getType().isAir() && item.getAmount() > 0;
+        final boolean hasItem = ITEM_POLICY.isValid(item);
         if (!hasRarity && !hasEntry && item == null) {
             return null;
         }
         if (hasRarity != hasEntry || hasRarity != hasItem) {
             throw new IllegalStateException("A pending DEV-item jutalom állapota részleges vagy sérült.");
         }
-        return new PendingReward(rarity, entry);
+        return DevItemRewardTransition.pending(rarity, entry, item, ITEM_POLICY,
+                value -> rankOf(value) >= 0);
     }
 
     private void clearPendingRewardLocked() {
@@ -577,93 +587,94 @@ public final class DevItemManager implements PersistentStore {
         pendingItem.set(null);
     }
 
-    private PendingStateSnapshot capturePendingStateLocked() {
-        final ItemStack item = pendingItem.get();
-        return new PendingStateSnapshot(
-                progressMillis.get(), pendingRarity.get(), pendingEntry.get(),
-                item == null ? null : item.clone(),
-                sinceRare.get(), sinceEpic.get(), sinceLegendary.get());
+    private DevItemRewardTransition.State<ItemStack> rewardStateLocked() {
+        final UUID owner = boundOwner.get();
+        if (owner == null) {
+            throw new IllegalStateException("A DEV-item owner állapota még nincs betöltve.");
+        }
+        return DevItemRewardTransition.state(
+                new DevItemRewardTransition.OwnerFence(owner, ownerGeneration),
+                progressMillis.get(), pendingRewardLocked(),
+                new DevItemRewardTransition.PityCounters(
+                        sinceRare.get(), sinceEpic.get(), sinceLegendary.get()),
+                ITEM_POLICY);
     }
 
-    private void restorePendingStateLocked(final PendingStateSnapshot snapshot) {
-        progressMillis.set(snapshot.progressMillis());
-        pendingRarity.set(snapshot.rarity());
-        pendingEntry.set(snapshot.entry());
-        pendingItem.set(snapshot.item() == null ? null : snapshot.item().clone());
-        sinceRare.set(snapshot.sinceRare());
-        sinceEpic.set(snapshot.sinceEpic());
-        sinceLegendary.set(snapshot.sinceLegendary());
+    private void applyRewardStateLocked(final DevItemRewardTransition.State<ItemStack> state) {
+        boundOwner.set(state.fence().owner());
+        ownerGeneration = state.fence().generation();
+        progressMillis.set(state.progressMillis());
+        final DevItemRewardTransition.Pending<ItemStack> pending = state.pending();
+        pendingRarity.set(pending == null ? "" : pending.rarity());
+        pendingEntry.set(pending == null ? "" : pending.entry());
+        pendingItem.set(pending == null ? null : ITEM_POLICY.copy(pending.exactItem()));
+        sinceRare.set(state.pity().sinceRare());
+        sinceEpic.set(state.pity().sinceEpic());
+        sinceLegendary.set(state.pity().sinceLegendary());
     }
 
-    private PendingReward preparePendingRewardDurably(final PendingReward selection,
-                                                        final ItemStack exactReward) {
-        requireHealthyState();
+    private DevItemRewardTransition.OwnerFence currentOwnerFence(final UUID actor) {
         synchronized (this) {
             synchronized (stateLock) {
-                if (pendingRewardLocked() != null) {
-                    throw new IllegalStateException("A pending DEV-item jutalom megváltozott a sorsolás közben.");
-                }
-                pendingRarity.set(selection.rarity());
-                pendingEntry.set(selection.entry());
-                pendingItem.set(exactReward.clone());
-            }
-            try {
-                final YamlConfiguration snapshot;
-                synchronized (stateLock) {
-                    snapshot = snapshotYamlLocked();
-                }
-                writeSnapshot(snapshot);
-                return selection;
-            } catch (final RuntimeException | Error failure) {
-                synchronized (stateLock) {
-                    clearPendingRewardLocked();
-                }
-                throw failure;
+                final DevItemRewardTransition.OwnerFence fence = rewardStateLocked().fence();
+                return fence.owner().equals(actor) ? fence : null;
             }
         }
     }
 
-    private boolean completePendingRewardDurably(final PendingReward expected) {
+    private boolean isCurrentOwnerFence(final DevItemRewardTransition.OwnerFence expected,
+                                        final UUID actor) {
+        synchronized (this) {
+            synchronized (stateLock) {
+                final DevItemRewardTransition.OwnerFence current = rewardStateLocked().fence();
+                return current.equals(expected) && current.owner().equals(actor);
+            }
+        }
+    }
+
+    private DevItemRewardTransition.Pending<ItemStack> preparePendingRewardDurably(
+            final DevItemRewardTransition.OwnerFence expectedFence,
+            final DevItemRewardTransition.Pending<ItemStack> proposed) {
         requireHealthyState();
         synchronized (this) {
-            final PendingStateSnapshot before;
+            final DevItemRewardTransition.State<ItemStack> current;
             synchronized (stateLock) {
-                final PendingReward current = pendingRewardLocked();
-                if (current == null) {
-                    return false;
-                }
-                if (!current.equals(expected)) {
-                    throw new IllegalStateException("A pending DEV-item jutalom megváltozott a nyugtázás előtt.");
-                }
-                before = capturePendingStateLocked();
-                progressMillis.set(0L);
-                clearPendingRewardLocked();
-                updatePityAfterLocked(current.rarity());
+                current = rewardStateLocked();
             }
-            try {
-                final YamlConfiguration snapshot;
-                synchronized (stateLock) {
-                    snapshot = snapshotYamlLocked();
-                }
-                writeSnapshot(snapshot);
-                return true;
-            } catch (final RuntimeException | Error failure) {
-                synchronized (stateLock) {
-                    restorePendingStateLocked(before);
-                }
-                throw failure;
+            final DevItemRewardTransition.Preparation<ItemStack> preparation =
+                    DevItemRewardTransition.prepare(current, expectedFence, proposed,
+                            ITEM_POLICY, this::writeRewardStateCandidate);
+            if (!preparation.prepared()) {
+                return null;
             }
+            synchronized (stateLock) {
+                applyRewardStateLocked(preparation.state());
+            }
+            return preparation.pending();
         }
     }
 
-    private PendingReward rollPendingReward() {
-        final String minimum = forcedMinimumRarity();
-        final String rarity = weightedRarity(minimum);
-        if (rarity == null) {
-            return null;
+    private boolean completePendingRewardDurably(
+            final DevItemRewardTransition.OwnerFence expectedFence,
+            final UUID actor,
+            final DevItemRewardTransition.Pending<ItemStack> expectedPending) {
+        requireHealthyState();
+        synchronized (this) {
+            final DevItemRewardTransition.State<ItemStack> current;
+            synchronized (stateLock) {
+                current = rewardStateLocked();
+            }
+            final DevItemRewardTransition.Completion<ItemStack> completion =
+                    DevItemRewardTransition.complete(current, expectedFence, actor, expectedPending,
+                            ITEM_POLICY, this::pityAfter, this::writeRewardStateCandidate);
+            if (!completion.committed()) {
+                return false;
+            }
+            synchronized (stateLock) {
+                applyRewardStateLocked(completion.state());
+            }
+            return true;
         }
-        final String entry = weightedEntry(rarity);
-        return entry == null ? null : new PendingReward(rarity, entry);
     }
 
     private String forcedMinimumRarity() {
@@ -851,19 +862,13 @@ public final class DevItemManager implements PersistentStore {
         return false;
     }
 
-    private void updatePityAfterLocked(final String rarity) {
+    private DevItemRewardTransition.PityCounters pityAfter(
+            final String rarity, final DevItemRewardTransition.PityCounters current) {
         final int rank = rankOf(rarity);
-        updateCounter(sinceRare, rank >= rankOf("ritka"));
-        updateCounter(sinceEpic, rank >= rankOf("epikus"));
-        updateCounter(sinceLegendary, rank >= rankOf("legendas"));
-    }
-
-    private void updateCounter(final AtomicInteger counter, final boolean reset) {
-        if (reset) {
-            counter.set(0);
-        } else {
-            counter.incrementAndGet();
-        }
+        return new DevItemRewardTransition.PityCounters(
+                rank >= rankOf("ritka") ? 0 : current.sinceRare() + 1,
+                rank >= rankOf("epikus") ? 0 : current.sinceEpic() + 1,
+                rank >= rankOf("legendas") ? 0 : current.sinceLegendary() + 1);
     }
 
     private void announce(final Player player, final String rarity, final ItemStack reward) {
@@ -917,58 +922,32 @@ public final class DevItemManager implements PersistentStore {
 
     private void reconcileConfiguredOwner() {
         requireHealthyState();
-        final UUID current = configuredOwnerUuid();
+        final UUID configured = configuredOwnerUuid();
         final UUID previous;
         synchronized (this) {
+            final DevItemRewardTransition.State<ItemStack> current;
             synchronized (stateLock) {
-                previous = boundOwner.get();
-                if (previous == null) {
-                    boundOwner.set(current);
-                    return;
-                }
-                if (previous.equals(current)) {
-                    return;
-                }
-                // Preserve the singleton token and every earned/pending progression field. The owner
-                // switch becomes authoritative only after this exact snapshot is durably committed.
-                boundOwner.set(current);
+                current = rewardStateLocked();
+                previous = current.fence().owner();
             }
-            try {
-                final YamlConfiguration snapshot;
-                synchronized (stateLock) {
-                    snapshot = snapshotYamlLocked();
-                }
-                writeSnapshot(snapshot);
-            } catch (final RuntimeException | Error failure) {
-                synchronized (stateLock) {
-                    boundOwner.set(previous);
-                }
-                throw failure;
+            if (previous.equals(configured)) {
+                return;
+            }
+            // The candidate is written before boundOwner/ownerGeneration are published.
+            final DevItemRewardTransition.State<ItemStack> transferred =
+                    DevItemRewardTransition.transfer(current, configured, ITEM_POLICY,
+                            this::writeRewardStateCandidate);
+            synchronized (stateLock) {
+                applyRewardStateLocked(transferred);
             }
         }
-        plugin.getLogger().info("Csodálatos Bingulus: tulajdonos változott (" + previous + " → " + current
+        lastActiveNanos.set(0L);
+        plugin.getLogger().info("Csodálatos Bingulus: tulajdonos változott (" + previous + " → " + configured
                 + "), az instance, az aktívidő, a pity és a pending jutalom megőrizve.");
     }
 
-    private void persistLoadedOwnerMigration() {
-        requireHealthyState();
-        synchronized (this) {
-            if (!ownerMigrationPending.get()) {
-                return;
-            }
-            final YamlConfiguration snapshot;
-            synchronized (stateLock) {
-                snapshot = snapshotYamlLocked();
-            }
-            // Clear the migration marker only after the transferred owner and preserved singleton
-            // state are durably committed. A failure keeps startup retryable and fail-closed.
-            writeSnapshot(snapshot);
-            ownerMigrationPending.set(false);
-        }
-    }
-
     private boolean hasHealthyState() {
-        return !YamlStore.isLoadFailed(stateFile) && !YamlStore.hasCriticalWriteFailure();
+        return !YamlStore.isLoadFailed(stateFile) && !YamlStore.hasWriteFailure(stateFile);
     }
 
     private void requireHealthyState() {
@@ -1054,6 +1033,7 @@ public final class DevItemManager implements PersistentStore {
         synchronized (stateLock) {
             issued.set(false);
             instanceId = UUID.randomUUID();
+            ownerGeneration = 0L;
             progressMillis.set(0L);
             clearPendingRewardLocked();
             sinceRare.set(0);
@@ -1068,7 +1048,6 @@ public final class DevItemManager implements PersistentStore {
     @Override
     public void load() {
         final UUID configuredOwner = configuredOwnerUuid();
-        ownerMigrationPending.set(false);
         if (!stateFile.exists()) {
             resetRuntimeState();
             synchronized (stateLock) {
@@ -1098,7 +1077,7 @@ public final class DevItemManager implements PersistentStore {
                 throw new IllegalArgumentException("bingulus.pending.item is empty");
             }
 
-            DevItemStateData loaded = new DevItemStateData(
+            final DevItemStateData loaded = new DevItemStateData(
                     savedOwner,
                     savedInstance,
                     savedIssued,
@@ -1109,20 +1088,13 @@ public final class DevItemManager implements PersistentStore {
                     requireInt(yaml, "bingulus.pity.since-rare"),
                     requireInt(yaml, "bingulus.pity.since-epic"),
                     requireInt(yaml, "bingulus.pity.since-legendary"));
-            DevItemStateData.validateLegacyReceiptMigration(
-                    loaded.hasPendingReward(),
-                    optionalString(yaml, "bingulus.pending.grant-id"),
-                    optionalString(yaml, "bingulus.pending.recipient"));
             if (loaded.hasPendingReward() && rankOf(loaded.pendingRarity()) < 0) {
                 throw new IllegalArgumentException("unknown pending rarity: " + loaded.pendingRarity());
             }
 
-            final boolean ownerChanged = !savedOwner.equals(configuredOwner);
-            if (ownerChanged) {
-                loaded = loaded.transferTo(configuredOwner);
-            }
             synchronized (stateLock) {
                 boundOwner.set(loaded.owner());
+                ownerGeneration = 0L;
                 instanceId = loaded.instanceId();
                 issued.set(loaded.issued());
                 progressMillis.set(loaded.progressMillis());
@@ -1136,12 +1108,7 @@ public final class DevItemManager implements PersistentStore {
                 restoreInventoryNoticeSent.set(false);
                 lastActiveNanos.set(0L);
             }
-            ownerMigrationPending.set(ownerChanged);
             stateHealthWarningSent.set(false);
-            if (ownerChanged) {
-                plugin.getLogger().info("Csodálatos Bingulus: tulajdonos-migráció előkészítve ("
-                        + savedOwner + " → " + configuredOwner + "); az instance és minden progressz megőrizve.");
-            }
         } catch (final RuntimeException invalidState) {
             YamlStore.failCorrupt(stateFile, plugin.getLogger(),
                     "A DEV-item állapota szemantikailag érvénytelen: " + invalidState.getMessage());
@@ -1152,37 +1119,47 @@ public final class DevItemManager implements PersistentStore {
     @Override
     public void save() {
         synchronized (this) {
+            final DevItemRewardTransition.State<ItemStack> rewardState;
             final YamlConfiguration snapshot;
             synchronized (stateLock) {
-                snapshot = snapshotYamlLocked();
+                rewardState = rewardStateLocked();
+                snapshot = snapshotYamlLocked(rewardState, issued.get());
             }
             writeSnapshot(snapshot);
         }
     }
 
-    private YamlConfiguration snapshotYamlLocked() {
-        final UUID owner = boundOwner.get();
-        if (owner == null) {
-            throw new IllegalStateException("A DEV-item állapota betöltés előtt nem menthető.");
+    private void writeRewardStateCandidate(
+            final DevItemRewardTransition.State<ItemStack> candidate) {
+        final YamlConfiguration snapshot;
+        synchronized (stateLock) {
+            snapshot = snapshotYamlLocked(candidate, issued.get());
         }
-        final ItemStack exactPending = pendingItem.get();
-        if (exactPending != null && (exactPending.getType().isAir() || exactPending.getAmount() <= 0)) {
+        writeSnapshot(snapshot);
+    }
+
+    private YamlConfiguration snapshotYamlLocked(
+            final DevItemRewardTransition.State<ItemStack> rewardState,
+            final boolean issuedValue) {
+        final DevItemRewardTransition.Pending<ItemStack> pending = rewardState.pending();
+        final ItemStack exactPending = pending == null ? null : pending.exactItem();
+        if (exactPending != null && !ITEM_POLICY.isValid(exactPending)) {
             throw new IllegalStateException("Üres ItemStack nem menthető pending DEV-item jutalomként.");
         }
 
         final DevItemStateData state;
         try {
             state = new DevItemStateData(
-                    owner,
+                    rewardState.fence().owner(),
                     instanceId,
-                    issued.get(),
-                    progressMillis.get(),
-                    pendingRarity.get(),
-                    pendingEntry.get(),
-                    exactPending != null,
-                    sinceRare.get(),
-                    sinceEpic.get(),
-                    sinceLegendary.get());
+                    issuedValue,
+                    rewardState.progressMillis(),
+                    pending == null ? "" : pending.rarity(),
+                    pending == null ? "" : pending.entry(),
+                    pending != null,
+                    rewardState.pity().sinceRare(),
+                    rewardState.pity().sinceEpic(),
+                    rewardState.pity().sinceLegendary());
         } catch (final IllegalArgumentException invalidState) {
             throw new IllegalStateException("Érvénytelen DEV-item állapotpillanat nem menthető.", invalidState);
         }
@@ -1198,7 +1175,7 @@ public final class DevItemManager implements PersistentStore {
         yaml.set("bingulus.progress-millis", state.progressMillis());
         yaml.set("bingulus.pending.rarity", state.pendingRarity());
         yaml.set("bingulus.pending.entry", state.pendingEntry());
-        yaml.set("bingulus.pending.item", exactPending == null ? null : exactPending.clone());
+        yaml.set("bingulus.pending.item", exactPending == null ? null : ITEM_POLICY.copy(exactPending));
         yaml.set("bingulus.pity.since-rare", state.rollsSinceRare());
         yaml.set("bingulus.pity.since-epic", state.rollsSinceEpic());
         yaml.set("bingulus.pity.since-legendary", state.rollsSinceLegendary());
@@ -1211,17 +1188,6 @@ public final class DevItemManager implements PersistentStore {
         } catch (final IOException exception) {
             throw new UncheckedIOException("A DEV item állapota nem menthető", exception);
         }
-    }
-
-    private String optionalString(final YamlConfiguration yaml, final String path) {
-        final Object raw = yaml.get(path);
-        if (raw == null) {
-            return "";
-        }
-        if (raw instanceof String value) {
-            return value;
-        }
-        throw new IllegalArgumentException(path + " must be a string when present");
     }
 
     private String requireString(final YamlConfiguration yaml, final String path) {
@@ -1260,26 +1226,4 @@ public final class DevItemManager implements PersistentStore {
         return (int) value;
     }
 
-    private void requestSave() {
-        if (!plugin.isEnabled()) {
-            return;
-        }
-        saveAgain.set(true);
-        if (!saveQueued.compareAndSet(false, true)) {
-            return;
-        }
-        Bukkit.getAsyncScheduler().runNow(plugin, task -> {
-            try {
-                do {
-                    saveAgain.set(false);
-                    save();
-                } while (saveAgain.get());
-            } finally {
-                saveQueued.set(false);
-                if (saveAgain.get()) {
-                    requestSave();
-                }
-            }
-        });
-    }
 }
