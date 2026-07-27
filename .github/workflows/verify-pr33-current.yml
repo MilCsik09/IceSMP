@@ -1,0 +1,27 @@
+name: Verify rebuilt PR 33
+
+on:
+  pull_request:
+    branches: [fix/dev-item-pending-reward]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/verify-pr33-current
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/wrapper-validation@v4
+      - run: python3 scripts/test_dev_item_state.py
+      - run: ./gradlew clean build --no-daemon --stacktrace
+      - name: Consistency report
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/check_consistency.py
+          exit 0
