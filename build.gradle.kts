@@ -41,3 +41,21 @@ tasks {
         }
     }
 }
+
+val regressionTest by sourceSets.creating {
+    java.srcDir("src/regression/java")
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += output + compileClasspath
+}
+
+val persistentStoreRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs dependency-free persistent-store lifecycle regression tests."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.storage.PersistentStoreCoordinatorRegressionTest")
+}
+
+tasks.check {
+    dependsOn(persistentStoreRegressionTest)
+}

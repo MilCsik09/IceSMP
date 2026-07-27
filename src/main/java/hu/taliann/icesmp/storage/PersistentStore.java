@@ -2,9 +2,10 @@ package hu.taliann.icesmp.storage;
 
 /**
  * A manager whose state is persisted to a data file. The plugin core keeps one registered list of
- * these and iterates it to {@link #load()} every store on enable and {@link #save()} every store on
- * disable — so adding a new persistent manager means implementing this interface and adding it to
- * that single list, instead of editing two hand-maintained call lists.
+ * these behind a {@link PersistentStoreCoordinator}, which fail-closed loads the full set on enable
+ * and serializes common autosave/shutdown writes. Adding a new persistent manager therefore means
+ * implementing this interface and adding it to that single list, instead of editing independent
+ * load/save call sites.
  */
 public interface PersistentStore {
 
