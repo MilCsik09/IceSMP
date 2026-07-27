@@ -106,18 +106,28 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     több-store atomicitás vagy exactly-once bizonyítás; a globális currency gate külön
     egyszerűsítési és runtime-validációs scope.
 
-
   - **Szezon–community generation commit** (`season.yml` → `community-goals.yml`): a community store tartós `season.number` markerrel jelöli, melyik szezonhoz tartozik a progressz. A zárás a community monitor alatt előbb rendezi az outboxot, majd commitolja az új `season.yml` generációt, és csak ezután nullázza/menti a community progresszt. Crash a két commit között egyetlen generációnyi marker-lemaradást hagy; bootkor ez idempotens resetként reconciliálódik. Függő régi payout, előreszaladt vagy több generációt átugró marker fail-closed.
 
+- **DEV-item jutalom — lokális pending/retry és owner fence:** a pontosan kisorsolt tárgy a
+  `dev-items-state.yml` egyetlen pending rekordjába kerül az inventory mutation előtt.
+  Teljes inventory vagy normál restart esetén ugyanaz az exact item próbálható újra. A live tick
+  rögzíti az owner UUID + monoton runtime generation fence-et; completion csak azonos fence,
+  delivery player és exact pending item mellett törölheti a pendinget, resetelheti a progresszt és
+  frissítheti a pityt. Stale tick esetén az inventory mutation rollbackel, a tartós gameplay state
+  változatlan marad. Owner-váltáskor az új ownerrel készült immutable snapshot előbb tartósan
+  kiíródik, és csak sikeres write után válik a live runtime számára autoritatívvá. A DEV manager a
+  saját state fájljának write-health állapotát figyeli, ezért egy független store hibája nem állítja
+  le. Nincs backward-compatibility vagy migration ág: az első production indulás ezt a steady-state
+  formátumot használja. A rendszer nem állít formális exactly-once garanciát az inventory mutation
+  és a YAML completion közötti erőszakos process-kill ablakra.
 
-- **DEV-item jutalom — arányos pending/retry modell:** a pontosan kisorsolt tárgy a
-  `dev-items-state.yml` egyetlen pending rekordjába kerül, mielőtt az inventoryhoz érnénk.
-  Teljes inventory vagy normál restart esetén ugyanaz a jutalom újrapróbálható; sikeres átadáskor
-  a pending rekord szinkron mentéssel törlődik. Nincs külön grant-UUID, player-PDC nyugta vagy
-  saját playerdata-commit protokoll. Emiatt nem állítunk formális exactly-once garanciát az
-  inventory-módosítás és a pending törlése közötti erőszakos process-kill ablakra.
-  A korábbi receipt-protokollból maradt, még nyugtázatlan pending rekord fail-closed indul,
-  mert automatikusan nem dönthető el, hogy a playerdata már megkapta-e a jutalmat.
+- **DEV regressziók:** a `devItemRewardRegressionTest` Gradle `JavaExec` task a `check` lifecycle
+  része. Strict metadata-validációt, full-inventory/restart/write-failure viselkedést, valamint
+  determinisztikus `CountDownLatch` owner-transfer race-eket futtat. A
+  `scripts/test_dev_item_state.py` ugyanazt a dependency-free suite-ot külön is elindítja, és tiltott
+  régi runtime útvonalakra statikus guardot ad. A tartós `IceSMP CI` workflow Java 21-en clean
+  buildet, Gradle-suite markert, célzott Python regressziót, `git diff --check`-et és base/head
+  consistency-deltát ellenőriz `contents: read` jogosultsággal.
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.
@@ -362,7 +372,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   - `FLASH` mindig `count=1` — a képernyő-villanás nem halmozódik, a többlet csak csomag.
   - Ünneplő konfetti (`TOTEM_OF_UNDYING`) legfeljebb ~16-18 darab, szűk terítéssel.
   - Egyszeri burst ≤ ~30 darab; ami hosszabb hatás, az PULZÁLJON kis adagokban
-    (AmbientEventManager `pulse`-minta), ne egy nagy robbanás legyen.
+    (`AmbientEventManager` `pulse`-minta), ne egy nagy robbanás legyen.
   - Talaj-közeli jelölők (határ, perem) a `ParticleUtil.markerY`-ról kapják a magasságot
     (terep-követés + Folia-guard) — sose lebegjenek a néző derekán dombokon át.
   - Adat-igényes particle-ök (`FLASH`, `DUST`…) mindig a `ParticleUtil.spawn`-on át
@@ -386,28 +396,16 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 - **Bootstrap-szint (`IceSMPBootstrap`):** a registry-fagyás előtt fut — itt regisztráljuk a
   data-driven **signature-enchantokat** (`icesmp:jegfog` stb., kulcsok: `items/SignatureEnchantKeys`);
   a kliens a registry-szinkronnal kapja őket, a leírás-Component a tooltipben renderelődik. A
-  viselkedés NEM itt él (SignatureItemListener); a craft-stamp kulcsa `signature.custom-enchants`.
-  Bővíthető: damage-type/banner-minta/trim regisztráció ugyanígt; MobEffect (bájital-effekt) NEM
+  viselkedés NEM itt él (`SignatureItemListener`); a craft-stamp kulcsa `signature.custom-enchants`.
+  Bővíthető: damage-type/banner-minta/trim regisztráció ugyanígy; MobEffect (bájital-effekt) NEM
   regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
 - **Jarból szállított datapack (`DATAPACK_DISCOVERY`):** a bootstrap a jar `/datapack`
   könyvtárát rendes datapackként ismerteti meg a szerverrel (`autoEnableOnServerStart`), így
-  a 22 csomópontos IceSMP haladás-fa és a 3 fix toast-bejegyzés a KÓDDAL EGYÜTT verziózódik,
-  futásidejű registry-mutáció nélkül. Az `AdvancementService` enable-időben csak ellenőriz;
-  ha a felderítés elbukott, a régi (`@Deprecated Bukkit.getUnsafe()`) úton pótolja a hiányzó
-  bejegyzéseket, és WARNING-ot logol. A fa-bejegyzések `show_toast:false` +
-  `announce_to_chat:false` (a visszajelzés a rendszerek saját chat-üzenete, az ünneplő toast a
-  külön `ToastUtil`-réteg) — a tartalék út JSON-generátora is ezt írja, hogy a két betöltési
-  út ugyanúgy viselkedjen. Új csomópont = NODES-bejegyzés + `python3 scripts/gen_advancements.py`
-  (a JSON-ok EGYETLEN forrása a Java NODES lista) + VALÓDI `AdvancementService.award(...)`
-  hívás — a `scripts/check_consistency.py` négyesével ellenőrzi: hiányzó JSON, árva JSON,
-  holt bejegyzés, tartalom-drift.
-- **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
-  jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 111 fájl).
-  Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
-  items 11, relics 9, integration 7.
-- **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
-  inline parancsok migrálásához a dispatch-bázis additív bővítése (default-subcommand + láthatósági
-  predikátum); az `IceSMPCore` manager-építés factory-szétbontása (a `final` mezők miatt); a mentések
-  debounce-olása (async IO + flush-on-disable).
-- **Nyitott fejlesztések:** `ROADMAP.md`.
+  a 22 csomópontos advancement-fa és a hozzá tartozó reward functionök install nélkül elérhetők.
+- **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
+  `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
+- **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
+  `python3 scripts/check_consistency.py`. Pull requesten a `scripts/check_consistency_delta.py`
+  hasonlítja a base/head eredményt.
+- **Garanciahatár:** a statikus, dependency-free és build-integrált regressziók nem helyettesítik a
+  valódi Folia multi-region, process-kill, ENOSPC vagy permission-denied fault-injectiont.
