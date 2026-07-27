@@ -43,7 +43,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 11 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
-| `storage/` | 6 | `YamlStore` (atomikus írás) + `PersistentStore` (load/save SPI). |
+| `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 21 | `MessageManager`, `ExperienceUtil`, egyebek. |
 | `integration/` | 7 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
@@ -90,6 +90,9 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 - **`storage/PersistentStore { load(); save(); }`**: a 33 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
+- **`storage/PersistentStoreCoordinator`**: az enable során **fail-closed** tölti be a teljes
+  registryt; az első hibánál az indulás megszakad, részlegesen betöltött állapot nem menthető.
+  Autosave és shutdown csak a teljesen betöltött registryt írhatja, egymással szerializálva.
 - **Write-ahead napló (WAL) — ahol a mentés-időpont nem elég:** két rendszernek a következő
   autosave-ig sem szabad kockáztatnia, mert közben a világból/inventoryból már eltűnt valami.
   - **`storage/BlockRegenJournal`** (block-regen.yml checkpoint + `block-regen.wal` hozzáfűzéses
