@@ -1,9 +1,14 @@
 name: Season/community transition publisher
 
 on:
-  push:
+  pull_request:
     branches:
-      - audit/baseline-14addda
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: season-community-transition-publisher
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -29,19 +34,27 @@ jobs:
           gzip --decompress --stdout /tmp/season-community.patch.gz > /tmp/season-community.patch
           test "$(sha256sum /tmp/season-community.patch | cut -d' ' -f1)" = 'b351c38da3d65f6510fb26e357e70be76d0b0e5acb2eed3bc7a0d7787cd8ab01'
 
-      - name: Checkout exact master-based target branch
+      - name: Checkout target branch
         uses: actions/checkout@v4
         with:
           ref: fix/season-community-transition
           path: target
           fetch-depth: 0
 
-      - name: Verify exact starting point
+      - name: Verify exact starting point or idempotent retry
         working-directory: target
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb'
+          base='14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb'
+          head="$(git rev-parse HEAD)"
+          if [ "$head" = "$base" ]; then
+            echo 'ALREADY_PUBLISHED=false' >> "$GITHUB_ENV"
+          else
+            test "$(git rev-parse HEAD^)" = "$base"
+            test "$(git log -1 --format='%s')" = 'Coordinate season and community generation commits'
+            echo 'ALREADY_PUBLISHED=true' >> "$GITHUB_ENV"
+          fi
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -49,25 +62,35 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Apply reviewed transition patch
+      - name: Apply reviewed transition patch when needed
         working-directory: target
         shell: bash
         run: |
           set -euo pipefail
-          git apply --check /tmp/season-community.patch
-          git apply /tmp/season-community.patch
-          git diff --check
+          if [ "$ALREADY_PUBLISHED" = 'false' ]; then
+            git apply --check /tmp/season-community.patch
+            git apply /tmp/season-community.patch
+            git diff --check
+          else
+            git diff --quiet
+            git diff --check 14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb..HEAD
+          fi
 
       - name: Run targeted transition regression
         working-directory: target
         run: python3 scripts/test_season_community_transition.py
 
-      - name: Commit and push the scoped fix
+      - name: Verify scope, commit and push when needed
         working-directory: target
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(git diff --name-only | sort)
+          base='14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb'
+          if [ "$ALREADY_PUBLISHED" = 'false' ]; then
+            mapfile -t files < <(git diff --name-only | sort)
+          else
+            mapfile -t files < <(git diff --name-only "$base"..HEAD | sort)
+          fi
           printf '%s\n' "${files[@]}"
           test "${#files[@]}" -eq 7
           test "${files[0]}" = 'docs/ARCHITECTURE.md'
@@ -77,15 +100,22 @@ jobs:
           test "${files[4]}" = 'src/main/java/hu/taliann/icesmp/managers/CommunitySeasonState.java'
           test "${files[5]}" = 'src/main/java/hu/taliann/icesmp/managers/SeasonManager.java'
           test "${files[6]}" = 'src/regression/java/hu/taliann/icesmp/managers/CommunitySeasonStateRegressionTest.java'
-          git config user.name 'OpenAI'
-          git config user.email 'noreply@openai.com'
-          git add -- "${files[@]}"
-          git diff --cached --check
-          git commit -m 'Coordinate season and community generation commits'
-          git push origin HEAD:fix/season-community-transition || {
-            git fetch origin fix/season-community-transition
-            test "$(git rev-parse origin/fix/season-community-transition)" = "$(git rev-parse HEAD)"
-          }
+
+          if [ "$ALREADY_PUBLISHED" = 'false' ]; then
+            git config user.name 'OpenAI'
+            git config user.email 'noreply@openai.com'
+            git add -- "${files[@]}"
+            git diff --cached --check
+            git commit -m 'Coordinate season and community generation commits'
+            git push origin HEAD:fix/season-community-transition || {
+              git fetch origin fix/season-community-transition
+              test "$(git rev-parse origin/fix/season-community-transition)" = "$(git rev-parse HEAD)"
+            }
+          fi
+
+          test "$(git rev-parse HEAD^)" = "$base"
+          test "$(git log -1 --format='%s')" = 'Coordinate season and community generation commits'
+          git diff --check "$base"..HEAD
           git rev-parse HEAD | tee /tmp/published-head
 
       - name: Archive exact published source
