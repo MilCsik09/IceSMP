@@ -64,6 +64,31 @@ record DevItemStateData(
                 rollsSinceRare, rollsSinceEpic, rollsSinceLegendary);
     }
 
+    /**
+     * PR #33 persisted a grant UUID and recipient while a playerdata receipt protocol was active.
+     * A receipt-backed pending reward may already be present in the player's inventory even though
+     * the YAML ACK is missing. The simpler pending/retry model therefore refuses to guess and asks
+     * for one-time operator reconciliation instead of silently duplicating or deleting the reward.
+     */
+    static void validateLegacyReceiptMigration(final boolean hasPendingReward,
+                                                final String rawGrantId,
+                                                final String rawRecipient) {
+        final String grantId = Objects.requireNonNull(rawGrantId, "rawGrantId").trim();
+        final String recipient = Objects.requireNonNull(rawRecipient, "rawRecipient").trim();
+        final boolean hasGrant = !grantId.isBlank();
+        final boolean hasRecipient = !recipient.isBlank();
+        if (hasGrant != hasRecipient) {
+            throw new IllegalArgumentException("legacy grant-id and recipient must both be present or absent");
+        }
+        if (hasGrant) {
+            if (!hasPendingReward) {
+                throw new IllegalArgumentException("legacy DEV reward receipt metadata exists without a pending reward");
+            }
+            throw new IllegalArgumentException(
+                    "legacy receipt-backed pending DEV reward requires one-time manual reconciliation");
+        }
+    }
+
     static UUID requireUuid(final String raw, final String field) {
         if (raw == null || raw.isBlank()) {
             throw new IllegalArgumentException(field + " must contain a UUID");

@@ -1109,6 +1109,10 @@ public final class DevItemManager implements PersistentStore {
                     requireInt(yaml, "bingulus.pity.since-rare"),
                     requireInt(yaml, "bingulus.pity.since-epic"),
                     requireInt(yaml, "bingulus.pity.since-legendary"));
+            DevItemStateData.validateLegacyReceiptMigration(
+                    loaded.hasPendingReward(),
+                    optionalString(yaml, "bingulus.pending.grant-id"),
+                    optionalString(yaml, "bingulus.pending.recipient"));
             if (loaded.hasPendingReward() && rankOf(loaded.pendingRarity()) < 0) {
                 throw new IllegalArgumentException("unknown pending rarity: " + loaded.pendingRarity());
             }
@@ -1207,6 +1211,17 @@ public final class DevItemManager implements PersistentStore {
         } catch (final IOException exception) {
             throw new UncheckedIOException("A DEV item állapota nem menthető", exception);
         }
+    }
+
+    private String optionalString(final YamlConfiguration yaml, final String path) {
+        final Object raw = yaml.get(path);
+        if (raw == null) {
+            return "";
+        }
+        if (raw instanceof String value) {
+            return value;
+        }
+        throw new IllegalArgumentException(path + " must be a string when present");
     }
 
     private String requireString(final YamlConfiguration yaml, final String path) {

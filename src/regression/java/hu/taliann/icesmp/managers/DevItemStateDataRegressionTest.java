@@ -20,6 +20,9 @@ public final class DevItemStateDataRegressionTest {
         partialPendingRewardIsRejected();
         unissuedStateCannotCarryEarnedProgress();
         emptyPendingStateIsValid();
+        receiptFreeLegacySnapshotsRemainCompatible();
+        partialLegacyReceiptMetadataIsRejected();
+        receiptBackedPendingRewardRequiresManualReconciliation();
         System.out.println("DevItemStateData regression tests passed.");
     }
 
@@ -88,6 +91,26 @@ public final class DevItemStateDataRegressionTest {
         final DevItemStateData state = new DevItemStateData(
                 OWNER, INSTANCE, true, 0L, "", "", false, 0, 0, 0);
         check(!state.hasPendingReward(), "an empty pending snapshot must not create a reward");
+    }
+
+    private static void receiptFreeLegacySnapshotsRemainCompatible() {
+        DevItemStateData.validateLegacyReceiptMigration(false, "", "");
+        DevItemStateData.validateLegacyReceiptMigration(true, "", "");
+    }
+
+    private static void partialLegacyReceiptMetadataIsRejected() {
+        expectThrows(IllegalArgumentException.class,
+                () -> DevItemStateData.validateLegacyReceiptMigration(true, OWNER.toString(), ""));
+        expectThrows(IllegalArgumentException.class,
+                () -> DevItemStateData.validateLegacyReceiptMigration(true, "", OWNER.toString()));
+        expectThrows(IllegalArgumentException.class,
+                () -> DevItemStateData.validateLegacyReceiptMigration(false, OWNER.toString(), NEW_OWNER.toString()));
+    }
+
+    private static void receiptBackedPendingRewardRequiresManualReconciliation() {
+        expectThrows(IllegalArgumentException.class,
+                () -> DevItemStateData.validateLegacyReceiptMigration(
+                        true, INSTANCE.toString(), OWNER.toString()));
     }
 
     private static DevItemStateData pendingState() {

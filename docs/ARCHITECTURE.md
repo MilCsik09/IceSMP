@@ -116,6 +116,8 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   a pending rekord szinkron mentéssel törlődik. Nincs külön grant-UUID, player-PDC nyugta vagy
   saját playerdata-commit protokoll. Emiatt nem állítunk formális exactly-once garanciát az
   inventory-módosítás és a pending törlése közötti erőszakos process-kill ablakra.
+  A korábbi receipt-protokollból maradt, még nyugtázatlan pending rekord fail-closed indul,
+  mert automatikusan nem dönthető el, hogy a playerdata már megkapta-e a jutalmat.
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.

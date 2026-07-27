@@ -56,7 +56,9 @@ Feladott elméleti garancia:
 
 - nincs formális exactly-once bizonyítás erőszakos process-killre az inventory item hozzáadása és
   a pending YAML törlésének befejezése közötti szűk ablakban;
-- kézzel sérült playerdata és minden lehetséges storage kombinációja nem kap külön állapotgépet.
+- kézzel sérült playerdata és minden lehetséges storage kombinációja nem kap külön állapotgépet;
+- a #33 receipt-protokolljából maradt, receipt-backed pending jutalom automatikus találgatás
+  helyett fail-closed, egyszeri operátori reconciliationt igényel.
 
 Ez egy ritka DEV-item időalapú jutalma. A gyakorlati szerverüzemhez a tartós pending, a teljes
 inventory retry és a normál restart recovery arányos védelmet ad lényegesen kisebb mentális és
@@ -66,15 +68,15 @@ tartós állapotkomplexitással.
 
 | Mérőszám | Master | Branch |
 |---|---:|---:|
-| `DevItemManager.java` sor | `1465` | `1270` |
-| `DevItemStateData.java` sor | `123` | `77` |
+| `DevItemManager.java` sor | `1465` | `1285` |
+| `DevItemStateData.java` sor | `123` | `102` |
 | DEV tartós pending mezők | 5 | 3 |
 | Player-PDC receipt kulcs | 1 | 0 |
 | Delivery decision ág | 3 | 0 |
 | Tartós transition helper | 4 | 2 |
-| Bukkit-független regressziós teszteset | 10 | 7 |
+| Bukkit-független regressziós teszteset | 10 | 10 |
 | Érintett Java-fájl | — | 3 |
-| Hozzáadott / törölt sor összesen | — | `117 / 469` |
+| Hozzáadott / törölt sor összesen | — | `305 / 461` |
 
 ## Futtatott ellenőrzések
 
