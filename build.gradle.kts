@@ -56,6 +56,14 @@ val persistentStoreRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.storage.PersistentStoreCoordinatorRegressionTest")
 }
 
+val devItemRewardRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs focused DEV-item state, retry and scheduler-gate regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.DevItemRewardRegressionSuite")
+}
+
 tasks.check {
-    dependsOn(persistentStoreRegressionTest)
+    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest)
 }

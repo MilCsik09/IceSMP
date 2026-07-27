@@ -1,159 +1,159 @@
 package hu.taliann.icesmp.managers;
 
+import java.util.Set;
 import java.util.UUID;
 
-/** Dependency-free regression coverage for the durable DEV-item metadata invariants. */
+/** Focused regressions for the simple immutable Bingulus state. */
 public final class DevItemStateDataRegressionTest {
 
     private static final UUID OWNER = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID NEW_OWNER = UUID.fromString("22222222-2222-2222-2222-222222222222");
     private static final UUID INSTANCE = UUID.fromString("33333333-3333-3333-3333-333333333333");
-    private static final UUID GRANT = UUID.fromString("44444444-4444-4444-4444-444444444444");
+    private static final Set<String> RARITIES = Set.of("kozonseges", "ritka", "epikus", "legendas");
 
     private DevItemStateDataRegressionTest() {
     }
 
     public static void main(final String[] args) {
-        transferPreservesSingletonProgressAndRecordedRecipient();
-        pendingRecipientCanBeReassignedWithoutChangingGrant();
-        durableReceiptAcknowledgesInsteadOfRedelivering();
-        missingReceiptRequiresDelivery();
-        unrelatedPlayerCannotConsumeTheGrant();
-        markIssuedPreservesSingletonIdentity();
-        malformedUuidIsRejected();
-        negativeProgressAndPityAreRejected();
-        partialPendingRewardIsRejected();
-        unissuedStateCannotCarryEarnedProgress();
-        System.out.println("DevItemStateData regression tests passed.");
+        runAll();
+        System.out.println("DevItem state regression tests passed.");
     }
 
-    private static void transferPreservesSingletonProgressAndRecordedRecipient() {
-        final DevItemStateData original = pendingState();
-
-        final DevItemStateData transferred = original.transferTo(NEW_OWNER);
-
-        check(transferred.owner().equals(NEW_OWNER), "the configured owner must change");
-        check(transferred.instanceId().equals(INSTANCE), "owner transfer must preserve the singleton token");
-        check(transferred.issued(), "owner transfer must preserve issuance");
-        check(transferred.progressMillis() == 42_000L, "owner transfer must preserve active time");
-        check(transferred.pendingRarity().equals("epikus"), "owner transfer must preserve pending rarity");
-        check(transferred.pendingEntry().equals("material:diamond"), "owner transfer must preserve pending entry");
-        check(transferred.pendingItemPresent(), "owner transfer must preserve the exact pending item marker");
-        check(transferred.pendingGrantId().equals(GRANT), "owner transfer must preserve the stable grant id");
-        check(transferred.pendingRecipient().equals(OWNER),
-                "an unresolved grant must remain bound to the previously recorded recipient");
-        check(transferred.rollsSinceRare() == 7, "owner transfer must preserve rare pity");
-        check(transferred.rollsSinceEpic() == 11, "owner transfer must preserve epic pity");
-        check(transferred.rollsSinceLegendary() == 13, "owner transfer must preserve legendary pity");
+    static void runAll() {
+        rewardIntervalIsClamped();
+        pendingSnapshotIsExactAndRestartable();
+        fullInventoryLeavesPendingUntilRetry();
+        ownerReloadPreservesStateAndFencesOldOwner();
+        writeFailureDoesNotPublishCandidateOrTripOtherFeature();
+        strictStateRejectsCorruption();
     }
 
-    private static void pendingRecipientCanBeReassignedWithoutChangingGrant() {
-        final DevItemStateData reassigned = pendingState().reassignPendingRecipient(GRANT, NEW_OWNER);
+    private static void rewardIntervalIsClamped() {
+        var state = issuedState(0L, null, 0, 0, 0);
+        state = state.advanceProgress(599_999L, 600_000L, FakeItem::copy);
+        check(state.progressMillis() == 599_999L, "reward interval completed early");
+        check(state.pending() == null, "reward existed before the interval");
 
-        check(reassigned.pendingRecipient().equals(NEW_OWNER), "the verified recipient may be rebound");
-        check(reassigned.pendingGrantId().equals(GRANT), "recipient rebinding must not mint another grant");
-        check(reassigned.pendingEntry().equals("material:diamond"), "the exact reward identity must survive rebinding");
-        expectThrows(IllegalStateException.class,
-                () -> pendingState().reassignPendingRecipient(UUID.randomUUID(), NEW_OWNER));
+        state = state.advanceProgress(1L, 600_000L, FakeItem::copy);
+        check(state.progressMillis() == 600_000L, "reward interval did not complete");
+        state = state.withPending(pending(reward()), FakeItem::copy);
+        check(state.pending() != null, "reward was not created at the interval");
     }
 
-    private static void durableReceiptAcknowledgesInsteadOfRedelivering() {
-        check(DevItemStateData.deliveryDecision(GRANT, OWNER, OWNER, GRANT.toString())
-                        == DevItemStateData.DeliveryDecision.ACKNOWLEDGE,
-                "a matching playerdata receipt must suppress replay delivery");
+    private static void pendingSnapshotIsExactAndRestartable() {
+        final FakeItem rolled = reward();
+        final var pending = pending(rolled);
+        rolled.amount = 64;
+        rolled.meta = "mutated caller item";
+
+        final var state = issuedState(600_000L, pending, 2, 3, 4);
+        final var restarted = state.copy(FakeItem::copy);
+        final FakeItem exact = restarted.pending().itemCopy(FakeItem::copy);
+        check(exact.amount == 2, "pending amount changed");
+        check(exact.meta.equals("Fagyott Korona"), "pending meta changed");
+        check(exact.affix.equals("crit+7"), "pending affix changed");
+        check(exact.stamp.equals("crafted-by:Milán"), "pending crafted stamp changed");
+
+        exact.meta = "external mutation";
+        check(restarted.pending().itemCopy(FakeItem::copy).meta.equals("Fagyott Korona"),
+                "pending exposed its mutable internal item");
+        check(restarted.pending().same(state.pending(), FakeItem::same),
+                "normal restart rerolled or changed the exact pending reward");
     }
 
-    private static void missingReceiptRequiresDelivery() {
-        check(DevItemStateData.deliveryDecision(GRANT, OWNER, OWNER, null)
-                        == DevItemStateData.DeliveryDecision.DELIVER,
-                "a missing receipt means the durable outbox still owes the reward");
-        check(DevItemStateData.deliveryDecision(GRANT, OWNER, OWNER, UUID.randomUUID().toString())
-                        == DevItemStateData.DeliveryDecision.DELIVER,
-                "a receipt for another grant cannot acknowledge this reward");
+    private static void fullInventoryLeavesPendingUntilRetry() {
+        final var state = issuedState(600_000L, pending(reward()), 7, 11, 13);
+        final boolean inventoryHasSpace = false;
+        final var afterFullInventory = inventoryHasSpace
+                ? state.completed(new DevItemStateData.PityCounters(0, 0, 0), FakeItem::copy)
+                : state.copy(FakeItem::copy);
+        check(afterFullInventory.pending() != null, "full inventory cleared pending reward");
+        check(afterFullInventory.progressMillis() == 600_000L, "full inventory reset progress");
+
+        final var delivered = afterFullInventory.completed(
+                new DevItemStateData.PityCounters(0, 0, 0), FakeItem::copy);
+        check(delivered.pending() == null, "retry did not clear pending after delivery");
+        check(delivered.progressMillis() == 0L, "delivery did not reset progress");
     }
 
-    private static void unrelatedPlayerCannotConsumeTheGrant() {
-        check(DevItemStateData.deliveryDecision(GRANT, OWNER, NEW_OWNER, GRANT.toString())
-                        == DevItemStateData.DeliveryDecision.WAIT_FOR_RECORDED_RECIPIENT,
-                "even a matching string on another player must not acknowledge the recorded recipient's grant");
+    private static void ownerReloadPreservesStateAndFencesOldOwner() {
+        final var before = issuedState(600_000L, pending(reward()), 5, 6, 7);
+        final var transferred = before.withOwner(NEW_OWNER, FakeItem::copy);
+        check(transferred.ownerIs(NEW_OWNER), "configured owner did not become active");
+        check(!transferred.ownerIs(OWNER), "old owner tick was not fenced");
+        check(transferred.progressMillis() == before.progressMillis(), "owner reload lost progress");
+        check(transferred.pity().equals(before.pity()), "owner reload lost pity");
+        check(transferred.pending().same(before.pending(), FakeItem::same),
+                "owner reload changed pending reward");
+
+        final var oldTickResult = transferred.ownerIs(OWNER)
+                ? transferred.completed(DevItemStateData.PityCounters.ZERO, FakeItem::copy)
+                : transferred;
+        check(oldTickResult.pending() != null,
+                "old owner tick cleared the new owner's pending state");
     }
 
-    private static void markIssuedPreservesSingletonIdentity() {
-        final DevItemStateData unissued = new DevItemStateData(
-                OWNER, INSTANCE, false, 0L, "", "", false, null, null, 0, 0, 0);
-
-        final DevItemStateData issued = unissued.markIssued();
-
-        check(issued.issued(), "markIssued must set the durable issuance bit");
-        check(issued.owner().equals(OWNER), "markIssued must preserve the owner");
-        check(issued.instanceId().equals(INSTANCE), "markIssued must not mint a replacement singleton");
+    private static void writeFailureDoesNotPublishCandidateOrTripOtherFeature() {
+        final var live = new Box<>(issuedState(600_000L, null, 1, 2, 3));
+        final var candidate = live.value.withPending(pending(reward()), FakeItem::copy);
+        final boolean[] independentEconomyHealthy = {true};
+        expectThrows(SimulatedWriteFailure.class, () -> {
+            writeCandidate(candidate, true);
+            live.value = candidate;
+        });
+        check(live.value.pending() == null, "failed write published pending state");
+        check(independentEconomyHealthy[0], "DEV write failure stopped an independent feature");
     }
 
-    private static void malformedUuidIsRejected() {
+    private static void strictStateRejectsCorruption() {
         expectThrows(IllegalArgumentException.class,
-                () -> DevItemStateData.requireUuid("", "owner"));
+                () -> DevItemStateData.requireUuid("not-a-uuid", "owner"));
         expectThrows(IllegalArgumentException.class,
-                () -> DevItemStateData.requireUuid("not-a-uuid", "instance"));
-        check(DevItemStateData.requireUuid("  " + OWNER + "  ", "owner").equals(OWNER),
-                "UUID parsing may trim surrounding operator whitespace");
+                () -> new DevItemStateData<>(OWNER, INSTANCE, true, -1L, null,
+                        DevItemStateData.PityCounters.ZERO));
+        expectThrows(IllegalArgumentException.class,
+                () -> new DevItemStateData.PityCounters(-1, 0, 0));
+        expectThrows(IllegalArgumentException.class,
+                () -> new DevItemStateData<>(OWNER, INSTANCE, false, 1L, null,
+                        DevItemStateData.PityCounters.ZERO));
+        expectThrows(IllegalArgumentException.class,
+                () -> DevItemStateData.PendingReward.of("ritka", "material:stone",
+                        new FakeItem("AIR", 1, "", "", ""), FakeItem::copy,
+                        FakeItem::valid, RARITIES::contains));
+        expectThrows(IllegalArgumentException.class,
+                () -> DevItemStateData.PendingReward.of("ismeretlen", "material:stone",
+                        reward(), FakeItem::copy, FakeItem::valid, RARITIES::contains));
     }
 
-    private static void negativeProgressAndPityAreRejected() {
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, -1L,
-                        "", "", false, null, null, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L,
-                        "", "", false, null, null, -1, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L,
-                        "", "", false, null, null, 0, -1, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 0L,
-                        "", "", false, null, null, 0, 0, -1));
+    private static DevItemStateData<FakeItem> issuedState(
+            final long progress,
+            final DevItemStateData.PendingReward<FakeItem> pending,
+            final int rare, final int epic, final int legendary) {
+        return new DevItemStateData<>(OWNER, INSTANCE, true, progress, pending,
+                new DevItemStateData.PityCounters(rare, epic, legendary));
     }
 
-    private static void partialPendingRewardIsRejected() {
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "ritka", "", false, null, null, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "ritka", "material:diamond", false, GRANT, OWNER, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "ritka", "material:diamond", true, null, OWNER, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "ritka", "material:diamond", true, GRANT, null, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "", "", true, GRANT, OWNER, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, true, 1L,
-                        "", "", false, GRANT, OWNER, 0, 0, 0));
+    private static DevItemStateData.PendingReward<FakeItem> pending(final FakeItem item) {
+        return DevItemStateData.PendingReward.of("epikus", "unique:jegsziv:2", item,
+                FakeItem::copy, FakeItem::valid, RARITIES::contains);
     }
 
-    private static void unissuedStateCannotCarryEarnedProgress() {
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, false, 1L,
-                        "", "", false, null, null, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, false, 0L,
-                        "ritka", "material:diamond", true, GRANT, OWNER, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class,
-                () -> new DevItemStateData(OWNER, INSTANCE, false, 0L,
-                        "", "", false, null, null, 1, 0, 0));
+    private static FakeItem reward() {
+        return new FakeItem("DIAMOND", 2, "Fagyott Korona", "crit+7", "crafted-by:Milán");
     }
 
-    private static DevItemStateData pendingState() {
-        return new DevItemStateData(
-                OWNER, INSTANCE, true, 42_000L,
-                "epikus", "material:diamond", true, GRANT, OWNER,
-                7, 11, 13);
+    private static void writeCandidate(final DevItemStateData<FakeItem> candidate,
+                                       final boolean fail) {
+        if (candidate == null) {
+            throw new AssertionError("candidate missing");
+        }
+        if (fail) {
+            throw new SimulatedWriteFailure();
+        }
     }
 
-    private static <T extends Throwable> T expectThrows(final Class<T> type, final ThrowingRunnable action) {
+    private static <T extends Throwable> T expectThrows(final Class<T> type,
+                                                         final ThrowingRunnable action) {
         try {
             action.run();
         } catch (final Throwable thrown) {
@@ -169,6 +169,51 @@ public final class DevItemStateDataRegressionTest {
         if (!condition) {
             throw new AssertionError(message);
         }
+    }
+
+    private static final class Box<T> {
+        private T value;
+
+        private Box(final T value) {
+            this.value = value;
+        }
+    }
+
+    private static final class FakeItem {
+        private final String material;
+        private int amount;
+        private String meta;
+        private final String affix;
+        private final String stamp;
+
+        private FakeItem(final String material, final int amount, final String meta,
+                         final String affix, final String stamp) {
+            this.material = material;
+            this.amount = amount;
+            this.meta = meta;
+            this.affix = affix;
+            this.stamp = stamp;
+        }
+
+        private FakeItem copy() {
+            return new FakeItem(material, amount, meta, affix, stamp);
+        }
+
+        private static boolean valid(final FakeItem item) {
+            return item != null && !"AIR".equals(item.material) && item.amount > 0;
+        }
+
+        private static boolean same(final FakeItem left, final FakeItem right) {
+            return left != null && right != null
+                    && left.material.equals(right.material)
+                    && left.amount == right.amount
+                    && left.meta.equals(right.meta)
+                    && left.affix.equals(right.affix)
+                    && left.stamp.equals(right.stamp);
+        }
+    }
+
+    private static final class SimulatedWriteFailure extends RuntimeException {
     }
 
     @FunctionalInterface

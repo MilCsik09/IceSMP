@@ -39,7 +39,7 @@ public final class YamlStore {
         }
     }
 
-    /** Whether any critical transaction file has failed since the last controlled successful load. */
+    /** Whether any registered critical transaction file has failed. */
     public static boolean hasCriticalWriteFailure() {
         for (final String failed : writeFailed) {
             if (criticalWritePaths.contains(failed)) {
@@ -47,6 +47,11 @@ public final class YamlStore {
             }
         }
         return false;
+    }
+
+    /** Whether the latest write of this exact store path failed. */
+    public static boolean hasWriteFailure(final File file) {
+        return file != null && writeFailed.contains(key(file));
     }
 
     /** Loads an authoritative state file with strict parse handling. */
