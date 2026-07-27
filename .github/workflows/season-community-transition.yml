@@ -86,26 +86,34 @@ jobs:
         run: |
           set -euo pipefail
           base='14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb'
+          expected=(
+            'docs/ARCHITECTURE.md'
+            'scripts/test_season_community_transition.py'
+            'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
+            'src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java'
+            'src/main/java/hu/taliann/icesmp/managers/CommunitySeasonState.java'
+            'src/main/java/hu/taliann/icesmp/managers/SeasonManager.java'
+            'src/regression/java/hu/taliann/icesmp/managers/CommunitySeasonStateRegressionTest.java'
+          )
+
           if [ "$ALREADY_PUBLISHED" = 'false' ]; then
-            mapfile -t files < <(git diff --name-only | sort)
+            git add -- "${expected[@]}"
+            mapfile -t files < <(git diff --cached --name-only | sort)
+            git diff --cached --check
+            test "$(git status --porcelain=v1 | wc -l)" -eq 7
           else
             mapfile -t files < <(git diff --name-only "$base"..HEAD | sort)
           fi
+
           printf '%s\n' "${files[@]}"
           test "${#files[@]}" -eq 7
-          test "${files[0]}" = 'docs/ARCHITECTURE.md'
-          test "${files[1]}" = 'scripts/test_season_community_transition.py'
-          test "${files[2]}" = 'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
-          test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java'
-          test "${files[4]}" = 'src/main/java/hu/taliann/icesmp/managers/CommunitySeasonState.java'
-          test "${files[5]}" = 'src/main/java/hu/taliann/icesmp/managers/SeasonManager.java'
-          test "${files[6]}" = 'src/regression/java/hu/taliann/icesmp/managers/CommunitySeasonStateRegressionTest.java'
+          for index in "${!expected[@]}"; do
+            test "${files[$index]}" = "${expected[$index]}"
+          done
 
           if [ "$ALREADY_PUBLISHED" = 'false' ]; then
             git config user.name 'OpenAI'
             git config user.email 'noreply@openai.com'
-            git add -- "${files[@]}"
-            git diff --cached --check
             git commit -m 'Coordinate season and community generation commits'
             git push origin HEAD:fix/season-community-transition || {
               git fetch origin fix/season-community-transition
