@@ -599,7 +599,7 @@ public final class IceSMPCore {
                 eventSpawnPointManager,
                 councilManager,
                 dungeonLootService,
-                raidManager);
+                raidManager,
                 devItemManager);
         this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
