@@ -1,0 +1,144 @@
+name: Season/community transition publisher
+
+on:
+  push:
+    branches:
+      - audit/baseline-14addda
+
+permissions:
+  contents: write
+
+jobs:
+  publish-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout reviewed patch source
+        uses: actions/checkout@v4
+        with:
+          ref: audit/baseline-14addda
+          path: patch-source
+          fetch-depth: 1
+
+      - name: Extract and verify reviewed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode patch-source/.audit-patches/season-community-transition.patch.gz.b64 > /tmp/season-community.patch.gz
+          test "$(sha256sum /tmp/season-community.patch.gz | cut -d' ' -f1)" = 'aebd1b9036c47d0d73883945102ab4f8802ba70568cc526a0ea77474c10645a7'
+          gzip --decompress --stdout /tmp/season-community.patch.gz > /tmp/season-community.patch
+          test "$(sha256sum /tmp/season-community.patch | cut -d' ' -f1)" = 'b351c38da3d65f6510fb26e357e70be76d0b0e5acb2eed3bc7a0d7787cd8ab01'
+
+      - name: Checkout exact master-based target branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/season-community-transition
+          path: target
+          fetch-depth: 0
+
+      - name: Verify exact starting point
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '14addda17fb5a6c3dfec6a8320a8bfd0aa98e6fb'
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Apply reviewed transition patch
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check /tmp/season-community.patch
+          git apply /tmp/season-community.patch
+          git diff --check
+
+      - name: Run targeted transition regression
+        working-directory: target
+        run: python3 scripts/test_season_community_transition.py
+
+      - name: Commit and push the scoped fix
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git diff --name-only | sort)
+          printf '%s\n' "${files[@]}"
+          test "${#files[@]}" -eq 7
+          test "${files[0]}" = 'docs/ARCHITECTURE.md'
+          test "${files[1]}" = 'scripts/test_season_community_transition.py'
+          test "${files[2]}" = 'src/main/java/hu/taliann/icesmp/core/IceSMPCore.java'
+          test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java'
+          test "${files[4]}" = 'src/main/java/hu/taliann/icesmp/managers/CommunitySeasonState.java'
+          test "${files[5]}" = 'src/main/java/hu/taliann/icesmp/managers/SeasonManager.java'
+          test "${files[6]}" = 'src/regression/java/hu/taliann/icesmp/managers/CommunitySeasonStateRegressionTest.java'
+          git config user.name 'OpenAI'
+          git config user.email 'noreply@openai.com'
+          git add -- "${files[@]}"
+          git diff --cached --check
+          git commit -m 'Coordinate season and community generation commits'
+          git push origin HEAD:fix/season-community-transition || {
+            git fetch origin fix/season-community-transition
+            test "$(git rev-parse origin/fix/season-community-transition)" = "$(git rev-parse HEAD)"
+          }
+          git rev-parse HEAD | tee /tmp/published-head
+
+      - name: Archive exact published source
+        working-directory: target
+        run: tar --exclude=.git -czf /tmp/season-community-source.tar.gz .
+
+      - name: Upload exact published source
+        uses: actions/upload-artifact@v4
+        with:
+          name: season-community-transition-source
+          path: /tmp/season-community-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Apply PR 26 compilation prerequisite for verification only
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin fix/core-persistent-store-wiring
+          git cherry-pick --no-commit 2137554455f7748cd3e67935a4af110387d16bbb
+          git diff --check
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+        with:
+          build-root-directory: target
+
+      - name: Full Gradle build and tests
+        working-directory: target
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew clean build --no-daemon --stacktrace 2>&1 | tee /tmp/season-community-build.log
+
+      - name: Upload complete Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: season-community-transition-gradle-log
+          path: /tmp/season-community-build.log
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Consistency checks against the recorded branch baseline
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python3 scripts/check_consistency.py | tee /tmp/consistency.log
+          result=${PIPESTATUS[0]}
+          set -e
+          test "$result" -eq 1
+          test "$(grep -c '^✗ FAIL:' /tmp/consistency.log)" -eq 5
+          grep -Fq 'Összegzés: 5 FAIL, 0 WARN' /tmp/consistency.log
