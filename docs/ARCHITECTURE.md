@@ -108,26 +108,29 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 
   - **Szezon–community generation commit** (`season.yml` → `community-goals.yml`): a community store tartós `season.number` markerrel jelöli, melyik szezonhoz tartozik a progressz. A zárás a community monitor alatt előbb rendezi az outboxot, majd commitolja az új `season.yml` generációt, és csak ezután nullázza/menti a community progresszt. Crash a két commit között egyetlen generációnyi marker-lemaradást hagy; bootkor ez idempotens resetként reconciliálódik. Függő régi payout, előreszaladt vagy több generációt átugró marker fail-closed.
 
-- **DEV-item jutalom — lokális pending/retry és owner fence:** a pontosan kisorsolt tárgy a
-  `dev-items-state.yml` egyetlen pending rekordjába kerül az inventory mutation előtt.
-  Teljes inventory vagy normál restart esetén ugyanaz az exact item próbálható újra. A live tick
-  rögzíti az owner UUID + monoton runtime generation fence-et; completion csak azonos fence,
-  delivery player és exact pending item mellett törölheti a pendinget, resetelheti a progresszt és
-  frissítheti a pityt. Stale tick esetén az inventory mutation rollbackel, a tartós gameplay state
-  változatlan marad. Owner-váltáskor az új ownerrel készült immutable snapshot előbb tartósan
-  kiíródik, és csak sikeres write után válik a live runtime számára autoritatívvá. A DEV manager a
-  saját state fájljának write-health állapotát figyeli, ezért egy független store hibája nem állítja
-  le. Nincs backward-compatibility vagy migration ág: az első production indulás ezt a steady-state
-  formátumot használja. A rendszer nem állít formális exactly-once garanciát az inventory mutation
-  és a YAML completion közötti erőszakos process-kill ablakra.
-
+- **DEV-item jutalom — arányos easter-egg state:** a Csodálatos Bingulus egyetlen runtime ownerhez
+  kötött DEV-item, amely alapértelmezetten 10 perc aktív online birtoklás után sorsol random,
+  konfigurált jutalmat. A manager egy immutable state-et tart (owner, singleton instance, issued,
+  aktív idő, exact pending `ItemStack`, pity), egy lockkal és egy minimális tick gate-tel. A már
+  kisorsolt exact item az inventory módosítása előtt a `dev-items-state.yml` fájlba kerül; teljes
+  inventory és normál restart után ugyanaz próbálható újra.
+- **Live owner reload:** `/icesmp reload` közben az új owner candidate state-je előbb kiíródik, majd
+  válik aktívvá; az instance, progress, pity és pending jutalom megmarad. A tick az owner UUID-t a
+  kezdéskor, az inventoryba adás előtt és a pending törlése előtt ellenőrzi. Mismatch esetén a régi
+  tick egyszerűen visszatér. Nincs generation counter, owner-transition framework vagy tranzakciós
+  rollback-protokoll.
+- **DEV garanciahatár:** nincs receipt, grant ID, recipient binding, migration vagy exactly-once
+  garancia. Process kill az inventory mutation és a completion YAML között, ritka write race,
+  hardverhiba vagy extrém owner-transfer verseny esetén jutalomvesztés vagy duplikáció elfogadható.
+  A DEV state hibája kizárólag a Bingulus progresszét, sorsolását és kiosztását állítja le; a market,
+  wallet, currency és season store-ok ettől nem állnak le.
 - **DEV regressziók:** a `devItemRewardRegressionTest` Gradle `JavaExec` task a `check` lifecycle
-  része. Strict metadata-validációt, full-inventory/restart/write-failure viselkedést, valamint
-  determinisztikus `CountDownLatch` owner-transfer race-eket futtat. A
-  `scripts/test_dev_item_state.py` ugyanazt a dependency-free suite-ot külön is elindítja, és tiltott
-  régi runtime útvonalakra statikus guardot ad. A tartós `IceSMP CI` workflow Java 21-en clean
-  buildet, Gradle-suite markert, célzott Python regressziót, `git diff --check`-et és base/head
-  consistency-deltát ellenőriz `contents: read` jogosultsággal.
+  része. Az intervalt, exact pending/restartot, full-inventory retryt, egyszerű owner reloadot,
+  write-failure határt, strict state-et és a gate normal/exception/retired/rejection/null útjait
+  teszteli. A `scripts/test_dev_item_state.py` csak tiltott legacy/overengineered tokeneket ellenőriz,
+  majd ugyanezt a Gradle taskot hívja; nincs második, párhuzamos tesztrendszer. A tartós `IceSMP CI`
+  workflow Java 21-en clean buildet, Gradle-suite markert, célzott Python futtatást,
+  `git diff --check`-et és base/head consistency-deltát ellenőriz `contents: read` jogosultsággal.
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.

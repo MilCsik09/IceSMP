@@ -3,15 +3,14 @@
 > **Auditált master:** `b6db9d21d12a2944b67925a5fe9228b4e76b9b04`
 > **Dátum:** 2026-07-27
 > **Hatókör:** a #26, #31, #32, #33, #34 és #35 merge-ek arányossági auditja,
-> valamint a DEV-item pending reward célzott egyszerűsítése és owner-transfer javítása.
+> valamint a DEV-item jutalmazás célzott egyszerűsítése.
 > **Nem állítás:** a korábbi teljes mélyaudit minden findingje nem lett újraellenőrizve.
 
 ## Termékdefiníció
 
-Az IceSMP elsődlegesen lore-központú fantasy kingdom SMP: kaszt- és karakterépítés, frakciók,
-politika, questek, szakmák, relikviák, raidek, kazamaták, világesemények, felfedezés és közösségi
-szezonok együtt adják az élményt. A gazdaság és a perzisztencia ezeket védi; nem önálló banki vagy
-általános tranzakciós termék.
+Az IceSMP elsődlegesen lore-központú fantasy kingdom SMP. A Csodálatos Bingulus ezen belül egy
+könnyűsúlyú easter egg DEV-item, nem pénzügyi rendszer és nem általános tranzakciós platform.
+Alapértelmezetten 10 perc aktív online birtoklás után ad egy random konfigurált jutalmat.
 
 ## Merge- és rendszerbesorolás
 
@@ -19,110 +18,128 @@ szezonok együtt adják az élményt. A gazdaság és a perzisztencia ezeket vé
 |---|---|---|
 | #26 persistent-store wiring | `KEEP_AS_IS` | A kihagyott store nem töltődik vagy mentődik. Kis wiring-javítás, közvetlen progresszióvédelem. |
 | #31 `PersistentStoreCoordinator` | `SAFETY_CRITICAL_KEEP` | Corrupt vagy partial load után ne induljon írható részállapot; autosave és shutdown ne fusson össze. |
-| Globális kritikus write gate | `SIMPLIFIED` a DEV scope-ban | A DEV manager már a saját state fájljának write-health állapotát figyeli; más feature hibája nem állítja le. |
-| #32 DEV-item durable singleton state | `SAFETY_CRITICAL_KEEP` | Megőrzi az egyedi item identitását, tulajdonosát, idejét, pity állapotát és pontos pending jutalmát. |
-| #33 többrétegű DEV delivery protocol | `SIMPLIFIED` | Egyetlen exact pending snapshot és lokális owner fence váltotta; nincs production compatibility igény. |
+| Globális kritikus write gate | `REMOVED_FROM_DEV` | A Bingulus csak a saját state fájljának health állapotát figyeli; más feature hibája nem állítja le, és a DEV write hiba nem állítja le a market/currency rendszert. |
+| #32 DEV-item durable singleton state | `SIMPLIFIED_KEEP` | Owner, instance, issued, aktív idő, pity és exact pending item megmarad egy immutable state-ben. |
+| #33 többrétegű DEV delivery protocol | `REMOVED` | Nincs receipt, grant ID, recipient, migration, reconciliation vagy exactly-once protocol. |
 | #34 season/community generation marker | `KEEP_AS_IS` | Egy mezős marker akadályozza meg, hogy új szezonban régi community progressz éljen tovább. |
 | #35 treasury és monument idempotens grant | `SAFETY_CRITICAL_KEEP` | Tartós kasszajutalom és a Korszakok Könyve sora normál replay során ne duplikálódjon. |
 | #35 member reward playerdata protocol | `SIMPLIFY` | A pending tagjutalom és full-inventory retry kell; külön, fókuszált scope-ban egyszerűsítendő. |
 | Season announcement/story pending flag | `REMOVE_REDUNDANT_LAYER` | Chat és narratív kiírás best-effort; ne blokkolja a tartós jutalmat. |
 | `TransactionJournal` + globális currency gate | `NEEDS_RUNTIME_VALIDATION` / `SIMPLIFY` | Valós item- és pénzvesztést véd, de külön market scope szükséges. |
 | `BlockRegenJournal` | `NEEDS_RUNTIME_VALIDATION` | A snapshot-before-clear fontos; valós Folia/process-kill ellenőrzés még nem futott. |
-| Forrásszöveg-sorrendet vizsgáló regressziók | `REPLACED_WITH_BEHAVIOURAL_TESTS` | Megfigyelhető transition viselkedést és determinisztikus race-eket ellenőrző tesztek futnak. |
 
-## Végleges DEV reward modell
+## Végleges DEV runtime state
 
-Megtartott invariánsok:
+A `DevItemManager` egyetlen immutable state-et tart, egy lockkal:
 
-- az autoritatív singleton instance és owner tartós;
-- az aktív idő és pity számlálók restart után megmaradnak;
-- a pontosan kisorsolt `ItemStack` a live inventory előtt tartós pending rekordba kerül;
-- teljes inventory esetén a jutalom és minden progressz változatlanul pending marad;
-- normál restart ugyanazt az exact itemet próbálja újra, újrasorsolás nélkül;
-- sikeres átadás után a pending törlődik, a progress resetelődik és a pity frissül;
-- completion write hiba esetén az in-process inventory mutation rollbackel;
-- owner UUID és monoton runtime generation együtt fence-eli a tickeket;
-- stale tick nem törölhet pendinget, nem resetelhet progresszt és nem módosíthat pityt;
-- az új owner csak sikeres owner snapshot write után válik live autoritássá;
-- owner transfer alatt a pending exact item, progress és pity megmarad;
-- két átfedő ticket egy lokális coalescing gate akadályoz meg;
-- corrupt vagy részleges DEV state továbbra is fail-closed.
+- aktuális owner UUID;
+- singleton instance UUID;
+- issued állapot;
+- összegyűlt aktív idő;
+- opcionális pending reward: rarity, entry és klónozott exact `ItemStack`;
+- a gameplayben használt három pity számláló.
 
-Eltávolított rétegek:
+A külön `DevItemRewardTransition`, owner fence/generation, state-writer interfész,
+preparation/completion/transfer result recordok és párhuzamos atomikus state-mezők megszűntek.
+A scheduler átfedést egyetlen minimális `AtomicBoolean` gate zárja ki.
 
-- külön delivery azonosító és címzettállapot;
-- játékosadatba írt delivery nyugta;
-- explicit játékosadat-mentési commit protocol;
-- többlépcsős delivery decision state machine;
-- címzett-átruházási recovery;
-- nem létező production állapothoz készült compatibility és migration ágak;
-- alternatív async save queue;
-- implementációs metódussorrendet vizsgáló tesztek.
+## Lineáris tick flow
 
-## Owner-transfer race
+1. a globális tick kiolvassa az aktuális ownert;
+2. megkeresi az online playert;
+3. belép a manager egyetlen gate-jén és az entity schedulerre ütemez;
+4. ellenőrzi, hogy a player még mindig az aktuális owner;
+5. ellenőrzi és szükség esetén helyreállítja az autentikus singleton itemet;
+6. növeli az aktív időt, legfeljebb az intervalig;
+7. interval előtt befejezi a ticket;
+8. pending hiányában sorsol, exact `ItemStack` snapshotot készít és inventory mutation előtt ment;
+9. újra ellenőrzi az owner UUID-t;
+10. teljes inventory esetén változatlan pendinggel visszatér;
+11. hozzáadja a pending item klónját;
+12. pending törlés előtt ismét ellenőrzi az owner UUID-t;
+13. siker esetén menti a clear/reset/pity state-et, publikálja és announcementet küld.
 
-A korábbi live reload útvonalon a régi owner entity schedulerén futó tick durable prepare után is
-folytathatta az inventory mutationt, miközben a reload már új ownert publikált. A completion csak a
-pending metadata azonosságát ellenőrizte, ezért stale tick törölhette az új ownerhez megőrzendő
-pendinget, resetelhette a progresszt és módosíthatta a pityt.
+Nincs többfázisú commit, receipt, playerdata-nyugta vagy formális inventory+YAML tranzakció.
 
-A javított sorrend:
+## Live owner reload
 
-1. a tick rögzíti az aktuális owner UUID + generation fence-et;
-2. a pending prepare csak ezzel a fence-szel commitolható;
-3. owner transfer immutable candidate snapshotot készít az új ownerrel;
-4. a candidate előbb tartósan kiíródik;
-5. csak sikeres write után publikálódik a live owner és az új generation;
-6. completion csak azonos fence, actor UUID és exact pending item mellett commitol;
-7. mismatch esetén az inventory rollbackel, a pending/progress/pity változatlan marad.
+`/icesmp reload` után az új konfigurált owner state-candidate-je megőrzi az instance ID-t, az aktív
+időt, a pityt és az exact pending itemet. A candidate előbb a DEV state fájlba kerül, és csak sikeres
+write után lesz a runtime state. Az online játékosok frissítése eltávolítja a régi owner példányát és
+helyreállíthatja az új owner autentikus itemét.
 
-## Tesztek
+A régi tick owner UUID-t ellenőriz a tick elején, inventoryba adás előtt és pending törlés előtt.
+Mismatch esetén egyszerűen visszatér. Nincs generation counter és nincs tranzakciós owner-transfer
+state machine; a nanoszekundumos szélsőséges versenyekre nem ígérünk tökéletes rollbacket.
 
-A dependency-free regression suite két részből áll:
+## Normál garanciák
 
-- strict state metadata validáció;
-- viselkedési pending/retry és owner-fence regressziók.
+- csak az aktuális owner tarthat autentikus Bingulust;
+- az ownernél egy autentikus példány marad;
+- cursorban és ender chestben lévő tiltott/dupla példányok kezelhetők;
+- respawn és normál restore után az issued singleton visszaadható;
+- aktív idő csak online autentikus birtoklás közben gyűlik;
+- alapértelmezetten 10 perc után történik sorsolás;
+- a kisorsolt exact item inventory mutation előtt pendingként mentődik;
+- full inventory után ugyanaz próbálható újra;
+- normál restart nem kényszerít rerollt, amount/meta/affix/PDC/craft stamp megmarad;
+- sikeres completion törli a pendinget, nullázza a progresszt és frissíti a pityt;
+- malformed vagy részleges state elutasított;
+- scheduler normal completion, exception, retired callback, rejection és null task után kinyitja a gate-et;
+- DEV write failure után további DEV progress/sorsolás/delivery nem történik;
+- a DEV store hibája nem kapcsolja le a marketet, walletet, currencyt vagy season rendszert.
 
-A viselkedési suite ellenőrzi:
+## Tudatosan elfogadott edge case-ek
 
-- durable prepare megelőzi az inventory mutationt;
-- prepare write failure nem hagy ghost pendinget;
-- full inventory nem okoz részleges deliveryt;
-- restart az exact amount/meta/affix/stamp adatokat őrzi;
-- completion write failure rollbackel és retryzható;
-- owner transfer durable prepare után fence-eli a stale tick-et;
-- owner transfer inventory mutation után rollbackeli a stale deliveryt;
-- sikertelen owner snapshot write nem publikál új live ownert;
-- átfedő tickek nem lépnek be egyszerre;
-- AIR, nulla amount és ismeretlen rarity elutasított.
+Nincs exactly-once garancia. Elfogadható ritka reward-vesztés vagy duplikáció:
 
-A concurrency fixture-ek `CountDownLatch`-ot használnak; nincs időzítésfüggő `sleep`.
-A `devItemRewardRegressionTest` Gradle `JavaExec` task a `check` lifecycle része, ezért a
-`./gradlew clean build` ténylegesen futtatja a suite-ot. A Python driver kiegészítő célzott futtatási
-út és obsolete-path guard.
+- process kill az inventory mutation és a completion save között;
+- hardverhiba vagy bizonytalan post-rename filesystem outcome;
+- completion write failure az inventory mutation után;
+- extrém owner-transfer race két UUID-check közötti nagyon szűk ablakban;
+- plugin listener side effect, amely nem rollbackelhető általánosan.
+
+Ezek tízpercnyi easter egg rewardhoz nem indokolnak journalt, receiptet, grant ID-t vagy
+reconciliation frameworköt.
+
+## Regressziók és Gradle
+
+A rövid regression suite közvetlenül az immutable production state-et és a production gate-et hívja.
+Lefedett:
+
+- reward interval előtt/után;
+- exact pending snapshot és caller-mutation elleni klónozás;
+- normál restart/replay;
+- full inventory retry;
+- egyszerű owner reload és stale owner clear tiltása;
+- write-failure publication boundary és független feature izoláció;
+- strict state validáció;
+- gate normal/exception/retired/rejection/null útjai.
+
+Nincs `CountDownLatch` owner-transfer fixture, fake production manager vagy második control-flow
+implementáció. A `devItemRewardRegressionTest` a Gradle `check` lifecycle része. A
+`scripts/test_dev_item_state.py` statikus obsolete-token guard után ugyanezt a Gradle taskot hívja;
+nem fordítja és futtatja újra saját tesztrendszerként.
 
 ## CI és consistency
 
-A tartós `.github/workflows/ci.yml` workflow:
+A `.github/workflows/ci.yml` jogosultsága változatlanul csak:
 
-- pull requesten és master pushon automatikusan fut;
-- kézzel is indítható;
-- `contents: read` jogosultságot használ;
-- validálja a Gradle wrappert;
-- Java 21 környezetben teljes clean buildet futtat;
-- log-markerrel ellenőrzi, hogy a Gradle `check` elindította a DEV suite-ot;
-- külön futtatja a Python DEV regressziót;
-- `git diff --check`-et futtat;
-- base/head consistency eredményt hasonlít össze;
-- új FAIL, WARN, diagnosztika vagy kategória esetén megbukik.
+```yaml
+permissions:
+  contents: read
+```
 
-A végleges headhez tartozó konkrét run ID és eredmények a PR leírásában szerepelnek.
+A workflow Java 21 clean buildet, Gradle DEV-suite markert, célzott Python drivert,
+`git diff --check`-et és base/head consistency-deltát futtat. A konkrét végleges run és a
+base/head számlálók a PR leírásában szerepelnek.
 
 ## Finding-státuszok
 
-- `SIMPLIFIED`: DEV-item pending reward delivery és owner-transfer kezelés.
-- `FIXED`: stale owner tick completion, owner publication-before-write, más store hibájára reagáló DEV global gate.
-- `SAFETY_CRITICAL_KEEP`: strict store load, coordinator, DEV singleton state, season generation marker,
+- `SIMPLIFIED`: Bingulus runtime state, tick flow, pending/retry és owner reload.
+- `REMOVED`: DEV transition framework, generation fence, result recordok, receipt/grant/recipient/migration ágak.
+- `FIXED`: DEV write-health cross-feature coupling és beragadható scheduler gate útvonalak.
+- `SAFETY_CRITICAL_KEEP`: strict store load, coordinator, singleton identity, season generation marker,
   treasury/monument idempotens grant.
 - `OVERENGINEERED_SIMPLIFICATION_NEEDED`: season member reward protocol, market currency gate/recovery.
 - `NEEDS_RUNTIME_VALIDATION`: BlockRegenJournal replay, TransactionJournal recovery,

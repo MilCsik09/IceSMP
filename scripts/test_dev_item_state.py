@@ -1,45 +1,36 @@
 #!/usr/bin/env python3
-"""Compile and run dependency-free DEV reward regressions plus obsolete-path guards."""
+"""Run the Gradle-owned DEV regression suite and reject obsolete complexity."""
 
 from __future__ import annotations
 
 import pathlib
-import shutil
 import subprocess
-import tempfile
+import sys
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SOURCES = [
-    ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java",
-    ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java",
-    ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemRewardTransitionRegressionTest.java",
-    ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemRewardRegressionSuite.java",
-]
-MAIN_CLASS = "hu.taliann.icesmp.managers.DevItemRewardRegressionSuite"
 DEV_RUNTIME_SOURCES = [
     ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
     ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java",
 ]
 
 FORBIDDEN_DEV_PATHS = {
+    "DevItemRewardTransition": "general DEV reward transition framework",
+    "OwnerFence": "owner generation/fence framework",
+    "StateWriter": "general state-writer interface",
+    "Preparation<": "preparation result record",
+    "Completion<": "completion result record",
+    "CountDownLatch": "large owner-transfer race fixture",
     "dev_reward_receipt": "player-PDC DEV receipt",
     "bingulus.pending.grant-id": "legacy grant id",
     "bingulus.pending.recipient": "legacy pending recipient",
-    "validateLegacyReceiptMigration": "legacy receipt migration",
     "Player.saveData()": "explicit playerdata commit",
-    "requestSave()": "obsolete async save queue",
-    "saveQueued": "obsolete async save queue flag",
-    "saveAgain": "obsolete async save queue flag",
-    "manual reconciliation": "legacy reconciliation runtime path",
+    "registerCriticalWrite(stateFile)": "global critical persistence coupling",
+    "hasCriticalWriteFailure": "cross-feature global gate",
+    "AtomicReference": "parallel DEV state representation",
+    "AtomicInteger": "parallel DEV state representation",
+    "AtomicLong": "parallel DEV state representation",
 }
-
-
-def require_tool(name: str) -> str:
-    executable = shutil.which(name)
-    if executable is None:
-        raise SystemExit(f"Required Java 21 tool is unavailable: {name}")
-    return executable
 
 
 def verify_removed_paths() -> None:
@@ -51,20 +42,14 @@ def verify_removed_paths() -> None:
 
 def main() -> None:
     verify_removed_paths()
-    javac = require_tool("javac")
-    java = require_tool("java")
-    missing = [str(path) for path in SOURCES if not path.is_file()]
-    if missing:
-        raise SystemExit("Missing regression source(s): " + ", ".join(missing))
-
-    with tempfile.TemporaryDirectory(prefix="icesmp-dev-reward-regression-") as directory:
-        output = pathlib.Path(directory)
-        subprocess.run(
-            [javac, "--release", "21", "-d", str(output), *(str(path) for path in SOURCES)],
-            cwd=ROOT,
-            check=True,
-        )
-        subprocess.run([java, "-cp", str(output), MAIN_CLASS], cwd=ROOT, check=True)
+    gradlew = ROOT / ("gradlew.bat" if sys.platform.startswith("win") else "gradlew")
+    if not gradlew.is_file():
+        raise SystemExit(f"Gradle wrapper is missing: {gradlew}")
+    subprocess.run(
+        [str(gradlew), "devItemRewardRegressionTest", "--no-daemon", "--stacktrace"],
+        cwd=ROOT,
+        check=True,
+    )
 
 
 if __name__ == "__main__":

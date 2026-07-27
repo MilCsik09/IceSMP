@@ -3,49 +3,90 @@ package hu.taliann.icesmp.managers;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
-/** Immutable, Bukkit-free metadata validation for the DEV-item durable snapshot. */
-record DevItemStateData(
+/** Immutable runtime and persisted gameplay state for the single Bingulus DEV item. */
+record DevItemStateData<T>(
         UUID owner,
         UUID instanceId,
         boolean issued,
         long progressMillis,
-        String pendingRarity,
-        String pendingEntry,
-        boolean pendingItemPresent,
-        int rollsSinceRare,
-        int rollsSinceEpic,
-        int rollsSinceLegendary
+        PendingReward<T> pending,
+        PityCounters pity
 ) {
 
     DevItemStateData {
         Objects.requireNonNull(owner, "owner");
         Objects.requireNonNull(instanceId, "instanceId");
-        Objects.requireNonNull(pendingRarity, "pendingRarity");
-        Objects.requireNonNull(pendingEntry, "pendingEntry");
+        Objects.requireNonNull(pity, "pity");
         if (progressMillis < 0L) {
             throw new IllegalArgumentException("progress-millis cannot be negative");
         }
-        if (rollsSinceRare < 0 || rollsSinceEpic < 0 || rollsSinceLegendary < 0) {
-            throw new IllegalArgumentException("pity counters cannot be negative");
-        }
-
-        final boolean hasRarity = !pendingRarity.isBlank();
-        final boolean hasEntry = !pendingEntry.isBlank();
-        if (hasRarity != hasEntry || hasRarity != pendingItemPresent) {
-            throw new IllegalArgumentException(
-                    "pending rarity, entry and exact item must either all be present or all be absent");
-        }
-        if (!issued && (progressMillis != 0L || hasRarity
-                || rollsSinceRare != 0 || rollsSinceEpic != 0 || rollsSinceLegendary != 0)) {
+        if (!issued && (progressMillis != 0L || pending != null || !pity.isZero())) {
             throw new IllegalArgumentException(
                     "an unissued DEV item cannot carry active time, pending reward or pity progress");
         }
     }
 
-    boolean hasPendingReward() {
-        return pendingItemPresent;
+    static <T> DevItemStateData<T> fresh(final UUID owner, final UUID instanceId) {
+        return new DevItemStateData<>(owner, instanceId, false, 0L, null, PityCounters.ZERO);
+    }
+
+    DevItemStateData<T> copy(final UnaryOperator<T> itemCopier) {
+        return new DevItemStateData<>(owner, instanceId, issued, progressMillis,
+                pending == null ? null : pending.copy(itemCopier), pity);
+    }
+
+    DevItemStateData<T> withOwner(final UUID newOwner, final UnaryOperator<T> itemCopier) {
+        if (owner.equals(newOwner)) {
+            return copy(itemCopier);
+        }
+        return new DevItemStateData<>(Objects.requireNonNull(newOwner, "newOwner"), instanceId,
+                issued, progressMillis, pending == null ? null : pending.copy(itemCopier), pity);
+    }
+
+    DevItemStateData<T> issued(final UnaryOperator<T> itemCopier) {
+        if (issued) {
+            return copy(itemCopier);
+        }
+        return new DevItemStateData<>(owner, instanceId, true, progressMillis,
+                pending == null ? null : pending.copy(itemCopier), pity);
+    }
+
+    DevItemStateData<T> advanceProgress(final long elapsedMillis, final long intervalMillis,
+                                        final UnaryOperator<T> itemCopier) {
+        if (elapsedMillis <= 0L) {
+            return copy(itemCopier);
+        }
+        final long limit = Math.max(1L, intervalMillis);
+        final long remaining = Math.max(0L, limit - progressMillis);
+        final long increment = Math.min(remaining, elapsedMillis);
+        return new DevItemStateData<>(owner, instanceId, issued, progressMillis + increment,
+                pending == null ? null : pending.copy(itemCopier), pity);
+    }
+
+    DevItemStateData<T> withPending(final PendingReward<T> reward,
+                                    final UnaryOperator<T> itemCopier) {
+        if (pending != null) {
+            throw new IllegalStateException("a pending DEV reward already exists");
+        }
+        return new DevItemStateData<>(owner, instanceId, issued, progressMillis,
+                Objects.requireNonNull(reward, "reward").copy(itemCopier), pity);
+    }
+
+    DevItemStateData<T> completed(final PityCounters updatedPity,
+                                  final UnaryOperator<T> itemCopier) {
+        if (pending == null) {
+            throw new IllegalStateException("there is no pending DEV reward to complete");
+        }
+        return new DevItemStateData<>(owner, instanceId, issued, 0L, null,
+                Objects.requireNonNull(updatedPity, "updatedPity"));
+    }
+
+    boolean ownerIs(final UUID expectedOwner) {
+        return owner.equals(expectedOwner);
     }
 
     static UUID requireUuid(final String raw, final String field) {
@@ -58,79 +99,83 @@ record DevItemStateData(
             throw new IllegalArgumentException(field + " is not a valid UUID", malformed);
         }
     }
-}
 
-/**
- * Bukkit-free transition model for the single DEV-item pending reward.
- *
- * <p>The caller serializes state publication. Durable writers receive an immutable candidate and
- * must complete before the caller publishes that candidate as live state. Inventory mutation stays
- * outside this component; completion uses an owner fence so a stale entity-scheduler tick cannot
- * acknowledge another owner's reward.</p>
- */
-final class DevItemRewardTransition {
+    static final class PendingReward<T> {
+        private final String rarity;
+        private final String entry;
+        private final T exactItem;
 
-    interface ExactItemPolicy<T> {
-        T copy(T item);
-        boolean isValid(T item);
-        boolean same(T left, T right);
-    }
+        private PendingReward(final String rarity, final String entry, final T exactItem) {
+            this.rarity = rarity;
+            this.entry = entry;
+            this.exactItem = exactItem;
+        }
 
-    @FunctionalInterface
-    interface StateWriter<T> {
-        void write(State<T> candidate);
-    }
-
-    @FunctionalInterface
-    interface PityRule {
-        PityCounters after(String rarity, PityCounters current);
-    }
-
-    record OwnerFence(UUID owner, long generation) {
-        OwnerFence {
-            Objects.requireNonNull(owner, "owner");
-            if (generation < 0L) {
-                throw new IllegalArgumentException("owner generation cannot be negative");
+        static <T> PendingReward<T> of(final String rarity, final String entry, final T exactItem,
+                                       final UnaryOperator<T> itemCopier,
+                                       final Predicate<T> validItem,
+                                       final Predicate<String> knownRarity) {
+            Objects.requireNonNull(rarity, "rarity");
+            Objects.requireNonNull(entry, "entry");
+            Objects.requireNonNull(exactItem, "exactItem");
+            Objects.requireNonNull(itemCopier, "itemCopier");
+            Objects.requireNonNull(validItem, "validItem");
+            Objects.requireNonNull(knownRarity, "knownRarity");
+            if (rarity.isBlank() || entry.isBlank()) {
+                throw new IllegalArgumentException("pending rarity and entry cannot be blank");
             }
+            if (!knownRarity.test(rarity)) {
+                throw new IllegalArgumentException("unknown pending rarity: " + rarity);
+            }
+            if (!validItem.test(exactItem)) {
+                throw new IllegalArgumentException("pending exact item is empty or invalid");
+            }
+            final T copy = Objects.requireNonNull(itemCopier.apply(exactItem), "copied exact item");
+            if (!validItem.test(copy)) {
+                throw new IllegalArgumentException("copied pending exact item is empty or invalid");
+            }
+            return new PendingReward<>(rarity, entry, copy);
+        }
+
+        String rarity() {
+            return rarity;
+        }
+
+        String entry() {
+            return entry;
+        }
+
+        T itemCopy(final UnaryOperator<T> itemCopier) {
+            return Objects.requireNonNull(itemCopier.apply(exactItem), "copied exact item");
+        }
+
+        PendingReward<T> copy(final UnaryOperator<T> itemCopier) {
+            return new PendingReward<>(rarity, entry, itemCopy(itemCopier));
+        }
+
+        boolean same(final PendingReward<T> other, final BiPredicate<T, T> sameItem) {
+            return other != null
+                    && rarity.equals(other.rarity)
+                    && entry.equals(other.entry)
+                    && sameItem.test(exactItem, other.exactItem);
         }
     }
 
     record PityCounters(int sinceRare, int sinceEpic, int sinceLegendary) {
+        static final PityCounters ZERO = new PityCounters(0, 0, 0);
+
         PityCounters {
             if (sinceRare < 0 || sinceEpic < 0 || sinceLegendary < 0) {
                 throw new IllegalArgumentException("pity counters cannot be negative");
             }
         }
-    }
 
-    record Pending<T>(String rarity, String entry, T exactItem) {
-        Pending {
-            Objects.requireNonNull(rarity, "rarity");
-            Objects.requireNonNull(entry, "entry");
-            Objects.requireNonNull(exactItem, "exactItem");
-            if (rarity.isBlank() || entry.isBlank()) {
-                throw new IllegalArgumentException("pending rarity and entry cannot be blank");
-            }
+        boolean isZero() {
+            return sinceRare == 0 && sinceEpic == 0 && sinceLegendary == 0;
         }
     }
 
-    record State<T>(OwnerFence fence, long progressMillis, Pending<T> pending, PityCounters pity) {
-        State {
-            Objects.requireNonNull(fence, "fence");
-            Objects.requireNonNull(pity, "pity");
-            if (progressMillis < 0L) {
-                throw new IllegalArgumentException("progress cannot be negative");
-            }
-        }
-    }
-
-    record Preparation<T>(State<T> state, Pending<T> pending, boolean prepared) {
-    }
-
-    record Completion<T>(State<T> state, boolean committed) {
-    }
-
-    /** Minimal coalescing gate shared by the runtime and deterministic overlap regression. */
+    /** Minimal per-manager coalescing gate for entity-scheduler callbacks. */
     static final class TickGate {
         private final AtomicBoolean running = new AtomicBoolean();
 
@@ -145,125 +190,5 @@ final class DevItemRewardTransition {
         boolean isRunning() {
             return running.get();
         }
-    }
-
-    private DevItemRewardTransition() {
-    }
-
-    static <T> Pending<T> pending(final String rarity, final String entry, final T exactItem,
-                                  final ExactItemPolicy<T> itemPolicy,
-                                  final Predicate<String> knownRarity) {
-        Objects.requireNonNull(itemPolicy, "itemPolicy");
-        Objects.requireNonNull(knownRarity, "knownRarity");
-        if (!knownRarity.test(rarity)) {
-            throw new IllegalArgumentException("unknown pending rarity: " + rarity);
-        }
-        if (!itemPolicy.isValid(exactItem)) {
-            throw new IllegalArgumentException("pending exact item is empty or invalid");
-        }
-        return new Pending<>(rarity, entry, itemPolicy.copy(exactItem));
-    }
-
-    static <T> State<T> state(final OwnerFence fence, final long progressMillis,
-                              final Pending<T> pending, final PityCounters pity,
-                              final ExactItemPolicy<T> itemPolicy) {
-        Objects.requireNonNull(itemPolicy, "itemPolicy");
-        return new State<>(fence, progressMillis, copyPending(pending, itemPolicy), pity);
-    }
-
-    static <T> State<T> advanceProgress(final State<T> current, final OwnerFence expectedFence,
-                                        final long elapsedMillis, final long intervalMillis,
-                                        final ExactItemPolicy<T> itemPolicy) {
-        Objects.requireNonNull(current, "current");
-        Objects.requireNonNull(expectedFence, "expectedFence");
-        if (!current.fence().equals(expectedFence) || elapsedMillis <= 0L) {
-            return current;
-        }
-        final long limit = Math.max(1L, intervalMillis);
-        final long remaining = Math.max(0L, limit - current.progressMillis());
-        final long increment = Math.min(remaining, elapsedMillis);
-        return state(current.fence(), current.progressMillis() + increment,
-                current.pending(), current.pity(), itemPolicy);
-    }
-
-    static <T> Preparation<T> prepare(final State<T> current, final OwnerFence expectedFence,
-                                      final Pending<T> proposed,
-                                      final ExactItemPolicy<T> itemPolicy,
-                                      final StateWriter<T> writer) {
-        Objects.requireNonNull(current, "current");
-        Objects.requireNonNull(expectedFence, "expectedFence");
-        Objects.requireNonNull(proposed, "proposed");
-        Objects.requireNonNull(writer, "writer");
-        if (!current.fence().equals(expectedFence) || current.pending() != null) {
-            return new Preparation<>(current, current.pending(), false);
-        }
-        final State<T> candidate = state(current.fence(), current.progressMillis(),
-                proposed, current.pity(), itemPolicy);
-        writer.write(candidate);
-        return new Preparation<>(candidate, candidate.pending(), true);
-    }
-
-    static <T> Completion<T> complete(final State<T> current, final OwnerFence expectedFence,
-                                      final UUID actor, final Pending<T> expectedPending,
-                                      final ExactItemPolicy<T> itemPolicy,
-                                      final PityRule pityRule,
-                                      final StateWriter<T> writer) {
-        Objects.requireNonNull(current, "current");
-        Objects.requireNonNull(expectedFence, "expectedFence");
-        Objects.requireNonNull(actor, "actor");
-        Objects.requireNonNull(expectedPending, "expectedPending");
-        Objects.requireNonNull(pityRule, "pityRule");
-        Objects.requireNonNull(writer, "writer");
-        if (!current.fence().equals(expectedFence)
-                || !expectedFence.owner().equals(actor)
-                || !samePending(current.pending(), expectedPending, itemPolicy)) {
-            return new Completion<>(current, false);
-        }
-        final PityCounters updatedPity = Objects.requireNonNull(
-                pityRule.after(expectedPending.rarity(), current.pity()), "updated pity");
-        final State<T> candidate = state(current.fence(), 0L, null, updatedPity, itemPolicy);
-        writer.write(candidate);
-        return new Completion<>(candidate, true);
-    }
-
-    static <T> State<T> transfer(final State<T> current, final UUID newOwner,
-                                 final ExactItemPolicy<T> itemPolicy,
-                                 final StateWriter<T> writer) {
-        Objects.requireNonNull(current, "current");
-        Objects.requireNonNull(newOwner, "newOwner");
-        Objects.requireNonNull(writer, "writer");
-        if (current.fence().owner().equals(newOwner)) {
-            return current;
-        }
-        final OwnerFence nextFence = new OwnerFence(newOwner,
-                Math.addExact(current.fence().generation(), 1L));
-        final State<T> candidate = state(nextFence, current.progressMillis(),
-                current.pending(), current.pity(), itemPolicy);
-        writer.write(candidate);
-        return candidate;
-    }
-
-    static <T> boolean samePending(final Pending<T> left, final Pending<T> right,
-                                   final ExactItemPolicy<T> itemPolicy) {
-        if (left == right) {
-            return true;
-        }
-        if (left == null || right == null) {
-            return false;
-        }
-        return left.rarity().equals(right.rarity())
-                && left.entry().equals(right.entry())
-                && itemPolicy.same(left.exactItem(), right.exactItem());
-    }
-
-    private static <T> Pending<T> copyPending(final Pending<T> pending,
-                                              final ExactItemPolicy<T> itemPolicy) {
-        if (pending == null) {
-            return null;
-        }
-        if (!itemPolicy.isValid(pending.exactItem())) {
-            throw new IllegalArgumentException("pending exact item is empty or invalid");
-        }
-        return new Pending<>(pending.rarity(), pending.entry(), itemPolicy.copy(pending.exactItem()));
     }
 }

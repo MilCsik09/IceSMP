@@ -58,7 +58,7 @@ val persistentStoreRegressionTest by tasks.registering(JavaExec::class) {
 
 val devItemRewardRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
-    description = "Runs dependency-free DEV-item reward state and owner-fence regressions."
+    description = "Runs focused DEV-item state, retry and scheduler-gate regressions."
     dependsOn(tasks.named(regressionTest.classesTaskName))
     classpath = regressionTest.runtimeClasspath
     mainClass.set("hu.taliann.icesmp.managers.DevItemRewardRegressionSuite")
