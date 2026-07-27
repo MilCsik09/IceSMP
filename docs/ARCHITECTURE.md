@@ -401,11 +401,29 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
 - **Jarból szállított datapack (`DATAPACK_DISCOVERY`):** a bootstrap a jar `/datapack`
   könyvtárát rendes datapackként ismerteti meg a szerverrel (`autoEnableOnServerStart`), így
-  a 22 csomópontos advancement-fa és a hozzá tartozó reward functionök install nélkül elérhetők.
+  a 22 csomópontos IceSMP haladás-fa és a 3 fix toast-bejegyzés a KÓDDAL EGYÜTT verziózódik,
+  futásidejű registry-mutáció nélkül. Az `AdvancementService` enable-időben csak ellenőriz;
+  ha a felderítés elbukott, a régi (`@Deprecated Bukkit.getUnsafe()`) úton pótolja a hiányzó
+  bejegyzéseket, és WARNING-ot logol. A fa-bejegyzések `show_toast:false` +
+  `announce_to_chat:false` (a visszajelzés a rendszerek saját chat-üzenete, az ünneplő toast a
+  külön `ToastUtil`-réteg) — a tartalék út JSON-generátora is ezt írja, hogy a két betöltési
+  út ugyanúgy viselkedjen. Új csomópont = NODES-bejegyzés + `python3 scripts/gen_advancements.py`
+  (a JSON-ok EGYETLEN forrása a Java NODES lista) + VALÓDI `AdvancementService.award(...)`
+  hívás — a `scripts/check_consistency.py` négyesével ellenőrzi: hiányzó JSON, árva JSON,
+  holt bejegyzés, tartalom-drift.
+- **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
+  jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
+- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 111 fájl).
+  Csomag-megoszlás: listeners 114, managers 111, commands 84, spells 56, gui 42, utils 21, data 12,
+  items 11, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
   `python3 scripts/check_consistency.py`. Pull requesten a `scripts/check_consistency_delta.py`
   hasonlítja a base/head eredményt.
+- **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
+  inline parancsok migrálásához a dispatch-bázis additív bővítése (default-subcommand + láthatósági
+  predikátum); az `IceSMPCore` manager-építés factory-szétbontása (a `final` mezők miatt).
 - **Garanciahatár:** a statikus, dependency-free és build-integrált regressziók nem helyettesítik a
   valódi Folia multi-region, process-kill, ENOSPC vagy permission-denied fault-injectiont.
+- **Nyitott fejlesztések:** `ROADMAP.md`.
