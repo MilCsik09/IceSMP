@@ -17,7 +17,10 @@ SOURCES = [
     ROOT / "src/regression/java/hu/taliann/icesmp/managers/DevItemRewardRegressionSuite.java",
 ]
 MAIN_CLASS = "hu.taliann.icesmp.managers.DevItemRewardRegressionSuite"
-DEV_MANAGER = ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java"
+DEV_RUNTIME_SOURCES = [
+    ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
+    ROOT / "src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java",
+]
 
 FORBIDDEN_DEV_PATHS = {
     "dev_reward_receipt": "player-PDC DEV receipt",
@@ -28,7 +31,7 @@ FORBIDDEN_DEV_PATHS = {
     "requestSave()": "obsolete async save queue",
     "saveQueued": "obsolete async save queue flag",
     "saveAgain": "obsolete async save queue flag",
-    "manual reconciliation": "legacy reconciliation documentation in runtime source",
+    "manual reconciliation": "legacy reconciliation runtime path",
 }
 
 
@@ -40,7 +43,7 @@ def require_tool(name: str) -> str:
 
 
 def verify_removed_paths() -> None:
-    source = DEV_MANAGER.read_text(encoding="utf-8")
+    source = "\n".join(path.read_text(encoding="utf-8") for path in DEV_RUNTIME_SOURCES)
     found = [description for token, description in FORBIDDEN_DEV_PATHS.items() if token in source]
     if found:
         raise SystemExit("Obsolete DEV reward paths remain: " + ", ".join(found))
