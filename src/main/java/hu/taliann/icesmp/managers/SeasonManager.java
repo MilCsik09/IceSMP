@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 /**
  * Seasonal league: factions earn points from raid victories and world boss kills over a
@@ -65,6 +66,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         this.treasuryManager = treasuryManager;
         this.factionManager = factionManager;
         this.storageFile = new File(plugin.getDataFolder(), "season.yml");
+        YamlStore.registerCriticalWrite(storageFile);
         plugin.getDataFolder().mkdirs();
     }
 
@@ -378,11 +380,17 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         this.seasonFinale = seasonFinale;
     }
 
-    /** Setter-injected korszakváltás-narrátor. */
-    private volatile Runnable seasonResetHook;
+    /** Coordinates the season commit with stores whose generation must advance afterwards. */
+    @FunctionalInterface
+    public interface SeasonTransitionCoordinator {
+        boolean commit(int closingSeason, int openedSeason, BooleanSupplier seasonCommit);
+    }
 
-    public void setSeasonResetHook(final Runnable seasonResetHook) {
-        this.seasonResetHook = seasonResetHook;
+    private volatile SeasonTransitionCoordinator seasonTransitionCoordinator;
+
+    public void setSeasonTransitionCoordinator(
+            final SeasonTransitionCoordinator seasonTransitionCoordinator) {
+        this.seasonTransitionCoordinator = seasonTransitionCoordinator;
     }
 
     private volatile SeasonStoryTeller storyTeller;
@@ -414,25 +422,50 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             return;
         }
         announceGrandFinale();
-        if (System.currentTimeMillis() < getSeasonEndMillis()) {
-            return;
-        }
 
-        // A közösségi outbox a szezonzárás tartós kapuja. Ha részleges payout vagy íráshiba
-        // maradt, a hook kivételt dob, ezért nem osztunk bajnoki jutalmat és nem nullázzuk a
-        // régi szezon pontjait; a következő tick biztonságosan újrapróbálja.
-        final Runnable resetHook = this.seasonResetHook;
-        if (resetHook != null) {
-            try {
-                resetHook.run();
-            } catch (final RuntimeException blocked) {
-                plugin.getLogger().severe("Szezonzárás elhalasztva: " + blocked.getMessage());
+        final int closingSeason;
+        synchronized (stateLock) {
+            if (System.currentTimeMillis() < getSeasonEndMillisLocked()) {
                 return;
             }
+            closingSeason = seasonNumber;
         }
+        if (closingSeason == Integer.MAX_VALUE) {
+            plugin.getLogger().severe("Szezonzárás elhalasztva: a season number elérte az int határát.");
+            return;
+        }
+        final int openedSeason = closingSeason + 1;
+        final BooleanSupplier seasonCommit = () -> closeExpiredSeason(closingSeason, openedSeason);
 
+        final SeasonTransitionCoordinator coordinator = seasonTransitionCoordinator;
+        try {
+            final boolean committed = coordinator == null
+                    ? seasonCommit.getAsBoolean()
+                    : coordinator.commit(closingSeason, openedSeason, seasonCommit);
+            if (!committed) {
+                plugin.getLogger().severe("Szezonzárás elhalasztva: a season.yml commit nem sikerült.");
+            }
+        } catch (final RuntimeException blocked) {
+            plugin.getLogger().severe("Szezonzárás elhalasztva: " + blocked.getMessage());
+        }
+    }
+
+    /**
+     * Performs the existing season-close side effects and commits the new season generation.
+     * The community coordinator holds its monitor for the whole callback, so community
+     * contributions cannot cross the standings snapshot/reset boundary.
+     *
+     * <p>Champion reward delivery is still the separate HIGH-05 state-machine scope: side effects
+     * intentionally retain their previous ordering here. This method only reports success after the
+     * season number, start and carried points are durably written.</p>
+     */
+    private boolean closeExpiredSeason(final int expectedSeason, final int openedSeason) {
         final java.util.Map<FactionType, Integer> closingPoints;
         synchronized (stateLock) {
+            if (seasonNumber != expectedSeason
+                    || System.currentTimeMillis() < getSeasonEndMillisLocked()) {
+                return false;
+            }
             closingPoints = new java.util.EnumMap<>(FactionType.class);
             closingPoints.putAll(points);
         }
@@ -515,9 +548,18 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
         final int openedChapter;
         synchronized (stateLock) {
-            // A closing snapshot után érkező pontok már az új szezon eseményei. Mivel minden
-            // pontmutáció ugyanazon lockon fut és csak növel, a snapshot feletti többletet
-            // átvisszük, nem töröljük el egy versenyhelyzetben.
+            if (seasonNumber != expectedSeason) {
+                return false;
+            }
+            final java.util.EnumMap<FactionType, Integer> previousPoints =
+                    new java.util.EnumMap<>(FactionType.class);
+            previousPoints.putAll(points);
+            final long previousStart = seasonStart;
+            final int previousNumber = seasonNumber;
+            final boolean previousFinale = grandFinaleAnnounced;
+
+            // The closing snapshot is fixed while community contributions are blocked. Other point
+            // sources may still arrive; their delta above the snapshot belongs to the opened season.
             final java.util.EnumMap<FactionType, Integer> carry =
                     new java.util.EnumMap<>(FactionType.class);
             for (final FactionType faction : FactionType.values()) {
@@ -530,15 +572,34 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             points.clear();
             points.putAll(carry);
             seasonStart = System.currentTimeMillis();
-            seasonNumber++;
+            seasonNumber = openedSeason;
             openedChapter = seasonNumber;
             grandFinaleAnnounced = false;
+
+            try {
+                if (!writeStateLocked()) {
+                    points.clear();
+                    points.putAll(previousPoints);
+                    seasonStart = previousStart;
+                    seasonNumber = previousNumber;
+                    grandFinaleAnnounced = previousFinale;
+                    return false;
+                }
+            } catch (final RuntimeException | Error failure) {
+                points.clear();
+                points.putAll(previousPoints);
+                seasonStart = previousStart;
+                seasonNumber = previousNumber;
+                grandFinaleAnnounced = previousFinale;
+                throw failure;
+            }
         }
+
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "season-chapter-opened",
                 "<gold>📖 Új fejezet nyílik a krónikában: <white>{chapter}. fejezet</white> — a régi fejezet küldetései lezárultak, újak várnak!</gold>",
                 Map.of("chapter", String.valueOf(openedChapter))));
-        save();
+        return true;
     }
 
     /** Grants the champion faction's online members their season spoils. */

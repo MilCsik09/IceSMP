@@ -35,7 +35,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 109 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 111 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 114 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
@@ -105,6 +105,8 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     KÖTELEZŐEN vizsgálandó: tanút csak akkor dobunk el, ha a bejegyzés bizonyítottan eltűnt a
     lemezről is. Az átvétel-jelző PDC-kulcsa **tranzakciónkénti** (egy közös kulcs a második
     listázásnál felülírta volna az elsőt, és a tárgy elveszett volna).
+
+  - **Szezon–community generation commit** (`season.yml` → `community-goals.yml`): a community store tartós `season.number` markerrel jelöli, melyik szezonhoz tartozik a progressz. A zárás a community monitor alatt előbb rendezi az outboxot, majd commitolja az új `season.yml` generációt, és csak ezután nullázza/menti a community progresszt. Crash a két commit között egyetlen generációnyi marker-lemaradást hagy; bootkor ez idempotens resetként reconciliálódik. Függő régi payout, előreszaladt vagy több generációt átugró marker fail-closed.
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.
@@ -389,7 +391,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (MavenLibraryResolver) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 109 fájl).
+- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 111 fájl).
   Csomag-megoszlás: listeners 113, managers 106, commands 84, spells 56, gui 42, utils 12, data 12,
   items 11, relics 9, integration 7.
 - **Hátralévő refaktor** (build-checkpointot igénylő, szándékosan halasztott tételek): a maradék
