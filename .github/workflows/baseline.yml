@@ -45,6 +45,17 @@ jobs:
           test "${files[3]}" = 'src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java'
           test "${files[4]}" = 'src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java'
 
+      - name: Archive exact DEV-item recovery source
+        run: tar --exclude=.git -czf /tmp/dev-item-recovery-source.tar.gz .
+
+      - name: Upload exact DEV-item recovery source
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-item-recovery-source
+          path: /tmp/dev-item-recovery-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Apply PR 26 prerequisite for verification only
         shell: bash
         run: |
