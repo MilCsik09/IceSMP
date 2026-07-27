@@ -1,0 +1,111 @@
+name: Validate DEV-item migration guard
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MASTER_SHA: b6db9d21d12a2944b67925a5fe9228b4e76b9b04
+      FINAL_BRANCH: agent/simplify-dev-item-recovery
+      VALIDATION_BRANCH: agent/validate-dev-item-migration-20260727
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Record exact master consistency baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp scripts/bootstrap_legacy_dev_receipt_guard.py /tmp/bootstrap_legacy_dev_receipt_guard.py
+          git config user.name "OpenAI Codex"
+          git config user.email "codex@openai.com"
+          git switch --detach "$MASTER_SHA"
+          set +e
+          python3 scripts/check_consistency.py 2>&1 | tee /tmp/baseline-consistency.log
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          grep '^✗ FAIL:' /tmp/baseline-consistency.log | sort > /tmp/baseline-consistency.failures || true
+          FAILS=$(sed -n 's/.*Összegzés: \([0-9][0-9]*\) FAIL, \([0-9][0-9]*\) WARN.*/\1/p' /tmp/baseline-consistency.log | tail -1)
+          WARNS=$(sed -n 's/.*Összegzés: \([0-9][0-9]*\) FAIL, \([0-9][0-9]*\) WARN.*/\2/p' /tmp/baseline-consistency.log | tail -1)
+          test -n "$FAILS" && test -n "$WARNS"
+          echo "BASE_CONSISTENCY_FAILS=$FAILS" >> "$GITHUB_ENV"
+          echo "BASE_CONSISTENCY_WARNS=$WARNS" >> "$GITHUB_ENV"
+
+      - name: Apply migration guard to the focused branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -C "$FINAL_BRANCH" "origin/$FINAL_BRANCH"
+          python3 /tmp/bootstrap_legacy_dev_receipt_guard.py
+          export MANAGER_LINES=$(wc -l < src/main/java/hu/taliann/icesmp/managers/DevItemManager.java)
+          export STATE_LINES=$(wc -l < src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java)
+          export ADDED_LINES=$(git diff --numstat "$MASTER_SHA" | awk '{a += $1} END {print a + 0}')
+          export DELETED_LINES=$(git diff --numstat "$MASTER_SHA" | awk '{d += $2} END {print d + 0}')
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path('docs/audits/IceSMP_audit_update_b6db9d2.md')
+          text = path.read_text(encoding='utf-8')
+          text = re.sub(r'\| `DevItemManager\.java` sor \| `1465` \| `\d+` \|',
+                        f"| `DevItemManager.java` sor | `1465` | `{os.environ['MANAGER_LINES']}` |", text)
+          text = re.sub(r'\| `DevItemStateData\.java` sor \| `123` \| `\d+` \|',
+                        f"| `DevItemStateData.java` sor | `123` | `{os.environ['STATE_LINES']}` |", text)
+          text = re.sub(r'\| Hozzáadott / törölt sor összesen \| — \| `\d+ / \d+` \|',
+                        f"| Hozzáadott / törölt sor összesen | — | `{os.environ['ADDED_LINES']} / {os.environ['DELETED_LINES']}` |", text)
+          path.write_text(text, encoding='utf-8')
+          PY
+          git diff --check
+
+      - name: Clean build
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Compare consistency with master
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/check_consistency.py 2>&1 | tee /tmp/branch-consistency.log
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          grep '^✗ FAIL:' /tmp/branch-consistency.log | sort > /tmp/branch-consistency.failures || true
+          FAILS=$(sed -n 's/.*Összegzés: \([0-9][0-9]*\) FAIL, \([0-9][0-9]*\) WARN.*/\1/p' /tmp/branch-consistency.log | tail -1)
+          WARNS=$(sed -n 's/.*Összegzés: \([0-9][0-9]*\) FAIL, \([0-9][0-9]*\) WARN.*/\2/p' /tmp/branch-consistency.log | tail -1)
+          test -n "$FAILS" && test -n "$WARNS"
+          NEW_FAILURES=$(comm -13 /tmp/baseline-consistency.failures /tmp/branch-consistency.failures || true)
+          test -z "$NEW_FAILURES" || { echo "$NEW_FAILURES"; exit 1; }
+          test "$FAILS" -le "$BASE_CONSISTENCY_FAILS"
+          test "$WARNS" -le "$BASE_CONSISTENCY_WARNS"
+
+      - name: DEV-item state regression
+        run: python3 scripts/test_dev_item_state.py
+
+      - name: Amend and publish the migration guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add \
+            src/main/java/hu/taliann/icesmp/managers/DevItemManager.java \
+            src/main/java/hu/taliann/icesmp/managers/DevItemStateData.java \
+            src/regression/java/hu/taliann/icesmp/managers/DevItemStateDataRegressionTest.java \
+            docs/ARCHITECTURE.md \
+            docs/audits/IceSMP_audit_update_b6db9d2.md
+          git commit --amend --no-edit
+          git push --force-with-lease origin "HEAD:refs/heads/$FINAL_BRANCH"
+          git push origin --delete "$VALIDATION_BRANCH" || true
