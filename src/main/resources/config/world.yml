@@ -175,8 +175,9 @@ world-events:
     mob-lifespan-seconds: 600
     champion-slam-damage: 5.0  # a bajnok ~6 mp-enkénti telegrafált földcsapásának sebzése
   # Szezonális liga: a frakciók pontot gyűjtenek raid- és boss-győzelmekből.
-  # A szezon végén a győztes frakció KASSZÁJA treasury-reward-ot kap, az online
-  # TAGJAI pedig győzelmi buffot + tárgy-jutalmat + ünneplő tűzijátékot.
+  # A szezon végén a győztes frakció KASSZÁJA treasury-reward-ot kap, minden lezáráskor
+  # nyilvántartott TAGJA pedig tartós claimből győzelmi buffot + tárgy-jutalmat. A tűzijáték
+  # csak best-effort vizuális mellékhatás; a jutalom telt inventorynál vagy restartnál várakozik.
   season:
     enabled: true
     length-days: 60

@@ -112,11 +112,13 @@ def verify_source_protocol() -> None:
     require_order(
         close,
         "closingPoints.putAll(points)",
-        "awardChampionMembers(champion)",
+        "buildRewardPlan",
+        "pendingRewardBatch = rewardPlan.batch()",
         "writeStateLocked()",
-        '"season-chapter-opened"',
         "return true",
     )
+    if "treasuryManager.deposit(" in close or "Bukkit.getServer().broadcast" in close:
+        raise SystemExit("Season side effects must run only after the coordinated generation commit")
 
 
 def main() -> None:
