@@ -1,4 +1,4 @@
-name: Agent Patch Publisher
+name: Agent Source Export
 
 on:
   pull_request:
@@ -8,30 +8,41 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  publish:
-    name: Validate and publish moderation commits
+  export:
+    name: Export current moderation source
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
-      - name: Checkout publisher branch
+      - name: Checkout moderation branch
         uses: actions/checkout@v4
         with:
+          ref: feature/native-moderation-suite
           fetch-depth: 0
-      - name: Validate and apply moderation patch
+
+      - name: Verify exact moderation head
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/agent-patches-v2/moderation.part* > /tmp/moderation.patch.gz.b64
-          test "$(wc -c < /tmp/moderation.patch.gz.b64)" -eq 92616
-          base64 --decode /tmp/moderation.patch.gz.b64 > /tmp/moderation.patch.gz
-          echo "000a906053bbf7a634ec0faf859397c7533850e623881034160118ccb3cf6437  /tmp/moderation.patch.gz" | sha256sum -c -
-          gzip -t /tmp/moderation.patch.gz
-          gzip -dc /tmp/moderation.patch.gz > /tmp/moderation.mbox
-          git config user.name "IceSMP Automation"
-          git config user.email "actions@users.noreply.github.com"
-          git checkout --detach f4e82263d35c645a053eccac09a3ad254a36ed90
-          git am /tmp/moderation.mbox
-          git push --force-with-lease=refs/heads/feature/native-moderation-suite:f4e82263d35c645a053eccac09a3ad254a36ed90 origin HEAD:refs/heads/feature/native-moderation-suite
+          test "$(git rev-parse HEAD)" = "5449dc726c785d5ee1305c457046daa1e60879fc"
+
+      - name: Package source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude='./.git' \
+            --exclude='./.gradle' \
+            --exclude='./build' \
+            --exclude='./Other' \
+            -czf /tmp/icesmp-moderation-source.tar.gz .
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-moderation-source-5449dc7
+          path: /tmp/icesmp-moderation-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
