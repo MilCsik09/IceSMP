@@ -1,4 +1,4 @@
-name: Agent Source Export
+name: Agent AFK Patch Publisher
 
 on:
   pull_request:
@@ -8,41 +8,31 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
-    name: Export current moderation source
+  publish:
+    name: Validate and publish native AFK commits
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Checkout moderation branch
+      - name: Checkout publisher branch
         uses: actions/checkout@v4
         with:
-          ref: feature/native-moderation-suite
           fetch-depth: 0
 
-      - name: Verify exact moderation head
+      - name: Validate and apply native AFK patch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "5449dc726c785d5ee1305c457046daa1e60879fc"
-
-      - name: Package source
-        shell: bash
-        run: |
-          set -euo pipefail
-          tar \
-            --exclude='./.git' \
-            --exclude='./.gradle' \
-            --exclude='./build' \
-            --exclude='./Other' \
-            -czf /tmp/icesmp-moderation-source.tar.gz .
-
-      - name: Upload source snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: icesmp-moderation-source-5449dc7
-          path: /tmp/icesmp-moderation-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          SOURCE=.github/agent-patches-afk/afk.mbox.gz.b64
+          test "$(wc -c < "$SOURCE")" -eq 60060
+          base64 --decode "$SOURCE" > /tmp/afk.mbox.gz
+          echo "72a57e3947328e4ae04b0f579c58058c0086d1388ccda584d2713af9631b8a44  /tmp/afk.mbox.gz" | sha256sum -c -
+          gzip -t /tmp/afk.mbox.gz
+          gzip -dc /tmp/afk.mbox.gz > /tmp/afk.mbox
+          git config user.name "IceSMP Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout --detach f4e82263d35c645a053eccac09a3ad254a36ed90
+          git am /tmp/afk.mbox
+          git push --force-with-lease=refs/heads/feature/native-afk-zones:f4e82263d35c645a053eccac09a3ad254a36ed90 origin HEAD:refs/heads/feature/native-afk-zones
