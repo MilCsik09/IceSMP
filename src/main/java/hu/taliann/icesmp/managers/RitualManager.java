@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * block) turns an altar into a buildable shrine; non-relic rituals may set
  * {@code cooldown-seconds} to rate-limit repeats (in memory, reset on restart).
  */
-public final class RitualManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
+public final class RitualManager implements hu.taliann.icesmp.session.PlayerStateCleanup, org.bukkit.event.Listener {
 
     /** E25 — setter-injektált függőségek a pakt-ceremóniához. */
     private volatile hu.taliann.icesmp.managers.ResourceBonusService resourceBonusService;
@@ -63,9 +63,11 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
     private final MessageManager messageManager;
     // Per-player, per-ritual cooldown expiry (in-memory; only used by non-relic rituals).
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
-    // Folyamatban lévő hazatérés-teleportok: az áldozat/cooldown csak a sikeres megérkezéskor
-    // rögzül, addig a dupla oltár-kattintást ez a jelölő fogja meg.
+    // Folyamatban lévő hazatérés-teleportok: a dupla oltár-kattintást ez a jelölő fogja meg.
     private final java.util.Set<UUID> homeInFlight = ConcurrentHashMap.newKeySet();
+    // Az induláskor elfogyasztott áldozat foglalása: siker törli, kudarc refundálja; ha a
+    // játékos a teleport közben lép ki (retired scheduler), a következő belépéskor jár vissza.
+    private final Map<UUID, Map<Material, Integer>> pendingHomeRefunds = new ConcurrentHashMap<>();
 
     public RitualManager(final org.bukkit.plugin.java.JavaPlugin plugin, final ConfigManager configManager,
                          final RelicManager relicManager,
@@ -82,11 +84,29 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         this.messageManager = messageManager;
     }
 
-    /** Drops the player's per-ritual cooldown map on logout so the nested map cannot grow unbounded. */
+    /**
+     * Drops the player's per-ritual cooldown map on logout so the nested map cannot grow
+     * unbounded. A pendingHomeRefunds SZÁNDÉKOSAN marad: a félbeszakadt hazatérés áldozata
+     * a következő belépéskor jár vissza.
+     */
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId != null) {
             cooldowns.remove(playerId);
+            homeInFlight.remove(playerId);
+        }
+    }
+
+    /** Menet közben megszakadt hazatérés (kilépés/kick) áldozatának visszaadása belépéskor. */
+    @org.bukkit.event.EventHandler
+    public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
+        final Map<Material, Integer> refund = pendingHomeRefunds.remove(event.getPlayer().getUniqueId());
+        if (refund != null) {
+            refundSacrifices(event.getPlayer(), refund);
+            event.getPlayer().sendMessage(messageManager.getMessage(
+                    "ritual-home-refund",
+                    "<gold>A félbeszakadt hazatérés áldozatát visszakaptad.</gold>"
+            ));
         }
     }
 
@@ -385,6 +405,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             ));
             return;
         }
+        pendingHomeRefunds.put(player.getUniqueId(), new java.util.EnumMap<>(sacrifices));
         final float yaw = player.getLocation().getYaw();
         final float pitch = player.getLocation().getPitch();
         // The highest-block lookup reads the capital's chunk — it must run on the DESTINATION region's
@@ -395,13 +416,16 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
                     .whenComplete((success, failure) -> player.getScheduler().run(plugin, done -> {
                         homeInFlight.remove(player.getUniqueId());
                         if (failure != null || success == null || !success) {
-                            refundSacrifices(player, sacrifices);
+                            if (pendingHomeRefunds.remove(player.getUniqueId()) != null) {
+                                refundSacrifices(player, sacrifices);
+                            }
                             player.sendMessage(messageManager.getMessage(
                                     "ritual-home-failed",
                                     "<red>Az oltár fénye kihunyt — a hazatérés nem sikerült, az áldozatodat visszakaptad.</red>"
                             ));
                             return;
                         }
+                        pendingHomeRefunds.remove(player.getUniqueId());
                         AdvancementService.award(player, "first_ritual");
                         if (cooldownSeconds > 0L) {
                             cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())

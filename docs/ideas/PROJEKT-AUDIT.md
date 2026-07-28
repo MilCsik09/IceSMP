@@ -114,7 +114,7 @@ L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
     az `IceSMPCore.disable()` törzsében 0 try/catch. Árnyalat: a store-mentési hurok a
     koordinátorban MÁR per-store hibagyűjtéses — a rés a manager-leállítás/UI-takarítás
     szigeteletlensége, plusz a 14. tétel.
-14. ✅ KÉSZ (0. fázis: 22 void-szerződésű store rethrow; PR-review kör: a 4 boolean-szerződésű író [CommunityGoal saveStrict, FactionTreasury, Season, SeasonMonument] visszakapta a false-jelzést, mert hívóik rollbacket építenek rá) — **M-PERSIST-001: több store elnyeli az írási hibát.** Pl. `FactionManager.save()`
+14. ✅ KÉSZ (0. fázis + két PR-review kör: 22 void-szerződésű store rethrow; a 4 boolean-szerződésű strict író a kritikus-write Errort IS false-ként jelzi [a rollback-ágak minden hibaútra lefutnak, a write-circuit közben tilt], a void save() wrapperük pedig false-nál dob, így a koordinátor autosave/shutdown alatt is lát) — **M-PERSIST-001: több store elnyeli az írási hibát.** Pl. `FactionManager.save()`
     catch-eli az IOException-t és csak logol → a koordinátor per-store hibagyűjtése vakon
     marad. → logolás után dobjuk tovább (UncheckedIOException), a koordinátor a gyűjtő.
 15. ✅ RÉSZBEN KÉSZ (0. fázis: factions.yml + kings.yml fail-closed; a claims.yml loader külön kört vár) — **M-PERSIST-003: szemantikai hibát a loader átugrik, a következő mentés véglegesít.**

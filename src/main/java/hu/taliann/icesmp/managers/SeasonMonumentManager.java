@@ -116,7 +116,8 @@ public final class SeasonMonumentManager implements PersistentStore {
     @Override
     public synchronized void save() {
         if (!writeStateLocked()) {
-            plugin.getLogger().severe("Failed to save monument.yml");
+            // A koordinátor hibagyűjtése csak dobásból lát.
+            throw new IllegalStateException("monument.yml mentése sikertelen — részletek a logban");
         }
     }
 
@@ -134,6 +135,12 @@ public final class SeasonMonumentManager implements PersistentStore {
             return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save monument.yml: " + exception.getMessage());
+            return false;
+        } catch (final hu.taliann.icesmp.storage.CriticalPersistenceWriteError fatal) {
+            // A kritikus write-circuit már beállt (minden további írás tiltva) — itt false-t
+            // adunk, hogy a hívó rollback-ága lefusson; a koordinátort a void save() wrapper
+            // dobása értesíti. A fatal elnyelése nélkül a rollback kimaradna (Error != IOException).
+            plugin.getLogger().severe(fatal.getMessage() == null ? fatal.toString() : fatal.getMessage());
             return false;
         }
     }

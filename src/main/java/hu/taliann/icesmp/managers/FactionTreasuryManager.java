@@ -163,7 +163,10 @@ public final class FactionTreasuryManager implements PersistentStore {
 
     public void save() {
         synchronized (stateLock) {
-            writeStateLocked();
+            if (!writeStateLocked()) {
+                // A koordinátor hibagyűjtése csak dobásból lát.
+                throw new IllegalStateException("faction-treasury mentése sikertelen — részletek a logban");
+            }
         }
     }
 
@@ -196,6 +199,12 @@ public final class FactionTreasuryManager implements PersistentStore {
         } catch (final IOException exception) {
             plugin.getLogger().severe(
                     "Failed to save faction treasury: " + exception.getMessage());
+            return false;
+        } catch (final hu.taliann.icesmp.storage.CriticalPersistenceWriteError fatal) {
+            // A kritikus write-circuit már beállt (minden további írás tiltva) — itt false-t
+            // adunk, hogy a hívó rollback-ága lefusson; a koordinátort a void save() wrapper
+            // dobása értesíti. A fatal elnyelése nélkül a rollback kimaradna (Error != IOException).
+            plugin.getLogger().severe(fatal.getMessage() == null ? fatal.toString() : fatal.getMessage());
             return false;
         }
     }
