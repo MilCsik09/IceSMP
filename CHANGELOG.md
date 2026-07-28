@@ -133,6 +133,16 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 - Kick-rés zárva a relikvia- és katalizátor-stash mapeken (9.); `/faction set`
   tab-complete (10.); `/afk` a parancs-referenciában (11.).
 
+**Gazdasági crash-ablak (H-ECON-001) — szinkron-commit kör:**
+- Bank-kifizetés: az egyenleg-levonás tartósan rögzül, MIELŐTT a fizikai veret kézbe
+  kerül (írási hibánál automatikus visszatérítés, veret nélkül).
+- Bank-befizetés: előbb kerül ki a veret az inventoryból, aztán rögzül tartósan a
+  jóváírás — mindkét irányban a veszteség-kerülő sorrend.
+- Fizetős claim (létrehozás + Y-bővítés): a wallet-levonás ÉS a claim még a hívásban,
+  tartósan mentődik — nincs fizetés nélküli claim / claim nélküli levonás debounce-ablak.
+- Adomány-láda: a be- és kivét bejegyzése azonnal tartós (dupe/nyelés-ablak zárva).
+- Maradó rés: az inventory (playerdata) és a saját fájl közti ezredmásodperces ablak —
+  formális WAL csak akkor, ha a process-kill playtest indokolja.
+
 **Nem része a körnek (tulaj-döntés / külön kör):** a scoreboard-réteg Folia-kérdése
-(12., félretéve), a bank/claim/adomány crash-ablak (H-ECON-001 pending-record),
-a claims.yml fail-closed loader és az alacsony súlyú sáv.
+(12., félretéve), a claims.yml fail-closed loader és az alacsony súlyú sáv.

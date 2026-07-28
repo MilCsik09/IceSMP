@@ -31,9 +31,15 @@ tulaj-döntésre FÉLRETÉVE, egyik fázisnak sem része.
 > leállítás-szigetelés, a totem crash-sweep és a PositionCache-alapú jutalom-megosztás
 > KÉSZ (✅-jelölések: PROJEKT-AUDIT; összefoglaló: CHANGELOG). A TransientEntities-blokkoló
 > érdemi részét már a 2026-07-26-i P0-F kör lezárta (heartbeat + fail-closed liveness +
-> watchdog) — a 0. fázis a maradékot pótolta. **Maradék, külön körre:** a claims.yml
-> loader fail-closed átállása, a H-ECON-001 pending-record terv és megvalósítás,
-> és az alacsony súlyú sáv (HUD/Parkour kick, purge-nélküli mapek, GUI-szövegek,
+> watchdog) — a 0. fázis a maradékot pótolta. A **H-ECON-001 szinkron-commit köre is
+> lefutott:** bank ki-/befizetés, fizetős claim (create+extend) és adomány-láda be-/kivét
+> a debounce helyett még a hívásban, tartósan rögzít, veszteség-kerülő sorrenddel (a
+> market-journal prepare írás-mintája szerint). Maradó rés: az inventory (playerdata) és
+> a saját fájl közti ezredmásodperces ablak — formális pending-record/WAL CSAK akkor,
+> ha a process-kill fault-injection playtest indokolja (a terv: op-rekord az
+> irreverzibilis lépés előtt + aszimmetrikus, a valószínű tartós kimenetet követő
+> boot-recovery). **Maradék, külön körre:** a claims.yml loader fail-closed átállása és
+> az alacsony súlyú sáv (HUD/Parkour kick, purge-nélküli mapek, GUI-szövegek,
 > claims allow-séma).
 
 Kód-javítások, új feature nélkül. Tétel-hivatkozások: PROJEKT-AUDIT 2026-07-28-as szekció.
@@ -194,8 +200,9 @@ Cél: az éles szerver megfigyelhetősége, mielőtt tartalom épül rá.
   fázis a shutdown-szigetelést és a totem crash-sweepet pótolta), a pozíció-alapú
   jutalom-megosztás pedig a `PartyRewardResolver` (07-26) + a `PositionCache`-alapú
   közelség-számítás (0. fázis) párossal zárult — e két korábbi blokkoló már NEM nyitott.
-  **Még nyitott kiadásblokkoló:** a bank/claim/adomány több-tartományos crash-ablak
-  (H-ECON-001 — pending-record terv a kivitelezési terv 0. fázis-maradékában). A 2026-07-28-i saját
+  **A bank/claim/adomány crash-ablak (H-ECON-001) a 0. fázis szinkron-commit körével
+  lezárult** — a maradó ezredmásodperces playerdata-rés WAL-ja playtest-kapus (részletek
+  a kivitelezési terv 0. fázis-státuszában). Nyitott kiadásblokkoló e körrel nincs. A 2026-07-28-i saját
   audit-kör és a feldolgozott külső mélyaudit további igazolt tételei (Folia-kapuk,
   perzisztencia-szerződés, config-guardok) szintén a `PROJEKT-AUDIT.md`-ben élnek — a
   javítási sorrend fent, az Összesített kivitelezési terv 0. fázisában. Playtesten

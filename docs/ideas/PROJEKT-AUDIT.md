@@ -96,7 +96,10 @@ economy/factions/world/relics/professions configok ellen) mind egyeznek. A Guide
 ### Külső mélyaudit feldolgozása (10403f8, 2026-07-27 — leletek kézzel visszaigazolva)
 
 A tulaj által kapott külső audit 14 leletéből 12 a kódban megerősítve; a már nálunk
-dokumentált tételeket nem duplikáljuk (H-ECON-001 = perzisztencia-atomicitás blokkoló;
+dokumentált tételeket nem duplikáljuk (H-ECON-001 = perzisztencia-atomicitás blokkoló —
+✅ a 0. fázis szinkron-commit körével LEZÁRVA: bank ki-/befizetés, fizetős claim és
+adomány-láda a hívásban, tartósan, veszteség-kerülő sorrenddel rögzít; a maradó
+ezredmásodperces playerdata-rés WAL-ja playtest-kapus;
 M-FOLIA-001 = pozíció-alapú jutalom-megosztás; M-PERSIST-002 = save()-szinkron;
 L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
 
