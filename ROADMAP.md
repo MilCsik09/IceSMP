@@ -295,14 +295,17 @@ Cél: az éles szerver megfigyelhetősége, mielőtt tartalom épül rá.
 A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erőfeszítés sorrendben:
 
 1. **Plugin-beolvasztás folytatása** (kevesebb külső függőség):
-   - 🟢 gyors: **FarmProtect** (termés-taposás, ~30 sor), **minimotd** (MOTD), **ICEsmpadditions**
-     (saját 2 KB-os mini-plugin — a forrása kell hozzá);
+   - ✅ KÉSZ (2026-07-16/17-i körök, kód-validálva 2026-07-28): **ICEsmpadditions**
+     (world-tweaks.warden-death-xp), **FarmProtect** (crop-trample-protection),
+     **MiniMOTD** (motd.yml), **TAB** (natív tablist: header/footer, nevek,
+     nametag+rendezés, ping), **CrazyCrates** (natív crate), továbbá AFK/ülés plugin
+     és **InvSee++/SModeration** (natív moderáció + inspektor) — az új build
+     telepítésekor ezek a pluginok eltávolítandók a szerverről;
    - 🟡 közepes: **economist + service-io** (ha semmi nem függ tőlük → törölhetők; vagy IceSMP
      gazdaság-szolgáltató híd), **FancyHolograms** (általános `/hologram` admin-parancs a meglévő
      TextDisplay-infrára), **AuMenus** (config-vezérelt hub-menü), **VillagerTradeEdit** (statikus
      trade-módosítások configból);
-   - 🟠 nagy: **TAB** (header/footer + LP-prefix sorrend a saját HUD-ba), **WorldGuard**
-     (admin-zóna flagek a TerritoryManagerbe) — csak alapos playtest után.
+   - 🟠 nagy: **WorldGuard** (admin-zóna flagek a TerritoryManagerbe) — csak alapos playtest után.
 2. **Végjáték-progresszió:** presztízs/paragon szintek a max kaszt után, relikvia-fejlesztés
    (reforge), szezon-emléktárgyak.
 3. **Egyedi dungeonök (PvE):** kézzel készített helyszínek megnevezett bossokkal, mechanikákkal,
