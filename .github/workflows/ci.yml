@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - claude/projekt-audit-u0hkcz
   push:
     branches:
       - master
