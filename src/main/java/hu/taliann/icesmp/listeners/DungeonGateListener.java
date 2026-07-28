@@ -176,14 +176,14 @@ public final class DungeonGateListener implements Listener {
                     if (member == null) {
                         continue;
                     }
-                    try {
-                        if (!member.getWorld().equals(player.getWorld())
-                                || member.getLocation().distanceSquared(player.getLocation()) > 16.0D * 16.0D) {
-                            continue;
-                        }
-                    } catch (final Exception ignored) {
-                        // Kereszt-régiós olvasás nem elérhető Folián — nem közelinek vesszük
-                        // (a PartyManager ugyanezt a védőhálót használja).
+                    // Idegen régió tagját tilos közvetlenül olvasni — a tag pozícióját a
+                    // PositionCache játékos-szálon töltött tükréből hasonlítjuk (világ +
+                    // távolság); a belépő saját pozíciója a saját szálán él, az olvasható.
+                    final org.bukkit.Location memberPosition =
+                            hu.taliann.icesmp.utils.PositionCache.get(memberId);
+                    if (memberPosition == null || memberPosition.getWorld() == null
+                            || !memberPosition.getWorld().getUID().equals(player.getWorld().getUID())
+                            || memberPosition.distanceSquared(player.getLocation()) > 16.0D * 16.0D) {
                         continue;
                     }
                     member.getScheduler().run(plugin, task -> {
