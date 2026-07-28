@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * hops to the target's scheduler otherwise. Active totems are tracked and removed on plugin
  * disable so none survive a reload as orphans.
  */
-public final class TotemManager {
+public final class TotemManager implements org.bukkit.event.Listener {
 
     /** The totem roster: who it affects, the effect/damage it pulses, and its look. */
     public enum TotemType {
@@ -125,6 +125,22 @@ public final class TotemManager {
         this.plugin = plugin;
         this.configManager = configManager;
         this.totemKey = new NamespacedKey(plugin, "shaman_totem");
+    }
+
+    /**
+     * Crash-árva takarítás: a totem-állvány persistent (nem despawnol magától), az
+     * élettartam-órája és a pulzusa viszont a memóriával együtt vész el crashkor. A
+     * betöltéskor nem követett, taggelt állványt a saját régió-szálán eltávolítjuk.
+     */
+    @org.bukkit.event.EventHandler
+    public void onEntitiesLoad(final org.bukkit.event.world.EntitiesLoadEvent event) {
+        for (final Entity entity : event.getEntities()) {
+            if (entity instanceof ArmorStand stand
+                    && stand.getPersistentDataContainer().has(totemKey, PersistentDataType.BYTE)
+                    && !activeTotems.contains(stand.getUniqueId())) {
+                stand.remove();
+            }
+        }
     }
 
     /**

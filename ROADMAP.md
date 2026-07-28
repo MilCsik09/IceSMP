@@ -25,6 +25,17 @@ tulaj-döntésre FÉLRETÉVE, egyik fázisnak sem része.
 
 ### 0. fázis — Stabilitási kör (minden más előfeltétele)
 
+> **Státusz 2026-07-28: LEFUTOTT.** A Folia-kritikusok, a gyors javítások, a
+> reload-teljesség, a perzisztencia-szerződés (26 store hibapropagálás + 14 synchronized
+> save + király-lock + factions/kings fail-closed), az M-CONFIG-002 allowlist, a
+> leállítás-szigetelés, a totem crash-sweep és a PositionCache-alapú jutalom-megosztás
+> KÉSZ (✅-jelölések: PROJEKT-AUDIT; összefoglaló: CHANGELOG). A TransientEntities-blokkoló
+> érdemi részét már a 2026-07-26-i P0-F kör lezárta (heartbeat + fail-closed liveness +
+> watchdog) — a 0. fázis a maradékot pótolta. **Maradék, külön körre:** a claims.yml
+> loader fail-closed átállása, a H-ECON-001 pending-record terv és megvalósítás,
+> és az alacsony súlyú sáv (HUD/Parkour kick, purge-nélküli mapek, GUI-szövegek,
+> claims allow-séma).
+
 Kód-javítások, új feature nélkül. Tétel-hivatkozások: PROJEKT-AUDIT 2026-07-28-as szekció.
 
 - ⬜ **Folia-kritikusok:** TotemManager pulzus (1.) és PetManager célpont-kezelés (2.) —
@@ -178,10 +189,13 @@ Cél: az éles szerver megfigyelhetősége, mielőtt tartalom épül rá.
   Lezárult továbbá a piac/wallet/inventory tartós tranzakció (`storage/TransactionJournal`) és a
   tile-entity block-regen write-ahead journal (`storage/BlockRegenJournal`), valamint a
   `MobKillUtil` immutable `KillContext` átterve a FAUCET/PROGRESSION jutalom-utakon.
-  **Még nyitott:** a `TransientEntities`-re épülő world-event életciklus (a naiv fail-open
-  változat vissza lett vonva, mert esemény-deadlockot okozott — a feltételek a
-  `docs/ideas/PROJEKT-AUDIT.md`-ben), és a pozíció-alapú jutalom-megosztás (párt-XP, Vad
-  Hajsza personal loot), ami még az áldozat szálán olvas pozíciót. A 2026-07-28-i saját
+  **2026-07-28-i kód-validálás:** a `TransientEntities`-életciklus a 07-26-i P0-F körben
+  lezárult (heartbeat-alapú Handle + fail-closed liveness + MajorEventGate-watchdog; a 0.
+  fázis a shutdown-szigetelést és a totem crash-sweepet pótolta), a pozíció-alapú
+  jutalom-megosztás pedig a `PartyRewardResolver` (07-26) + a `PositionCache`-alapú
+  közelség-számítás (0. fázis) párossal zárult — e két korábbi blokkoló már NEM nyitott.
+  **Még nyitott kiadásblokkoló:** a bank/claim/adomány több-tartományos crash-ablak
+  (H-ECON-001 — pending-record terv a kivitelezési terv 0. fázis-maradékában). A 2026-07-28-i saját
   audit-kör és a feldolgozott külső mélyaudit további igazolt tételei (Folia-kapuk,
   perzisztencia-szerződés, config-guardok) szintén a `PROJEKT-AUDIT.md`-ben élnek — a
   javítási sorrend fent, az Összesített kivitelezési terv 0. fázisában. Playtesten
@@ -192,7 +206,7 @@ Cél: az éles szerver megfigyelhetősége, mielőtt tartalom épül rá.
     közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes (BACKLOG O6/O27).
     Ugyanez a duplikáció-osztály: `prefixAt` 20 fájlban (O4), kill-jutalom előszűrő 19 listenerben
     (O24), napi keret 5+ helyen (O25), hibakulcs→default switch 11+ osztályban (O26). A `utils/`
-    csomag már létezik (21 osztály, pl. `SpellTargetingUtil` — O5 így zárult le), tehát ez tisztán
+    csomag már létezik (22 osztály, pl. `SpellTargetingUtil` — O5 így zárult le), tehát ez tisztán
     mechanikus munka, nem architektúra-döntés.
   - ✅ MEGOLDVA — `ClaimManager` már debounce-ol: a 8 mutációs pont mind a `requestSave()`-et hívja
     (2 mp-es async coalescing flush a CurrencyManager mintájára), a szinkron teljes-fájl írás

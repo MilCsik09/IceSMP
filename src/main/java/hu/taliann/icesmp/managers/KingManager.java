@@ -85,8 +85,11 @@ public final class KingManager implements PersistentStore {
                 if (rawKing != null && !rawKing.isBlank()) {
                     try {
                         kings.put(faction, UUID.fromString(rawKing));
-                    } catch (final IllegalArgumentException ignored) {
-                        // Skip malformed UUIDs.
+                    } catch (final IllegalArgumentException malformed) {
+                        // Fail-closed: az átugrott király-rekordot a következő snapshot-mentés
+                        // végleg eltüntetné — karantén + indulás-megszakítás a néma vesztés helyett.
+                        hu.taliann.icesmp.storage.YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                "Érvénytelen király-UUID a kings.yml-ben: " + factionKey);
                     }
                 }
 
@@ -104,8 +107,11 @@ public final class KingManager implements PersistentStore {
                     for (final String voterKey : votesSection.getKeys(false)) {
                         try {
                             factionVotes.put(UUID.fromString(voterKey), UUID.fromString(votesSection.getString(voterKey, "")));
-                        } catch (final IllegalArgumentException ignored) {
-                            // Skip malformed entries.
+                        } catch (final IllegalArgumentException malformed) {
+                            // Fail-closed: az átugrott szavazat a következő mentéssel végleg elveszne.
+                            hu.taliann.icesmp.storage.YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                    "Érvénytelen szavazat-bejegyzés a kings.yml-ben: "
+                                            + factionKey + "." + voterKey);
                         }
                     }
                     votes.put(faction, factionVotes);

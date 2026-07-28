@@ -105,6 +105,34 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 ## 0. stabilitási fázis javításai (2026-07-28 — az új build része)
 
 > A kivitelezési terv 0. fázisa (ROADMAP). A tételszámok a PROJEKT-AUDIT 2026-07-28-as
-> szekciójára hivatkoznak. A szekció a fázis lezárásakor véglegesedik.
+> szekciójára hivatkoznak. Valódi build + mindkét regressziós suite zöld.
 
-- (folyamatban — a kész tételek itt lesznek felsorolva)
+**Folia szál-biztonság:**
+- Sámán-totem pulzus, pet cél-feloldás/aggro-keresés, világboss ZONE-telegráf:
+  régió-tulajdon kapu + scheduler-hop (1–3.); kazamata-kapu párttag-szűrés védőhálóval (4.).
+- Párt-közelség (XP-megosztás, personal loot) az új, játékos-szálon töltött
+  **PositionCache** tükörből számol — a régiófelosztás-függő jutalom-kimaradás megszűnt.
+- Totem crash-árva sweep: betöltéskor a nem követett, taggelt totem-állvány eltávolítása.
+
+**Perzisztencia és életciklus:**
+- 26 store mentési hibája a log után tovább is dobódik — a leállítás-koordinátor
+  hibagyűjtése így már látja (14.); a 14 nem-szinkronizált store-save synchronized.
+- Királyválasztás: az összetett szavazás→koronázás tranzakció lock alá került (16.).
+- factions.yml + kings.yml betöltés fail-closed karanténnal — hibás rekordot a mentés
+  többé nem tüntet el némán (15., részleges: a claims.yml külön kört vár).
+- Leállítás hibaszigetelt: `onDisable` try/finally + lépésenkénti hibagyűjtés — egy hibás
+  manager-shutdown nem viszi el a mentést és a takarítást (13.).
+
+**Élő-config és gameplay:**
+- `/icesmp reload` mostantól a recept-katalógust és a spell-VFX beállításokat is frissíti (5–6.).
+- Hazatérés-rituálé: az áldozat + cooldown csak SIKERES teleport után rögzül (17.).
+- GameModeCache cancelelt eventből nem frissül (18.); `/icesmp config set` nem fogad
+  NaN/Infinity számot (19.); a config-betöltés csak az allowlist fájljait merge-öli (20.).
+- PvP-n gazdát cserélt relikvia megtartja az ITEM_MODEL kinézetét (7.); affix-rollos
+  craftolt tárgyak megtartják a rollolt vanília raritás-fokot (8.).
+- Kick-rés zárva a relikvia- és katalizátor-stash mapeken (9.); `/faction set`
+  tab-complete (10.); `/afk` a parancs-referenciában (11.).
+
+**Nem része a körnek (tulaj-döntés / külön kör):** a scoreboard-réteg Folia-kérdése
+(12., félretéve), a bank/claim/adomány crash-ablak (H-ECON-001 pending-record),
+a claims.yml fail-closed loader és az alacsony súlyú sáv.

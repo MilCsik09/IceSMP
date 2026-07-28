@@ -2736,3 +2736,28 @@ Gyorsítás teszthez:
 - [ ] A vanilla, `unique:`, `recipe:` és `blueprint:` jutalmak működnek.
 - [ ] Két másolt Bingulus sem gyorsítja a jutalmazást; a manager egy hiteles példányt hagy meg.
 - [ ] Restart után megmarad a rész-progressz, a pending jutalom és a pity-számláló.
+
+## 0. stabilitási fázis — két-régiós Folia ellenőrzés (2026-07-28)
+
+Két teszter álljon egymástól távol (külön régió, ~200+ blokk), egy pedig a jelenség
+helyszínén. A konzolt végig figyeld `region`/`scheduler`/`IllegalStateException` stacktrace-re.
+
+- [ ] **Totem régióhatáron:** sámán rakjon totemet régióhatár közelébe úgy, hogy a
+      hatósugárba eső mob/játékos a szomszéd régióban áll — a buff/sebzés megérkezik,
+      konzol-hiba nélkül. Crash-teszt: aktív totemnél öld meg a szervert (kill -9),
+      restart után a totem-állvány NEM marad a világban.
+- [ ] **Pet távoli célponton:** a gazdi lövedékkel sebezzen távoli (másik régiós) mobot —
+      a pet nem dob hibát; ha a cél átfut a határon, a következő tickben újra felveszi.
+- [ ] **Világboss ZONE-special:** a bossnál a zóna-telegráf régióhatáron álló játékossal
+      is hibamentes.
+- [ ] **Párt-jutalom régióhatáron:** két párttag KÜLÖN régióban, sugáron belül — kincs
+      nyitásakor / mob-ölésnél MINDKETTEN kapnak (a korábbi néma kimaradás megszűnt).
+- [ ] **Hazatérés-rituálé kudarca:** érvénytelen fővárosnál / tiltott teleportnál a
+      2 ender pearl és a cooldown MEGMARAD, hibaüzenettel; sikeres útnál egyszer fogy.
+- [ ] **Reload-teljesség:** recept-ár módosítás + `/icesmp reload` → a recept-könyv az
+      új árat mutatja restart nélkül; `spell-vfx.enabled: false` + reload → a spell-VFX
+      azonnal eltűnik.
+- [ ] **Config-őrök:** `/icesmp config set` NaN-ra hibatűrő (nem lesz ingyen bolt-item);
+      egy bemásolt `zz-backup.yml` reload után warningot ad és NEM ír felül kulcsot.
+- [ ] **Sérült állapotfájl:** egy kézzel elrontott UUID a factions.yml-ben → az indulás
+      MEGÁLL, a fájl karanténba kerül, semmi nem íródik felül.

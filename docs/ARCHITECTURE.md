@@ -45,7 +45,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 21 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `utils/` | 22 | `MessageManager`, `ExperienceUtil`, egyebek. |
 | `integration/` | 7 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -416,8 +416,8 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 484 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 113 fájl).
-  Csomag-megoszlás: listeners 115, managers 113, commands 84, spells 56, gui 42, utils 21, data 12,
+- **Méret:** 485 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 113 fájl).
+  Csomag-megoszlás: listeners 115, managers 113, commands 84, spells 56, gui 42, utils 22, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
