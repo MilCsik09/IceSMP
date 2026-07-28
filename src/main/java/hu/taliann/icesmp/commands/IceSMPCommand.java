@@ -420,7 +420,13 @@ public final class IceSMPCommand implements BasicCommand {
             // fall through
         }
         try {
-            return Double.parseDouble(raw);
+            final double parsed = Double.parseDouble(raw);
+            // A parseDouble a NaN/Infinity tokent is elfogadja, azok viszont átcsúsznak a
+            // "> 0" ár- és súly-kapukon (NaN > 0 hamis → ingyenes vásárlás) — számként csak
+            // véges érték tárolható; a nem-véges bemenet sima stringként esik tovább.
+            if (Double.isFinite(parsed)) {
+                return parsed;
+            }
         } catch (final NumberFormatException ignored) {
             // fall through
         }

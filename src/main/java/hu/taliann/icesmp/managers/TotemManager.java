@@ -25,10 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Shaman totems: a placed, short-lived {@link ArmorStand} that pulses a themed effect to nearby
- * entities (heal/buff allies, or damage/debuff hostiles) on its OWN region scheduler, so the whole
- * thing is Folia-correct — the totem ticks and despawns on its region thread, and the pulse only
- * touches region-local nearby entities. Active totems are tracked and removed on plugin disable so
- * none survive a reload as orphans.
+ * entities (heal/buff allies, or damage/debuff hostiles) on its OWN region scheduler — the totem
+ * ticks and despawns on its region thread. A nearby entity can belong to a NEIGHBOURING region
+ * (the pulse radius may cross the border), so the pulse only touches owned entities directly and
+ * hops to the target's scheduler otherwise. Active totems are tracked and removed on plugin
+ * disable so none survive a reload as orphans.
  */
 public final class TotemManager {
 
@@ -175,7 +176,12 @@ public final class TotemManager {
                 return;
             }
             for (final Entity nearby : totem.getNearbyEntities(radius, radius, radius)) {
-                type.affect(nearby, durationTicks);
+                // A pulzus-sugár átnyúlhat régióhatáron — idegen entitást csak a saját szálán érintünk.
+                if (Bukkit.isOwnedByCurrentRegion(nearby)) {
+                    type.affect(nearby, durationTicks);
+                } else {
+                    nearby.getScheduler().run(plugin, hop -> type.affect(nearby, durationTicks), null);
+                }
             }
             totem.getWorld().spawnParticle(type.particle, totem.getLocation().add(0.0D, 1.0D, 0.0D),
                     10, 0.5D, 0.5D, 0.5D, 0.01D);

@@ -74,8 +74,12 @@ public final class PlayerSessionCleanupListener implements Listener {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer());
     }
 
-    /** A váltás az ÚJ értékkel érkezik, ezért nem a játékosból olvassuk, hanem az eventből. */
-    @EventHandler
+    /**
+     * A váltás az ÚJ értékkel érkezik, ezért nem a játékosból olvassuk, hanem az eventből.
+     * MONITOR + ignoreCancelled: egy későbbi listener cancelje után a tükör nem térhet el a
+     * tényleges játékmódtól — a kill-jutalom előszűrő ebből a tükörből dolgozik.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onGameModeChange(final PlayerGameModeChangeEvent event) {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer().getUniqueId(), event.getNewGameMode());
     }

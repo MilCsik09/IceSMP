@@ -393,6 +393,14 @@ public final class ProfessionRecipeBookListener implements Listener {
                 .getStringList("profession-recipes." + recipe.id() + ".result.attributes");
         if (hu.taliann.icesmp.items.ItemDataFactory.applyAttributeModifiers(result, attrSpecs)) {
             hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(result);
+            // Az applyAttributeModifiers meta-round-tripje a roll() által feltett RARITY
+            // data-komponenst is eldobta — a rollolt fokot vissza kell tenni, különben a
+            // vanília felület a Material alapértelmezett színfokát mutatja.
+            final String rolledRarity = affixService.rarityIdOf(result);
+            if (rolledRarity != null) {
+                hu.taliann.icesmp.items.ItemDataFactory.applyRarity(result,
+                        hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rolledRarity));
+            }
         }
         // P7 data-komponensek UTOLSÓnak (minden setItemMeta után) — a signature-ételek
         // fix-effektű buffja a CONSUMABLE-be kerül (a FactionFoodListener a food_v2 jelölő

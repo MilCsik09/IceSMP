@@ -173,8 +173,17 @@ public final class DungeonGateListener implements Listener {
                         continue;
                     }
                     final Player member = org.bukkit.Bukkit.getPlayer(memberId);
-                    if (member == null || !member.getWorld().equals(player.getWorld())
-                            || member.getLocation().distanceSquared(player.getLocation()) > 16.0D * 16.0D) {
+                    if (member == null) {
+                        continue;
+                    }
+                    try {
+                        if (!member.getWorld().equals(player.getWorld())
+                                || member.getLocation().distanceSquared(player.getLocation()) > 16.0D * 16.0D) {
+                            continue;
+                        }
+                    } catch (final Exception ignored) {
+                        // Kereszt-régiós olvasás nem elérhető Folián — nem közelinek vesszük
+                        // (a PartyManager ugyanezt a védőhálót használja).
                         continue;
                     }
                     member.getScheduler().run(plugin, task -> {

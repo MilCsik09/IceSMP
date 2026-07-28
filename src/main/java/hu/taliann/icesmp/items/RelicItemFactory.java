@@ -111,6 +111,12 @@ public final class RelicItemFactory {
         final ItemMeta meta = itemStack.getItemMeta();
         meta.getPersistentDataContainer().set(relicOwnerKey, PersistentDataType.STRING, owner.toString());
         itemStack.setItemMeta(meta);
+        // A setItemMeta a data-komponenseket eldobja — az ITEM_MODEL-t utolsóként vissza kell
+        // tenni, különben a PvP-n gazdát cserélt relikvia a vanília kinézetre esik vissza.
+        final String relicType = getRelicType(itemStack);
+        if (relicType != null) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:relic_" + relicType);
+        }
     }
 
     public void refresh(final ItemStack itemStack, final RelicDefinition definition) {

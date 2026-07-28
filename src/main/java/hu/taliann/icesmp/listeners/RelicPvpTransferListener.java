@@ -160,7 +160,17 @@ public final class RelicPvpTransferListener implements Listener {
      */
     @EventHandler
     public void onQuit(final org.bukkit.event.player.PlayerQuitEvent event) {
-        final List<ItemStack> kept = keptRelics.remove(event.getPlayer().getUniqueId());
+        clearStash(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onKick(final org.bukkit.event.player.PlayerKickEvent event) {
+        // PlayerKickEvent does not reliably chain to PlayerQuitEvent — clear here too.
+        clearStash(event.getPlayer().getUniqueId());
+    }
+
+    private void clearStash(final java.util.UUID playerId) {
+        final List<ItemStack> kept = keptRelics.remove(playerId);
         if (kept == null || kept.isEmpty()) {
             return;
         }

@@ -86,4 +86,10 @@ public final class CatalystProtectionListener implements Listener {
         // re-obtainable (a Fa újat ád — Job GUI / givecatalyst), so dropping it is safe.
         keptOnDeath.remove(event.getPlayer().getUniqueId());
     }
+
+    @EventHandler
+    public void onKick(final org.bukkit.event.player.PlayerKickEvent event) {
+        // PlayerKickEvent does not reliably chain to PlayerQuitEvent — clear here too.
+        keptOnDeath.remove(event.getPlayer().getUniqueId());
+    }
 }

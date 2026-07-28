@@ -603,7 +603,17 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             return null;
         }
         final Entity entity = Bukkit.getEntity(id);
-        if (!(entity instanceof LivingEntity living) || living.isDead() || !living.isValid()
+        if (!(entity instanceof LivingEntity living)) {
+            combatTargets.remove(ownerId);
+            return null;
+        }
+        // A cél lehet szomszéd régióé — állapotát (pozíció, világ, életjel) csak birtokolt
+        // szálon olvassuk; idegen régióban lévő célt ebben a tickben kihagyunk, a bejegyzés
+        // marad és a következő tickben újra-feloldódik.
+        if (!Bukkit.isOwnedByCurrentRegion(living)) {
+            return null;
+        }
+        if (living.isDead() || !living.isValid()
                 || living.getUniqueId().equals(ownerId)
                 || !living.getWorld().equals(ownerWorld)
                 || living.getLocation().distanceSquared(ownerLoc) > leash * leash) {
@@ -621,7 +631,9 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         LivingEntity best = null;
         double bestSq = aggro * aggro;
         for (final Entity nearby : pet.getNearbyEntities(aggro, aggro, aggro)) {
-            if (!(nearby instanceof Monster monster) || monster.isDead() || !monster.isValid()
+            // Az aggro-sugár átnyúlhat régióhatáron — idegen régió mobját nem olvassuk/célozzuk.
+            if (!(nearby instanceof Monster monster) || !Bukkit.isOwnedByCurrentRegion(monster)
+                    || monster.isDead() || !monster.isValid()
                     || minionManager.isOwnedBy(monster, ownerId)) {
                 continue;
             }

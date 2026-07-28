@@ -1335,8 +1335,15 @@ public final class IceSMPCore {
             relicManager.load();
             mobScalingManager.load();
             craftingRestrictionManager.load();
+            professionRecipeCatalog.load();
             achievementManager.reload();
             devItemManager.refreshOnlineOwner();
+            // A spell-VFX statikus mezőkbe cache-el — reload nélkül az enable-kori érték
+            // ragadna be, pedig a VFX-kikapcsolás tipikus élő TPS-mentő beavatkozás.
+            hu.taliann.icesmp.utils.SpellVfx.configure(
+                    configManager.getBoolean("spell-vfx.enabled", true),
+                    configManager.getInt("spell-vfx.max-points", 48));
+            configureSpellVfxPalettes();
         });
         // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
         // leggyakoribb kulcsokhoz — az override-fájlba ír, restart nélkül él.
