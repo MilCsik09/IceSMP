@@ -1,0 +1,48 @@
+name: Bootstrap IceSMP source export
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    name: Export exact source tree
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Record source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD | tee SOURCE_HEAD.txt
+          git status --short
+
+      - name: Package repository source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude='.git' \
+            --exclude='.gradle' \
+            --exclude='build' \
+            --exclude='run' \
+            -czf /tmp/icesmp-source.tar.gz .
+          test -s /tmp/icesmp-source.tar.gz
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-source-f9e1db97
+          path: /tmp/icesmp-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
