@@ -93,6 +93,57 @@ economy/factions/world/relics/professions configok ellen) mind egyeznek. A Guide
 (Bingulus-doksi) tartalma a #39-es egyszerűsítés után is helytálló (pity/pending/
 `reward-interval-seconds` mind él).
 
+### Külső mélyaudit feldolgozása (10403f8, 2026-07-27 — leletek kézzel visszaigazolva)
+
+A tulaj által kapott külső audit 14 leletéből 12 a kódban megerősítve; a már nálunk
+dokumentált tételeket nem duplikáljuk (H-ECON-001 = perzisztencia-atomicitás blokkoló;
+M-FOLIA-001 = pozíció-alapú jutalom-megosztás; M-PERSIST-002 = save()-szinkron;
+L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
+
+12. 🔕 TULAJ-DÖNTÉSRE FÉLRETÉVE (2026-07-28: „egyelőre ignoráljuk") — **H-FOLIA-001:
+    a HUD-oldalsáv + tablist a Folia által hivatalosan töröttnek jelölt scoreboard API-ra
+    épül.** A Folia README kimondja: „ALL scoreboard API is considered broken"; a
+    `HudManager.ownBoard` (`:224-232`) saját boardot/objective-et épít, a TablistManager
+    teameket, a sidebar alapból be van kapcsolva, `folia-supported: true` mellett.
+    Javasolt irány (ha újra elővesszük): Folia-detektáláskor a scoreboard-réteg
+    alapértelmezett kikapcsolása, a meglévő Adventure/PAPI-rétegek megtartásával.
+13. ⬜ **H-LIFE-001: a leállítási lánc nem hibaszigetelt.** Az `IceSMP.onDisable`-ben nincs
+    try/finally (egy dobó `core.disable()` után a `TransientEntities.shutdown()` kimarad),
+    az `IceSMPCore.disable()` törzsében 0 try/catch. Árnyalat: a store-mentési hurok a
+    koordinátorban MÁR per-store hibagyűjtéses — a rés a manager-leállítás/UI-takarítás
+    szigeteletlensége, plusz a 14. tétel.
+14. ⬜ **M-PERSIST-001: több store elnyeli az írási hibát.** Pl. `FactionManager.save()`
+    catch-eli az IOException-t és csak logol → a koordinátor per-store hibagyűjtése vakon
+    marad. → logolás után dobjuk tovább (UncheckedIOException), a koordinátor a gyűjtő.
+15. ⬜ **M-PERSIST-003: szemantikai hibát a loader átugrik, a következő mentés véglegesít.**
+    Pl. `FactionManager.load()` a rossz UUID-t warninggal kihagyja, a save memóriából
+    újraír → a kézzel javítható rekord elvész. → a wallet fail-closed/karantén mintája.
+16. ⬜ **M-POL-001: királyválasztás versenyhelyzet.** A `KingManager`-ben nulla
+    `synchronized`; a lejárat→szavazat→összeszámlálás→koronázás összetett átmenetet csak
+    ConcurrentHashMap-ek védik → dupla koronázás / elvesző szavazat lehetséges.
+    → frakciónkénti lock a kritikus szakaszra.
+17. ⬜ **M-GAME-001: a hazatérés-rituálé a teleport eredménye előtt fogyaszt.** A `tryHome`
+    (`RitualManager.java:349-379`) a `teleportAsync` future-jét eldobja és azonnal true-t
+    ad → sikertelen teleportnál is elfogy az áldozat + indul a cooldown. → completion-alapú
+    fogyasztás a HOME ágon.
+18. ⬜ **M-GAME-002: a GameModeCache cancelelt eventből is frissül.** Csupasz
+    `@EventHandler` (`PlayerSessionCleanupListener.onGameModeChange`) — másik plugin
+    MONITOR-cancelje után a cache és a valós gamemode széttart, a kill-jutalom előszűrő
+    a cache-ből dolgozik. → `priority = MONITOR, ignoreCancelled = true`.
+19. ⬜ **M-CONFIG-001: a `/icesmp config set` elfogadja a NaN/Infinity értéket.**
+    `Double.parseDouble` isFinite-guard nélkül (`IceSMPCommand.java:423`); a
+    `ShopManager.buy`-ban `NaN > 0` hamis → a levonás kimarad, de az item kiadódik
+    (admin-jogot igényel). → `Double.isFinite` guard a parserben + ár/súly-határokon.
+20. ⬜ **M-CONFIG-002: a ConfigManager MINDEN .yml-t merge-öl a config-könyvtárból.**
+    A `CONFIG_FILES` allowlist csak a kicsomagoláshoz használt; betöltéskor
+    `listFiles(*.yml)` fut → egy bemásolt backup észrevétlenül felülír kulcsokat.
+    → az allowlist legyen a betöltési lista is; ismeretlen fájl = warning.
+    ELŐFELTÉTELE a live-ops preset iránynak.
+
+**Téves lelet (nem vezetjük):** L-DOC-001 „a teaser 31 specet ír" — a repo `TEASER.md`-je
+35-öt ír (az auditor egy régebbi, feltöltött teaserrel dolgozott); az `[IP]`/`[DÁTUM]`
+placeholder a fájl saját fejléce szerint szándékos, launchkor töltendő.
+
 ---
 
 ## P2 — Teljes gameplay-audit, 2. kör (2026-07-21, 14 szempont, több-agentes mélyvizsgálat)
