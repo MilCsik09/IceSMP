@@ -11,8 +11,12 @@
 > egyenként KÉZZEL visszaigazolva a kódban. Kiindulás: valódi `./gradlew build` zöld
 > (a DEV-item- és PersistentStore-regressziós tesztek is), a master CI zöld, az ág a
 > master csúcsán. A `check_consistency.py` 6 doksi-szám FAIL-jét ez a kör javította
-> (88 manager, 484 fájl); az 5 tükör-WARN (PLAYTEST, RESOURCE_PACK_CMD, FEATURES,
-> LORE, LORE_REFERENCE — az IceSMP-oldal az újabb) külön tükör-körre vár.
+> (88 manager, 484 fájl). Az 5 tükör-WARN-t + a script által nem figyelt 11 lemaradt
+> player-guide tükröt a 2026-07-28-i tükör-kör rendezte (sehol nem volt Guides-oldali
+> önálló tartalom). A 🔜 tesztelői jelölés-réteg tulaj-döntésre KIVEZETVE; a
+> `check_consistency.py` azóta MINDEN tükör-fájlt tartalomra ellenőriz (player-guide
+> számozott oldalak, `docs/IDEAS.md`, `ideas/*` is). A Guides #7 PR (Bingulus-doksi)
+> a tükör-kör után redundáns — tartalma szó szerint bekerült a kanonikus másolatokkal.
 
 ### 🔴 Kritikus (Folia szál-biztonság)
 

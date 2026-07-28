@@ -187,7 +187,14 @@ MIRROR = [
     ("docs/FEATURES.md", "FEATURES.md"),
     ("docs/LORE.md", "lore/LORE.md"),
     ("docs/LORE_REFERENCE.md", "lore/LORE_REFERENCE.md"),
+    ("docs/IDEAS.md", "ideas/README.md"),
 ]
+# A számozott player-guide oldalak is szó szerinti tükrök (a 🔜 tesztelői réteg
+# 2026-07-28-án kivezetve), így ugyanazzal a tartalom-összevetéssel ellenőrizhetők.
+MIRROR += sorted(
+    (f"docs/player-guide/{os.path.basename(p)}", os.path.basename(p))
+    for p in glob.glob(os.path.join(REPO, "docs/player-guide/[0-9]*.md"))
+)
 if os.path.isdir(GUIDES):
     for src_rel, dst_rel in MIRROR:
         a, b = os.path.join(REPO, src_rel), os.path.join(GUIDES, dst_rel)
@@ -202,6 +209,10 @@ if os.path.isdir(GUIDES):
     ideas_b.discard("README.md")  # az a docs/IDEAS.md tükre, nem ideas-fájl
     for extra in sorted(ideas_a ^ ideas_b):
         warn(f"tükör: ideas/{extra} csak az egyik repóban létezik")
+    for name in sorted(ideas_a & ideas_b):
+        a, b = os.path.join(REPO, "docs/ideas", name), os.path.join(GUIDES, "ideas", name)
+        if read(a) != read(b):
+            warn(f"tükör-drift: docs/ideas/{name} != Guides/ideas/{name} — tükrözés kell")
 
 # ---------- 7. recept-hozzávaló szint-sorrend ----------
 # Egy recept nem nyílhat korábban, mint amikor a unique hozzávalója termelhetővé válik.
