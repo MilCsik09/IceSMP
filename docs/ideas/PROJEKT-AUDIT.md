@@ -124,7 +124,7 @@ L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
     `synchronized`; a lejárat→szavazat→összeszámlálás→koronázás összetett átmenetet csak
     ConcurrentHashMap-ek védik → dupla koronázás / elvesző szavazat lehetséges.
     → frakciónkénti lock a kritikus szakaszra.
-17. ✅ KÉSZ (0. fázis + PR-review kör: fogyasztás induláskor, sikertelen teleportnál refund + nincs cooldown) — **M-GAME-001: a hazatérés-rituálé a teleport eredménye előtt fogyaszt.** A `tryHome`
+17. ✅ KÉSZ (0. fázis + PR-review kör: fogyasztás induláskor, sikertelen teleportnál refund + nincs cooldown; a teleport közbeni kilépés/leállás tulaj-döntésre elfogadott, nem blokkoló edge case — a reservation-réteg egyszerűség okán visszavéve) — **M-GAME-001: a hazatérés-rituálé a teleport eredménye előtt fogyaszt.** A `tryHome`
     (`RitualManager.java:349-379`) a `teleportAsync` future-jét eldobja és azonnal true-t
     ad → sikertelen teleportnál is elfogy az áldozat + indul a cooldown. → completion-alapú
     fogyasztás a HOME ágon.
