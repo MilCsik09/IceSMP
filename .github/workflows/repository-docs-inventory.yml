@@ -1,0 +1,229 @@
+name: Repository Docs Inventory
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Base Git ref for the release inventory
+        required: true
+        default: 49cb32740629f3d91a08b753436f3e16d33a494d
+        type: string
+      head_ref:
+        description: Head Git ref for the release inventory
+        required: true
+        default: master
+        type: string
+      strict_docs:
+        description: Enforce 100% documentation coverage and zero review-required findings
+        required: true
+        default: false
+        type: boolean
+      generate_release_delta:
+        description: Generate the full base/head release inventory
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  inventory:
+    name: Repository and documentation inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.head_ref || github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Resolve base and head commits
+        id: refs
+        shell: bash
+        env:
+          DISPATCH_BASE: ${{ inputs.base_ref }}
+          DISPATCH_HEAD: ${{ inputs.head_ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          resolve_ref() {
+            local requested="$1"
+            local candidate
+            for candidate in "$requested" "origin/$requested"; do
+              if git rev-parse --verify --quiet "${candidate}^{commit}" >/dev/null; then
+                git rev-parse --verify "${candidate}^{commit}"
+                return 0
+              fi
+            done
+            echo "Unresolvable Git ref: $requested" >&2
+            return 1
+          }
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            BASE_SHA=$(resolve_ref "$DISPATCH_BASE")
+            HEAD_SHA=$(resolve_ref "$DISPATCH_HEAD")
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
+            HEAD_SHA=$(resolve_ref "$PR_HEAD_SHA")
+          else
+            HEAD_SHA=$(git rev-parse HEAD)
+            if [[ -n "${PUSH_BEFORE_SHA:-}" && ! "$PUSH_BEFORE_SHA" =~ ^0+$ ]]; then
+              BASE_SHA=$(resolve_ref "$PUSH_BEFORE_SHA")
+            else
+              BASE_SHA=$(git rev-parse HEAD^)
+            fi
+          fi
+
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "Base: $BASE_SHA"
+          echo "Head: $HEAD_SHA"
+
+      - name: Tooling self-tests
+        id: tests
+        continue-on-error: true
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+
+      - name: Generate head repository inventory
+        id: repository_inventory
+        continue-on-error: true
+        run: >-
+          python3 scripts/generate_repository_inventory.py
+          --root .
+          --output build/repository-inventory
+          --mode report
+
+      - name: Check documentation coverage (report mode)
+        id: report_coverage
+        continue-on-error: true
+        run: >-
+          python3 scripts/check_documentation_coverage.py
+          --root .
+          --inventory build/repository-inventory/repository-inventory.json
+          --output build/repository-inventory
+          --mode report
+
+      - name: Generate pull request or manual release delta
+        id: release_inventory
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.generate_release_delta)
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/generate_release_inventory.py
+          --root .
+          --base-ref "${{ steps.refs.outputs.base_sha }}"
+          --head-ref "${{ steps.refs.outputs.head_sha }}"
+          --output build/release-inventory
+
+      - name: Check documentation coverage (strict mode)
+        id: strict_coverage
+        if: github.event_name == 'workflow_dispatch' && inputs.strict_docs
+        continue-on-error: true
+        run: >-
+          python3 scripts/check_documentation_coverage.py
+          --root .
+          --inventory build/repository-inventory/repository-inventory.json
+          --output build/repository-inventory
+          --mode strict
+
+      - name: Check generated JSON
+        id: json_integrity
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          files = sorted(Path("build").rglob("*.json"))
+          if not files:
+              raise SystemExit("No JSON artifact was generated")
+          for path in files:
+              with path.open(encoding="utf-8") as handle:
+                  json.load(handle)
+          print(f"Validated {len(files)} JSON files")
+          PY
+
+      - name: Write mobile-friendly Actions Summary
+        if: always()
+        shell: bash
+        env:
+          ARTIFACT_NAME: repository-docs-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          {
+            if [[ -f build/repository-inventory/summary.md ]]; then
+              cat build/repository-inventory/summary.md
+            else
+              echo "# Repository Documentation Inventory"
+              echo
+              echo "**Result: FAIL**"
+              echo
+              echo "Repository inventory summary was not generated."
+            fi
+            echo
+            echo "## Compared refs"
+            echo
+            echo "- Base: \`${{ steps.refs.outputs.base_sha }}\`"
+            echo "- Head: \`${{ steps.refs.outputs.head_sha }}\`"
+            echo "- Artifact: \`${ARTIFACT_NAME}\`"
+            if [[ -f build/release-inventory/summary.md ]]; then
+              echo
+              cat build/release-inventory/summary.md
+            fi
+            echo
+            echo "## Workflow checks"
+            echo
+            echo "| Check | Outcome |"
+            echo "| --- | --- |"
+            echo "| Tooling self-tests | ${{ steps.tests.outcome }} |"
+            echo "| Repository inventory | ${{ steps.repository_inventory.outcome }} |"
+            echo "| Coverage report | ${{ steps.report_coverage.outcome }} |"
+            echo "| Release inventory | ${{ steps.release_inventory.outcome || 'skipped' }} |"
+            echo "| Strict coverage | ${{ steps.strict_coverage.outcome || 'skipped' }} |"
+            echo "| JSON integrity | ${{ steps.json_integrity.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload inventory artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-docs-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce blocking policy
+        if: always()
+        shell: bash
+        env:
+          TESTS: ${{ steps.tests.outcome }}
+          INVENTORY: ${{ steps.repository_inventory.outcome }}
+          REPORT: ${{ steps.report_coverage.outcome }}
+          RELEASE: ${{ steps.release_inventory.outcome }}
+          STRICT: ${{ steps.strict_coverage.outcome }}
+          JSON: ${{ steps.json_integrity.outcome }}
+        run: |
+          set -euo pipefail
+          failed=0
+          for outcome in "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
+            [[ "$outcome" == "success" ]] || failed=1
+          done
+          if [[ -n "$RELEASE" && "$RELEASE" != "success" && "$RELEASE" != "skipped" ]]; then failed=1; fi
+          if [[ -n "$STRICT" && "$STRICT" != "success" && "$STRICT" != "skipped" ]]; then failed=1; fi
+          exit "$failed"
