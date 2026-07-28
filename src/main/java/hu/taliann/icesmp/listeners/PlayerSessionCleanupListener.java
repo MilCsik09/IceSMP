@@ -29,6 +29,7 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final List<PlayerStateCleanup> stateOwners;
     /** Spells are cleaned via the registry, so a new stateful spell needs no change here. */
     private final SpellRegistry spellRegistry;
+    private final hu.taliann.icesmp.managers.InvseeManager invseeManager;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -47,6 +48,8 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.AfkManager afkManager,
                                         final hu.taliann.icesmp.managers.SitManager sitManager,
                                         final hu.taliann.icesmp.managers.ModerationManager moderationManager,
+                                        final hu.taliann.icesmp.managers.VanishManager vanishManager,
+                                        final hu.taliann.icesmp.managers.InvseeManager invseeManager,
                                         final hu.taliann.icesmp.managers.WhisperManager whisperManager,
                                         final hu.taliann.icesmp.managers.GuildManager guildManager,
                                         final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager,
@@ -59,9 +62,10 @@ public final class PlayerSessionCleanupListener implements Listener {
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 metelytepoManager, relicManager, craftingRestrictionManager, resourceManager, partyManager,
                 claimManager, territoryManager, petManager, ritualManager, professionManager,
-                afkManager, sitManager, moderationManager, whisperManager, guildManager,
+                afkManager, sitManager, moderationManager, vanishManager, invseeManager, whisperManager, guildManager,
                 honorDuelManager, spyManager, combatTagManager, classHealthService, lowHealthBorderListener);
         this.spellRegistry = spellRegistry;
+        this.invseeManager = invseeManager;
     }
 
     /**
@@ -74,6 +78,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer());
         hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(),
                 event.getPlayer().getLocation());
+        invseeManager.restorePending(event.getPlayer());
     }
 
     /**
