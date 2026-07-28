@@ -196,7 +196,7 @@ public final class FactionTreasuryManager implements PersistentStore {
         } catch (final IOException exception) {
             plugin.getLogger().severe(
                     "Failed to save faction treasury: " + exception.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save faction treasury", exception);
+            return false;
         }
     }
 

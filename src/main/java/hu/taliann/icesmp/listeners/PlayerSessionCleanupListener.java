@@ -107,8 +107,9 @@ public final class PlayerSessionCleanupListener implements Listener {
         cleanupPlayerState(event.getPlayer().getUniqueId());
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerKick(final PlayerKickEvent event) {
+        // Cancelelt kicknél a játékos online marad — a session-állapot nem takarítható el.
         cleanupPlayerState(event.getPlayer().getUniqueId());
     }
 

@@ -331,10 +331,6 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
                 return "claim-insufficient";
             }
-            // A fizetés és a claim-létrejötte két külön tartóssági tartomány (wallet + claims
-            // fájl) — mindkettőt még ebben a hívásban rögzítjük, hogy a debounce-ablakban egy
-            // crash ne hagyhasson fizetés nélküli claimet vagy claim nélküli levonást.
-            currencyManager.save();
         }
 
         final int minY = Math.max(world.getMinHeight(), anchorY - defaultDepth());
@@ -344,8 +340,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 player.getUniqueId(), player.getName(), System.currentTimeMillis());
         claims.put(claim.id, claim);
         rebuildIndex();
-        // Fizetős művelet záró fele — szinkron mentés, ne a 2 mp-es coalescing flush-ra várjon.
-        save();
+        requestSave();
         return null;
     }
 
@@ -564,9 +559,6 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
                 return "claim-insufficient";
             }
-            // Fizetős művelet — a wallet-levonás és a bővített claim együtt, még ebben a
-            // hívásban rögzül tartósan (lásd a createClaim azonos indoklását).
-            currencyManager.save();
         }
 
         final Claim extended = new Claim(claim.id, claim.world, claim.minX, newMinY, claim.minZ,
@@ -574,7 +566,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         extended.trusted.addAll(claim.trusted);
         claims.put(claim.id, extended);
         rebuildIndex();
-        save();
+        requestSave();
         return null;
     }
 

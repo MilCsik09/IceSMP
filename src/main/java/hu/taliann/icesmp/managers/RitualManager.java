@@ -374,6 +374,17 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         if (!homeInFlight.add(player.getUniqueId())) {
             return;
         }
+        // Az áldozat MOST fogy el (a játékos saját szálán) — ha csak érkezéskor fogyna, az
+        // aszinkron ablakban kidobott/elrakott hozzávalókkal a rituálé ingyenessé válna.
+        // Sikertelen teleportnál a hozzávalók visszajárnak (refund), a cooldown nem indul.
+        if (!consume(player, sacrifices)) {
+            homeInFlight.remove(player.getUniqueId());
+            player.sendMessage(messageManager.getMessage(
+                    "ritual-missing-sacrifice",
+                    "<red>Hiányoznak az áldozati tárgyak a rituáléhoz.</red>"
+            ));
+            return;
+        }
         final float yaw = player.getLocation().getYaw();
         final float pitch = player.getLocation().getPitch();
         // The highest-block lookup reads the capital's chunk — it must run on the DESTINATION region's
@@ -384,17 +395,14 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
                     .whenComplete((success, failure) -> player.getScheduler().run(plugin, done -> {
                         homeInFlight.remove(player.getUniqueId());
                         if (failure != null || success == null || !success) {
+                            refundSacrifices(player, sacrifices);
                             player.sendMessage(messageManager.getMessage(
                                     "ritual-home-failed",
-                                    "<red>Az oltár fénye kihunyt — a hazatérés nem sikerült, az áldozatod megmaradt.</red>"
+                                    "<red>Az oltár fénye kihunyt — a hazatérés nem sikerült, az áldozatodat visszakaptad.</red>"
                             ));
                             return;
                         }
                         AdvancementService.award(player, "first_ritual");
-                        if (!consume(player, sacrifices)) {
-                            plugin.getLogger().severe("Rituálé-áldozat nem fogyott el: " + ritualId
-                                    + " (" + player.getName() + ")");
-                        }
                         if (cooldownSeconds > 0L) {
                             cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())
                                     .put(ritualId, System.currentTimeMillis() + cooldownSeconds * 1000L);
@@ -406,6 +414,19 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
                         playSuccessEffect(player, "home");
                     }, () -> homeInFlight.remove(player.getUniqueId())));
         });
+    }
+
+    /** Az elbukott hazatérés előre elfogyasztott áldozatának visszaadása (a maradék a földre esik). */
+    private void refundSacrifices(final Player player, final Map<Material, Integer> sacrifices) {
+        for (final Map.Entry<Material, Integer> entry : sacrifices.entrySet()) {
+            int remaining = entry.getValue();
+            while (remaining > 0) {
+                final int stack = Math.min(entry.getKey().getMaxStackSize(), remaining);
+                player.getInventory().addItem(new ItemStack(entry.getKey(), stack)).values()
+                        .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
+                remaining -= stack;
+            }
+        }
     }
 
     /** Validates every "dx,dy,dz:MATERIAL" offset against the blocks around the core. */

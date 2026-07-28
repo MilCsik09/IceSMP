@@ -237,7 +237,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season.yml: " + exception.getMessage());
-            throw new java.io.UncheckedIOException("Failed to save season.yml", exception);
+            return false;
         }
     }
 

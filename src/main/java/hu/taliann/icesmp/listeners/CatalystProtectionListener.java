@@ -87,9 +87,10 @@ public final class CatalystProtectionListener implements Listener {
         keptOnDeath.remove(event.getPlayer().getUniqueId());
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onKick(final org.bukkit.event.player.PlayerKickEvent event) {
         // PlayerKickEvent does not reliably chain to PlayerQuitEvent — clear here too.
+        // MONITOR + ignoreCancelled: cancelelt kicknél a játékos marad, a stash nem törölhető.
         keptOnDeath.remove(event.getPlayer().getUniqueId());
     }
 }

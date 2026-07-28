@@ -363,18 +363,16 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
                 contents[slot] = null;
             }
             if (total > 0.0D) {
-                // Előbb a veret kerül ki az inventoryból, aztán rögzül tartósan a jóváírás:
-                // crashnél a playerdata jellemzően NEM mentődik (a veret visszaáll), a fordított
-                // sorrend viszont tartós jóváírás + visszaálló veret dupét adna. A szinkron
-                // mentés a köztes playerdata-mentés + crash beadott-veret-nyelését zárja.
-                inventory.setContents(contents);
                 for (final Map.Entry<CurrencyType, Double> entry : pending.entrySet()) {
                     adjustBalanceUnsafe(player.getUniqueId(), entry.getKey(), entry.getValue());
                 }
-                save();
+                inventory.setContents(contents);
             }
             return total;
         }, 0.0D);
+        if (deposited > 0.0D) {
+            requestSave();
+        }
         return deposited;
     }
 
@@ -413,18 +411,12 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
             if (!tryDeductUnsafe(player.getUniqueId(), resolvedType, amount)) {
                 return false;
             }
-            // A levonás TARTÓSAN rögzül, mielőtt a fizikai veret kézbe kerül — a debounced
-            // flush 2 mp-es ablakában egy köztes playerdata-mentés + crash a régi egyenleget
-            // ÉS a kiadott veretet együtt hagyta volna meg (dupe). Kis atomi írás a hívó
-            // szálán — a market-journal prepare ugyanígy dolgozik.
-            save();
-            if (YamlStore.hasCriticalWriteFailure()) {
-                adjustBalanceUnsafe(player.getUniqueId(), resolvedType, amount);
-                return false;
-            }
             giveCurrency(player, resolvedType, amount);
             return true;
         }, false);
+        if (success) {
+            requestSave();
+        }
         return success;
     }
 

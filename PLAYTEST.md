@@ -2761,7 +2761,7 @@ helyszínén. A konzolt végig figyeld `region`/`scheduler`/`IllegalStateExcepti
       egy bemásolt `zz-backup.yml` reload után warningot ad és NEM ír felül kulcsot.
 - [ ] **Sérült állapotfájl:** egy kézzel elrontott UUID a factions.yml-ben → az indulás
       MEGÁLL, a fájl karanténba kerül, semmi nem íródik felül.
-- [ ] **Gazdasági crash-teszt (H-ECON-001):** `/bank kivet 100` után AZONNAL öld meg a
+- [ ] **Gazdasági crash-teszt (H-ECON-001 — a WAL-kör átvételi tesztje, addig VÁRHATÓAN BUKIK):** `/bank kivet 100` után AZONNAL öld meg a
       szervert (kill -9) — restart után az egyenleg a levont érték, dupla pénz nincs
       (a veret a crash miatt veszhet el, de nem duplázódik). Ugyanez befizetésre:
       a beadott veret vagy a számlán van, vagy visszakerült — sosem tűnik el nyomtalanul.

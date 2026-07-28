@@ -125,7 +125,8 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 **Élő-config és gameplay:**
 - `/icesmp reload` mostantól a recept-katalógust és a spell-VFX beállításokat is frissíti (5–6.).
-- Hazatérés-rituálé: az áldozat + cooldown csak SIKERES teleport után rögzül (17.).
+- Hazatérés-rituálé: az áldozat induláskor fogy el, sikertelen teleportnál refund +
+  nincs cooldown — se ingyen-teleport, se igazságtalan veszteség (17.).
 - GameModeCache cancelelt eventből nem frissül (18.); `/icesmp config set` nem fogad
   NaN/Infinity számot (19.); a config-betöltés csak az allowlist fájljait merge-öli (20.).
 - PvP-n gazdát cserélt relikvia megtartja az ITEM_MODEL kinézetét (7.); affix-rollos
@@ -133,16 +134,13 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 - Kick-rés zárva a relikvia- és katalizátor-stash mapeken (9.); `/faction set`
   tab-complete (10.); `/afk` a parancs-referenciában (11.).
 
-**Gazdasági crash-ablak (H-ECON-001) — szinkron-commit kör:**
-- Bank-kifizetés: az egyenleg-levonás tartósan rögzül, MIELŐTT a fizikai veret kézbe
-  kerül (írási hibánál automatikus visszatérítés, veret nélkül).
-- Bank-befizetés: előbb kerül ki a veret az inventoryból, aztán rögzül tartósan a
-  jóváírás — mindkét irányban a veszteség-kerülő sorrend.
-- Fizetős claim (létrehozás + Y-bővítés): a wallet-levonás ÉS a claim még a hívásban,
-  tartósan mentődik — nincs fizetés nélküli claim / claim nélküli levonás debounce-ablak.
-- Adomány-láda: a be- és kivét bejegyzése azonnal tartós (dupe/nyelés-ablak zárva).
-- Maradó rés: az inventory (playerdata) és a saját fájl közti ezredmásodperces ablak —
-  formális WAL csak akkor, ha a process-kill playtest indokolja.
+**Gazdasági crash-ablak (H-ECON-001):** a szinkron-commit kísérlet PR-review alapján
+visszavonva (teljes wallet/claim snapshot írása régió-szálon nem elfogadható, és a
+két-fájlos írást nem is tette atomivá) — a blokkoló NYITVA marad, az elfogadott irány
+a szűk WAL/pending-record a market-journal mintájára (külön kör). A hazatérés-rituálé
+viszont végleges formát kapott: az áldozat induláskor fogy el, sikertelen teleportnál
+visszajár (refund) és a cooldown sem indul — se ingyen-teleport, se ingyen-veszteség.
 
 **Nem része a körnek (tulaj-döntés / külön kör):** a scoreboard-réteg Folia-kérdése
-(12., félretéve), a claims.yml fail-closed loader és az alacsony súlyú sáv.
+(12., félretéve), a H-ECON-001 WAL, a claims.yml fail-closed loader és az alacsony
+súlyú sáv.

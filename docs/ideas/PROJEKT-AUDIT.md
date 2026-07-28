@@ -97,9 +97,8 @@ economy/factions/world/relics/professions configok ellen) mind egyeznek. A Guide
 
 A tulaj által kapott külső audit 14 leletéből 12 a kódban megerősítve; a már nálunk
 dokumentált tételeket nem duplikáljuk (H-ECON-001 = perzisztencia-atomicitás blokkoló —
-✅ a 0. fázis szinkron-commit körével LEZÁRVA: bank ki-/befizetés, fizetős claim és
-adomány-láda a hívásban, tartósan, veszteség-kerülő sorrenddel rögzít; a maradó
-ezredmásodperces playerdata-rés WAL-ja playtest-kapus;
+a szinkron-commit kísérlet PR-review-ra visszavonva [teljes snapshot-írás régió-szálon
++ nem-atomi két-fájlos írás], NYITVA; az elfogadott irány a szűk WAL/pending-record;
 M-FOLIA-001 = pozíció-alapú jutalom-megosztás; M-PERSIST-002 = save()-szinkron;
 L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
 
@@ -115,7 +114,7 @@ L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
     az `IceSMPCore.disable()` törzsében 0 try/catch. Árnyalat: a store-mentési hurok a
     koordinátorban MÁR per-store hibagyűjtéses — a rés a manager-leállítás/UI-takarítás
     szigeteletlensége, plusz a 14. tétel.
-14. ✅ KÉSZ (0. fázis: 26 store rethrow) — **M-PERSIST-001: több store elnyeli az írási hibát.** Pl. `FactionManager.save()`
+14. ✅ KÉSZ (0. fázis: 22 void-szerződésű store rethrow; PR-review kör: a 4 boolean-szerződésű író [CommunityGoal saveStrict, FactionTreasury, Season, SeasonMonument] visszakapta a false-jelzést, mert hívóik rollbacket építenek rá) — **M-PERSIST-001: több store elnyeli az írási hibát.** Pl. `FactionManager.save()`
     catch-eli az IOException-t és csak logol → a koordinátor per-store hibagyűjtése vakon
     marad. → logolás után dobjuk tovább (UncheckedIOException), a koordinátor a gyűjtő.
 15. ✅ RÉSZBEN KÉSZ (0. fázis: factions.yml + kings.yml fail-closed; a claims.yml loader külön kört vár) — **M-PERSIST-003: szemantikai hibát a loader átugrik, a következő mentés véglegesít.**
@@ -125,7 +124,7 @@ L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
     `synchronized`; a lejárat→szavazat→összeszámlálás→koronázás összetett átmenetet csak
     ConcurrentHashMap-ek védik → dupla koronázás / elvesző szavazat lehetséges.
     → frakciónkénti lock a kritikus szakaszra.
-17. ✅ KÉSZ (0. fázis: completion-alapú home-ág) — **M-GAME-001: a hazatérés-rituálé a teleport eredménye előtt fogyaszt.** A `tryHome`
+17. ✅ KÉSZ (0. fázis + PR-review kör: fogyasztás induláskor, sikertelen teleportnál refund + nincs cooldown) — **M-GAME-001: a hazatérés-rituálé a teleport eredménye előtt fogyaszt.** A `tryHome`
     (`RitualManager.java:349-379`) a `teleportAsync` future-jét eldobja és azonnal true-t
     ad → sikertelen teleportnál is elfogy az áldozat + indul a cooldown. → completion-alapú
     fogyasztás a HOME ágon.

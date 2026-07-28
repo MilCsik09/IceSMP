@@ -173,9 +173,7 @@ public final class DonationChestManager implements PersistentStore {
         entries.put(id, new DonationEntry(id, donor.getUniqueId(), donor.getName(), held.clone(),
                 System.currentTimeMillis()));
         donor.getInventory().setItemInMainHand(null);
-        // A bejegyzés a kézből kivett tárggyal együtt, még ebben a hívásban rögzül tartósan —
-        // a debounce-ablakban egy köztes playerdata-mentés + crash az adományt elnyelte volna.
-        save();
+        requestSave();
         return null;
     }
 
@@ -192,9 +190,7 @@ public final class DonationChestManager implements PersistentStore {
         if (entry == null) {
             return null;
         }
-        // A bejegyzés törlése tartósan rögzül, MIELŐTT a tárgy a kivevő kezébe kerül —
-        // a debounce-ablakban a visszatöltődő bejegyzés + kiadott tárgy dupét adott volna.
-        save();
+        requestSave();
         return entry.item();
     }
 
