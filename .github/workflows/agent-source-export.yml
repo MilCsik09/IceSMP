@@ -25,9 +25,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SOURCE=.github/agent-patches-afk/afk.mbox.gz.b64
-          test "$(wc -c < "$SOURCE")" -eq 60060
-          base64 --decode "$SOURCE" > /tmp/afk.mbox.gz
+          cat .github/agent-patches-afk/chunks/part* > /tmp/afk.mbox.gz.b64
+          test "$(wc -c < /tmp/afk.mbox.gz.b64)" -eq 60060
+          base64 --decode /tmp/afk.mbox.gz.b64 > /tmp/afk.mbox.gz
           echo "72a57e3947328e4ae04b0f579c58058c0086d1388ccda584d2713af9631b8a44  /tmp/afk.mbox.gz" | sha256sum -c -
           gzip -t /tmp/afk.mbox.gz
           gzip -dc /tmp/afk.mbox.gz > /tmp/afk.mbox
