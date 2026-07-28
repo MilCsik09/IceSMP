@@ -231,8 +231,25 @@ def nearest_method(source: str, index: int) -> str:
     return matches[-1].group(1) if matches else ""
 
 
+def _strip_yaml_inline_comment(raw: str) -> str:
+    state = "code"
+    for index, char in enumerate(raw):
+        if state == "code":
+            if char == '"': state = "double"
+            elif char == "'": state = "single"
+            elif char == "#" and (index == 0 or raw[index - 1].isspace()):
+                return raw[:index].rstrip()
+        elif state == "double":
+            if char == "\\":
+                continue
+            if char == '"': state = "code"
+        elif state == "single" and char == "'":
+            state = "code"
+    return raw.rstrip()
+
+
 def parse_scalar(raw: str) -> Any:
-    value = raw.strip()
+    value = _strip_yaml_inline_comment(raw).strip()
     if not value:
         return None
     if value[0:1] in ('"', "'") and value[-1:] == value[0]:

@@ -17,7 +17,7 @@ def scan_messages(root: Path, index: JavaIndex) -> tuple[list[dict[str, Any]], l
         for path in sorted(iter_files(resources, ("*.yml", "*.yaml"))):
             relative = posix(path, root)
             flat = flatten_yaml_paths(path)
-            message_file = "message" in path.name.lower()
+            message_file = "message" in path.name.lower() or "/messages/" in f"/{relative}"
             for key, value in flat.items():
                 normalized = key[9:] if key.startswith("messages.") else key
                 if message_file or key.startswith("messages."):
