@@ -20,7 +20,7 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
   fő-agentet ott, ahol a session-kontextus számít (a delegált agent mindig üresen indul).
 - **Teljes több-agentes audit-kör CSAK kifejezett tulaj-kérésre** — drága (agentenként
   100-340k token), és a gépi drift-ellenőrző + a Definition of Done pont azért él, hogy
-  ne kelljen ismételni. Új leletek az élő `docs/ideas/P2-gameplay-audit.md`-be, helyben.
+  ne kelljen ismételni. Új leletek az élő `docs/ideas/PROJEKT-AUDIT.md`-be, helyben.
 - Egyszerre max 4-5 párhuzamos agent (a session-limit egyszer már elvitte a teljes kört).
 - **Légy token-takarékos**: tömör válaszok, célzott fájlolvasás, ne duplikáld a subagent
   munkáját.
@@ -58,7 +58,7 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 - **Tükör-repo (IceSMPGuides):** az aktív, kanonikus szabály az `AGENTS.md` „Docs and IceSMPGuides mirror” szekciójában él. A docs egy része a `MilCsik09/IceSMPGuides` repóba is átmásolandó minden változtatásnál. Térkép: `PLAYTEST.md` ↔ gyökér; `docs/player-guide/NN-*.md` ↔ gyökér számozott fájlok (FIGYELEM: a Guides-oldali példányokon 🔜 tesztelői jelölés-réteg lehet — tartalmi merge kell, nem vak felülírás!); `docs/RESOURCE_PACK_CMD.md` ↔ gyökér; `docs/EPITESZ_UTMUTATO.md` ↔ gyökér; `docs/TEASER.md` ↔ gyökér; `docs/PITCH.md` ↔ gyökér; `docs/FEATURES.md` ↔ gyökér; `docs/LORE.md` + `docs/LORE_REFERENCE.md` ↔ `lore/`; `docs/ideas/*` ↔ `ideas/`; `docs/IDEAS.md` ↔ `ideas/README.md`. Mindkét repót ugyanarra a célágra pushold (alapértelmezés: masterből nyitott tool-semleges feature ág; owner-kérésre közvetlen master).
 
 ## Mi ez a projekt
-Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció (~390 spell)**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A kód 477 Java-fájl / 87 manager (~82 000 sor). Minden játékos-szöveg **magyar**.
+Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció (~390 spell)**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A kód 484 Java-fájl / 88 manager (~85 000 sor). Minden játékos-szöveg **magyar**.
 
 ## Architektúra (nagy kép)
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader`. A tényleges élet a `core/IceSMPCore`-ban van: konstruktorban épül fel az ÖSSZES manager (kézi DI, sorrend számít), majd `enable()`: `load()` a `persistentStores` listán → listener-regisztráció → parancs-regisztráció (kódból, nem manifestből!) → schedulerek; `disable()`: `save()` + cleanup.
@@ -91,7 +91,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   review-hivatkozás), kód-narrálás ("// mentés"), változás-történet ("// mostantól").
   A config-YAML kommentjei kivételek: ott a komment a dokumentáció.
 - **MD-politika:** új .md fájl CSAK kifejezett tulaj-kérésre születhet. Auditok a meglévő
-  `docs/ideas/P2-gameplay-audit.md`-t frissítik HELYBEN (nem új fájl körönként); ötletek
+  `docs/ideas/PROJEKT-AUDIT.md`-t frissítik HELYBEN (nem új fájl körönként); ötletek
   egyetlen helyre mennek: `docs/ideas/BACKLOG.md`. A `PLAYER_GUIDE.md` csak index — az
   egyetlen igazságforrás a `docs/player-guide/` oldalak.
 - **Definition of Done — minden változás UGYANABBAN a commitban propagál:**
@@ -100,7 +100,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   - új config-kulcs → use-site olvasás (élő-config) + ha admin-hangolandó: ConfigMenuGUI
   - új custom item → **ITEM_MODEL** (modern; `item-model:`/`ItemDataFactory.applyItemModel`) +
     `docs/RESOURCE_PACK_CMD.md` manifest-sor. (ÚJ itemnél már NEM adunk régi numerikus modelladatot.)
-  - új quest-NPC / territory-id → a P2-audit világépítő-checklistjére is fel kell kerülnie
+  - új quest-NPC / territory-id → a PROJEKT-AUDIT.md világépítő-checklistjére is fel kell kerülnie
   - új rendszer/mechanika → érintett `docs/player-guide/` oldal + PLAYTEST-blokk +
     `LORE_REFERENCE.md` sor (ha lore-kötött) + README feature-lista, ha ott is szerepel
   - minden doksi-szám a configból származik, nem fejből

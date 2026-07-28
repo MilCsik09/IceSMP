@@ -1,4 +1,97 @@
-# P2 — Teljes gameplay-audit, 2. kör (2026-07-21, 14 szempont, több-agentes mélyvizsgálat)
+# IceSMP — Élő projekt-audit
+
+> Ez a doksi az élő audit: minden új kör IDE kerül, helyben, legfrissebb elöl.
+> (2026-07-28-ig a neve `P2-gameplay-audit.md` volt; az átnevezés tulaj-kérés — a doksi
+> kör-független, projekt-szintű gyűjtő, nem csak gameplay.) Státusz-jelölés: ✅ javítva,
+> ⬜ nyitott (tulaj-döntésre vár).
+
+## 2026-07-28 — Projekt-audit kör (5 szempont: Folia • élő-config • item-invariáns • per-player állapot • DoD-drift)
+
+> Tulaj-kérésre futtatott kör: 5 párhuzamos, csak-olvasó szempont-agent, a leletek
+> egyenként KÉZZEL visszaigazolva a kódban. Kiindulás: valódi `./gradlew build` zöld
+> (a DEV-item- és PersistentStore-regressziós tesztek is), a master CI zöld, az ág a
+> master csúcsán. A `check_consistency.py` 6 doksi-szám FAIL-jét ez a kör javította
+> (88 manager, 484 fájl); az 5 tükör-WARN (PLAYTEST, RESOURCE_PACK_CMD, FEATURES,
+> LORE, LORE_REFERENCE — az IceSMP-oldal az újabb) külön tükör-körre vár.
+
+### 🔴 Kritikus (Folia szál-biztonság)
+
+1. ⬜ **Sámán-totem pulzus idegen régió entitásait mutálja kapu nélkül.** A pulzus a totem
+   régió-szálán fut (`TotemManager.java:170-182`), és a `getNearbyEntities` találatain az
+   `affect` (`:95-115`) közvetlenül hív `addPotionEffect`/`damage`/`setFireTicks`-et — a
+   fájlban nulla `isOwnedByCurrentRegion`. Régióhatáron álló célpontnál Folia thread-check
+   hibát dob, minden pulzusnál újra. KÉZZEL MEGERŐSÍTVE. → a projekt saját kapu+hop mintája
+   (`SpellStateListener.java:136-139`, ElytraRelicListener, CrownCurseManager).
+2. ⬜ **A pet a saját szálán oldja fel és sebzi a más régióban lévő célpontot.** A pet-tick
+   (`PetManager.java:539-540`) a `resolveTarget`-ben (`:600-614`) UUID-ból old fel idegen
+   entitást, hop nélkül olvassa pozícióját/világát (`:606-609`, `:641`), majd `target.damage`
+   (`:652`) — miközben a UUID-t író `PetCombatListener` gondosan hoppol. KÉZZEL MEGERŐSÍTVE.
+   → célpont-érintés `isOwnedByCurrentRegion`-kapuval + schedulerhoppal.
+
+### 🟡 Közepes
+
+3. ⬜ **WorldBoss ZONE-telegráf kapuzatlan túlélő-gyűjtése.** A `fireSpecial` ZONE-ágának
+   telegráf-szakasza (`WorldBossManager.java:598-608`) a boss szálán olvassa idegen játékos
+   gamemode-ját/pozícióját, miközben ugyanabban a metódusban a másik három azonos hozzáférés
+   (`:511`, `:581`, `:621+`) mintaszerűen kapuzott — kimaradás. KÉZZEL MEGERŐSÍTVE.
+4. ⬜ **Kazamata-kapu párttag-szűrés védőháló nélkül.** `DungeonGateListener.java:176-177`:
+   a `member.getLocation()` a scheduler-hop ELŐTT fut, try/catch nélkül — a `PartyManager.java:118-127`
+   ugyanezt szándékosan védi („Cross-region read unavailable”). A dobás rossz pillanatban jön:
+   a kulcs már elfogyott, a pecsét már felkerült. KÉZZEL MEGERŐSÍTVE.
+5. ⬜ **`/icesmp reload` nem frissíti a recept-katalógust.** A reload-hookból
+   (`IceSMPCore.java:1334-1340`) hiányzik a `professionRecipeCatalog.load()` — a
+   `profession-recipes.yml` a CONFIG_FILES tagja, de recept-módosítás csak restartnál él.
+   KÉZZEL MEGERŐSÍTVE. → hívás a hookban (a Relic/MobScaling/CraftingRestriction mintájára).
+6. ⬜ **`spell-vfx.*` csak enable-kor olvasódik.** `IceSMPCore.java:841-844` statikus mezőkbe
+   cache-eli (enabled/max-points/paletták); reload nem frissíti, pedig az élő-config konvenció
+   alá esne (pl. TPS-mentő VFX-kikapcsolás restart nélkül). KÉZZEL MEGERŐSÍTVE.
+7. ⬜ **PvP-relikvia-transzfer letörli az ITEM_MODEL-t.** `RelicItemFactory.setOwner`
+   (`:106-114`) csupasz `getItemMeta`/`setItemMeta` kört fut az élő stacken az
+   `applyItemModel` újra-alkalmazása nélkül — a `create()` és a `refresh()` (`:116-125`)
+   helyesen csinálja. Hívási lánc élő: `RelicPvpTransferListener:111` →
+   `RelicManager.transferOwnership:594`. A gazdát cserélt fegyver-relikvia vanília kinézetre
+   esik vissza. KÉZZEL MEGERŐSÍTVE. → `applyItemModel` a setItemMeta után a setOwnerben is.
+8. ⬜ **Affix-roll után elveszik a vanília RARITY-fok.** A `buildResult`-ban a roll()
+   setData-val teszi fel a RARITY-t + TOOLTIP_DISPLAY-t (`ItemRarityService.java:217-226`),
+   majd az utána hívott `applyAttributeModifiers` setItemMeta-ja
+   (`ProfessionRecipeBookListener.java:392-396`) törli; csak a tooltip kerül vissza, a RARITY
+   nem. Mérve: **40 recept** ad meg együtt `affix-tier`-t és `result.attributes`-t — mindnél.
+   KÉZZEL MEGERŐSÍTVE. → RARITY újra-alkalmazás az attribútum-ág után.
+9. ⬜ **Kick-rés két ItemStack-tartó mapen.** `RelicPvpTransferListener.keptRelics` (`:47`) és
+   `CatalystProtectionListener.keptOnDeath` (`:35`) csak quit/respawn-on ürül; a projekt 9 másik
+   listenere (+ a PlayerSessionCleanupListener) külön kezeli a `PlayerKickEvent`-et, dokumentált
+   indokkal. Halál→respawn előtti kicknél a bejegyzés örökre bent marad. KÉZZEL MEGERŐSÍTVE.
+10. ⬜ **`/faction set` tab-complete nélkül.** `FactionSetSubcommand` nem override-olja a
+    `tabComplete`-et (default üres lista), pedig játékosnév + frakciónév argumentumot vár —
+    a testvér-parancsok (join, currency set) adnak kitöltést. KÉZZEL MEGERŐSÍTVE.
+11. ⬜ **`/afk` hiányzik a parancs-referenciából.** A parancs regisztrálva
+    (`IceSMPCore.java:1353`), de a `docs/player-guide/14-parancsok.md`-ben 0 találat — csak a
+    PLAYTEST.md említi. KÉZZEL MEGERŐSÍTVE. → sor a 14-parancsok.md-be (+ Guides-tükör).
+
+### 🟢 Alacsony (konvenció / apró szivárgás)
+
+- ⬜ `HudListener` és `ParkourListener` nem kezel kicket (HUD/tablist 7 cache-mapje, ill.
+  `ParkourManager.activeRuns` bent ragadhat); `ReportManager.lastReportAt` és
+  `InvseeGUIListener.refreshDebounce` sosem purge-ölődik.
+- ⬜ `claims.block-in-*` booleanok (general.yml:134-136) nem az `allow-<szabály>` sémát
+  követik, `allow-*` megfelelő nélkül — a javadoc maga is legacynek hívja.
+- ⬜ GUI-réteg: 12 `gui/*.java` fájlban ~65 hardcode-olt magyar `Component.text(...)` szöveg
+  MessageManager-kulcs nélkül (a commands/ réteg ezzel szemben következetes).
+- ⬜ `FactionDonateSubcommand` üres tab-complete (a Caravan preset-összegeket ad);
+  `KronikaCommand`/`AfkCommand` nem override-olja a `suggest()`-et.
+
+### Ami tiszta (ellenőrizve)
+
+Tiltott scheduler-API (`Bukkit.getScheduler`/`BukkitRunnable`): 0 találat. Sima `.teleport(`:
+0 — mindenhol `teleportAsync`. A megosztott manager-állapotok (CommunityGoal/Season/Party stb.)
+monitor vagy concurrent szerkezet alatt. A player-guide numerikus állításai (30+ mintavétel az
+economy/factions/world/relics/professions configok ellen) mind egyeznek. A Guides #7 PR
+(Bingulus-doksi) tartalma a #39-es egyszerűsítés után is helytálló (pity/pending/
+`reward-interval-seconds` mind él).
+
+---
+
+## P2 — Teljes gameplay-audit, 2. kör (2026-07-21, 14 szempont, több-agentes mélyvizsgálat)
 
 > 18 párhuzamos szempont (14 fő + 4 záró): játékos-életút • gazdaság • frakció/PvP • világesemények+loot •
 > quest-konzisztencia • spell/kaszt-balansz • szakmák+itemek+relikviák • claim/grief-védelem •

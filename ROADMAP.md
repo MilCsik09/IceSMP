@@ -27,7 +27,7 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   `MobKillUtil` immutable `KillContext` átterve a FAUCET/PROGRESSION jutalom-utakon.
   **Még nyitott:** a `TransientEntities`-re épülő world-event életciklus (a naiv fail-open
   változat vissza lett vonva, mert esemény-deadlockot okozott — a feltételek a
-  `docs/ideas/P2-gameplay-audit.md`-ben), és a pozíció-alapú jutalom-megosztás (párt-XP, Vad
+  `docs/ideas/PROJEKT-AUDIT.md`-ben), és a pozíció-alapú jutalom-megosztás (párt-XP, Vad
   Hajsza personal loot), ami még az áldozat szálán olvas pozíciót. Playtesten figyeljétek a
   konzolt `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 - **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
