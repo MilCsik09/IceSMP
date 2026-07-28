@@ -1,0 +1,31 @@
+name: Agent Source Export
+
+on:
+  pull_request:
+    branches:
+      - claude/projekt-audit-u0hkcz
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export repository snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Package source
+        shell: bash
+        run: |
+          tar --exclude='./.git' -czf /tmp/icesmp-source.tar.gz .
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-source-f4e82263
+          path: /tmp/icesmp-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
