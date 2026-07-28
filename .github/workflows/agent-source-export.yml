@@ -1,4 +1,4 @@
-name: Agent Source Export
+name: Agent Sit Publisher
 
 on:
   pull_request:
@@ -8,41 +8,31 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
-    name: Export current AFK source
+  publish:
+    name: Validate and publish native sit commits
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Checkout AFK branch
+      - name: Checkout publisher branch
         uses: actions/checkout@v4
         with:
-          ref: 66b2a362cdefb557e66c2d518d234b32db97e0ba
           fetch-depth: 0
 
-      - name: Verify exact AFK head
+      - name: Validate and apply native sit patch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "66b2a362cdefb557e66c2d518d234b32db97e0ba"
-
-      - name: Package source
-        shell: bash
-        run: |
-          set -euo pipefail
-          tar \
-            --exclude='./.git' \
-            --exclude='./.gradle' \
-            --exclude='./build' \
-            --exclude='./Other' \
-            -czf /tmp/icesmp-afk-source.tar.gz .
-
-      - name: Upload source snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: icesmp-afk-source-66b2a36
-          path: /tmp/icesmp-afk-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          cat .github/agent-patches-sit/chunks/part* > /tmp/sit.mbox.gz.b64
+          test "$(wc -c < /tmp/sit.mbox.gz.b64)" -eq 50688
+          base64 --decode /tmp/sit.mbox.gz.b64 > /tmp/sit.mbox.gz
+          echo "4e65ec25a7dd957238ffbb04ebbd50fc49a5a75245fe62f77c2cea5189626845  /tmp/sit.mbox.gz" | sha256sum -c -
+          gzip -t /tmp/sit.mbox.gz
+          gzip -dc /tmp/sit.mbox.gz > /tmp/sit.mbox
+          git config user.name "IceSMP Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout --detach f4e82263d35c645a053eccac09a3ad254a36ed90
+          git am /tmp/sit.mbox
+          git push --force-with-lease=refs/heads/feature/native-sit-poses:f4e82263d35c645a053eccac09a3ad254a36ed90 origin HEAD:refs/heads/feature/native-sit-poses
