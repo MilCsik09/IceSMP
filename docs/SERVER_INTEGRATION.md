@@ -3,7 +3,7 @@
 A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzése alapján.
 (Frissítve az ütközések felszámolásakor.)
 
-## 1. TAB → IceSMP natív tablist — A TAB PLUGIN LESZEDHETŐ
+## 1. TAB → IceSMP natív tablist — jelenlegi IceSMP-igényre READY
 
 **Új állapot:** a teljes TAB-funkcionalitás, amit a szerver használt, natívan megy
 (`managers/TablistManager` + `HudManager` + `config/tablist.yml`):
@@ -79,7 +79,11 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 
 ## 5.1 Plugin-leépítési terv (mi váltható ki / törölhető, és hogyan)
 
-### ✅ Kiváltva natívan — a jar TÖRÖLHETŐ
+### Pluginonkénti bizonyított állapot
+
+A táblázatban csak a **READY** és kézzel igazolt sor tekinthető törölhetőnek. A **MÉG NEM**
+és **FELTÉTELES** soroknál a külső jar eltávolítása nem jóváhagyott.
+
 
 | Plugin | Natív megfelelő | Teendő törlés előtt |
 |---|---|---|
@@ -88,12 +92,12 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **LuckPermsChatFormatterFolia** | natív chat-formázó (`chat.format-enabled`) | — |
 | **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
-| **MiniMOTD** | `MotdListener` + `config/motd.yml` — MiniMessage-formázás, IDŐALAPON rotálódó variánsok, {online}/{max} tokenek, max-player felülírás. (A MiniMOTD amúgy is gyári példa-configon állt.) | szabd testre a `motd.yml` variánsokat |
-| **AxAFKZone (+AxAPI)** | `AfkManager` + `config/afk.yml` — AFK-zónák (doboz), időzített valuta-jutalom (tudatos kis faucet, C3 monitorral figyelendő), bossbar-visszaszámláló, be-/kilépés üzenetek; PLUSZ globális AFK-detektálás és ⌚ AFK jelzés a tablistában (amit az AxAFKZone nem tudott) | vidd át a zóna-koordinátákat az `afk.yml`-be (a régi `AxAFKZone/zones/zome1.yml`-ből) |
-| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages, ITEM_MODEL-es kulcsok, súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
-| **GSit** | `SitManager` — `/sit` parancs + jobb-katt lépcsőre/fél-lapra üres kézzel; kelés minden úton takarít (quit/halál/teleport/blokk-törés) | — |
-| **SModeration** | `ModerationManager` — restart-álló némítás (`/mute`/`/unmute`, offline is), chat-szűrő (CENSOR/BLOCK), spam-fék, privát-parancs tiltás némítottnak; PLUSZ `/report` + `/reports` bejelentő-rendszer admin-értesítéssel (`config/moderation.yml`, `icesmp.admin.moderation`) | szavak felvétele a `chat-filter.words` listába |
-| **InvSee++ (3 jar)** | `/invsee <név>` — READ-ONLY inventory + ender-láda pillanatkép-GUI; PLUSZ `/icesmp inspect <név>` teljes plugin-állapot riport (kaszt/erőforrás/statok/bűn/claim/questek/cooldownok) — `icesmp.admin.inspect`. Szerkesztés/clear/give nincs (ha kell, a jar maradhat, de betekintésre már nem) | — |
+| **MiniMOTD** | meglévő natív MOTD-alap | **MÉG NEM:** completion scope hiányzik |
+| **AxAFKZone (+AxAPI)** | meglévő globális AFK-alap | **MÉG NEM:** közös 3D selectionös multi-zone scope hiányzik |
+| **CrazyCrates** | meglévő natív crate-alap | **MÉG NEM:** completion scope hiányzik |
+| **GSit** | meglévő sit-alap | **MÉG NEM:** lifecycle/material/pose completion scope hiányzik |
+| **SModeration** | `ModerationManager` + natív punishment ledger, commands, SocialSpy, vanish és ban gate | **FELTÉTELES:** automated zöld; restart/Folia/fault-injection playtest kell |
+| **InvSee++ (3 jar)** | online live inventory/ender read+edit, külön permission, scheduler ownership és audit | **FELTÉTELES:** disconnect/reload/escrow Folia-playtest kell; offline playerdata nincs és nem is cél |
 
 ### 🗑 Törölhető kiváltás NÉLKÜL (nem használt / kiürült)
 
@@ -105,9 +109,9 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 
 ### 🔶 Kiváltható közepes munkával (tervezett)
 
-*(A kör lezárva — minden tervezett tétel a ✅ táblába került. Megjegyzés: az InvSee++
-szerkesztő/clear/give funkciói nincsenek kiváltva, csak a betekintés; ha az admin-csapat
-aktívan szerkeszt inventorykat, az InvSee++ maradhat, egyébként törölhető.)*
+*(A korábbi általános „lezárva/törölhető” állítás visszavonva. A mérvadó állapot a
+`docs/PLUGIN_REPLACEMENT_MATRIX.md`: a buildelt alap és a teljes, valódi Folia-playtest
+két külön bizonyítékszint.)*
 
 ### 🔒 Marad (nem érdemes/nem szabad kiváltani)
 

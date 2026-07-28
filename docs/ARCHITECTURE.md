@@ -14,7 +14,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~88 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~90 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -35,11 +35,11 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 113 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 115 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `managers/` | 115 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 118 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 42 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `gui/` | 44 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
@@ -416,8 +416,8 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 485 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 113 fájl).
-  Csomag-megoszlás: listeners 115, managers 113, commands 84, spells 56, gui 42, utils 22, data 12,
+- **Méret:** 508 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 115 fájl).
+  Csomag-megoszlás: listeners 118, managers 115, commands 94, spells 56, gui 44, utils 22, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
@@ -430,3 +430,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 - **Garanciahatár:** a statikus, dependency-free és build-integrált regressziók nem helyettesítik a
   valódi Folia multi-region, process-kill, ENOSPC vagy permission-denied fault-injectiont.
 - **Nyitott fejlesztések:** `ROADMAP.md`.
+
+## Natív moderációs alrendszer
+
+A moderáció egyetlen autoritatív `ModerationManager` store-ra épül. A dependency-free `PunishmentLedger` tartja az invariánsokat; a Paper/Folia adapterek csak parancsot, eventet, GUI-t és scheduler ownershipot kezelnek. A state a közös `PersistentStoreCoordinator` lifecycle-ban, `YamlStore.saveAtomic` mentéssel működik. Sikertelen mutációs mentésnél a manager visszagörgeti a memóriasnapshotot, kritikus írási hibánál fail-closed leállást kér.
+
+A kereszt-entitásos live inventory két owner thread között halad: target scheduler → tesztelt `InventoryEscrowGate` → viewer scheduler. A vanish viewer-owned visibility API-t használ. Az async pre-login gate kizárólag szálbiztos immutable/synchronized read modellt olvas. Részletes szerződés: [`MODERATION.md`](MODERATION.md).

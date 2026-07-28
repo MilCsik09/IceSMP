@@ -4,7 +4,7 @@
 > de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
 > kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
 > életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
-> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 485 Java-fájl / 88 manager.
+> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 508 Java-fájl / 90 manager.
 
 ## ⚔ Kasztok és képességek
 
