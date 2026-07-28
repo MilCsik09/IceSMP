@@ -25,7 +25,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "988a536025fcb419602be295898de19efc319827c4f9ca6215bb5044e106fd62  .github/agent-patches-sit/chunks/part00" | sha256sum -c -
+          echo "8db2530ac2c1f85ae48595230b369402f18bc7cda9799b32901b1864297574a6  .github/agent-patches-sit/chunks/part00a" | sha256sum -c -
+          echo "ea59809d3d2b6530237b98d492ccc2d01f5dfab810ebaf88378fe6f5fc9a78ea  .github/agent-patches-sit/chunks/part00b" | sha256sum -c -
           echo "d0ce94fc8329ad7fd0230d811016949d08e437014eb9a9ffe49186280498cd74  .github/agent-patches-sit/chunks/part01" | sha256sum -c -
           echo "984d10d37033547af33d8857eb1f4af1d883d19a0d485e8044046627273ec0ff  .github/agent-patches-sit/chunks/part02" | sha256sum -c -
           echo "8e29ff656d0efb769daab1066266fbd05282da6289eee9f3036efc16425c68e2  .github/agent-patches-sit/chunks/part03" | sha256sum -c -
