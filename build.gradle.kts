@@ -45,6 +45,7 @@ tasks {
 val regressionTest by sourceSets.creating {
     java.srcDir("src/regression/java")
     compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
     runtimeClasspath += output + compileClasspath
 }
 
@@ -56,6 +57,14 @@ val persistentStoreRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.storage.PersistentStoreCoordinatorRegressionTest")
 }
 
+val afkRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native AFK-zone domain and integration-invariant regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.AfkZoneRegressionSuite")
+}
+
 val devItemRewardRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs focused DEV-item state, retry and scheduler-gate regressions."
@@ -65,5 +74,5 @@ val devItemRewardRegressionTest by tasks.registering(JavaExec::class) {
 }
 
 tasks.check {
-    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest)
+    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, afkRegressionTest)
 }
