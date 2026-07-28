@@ -25,6 +25,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "988a536025fcb419602be295898de19efc319827c4f9ca6215bb5044e106fd62  .github/agent-patches-sit/chunks/part00" | sha256sum -c -
+          echo "d0ce94fc8329ad7fd0230d811016949d08e437014eb9a9ffe49186280498cd74  .github/agent-patches-sit/chunks/part01" | sha256sum -c -
+          echo "984d10d37033547af33d8857eb1f4af1d883d19a0d485e8044046627273ec0ff  .github/agent-patches-sit/chunks/part02" | sha256sum -c -
+          echo "8e29ff656d0efb769daab1066266fbd05282da6289eee9f3036efc16425c68e2  .github/agent-patches-sit/chunks/part03" | sha256sum -c -
+          echo "8910e4c2e5f488b6203a5fc13d958dfc52242ffa135c29624ee74d6ca0a284c7  .github/agent-patches-sit/chunks/part04" | sha256sum -c -
+          echo "d03712f80c64573a634e35bfb1e7d4449ce42ca5e2670f71ec6ef8bf6114b514  .github/agent-patches-sit/chunks/part05" | sha256sum -c -
           cat .github/agent-patches-sit/chunks/part* > /tmp/sit.mbox.gz.b64
           test "$(wc -c < /tmp/sit.mbox.gz.b64)" -eq 50688
           base64 --decode /tmp/sit.mbox.gz.b64 > /tmp/sit.mbox.gz
