@@ -50,6 +50,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Resolve base and head commits
         id: refs
         shell: bash
@@ -93,6 +105,21 @@ jobs:
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "Base: $BASE_SHA"
           echo "Head: $HEAD_SHA"
+
+      - name: Check patch whitespace
+        id: diff_check
+        continue-on-error: true
+        run: git diff --check "${{ steps.refs.outputs.base_sha }}...${{ steps.refs.outputs.head_sha }}"
+
+      - name: Java 21 clean build
+        id: gradle_build
+        continue-on-error: true
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Repository consistency check
+        id: consistency
+        continue-on-error: true
+        run: python3 scripts/check_consistency.py
 
       - name: Tooling self-tests
         id: tests
@@ -191,6 +218,9 @@ jobs:
             echo
             echo "| Check | Outcome |"
             echo "| --- | --- |"
+            echo "| Patch whitespace | ${{ steps.diff_check.outcome }} |"
+            echo "| Java 21 clean build | ${{ steps.gradle_build.outcome }} |"
+            echo "| Consistency check | ${{ steps.consistency.outcome }} |"
             echo "| Tooling self-tests | ${{ steps.tests.outcome }} |"
             echo "| Repository inventory | ${{ steps.repository_inventory.outcome }} |"
             echo "| Coverage report | ${{ steps.report_coverage.outcome }} |"
@@ -212,6 +242,9 @@ jobs:
         if: always()
         shell: bash
         env:
+          DIFF_CHECK: ${{ steps.diff_check.outcome }}
+          GRADLE_BUILD: ${{ steps.gradle_build.outcome }}
+          CONSISTENCY: ${{ steps.consistency.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           INVENTORY: ${{ steps.repository_inventory.outcome }}
           REPORT: ${{ steps.report_coverage.outcome }}
@@ -221,7 +254,7 @@ jobs:
         run: |
           set -euo pipefail
           failed=0
-          for outcome in "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
+          for outcome in "$DIFF_CHECK" "$GRADLE_BUILD" "$CONSISTENCY" "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
             [[ "$outcome" == "success" ]] || failed=1
           done
           if [[ -n "$RELEASE" && "$RELEASE" != "success" && "$RELEASE" != "skipped" ]]; then failed=1; fi
