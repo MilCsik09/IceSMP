@@ -75,11 +75,81 @@ egységes `icesmp.admin.<domain>` séma:
 | `icesmp.territory.builder` | építő-jog: védett zónában is építhet/interaktálhat (PvP-tiltás rá is áll) — szerep-node, NEM admin |
 | `icesmp.admin.parkour` / `icesmp.admin.exchangeboard` / `icesmp.admin.profession` / `icesmp.admin.spec` | parkour / tábla / szakma / spec admin |
 | `icesmp.admin.npc` | `/npcbind` — NPC kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz/frakció-menühöz/parancshoz |
+| `icesmp.admin.afk` | közös 3D selection és `/afkzone create|replace|delete|list|tp|show|status|clear` |
 
 > ♻️ **Visszafelé kompatibilis:** a régi nevek (`icesmp.admin`, `icesmp.job.admin`,
 > `icesmp.currency.admin`, `icesmp.faction.admin`, `icesmp.relic.admin`) alias-ként
 > regisztrálva maradnak — a meglévő LuckPerms-beállítás átírás nélkül tovább működik,
 > de új jogosztásnál már a kanonikus `icesmp.admin.<domain>` nevet használd.
+
+---
+
+## 0.1 Natív AFK-zónák — completion scope
+
+A zónák az IceSMP saját configját használják; AxAFKZone-adat, legacy config vagy progressz nem
+migrálandó. A sarkokat a **közös** `/claim pos1`, `/claim pos2` vagy a meglévő birtokmérő pálca
+adja. Nincs külön AFK-selection.
+
+### AUTOMATED
+
+- [ ] `./gradlew afkRegressionTest --no-daemon --stacktrace` zöld; a suite cuboid
+      normalizálást/overflowot, reward clockot, weighted picket, NaN/Infinity és túl nagy item
+      elutasítást, command-placeholdert, tombstone-t, reuse- és tiltott scheduler invariánsokat tesztel.
+- [ ] A teljes `./gradlew clean build --no-daemon --stacktrace`, a
+      `python3 scripts/check_consistency.py` és a `git diff --check` zöld.
+
+### MANUAL
+
+- [ ] `/claim pos1` + `/claim pos2`, majd `/afkzone create piheno Pihenő liget`: a zóna megjelenik
+      a listában, a selection törlődik, a `config.yml` override atomikusan mentődik.
+- [ ] `/afkzone replace piheno`, `/afkzone show piheno`, `/afkzone status piheno`,
+      `/afkzone tp piheno` és `/afkzone delete piheno` a várt zónán dolgozik.
+- [ ] Belépés, kilépés és két átfedésmentes zóna közötti közvetlen váltás pontosan egy leave/enter
+      párt, a zónához tartozó title/subtitle/actionbar/bossbart és új időzítőt ad.
+- [ ] Több rollnál a currency, vanilla item és validált console command jutalom mind kiosztható;
+      minden roll auditlogot ír.
+- [ ] Teli inventorynál az item maradéka a játékos entity schedulerén, a játékos helyén esik ki.
+
+### REAL FOLIA REQUIRED
+
+- [ ] A global driver több régióban lévő játékosnál csak a saját entity scheduleren olvas
+      locationt/inventoryt és frissít UI-t; nincs region-thread stacktrace.
+- [ ] A console command reward a global region scheduleren fut, a játékos reward-útja közben nem
+      ér el másik player entitást.
+- [ ] A részecskés selection preview player entity scheduleren fut és retired/rejected task után
+      nem marad session vagy ismétlődő task.
+
+### RESTART TEST
+
+- [ ] Create/replace/delete után normál restart: az érvényes zónák pontosan egyszer töltődnek be,
+      a `deleted: true` packaged zóna nem támad fel.
+- [ ] A zónán belüli **progressz szándékosan transient**: restart után nulláról indul; nincs legacy
+      progressz vagy migráció.
+
+### RELOAD TEST
+
+- [ ] Jutalom előtt és után `/icesmp reload`: nincs dupla payout; az új immutable catalog lép életbe,
+      a régi bossbar/session tisztán újraszámolódik.
+- [ ] Hibás testvérzóna reloadja csak azt a zónát tiltja le; a többi zóna és a plugin működik.
+- [ ] Aktív selection preview közbeni reload törli a selectiont és leállítja a preview taskot.
+
+### PERMISSION TEST
+
+- [ ] `icesmp.admin.afk` nélkül az `/afkzone` végrehajtás és tab completion nem szivárogtat
+      adminfunkciót; a közös claim selection normál claimjoga változatlan.
+- [ ] Zónánkénti `permission` hiányában a játékos nem lép aktív AFK-zónába és nem kap jutalmat.
+- [ ] `icesmp.admin.afk` joggal a command és minden adminművelet elérhető.
+
+### NEGATIVE TEST
+
+- [ ] Hiányos, más világban lévő vagy a max volume fölötti selectionből create/replace nem ment.
+- [ ] NaN/Infinity, negatív/túl nagy currency, 64 fölötti vagy overflowoló item amount, ismeretlen
+      reward type/material/currency/bossbar enum és hibás világ/koordináta csak az érintett zónát tiltja le.
+- [ ] Ismeretlen, árva/nested/unclosed vagy control karakteres command placeholder elutasítódik.
+- [ ] Írásvédett adatkönyvtárnál create/replace/delete `afk-zone-save-failed` üzenetet ad, a runtime
+      catalog nem állít sikeres műveletet és a hiba teljes stacktrace-szel naplózódik.
+- [ ] Quit és kick zónában/selection preview alatt eltávolítja a bossbart, progresszt, manuális AFK-t
+      és selection state-et.
 
 ---
 

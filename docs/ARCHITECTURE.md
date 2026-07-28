@@ -35,10 +35,10 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 113 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 115 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 115 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `commands/` | 85 (56 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `gui/` | 42 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
@@ -181,7 +181,29 @@ A `PlayerSessionCleanupListener` kilépéskor/kickkor: (a) végigmegy a regisztr
 automatikusan bekerül; a manager-ág viszont kézzel karbantartott konstruktor-lista (lásd 5.7/5.8
 recept: új állapotos managert fel kell venni a `stateOwners` listába).
 
-### 3.8 Kaszt-erőforrás (`ResourceManager`) — hibrid költség
+### 3.8 Közös 3D selection és natív AFK-zónák
+
+- **`selection/CuboidSelectionService`** az egyetlen playerenkénti kétpontos 3D kijelölési
+  owner. A claim és az AFK-admin ugyanazt a state-et, világazonosság-ellenőrzést,
+  koordinátanormalizálást, overflow-biztos méret/volume limitet és részecskés előnézetet
+  használja. Nincs AFK-specifikus `pos1`/`pos2`, wand vagy session registry.
+- A selection-player task az adott játékos entity schedulerén fut. Quit/kick a központi
+  `PlayerStateCleanup` listán, reload/disable pedig a core lifecycle-on át törli a sessiont és
+  leállítja a preview taskot.
+- **`AfkZoneCatalog`** egy reloadonként felépített, immutable, insertion-ordered snapshot.
+  A hibás zóna csak saját magát tiltja le; a NaN/Infinity, negatív/túl nagy jutalom, hibás világ,
+  koordináta, permission, enum, material, reward type és command-placeholder elutasításra kerül.
+- **`AfkManager`** megőrzi a globális AFK- és tablistaintegrációt, de a zónakezelés a játékos
+  entity schedulerén történik. A valutajutalom a meglévő `CurrencyManager`, a tárgyjutalom a
+  Bukkit inventory API, a validált console command a global region scheduler útvonalát használja.
+  A tiszta `AfkRewardClock` egy tick alatt legfeljebb egy payout ciklust enged, a maradékidőt
+  megtartja, így reload vagy hosszú tick sem okoz jutalomduplázást.
+- Az admin `/afkzone` parancs a közös selectiont fogyasztja; create/replace/delete módosításai a
+  meglévő `ConfigManager.applyOverrides` → `YamlStore.saveAtomic` útvonalon mennek. A packaged
+  defaulttal definiált zóna törlése explicit `deleted: true` tombstone, ezért merge/reload után sem
+  támad fel. Ez nem legacy migration vagy külön persistence-framework.
+
+### 3.9 Kaszt-erőforrás (`ResourceManager`) — hibrid költség
 Per-kaszt „erő" 0–max meter, a HUD-oldalsávban megjelenítve (`HudManager.buildLines` hív egy
 `hudLine`-t — **nem** külön boss-bar, hogy ne ütközzön a világboss-sávval). A csík **lazy módon
 regenerálódik** (minden hozzáférés krediteli az eltelt időt — nincs scheduler), UUID-kulcsos
@@ -202,7 +224,7 @@ cooldown-szint alapján); egyébként a spell saját `hasRequiredCost`/`consumeC
 > A korábbi „teli állapotban kirobbanás + empowered ablak" jutalom-mechanika **megszűnt** — a csík
 > most költség (spend-modell), ami ugyanazon a sávon kizárta a build→discharge-ot.
 
-### 3.9 Territórium-zónák és zóna-védelem
+### 3.10 Territórium-zónák és zóna-védelem
 
 A **zóna-modell** három rétegre bomlik, hogy a geometria, a szabály-feloldás és az
 eseménykezelés külön változhasson:
@@ -416,8 +438,8 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 485 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 113 fájl).
-  Csomag-megoszlás: listeners 115, managers 113, commands 84, spells 56, gui 42, utils 22, data 12,
+- **Méret:** 489 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 115 fájl).
+  Csomag-megoszlás: listeners 115, managers 115, commands 85, spells 56, gui 42, utils 22, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.

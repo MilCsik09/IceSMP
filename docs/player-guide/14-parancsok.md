@@ -109,6 +109,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 |---|---|
 | `/icesmp reload` | Konfiguráció újratöltése |
 | `/icesmp inspect <név>` | Teljes játékos-riport: kaszt/erőforrás/statok/bűn/claim/questek/cooldownok |
+| `/afkzone create|replace|delete|list|tp|show|status|clear ...` | Natív AFK-zónák kezelése a közös `/claim pos1|pos2` vagy birtokmérő-pálca selectionből (`icesmp.admin.afk`) |
 | `/invsee <név>` | Inventory + ender-láda betekintés (pillanatkép, csak olvasás) |
 | `/mute <név> [perc] [ok]` / `/unmute <név>` | Némítás (0 = végtelen; perc kihagyva = automatikus eszkaláció a némítás-történet alapján; chat + privát üzenetek), feloldás; `/mute list` |
 | `/reports` / `/reports resolve <id>` | Játékos-bejelentések listája és lezárása |

@@ -7,23 +7,40 @@
 
 ---
 
+## Unreleased — natív AFK-zónák
+
+- A claim-rendszer kétpontos kijelölése a közös, claim-kompatibilis
+  `CuboidSelectionService` alá került; az AFK-admin ugyanazt a state-et és előnézetet használja.
+- A meglévő globális `AfkManager` több, szigorúan validált cuboid zónát, zónánkénti permissiont,
+  reward intervalt/rollt, currency/item/console-command rewardot és konfigurálható UI-t kezel.
+- Az `/afkzone` create/replace/delete/list/tp/show/status/clear műveleteket biztosít. A configírás
+  a meglévő `ConfigManager` + `YamlStore.saveAtomic` útvonalon történik; a törlés tombstone-alapú.
+- Az `afkRegressionTest` cuboid overflowot, reward clockot, weighted rollt, configvalidációt,
+  command-placeholdert, tombstone-t és reuse/Folia invariánsokat ellenőriz.
+- Az AxAFKZone/AxAPI eltávolíthatósága nincs kijelentve: zöld remote CI és a dokumentált valódi
+  Folia playtest továbbra is kötelező.
+
+---
+
 ## Telepítési útmutató
 
-### 1. Eltávolítandó pluginok (mind natívan kiváltva)
+### 1. Külsőplugin-eltávolítási kapu
 
-| Régi plugin | Natív kiváltás |
-|---|---|
-| `ICEsmpadditions.jar` | `world-tweaks.warden-death-xp` (general.yml, élőben hangolható) |
-| `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
-| `MiniMOTD` | natív MOTD (`motd.yml`) |
-| `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
-| `CrazyCrates` | natív crate-rendszer (`crates.yml`, `/crate`, rulett-animáció) |
-| AFK/ülés plugin | natív `/afk` + `/sit` (klikk-ülés) |
-| `InvSee++` / `SModeration` | natív moderáció (`/report`, mute, chat-szűrő) + read-only `/invsee` + inspektor |
+A plugin-replacement branchek nem állítanak upstream paritást. Külső jar csak akkor távolítható el,
+ha az adott scope draft PR-je zöld remote CI-val rendelkezik, és a `PLAYTEST.md` kötelező valódi
+Folia tesztjei is dokumentáltan sikeresek. A mérvadó státusz: `docs/PLUGIN_REPLACEMENT_MATRIX.md`.
 
-A `plugins/` mappából a fentiek jarját el kell távolítani az új IceSMP-jar bemásolásakor.
-Megmaradó soft-dependency: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms
-(mind opcionális — nélkülük is fut).
+- `SModeration` / `InvSee++`: moderációs scope + runtime kapu;
+- `AxAFKZone` / `AxAPI`: AFK-zóna scope + runtime kapu;
+- `GSit`: sit/pose completion scope + runtime kapu;
+- `MiniMOTD`: MOTD completion scope + runtime kapu;
+- `CrazyCrates`: crate completion scope + runtime kapu;
+- `ICEsmpadditions.jar` / `FarmProtect.jar`: a natív megfelelő megvan, de kézi eventteszt kell;
+- `TAB`: a jelenlegi natív igény lefedett, de viewer/reload/permission teszt kell.
+
+Nincs production vagy legacy adat, ezért ehhez a programhoz migráció, decoder vagy compatibility
+réteg nem készül. A soft-dependency-k (PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard,
+LuckPerms) változatlanul opcionális integrációk.
 
 ### 2. Resource pack — CSERE KÖTELEZŐ
 
@@ -53,8 +70,8 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
   infósor, prioritás-kiszorítás, party-szekció.
 - **Natív moderáció**: `/report` rendszer (perzisztens, offline-feedbackkel), mute +
   chat-szűrő + spam-fék, eszkaláció + chat-napló; **admin-inspektor** + read-only `/invsee`.
-- **Natív AFK-, crate- és ülés-rendszer** (3 plugin kiváltva); crate rulett-animációval,
-  kulcs-források a jutalom-csatornákban.
+- **Natív AFK-, crate- és ülés-alapok** kerültek a repositoryba; a teljes IceSMP-specifikus
+  completion és az eltávolíthatóság scope-onként, külön draft PR-ben és runtime kapuval igazolandó.
 - **DisplayFx + SpellVfx réteg**: display-entity effektek, formázott spell-VFX kaszt/spec-
   palettákkal és per-spell override-dal, 3D crate-feltárás, boss-AoE padló-telegraph,
   aurora fény-fátyol; particle-diéta (FLASH-korlát, konfetti-mérséklés).

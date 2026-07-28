@@ -3,7 +3,7 @@
 A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzése alapján.
 (Frissítve az ütközések felszámolásakor.)
 
-## 1. TAB → IceSMP natív tablist — A TAB PLUGIN LESZEDHETŐ
+## 1. TAB → IceSMP natív tablist — runtime ellenőrzés után kivezethető
 
 **Új állapot:** a teljes TAB-funkcionalitás, amit a szerver használt, natívan megy
 (`managers/TablistManager` + `HudManager` + `config/tablist.yml`):
@@ -17,11 +17,11 @@ A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzés
 | Scoreboard-oldalsáv (IceSMP-adatokkal) | `hud.sidebar-enabled: true` + `hud.sidebar.title` — TAB-dizájn portolva (elválasztó-animáció, small-caps címkék) |
 | Animációk (animations.yml) | `tablist.animations.<név>` — időalapú frame-váltás, minimum 250 ms (a TAB 50 ms-os marquee-i ritkított frame-ekkel portolva) |
 
-**Éles átállás:** (1) frissítsd a plugint; (2) töröld a `TAB v6.0.0.jar`-t; (3) kész — a
-repo-defaultok már a natív rétegre állnak (`hud.sidebar-enabled: true`,
-`tablist.enabled: true`). Ha a TAB fent marad, a konzol induláskor figyelmeztet, és a két
-rendszer a neveken/teameken verekedni fog. A ㍿/㍐ glyph-ek a resource packből jönnek —
-RP nélküli teszthez cseréld őket a configban sima szövegre.
+**Átállási kapu:** a natív réteg a jelenlegi IceSMP-igényt lefedi, de a TAB jar csak a
+`PLAYTEST.md` szerinti viewer-, sorting-, AFK-, raid-, reload- és permissionteszt után távolítható el.
+A párhuzamos működés nem támogatott: a két rendszer ugyanazokat a player-list/scoreboard adatokat
+kezeli. A ㍿/㍐ glyph-ek a resource packből jönnek; resource pack nélküli teszthez a configban
+sima szövegre cserélhetők.
 
 **PlaceholderAPI-híd megmarad** más pluginok kedvéért (`integration/IceSMPPlaceholders`):
 
@@ -68,8 +68,9 @@ változatlanul a régi név-alapú logikával működnek (teljes visszafele-komp
 1. **AuMenus** — a menü-fájljai még a gyári példák; IceSMP-parancsokra kötve (console:
    `icesmp ...` akciók + `%icesmp_...%` lore-placeholderek) staff Java nélkül építhet új
    front-endeket, a gameplay-logika a parancsokban marad (agent GUI-szabály).
-2. **AxAFKZone** — AFK-zóna jelzés átvétele: AFK-zónában az IceSMP passzív XP/erőforrás-regen
-   szüneteltethető, hogy az AFK-jutalom ne legyen párhuzamos power-leveling exploit.
+2. **Natív AFK-zónák** — a közös claim-kompatibilis 3D selection, a meglévő `AfkManager`,
+   `CurrencyManager`, `MessageManager` és Folia scheduler-minták együtt biztosítják a célzott
+   AFK-zóna viselkedést. Az AxAFKZone/AxAPI eltávolítása csak a dedikált runtime playtest után engedett.
 3. **VillagerTradeEdit** — szakma-specifikus vendor-villagerek (recept/valuta-árak) a
    profession/market rendszerhez, egyedi trade-GUI kód nélkül.
 
@@ -77,49 +78,28 @@ Semleges (nem ütközik): GSit, ImageFrame, CoreProtect, GrimAC, ViaVersion, voi
 FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
 Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms.
 
-## 5.1 Plugin-leépítési terv (mi váltható ki / törölhető, és hogyan)
+## 5.1 Plugin-leépítési kapuk
 
-### ✅ Kiváltva natívan — a jar TÖRÖLHETŐ
+A repositoryban található natív alap vagy elkészült branch önmagában nem jogosít külső jar
+eltávolítására. A mérvadó állapotot a `docs/PLUGIN_REPLACEMENT_MATRIX.md`, az adott draft PR
+remote CI-je és a `PLAYTEST.md` runtime kapui együtt adják. A szerverhez nincs production vagy
+legacy adat, ezért migrációs lépések nem részei ennek a programnak.
 
-| Plugin | Natív megfelelő | Teendő törlés előtt |
+| Külső plugin | Natív IceSMP-állapot | Eltávolítási kapu |
 |---|---|---|
-| **TAB v6.0.0** | TablistManager + `config/tablist.yml` + oldalsáv (lásd §1) | — |
-| **SimpleClaimSystem** | natív `/claim` | régi claimek újrafoglalása (nem konvertálódik) |
-| **LuckPermsChatFormatterFolia** | natív chat-formázó (`chat.format-enabled`) | — |
-| **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
-| **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
-| **MiniMOTD** | `MotdListener` + `config/motd.yml` — MiniMessage-formázás, IDŐALAPON rotálódó variánsok, {online}/{max} tokenek, max-player felülírás. (A MiniMOTD amúgy is gyári példa-configon állt.) | szabd testre a `motd.yml` variánsokat |
-| **AxAFKZone (+AxAPI)** | `AfkManager` + `config/afk.yml` — AFK-zónák (doboz), időzített valuta-jutalom (tudatos kis faucet, C3 monitorral figyelendő), bossbar-visszaszámláló, be-/kilépés üzenetek; PLUSZ globális AFK-detektálás és ⌚ AFK jelzés a tablistában (amit az AxAFKZone nem tudott) | vidd át a zóna-koordinátákat az `afk.yml`-be (a régi `AxAFKZone/zones/zome1.yml`-ből) |
-| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages, ITEM_MODEL-es kulcsok, súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
-| **GSit** | `SitManager` — `/sit` parancs + jobb-katt lépcsőre/fél-lapra üres kézzel; kelés minden úton takarít (quit/halál/teleport/blokk-törés) | — |
-| **SModeration** | `ModerationManager` — restart-álló némítás (`/mute`/`/unmute`, offline is), chat-szűrő (CENSOR/BLOCK), spam-fék, privát-parancs tiltás némítottnak; PLUSZ `/report` + `/reports` bejelentő-rendszer admin-értesítéssel (`config/moderation.yml`, `icesmp.admin.moderation`) | szavak felvétele a `chat-filter.words` listába |
-| **InvSee++ (3 jar)** | `/invsee <név>` — READ-ONLY inventory + ender-láda pillanatkép-GUI; PLUSZ `/icesmp inspect <név>` teljes plugin-állapot riport (kaszt/erőforrás/statok/bűn/claim/questek/cooldownok) — `icesmp.admin.inspect`. Szerkesztés/clear/give nincs (ha kell, a jar maradhat, de betekintésre már nem) | — |
+| **TAB** | a jelenleg szükséges tablist/HUD funkciók natívan megvannak | viewer-, sorting-, AFK/raid-, reload- és permission-playtest |
+| **ICEsmpadditions** | `WorldTweaksListener` Warden-XP viselkedés | kézi Warden death/XP event teszt |
+| **FarmProtect** | `WorldTweaksListener` crop-trample védelem | játékos- és mob-taposás kézi teszt |
+| **SModeration / InvSee++** | a `feature/native-moderation-suite` draft PR egységes ledgerrel, ban gate-tel, SocialSpyjal, vanish-sel és online inv/ender read-edit móddal készül | zöld remote CI + dokumentált valódi Folia restart/reload/disconnect/permission/fault-injection teszt |
+| **AxAFKZone / AxAPI** | a `feature/native-afk-zones` scope több zónát, közös 3D selectiont és validált rewardokat ad | zöld remote CI + valódi Folia zone/reload/restart/reward/full-inventory/permission teszt |
+| **GSit** | meglévő alap `SitManager`; completion külön scope | sit/pose draft PR, zöld CI és lifecycle playtest |
+| **MiniMOTD** | meglévő alap `MotdListener`; completion külön scope | MOTD draft PR, zöld CI, ikon/reload/event/vanish count playtest |
+| **CrazyCrates** | meglévő fizikai crate/PDC/weighted-reward alap; completion külön scope | crate draft PR, zöld CI, key/cooldown/full-inventory/stat/restart playtest |
 
-### 🗑 Törölhető kiváltás NÉLKÜL (nem használt / kiürült)
-
-| Plugin | Indoklás |
-|---|---|
-| **Economist + ServiceIO** | Vault-gazdaság — de a szerver gazdasága az IceSMP-é. Fogyasztót nem találtunk (a TAB `%vault_prefix%`-e volt az utolsó, az már natív LP-hídon megy). Törlés előtt: konzolban `/papi parse me %vault_eco_balance%` gyors ellenőrzésnek. |
-| **AuMenus** | A menü-configjai a gyári teszt-példák (`basic_menu`, `test_*`) — a `/menu` rendszerünk teljesebb. |
-| **FancyHolograms** | Egyetlen „test" hologram van benne (NPC-hez kötött teszt). Ha hologram kell később: natív TextDisplay-infránk kész (D3/D10 ötletek). Figyelem: törlés előtt ellenőrizd, hogy a FancyNpcs verziód nem függ-e tőle. |
-
-### 🔶 Kiváltható közepes munkával (tervezett)
-
-*(A kör lezárva — minden tervezett tétel a ✅ táblába került. Megjegyzés: az InvSee++
-szerkesztő/clear/give funkciói nincsenek kiváltva, csak a betekintés; ha az admin-csapat
-aktívan szerkeszt inventorykat, az InvSee++ maradhat, egyébként törölhető.)*
-
-### 🔒 Marad (nem érdemes/nem szabad kiváltani)
-
-CoreProtect (rollback), GrimAC (anticheat), FAWE/WorldEdit/WorldGuard/goBrush/VoxelSniper/
-AxiomPaper (build-eszközök), ViaVersion/Backwards, ProtocolLib/packetevents (más pluginok
-függőségei), spark (profiler), voicechat, LuckPerms, PlaceholderAPI, LibsDisguises,
-FancyNpcs, ImageFrame, VillagerTradeEdit, bStats/faststats/FancyAnalytics (metrika),
-**Orebfuscator** (X-ray védelem — csak az építési fázis alatt inaktív, éles indulásra
-visszakapcsolandó).
-
-**Mérleg:** a ✅+🗑 lépések után a plugin-lista ~35-ről **~24-re** csökken — kevesebb
-Folia-kockázat, gyorsabb indulás, kevesebb frissítés-függés.
+A SimpleClaimSystem és LuckPermsChatFormatterFolia korábbi kivezetési döntése külön, már létező
+natív rendszerekhez tartozik. CoreProtect, GrimAC, WorldEdit/FAWE/WorldGuard, ViaVersion,
+ProtocolLib/packetevents, voicechat, LuckPerms, PlaceholderAPI, LibsDisguises, FancyNpcs és a
+szerverüzemeltetési eszközök nem részei ennek a kiváltási programnak.
 
 ## 6. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
 
