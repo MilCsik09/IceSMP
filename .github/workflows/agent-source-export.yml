@@ -1,4 +1,4 @@
-name: Agent AFK Patch Publisher
+name: Agent Source Export
 
 on:
   pull_request:
@@ -8,31 +8,41 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  publish:
-    name: Validate and publish native AFK commits
+  export:
+    name: Export current AFK source
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
-      - name: Checkout publisher branch
+      - name: Checkout AFK branch
         uses: actions/checkout@v4
         with:
+          ref: 66b2a362cdefb557e66c2d518d234b32db97e0ba
           fetch-depth: 0
 
-      - name: Validate and apply native AFK patch
+      - name: Verify exact AFK head
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/agent-patches-afk/chunks/part* > /tmp/afk.mbox.gz.b64
-          test "$(wc -c < /tmp/afk.mbox.gz.b64)" -eq 60060
-          base64 --decode /tmp/afk.mbox.gz.b64 > /tmp/afk.mbox.gz
-          echo "72a57e3947328e4ae04b0f579c58058c0086d1388ccda584d2713af9631b8a44  /tmp/afk.mbox.gz" | sha256sum -c -
-          gzip -t /tmp/afk.mbox.gz
-          gzip -dc /tmp/afk.mbox.gz > /tmp/afk.mbox
-          git config user.name "IceSMP Automation"
-          git config user.email "actions@users.noreply.github.com"
-          git checkout --detach f4e82263d35c645a053eccac09a3ad254a36ed90
-          git am /tmp/afk.mbox
-          git push --force-with-lease=refs/heads/feature/native-afk-zones:f4e82263d35c645a053eccac09a3ad254a36ed90 origin HEAD:refs/heads/feature/native-afk-zones
+          test "$(git rev-parse HEAD)" = "66b2a362cdefb557e66c2d518d234b32db97e0ba"
+
+      - name: Package source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude='./.git' \
+            --exclude='./.gradle' \
+            --exclude='./build' \
+            --exclude='./Other' \
+            -czf /tmp/icesmp-afk-source.tar.gz .
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-afk-source-66b2a36
+          path: /tmp/icesmp-afk-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
