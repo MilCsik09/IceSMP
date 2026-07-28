@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
+import hu.taliann.icesmp.selection.CuboidSelectionService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -123,19 +124,6 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         }
     }
 
-    /** Per-player block-corner selection for /claim pos1|pos2 (volatile, cleared on quit). */
-    private static final class Selection {
-        private String world;
-        private int x1;
-        private int y1;
-        private int z1;
-        private boolean hasFirst;
-        private int x2;
-        private int y2;
-        private int z2;
-        private boolean hasSecond;
-    }
-
     /** A completed selection's summary for previews and the area-claim flow. */
     public record SelectionInfo(int width, int depth, int columns, boolean overlaps, double cost) { }
 
@@ -144,6 +132,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
     private final TerritoryManager territoryManager;
+    private final CuboidSelectionService selectionService;
     private final File storageFile;
 
     /** claim-id → claim. */
@@ -157,18 +146,19 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
      */
     private volatile Map<String, List<Claim>> chunkIndex = Map.of();
 
-    private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();
     /** Last claim-id per player (border-cross action-bar notices; cleared on quit). */
     private final Map<UUID, String> lastClaimId = new ConcurrentHashMap<>();
 
     public ClaimManager(final JavaPlugin plugin, final ConfigManager configManager,
                         final CurrencyManager currencyManager, final FactionManager factionManager,
-                        final TerritoryManager territoryManager) {
+                        final TerritoryManager territoryManager,
+                        final CuboidSelectionService selectionService) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.territoryManager = territoryManager;
+        this.selectionService = selectionService;
         this.storageFile = new File(plugin.getDataFolder(), "claims.yml");
     }
 
@@ -237,7 +227,8 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     }
 
     public double columnCost() {
-        return Math.max(0.0D, configManager.getDouble("claims.column-cost", 0.5D));
+        final double configured = configManager.getDouble("claims.column-cost", 0.5D);
+        return Double.isFinite(configured) && configured >= 0.0D ? configured : 0.5D;
     }
 
     /**
@@ -247,9 +238,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
      */
     public double priceFor(final int ownedColumns, final int newColumns) {
         final int free = freeColumns();
-        final int paidBefore = Math.max(0, ownedColumns - free);
-        final int paidAfter = Math.max(0, ownedColumns + newColumns - free);
-        return Math.ceil((paidAfter - paidBefore) * columnCost() * 100.0D) / 100.0D;
+        final long paidBefore = Math.max(0L, (long) ownedColumns - free);
+        final long paidAfter = Math.max(0L, (long) ownedColumns + newColumns - free);
+        final double raw = (paidAfter - paidBefore) * columnCost();
+        return Double.isFinite(raw) ? Math.ceil(raw * 100.0D) / 100.0D : Double.MAX_VALUE;
     }
 
     /** The price of the player's next quick-claim (a quick-size² square). */
@@ -429,100 +421,75 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
         return null;
     }
 
-    // ==================== terület-kijelölés (pos1/pos2 → area) ====================
+    // ==================== terület-kijelölés (közös 3D selection → area) ====================
 
-    /** Records the player's standing BLOCK as the selection's first/second corner. */
+    /** Records the player's standing block through the shared 3D selection service. */
     public int[] setCorner(final Player player, final boolean first) {
         return setCorner(player, first, player.getLocation());
     }
 
-    /** Pálcás kijelölés: a KATTINTOTT blokk koordinátájával (nem a játékos helyével). */
+    /** Wand selection delegates to the shared, feature-neutral service. */
     public int[] setCorner(final Player player, final boolean first, final Location location) {
-        final Selection selection = selections.computeIfAbsent(player.getUniqueId(), id -> new Selection());
-        synchronized (selection) {
-            final String worldName = location.getWorld().getName();
-            if (!worldName.equals(selection.world)) {
-                selection.hasFirst = false;
-                selection.hasSecond = false;
-                selection.world = worldName;
-            }
-            if (first) {
-                selection.x1 = location.getBlockX();
-                selection.y1 = location.getBlockY();
-                selection.z1 = location.getBlockZ();
-                selection.hasFirst = true;
-            } else {
-                selection.x2 = location.getBlockX();
-                selection.y2 = location.getBlockY();
-                selection.z2 = location.getBlockZ();
-                selection.hasSecond = true;
-            }
-        }
-        return new int[] {location.getBlockX(), location.getBlockZ()};
+        final CuboidSelectionService.Corner corner = selectionService.setCorner(player, first, location);
+        return new int[] {corner.x(), corner.z()};
     }
 
-    /** Summary of the player's completed selection, or null when incomplete. */
+    /** Summary of the player's completed shared selection, or null when incomplete/too large. */
     public SelectionInfo getSelectionInfo(final UUID playerId) {
-        final Selection selection = selections.get(playerId);
-        if (selection == null) {
+        final CuboidSelectionService.Result selected = selectionService.result(playerId);
+        if (!selected.ready()) {
             return null;
         }
-        synchronized (selection) {
-            if (!selection.hasFirst || !selection.hasSecond) {
-                return null;
-            }
-            final int minX = Math.min(selection.x1, selection.x2);
-            final int maxX = Math.max(selection.x1, selection.x2);
-            final int minZ = Math.min(selection.z1, selection.z2);
-            final int maxZ = Math.max(selection.z1, selection.z2);
-            final int width = maxX - minX + 1;
-            final int depth = maxZ - minZ + 1;
-            final boolean overlaps = findFootprintOverlap(selection.world, minX, minZ, maxX, maxZ) != null;
-            return new SelectionInfo(width, depth, width * depth, overlaps,
-                    priceFor(countColumns(playerId), width * depth));
-        }
+        final CuboidSelectionService.Cuboid cuboid = selected.cuboid();
+        final long columnsLong = cuboid.footprint();
+        final int columns = columnsLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) columnsLong;
+        final int width = cuboid.width() > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cuboid.width();
+        final int depth = cuboid.depth() > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cuboid.depth();
+        final boolean overlaps = findFootprintOverlap(cuboid.worldName(),
+                cuboid.minX(), cuboid.minZ(), cuboid.maxX(), cuboid.maxZ()) != null;
+        return new SelectionInfo(width, depth, columns, overlaps,
+                priceFor(countColumns(playerId), columns));
     }
 
     /**
-     * Claims the exact block-rectangle between the two corners (Y-range: the lower
-     * corner minus default depth up to the higher corner plus default height).
-     * Null on success, else message key.
+     * Claims the exact block rectangle of the shared selection (the claim domain still applies
+     * its own XZ cap and vertical expansion policy). Null on success, else message key.
      */
     public synchronized String claimSelection(final Player player) {
         if (!isEnabled()) {
             return "claim-disabled";
         }
-        final Selection selection = selections.get(player.getUniqueId());
-        if (selection == null || !selection.hasFirst || !selection.hasSecond) {
+        final long areaMax = Math.max(16L, configManager.getLong("claims.area-max-columns", 6400L));
+        // The shared service owns global 3D overflow protection. The claim's XZ footprint limit is
+        // checked below because its domain price/protection model is column-based.
+        final CuboidSelectionService.Result selected = selectionService.result(player.getUniqueId());
+        if (selected.status() == CuboidSelectionService.Status.INCOMPLETE) {
             return "claim-area-incomplete";
         }
-        if (!player.getWorld().getName().equals(selection.world)) {
+        if (selected.status() == CuboidSelectionService.Status.TOO_LARGE) {
+            return "claim-area-too-big";
+        }
+        final CuboidSelectionService.Cuboid cuboid = selected.cuboid();
+        if (!player.getWorld().getUID().equals(cuboid.worldId())) {
             return "claim-area-cross-world";
         }
 
-        final int minX = Math.min(selection.x1, selection.x2);
-        final int maxX = Math.max(selection.x1, selection.x2);
-        final int minZ = Math.min(selection.z1, selection.z2);
-        final int maxZ = Math.max(selection.z1, selection.z2);
-        // long-szorzás: egy ~46341×46341-es kijelölésnél az int-szorzat átfordulna, és a
-        // méret-plafon + a költség-számítás is kijátszható lenne.
-        final long columns = (long) (maxX - minX + 1) * (long) (maxZ - minZ + 1);
-        final int areaMax = Math.max(16, configManager.getInt("claims.area-max-columns", 6400));
+        final long columns = cuboid.footprint();
         if (columns > areaMax) {
             return "claim-area-too-big";
         }
 
-        final int anchorY = (Math.min(selection.y1, selection.y2) + Math.max(selection.y1, selection.y2)) / 2;
-        final String errorKey = createClaim(player, player.getWorld(), minX, minZ, maxX, maxZ, anchorY);
+        final int anchorY = cuboid.minY() + (cuboid.maxY() - cuboid.minY()) / 2;
+        final String errorKey = createClaim(player, player.getWorld(), cuboid.minX(), cuboid.minZ(),
+                cuboid.maxX(), cuboid.maxZ(), anchorY);
         if (errorKey != null) {
-            // Az area-specifikus üzenetek beszédesebbek az általános foglalási hibáknál.
             return switch (errorKey) {
                 case "claim-already-taken" -> "claim-area-foreign";
                 case "claim-overlap-own" -> "claim-area-overlap-own";
                 default -> errorKey;
             };
         }
-        selections.remove(player.getUniqueId());
+        selectionService.clear(player.getUniqueId());
         return null;
     }
 
@@ -846,7 +813,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        selections.remove(playerId);
+        // Corner state belongs to CuboidSelectionService and is cleaned centrally.
         lastClaimId.remove(playerId);
     }
 

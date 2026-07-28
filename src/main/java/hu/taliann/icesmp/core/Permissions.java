@@ -47,6 +47,7 @@ public final class Permissions {
     public static final String SINNER = "icesmp.admin.sinner";
     public static final String WAR = "icesmp.admin.war";
     public static final String CRATE = "icesmp.admin.crate";
+    public static final String AFK = "icesmp.admin.afk";
     public static final String MODERATION = "icesmp.admin.moderation";
     public static final String INSPECT = "icesmp.admin.inspect";
     public static final String ITEM = "icesmp.admin.item";
@@ -78,6 +79,7 @@ public final class Permissions {
         canonical.put(SINNER, "Bűn-kezelés (/sinner)");
         canonical.put(WAR, "Hadi-ablak admin (/faction war start|stop)");
         canonical.put(CRATE, "Láda-admin (/crate set/remove/give)");
+        canonical.put(AFK, "AFK-zóna admin (/afkzone)");
         canonical.put(MODERATION, "Moderáció: némítás, chat-szűrő, bejelentések (/mute, /reports)");
         canonical.put(INSPECT, "Játékos-inspektor + inventory-betekintés (/icesmp inspect, /invsee)");
         canonical.put(ITEM, "Admin item-adás (/iceitem)");

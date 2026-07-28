@@ -144,6 +144,16 @@ public final class MessageManager {
         }
     }
 
+    /** Renders an already-resolved config/domain string through the shared message formatter. */
+    public Component render(final String rawMessage) {
+        return renderComponent(rawMessage == null ? "" : rawMessage);
+    }
+
+    /** Legacy-string counterpart used only by APIs that still accept a String. */
+    public String renderLegacy(final String rawMessage) {
+        return colorize(rawMessage == null ? "" : rawMessage);
+    }
+
     /**
      * Whether a message should go through the MiniMessage parser: it carries {@code <...>}
      * tags. Mixed messages (tags + legacy codes) are normalized first via

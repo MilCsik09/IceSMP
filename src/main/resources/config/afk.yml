@@ -1,37 +1,85 @@
-# IceSMP konfiguráció — afk (a ConfigManager az összes config/*.yml-t betölti)
-# Natív AFK-rendszer (AxAFKZone-kiváltás): globális inaktivitás-figyelés +
-# időzített AFK-zóna jutalom (kicsi "faucet" — gazdasági csap, ld. lent).
+# IceSMP konfiguráció — natív AFK-rendszer.
+# Az Other/plugins/AxAFKZone csak követelményforrás; nincs legacy config- vagy adatmigráció.
+
+# Közös 3D kijelölő szolgáltatás: a claim és az AFK-zóna ugyanazt a player sessiont,
+# világellenőrzést, cuboid-normalizálást, előnézetet és cleanupot használja.
+selection:
+  # Globális biztonsági plafon minden közös 3D kijelölésre.
+  max-volume: 1000000
+  preview-seconds: 8
+  preview-max-points: 120
+
 afk:
   enabled: true
   # Az AFK-állapot ellenőrzésének gyakorisága (tick; 20 = másodpercenként).
   refresh-ticks: 20
-
-  # Ennyi másodperc inaktivitás (mozgás/nézés-változás, chat, parancs, blokk-interakció
-  # nélkül) után számít a játékos AFK-nak — BÁRHOL a szerveren (nem csak a zónában).
   afk-after-seconds: 180
-  # IDEAS A46: AFK-jelölt játékos nem termel kaszt-XP-t, szakma-XP-t és lélekkő-dropot
-  # (auto-farm exploit-fék). Az AFK-zóna időzített jutalmát ez NEM érinti.
+  # AFK-jelölt játékos nem termel kaszt-/szakma-XP-t vagy automata lootot.
   block-rewards: true
 
-  # AFK-zónák (doboz): itt állva (akár mozogva a zónán belül) időzített jutalom jár,
-  # függetlenül a fenti inaktivitás-időzítőtől.
-  zones:
-    fovaros-pihenokert:
-      world: world
-      min: {x: 0, y: 60, z: 0}
-      max: {x: 10, y: 70, z: 10}
-
-  reward:
-    # Ennyi zónában (megszakítás nélkül) töltött másodperc után jár egy jutalom-kör.
-    interval-seconds: 600
-    # CurrencyType neve (RED/BLUE/NEUTRAL/DARK).
-    currency: NEUTRAL
-    # SZÁNDÉKOSAN kicsi összeg — ez egy gazdasági csap ("faucet"), nem grind-forrás.
-    # A C3 gazdasági monitor figyeli az AFK-zóna kibocsátását; ha emelni kell, apránként.
-    amount: 2.0
+  # Zóna- és jutalombiztonsági korlátok. NaN/Infinity, nulla, negatív és ennél nagyobb
+  # értékek elutasításra kerülnek; egy hibás zóna nem állítja le a teljes plugint.
+  max-zone-volume: 1000000
+  max-currency-reward: 1000
+  max-item-amount: 64
 
   bossbar:
     enabled: true
-    # {perc} / {mp} — a következő jutalomig hátralévő idő (perc, illetve a perc utáni
-    # másodperc-maradék).
-    text: "⌚ ᴀꜰᴋ-ᴢóɴᴀ — köv. jutalom: {perc} perc {mp} mp"
+
+  # /afkzone create alapértékei. A létrehozás ezeket atomikusan másolja a config.yml
+  # override-ba, majd szigorúan újravalidálja a teljes zónát.
+  zone-defaults:
+    reward-interval-seconds: 600
+    roll-count: 1
+    rewards:
+      - type: CURRENCY
+        weight: 80.0
+        currency: NEUTRAL
+        amount: 2
+      - type: ITEM
+        weight: 20.0
+        material: BREAD
+        amount: 1
+    messages:
+      enter: '&b⌚ Beléptél: &f{zone}&b — időzítve jutalom jár.'
+      leave: '&7Elhagytad: &f{zone}&7 — az időzítő nullázódott.'
+    title: ''
+    subtitle: ''
+    actionbar: '&b{zone} &7— következő jutalom: &f{minutes}p {seconds}mp'
+    bossbar:
+      text: '⌚ {zone} — {minutes}p {seconds}mp'
+      color: BLUE
+      overlay: PROGRESS
+
+  # Több, egymástól független zóna. Adminmódosítás: /afkzone.
+  # A world-uuid kulcsot az adminparancs mindig rögzíti; a csomagolt kezdőpélda a
+  # világ nevét használja, mert az első indítás előtt UUID még nem ismert.
+  zones:
+    fovaros-pihenokert:
+      enabled: true
+      display-name: 'Fővárosi pihenőkert'
+      world: world
+      permission: ''
+      min: {x: 0, y: 60, z: 0}
+      max: {x: 10, y: 70, z: 10}
+      reward-interval-seconds: 600
+      roll-count: 1
+      rewards:
+        - type: CURRENCY
+          weight: 80.0
+          currency: NEUTRAL
+          amount: 2
+        - type: ITEM
+          weight: 20.0
+          material: BREAD
+          amount: 1
+      messages:
+        enter: '&b⌚ Beléptél: &f{zone}&b — időzítve jutalom jár.'
+        leave: '&7Elhagytad: &f{zone}&7 — az időzítő nullázódott.'
+      title: ''
+      subtitle: ''
+      actionbar: '&b{zone} &7— következő jutalom: &f{minutes}p {seconds}mp'
+      bossbar:
+        text: '⌚ {zone} — {minutes}p {seconds}mp'
+        color: BLUE
+        overlay: PROGRESS

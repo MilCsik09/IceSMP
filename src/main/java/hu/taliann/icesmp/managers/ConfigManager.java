@@ -1,12 +1,15 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manager for loading and accessing configuration values.
@@ -112,6 +115,34 @@ public final class ConfigManager {
         plugin.saveConfig();
         load();
         return true;
+    }
+
+    /**
+     * Atomically applies a related set of override leaves/sections to {@code config.yml} and
+     * publishes one merged snapshot. This is the shared write path for admin operations such as
+     * AFK-zone creation: no reader can observe a half-written cuboid or reward definition.
+     * A null value removes the key/section.
+     */
+    public synchronized void applyOverrides(final Map<String, ?> updates) {
+        if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        final File configFile = new File(plugin.getDataFolder(), "config.yml");
+        final YamlConfiguration overrides = YamlConfiguration.loadConfiguration(configFile);
+        for (final Map.Entry<String, ?> update : updates.entrySet()) {
+            if (update.getKey() == null || update.getKey().isBlank()) {
+                throw new IllegalArgumentException("Üres configkulcs nem írható.");
+            }
+            overrides.set(update.getKey(), update.getValue());
+        }
+        try {
+            YamlStore.saveAtomic(configFile, overrides);
+        } catch (final IOException failure) {
+            // A hívó adminműveletnek tudnia kell, hogy a változtatás NEM tartós.
+            throw new IllegalStateException("A config.yml atomikus mentése sikertelen.", failure);
+        }
+        plugin.reloadConfig();
+        load();
     }
 
     /** Returns null if not yet loaded. */

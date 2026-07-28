@@ -273,6 +273,7 @@ public final class IceSMPCore {
     private final MeteorEventManager meteorEventManager;
     private final PartyManager partyManager;
     private final ClaimManager claimManager;
+    private final hu.taliann.icesmp.selection.CuboidSelectionService selectionService;
     private final SpecializationManager specializationManager;
     private final TalentManager talentManager;
     private final TerritoryManager territoryManager;
@@ -417,7 +418,9 @@ public final class IceSMPCore {
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
-        this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
+        this.selectionService = new hu.taliann.icesmp.selection.CuboidSelectionService(plugin, configManager);
+        this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager,
+                territoryManager, selectionService);
         // Közös, esemény×védelem mátrixszal configolható spawn-hely szabályok (world-events.
         // spawn-rules) minden világeseménynek. A világboss/invázió/vad hajsza setter-t kap,
         // mert a DI-sorrendben a ClaimManager ELŐTT épülnek.
@@ -567,7 +570,8 @@ public final class IceSMPCore {
                 abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
-        this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
+        this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager,
+                messageManager, selectionService);
         ambientEventManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
@@ -622,6 +626,7 @@ public final class IceSMPCore {
                 resourceManager,
                 partyManager,
                 claimManager,
+                selectionService,
                 territoryManager,
                 petManager,
                 ritualManager,
@@ -1128,6 +1133,7 @@ public final class IceSMPCore {
         shutdownStep("cultistEventManager", cultistEventManager::shutdown);
         shutdownStep("totemManager", totemManager::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
+        shutdownStep("selectionService", selectionService::shutdown);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
@@ -1353,6 +1359,9 @@ public final class IceSMPCore {
             professionRecipeCatalog.load();
             achievementManager.reload();
             devItemManager.refreshOnlineOwner();
+            // Shared selection sessions and previews are transient and never survive reload.
+            selectionService.clearAll();
+            afkManager.reloadZones();
             // A spell-VFX statikus mezőkbe cache-el — reload nélkül az enable-kori érték
             // ragadna be, pedig a VFX-kikapcsolás tipikus élő TPS-mentő beavatkozás.
             hu.taliann.icesmp.utils.SpellVfx.configure(
@@ -1373,6 +1382,9 @@ public final class IceSMPCore {
         plugin.registerCommand("stats", "Statisztika-profil", List.of(), new hu.taliann.icesmp.commands.StatsCommand(statsManager, messageManager));
         plugin.registerCommand("sit", "Ülés (leül/feláll)", List.of(), new hu.taliann.icesmp.commands.SitCommand(sitManager, messageManager));
         plugin.registerCommand("afk", "Önkéntes AFK-jelölés", List.of(), new hu.taliann.icesmp.commands.AfkCommand(afkManager, messageManager));
+        plugin.registerCommand("afkzone", "Natív AFK-zóna admin", List.of("afkzona"),
+                new hu.taliann.icesmp.commands.AfkZoneCommand(plugin, afkManager, selectionService,
+                        configManager, messageManager));
         plugin.registerCommand("crate", "Láda (crate) parancsok", List.of("ladak", "crates"),
                 new hu.taliann.icesmp.commands.CrateCommand(plugin, crateManager, crateKeyFactory, currencyManager, messageManager));
         plugin.registerCommand("report", "Játékos bejelentése (admin: /reports)", List.of("bejelent"),
