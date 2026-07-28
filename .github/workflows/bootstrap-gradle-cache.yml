@@ -32,12 +32,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tar -C "$HOME" -czf /tmp/icesmp-gradle-home.tar.gz \
-            .gradle/caches/modules-2 \
-            .gradle/caches/jars-* \
-            .gradle/caches/transforms-* \
-            .gradle/caches/*/generated-gradle-jars \
-            .gradle/wrapper/dists
+          test -d "$HOME/.gradle/caches"
+          test -d "$HOME/.gradle/wrapper"
+          tar -C "$HOME" \
+            --exclude='.gradle/daemon' \
+            --exclude='.gradle/notifications' \
+            -czf /tmp/icesmp-gradle-home.tar.gz \
+            .gradle/caches \
+            .gradle/wrapper
           test -s /tmp/icesmp-gradle-home.tar.gz
 
       - uses: actions/upload-artifact@v4
