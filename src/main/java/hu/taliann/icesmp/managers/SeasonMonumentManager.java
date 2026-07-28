@@ -134,7 +134,7 @@ public final class SeasonMonumentManager implements PersistentStore {
             return true;
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save monument.yml: " + exception.getMessage());
-            return false;
+            throw new java.io.UncheckedIOException("Failed to save monument.yml", exception);
         }
     }
 

@@ -91,6 +91,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
             plugin.getLogger().info("Saved " + playerFactions.size() + " faction assignments.");
         } catch (final IOException e) {
             plugin.getLogger().severe("Failed to save factions: " + e.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save factions", e);
         }
     }
 

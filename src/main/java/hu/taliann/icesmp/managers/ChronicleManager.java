@@ -82,7 +82,7 @@ public final class ChronicleManager implements PersistentStore {
     }
 
     @Override
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("last-published", lastPublishedAt);
@@ -90,6 +90,7 @@ public final class ChronicleManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save chronicle.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save chronicle.yml", exception);
         }
     }
 

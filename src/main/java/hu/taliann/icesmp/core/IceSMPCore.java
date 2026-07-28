@@ -1078,7 +1078,7 @@ public final class IceSMPCore {
             questNpcMarkerTask.cancel();
             questNpcMarkerTask = null;
         }
-        raidManager.shutdown();
+        shutdownStep("raidManager", raidManager::shutdown);
         if (economyEventTask != null) {
             economyEventTask.cancel();
             economyEventTask = null;
@@ -1111,38 +1111,53 @@ public final class IceSMPCore {
             petTask.cancel();
             petTask = null;
         }
-        worldBossManager.shutdown();
-        invasionManager.shutdown();
-        caravanManager.shutdown();
-        treasureEventManager.shutdown();
-        wildHuntManager.shutdown();
-        corruptionManager.shutdown();
-        archeologyManager.shutdown();
-        strangerNpcManager.shutdown();
-        escortManager.shutdown();
-        playerCaravanManager.shutdown();
-        cityGuardManager.shutdown();
-        meteorEventManager.shutdown();
-        serverChallengeManager.shutdown();
-        spyManager.shutdown();
-        cultistEventManager.shutdown();
-        totemManager.shutdown();
-        devItemManager.shutdown();
+        shutdownStep("worldBossManager", worldBossManager::shutdown);
+        shutdownStep("invasionManager", invasionManager::shutdown);
+        shutdownStep("caravanManager", caravanManager::shutdown);
+        shutdownStep("treasureEventManager", treasureEventManager::shutdown);
+        shutdownStep("wildHuntManager", wildHuntManager::shutdown);
+        shutdownStep("corruptionManager", corruptionManager::shutdown);
+        shutdownStep("archeologyManager", archeologyManager::shutdown);
+        shutdownStep("strangerNpcManager", strangerNpcManager::shutdown);
+        shutdownStep("escortManager", escortManager::shutdown);
+        shutdownStep("playerCaravanManager", playerCaravanManager::shutdown);
+        shutdownStep("cityGuardManager", cityGuardManager::shutdown);
+        shutdownStep("meteorEventManager", meteorEventManager::shutdown);
+        shutdownStep("serverChallengeManager", serverChallengeManager::shutdown);
+        shutdownStep("spyManager", spyManager::shutdown);
+        shutdownStep("cultistEventManager", cultistEventManager::shutdown);
+        shutdownStep("totemManager", totemManager::shutdown);
+        shutdownStep("devItemManager", devItemManager::shutdown);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
-        storeCoordinator.saveForShutdown(failure -> plugin.getLogger().severe("Store save() hiba ("
-                + failure.store().getClass().getSimpleName() + "): " + failure.cause()));
-        ProfileGUI.closeAll();
+        shutdownStep("storeCoordinator.saveForShutdown", () ->
+                storeCoordinator.saveForShutdown(failure -> plugin.getLogger().severe("Store save() hiba ("
+                        + failure.store().getClass().getSimpleName() + "): " + failure.cause())));
+        shutdownStep("ProfileGUI.closeAll", ProfileGUI::closeAll);
 
         // Then clean up live player session state (HUD teams, restored armor, caches).
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            hudManager.cleanup(onlinePlayer);
-            afkManager.cleanup(onlinePlayer);
-            playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
+            shutdownStep("player-cleanup " + onlinePlayer.getName(), () -> {
+                hudManager.cleanup(onlinePlayer);
+                afkManager.cleanup(onlinePlayer);
+                playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
+            });
         }
 
         plugin.getLogger().info("IceSMP core disabled.");
+    }
+
+    /**
+     * Best-effort leállítási lépés: egyetlen hibás manager-shutdown vagy cleanup nem
+     * akadályozhatja meg a KÉSŐBBI állapot-mentést és takarítást — a hiba loggal megy tovább.
+     */
+    private void shutdownStep(final String name, final Runnable step) {
+        try {
+            step.run();
+        } catch (final Throwable failure) {
+            plugin.getLogger().severe("Leállítási lépés hibázott (" + name + "): " + failure);
+        }
     }
 
     /**

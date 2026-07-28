@@ -393,7 +393,7 @@ public final class CrateManager implements PersistentStore {
     }
 
     @Override
-    public void save() {
+    public synchronized void save() {
         persist();
     }
 

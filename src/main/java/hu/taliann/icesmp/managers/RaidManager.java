@@ -106,6 +106,7 @@ public final class RaidManager implements PersistentStore {
             YamlStore.saveAtomic(new java.io.File(plugin.getDataFolder(), "raids.yml"), yaml);
         } catch (final java.io.IOException exception) {
             plugin.getLogger().severe("Failed to save raids.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save raids.yml", exception);
         }
     }
 

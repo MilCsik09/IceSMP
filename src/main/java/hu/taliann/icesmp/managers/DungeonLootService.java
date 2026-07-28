@@ -372,6 +372,7 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
             hu.taliann.icesmp.storage.YamlStore.saveAtomic(storageFile, yaml);
         } catch (final java.io.IOException exception) {
             plugin.getLogger().severe("Failed to save dungeon-loot.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save dungeon-loot.yml", exception);
         }
     }
 }

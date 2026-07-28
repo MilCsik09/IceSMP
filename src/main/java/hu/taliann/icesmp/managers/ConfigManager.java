@@ -52,11 +52,22 @@ public final class ConfigManager {
                 plugin.saveResource("config/" + name + ".yml", false);
             }
         }
+        // Csak az allowlist töltődik be: egy bemásolt backup/szerkesztői mentés (.yml) különben
+        // észrevétlenül felülírna élő kulcsokat az alfabetikus merge-sorrend szerint.
+        for (final String name : CONFIG_FILES) {
+            final File file = new File(dir, name + ".yml");
+            if (file.exists()) {
+                mergeInto(merged, YamlConfiguration.loadConfiguration(file));
+            }
+        }
         final File[] files = dir.listFiles((directory, fileName) -> fileName.endsWith(".yml"));
         if (files != null) {
-            java.util.Arrays.sort(files);
             for (final File file : files) {
-                mergeInto(merged, YamlConfiguration.loadConfiguration(file));
+                final String base = file.getName().substring(0, file.getName().length() - 4);
+                if (java.util.Arrays.stream(CONFIG_FILES).noneMatch(base::equals)) {
+                    plugin.getLogger().warning("Ismeretlen config-fájl kihagyva a merge-ből: config/"
+                            + file.getName() + " (csak a CONFIG_FILES lista töltődik be)");
+                }
             }
         }
 

@@ -154,6 +154,7 @@ public final class ReportManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save reports.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save reports.yml", exception);
         }
     }
 

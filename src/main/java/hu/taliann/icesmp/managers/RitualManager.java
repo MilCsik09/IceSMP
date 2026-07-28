@@ -63,6 +63,9 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
     private final MessageManager messageManager;
     // Per-player, per-ritual cooldown expiry (in-memory; only used by non-relic rituals).
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
+    // Folyamatban lévő hazatérés-teleportok: az áldozat/cooldown csak a sikeres megérkezéskor
+    // rögzül, addig a dupla oltár-kattintást ez a jelölő fogja meg.
+    private final java.util.Set<UUID> homeInFlight = ConcurrentHashMap.newKeySet();
 
     public RitualManager(final org.bukkit.plugin.java.JavaPlugin plugin, final ConfigManager configManager,
                          final RelicManager relicManager,
@@ -182,11 +185,17 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             return;
         }
 
+        // A home-ág aszinkron teleportra vár — az áldozat/cooldown ott csak a TÉNYLEGES
+        // megérkezés után rögzülhet, ezért nem mehet a szinkron outcome-útra.
+        if ("home".equals(type)) {
+            performHomeRitual(player, ritualId, sacrifices, cooldownSeconds);
+            return;
+        }
+
         // Resolve the outcome first — only consume the sacrifices if it actually succeeds.
         final boolean success = switch (type) {
             case "cleanse" -> tryCleanse(player);
             case "buff" -> tryBuff(player, ritual);
-            case "home" -> tryHome(player);
             case "uncurse" -> tryUncurse(player);
             case "pakt" -> tryPakt(player);
             default -> tryRelic(player, ritualId, ritual);
@@ -345,24 +354,25 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         return true;
     }
 
-    /** Home: teleports the ritualist to their faction's capital (a "hearthstone" altar). */
-    private boolean tryHome(final Player player) {
+    /**
+     * Home: teleports the ritualist to their faction's capital (a "hearthstone" altar).
+     * A teleport aszinkron — az áldozat és a cooldown csak a SIKERES megérkezés után rögzül,
+     * különben egy elbukó/cancelelt teleport ingyen vinné el a hozzávalókat és az 5 percet.
+     */
+    private void performHomeRitual(final Player player, final String ritualId,
+                                   final Map<Material, Integer> sacrifices, final long cooldownSeconds) {
         final FactionType faction = factionManager.getFaction(player.getUniqueId());
         final Territory capital = faction == null ? null : territoryManager.getCapital(faction);
-        if (capital == null) {
+        final World world = capital == null ? null : Bukkit.getWorld(capital.world());
+        if (capital == null || world == null) {
             player.sendMessage(messageManager.getMessage(
                     "ritual-home-no-capital",
                     "<red>A frakciódnak nincs fővárosa, ahová hazatérhetnél.</red>"
             ));
-            return false;
+            return;
         }
-        final World world = Bukkit.getWorld(capital.world());
-        if (world == null) {
-            player.sendMessage(messageManager.getMessage(
-                    "ritual-home-no-capital",
-                    "<red>A frakciódnak nincs fővárosa, ahová hazatérhetnél.</red>"
-            ));
-            return false;
+        if (!homeInFlight.add(player.getUniqueId())) {
+            return;
         }
         final float yaw = player.getLocation().getYaw();
         final float pitch = player.getLocation().getPitch();
@@ -370,13 +380,32 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         // thread (Folia), not the altar's. Hop there, resolve the safe Y, then teleportAsync.
         plugin.getServer().getRegionScheduler().run(plugin, world, capital.x() >> 4, capital.z() >> 4, task -> {
             final int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
-            player.teleportAsync(new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D, yaw, pitch));
+            player.teleportAsync(new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D, yaw, pitch))
+                    .whenComplete((success, failure) -> player.getScheduler().run(plugin, done -> {
+                        homeInFlight.remove(player.getUniqueId());
+                        if (failure != null || success == null || !success) {
+                            player.sendMessage(messageManager.getMessage(
+                                    "ritual-home-failed",
+                                    "<red>Az oltár fénye kihunyt — a hazatérés nem sikerült, az áldozatod megmaradt.</red>"
+                            ));
+                            return;
+                        }
+                        AdvancementService.award(player, "first_ritual");
+                        if (!consume(player, sacrifices)) {
+                            plugin.getLogger().severe("Rituálé-áldozat nem fogyott el: " + ritualId
+                                    + " (" + player.getName() + ")");
+                        }
+                        if (cooldownSeconds > 0L) {
+                            cooldowns.computeIfAbsent(player.getUniqueId(), key -> new ConcurrentHashMap<>())
+                                    .put(ritualId, System.currentTimeMillis() + cooldownSeconds * 1000L);
+                        }
+                        player.sendMessage(messageManager.getMessage(
+                                "ritual-home-success",
+                                "<gold>Az oltár fénye hazaröpít a fővárosodba.</gold>"
+                        ));
+                        playSuccessEffect(player, "home");
+                    }, () -> homeInFlight.remove(player.getUniqueId())));
         });
-        player.sendMessage(messageManager.getMessage(
-                "ritual-home-success",
-                "<gold>Az oltár fénye hazaröpít a fővárosodba.</gold>"
-        ));
-        return true;
     }
 
     /** Validates every "dx,dy,dz:MATERIAL" offset against the blocks around the core. */

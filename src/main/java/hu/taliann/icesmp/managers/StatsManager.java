@@ -100,7 +100,7 @@ public final class StatsManager implements PersistentStore {
         }
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             for (final var entry : stats.entrySet()) {
@@ -119,6 +119,7 @@ public final class StatsManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save leaderboard.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save leaderboard.yml", exception);
         }
     }
 

@@ -100,12 +100,11 @@ public final class PartyManager implements PlayerStateCleanup {
         }
         final double radius = getShareRadius();
         final double radiusSq = radius * radius;
-        final Location center;
-        try {
-            center = source.getLocation();
-        } catch (final Exception ignored) {
-            // Folia: a hívó régió-szála nem éri el a source pozícióját (pl. Wild Hunt — a fenevad
-            // szálán fut) — kezeld úgy, mintha nem lenne közeli tag; a normál jutalom-út él tovább.
+        // A pozíciókat a PositionCache tükréből olvassuk: a hívó gyakran idegen régió-szálon
+        // fut (pl. Wild Hunt — a fenevad szálán), és a korábbi „élő olvasás + kihagyás
+        // hibánál" védőháló régiófelosztás-függő jutalmat adott azonos geometriánál.
+        final Location center = hu.taliann.icesmp.utils.PositionCache.get(source.getUniqueId());
+        if (center == null || center.getWorld() == null) {
             return List.of();
         }
         final List<Player> nearby = new ArrayList<>();
@@ -120,13 +119,11 @@ public final class PartyManager implements PlayerStateCleanup {
             if (member == null || !member.isOnline()) {
                 continue;
             }
-            try {
-                if (member.getWorld().getUID().equals(center.getWorld().getUID())
-                        && member.getLocation().distanceSquared(center) <= radiusSq) {
-                    nearby.add(member);
-                }
-            } catch (final Exception ignored) {
-                // Cross-region read unavailable — treat as not nearby.
+            final Location memberPosition = hu.taliann.icesmp.utils.PositionCache.get(memberId);
+            if (memberPosition != null && memberPosition.getWorld() != null
+                    && memberPosition.getWorld().getUID().equals(center.getWorld().getUID())
+                    && memberPosition.distanceSquared(center) <= radiusSq) {
+                nearby.add(member);
             }
         }
         return nearby;

@@ -177,6 +177,7 @@ public final class QuestManager implements PersistentStore {
             YamlStore.saveAtomic(customQuestsFile, customQuests);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save custom-quests.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save custom-quests.yml", exception);
         }
     }
 

@@ -146,6 +146,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save moderation-data.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save moderation-data.yml", exception);
         }
     }
 

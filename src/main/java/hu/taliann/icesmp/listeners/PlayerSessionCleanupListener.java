@@ -72,6 +72,24 @@ public final class PlayerSessionCleanupListener implements Listener {
     @EventHandler
     public void onPlayerJoin(final PlayerJoinEvent event) {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer());
+        hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(),
+                event.getPlayer().getLocation());
+    }
+
+    /**
+     * Pozíció-tükör a kereszt-régiós közelség-döntésekhez: a move a játékos saját szálán fut,
+     * innen biztonságos a tükörbe írni. Blokk-váltásra szűrve a frissítések zöme kiesik.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMove(final org.bukkit.event.player.PlayerMoveEvent event) {
+        if (event.hasChangedBlock()) {
+            hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(), event.getTo());
+        }
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
+        hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(), event.getTo());
     }
 
     /**
@@ -98,6 +116,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         final Player player = Bukkit.getPlayer(playerId);
 
         hu.taliann.icesmp.utils.GameModeCache.remove(playerId);
+        hu.taliann.icesmp.utils.PositionCache.remove(playerId);
 
         for (final PlayerStateCleanup owner : stateOwners) {
             owner.clearPlayerState(playerId);

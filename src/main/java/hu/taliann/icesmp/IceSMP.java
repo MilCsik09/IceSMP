@@ -21,11 +21,15 @@ public final class IceSMP extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (core != null) {
-            core.disable();
+        try {
+            if (core != null) {
+                core.disable();
+            }
+        } finally {
+            // Manager shutdowns requested their known entities first; finish any remaining registered
+            // custom entity while schedulers are still available, then release all strong references.
+            // finally: a core.disable() bármely hibája sem hagyhat élő entity-referenciákat hátra.
+            TransientEntities.shutdown();
         }
-        // Manager shutdowns requested their known entities first; finish any remaining registered
-        // custom entity while schedulers are still available, then release all strong references.
-        TransientEntities.shutdown();
     }
 }
