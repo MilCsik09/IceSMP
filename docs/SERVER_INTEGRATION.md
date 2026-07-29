@@ -94,7 +94,7 @@ A táblázatban csak a **READY** és kézzel igazolt sor tekinthető törölhet�
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
 | **MiniMOTD** | natív `MotdListener`: idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish count és célzott reload | **FELTÉTELES:** build/regresszió után valódi Folia server-list ping, ikon/reload és MiniMOTD nélküli átvételi playtest kell |
 | **AxAFKZone (+AxAPI)** | meglévő globális AFK | **NEM KELL:** jutalmazó AFK-zóna scope törölve; nincs migráció |
-| **CrazyCrates** | meglévő natív crate-alap | **MÉG NEM:** completion scope hiányzik |
+| **CrazyCrates** | `CrateManager` + strict config/policy, browser/preview, atomi settlement, recovery fence, audit és 7 rewardtípus | **FELTÉTELES:** zöld crate/full build után valódi Folia/fault-injection teszt kell (currency/command hiba, reload/disable, restart recovery, full inventory); process-crash exactly-once nincs állítva |
 | **GSit** | natív sit-only lifecycle | **FELTÉTELES:** valódi Folia seat/cleanup átvételi teszt után távolítható el |
 | **SModeration** | `ModerationManager` + natív punishment ledger, commands, SocialSpy, vanish és ban gate | **FELTÉTELES:** automated zöld; restart/Folia/fault-injection playtest kell |
 | **InvSee++ (3 jar)** | online live inventory/ender read+edit, külön permission, scheduler ownership és audit | **FELTÉTELES:** disconnect/reload/escrow Folia-playtest kell; offline playerdata nincs és nem is cél |

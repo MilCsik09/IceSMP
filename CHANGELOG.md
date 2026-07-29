@@ -7,6 +7,18 @@
 
 ---
 
+## Unreleased — natív crate code-review hardening (2026-07-29)
+
+- Atomi opening lifecycle: `RESERVED → PERSISTED → GRANTING → COMPLETED`, kizárólagos rollback/finalize és single-claim grant.
+- A stat és cooldown csak sikeres reward-settlement után válik autoritatívvá; scheduler rejection nem hagy phantom állapotot.
+- Tartós recovery fence: `ROLLBACK_ONLY`, `REFUND_KEYS`, `REFUND_CLAIMED`, `MANUAL_REVIEW`; automatikus refund csak bizonyíthatóan kompenzálható állapotban.
+- A currency reward durable mutationt és exact-snapshot kompenzációt használ; command reward csak elfogadott scheduler submit, tényleges futás és `dispatchCommand == true` után sikeres.
+- Strict config: hibás `worlds` típus fail-closed, pontos egész parser `double` köztes reprezentáció nélkül, egységes permission/world policy.
+- Generation-konzisztens kulcsvásárlás, finalize előtti world/location/crate-definition revalidation, ismeretlen tartós crate-ID fail-closed.
+- Sorosított audit writer, thread-safe formázás, spin/reveal rejection cleanup, stats-reset és opening race-védelem.
+- Nem állítunk distributed transaction, process-crash exactly-once vagy automatikus CrazyCrates-paritási garanciát.
+- Bizonyíték: `crateRegressionTest`, teljes Java 21 build, consistency és whitespace check; a CrazyCrates eltávolításához valódi Folia/fault-injection átvételi teszt kell.
+
 ## Telepítési útmutató
 
 ### 1. Külső pluginok eltávolíthatósági állapota
@@ -21,7 +33,7 @@
 | `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
 | `MiniMOTD` | **FELTÉTELES** — a natív completion buildelt és regressziózott; valódi Folia ping/ikon/reload és jar nélküli átvételi playtest még kell |
 | `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
-| `CrazyCrates` | **MÉG NEM** — a code-review-zott crate PR valódi Folia/fault-injection átvételi tesztje és merge-je még kell |
+| `CrazyCrates` | **FELTÉTELES** — a natív crate lifecycle code-review-zott és regressziózott; valódi Folia/fault-injection átvételi teszt még kell |
 | `AxAFKZone` / `AxAPI` | **NEM KELL** — a jutalmazó AFK-zóna termékscope törölve; a meglévő globális `/afk` változatlanul megmarad |
 | `GSit` | **FELTÉTELES** — a natív sit-only lifecycle buildelt és regressziózott; valódi Folia seat/cleanup átvételi playtest még kell |
 | `InvSee++` / `SModeration` | **FELTÉTELES** — a natív suite buildelt; valódi Folia/restart/fault-injection playtest még kell |
@@ -40,7 +52,7 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 - Az **advancement-fa** mostantól a jarból szállított datapack (7 → 20 csomópont) —
   első indulásnál a log jelzi: „IceSMP advancement-fa: N/N bejegyzés a jar datapackjéből”.
-- Az új config-fájlok (pl. `dev-items.yml`, `motd.yml`, `sit.yml`, `tablist.yml`) a jarból
+- Az új config-fájlok (pl. `crates.yml`, `dev-items.yml`, `motd.yml`, `sit.yml`, `tablist.yml`) a jarból
   csomagolódnak ki; a data-mappás `config.yml` felülbírálások megmaradnak és utolsóként
   merge-ölődnek.
 - A **HP-rendszer** megépült, de **alapból kikapcsolt** (`health.enabled: false`) —

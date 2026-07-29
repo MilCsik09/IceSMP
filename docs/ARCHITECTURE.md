@@ -36,10 +36,11 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
 | `managers/` | 116 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 118 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `listeners/` | 119 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 44 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `gui/` | 46 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `crates/` | 13 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
@@ -445,8 +446,8 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 527 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 116 fájl).
-  Csomag-megoszlás: listeners 118, managers 115, commands 94, spells 56, gui 44, utils 22, data 12,
+- **Méret:** 543 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 116 fájl).
+  Csomag-megoszlás: listeners 119, managers 116, commands 94, spells 56, gui 46, crates 13, utils 22, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
@@ -474,3 +475,22 @@ tulajdonos-szálán. A player/entity scheduler submit exception, null handle és
 `PaperEntityTaskSubmission` single-winner fallbacken fut; a reload/disable cleanup rövid, korlátos
 drainnel követi az entity eltávolításokat. A scope kizárólag `/sit`, `/sit fel` és click-to-sit: lay,
 crawl, stacking és player/NPC sitting nincs runtime wiringban.
+
+## Natív crate settlement és recovery
+
+A `CrateManager` egy dependency-free domainrétegre épül. A `CrateOpeningLifecycle` CAS-alapú
+`RESERVED → PERSISTED → GRANTING → COMPLETED` állapotgépe biztosítja, hogy egy grant legfeljebb
+egyszer legyen claimelhető, a finalize és rollback pedig kölcsönösen kizárja egymást. A stat/cooldown
+mutation token csak sikeres reward-settlement után kerül az autoritatív `CrateLedger` állapotba.
+
+A schema 2 recovery rekord `ROLLBACK_ONLY`, `REFUND_KEYS`, `REFUND_CLAIMED` és `MANUAL_REVIEW`
+állapotokkal teszi explicitté a kompenzációs határt. A currency batch durable save + exact snapshot
+rollback tokent használ; a command batch csak global-scheduler elfogadás, tényleges futás és sikeres
+`dispatchCommand` után tekinthető sikeresnek. Már nem kompenzálható külső side effect esetén nincs
+automatikus key refund, hanem auditálható részleges hiba marad. Ez nem distributed transaction és
+nem process-crash exactly-once garancia.
+
+A config snapshot generationhöz kötött: a key purchase ugyanabból a generationből számít árat és
+készít kulcsot, opening finalize előtt pedig újraellenőrzi a world/location/crate-ID/definition/policy
+invariánsokat. Audit append és rotáció egyetlen sorosított writeren fut; a scheduler task/rejection
+single-winner gate-et és race-biztos task lease-t használ. Részletes szerződés: [`CRATES.md`](CRATES.md).

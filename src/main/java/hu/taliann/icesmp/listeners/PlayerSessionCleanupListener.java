@@ -31,6 +31,8 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final SpellRegistry spellRegistry;
     private final hu.taliann.icesmp.managers.InvseeManager invseeManager;
     private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
+    /** Join-time durable crate key recovery runs on the joining player owner thread. */
+    private final hu.taliann.icesmp.managers.CrateManager crateManager;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -48,6 +50,7 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.ProfessionManager professionManager,
                                         final hu.taliann.icesmp.managers.AfkManager afkManager,
                                         final hu.taliann.icesmp.managers.SitManager sitManager,
+                                        final hu.taliann.icesmp.managers.CrateManager crateManager,
                                         final hu.taliann.icesmp.managers.ModerationManager moderationManager,
                                         final hu.taliann.icesmp.managers.VanishManager vanishManager,
                                         final hu.taliann.icesmp.managers.InvseeManager invseeManager,
@@ -63,11 +66,12 @@ public final class PlayerSessionCleanupListener implements Listener {
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 metelytepoManager, relicManager, craftingRestrictionManager, resourceManager, partyManager,
                 claimManager, territoryManager, petManager, ritualManager, professionManager,
-                afkManager, sitManager, moderationManager, vanishManager, invseeManager, whisperManager, guildManager,
+                afkManager, sitManager, crateManager, moderationManager, vanishManager, invseeManager, whisperManager, guildManager,
                 honorDuelManager, spyManager, combatTagManager, classHealthService, lowHealthBorderListener);
         this.spellRegistry = spellRegistry;
         this.invseeManager = invseeManager;
         this.moderationManager = moderationManager;
+        this.crateManager = crateManager;
     }
 
     /**
@@ -82,6 +86,7 @@ public final class PlayerSessionCleanupListener implements Listener {
                 event.getPlayer().getLocation());
         moderationManager.openReplySession(event.getPlayer().getUniqueId());
         invseeManager.restorePending(event.getPlayer());
+        crateManager.restorePendingRecovery(event.getPlayer());
     }
 
     /**

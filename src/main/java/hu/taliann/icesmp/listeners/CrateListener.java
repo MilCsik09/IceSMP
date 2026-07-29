@@ -13,20 +13,10 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-/**
- * Native crate opening: right-clicking a registered crate block with its matching key
- * consumes one key and rolls the reward ({@link CrateManager#open}); without (or with
- * the wrong) key it just shows info. Also protects crate keys from being consumed as
- * craft ingredients or furnace fuel (mirrors {@link CatalystCraftSafetyListener} —
- * TRIPWIRE_HOOK is a plain, otherwise-inert vanilla item so this only matters if a
- * server's resource pack repurposes the base material of some future crate).
- *
- * <p>Folia: the interact fires on the clicked block's region thread, which is the
- * player's own thread for a block they are standing next to — {@link CrateManager#open}
- * and the key consumption run there directly, no scheduler hop needed.
- */
+/** Physical crate interaction and crate-key craft/fuel protection. */
 public final class CrateListener implements Listener {
 
     private final CrateManager crateManager;
@@ -44,12 +34,8 @@ public final class CrateListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInteract(final PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
-            return;
-        }
-        // Egy fizikai katt main+off kézzel KÉTSZER tüzel — kulcs-duplafogyasztás lenne.
-        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) {
-            return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+            return; // One physical click also emits an off-hand event; never process it twice.
         }
         final Block block = event.getClickedBlock();
         final String crateId = block == null ? null : crateManager.crateAt(block.getLocation());
@@ -61,7 +47,6 @@ public final class CrateListener implements Listener {
         final Player player = event.getPlayer();
         final ItemStack hand = player.getInventory().getItemInMainHand();
         final String heldCrateId = crateKeyFactory.keyCrateId(hand);
-
         if (heldCrateId == null) {
             sendInfo(player, crateId);
             return;
@@ -70,26 +55,32 @@ public final class CrateListener implements Listener {
             player.sendMessage(messageManager.get("crate-wrong-key", "&cEz a kulcs nem ehhez a ládához való."));
             return;
         }
-
-        hand.setAmount(hand.getAmount() - 1);
-        if (!crateManager.open(player, crateId, block.getLocation())) {
-            // Extremely unlikely (config is broken between the click and the roll) — refund the key.
-            player.getInventory().addItem(crateKeyFactory.createKey(crateId, 1));
-            player.sendMessage(messageManager.get("crate-broken", "&cEnnek a ládának jelenleg nincs beállítva jutalom-táblája — a kulcsod visszakaptad."));
-        }
+        final CrateManager.CrateDefinition definition = crateManager.definition(crateId);
+        final int requested = player.isSneaking() && definition != null && definition.massOpenEnabled()
+                ? definition.massOpenMaximum() : 1;
+        crateManager.requestOpen(player, crateId, block.getLocation(), requested);
     }
 
     private void sendInfo(final Player player, final String crateId) {
-        final double price = crateManager.keyPriceAmount(crateId);
+        final CrateManager.CrateDefinition definition = crateManager.definition(crateId);
+        final CrateManager.AccessDecision access = crateManager.accessDecision(player, definition);
+        if (!access.allowed()) {
+            player.sendMessage(messageManager.get(access.errorKey(), switch (access.errorKey()) {
+                case "crate-no-permission" -> "&cEhhez a ládához nincs jogosultságod.";
+                case "crate-world-disabled" -> "&cEz a láda ebben a világban nem használható.";
+                default -> "&cEz a láda jelenleg hibás vagy le van tiltva.";
+            }));
+            return;
+        }
         player.sendMessage(messageManager.get("crate-need-key",
-                "&e%s &7— kulcs kell hozzá! Ár: &f%s %s &7(&e/crate buy %s&7)",
-                crateManager.displayName(crateId),
-                currencyManager.formatBalance(price),
-                crateManager.keyPriceCurrency(crateId).getDisplayName(),
-                crateId));
+                "&e%s &7— %s kulcs kell nyitásonként. Ár: &f%s %s &7(&e/crate buy %s&7)",
+                crateManager.displayName(crateId), definition.requiredKeys(),
+                currencyManager.formatBalance(definition.keyPriceAmount()),
+                definition.keyPriceCurrency().getDisplayName(), crateId));
+        player.sendMessage(messageManager.get("crate-preview-hint",
+                "&7Jutalmak: &e/crate preview %s&7. Lopakodva kattintva többszörös nyitás kérhető.", crateId));
     }
 
-    /** Crate keys never get consumed as crafting ingredients. */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPrepareItemCraft(final PrepareItemCraftEvent event) {
         for (final ItemStack itemStack : event.getInventory().getMatrix()) {
@@ -100,7 +91,6 @@ public final class CrateListener implements Listener {
         }
     }
 
-    /** Crate keys never get burned as furnace fuel. */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFurnaceBurn(final FurnaceBurnEvent event) {
         if (crateKeyFactory.isKey(event.getFuel())) {

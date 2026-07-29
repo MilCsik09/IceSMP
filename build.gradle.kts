@@ -44,7 +44,7 @@ tasks {
 
 val regressionTest by sourceSets.creating {
     java.srcDir("src/regression/java")
-    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     runtimeClasspath += output + compileClasspath
 }
 
@@ -88,7 +88,15 @@ val sitRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.SitRegressionSuite")
 }
 
+val crateRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native crate validation, settlement, recovery and scheduler regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.crates.CrateRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-        motdRegressionTest, sitRegressionTest)
+        motdRegressionTest, sitRegressionTest, crateRegressionTest)
 }
