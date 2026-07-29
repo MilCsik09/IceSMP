@@ -4,7 +4,9 @@
 # Közös 3D kijelölő szolgáltatás: a claim és az AFK-zóna ugyanazt a player sessiont,
 # világellenőrzést, cuboid-normalizálást, előnézetet és cleanupot használja.
 selection:
-  # Globális biztonsági plafon minden közös 3D kijelölésre.
+  # Biztonsági 3D térfogatplafon a volume-alapú fogyasztóknak (jelenleg AFK-zóna).
+  # A claim a történeti XZ footprint-limitjét használja, ezért egy magas, de kis alapterületű
+  # claimet ez a közös kijelölési kulcs nem utasít el.
   max-volume: 1000000
   preview-seconds: 8
   preview-max-points: 120
@@ -20,6 +22,7 @@ afk:
   # Zóna- és jutalombiztonsági korlátok. NaN/Infinity, nulla, negatív és ennél nagyobb
   # értékek elutasításra kerülnek; egy hibás zóna nem állítja le a teljes plugint.
   max-zone-volume: 1000000
+  # Fizikai tokenként materializálódik; 1000 a nem emelhető hard plafon, csak lefelé szigorítható.
   max-currency-reward: 1000
   max-item-amount: 64
 
