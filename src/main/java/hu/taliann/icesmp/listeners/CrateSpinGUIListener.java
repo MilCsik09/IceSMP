@@ -37,8 +37,7 @@ public final class CrateSpinGUIListener implements Listener {
     @EventHandler
     public void onInventoryClose(final InventoryCloseEvent event) {
         if (event.getInventory().getHolder() instanceof CrateSpinHolder holder) {
-            holder.cancel();
-            holder.setInventory(null);
+            hu.taliann.icesmp.gui.CrateSpinGUI.cancel(holder.getOwnerUuid());
         }
     }
 }

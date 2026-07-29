@@ -5,6 +5,7 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -47,6 +48,7 @@ public final class Permissions {
     public static final String SINNER = "icesmp.admin.sinner";
     public static final String WAR = "icesmp.admin.war";
     public static final String CRATE = "icesmp.admin.crate";
+    public static final String CRATE_USE = "icesmp.crate.use";
     public static final String MODERATION = "icesmp.admin.moderation";
     public static final String MODERATION_WARN = "icesmp.moderation.warn";
     public static final String MODERATION_KICK = "icesmp.moderation.kick";
@@ -73,6 +75,9 @@ public final class Permissions {
     /** Registers every canonical node, the {@link #ALL} parent and the legacy aliases. Idempotent. */
     public static void register() {
         final PluginManager pm = Bukkit.getPluginManager();
+
+        registerNode(pm, new Permission(CRATE_USE,
+                "Natív ládalista, előnézet, kulcsvásárlás és nyitás", PermissionDefault.TRUE));
 
         final Map<String, String> canonical = new LinkedHashMap<>();
         canonical.put(RELOAD, "Config + üzenetek újratöltése (/icesmp reload)");
@@ -137,6 +142,17 @@ public final class Permissions {
         registerNode(pm, alias("icesmp.currency.admin", CURRENCY));
         registerNode(pm, alias("icesmp.faction.admin", FACTION));
         registerNode(pm, alias("icesmp.relic.admin", RELIC));
+    }
+
+    /** Registers optional per-crate icesmp.* gates from the validated crate snapshot. */
+    public static void registerCratePermissions(final Collection<String> permissionNodes) {
+        final PluginManager pm = Bukkit.getPluginManager();
+        for (final String node : permissionNodes) {
+            if (node != null && node.startsWith("icesmp.") && !node.isBlank()) {
+                registerNode(pm, new Permission(node,
+                        "Konfigurált IceSMP láda-hozzáférés: " + node, PermissionDefault.FALSE));
+            }
+        }
     }
 
     private static Permission alias(final String legacyNode, final String... canonicalChildren) {

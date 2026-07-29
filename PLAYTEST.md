@@ -932,9 +932,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **Globális AFK:** az automatikus AFK-észlelés, `/afk`, tablistajelzés és meglévő
         exploitvédelmi lifecycle változatlanul működik. Jutalmazó AFK-zóna nincs és nem készül;
         AxAFKZone/AxAPI jar nem része a deploymentnek.
-  - [ ] **Crate-rendszer** (CrazyCrates helyett): csak a `feature/native-crates-completion`
-        scope után; lista/preview, permission/world, többkulcsos fogyasztás, cooldown, statisztika,
-        strict reward-validáció és full-inventory útvonal is tesztelendő a meglévő fizikai nyitás mellett.
+  - [ ] **Crate-rendszer** (CrazyCrates helyett): a code-review-zott lifecycle buildelt és regressziózott,
+        de a jar eltávolítása csak valódi Folia/fault-injection átvételi teszt után engedhető. Ellenőrizd:
+        - main-hand működik, off-hand és gyors dupla katt nem indít második openinget;
+        - required key több inventory stackből pontosan fogy, partial mass-open csak teljesen finanszírozott nyitásokat indít;
+        - full inventorynál az item reward a játékos owner-szálán a helyére esik;
+        - currency write/rollback hiba, command submit exception/null/rejection, `dispatchCommand == false` és command exception nem kap hamis completed/success állapotot;
+        - két gyors reload, crate/world/definition cseréje finalize előtt, valamint quit/kick/disable minden lifecycle ponton;
+        - spin/reveal entity és GUI cleanup, konkurens auditrotáció, stats-reset race;
+        - restart recovery: egyszeri key refund vagy dokumentált `MANUAL_REVIEW`, jutalomduplikáció nélkül.
   - [ ] **Sit-only ülés** (GSit helyett): `/sit`, `/sit fel`, click-to-sit, üres kéz,
         stairs/slabs/carpets/moss carpet/pale moss carpet/snow pozíció, világ- és materialpolicy,
         unsafe/folyadék/clearance, namespaced tiltott parancs, konkurens reservation és minden

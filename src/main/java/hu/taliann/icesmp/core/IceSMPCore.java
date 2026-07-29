@@ -581,7 +581,9 @@ public final class IceSMPCore {
                 bloodMoonManager, worldBossManager, seasonManager, vanishManager);
         this.invseeManager = new hu.taliann.icesmp.managers.InvseeManager(plugin, messageManager, moderationManager);
         this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
-        this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
+        this.crateManager = new hu.taliann.icesmp.managers.CrateManager(
+                plugin, configManager, currencyManager, crateKeyFactory, uniqueMaterialFactory,
+                professionRecipeCatalog, professionRecipeBookListener, blueprintItemFactory, messageManager);
         // A quest "rewards.crate-key" mezője setterrel kap CrateKeyFactory-t
         // (CrateKeyFactory a DI-sorrendben a QuestManager UTÁN épül).
         questManager.setCrateKeyFactory(crateKeyFactory);
@@ -637,6 +639,7 @@ public final class IceSMPCore {
                 professionManager,
                 afkManager,
                 sitManager,
+                crateManager,
                 moderationManager,
                 vanishManager,
                 invseeManager,
@@ -862,6 +865,7 @@ public final class IceSMPCore {
         mobScalingManager.load();
         craftingRestrictionManager.load();
         professionRecipeCatalog.load();
+        crateManager.reloadConfig();
         advancementService.load();
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
@@ -1163,6 +1167,7 @@ public final class IceSMPCore {
         shutdownStep("totemManager", totemManager::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("sitManager", sitManager::shutdown);
+        shutdownStep("crateManager", crateManager::shutdown);
         shutdownStep("invseeManager", invseeManager::shutdown);
         shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
@@ -1395,6 +1400,7 @@ public final class IceSMPCore {
             mobScalingManager.load();
             craftingRestrictionManager.load();
             professionRecipeCatalog.load();
+            crateManager.reloadConfig();
             achievementManager.reload();
             devItemManager.refreshOnlineOwner();
             // A spell-VFX statikus mezőkbe cache-el — reload nélkül az enable-kori érték
@@ -1420,6 +1426,9 @@ public final class IceSMPCore {
             if (key.startsWith("sit.")) {
                 sitManager.reload();
             }
+            if (key.startsWith("crates.")) {
+                crateManager.reloadConfig();
+            }
         };
         iceSMPCommand.setConfigChangeHook(configChangeHook);
         // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
@@ -1437,7 +1446,7 @@ public final class IceSMPCore {
         plugin.registerCommand("sit", "Ülés (leül/feláll)", List.of(), new hu.taliann.icesmp.commands.SitCommand(sitManager, messageManager));
         plugin.registerCommand("afk", "Önkéntes AFK-jelölés", List.of(), new hu.taliann.icesmp.commands.AfkCommand(afkManager, messageManager));
         plugin.registerCommand("crate", "Láda (crate) parancsok", List.of("ladak", "crates"),
-                new hu.taliann.icesmp.commands.CrateCommand(plugin, crateManager, crateKeyFactory, currencyManager, messageManager));
+                new hu.taliann.icesmp.commands.CrateCommand(plugin, crateManager, currencyManager, messageManager));
         plugin.registerCommand("report", "Játékos bejelentése (admin: /reports)", List.of("bejelent"),
                 new hu.taliann.icesmp.commands.ReportCommand(reportManager, messageManager));
         plugin.registerCommand("reports", "Bejelentések kezelése (admin)", List.of(),
@@ -1574,6 +1583,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SitListener(sitManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateListener(crateManager, crateKeyFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateSpinGUIListener(), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateBrowserGUIListener(crateManager, currencyManager), plugin);
         final JobGUIListener jobGUIListener = new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext);
         jobGUIListener.setFactionManager(factionManager);
         pluginManager.registerEvents(jobGUIListener, plugin);
