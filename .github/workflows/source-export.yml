@@ -1,4 +1,4 @@
-name: Source export
+name: Review cache export
 
 on:
   push:
@@ -19,12 +19,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Package working tree
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Populate Gradle distribution and dependency cache
+        run: ./gradlew clean build --no-daemon --stacktrace
+      - name: Package Gradle home
+        run: tar -C "$HOME" -czf "$RUNNER_TEMP/gradle-home.tar.gz" .gradle
+      - name: Upload Gradle cache
         uses: actions/upload-artifact@v4
         with:
-          name: icesmp-source-45
-          path: |
-            .
-            !.git
-          include-hidden-files: true
+          name: icesmp-gradle-home
+          path: ${{ runner.temp }}/gradle-home.tar.gz
           retention-days: 1
