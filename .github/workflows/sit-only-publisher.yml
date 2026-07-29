@@ -1,0 +1,77 @@
+name: IceSMP sit-only publisher
+
+on:
+  pull_request:
+    branches:
+      - claude/projekt-audit-u0hkcz
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Verify and publish sit-only branch
+    if: github.head_ref == 'agent/sit-only-publisher'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout publisher transport
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify patch and publish with exact lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH=feature/native-sit-poses
+          TARGET_BRANCH=claude/projekt-audit-u0hkcz
+          EXPECTED_TARGET=2dede0eee5513a9102be6d22140d572aa7ee1513
+          EXPECTED_SIT=d2b1572f7cd0aa4bf7ec1f9703e9f5b76233614e
+          B64_SHA=cf88f624e2e93bc415e1f73390dbd7fba4c5684b6a73ba0b3064a677148ce031
+          GZ_SHA=b5dc70795fe4abb7a78327cb2d98a322c4c318f0549d90ec058df1389d7e309f
+          PATCH_SHA=729f7aa53da9ad20e9ca99903a0598345d6c8fec537ccc3121b9f29f68b2a5c9
+
+          git fetch origin "$BRANCH" "$TARGET_BRANCH"
+          test "$(git rev-parse origin/$BRANCH)" = "$EXPECTED_SIT"
+          test "$(git rev-parse origin/$TARGET_BRANCH)" = "$EXPECTED_TARGET"
+
+          cat .review/sit-0{0,1,2,3,4} > /tmp/sit.patch.gz.b64
+          echo "$B64_SHA  /tmp/sit.patch.gz.b64" | sha256sum --check --strict
+          base64 --decode /tmp/sit.patch.gz.b64 > /tmp/sit.patch.gz
+          echo "$GZ_SHA  /tmp/sit.patch.gz" | sha256sum --check --strict
+          gzip --decompress --stdout /tmp/sit.patch.gz > /tmp/sit.patch
+          echo "$PATCH_SHA  /tmp/sit.patch" | sha256sum --check --strict
+
+          git config user.name "IceSMP review automation"
+          git config user.email "noreply@github.com"
+          git checkout -B sit-reviewed "$EXPECTED_TARGET"
+          git am /tmp/sit.patch
+
+          test ! -e .review
+          test ! -e .github/workflows/export-sit-review.yml
+          test "$(git merge-base HEAD "$EXPECTED_TARGET")" = "$EXPECTED_TARGET"
+          test "$(git rev-list --count "$EXPECTED_TARGET..HEAD")" = "2"
+          ! grep -RInE 'LayPoseBridge|SIT_POSE|toggleLay|toggleCrawl|sit\.poses|/sit (fekves|maszas|crawl|lay)|icesmp\.sit\.pose' \
+            src/main docs PLAYTEST.md CHANGELOG.md
+
+          ./gradlew sitRegressionTest --no-daemon --stacktrace
+          ./gradlew clean build --no-daemon --stacktrace
+          python3 scripts/check_consistency.py
+          git diff --check "$EXPECTED_TARGET...HEAD"
+
+          git fetch origin "$BRANCH" "$TARGET_BRANCH"
+          test "$(git rev-parse origin/$BRANCH)" = "$EXPECTED_SIT"
+          test "$(git rev-parse origin/$TARGET_BRANCH)" = "$EXPECTED_TARGET"
+          git push origin "HEAD:refs/heads/$BRANCH" \
+            --force-with-lease="refs/heads/$BRANCH:$EXPECTED_SIT"
