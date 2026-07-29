@@ -1,24 +1,22 @@
 package hu.taliann.icesmp.gui;
 
+import hu.taliann.icesmp.crates.CrateTaskLease;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Holder for the crate-spin reveal GUI. The animation itself lives in
- * {@link CrateSpinGUI} as a chain of {@code runDelayed} calls on the opening player's
- * own entity scheduler; this holder just carries the owner-UUID (for the click-guard in
- * {@link hu.taliann.icesmp.listeners.CrateSpinGUIListener}) and the volatile
- * {@code cancelled} flag the listener flips on close/logout so the next chained step
- * knows to stop touching the (possibly already-gone) inventory.
- */
+/** Owner-scoped holder and race-safe task lease for the cosmetic crate reel. */
 public final class CrateSpinHolder implements InventoryHolder {
 
     private final UUID ownerUuid;
-    private Inventory inventory;
-    private volatile boolean cancelled;
+    private final AtomicBoolean cancelled = new AtomicBoolean();
+    private final AtomicBoolean completed = new AtomicBoolean();
+    private final AtomicReference<CrateTaskLease> taskLease = new AtomicReference<>();
+    private volatile Inventory inventory;
 
     public CrateSpinHolder(final UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
@@ -32,17 +30,55 @@ public final class CrateSpinHolder implements InventoryHolder {
         this.inventory = inventory;
     }
 
-    public boolean isCancelled() {
-        return cancelled;
+    public Inventory inventoryOrNull() {
+        return inventory;
     }
 
-    /** Stops the spin chain — checked by {@link CrateSpinGUI} before every step. */
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    /** Publishes the next delayed-task lease and retires the already completed prior step. */
+    public boolean replaceTaskLease(final CrateTaskLease next) {
+        if (next == null || cancelled.get()) {
+            if (next != null) {
+                next.retire();
+            }
+            return false;
+        }
+        final CrateTaskLease previous = taskLease.getAndSet(next);
+        if (previous != null) {
+            previous.retire();
+        }
+        if (cancelled.get() && taskLease.compareAndSet(next, null)) {
+            next.retire();
+            return false;
+        }
+        return true;
+    }
+
+    /** Idempotent rejection/close/quit cleanup. */
     public void cancel() {
-        this.cancelled = true;
+        cancelled.set(true);
+        final CrateTaskLease current = taskLease.getAndSet(null);
+        if (current != null) {
+            current.retire();
+        }
+    }
+
+    /** Runs the cosmetic completion callback at most once. */
+    public boolean complete(final Runnable action) {
+        if (!completed.compareAndSet(false, true)) {
+            return false;
+        }
+        cancel();
+        action.run();
+        return true;
     }
 
     @Override
     public Inventory getInventory() {
-        return inventory == null ? Bukkit.createInventory(this, 27) : inventory;
+        final Inventory current = inventory;
+        return current == null ? Bukkit.createInventory(this, 27) : current;
     }
 }
