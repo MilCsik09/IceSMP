@@ -1,0 +1,27 @@
+name: Review source export
+
+on:
+  push:
+    branches:
+      - feature/native-afk-zones
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout reviewed commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Pack source without Git metadata
+        run: tar --exclude=.git -czf "$RUNNER_TEMP/icesmp-source.tgz" .
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: afk-review-source
+          path: ${{ runner.temp }}/icesmp-source.tgz
+          if-no-files-found: error
+          retention-days: 1
