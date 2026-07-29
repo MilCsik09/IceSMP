@@ -6,6 +6,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.SeasonManager;
 import hu.taliann.icesmp.managers.VanishManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.motd.MotdIconValidator;
 import hu.taliann.icesmp.motd.MotdSelector;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -17,12 +18,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.CachedServerIcon;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -31,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -301,6 +297,7 @@ public final class MotdListener implements Listener {
     }
 
     private void validateMiniMessage(final String value, final String path) {
+        MotdSelector.validatePlaceholders(value, path);
         try {
             MINI.deserialize(value.replace("{online}", "0").replace("{max}", "0"));
         } catch (final RuntimeException exception) {
@@ -315,8 +312,15 @@ public final class MotdListener implements Listener {
                 if (generation.get() != requestedGeneration) {
                     return;
                 }
-                plugin.getServer().getGlobalRegionScheduler().run(plugin, scheduledTask ->
-                        publishIcons(decoded, requested, requestedGeneration));
+                try {
+                    plugin.getServer().getGlobalRegionScheduler().run(plugin, scheduledTask ->
+                            publishIcons(decoded, requested, requestedGeneration));
+                } catch (final RuntimeException exception) {
+                    if (generation.get() == requestedGeneration) {
+                        logger.warning("A MOTD ikonok global-region publikálása nem indítható; "
+                                + "a default szerverikon marad: " + exception.getMessage());
+                    }
+                }
             });
         } catch (final RuntimeException exception) {
             logger.warning("A MOTD ikonkészlet async betöltése nem indítható; a default szerverikon marad: "
@@ -358,45 +362,12 @@ public final class MotdListener implements Listener {
                 continue;
             }
             try {
-                final long size = Files.size(path);
-                if (size <= 0L || size > requested.maxIconBytes()) {
-                    throw new IOException("fájlméret " + size + " bájt; limit " + requested.maxIconBytes());
-                }
-                decoded.put(id, readValidatedPng(path));
+                decoded.put(id, MotdIconValidator.readValidatedPng(path, requested.maxIconBytes()));
             } catch (final Exception exception) {
                 logger.warning("MOTD ikon kihagyva (" + file.getName() + "): " + exception.getMessage());
             }
         }
         return Map.copyOf(decoded);
-    }
-
-    private BufferedImage readValidatedPng(final Path path) throws IOException {
-        try (ImageInputStream input = ImageIO.createImageInputStream(path.toFile())) {
-            if (input == null) {
-                throw new IOException("nem nyitható képfájlként");
-            }
-            final Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) {
-                throw new IOException("ismeretlen vagy sérült PNG");
-            }
-            final ImageReader reader = readers.next();
-            try {
-                if (!"png".equalsIgnoreCase(reader.getFormatName())) {
-                    throw new IOException("a fájl nem PNG");
-                }
-                reader.setInput(input, true, true);
-                if (reader.getWidth(0) != 64 || reader.getHeight(0) != 64) {
-                    throw new IOException("az ikon mérete nem pontosan 64×64");
-                }
-                final BufferedImage image = reader.read(0);
-                if (image == null || image.getWidth() != 64 || image.getHeight() != 64) {
-                    throw new IOException("a 64×64 PNG nem dekódolható");
-                }
-                return image;
-            } finally {
-                reader.dispose();
-            }
-        }
     }
 
     private void publishIcons(final Map<String, BufferedImage> decoded, final Snapshot requested,
@@ -477,29 +448,8 @@ public final class MotdListener implements Listener {
 
     private static long readWholeNumber(final ConfigurationSection section, final String key,
                                         final long fallback, final long minimum, final long maximum) {
-        final Object raw = section.get(key);
-        if (raw == null) {
-            return fallback;
-        }
-        final double number;
-        if (raw instanceof Number numeric) {
-            number = numeric.doubleValue();
-        } else {
-            try {
-                number = Double.parseDouble(raw.toString().trim());
-            } catch (final NumberFormatException exception) {
-                throw new IllegalArgumentException(section.getCurrentPath() + "." + key + ": nem szám");
-            }
-        }
-        if (!Double.isFinite(number) || Math.rint(number) != number) {
-            throw new IllegalArgumentException(section.getCurrentPath() + "." + key
-                    + ": csak véges egész szám lehet");
-        }
-        if (number < minimum || number > maximum) {
-            throw new IllegalArgumentException(section.getCurrentPath() + "." + key + ": tartományon kívüli érték ("
-                    + minimum + ".." + maximum + ")");
-        }
-        return (long) number;
+        return MotdSelector.parseWholeNumber(section.get(key), fallback, minimum, maximum,
+                section.getCurrentPath() + "." + key);
     }
 
     private static String normalizeVariantId(final String value) {
