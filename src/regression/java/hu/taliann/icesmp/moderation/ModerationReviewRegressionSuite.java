@@ -60,6 +60,8 @@ public final class ModerationReviewRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java"));
         final String moderationGuiCommand = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java"));
+        final String invseeCommand = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java"));
 
         check(chat.contains("ModerationSpamGuard.evaluate(moderationManager")
                         && privateMessage.contains("ModerationSpamGuard.evaluate(manager"),
@@ -71,6 +73,9 @@ public final class ModerationReviewRegressionSuite {
         check(moderationGui.contains("viewer.canSee(target)")
                         && moderationGuiCommand.contains("viewer.canSee(target)"),
                 "moderation GUI list, direct open and completion must preserve viewer visibility");
+        check(invseeCommand.contains("!viewer.canSee(target)")
+                        && invseeCommand.contains("viewer.canSee(target)"),
+                "invsee direct open and completion must not grant implicit vanish visibility");
     }
 
     private static void await(final CountDownLatch latch) {
