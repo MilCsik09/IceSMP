@@ -6,8 +6,10 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.SeasonManager;
 import hu.taliann.icesmp.managers.VanishManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.motd.MotdGenerationGate;
 import hu.taliann.icesmp.motd.MotdIconValidator;
 import hu.taliann.icesmp.motd.MotdSelector;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -19,13 +21,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.CachedServerIcon;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -34,7 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -51,6 +49,7 @@ public final class MotdListener implements Listener {
     private static final List<String> BUNDLED_ICONS = List.of(
             "frost", "war", "book", "whisper", "blood_moon", "world_boss", "season_end");
     private static final long ICON_RANDOM_SALT = 0x46A4_934B_7D1E_9C31L;
+    private static final Path ICON_DIRECTORY = Path.of("icons");
 
     private final JavaPlugin plugin;
     private final Logger logger;
@@ -59,13 +58,12 @@ public final class MotdListener implements Listener {
     private final WorldBossManager worldBossManager;
     private final SeasonManager seasonManager;
     private final VanishManager vanishManager;
-    private final File iconDirectory;
-    private final AtomicLong generation = new AtomicLong();
+    private final Path dataDirectory;
+    private final MotdGenerationGate generations = new MotdGenerationGate();
     private final AtomicBoolean iconApplyWarningLogged = new AtomicBoolean();
 
     private volatile Snapshot snapshot = Snapshot.disabled();
-    private volatile Map<String, CachedServerIcon> icons = Map.of();
-    private volatile List<String> iconIds = List.of();
+    private volatile IconCache iconCache = IconCache.empty();
 
     public MotdListener(final JavaPlugin plugin, final ConfigManager configManager,
                         final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
@@ -77,17 +75,15 @@ public final class MotdListener implements Listener {
         this.worldBossManager = worldBossManager;
         this.seasonManager = seasonManager;
         this.vanishManager = vanishManager;
-        this.iconDirectory = new File(plugin.getDataFolder(), "icons");
-        extractBundledIcons();
+        this.dataDirectory = plugin.getDataFolder().toPath();
         reload();
     }
 
     /** Rebuilds the immutable config snapshot and starts a generation-gated asynchronous icon load. */
     public void reload() {
-        final long requestedGeneration = generation.incrementAndGet();
+        final long requestedGeneration = generations.nextGeneration();
         iconApplyWarningLogged.set(false);
-        icons = Map.of();
-        iconIds = List.of();
+        iconCache = IconCache.empty();
 
         final Snapshot parsed;
         try {
@@ -107,10 +103,9 @@ public final class MotdListener implements Listener {
 
     /** Invalidates queued reload generations and drops all cached presentation state on disable. */
     public void shutdown() {
-        generation.incrementAndGet();
+        generations.invalidate();
         snapshot = Snapshot.disabled();
-        icons = Map.of();
-        iconIds = List.of();
+        iconCache = IconCache.empty();
     }
 
     @EventHandler
@@ -175,12 +170,13 @@ public final class MotdListener implements Listener {
 
     private void applyIcon(final PaperServerListPingEvent event, final Snapshot current,
                            final Variant selected, final long now) {
+        final IconCache currentCache = iconCache;
         final String selectedIcon = switch (current.iconMode()) {
             case NONE -> null;
             case DEFAULT -> current.defaultIcon();
             case VARIANT -> selected.icon() == null ? current.defaultIcon() : selected.icon();
             case RANDOM -> {
-                final List<String> currentIds = iconIds;
+                final List<String> currentIds = currentCache.ids();
                 if (currentIds.isEmpty()) {
                     yield current.defaultIcon();
                 }
@@ -192,7 +188,7 @@ public final class MotdListener implements Listener {
         if (selectedIcon == null) {
             return;
         }
-        final CachedServerIcon icon = icons.get(selectedIcon);
+        final CachedServerIcon icon = currentCache.icons().get(selectedIcon);
         if (icon == null) {
             return;
         }
@@ -215,7 +211,7 @@ public final class MotdListener implements Listener {
         if (root == null) {
             throw new IllegalArgumentException("hiányzik a motd configszekció");
         }
-        final boolean enabled = root.getBoolean("enabled", true);
+        final boolean enabled = readBoolean(root, "enabled", true);
         if (!enabled) {
             return Snapshot.disabled();
         }
@@ -229,7 +225,7 @@ public final class MotdListener implements Listener {
         if (maxPlayersOverride == 0) {
             throw new IllegalArgumentException("motd.max-players-override: 0 nem használható; -1 vagy pozitív érték kell");
         }
-        final boolean excludeVanished = root.getBoolean("exclude-vanished-from-online-count", true);
+        final boolean excludeVanished = readBoolean(root, "exclude-vanished-from-online-count", true);
 
         final ConfigurationSection iconSection = requireSection(root, "icons");
         final IconMode iconMode = IconMode.parse(iconSection.getString("mode", "VARIANT"));
@@ -265,7 +261,7 @@ public final class MotdListener implements Listener {
             putEventVariant(events, "blood-moon", MotdSelector.ActiveEvent.BLOOD_MOON, eventVariants);
             putEventVariant(events, "world-boss", MotdSelector.ActiveEvent.WORLD_BOSS, eventVariants);
             final ConfigurationSection season = events.getConfigurationSection("season-end");
-            if (season != null && season.getBoolean("enabled", true)) {
+            if (season != null && readBoolean(season, "enabled", true)) {
                 final long daysBefore = readWholeNumber(season, "days-before", 3L, 0L, 3_650L);
                 seasonThreshold = Math.multiplyExact(daysBefore, Duration.ofDays(1L).toMillis());
                 eventVariants.put(MotdSelector.ActiveEvent.SEASON_END,
@@ -282,7 +278,7 @@ public final class MotdListener implements Listener {
                                  final MotdSelector.ActiveEvent event,
                                  final Map<MotdSelector.ActiveEvent, Variant> target) {
         final ConfigurationSection section = events.getConfigurationSection(key);
-        if (section != null && section.getBoolean("enabled", true)) {
+        if (section != null && readBoolean(section, "enabled", true)) {
             target.put(event, parseVariant(section, key, "motd.event-variants." + key));
         }
     }
@@ -306,73 +302,68 @@ public final class MotdListener implements Listener {
     }
 
     private void scheduleIconLoad(final Snapshot requested, final long requestedGeneration) {
+        final MotdGenerationGate.Attempt asyncAttempt = generations.newAttempt(requestedGeneration);
         try {
-            plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
-                final Map<String, BufferedImage> decoded = decodeIcons(requested);
-                if (generation.get() != requestedGeneration) {
-                    return;
-                }
-                try {
-                    plugin.getServer().getGlobalRegionScheduler().run(plugin, scheduledTask ->
-                            publishIcons(decoded, requested, requestedGeneration));
-                } catch (final RuntimeException exception) {
-                    if (generation.get() == requestedGeneration) {
-                        logger.warning("A MOTD ikonok global-region publikálása nem indítható; "
-                                + "a default szerverikon marad: " + exception.getMessage());
-                    }
-                }
-            });
+            final ScheduledTask submitted = plugin.getServer().getAsyncScheduler().runNow(plugin, task ->
+                    asyncAttempt.runCurrent(() -> {
+                        final Map<String, BufferedImage> decoded = decodeIcons(requested);
+                        final MotdGenerationGate.Attempt publishAttempt = generations.newAttempt(requestedGeneration);
+                        try {
+                            final ScheduledTask publishTask = plugin.getServer().getGlobalRegionScheduler().run(
+                                    plugin, scheduledTask -> publishAttempt.runCurrent(() ->
+                                            publishIcons(decoded, requested, requestedGeneration)));
+                            if (publishTask == null) {
+                                publishAttempt.rejectCurrent(() -> warnIconPublishRejected("null scheduler handle"));
+                            }
+                        } catch (final RuntimeException exception) {
+                            publishAttempt.rejectCurrent(() -> warnIconPublishRejected(safeMessage(exception)));
+                        }
+                    }));
+            if (submitted == null) {
+                asyncAttempt.rejectCurrent(() -> logger.warning(
+                        "A MOTD ikonkészlet async betöltése nem indítható; a default szerverikon marad: null scheduler handle"));
+            }
         } catch (final RuntimeException exception) {
-            logger.warning("A MOTD ikonkészlet async betöltése nem indítható; a default szerverikon marad: "
-                    + exception.getMessage());
+            asyncAttempt.rejectCurrent(() -> logger.warning(
+                    "A MOTD ikonkészlet async betöltése nem indítható; a default szerverikon marad: "
+                            + safeMessage(exception)));
         }
     }
 
     private Map<String, BufferedImage> decodeIcons(final Snapshot requested) {
-        final File[] listed = iconDirectory.listFiles((directory, name) ->
-                name.toLowerCase(Locale.ROOT).endsWith(".png"));
-        if (listed == null || listed.length == 0) {
+        try {
+            extractBundledIcons();
+            final MotdIconValidator.ScanResult scan = MotdIconValidator.scanPngDirectory(
+                    dataDirectory, ICON_DIRECTORY, requested.maxIconFiles(), requested.maxIconBytes());
+            for (final String warning : scan.warnings()) {
+                logger.warning("MOTD ikon kihagyva: " + warning);
+            }
+            final Map<String, BufferedImage> decoded = new LinkedHashMap<>();
+            for (final MotdIconValidator.DecodedIcon icon : scan.icons()) {
+                final String fileName = icon.fileName();
+                final String rawId = fileName.substring(0, fileName.length() - 4);
+                final String id;
+                try {
+                    id = requireIconId(rawId, "icons/" + fileName);
+                } catch (final IllegalArgumentException exception) {
+                    logger.warning(exception.getMessage());
+                    continue;
+                }
+                if (decoded.putIfAbsent(id, icon.image()) != null) {
+                    logger.warning("Duplikált normalizált MOTD ikon-ID kihagyva: " + fileName);
+                }
+            }
+            return Map.copyOf(decoded);
+        } catch (final Exception exception) {
+            logger.warning("A MOTD ikonkönyvtár fail-closed kihagyva; a default szerverikon marad: "
+                    + safeMessage(exception));
             return Map.of();
         }
-        final List<File> files = new ArrayList<>(List.of(listed));
-        files.sort(Comparator.comparing(File::getName));
-        if (files.size() > requested.maxIconFiles()) {
-            logger.warning("Túl sok MOTD ikon van az icons/ mappában (" + files.size() + "); csak az első "
-                    + requested.maxIconFiles() + " kerül betöltésre.");
-            files.subList(requested.maxIconFiles(), files.size()).clear();
-        }
-
-        final Map<String, BufferedImage> decoded = new LinkedHashMap<>();
-        for (final File file : files) {
-            final Path path = file.toPath();
-            if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-                logger.warning("MOTD ikon kihagyva, mert nem normál fájl: " + file.getName());
-                continue;
-            }
-            final String rawId = file.getName().substring(0, file.getName().length() - 4);
-            final String id;
-            try {
-                id = requireIconId(rawId, "icons/" + file.getName());
-            } catch (final IllegalArgumentException exception) {
-                logger.warning(exception.getMessage());
-                continue;
-            }
-            if (decoded.containsKey(id)) {
-                logger.warning("Duplikált normalizált MOTD ikon-ID kihagyva: " + file.getName());
-                continue;
-            }
-            try {
-                decoded.put(id, MotdIconValidator.readValidatedPng(path, requested.maxIconBytes()));
-            } catch (final Exception exception) {
-                logger.warning("MOTD ikon kihagyva (" + file.getName() + "): " + exception.getMessage());
-            }
-        }
-        return Map.copyOf(decoded);
     }
 
     private void publishIcons(final Map<String, BufferedImage> decoded, final Snapshot requested,
                               final long requestedGeneration) {
-        if (generation.get() != requestedGeneration) {
+        if (!generations.isCurrent(requestedGeneration)) {
             return;
         }
         final Map<String, CachedServerIcon> cached = new HashMap<>();
@@ -381,17 +372,21 @@ public final class MotdListener implements Listener {
                 cached.put(entry.getKey(), Bukkit.loadServerIcon(entry.getValue()));
             } catch (final Exception exception) {
                 logger.warning("MOTD ikon nem alakítható Bukkit cache-é (" + entry.getKey() + "): "
-                        + exception.getMessage());
+                        + safeMessage(exception));
             }
         }
-        if (generation.get() != requestedGeneration) {
-            return;
-        }
         final Map<String, CachedServerIcon> immutable = Map.copyOf(cached);
-        icons = immutable;
-        iconIds = immutable.keySet().stream().sorted().toList();
-        warnMissingConfiguredIcons(requested, immutable.keySet());
-        logger.info("MOTD ikonkészlet betöltve: " + immutable.size() + " érvényes 64×64 PNG.");
+        final IconCache published = new IconCache(immutable, immutable.keySet().stream().sorted().toList());
+        generations.publishIfCurrent(requestedGeneration, () -> {
+            iconCache = published;
+            warnMissingConfiguredIcons(requested, immutable.keySet());
+            logger.info("MOTD ikonkészlet betöltve: " + immutable.size() + " érvényes 64×64 PNG.");
+        });
+    }
+
+    private void warnIconPublishRejected(final String detail) {
+        logger.warning("A MOTD ikonok global-region publikálása nem indítható; "
+                + "a default szerverikon marad: " + detail);
     }
 
     private void warnMissingConfiguredIcons(final Snapshot requested, final Set<String> available) {
@@ -408,23 +403,22 @@ public final class MotdListener implements Listener {
         }
     }
 
-    private void extractBundledIcons() {
-        if (!iconDirectory.exists() && !iconDirectory.mkdirs()) {
-            logger.warning("Az icons/ könyvtár nem hozható létre; a default szerverikon marad.");
-            return;
-        }
+    private void extractBundledIcons() throws java.io.IOException {
+        final Map<String, byte[]> bundled = new LinkedHashMap<>();
         for (final String id : BUNDLED_ICONS) {
-            final File destination = new File(iconDirectory, id + ".png");
-            if (destination.exists()) {
-                continue;
-            }
-            try {
-                plugin.saveResource("icons/" + id + ".png", false);
-            } catch (final IllegalArgumentException exception) {
-                logger.warning("A beépített MOTD ikon nem csomagolható ki (" + id + "): "
-                        + exception.getMessage());
+            try (InputStream input = plugin.getResource("icons/" + id + ".png")) {
+                if (input == null) {
+                    throw new java.io.IOException("hiányzó beépített ikon: " + id);
+                }
+                bundled.put(id + ".png", input.readAllBytes());
             }
         }
+        MotdIconValidator.writeFilesIfMissing(dataDirectory, ICON_DIRECTORY, bundled);
+    }
+
+    private static String safeMessage(final Throwable failure) {
+        final String message = failure.getMessage();
+        return message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
     }
 
     private static ConfigurationSection requireSection(final ConfigurationSection parent, final String path) {
@@ -444,6 +438,12 @@ public final class MotdListener implements Listener {
             throw new IllegalArgumentException(path + ": legfeljebb 1024 karakter lehet");
         }
         return value;
+    }
+
+    private static boolean readBoolean(final ConfigurationSection section, final String key,
+                                       final boolean fallback) {
+        return MotdSelector.parseBoolean(section.get(key), fallback,
+                section.getCurrentPath() + "." + key);
     }
 
     private static long readWholeNumber(final ConfigurationSection section, final String key,
@@ -493,6 +493,12 @@ public final class MotdListener implements Listener {
             } catch (final IllegalArgumentException ignored) {
                 throw new IllegalArgumentException("motd.icons.mode: ismeretlen mód: " + value);
             }
+        }
+    }
+
+    private record IconCache(Map<String, CachedServerIcon> icons, List<String> ids) {
+        private static IconCache empty() {
+            return new IconCache(Map.of(), List.of());
         }
     }
 

@@ -4,10 +4,17 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MotdRegressionSuite {
 
@@ -22,10 +29,13 @@ public final class MotdRegressionSuite {
         seasonThresholdIsMillisecondPrecise();
         seasonThresholdDoesNotOverflow();
         wholeNumbersPreserveSignedLongPrecision();
+        booleansAreTypeStrict();
         placeholdersAreStrict();
+        generationLifecycleRejectsStaleCallbacks();
+        generationAdvanceCannotOvertakePublication();
         invalidInputsFailClosed();
         bundledIconsAreValid();
-        iconValidationDoesNotFollowSymlinks();
+        iconDirectoryIsNoFollowAndBounded();
         System.out.println("MOTD regression suite passed.");
     }
 
@@ -96,32 +106,131 @@ public final class MotdRegressionSuite {
     }
 
     private static void wholeNumbersPreserveSignedLongPrecision() {
+        final String path = "motd.random-seed";
         final long aboveDoublePrecision = 9_007_199_254_740_993L;
-        require(MotdSelector.parseWholeNumber(aboveDoublePrecision, 0L, Long.MIN_VALUE, Long.MAX_VALUE,
-                        "motd.random-seed") == aboveDoublePrecision,
+        require(MotdSelector.parseWholeNumber(aboveDoublePrecision, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path) == aboveDoublePrecision,
                 "an exact Long seed above 2^53 must not be rounded through double");
-        require(MotdSelector.parseWholeNumber("9223372036854775807", 0L, Long.MIN_VALUE, Long.MAX_VALUE,
-                        "motd.random-seed") == Long.MAX_VALUE,
-                "Long.MAX_VALUE string must parse exactly");
-        require(MotdSelector.parseWholeNumber("-9223372036854775808", 0L, Long.MIN_VALUE, Long.MAX_VALUE,
-                        "motd.random-seed") == Long.MIN_VALUE,
-                "Long.MIN_VALUE string must parse exactly");
+        require(MotdSelector.parseWholeNumber(Long.MIN_VALUE, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path) == Long.MIN_VALUE, "Long.MIN_VALUE object");
+        require(MotdSelector.parseWholeNumber(Long.MAX_VALUE, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path) == Long.MAX_VALUE, "Long.MAX_VALUE object");
+        require(MotdSelector.parseWholeNumber("9223372036854775807", 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path) == Long.MAX_VALUE, "valid positive string");
+        require(MotdSelector.parseWholeNumber("-9223372036854775808", 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path) == Long.MIN_VALUE, "valid negative string");
+        require(MotdSelector.parseWholeNumber(null, 17L, -100L, 100L, path) == 17L,
+                "missing key must use the documented default");
+
+        expectFailure(() -> MotdSelector.parseWholeNumber(new BigInteger("9223372036854775808"), 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber(new BigInteger("-9223372036854775809"), 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
         expectFailure(() -> MotdSelector.parseWholeNumber("9223372036854775808", 0L,
-                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
-        expectFailure(() -> MotdSelector.parseWholeNumber("1.5", 0L,
-                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber("-9223372036854775809", 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber(new BigDecimal("1.5"), 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber(1.0D, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
         expectFailure(() -> MotdSelector.parseWholeNumber(Double.NaN, 0L,
-                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
         expectFailure(() -> MotdSelector.parseWholeNumber(Double.POSITIVE_INFINITY, 0L,
-                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber("not-a-number", 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber(Boolean.TRUE, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+        expectFailure(() -> MotdSelector.parseWholeNumber(List.of(1), 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, path));
+    }
+
+    private static void booleansAreTypeStrict() {
+        require(MotdSelector.parseBoolean(null, true, "motd.enabled"), "missing boolean uses default");
+        require(MotdSelector.parseBoolean(Boolean.TRUE, false, "motd.enabled"), "true boolean");
+        require(!MotdSelector.parseBoolean(Boolean.FALSE, true, "motd.enabled"), "false boolean");
+        for (final Object invalid : List.of("true", 1, 0L, List.of(true), new Object())) {
+            expectFailure(() -> MotdSelector.parseBoolean(invalid, false, "motd.enabled"));
+        }
     }
 
     private static void placeholdersAreStrict() {
         MotdSelector.validatePlaceholders("<gray>{online}/{max}</gray>", "motd.variants.test.line1");
+        MotdSelector.validatePlaceholders("{online} + {online} / {max}", "motd.variants.test.line1");
+        MotdSelector.validatePlaceholders("<gradient:#fff:#000><b>Ice SMP</b></gradient>",
+                "motd.variants.test.line1");
+        MotdSelector.validatePlaceholders("<gold>{online}</gold> <gray>/ {max}</gray>",
+                "motd.variants.test.line1");
         expectFailure(() -> MotdSelector.validatePlaceholders("{players}", "motd.variants.test.line1"));
+        expectFailure(() -> MotdSelector.validatePlaceholders("{onlin}", "motd.variants.test.line1"));
         expectFailure(() -> MotdSelector.validatePlaceholders("{Online}", "motd.variants.test.line1"));
         expectFailure(() -> MotdSelector.validatePlaceholders("{online", "motd.variants.test.line1"));
         expectFailure(() -> MotdSelector.validatePlaceholders("online}", "motd.variants.test.line1"));
+    }
+
+    private static void generationLifecycleRejectsStaleCallbacks() {
+        final MotdGenerationGate gate = new MotdGenerationGate();
+        final AtomicInteger publications = new AtomicInteger();
+        final AtomicInteger rejections = new AtomicInteger();
+
+        final long first = gate.nextGeneration();
+        final MotdGenerationGate.Attempt stale = gate.newAttempt(first);
+        final long second = gate.nextGeneration();
+        require(stale.runCurrent(publications::incrementAndGet), "the scheduled callback may win once");
+        require(publications.get() == 0, "a late callback from the previous reload must not publish");
+        require(!stale.rejectCurrent(rejections::incrementAndGet), "task/rejection gate must have one winner");
+
+        final MotdGenerationGate.Attempt rejected = gate.newAttempt(second);
+        require(rejected.rejectCurrent(rejections::incrementAndGet), "current scheduler rejection must run");
+        require(rejections.get() == 1, "scheduler rejection must run exactly once");
+        require(!rejected.runCurrent(publications::incrementAndGet), "late task after rejection must not run");
+
+        final MotdGenerationGate.Attempt accepted = gate.newAttempt(second);
+        require(accepted.runCurrent(publications::incrementAndGet), "current task must run");
+        require(publications.get() == 1, "current task publishes exactly once");
+        require(!accepted.rejectCurrent(rejections::incrementAndGet), "fallback after task must not run");
+
+        gate.invalidate();
+        require(!gate.publishIfCurrent(second, publications::incrementAndGet),
+                "disable invalidation must reject an already decoded result");
+        require(publications.get() == 1, "disable must not permit stale cache publication");
+    }
+
+    private static void generationAdvanceCannotOvertakePublication() throws Exception {
+        final MotdGenerationGate gate = new MotdGenerationGate();
+        final long current = gate.nextGeneration();
+        final CountDownLatch publisherEntered = new CountDownLatch(1);
+        final CountDownLatch releasePublisher = new CountDownLatch(1);
+        final AtomicBoolean generationAdvanced = new AtomicBoolean();
+
+        final Thread publisher = Thread.ofPlatform().start(() -> gate.publishIfCurrent(current, () -> {
+            publisherEntered.countDown();
+            await(releasePublisher);
+        }));
+        require(publisherEntered.await(5L, TimeUnit.SECONDS), "publisher did not enter generation fence");
+        final Thread reloader = Thread.ofPlatform().start(() -> {
+            gate.nextGeneration();
+            generationAdvanced.set(true);
+        });
+        Thread.sleep(50L);
+        require(!generationAdvanced.get(), "reload generation must not overtake an in-progress publication");
+        releasePublisher.countDown();
+        publisher.join(5_000L);
+        reloader.join(5_000L);
+        require(!publisher.isAlive() && !reloader.isAlive(), "generation fence threads must terminate");
+        require(generationAdvanced.get(), "reload generation must advance after publication leaves the fence");
+    }
+
+    private static void await(final CountDownLatch latch) {
+        try {
+            if (!latch.await(5L, TimeUnit.SECONDS)) {
+                throw new AssertionError("latch timeout");
+            }
+        } catch (final InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("interrupted", exception);
+        }
     }
 
     private static void invalidInputsFailClosed() {
@@ -141,27 +250,78 @@ public final class MotdRegressionSuite {
         }
     }
 
-    private static void iconValidationDoesNotFollowSymlinks() throws Exception {
-        final Path directory = Files.createTempDirectory("icesmp-motd-icon-");
-        final Path target = directory.resolve("target.png");
+    private static void iconDirectoryIsNoFollowAndBounded() throws Exception {
+        final Path data = Files.createTempDirectory("icesmp-motd-data-");
+        final Path icons = Files.createDirectory(data.resolve("icons"));
+        copyBundledIcon(icons.resolve("valid.png"));
+        require(MotdIconValidator.scanPngDirectory(data, Path.of("icons"), 64, 1_048_576L)
+                        .icons().size() == 1,
+                "a regular valid icon must load through the secure directory handle");
+        copyBundledIcon(icons.resolve("valid-second.png"));
+        final MotdIconValidator.ScanResult limited = MotdIconValidator.scanPngDirectory(
+                data, Path.of("icons"), 1, 1_048_576L);
+        require(limited.discoveredPngFiles() == 2 && limited.icons().size() == 1,
+                "the configured icon count limit must be deterministic and reported");
+        require(!limited.warnings().isEmpty(), "truncating the icon directory must emit a warning");
+
+        final Path wrongSize = icons.resolve("wrong-size.png");
+        ImageIO.write(new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB), "png", wrongSize.toFile());
+        Files.write(icons.resolve("corrupt.png"), new byte[]{1, 2, 3, 4, 5});
+        copyBundledIcon(icons.resolve("too-large.png"));
+        final MotdIconValidator.ScanResult invalidScan = MotdIconValidator.scanPngDirectory(
+                data, Path.of("icons"), 64, Files.size(icons.resolve("valid.png")) - 1L);
+        require(invalidScan.icons().isEmpty(), "wrong-size, corrupt and oversized files must fail closed");
+        require(invalidScan.warnings().size() >= 4, "every invalid PNG must be reported without aborting the scan");
+
+        final Path linkedFile = icons.resolve("linked.png");
+        final Path outside = Files.createTempDirectory("icesmp-motd-outside-");
+        copyBundledIcon(outside.resolve("outside.png"));
+        try {
+            Files.createSymbolicLink(linkedFile, outside.resolve("outside.png"));
+            final MotdIconValidator.ScanResult linkScan = MotdIconValidator.scanPngDirectory(
+                    data, Path.of("icons"), 64, 1_048_576L);
+            require(linkScan.icons().stream().noneMatch(icon -> icon.fileName().equals("linked.png")),
+                    "a symlinked icon file must not be followed");
+
+            final Path nested = icons.resolve("nested");
+            Files.createSymbolicLink(nested, outside);
+            expectIOException(() -> MotdIconValidator.readValidatedPng(data,
+                    Path.of("icons", "nested", "outside.png"), 1_048_576L));
+            Files.deleteIfExists(nested);
+
+            final Path rootLinkData = Files.createTempDirectory("icesmp-motd-root-link-");
+            Files.createSymbolicLink(rootLinkData.resolve("icons"), outside);
+            expectIOException(() -> MotdIconValidator.scanPngDirectory(
+                    rootLinkData, Path.of("icons"), 64, 1_048_576L));
+            Files.deleteIfExists(rootLinkData.resolve("icons"));
+            Files.deleteIfExists(rootLinkData);
+        } catch (final UnsupportedOperationException | SecurityException exception) {
+            // Linux CI executes the symlink assertions; unsupported local filesystems still run all other checks.
+        }
+
+        expectIOException(() -> MotdIconValidator.readValidatedPng(data,
+                Path.of("..", outside.getFileName().toString(), "outside.png"), 1_048_576L));
+
+        deleteTree(data);
+        deleteTree(outside);
+    }
+
+    private static void copyBundledIcon(final Path destination) throws IOException {
         try (InputStream input = MotdRegressionSuite.class.getClassLoader().getResourceAsStream("icons/frost.png")) {
             require(input != null, "missing bundled frost icon");
-            Files.copy(input, target);
+            Files.copy(input, destination);
         }
-        require(MotdIconValidator.readValidatedPng(target, 1_048_576L).getWidth() == 64,
-                "a regular valid bundled icon must pass the no-follow validator");
-        expectIOException(() -> MotdIconValidator.readValidatedPng(target, 1L));
+    }
 
-        final Path link = directory.resolve("linked.png");
-        try {
-            Files.createSymbolicLink(link, target.getFileName());
-            expectIOException(() -> MotdIconValidator.readValidatedPng(link, 1_048_576L));
-        } catch (final UnsupportedOperationException | SecurityException exception) {
-            // Some local filesystems cannot create symlinks; Linux CI executes the behavioral assertion.
-        } finally {
-            Files.deleteIfExists(link);
-            Files.deleteIfExists(target);
-            Files.deleteIfExists(directory);
+    private static void deleteTree(final Path root) throws IOException {
+        if (!Files.exists(root)) {
+            return;
+        }
+        try (var paths = Files.walk(root)) {
+            final List<Path> sorted = paths.sorted(java.util.Comparator.reverseOrder()).toList();
+            for (final Path path : sorted) {
+                Files.deleteIfExists(path);
+            }
         }
     }
 

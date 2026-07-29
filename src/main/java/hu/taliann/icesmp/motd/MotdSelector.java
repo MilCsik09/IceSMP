@@ -70,9 +70,20 @@ public final class MotdSelector {
         return seasonEndMillis <= latestIncluded ? ActiveEvent.SEASON_END : ActiveEvent.NONE;
     }
 
+    /** Missing values use the documented default; a present non-boolean value always fails closed. */
+    public static boolean parseBoolean(final Object raw, final boolean fallback, final String path) {
+        if (raw == null) {
+            return fallback;
+        }
+        if (raw instanceof Boolean value) {
+            return value;
+        }
+        throw new IllegalArgumentException(path + ": csak valódi boolean érték lehet");
+    }
+
     /**
-     * Parses a finite integral scalar without routing exact long values through {@code double}.
-     * This keeps configured random seeds deterministic across the entire signed 64-bit range.
+     * Parses an exact integral scalar without routing integer values through {@code double}.
+     * Floating-point config nodes are rejected even when their rounded value happens to be integral.
      */
     public static long parseWholeNumber(final Object raw, final long fallback, final long minimum,
                                         final long maximum, final String path) {
@@ -83,31 +94,34 @@ public final class MotdSelector {
             return requireRange(fallback, minimum, maximum, path);
         }
 
-        final BigDecimal decimal;
+        final BigInteger integer;
         try {
-            if (raw instanceof BigDecimal value) {
-                decimal = value;
-            } else if (raw instanceof BigInteger value) {
-                decimal = new BigDecimal(value);
+            if (raw instanceof BigInteger value) {
+                integer = value;
+            } else if (raw instanceof BigDecimal value) {
+                integer = value.toBigIntegerExact();
             } else if (raw instanceof Byte || raw instanceof Short
                     || raw instanceof Integer || raw instanceof Long) {
-                decimal = BigDecimal.valueOf(((Number) raw).longValue());
+                integer = BigInteger.valueOf(((Number) raw).longValue());
             } else if (raw instanceof Float || raw instanceof Double) {
-                final double value = ((Number) raw).doubleValue();
-                if (!Double.isFinite(value)) {
-                    throw invalidWholeNumber(path);
-                }
-                decimal = BigDecimal.valueOf(value);
+                throw invalidWholeNumber(path);
             } else if (raw instanceof Number value) {
-                decimal = new BigDecimal(value.toString());
-            } else {
-                final String text = raw.toString().trim();
+                integer = new BigDecimal(value.toString()).toBigIntegerExact();
+            } else if (raw instanceof CharSequence value) {
+                final String text = value.toString().trim();
                 if (text.isEmpty()) {
                     throw invalidWholeNumber(path);
                 }
-                decimal = new BigDecimal(text);
+                integer = new BigInteger(text);
+            } else {
+                throw invalidWholeNumber(path);
             }
-            return requireRange(decimal.longValueExact(), minimum, maximum, path);
+            if (integer.compareTo(BigInteger.valueOf(minimum)) < 0
+                    || integer.compareTo(BigInteger.valueOf(maximum)) > 0) {
+                throw new IllegalArgumentException(path + ": tartományon kívüli érték ("
+                        + minimum + ".." + maximum + ")");
+            }
+            return integer.longValueExact();
         } catch (final NumberFormatException | ArithmeticException exception) {
             throw invalidWholeNumber(path);
         }
