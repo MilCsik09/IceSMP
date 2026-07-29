@@ -318,6 +318,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.managers.ReportManager reportManager;
     private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
     private final hu.taliann.icesmp.managers.VanishManager vanishManager;
+    private final hu.taliann.icesmp.listeners.MotdListener motdListener;
     private final hu.taliann.icesmp.managers.InvseeManager invseeManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask petTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask moderationExpiryTask;
@@ -576,6 +577,8 @@ public final class IceSMPCore {
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
         this.vanishManager = new hu.taliann.icesmp.managers.VanishManager(plugin, moderationManager, configManager);
+        this.motdListener = new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager,
+                bloodMoonManager, worldBossManager, seasonManager, vanishManager);
         this.invseeManager = new hu.taliann.icesmp.managers.InvseeManager(plugin, messageManager, moderationManager);
         this.crateKeyFactory = new hu.taliann.icesmp.items.CrateKeyFactory(plugin, configManager);
         this.crateManager = new hu.taliann.icesmp.managers.CrateManager(plugin, configManager, currencyManager, crateKeyFactory, messageManager);
@@ -853,6 +856,7 @@ public final class IceSMPCore {
         applySpellBalanceOverrides();
         adviseOnPluginCompatibility();
         messageManager.reload();
+        motdListener.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();
         craftingRestrictionManager.load();
@@ -1158,6 +1162,7 @@ public final class IceSMPCore {
         shutdownStep("totemManager", totemManager::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("invseeManager", invseeManager::shutdown);
+        shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -1400,11 +1405,19 @@ public final class IceSMPCore {
             // Transient admin sessions must not retain stale config-dependent state across reload.
             invseeManager.reload();
             vanishManager.refreshAll();
+            motdListener.reload();
         });
+        final java.util.function.Consumer<String> configChangeHook = key -> {
+            if (key != null && key.startsWith("motd.")) {
+                motdListener.reload();
+            }
+        };
+        iceSMPCommand.setConfigChangeHook(configChangeHook);
         // GUI-s config-menü (/icesmp config menu): kategorizált, kattintható felület a
         // leggyakoribb kulcsokhoz — az override-fájlba ír, restart nélkül él.
         final hu.taliann.icesmp.listeners.ConfigMenuGUIListener configMenuGUIListener =
                 new hu.taliann.icesmp.listeners.ConfigMenuGUIListener(plugin, configManager, messageManager);
+        configMenuGUIListener.setConfigChangeHook(configChangeHook);
         plugin.getServer().getPluginManager().registerEvents(configMenuGUIListener, plugin);
         iceSMPCommand.setConfigMenuOpener(configMenuGUIListener::open);
         plugin.registerCommand("icesmp", "IceSMP admin", List.of("ismp"), iceSMPCommand);
@@ -1707,7 +1720,7 @@ public final class IceSMPCore {
         // Plugin-leépítés: ICEsmpadditions + FarmProtect + MiniMOTD natív kiváltása
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WorldTweaksListener(configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DisplayFxCleanupListener(), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager, bloodMoonManager, worldBossManager, seasonManager, vanishManager), plugin);
+        pluginManager.registerEvents(motdListener, plugin);
         // Harci erőforrás-töltés, sebzés-számok, halál-összegzés
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ResourceCombatListener(resourceManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StatsCombatListener(statsManager), plugin);

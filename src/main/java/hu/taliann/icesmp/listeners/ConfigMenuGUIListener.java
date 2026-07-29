@@ -29,12 +29,17 @@ public final class ConfigMenuGUIListener implements Listener {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private volatile java.util.function.Consumer<String> configChangeHook;
 
     public ConfigMenuGUIListener(final JavaPlugin plugin, final ConfigManager configManager,
                                  final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
+    }
+
+    public void setConfigChangeHook(final java.util.function.Consumer<String> configChangeHook) {
+        this.configChangeHook = configChangeHook;
     }
 
     /** A menü megnyitása (a parancs-oldal is ezen át hívja; jog-ellenőrzéssel). */
@@ -108,6 +113,10 @@ public final class ConfigMenuGUIListener implements Listener {
         configManager.applyOverride(key, value);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
+        final java.util.function.Consumer<String> hook = configChangeHook;
+        if (hook != null) {
+            hook.accept(key);
+        }
         player.sendMessage(messageManager.get("admin.icesmp.config.set-success-short",
                 "&a⚙ &6%s &7= &f%s &7(azonnal él)", key, String.valueOf(value)));
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.6F, 1.4F);

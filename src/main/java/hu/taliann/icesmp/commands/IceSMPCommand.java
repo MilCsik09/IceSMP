@@ -69,9 +69,14 @@ public final class IceSMPCommand implements BasicCommand {
     private final SinManager sinManager;
 
     private volatile Runnable reloadHook;
+    private volatile java.util.function.Consumer<String> configChangeHook;
 
     public void setReloadHook(final Runnable reloadHook) {
         this.reloadHook = reloadHook;
+    }
+
+    public void setConfigChangeHook(final java.util.function.Consumer<String> configChangeHook) {
+        this.configChangeHook = configChangeHook;
     }
 
     public IceSMPCommand(final JavaPlugin plugin, final ConfigManager configManager,
@@ -334,6 +339,7 @@ public final class IceSMPCommand implements BasicCommand {
         configManager.applyOverride(key, parsed);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
+        notifyConfigChange(key);
 
         sender.sendMessage(messageManager.get("admin.icesmp.config.set-success",
                 "&aBeállítva: &6%s &7= &f%s &7(%s). A legtöbb érték azonnal él (a spell-balansz is); újraindítás csak a szerkezethez kell: új parancs/listener/spell regisztrációja és a scheduler-időzítések. A config-ellenőrző figyelmeztetései a konzolon.",
@@ -352,8 +358,17 @@ public final class IceSMPCommand implements BasicCommand {
             return;
         }
         messageManager.reload();
+        ConfigValidator.validate(configManager, plugin.getLogger());
+        notifyConfigChange(key);
         sender.sendMessage(messageManager.get("admin.icesmp.config.unset-success",
                 "&aFelülbírálás törölve: &6%s &7— újra a config-fájlok/kódbeli default él.", key));
+    }
+
+    private void notifyConfigChange(final String key) {
+        final java.util.function.Consumer<String> hook = configChangeHook;
+        if (hook != null) {
+            hook.accept(key);
+        }
     }
 
     /** Lists the ingame overrides currently stored in the data-folder config.yml. */

@@ -78,6 +78,30 @@ tartományban vannak-e, a `…-minutes/-hours/-seconds/-ticks/-millis` kulcsok n
 admin-elgépelések (rossz item-név, kilógó százalék) tiszta log-figyelmeztetésként jelennek meg
 ahelyett, hogy némán az alapértékre esnének vissza.
 
+#### 3.1.1 Natív szerverlista-MOTD — immutable snapshot + generációkapu
+
+A `MotdListener` nem olvas fájlt és nem járja be a konfigurációt a server-list ping szálán.
+A `/icesmp reload`, a `motd.*` config-parancs és a config GUI ugyanazon célzott reload-hookot
+hívja: a listener előbb szigorúan felépít egy immutable snapshotot, azonnal üríti a korábbi
+ikoncache-t, majd külön async taskban olvassa és validálja a `plugins/IceSMP/icons/*.png`
+fájlokat. A Bukkit `CachedServerIcon` létrehozása a global-region scheduleren történik.
+
+- választási mód: időalapú vagy seedelt, időablakon belül stabil random;
+- eseményprioritás: vérhold → világboss → szezonzárás → normál pool;
+- tokenek: `{online}` és `{max}`, opcionális max-player override;
+- a vanished count kizárólag a moderációs `VanishManager` thread-safe UUID-cache-ét használja;
+- ikonmód: `NONE`, `DEFAULT`, `VARIANT`, `RANDOM`;
+- ikonkapuk: normál fájl, legfeljebb 1 MiB, legfeljebb 64 fájl, valódi PNG, pontosan 64×64;
+- a reload-generáció száma megakadályozza, hogy egy régi async ikonbetöltés később felülírja
+  az új configot; disablekor a generáció érvénytelenedik és minden cache ürül;
+- hibás enum, nem véges/nem egész szám, üres vagy túl nagy variánslista, duplikált normalizált
+  ID és hibás strict MiniMessage csak a MOTD feature-t tiltja le, nem a teljes plugint.
+
+A dependency-free `MotdSelector` tesztelhetővé teszi a rotációt és eseményprioritást. A
+`motdRegressionTest` a negatív epoch floor-mod viselkedést, a random stabilitást/pool-lefedést,
+a milliszekundum-pontos szezonzáró küszöböt és a jarban szállított ikonok 64×64 dekódolását is
+ellenőrzi. Ez nem helyettesíti a valódi Folia ping/reload és proxy nélküli runtime playtestet.
+
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
 majd a fő `messages.yml`-t override-ként. Rendering: a `get`/`getMessage`/`getComponent` **mind**

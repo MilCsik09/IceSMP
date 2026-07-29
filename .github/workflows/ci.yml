@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - claude/projekt-audit-u0hkcz
+      - feature/native-moderation-suite
   push:
     branches:
       - master
