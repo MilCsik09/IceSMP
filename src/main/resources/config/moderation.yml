@@ -29,3 +29,12 @@ moderation:
   # IDEAS A52: blokkolt/cenzúrázott/némított üzenetek naplózása logs/chat-moderation.log-ba.
   chat-log:
     enabled: true
+
+  # Admin vanish — a state a moderation-data.yml-ben tartós, ezek csak a gameplay-kapuk.
+  vanish:
+    # Ha true, a MOTD és a natív tablista {online} számlálója nem számolja a vanished játékosokat.
+    exclude-from-online-count: true
+    # Alapból a vanished admin nem vehet fel tárgyat, nem sebezhet és nem interaktálhat.
+    allow-item-pickup: false
+    allow-damage: false
+    allow-interaction: false

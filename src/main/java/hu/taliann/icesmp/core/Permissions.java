@@ -48,6 +48,19 @@ public final class Permissions {
     public static final String WAR = "icesmp.admin.war";
     public static final String CRATE = "icesmp.admin.crate";
     public static final String MODERATION = "icesmp.admin.moderation";
+    public static final String MODERATION_WARN = "icesmp.moderation.warn";
+    public static final String MODERATION_KICK = "icesmp.moderation.kick";
+    public static final String MODERATION_MUTE = "icesmp.moderation.mute";
+    public static final String MODERATION_BAN = "icesmp.moderation.ban";
+    public static final String MODERATION_HISTORY = "icesmp.moderation.history";
+    public static final String MODERATION_SOCIALSPY = "icesmp.moderation.socialspy";
+    public static final String MODERATION_VANISH = "icesmp.moderation.vanish";
+    public static final String MODERATION_VANISH_SEE = "icesmp.moderation.vanish.see";
+    public static final String MODERATION_OFFLINE_TP = "icesmp.moderation.offlinetp";
+    public static final String MODERATION_INVENTORY_READ = "icesmp.moderation.inventory.read";
+    public static final String MODERATION_INVENTORY_EDIT = "icesmp.moderation.inventory.edit";
+    public static final String MODERATION_GUI = "icesmp.moderation.gui";
+    public static final String MESSAGE = "icesmp.message";
     public static final String INSPECT = "icesmp.admin.inspect";
     public static final String ITEM = "icesmp.admin.item";
     public static final String TERRITORY_BUILDER = "icesmp.territory.builder";
@@ -78,8 +91,7 @@ public final class Permissions {
         canonical.put(SINNER, "Bűn-kezelés (/sinner)");
         canonical.put(WAR, "Hadi-ablak admin (/faction war start|stop)");
         canonical.put(CRATE, "Láda-admin (/crate set/remove/give)");
-        canonical.put(MODERATION, "Moderáció: némítás, chat-szűrő, bejelentések (/mute, /reports)");
-        canonical.put(INSPECT, "Játékos-inspektor + inventory-betekintés (/icesmp inspect, /invsee)");
+        canonical.put(INSPECT, "Játékos-inspektor (/icesmp inspect)");
         canonical.put(ITEM, "Admin item-adás (/iceitem)");
         canonical.put(TERRITORY_BUILDER, "Építés a védett zónákban (szerver-építő szerep)");
 
@@ -88,6 +100,30 @@ public final class Permissions {
             registerNode(pm, new Permission(entry.getKey(), entry.getValue(), PermissionDefault.OP));
             allChildren.put(entry.getKey(), Boolean.TRUE);
         }
+
+        final Map<String, String> moderationNodes = new LinkedHashMap<>();
+        moderationNodes.put(MODERATION_WARN, "Figyelmeztetés kiadása (/warn)");
+        moderationNodes.put(MODERATION_KICK, "Játékos kirúgása (/kick)");
+        moderationNodes.put(MODERATION_MUTE, "Némítás és feloldás (/mute, /unmute)");
+        moderationNodes.put(MODERATION_BAN, "Kitiltás és feloldás (/ban, /tempban, /unban)");
+        moderationNodes.put(MODERATION_HISTORY, "Büntetési előzmények megtekintése");
+        moderationNodes.put(MODERATION_SOCIALSPY, "Natív privát üzenetek megfigyelése");
+        moderationNodes.put(MODERATION_VANISH, "Vanish állapot kezelése");
+        moderationNodes.put(MODERATION_VANISH_SEE, "Vanish állapotú adminok megtekintése");
+        moderationNodes.put(MODERATION_OFFLINE_TP, "Teleport az utolsó kijelentkezési helyre");
+        moderationNodes.put(MODERATION_INVENTORY_READ, "Online inventory és ender-láda olvasása");
+        moderationNodes.put(MODERATION_INVENTORY_EDIT, "Online inventory és ender-láda szerkesztése");
+        moderationNodes.put(MODERATION_GUI, "Natív moderációs admin GUI");
+        final Map<String, Boolean> moderationChildren = new LinkedHashMap<>();
+        for (final Map.Entry<String, String> entry : moderationNodes.entrySet()) {
+            registerNode(pm, new Permission(entry.getKey(), entry.getValue(), PermissionDefault.OP));
+            moderationChildren.put(entry.getKey(), Boolean.TRUE);
+        }
+        registerNode(pm, new Permission(MODERATION,
+                "IceSMP natív moderációs jogosultságcsomag", PermissionDefault.OP, moderationChildren));
+        allChildren.put(MODERATION, Boolean.TRUE);
+        registerNode(pm, new Permission(MESSAGE,
+                "IceSMP privát üzenetküldés (/msg, /tell, /w, /reply)", PermissionDefault.TRUE));
         registerNode(pm, new Permission(ALL,
                 "IceSMP super-admin: az összes IceSMP admin-node egyben", PermissionDefault.OP, allChildren));
 

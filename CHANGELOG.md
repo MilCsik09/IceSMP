@@ -9,19 +9,23 @@
 
 ## Telepítési útmutató
 
-### 1. Eltávolítandó pluginok (mind natívan kiváltva)
+### 1. Külső pluginok eltávolíthatósági állapota
+
+> A buildelt natív alap önmagában nem runtime-garancia. A MiniMOTD, AxAFKZone, GSit,
+> CrazyCrates, SModeration és InvSee++ csak a replacement-mátrix kötelező scope-jainak
+> és kézi Folia-playtestjeinek lezárása után törölhető biztonságosan.
 
 | Régi plugin | Natív kiváltás |
 |---|---|
 | `ICEsmpadditions.jar` | `world-tweaks.warden-death-xp` (general.yml, élőben hangolható) |
 | `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
-| `MiniMOTD` | natív MOTD (`motd.yml`) |
+| `MiniMOTD` | **FELTÉTELES** — a natív completion buildelt és regressziózott; valódi Folia ping/ikon/reload és jar nélküli átvételi playtest még kell |
 | `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
-| `CrazyCrates` | natív crate-rendszer (`crates.yml`, `/crate`, rulett-animáció) |
-| AFK/ülés plugin | natív `/afk` + `/sit` (klikk-ülés) |
-| `InvSee++` / `SModeration` | natív moderáció (`/report`, mute, chat-szűrő) + read-only `/invsee` + inspektor |
+| `CrazyCrates` | **MÉG NEM** — preview/permission/cooldown/stats/strict reward scope hiányzik |
+| AFK/ülés plugin | **MÉG NEM** — AFK-zóna és sit/pose completion scope hiányzik |
+| `InvSee++` / `SModeration` | **FELTÉTELES** — a natív suite buildelt; valódi Folia/restart/fault-injection playtest még kell |
 
-A `plugins/` mappából a fentiek jarját el kell távolítani az új IceSMP-jar bemásolásakor.
+A `plugins/` mappából csak a mátrixban **READY** és kézzel is igazolt tételek jarját szabad eltávolítani.
 Megmaradó soft-dependency: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms
 (mind opcionális — nélkülük is fut).
 
@@ -45,6 +49,27 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 ---
 
+
+## Unreleased — natív MOTD completion (2026-07-29)
+
+- Immutable, strict config snapshot időalapú és seedelt, időablakon belül stabil random rotációval; exact signed-`long` parserrel és típushű boolean validációval.
+- Eseményprioritás: vérhold, világboss, szezonzárás, majd normál variáns; kizárólag `{online}`/`{max}` tokenek és max-player override.
+- A vanished játékosok számlálása a moderációs `VanishManager` meglévő thread-safe cache-ét használja, párhuzamos state nélkül.
+- Variáns/default/random ikonmód; az ikonok async, secure-directory handle-en, root/köztes/fájl symlink követése nélkül töltődnek, majd egyetlen immutable cache-ként kerülnek a global-region schedulerre.
+- `/icesmp reload`, `motd.*` config set/unset és a központi config GUI ugyanazt a célzott reloadot használja.
+- A reload/disable generáció és a moderációból újrahasznált single-winner scheduler gate megakadályozza a késői vagy visszautasított async callback cache-publikálását.
+- Bizonyíték: `motdRegressionTest`, teljes Gradle build, consistency `0 FAIL / 0 WARN` és whitespace check. A MiniMOTD eltávolításához továbbra is valódi Folia server-list és reload playtest kell; upstream paritást nem állítunk.
+
+## Unreleased — natív moderációs suite (2026-07-28)
+
+- Egységes, strict punishment ledger: warning/kick/mute/tempmute/ban/tempban/unmute/unban, teljes history és async login ban gate.
+- Közös persistence lifecycle, atomikus mentés, mutációs rollback és fail-closed corrupt-state kezelés.
+- Natív `/msg`/`tell`/`w`/`reply`, tartós SocialSpy, tartós vanish viewer-specifikus tablist-integrációval.
+- Online live inventory és ender chest read/edit külön permissionnel, két entity-scheduler közötti tesztelt single-claim escrow-val és auditloggal.
+- Review-hardening: a tartós invsee return queue strict restart/corrupt-state validációt és claimenkénti törlést kapott; a nullable entity-scheduler submitok single-winner fallbacken futnak; a `/reply` link join-session generációval védett a quit–reconnect race ellen.
+- Moderációs GUI, offline teleport, központi permissionök és konfigurálható magyar üzenetek.
+- Bizonyíték: `moderationRegressionTest` és teljes Gradle build. Valódi Folia playtest nélkül nincs végleges plugin-eltávolítási állítás.
+
 ## Changelog — 2026-07-14 (`49cb327`) → 2026-07-27 (`10403f8`)
 
 ### Új rendszerek
@@ -53,8 +78,8 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
   infósor, prioritás-kiszorítás, party-szekció.
 - **Natív moderáció**: `/report` rendszer (perzisztens, offline-feedbackkel), mute +
   chat-szűrő + spam-fék, eszkaláció + chat-napló; **admin-inspektor** + read-only `/invsee`.
-- **Natív AFK-, crate- és ülés-rendszer** (3 plugin kiváltva); crate rulett-animációval,
-  kulcs-források a jutalom-csatornákban.
+- **Natív AFK-, crate- és ülés-alapok**; ezek a szerverhez szükséges magfunkciókat elindították,
+  de a teljes replacement-completion és valódi Folia-playtest ebben a fejlesztési programban készül.
 - **DisplayFx + SpellVfx réteg**: display-entity effektek, formázott spell-VFX kaszt/spec-
   palettákkal és per-spell override-dal, 3D crate-feltárás, boss-AoE padló-telegraph,
   aurora fény-fátyol; particle-diéta (FLASH-korlát, konfetti-mérséklés).
