@@ -41,8 +41,8 @@ jobs:
           CRATE_SHA=2262705680a98ac25c7df2dc880ca20af9583b47
           SCRIPT_B64_SHA=129bc98905fadc34409585f307e140639f211496f46f2b15ff455c6618614037
           SCRIPT_SHA=e231f9a5337b53cf078e5529353737bdb93b56aab1e0b61c1c012d4bc9bba370
-          EXPECTED_CODE_TREE=b1ec9c7af9d0eea5e25d735b8baa5ab47494917d
-          EXPECTED_FINAL_TREE=6b40a3723b5ce9988d9ac8381dce66804e601157
+          EXPECTED_CODE_TREE=3df14110b6cb0f8ef869af328c4147f7eadd6330
+          EXPECTED_FINAL_TREE=846ec983cae765cc3faeec4619b22085f07f853a
 
           remote_target=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')
           remote_crate=$(git ls-remote origin "refs/heads/$CRATE_BRANCH" | awk '{print $1}')
@@ -67,6 +67,11 @@ jobs:
           git checkout -B crate-reviewed "$TARGET_SHA"
           CRATE_BASE="$BASE_SHA" CRATE_TARGET="$TARGET_SHA" CRATE_HEAD="$CRATE_SHA" \
             python3 /tmp/rebuild-crate.py
+
+          # The normal target CI already executes crateRegressionTest through Gradle check.
+          # Preserve the target workflow byte-for-byte so the Actions token does not need
+          # workflow-write permission when publishing the feature branch.
+          git checkout "$TARGET_SHA" -- .github/workflows/ci.yml
 
           git add .github/workflows/ci.yml build.gradle.kts src/main src/regression
           git commit -m "fix(crates): reconcile reviewed settlement with current target"
