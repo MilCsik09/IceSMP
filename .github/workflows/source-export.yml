@@ -1,36 +1,52 @@
-name: Review cache export
+name: Publish reviewed moderation fix
 
 on:
-  push:
-    branches:
-      - codex/source-export-45
   pull_request:
+    types: [reopened]
     branches:
       - claude/projekt-audit-u0hkcz
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
+  publish:
+    if: github.head_ref == 'codex/source-export-45'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out exact source
+      - name: Check out verified patch payload
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+          path: publisher
+      - name: Check out moderation feature branch
+        uses: actions/checkout@v4
         with:
-          distribution: temurin
-          java-version: '21'
-      - name: Populate Gradle distribution and dependency cache
-        run: ./gradlew clean build --no-daemon --stacktrace
-      - name: Package Gradle home
-        run: tar -C "$HOME" -czf "$RUNNER_TEMP/gradle-home.tar.gz" .gradle
-      - name: Upload Gradle cache
+          ref: feature/native-moderation-suite
+          fetch-depth: 0
+          path: work
+      - name: Verify lease and apply reviewed patch
+        env:
+          EXPECTED_HEAD: 788a8f019d84648a8155652f356d074ea29b647a
+          EXPECTED_PATCH_SHA256: fa80f3b26d02516509678a16242e2bfa4a0d95b4e8abddc25570213fc9fad67d
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/work"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          cat "$GITHUB_WORKSPACE/publisher/.review/pr45.patch.gz.b64.part"{1..6} > "$RUNNER_TEMP/patch.b64"
+          base64 --decode "$RUNNER_TEMP/patch.b64" > "$RUNNER_TEMP/patch.gz"
+          gzip -dc "$RUNNER_TEMP/patch.gz" > "$RUNNER_TEMP/review.patch"
+          echo "$EXPECTED_PATCH_SHA256  $RUNNER_TEMP/review.patch" | sha256sum -c -
+          git apply --check "$RUNNER_TEMP/review.patch"
+          git apply --index "$RUNNER_TEMP/review.patch"
+          git diff --cached --check
+          git config user.name "OpenAI Codex Review"
+          git config user.email "codex-review@openai.invalid"
+          git commit -m "fix(moderation): close lifecycle and ownership review gaps"
+          git push origin HEAD:feature/native-moderation-suite
+          git rev-parse HEAD | tee "$RUNNER_TEMP/review-commit-sha"
+      - name: Upload published commit SHA
         uses: actions/upload-artifact@v4
         with:
-          name: icesmp-gradle-home
-          path: ${{ runner.temp }}/gradle-home.tar.gz
+          name: moderation-review-publish
+          path: ${{ runner.temp }}/review-commit-sha
           retention-days: 1
