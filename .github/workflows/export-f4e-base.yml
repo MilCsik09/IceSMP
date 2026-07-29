@@ -1,0 +1,41 @@
+name: IceSMP fixed base source export
+
+on:
+  pull_request:
+    branches:
+      - claude/projekt-audit-u0hkcz
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export fixed f4e base source
+    if: github.head_ref == 'agent/export-f4e-base'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout fixed base
+        uses: actions/checkout@v4
+        with:
+          ref: f4e82263d35c645a053eccac09a3ad254a36ed90
+          fetch-depth: 1
+
+      - name: Verify and package source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "f4e82263d35c645a053eccac09a3ad254a36ed90"
+          tar --exclude=.git --exclude=.gradle --exclude=build --exclude='*.log' \
+            -czf /tmp/icesmp-base-f4e-source.tar.gz .
+          printf '%s\n' "$(sha256sum /tmp/icesmp-base-f4e-source.tar.gz)" > /tmp/SHA256SUMS
+
+      - name: Upload fixed base source
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-base-f4e-source
+          path: |
+            /tmp/icesmp-base-f4e-source.tar.gz
+            /tmp/SHA256SUMS
+          retention-days: 1
+          if-no-files-found: error
