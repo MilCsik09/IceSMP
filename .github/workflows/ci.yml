@@ -97,3 +97,20 @@ jobs:
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
+
+      - name: Package exact PR 49 review repository
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --exclude=.gradle --exclude=build --exclude='*.log' \
+            -czf /tmp/icesmp-pr49-review-repo.tar.gz .
+
+      - name: Upload exact PR 49 review repository
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-pr49-review-repo
+          path: /tmp/icesmp-pr49-review-repo.tar.gz
+          retention-days: 1
+          if-no-files-found: error
