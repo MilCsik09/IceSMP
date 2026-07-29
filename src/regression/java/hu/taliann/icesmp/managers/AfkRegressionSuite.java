@@ -34,9 +34,10 @@ public final class AfkRegressionSuite {
         expect(!tracker.isAfk(player, 3_100L, 2L), "toggle-off must reset inactivity baseline");
         expect(!tracker.isAfk(player, 5_099L, 2L), "fresh baseline must not instantly expire");
 
-        expect(tracker.toggleAfk(player, 5_100L, 2L), "active player must toggle manual AFK on");
+        tracker.recordActivity(player, 5_100L);
+        expect(tracker.toggleAfk(player, 5_101L, 2L), "active player must toggle manual AFK on");
         expect(tracker.isManuallyAfk(player), "manual flag not retained");
-        expect(tracker.isAfk(player, 5_100L, 2L), "manual AFK not visible");
+        expect(tracker.isAfk(player, 5_101L, 2L), "manual AFK not visible");
         expect(!tracker.toggleAfk(player, 5_200L, 2L), "second toggle must turn manual AFK off");
         expect(!tracker.isAfk(player, 5_200L, 2L), "manual toggle-off left AFK state behind");
 
@@ -130,6 +131,10 @@ public final class AfkRegressionSuite {
                 "world-boss rewards do not consume the shared AFK gate");
         expect(worldBossManager.contains("if (!allowRewards)"),
                 "world-boss lifecycle cannot close without paying rewards");
+        expect(core.contains("wildHuntManager.setAfkManager(afkManager)"),
+                "Wild Hunt AFK manager is not wired by the core");
+        expect(wildHuntManager.contains("setAfkManager"),
+                "Wild Hunt lost the AFK manager injection point");
         expect(wildHuntManager.contains("isAfkRewardBlocked"),
                 "Wild Hunt personal loot can bypass the global AFK gate");
     }
