@@ -17,11 +17,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply AFK scheduler patch
+      - name: Decode and apply AFK scheduler patch
         run: |
           test -f .review/afk-core-fix.patch
-          git apply --check --whitespace=error-all .review/afk-core-fix.patch
-          git apply .review/afk-core-fix.patch
+          base64 --decode .review/afk-core-fix.patch > "$RUNNER_TEMP/afk-core-fix.patch"
+          git apply --check --whitespace=error-all "$RUNNER_TEMP/afk-core-fix.patch"
+          git apply "$RUNNER_TEMP/afk-core-fix.patch"
 
       - name: Run required build and regressions
         run: |
