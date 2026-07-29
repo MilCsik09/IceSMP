@@ -1,17 +1,15 @@
 name: Publish reviewed moderation fix
 
 on:
-  pull_request:
-    types: [reopened]
+  push:
     branches:
-      - claude/projekt-audit-u0hkcz
+      - codex/source-export-45
 
 permissions:
   contents: write
 
 jobs:
   publish:
-    if: github.head_ref == 'codex/source-export-45'
     runs-on: ubuntu-latest
     steps:
       - name: Check out verified patch payload
