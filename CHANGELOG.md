@@ -56,6 +56,7 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 - Közös persistence lifecycle, atomikus mentés, mutációs rollback és fail-closed corrupt-state kezelés.
 - Natív `/msg`/`tell`/`w`/`reply`, tartós SocialSpy, tartós vanish viewer-specifikus tablist-integrációval.
 - Online live inventory és ender chest read/edit külön permissionnel, két entity-scheduler közötti tesztelt single-claim escrow-val és auditloggal.
+- Review-hardening: a tartós invsee return queue strict restart/corrupt-state validációt és claimenkénti törlést kapott; a nullable entity-scheduler submitok single-winner fallbacken futnak; a `/reply` link join-session generációval védett a quit–reconnect race ellen.
 - Moderációs GUI, offline teleport, központi permissionök és konfigurálható magyar üzenetek.
 - Bizonyíték: `moderationRegressionTest` és teljes Gradle build. Valódi Folia playtest nélkül nincs végleges plugin-eltávolítási állítás.
 
