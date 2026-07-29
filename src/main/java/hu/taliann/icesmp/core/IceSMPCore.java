@@ -573,7 +573,7 @@ public final class IceSMPCore {
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
         ambientEventManager.setAfkManager(afkManager);
-        this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin);
+        this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
         this.vanishManager = new hu.taliann.icesmp.managers.VanishManager(plugin, moderationManager, configManager);
@@ -857,6 +857,7 @@ public final class IceSMPCore {
         adviseOnPluginCompatibility();
         messageManager.reload();
         motdListener.reload();
+        sitManager.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.
         mobScalingManager.load();
         craftingRestrictionManager.load();
@@ -1161,6 +1162,7 @@ public final class IceSMPCore {
         shutdownStep("cultistEventManager", cultistEventManager::shutdown);
         shutdownStep("totemManager", totemManager::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
+        shutdownStep("sitManager", sitManager::shutdown);
         shutdownStep("invseeManager", invseeManager::shutdown);
         shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
@@ -1406,10 +1408,17 @@ public final class IceSMPCore {
             invseeManager.reload();
             vanishManager.refreshAll();
             motdListener.reload();
+            sitManager.reload();
         });
         final java.util.function.Consumer<String> configChangeHook = key -> {
-            if (key != null && key.startsWith("motd.")) {
+            if (key == null) {
+                return;
+            }
+            if (key.startsWith("motd.")) {
                 motdListener.reload();
+            }
+            if (key.startsWith("sit.")) {
+                sitManager.reload();
             }
         };
         iceSMPCommand.setConfigChangeHook(configChangeHook);
@@ -1562,7 +1571,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new CommandMenuListener(commandMenuContext), plugin);
         pluginManager.registerEvents(new HudListener(hudManager, tablistManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.AfkActivityListener(afkManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SitListener(sitManager, configManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SitListener(sitManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateListener(crateManager, crateKeyFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CrateSpinGUIListener(), plugin);
         final JobGUIListener jobGUIListener = new JobGUIListener(jobManager, catalystItemFactory, specializationManager, spellRegistry, configManager, messageManager, characterMenuContext);

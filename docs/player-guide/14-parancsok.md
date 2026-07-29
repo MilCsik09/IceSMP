@@ -21,8 +21,7 @@ jelenti, hogy **elhagyható**.
 | `/achievements` | `ach`, `eleresek` | Elérések (mérföldkövek + jutalmak) |
 | `/stats [név]` | — | Statisztika-profil: ölések, halálok, K/D, mob-ölések, castolt spellek, teljesített questek |
 | `/hud <szekció>` | — | HUD-oldalsáv szekciók ki-be kapcsolása (frakcio/kaszt/eroforras/esemeny/valuta/csapat/mind) |
-| `/sit` | — | Leülés, ahol állsz (újra `/sit` vagy sneak = felállás); lépcsőre/fél-lapra üres kézzel jobb-katt is leültet |
-| `/sit fekves` | — | Fekvő póz (LibsDisguises szükséges hozzá); újra kiadva vagy mozgásra felállsz |
+| `/sit` / `/sit fel` | — | Leülés vagy felállás; támogatott lépcsőre, fél-lapra, szőnyegre/mohaszőnyegre és hórétegre üres kézzel jobb-katt is leültet |
 | `/afk` | — | Önkéntes AFK-jelölés ki/be |
 | `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése (kulccsal a ládára jobb-katt = nyitás; a nyereményt egy 3D-ikon tárja fel a láda fölött) |
 | `/report <név> <ok>` | `bejelent` | Játékos bejelentése a moderátoroknak (percenként egyszer) |

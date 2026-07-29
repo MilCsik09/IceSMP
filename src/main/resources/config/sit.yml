@@ -1,0 +1,40 @@
+# IceSMP konfiguráció — kizárólag natív ülés.
+sit:
+  enabled: true
+  click-to-sit: true
+  empty-hand-only: true
+  max-click-distance: 4.5
+  allow-unsafe-locations: false
+
+  stand-up:
+    damage: true
+    sneak: true
+    block-break: true
+
+  worlds:
+    whitelist: []
+    blacklist: []
+
+  seats:
+    tags:
+      - STAIRS
+      - SLABS
+      - CARPETS
+    materials:
+      - MOSS_CARPET
+      - PALE_MOSS_CARPET
+      - SNOW
+    material-blacklist:
+      - POWDER_SNOW
+      - MAGMA_BLOCK
+      - CAMPFIRE
+      - SOUL_CAMPFIRE
+
+  # Root commandok. A namespace és a kezdő slash normalizált, ezért home és plugin:home azonos.
+  blocked-commands:
+    - home
+    - spawn
+    - warp
+    - tpa
+    - tpaccept
+    - rtp
