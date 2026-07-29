@@ -25,6 +25,7 @@ public final class AfkZoneRegressionSuite {
         claimFootprintAndAfkVolumeRemainDistinct();
         previewLeaseIdentityAndGeneration();
         intervalRemainderAndSingleCycleGate();
+        globalAfkTimingBounds();
         weightedRewardBoundaries();
         strictRewardAndCommandValidation();
         tombstoneAndGlobalLimitIsolation();
@@ -99,6 +100,25 @@ public final class AfkZoneRegressionSuite {
                 "overflow must saturate and remain deterministic");
         expectFailure(() -> AfkRewardClock.advance(-1L, 0L, 1_000L), "negative progress");
         expectFailure(() -> AfkRewardClock.advance(0L, 0L, 0L), "zero interval");
+    }
+
+    private static void globalAfkTimingBounds() {
+        assertEquals(5L, AfkZoneCatalog.safeRefreshTicks(5L), "minimum refresh tick");
+        assertEquals(AfkZoneCatalog.MAX_REFRESH_TICKS,
+                AfkZoneCatalog.safeRefreshTicks(AfkZoneCatalog.MAX_REFRESH_TICKS),
+                "maximum refresh tick");
+        assertEquals(20L, AfkZoneCatalog.safeRefreshTicks(4L),
+                "too-frequent refresh must use the safe default");
+        assertEquals(20L, AfkZoneCatalog.safeRefreshTicks(Long.MAX_VALUE),
+                "overflow-sized refresh must use the safe default");
+        assertEquals(1L, AfkZoneCatalog.safeAfkAfterSeconds(1L), "minimum AFK timeout");
+        assertEquals(AfkZoneCatalog.MAX_AFK_AFTER_SECONDS,
+                AfkZoneCatalog.safeAfkAfterSeconds(AfkZoneCatalog.MAX_AFK_AFTER_SECONDS),
+                "maximum AFK timeout");
+        assertEquals(180L, AfkZoneCatalog.safeAfkAfterSeconds(0L),
+                "zero AFK timeout must use the safe default");
+        assertEquals(180L, AfkZoneCatalog.safeAfkAfterSeconds(Long.MAX_VALUE),
+                "overflow-sized AFK timeout must use the safe default");
     }
 
     private static void weightedRewardBoundaries() {
@@ -198,6 +218,8 @@ public final class AfkZoneRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/commands/AfkZoneCommand.java"));
         final String selection = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/selection/CuboidSelectionService.java"));
+        final String core = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
         final String cleanup = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java"));
         final String config = Files.readString(Path.of(
@@ -214,6 +236,17 @@ public final class AfkZoneRegressionSuite {
         assertContains(command, "selectionService.result(player.getUniqueId(),",
                 "AFK create/replace must retain the explicit 3D volume cap");
         assertContains(afk, "AfkRewardClock.advance", "single payout gate used by runtime");
+        assertContains(core, "scheduleHud();\n        scheduleAfk();",
+                "AFK driver must be enabled independently after the HUD scheduler");
+        assertContains(core, "private synchronized void scheduleAfk()",
+                "AFK driver must own an explicit cancel/reschedule lifecycle");
+        assertContains(core, "afkManager.reloadZones();\n            scheduleAfk();",
+                "config reload must apply refresh-period changes");
+        final int hudStart = core.indexOf("private void scheduleHud()");
+        final int afkStart = core.indexOf("private synchronized void scheduleAfk()");
+        assertTrue(hudStart >= 0 && afkStart > hudStart, "scheduler methods must be discoverable");
+        assertNotContains(core.substring(hudStart, afkStart), "afkManager.tick()",
+                "HUD disable must not suppress the native AFK driver");
         assertContains(afk, "CatalogRevision", "queued player ticks carry an immutable config generation");
         assertContains(afk, "catalog != revision", "stale player/global callbacks must fail closed");
         assertContains(afk, "if (!dispatched)", "command reward success is conditional on dispatch");

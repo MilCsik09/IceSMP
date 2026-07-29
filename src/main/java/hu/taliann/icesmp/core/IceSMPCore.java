@@ -866,6 +866,7 @@ public final class IceSMPCore {
         scheduleEconomyEvents();
         scheduleWorldEvents();
         scheduleHud();
+        scheduleAfk();
         scheduleHealth();
         scheduleCorruptionAura();
         schedulePetCombat();
@@ -1275,10 +1276,26 @@ public final class IceSMPCore {
         final long tablistTicks = Math.max(5L, configManager.getLong("tablist.refresh-ticks", 10L));
         tablistTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> tablistManager.tick(), tablistTicks, tablistTicks);
-        // Natív AFK-rendszer (AxAFKZone-kiváltás): zóna-jutalom + bossbar tick.
-        final long afkTicks = Math.max(5L, configManager.getLong("afk.refresh-ticks", 20L));
-        afkTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin, task -> afkManager.tick(), afkTicks, afkTicks);
+    }
+
+    /**
+     * Natív AFK-rendszer (AxAFKZone-kiváltás). A driver nem függhet a HUD vagy tablista
+     * kapcsolójától; reloadkor a periodus is célzottan újraütemeződik.
+     */
+    private synchronized void scheduleAfk() {
+        if (afkTask != null) {
+            afkTask.cancel();
+            afkTask = null;
+        }
+        final long afkTicks = hu.taliann.icesmp.managers.AfkZoneCatalog.safeRefreshTicks(
+                configManager.getLong("afk.refresh-ticks", 20L));
+        try {
+            afkTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                    plugin, task -> afkManager.tick(), afkTicks, afkTicks);
+        } catch (final RuntimeException rejected) {
+            plugin.getLogger().severe("Az AFK driver nem ütemezhető; a natív AFK-rendszer nem fut: "
+                    + rejected.getMessage());
+        }
     }
 
     /** HP-rendszer: kaszt-profil karbantartás + harcon kívüli regen (a HUD-kapcsolótól független). */
@@ -1362,6 +1379,7 @@ public final class IceSMPCore {
             // Shared selection sessions and previews are transient and never survive reload.
             selectionService.clearAll();
             afkManager.reloadZones();
+            scheduleAfk();
             // A spell-VFX statikus mezőkbe cache-el — reload nélkül az enable-kori érték
             // ragadna be, pedig a VFX-kikapcsolás tipikus élő TPS-mentő beavatkozás.
             hu.taliann.icesmp.utils.SpellVfx.configure(

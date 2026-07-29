@@ -102,7 +102,7 @@ public final class AfkManager implements PlayerStateCleanup {
         if (last == null) {
             return false;
         }
-        final long afterMillis = Math.max(1L,
+        final long afterMillis = AfkZoneCatalog.safeAfkAfterSeconds(
                 configManager.getLong("afk.afk-after-seconds", 180L)) * 1000L;
         return System.currentTimeMillis() - last >= afterMillis;
     }

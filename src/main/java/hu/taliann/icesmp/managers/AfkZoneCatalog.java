@@ -22,6 +22,9 @@ import java.util.UUID;
 public final class AfkZoneCatalog {
 
     public static final long MAX_INTERVAL_SECONDS = 86_400L;
+    public static final long MIN_REFRESH_TICKS = 5L;
+    public static final long MAX_REFRESH_TICKS = 72_000L;
+    public static final long MAX_AFK_AFTER_SECONDS = 31_536_000L;
     public static final int MAX_ROLL_COUNT = 16;
     public static final double MAX_WEIGHT = 1_000_000.0D;
     public static final long MAX_CONFIGURED_ZONE_VOLUME = 100_000_000L;
@@ -84,6 +87,10 @@ public final class AfkZoneCatalog {
         final Map<String, Zone> zones = new LinkedHashMap<>();
         final Map<String, List<String>> errors = new LinkedHashMap<>();
         final List<String> globalProblems = new ArrayList<>();
+        boundedPositiveLong(config.get("afk.refresh-ticks"), 20L,
+                MIN_REFRESH_TICKS, MAX_REFRESH_TICKS, "afk.refresh-ticks", globalProblems);
+        boundedPositiveLong(config.get("afk.afk-after-seconds"), 180L,
+                1L, MAX_AFK_AFTER_SECONDS, "afk.afk-after-seconds", globalProblems);
         final long maxVolume = boundedPositiveLong(config.get("afk.max-zone-volume"), 1_000_000L,
                 1L, MAX_CONFIGURED_ZONE_VOLUME, "afk.max-zone-volume", globalProblems);
         final long maxCurrency = boundedPositiveLong(config.get("afk.max-currency-reward"), 1_000L,
@@ -196,6 +203,17 @@ public final class AfkZoneCatalog {
                     color, overlay));
         }
         return new Snapshot(zones, errors);
+    }
+
+
+    public static long safeRefreshTicks(final long configured) {
+        return configured >= MIN_REFRESH_TICKS && configured <= MAX_REFRESH_TICKS
+                ? configured : 20L;
+    }
+
+    public static long safeAfkAfterSeconds(final long configured) {
+        return configured >= 1L && configured <= MAX_AFK_AFTER_SECONDS
+                ? configured : 180L;
     }
 
     /** Deterministic roll input (0 <= unit < 1) keeps the weighted algorithm directly testable. */
