@@ -1009,15 +1009,18 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (frissítsd a listát), utána vissza a normál rotációra.
 - [ ] **Natív MOTD completion — `feature/native-motd-completion`:**
   - [x] **AUTOMATED:** `motdRegressionTest` — TIME floor-mod, időablakon belül stabil RANDOM, seed-érzékenység és pool-lefedés.
+  - [x] **AUTOMATED:** teljes signed-`long` parser (`2^53` fölött, MIN/MAX, kétirányú overflow, string, tört/NaN/Infinity) és minden MOTD boolean típushű validációja.
+  - [x] **AUTOMATED:** kizárólag `{online}`/`{max}` placeholder; MiniMessage-only és vegyes MiniMessage/token szöveg változatlanul érvényes.
   - [x] **AUTOMATED:** vérhold > világboss > szezonzárás prioritás és milliszekundum-pontos szezonzáró küszöb.
-  - [x] **AUTOMATED:** a hét jarból szállított ikon dekódolható és pontosan 64×64.
+  - [x] **AUTOMATED:** secure icon-root/köztes/fájl no-follow, traversal tiltás, helyes/hibás méret, sérült/túl nagy PNG és a hét bundled 64×64 ikon.
+  - [x] **AUTOMATED:** két reload, scheduler rejection/null handle, task–fallback single-winner és disable utáni késői callback nem publikál cache-t.
   - [ ] **REAL FOLIA REQUIRED / MANUAL:** párhuzamos server-list pingek TIME és RANDOM módban, hiba és region-thread stacktrace nélkül.
   - [ ] **REAL FOLIA REQUIRED:** vérhold, világboss és szezonzárás egymásra fedése; a prioritás pontosan ebben a sorrendben érvényes.
   - [ ] **PERMISSION TEST / MANUAL:** vanished admin megjelenik vagy kimarad az online countból az `exclude-vanished-from-online-count` kapcsoló szerint; nem készül második vanish-state.
   - [ ] **RELOAD TEST:** ikonfájl csere közben két gyors `/icesmp reload`; a régi async generáció nem írja vissza a régi ikonkészletet.
   - [ ] **RELOAD TEST:** `/icesmp config set motd.selection-mode random`, `rotation-seconds`, vanish toggle és `icons.mode` azonnal új snapshotot ad.
-  - [ ] **NEGATIVE TEST:** sérült, nem PNG, 32×32, 65×64, symlink és 1 MiB feletti fájl kihagyása; a plugin többi része működik.
-  - [ ] **NEGATIVE TEST:** ismeretlen enum, `NaN`, `Infinity`, nulla max-player override, üres/65 elemű pool, duplikált normalizált ID és hibás strict MiniMessage a MOTD-t fail-safe letiltja.
+  - [ ] **NEGATIVE TEST:** sérült, nem PNG, 32×32, 65×64, root/köztes/fájl symlink és 1 MiB feletti fájl kihagyása; a plugin többi része működik.
+  - [ ] **NEGATIVE TEST:** ismeretlen enum, hibás típusú boolean, lebegőpontos/overflow integer, nulla max-player override, üres/65 elemű pool, ismeretlen placeholder, duplikált normalizált ID és hibás strict MiniMessage a MOTD-t fail-safe letiltja.
   - [ ] **MANUAL:** `{online}`/`{max}`, max-player override és NONE/DEFAULT/VARIANT/RANDOM ikonmód a kliens szerverlistájában.
   - [ ] **MANUAL / NEGATIVE:** MiniMOTD jar nélkül teljes átvételi teszt; proxy/vhost és upstream configkompatibilitás nincs és nem cél.
 

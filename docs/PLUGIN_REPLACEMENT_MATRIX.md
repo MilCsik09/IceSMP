@@ -37,6 +37,6 @@
 | config és reload | `ConfigManager`, `/icesmp reload`, config command/GUI | ugyanazon override+reload út | célzott `motd.*` hook | nem |
 | vanished count | moderációs `VanishManager` | thread-safe online UUID-cache közvetlen olvasása | explicit include/exclude getter | nem; külön vanish state tilos |
 | eseményállapot | `BloodMoonManager`, `WorldBossManager`, `SeasonManager` | meglévő async-safe getterek | tiszta prioritás-selector | csak dependency-free selector |
-| scheduler | Paper async + global-region scheduler minta | fájl/PNG async, Bukkit icon cache global | generation gate | nem wrapper |
+| scheduler | Paper async + global-region scheduler minta, moderációs `SchedulerCallbackGate` | fájl/PNG async, Bukkit icon cache global | generation + single-winner gate | csak MOTD lifecycle-adapter |
 | admin GUI | `ConfigMenuGUI` + listener | meglévő kategória/override mechanizmus | MOTD-kategória | nem |
-| teszt lifecycle | Gradle `regressionTest` source set | új JavaExec a meglévő `check` részeként | selector és bundled icon teszt | nem framework |
+| teszt lifecycle | Gradle `regressionTest` source set | új JavaExec a meglévő `check` részeként | selector, strict scalar, placeholder, secure icon és generation teszt | nem framework |

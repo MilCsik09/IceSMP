@@ -52,11 +52,12 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 ## Unreleased — natív MOTD completion (2026-07-29)
 
-- Immutable, strict config snapshot időalapú és seedelt, időablakon belül stabil random rotációval.
-- Eseményprioritás: vérhold, világboss, szezonzárás, majd normál variáns; `{online}`/`{max}` és max-player override.
+- Immutable, strict config snapshot időalapú és seedelt, időablakon belül stabil random rotációval; exact signed-`long` parserrel és típushű boolean validációval.
+- Eseményprioritás: vérhold, világboss, szezonzárás, majd normál variáns; kizárólag `{online}`/`{max}` tokenek és max-player override.
 - A vanished játékosok számlálása a moderációs `VanishManager` meglévő thread-safe cache-ét használja, párhuzamos state nélkül.
-- Variáns/default/random ikonmód, async PNG-beolvasás, global-region icon cache, generációkapu és pontos 64×64/1 MiB/64 fájl validáció.
+- Variáns/default/random ikonmód; az ikonok async, secure-directory handle-en, root/köztes/fájl symlink követése nélkül töltődnek, majd egyetlen immutable cache-ként kerülnek a global-region schedulerre.
 - `/icesmp reload`, `motd.*` config set/unset és a központi config GUI ugyanazt a célzott reloadot használja.
+- A reload/disable generáció és a moderációból újrahasznált single-winner scheduler gate megakadályozza a késői vagy visszautasított async callback cache-publikálását.
 - Bizonyíték: `motdRegressionTest`, teljes Gradle build, consistency `0 FAIL / 0 WARN` és whitespace check. A MiniMOTD eltávolításához továbbra is valódi Folia server-list és reload playtest kell; upstream paritást nem állítunk.
 
 ## Unreleased — natív moderációs suite (2026-07-28)

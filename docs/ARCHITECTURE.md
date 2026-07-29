@@ -83,24 +83,29 @@ ahelyett, hogy némán az alapértékre esnének vissza.
 A `MotdListener` nem olvas fájlt és nem járja be a konfigurációt a server-list ping szálán.
 A `/icesmp reload`, a `motd.*` config-parancs és a config GUI ugyanazon célzott reload-hookot
 hívja: a listener előbb szigorúan felépít egy immutable snapshotot, azonnal üríti a korábbi
-ikoncache-t, majd külön async taskban olvassa és validálja a `plugins/IceSMP/icons/*.png`
-fájlokat. A Bukkit `CachedServerIcon` létrehozása a global-region scheduleren történik.
+ikoncache-t, majd külön async taskban csomagolja ki és olvassa a `plugins/IceSMP/icons/*.png`
+fájlokat. A könyvtár és minden fájl `SecureDirectoryStream` handle-en, `NOFOLLOW_LINKS` mellett
+nyílik meg; a méretellenőrzés és a dekódolás ugyanazon fájldescriptoron fut. A Bukkit
+`CachedServerIcon` létrehozása a global-region scheduleren történik.
 
 - választási mód: időalapú vagy seedelt, időablakon belül stabil random;
 - eseményprioritás: vérhold → világboss → szezonzárás → normál pool;
-- tokenek: `{online}` és `{max}`, opcionális max-player override;
+- tokenek: kizárólag `{online}` és `{max}`; minden más brace-token config hiba; opcionális max-player override;
 - a vanished count kizárólag a moderációs `VanishManager` thread-safe UUID-cache-ét használja;
 - ikonmód: `NONE`, `DEFAULT`, `VARIANT`, `RANDOM`;
-- ikonkapuk: normál fájl, legfeljebb 1 MiB, legfeljebb 64 fájl, valódi PNG, pontosan 64×64;
-- a reload-generáció száma megakadályozza, hogy egy régi async ikonbetöltés később felülírja
-  az új configot; disablekor a generáció érvénytelenedik és minden cache ürül;
-- hibás enum, nem véges/nem egész szám, üres vagy túl nagy variánslista, duplikált normalizált
-  ID és hibás strict MiniMessage csak a MOTD feature-t tiltja le, nem a teljes plugint.
+- ikonkapuk: symlinkmentes root/köztes/fájl útvonal, jóváhagyott data-rooton belüli secure open,
+  legfeljebb 1 MiB és 64 fájl, valódi PNG, pontosan 64×64;
+- a reload-generáció és a `SchedulerCallbackGate`-et újrahasznosító `MotdGenerationGate`
+  megakadályozza, hogy régi, visszautasított vagy disable után befejeződő callback publikáljon;
+  az ikonmap és a rendezett ID-lista egyetlen volatile immutable cache;
+- hiányzó scalar a dokumentált defaultot használja; jelen lévő hibás boolean, lebegőpontos vagy
+  tartományon kívüli egész, hibás enum, üres/túl nagy pool, duplikált normalizált ID és hibás
+  strict MiniMessage csak a MOTD feature-t tiltja le, nem a teljes plugint.
 
 A dependency-free `MotdSelector` tesztelhetővé teszi a rotációt és eseményprioritást. A
 `motdRegressionTest` a negatív epoch floor-mod viselkedést, a random stabilitást/pool-lefedést,
-a milliszekundum-pontos szezonzáró küszöböt és a jarban szállított ikonok 64×64 dekódolását is
-ellenőrzi. Ez nem helyettesíti a valódi Folia ping/reload és proxy nélküli runtime playtestet.
+a teljes signed-`long` és strict boolean szabályokat, a placeholder whitelistet, a symlink/TOCTOU
+ikonvédelmet, a generációs interleavinget és a jarban szállított ikonok 64×64 dekódolását is ellenőrzi. Ez nem helyettesíti a valódi Folia ping/reload és proxy nélküli runtime playtestet.
 
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
@@ -440,7 +445,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 508 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 115 fájl).
+- **Méret:** 525 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 115 fájl).
   Csomag-megoszlás: listeners 118, managers 115, commands 94, spells 56, gui 44, utils 22, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
