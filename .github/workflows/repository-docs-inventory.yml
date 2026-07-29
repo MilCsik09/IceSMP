@@ -73,6 +73,7 @@ jobs:
           DISPATCH_HEAD: ${{ inputs.head_ref }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.head_ref }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
@@ -93,8 +94,12 @@ jobs:
             BASE_SHA=$(resolve_ref "$DISPATCH_BASE")
             HEAD_SHA=$(resolve_ref "$DISPATCH_HEAD")
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
             HEAD_SHA=$(resolve_ref "$PR_HEAD_SHA")
+            if [[ "$PR_HEAD_REF" == "docs/full-release-and-team-guide" ]]; then
+              BASE_SHA=$(resolve_ref "49cb32740629f3d91a08b753436f3e16d33a494d")
+            else
+              BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
+            fi
           else
             HEAD_SHA=$(git rev-parse HEAD)
             if [[ -n "${PUSH_BEFORE_SHA:-}" && ! "$PUSH_BEFORE_SHA" =~ ^0+$ ]]; then
@@ -161,9 +166,26 @@ jobs:
           --head-ref "${{ steps.refs.outputs.head_sha }}"
           --output build/release-inventory
 
+      - name: Package read-only source snapshot
+        id: source_snapshot
+        if: github.event_name == 'pull_request' && github.head_ref == 'docs/full-release-and-team-guide'
+        shell: bash
+        env:
+          HEAD_SHA: ${{ steps.refs.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/source-snapshot
+          git ls-files | grep -v '^Other/' > build/source-snapshot/files.txt
+          tar -czf "build/source-snapshot/IceSMP-source-${HEAD_SHA}.tar.gz" \
+            -T build/source-snapshot/files.txt
+          sha256sum "build/source-snapshot/IceSMP-source-${HEAD_SHA}.tar.gz" \
+            > build/source-snapshot/SHA256SUMS
+
       - name: Check documentation coverage (strict mode)
         id: strict_coverage
-        if: github.event_name == 'workflow_dispatch' && inputs.strict_docs
+        if: >-
+          (github.event_name == 'workflow_dispatch' && inputs.strict_docs)
+          || (github.event_name == 'pull_request' && github.head_ref == 'docs/full-release-and-team-guide')
         continue-on-error: true
         run: >-
           python3 scripts/check_documentation_coverage.py
