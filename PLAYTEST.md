@@ -929,16 +929,17 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         fel a földet (`world-tweaks.crop-trample-protection`).
   - [ ] **MOTD** (MiniMOTD helyett): a completion branch buildelt; eltávolítás csak az alábbi valódi Folia ping/reload tesztek után;
         idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish-count és reload külön ellenőrzendő.
-  - [ ] **AFK-rendszer** (AxAFKZone helyett): csak a `feature/native-afk-zones` scope után;
-        közös 3D selectionből létrehozott több zóna, közvetlen zónaváltás, reward-rollok,
-        full-inventory és reload/quit/kick lifecycle külön ellenőrzendő. A globális AFK-jelzés
-        ettől függetlenül továbbra is tesztelendő.
+  - [ ] **Globális AFK:** az automatikus AFK-észlelés, `/afk`, tablistajelzés és meglévő
+        exploitvédelmi lifecycle változatlanul működik. Jutalmazó AFK-zóna nincs és nem készül;
+        AxAFKZone/AxAPI jar nem része a deploymentnek.
   - [ ] **Crate-rendszer** (CrazyCrates helyett): csak a `feature/native-crates-completion`
         scope után; lista/preview, permission/world, többkulcsos fogyasztás, cooldown, statisztika,
         strict reward-validáció és full-inventory útvonal is tesztelendő a meglévő fizikai nyitás mellett.
-  - [ ] **Ülés** (GSit helyett): csak a `feature/native-sit-poses` scope után; `/sit`, click-to-sit,
-        anyag- és világpolicy, unsafe location, tiltott parancs, minden cleanup-esemény, lay/crawl
-        és árva seat-entitás külön ellenőrzendő.
+  - [ ] **Sit-only ülés** (GSit helyett): `/sit`, `/sit fel`, click-to-sit, üres kéz,
+        stairs/slabs/carpets/moss carpet/pale moss carpet/snow pozíció, világ- és materialpolicy,
+        unsafe/folyadék/clearance, namespaced tiltott parancs, konkurens reservation és minden
+        damage/sneak/break/teleport/world-change/death/quit/kick/dismount/reload/disable cleanup.
+        Lay, crawl, stacking és player/NPC sitting nincs a termékscope-ban.
   - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5m teszt` → chat és natív `/msg`
         blokkolva; restart után is él; `/unmute`, `/history <név>`, `/punishments <név>` ugyanazt
         az autoritatív ledgert olvassa. Külön tempban/login, SocialSpy és corrupt-state teszt kell.
@@ -1000,8 +1001,6 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         entitás-szemét (relog/restart után sem). Kapcsoló: `display-fx.crate-reveal.enabled: false`.
         ⚠️ Folia: a pörgetés az ikon saját szálán fut, régióhatár-közeli ládánál is hibamentes.
   - [ ] **Kombó-kiemelés:** kombó/lánc-finisher utáni 3 mp-ben a sebzés-szám nagyobb, arany, "!"-lel.
-  - [ ] **Fekvés:** `/sit fekves` (LibsDisguises-szel) fekvő póz; mozgásra/újra kiadva felállás;
-        LD nélkül udvarias hibaüzenet. ⚠️ GrimAC false-positive playtest kötelező!
   - [ ] **Mute-eszkaláció:** `/mute <név>` perc NÉLKÜL → 1. alkalom 5 perc, majd 30/180/1440
         (moderation.escalation-minutes); a blokkolt/cenzúrázott üzenetek a
         logs/chat-moderation.log-ba kerülnek (5 MB-nál forgatás).

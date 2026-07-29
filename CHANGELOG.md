@@ -21,8 +21,9 @@
 | `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
 | `MiniMOTD` | **FELTÉTELES** — a natív completion buildelt és regressziózott; valódi Folia ping/ikon/reload és jar nélküli átvételi playtest még kell |
 | `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
-| `CrazyCrates` | **MÉG NEM** — preview/permission/cooldown/stats/strict reward scope hiányzik |
-| AFK/ülés plugin | **MÉG NEM** — AFK-zóna és sit/pose completion scope hiányzik |
+| `CrazyCrates` | **MÉG NEM** — a code-review-zott crate PR valódi Folia/fault-injection átvételi tesztje és merge-je még kell |
+| `AxAFKZone` / `AxAPI` | **NEM KELL** — a jutalmazó AFK-zóna termékscope törölve; a meglévő globális `/afk` változatlanul megmarad |
+| `GSit` | **FELTÉTELES** — a natív sit-only lifecycle buildelt és regressziózott; valódi Folia seat/cleanup átvételi playtest még kell |
 | `InvSee++` / `SModeration` | **FELTÉTELES** — a natív suite buildelt; valódi Folia/restart/fault-injection playtest még kell |
 
 A `plugins/` mappából csak a mátrixban **READY** és kézzel is igazolt tételek jarját szabad eltávolítani.
@@ -39,7 +40,7 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 - Az **advancement-fa** mostantól a jarból szállított datapack (7 → 20 csomópont) —
   első indulásnál a log jelzi: „IceSMP advancement-fa: N/N bejegyzés a jar datapackjéből”.
-- Az új config-fájlok (pl. `dev-items.yml`, `motd.yml`, `tablist.yml`) a jarból
+- Az új config-fájlok (pl. `dev-items.yml`, `motd.yml`, `sit.yml`, `tablist.yml`) a jarból
   csomagolódnak ki; a data-mappás `config.yml` felülbírálások megmaradnak és utolsóként
   merge-ölődnek.
 - A **HP-rendszer** megépült, de **alapból kikapcsolt** (`health.enabled: false`) —
