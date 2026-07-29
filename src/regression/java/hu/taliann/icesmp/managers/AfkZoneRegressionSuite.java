@@ -2,6 +2,7 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.selection.CuboidSelectionService;
+import hu.taliann.icesmp.selection.IdentityTaskRegistry;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -21,6 +22,8 @@ public final class AfkZoneRegressionSuite {
 
     public static void main(final String[] args) throws Exception {
         cuboidNormalizationAndOverflow();
+        claimFootprintAndAfkVolumeRemainDistinct();
+        previewLeaseIdentityAndGeneration();
         intervalRemainderAndSingleCycleGate();
         weightedRewardBoundaries();
         strictRewardAndCommandValidation();
@@ -49,6 +52,38 @@ public final class AfkZoneRegressionSuite {
                 new CuboidSelectionService.Corner(world, "world", 0, 0, 0),
                 new CuboidSelectionService.Corner(UUID.randomUUID(), "other", 1, 1, 1)),
                 "cross-world cuboid normalization");
+    }
+
+    private static void claimFootprintAndAfkVolumeRemainDistinct() {
+        final CuboidSelectionService.Cuboid tallButSmallFootprint = new CuboidSelectionService.Cuboid(
+                UUID.randomUUID(), "world", 0, -64, 0, 59, 319, 59);
+        assertEquals(3_600L, tallButSmallFootprint.footprint(),
+                "claim compatibility is governed by the historical XZ column cap");
+        assertEquals(1_382_400L, tallButSmallFootprint.volume(),
+                "the same valid claim selection may exceed the AFK 3D safety cap");
+        assertTrue(tallButSmallFootprint.footprint() <= 6_400L,
+                "the representative selection remains claim-valid");
+        assertTrue(tallButSmallFootprint.volume() > 1_000_000L,
+                "the representative selection remains AFK-volume-invalid");
+    }
+
+    private static void previewLeaseIdentityAndGeneration() {
+        final IdentityTaskRegistry<String, String> registry = new IdentityTaskRegistry<>();
+        final IdentityTaskRegistry.Installation<String> first = registry.install("player");
+        first.current().attach("old-task");
+        final IdentityTaskRegistry.Installation<String> second = registry.install("player");
+        second.current().attach("new-task");
+
+        assertSame(first.current(), second.previous(), "replacement must return the exact old lease");
+        assertFalse(registry.remove("player", first.current()),
+                "an old retirement callback must not evict the replacement preview");
+        assertTrue(registry.isCurrent("player", second.current()),
+                "the replacement preview must stay registered");
+        assertEquals(List.of(second.current()), registry.invalidateAndDrain(),
+                "reload must drain the current preview exactly once");
+        assertFalse(registry.isCurrent("player", second.current()),
+                "a pre-reload lease must be stale after generation invalidation");
+        assertEquals(0, registry.size(), "reload must leave no preview session");
     }
 
     private static void intervalRemainderAndSingleCycleGate() {
@@ -100,6 +135,8 @@ public final class AfkZoneRegressionSuite {
         assertNull(AfkZoneCatalog.validateCommandTemplate(
                 "say {uuid} {zone}"), "all documented placeholders");
         assertNotNull(AfkZoneCatalog.validateCommandTemplate(
+                "give {PLAYER} bread 1"), "placeholder case must match runtime replacement exactly");
+        assertNotNull(AfkZoneCatalog.validateCommandTemplate(
                 "op {unknown}"), "unknown placeholder");
         assertNotNull(AfkZoneCatalog.validateCommandTemplate(
                 "say }"), "orphan close brace");
@@ -117,6 +154,13 @@ public final class AfkZoneRegressionSuite {
         ), 1_000L, 64, problems);
         assertEquals(0, invalid.size(), "invalid rewards must not enter the catalog");
         assertEquals(4, problems.size(), "every invalid sibling must be reported");
+
+        final List<String> excessiveProblems = new ArrayList<>();
+        final List<AfkZoneCatalog.Reward> excessive = AfkZoneCatalog.parseRewards(List.of(
+                Map.of("type", "CURRENCY", "weight", 1.0D, "currency", "NEUTRAL", "amount", 1_001L)
+        ), AfkZoneCatalog.MAX_CONFIGURED_CURRENCY_REWARD, 64, excessiveProblems);
+        assertEquals(0, excessive.size(), "a physical reward above the hard stack budget must be rejected");
+        assertEquals(1, excessiveProblems.size(), "the hard physical reward limit must be reported");
 
         final List<String> validProblems = new ArrayList<>();
         final List<AfkZoneCatalog.Reward> valid = AfkZoneCatalog.parseRewards(List.of(
@@ -165,9 +209,18 @@ public final class AfkZoneRegressionSuite {
         assertNotContains(claim, "class Selection", "claim-specific selection state removed");
         assertNotContains(command, "case \"pos1\"", "AFK must not add pos1 command");
         assertNotContains(command, "case \"pos2\"", "AFK must not add pos2 command");
+        assertContains(selection, "resultInternal(playerId, Long.MAX_VALUE)",
+                "claim-compatible selection must not inherit the AFK 3D volume cap");
+        assertContains(command, "selectionService.result(player.getUniqueId(),",
+                "AFK create/replace must retain the explicit 3D volume cap");
         assertContains(afk, "AfkRewardClock.advance", "single payout gate used by runtime");
+        assertContains(afk, "CatalogRevision", "queued player ticks carry an immutable config generation");
+        assertContains(afk, "catalog != revision", "stale player/global callbacks must fail closed");
+        assertContains(afk, "if (!dispatched)", "command reward success is conditional on dispatch");
+        assertContains(afk, "clearDetachedState", "retired entity schedulers clear transient AFK state");
         assertContains(afk, ".getScheduler().run", "player work uses entity scheduler");
         assertContains(afk, "getGlobalRegionScheduler().run", "console rewards use global scheduler");
+        assertContains(selection, "IdentityTaskRegistry", "preview lifecycle uses tested identity leases");
         assertContains(selection, "runAtFixedRate", "preview is scheduled through player scheduler");
         assertContains(selection, "if (scheduled == null)",
                 "retired entity scheduler must not insert null task into the preview registry");
@@ -208,6 +261,18 @@ public final class AfkZoneRegressionSuite {
     private static void assertSame(final Object expected, final Object actual, final String message) {
         if (expected != actual) {
             throw new AssertionError(message + ": expected same instance");
+        }
+    }
+
+    private static void assertTrue(final boolean value, final String message) {
+        if (!value) {
+            throw new AssertionError(message);
+        }
+    }
+
+    private static void assertFalse(final boolean value, final String message) {
+        if (value) {
+            throw new AssertionError(message);
         }
     }
 
