@@ -1,4 +1,4 @@
-name: Agent MOTD Publisher
+name: Agent Crate Publisher
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    name: Validate and publish native MOTD feature commit
+    name: Validate and publish native crate commits
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,32 +21,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate and apply native MOTD patch
+      - name: Validate and apply native crate patch
         shell: bash
         run: |
           set -euo pipefail
-          echo "462d682faaba3f9f7b08365869a18470029935d32a806e31d98ee090e524d82e  .github/agent-patches-motd/chunks/part00" | sha256sum -c -
-          echo "2bf46094d2252bea8c0c6cacd90d26dc00cbfce9a22a1b24b9127a8d6ad3618b  .github/agent-patches-motd/chunks/part01" | sha256sum -c -
-          echo "9dcd3bdf214faea3cc8e70312428923e937bc428486cf3959c193716dce8f865  .github/agent-patches-motd/chunks/part02" | sha256sum -c -
-          echo "9290a0f89b0123739db113f81021a4babad58a9d4896cfa6e4f8a2dc5b8c3559  .github/agent-patches-motd/chunks/part03" | sha256sum -c -
-          echo "6b3c140cf3b7c67604e538ce4950f224d1c5e30181cd0544f51fa6ae3909915f  .github/agent-patches-motd/chunks/part04" | sha256sum -c -
-          echo "6e3eaf1f01666155e3b938353ee26216cc649b0547632a851323fef42b82d800  .github/agent-patches-motd/chunks/part05" | sha256sum -c -
-          echo "b3c3871fc163e6e54875e26ca460a672477e45476a82e9bda23bbe235270449c  .github/agent-patches-motd/chunks/part06" | sha256sum -c -
-          echo "f426875bef9273ad54f6a30aad361c0327b94618d31fb1243c58bdcbd09ed3cb  .github/agent-patches-motd/chunks/part07" | sha256sum -c -
-          echo "03a5ae779c7bb254ea989b27cc8f7871695d8e7d6d1ef00420aafa4baa428b20  .github/agent-patches-motd/chunks/part08" | sha256sum -c -
-          cat .github/agent-patches-motd/chunks/part* > /tmp/motd.mbox.gz.b64
-          test "$(wc -c < /tmp/motd.mbox.gz.b64)" -eq 35400
-          base64 --decode /tmp/motd.mbox.gz.b64 > /tmp/motd.mbox.gz
-          echo "f1aafd8c3d8aac4ba6cac3c5191d7a802b213d234748db1cbdaa634642686760  /tmp/motd.mbox.gz" | sha256sum -c -
-          gzip -t /tmp/motd.mbox.gz
-          gzip -dc /tmp/motd.mbox.gz > /tmp/motd.mbox
-          echo "30b9d2b167a24eb9dcb6b79d1891db9adfec980279991757b953de08fbeaa014  /tmp/motd.mbox" | sha256sum -c -
+          sha256sum -c <<'CHECKSUMS'
+          096494166c61717692d6d993fffce2799eb57358f57d11da816e8982c62d6780  .github/agent-patches-crates/chunks/part00
+          44c00e40829a99c8a166e8c638999ddef0ddde066851ac99872e663a0b818388  .github/agent-patches-crates/chunks/part01
+          acdfe7129aa20917edc17d63c7ecd960c2ffc1749ef9bdc6fbb9b6ee392b6fa4  .github/agent-patches-crates/chunks/part02
+          542fb3d90c158729f49db57600218e648bc5dc31456b9568b7862728614743e3  .github/agent-patches-crates/chunks/part03
+          b0c13f13e5ff003a3f633a7ac160fa56f0e51aa9896c7786753562f8ced84856  .github/agent-patches-crates/chunks/part04
+          83ed7b391f1e781bddb49e274f8cd0a5fc1e4a6c8b5c9ab6cc672c2c50229dc8  .github/agent-patches-crates/chunks/part05
+          a066d065a766f1a515d05ee61b25fb57355888400d1c31aebd27e25370f2dfc1  .github/agent-patches-crates/chunks/part06
+          b4d735ac5c6809ef1422f6136889dc21af0125cd86ca39a7a478f8b62f2ce451  .github/agent-patches-crates/chunks/part07
+          0faefb615647d45954a0be755667ea8081932c9f2777ee2be84c78923e5d07f4  .github/agent-patches-crates/chunks/part08
+          5b81b5f69f3e2577fb2edb82dc3e7d90c07f34555ecba0b008b0d432d6224276  .github/agent-patches-crates/chunks/part09
+          dd9038f4d19b7418d82bb0d39bd132e28ad86421874dd14105ae0d0914ba5da3  .github/agent-patches-crates/chunks/part10
+          c482d4c439ef90269e8514e4e96eb33d7c27c2ac9183d2550d5613cd571d007e  .github/agent-patches-crates/chunks/part11
+          24865db00a8076e7f8fe0b224c672018ac5def6bc0f0e3cec7f9ac5f56ad868  .github/agent-patches-crates/chunks/part12
+          7a11fae94b4998db1d40e52113830a5ae9afe7fc771eaf991b751415349492e7  .github/agent-patches-crates/chunks/part13
+          6b6848d8675318993bec1ac9520166e86d6b441e0f8cac0ec23b8e68350ee81f  .github/agent-patches-crates/chunks/part14
+          CHECKSUMS
+          cat .github/agent-patches-crates/chunks/part* > /tmp/crates.mbox.gz.b64
+          test "$(wc -c < /tmp/crates.mbox.gz.b64)" -eq 74328
+          base64 --decode /tmp/crates.mbox.gz.b64 > /tmp/crates.mbox.gz
+          echo "68002d7fc9f90bf1ce9b326648d87a856e54a6c189bfa46a5fdf7fcad543fc6b  /tmp/crates.mbox.gz" | sha256sum -c -
+          gzip -t /tmp/crates.mbox.gz
+          gzip -dc /tmp/crates.mbox.gz > /tmp/crates.mbox
+          echo "e74cd11babe78d2910d1faf21b0099009fbc7303302ea5cfdd1cb1f3eda1532c  /tmp/crates.mbox" | sha256sum -c -
           git config user.name "IceSMP Automation"
           git config user.email "actions@users.noreply.github.com"
-          git checkout --detach 5449dc726c785d5ee1305c457046daa1e60879fc
-          git am /tmp/motd.mbox
-          test "$(git log -1 --format=%s)" = "ci: run checks for stacked MOTD PRs"
-          test "$(git log -2 --format=%s | tail -1)" = "feat(motd): complete native server-list presentation"
-          git reset --hard HEAD^
-          test "$(git log -1 --format=%s)" = "feat(motd): complete native server-list presentation"
-          git push --force-with-lease=refs/heads/feature/native-motd-completion:5449dc726c785d5ee1305c457046daa1e60879fc origin HEAD:refs/heads/feature/native-motd-completion
+          git checkout --detach f4e82263d35c645a053eccac09a3ad254a36ed90
+          git am /tmp/crates.mbox
+          test "$(git log -1 --format=%s)" = "ci: run checks for native crate PRs"
+          test "$(git log -2 --format=%s | tail -1)" = "docs(crates): document native crate replacement"
+          test "$(git log -3 --format=%s | tail -1)" = "feat(crates): complete native crate lifecycle"
+          git push --force-with-lease=refs/heads/feature/native-crates-completion:f4e82263d35c645a053eccac09a3ad254a36ed90 origin HEAD:refs/heads/feature/native-crates-completion
