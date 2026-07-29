@@ -183,8 +183,7 @@ public final class MobKillUtil {
                     return null;
                 }
             }
-            if (afkManager != null && blockAfkRewards(configManager)
-                    && afkManager.isAfk(killerId)) {
+            if (isAfkRewardBlocked(killerId, configManager, afkManager)) {
                 return null;
             }
         }
@@ -220,6 +219,14 @@ public final class MobKillUtil {
         return entity != null && SPAWNER_MOB_KEY != null
                 && entity.getPersistentDataContainer().has(
                 SPAWNER_MOB_KEY, PersistentDataType.BYTE);
+    }
+
+    /** Shared direct-reward gate for non-kill interactions and dedicated boss lifecycles. */
+    public static boolean isAfkRewardBlocked(final UUID playerId,
+                                             final ConfigManager configManager,
+                                             final AfkManager afkManager) {
+        return playerId != null && afkManager != null && blockAfkRewards(configManager)
+                && afkManager.isAfk(playerId);
     }
 
     private static boolean blockAfkRewards(final ConfigManager configManager) {

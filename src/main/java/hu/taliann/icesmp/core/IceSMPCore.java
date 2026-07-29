@@ -306,7 +306,6 @@ public final class IceSMPCore {
     private final BlockRegenService blockRegenService;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask hudTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask tablistTask;
-    private io.papermc.paper.threadedregions.scheduler.ScheduledTask afkTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask healthTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask corruptionAuraTask;
     private final hu.taliann.icesmp.utils.TextAnimator textAnimator;
@@ -571,8 +570,9 @@ public final class IceSMPCore {
                 abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, dailyQuestManager, configManager);
-        this.afkManager = new hu.taliann.icesmp.managers.AfkManager(plugin, configManager, currencyManager, messageManager);
+        this.afkManager = new hu.taliann.icesmp.managers.AfkManager(configManager);
         ambientEventManager.setAfkManager(afkManager);
+        wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
@@ -877,6 +877,7 @@ public final class IceSMPCore {
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             moderationManager.openReplySession(onlinePlayer.getUniqueId());
+            afkManager.recordActivity(onlinePlayer.getUniqueId());
         }
         vanishManager.refreshAll();
         registerCommands();
@@ -1141,10 +1142,6 @@ public final class IceSMPCore {
             corruptionAuraTask.cancel();
             corruptionAuraTask = null;
         }
-        if (afkTask != null) {
-            afkTask.cancel();
-            afkTask = null;
-        }
         if (petTask != null) {
             petTask.cancel();
             petTask = null;
@@ -1183,7 +1180,7 @@ public final class IceSMPCore {
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             shutdownStep("player-cleanup " + onlinePlayer.getName(), () -> {
                 hudManager.cleanup(onlinePlayer);
-                afkManager.cleanup(onlinePlayer);
+                tablistManager.cleanup(onlinePlayer);
                 playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
             });
         }
@@ -1300,28 +1297,20 @@ public final class IceSMPCore {
     }
 
     /**
-     * Schedules the live HUD refresh (sidebar, tab-list, boss-bars) on the global
-     * region scheduler; the manager hops to each player's region thread.
+     * Schedules the independently gated HUD and native tablist refreshes on the global region
+     * scheduler; each manager hops to the affected player's region thread.
      */
     private void scheduleHud() {
-        if (!configManager.getBoolean("hud.enabled", true)) {
-            return;
-        }
-
+        // Both tasks are always present so either subsystem can be enabled by a config reload.
         final long intervalTicks = Math.max(5L, configManager.getLong("hud.refresh-ticks", 20L));
         hudTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> hudManager.tick(), intervalTicks, intervalTicks);
-        // A tablist {event} tokenje a HUD-snapshotból olvas.
+
+        // A tablist {event} tokenje a HUD-snapshotból olvas, de a tablista nem függ a HUD kapcsolójától.
         tablistManager.setHudManager(hudManager);
-        // Natív tablist (TAB-kiváltás): saját, gyorsabb tick — a header/footer és a tab-nevek
-        // diff-eltek, így a sűrűbb ütem csak valódi változáskor jelent csomagot.
         final long tablistTicks = Math.max(5L, configManager.getLong("tablist.refresh-ticks", 10L));
         tablistTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
                 plugin, task -> tablistManager.tick(), tablistTicks, tablistTicks);
-        // Natív AFK-rendszer (AxAFKZone-kiváltás): zóna-jutalom + bossbar tick.
-        final long afkTicks = Math.max(5L, configManager.getLong("afk.refresh-ticks", 20L));
-        afkTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin, task -> afkManager.tick(), afkTicks, afkTicks);
     }
 
     /** HP-rendszer: kaszt-profil karbantartás + harcon kívüli regen (a HUD-kapcsolótól független). */
@@ -1726,7 +1715,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SchoolCounterAnvilListener(), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);
         pluginManager.registerEvents(new SoulstoneListener(currencyManager, mobScalingManager, bloodMoonManager, configManager, factionManager, afkManager), plugin);
-        pluginManager.registerEvents(new WorldBossListener(worldBossManager), plugin);
+        pluginManager.registerEvents(new WorldBossListener(worldBossManager, configManager, afkManager), plugin);
         pluginManager.registerEvents(new IntroListener(introManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.OnboardingListener(plugin, configManager, questManager, messageManager), plugin);
         pluginManager.registerEvents(new FactionSpawnListener(factionManager, territoryManager, configManager), plugin);

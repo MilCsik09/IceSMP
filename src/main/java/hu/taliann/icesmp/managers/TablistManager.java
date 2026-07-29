@@ -17,7 +17,6 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,6 +81,8 @@ public final class TablistManager {
     /** Diff-cache-ek: az utoljára kiküldött renderelt szövegek (villogás- és csomag-spórolás). */
     private final Map<UUID, String> lastHeaderFooter = new ConcurrentHashMap<>();
     private final Map<UUID, String> lastTabName = new ConcurrentHashMap<>();
+    /** True after native output has been produced; used to cleanly hand off on config disable. */
+    private volatile boolean nativeOutputActive;
 
     public TablistManager(final JavaPlugin plugin, final ConfigManager configManager,
                           final FactionManager factionManager, final TextAnimator animator,
@@ -107,8 +108,13 @@ public final class TablistManager {
 
     public void tick() {
         if (!isEnabled()) {
+            if (nativeOutputActive) {
+                nativeOutputActive = false;
+                releaseNativeOutput();
+            }
             return;
         }
+        nativeOutputActive = true;
         // A kilépő/átrendeződő bejegyzések söprése O(n²) nézőnként — nem futhat minden
         // fél másodpercben. Az érvényes team/név-készlet EGYSZER épül fel (az előző kör
         // snapshotjaiból — a söpréshez ez a laza konzisztencia elég), és minden néző ezt
@@ -133,12 +139,47 @@ public final class TablistManager {
         }
     }
 
-    /** A kilépő játékos állapotának takarítása (PlayerSessionCleanup-útvonal). */
+    /** A kilépő játékos map-állapotának takarítása. */
     public void cleanup(final UUID playerId) {
         snapshots.remove(playerId);
         lastHeaderFooter.remove(playerId);
         lastTabName.remove(playerId);
         // A többi néző boardján maradt team-et a következő tick szedi le (a snapshot már nincs meg).
+    }
+
+    /**
+     * Removes every native tablist artifact from a live player. The caller must own the player's
+     * region thread; config-disable uses the entity scheduler and plugin shutdown uses its existing
+     * live-player cleanup phase.
+     */
+    public void cleanup(final Player player) {
+        if (player == null) {
+            return;
+        }
+        cleanup(player.getUniqueId());
+        player.playerListName(null);
+        player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
+
+        final Scoreboard board = player.getScoreboard();
+        for (final Team team : List.copyOf(board.getTeams())) {
+            if (team.getName().startsWith(TEAM_PREFIX)) {
+                team.unregister();
+            }
+        }
+        final Objective ping = board.getObjective(PING_OBJECTIVE);
+        if (ping != null) {
+            ping.unregister();
+        }
+    }
+
+    /** One-shot cleanup when the native tablist is disabled at runtime. */
+    private void releaseNativeOutput() {
+        snapshots.clear();
+        lastHeaderFooter.clear();
+        lastTabName.clear();
+        for (final Player player : Bukkit.getOnlinePlayers()) {
+            player.getScheduler().run(plugin, task -> cleanup(player), null);
+        }
     }
 
     // ==================== 1. fázis: snapshot a játékos saját szálán ====================
@@ -173,10 +214,7 @@ public final class TablistManager {
         if (index < 0) {
             index = order.size();
         }
-        final char rank = (char) ('a' + Math.min(24, index));
-        final String lower = name.toLowerCase(Locale.ROOT);
-        // Az AFK-játékos a rangján belül a lista aljára kerül ("zz" beszúrás).
-        return rank + (afk ? "zz" : "") + lower.substring(0, Math.min(11, lower.length()));
+        return TablistOrdering.key(index, name, afk);
     }
 
     // ==================== 2. fázis: a néző saját nézete ====================

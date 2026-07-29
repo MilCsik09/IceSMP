@@ -52,7 +52,9 @@ public final class DungeonLootListener implements Listener {
         }
         // A vanília konténer sosem nyílik meg: a loot fejenkénti és virtuális.
         event.setCancelled(true);
-        lootService.claimChest(event.getPlayer(), event.getClickedBlock().getLocation());
+        final boolean rewardAllowed = !hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked(
+                event.getPlayer().getUniqueId(), configManager, afkManager);
+        lootService.claimChest(event.getPlayer(), event.getClickedBlock().getLocation(), rewardAllowed);
     }
 
     /** Kazamata-határ átlépésekor ébred a mini-boss (blokk-váltásra szűrve — olcsó). */
@@ -79,8 +81,13 @@ public final class DungeonLootListener implements Listener {
         if (event.getEntity() instanceof Player) {
             return;
         }
-        // Mini-boss: saját tábla, respawn-óra.
-        if (lootService.handleBossDeath(event.getEntity(), event.getDrops())) {
+        // A közös kapu a miniboss saját lootjára és a kazamata bónuszdropjára is érvényes.
+        // A miniboss lifecycle akkor is lezárul és újraindul, ha jutalom nem adható.
+        final Player killer = event.getEntity().getKiller();
+        final boolean bossRewardsAllowed = killer == null
+                || !hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked(
+                        killer.getUniqueId(), configManager, afkManager);
+        if (lootService.handleBossDeath(event.getEntity(), event.getDrops(), bossRewardsAllowed)) {
             return;
         }
         // Bónusz mob-drop a kazamatán belül (csak játékos-kill; a kapu mögötti
@@ -88,7 +95,8 @@ public final class DungeonLootListener implements Listener {
         // A kazamata-lelet FAUCET-tier (új értéket termel), ezért a közös előszűrőn megy át:
         // survival-kapu, AFK-fék, spawner- és minion-kizárás — enélkül ez az ág kiskapu volt.
         if (hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(event.getEntity(),
-                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) == null) {
+                hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET,
+                configManager, afkManager) == null) {
             return;
         }
         final Territory zone = territoryManager.getTerritoryAt(event.getEntity().getLocation());

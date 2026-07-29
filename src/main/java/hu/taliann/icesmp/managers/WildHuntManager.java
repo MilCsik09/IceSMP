@@ -53,6 +53,7 @@ public final class WildHuntManager {
     private volatile EventSpawnGuard spawnGuard;
     private volatile MajorEventGate eventGate;
     private volatile SeasonalModifierService seasonalModifiers;
+    private volatile AfkManager afkManager;
 
     public WildHuntManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final MobScalingManager mobScalingManager,
@@ -76,6 +77,10 @@ public final class WildHuntManager {
 
     public void setSeasonalModifiers(final SeasonalModifierService seasonalModifiers) {
         this.seasonalModifiers = seasonalModifiers;
+    }
+
+    public void setAfkManager(final AfkManager afkManager) {
+        this.afkManager = afkManager;
     }
 
     public boolean isWildHunt(final UUID entityId) {
@@ -232,6 +237,12 @@ public final class WildHuntManager {
             return;
         }
         player.getScheduler().run(plugin, task -> {
+            if (hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked(
+                    playerId, configManager, afkManager)) {
+                player.sendActionBar(messageManager.getMessage("afk-reward-blocked",
+                        "<gray>⌚ AFK állapotban személyes eseményjutalom nem jár.</gray>"));
+                return;
+            }
             for (final ItemStack loot : LootTable.roll(
                     configManager, "wild-hunt.loot", rolls)) {
                 player.getInventory().addItem(loot).values().forEach(left ->

@@ -52,7 +52,8 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 | **FarmProtect** | Együttműködik: az IceSMP termés-listenerei `ignoreCancelled`-del futnak, a FarmProtect által tiltott esemény nem ad bónuszt. |
 | **economist** | Külön gazdaság: az IceSMP saját frakció-valutát használ (nincs Vault-híd) — a két rendszer nem keveredik. |
 | LuckPerms, FancyHolograms, AuMenus, voicechat, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert közvetlen ütközés. |
-| GSit, CrazyCrates, SModeration, MiniMOTD, AxAFKZone | Replacement alatt állnak; azonos parancs/event felelősség miatt nem tekinthetők konfliktusmentesnek. Jar nélkül csak a megfelelő scope draft PR-jének buildje és kézi playtestje után tesztelendők. |
+| GSit, CrazyCrates, SModeration, MiniMOTD | Natív kiváltásuk kódszinten elkészült, de a régi jar csak a saját runtime átvételi kapuja után távolítható el. |
+| AxAFKZone / AxAPI | Nem része a cél-deploymentnek: jutalmazó AFK-zóna nincs. A repó `Other/plugins/` könyvtára csak audit-snapshot; az éles `plugins/` jarját, adatkönyvtárait és remap-cache-ét deploymentkor külön kell archiválni/törölni. |
 
 ### Permissionök tesztelőknek
 A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan), vagy egyetlen sorral:
@@ -929,9 +930,10 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         fel a földet (`world-tweaks.crop-trample-protection`).
   - [ ] **MOTD** (MiniMOTD helyett): a completion branch buildelt; eltávolítás csak az alábbi valódi Folia ping/reload tesztek után;
         idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish-count és reload külön ellenőrzendő.
-  - [ ] **Globális AFK:** az automatikus AFK-észlelés, `/afk`, tablistajelzés és meglévő
-        exploitvédelmi lifecycle változatlanul működik. Jutalmazó AFK-zóna nincs és nem készül;
-        AxAFKZone/AxAPI jar nem része a deploymentnek.
+  - [ ] **Globális AFK:** az automatikus tétlenségészlelés, `/afk` ki/be kapcsolás,
+        tablistajelzés, rangon belüli hátrasorolás és jutalomkapu működik. Jutalmazó AFK-zóna,
+        bossbar vagy kifizetés nincs. Az éles AxAFKZone/AxAPI jar/adat és Paper remap-cache nem
+        része a cél-deploymentnek.
   - [ ] **Crate-rendszer** (CrazyCrates helyett): a code-review-zott lifecycle buildelt és regressziózott,
         de a jar eltávolítása csak valódi Folia/fault-injection átvételi teszt után engedhető. Ellenőrizd:
         - main-hand működik, off-hand és gyors dupla katt nem indít második openinget;
@@ -965,8 +967,11 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         után a frakció-színek visszaállnak; a tablist-sorrend eközben NEM ugrál.
   - [ ] **AFK-jelzés/hátrasorolás:** ~3 perc tétlenség után „⌚ ᴀꜰᴋ" suffix + a játékos a rangján
         belül a tablist aljára kerül; mozgásra azonnal vissza.
-  - [ ] **AFK-jutalomkapu:** AFK-jelölt játékos mob-ölése NEM ad kaszt-XP-t/lélekkövet (auto-farm
-        teszt: állj mob-farm mellé 3+ percig); az AFK-zóna időzített jutalma viszont jár.
+  - [ ] **AFK-jutalomkapu:** AFK-jelölt játékos mob-, világboss- és kazamata-miniboss
+        öléséből, virtuális kazamata-ládából vagy személyes Vad Hajsza-részesedésből NEM kap
+        tiltott kassza-, liga-, buff-, advancement-, tervrajz- vagy tárgyjutalmat. A boss
+        lifecycle/respawn közben lezárul.
+        AFK-valuta vagy más időzített kifizetés sehol nem jelenik meg.
   - [ ] **Közös kill-jutalom előszűrő (`kill-rewards.*`):** MINDEN ölés-alapú jutalom ugyanazokon a
         szűrőkön megy át, tier szerint. Ellenőrizd:
         - **AFK-jelölten** (3+ perc) a mob-ölés nem ad kaszt-XP-t, lélekkövet, **pénz-erszényt ÉS
@@ -1030,8 +1035,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
   - [ ] **MANUAL / NEGATIVE:** MiniMOTD jar nélkül teljes átvételi teszt; proxy/vhost és upstream configkompatibilitás nincs és nem cél.
 
 - [ ] **QoL-kör 2 (A53–A62, ÚJ):**
-  - [ ] **`/afk`:** azonnali ⌚-jelölés + hátrasorolás + jutalomkapu; bármilyen mozgás/üzenet törli
-        (a parancs kiadása maga NEM törli — a toggle megmarad).
+  - [ ] **`/afk`:** aktívból azonnali ⌚-jelölés + hátrasorolás + jutalomkapu; második
+        `/afk` kézi és automatikus AFK-ból is aktívra vált, friss tétlenségi időablakkal.
+        Mozgás/chat/interakció/más parancs törli; `/icesmp:afk` ugyanígy működik.
   - [ ] **Sidebar-számok:** az oldalsáv jobb szélén NINCSENEK piros sor-számok (blank numberFormat).
   - [ ] **{event}/{ping} tokenek:** a tablist headerben/footerben használható az {event} (aktív
         események) és a {ping} mostantól színkódolt (zöld <80 / sárga <150 / piros).
@@ -1449,7 +1455,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         veretekre (token-item) bontja a kézbe (üzenet + hang). Admin-adás:
         `/iceitem erszeny <összeg> [darab] [játékos]`.
   - [ ] **„Számlára csak a bankból” szabály:** MINDEN jutalom-kifizetés (quest, napi/heti
-        kihívás, mérföldkő, parkour, ambient-esemény, AFK-jutalom, vérdíj, Felvásárló,
+        kihívás, mérföldkő, parkour, ambient-esemény, vérdíj, Felvásárló,
         Bankbetét-jegy) fizikai veretet ad a kézbe — addToBalance jutalom-úton NINCS;
         a számlára kizárólag `/bank deposit` tesz pénzt. A piac/aukció/kincstár bankon
         belüli átvezetés marad.
@@ -2527,9 +2533,10 @@ Jó tesztelést! ❄️
 - [ ] **Függőleges biome-progressz (DEEP-LOW-01):** barlang-biome quest (`EXPLORE_BIOME`,
       pl. lush_caves) — ásd le magad EGY oszlopban a barlang-biome-ba: a progressz megjön
       (eddig csak X/Z elmozdulásra futott az ellenőrzés).
-- [ ] **AFK-kikapcsolás takarít (DEEP-LOW-03):** állj AFK-zónába (bossbar látszik), majd
-      `/icesmp config set afk.enabled false` → a bossbar eltűnik, a zóna-időzítő nullázódik,
-      és az AFK-státusz megszűnik (nem ragad bent).
+- [ ] **Globális AFK toggle és tablista (DEEP-LOW-03):** `/afk` ON, majd mozgás nélkül
+      azonnal `/afk` OFF → a jelölés eltűnik és nem jelenik vissza azonnal automatikusan.
+      Ezután indíts `hud.enabled: false`, `tablist.enabled: true` beállítással: a tablista
+      és az AFK hátrasorolás HUD nélkül is működik; tablista-kikapcsoláskor a suffix/teamek eltűnnek.
 - [ ] **Relikvia keep-mód recovery (DEEP-HIGH-07):** `relics.passive-death.mode: keep` —
       halj meg passzív relikviával, majd respawn ELŐTT lépj ki. Visszajelentkezés után a
       relikvia a rituálé-oltárnál ÚJRAIDÉZHETŐ (a tulajdon él, nem ragadt be). Ha viszont

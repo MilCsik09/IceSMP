@@ -97,7 +97,13 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
      * Fejenkénti kifosztás (a hívó a játékos szálán fut): cooldownon belül üzenet,
      * egyébként a tábla kisorsolt zsákmánya az inventoryba kerül (túlcsordulás a lábhoz).
      */
-    public void claimChest(final Player player, final Location location) {
+    public void claimChest(final Player player, final Location location,
+                           final boolean allowRewards) {
+        if (!allowRewards) {
+            player.sendActionBar(messageManager.getMessage("afk-reward-blocked",
+                    "<gray>⌚ AFK állapotban jutalom nem vehető át — mozogj vagy kapcsold ki a /afk jelölést.</gray>"));
+            return;
+        }
         final String key = posKey(location);
         final String table = chests.get(key);
         if (table == null) {
@@ -221,10 +227,13 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
     }
 
     /**
-     * Boss-halál (a boss régió-szálán, EntityDeathEvent): loot a halál helyére,
-     * respawn-óra indul. @return true, ha ez kazamata-boss volt.
+     * Boss-halál (a boss régió-szálán, EntityDeathEvent): a lifecycle mindig lezárul és a
+     * respawn-óra elindul; loot csak a közös jutalomkapu engedélyével kerül a halál helyére.
+     *
+     * @return true, ha ez kazamata-boss volt
      */
-    public boolean handleBossDeath(final LivingEntity dead, final List<ItemStack> drops) {
+    public boolean handleBossDeath(final LivingEntity dead, final List<ItemStack> drops,
+                                   final boolean allowLoot) {
         final String id = dead.getPersistentDataContainer().get(bossKey, PersistentDataType.STRING);
         if (id == null) {
             return false;
@@ -235,7 +244,10 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
         final BossSpawn spawn = bosses.get(id);
         final String table = spawn != null ? spawn.table()
                 : configManager.getString("dungeon.minibosses." + id + ".table", "kazamata-boss");
-        drops.addAll(rollTable(table, Math.max(1, configManager.getInt("dungeon.loot.boss-rolls", 4))));
+        if (allowLoot) {
+            drops.addAll(rollTable(table, Math.max(1,
+                    configManager.getInt("dungeon.loot.boss-rolls", 4))));
+        }
         save();
         return true;
     }

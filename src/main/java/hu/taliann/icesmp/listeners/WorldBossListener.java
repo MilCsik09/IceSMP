@@ -1,6 +1,9 @@
 package hu.taliann.icesmp.listeners;
 
+import hu.taliann.icesmp.managers.AfkManager;
+import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.utils.MobKillUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,9 +19,15 @@ import org.bukkit.event.entity.EntityDeathEvent;
 public final class WorldBossListener implements Listener {
 
     private final WorldBossManager worldBossManager;
+    private final ConfigManager configManager;
+    private final AfkManager afkManager;
 
-    public WorldBossListener(final WorldBossManager worldBossManager) {
+    public WorldBossListener(final WorldBossManager worldBossManager,
+                             final ConfigManager configManager,
+                             final AfkManager afkManager) {
         this.worldBossManager = worldBossManager;
+        this.configManager = configManager;
+        this.afkManager = afkManager;
     }
 
     /** Keeps the shared HUD boss-bar in sync with the boss's health the moment it takes a hit. */
@@ -40,6 +49,8 @@ public final class WorldBossListener implements Listener {
             return;
         }
 
-        worldBossManager.handleBossDeath(event.getEntity(), killer);
+        final boolean rewardsAllowed = !MobKillUtil.isAfkRewardBlocked(
+                killer.getUniqueId(), configManager, afkManager);
+        worldBossManager.handleBossDeath(event.getEntity(), killer, rewardsAllowed);
     }
 }

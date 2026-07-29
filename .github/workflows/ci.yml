@@ -98,6 +98,7 @@ jobs:
           grep -F "Moderation review regression suite passed." gradle-build.log
           grep -F "PersistentStoreCoordinator regression tests passed." gradle-build.log
           grep -F "DEV-item reward regression suite passed." gradle-build.log
+          grep -F "AFK regression suite passed." gradle-build.log
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py

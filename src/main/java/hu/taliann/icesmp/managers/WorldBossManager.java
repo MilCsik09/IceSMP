@@ -712,8 +712,10 @@ public final class WorldBossManager {
      *
      * @param boss the slain boss
      * @param killer the slayer
+     * @param allowRewards false when the global AFK gate suppresses every payout
      */
-    public void handleBossDeath(final LivingEntity boss, final Player killer) {
+    public void handleBossDeath(final LivingEntity boss, final Player killer,
+                                final boolean allowRewards) {
         // Csak az ÉLŐ, követett bossért jár jutalom: crash után árván maradt (PDC-tages,
         // de már nem követett) példány leölése nem fizethet dupla kasszát/liga-pontot,
         // és nem nullázhatja az épp futó boss követését.
@@ -723,6 +725,14 @@ public final class WorldBossManager {
         }
         activeBossUntil = 0L;
         activeBossId = null;
+
+        // The tracked lifecycle must close even when AFK protection suppresses every reward.
+        if (!allowRewards) {
+            killer.getScheduler().run(plugin, task -> killer.sendActionBar(messageManager.getMessage(
+                    "afk-reward-blocked",
+                    "<gray>⌚ AFK állapotban a világboss jutalmai nem járnak.</gray>")), null);
+            return;
+        }
 
         double rewardMult = 1.0D;
         final String archetypeName = boss.getPersistentDataContainer().get(bossArchetypeKey, PersistentDataType.STRING);

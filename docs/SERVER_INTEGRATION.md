@@ -63,15 +63,15 @@ fővárosban engedi át a műveletet; ha ezt a korlátozást fel akarod oldani (
 helyen működő bankár), állítsd `false`-ra a `config/economy.yml`-ben. Kötés nélküli NPC-k
 változatlanul a régi név-alapú logikával működnek (teljes visszafele-kompatibilitás).
 
-## 5. Crossover-ötletek (top 3)
+## 5. Crossover-ötletek
 
 1. **AuMenus** — a menü-fájljai még a gyári példák; IceSMP-parancsokra kötve (console:
    `icesmp ...` akciók + `%icesmp_...%` lore-placeholderek) staff Java nélkül építhet új
    front-endeket, a gameplay-logika a parancsokban marad (agent GUI-szabály).
-2. **AxAFKZone** — AFK-zóna jelzés átvétele: AFK-zónában az IceSMP passzív XP/erőforrás-regen
-   szüneteltethető, hogy az AFK-jutalom ne legyen párhuzamos power-leveling exploit.
-3. **VillagerTradeEdit** — szakma-specifikus vendor-villagerek (recept/valuta-árak) a
+2. **VillagerTradeEdit** — szakma-specifikus vendor-villagerek (recept/valuta-árak) a
    profession/market rendszerhez, egyedi trade-GUI kód nélkül.
+
+Az AxAFKZone/AxAPI nem crossover-cél: a globális AFK natív, a jutalmazó zóna elvetett scope.
 
 Átvételig együtt tesztelendő: GSit. Semleges: ImageFrame, CoreProtect, GrimAC, ViaVersion, voicechat,
 FAWE/goBrush/VoxelSniper, SModeration, AxiomPaper.
@@ -93,7 +93,7 @@ A táblázatban csak a **READY** és kézzel igazolt sor tekinthető törölhet�
 | **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
 | **MiniMOTD** | natív `MotdListener`: idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish count és célzott reload | **FELTÉTELES:** build/regresszió után valódi Folia server-list ping, ikon/reload és MiniMOTD nélküli átvételi playtest kell |
-| **AxAFKZone (+AxAPI)** | meglévő globális AFK | **NEM KELL:** jutalmazó AFK-zóna scope törölve; nincs migráció |
+| **AxAFKZone (+AxAPI)** | natív globális AFK: automatikus/manual toggle, tablista, jutalomkapu | **NEM KELL:** jutalmazó zóna nincs; az éles jart/adatkönyvtárakat archiváld vagy töröld, a Paper remap-cache-t építsd újra; migráció nincs |
 | **CrazyCrates** | `CrateManager` + strict config/policy, browser/preview, atomi settlement, recovery fence, audit és 7 rewardtípus | **FELTÉTELES:** zöld crate/full build után valódi Folia/fault-injection teszt kell (currency/command hiba, reload/disable, restart recovery, full inventory); process-crash exactly-once nincs állítva |
 | **GSit** | natív sit-only lifecycle | **FELTÉTELES:** valódi Folia seat/cleanup átvételi teszt után távolítható el |
 | **SModeration** | `ModerationManager` + natív punishment ledger, commands, SocialSpy, vanish és ban gate | **FELTÉTELES:** automated zöld; restart/Folia/fault-injection playtest kell |

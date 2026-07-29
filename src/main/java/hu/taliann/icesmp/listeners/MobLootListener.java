@@ -109,11 +109,17 @@ public final class MobLootListener implements Listener {
                 || invasionManager.isInvasionMob(entity.getUniqueId())
                 || wildHuntManager.isWildHunt(entity.getUniqueId());
 
-        // Ordinary mobs may require a player kill; boss/event mobs always yield their loot
-        // (környezeti halál is dobja őket — ezért a FAUCET-előszűrő csak a sima mob-ágon fut).
+        // A player-owned kill never bypasses the global AFK gate, including boss/event tiers.
+        // Environmental boss deaths keep their existing shared-drop behaviour.
+        final Player killer = entity.getKiller();
+        if (killer != null && hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked(
+                killer.getUniqueId(), configManager, afkManager)) {
+            return;
+        }
         if (!bossTier && configManager.getBoolean("loot.require-player-kill", true)
                 && hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
-                        hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager) == null) {
+                        hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET,
+                        configManager, afkManager) == null) {
             return;
         }
 
