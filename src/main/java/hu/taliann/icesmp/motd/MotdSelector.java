@@ -1,7 +1,13 @@
 package hu.taliann.icesmp.motd;
 
-/** Dependency-free deterministic selector used by the async server-list presentation. */
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Set;
+
+/** Dependency-free deterministic selector and strict scalar rules used by the server-list presentation. */
 public final class MotdSelector {
+
+    private static final Set<String> SUPPORTED_PLACEHOLDERS = Set.of("online", "max");
 
     public enum Mode {
         TIME,
@@ -56,11 +62,93 @@ public final class MotdSelector {
         if (worldBossActive) {
             return ActiveEvent.WORLD_BOSS;
         }
-        final long remaining = seasonEndMillis - nowMillis;
-        if (seasonThresholdMillis >= 0L && remaining >= 0L && remaining <= seasonThresholdMillis) {
-            return ActiveEvent.SEASON_END;
+        if (seasonThresholdMillis < 0L || seasonEndMillis < nowMillis) {
+            return ActiveEvent.NONE;
         }
-        return ActiveEvent.NONE;
+        final long latestIncluded = nowMillis > Long.MAX_VALUE - seasonThresholdMillis
+                ? Long.MAX_VALUE : nowMillis + seasonThresholdMillis;
+        return seasonEndMillis <= latestIncluded ? ActiveEvent.SEASON_END : ActiveEvent.NONE;
+    }
+
+    /**
+     * Parses a finite integral scalar without routing exact long values through {@code double}.
+     * This keeps configured random seeds deterministic across the entire signed 64-bit range.
+     */
+    public static long parseWholeNumber(final Object raw, final long fallback, final long minimum,
+                                        final long maximum, final String path) {
+        if (minimum > maximum) {
+            throw new IllegalArgumentException("Érvénytelen egészszám-tartomány: " + minimum + ".." + maximum);
+        }
+        if (raw == null) {
+            return requireRange(fallback, minimum, maximum, path);
+        }
+
+        final BigDecimal decimal;
+        try {
+            if (raw instanceof BigDecimal value) {
+                decimal = value;
+            } else if (raw instanceof BigInteger value) {
+                decimal = new BigDecimal(value);
+            } else if (raw instanceof Byte || raw instanceof Short
+                    || raw instanceof Integer || raw instanceof Long) {
+                decimal = BigDecimal.valueOf(((Number) raw).longValue());
+            } else if (raw instanceof Float || raw instanceof Double) {
+                final double value = ((Number) raw).doubleValue();
+                if (!Double.isFinite(value)) {
+                    throw invalidWholeNumber(path);
+                }
+                decimal = BigDecimal.valueOf(value);
+            } else if (raw instanceof Number value) {
+                decimal = new BigDecimal(value.toString());
+            } else {
+                final String text = raw.toString().trim();
+                if (text.isEmpty()) {
+                    throw invalidWholeNumber(path);
+                }
+                decimal = new BigDecimal(text);
+            }
+            return requireRange(decimal.longValueExact(), minimum, maximum, path);
+        } catch (final NumberFormatException | ArithmeticException exception) {
+            throw invalidWholeNumber(path);
+        }
+    }
+
+    /** Rejects every brace token except the two documented dynamic MOTD placeholders. */
+    public static void validatePlaceholders(final String value, final String path) {
+        if (value == null) {
+            throw new IllegalArgumentException(path + ": a szöveg nem lehet null");
+        }
+        for (int index = 0; index < value.length(); index++) {
+            final char current = value.charAt(index);
+            if (current == '}') {
+                throw new IllegalArgumentException(path + ": pár nélküli '}' karakter");
+            }
+            if (current != '{') {
+                continue;
+            }
+            final int close = value.indexOf('}', index + 1);
+            if (close < 0) {
+                throw new IllegalArgumentException(path + ": lezáratlan placeholder");
+            }
+            final String token = value.substring(index + 1, close);
+            if (token.indexOf('{') >= 0 || !SUPPORTED_PLACEHOLDERS.contains(token)) {
+                throw new IllegalArgumentException(path + ": ismeretlen placeholder: {" + token + "}");
+            }
+            index = close;
+        }
+    }
+
+    private static long requireRange(final long value, final long minimum, final long maximum,
+                                     final String path) {
+        if (value < minimum || value > maximum) {
+            throw new IllegalArgumentException(path + ": tartományon kívüli érték ("
+                    + minimum + ".." + maximum + ")");
+        }
+        return value;
+    }
+
+    private static IllegalArgumentException invalidWholeNumber(final String path) {
+        return new IllegalArgumentException(path + ": csak véges, 64 bites egész szám lehet");
     }
 
     private static long mix64(long value) {
