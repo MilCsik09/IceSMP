@@ -66,6 +66,9 @@ után az alapdefiníció egyébként újra megjelenne.
 
 ```yaml
 afk:
+  # HUD/tablista kapcsolótól független driver; reloadkor újraütemeződik.
+  refresh-ticks: 20       # 5..72000, hibás értéknél 20
+  afk-after-seconds: 180  # 1..31536000, hibás értéknél 180
   max-zone-volume: 1000000
   max-currency-reward: 1000
   max-item-amount: 64
@@ -105,6 +108,7 @@ Szigorúan elutasított állapotok:
 - hiányzó vagy nem betöltött világ, eltérő UUID/név;
 - nem egész, nem 32 bites vagy világmagasságon kívüli koordináta;
 - túl nagy cuboid;
+- `refresh-ticks` az 5..72000, illetve `afk-after-seconds` az 1..31536000 tartományon kívül;
 - nulla, negatív, nem egész vagy túl nagy interval/roll/item/currency érték;
 - 1000-nél nagyobb fizikai currency reward még akkor is, ha a config ennél nagyobb értéket kér;
 - NaN/Infinity vagy túl nagy reward weight;
@@ -119,10 +123,14 @@ a hiba pedig `_global` diagnosztikaként jelenik meg.
 
 ## Reward, reload és Folia ownership
 
-A global region scheduler csak drivert futtat. Minden játékos helye, permissionje, bossbarja,
-title/actionbarja és inventoryja a saját entity schedulerén kezelődik. A command reward a global
-region scheduleren fut konzolként. A player thread és a global scheduler között csak már
-feloldott, immutable command string kerül át.
+A global region scheduler csak drivert futtat. Az AFK driver külön scheduler-életciklust kapott:
+a `hud.enabled` és a tablista beállításától függetlenül indul, reloadkor a régi task törlődik és az
+új, validált `refresh-ticks` periodussal indul újra. Scheduler rejection esetén nincs néma, hamis
+aktív állapot: a rendszer súlyos hibát naplóz, és jutalomtick nem fut.
+
+Minden játékos helye, permissionje, bossbarja, title/actionbarja és inventoryja a saját entity
+schedulerén kezelődik. A command reward a global region scheduleren fut konzolként. A player
+thread és a global scheduler között csak már feloldott, immutable command string kerül át.
 
 Minden player-tick egy immutable catalog-revíziót visz magával. Reload új revíziót publikál; a
 korábban sorba állt entity callback fail-closed, a későn befejeződő command callback pedig nem
