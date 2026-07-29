@@ -24,6 +24,7 @@ public final class ModerationGUI {
             inventory.setItem(slot, GuiUtil.filler());
         }
         final List<? extends Player> players = Bukkit.getOnlinePlayers().stream()
+                .filter(target -> target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target))
                 .sorted(Comparator.comparing(Player::getName, String.CASE_INSENSITIVE_ORDER)).limit(45).toList();
         for (int slot = 0; slot < players.size(); slot++) {
             final Player target = players.get(slot);

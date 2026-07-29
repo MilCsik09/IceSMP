@@ -36,7 +36,7 @@ public final class ModerationGuiCommand implements BasicCommand {
         }
         if (args.length >= 1) {
             final Player target = Bukkit.getPlayerExact(args[0]);
-            if (target == null) {
+            if (target == null || (!target.getUniqueId().equals(viewer.getUniqueId()) && !viewer.canSee(target))) {
                 viewer.sendMessage(messages.get("moderation.player-offline", "&cA játékos nincs online: &f%s", args[0]));
                 return;
             }
@@ -49,11 +49,14 @@ public final class ModerationGuiCommand implements BasicCommand {
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack source,
                                                 final @NonNull String[] args) {
-        if (!source.getSender().hasPermission(permission) || args.length > 1) {
+        if (!(source.getSender() instanceof Player viewer)
+                || !viewer.hasPermission(permission) || args.length > 1) {
             return List.of();
         }
         final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+        return Bukkit.getOnlinePlayers().stream()
+                .filter(target -> target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target))
+                .map(Player::getName)
                 .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
     }
 }

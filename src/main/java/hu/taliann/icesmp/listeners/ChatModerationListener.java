@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ModerationManager;
+import hu.taliann.icesmp.moderation.ModerationSpamGuard;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
@@ -64,7 +65,8 @@ public final class ChatModerationListener implements Listener {
             return;
         }
 
-        if (moderationManager.isSpam(sender.getUniqueId(), plain)) {
+        if (ModerationSpamGuard.evaluate(moderationManager,
+                () -> moderationManager.isSpam(sender.getUniqueId(), plain))) {
             event.setCancelled(true);
             sender.sendMessage(messageManager.get("moderation.spam-blocked",
                     "&cTúl gyorsan/ismételten küldesz üzenetet — várj egy kicsit."));

@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.managers.ModerationManager;
+import hu.taliann.icesmp.moderation.ModerationSpamGuard;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -75,7 +76,7 @@ public final class PrivateMessageCommand implements BasicCommand {
             recipient = Bukkit.getPlayerExact(args[0]);
             rawMessage = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         }
-        if (recipient == null) {
+        if (recipient == null || (!recipient.getUniqueId().equals(senderId) && !sender.canSee(recipient))) {
             sender.sendMessage(messages.get("moderation.message-target-offline", "&cA címzett nincs online."));
             notifySpy(senderId, senderName, null, requestedRecipientName, rawMessage, "TARGET_OFFLINE");
             return;
@@ -87,7 +88,8 @@ public final class PrivateMessageCommand implements BasicCommand {
             sender.sendMessage(messages.get("moderation.message-self", "&cMagadnak nem küldhetsz privát üzenetet."));
             return;
         }
-        final ModerationManager.PrivateMessageDecision decision = manager.evaluatePrivateMessage(senderId, rawMessage);
+        final ModerationManager.PrivateMessageDecision decision = ModerationSpamGuard.evaluate(manager,
+                () -> manager.evaluatePrivateMessage(senderId, rawMessage));
         if (decision.status() != ModerationManager.PrivateMessageStatus.DELIVERED) {
             sender.sendMessage(blockedMessage(decision));
             notifySpy(senderId, senderName, recipientId, recipientName, rawMessage, decision.status().name());
@@ -155,11 +157,14 @@ public final class PrivateMessageCommand implements BasicCommand {
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack source,
                                                 final @NonNull String[] args) {
-        if (reply || !source.getSender().hasPermission(permission) || args.length > 1) {
+        if (reply || !(source.getSender() instanceof Player sender)
+                || !sender.hasPermission(permission) || args.length > 1) {
             return List.of();
         }
         final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+        return Bukkit.getOnlinePlayers().stream()
+                .filter(target -> target.getUniqueId().equals(sender.getUniqueId()) || sender.canSee(target))
+                .map(Player::getName)
                 .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
     }
 }
