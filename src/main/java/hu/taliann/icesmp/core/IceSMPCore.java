@@ -864,6 +864,11 @@ public final class IceSMPCore {
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
+        // Hot plugin reloads may enable while players are already online and therefore do not emit
+        // a new join event. Give those sessions a fresh generation before PM delivery can link them.
+        for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            moderationManager.openReplySession(onlinePlayer.getUniqueId());
+        }
         vanishManager.refreshAll();
         registerCommands();
         scheduleTaxCollection();

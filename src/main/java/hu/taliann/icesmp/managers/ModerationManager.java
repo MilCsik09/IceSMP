@@ -7,6 +7,7 @@ import hu.taliann.icesmp.moderation.PunishmentLedger;
 import hu.taliann.icesmp.moderation.PunishmentRecord;
 import hu.taliann.icesmp.moderation.PunishmentState;
 import hu.taliann.icesmp.moderation.PunishmentType;
+import hu.taliann.icesmp.moderation.ReplyPartnerRegistry;
 import hu.taliann.icesmp.moderation.StrictYamlNumber;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.CriticalPersistenceWriteError;
@@ -118,7 +119,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
 
     private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
     private final Map<UUID, String> lastMessage = new ConcurrentHashMap<>();
-    private final Map<UUID, UUID> replyTargets = new ConcurrentHashMap<>();
+    private final ReplyPartnerRegistry replyPartners = new ReplyPartnerRegistry();
 
     public ModerationManager(final JavaPlugin plugin, final ConfigManager configManager,
                              final MessageManager messageManager) {
@@ -550,13 +551,21 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         }
     }
 
-    public void setReplyPartners(final UUID first, final UUID second) {
-        replyTargets.put(first, second);
-        replyTargets.put(second, first);
+    public ReplyPartnerRegistry.Session openReplySession(final UUID playerId) {
+        return replyPartners.openSession(playerId);
+    }
+
+    public Optional<ReplyPartnerRegistry.Session> captureReplySession(final UUID playerId) {
+        return replyPartners.capture(playerId);
+    }
+
+    public boolean setReplyPartnersIfCurrent(final ReplyPartnerRegistry.Session first,
+                                             final ReplyPartnerRegistry.Session second) {
+        return replyPartners.linkIfCurrent(first, second);
     }
 
     public Optional<UUID> replyTarget(final UUID playerId) {
-        return Optional.ofNullable(replyTargets.get(playerId));
+        return replyPartners.partner(playerId);
     }
 
     public PrivateMessageDecision evaluatePrivateMessage(final UUID senderId, final String rawMessage) {
@@ -707,8 +716,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     public void clearPlayerState(final UUID playerId) {
         lastMessageAt.remove(playerId);
         lastMessage.remove(playerId);
-        replyTargets.remove(playerId);
-        replyTargets.entrySet().removeIf(entry -> entry.getValue().equals(playerId));
+        replyPartners.closeSession(playerId);
     }
 
     private YamlConfiguration encodeLocked() {

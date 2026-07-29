@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.managers.ModerationManager;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.moderation.PunishmentLedger;
 import hu.taliann.icesmp.moderation.PunishmentType;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -77,9 +78,9 @@ public final class ModerationRevokeCommand implements BasicCommand {
         Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
             final Player current = Bukkit.getPlayer(target.id());
             if (current != null) {
-                current.getScheduler().run(plugin, entityTask -> current.sendMessage(messages.get(
+                PaperEntityTaskSubmission.run(plugin, current.getScheduler(), () -> current.sendMessage(messages.get(
                         "moderation.revoke-notify", "&aA(z) %s büntetésed feloldásra került.",
-                        family == PunishmentType.Family.MUTE ? "némítás" : "kitiltás")), null);
+                        family == PunishmentType.Family.MUTE ? "némítás" : "kitiltás")), () -> { });
             }
         });
     }

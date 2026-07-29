@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.core.Permissions;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -57,7 +58,7 @@ public final class VanishManager implements PlayerStateCleanup {
 
     /** Reconciles one viewer on that viewer's entity scheduler. */
     public void refreshViewer(final Player viewer) {
-        viewer.getScheduler().run(plugin, task -> applyViewer(viewer), null);
+        PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> applyViewer(viewer), () -> { });
     }
 
     /** Reconciles every viewer; global discovery is followed by one entity-owned task per viewer. */
@@ -77,7 +78,8 @@ public final class VanishManager implements PlayerStateCleanup {
     public void refreshSubject(final UUID subjectId) {
         Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
             for (final Player viewer : Bukkit.getOnlinePlayers()) {
-                viewer.getScheduler().run(plugin, entityTask -> applySubject(viewer, subjectId), null);
+                PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                        () -> applySubject(viewer, subjectId), () -> { });
             }
         });
     }
@@ -129,14 +131,14 @@ public final class VanishManager implements PlayerStateCleanup {
                 continue;
             }
             final Set<UUID> snapshot = Set.copyOf(hidden);
-            viewer.getScheduler().run(plugin, task -> {
+            PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
                 for (final UUID subjectId : snapshot) {
                     final Player subject = Bukkit.getPlayer(subjectId);
                     if (subject != null) {
                         viewer.showPlayer(plugin, subject);
                     }
                 }
-            }, null);
+            }, () -> { });
         }
         hiddenByViewer.clear();
     }

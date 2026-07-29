@@ -30,6 +30,7 @@ public final class PlayerSessionCleanupListener implements Listener {
     /** Spells are cleaned via the registry, so a new stateful spell needs no change here. */
     private final SpellRegistry spellRegistry;
     private final hu.taliann.icesmp.managers.InvseeManager invseeManager;
+    private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -66,6 +67,7 @@ public final class PlayerSessionCleanupListener implements Listener {
                 honorDuelManager, spyManager, combatTagManager, classHealthService, lowHealthBorderListener);
         this.spellRegistry = spellRegistry;
         this.invseeManager = invseeManager;
+        this.moderationManager = moderationManager;
     }
 
     /**
@@ -78,6 +80,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer());
         hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(),
                 event.getPlayer().getLocation());
+        moderationManager.openReplySession(event.getPlayer().getUniqueId());
         invseeManager.restorePending(event.getPlayer());
     }
 

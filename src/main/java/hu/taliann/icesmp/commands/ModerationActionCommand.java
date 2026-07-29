@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.managers.ModerationManager;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.moderation.PunishmentRecord;
 import hu.taliann.icesmp.moderation.PunishmentType;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -131,11 +132,11 @@ public final class ModerationActionCommand implements BasicCommand {
             // sessiont nem szabad a régi kick tranzakcióval kirúgni.
             final Player originalSession = target.online();
             if (originalSession != null) {
-                originalSession.getScheduler().run(plugin, task -> {
+                PaperEntityTaskSubmission.run(plugin, originalSession.getScheduler(), () -> {
                     if (originalSession.isOnline()) {
                         kick(originalSession, record);
                     }
-                }, null);
+                }, () -> { });
             }
             return;
         }
@@ -147,7 +148,8 @@ public final class ModerationActionCommand implements BasicCommand {
             if (current == null) {
                 return;
             }
-            current.getScheduler().run(plugin, entityTask -> applyCurrentSessionEffect(current, action, record), null);
+            PaperEntityTaskSubmission.run(plugin, current.getScheduler(),
+                    () -> applyCurrentSessionEffect(current, action, record), () -> { });
         });
     }
 

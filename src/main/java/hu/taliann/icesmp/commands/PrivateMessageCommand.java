@@ -2,7 +2,9 @@ package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.managers.ModerationManager;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.moderation.ModerationSpamGuard;
+import hu.taliann.icesmp.moderation.ReplyPartnerRegistry;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -88,6 +90,8 @@ public final class PrivateMessageCommand implements BasicCommand {
             sender.sendMessage(messages.get("moderation.message-self", "&cMagadnak nem küldhetsz privát üzenetet."));
             return;
         }
+        final ReplyPartnerRegistry.Session senderSession = manager.captureReplySession(senderId).orElse(null);
+        final ReplyPartnerRegistry.Session recipientSession = manager.captureReplySession(recipientId).orElse(null);
         final ModerationManager.PrivateMessageDecision decision = ModerationSpamGuard.evaluate(senderId,
                 () -> manager.evaluatePrivateMessage(senderId, rawMessage));
         if (decision.status() != ModerationManager.PrivateMessageStatus.DELIVERED) {
@@ -99,7 +103,7 @@ public final class PrivateMessageCommand implements BasicCommand {
 
         // The recipient owns delivery. Only after that scheduler task actually runs do we acknowledge
         // success and establish /reply state; a retired target task cannot fake delivery.
-        recipient.getScheduler().run(plugin, task -> {
+        PaperEntityTaskSubmission.run(plugin, recipient.getScheduler(), () -> {
             if (!recipient.isOnline()) {
                 reportUndelivered(senderId, senderName, recipientId, recipientName,
                         decision.message(), "TARGET_OFFLINE");
@@ -107,7 +111,7 @@ public final class PrivateMessageCommand implements BasicCommand {
             }
             recipient.sendMessage(messages.get("moderation.message-received", "&8[&d%s &7→ &dte&8] &f%s",
                     senderName, decision.message()));
-            manager.setReplyPartners(senderId, recipientId);
+            manager.setReplyPartnersIfCurrent(senderSession, recipientSession);
             ModerationCommandSupport.send(plugin, senderId, messages.get("moderation.message-sent",
                     "&8[&dte &7→ &d%s&8] &f%s", recipientName, decision.message()));
             notifySpy(senderId, senderName, recipientId, recipientName, decision.message(), "DELIVERED");
@@ -147,11 +151,11 @@ public final class PrivateMessageCommand implements BasicCommand {
                 }
                 final Player spy = Bukkit.getPlayer(spyId);
                 if (spy != null) {
-                    spy.getScheduler().run(plugin, entityTask -> {
+                    PaperEntityTaskSubmission.run(plugin, spy.getScheduler(), () -> {
                         if (spy.isOnline() && spy.hasPermission(Permissions.MODERATION_SOCIALSPY)) {
                             spy.sendMessage(rendered);
                         }
-                    }, null);
+                    }, () -> { });
                 }
             }
         });

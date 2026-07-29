@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.managers.ModerationManager;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.moderation.ModerationDuration;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -45,7 +46,8 @@ final class ModerationCommandSupport {
 
     static void send(final JavaPlugin plugin, final CommandSender sender, final String message) {
         if (sender instanceof Player player) {
-            player.getScheduler().run(plugin, task -> player.sendMessage(message), null);
+            PaperEntityTaskSubmission.run(plugin, player.getScheduler(),
+                    () -> player.sendMessage(message), () -> { });
         } else {
             Bukkit.getGlobalRegionScheduler().run(plugin, task -> sender.sendMessage(message));
         }
@@ -56,11 +58,11 @@ final class ModerationCommandSupport {
         Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
             final Player player = Bukkit.getPlayer(playerId);
             if (player != null) {
-                player.getScheduler().run(plugin, entityTask -> {
+                PaperEntityTaskSubmission.run(plugin, player.getScheduler(), () -> {
                     if (player.isOnline()) {
                         player.sendMessage(message);
                     }
-                }, null);
+                }, () -> { });
             }
         });
     }

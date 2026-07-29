@@ -3,9 +3,13 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.gui.InvseeGUI;
 import hu.taliann.icesmp.gui.InvseeHolder;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.moderation.InventoryEscrowGate;
+import hu.taliann.icesmp.moderation.InventoryEscrowQueue;
 import hu.taliann.icesmp.moderation.InventoryTransferBarrier;
 import hu.taliann.icesmp.moderation.InventoryWriteRecovery;
+import hu.taliann.icesmp.moderation.InvseeEscrowSchema;
+import hu.taliann.icesmp.moderation.TaskLease;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
@@ -23,7 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -60,7 +64,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         private final InvseeHolder.Mode mode;
         private volatile InvseeHolder.View view;
         private final AtomicBoolean refreshInFlight = new AtomicBoolean();
-        private volatile ScheduledTask refreshTask;
+        private volatile TaskLease<ScheduledTask> refreshLease;
         private volatile PendingTransfer pending;
         private volatile boolean transitioning;
 
@@ -89,16 +93,15 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         private boolean claimTarget() { return gate.claimTarget(); }
         private boolean claimReturn() { return gate.claimInsertedReturn(); }
         private boolean abortTargetAndClaimReturn() { return gate.abortTargetAndClaimInsertedReturn(); }
-        private void complete(final ItemStack displaced) {
+        private void prepareCompletion(final ItemStack displaced) {
             this.displaced = cloneItem(displaced);
-            gate.completeTargetWrite();
         }
+        private void publishCompletion() { gate.completeTargetWrite(); }
         private InventoryEscrowGate.State state() { return gate.state(); }
         private boolean claimDisplacedReturn() { return gate.claimDisplacedReturn(); }
         private boolean claimLifecycleRelease() { return lifecycleReleased.compareAndSet(false, true); }
     }
 
-    private static final int ESCROW_SCHEMA_VERSION = 1;
     private static final int MAX_ESCROW_PLAYERS = 10_000;
     private static final int MAX_ESCROW_ITEMS = 100_000;
 
@@ -106,9 +109,8 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
     private final MessageManager messages;
     private final ModerationManager moderationManager;
     private final File escrowFile;
-    private final Object escrowLock = new Object();
     private final ConcurrentHashMap<UUID, Session> sessions = new ConcurrentHashMap<>();
-    private final Map<UUID, List<ItemStack>> pendingReturns = new HashMap<>();
+    private final InventoryEscrowQueue<ItemStack> pendingReturns = new InventoryEscrowQueue<>(ItemStack::clone);
     private final InventoryTransferBarrier transferBarrier = new InventoryTransferBarrier();
     private volatile boolean shuttingDown;
 
@@ -129,10 +131,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
                 throw new IllegalArgumentException("existing authoritative escrow file is empty");
             }
             final Map<UUID, List<ItemStack>> loaded = decodeEscrow(yaml);
-            synchronized (escrowLock) {
-                pendingReturns.clear();
-                pendingReturns.putAll(loaded);
-            }
+            pendingReturns.replace(loaded);
         } catch (final RuntimeException invalid) {
             YamlStore.failCorrupt(escrowFile, plugin.getLogger(),
                     "Az invsee escrow szemantikailag érvénytelen: " + invalid.getMessage());
@@ -142,11 +141,9 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
     @Override
     public void save() {
         final YamlConfiguration yaml = new YamlConfiguration();
-        yaml.set("schema-version", ESCROW_SCHEMA_VERSION);
-        synchronized (escrowLock) {
-            for (final Map.Entry<UUID, List<ItemStack>> entry : pendingReturns.entrySet()) {
-                yaml.set("returns." + entry.getKey(), cloneList(entry.getValue()));
-            }
+        yaml.set("schema-version", InvseeEscrowSchema.VERSION);
+        for (final Map.Entry<UUID, List<ItemStack>> entry : pendingReturns.snapshot().entrySet()) {
+            yaml.set("returns." + entry.getKey(), cloneList(entry.getValue()));
         }
         try {
             YamlStore.saveAtomic(escrowFile, yaml);
@@ -157,44 +154,30 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
 
     private static Map<UUID, List<ItemStack>> decodeEscrow(final YamlConfiguration yaml) {
         if (yaml.getKeys(false).isEmpty()) {
-            return new HashMap<>();
+            return Map.of();
         }
-        final int schema = hu.taliann.icesmp.moderation.StrictYamlNumber.requireInt(
-                yaml.get("schema-version"), "schema-version");
-        if (schema != ESCROW_SCHEMA_VERSION) {
-            throw new IllegalArgumentException("unsupported escrow schema-version: " + schema);
-        }
-        final Map<UUID, List<ItemStack>> loaded = new HashMap<>();
+        final Map<UUID, List<ItemStack>> loaded = new LinkedHashMap<>();
         final ConfigurationSection returns = yaml.getConfigurationSection("returns");
-        if (returns == null) {
-            return loaded;
+        if (yaml.contains("returns") && returns == null) {
+            throw new IllegalArgumentException("returns must be a section");
         }
-        if (returns.getKeys(false).size() > MAX_ESCROW_PLAYERS) {
-            throw new IllegalArgumentException("too many escrow players");
+        final Map<String, Object> rawReturns = new LinkedHashMap<>();
+        if (returns != null) {
+            for (final String key : returns.getKeys(false)) {
+                rawReturns.put(key, returns.get(key));
+            }
         }
-        int total = 0;
-        for (final String rawId : returns.getKeys(false)) {
-            final UUID playerId;
-            try {
-                playerId = UUID.fromString(rawId);
-            } catch (final IllegalArgumentException invalid) {
-                throw new IllegalArgumentException("invalid escrow player UUID: " + rawId, invalid);
-            }
-            final Object raw = returns.get(rawId);
-            if (!(raw instanceof List<?> values) || values.isEmpty()) {
-                throw new IllegalArgumentException("escrow entry must be a non-empty item list: " + rawId);
-            }
-            final List<ItemStack> items = new ArrayList<>(values.size());
-            for (final Object value : values) {
+        for (final InvseeEscrowSchema.Entry entry : InvseeEscrowSchema.validate(
+                yaml.getKeys(false), yaml.get("schema-version"), rawReturns,
+                MAX_ESCROW_PLAYERS, MAX_ESCROW_ITEMS)) {
+            final List<ItemStack> items = new ArrayList<>(entry.payloads().size());
+            for (final Object value : entry.payloads()) {
                 if (!(value instanceof ItemStack item) || isEmpty(item)) {
-                    throw new IllegalArgumentException("escrow entry contains an invalid item: " + rawId);
+                    throw new IllegalArgumentException("escrow entry contains an invalid item: " + entry.playerId());
                 }
                 items.add(item.clone());
-                if (++total > MAX_ESCROW_ITEMS) {
-                    throw new IllegalArgumentException("too many escrow items");
-                }
             }
-            loaded.put(playerId, List.copyOf(items));
+            loaded.put(entry.playerId(), List.copyOf(items));
         }
         return loaded;
     }
@@ -214,7 +197,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         final Session session = new Session(viewer.getUniqueId(), viewer.getName(), target.getUniqueId(),
                 target.getName(), mode, view);
         sessions.put(viewer.getUniqueId(), session);
-        capture(target, snapshot -> viewer.getScheduler().run(plugin, task -> {
+        capture(target, snapshot -> PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
             if (!viewer.isOnline() || sessions.get(viewer.getUniqueId()) != session) {
                 return;
             }
@@ -224,18 +207,44 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             startRefresh(viewer, session);
         }, () -> closeSession(viewer.getUniqueId())), () -> {
             sessions.remove(viewer.getUniqueId(), session);
-            viewer.getScheduler().run(plugin, task -> viewer.sendMessage(messages.get(
-                    "moderation.invsee-target-left", "&cA céljátékos kilépett.")), null);
+            PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                    () -> viewer.sendMessage(messages.get(
+                            "moderation.invsee-target-left", "&cA céljátékos kilépett.")),
+                    () -> { });
         });
     }
 
     private void startRefresh(final Player viewer, final Session session) {
-        if (session.refreshTask != null) {
-            session.refreshTask.cancel();
+        final TaskLease<ScheduledTask> previous = session.refreshLease;
+        if (previous != null) {
+            previous.retire();
         }
-        session.refreshTask = viewer.getScheduler().runAtFixedRate(plugin,
-                task -> requestRefresh(viewer, session), () -> closeSession(viewer.getUniqueId()),
-                10L, 10L);
+        final TaskLease<ScheduledTask> lease = new TaskLease<>(ScheduledTask::cancel);
+        session.refreshLease = lease;
+        final ScheduledTask scheduled;
+        try {
+            scheduled = viewer.getScheduler().runAtFixedRate(plugin,
+                    task -> requestRefresh(viewer, session), () -> {
+                        lease.retire();
+                        if (session.refreshLease == lease) {
+                            session.refreshLease = null;
+                        }
+                        closeSession(viewer.getUniqueId());
+                    }, 10L, 10L);
+        } catch (final RuntimeException schedulingFailure) {
+            lease.retire();
+            if (session.refreshLease == lease) {
+                session.refreshLease = null;
+            }
+            closeSession(viewer.getUniqueId());
+            return;
+        }
+        if (!lease.publish(scheduled)) {
+            if (session.refreshLease == lease) {
+                session.refreshLease = null;
+            }
+            closeSession(viewer.getUniqueId());
+        }
     }
 
     private void requestRefresh(final Player viewer, final Session session) {
@@ -249,7 +258,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             closeFromViewerThread(viewer, session, "&cA céljátékos kilépett.");
             return;
         }
-        capture(target, snapshot -> viewer.getScheduler().run(plugin, task -> {
+        capture(target, snapshot -> PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
             session.refreshInFlight.set(false);
             if (!viewer.isOnline() || sessions.get(viewer.getUniqueId()) != session) {
                 return;
@@ -260,14 +269,15 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             }
         }, () -> session.refreshInFlight.set(false)), () -> {
             session.refreshInFlight.set(false);
-            viewer.getScheduler().run(plugin, task -> closeFromViewerThread(viewer, session,
-                    "&cA céljátékos kilépett."), null);
+            PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                    () -> closeFromViewerThread(viewer, session, "&cA céljátékos kilépett."),
+                    () -> closeSession(viewer.getUniqueId()));
         });
     }
 
     private void capture(final Player target, final java.util.function.Consumer<Snapshot> callback,
                          final Runnable retired) {
-        target.getScheduler().run(plugin, task -> {
+        PaperEntityTaskSubmission.run(plugin, target.getScheduler(), () -> {
             if (!target.isOnline()) {
                 retired.run();
                 return;
@@ -290,16 +300,19 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         }
         session.transitioning = true;
         session.view = holder.view() == InvseeHolder.View.MAIN ? InvseeHolder.View.ENDER : InvseeHolder.View.MAIN;
-        capture(target, snapshot -> viewer.getScheduler().run(plugin, task -> {
+        capture(target, snapshot -> PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
             if (!viewer.isOnline() || sessions.get(viewer.getUniqueId()) != session) {
+                session.transitioning = false;
                 return;
             }
             final InvseeHolder next = new InvseeHolder(session.sessionId, session.targetId, session.targetName,
                     session.view, session.mode);
             viewer.openInventory(InvseeGUI.create(next, snapshot, messages));
             session.transitioning = false;
-        }, () -> session.transitioning = false), () -> viewer.getScheduler().run(plugin,
-                task -> closeFromViewerThread(viewer, session, "&cA céljátékos kilépett."), null));
+        }, () -> session.transitioning = false), () -> PaperEntityTaskSubmission.run(plugin,
+                viewer.getScheduler(),
+                () -> closeFromViewerThread(viewer, session, "&cA céljátékos kilépett."),
+                () -> closeSession(viewer.getUniqueId())));
     }
 
     public void beginSwap(final Player viewer, final InvseeHolder holder, final int rawSlot) {
@@ -325,27 +338,23 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             failBeforeTarget(viewer, session, transfer);
             return;
         }
-        try {
-            target.getScheduler().run(plugin, task -> {
-                if (!target.isOnline() || !transfer.claimTarget()) {
-                    if (transfer.state() == InventoryEscrowGate.State.INIT) {
-                        failBeforeTarget(viewer, session, transfer);
-                    }
-                    return;
+        PaperEntityTaskSubmission.run(plugin, target.getScheduler(), () -> {
+            if (!target.isOnline() || !transfer.claimTarget()) {
+                if (transfer.state() == InventoryEscrowGate.State.INIT) {
+                    failBeforeTarget(viewer, session, transfer);
                 }
-                final ItemStack displaced = readTargetSlot(target, targetSlot);
-                try {
-                    writeTargetSlot(target, targetSlot, transfer.inserted);
-                } catch (final RuntimeException writeFailure) {
-                    recoverTargetWriteFailure(viewer, session, holder, rawSlot, target, targetSlot,
-                            transfer, displaced, writeFailure);
-                    return;
-                }
-                completeTargetTransfer(viewer, session, holder, rawSlot, target, transfer, displaced);
-            }, () -> failBeforeTarget(viewer, session, transfer));
-        } catch (final RuntimeException schedulingFailure) {
-            failBeforeTarget(viewer, session, transfer);
-        }
+                return;
+            }
+            final ItemStack displaced = readTargetSlot(target, targetSlot);
+            try {
+                writeTargetSlot(target, targetSlot, transfer.inserted);
+            } catch (final RuntimeException writeFailure) {
+                recoverTargetWriteFailure(viewer, session, holder, rawSlot, target, targetSlot,
+                        transfer, displaced, writeFailure);
+                return;
+            }
+            completeTargetTransfer(viewer, session, holder, rawSlot, target, transfer, displaced);
+        }, () -> failBeforeTarget(viewer, session, transfer));
     }
 
     private void recoverTargetWriteFailure(final Player viewer, final Session session,
@@ -414,10 +423,11 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
                                         final InvseeHolder holder, final int rawSlot,
                                         final Player target, final PendingTransfer transfer,
                                         final ItemStack displaced) {
-        transfer.complete(displaced);
-        // The displaced stack enters the durable in-memory escrow before any foreign viewer
-        // callback is attempted. Scheduler retirement therefore cannot lose the only copy.
-        queueDisplaced(session.viewerId, transfer);
+        // Keep the gate TARGET_CLAIMED while publishing the displaced stack. Shutdown therefore
+        // waits for this callback instead of observing COMPLETE before the durable queue exists.
+        transfer.prepareCompletion(displaced);
+        queueReturn(session.viewerId, transfer.displaced);
+        transfer.publishCompletion();
         try {
             moderationManager.logInventoryEditAsync(session.viewerId, session.viewerName,
                     target.getUniqueId(), target.getName(), holder.view().name(), rawSlot,
@@ -425,13 +435,9 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         } catch (final RuntimeException auditFailure) {
             plugin.getLogger().warning("Invsee audit ütemezése sikertelen: " + auditFailure);
         }
-        try {
-            viewer.getScheduler().run(plugin,
-                    callback -> finishAfterTarget(viewer, session, transfer),
-                    () -> finishTransfer(transfer));
-        } catch (final RuntimeException schedulingFailure) {
-            finishTransfer(transfer);
-        }
+        PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                () -> finishAfterTarget(viewer, session, transfer),
+                () -> finishWithoutViewer(session, transfer));
     }
 
     private void finishAfterTarget(final Player viewer, final Session session, final PendingTransfer transfer) {
@@ -443,7 +449,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             session.pending = null;
             final ItemStack displaced = claimQueuedReturn(session.viewerId, transfer.displaced);
             if (!isEmpty(displaced)) {
-                returnItem(viewer, displaced, true);
+                returnClaimedItem(viewer, session.viewerId, displaced, true);
             }
             requestRefresh(viewer, session);
         } finally {
@@ -461,27 +467,31 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
 
     private void notifyFailedTransfer(final Player viewer, final Session session,
                                       final PendingTransfer transfer) {
-        try {
-            viewer.getScheduler().run(plugin, task -> {
-                try {
-                    if (!shuttingDown && viewer.isOnline()) {
-                        final ItemStack inserted = claimQueuedReturn(session.viewerId, transfer.inserted);
-                        if (!isEmpty(inserted)) {
-                            returnItem(viewer, inserted, true);
-                        }
-                        if (sessions.get(viewer.getUniqueId()) == session) {
-                            session.pending = null;
-                        }
-                        viewer.sendMessage(messages.get("moderation.invsee-edit-failed",
-                                "&cA céljátékos kilépett; a kurzortárgyad visszakaptad."));
+        PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
+            try {
+                if (!shuttingDown && viewer.isOnline()) {
+                    final ItemStack inserted = claimQueuedReturn(session.viewerId, transfer.inserted);
+                    if (!isEmpty(inserted)) {
+                        returnClaimedItem(viewer, session.viewerId, inserted, true);
                     }
-                } finally {
-                    finishTransfer(transfer);
+                    if (sessions.get(viewer.getUniqueId()) == session) {
+                        session.pending = null;
+                    }
+                    viewer.sendMessage(messages.get("moderation.invsee-edit-failed",
+                            "&cA céljátékos kilépett; a kurzortárgyad visszakaptad."));
                 }
-            }, () -> finishTransfer(transfer));
-        } catch (final RuntimeException schedulingFailure) {
-            finishTransfer(transfer);
+            } finally {
+                finishTransfer(transfer);
+            }
+        }, () -> finishWithoutViewer(session, transfer));
+    }
+
+    private void finishWithoutViewer(final Session session, final PendingTransfer transfer) {
+        transfer.viewerAbsent = true;
+        if (sessions.get(session.viewerId) == session) {
+            session.pending = null;
         }
+        finishTransfer(transfer);
     }
 
     public boolean hasPending(final Player viewer, final InvseeHolder holder) {
@@ -530,13 +540,15 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         }
         // This helper is also called from target/retired callbacks. Never mutate the admin's
         // cursor or inventory from that foreign scheduler.
-        viewer.getScheduler().run(plugin, task -> cleanupSession(session, viewer),
-                () -> cleanupSession(session, null));
+        PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                () -> cleanupSession(session, viewer), () -> cleanupSession(session, null));
     }
 
     private void cleanupSession(final Session session, final Player viewer) {
-        if (session.refreshTask != null) {
-            session.refreshTask.cancel();
+        final TaskLease<ScheduledTask> refresh = session.refreshLease;
+        session.refreshLease = null;
+        if (refresh != null) {
+            refresh.retire();
         }
         final PendingTransfer transfer = session.pending;
         session.pending = null;
@@ -549,7 +561,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             if (!shuttingDown && viewer != null && viewer.isOnline()) {
                 final ItemStack inserted = claimQueuedReturn(session.viewerId, transfer.inserted);
                 if (!isEmpty(inserted)) {
-                    returnItem(viewer, inserted, false);
+                    returnClaimedItem(viewer, session.viewerId, inserted, false);
                 }
             }
             finishTransfer(transfer);
@@ -558,16 +570,10 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             if (!shuttingDown && viewer != null && viewer.isOnline()) {
                 final ItemStack displaced = claimQueuedReturn(session.viewerId, transfer.displaced);
                 if (!isEmpty(displaced)) {
-                    returnItem(viewer, displaced, false);
+                    returnClaimedItem(viewer, session.viewerId, displaced, false);
                 }
             }
             finishTransfer(transfer);
-        }
-    }
-
-    private void queueDisplaced(final UUID viewerId, final PendingTransfer transfer) {
-        if (transfer.claimDisplacedReturn()) {
-            queueReturn(viewerId, transfer.displaced);
         }
     }
 
@@ -575,12 +581,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         if (isEmpty(item)) {
             return;
         }
-        synchronized (escrowLock) {
-            final List<ItemStack> current = pendingReturns.get(viewerId);
-            final List<ItemStack> copy = current == null ? new ArrayList<>() : new ArrayList<>(current);
-            copy.add(item.clone());
-            pendingReturns.put(viewerId, List.copyOf(copy));
-        }
+        pendingReturns.add(viewerId, item);
     }
 
     /** Claims one equivalent queued stack; equal duplicate stacks remain count-safe and interchangeable. */
@@ -588,26 +589,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
         if (isEmpty(expected)) {
             return null;
         }
-        synchronized (escrowLock) {
-            final List<ItemStack> current = pendingReturns.get(viewerId);
-            if (current == null || current.isEmpty()) {
-                return null;
-            }
-            final List<ItemStack> copy = new ArrayList<>(current);
-            for (int index = 0; index < copy.size(); index++) {
-                final ItemStack candidate = copy.get(index);
-                if (candidate.equals(expected)) {
-                    copy.remove(index);
-                    if (copy.isEmpty()) {
-                        pendingReturns.remove(viewerId);
-                    } else {
-                        pendingReturns.put(viewerId, List.copyOf(copy));
-                    }
-                    return candidate.clone();
-                }
-            }
-            return null;
-        }
+        return pendingReturns.claimMatching(viewerId, candidate -> candidate.equals(expected));
     }
 
     private void finishTransfer(final PendingTransfer transfer) {
@@ -618,19 +600,33 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
 
     /** Restores edit escrow on reconnect, on the player's own scheduler. */
     public void restorePending(final Player player) {
-        final List<ItemStack> returns;
-        synchronized (escrowLock) {
-            final List<ItemStack> removed = pendingReturns.remove(player.getUniqueId());
-            returns = removed == null ? List.of() : cloneList(removed);
+        int restored = 0;
+        ItemStack item;
+        while ((item = pendingReturns.claimFirst(player.getUniqueId())) != null) {
+            try {
+                returnItem(player, item, false);
+                restored++;
+            } catch (final RuntimeException failure) {
+                pendingReturns.restoreFirst(player.getUniqueId(), item);
+                plugin.getLogger().warning("Invsee escrow visszaadása megszakadt; a rekord megmaradt: "
+                        + failure.getMessage());
+                break;
+            }
         }
-        if (returns.isEmpty()) {
-            return;
+        if (restored > 0) {
+            player.sendMessage(messages.get("moderation.invsee-escrow-restored",
+                    "&aA megszakadt inventory-szerkesztés tárgyai visszakerültek hozzád."));
         }
-        for (final ItemStack item : returns) {
-            returnItem(player, item, false);
+    }
+
+    private void returnClaimedItem(final Player player, final UUID playerId,
+                                   final ItemStack item, final boolean preferCursor) {
+        try {
+            returnItem(player, item, preferCursor);
+        } catch (final RuntimeException failure) {
+            pendingReturns.restoreFirst(playerId, item);
+            throw failure;
         }
-        player.sendMessage(messages.get("moderation.invsee-escrow-restored",
-                "&aA megszakadt inventory-szerkesztés tárgyai visszakerültek hozzád."));
     }
 
     private static void returnItem(final Player player, final ItemStack item, final boolean preferCursor) {
@@ -697,7 +693,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             if (session.targetId.equals(playerId) && sessions.remove(session.viewerId, session)) {
                 final Player viewer = Bukkit.getPlayer(session.viewerId);
                 if (viewer != null) {
-                    viewer.getScheduler().run(plugin, task -> {
+                    PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
                         cleanupSession(session, viewer);
                         if (viewer.getOpenInventory().getTopInventory().getHolder() instanceof InvseeHolder holder
                                 && holder.sessionId().equals(session.sessionId)) {
@@ -743,8 +739,10 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             if (!sessions.remove(session.viewerId, session)) {
                 continue;
             }
-            if (session.refreshTask != null) {
-                session.refreshTask.cancel();
+            final TaskLease<ScheduledTask> refresh = session.refreshLease;
+            session.refreshLease = null;
+            if (refresh != null) {
+                refresh.retire();
             }
             final PendingTransfer transfer = session.pending;
             session.pending = null;
@@ -762,12 +760,12 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             }
             final Player viewer = Bukkit.getPlayer(session.viewerId);
             if (viewer != null) {
-                viewer.getScheduler().run(plugin, task -> {
+                PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
                     if (viewer.getOpenInventory().getTopInventory().getHolder() instanceof InvseeHolder holder
                             && holder.sessionId().equals(session.sessionId)) {
                         viewer.closeInventory();
                     }
-                }, null);
+                }, () -> { });
             }
         }
     }
@@ -780,7 +778,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
             if (sessions.remove(session.viewerId, session)) {
                 final Player viewer = Bukkit.getPlayer(session.viewerId);
                 if (viewer != null && viewer.isOnline()) {
-                    viewer.getScheduler().run(plugin, task -> {
+                    PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(), () -> {
                         cleanupSession(session, viewer);
                         if (viewer.getOpenInventory().getTopInventory().getHolder() instanceof InvseeHolder) {
                             viewer.closeInventory();

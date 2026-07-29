@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.moderation.ModerationSpamGuard;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
@@ -96,11 +97,11 @@ public final class ChatModerationListener implements Listener {
     }
 
     private void notifySender(final Player sender, final String message) {
-        sender.getScheduler().run(plugin, task -> {
+        PaperEntityTaskSubmission.run(plugin, sender.getScheduler(), () -> {
             if (sender.isOnline()) {
                 sender.sendMessage(message);
             }
-        }, null);
+        }, () -> { });
     }
 
     /** A némított játékos ne kerülhesse meg a chatet privát-üzenet-jellegű parancsokkal. */

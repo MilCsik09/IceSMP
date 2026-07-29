@@ -344,11 +344,16 @@ public final class ModerationRegressionSuite {
                         && invsee.contains("YamlStore.saveAtomic")
                         && invsee.contains("pendingReturns"),
                 "invsee returns must be part of the authoritative persistence lifecycle");
-        check(invsee.contains("target.getScheduler().run") && invsee.contains("viewer.getScheduler().run"),
-                "live inventory must hop to both entity owners");
+        check(invsee.contains("PaperEntityTaskSubmission.run(plugin, target.getScheduler()")
+                        && invsee.contains("PaperEntityTaskSubmission.run(plugin, viewer.getScheduler()"),
+                "live inventory must hop to both entity owners through the rejection-safe adapter");
         check(invsee.contains("InventoryEscrowGate") && invsee.contains("InventoryTransferBarrier")
-                        && invsee.contains("InventoryWriteRecovery.classify"),
+                        && invsee.contains("InventoryWriteRecovery.classify")
+                        && invsee.contains("InventoryEscrowQueue") && invsee.contains("TaskLease"),
                 "live inventory must use tested ownership, recovery and shutdown-drain gates");
+        check(invsee.indexOf("queueReturn(session.viewerId, transfer.displaced)")
+                        < invsee.indexOf("transfer.publishCompletion()"),
+                "target completion must be published only after the displaced return is queued");
         check(manager.contains("mutationGate.close()")
                         && manager.contains("catch (final RuntimeException schedulingFailure)"),
                 "critical persistence failure must close admission even when disable scheduling is rejected");

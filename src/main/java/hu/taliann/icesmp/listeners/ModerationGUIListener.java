@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.gui.ModerationGUI;
 import hu.taliann.icesmp.gui.ModerationGuiHolder;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -109,11 +110,13 @@ public final class ModerationGUIListener implements Listener {
     }
 
     private void teleportToOnline(final Player viewer, final Player target) {
-        target.getScheduler().run(plugin, task -> {
+        PaperEntityTaskSubmission.run(plugin, target.getScheduler(), () -> {
             final Location snapshot = target.getLocation().clone();
-            viewer.getScheduler().run(plugin, viewerTask -> viewer.teleportAsync(snapshot), null);
-        }, () -> viewer.getScheduler().run(plugin, task -> viewer.sendMessage(messages.get(
-                "moderation.player-offline", "&cA céljátékos kilépett.")), null));
+            PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                    () -> viewer.teleportAsync(snapshot), () -> { });
+        }, () -> PaperEntityTaskSubmission.run(plugin, viewer.getScheduler(),
+                () -> viewer.sendMessage(messages.get(
+                        "moderation.player-offline", "&cA céljátékos kilépett.")), () -> { }));
     }
 
     @EventHandler(ignoreCancelled = true)

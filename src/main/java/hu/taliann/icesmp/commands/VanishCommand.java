@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.managers.VanishManager;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -70,9 +71,9 @@ public final class VanishCommand implements BasicCommand {
                 final Player current = Bukkit.getPlayer(targetId);
                 if (current != null) {
                     vanishManager.refreshViewer(current);
-                    current.getScheduler().run(plugin, entityTask -> current.sendMessage(messages.get(
+                    PaperEntityTaskSubmission.run(plugin, current.getScheduler(), () -> current.sendMessage(messages.get(
                             "moderation.vanish-self", "&7Vanish: &f%s",
-                            enabled ? "bekapcsolva" : "kikapcsolva")), null);
+                            enabled ? "bekapcsolva" : "kikapcsolva")), () -> { });
                 }
             });
             ModerationCommandSupport.send(plugin, sender, messages.get("moderation.vanish-state",

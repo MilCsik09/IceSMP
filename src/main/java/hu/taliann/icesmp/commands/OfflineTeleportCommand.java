@@ -2,6 +2,7 @@ package hu.taliann.icesmp.commands;
 
 import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.moderation.LastKnownLocation;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -66,10 +67,11 @@ public final class OfflineTeleportCommand implements BasicCommand {
         }
         final Location destination = new Location(world, saved.x(), saved.y(), saved.z(), saved.yaw(), saved.pitch());
         player.teleportAsync(destination).whenComplete((success, failure) ->
-                player.getScheduler().run(plugin, task -> player.sendMessage(
+                PaperEntityTaskSubmission.run(plugin, player.getScheduler(), () -> player.sendMessage(
                         failure == null && Boolean.TRUE.equals(success)
                                 ? messages.get("moderation.offlinetp-success", "&aTeleportálva: &f%s", target.name())
-                                : messages.get("moderation.offlinetp-failed", "&cA teleportálás nem sikerült.")), null));
+                                : messages.get("moderation.offlinetp-failed", "&cA teleportálás nem sikerült.")),
+                        () -> { }));
     }
 
     @Override

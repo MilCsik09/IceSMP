@@ -3,6 +3,7 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ModerationManager;
 import hu.taliann.icesmp.managers.VanishManager;
+import hu.taliann.icesmp.moderation.PaperEntityTaskSubmission;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -42,10 +43,10 @@ public final class VanishListener implements Listener {
         if (moderationManager.isVanished(event.getPlayer().getUniqueId())) {
             event.joinMessage(null);
         }
-        event.getPlayer().getScheduler().runDelayed(plugin, task -> {
+        PaperEntityTaskSubmission.runDelayed(plugin, event.getPlayer().getScheduler(), () -> {
             vanishManager.refreshViewer(event.getPlayer());
             vanishManager.refreshSubject(event.getPlayer().getUniqueId());
-        }, null, 1L);
+        }, () -> { }, 1L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
