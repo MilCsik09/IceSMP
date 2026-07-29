@@ -93,15 +93,19 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             BASE_SHA=$(resolve_ref "$DISPATCH_BASE")
             HEAD_SHA=$(resolve_ref "$DISPATCH_HEAD")
+            RELEASE_HEAD_SHA="$HEAD_SHA"
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             HEAD_SHA=$(resolve_ref "$PR_HEAD_SHA")
             if [[ "$PR_HEAD_REF" == "docs/full-release-and-team-guide" ]]; then
               BASE_SHA=$(resolve_ref "49cb32740629f3d91a08b753436f3e16d33a494d")
+              RELEASE_HEAD_SHA=$(resolve_ref "4643ab53586f0c1ee7352df16dcd477013e6fad4")
             else
               BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
+              RELEASE_HEAD_SHA="$HEAD_SHA"
             fi
           else
             HEAD_SHA=$(git rev-parse HEAD)
+            RELEASE_HEAD_SHA="$HEAD_SHA"
             if [[ -n "${PUSH_BEFORE_SHA:-}" && ! "$PUSH_BEFORE_SHA" =~ ^0+$ ]]; then
               BASE_SHA=$(resolve_ref "$PUSH_BEFORE_SHA")
             else
@@ -111,8 +115,10 @@ jobs:
 
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "release_head_sha=$RELEASE_HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "Base: $BASE_SHA"
-          echo "Head: $HEAD_SHA"
+          echo "Tested head: $HEAD_SHA"
+          echo "Documented release head: $RELEASE_HEAD_SHA"
 
       - name: Check patch whitespace
         id: diff_check
@@ -163,7 +169,7 @@ jobs:
           python3 scripts/generate_release_inventory.py
           --root .
           --base-ref "${{ steps.refs.outputs.base_sha }}"
-          --head-ref "${{ steps.refs.outputs.head_sha }}"
+          --head-ref "${{ steps.refs.outputs.release_head_sha }}"
           --output build/release-inventory
 
       - name: Package read-only source snapshot
@@ -232,7 +238,8 @@ jobs:
             echo "## Compared refs"
             echo
             echo "- Base: \`${{ steps.refs.outputs.base_sha }}\`"
-            echo "- Head: \`${{ steps.refs.outputs.head_sha }}\`"
+            echo "- Tested documentation head: \`${{ steps.refs.outputs.head_sha }}\`"
+            echo "- Documented release head: \`${{ steps.refs.outputs.release_head_sha }}\`"
             echo "- Artifact: \`${ARTIFACT_NAME}\`"
             if [[ -f build/release-inventory/summary.md ]]; then
               echo
