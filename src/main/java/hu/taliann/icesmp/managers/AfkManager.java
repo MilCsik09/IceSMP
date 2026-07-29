@@ -3,6 +3,7 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.selection.CuboidSelectionService;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.utils.MessageManager;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -19,10 +20,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
 
 /**
  * Native IceSMP AFK system: global inactivity tracking plus multiple strictly validated,
@@ -33,8 +37,15 @@ import java.util.concurrent.ThreadLocalRandom;
  * the owning entity. Console rewards are dispatched on the global-region scheduler. The only
  * cross-thread activity method is {@link #recordActivity(UUID)}, intentionally limited to
  * concurrent scalar state.</p>
+ *
+ * <p>Every queued player tick carries an immutable catalog revision. Reload publishes a new
+ * revision under a short write gate; old queued callbacks fail closed instead of entering a deleted
+ * zone or paying a reward from stale config. Command rewards repeat the revision check on the
+ * global scheduler because dispatch is necessarily asynchronous.</p>
  */
 public final class AfkManager implements PlayerStateCleanup {
+
+    private record CatalogRevision(long generation, AfkZoneCatalog.Snapshot snapshot) { }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -49,8 +60,10 @@ public final class AfkManager implements PlayerStateCleanup {
     private final ConcurrentHashMap<UUID, BossBar> bossBars = new ConcurrentHashMap<>();
     private final Set<UUID> manualAfk = ConcurrentHashMap.newKeySet();
 
-    /** Reload publishes one fully validated immutable snapshot. */
-    private volatile AfkZoneCatalog.Snapshot catalog = AfkZoneCatalog.Snapshot.empty();
+    private final ReentrantReadWriteLock catalogLifecycle = new ReentrantReadWriteLock();
+    private long catalogGeneration;
+    /** Reload publishes one fully validated immutable snapshot and generation as one volatile value. */
+    private volatile CatalogRevision catalog = new CatalogRevision(0L, AfkZoneCatalog.Snapshot.empty());
 
     public AfkManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final CurrencyManager currencyManager, final MessageManager messageManager,
@@ -97,85 +110,138 @@ public final class AfkManager implements PlayerStateCleanup {
     /** Rebuilds and atomically publishes the valid zone set; bad siblings remain isolated. */
     public void reloadZones() {
         final AfkZoneCatalog.Snapshot loaded = AfkZoneCatalog.load(configManager.getConfiguration());
-        catalog = loaded;
+        final long publishedGeneration;
+        catalogLifecycle.writeLock().lock();
+        try {
+            publishedGeneration = ++catalogGeneration;
+            catalog = new CatalogRevision(publishedGeneration, loaded);
+        } finally {
+            catalogLifecycle.writeLock().unlock();
+        }
         for (final Map.Entry<String, List<String>> entry : loaded.errors().entrySet()) {
             for (final String problem : entry.getValue()) {
                 plugin.getLogger().warning("AFK-zóna '" + entry.getKey() + "' letiltva: " + problem);
             }
         }
         plugin.getLogger().info("AFK-zónák betöltve: " + loaded.zones().size()
-                + " aktív definíció, " + loaded.errors().size() + " hibás definíció.");
+                + " aktív definíció, " + loaded.errors().size() + " hibás definíció, generáció "
+                + publishedGeneration + ".");
     }
 
     public Set<String> zoneIds() {
-        return catalog.zones().keySet();
+        return catalog.snapshot().zones().keySet();
     }
 
     public AfkZoneCatalog.Zone zone(final String id) {
-        return catalog.zones().get(normalizeId(id));
+        return catalog.snapshot().zones().get(normalizeId(id));
     }
 
     public List<String> zoneProblems(final String id) {
-        return catalog.errors().getOrDefault(normalizeId(id), List.of());
+        return catalog.snapshot().errors().getOrDefault(normalizeId(id), List.of());
     }
 
     public Map<String, List<String>> allZoneProblems() {
-        return catalog.errors();
+        return catalog.snapshot().errors();
     }
 
     /** Periodic global-driver entrypoint; all player work hops to the player's scheduler. */
     public void tick() {
-        if (!configManager.getBoolean("afk.enabled", true)) {
-            releaseAllZones();
-            return;
-        }
-        final AfkZoneCatalog.Snapshot snapshot = catalog;
-        if (snapshot.zones().isEmpty()) {
-            releaseAllZones();
+        final CatalogRevision revision = catalog;
+        if (!configManager.getBoolean("afk.enabled", true) || revision.snapshot().zones().isEmpty()) {
+            releaseAllZones(revision);
             return;
         }
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            player.getScheduler().run(plugin, task -> tickPlayer(player, snapshot), null);
+            final UUID playerId = player.getUniqueId();
+            try {
+                final ScheduledTask scheduled = player.getScheduler().run(plugin,
+                        task -> tickPlayer(player, revision), () -> clearDetachedState(playerId));
+                if (scheduled == null) {
+                    clearDetachedState(playerId);
+                }
+            } catch (final RuntimeException rejected) {
+                clearDetachedState(playerId);
+            }
         }
     }
 
-    private void releaseAllZones() {
+    private void releaseAllZones(final CatalogRevision revision) {
         if (currentZone.isEmpty()) {
             return;
         }
-        final AfkZoneCatalog.Snapshot snapshot = catalog;
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            if (currentZone.containsKey(player.getUniqueId())) {
-                player.getScheduler().run(plugin, task -> onZoneLeave(player,
-                        snapshot.zones().get(currentZone.get(player.getUniqueId()))), null);
+            final UUID playerId = player.getUniqueId();
+            final String expectedZone = currentZone.get(playerId);
+            if (expectedZone == null) {
+                continue;
+            }
+            try {
+                final ScheduledTask scheduled = player.getScheduler().run(plugin,
+                        task -> releasePlayerZone(player, expectedZone, revision),
+                        () -> clearDetachedState(playerId));
+                if (scheduled == null) {
+                    clearDetachedState(playerId);
+                }
+            } catch (final RuntimeException rejected) {
+                clearDetachedState(playerId);
             }
         }
-        currentZone.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
+        for (final UUID playerId : List.copyOf(currentZone.keySet())) {
+            if (Bukkit.getPlayer(playerId) == null) {
+                clearDetachedState(playerId);
+            }
+        }
     }
 
-    private void tickPlayer(final Player player, final AfkZoneCatalog.Snapshot snapshot) {
-        final UUID playerId = player.getUniqueId();
-        final AfkZoneCatalog.Zone next = findZone(player, snapshot.zones().values());
-        final String previousId = currentZone.get(playerId);
-        final AfkZoneCatalog.Zone previous = previousId == null ? null : snapshot.zones().get(previousId);
-
-        if (next == null) {
-            if (previousId != null) {
-                onZoneLeave(player, previous);
+    private void releasePlayerZone(final Player player, final String expectedZone,
+                                   final CatalogRevision revision) {
+        catalogLifecycle.readLock().lock();
+        try {
+            if (catalog != revision || !Objects.equals(currentZone.get(player.getUniqueId()), expectedZone)) {
+                return;
             }
-            return;
+            if (configManager.getBoolean("afk.enabled", true)
+                    && !revision.snapshot().zones().isEmpty()) {
+                return;
+            }
+            onZoneLeave(player, revision.snapshot().zones().get(expectedZone));
+        } finally {
+            catalogLifecycle.readLock().unlock();
         }
+    }
 
-        final long now = System.currentTimeMillis();
-        if (previousId == null) {
-            onZoneEnter(player, next, now);
-        } else if (!previousId.equals(next.id())) {
-            onZoneLeave(player, previous);
-            onZoneEnter(player, next, now);
+    private void tickPlayer(final Player player, final CatalogRevision revision) {
+        catalogLifecycle.readLock().lock();
+        try {
+            if (catalog != revision || !configManager.getBoolean("afk.enabled", true)) {
+                return;
+            }
+            final AfkZoneCatalog.Snapshot snapshot = revision.snapshot();
+            final UUID playerId = player.getUniqueId();
+            final AfkZoneCatalog.Zone next = findZone(player, snapshot.zones().values());
+            final String previousId = currentZone.get(playerId);
+            final AfkZoneCatalog.Zone previous = previousId == null ? null : snapshot.zones().get(previousId);
+
+            if (next == null) {
+                if (previousId != null) {
+                    onZoneLeave(player, previous);
+                }
+                return;
+            }
+
+            final long now = System.currentTimeMillis();
+            if (previousId == null) {
+                onZoneEnter(player, next, now);
+            } else if (!previousId.equals(next.id())) {
+                onZoneLeave(player, previous);
+                onZoneEnter(player, next, now);
+            }
+
+            advanceProgress(player, next, now, revision);
+            updateUi(player, next);
+        } finally {
+            catalogLifecycle.readLock().unlock();
         }
-
-        advanceProgress(player, next, now);
-        updateUi(player, next);
     }
 
     private AfkZoneCatalog.Zone findZone(final Player player,
@@ -235,7 +301,8 @@ public final class AfkManager implements PlayerStateCleanup {
         }
     }
 
-    private void advanceProgress(final Player player, final AfkZoneCatalog.Zone zone, final long now) {
+    private void advanceProgress(final Player player, final AfkZoneCatalog.Zone zone, final long now,
+                                 final CatalogRevision revision) {
         final UUID playerId = player.getUniqueId();
         final long previousTick = zoneLastTick.getOrDefault(playerId, now);
         final long delta = Math.max(0L, now - previousTick);
@@ -244,49 +311,107 @@ public final class AfkManager implements PlayerStateCleanup {
                 zoneProgress.getOrDefault(playerId, 0L), delta, zone.intervalMillis());
         zoneProgress.put(playerId, advance.remainderMillis());
         if (advance.rewardDue()) {
-            payRewardCycle(player, zone);
+            payRewardCycle(player, zone, revision);
         }
     }
 
-    private void payRewardCycle(final Player player, final AfkZoneCatalog.Zone zone) {
+    private void payRewardCycle(final Player player, final AfkZoneCatalog.Zone zone,
+                                final CatalogRevision revision) {
         for (int roll = 0; roll < zone.rollCount(); roll++) {
             final AfkZoneCatalog.Reward reward = AfkZoneCatalog.pick(zone,
                     ThreadLocalRandom.current().nextDouble());
-            deliverReward(player, zone, reward);
+            deliverReward(player, zone, reward, revision);
         }
     }
 
     private void deliverReward(final Player player, final AfkZoneCatalog.Zone zone,
-                               final AfkZoneCatalog.Reward reward) {
-        switch (reward.type()) {
-            case CURRENCY -> currencyManager.payOutTokens(player, reward.currency(), reward.currencyAmount());
-            case ITEM -> {
-                final ItemStack item = new ItemStack(reward.material(), reward.itemAmount());
-                for (final ItemStack overflow : player.getInventory().addItem(item).values()) {
-                    player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+                               final AfkZoneCatalog.Reward reward, final CatalogRevision revision) {
+        try {
+            switch (reward.type()) {
+                case CURRENCY -> {
+                    currencyManager.payOutTokens(player, reward.currency(), reward.currencyAmount());
+                    confirmReward(player, zone, reward);
                 }
-            }
-            case COMMAND -> {
-                final String command = reward.command()
-                        .replace("{player}", player.getName())
-                        .replace("{uuid}", player.getUniqueId().toString())
-                        .replace("{zone}", zone.id());
-                Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
-                    try {
-                        if (!Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)) {
-                            plugin.getLogger().warning("AFK command reward nem ismert parancs: " + command);
-                        }
-                    } catch (final RuntimeException failure) {
-                        plugin.getLogger().log(java.util.logging.Level.WARNING,
-                                "AFK command reward hibázott: " + command, failure);
+                case ITEM -> {
+                    final ItemStack item = new ItemStack(reward.material(), reward.itemAmount());
+                    for (final ItemStack overflow : player.getInventory().addItem(item).values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), overflow);
                     }
-                });
+                    confirmReward(player, zone, reward);
+                }
+                case COMMAND -> scheduleCommandReward(player, zone, reward, revision);
             }
+        } catch (final RuntimeException failure) {
+            plugin.getLogger().log(Level.WARNING,
+                    "AFK reward kézbesítése hibázott: player=" + player.getUniqueId()
+                            + ", zone=" + zone.id() + ", type=" + reward.type(), failure);
         }
-        plugin.getLogger().info("AFK reward: player=" + player.getUniqueId() + ", zone=" + zone.id()
-                + ", type=" + reward.type() + ", reward=" + reward.description());
+    }
+
+    private void scheduleCommandReward(final Player player, final AfkZoneCatalog.Zone zone,
+                                       final AfkZoneCatalog.Reward reward,
+                                       final CatalogRevision revision) {
+        final UUID playerId = player.getUniqueId();
+        final String command = reward.command()
+                .replace("{player}", player.getName())
+                .replace("{uuid}", playerId.toString())
+                .replace("{zone}", zone.id());
+        try {
+            final ScheduledTask scheduled = Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+                if (catalog != revision) {
+                    plugin.getLogger().warning("Stale AFK command reward kihagyva reload után: player="
+                            + playerId + ", zone=" + zone.id());
+                    return;
+                }
+                final boolean dispatched;
+                try {
+                    dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                } catch (final RuntimeException failure) {
+                    plugin.getLogger().log(Level.WARNING,
+                            "AFK command reward hibázott: " + command, failure);
+                    return;
+                }
+                if (!dispatched) {
+                    plugin.getLogger().warning("AFK command reward nem ismert parancs: " + command);
+                    return;
+                }
+                plugin.getLogger().info(rewardLog(playerId, zone, reward));
+                try {
+                    player.getScheduler().run(plugin, entityTask -> {
+                        if (player.isOnline()) {
+                            sendRewardMessage(player, zone, reward);
+                        }
+                    }, null);
+                } catch (final RuntimeException ignored) {
+                    // The command already succeeded; a retired player may simply miss the chat receipt.
+                }
+            });
+            if (scheduled == null) {
+                plugin.getLogger().warning("AFK command reward global scheduler által visszautasítva: " + command);
+            }
+        } catch (final RuntimeException rejected) {
+            plugin.getLogger().log(Level.WARNING,
+                    "AFK command reward nem ütemezhető: " + command, rejected);
+        }
+    }
+
+    private void confirmReward(final Player player, final AfkZoneCatalog.Zone zone,
+                               final AfkZoneCatalog.Reward reward) {
+        plugin.getLogger().info(rewardLog(player.getUniqueId(), zone, reward));
+        sendRewardMessage(player, zone, reward);
+    }
+
+    private static String rewardLog(final UUID playerId, final AfkZoneCatalog.Zone zone,
+                                    final AfkZoneCatalog.Reward reward) {
+        return "AFK reward: player=" + playerId + ", zone=" + zone.id()
+                + ", type=" + reward.type() + ", reward=" + reward.description();
+    }
+
+    private void sendRewardMessage(final Player player, final AfkZoneCatalog.Zone zone,
+                                   final AfkZoneCatalog.Reward reward) {
         player.sendMessage(messageManager.getMessage("afk-reward-generic",
-                "&b⌚ AFK-jutalom: &f{reward}", Map.of("reward", reward.description(), "zone", zone.displayName())));
+                "&b⌚ AFK-jutalom: &f{reward}",
+                Map.of("reward", reward.description(), "zone", zone.displayName())));
     }
 
     private void updateUi(final Player player, final AfkZoneCatalog.Zone zone) {
@@ -441,13 +566,12 @@ public final class AfkManager implements PlayerStateCleanup {
         return updates;
     }
 
-
     private boolean applyZoneOverrides(final Map<String, ?> updates, final String operation) {
         try {
             configManager.applyOverrides(updates);
             return true;
         } catch (final RuntimeException failure) {
-            plugin.getLogger().log(java.util.logging.Level.SEVERE,
+            plugin.getLogger().log(Level.SEVERE,
                     "AFK-zóna configművelet nem menthető: " + operation, failure);
             return false;
         }
@@ -503,6 +627,18 @@ public final class AfkManager implements PlayerStateCleanup {
         }
     }
 
+    private void clearDetachedState(final UUID playerId) {
+        if (playerId == null) {
+            return;
+        }
+        lastActivity.remove(playerId);
+        currentZone.remove(playerId);
+        zoneProgress.remove(playerId);
+        zoneLastTick.remove(playerId);
+        bossBars.remove(playerId);
+        manualAfk.remove(playerId);
+    }
+
     @Override
     public void clearPlayerState(final UUID playerId) {
         if (playerId == null) {
@@ -513,11 +649,6 @@ public final class AfkManager implements PlayerStateCleanup {
             cleanup(player);
             return;
         }
-        lastActivity.remove(playerId);
-        currentZone.remove(playerId);
-        zoneProgress.remove(playerId);
-        zoneLastTick.remove(playerId);
-        bossBars.remove(playerId);
-        manualAfk.remove(playerId);
+        clearDetachedState(playerId);
     }
 }
