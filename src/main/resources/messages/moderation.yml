@@ -55,6 +55,7 @@ messages:
 
     invsee-usage: '&cHasználat: /invsee <játékos> [read|edit] [main|ender]'
     invsee-self: '&cA saját inventorydat nem nyithatod meg adminnézetben.'
+    invsee-shutting-down: '&cAz inventory-nézet éppen leáll.'
     invsee-target-left: '&cA céljátékos kilépett; a live nézet bezárult.'
     invsee-edit-failed: '&cA szerkesztés megszakadt; a kurzortárgyad visszakaptad.'
     invsee-escrow-restored: '&aA megszakadt inventory-szerkesztés tárgyai visszakerültek hozzád.'

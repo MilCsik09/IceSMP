@@ -64,7 +64,6 @@ public final class ActivePunishmentsCommand implements BasicCommand {
             return List.of();
         }
         final String prefix = args.length == 0 ? "" : args[0].toLowerCase(java.util.Locale.ROOT);
-        return org.bukkit.Bukkit.getOnlinePlayers().stream().map(org.bukkit.entity.Player::getName)
-                .filter(name -> name.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)).toList();
+        return ModerationCommandSupport.visibleOnlineNames(source.getSender(), prefix);
     }
 }

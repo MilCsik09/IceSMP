@@ -62,13 +62,22 @@ public final class VanishCommand implements BasicCommand {
                         "&cA vanish állapot nem menthető."));
                 return;
             }
-            vanishManager.refreshSubject(targetId);
-            vanishManager.refreshViewer(target);
+            // The persistence callback runs on the async scheduler. Resolve the current session and
+            // start all visibility/entity work from the global scheduler instead of carrying the
+            // pre-save Player instance across a disconnect/reconnect race.
+            Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+                vanishManager.refreshSubject(targetId);
+                final Player current = Bukkit.getPlayer(targetId);
+                if (current != null) {
+                    vanishManager.refreshViewer(current);
+                    current.getScheduler().run(plugin, entityTask -> current.sendMessage(messages.get(
+                            "moderation.vanish-self", "&7Vanish: &f%s",
+                            enabled ? "bekapcsolva" : "kikapcsolva")), null);
+                }
+            });
             ModerationCommandSupport.send(plugin, sender, messages.get("moderation.vanish-state",
                     "&aVanish állapot mentve: &f%s &7— &f%s", targetName,
                     enabled ? "bekapcsolva" : "kikapcsolva"));
-            target.getScheduler().run(plugin, task -> target.sendMessage(messages.get("moderation.vanish-self",
-                    "&7Vanish: &f%s", enabled ? "bekapcsolva" : "kikapcsolva")), null);
         });
     }
 
@@ -79,7 +88,6 @@ public final class VanishCommand implements BasicCommand {
             return List.of();
         }
         final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+        return ModerationCommandSupport.visibleOnlineNames(source.getSender(), prefix);
     }
 }

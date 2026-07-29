@@ -60,22 +60,26 @@ public final class VanishManager implements PlayerStateCleanup {
         viewer.getScheduler().run(plugin, task -> applyViewer(viewer), null);
     }
 
-    /** Reconciles every viewer; each operation is scheduled on its owner. */
+    /** Reconciles every viewer; global discovery is followed by one entity-owned task per viewer. */
     public void refreshAll() {
-        final Set<UUID> current = ConcurrentHashMap.newKeySet();
-        for (final Player viewer : Bukkit.getOnlinePlayers()) {
-            current.add(viewer.getUniqueId());
-            refreshViewer(viewer);
-        }
-        onlinePlayers.retainAll(current);
-        onlinePlayers.addAll(current);
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            final Set<UUID> current = ConcurrentHashMap.newKeySet();
+            for (final Player viewer : Bukkit.getOnlinePlayers()) {
+                current.add(viewer.getUniqueId());
+                refreshViewer(viewer);
+            }
+            onlinePlayers.retainAll(current);
+            onlinePlayers.addAll(current);
+        });
     }
 
-    /** Reconciles a changed subject across all viewers without touching viewers off-owner. */
+    /** Reconciles a changed subject across all viewers without discovering them off-global. */
     public void refreshSubject(final UUID subjectId) {
-        for (final Player viewer : Bukkit.getOnlinePlayers()) {
-            viewer.getScheduler().run(plugin, task -> applySubject(viewer, subjectId), null);
-        }
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            for (final Player viewer : Bukkit.getOnlinePlayers()) {
+                viewer.getScheduler().run(plugin, entityTask -> applySubject(viewer, subjectId), null);
+            }
+        });
     }
 
     private void applyViewer(final Player viewer) {

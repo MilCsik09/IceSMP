@@ -7,6 +7,9 @@ import java.util.UUID;
 public record LastKnownLocation(UUID playerId, String playerName, UUID worldId, String worldName,
                                 double x, double y, double z, float yaw, float pitch,
                                 long capturedAtMillis) {
+    private static final double MAX_HORIZONTAL = 30_000_000.0D;
+    private static final double MAX_VERTICAL = 20_000_000.0D;
+
     public LastKnownLocation {
         Objects.requireNonNull(playerId, "playerId");
         Objects.requireNonNull(worldId, "worldId");
@@ -15,6 +18,13 @@ public record LastKnownLocation(UUID playerId, String playerName, UUID worldId, 
         if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
                 || !Float.isFinite(yaw) || !Float.isFinite(pitch)) {
             throw new IllegalArgumentException("location contains non-finite coordinate");
+        }
+        if (Math.abs(x) > MAX_HORIZONTAL || Math.abs(z) > MAX_HORIZONTAL
+                || Math.abs(y) > MAX_VERTICAL) {
+            throw new IllegalArgumentException("location coordinate is outside the safe world range");
+        }
+        if (pitch < -90.0F || pitch > 90.0F) {
+            throw new IllegalArgumentException("pitch must be within -90..90 degrees");
         }
         if (capturedAtMillis <= 0L) {
             throw new IllegalArgumentException("capturedAtMillis must be positive");

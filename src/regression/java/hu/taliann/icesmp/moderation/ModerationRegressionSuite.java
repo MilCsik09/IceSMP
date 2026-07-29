@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.moderation;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,7 +31,13 @@ public final class ModerationRegressionSuite {
         historyIsNewestFirst();
         escrowInsertHasExactlyOneOwner();
         escrowDisplacedItemHasExactlyOneReturnOwner();
-        locationRejectsNonFiniteCoordinates();
+        targetWriteRollbackReturnsInsertedOwnership();
+        targetWriteFailureRecoveryIsOneOwner();
+        transferBarrierRejectsLateWorkAndDrainsAdmissions();
+        mutationGateFailsClosedBeforeDisableCallback();
+        strictYamlNumbersRejectTruncationAndOverflow();
+        unicodeFilterDoesNotMisalignIndices();
+        locationRejectsUnsafeCoordinates();
         durationParserRejectsOverflowWithoutTurningItIntoAReason();
         sourceInvariants();
         System.out.println("Moderation regression suite passed.");
@@ -123,6 +131,12 @@ public final class ModerationRegressionSuite {
                 PunishmentState.RECORDED, null, null, null, "", false, active.id());
         expectThrows(IllegalArgumentException.class, () -> new PunishmentLedger(List.of(revoked, action)));
 
+        final PunishmentRecord wrongTargetName = new PunishmentRecord(UUID.randomUUID(), PunishmentType.UNMUTE,
+                TARGET, "Impostor", ADMIN, "Admin", "appeal", 2_000L, null,
+                PunishmentState.RECORDED, null, null, null, "", false, active.id());
+        expectThrows(IllegalArgumentException.class,
+                () -> new PunishmentLedger(List.of(revoked, wrongTargetName)));
+
         expectThrows(IllegalArgumentException.class, () -> new PunishmentRecord(UUID.randomUUID(),
                 PunishmentType.TEMPORARY_MUTE, TARGET, "Target", ADMIN, "Admin", "mute", 1_000L,
                 2_000L, PunishmentState.REVOKED, ADMIN, "Admin", 2_000L,
@@ -191,11 +205,93 @@ public final class ModerationRegressionSuite {
         check(winners.get() == 1, "displaced stack must be returned by exactly one cleanup path");
     }
 
-    private static void locationRejectsNonFiniteCoordinates() {
+    private static void targetWriteRollbackReturnsInsertedOwnership() {
+        final InventoryEscrowGate gate = new InventoryEscrowGate();
+        check(gate.claimTarget(), "target must claim before a write attempt");
+        check(gate.abortTargetAndClaimInsertedReturn(),
+                "a rolled-back target write must transfer ownership to inserted-item recovery");
+        check(gate.state() == InventoryEscrowGate.State.INSERTED_RETURN_CLAIMED,
+                "rolled-back target write must not remain TARGET_CLAIMED");
+        check(!gate.claimDisplacedReturn(), "no displaced item exists after a rolled-back write");
+    }
+
+    private static void targetWriteFailureRecoveryIsOneOwner() {
+        check(InventoryWriteRecovery.classify(false, true) == InventoryWriteRecovery.Outcome.ROLLED_BACK,
+                "observable pre-state must return inserted ownership");
+        check(InventoryWriteRecovery.classify(true, false) == InventoryWriteRecovery.Outcome.COMMITTED,
+                "observable post-state must return displaced ownership");
+        check(InventoryWriteRecovery.classify(false, false) == InventoryWriteRecovery.Outcome.UNKNOWN,
+                "unrelated post-state must fail closed instead of duplicating an inserted item");
+        check(InventoryWriteRecovery.classify(true, true) == InventoryWriteRecovery.Outcome.ROLLED_BACK,
+                "equivalent pre/post stacks must still choose exactly one recovery owner");
+    }
+
+    private static void transferBarrierRejectsLateWorkAndDrainsAdmissions() throws Exception {
+        final InventoryTransferBarrier barrier = new InventoryTransferBarrier();
+        check(barrier.reserve(), "first inventory transfer must be admitted");
+        barrier.close();
+        check(!barrier.reserve(), "shutdown must reject every later inventory transfer");
+        final Thread release = Thread.ofPlatform().start(() -> {
+            try {
+                Thread.sleep(20L);
+            } catch (final InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            barrier.release();
+        });
+        check(barrier.awaitDrained(2_000L), "shutdown must wait for an admitted inventory transfer");
+        release.join(2_000L);
+        check(!release.isAlive(), "inventory transfer releaser must terminate");
+    }
+
+    private static void mutationGateFailsClosedBeforeDisableCallback() throws Exception {
+        final ModerationMutationGate gate = new ModerationMutationGate();
+        check(gate.reserve(), "first moderation mutation must be admitted");
+        gate.close();
+        check(!gate.reserve(), "persistence circuit must reject mutations immediately");
+        final Thread release = Thread.ofPlatform().start(gate::release);
+        check(gate.closeAndAwait(2_000L), "already admitted moderation work must drain");
+        release.join(2_000L);
+    }
+
+    private static void strictYamlNumbersRejectTruncationAndOverflow() {
+        check(StrictYamlNumber.requireLong(42L, "long") == 42L,
+                "integral YAML long must remain exact");
+        check(StrictYamlNumber.requireLong(new BigDecimal("42.000"), "decimal") == 42L,
+                "integral decimal YAML number must be accepted exactly");
+        expectThrows(IllegalArgumentException.class,
+                () -> StrictYamlNumber.requireLong(new BigDecimal("42.5"), "fraction"));
+        expectThrows(IllegalArgumentException.class,
+                () -> StrictYamlNumber.requireLong(Double.NaN, "nan"));
+        expectThrows(IllegalArgumentException.class,
+                () -> StrictYamlNumber.requireLong(Double.POSITIVE_INFINITY, "infinity"));
+        expectThrows(IllegalArgumentException.class,
+                () -> StrictYamlNumber.requireLong(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE), "overflow"));
+        expectThrows(IllegalArgumentException.class,
+                () -> StrictYamlNumber.requireInt((long) Integer.MAX_VALUE + 1L, "schema"));
+    }
+
+    private static void unicodeFilterDoesNotMisalignIndices() {
+        final String censored = ModerationTextFilter.censorIgnoreCase("İX-i", "i");
+        check(censored != null && censored.endsWith("-*"),
+                "Unicode case-insensitive censoring must complete without index corruption");
+        check("a***b".equals(ModerationTextFilter.censorIgnoreCase("aFoOb", "foo")),
+                "literal censoring must preserve surrounding text and match case-insensitively");
+        check(ModerationTextFilter.containsIgnoreCase("a.FOO+b", ".foo+"),
+                "configured filter words must be treated as literals, not regex syntax");
+    }
+
+    private static void locationRejectsUnsafeCoordinates() {
         expectThrows(IllegalArgumentException.class, () -> new LastKnownLocation(TARGET, "Target",
                 UUID.randomUUID(), "world", Double.NaN, 64, 0, 0, 0, 1_000L));
         expectThrows(IllegalArgumentException.class, () -> new LastKnownLocation(TARGET, "Target",
                 UUID.randomUUID(), "world", 0, 64, Double.POSITIVE_INFINITY, 0, 0, 1_000L));
+        expectThrows(IllegalArgumentException.class, () -> new LastKnownLocation(TARGET, "Target",
+                UUID.randomUUID(), "world", 30_000_001, 64, 0, 0, 0, 1_000L));
+        expectThrows(IllegalArgumentException.class, () -> new LastKnownLocation(TARGET, "Target",
+                UUID.randomUUID(), "world", 0, 64, 0, 0, 90.01F, 1_000L));
+        new LastKnownLocation(TARGET, "Target", UUID.randomUUID(), "world",
+                30_000_000, -20_000_000, -30_000_000, 720, -90, 1_000L);
     }
 
     private static void durationParserRejectsOverflowWithoutTurningItIntoAReason() {
@@ -223,31 +319,69 @@ public final class ModerationRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
         final String privateMessage = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java"));
+        final String chatModeration = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/ChatModerationListener.java"));
+        final String moderationAction = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java"));
+        final String moderationSupport = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/commands/ModerationCommandSupport.java"));
+        final String reports = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java"));
         final String moderationGui = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java"));
         final String vanishCommand = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java"));
         final String moderationMessages = Files.readString(Path.of(
                 "src/main/resources/messages/moderation.yml"));
+
         check(manager.contains("implements PersistentStore, PlayerStateCleanup"),
                 "moderation must use the shared persistence and cleanup lifecycle");
         check(manager.contains("YamlStore.saveAtomic") && manager.contains("restoreLocked(before)"),
                 "authoritative mutation must use atomic save plus rollback");
         check(core.contains("moderationManager") && core.contains("storeCoordinator"),
                 "moderation store must be wired through the shared coordinator");
+        check(invsee.contains("implements PersistentStore, PlayerStateCleanup")
+                        && invsee.contains("YamlStore.saveAtomic")
+                        && invsee.contains("pendingReturns"),
+                "invsee returns must be part of the authoritative persistence lifecycle");
         check(invsee.contains("target.getScheduler().run") && invsee.contains("viewer.getScheduler().run"),
                 "live inventory must hop to both entity owners");
-        check(invsee.contains("InventoryEscrowGate"), "live inventory must use the tested single-claim gate");
+        check(invsee.contains("InventoryEscrowGate") && invsee.contains("InventoryTransferBarrier")
+                        && invsee.contains("InventoryWriteRecovery.classify"),
+                "live inventory must use tested ownership, recovery and shutdown-drain gates");
+        check(manager.contains("mutationGate.close()")
+                        && manager.contains("catch (final RuntimeException schedulingFailure)"),
+                "critical persistence failure must close admission even when disable scheduling is rejected");
         check(manager.contains("storageFile.isFile() && yaml.getKeys(false).isEmpty()"),
                 "an existing empty authoritative moderation file must fail closed");
-        check(manager.contains("prepareShutdown") && manager.contains("inFlightMutations")
+        check(manager.contains("prepareShutdown") && manager.contains("mutationGate.closeAndAwait")
                         && core.contains("moderationExpiryTask.cancel()")
                         && core.indexOf("moderationManager.prepareShutdown")
                         < core.indexOf("storeCoordinator.beginShutdown"),
                 "shutdown must cancel expiry and drain durable moderation mutations before final save");
+        check(core.contains("moderationManager, invseeManager")
+                        && core.indexOf("invseeManager.prepareShutdown")
+                        < core.indexOf("storeCoordinator.beginShutdown"),
+                "invsee escrow must load/save commonly and drain before shutdown snapshot");
         check(privateMessage.contains("final UUID senderId = sender.getUniqueId()")
                         && privateMessage.contains("manager.logChatEvent(\"PM_DELIVERED\", senderId, senderName"),
                 "private-message delivery must carry scalar sender identity across entity schedulers");
+        check(chatModeration.contains("notifySender(sender")
+                        && chatModeration.contains("logChatEvent(\"MUTED\", senderId, senderName")
+                        && !chatModeration.contains("logChatEvent(\"MUTED\", sender,"),
+                "async chat must carry scalar identity and hop entity feedback to the sender scheduler");
+        check(moderationAction.contains("Bukkit.getGlobalRegionScheduler().run")
+                        && moderationAction.contains("manager.activeBan(current.getUniqueId())")
+                        && moderationAction.contains("manager.activeMute(current.getUniqueId())"),
+                "post-commit punishment effects must resolve the current session and suppress stale revocations");
+        check(moderationSupport.contains("visibleOnlineNames")
+                        && moderationSupport.contains("viewer.canSee(target)"),
+                "moderation completions must share viewer-aware visibility filtering");
+        check(reports.contains("hasPermission(PERMISSION)"),
+                "report ID completion must not disclose open reports without permission");
+        check(privateMessage.contains("Bukkit.getGlobalRegionScheduler().run")
+                        && moderationSupport.contains("Bukkit.getGlobalRegionScheduler().run"),
+                "cross-entity message and SocialSpy resolution must begin on the global scheduler");
         check(moderationGui.contains("permissionForSlot(slot)")
                         && moderationGui.contains("!viewer.hasPermission(requiredPermission)"),
                 "GUI actions must re-check the same permission even when a filler slot is clicked");

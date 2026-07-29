@@ -598,7 +598,7 @@ public final class IceSMPCore {
                 factionTreasuryManager, kingManager, economyEventManager, marketManager, seasonManager,
                 exchangeBoardManager, statsManager, parkourManager, questManager, communityGoalManager,
                 claimManager, donationChestManager, npcBindingManager, crateManager, reportManager,
-                moderationManager, chronicleManager, corruptionManager, seasonFinaleManager,
+                moderationManager, invseeManager, chronicleManager, corruptionManager, seasonFinaleManager,
                 seasonMonumentManager, hiddenSpotManager,
                 guildManager,
                 professionWeeklyGoalManager,
@@ -1081,6 +1081,10 @@ public final class IceSMPCore {
         // final-save gate closes. Otherwise a queued expiry/command could commit after shutdown save.
         if (!moderationManager.prepareShutdown(10_000L)) {
             plugin.getLogger().severe("A moderációs tranzakciók nem álltak le; a shutdown-save megtagadva.");
+            return;
+        }
+        if (!invseeManager.prepareShutdown(10_000L)) {
+            plugin.getLogger().severe("Az invsee escrow tranzakciók nem álltak le; a shutdown-save megtagadva.");
             return;
         }
         // Atomically wait for any running common autosave and close its gate before shutdown hooks
@@ -1654,7 +1658,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ClaimTrustGUIListener(claimManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatFormatListener(configManager, hudManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ChatModerationListener(
-                configManager, moderationManager, messageManager), plugin);
+                plugin, configManager, moderationManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ModerationLoginListener(
                 moderationManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.VanishListener(

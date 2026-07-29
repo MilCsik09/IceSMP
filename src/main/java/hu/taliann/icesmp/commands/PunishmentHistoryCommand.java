@@ -87,8 +87,7 @@ public final class PunishmentHistoryCommand implements BasicCommand {
         }
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+            return ModerationCommandSupport.visibleOnlineNames(source.getSender(), prefix);
         }
         return List.of();
     }

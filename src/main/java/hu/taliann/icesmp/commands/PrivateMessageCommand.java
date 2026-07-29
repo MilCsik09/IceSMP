@@ -139,19 +139,22 @@ public final class PrivateMessageCommand implements BasicCommand {
                            final String message, final String status) {
         final String rendered = messages.get("moderation.socialspy-line",
                 "&8[SPY:%s:%s] &7%s → %s: &f%s", channel, status, senderName, recipientName, message);
-        for (final UUID spyId : manager.socialSpyRecipients()) {
-            if (spyId.equals(senderId) || spyId.equals(recipientId)) {
-                continue;
+        final java.util.Set<UUID> recipients = manager.socialSpyRecipients();
+        Bukkit.getGlobalRegionScheduler().run(plugin, globalTask -> {
+            for (final UUID spyId : recipients) {
+                if (spyId.equals(senderId) || spyId.equals(recipientId)) {
+                    continue;
+                }
+                final Player spy = Bukkit.getPlayer(spyId);
+                if (spy != null) {
+                    spy.getScheduler().run(plugin, entityTask -> {
+                        if (spy.isOnline() && spy.hasPermission(Permissions.MODERATION_SOCIALSPY)) {
+                            spy.sendMessage(rendered);
+                        }
+                    }, null);
+                }
             }
-            final Player spy = Bukkit.getPlayer(spyId);
-            if (spy != null) {
-                spy.getScheduler().run(plugin, task -> {
-                    if (spy.isOnline() && spy.hasPermission(Permissions.MODERATION_SOCIALSPY)) {
-                        spy.sendMessage(rendered);
-                    }
-                }, null);
-            }
-        }
+        });
     }
 
     @Override

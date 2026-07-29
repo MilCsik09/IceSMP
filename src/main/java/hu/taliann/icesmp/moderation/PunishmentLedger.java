@@ -144,7 +144,8 @@ public final class PunishmentLedger {
                         || (record.type() == PunishmentType.UNBAN
                         && linked.type().family() == PunishmentType.Family.BAN));
                 if (linked == null || linked.state() != PunishmentState.REVOKED
-                        || !linked.targetId().equals(record.targetId()) || !familyMatches
+                        || !linked.targetId().equals(record.targetId())
+                        || !linked.targetName().equals(record.targetName()) || !familyMatches
                         || !Objects.equals(linked.revokedAtMillis(), record.createdAtMillis())
                         || !Objects.equals(linked.revokedById(), record.administratorId())
                         || !linked.revokedByName().equals(record.administratorName())

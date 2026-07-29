@@ -125,26 +125,62 @@ public final class ModerationActionCommand implements BasicCommand {
                 "&a%s rögzítve: &f%s &7(%s)&a. Azonosító: &f%s",
                 typeName(record.type()), target.name(),
                 ModerationCommandSupport.durationText(action.durationMillis()), record.id()));
-        final Player online = target.online();
-        if (online == null) {
+
+        if (record.type() == PunishmentType.KICK) {
+            // A kick a parancs idején létező sessionre vonatkozik. Egy közben újracsatlakozott
+            // sessiont nem szabad a régi kick tranzakcióval kirúgni.
+            final Player originalSession = target.online();
+            if (originalSession != null) {
+                originalSession.getScheduler().run(plugin, task -> {
+                    if (originalSession.isOnline()) {
+                        kick(originalSession, record);
+                    }
+                }, null);
+            }
             return;
         }
-        online.getScheduler().run(plugin, task -> {
-            if (!online.isOnline()) {
+
+        // A durable save async útja alatt a korábban feloldott Player objektum kiléphet és egy új
+        // session érkezhet. Ban/mute/warning mellékhatást ezért UUID alapján, a commit UTÁN oldunk fel.
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            final Player current = Bukkit.getPlayer(target.id());
+            if (current == null) {
                 return;
             }
-            if (record.type() == PunishmentType.KICK || record.type().family() == PunishmentType.Family.BAN) {
-                online.kick(messages.getComponent("moderation.disconnect",
-                        "&c%s\n&7Ok: &f%s", typeName(record.type()), record.reason()));
-            } else if (record.type().family() == PunishmentType.Family.MUTE) {
-                online.sendMessage(messages.get("moderation.mute-notify",
+            current.getScheduler().run(plugin, entityTask -> applyCurrentSessionEffect(current, action, record), null);
+        });
+    }
+
+    private void applyCurrentSessionEffect(final Player current, final ParsedAction action,
+                                           final PunishmentRecord record) {
+        if (!current.isOnline()) {
+            return;
+        }
+        if (record.type().family() == PunishmentType.Family.BAN) {
+            final boolean stillActive = manager.activeBan(current.getUniqueId())
+                    .map(active -> active.id().equals(record.id()))
+                    .orElse(false);
+            if (stillActive) {
+                kick(current, record);
+            }
+        } else if (record.type().family() == PunishmentType.Family.MUTE) {
+            final boolean stillActive = manager.activeMute(current.getUniqueId())
+                    .map(active -> active.id().equals(record.id()))
+                    .orElse(false);
+            if (stillActive) {
+                current.sendMessage(messages.get("moderation.mute-notify",
                         "&cNémítva lettél. &7Időtartam: &f%s&7, ok: &f%s",
                         ModerationCommandSupport.durationText(action.durationMillis()), record.reason()));
-            } else if (record.type() == PunishmentType.WARNING) {
-                online.sendMessage(messages.get("moderation.warning-notify",
-                        "&eFigyelmeztetést kaptál. &7Ok: &f%s", record.reason()));
             }
-        }, null);
+        } else if (record.type() == PunishmentType.WARNING) {
+            current.sendMessage(messages.get("moderation.warning-notify",
+                    "&eFigyelmeztetést kaptál. &7Ok: &f%s", record.reason()));
+        }
+    }
+
+    private void kick(final Player player, final PunishmentRecord record) {
+        player.kick(messages.getComponent("moderation.disconnect",
+                "&c%s\n&7Ok: &f%s", typeName(record.type()), record.reason()));
     }
 
     private int minimumArguments() {
@@ -190,8 +226,7 @@ public final class ModerationActionCommand implements BasicCommand {
         }
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+            return ModerationCommandSupport.visibleOnlineNames(source.getSender(), prefix);
         }
         if ((configuredType == PunishmentType.MUTE || configuredType == PunishmentType.TEMPORARY_BAN)
                 && args.length == 2) {

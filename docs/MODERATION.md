@@ -4,7 +4,7 @@ Ez a dokumentum a `feature/native-moderation-suite` scope bizonyítható állapo
 
 ## Architektúra
 
-A `ModerationManager` az egyetlen autoritatív moderációs store. A `moderation-data.yml` sémája tartalmazza a punishment ledgert, a SocialSpy- és vanish-beállításokat, valamint az utolsó kijelentkezési helyeket. A manager a közös `PersistentStoreCoordinator` tagja; mentéshez `YamlStore.saveAtomic` útvonalat használ.
+A `ModerationManager` a punishment/visibility autoritatív store. A `moderation-data.yml` sémája tartalmazza a punishment ledgert, a SocialSpy- és vanish-beállításokat, valamint az utolsó kijelentkezési helyeket. Az invsee visszaadandó tárgyai külön `invsee-escrow.yml` autoritatív store-ban élnek. Mindkettő a közös `PersistentStoreCoordinator` tagja és `YamlStore.saveAtomic` mentést használ.
 
 Minden mutáció:
 
@@ -13,7 +13,7 @@ Minden mutáció:
 3. alkalmazza a domainmutációt;
 4. atomikusan ment;
 5. hiba esetén visszaállítja a snapshotot;
-6. kritikus autoritatív írási hibánál a meglévő persistence circuit-breaker letiltja a plugint.
+6. kritikus autoritatív írási hibánál a persistence circuit-breaker azonnal lezárja az új mutációk admission gate-jét, majd letiltja a plugint.
 
 A sérült vagy részleges state betöltése `YamlStore.failCorrupt` útvonalon fail-closed. Nincs schema migration: a szerver még nem futott productionben.
 
@@ -49,7 +49,9 @@ A `icesmp.admin.moderation` parent kiosztja az adminjogokat. A vanished admin me
 
 Az async pre-login listener csak a szálbiztos ledger-read modellt olvassa. Aktív ban esetén okot és tempbannál hátralévő időt ad vissza. Lejárt tempban nem blokkol.
 
-A privát üzenetet a címzett entity schedulere kézbesíti. A feladó csak a tényleges címzett-task lefutása után kap sikervisszajelzést és csak ekkor épül fel a `/reply` kapcsolat. A SocialSpy külön jelzi a `DELIVERED`, `BLOCKED_MUTED`, `BLOCKED_FILTER`, `BLOCKED_SPAM`, `TARGET_OFFLINE` és `TARGET_RETIRED` állapotokat; nem végez packet interceptiont.
+A privát üzenetet a címzett entity schedulere kézbesíti. A feladó csak a tényleges címzett-task lefutása után kap sikervisszajelzést és csak ekkor épül fel a `/reply` kapcsolat. A SocialSpy külön jelzi a `DELIVERED`, `BLOCKED_MUTED`, `BLOCKED_FILTER`, `BLOCKED_SPAM`, `TARGET_OFFLINE` és `TARGET_RETIRED` állapotokat; a spy-játékosok feloldása global scheduleren, a kézbesítés a saját entity schedulerükön történik. Nem végez packet interceptiont.
+
+Az async chat-listener csak UUID/név/text snapshotot visz át: a blokkoló visszajelzés mindig a küldő entity schedulerén fut. A ban mentése utáni kick UUID alapján az aktuális sessiont oldja fel, és csak addig fut le, amíg ugyanaz a banrekord aktív; egy közben végrehajtott unban nem okozhat késői kirúgást.
 
 ## Vanish
 
@@ -66,7 +68,9 @@ Nincs offline playerdata parser. A cél inventoryjának olvasása/írása kizár
 - target disconnect előtt a beillesztett tárgy visszakerüljön;
 - admin disconnect után a kiszorított tárgy reconnectkor kerüljön vissza.
 
-Sikeres edit külön `logs/moderation-audit.log` sort ír. A runtime reconnect-escrow memóriabeli; process crash közbeni exactly-once garanciát a kód nem állít.
+Sikeres edit külön `logs/moderation-audit.log` sort ír. A kiszorított/visszaadandó stack előbb a közös lifecycle-ba regisztrált `invsee-escrow.yml` memóriasnapshotjába kerül, és csak ezután próbálja a viewer callback átvenni. Disable előtt az edit admission gate lezár, az összes már befogadott target/viewer callback drainelődik, majd a végső common save rögzíti a fennmaradó escrow-t. Így normál reload/disable/restart alatt a visszaadás nem csak process-memóriára támaszkodik.
+
+**Garanciahatár:** nincs több-store/player-inventory WAL vagy formális exactly-once protokoll. A process azonnali megszakítása a target inventory írása és a következő tartós escrow-save között elvesztést, illetve a reconnect-visszaadás és az azt követő save között ismételt visszaadást okozhat. Ezekhez külön crash-fault-injection és tartós kétfázisú journal kellene; a kód csak a kontrollált lifecycle-t teszi determinisztikussá.
 
 ## Config
 
@@ -83,6 +87,6 @@ A runtime immutable validált snapshotot használ. Ismeretlen filter mode fail-s
 
 ## Automatizált bizonyíték és kézi korlát
 
-A `moderationRegressionTest` valódi domain-viselkedést tesztel: restart snapshot, temp expiry, ban read model, kétirányúan validált unmute/unban auditlink, warning/kick history, duplikált/ellentmondó/árva revocation/partial state, kétirányú inventory single-claim és non-finite location. A teljes Gradle build fordítja a Paper-integrációt.
+A `moderationRegressionTest` valódi domain-viselkedést tesztel: restart snapshot, temp expiry, ban read model, kétirányúan validált unmute/unban auditlink, warning/kick history, duplikált/ellentmondó/árva revocation/partial state, inventory single-claim + target-write rollback, shutdown admission/drain gate, szigorú YAML-számdekódolás, Unicode-biztos literal chat-filter és location-határok. A teljes Gradle build fordítja a Paper-integrációt, a forrásinvariánsok pedig a scheduler-, permission- és common-persistence wiringot őrzik.
 
 A valódi Folia scheduler-ownership, reconnect, reload, permission és fault-injection esetekhez továbbra is runtime playtest kell; enélkül az SModeration és InvSee++ eltávolítása nem minősül véglegesen igazoltnak.

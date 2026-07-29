@@ -74,11 +74,14 @@ public final class ModerationRevokeCommand implements BasicCommand {
                 "&a%s feloldva: &f%s&a. Műveletazonosító: &f%s",
                 family == PunishmentType.Family.MUTE ? "Némítás" : "Kitiltás",
                 target.name(), result.value().action().id()));
-        if (target.online() != null) {
-            target.online().getScheduler().run(plugin, task -> target.online().sendMessage(messages.get(
-                    "moderation.revoke-notify", "&aA(z) %s büntetésed feloldásra került.",
-                    family == PunishmentType.Family.MUTE ? "némítás" : "kitiltás")), null);
-        }
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            final Player current = Bukkit.getPlayer(target.id());
+            if (current != null) {
+                current.getScheduler().run(plugin, entityTask -> current.sendMessage(messages.get(
+                        "moderation.revoke-notify", "&aA(z) %s büntetésed feloldásra került.",
+                        family == PunishmentType.Family.MUTE ? "némítás" : "kitiltás")), null);
+            }
+        });
     }
 
     @Override
@@ -88,7 +91,6 @@ public final class ModerationRevokeCommand implements BasicCommand {
             return List.of();
         }
         final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+        return ModerationCommandSupport.visibleOnlineNames(source.getSender(), prefix);
     }
 }

@@ -33,6 +33,11 @@ public final class InventoryEscrowGate {
         }
     }
 
+    /** Returns ownership to the inserted-stack recovery path after a target write was rolled back. */
+    public boolean abortTargetAndClaimInsertedReturn() {
+        return state.compareAndSet(TARGET_CLAIMED, INSERTED_RETURN_CLAIMED);
+    }
+
     public boolean claimDisplacedReturn() {
         return state.get() == COMPLETE && displacedReturnClaimed.compareAndSet(false, true);
     }

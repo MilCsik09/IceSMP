@@ -1,10 +1,13 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.moderation.LastKnownLocation;
+import hu.taliann.icesmp.moderation.ModerationMutationGate;
+import hu.taliann.icesmp.moderation.ModerationTextFilter;
 import hu.taliann.icesmp.moderation.PunishmentLedger;
 import hu.taliann.icesmp.moderation.PunishmentRecord;
 import hu.taliann.icesmp.moderation.PunishmentState;
 import hu.taliann.icesmp.moderation.PunishmentType;
+import hu.taliann.icesmp.moderation.StrictYamlNumber;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.storage.CriticalPersistenceWriteError;
 import hu.taliann.icesmp.storage.PersistentStore;
@@ -14,7 +17,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -104,9 +106,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     private final File chatLogFile;
     private final File auditLogFile;
     private final Object stateLock = new Object();
-    private final Object mutationLifecycleLock = new Object();
-    private int inFlightMutations;
-    private boolean acceptingMutations = true;
+    private final ModerationMutationGate mutationGate = new ModerationMutationGate();
 
     private PunishmentLedger ledger = new PunishmentLedger();
     private Set<UUID> socialSpy = new HashSet<>();
@@ -291,7 +291,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     private <T> void mutateAsync(final StateMutation<T> mutation,
                                  final Consumer<OperationResult<T>> callback,
                                  final java.util.function.Predicate<T> shouldPersist) {
-        if (!reserveMutation()) {
+        if (!mutationGate.reserve()) {
             if (callback != null) {
                 callback.accept(new OperationResult<>(null,
                         new IllegalStateException("moderation store is shutting down")));
@@ -323,67 +323,36 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
                         callback.accept(result);
                     }
                 } finally {
-                    releaseMutation();
+                    mutationGate.release();
                 }
             });
         } catch (final RuntimeException schedulingFailure) {
-            releaseMutation();
+            mutationGate.release();
             if (callback != null) {
                 callback.accept(new OperationResult<>(null, schedulingFailure));
             }
         }
     }
 
-    private boolean reserveMutation() {
-        synchronized (mutationLifecycleLock) {
-            if (!acceptingMutations) {
-                return false;
-            }
-            inFlightMutations++;
-            return true;
-        }
-    }
-
-    private void releaseMutation() {
-        synchronized (mutationLifecycleLock) {
-            inFlightMutations--;
-            if (inFlightMutations < 0) {
-                throw new IllegalStateException("moderation mutation reservation underflow");
-            }
-            if (inFlightMutations == 0) {
-                mutationLifecycleLock.notifyAll();
-            }
-        }
-    }
-
     /** Closes the mutation gate and waits for already-reserved durable transactions before final save. */
     public boolean prepareShutdown(final long timeoutMillis) {
-        if (timeoutMillis < 0L) {
-            throw new IllegalArgumentException("timeoutMillis must be non-negative");
-        }
-        final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        synchronized (mutationLifecycleLock) {
-            acceptingMutations = false;
-            while (inFlightMutations > 0) {
-                final long remainingNanos = deadline - System.nanoTime();
-                if (remainingNanos <= 0L) {
-                    return false;
-                }
-                try {
-                    java.util.concurrent.TimeUnit.NANOSECONDS.timedWait(mutationLifecycleLock, remainingNanos);
-                } catch (final InterruptedException interrupted) {
-                    Thread.currentThread().interrupt();
-                    return false;
-                }
-            }
-            return true;
-        }
+        return mutationGate.closeAndAwait(timeoutMillis);
     }
 
     private void tripPersistenceCircuit(final Throwable failure) {
+        // Fail closed immediately. A global disable task can be delayed or rejected while the
+        // server is already retiring, but no further authoritative mutation may be admitted.
+        mutationGate.close();
         plugin.getLogger().severe("A moderációs autoritatív mentés meghiúsult; a plugin leáll: " + failure);
-        Bukkit.getGlobalRegionScheduler().run(plugin,
-                task -> Bukkit.getPluginManager().disablePlugin(plugin));
+        try {
+            Bukkit.getGlobalRegionScheduler().run(plugin,
+                    task -> Bukkit.getPluginManager().disablePlugin(plugin));
+        } catch (final RuntimeException schedulingFailure) {
+            // Preserve the original operation callback even when the scheduler is already retiring.
+            // The admission gate above remains closed, so no later authoritative write can slip in.
+            plugin.getLogger().severe("A persistence circuit plugin-disable ütemezése sikertelen: "
+                    + schedulingFailure);
+        }
     }
 
     private static Long checkedExpiry(final long now, final Long durationMillis) {
@@ -614,10 +583,10 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         if (words.isEmpty()) {
             return message;
         }
-        final String lower = message.toLowerCase(Locale.ROOT);
         final List<String> hits = new ArrayList<>();
         for (final String word : words) {
-            if (word != null && !word.isBlank() && lower.contains(word.toLowerCase(Locale.ROOT))) {
+            if (word != null && !word.isBlank()
+                    && ModerationTextFilter.containsIgnoreCase(message, word)) {
                 hits.add(word);
             }
         }
@@ -629,27 +598,9 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         }
         String result = message;
         for (final String word : hits) {
-            result = replaceCaseInsensitive(result, word);
+            result = ModerationTextFilter.censorIgnoreCase(result, word);
         }
         return result;
-    }
-
-    private static String replaceCaseInsensitive(final String text, final String word) {
-        final String lowerText = text.toLowerCase(Locale.ROOT);
-        final String lowerWord = word.toLowerCase(Locale.ROOT);
-        final StringBuilder out = new StringBuilder(text.length());
-        final String stars = "*".repeat(word.length());
-        int cursor = 0;
-        while (cursor < text.length()) {
-            final int index = lowerText.indexOf(lowerWord, cursor);
-            if (index < 0) {
-                out.append(text, cursor, text.length());
-                break;
-            }
-            out.append(text, cursor, index).append(stars);
-            cursor = index + word.length();
-        }
-        return out.toString();
     }
 
     public boolean isSpam(final UUID playerId, final String message) {
@@ -671,12 +622,6 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         lastMessageAt.put(playerId, now);
         lastMessage.put(playerId, message);
         return false;
-    }
-
-    public void logChatEvent(final String type, final Player player, final String originalMessage) {
-        final UUID playerId = player.getUniqueId();
-        final String playerName = player.getName();
-        logChatEvent(type, playerId, playerName, originalMessage);
     }
 
     public void logChatEvent(final String type, final UUID playerId, final String playerName,
@@ -812,8 +757,8 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         if (yaml.getKeys(false).isEmpty()) {
             return emptySnapshot();
         }
-        final Object schema = yaml.get("schema-version");
-        if (!(schema instanceof Number number) || number.intValue() != SCHEMA_VERSION) {
+        final int schema = StrictYamlNumber.requireInt(yaml.get("schema-version"), "schema-version");
+        if (schema != SCHEMA_VERSION) {
             throw new IllegalArgumentException("unsupported or missing schema-version");
         }
         final List<PunishmentRecord> records = new ArrayList<>();
@@ -939,22 +884,13 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
     }
 
     private static long requireLong(final ConfigurationSection section, final String key) {
-        final Object value = section.get(key);
-        if (!(value instanceof Number number)) {
-            throw new IllegalArgumentException("missing number: " + section.getCurrentPath() + "." + key);
-        }
-        return number.longValue();
+        return StrictYamlNumber.requireLong(section.get(key), section.getCurrentPath() + "." + key);
     }
 
     private static Long optionalLong(final ConfigurationSection section, final String key) {
         final Object value = section.get(key);
-        if (value == null) {
-            return null;
-        }
-        if (!(value instanceof Number number)) {
-            throw new IllegalArgumentException("expected number: " + section.getCurrentPath() + "." + key);
-        }
-        return number.longValue();
+        return value == null ? null
+                : StrictYamlNumber.requireLong(value, section.getCurrentPath() + "." + key);
     }
 
     private static double requireFiniteDouble(final ConfigurationSection section, final String key) {

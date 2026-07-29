@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,16 +51,29 @@ final class ModerationCommandSupport {
         }
     }
 
-    /** Schedules a message by UUID without carrying a foreign Player object across entity regions. */
+    /** Schedules a message by UUID without resolving a foreign Player from another entity region. */
     static void send(final JavaPlugin plugin, final UUID playerId, final String message) {
-        final Player player = Bukkit.getPlayer(playerId);
-        if (player != null) {
-            player.getScheduler().run(plugin, task -> {
-                if (player.isOnline()) {
-                    player.sendMessage(message);
-                }
-            }, null);
-        }
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            final Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                player.getScheduler().run(plugin, entityTask -> {
+                    if (player.isOnline()) {
+                        player.sendMessage(message);
+                    }
+                }, null);
+            }
+        });
+    }
+
+    /** Viewer-aware online-name completion; vanished/otherwise hidden players are not disclosed. */
+    static List<String> visibleOnlineNames(final CommandSender sender, final String rawPrefix) {
+        final String prefix = rawPrefix == null ? "" : rawPrefix.toLowerCase(Locale.ROOT);
+        return Bukkit.getOnlinePlayers().stream()
+                .filter(target -> !(sender instanceof Player viewer)
+                        || target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target))
+                .map(Player::getName)
+                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                .toList();
     }
 
     static Long parseDurationMillis(final String raw) {
