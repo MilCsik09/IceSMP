@@ -13,8 +13,10 @@ selection:
 
 afk:
   enabled: true
-  # Az AFK-állapot ellenőrzésének gyakorisága (tick; 20 = másodpercenként).
+  # HUD/tablista kapcsolótól független global driver; reloadkor az új periodus lép életbe.
+  # Csak 5..72000 tick fogadható el, hibás értéknél a biztonságos 20 tick marad.
   refresh-ticks: 20
+  # Csak 1..31536000 másodperc fogadható el; hibás vagy overflow-veszélyes értéknél 180.
   afk-after-seconds: 180
   # AFK-jelölt játékos nem termel kaszt-/szakma-XP-t vagy automata lootot.
   block-rewards: true
