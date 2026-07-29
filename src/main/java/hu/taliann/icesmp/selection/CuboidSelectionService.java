@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,9 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Shared, feature-neutral two-corner 3D selection service.
  *
  * <p>The service owns the player session, world identity validation, inclusive cuboid
- * normalization, overflow-safe volume limits, preview task and lifecycle cleanup. Domain
- * systems such as claims or AFK zones only consume the completed {@link Cuboid}; they do not
- * keep a second pos1/pos2 registry or create their own wand/preview framework.</p>
+ * normalization, overflow-safe dimensions, preview task and lifecycle cleanup. Domain systems
+ * apply the metric that belongs to them: AFK zones use the volume-limited overload, while claims
+ * use the complete cuboid and enforce their historical XZ footprint cap.</p>
  *
  * <p>Folia ownership: corners and previews are set from the player's entity thread. Preview
  * particles are emitted only from a task scheduled on that same player. The map itself contains
@@ -102,10 +103,15 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
         private Corner second;
     }
 
+    /** Identity-owned task slot: an old retirement callback can remove only its own session. */
+    private static final class PreviewSession {
+        private volatile ScheduledTask task;
+    }
+
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final Map<UUID, MutableSelection> selections = new ConcurrentHashMap<>();
-    private final Map<UUID, ScheduledTask> previewTasks = new ConcurrentHashMap<>();
+    private final Map<UUID, PreviewSession> previewTasks = new ConcurrentHashMap<>();
 
     public CuboidSelectionService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -139,18 +145,24 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
         return corner;
     }
 
-    /** Returns a validated immutable cuboid or an explicit incomplete/too-large status. */
+    /**
+     * Returns the complete normalized cuboid without imposing a 3D volume policy. This is the
+     * compatibility path for footprint-based domains such as claims; dimensions remain saturating
+     * and the caller must enforce its own domain cap before any mutation.
+     */
     public Result result(final UUID playerId) {
-        final long maxVolume = Math.max(1L,
-                configManager.getLong("selection.max-volume", 1_000_000L));
-        return result(playerId, maxVolume);
+        return resultInternal(playerId, Long.MAX_VALUE);
     }
 
-    /** Domain systems may apply a tighter cap, never a looser one than the shared global cap. */
+    /** Domain systems may apply a tighter 3D cap, never a looser one than the shared configured cap. */
     public Result result(final UUID playerId, final long requestedMaxVolume) {
         final long globalMax = Math.max(1L,
                 configManager.getLong("selection.max-volume", 1_000_000L));
         final long maxVolume = Math.max(1L, Math.min(globalMax, requestedMaxVolume));
+        return resultInternal(playerId, maxVolume);
+    }
+
+    private Result resultInternal(final UUID playerId, final long maxVolume) {
         final MutableSelection selection = selections.get(playerId);
         if (selection == null) {
             return new Result(Status.INCOMPLETE, null, maxVolume);
@@ -195,31 +207,41 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
             return;
         }
         final UUID playerId = player.getUniqueId();
-        cancelPreview(playerId);
         final int seconds = Math.max(1, Math.min(30, requestedSeconds));
         final AtomicInteger frame = new AtomicInteger();
-        final ScheduledTask scheduled = player.getScheduler().runAtFixedRate(plugin, task -> {
-            if (!player.isOnline() || frame.getAndIncrement() >= seconds) {
-                previewTasks.remove(playerId, task);
-                task.cancel();
-                return;
-            }
-            drawFrame(player, cuboid);
-        }, () -> previewTasks.remove(playerId), 1L, 20L);
-        if (scheduled == null) {
-            previewTasks.remove(playerId);
+        final PreviewSession session = new PreviewSession();
+        final PreviewSession previous = previewTasks.put(playerId, session);
+        cancelSession(previous);
+
+        final ScheduledTask scheduled;
+        try {
+            scheduled = player.getScheduler().runAtFixedRate(plugin, task -> {
+                if (!player.isOnline() || frame.getAndIncrement() >= seconds) {
+                    previewTasks.remove(playerId, session);
+                    task.cancel();
+                    return;
+                }
+                drawFrame(player, cuboid);
+            }, () -> previewTasks.remove(playerId, session), 1L, 20L);
+        } catch (final RuntimeException rejected) {
+            previewTasks.remove(playerId, session);
             return;
         }
-        final ScheduledTask previous = previewTasks.put(playerId, scheduled);
-        if (previous != null && previous != scheduled) {
-            previous.cancel();
+        session.task = scheduled;
+        if (scheduled == null) {
+            previewTasks.remove(playerId, session);
+            return;
+        }
+        if (previewTasks.get(playerId) != session) {
+            scheduled.cancel();
         }
     }
 
     /** Reload semantics are explicit: transient corners and preview tasks never survive reload. */
     public void clearAll() {
-        previewTasks.values().forEach(ScheduledTask::cancel);
+        final ArrayList<PreviewSession> sessions = new ArrayList<>(previewTasks.values());
         previewTasks.clear();
+        sessions.forEach(CuboidSelectionService::cancelSession);
         selections.clear();
     }
 
@@ -233,9 +255,12 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
     }
 
     private void cancelPreview(final UUID playerId) {
-        final ScheduledTask task = previewTasks.remove(playerId);
-        if (task != null) {
-            task.cancel();
+        cancelSession(previewTasks.remove(playerId));
+    }
+
+    private static void cancelSession(final PreviewSession session) {
+        if (session != null && session.task != null) {
+            session.task.cancel();
         }
     }
 
