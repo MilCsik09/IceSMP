@@ -7,9 +7,25 @@
 
 ---
 
+
+## Natív crate completion — 2026-07-29
+
+- Megmaradt a fizikai crate, PDC-kulcs, vásárlás, súlyozott roll, spin GUI és 3D reveal.
+- Elkészült a `/crates` lista- és preview GUI, per-crate permission/world gate, required key,
+  cooldown, bounded mass-open, nyitási audit és játékosonkénti stat/reset.
+- Rewardok: vanilla item, whitelistelt command, IceSMP currency, unique item, profession recipe,
+  blueprint és másik crate kulcsa — a meglévő resolverekkel.
+- A config finite/enum/world/ID/placeholder validációt kapott; hibás crate izoláltan letiltható.
+- A `crates-data.yml` a közös `PersistentStoreCoordinator` és `YamlStore.saveAtomic` lifecycle-on
+  tartja a helyeket, statot és cooldownot; mentési hiba rollbacket és fail-closed kaput indít.
+- Az off-hand duplaevent, exact multi-stack key consumption, full-inventory drop és Folia owner
+  schedulerek kód- és regressziós védelmet kaptak.
+- Nem készült legacy CrazyCrates migration, config/command kompatibilitás vagy upstream animációparitás.
+- A CrazyCrates eltávolíthatósága a remote CI és a dokumentált valódi Folia playtest után dönthető el.
+
 ## Telepítési útmutató
 
-### 1. Eltávolítandó pluginok (mind natívan kiváltva)
+### 1. Plugin-leépítés (csak zöld CI + dokumentált runtime átvételi teszt után)
 
 | Régi plugin | Natív kiváltás |
 |---|---|
@@ -17,11 +33,11 @@
 | `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
 | `MiniMOTD` | natív MOTD (`motd.yml`) |
 | `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
-| `CrazyCrates` | natív crate-rendszer (`crates.yml`, `/crate`, rulett-animáció) |
+| `CrazyCrates` | natív crate completion branch: list/preview, access gate, required keys, cooldown, 7 rewardtípus, stat/audit/rollback; törlés csak valódi Folia átvételi teszt után |
 | AFK/ülés plugin | natív `/afk` + `/sit` (klikk-ülés) |
 | `InvSee++` / `SModeration` | natív moderáció (`/report`, mute, chat-szűrő) + read-only `/invsee` + inspektor |
 
-A `plugins/` mappából a fentiek jarját el kell távolítani az új IceSMP-jar bemásolásakor.
+A `plugins/` mappából csak annak a jarját távolítsd el, amelynek külön feature PR-je zöld és a `PLAYTEST.md` runtime átvételi pontjai is teljesültek.
 Megmaradó soft-dependency: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms
 (mind opcionális — nélkülük is fut).
 

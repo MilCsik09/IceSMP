@@ -932,12 +932,31 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         üzenet + bossbar-visszaszámláló; az intervallum leteltével (default 10 perc) kis
         valuta-jutalom; kilépéskor a haladás NULLÁZÓDIK (nincs bankolás). 3 perc tétlenség
         után (bárhol) a tablistában szürke „⌚ ᴀꜰᴋ" jelenik meg a név után, mozgásra eltűnik.
-  - [ ] **Crate-rendszer** (CrazyCrates helyett): admin: `/crate set koznapi` a nézett blokkra,
-        `/crate give <név> koznapi 3`; kulccsal jobb-katt → kulcs fogy + súlyozott jutalom
-        (hang+részecske+üzenet); kulcs nélkül info az árról; `/crate buy koznapi` levonja a
-        25 NEUTRAL-t (sink); `/crate info` esély-táblát mutat; a kulcs NEM craftolható be;
-        restart után a crate-blokkok megmaradnak. ⚠️ **Folia:** `/crate give` távoli (másik
-        régióban lévő) játékosnak is hibamentes.
+  - [ ] **[MANUAL] Crate alapút:** `/crates`, preview, `/crate buy`, `/crate set/remove/give/list`,
+        helyes és rossz PDC-kulcs, hang/részecske/spin/3D reveal, crafting/fuel tiltás.
+  - [ ] **[NEGATIVE TEST] Off-hand:** egyetlen jobb katt csak egy tranzakciót indít; off-hand event
+        nem fogyaszt plusz kulcsot és nem növeli kétszer a statot.
+  - [ ] **[REAL FOLIA REQUIRED] Required key/mass-open:** 2+ külön inventory stackből pontos
+        kulcsfogyasztás; kevés kulcsnál csak teljesen finanszírozott nyitások; ugyanazon player
+        párhuzamos kattintása `opening-busy`; másik régióból `/crate give`.
+  - [ ] **[PERMISSION TEST] Access gate:** `icesmp.crate.use`, per-crate `icesmp.*` permission és
+        világlista; a list GUI zárt crate-et barrierrel mutat, a fizikai nyitás nem kerülhető meg.
+  - [ ] **[AUTOMATED] Validáció:** nulla/negatív/NaN/Infinity/óriás weight, item amount, cooldown,
+        ismeretlen enum/material/world/reward/id/placeholder letiltja az érintett crate-et; `/crate status`.
+  - [ ] **[REAL FOLIA REQUIRED] Rewardok:** vanilla item, command, currency, unique item, profession
+        recipe, blueprint és másik crate kulcsa; command csak `{player}`, `{uuid}`, `{crate}`, `{amount}`.
+  - [ ] **[NEGATIVE TEST] Full inventory:** item/unique/recipe/blueprint/key overflow a játékos
+        helyén leesik, nem tűnik el; currency- vagy resolverhiba előtt a kulcsok nem vesznek el.
+  - [ ] **[RESTART TEST] State:** crate-hely, stat és cooldown restart után megmarad; hibás/duplikált/
+        ismeretlen crate-es vagy hibás világú `crates-data.yml` fail-closed, nem íródik felül.
+  - [ ] **[RELOAD TEST] Generation:** configváltás aktív nyitás közben visszavonja a még nem teljesült
+        tranzakciót; `/icesmp reload`, config set/unset és config GUI után új snapshot él.
+  - [ ] **[NEGATIVE TEST] Mentési hiba:** írásvédett data könyvtár/ENOSPC mellett set/remove/open/
+        reset rollbackel, kulcs és stat nem válik szét; hiba után új nyitás fail-closed.
+  - [ ] **[REAL FOLIA REQUIRED] Lifecycle:** quit, kick vagy plugin-disable a persistált, de még nem
+        jutalmazott nyitást rollbackeli; spin/reveal nem hagy transient entitást vagy taskot.
+  - [ ] **[MANUAL] Audit:** `logs/crate-openings.log`, opcionális broadcast, stat query/reset és
+        cooldown sorrend megfelel a ténylegesen teljesült nyitásnak.
   - [ ] **Ülés** (GSit helyett): `/sit` a földön állva leültet (ArmorStand-ülés), újra `/sit`
         vagy sneak = felállás; jobb-katt lépcsőre/fél-lapra ÜRES kézzel leültet; halál/teleport/
         kilépés/blokk-törés alóla → korrekt felállás, nem marad árva ArmorStand.

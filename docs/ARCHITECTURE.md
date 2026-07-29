@@ -36,10 +36,11 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
 | `managers/` | 113 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 115 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `listeners/` | 116 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 42 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `gui/` | 44 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `crates/` | 4 | Dependency-free crate domain: validáció, súlyozott selector, exact kulcsfogyasztás és ledger rollback. |
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
@@ -246,6 +247,19 @@ támadó saját `getScheduler()`-ére hoppol.
 
 ---
 
+### 3.10 Natív crate-tranzakció
+
+A `CrateManager` az egyetlen autoritatív owner a fizikai helyek, cooldownok és nyitási
+statisztika felett. A gameplay belépési pontok (`CrateCommand`, `CrateListener`, list/preview/spin
+GUI) nem tartanak saját crate-state-et. A tiszta `crates/` domainosztályok izolálják a finite
+validációt, súlyozott választást, exact több-stackes kulcsfogyasztást és tokenes ledger rollbacket.
+
+A nyitás **persist-before-side-effect**: stat/cooldown + atomikus crate-state mentés megelőzi a
+player-scheduleres kulcsfogyasztást és rewardot. Config-generation, scheduler-retirement, quit/kick
+vagy mentési hiba rollbacket indít. A wallet batch a meglévő `CurrencyManager` mutation permitjét,
+az itemtípusok a meglévő unique/recipe/blueprint/key factorykat használják. A külső command
+side effect miatt process-crash exactly-once garancia nincs. Részletes szerződés: `docs/CRATES.md`.
+
 ## 4. Folia szálkezelés (KRITIKUS)
 
 Nincs egyetlen fő-szál. A megfelelő ütemezőt használd:
@@ -416,11 +430,13 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 485 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 113 fájl).
-  Csomag-megoszlás: listeners 115, managers 113, commands 84, spells 56, gui 42, utils 22, data 12,
+- **Méret:** 492 Java-fájl, ~85 000 sor; 88 `*Manager` osztály (a `managers/` csomag 113 fájl).
+  Csomag-megoszlás: listeners 116, managers 113, commands 84, spells 56, gui 44, utils 22, data 12,
+  crates 4,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
-  `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
+  `PersistentStoreCoordinatorRegressionTest`, a `DevItemRewardRegressionSuite` és a
+  `CrateRegressionSuite` main osztályokat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
   `python3 scripts/check_consistency.py`. Pull requesten a `scripts/check_consistency_delta.py`
   hasonlítja a base/head eredményt.

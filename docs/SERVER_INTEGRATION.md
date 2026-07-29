@@ -79,7 +79,7 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 
 ## 5.1 Plugin-leépítési terv (mi váltható ki / törölhető, és hogyan)
 
-### ✅ Kiváltva natívan — a jar TÖRÖLHETŐ
+### ✅ Natív megfelelő elkészült — törlés csak a dokumentált átvételi teszt után
 
 | Plugin | Natív megfelelő | Teendő törlés előtt |
 |---|---|---|
@@ -90,7 +90,7 @@ Már integrált: LibsDisguises, PlaceholderAPI, FancyNpcs, WorldGuard, LuckPerms
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
 | **MiniMOTD** | `MotdListener` + `config/motd.yml` — MiniMessage-formázás, IDŐALAPON rotálódó variánsok, {online}/{max} tokenek, max-player felülírás. (A MiniMOTD amúgy is gyári példa-configon állt.) | szabd testre a `motd.yml` variánsokat |
 | **AxAFKZone (+AxAPI)** | `AfkManager` + `config/afk.yml` — AFK-zónák (doboz), időzített valuta-jutalom (tudatos kis faucet, C3 monitorral figyelendő), bossbar-visszaszámláló, be-/kilépés üzenetek; PLUSZ globális AFK-detektálás és ⌚ AFK jelzés a tablistában (amit az AxAFKZone nem tudott) | vidd át a zóna-koordinátákat az `afk.yml`-be (a régi `AxAFKZone/zones/zome1.yml`-ből) |
-| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-tages, ITEM_MODEL-es kulcsok, súlyozott jutalom-táblák, `/crate buy` kulcsvásárlás (tiszta valuta-sink), `/crate set/give/list` admin (icesmp.admin.crate) | állítsd be a crate-blokkokat (`/crate set <id>`), szabd testre a jutalom-táblákat |
+| **CrazyCrates** | `CrateManager` + `config/crates.yml` — PDC-kulcs, fizikai helyek, list/preview GUI, per-crate permission/world, required key, cooldown, bounded mass-open, 7 rewardtípus, stat/reset, audit és atomikus crate-state | **Még ne töröld automatikusan:** futtasd a `PLAYTEST.md` crate fejezetét valódi Folián, különösen save-failure/full-inventory/restart/command reward esetekkel |
 | **GSit** | `SitManager` — `/sit` parancs + jobb-katt lépcsőre/fél-lapra üres kézzel; kelés minden úton takarít (quit/halál/teleport/blokk-törés) | — |
 | **SModeration** | `ModerationManager` — restart-álló némítás (`/mute`/`/unmute`, offline is), chat-szűrő (CENSOR/BLOCK), spam-fék, privát-parancs tiltás némítottnak; PLUSZ `/report` + `/reports` bejelentő-rendszer admin-értesítéssel (`config/moderation.yml`, `icesmp.admin.moderation`) | szavak felvétele a `chat-filter.words` listába |
 | **InvSee++ (3 jar)** | `/invsee <név>` — READ-ONLY inventory + ender-láda pillanatkép-GUI; PLUSZ `/icesmp inspect <név>` teljes plugin-állapot riport (kaszt/erőforrás/statok/bűn/claim/questek/cooldownok) — `icesmp.admin.inspect`. Szerkesztés/clear/give nincs (ha kell, a jar maradhat, de betekintésre már nem) | — |
@@ -118,7 +118,7 @@ FancyNpcs, ImageFrame, VillagerTradeEdit, bStats/faststats/FancyAnalytics (metri
 **Orebfuscator** (X-ray védelem — csak az építési fázis alatt inaktív, éles indulásra
 visszakapcsolandó).
 
-**Mérleg:** a ✅+🗑 lépések után a plugin-lista ~35-ről **~24-re** csökken — kevesebb
+**Mérleg:** a feltételesen átvett és kézzel igazolt ✅+🗑 lépések után a plugin-lista ~35-ről **~24-re** csökken — kevesebb
 Folia-kockázat, gyorsabb indulás, kevesebb frissítés-függés.
 
 ## 6. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
