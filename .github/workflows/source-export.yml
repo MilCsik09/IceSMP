@@ -26,18 +26,13 @@ jobs:
           path: work
       - name: Verify lease and apply reviewed patch
         env:
-          EXPECTED_HEAD: 65676dce969783ddeebf627c7477165b34c2b204
-          EXPECTED_PATCH_SHA256: 8c086f725daeb750d61fa9b1729b1ade548a51a3e3203054a8f2bf7ac1ad53eb
+          EXPECTED_HEAD: 788a8f019d84648a8155652f356d074ea29b647a
+          EXPECTED_PATCH_SHA256: fa80f3b26d02516509678a16242e2bfa4a0d95b4e8abddc25570213fc9fad67d
         run: |
           set -euo pipefail
           cd "$GITHUB_WORKSPACE/work"
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
-          cat \
-            "$GITHUB_WORKSPACE/publisher/.review/pr45-v2.patch.gz.b64.part1" \
-            "$GITHUB_WORKSPACE/publisher/.review/pr45-v2.patch.gz.b64.part2" \
-            "$GITHUB_WORKSPACE/publisher/.review/pr45-v2.patch.gz.b64.part3-4" \
-            "$GITHUB_WORKSPACE/publisher/.review/pr45-v2.patch.gz.b64.part5-7" \
-            > "$RUNNER_TEMP/patch.b64"
+          cat "$GITHUB_WORKSPACE/publisher/.review/pr45.patch.gz.b64.part"{1..6} > "$RUNNER_TEMP/patch.b64"
           base64 --decode "$RUNNER_TEMP/patch.b64" > "$RUNNER_TEMP/patch.gz"
           gzip -dc "$RUNNER_TEMP/patch.gz" > "$RUNNER_TEMP/review.patch"
           echo "$EXPECTED_PATCH_SHA256  $RUNNER_TEMP/review.patch" | sha256sum -c -
