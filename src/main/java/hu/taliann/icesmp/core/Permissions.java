@@ -61,6 +61,8 @@ public final class Permissions {
     public static final String MODERATION_INVENTORY_EDIT = "icesmp.moderation.inventory.edit";
     public static final String MODERATION_GUI = "icesmp.moderation.gui";
     public static final String MESSAGE = "icesmp.message";
+    /** Player permission for /sit and click-to-sit. */
+    public static final String SIT = "icesmp.sit";
     public static final String INSPECT = "icesmp.admin.inspect";
     public static final String ITEM = "icesmp.admin.item";
     public static final String TERRITORY_BUILDER = "icesmp.territory.builder";
@@ -124,6 +126,8 @@ public final class Permissions {
         allChildren.put(MODERATION, Boolean.TRUE);
         registerNode(pm, new Permission(MESSAGE,
                 "IceSMP privát üzenetküldés (/msg, /tell, /w, /reply)", PermissionDefault.TRUE));
+        registerNode(pm, new Permission(SIT,
+                "Natív ülés és click-to-sit használata", PermissionDefault.TRUE));
         registerNode(pm, new Permission(ALL,
                 "IceSMP super-admin: az összes IceSMP admin-node egyben", PermissionDefault.OP, allChildren));
 

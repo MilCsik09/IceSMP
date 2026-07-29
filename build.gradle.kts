@@ -80,7 +80,15 @@ val motdRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.motd.MotdRegressionSuite")
 }
 
+val sitRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native sit-only policy, reservation and lifecycle regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.SitRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-        motdRegressionTest)
+        motdRegressionTest, sitRegressionTest)
 }

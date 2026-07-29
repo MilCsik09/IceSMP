@@ -1,10 +1,10 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.integration.LayPoseBridge;
-import hu.taliann.icesmp.managers.ConfigManager;
+import org.bukkit.event.entity.EntityDismountEvent;
+import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.managers.SitManager;
 import hu.taliann.icesmp.utils.MessageManager;
-import org.bukkit.Tag;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -13,149 +13,139 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-/**
- * Native GSit-style click-to-sit: right-clicking an empty-handed stair/slab with an empty hand
- * seats the player on top of it. All the actual seat bookkeeping lives in {@link SitManager}; this
- * listener only decides WHEN to sit/stand and always does so on the affected player's own event
- * thread, so every call into the manager here is already region-local (see {@link SitManager}
- * class javadoc for the Folia reasoning).
- *
- * <p>Also owns the "lay pose" auto-stand-up-on-move rule ({@link #onMove}) — the seat
- * system and the lay pose are two independent per-player states in {@link SitManager}, but both are
- * cleared here since {@code PlayerMoveEvent} always fires on the moving player's own region thread.
- */
-public final class SitListener implements Listener {
+import java.util.UUID;
 
+/** Region-owned event adapter for the native sit-only domain. */
+public final class SitListener implements Listener {
     private final SitManager sitManager;
-    private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    public SitListener(final SitManager sitManager, final ConfigManager configManager,
-                        final MessageManager messageManager) {
+    public SitListener(final SitManager sitManager, final MessageManager messageManager) {
         this.sitManager = sitManager;
-        this.configManager = configManager;
         this.messageManager = messageManager;
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onInteract(final PlayerInteractEvent event) {
-        if (!configManager.getBoolean("sit.enabled", true) || !configManager.getBoolean("sit.click-to-sit", true)) {
-            return;
-        }
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+        if (!sitManager.isClickToSitEnabled()
+                || event.getAction() != Action.RIGHT_CLICK_BLOCK
+                || event.getHand() != EquipmentSlot.HAND) {
             return;
         }
         final Block block = event.getClickedBlock();
-        if (block == null || !(Tag.STAIRS.isTagged(block.getType()) || Tag.SLABS.isTagged(block.getType()))) {
+        if (block == null || !sitManager.isConfiguredSeatBlock(block)) {
             return;
         }
-
         final Player player = event.getPlayer();
-        if (player.isSneaking() || sitManager.isSitting(player.getUniqueId())) {
+        if (!player.hasPermission(Permissions.SIT) || player.isSneaking()) {
             return;
         }
-        // Empty hand only — a held item means the click is meant to place/use it, not sit.
-        if (event.getItem() != null && !event.getItem().getType().isAir()) {
+        if (sitManager.isEmptyHandOnly() && event.getItem() != null && !event.getItem().getType().isAir()) {
             return;
         }
-        if (!sitManager.hasClearanceAbove(block)) {
-            return;
+        final SitManager.SitResult result = sitManager.sit(player, block, SitManager.SitOrigin.CLICK);
+        if (result == SitManager.SitResult.OK) {
+            event.setCancelled(true);
+            player.sendMessage(messageManager.get("sit.down", "&b[Ülés] &7Leültél."));
+        } else {
+            sendFailure(player, result);
         }
-
-        sitManager.sit(player, sitManager.computeSeatLocation(block));
     }
 
-    /** Covers both explicit stand-up (command) and any external dismount (e.g. knockback off the seat). */
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDismount(final EntityDismountEvent event) {
-        if (!(event.getEntity() instanceof Player player)) {
-            return;
-        }
-        if (!(event.getDismounted() instanceof ArmorStand) || !sitManager.isSitting(player.getUniqueId())) {
-            return;
-        }
-        // Same region as the just-vacated seat (vehicle/passenger pairs never cross regions in
-        // Folia), so removing the stand here is safe without a scheduler hop.
-        sitManager.standUp(player);
-    }
-
-    @EventHandler
-    public void onPlayerQuit(final PlayerQuitEvent event) {
-        // Runs on the player's own region thread, so the seat ArmorStand (co-located by the Folia
-        // passenger/vehicle invariant) can be removed directly here.
-        sitManager.standUp(event.getPlayer());
-        clearLay(event.getPlayer(), false);
-    }
-
-    @EventHandler
-    public void onPlayerKick(final PlayerKickEvent event) {
-        sitManager.standUp(event.getPlayer());
-        clearLay(event.getPlayer(), false);
-    }
-
-    @EventHandler
-    public void onPlayerDeath(final PlayerDeathEvent event) {
-        sitManager.standUp(event.getEntity());
-        clearLay(event.getEntity(), false);
-    }
-
-    @EventHandler
-    public void onPlayerTeleport(final PlayerTeleportEvent event) {
-        // Stand up before the teleport resolves so the seat never ends up in a different region
-        // (or world) than the player.
-        sitManager.standUp(event.getPlayer());
-        clearLay(event.getPlayer(), false);
-    }
-
-    /**
-     * Mozgásra felkel a fekvő pózból. {@code PlayerMoveEvent} fej-forgatásra (csak
-     * yaw/pitch változás) is tüzel — csak akkor állunk fel, ha a tényleges koordináta is változott,
-     * különben minden körülnézés lefektetne/felállítana.
-     */
-    @EventHandler(ignoreCancelled = true)
-    public void onMove(final PlayerMoveEvent event) {
-        final Player player = event.getPlayer();
-        if (!sitManager.isLaying(player.getUniqueId())) {
-            return;
-        }
-        final org.bukkit.Location from = event.getFrom();
-        final org.bukkit.Location to = event.getTo();
-        if (to == null || (from.getX() == to.getX() && from.getY() == to.getY() && from.getZ() == to.getZ())) {
-            return;
-        }
-        clearLay(player, true);
-    }
-
-    /** Drops the lay disguise + {@link SitManager} bookkeeping; optionally notifies the player. */
-    private void clearLay(final Player player, final boolean notify) {
-        if (!sitManager.isLaying(player.getUniqueId())) {
-            return;
-        }
-        LayPoseBridge.clear(player);
-        sitManager.stopLaying(player.getUniqueId());
-        if (notify) {
-            player.sendMessage(messageManager.get("sit-lay-up", "&b[Fekvés] &7Felálltál."));
+        if (event.getEntity() instanceof Player player && event.getDismounted() instanceof ArmorStand stand) {
+            sitManager.completeDismount(player, stand);
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(final PlayerQuitEvent event) { sitManager.requestReset(event.getPlayer().getUniqueId()); }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onKick(final PlayerKickEvent event) { sitManager.requestReset(event.getPlayer().getUniqueId()); }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeath(final PlayerDeathEvent event) { sitManager.resetPlayer(event.getEntity()); }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(final PlayerTeleportEvent event) { sitManager.resetPlayer(event.getPlayer()); }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWorldChange(final PlayerChangedWorldEvent event) { sitManager.requestReset(event.getPlayer().getUniqueId()); }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDamage(final EntityDamageEvent event) {
+        if (sitManager.shouldStandUpOnDamage() && event.getFinalDamage() > 0.0D
+                && event.getEntity() instanceof Player player && sitManager.isSitting(player.getUniqueId())) {
+            sitManager.resetPlayer(player);
+            player.sendMessage(messageManager.get("sit.damage-up", "&b[Ülés] &7Sebzés miatt felálltál."));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onSneak(final PlayerToggleSneakEvent event) {
+        if (event.isSneaking() && sitManager.shouldStandUpOnSneak()
+                && sitManager.isSitting(event.getPlayer().getUniqueId())) {
+            sitManager.resetPlayer(event.getPlayer());
+            event.getPlayer().sendMessage(messageManager.get("sit.sneak-up", "&b[Ülés] &7Felálltál."));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent event) {
-        // Cheap guard: skip the scan entirely unless something is actually seated anywhere.
-        if (!sitManager.hasActiveSits()) {
+        if (!sitManager.shouldStandUpOnBlockBreak() || !sitManager.hasActiveSits()) {
             return;
         }
-        final Player sitter = sitManager.findSitterOnBlock(event.getBlock());
-        if (sitter != null) {
+        final UUID sitterId = sitManager.findSitterOnBlock(event.getBlock());
+        if (sitterId == null) {
+            return;
+        }
+        final Player sitter = Bukkit.getPlayer(sitterId);
+        if (sitter != null && Bukkit.isOwnedByCurrentRegion(sitter)) {
             sitManager.standUp(sitter);
+            sitter.sendMessage(messageManager.get("sit.block-break-up",
+                    "&b[Ülés] &7Az ülőhelyed megszűnt, ezért felálltál."));
+        } else {
+            sitManager.requestReset(sitterId);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onCommand(final PlayerCommandPreprocessEvent event) {
+        if (sitManager.isSitting(event.getPlayer().getUniqueId())
+                && sitManager.isBlockedCommand(event.getMessage())) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(messageManager.get("sit.command-blocked",
+                    "&cEzt a parancsot ülés közben nem használhatod. &7Előbb: &f/sit fel"));
+        }
+    }
+
+    private void sendFailure(final Player player, final SitManager.SitResult result) {
+        switch (result) {
+            case DISABLED, MATERIAL_NOT_ALLOWED -> { }
+            case ALREADY_SITTING -> player.sendMessage(messageManager.get("sit.already-sitting", "&cMár ülsz."));
+            case IN_VEHICLE -> player.sendMessage(messageManager.get("sit.in-vehicle", "&cJárműben nem tudsz leülni."));
+            case IN_LIQUID -> player.sendMessage(messageManager.get("sit.in-liquid", "&cFolyadékban nem tudsz leülni."));
+            case NOT_ON_GROUND -> player.sendMessage(messageManager.get("sit.not-on-ground", "&cCsak szilárd talajon tudsz leülni."));
+            case WORLD_DISABLED -> player.sendMessage(messageManager.get("sit.world-disabled", "&cEbben a világban az ülés nincs engedélyezve."));
+            case TOO_FAR -> player.sendMessage(messageManager.get("sit.too-far", "&cEz az ülőhely túl messze van."));
+            case UNSAFE -> player.sendMessage(messageManager.get("sit.unsafe", "&cEz a hely nem biztonságos üléshez."));
+            case OCCUPIED -> player.sendMessage(messageManager.get("sit.occupied", "&cEzen a helyen már ül valaki."));
+            case FOREIGN_REGION -> player.sendMessage(messageManager.get("sit.foreign-region", "&cAz ülőhely régióváltás alatt áll; próbáld újra."));
+            case OBSTRUCTED -> player.sendMessage(messageManager.get("sit.obstructed", "&cItt nem tudsz leülni."));
+            case OK -> { }
         }
     }
 }

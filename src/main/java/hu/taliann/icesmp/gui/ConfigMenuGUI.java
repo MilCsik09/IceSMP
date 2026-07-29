@@ -214,6 +214,15 @@ public final class ConfigMenuGUI {
                 Entry.toggle("spy.enabled", "Kém-álca"),
                 Entry.integer("spy.duration-seconds", "Álca hossza (mp)", 10, 10, 3600),
                 Entry.integer("spy.cooldown-minutes", "Álca cooldown (perc)", 1, 1, 100000))));
+        categories.put("ules", new Category("ules", "Ülés", Material.OAK_STAIRS, List.of(
+                Entry.toggle("sit.enabled", "Natív ülés"),
+                Entry.toggle("sit.click-to-sit", "Kattintásos ülés"),
+                Entry.toggle("sit.empty-hand-only", "Csak üres főkézzel"),
+                Entry.number("sit.max-click-distance", "Max. kattintási távolság", 0.5, 1, 16),
+                Entry.toggle("sit.allow-unsafe-locations", "Veszélyes hely engedélyezése"),
+                Entry.toggle("sit.stand-up.damage", "Sebzésre feláll"),
+                Entry.toggle("sit.stand-up.sneak", "Lopakodásra feláll"),
+                Entry.toggle("sit.stand-up.block-break", "Blokktörésre feláll"))));
         categories.put("borze", new Category("borze", "Börze és városi őrség", Material.EMERALD, List.of(
                 Entry.toggle("market.allow-relic-listing", "Relikvia listázható (börze)"),
                 Entry.number("market.relic-auction.recommended-min-bid", "Börze ajánlott minimuma", 25, 0, 1000000),
