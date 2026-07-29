@@ -41,8 +41,18 @@ public final class VanishManager implements PlayerStateCleanup {
 
     public int visibleOnlineCount() {
         if (!excludedFromOnlineCount()) {
-            return onlinePlayers.size();
+            return onlineCount();
         }
+        return onlineCountExcludingVanished();
+    }
+
+    /** Thread-safe tracked online count for async server-list presentation. */
+    public int onlineCount() {
+        return onlinePlayers.size();
+    }
+
+    /** Thread-safe count that always excludes vanished UUIDs, independent of moderation config. */
+    public int onlineCountExcludingVanished() {
         return (int) onlinePlayers.stream()
                 .filter(playerId -> !isVanished(playerId))
                 .count();

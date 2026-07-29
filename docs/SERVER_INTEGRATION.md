@@ -92,7 +92,7 @@ A táblázatban csak a **READY** és kézzel igazolt sor tekinthető törölhet�
 | **LuckPermsChatFormatterFolia** | natív chat-formázó (`chat.format-enabled`) | — |
 | **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
 | **FarmProtect** | `WorldTweaksListener` — termés-taposás védelem játékosra ÉS mobra (`world-tweaks.crop-trample-protection`) | — |
-| **MiniMOTD** | meglévő natív MOTD-alap | **MÉG NEM:** completion scope hiányzik |
+| **MiniMOTD** | natív `MotdListener`: idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish count és célzott reload | **FELTÉTELES:** build/regresszió után valódi Folia server-list ping, ikon/reload és MiniMOTD nélküli átvételi playtest kell |
 | **AxAFKZone (+AxAPI)** | meglévő globális AFK-alap | **MÉG NEM:** közös 3D selectionös multi-zone scope hiányzik |
 | **CrazyCrates** | meglévő natív crate-alap | **MÉG NEM:** completion scope hiányzik |
 | **GSit** | meglévő sit-alap | **MÉG NEM:** lifecycle/material/pose completion scope hiányzik |

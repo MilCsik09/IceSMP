@@ -72,6 +72,15 @@ val moderationRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.moderation.ModerationReviewRegressionSuite")
 }
 
+val motdRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs deterministic MOTD rotation, event-priority and icon regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.motd.MotdRegressionSuite")
+}
+
 tasks.check {
-    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest)
+    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
+        motdRegressionTest)
 }

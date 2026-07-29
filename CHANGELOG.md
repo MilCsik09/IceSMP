@@ -19,7 +19,7 @@
 |---|---|
 | `ICEsmpadditions.jar` | `world-tweaks.warden-death-xp` (general.yml, élőben hangolható) |
 | `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
-| `MiniMOTD` | **MÉG NEM** — a natív MOTD completion scope és ikon/reload playtest hiányzik |
+| `MiniMOTD` | **FELTÉTELES** — a natív completion buildelt és regressziózott; valódi Folia ping/ikon/reload és jar nélküli átvételi playtest még kell |
 | `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
 | `CrazyCrates` | **MÉG NEM** — preview/permission/cooldown/stats/strict reward scope hiányzik |
 | AFK/ülés plugin | **MÉG NEM** — AFK-zóna és sit/pose completion scope hiányzik |
@@ -49,6 +49,16 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 ---
 
+
+## Unreleased — natív MOTD completion (2026-07-29)
+
+- Immutable, strict config snapshot időalapú és seedelt, időablakon belül stabil random rotációval; exact signed-`long` parserrel és típushű boolean validációval.
+- Eseményprioritás: vérhold, világboss, szezonzárás, majd normál variáns; kizárólag `{online}`/`{max}` tokenek és max-player override.
+- A vanished játékosok számlálása a moderációs `VanishManager` meglévő thread-safe cache-ét használja, párhuzamos state nélkül.
+- Variáns/default/random ikonmód; az ikonok async, secure-directory handle-en, root/köztes/fájl symlink követése nélkül töltődnek, majd egyetlen immutable cache-ként kerülnek a global-region schedulerre.
+- `/icesmp reload`, `motd.*` config set/unset és a központi config GUI ugyanazt a célzott reloadot használja.
+- A reload/disable generáció és a moderációból újrahasznált single-winner scheduler gate megakadályozza a késői vagy visszautasított async callback cache-publikálását.
+- Bizonyíték: `motdRegressionTest`, teljes Gradle build, consistency `0 FAIL / 0 WARN` és whitespace check. A MiniMOTD eltávolításához továbbra is valódi Folia server-list és reload playtest kell; upstream paritást nem állítunk.
 
 ## Unreleased — natív moderációs suite (2026-07-28)
 

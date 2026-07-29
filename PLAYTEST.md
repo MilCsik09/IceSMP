@@ -927,7 +927,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (`world-tweaks.warden-death-xp`, configolható).
   - [ ] **Termés-taposás** (FarmProtect helyett): szántóföldre ugrás (játékos ÉS mob) nem töri
         fel a földet (`world-tweaks.crop-trample-protection`).
-  - [ ] **MOTD** (MiniMOTD helyett): csak a `feature/native-motd-completion` scope után;
+  - [ ] **MOTD** (MiniMOTD helyett): a completion branch buildelt; eltávolítás csak az alábbi valódi Folia ping/reload tesztek után;
         idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish-count és reload külön ellenőrzendő.
   - [ ] **AFK-rendszer** (AxAFKZone helyett): csak a `feature/native-afk-zones` scope után;
         közös 3D selectionből létrehozott több zóna, közvetlen zónaváltás, reward-rollok,
@@ -1007,6 +1007,23 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         logs/chat-moderation.log-ba kerülnek (5 MB-nál forgatás).
   - [ ] **Esemény-MOTD:** vérhold indítása után a szerverlista MOTD-ja a vérhold-variánsra vált
         (frissítsd a listát), utána vissza a normál rotációra.
+- [ ] **Natív MOTD completion — `feature/native-motd-completion`:**
+  - [x] **AUTOMATED:** `motdRegressionTest` — TIME floor-mod, időablakon belül stabil RANDOM, seed-érzékenység és pool-lefedés.
+  - [x] **AUTOMATED:** teljes signed-`long` parser (`2^53` fölött, MIN/MAX, kétirányú overflow, string, tört/NaN/Infinity) és minden MOTD boolean típushű validációja.
+  - [x] **AUTOMATED:** kizárólag `{online}`/`{max}` placeholder; MiniMessage-only és vegyes MiniMessage/token szöveg változatlanul érvényes.
+  - [x] **AUTOMATED:** vérhold > világboss > szezonzárás prioritás és milliszekundum-pontos szezonzáró küszöb.
+  - [x] **AUTOMATED:** secure icon-root/köztes/fájl no-follow, traversal tiltás, helyes/hibás méret, sérült/túl nagy PNG és a hét bundled 64×64 ikon.
+  - [x] **AUTOMATED:** két reload, scheduler rejection/null handle, task–fallback single-winner és disable utáni késői callback nem publikál cache-t.
+  - [ ] **REAL FOLIA REQUIRED / MANUAL:** párhuzamos server-list pingek TIME és RANDOM módban, hiba és region-thread stacktrace nélkül.
+  - [ ] **REAL FOLIA REQUIRED:** vérhold, világboss és szezonzárás egymásra fedése; a prioritás pontosan ebben a sorrendben érvényes.
+  - [ ] **PERMISSION TEST / MANUAL:** vanished admin megjelenik vagy kimarad az online countból az `exclude-vanished-from-online-count` kapcsoló szerint; nem készül második vanish-state.
+  - [ ] **RELOAD TEST:** ikonfájl csere közben két gyors `/icesmp reload`; a régi async generáció nem írja vissza a régi ikonkészletet.
+  - [ ] **RELOAD TEST:** `/icesmp config set motd.selection-mode random`, `rotation-seconds`, vanish toggle és `icons.mode` azonnal új snapshotot ad.
+  - [ ] **NEGATIVE TEST:** sérült, nem PNG, 32×32, 65×64, root/köztes/fájl symlink és 1 MiB feletti fájl kihagyása; a plugin többi része működik.
+  - [ ] **NEGATIVE TEST:** ismeretlen enum, hibás típusú boolean, lebegőpontos/overflow integer, nulla max-player override, üres/65 elemű pool, ismeretlen placeholder, duplikált normalizált ID és hibás strict MiniMessage a MOTD-t fail-safe letiltja.
+  - [ ] **MANUAL:** `{online}`/`{max}`, max-player override és NONE/DEFAULT/VARIANT/RANDOM ikonmód a kliens szerverlistájában.
+  - [ ] **MANUAL / NEGATIVE:** MiniMOTD jar nélkül teljes átvételi teszt; proxy/vhost és upstream configkompatibilitás nincs és nem cél.
+
 - [ ] **QoL-kör 2 (A53–A62, ÚJ):**
   - [ ] **`/afk`:** azonnali ⌚-jelölés + hátrasorolás + jutalomkapu; bármilyen mozgás/üzenet törli
         (a parancs kiadása maga NEM törli — a toggle megmarad).

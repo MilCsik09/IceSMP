@@ -114,7 +114,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 
 | Parancs | Mit csinál |
 |---|---|
-| `/icesmp reload` | Konfiguráció újratöltése |
+| `/icesmp reload` | Konfiguráció újratöltése; a natív MOTD snapshotja és 64×64 ikonkészlete is újraépül, a régi async generáció nem írhatja felül az újat |
 | `/icesmp inspect <név>` | Teljes játékos-riport: kaszt/erőforrás/statok/bűn/claim/questek/cooldownok |
 | `/invsee <név> [read|edit] [main|ender]` | Online live inventory/ender nézet; read és edit külön permission |
 | `/warn`, `/kick`, `/mute`, `/unmute`, `/ban`, `/tempban`, `/unban` | Egységes natív punishment műveletek; `/history` és `/punishments` a lekérdezés |
@@ -166,7 +166,7 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/events archeology` | Régészeti lelőhely azonnali felbukkanása |
 | `/events intro [játékos]` | Bemutató újrajátszása |
 | `/iceitem <unique\|recept\|relikvia\|tervrajz\|erszeny> <id> [db] [játékos]` | Bármely plugin-item admin-adása |
-| `/icesmp config menu` | Kattintható élő-config szerkesztő (kategóriákra bontva) |
+| `/icesmp config menu` | Kattintható élő-config szerkesztő; a „Szerverlista és MOTD” kategória kezeli az enable, TIME/RANDOM, rotáció, vanish count és ikonmód kulcsokat |
 | `/claim admin unclaim` | Idegen claim törlése admin-jogon |
 | `/parkour setstart\|setfinish\|remove <id>` | Parkour-pálya beállítása |
 | `/npcbind <npc> quest\|shop\|bank\|exchange\|clear` (`npckotes`) | NPC explicit kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz (a bank/exchange a meglévő bank menüt nyitja) |

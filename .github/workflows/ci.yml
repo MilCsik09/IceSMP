@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - claude/projekt-audit-u0hkcz
+      - feature/native-moderation-suite
   push:
     branches:
       - master
@@ -88,12 +89,15 @@ jobs:
           set -euo pipefail
           ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
 
-      - name: Verify DEV regressions ran inside Gradle check
+      - name: Verify stacked regressions ran inside Gradle check
         shell: bash
         run: |
           set -euo pipefail
+          grep -F "MOTD regression suite passed." gradle-build.log
+          grep -F "Moderation regression suite passed." gradle-build.log
+          grep -F "Moderation review regression suite passed." gradle-build.log
+          grep -F "PersistentStoreCoordinator regression tests passed." gradle-build.log
           grep -F "DEV-item reward regression suite passed." gradle-build.log
-          echo "Gradle check executed the DEV-item reward regression suite."
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
