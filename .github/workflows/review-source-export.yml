@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/native-afk-zones
+  pull_request:
+    branches:
+      - claude/projekt-audit-u0hkcz
 
 permissions:
   contents: read
