@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    name: Validate and publish native MOTD commits
+    name: Validate and publish native MOTD feature commit
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -45,4 +45,8 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git checkout --detach 5449dc726c785d5ee1305c457046daa1e60879fc
           git am /tmp/motd.mbox
+          test "$(git log -1 --format=%s)" = "ci: run checks for stacked MOTD PRs"
+          test "$(git log -2 --format=%s | tail -1)" = "feat(motd): complete native server-list presentation"
+          git reset --hard HEAD^
+          test "$(git log -1 --format=%s)" = "feat(motd): complete native server-list presentation"
           git push --force-with-lease=refs/heads/feature/native-motd-completion:5449dc726c785d5ee1305c457046daa1e60879fc origin HEAD:refs/heads/feature/native-motd-completion
