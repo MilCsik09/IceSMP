@@ -1,0 +1,27 @@
+name: Source export
+
+on:
+  push:
+    branches:
+      - codex/source-export-45
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Package working tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: icesmp-source-45
+          path: |
+            .
+            !.git
+          include-hidden-files: true
+          retention-days: 1
