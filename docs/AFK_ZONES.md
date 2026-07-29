@@ -15,20 +15,20 @@ külön runtime tesztelni kell; addig az AxAFKZone/AxAPI eltávolítása nem tek
 
 | Szükséges képesség | Meglévő IceSMP-komponens | Újrahasználás | Bővítés | Új komponens? |
 |---|---|---|---|---|
-| kétpontos 3D kijelölés | `ClaimManager` selection és claim wand | a selection felelősség kiemelve közös szolgáltatásba; a claim változatlan parancs/wand felülete ezt használja | világ-UUID, normalizált 3D cuboid, overflow-safe térfogat, preview lifecycle | `CuboidSelectionService`, csak a közös minimum |
-| globális AFK | `AfkManager`, `/afk`, tablista és reward gate | közvetlen bővítés | több zóna, zone state és reward clock | nincs párhuzamos AFK manager |
+| kétpontos 3D kijelölés | `ClaimManager` selection és claim wand | a selection felelősség kiemelve közös szolgáltatásba; a claim változatlan parancs/wand felülete ezt használja | világ-UUID, normalizált 3D cuboid, overflow-safe méretek, preview lifecycle | `CuboidSelectionService`, csak a közös minimum |
+| globális AFK | `AfkManager`, `/afk`, tablista és reward gate | közvetlen bővítés | több zóna, zone state, catalog-revízió és reward clock | nincs párhuzamos AFK manager |
 | config | `ConfigManager` | a meglévő merge és reload | több összetartozó override atomikus írása `YamlStore.saveAtomic`-kal | nincs új config loader |
 | üzenet | `MessageManager` | közös legacy/MiniMessage renderer | domainből érkező zónaszöveg renderelése | nincs új message framework |
-| valuta | `CurrencyManager` | `payOutTokens` | nincs | nincs új currency API |
+| valuta | `CurrencyManager` | `payOutTokens` | fizikai reward hard stack-budgetje | nincs új currency API |
 | item | Bukkit inventory API | meglévő player-scheduler minta | overflow a játékos helyén ledobva | nincs új item resolver a vanilla rewardhoz |
-| command reward | global region scheduler | támogatott konzol-dispatch | whitelistelt `{player}`, `{uuid}`, `{zone}` | nincs általános placeholder engine |
-| cleanup | `PlayerStateCleanup` és `PlayerSessionCleanupListener` | központi registry | selection preview és AFK zone state | nincs új cleanup registry |
+| command reward | global region scheduler | támogatott konzol-dispatch | pontosan whitelistelt `{player}`, `{uuid}`, `{zone}`, generation gate és valós siker-visszajelzés | nincs általános placeholder engine |
+| cleanup | `PlayerStateCleanup` és `PlayerSessionCleanupListener` | központi registry | selection preview és AFK zone state | `IdentityTaskRegistry`, kizárólag a preview task-lease minimuma |
 
 ## Közös 3D selection
 
 A `/claim pos1`, `/claim pos2` és a meglévő birtokmérő pálca ugyanazt a
 `CuboidSelectionService` sessiont állítja, amelyből a `/claim area` és az `/afkzone` is
-olvas. Az AFK-rendszer nem tart külön sarkokat, wandot vagy preview task-registryt.
+olvas. Az AFK-rendszer nem tart külön sarkokat, wandot vagy párhuzamos selection frameworköt.
 
 A szolgáltatás felelőssége:
 
@@ -36,8 +36,11 @@ A szolgáltatás felelőssége:
 - világ UUID + név és cross-world reset;
 - inclusive min/max normalizálás;
 - overflow-safe XZ footprint és 3D volume;
-- globális és domainenként szigorítható volume-limit;
+- domainenként helyes limit: a claim megőrzi a történeti XZ footprint-plafont, az AFK-zóna
+  az explicit 3D `selection.max-volume` és `afk.max-zone-volume` minimumát használja;
 - player entity scheduleren futó, pontszámban és időben korlátozott particle preview;
+- identitás- és generációalapú preview lease, ezért egy régi retirement callback nem törölheti
+  az új previewt, reload pedig nem hagyhat előtte indult taskot életben;
 - clear, quit, kick, reload és disable cleanup.
 
 ## Adminparancs
@@ -103,24 +106,32 @@ Szigorúan elutasított állapotok:
 - nem egész, nem 32 bites vagy világmagasságon kívüli koordináta;
 - túl nagy cuboid;
 - nulla, negatív, nem egész vagy túl nagy interval/roll/item/currency érték;
+- 1000-nél nagyobb fizikai currency reward még akkor is, ha a config ennél nagyobb értéket kér;
 - NaN/Infinity vagy túl nagy reward weight;
 - ismeretlen reward/currency/material/bossbar enum;
 - nem `icesmp.*` névtérbeli per-zone permission;
-- ismeretlen, lezáratlan, árva vagy egymásba ágyazott command placeholder;
+- ismeretlen, eltérő case-ű, lezáratlan, árva vagy egymásba ágyazott command placeholder;
 - command control character vagy 256 karakternél hosszabb command.
 
 Egy hibás zóna izoláltan letiltódik és `/afkzone status` alatt látható. A többi érvényes
 zóna tovább működik. Hibás globális biztonsági limitnél biztonságos fallback marad érvényben,
 a hiba pedig `_global` diagnosztikaként jelenik meg.
 
-## Reward és Folia ownership
+## Reward, reload és Folia ownership
 
 A global region scheduler csak drivert futtat. Minden játékos helye, permissionje, bossbarja,
 title/actionbarja és inventoryja a saját entity schedulerén kezelődik. A command reward a global
 region scheduleren fut konzolként. A player thread és a global scheduler között csak már
 feloldott, immutable command string kerül át.
 
+Minden player-tick egy immutable catalog-revíziót visz magával. Reload új revíziót publikál; a
+korábban sorba állt entity callback fail-closed, a későn befejeződő command callback pedig nem
+futtat régi reward-definíciót. Scheduler retirementkor a transient zone/progress/bossbar registry
+kitisztul. A command reward csak sikeres `dispatchCommand` után kerül sikeresként naplózásra és
+csak ekkor kap a játékos visszajelzést; ismeretlen command vagy scheduler rejection nem jelez
+hamis jutalmat.
+
 A reward clock egy tickben legfeljebb egy ciklust enged át, a maradékidőt megtartja. Így egy
-késői tick vagy reload nem okoz catch-up rewardvihart vagy dupla payoutot. Item overflow nem vész
-el: a megmaradt stackek a player aktuális helyén esnek ki. Minden reward típus és zónaazonosító
-naplózásra kerül.
+késői tick nem okoz catch-up rewardvihart vagy dupla payoutot. Item overflow nem vész el: a
+megmaradt stackek a player aktuális helyén esnek ki. A transient progress restartkor/reloadkor nem
+állít crash-safe vagy exactly-once garanciát; ezt a runtime playtest-lista külön kezeli.
