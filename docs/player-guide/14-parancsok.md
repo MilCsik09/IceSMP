@@ -24,7 +24,8 @@ jelenti, hogy **elhagyható**.
 | `/sit` | — | Leülés, ahol állsz (újra `/sit` vagy sneak = felállás); lépcsőre/fél-lapra üres kézzel jobb-katt is leültet |
 | `/sit fekves` | — | Fekvő póz (LibsDisguises szükséges hozzá); újra kiadva vagy mozgásra felállsz |
 | `/afk` | — | Önkéntes AFK-jelölés ki/be |
-| `/crate buy <id> [db]` / `/crate info [id]` | `ladak`, `crates` | Láda-kulcs vásárlása frakció-valutáért / jutalom-esélyek megtekintése (kulccsal a ládára jobb-katt = nyitás; a nyereményt egy 3D-ikon tárja fel a láda fölött) |
+| `/crates` / `/crate` | `ladak` | Read-only ládalista-GUI; kattintással jutalom-preview |
+| `/crate buy <id> [db]` / `/crate info <id>` / `/crate preview <id>` | — | Kulcsvásárlás, required key/cooldown/mass-open info és esélylista. Főkézből jobb katt a fizikai ládára = nyitás; lopakodva katt = engedélyezett többszörös nyitás |
 | `/report <név> <ok>` | `bejelent` | Játékos bejelentése a moderátoroknak (percenként egyszer) |
 | `/daily` | `napi` | A napi küldetés és haladásod |
 | `/pet [menu\|item\|summon\|dismiss\|name\|stance\|info]` | `tars`, `companion` | Társ-GUI (üresen), befogó eszköz, idézés, név, állásmód (Vadmester / Nekromanta / Szentségtelen / Boszorkánymester) |
@@ -171,6 +172,10 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/parkour setstart\|setfinish\|remove <id>` | Parkour-pálya beállítása |
 | `/npcbind <npc> quest\|shop\|bank\|exchange\|clear` (`npckotes`) | NPC explicit kötése küldetéshez/bolthoz/bankárhoz/valutaváltóhoz (a bank/exchange a meglévő bank menüt nyitja) |
 | `/npcbind list` | Minden NPC-kötés kiírása |
+| `/crate set <id>` / `/crate remove` | A nézett blokk crate-helyként mentése vagy törlése |
+| `/crate give <játékos> <id> [db]` / `/crate list` | PDC-kulcs átadása / tartós fizikai helyek listája |
+| `/crate stats <játékos|uuid> [id]` | Nyitási statisztika lekérdezése |
+| `/crate resetstats <játékos|uuid> [id|all]` / `/crate status` | Stat/cooldown reset / valid config és hibák |
 
 ---
 

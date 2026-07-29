@@ -1905,6 +1905,21 @@ A frakció-akcentek angol fordítása a prompthoz: RED = „glowing ember orange
 - **Színvilág:** sötétebb, kékes acél; akcent: földbarna
 - **Hangulat / lore:** A Hetedik Vérháború Rozsdás Pengéje — egykor hadsereg-fegyver, ma néma harag.
 
+
+## Crate-kulcsok
+
+### `crate_key_common` — Köznapi Láda Kulcsa
+- **Fájl:** `crate_key_common.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** egyszerű kovácsoltvas kulcs, apró zöld zománcozott crate-jellel
+- **Színvilág:** sötét vas; akcent: friss levélzöld
+- **Hangulat / lore:** A mindennapi zsákmányládák hivatalos, PDC-azonosított IceSMP-kulcsa.
+
+### `crate_key_rare` — Ritka Láda Kulcsa
+- **Fájl:** `crate_key_rare.png` &nbsp;|&nbsp; **Alap-item:** `TRIPWIRE_HOOK`
+- **Ábrázolás:** díszes ezüstkulcs ametiszt foglalattal és finom rúnamarással
+- **Színvilág:** hideg ezüst; akcent: mély lila és halvány mágikus fény
+- **Hangulat / lore:** A ritka jutalomtáblához kötött, új IceSMP-formátumú ládakulcs.
+
 ## Karbantartási szabály
 
 - Új itemnél a config/kód `item-model` értéke legyen `icesmp:<modell-id>`; ugyanez a `<modell-id>` a blokk-fejlécben és a PNG fájlnevében.

@@ -933,9 +933,15 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         közös 3D selectionből létrehozott több zóna, közvetlen zónaváltás, reward-rollok,
         full-inventory és reload/quit/kick lifecycle külön ellenőrzendő. A globális AFK-jelzés
         ettől függetlenül továbbra is tesztelendő.
-  - [ ] **Crate-rendszer** (CrazyCrates helyett): csak a `feature/native-crates-completion`
-        scope után; lista/preview, permission/world, többkulcsos fogyasztás, cooldown, statisztika,
-        strict reward-validáció és full-inventory útvonal is tesztelendő a meglévő fizikai nyitás mellett.
+  - [ ] **Crate-rendszer** (CrazyCrates helyett): a code-review-zott lifecycle buildelt és regressziózott,
+        de a jar eltávolítása csak valódi Folia/fault-injection átvételi teszt után engedhető. Ellenőrizd:
+        - main-hand működik, off-hand és gyors dupla katt nem indít második openinget;
+        - required key több inventory stackből pontosan fogy, partial mass-open csak teljesen finanszírozott nyitásokat indít;
+        - full inventorynál az item reward a játékos owner-szálán a helyére esik;
+        - currency write/rollback hiba, command submit exception/null/rejection, `dispatchCommand == false` és command exception nem kap hamis completed/success állapotot;
+        - két gyors reload, crate/world/definition cseréje finalize előtt, valamint quit/kick/disable minden lifecycle ponton;
+        - spin/reveal entity és GUI cleanup, konkurens auditrotáció, stats-reset race;
+        - restart recovery: egyszeri key refund vagy dokumentált `MANUAL_REVIEW`, jutalomduplikáció nélkül.
   - [ ] **Ülés** (GSit helyett): csak a `feature/native-sit-poses` scope után; `/sit`, click-to-sit,
         anyag- és világpolicy, unsafe location, tiltott parancs, minden cleanup-esemény, lay/crawl
         és árva seat-entitás külön ellenőrzendő.
