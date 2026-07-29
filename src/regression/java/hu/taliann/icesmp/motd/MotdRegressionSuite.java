@@ -2,7 +2,10 @@ package hu.taliann.icesmp.motd;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,8 +20,12 @@ public final class MotdRegressionSuite {
         randomRotationCoversPoolAndUsesSeed();
         eventPriorityIsStrict();
         seasonThresholdIsMillisecondPrecise();
+        seasonThresholdDoesNotOverflow();
+        wholeNumbersPreserveSignedLongPrecision();
+        placeholdersAreStrict();
         invalidInputsFailClosed();
         bundledIconsAreValid();
+        iconValidationDoesNotFollowSymlinks();
         System.out.println("MOTD regression suite passed.");
     }
 
@@ -73,6 +80,50 @@ public final class MotdRegressionSuite {
                 "an already ended season must not remain active");
     }
 
+    private static void seasonThresholdDoesNotOverflow() {
+        require(MotdSelector.selectEvent(false, false, Long.MIN_VALUE, Long.MAX_VALUE, 10L)
+                        == MotdSelector.ActiveEvent.NONE,
+                "subtraction overflow must not resurrect an ancient season end");
+        require(MotdSelector.selectEvent(false, false, Long.MAX_VALUE, Long.MAX_VALUE - 5L, 10L)
+                        == MotdSelector.ActiveEvent.SEASON_END,
+                "the upper long boundary must remain inside a saturated threshold");
+        require(MotdSelector.selectEvent(false, false, Long.MAX_VALUE, Long.MAX_VALUE - 5L, 4L)
+                        == MotdSelector.ActiveEvent.NONE,
+                "the upper long boundary must still honor an exact short threshold");
+        require(MotdSelector.selectEvent(false, false, -1L, Long.MIN_VALUE, Long.MAX_VALUE)
+                        == MotdSelector.ActiveEvent.SEASON_END,
+                "a full-range threshold must work without addition overflow");
+    }
+
+    private static void wholeNumbersPreserveSignedLongPrecision() {
+        final long aboveDoublePrecision = 9_007_199_254_740_993L;
+        require(MotdSelector.parseWholeNumber(aboveDoublePrecision, 0L, Long.MIN_VALUE, Long.MAX_VALUE,
+                        "motd.random-seed") == aboveDoublePrecision,
+                "an exact Long seed above 2^53 must not be rounded through double");
+        require(MotdSelector.parseWholeNumber("9223372036854775807", 0L, Long.MIN_VALUE, Long.MAX_VALUE,
+                        "motd.random-seed") == Long.MAX_VALUE,
+                "Long.MAX_VALUE string must parse exactly");
+        require(MotdSelector.parseWholeNumber("-9223372036854775808", 0L, Long.MIN_VALUE, Long.MAX_VALUE,
+                        "motd.random-seed") == Long.MIN_VALUE,
+                "Long.MIN_VALUE string must parse exactly");
+        expectFailure(() -> MotdSelector.parseWholeNumber("9223372036854775808", 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+        expectFailure(() -> MotdSelector.parseWholeNumber("1.5", 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+        expectFailure(() -> MotdSelector.parseWholeNumber(Double.NaN, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+        expectFailure(() -> MotdSelector.parseWholeNumber(Double.POSITIVE_INFINITY, 0L,
+                Long.MIN_VALUE, Long.MAX_VALUE, "motd.random-seed"));
+    }
+
+    private static void placeholdersAreStrict() {
+        MotdSelector.validatePlaceholders("<gray>{online}/{max}</gray>", "motd.variants.test.line1");
+        expectFailure(() -> MotdSelector.validatePlaceholders("{players}", "motd.variants.test.line1"));
+        expectFailure(() -> MotdSelector.validatePlaceholders("{Online}", "motd.variants.test.line1"));
+        expectFailure(() -> MotdSelector.validatePlaceholders("{online", "motd.variants.test.line1"));
+        expectFailure(() -> MotdSelector.validatePlaceholders("online}", "motd.variants.test.line1"));
+    }
+
     private static void invalidInputsFailClosed() {
         expectFailure(() -> MotdSelector.Mode.parse("shuffle"));
         expectFailure(() -> MotdSelector.selectIndex(MotdSelector.Mode.TIME, 0, 0L, 1L, 0L));
@@ -90,6 +141,30 @@ public final class MotdRegressionSuite {
         }
     }
 
+    private static void iconValidationDoesNotFollowSymlinks() throws Exception {
+        final Path directory = Files.createTempDirectory("icesmp-motd-icon-");
+        final Path target = directory.resolve("target.png");
+        try (InputStream input = MotdRegressionSuite.class.getClassLoader().getResourceAsStream("icons/frost.png")) {
+            require(input != null, "missing bundled frost icon");
+            Files.copy(input, target);
+        }
+        require(MotdIconValidator.readValidatedPng(target, 1_048_576L).getWidth() == 64,
+                "a regular valid bundled icon must pass the no-follow validator");
+        expectIOException(() -> MotdIconValidator.readValidatedPng(target, 1L));
+
+        final Path link = directory.resolve("linked.png");
+        try {
+            Files.createSymbolicLink(link, target.getFileName());
+            expectIOException(() -> MotdIconValidator.readValidatedPng(link, 1_048_576L));
+        } catch (final UnsupportedOperationException | SecurityException exception) {
+            // Some local filesystems cannot create symlinks; Linux CI executes the behavioral assertion.
+        } finally {
+            Files.deleteIfExists(link);
+            Files.deleteIfExists(target);
+            Files.deleteIfExists(directory);
+        }
+    }
+
     private static void expectFailure(final Runnable runnable) {
         try {
             runnable.run();
@@ -99,9 +174,23 @@ public final class MotdRegressionSuite {
         }
     }
 
+    private static void expectIOException(final CheckedRunnable runnable) throws Exception {
+        try {
+            runnable.run();
+            throw new AssertionError("expected IOException");
+        } catch (final IOException expected) {
+            // expected
+        }
+    }
+
     private static void require(final boolean condition, final String message) {
         if (!condition) {
             throw new AssertionError(message);
         }
+    }
+
+    @FunctionalInterface
+    private interface CheckedRunnable {
+        void run() throws Exception;
     }
 }
