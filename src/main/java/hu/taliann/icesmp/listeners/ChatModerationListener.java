@@ -15,6 +15,7 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Natív moderáció (a SModeration plugin chat-részének kiváltása): némítás + chat-szűrő
@@ -55,9 +56,10 @@ public final class ChatModerationListener implements Listener {
             return;
         }
         final Player sender = event.getPlayer();
+        final UUID senderId = sender.getUniqueId();
         final String plain = PLAIN.serialize(event.message());
 
-        final ModerationManager.MuteEntry mute = moderationManager.muteInfo(sender.getUniqueId());
+        final ModerationManager.MuteEntry mute = moderationManager.muteInfo(senderId);
         if (mute != null) {
             event.setCancelled(true);
             sender.sendMessage(muteMessage(mute));
@@ -65,8 +67,8 @@ public final class ChatModerationListener implements Listener {
             return;
         }
 
-        if (ModerationSpamGuard.evaluate(moderationManager,
-                () -> moderationManager.isSpam(sender.getUniqueId(), plain))) {
+        if (ModerationSpamGuard.evaluate(senderId,
+                () -> moderationManager.isSpam(senderId, plain))) {
             event.setCancelled(true);
             sender.sendMessage(messageManager.get("moderation.spam-blocked",
                     "&cTúl gyorsan/ismételten küldesz üzenetet — várj egy kicsit."));

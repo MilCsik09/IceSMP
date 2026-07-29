@@ -88,7 +88,7 @@ public final class PrivateMessageCommand implements BasicCommand {
             sender.sendMessage(messages.get("moderation.message-self", "&cMagadnak nem küldhetsz privát üzenetet."));
             return;
         }
-        final ModerationManager.PrivateMessageDecision decision = ModerationSpamGuard.evaluate(manager,
+        final ModerationManager.PrivateMessageDecision decision = ModerationSpamGuard.evaluate(senderId,
                 () -> manager.evaluatePrivateMessage(senderId, rawMessage));
         if (decision.status() != ModerationManager.PrivateMessageStatus.DELIVERED) {
             sender.sendMessage(blockedMessage(decision));
