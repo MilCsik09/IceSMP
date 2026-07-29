@@ -9,7 +9,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,15 +102,10 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
         private Corner second;
     }
 
-    /** Identity-owned task slot: an old retirement callback can remove only its own session. */
-    private static final class PreviewSession {
-        private volatile ScheduledTask task;
-    }
-
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final Map<UUID, MutableSelection> selections = new ConcurrentHashMap<>();
-    private final Map<UUID, PreviewSession> previewTasks = new ConcurrentHashMap<>();
+    private final IdentityTaskRegistry<UUID, ScheduledTask> previewTasks = new IdentityTaskRegistry<>();
 
     public CuboidSelectionService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
@@ -209,39 +203,40 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
         final UUID playerId = player.getUniqueId();
         final int seconds = Math.max(1, Math.min(30, requestedSeconds));
         final AtomicInteger frame = new AtomicInteger();
-        final PreviewSession session = new PreviewSession();
-        final PreviewSession previous = previewTasks.put(playerId, session);
-        cancelSession(previous);
+        final IdentityTaskRegistry.Installation<ScheduledTask> installation = previewTasks.install(playerId);
+        cancelLease(installation.previous());
+        if (!installation.active()) {
+            return;
+        }
+        final IdentityTaskRegistry.Lease<ScheduledTask> lease = installation.current();
 
         final ScheduledTask scheduled;
         try {
             scheduled = player.getScheduler().runAtFixedRate(plugin, task -> {
                 if (!player.isOnline() || frame.getAndIncrement() >= seconds) {
-                    previewTasks.remove(playerId, session);
+                    previewTasks.remove(playerId, lease);
                     task.cancel();
                     return;
                 }
                 drawFrame(player, cuboid);
-            }, () -> previewTasks.remove(playerId, session), 1L, 20L);
+            }, () -> previewTasks.remove(playerId, lease), 1L, 20L);
         } catch (final RuntimeException rejected) {
-            previewTasks.remove(playerId, session);
+            previewTasks.remove(playerId, lease);
             return;
         }
-        session.task = scheduled;
+        lease.attach(scheduled);
         if (scheduled == null) {
-            previewTasks.remove(playerId, session);
+            previewTasks.remove(playerId, lease);
             return;
         }
-        if (previewTasks.get(playerId) != session) {
+        if (!previewTasks.isCurrent(playerId, lease)) {
             scheduled.cancel();
         }
     }
 
     /** Reload semantics are explicit: transient corners and preview tasks never survive reload. */
     public void clearAll() {
-        final ArrayList<PreviewSession> sessions = new ArrayList<>(previewTasks.values());
-        previewTasks.clear();
-        sessions.forEach(CuboidSelectionService::cancelSession);
+        previewTasks.invalidateAndDrain().forEach(CuboidSelectionService::cancelLease);
         selections.clear();
     }
 
@@ -255,12 +250,12 @@ public final class CuboidSelectionService implements PlayerStateCleanup {
     }
 
     private void cancelPreview(final UUID playerId) {
-        cancelSession(previewTasks.remove(playerId));
+        cancelLease(previewTasks.remove(playerId));
     }
 
-    private static void cancelSession(final PreviewSession session) {
-        if (session != null && session.task != null) {
-            session.task.cancel();
+    private static void cancelLease(final IdentityTaskRegistry.Lease<ScheduledTask> lease) {
+        if (lease != null && lease.task() != null) {
+            lease.task().cancel();
         }
     }
 
