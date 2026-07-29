@@ -27,10 +27,16 @@ public final class CrateKeyFactory {
 
     private final ConfigManager configManager;
     private final NamespacedKey crateKeyIdKey;
+    private volatile hu.taliann.icesmp.managers.CrateManager crateManager;
 
     public CrateKeyFactory(final JavaPlugin plugin, final ConfigManager configManager) {
         this.configManager = configManager;
         this.crateKeyIdKey = new NamespacedKey(plugin, "crate_key");
+    }
+
+    /** Binds the validated crate snapshot after the manager is constructed. */
+    public void bind(final hu.taliann.icesmp.managers.CrateManager crateManager) {
+        this.crateManager = crateManager;
     }
 
     /**
@@ -45,7 +51,10 @@ public final class CrateKeyFactory {
             return new ItemStack(Material.AIR);
         }
         final String basePath = "crates." + crateId;
-        final Material material = Material.matchMaterial(configManager.getString(basePath + ".key-material", "TRIPWIRE_HOOK"));
+        final hu.taliann.icesmp.managers.CrateManager manager = crateManager;
+        final Material material = manager == null
+                ? Material.matchMaterial(configManager.getString(basePath + ".key-material", "TRIPWIRE_HOOK"))
+                : manager.keyMaterial(crateId);
         if (material == null || material.isAir()) {
             return new ItemStack(Material.AIR);
         }
@@ -56,75 +65,65 @@ public final class CrateKeyFactory {
             return itemStack;
         }
 
-        final String keyName = configManager.getString(basePath + ".key-name", "&fLáda Kulcs");
+        final String keyName = manager == null
+                ? configManager.getString(basePath + ".key-name", "&fLáda Kulcs")
+                : manager.keyName(crateId);
         meta.displayName(SERIALIZER.deserialize(TextUtil.color(keyName)).decoration(TextDecoration.ITALIC, false));
-        // A kulcs lore-ja a láda nevét és a top-3 jutalmat mutatja esély-százalékkal —
-        // a kulcs "önmagát adja el" a piacon/tradeben is. A sorsolás mindig a friss configból megy,
-        // a lore csak tájékoztató (config-átírás után a régi kulcsok lore-ja elavulhat, ez kozmetikai).
+        // A kulcs lore-ja a manager teljesen validált immutable snapshotjából készül.
+        // A már kiosztott kulcs lore-ja reload után kozmetikailag elavulhat, a PDC azonosítója viszont stabil.
         final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
-        lore.add(SERIALIZER.deserialize(TextUtil.color(
-                configManager.getString(basePath + ".display-name", "&8Láda") + " &8— kulcs")).decoration(TextDecoration.ITALIC, false));
+        final String crateName = manager == null
+                ? configManager.getString(basePath + ".display-name", "&8Láda")
+                : manager.displayName(crateId);
+        lore.add(SERIALIZER.deserialize(TextUtil.color(crateName + " &8— kulcs"))
+                .decoration(TextDecoration.ITALIC, false));
         lore.add(SERIALIZER.deserialize(TextUtil.color("&7Jobb katt a ládán: &fkinyitás")).decoration(TextDecoration.ITALIC, false));
-        lore.addAll(topRewardLore(basePath));
+        lore.addAll(topRewardLore(crateId, basePath));
         meta.lore(lore);
 
         meta.getPersistentDataContainer().set(crateKeyIdKey, PersistentDataType.STRING, crateId);
         itemStack.setItemMeta(meta);
-        final String keyModel = configManager.getString(basePath + ".key-item-model", null);
+        final String keyModel = manager == null
+                ? configManager.getString(basePath + ".key-item-model", null)
+                : manager.keyItemModel(crateId);
         if (keyModel != null && !keyModel.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, keyModel);
         }
         return itemStack;
     }
 
-    /** A top-3 jutalom lore-sorai súly szerinti esély-százalékkal, plusz „…és további N". */
-    private List<net.kyori.adventure.text.Component> topRewardLore(final String basePath) {
+    /** A top-3 jutalom lore-sorai a manager validált snapshotjából. */
+    private List<net.kyori.adventure.text.Component> topRewardLore(final String crateId, final String basePath) {
+        final hu.taliann.icesmp.managers.CrateManager manager = crateManager;
+        if (manager != null) {
+            final java.util.List<hu.taliann.icesmp.managers.CrateManager.RewardOdds> odds =
+                    new java.util.ArrayList<>(manager.rewardOdds(crateId));
+            odds.sort((left, right) -> Double.compare(right.percent(), left.percent()));
+            if (odds.isEmpty()) {
+                return List.of();
+            }
+            final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+            final int shown = Math.min(3, odds.size());
+            for (int i = 0; i < shown; i++) {
+                final var reward = odds.get(i);
+                final String percent = new java.text.DecimalFormat("0.#").format(reward.percent());
+                lore.add(SERIALIZER.deserialize(TextUtil.color(
+                                "&8◆ &7" + reward.description() + " &8— &e" + percent + "%"))
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            if (odds.size() > shown) {
+                lore.add(SERIALIZER.deserialize(TextUtil.color("&8…és további " + (odds.size() - shown) + " jutalom"))
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            return lore;
+        }
+
+        // Construction-time fallback; gameplay always binds the manager before a key is issued.
         final java.util.List<java.util.Map<?, ?>> rewards = configManager.getConfiguration() == null
                 ? List.of() : configManager.getConfiguration().getMapList(basePath + ".rewards");
-        if (rewards.isEmpty()) {
-            return List.of();
-        }
-        int totalWeight = 0;
-        for (final java.util.Map<?, ?> reward : rewards) {
-            totalWeight += rewardWeight(reward);
-        }
-        if (totalWeight <= 0) {
-            return List.of();
-        }
-        final java.util.List<java.util.Map<?, ?>> sorted = new java.util.ArrayList<>(rewards);
-        sorted.sort((a, b) -> Integer.compare(rewardWeight(b), rewardWeight(a)));
-
-        final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
-        final int shown = Math.min(3, sorted.size());
-        for (int i = 0; i < shown; i++) {
-            final java.util.Map<?, ?> reward = sorted.get(i);
-            final long percent = Math.round(rewardWeight(reward) * 100.0D / totalWeight);
-            lore.add(SERIALIZER.deserialize(TextUtil.color(
-                            "&8◆ &7" + rewardLabel(reward) + " &8— &e" + percent + "%"))
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        if (sorted.size() > shown) {
-            lore.add(SERIALIZER.deserialize(TextUtil.color("&8…és további " + (sorted.size() - shown) + " jutalom"))
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        return lore;
-    }
-
-    private static int rewardWeight(final java.util.Map<?, ?> reward) {
-        final Object weight = reward.get("weight");
-        return weight instanceof Number number ? Math.max(0, number.intValue()) : 0;
-    }
-
-    private static String rewardLabel(final java.util.Map<?, ?> reward) {
-        final Object description = reward.get("description");
-        if (description instanceof String text && !text.isBlank()) {
-            return TextUtil.color(text);
-        }
-        final Object material = reward.get("material");
-        final Object amount = reward.get("amount");
-        final String name = material instanceof String materialName
-                ? materialName.toLowerCase(java.util.Locale.ROOT).replace('_', ' ') : "jutalom";
-        return name + (amount instanceof Number number && number.intValue() > 1 ? " ×" + number.intValue() : "");
+        return rewards.isEmpty() ? List.of() : List.of(
+                SERIALIZER.deserialize(TextUtil.color("&8◆ &7Jutalmak: &f" + rewards.size()))
+                        .decoration(TextDecoration.ITALIC, false));
     }
 
     /** Whether the item is any crate key. */

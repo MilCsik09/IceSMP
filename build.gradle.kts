@@ -64,6 +64,14 @@ val devItemRewardRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.DevItemRewardRegressionSuite")
 }
 
+val crateRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native crate validation, selection, key and rollback regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.crates.CrateRegressionSuite")
+}
+
 tasks.check {
-    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest)
+    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, crateRegressionTest)
 }

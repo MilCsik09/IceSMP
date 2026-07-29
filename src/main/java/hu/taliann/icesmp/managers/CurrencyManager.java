@@ -294,7 +294,38 @@ public final class CurrencyManager implements PlayerStateCleanup, PersistentStor
         if (playerId == null || currencyType == null || !Double.isFinite(amount) || amount <= 0.0D) {
             return;
         }
-        requireMutation(() -> adjustBalanceUnsafe(playerId, currencyType, amount));
+        addBalances(playerId, Map.of(currencyType, amount));
+    }
+
+    /** Applies one reward batch under a single wallet mutation permit, without partial currency types. */
+    public void addBalances(final UUID playerId, final Map<CurrencyType, Double> additions) {
+        if (playerId == null || additions == null || additions.isEmpty()) {
+            return;
+        }
+        final EnumMap<CurrencyType, Double> validated = new EnumMap<>(CurrencyType.class);
+        for (final Map.Entry<CurrencyType, Double> entry : additions.entrySet()) {
+            final CurrencyType type = entry.getKey();
+            final Double amount = entry.getValue();
+            if (type == null || amount == null || !Double.isFinite(amount) || amount <= 0.0D) {
+                throw new IllegalArgumentException("A wallet batch csak véges, pozitív összegeket fogad.");
+            }
+            validated.merge(type, amount, Double::sum);
+            if (!Double.isFinite(validated.get(type))) {
+                throw new IllegalArgumentException("A wallet batch összege nem véges.");
+            }
+        }
+        requireMutation(() -> balances.compute(playerId, (key, existing) -> {
+            final EnumMap<CurrencyType, Double> updated = existing == null
+                    ? createEmptyBalanceMap() : new EnumMap<>(existing);
+            for (final Map.Entry<CurrencyType, Double> entry : validated.entrySet()) {
+                final double next = updated.getOrDefault(entry.getKey(), 0.0D) + entry.getValue();
+                if (!Double.isFinite(next) || next < 0.0D) {
+                    throw new IllegalArgumentException("A wallet batch túlcsordulna.");
+                }
+                updated.put(entry.getKey(), next);
+            }
+            return updated;
+        }));
         requestSave();
     }
 

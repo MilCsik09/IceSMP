@@ -1,59 +1,103 @@
-# Natív láda (crate) rendszer — a CrazyCrates kiváltása (IDEAS B8).
-#
-# Minden láda egy fizikai blokk-hely (lásd /crate set), amit egy hozzá tartozó
-# kulcs-itemmel lehet kinyitni. A kulcs ÁRA (key-price) a valuta-sink: a
-# /crate buy paranccsal levont pénz VÉGLEGESEN elég, nem kerül vissza a
-# gazdaságba. Az ELÉG a bevétel a rendszernek — a láda-jutalom maga SOSEM
-# pénz, mindig nyers item (ritkán parancs-jutalom, ha a config úgy definiálja).
-#
-# rewards: súlyozott lista — egy tétel esélye = weight / (az adott láda összes
-# weight-jének összege). Egy tétel vagy "material" (+ "amount"), vagy "command"
-# (konzolként lefuttatva, {player} helyettesítéssel) — pontosan egyet adj meg.
-#
-# Kulcs-források (IDEAS A48):
-#   - Bolt: /crate buy <láda> [darab] — a key-price valuta-sinkje (lásd fent).
-#   - Quest-jutalom: config/quests.yml — egy quest rewards blokkjában a
-#     "crate-key: \"<ládaId>:<darab>\"" mező (lásd pl. onboarding_gather).
-#   - Jövőbeli forrás (még nincs bekötve): napi/heti kihívás jutalma.
+# IceSMP natív ládarendszer. Ez a végleges saját séma; CrazyCrates-config és legacy kulcs nem támogatott.
 crates-settings:
-  # IDEAS A47: kozmetikus "pörgős" reveal-animáció (gui/CrateSpinGUI) a láda kinyitásakor —
-  # a nyeremény sorsolása és jóváírása EZTŐL FÜGGETLENÜL mindig azonnal megtörténik, ez a
-  # kapcsoló csak azt dönti el, hogy a visszajelzés (hang/részecske/chat) azonnal jön-e,
-  # vagy az animáció végén. Globális kapcsoló (nem láda-specifikus) — egyszerűbb, mint
-  # minden ládánál külön beállítani, és a kozmetika amúgy is szerver-szintű ízlés kérdése.
+  enabled: true
+  # Az egyetlen nyitás jutalmát kozmetikai pörgős GUI mutatja. Többszörös nyitás összegzést használ.
   spin-animation: true
 
 crates:
-
   koznapi:
-    display-name: "Caldesterai Kereskedőláda"
-    key-name: "&fKereskedő Kulcs"
+    enabled: true
+    display-name: "&aKöznapi Láda"
     key-material: TRIPWIRE_HOOK
-    key-item-model: "icesmp:cratekey_koznapi"
-    # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
+    key-name: "&aKöznapi Kulcs"
+    key-item-model: "icesmp:crate_key_common"
     key-price:
       currency: NEUTRAL
-      amount: 25.0
+      amount: 250
+    # Üres: csak az általános icesmp.crate.use jog kell. Egyedi gate csak icesmp.* lehet.
+    permission: ""
+    # Üres: minden betöltött világban használható. Ismeretlen világnév a crate-et letiltja.
+    worlds: []
+    required-key-count: 1
+    cooldown-seconds: 5
+    mass-open:
+      enabled: true
+      max-openings: 10
+    opening-sound:
+      sound: ENTITY_PLAYER_LEVELUP
+      volume: 1.0
+      pitch: 1.2
+    broadcast:
+      enabled: false
+      message: "&6[Láda] &f{player} &ekinyitotta: &f{crate} &7({amount}×)"
     rewards:
-      - {weight: 40, material: IRON_INGOT, amount: 8}
-      - {weight: 25, material: GOLDEN_APPLE, amount: 2}
-      - {weight: 20, material: DIAMOND, amount: 2}
-      - {weight: 10, material: NETHERITE_SCRAP, amount: 1}
-      - {weight: 5, material: DIAMOND_BLOCK, amount: 1, description: "&bGyémánttömb"}
+      - type: item
+        weight: 55.0
+        material: IRON_INGOT
+        amount: 8
+        description: "&f8× Vasrúd"
+      - type: currency
+        weight: 25.0
+        currency: NEUTRAL
+        amount: 125
+        description: "&e125 Creutzér"
+      - type: unique-item
+        weight: 12.0
+        id: emlekszilank
+        amount: 2
+        description: "&b2× Emlékszilánk"
+      - type: crate-key
+        weight: 8.0
+        id: ritka
+        amount: 1
+        description: "&dRitka ládakulcs"
 
   ritka:
-    display-name: "&5Caldesterai Kincsesláda"
-    key-name: "&5Kincses Kulcs"
+    enabled: true
+    display-name: "&dRitka Láda"
     key-material: TRIPWIRE_HOOK
-    key-item-model: "icesmp:cratekey_ritka"
-    # A kulcs ára valuta-sinkként ELÉG — nem megy vissza a gazdaságba.
+    key-name: "&dRitka Kulcs"
+    key-item-model: "icesmp:crate_key_rare"
     key-price:
       currency: NEUTRAL
-      amount: 100.0
+      amount: 1200
+    permission: "icesmp.crate.ritka"
+    worlds: []
+    required-key-count: 2
+    cooldown-seconds: 30
+    mass-open:
+      enabled: true
+      max-openings: 5
+    opening-sound:
+      sound: UI_TOAST_CHALLENGE_COMPLETE
+      volume: 0.8
+      pitch: 1.1
+    broadcast:
+      enabled: true
+      message: "&d[Láda] &f{player} &7kinyitotta: &d{crate} &7({amount}×)"
     rewards:
-      - {weight: 30, material: NETHERITE_INGOT, amount: 1}
-      - {weight: 25, material: DIAMOND_BLOCK, amount: 3}
-      - {weight: 20, material: ENCHANTED_GOLDEN_APPLE, amount: 1}
-      - {weight: 15, material: NETHER_STAR, amount: 1}
-      - {weight: 7, material: TOTEM_OF_UNDYING, amount: 1}
-      - {weight: 3, material: NETHERITE_BLOCK, amount: 1, description: "&5Netherit-tömb"}
+      - type: item
+        weight: 35.0
+        material: DIAMOND
+        amount: 4
+        description: "&b4× Gyémánt"
+      - type: recipe-item
+        weight: 20.0
+        id: netherit_torzsalek_otvozet
+        amount: 1
+        description: "&6Netherit ötvözet"
+      - type: blueprint
+        weight: 15.0
+        id: netherit_torzsalek_otvozet
+        amount: 1
+        description: "&bNetherit Ötvözés tervrajz"
+      - type: currency
+        weight: 20.0
+        currency: NEUTRAL
+        amount: 1000
+        description: "&e1000 Creutzér"
+      - type: command
+        weight: 10.0
+        # Csak {player}, {uuid}, {crate}, {amount} használható. Kezdő / és sortörés tiltott.
+        command: "xp add {player} 10 levels"
+        description: "&a10 tapasztalati szint"

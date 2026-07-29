@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Purely cosmetic reward-reveal animation for native crates. By the time this
- * GUI opens, {@link CrateManager#open} has ALREADY rolled and credited the reward — this
+ * GUI opens, {@link CrateManager#requestOpen} has ALREADY rolled and credited the reward — this
  * class never decides or grants anything, it only "spins" the middle row of a 27-slot
  * inventory through random reward icons for a few seconds (slowing down as it goes) before
  * landing on the actual reward in the center slot. {@code onComplete} is invoked at the end
@@ -35,6 +35,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * before doing anything else.
  */
 public final class CrateSpinGUI {
+
+    private static final java.util.concurrent.ConcurrentHashMap<java.util.UUID, CrateSpinHolder> ACTIVE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.legacySection();
 
@@ -70,6 +72,11 @@ public final class CrateSpinGUI {
         final Inventory inventory = Bukkit.createInventory(holder, SIZE,
                 Component.text("» " + crateDisplayName + " «", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
         holder.setInventory(inventory);
+        final CrateSpinHolder previous = ACTIVE.put(player.getUniqueId(), holder);
+        if (previous != null) {
+            previous.cancel();
+            previous.setInventory(null);
+        }
         GuiUtil.fill(inventory);
         inventory.setItem(STATUS_SLOT, statusIcon(crateDisplayName, false));
         player.openInventory(inventory);
@@ -109,6 +116,7 @@ public final class CrateSpinGUI {
             return;
         }
         holder.cancel();
+        ACTIVE.remove(holder.getOwnerUuid(), holder);
 
         final Inventory inventory = holder.getInventory();
         for (final int slot : REEL_SLOTS) {
@@ -127,11 +135,27 @@ public final class CrateSpinGUI {
     }
 
     private static ItemStack iconFor(final CrateManager.RewardEntry reward, final boolean highlight) {
-        final Material material = reward.material() != null ? reward.material() : Material.PAPER;
+        final Material material = reward.iconMaterial();
         final Component name = SERIALIZER.deserialize(TextUtil.color(CrateManager.describeReward(reward)))
                 .decoration(TextDecoration.ITALIC, false)
                 .decoration(TextDecoration.BOLD, highlight);
         return GuiUtil.icon(material, name, List.of(), highlight);
+    }
+
+    /** Cancels one player's cosmetic chain through the shared player-session cleanup. */
+    public static void cancel(final java.util.UUID playerId) {
+        final CrateSpinHolder holder = ACTIVE.remove(playerId);
+        if (holder != null) {
+            holder.cancel();
+            holder.setInventory(null);
+        }
+    }
+
+    /** Plugin-disable cleanup for every still-running cosmetic chain. */
+    public static void cancelAll() {
+        for (final java.util.UUID playerId : java.util.List.copyOf(ACTIVE.keySet())) {
+            cancel(playerId);
+        }
     }
 
     private static ItemStack frameGlass() {

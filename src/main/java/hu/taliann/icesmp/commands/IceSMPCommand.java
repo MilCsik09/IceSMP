@@ -74,6 +74,13 @@ public final class IceSMPCommand implements BasicCommand {
         this.reloadHook = reloadHook;
     }
 
+    private void runReloadHook() {
+        final Runnable hook = this.reloadHook;
+        if (hook != null) {
+            hook.run();
+        }
+    }
+
     public IceSMPCommand(final JavaPlugin plugin, final ConfigManager configManager,
                          final MessageManager messageManager, final JobManager jobManager,
                          final SpecializationManager specializationManager, final ResourceManager resourceManager,
@@ -110,10 +117,7 @@ public final class IceSMPCommand implements BasicCommand {
             ConfigValidator.validate(configManager, plugin.getLogger());
             // A load()-időben cache-elő managerek (relic/mob-scaling/craft-restrikció)
             // csak így frissülnek restart nélkül.
-            final Runnable hook = this.reloadHook;
-            if (hook != null) {
-                hook.run();
-            }
+            runReloadHook();
             sender.sendMessage(messageManager.get("admin.icesmp.reload.success", "<green>Plugin konfiguracio sikeresen ujratoltve!</green>"));
             return;
         }
@@ -334,6 +338,7 @@ public final class IceSMPCommand implements BasicCommand {
         configManager.applyOverride(key, parsed);
         messageManager.reload();
         ConfigValidator.validate(configManager, plugin.getLogger());
+        runReloadHook();
 
         sender.sendMessage(messageManager.get("admin.icesmp.config.set-success",
                 "&aBeállítva: &6%s &7= &f%s &7(%s). A legtöbb érték azonnal él (a spell-balansz is); újraindítás csak a szerkezethez kell: új parancs/listener/spell regisztrációja és a scheduler-időzítések. A config-ellenőrző figyelmeztetései a konzolon.",
@@ -352,6 +357,8 @@ public final class IceSMPCommand implements BasicCommand {
             return;
         }
         messageManager.reload();
+        ConfigValidator.validate(configManager, plugin.getLogger());
+        runReloadHook();
         sender.sendMessage(messageManager.get("admin.icesmp.config.unset-success",
                 "&aFelülbírálás törölve: &6%s &7— újra a config-fájlok/kódbeli default él.", key));
     }
