@@ -1,4 +1,4 @@
-name: Agent Sit Publisher
+name: Agent MOTD Publisher
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    name: Validate and publish native sit commits
+    name: Validate and publish native MOTD commits
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,26 +21,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate and apply native sit patch
+      - name: Validate and apply native MOTD patch
         shell: bash
         run: |
           set -euo pipefail
-          echo "8db2530ac2c1f85ae48595230b369402f18bc7cda9799b32901b1864297574a6  .github/agent-patches-sit/chunks/part00a" | sha256sum -c -
-          echo "ea59809d3d2b6530237b98d492ccc2d01f5dfab810ebaf88378fe6f5fc9a78ea  .github/agent-patches-sit/chunks/part00b" | sha256sum -c -
-          echo "d0ce94fc8329ad7fd0230d811016949d08e437014eb9a9ffe49186280498cd74  .github/agent-patches-sit/chunks/part01" | sha256sum -c -
-          echo "984d10d37033547af33d8857eb1f4af1d883d19a0d485e8044046627273ec0ff  .github/agent-patches-sit/chunks/part02" | sha256sum -c -
-          echo "8e29ff656d0efb769daab1066266fbd05282da6289eee9f3036efc16425c68e2  .github/agent-patches-sit/chunks/part03" | sha256sum -c -
-          echo "701df2091a8747061479753cea308d4ecd80ee3e5a53ace0a0db42b04d2cd0db  .github/agent-patches-sit/chunks/part04a" | sha256sum -c -
-          echo "98c731101aaaf6cf0b2a9c09f6e9401d68aa534631fbceae7359cd70fd298537  .github/agent-patches-sit/chunks/part04b" | sha256sum -c -
-          echo "d03712f80c64573a634e35bfb1e7d4449ce42ca5e2670f71ec6ef8bf6114b514  .github/agent-patches-sit/chunks/part05" | sha256sum -c -
-          cat .github/agent-patches-sit/chunks/part* > /tmp/sit.mbox.gz.b64
-          test "$(wc -c < /tmp/sit.mbox.gz.b64)" -eq 50688
-          base64 --decode /tmp/sit.mbox.gz.b64 > /tmp/sit.mbox.gz
-          echo "4e65ec25a7dd957238ffbb04ebbd50fc49a5a75245fe62f77c2cea5189626845  /tmp/sit.mbox.gz" | sha256sum -c -
-          gzip -t /tmp/sit.mbox.gz
-          gzip -dc /tmp/sit.mbox.gz > /tmp/sit.mbox
+          echo "462d682faaba3f9f7b08365869a18470029935d32a806e31d98ee090e524d82e  .github/agent-patches-motd/chunks/part00" | sha256sum -c -
+          echo "2bf46094d2252bea8c0c6cacd90d26dc00cbfce9a22a1b24b9127a8d6ad3618b  .github/agent-patches-motd/chunks/part01" | sha256sum -c -
+          echo "9dcd3bdf214faea3cc8e70312428923e937bc428486cf3959c193716dce8f865  .github/agent-patches-motd/chunks/part02" | sha256sum -c -
+          echo "9290a0f89b0123739db113f81021a4babad58a9d4896cfa6e4f8a2dc5b8c3559  .github/agent-patches-motd/chunks/part03" | sha256sum -c -
+          echo "6b3c140cf3b7c67604e538ce4950f224d1c5e30181cd0544f51fa6ae3909915f  .github/agent-patches-motd/chunks/part04" | sha256sum -c -
+          echo "6e3eaf1f01666155e3b938353ee26216cc649b0547632a851323fef42b82d800  .github/agent-patches-motd/chunks/part05" | sha256sum -c -
+          echo "b3c3871fc163e6e54875e26ca460a672477e45476a82e9bda23bbe235270449c  .github/agent-patches-motd/chunks/part06" | sha256sum -c -
+          echo "f426875bef9273ad54f6a30aad361c0327b94618d31fb1243c58bdcbd09ed3cb  .github/agent-patches-motd/chunks/part07" | sha256sum -c -
+          echo "03a5ae779c7bb254ea989b27cc8f7871695d8e7d6d1ef00420aafa4baa428b20  .github/agent-patches-motd/chunks/part08" | sha256sum -c -
+          cat .github/agent-patches-motd/chunks/part* > /tmp/motd.mbox.gz.b64
+          test "$(wc -c < /tmp/motd.mbox.gz.b64)" -eq 35400
+          base64 --decode /tmp/motd.mbox.gz.b64 > /tmp/motd.mbox.gz
+          echo "f1aafd8c3d8aac4ba6cac3c5191d7a802b213d234748db1cbdaa634642686760  /tmp/motd.mbox.gz" | sha256sum -c -
+          gzip -t /tmp/motd.mbox.gz
+          gzip -dc /tmp/motd.mbox.gz > /tmp/motd.mbox
+          echo "30b9d2b167a24eb9dcb6b79d1891db9adfec980279991757b953de08fbeaa014  /tmp/motd.mbox" | sha256sum -c -
           git config user.name "IceSMP Automation"
           git config user.email "actions@users.noreply.github.com"
-          git checkout --detach f4e82263d35c645a053eccac09a3ad254a36ed90
-          git am /tmp/sit.mbox
-          git push --force-with-lease=refs/heads/feature/native-sit-poses:f4e82263d35c645a053eccac09a3ad254a36ed90 origin HEAD:refs/heads/feature/native-sit-poses
+          git checkout --detach 5449dc726c785d5ee1305c457046daa1e60879fc
+          git am /tmp/motd.mbox
+          git push --force-with-lease=refs/heads/feature/native-motd-completion:5449dc726c785d5ee1305c457046daa1e60879fc origin HEAD:refs/heads/feature/native-motd-completion
