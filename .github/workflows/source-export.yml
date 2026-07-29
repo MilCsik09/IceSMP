@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/source-export-45
+  pull_request:
+    branches:
+      - claude/projekt-audit-u0hkcz
 
 permissions:
   contents: read
