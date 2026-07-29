@@ -98,19 +98,23 @@ jobs:
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
 
-      - name: Package exact PR 49 review repository
+      - name: Package focused PR 49 review source
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          tar --exclude=.gradle --exclude=build --exclude='*.log' \
-            -czf /tmp/icesmp-pr49-review-repo.tar.gz .
+          mkdir -p /tmp/pr49-export
+          git rev-parse HEAD > /tmp/pr49-export/HEAD_SHA
+          git rev-parse 'HEAD^{tree}' > /tmp/pr49-export/TREE_SHA
+          tar -czf /tmp/pr49-export/source.tar.gz \
+            .github AGENTS.md CHANGELOG.md CLAUDE.md PLAYTEST.md README.md ROADMAP.md \
+            build.gradle.kts settings.gradle.kts gradlew gradlew.bat gradle scripts docs src
 
-      - name: Upload exact PR 49 review repository
+      - name: Upload focused PR 49 review source
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: icesmp-pr49-review-repo
-          path: /tmp/icesmp-pr49-review-repo.tar.gz
+          name: icesmp-pr49-focused-source
+          path: /tmp/pr49-export
           retention-days: 1
           if-no-files-found: error
