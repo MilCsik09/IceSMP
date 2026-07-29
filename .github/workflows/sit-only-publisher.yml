@@ -42,9 +42,11 @@ jobs:
           GZ_SHA=b5dc70795fe4abb7a78327cb2d98a322c4c318f0549d90ec058df1389d7e309f
           PATCH_SHA=729f7aa53da9ad20e9ca99903a0598345d6c8fec537ccc3121b9f29f68b2a5c9
 
-          git fetch origin "$BRANCH" "$TARGET_BRANCH"
-          test "$(git rev-parse origin/$BRANCH)" = "$EXPECTED_SIT"
-          test "$(git rev-parse origin/$TARGET_BRANCH)" = "$EXPECTED_TARGET"
+          remote_sit=$(git ls-remote origin "refs/heads/$BRANCH" | awk '{print $1}')
+          remote_target=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')
+          printf 'remote-sit=%s\nremote-target=%s\n' "$remote_sit" "$remote_target"
+          test "$remote_sit" = "$EXPECTED_SIT"
+          test "$remote_target" = "$EXPECTED_TARGET"
 
           cat .review/sit-0{0,1,2,3,4} > /tmp/sit.patch.gz.b64
           echo "$B64_SHA  /tmp/sit.patch.gz.b64" | sha256sum --check --strict
@@ -70,8 +72,9 @@ jobs:
           python3 scripts/check_consistency.py
           git diff --check "$EXPECTED_TARGET...HEAD"
 
-          git fetch origin "$BRANCH" "$TARGET_BRANCH"
-          test "$(git rev-parse origin/$BRANCH)" = "$EXPECTED_SIT"
-          test "$(git rev-parse origin/$TARGET_BRANCH)" = "$EXPECTED_TARGET"
+          remote_sit=$(git ls-remote origin "refs/heads/$BRANCH" | awk '{print $1}')
+          remote_target=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')
+          test "$remote_sit" = "$EXPECTED_SIT"
+          test "$remote_target" = "$EXPECTED_TARGET"
           git push origin "HEAD:refs/heads/$BRANCH" \
             --force-with-lease="refs/heads/$BRANCH:$EXPECTED_SIT"
