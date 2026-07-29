@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -46,6 +46,8 @@ jobs:
           git cat-file -e "${BASE_SHA}^{commit}"
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "Base commit: $BASE_SHA"
+          echo "Head commit: $HEAD_SHA"
 
       - name: Check patch whitespace
         run: >-
@@ -87,133 +89,15 @@ jobs:
           set -euo pipefail
           ./gradlew clean build --no-daemon --stacktrace | tee gradle-build.log
 
-      - name: Verify DEV regressions ran inside Gradle check
+      - name: Verify stacked regressions ran inside Gradle check
         shell: bash
         run: |
           set -euo pipefail
+          grep -F "MOTD regression suite passed." gradle-build.log
+          grep -F "Moderation regression suite passed." gradle-build.log
+          grep -F "Moderation review regression suite passed." gradle-build.log
+          grep -F "PersistentStoreCoordinator regression tests passed." gradle-build.log
           grep -F "DEV-item reward regression suite passed." gradle-build.log
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py
-
-  publish_motd_review:
-    name: Publish reviewed MOTD rebase
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout leased transport head
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Gradle cache
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Verify, rebase, test and publish
-        shell: bash
-        run: |
-          set -euo pipefail
-          EXPECTED_MODERATION=986d312596dd30aea06f42c42b66b82662c57cb4
-          ORIGINAL_MOTD=03ea37878663bbc30291c42f2879ea033a22b676
-          BRANCH=feature/native-motd-completion
-          LEASED_HEAD=${{ github.event.pull_request.head.sha }}
-          PATCH_B64_SHA=7ab0faaf549d6ce21ed60edf30ce5278f2fa9b47a91a0d18d349a63fd313a36d
-          PATCH_GZ_SHA=91e6e5a6e5d33ff6ec68020a4eef55edd3c9ba65e69e67dff4af8c775faed28a
-          PATCH_SHA=dde58075ce806c2585806bc22ead362937464b5626304db09fda3b9c006242c4
-
-          test "$(git rev-parse HEAD)" = "$LEASED_HEAD"
-          git fetch origin feature/native-moderation-suite "$BRANCH"
-          test "$(git rev-parse origin/feature/native-moderation-suite)" = "$EXPECTED_MODERATION"
-          test "$(git rev-parse origin/$BRANCH)" = "$LEASED_HEAD"
-          cp .github/workflows/ci.yml /tmp/transport-ci.yml
-
-          cat > /tmp/chunk-checks <<'EOF'
-          bcf98841a6400a27f5418722c9710b3fa3c7ef93e2215ecb44771b6a7b2a9303  .review/pr48-00.b64
-          2f6565d4bd9be07bbda268280de6c0163f117e9b05240a2812db6ba80d23eed6  .review/pr48-01.b64
-          d5553abb8062ffdb98e3fd9eefd1f616e8820a0859e53534e5ab020c03e498c5  .review/pr48-02.b64
-          224888671bf7d34025430ba480ef533d8e3d64d0207ecf58497d242b23abee39  .review/pr48-03.b64
-          8e42a1f7bb7da0209509f3e500b8be6c3b90422c3ee15c8cfd1e44efeeae61aa  .review/pr48-04.b64
-          1cf0314c0f7d9dffa32c9b530ae0a3f4efccfcc62e215dc0ac2ee8f7829e47a2  .review/pr48-05.b64
-          a59e48e613dad7ceb03d0d1d57b5ec553d61686c3145abe6d9c091b1dd60bd56  .review/pr48-06.b64
-          EOF
-          sed -i 's/^          //' /tmp/chunk-checks
-          sha256sum --check --strict /tmp/chunk-checks
-          cat .review/pr48-0{0,1,2,3,4,5,6}.b64 > /tmp/pr48-review.patch.gz.b64
-          echo "$PATCH_B64_SHA  /tmp/pr48-review.patch.gz.b64" | sha256sum --check --strict
-          base64 --decode /tmp/pr48-review.patch.gz.b64 > /tmp/pr48-review.patch.gz
-          echo "$PATCH_GZ_SHA  /tmp/pr48-review.patch.gz" | sha256sum --check --strict
-          gzip --decompress --stdout /tmp/pr48-review.patch.gz > /tmp/pr48-review.patch
-          echo "$PATCH_SHA  /tmp/pr48-review.patch" | sha256sum --check --strict
-
-          git config user.name "IceSMP review automation"
-          git config user.email "noreply@github.com"
-          git checkout -B pr48-reviewed "$ORIGINAL_MOTD"
-          OLD_BASE=$(git merge-base "$ORIGINAL_MOTD" "$EXPECTED_MODERATION")
-          git rebase --onto "$EXPECTED_MODERATION" "$OLD_BASE"
-          git am /tmp/pr48-review.patch
-
-          cp /tmp/transport-ci.yml .github/workflows/ci.yml
-          git add .github/workflows/ci.yml
-          git commit --amend --no-edit
-
-          test "$(git merge-base HEAD "$EXPECTED_MODERATION")" = "$EXPECTED_MODERATION"
-          test ! -e .review
-
-          cat > /tmp/allowed-files <<'EOF'
-          .github/workflows/ci.yml
-          CHANGELOG.md
-          CLAUDE.md
-          PLAYTEST.md
-          build.gradle.kts
-          docs/ARCHITECTURE.md
-          docs/FEATURES.md
-          docs/PLUGIN_REPLACEMENT_MATRIX.md
-          docs/SERVER_INTEGRATION.md
-          docs/player-guide/14-parancsok.md
-          src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java
-          src/main/java/hu/taliann/icesmp/core/IceSMPCore.java
-          src/main/java/hu/taliann/icesmp/gui/ConfigMenuGUI.java
-          src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java
-          src/main/java/hu/taliann/icesmp/listeners/MotdListener.java
-          src/main/java/hu/taliann/icesmp/managers/VanishManager.java
-          src/main/java/hu/taliann/icesmp/motd/MotdGenerationGate.java
-          src/main/java/hu/taliann/icesmp/motd/MotdIconValidator.java
-          src/main/java/hu/taliann/icesmp/motd/MotdSelector.java
-          src/main/resources/config/motd.yml
-          src/main/resources/icons/blood_moon.png
-          src/main/resources/icons/book.png
-          src/main/resources/icons/frost.png
-          src/main/resources/icons/season_end.png
-          src/main/resources/icons/war.png
-          src/main/resources/icons/whisper.png
-          src/main/resources/icons/world_boss.png
-          src/regression/java/hu/taliann/icesmp/motd/MotdRegressionSuite.java
-          EOF
-          sed -i 's/^          //' /tmp/allowed-files
-          LC_ALL=C sort -o /tmp/allowed-files /tmp/allowed-files
-          git diff --name-only "$EXPECTED_MODERATION...HEAD" | LC_ALL=C sort > /tmp/actual-files
-          diff -u /tmp/allowed-files /tmp/actual-files
-
-          ./gradlew motdRegressionTest --no-daemon --stacktrace
-          ./gradlew moderationRegressionTest --no-daemon --stacktrace
-          ./gradlew clean build --no-daemon --stacktrace
-          python3 scripts/check_consistency.py
-          git diff --check "$EXPECTED_MODERATION...HEAD"
-
-          git fetch origin feature/native-moderation-suite "$BRANCH"
-          test "$(git rev-parse origin/feature/native-moderation-suite)" = "$EXPECTED_MODERATION"
-          test "$(git rev-parse origin/$BRANCH)" = "$LEASED_HEAD"
-          git push origin "HEAD:refs/heads/$BRANCH" \
-            --force-with-lease="refs/heads/$BRANCH:$LEASED_HEAD"
-
-          if git ls-remote --exit-code --heads origin refs/heads/agent/pr48-review-export >/dev/null 2>&1; then
-            git push origin --delete agent/pr48-review-export
-          fi
