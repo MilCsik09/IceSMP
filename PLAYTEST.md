@@ -51,7 +51,8 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 | **ViaVersion/Backwards** | Régi kliens-verziók a HUD unicode-jeleit (👑 ❤ ▮) és a hosszú oldalsáv-sorokat csonkíthatják — kozmetikai, nem hiba. |
 | **FarmProtect** | Együttműködik: az IceSMP termés-listenerei `ignoreCancelled`-del futnak, a FarmProtect által tiltott esemény nem ad bónuszt. |
 | **economist** | Külön gazdaság: az IceSMP saját frakció-valutát használ (nincs Vault-híd) — a két rendszer nem keveredik. |
-| LuckPerms, GSit, CrazyCrates, FancyHolograms, AuMenus, voicechat, SModeration, minimotd, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert ütközés. |
+| LuckPerms, FancyHolograms, AuMenus, voicechat, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert közvetlen ütközés. |
+| GSit, CrazyCrates, SModeration, MiniMOTD, AxAFKZone | Replacement alatt állnak; azonos parancs/event felelősség miatt nem tekinthetők konfliktusmentesnek. Jar nélkül csak a megfelelő scope draft PR-jének buildje és kézi playtestje után tesztelendők. |
 
 ### Permissionök tesztelőknek
 A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan), vagy egyetlen sorral:
@@ -926,25 +927,21 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (`world-tweaks.warden-death-xp`, configolható).
   - [ ] **Termés-taposás** (FarmProtect helyett): szántóföldre ugrás (játékos ÉS mob) nem töri
         fel a földet (`world-tweaks.crop-trample-protection`).
-  - [ ] **MOTD** (MiniMOTD helyett): a szerverlistában gradient-es Ice SMP MOTD, ami ~10 mp-enként
-        vált a variánsok közt (frissítsd a listát többször); `motd.yml`-ből szerkeszthető.
-  - [ ] **AFK-rendszer** (AxAFKZone helyett): állíts be zónát az `afk.yml`-ben → a zónába lépve
-        üzenet + bossbar-visszaszámláló; az intervallum leteltével (default 10 perc) kis
-        valuta-jutalom; kilépéskor a haladás NULLÁZÓDIK (nincs bankolás). 3 perc tétlenség
-        után (bárhol) a tablistában szürke „⌚ ᴀꜰᴋ" jelenik meg a név után, mozgásra eltűnik.
-  - [ ] **Crate-rendszer** (CrazyCrates helyett): admin: `/crate set koznapi` a nézett blokkra,
-        `/crate give <név> koznapi 3`; kulccsal jobb-katt → kulcs fogy + súlyozott jutalom
-        (hang+részecske+üzenet); kulcs nélkül info az árról; `/crate buy koznapi` levonja a
-        25 NEUTRAL-t (sink); `/crate info` esély-táblát mutat; a kulcs NEM craftolható be;
-        restart után a crate-blokkok megmaradnak. ⚠️ **Folia:** `/crate give` távoli (másik
-        régióban lévő) játékosnak is hibamentes.
-  - [ ] **Ülés** (GSit helyett): `/sit` a földön állva leültet (ArmorStand-ülés), újra `/sit`
-        vagy sneak = felállás; jobb-katt lépcsőre/fél-lapra ÜRES kézzel leültet; halál/teleport/
-        kilépés/blokk-törés alóla → korrekt felállás, nem marad árva ArmorStand.
-  - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5 teszt` → a némított nem tud
-        chatelni ÉS /msg-t sem küldeni (üzenetet kap a hátralévő idővel); restart után is él;
-        `/unmute` felold; `/mute list`; chat-szűrő: tiltott szó CENSOR-módban csillagozva,
-        BLOCK-módban elnyelve; spam: 1,5 mp-en belüli két üzenet / ismételt üzenet blokkolva.
+  - [ ] **MOTD** (MiniMOTD helyett): csak a `feature/native-motd-completion` scope után;
+        idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish-count és reload külön ellenőrzendő.
+  - [ ] **AFK-rendszer** (AxAFKZone helyett): csak a `feature/native-afk-zones` scope után;
+        közös 3D selectionből létrehozott több zóna, közvetlen zónaváltás, reward-rollok,
+        full-inventory és reload/quit/kick lifecycle külön ellenőrzendő. A globális AFK-jelzés
+        ettől függetlenül továbbra is tesztelendő.
+  - [ ] **Crate-rendszer** (CrazyCrates helyett): csak a `feature/native-crates-completion`
+        scope után; lista/preview, permission/world, többkulcsos fogyasztás, cooldown, statisztika,
+        strict reward-validáció és full-inventory útvonal is tesztelendő a meglévő fizikai nyitás mellett.
+  - [ ] **Ülés** (GSit helyett): csak a `feature/native-sit-poses` scope után; `/sit`, click-to-sit,
+        anyag- és világpolicy, unsafe location, tiltott parancs, minden cleanup-esemény, lay/crawl
+        és árva seat-entitás külön ellenőrzendő.
+  - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5m teszt` → chat és natív `/msg`
+        blokkolva; restart után is él; `/unmute`, `/history <név>`, `/punishments <név>` ugyanazt
+        az autoritatív ledgert olvassa. Külön tempban/login, SocialSpy és corrupt-state teszt kell.
   - [ ] **Bejelentés:** `/report <név> <ok min 3 szó>` → az online moderátorok
         (icesmp.admin.moderation) azonnal értesülnek; 60 mp-en belül második report
         rate-limitbe fut; `/reports` lista → `/reports resolve <id>`; restart-álló.
@@ -952,8 +949,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (frakció/kaszt+XP/spec/erőforrás/egyenlegek/statok/bűn/claim/questek/cooldownok);
         offline névre korlátozott riport. ⚠️ **Folia:** távoli (másik régiós) célpontra is
         hibamentes (a riport a célpont szálán épül).
-  - [ ] **Invsee** (InvSee++ helyett, csak olvasás): `/invsee <név>` → pillanatkép-GUI a fő
-        inventoryról (páncél+offhand sorral) + ender-láda nézet gombbal; SEMMI nem vehető ki.
+  - [ ] **Invsee** (InvSee++ helyett): `/invsee <név> read main|ender` élő read-only nézet;
+        `/invsee <név> edit main|ender` csak külön edit permissionnel. Target/admin quit/kick,
+        reload és reconnect közbeni escrow-visszaadás két eltérő Folia-régióban is ellenőrzendő.
 - [ ] **QoL-kör (A43–A52, ÚJ):**
   - [ ] **Relációs háború-szín:** raid alatt a szemben álló fél tagjai PIROSAK a tablistádban
         és a fejük fölött — a raidben nem érintett harmadik frakciónak viszont NEM; a raid vége
@@ -2767,3 +2765,20 @@ helyszínén. A konzolt végig figyeld `region`/`scheduler`/`IllegalStateExcepti
       a beadott veret vagy a számlán van, vagy visszakerült — sosem tűnik el nyomtalanul.
 - [ ] **Fizetős claim crash-teszt:** claim-vásárlás után azonnali kill — restart után a
       levonás ÉS a claim együtt van meg (vagy együtt hiányzik), félkész állapot nincs.
+
+## Natív moderáció — replacement scope (2026-07-28)
+
+- [x] **AUTOMATED:** `./gradlew moderationRegressionTest` — ledger restart/expiry/revocation/history/invariánsok; invsee restart snapshot, count-preserving single-claim, claim utáni törlés, corrupt/partial/schema/count state; scheduler submit exception/null/retirement single-winner; repeating-task publish race; `/reply` quit–reconnect generációvédelem.
+- [x] **AUTOMATED:** `./gradlew clean build --no-daemon --stacktrace` — teljes fordítás és regressziós lifecycle.
+- [ ] **REAL FOLIA REQUIRED / RESTART TEST:** tempmute és tempban mentése, restart előtti/utáni enforcement, lejárat.
+- [ ] **NEGATIVE TEST / RESTART TEST:** hibás, részleges, duplikált és ellentmondó `moderation-data.yml` fail-closed karantén.
+- [ ] **NEGATIVE TEST:** írásvédett data könyvtár / lemezhiba — mutáció rollback, nincs hamis sikerüzenet, plugin fail-closed.
+- [ ] **REAL FOLIA REQUIRED:** `/msg` két eltérő régióban; sender/recipient quit–reconnect a kézbesítési hop közben; a régi callback nem épít `/reply` linket az új sessionhez; SocialSpy státuszok.
+- [ ] **PERMISSION TEST:** minden akció, GUI-gomb és tab completion külön permissionnel; invsee read/edit szétválasztás.
+- [ ] **REAL FOLIA REQUIRED / RELOAD TEST:** vanish relog, world change, reload, tablist viewer-filter, nametag, online/MOTD count.
+- [ ] **NEGATIVE TEST:** vanished admin mob target, item pickup, incoming/outgoing damage és interaction kapcsolók.
+- [ ] **REAL FOLIA REQUIRED:** invsee fő/ender read és edit eltérő régiókban; target és admin quit/kick minden scheduler-hopnál; azonnal retired/null submit fault-injectionnél nincs elvesző vagy duplikált stack és nincs stale refresh task.
+- [ ] **RELOAD TEST:** aktív invsee session reload/disable alatt bezár; admission lezárás után minden befogadott transfer drainelődik; final save után restart/reconnect restore; sikeres return utáni kontrollált újraindítás nem adja vissza ismét a rekordot.
+- [ ] **NEGATIVE TEST:** `/offlinetp` hiányzó adat, nem betöltött vagy UUID-ben eltérő világ; nincs szinkron world/chunk load.
+
+A fenti kézi pontok teljesítése előtt az SModeration/InvSee++ eltávolíthatósága **nem végleges**.

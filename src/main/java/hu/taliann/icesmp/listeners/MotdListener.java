@@ -26,6 +26,7 @@ public final class MotdListener implements Listener {
     private final hu.taliann.icesmp.managers.BloodMoonManager bloodMoonManager;
     private final hu.taliann.icesmp.managers.WorldBossManager worldBossManager;
     private final hu.taliann.icesmp.managers.SeasonManager seasonManager;
+    private final hu.taliann.icesmp.managers.VanishManager vanishManager;
 
     /**
      * A data-mappa {@code icons/*.png} fájljaiból betöltött szerverlista-ikonok
@@ -37,11 +38,13 @@ public final class MotdListener implements Listener {
     public MotdListener(final org.bukkit.plugin.java.JavaPlugin plugin, final ConfigManager configManager,
                         final hu.taliann.icesmp.managers.BloodMoonManager bloodMoonManager,
                         final hu.taliann.icesmp.managers.WorldBossManager worldBossManager,
-                        final hu.taliann.icesmp.managers.SeasonManager seasonManager) {
+                        final hu.taliann.icesmp.managers.SeasonManager seasonManager,
+                        final hu.taliann.icesmp.managers.VanishManager vanishManager) {
         this.configManager = configManager;
         this.bloodMoonManager = bloodMoonManager;
         this.worldBossManager = worldBossManager;
         this.seasonManager = seasonManager;
+        this.vanishManager = vanishManager;
         final java.io.File iconDir = new java.io.File(plugin.getDataFolder(), "icons");
         final java.io.File[] files = iconDir.listFiles((dir, name) -> name.toLowerCase(java.util.Locale.ROOT).endsWith(".png"));
         if (files != null) {
@@ -70,9 +73,9 @@ public final class MotdListener implements Listener {
         // így az async ping-szálról is biztonságosak.
         final ConfigurationSection eventVariant = activeEventVariant();
         if (eventVariant != null) {
-            event.motd(render(eventVariant.getString("line1", ""))
+            event.motd(render(event, eventVariant.getString("line1", ""))
                     .append(Component.newline())
-                    .append(render(eventVariant.getString("line2", ""))));
+                    .append(render(event, eventVariant.getString("line2", ""))));
             applyIcon(event, eventVariant.getString("icon", null));
             applyMaxPlayers(event);
             return;
@@ -86,9 +89,9 @@ public final class MotdListener implements Listener {
                 final ConfigurationSection variant = variants.getConfigurationSection(
                         keys.get((int) ((System.currentTimeMillis() / rotationMillis) % keys.size())));
                 if (variant != null) {
-                    event.motd(render(variant.getString("line1", ""))
+                    event.motd(render(event, variant.getString("line1", ""))
                             .append(Component.newline())
-                            .append(render(variant.getString("line2", ""))));
+                            .append(render(event, variant.getString("line2", ""))));
                     applyIcon(event, variant.getString("icon", null));
                 }
             }
@@ -147,9 +150,10 @@ public final class MotdListener implements Listener {
         return null;
     }
 
-    private Component render(final String line) {
+    private Component render(final PaperServerListPingEvent event, final String line) {
+        final int online = vanishManager == null ? event.getNumPlayers() : vanishManager.visibleOnlineCount();
         return MINI.deserialize(line
-                .replace("{online}", String.valueOf(Bukkit.getOnlinePlayers().size()))
-                .replace("{max}", String.valueOf(Bukkit.getMaxPlayers())));
+                .replace("{online}", String.valueOf(online))
+                .replace("{max}", String.valueOf(event.getMaxPlayers())));
     }
 }

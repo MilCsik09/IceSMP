@@ -103,14 +103,24 @@ A raidhez **mindenki** (nem csak a király) így kapcsolódik:
 | `/faction raid join` | Jelentkezés harcosnak a felkészülés alatt (max 10/oldal) |
 | `/faction raid status` | Raid-állás: fázis, pontok, létszám |
 
+## Privát üzenetek
+
+| Parancs | Mit csinál |
+|---|---|
+| `/msg <játékos> <üzenet>` | Privát üzenet; aliasok: `/tell`, `/w` |
+| `/reply <üzenet>` | Válasz az utolsó ténylegesen kézbesített privát beszélgetésre; alias: `/r` |
+
 ## Admin parancsok (csak adminoknak)
 
 | Parancs | Mit csinál |
 |---|---|
 | `/icesmp reload` | Konfiguráció újratöltése |
 | `/icesmp inspect <név>` | Teljes játékos-riport: kaszt/erőforrás/statok/bűn/claim/questek/cooldownok |
-| `/invsee <név>` | Inventory + ender-láda betekintés (pillanatkép, csak olvasás) |
-| `/mute <név> [perc] [ok]` / `/unmute <név>` | Némítás (0 = végtelen; perc kihagyva = automatikus eszkaláció a némítás-történet alapján; chat + privát üzenetek), feloldás; `/mute list` |
+| `/invsee <név> [read|edit] [main|ender]` | Online live inventory/ender nézet; read és edit külön permission |
+| `/warn`, `/kick`, `/mute`, `/unmute`, `/ban`, `/tempban`, `/unban` | Egységes natív punishment műveletek; `/history` és `/punishments` a lekérdezés |
+| `/moderation` | Permission-szűrt moderációs admin GUI |
+| `/socialspy` / `/vanish [név]` | Tartós SocialSpy és admin vanish |
+| `/offlinetp <név>` | Utolsó ismert kijelentkezési helyre teleport |
 | `/reports` / `/reports resolve <id>` | Játékos-bejelentések listája és lezárása |
 | `/class addxp\|setxp <játékos> <mennyiség>` | Kaszt-XP adása/beállítása |
 | `/class givecatalyst\|unlockspell <játékos> [spell]` | Lélekkapocs adása / spell feloldása |

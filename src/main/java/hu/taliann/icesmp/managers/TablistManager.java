@@ -50,7 +50,7 @@ public final class TablistManager {
     private static final String TEAM_PREFIX = "nt";
 
     /** Egy játékos tablist-adatai, bármely régió-szálról biztonságosan olvasható snapshot. */
-    private record TabInfo(String name, String sortKey, String prefixLegacy, String suffixLegacy,
+    private record TabInfo(UUID id, String name, String sortKey, String prefixLegacy, String suffixLegacy,
                            NamedTextColor nameColor, FactionType faction, int ping) {
     }
 
@@ -61,6 +61,11 @@ public final class TablistManager {
     private final AfkManager afkManager;
     /** Relációs háború-színekhez; setterrel kötve a kézi DI-sorrend miatt. */
     private volatile RaidManager raidManager;
+    private volatile VanishManager vanishManager;
+
+    public void setVanishManager(final VanishManager vanishManager) {
+        this.vanishManager = vanishManager;
+    }
 
     public void setRaidManager(final RaidManager raidManager) {
         this.raidManager = raidManager;
@@ -147,7 +152,7 @@ public final class TablistManager {
         final boolean afk = afkManager != null && afkManager.isAfk(id);
         final String afkSuffix = afk ? " &7⌚ ᴀꜰᴋ" : "";
         snapshots.put(id, new TabInfo(
-                player.getName(),
+                id, player.getName(),
                 sortKey(group, player.getName(), afk),
                 LuckPermsBridge.prefix(id),
                 LuckPermsBridge.suffix(id) + afkSuffix,
@@ -219,7 +224,7 @@ public final class TablistManager {
         if (result.contains("{")) {
             result = result.replace("{player}", viewer.getName())
                     .replace("{ping}", coloredPing(Math.max(0, viewer.getPing())))
-                    .replace("{online}", String.valueOf(Bukkit.getOnlinePlayers().size()))
+                    .replace("{online}", String.valueOf(visibleOnlineCount()))
                     .replace("{max}", String.valueOf(Bukkit.getMaxPlayers()));
             // Az aktív világesemények egy sorban (a HUD-snapshot §-kódolt sora).
             if (result.contains("{event}")) {
@@ -294,6 +299,17 @@ public final class TablistManager {
             final RaidManager raids = raidManager;
             final RaidManager.ActiveRaid raid = raids == null ? null : raids.getActiveRaid();
             for (final TabInfo info : snapshots.values()) {
+                if (hiddenForViewer(viewer, info)) {
+                    final Team existing = board.getTeam(teamName(info));
+                    if (existing != null) {
+                        existing.removeEntry(info.name());
+                        if (existing.getEntries().isEmpty()) {
+                            existing.unregister();
+                        }
+                    }
+                    board.resetScores(info.name());
+                    continue;
+                }
                 applyTeam(board, info, displayColor(viewerFaction, info, raid));
             }
         }
@@ -306,6 +322,10 @@ public final class TablistManager {
                 ping.setDisplaySlot(DisplaySlot.PLAYER_LIST);
             }
             for (final TabInfo info : snapshots.values()) {
+                if (hiddenForViewer(viewer, info)) {
+                    board.resetScores(info.name());
+                    continue;
+                }
                 final org.bukkit.scoreboard.Score score = ping.getScore(info.name());
                 if (!score.isScoreSet() || score.getScore() != info.ping()) {
                     score.setScore(info.ping());
@@ -321,6 +341,18 @@ public final class TablistManager {
                 }
             }
         }
+    }
+
+    private boolean hiddenForViewer(final Player viewer, final TabInfo info) {
+        final VanishManager vanish = vanishManager;
+        return vanish != null && !viewer.getUniqueId().equals(info.id())
+                && vanish.isVanished(info.id())
+                && !viewer.hasPermission(hu.taliann.icesmp.core.Permissions.MODERATION_VANISH_SEE);
+    }
+
+    private int visibleOnlineCount() {
+        final VanishManager vanish = vanishManager;
+        return vanish == null ? Bukkit.getOnlinePlayers().size() : vanish.visibleOnlineCount();
     }
 
     private String teamName(final TabInfo info) {
