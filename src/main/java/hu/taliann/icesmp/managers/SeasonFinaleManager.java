@@ -81,7 +81,7 @@ public final class SeasonFinaleManager implements PersistentStore {
     }
 
     @Override
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("announced-season", announcedSeasonStart);
@@ -90,6 +90,7 @@ public final class SeasonFinaleManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save season-finale.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save season-finale.yml", exception);
         }
     }
 

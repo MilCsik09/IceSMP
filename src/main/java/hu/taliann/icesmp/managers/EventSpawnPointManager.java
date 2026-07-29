@@ -152,6 +152,7 @@ public final class EventSpawnPointManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save event-spawnpoints.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save event-spawnpoints.yml", exception);
         }
     }
 }

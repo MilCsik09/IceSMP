@@ -295,7 +295,11 @@ public final class CommunityGoalManager implements PersistentStore {
 
     @Override
     public synchronized void save() {
-        saveStrict();
+        if (!saveStrict()) {
+            // A koordinátor hibagyűjtése csak dobásból lát — a néma false autosave/shutdown
+            // alatt észrevétlen adatvesztés lenne.
+            throw new IllegalStateException("community-goals.yml mentése sikertelen — részletek a logban");
+        }
     }
 
     /** Writes receipts and counters in the same atomic file image. */
@@ -328,6 +332,12 @@ public final class CommunityGoalManager implements PersistentStore {
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save community-goals.yml: "
                     + exception.getMessage());
+            return false;
+        } catch (final hu.taliann.icesmp.storage.CriticalPersistenceWriteError fatal) {
+            // A kritikus write-circuit már beállt (minden további írás tiltva) — itt false-t
+            // adunk, hogy a hívó rollback-ága lefusson; a koordinátort a void save() wrapper
+            // dobása értesíti. A fatal elnyelése nélkül a rollback kimaradna (Error != IOException).
+            plugin.getLogger().severe(fatal.getMessage() == null ? fatal.toString() : fatal.getMessage());
             return false;
         }
     }

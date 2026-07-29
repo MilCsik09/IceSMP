@@ -158,7 +158,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         rebuildIndex();
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             for (final Territory territory : territories.values()) {
@@ -196,6 +196,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save territories: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save territories", exception);
         }
     }
 

@@ -1,130 +1,107 @@
 package hu.taliann.icesmp.gui;
 
+import hu.taliann.icesmp.managers.InvseeManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-/**
- * Read-only inventory-betekintő (InvSee++ kiváltás első lépcsője): a
- * {@code /invsee <név>} által a CÉLPONT szálán készített pillanatképet (36 fő + 4 páncél +
- * off-hand + 27 ender-láda) jeleníti meg a NÉZŐ szálán nyitott GUI-ban. MINDEN kattintás
- * cancel-elve ({@link hu.taliann.icesmp.listeners.InvseeGUIListener}) — ez kizárólag
- * megtekintésre szolgál, tárgy nem mozgatható/vehető el. Két aloldal (fő + ender-láda), mindkettő
- * ugyanabból a snapshotból épül újra, tehát váltáskor nincs újabb entitás-hozzáférés/scheduler-hop.
- */
+/** Rendering-only part of the existing /invsee GUI; entity access stays in InvseeManager. */
 public final class InvseeGUI {
 
-    private static final int MAIN_SIZE = 54;
-    private static final int ENDER_SIZE = 36;
-    /** Fő nézet: páncél (csizma/lábvért/mellvért/sisak) + off-hand slotjai az elválasztó sorban. */
-    private static final int[] ARMOR_OFFHAND_SLOTS = {36, 37, 38, 39, 40};
-    private static final String[] ARMOR_OFFHAND_LABELS = {"Csizma", "Lábvért", "Mellvért", "Sisak", "Balkéz (off-hand)"};
-
-    public static final int ENDER_BUTTON_SLOT = 49;
-    public static final int BACK_SLOT = 31;
-    public static final int REFRESH_SLOT = 45;
+    public static final int MAIN_ENDER_BUTTON = 45;
+    public static final int MAIN_MODE_SLOT = 49;
+    public static final int MAIN_CLOSE_SLOT = 53;
+    public static final int ENDER_BACK_BUTTON = 36;
+    public static final int ENDER_MODE_SLOT = 40;
+    public static final int ENDER_CLOSE_SLOT = 44;
 
     private InvseeGUI() {
     }
 
-    /** Reopens the main view from an existing holder's snapshot (no new item access). */
-    public static void openMain(final Player viewer, final InvseeHolder source, final MessageManager messageManager) {
-        openMain(viewer, source.getTargetName(), source.getMainSnapshot(), source.getArmorSnapshot(),
-                source.getOffHandSnapshot(), source.getEnderSnapshot(), source.getSnapshotAtMillis(), messageManager);
-    }
-
-    public static void openMain(final Player viewer, final String targetName, final ItemStack[] mainSnapshot,
-                                final ItemStack[] armorSnapshot, final ItemStack offHandSnapshot,
-                                final ItemStack[] enderSnapshot, final long snapshotAtMillis,
-                                final MessageManager messageManager) {
-        final Component title = messageManager.getComponent("admin.icesmp.invsee.title-main",
-                "&6» %s inventoryja (csak olvasás%s) «", targetName, ageSuffix(snapshotAtMillis));
-        final InvseeHolder holder = new InvseeHolder(targetName, mainSnapshot, armorSnapshot, offHandSnapshot,
-                enderSnapshot, snapshotAtMillis, InvseeHolder.View.MAIN);
-        final Inventory inventory = Bukkit.createInventory(holder, MAIN_SIZE, title);
+    public static Inventory create(final InvseeHolder holder, final InvseeManager.Snapshot snapshot,
+                                   final MessageManager messages) {
+        final boolean edit = holder.mode() == InvseeHolder.Mode.EDIT;
+        final String mode = edit ? "SZERKESZTÉS" : "CSAK OLVASÁS";
+        final Component title = messages.getComponent("moderation.invsee.title",
+                "&6» %s — %s (%s) «", holder.targetName(),
+                holder.view() == InvseeHolder.View.MAIN ? "inventory" : "ender-láda", mode);
+        final int size = holder.view() == InvseeHolder.View.MAIN ? 54 : 45;
+        final Inventory inventory = Bukkit.createInventory(holder, size, title);
         holder.setInventory(inventory);
-
-        for (int slot = 0; slot < 36 && mainSnapshot != null && slot < mainSnapshot.length; slot++) {
-            inventory.setItem(slot, mainSnapshot[slot]);
-        }
-
-        for (int slot = 36; slot < 45; slot++) {
-            inventory.setItem(slot, GuiUtil.filler());
-        }
-        for (int i = 0; i < ARMOR_OFFHAND_SLOTS.length; i++) {
-            final ItemStack piece = resolveArmorOffhandPiece(i, armorSnapshot, offHandSnapshot);
-            inventory.setItem(ARMOR_OFFHAND_SLOTS[i], piece != null && !piece.getType().isAir()
-                    ? piece : emptySlotMarker(ARMOR_OFFHAND_LABELS[i]));
-        }
-
-        for (int slot = 45; slot < MAIN_SIZE; slot++) {
-            inventory.setItem(slot, GuiUtil.filler());
-        }
-        inventory.setItem(ENDER_BUTTON_SLOT, enderButton());
-        inventory.setItem(REFRESH_SLOT, refreshButton(snapshotAtMillis));
-
-        viewer.openInventory(inventory);
+        update(inventory, holder, snapshot, messages);
+        return inventory;
     }
 
-    public static void openEnder(final Player viewer, final InvseeHolder source, final MessageManager messageManager) {
-        final Component title = messageManager.getComponent("admin.icesmp.invsee.title-ender",
-                "&6» %s ender-ládája (csak olvasás%s) «", source.getTargetName(),
-                ageSuffix(source.getSnapshotAtMillis()));
-        final InvseeHolder holder = new InvseeHolder(source.getTargetName(), source.getMainSnapshot(),
-                source.getArmorSnapshot(), source.getOffHandSnapshot(), source.getEnderSnapshot(),
-                source.getSnapshotAtMillis(), InvseeHolder.View.ENDER);
-        final Inventory inventory = Bukkit.createInventory(holder, ENDER_SIZE, title);
-        holder.setInventory(inventory);
-
-        final ItemStack[] enderSnapshot = source.getEnderSnapshot();
-        for (int slot = 0; slot < 27 && enderSnapshot != null && slot < enderSnapshot.length; slot++) {
-            inventory.setItem(slot, enderSnapshot[slot]);
+    public static void update(final Inventory inventory, final InvseeHolder holder,
+                              final InvseeManager.Snapshot snapshot, final MessageManager messages) {
+        if (holder.view() == InvseeHolder.View.MAIN) {
+            final ItemStack[] storage = snapshot.storage();
+            for (int slot = 0; slot < 36; slot++) {
+                inventory.setItem(slot, cloneAt(storage, slot));
+            }
+            final ItemStack[] armor = snapshot.armor();
+            for (int index = 0; index < 4; index++) {
+                inventory.setItem(36 + index, cloneAt(armor, index));
+            }
+            inventory.setItem(40, cloneItem(snapshot.offHand()));
+            for (int slot = 41; slot <= 44; slot++) {
+                inventory.setItem(slot, GuiUtil.filler());
+            }
+            for (int slot = 45; slot < 54; slot++) {
+                inventory.setItem(slot, GuiUtil.filler());
+            }
+            inventory.setItem(MAIN_ENDER_BUTTON, GuiUtil.icon(Material.ENDER_CHEST,
+                    messages.getComponent("moderation.invsee.ender", "&dEnder-láda"),
+                    List.of(messages.getComponent("moderation.invsee.live-hint", "&7Kattints az élő nézethez"))));
+            inventory.setItem(MAIN_MODE_SLOT, modeIcon(holder.mode(), messages));
+            inventory.setItem(MAIN_CLOSE_SLOT, GuiUtil.icon(Material.BARRIER,
+                    messages.getComponent("moderation.invsee.close", "&cBezárás"), List.of()));
+        } else {
+            final ItemStack[] ender = snapshot.ender();
+            for (int slot = 0; slot < 27; slot++) {
+                inventory.setItem(slot, cloneAt(ender, slot));
+            }
+            for (int slot = 27; slot < 45; slot++) {
+                inventory.setItem(slot, GuiUtil.filler());
+            }
+            inventory.setItem(ENDER_BACK_BUTTON, GuiUtil.icon(Material.ARROW,
+                    messages.getComponent("moderation.invsee.back", "&eVissza az inventoryhoz"), List.of()));
+            inventory.setItem(ENDER_MODE_SLOT, modeIcon(holder.mode(), messages));
+            inventory.setItem(ENDER_CLOSE_SLOT, GuiUtil.icon(Material.BARRIER,
+                    messages.getComponent("moderation.invsee.close", "&cBezárás"), List.of()));
         }
-        for (int slot = 27; slot < ENDER_SIZE; slot++) {
-            inventory.setItem(slot, GuiUtil.filler());
+    }
+
+    public static boolean isTargetSlot(final InvseeHolder.View view, final int rawSlot) {
+        return view == InvseeHolder.View.MAIN ? rawSlot >= 0 && rawSlot <= 40
+                : rawSlot >= 0 && rawSlot < 27;
+    }
+
+    private static ItemStack modeIcon(final InvseeHolder.Mode mode, final MessageManager messages) {
+        if (mode == InvseeHolder.Mode.EDIT) {
+            return GuiUtil.icon(Material.LIME_DYE,
+                    messages.getComponent("moderation.invsee.mode-edit", "&aSZERKESZTÉS"),
+                    List.of(messages.getComponent("moderation.invsee.edit-swap-hint",
+                                    "&7A felső slot a kurzorral cserélhető."),
+                            messages.getComponent("moderation.invsee.edit-audit-hint",
+                                    "&7Minden módosítás auditálva van.")));
         }
-        inventory.setItem(BACK_SLOT, backButton());
-
-        viewer.openInventory(inventory);
+        return GuiUtil.icon(Material.GRAY_DYE,
+                messages.getComponent("moderation.invsee.mode-read", "&7CSAK OLVASÁS"),
+                List.of(messages.getComponent("moderation.invsee.read-hint",
+                        "&7A cél inventoryja nem módosítható.")));
     }
 
-    private static ItemStack resolveArmorOffhandPiece(final int index, final ItemStack[] armorSnapshot,
-                                                       final ItemStack offHandSnapshot) {
-        if (index == ARMOR_OFFHAND_SLOTS.length - 1) {
-            return offHandSnapshot;
-        }
-        return armorSnapshot != null && index < armorSnapshot.length ? armorSnapshot[index] : null;
+    private static ItemStack cloneAt(final ItemStack[] source, final int index) {
+        return source == null || index < 0 || index >= source.length ? null : cloneItem(source[index]);
     }
 
-    private static ItemStack emptySlotMarker(final String label) {
-        return GuiUtil.icon(Material.GRAY_STAINED_GLASS_PANE, GuiUtil.grey(label + " (üres)"), List.of());
-    }
-
-    private static ItemStack enderButton() {
-        return GuiUtil.icon(Material.ENDER_CHEST, GuiUtil.accent("Ender-láda"),
-                List.of(GuiUtil.grey("Kattints a megtekintéshez"), GuiUtil.grey("Pillanatkép — nem élő nézet")));
-    }
-
-    private static ItemStack backButton() {
-        return GuiUtil.icon(Material.ARROW, GuiUtil.accent("« Vissza a fő nézethez"),
-                List.of(GuiUtil.grey("Pillanatkép — nem élő nézet")));
-    }
-
-    /** A pillanatkép kora a címben („ — 12 mp-es kép"), friss képnél üres. */
-    private static String ageSuffix(final long snapshotAtMillis) {
-        final long ageSeconds = Math.max(0L, (System.currentTimeMillis() - snapshotAtMillis) / 1000L);
-        return ageSeconds < 5L ? " — pillanatkép" : " — " + ageSeconds + " mp-es kép";
-    }
-
-    private static ItemStack refreshButton(final long snapshotAtMillis) {
-        return GuiUtil.icon(Material.CLOCK, GuiUtil.accent("🔄 Frissítés"),
-                List.of(GuiUtil.grey("Új pillanatkép kérése a célpontról."),
-                        GuiUtil.grey(ageSuffix(snapshotAtMillis).replaceFirst("^ — ", "Kora: "))));
+    private static ItemStack cloneItem(final ItemStack item) {
+        return item == null || item.getType().isAir() ? null : item.clone();
     }
 }

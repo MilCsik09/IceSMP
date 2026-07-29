@@ -598,7 +598,10 @@ public final class WorldBossManager {
             case ZONE -> {
                 final java.util.List<Player> survivors = new java.util.ArrayList<>();
                 for (final Entity nearby : boss.getNearbyEntities(20.0D, 20.0D, 20.0D)) {
-                    if (nearby instanceof Player player && isSurvivor(player)) {
+                    // A telegráf-célpont kiválasztása a boss szálán fut — idegen régió játékosát
+                    // nem olvassuk (gamemode/pozíció), ugyanúgy kapuzva, mint a becsapódás-ág.
+                    if (nearby instanceof Player player && Bukkit.isOwnedByCurrentRegion(player)
+                            && isSurvivor(player)) {
                         survivors.add(player);
                     }
                 }

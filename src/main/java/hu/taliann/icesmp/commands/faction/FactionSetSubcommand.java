@@ -10,6 +10,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
+import java.util.Locale;
+
 public final class FactionSetSubcommand implements FactionSubcommand {
 
     private static final String PERMISSION = hu.taliann.icesmp.core.Permissions.FACTION;
@@ -87,6 +90,24 @@ public final class FactionSetSubcommand implements FactionSubcommand {
                 factionType.getDisplayName()
         ));
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(final CommandSender sender, final String[] args) {
+        if (args.length <= 1) {
+            final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                    .toList();
+        }
+        if (args.length == 2) {
+            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            return List.of("red", "blue", "neutral", "dark").stream()
+                    .filter(option -> option.startsWith(prefix))
+                    .toList();
+        }
+        return List.of();
     }
 }
 

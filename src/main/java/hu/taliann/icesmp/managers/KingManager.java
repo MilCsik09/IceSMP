@@ -44,6 +44,9 @@ public final class KingManager implements PersistentStore {
      * azonnal magas átokszinttel és elfogyott mandátummal indult volna.
      */
     private final Map<FactionType, Long> reignStart = new ConcurrentHashMap<>();
+    // A választási állapot (votes/kings/electionStart/reignStart) összetett átmeneteit
+    // egyetlen monitor szerializálja — a concurrent mapek csak az egyedi olvasásokat védik.
+    private final Object electionLock = new Object();
 
     public KingManager(final JavaPlugin plugin, final ConfigManager configManager,
                        final FactionManager factionManager, final MessageManager messageManager) {
@@ -82,8 +85,11 @@ public final class KingManager implements PersistentStore {
                 if (rawKing != null && !rawKing.isBlank()) {
                     try {
                         kings.put(faction, UUID.fromString(rawKing));
-                    } catch (final IllegalArgumentException ignored) {
-                        // Skip malformed UUIDs.
+                    } catch (final IllegalArgumentException malformed) {
+                        // Fail-closed: az átugrott király-rekordot a következő snapshot-mentés
+                        // végleg eltüntetné — karantén + indulás-megszakítás a néma vesztés helyett.
+                        hu.taliann.icesmp.storage.YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                "Érvénytelen király-UUID a kings.yml-ben: " + factionKey);
                     }
                 }
 
@@ -101,8 +107,11 @@ public final class KingManager implements PersistentStore {
                     for (final String voterKey : votesSection.getKeys(false)) {
                         try {
                             factionVotes.put(UUID.fromString(voterKey), UUID.fromString(votesSection.getString(voterKey, "")));
-                        } catch (final IllegalArgumentException ignored) {
-                            // Skip malformed entries.
+                        } catch (final IllegalArgumentException malformed) {
+                            // Fail-closed: az átugrott szavazat a következő mentéssel végleg elveszne.
+                            hu.taliann.icesmp.storage.YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                                    "Érvénytelen szavazat-bejegyzés a kings.yml-ben: "
+                                            + factionKey + "." + voterKey);
                         }
                     }
                     votes.put(faction, factionVotes);
@@ -115,7 +124,7 @@ public final class KingManager implements PersistentStore {
         }
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             for (final FactionType faction : FactionType.values()) {
@@ -137,6 +146,7 @@ public final class KingManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save kings.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save kings.yml", exception);
         }
     }
 
@@ -184,10 +194,15 @@ public final class KingManager implements PersistentStore {
             return false;
         }
 
-        resetExpiredTerm(faction);
-        votes.computeIfAbsent(faction, key -> new ConcurrentHashMap<>()).put(voter.getUniqueId(), candidate);
-        recount(faction);
-        save();
+        // A lejárat-ellenőrzés → szavazat → összeszámlálás → (koronázás) → mentés összetett
+        // tranzakció: két régió-szál küszöb-közeli egyidejű szavazata lock nélkül dupla
+        // koronázást vagy a ballot-törléssel elvesző szavazatot adhatna.
+        synchronized (electionLock) {
+            resetExpiredTerm(faction);
+            votes.computeIfAbsent(faction, key -> new ConcurrentHashMap<>()).put(voter.getUniqueId(), candidate);
+            recount(faction);
+            save();
+        }
         return true;
     }
 
@@ -229,17 +244,20 @@ public final class KingManager implements PersistentStore {
             return;
         }
 
-        final long now = System.currentTimeMillis();
-        if (king == null) {
-            kings.remove(faction);
-            reignStart.remove(faction);
-        } else {
-            kings.put(faction, king);
-            reignStart.put(faction, now);
+        // Reentráns a vote() lockja alól; az admin setKing útján ez az egyetlen kapu.
+        synchronized (electionLock) {
+            final long now = System.currentTimeMillis();
+            if (king == null) {
+                kings.remove(faction);
+                reignStart.remove(faction);
+            } else {
+                kings.put(faction, king);
+                reignStart.put(faction, now);
+            }
+            votes.remove(faction);
+            electionStart.put(faction, now);
+            save();
         }
-        votes.remove(faction);
-        electionStart.put(faction, now);
-        save();
         if (king != null) {
             // Folia: a friss király más régió-szálon lehet — az award maga hopol a játékoshoz.
             final org.bukkit.entity.Player crowned = Bukkit.getPlayer(king);

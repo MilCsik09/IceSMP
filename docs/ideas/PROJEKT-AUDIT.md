@@ -1,4 +1,154 @@
-# P2 — Teljes gameplay-audit, 2. kör (2026-07-21, 14 szempont, több-agentes mélyvizsgálat)
+# IceSMP — Élő projekt-audit
+
+> Ez a doksi az élő audit: minden új kör IDE kerül, helyben, legfrissebb elöl.
+> (2026-07-28-ig a neve `P2-gameplay-audit.md` volt; az átnevezés tulaj-kérés — a doksi
+> kör-független, projekt-szintű gyűjtő, nem csak gameplay.) Státusz-jelölés: ✅ javítva,
+> ⬜ nyitott (tulaj-döntésre vár).
+
+## 2026-07-28 — Projekt-audit kör (5 szempont: Folia • élő-config • item-invariáns • per-player állapot • DoD-drift)
+
+> Tulaj-kérésre futtatott kör: 5 párhuzamos, csak-olvasó szempont-agent, a leletek
+> egyenként KÉZZEL visszaigazolva a kódban. Kiindulás: valódi `./gradlew build` zöld
+> (a DEV-item- és PersistentStore-regressziós tesztek is), a master CI zöld, az ág a
+> master csúcsán. A `check_consistency.py` 6 doksi-szám FAIL-jét ez a kör javította
+> (88 manager, 484 fájl). Az 5 tükör-WARN-t + a script által nem figyelt 11 lemaradt
+> player-guide tükröt a 2026-07-28-i tükör-kör rendezte (sehol nem volt Guides-oldali
+> önálló tartalom). A 🔜 tesztelői jelölés-réteg tulaj-döntésre KIVEZETVE; a
+> `check_consistency.py` azóta MINDEN tükör-fájlt tartalomra ellenőriz (player-guide
+> számozott oldalak, `docs/IDEAS.md`, `ideas/*` is). A Guides #7 PR (Bingulus-doksi)
+> a tükör-kör után redundáns — tartalma szó szerint bekerült a kanonikus másolatokkal.
+
+### 🔴 Kritikus (Folia szál-biztonság)
+
+1. ✅ KÉSZ (0. fázis) — **Sámán-totem pulzus idegen régió entitásait mutálja kapu nélkül.** A pulzus a totem
+   régió-szálán fut (`TotemManager.java:170-182`), és a `getNearbyEntities` találatain az
+   `affect` (`:95-115`) közvetlenül hív `addPotionEffect`/`damage`/`setFireTicks`-et — a
+   fájlban nulla `isOwnedByCurrentRegion`. Régióhatáron álló célpontnál Folia thread-check
+   hibát dob, minden pulzusnál újra. KÉZZEL MEGERŐSÍTVE. → a projekt saját kapu+hop mintája
+   (`SpellStateListener.java:136-139`, ElytraRelicListener, CrownCurseManager).
+2. ✅ KÉSZ (0. fázis) — **A pet a saját szálán oldja fel és sebzi a más régióban lévő célpontot.** A pet-tick
+   (`PetManager.java:539-540`) a `resolveTarget`-ben (`:600-614`) UUID-ból old fel idegen
+   entitást, hop nélkül olvassa pozícióját/világát (`:606-609`, `:641`), majd `target.damage`
+   (`:652`) — miközben a UUID-t író `PetCombatListener` gondosan hoppol. KÉZZEL MEGERŐSÍTVE.
+   → célpont-érintés `isOwnedByCurrentRegion`-kapuval + schedulerhoppal.
+
+### 🟡 Közepes
+
+3. ✅ KÉSZ (0. fázis) — **WorldBoss ZONE-telegráf kapuzatlan túlélő-gyűjtése.** A `fireSpecial` ZONE-ágának
+   telegráf-szakasza (`WorldBossManager.java:598-608`) a boss szálán olvassa idegen játékos
+   gamemode-ját/pozícióját, miközben ugyanabban a metódusban a másik három azonos hozzáférés
+   (`:511`, `:581`, `:621+`) mintaszerűen kapuzott — kimaradás. KÉZZEL MEGERŐSÍTVE.
+4. ✅ KÉSZ (0. fázis) — **Kazamata-kapu párttag-szűrés védőháló nélkül.** `DungeonGateListener.java:176-177`:
+   a `member.getLocation()` a scheduler-hop ELŐTT fut, try/catch nélkül — a `PartyManager.java:118-127`
+   ugyanezt szándékosan védi („Cross-region read unavailable”). A dobás rossz pillanatban jön:
+   a kulcs már elfogyott, a pecsét már felkerült. KÉZZEL MEGERŐSÍTVE.
+5. ✅ KÉSZ (0. fázis) — **`/icesmp reload` nem frissíti a recept-katalógust.** A reload-hookból
+   (`IceSMPCore.java:1334-1340`) hiányzik a `professionRecipeCatalog.load()` — a
+   `profession-recipes.yml` a CONFIG_FILES tagja, de recept-módosítás csak restartnál él.
+   KÉZZEL MEGERŐSÍTVE. → hívás a hookban (a Relic/MobScaling/CraftingRestriction mintájára).
+6. ✅ KÉSZ (0. fázis) — **`spell-vfx.*` csak enable-kor olvasódik.** `IceSMPCore.java:841-844` statikus mezőkbe
+   cache-eli (enabled/max-points/paletták); reload nem frissíti, pedig az élő-config konvenció
+   alá esne (pl. TPS-mentő VFX-kikapcsolás restart nélkül). KÉZZEL MEGERŐSÍTVE.
+7. ✅ KÉSZ (0. fázis) — **PvP-relikvia-transzfer letörli az ITEM_MODEL-t.** `RelicItemFactory.setOwner`
+   (`:106-114`) csupasz `getItemMeta`/`setItemMeta` kört fut az élő stacken az
+   `applyItemModel` újra-alkalmazása nélkül — a `create()` és a `refresh()` (`:116-125`)
+   helyesen csinálja. Hívási lánc élő: `RelicPvpTransferListener:111` →
+   `RelicManager.transferOwnership:594`. A gazdát cserélt fegyver-relikvia vanília kinézetre
+   esik vissza. KÉZZEL MEGERŐSÍTVE. → `applyItemModel` a setItemMeta után a setOwnerben is.
+8. ✅ KÉSZ (0. fázis) — **Affix-roll után elveszik a vanília RARITY-fok.** A `buildResult`-ban a roll()
+   setData-val teszi fel a RARITY-t + TOOLTIP_DISPLAY-t (`ItemRarityService.java:217-226`),
+   majd az utána hívott `applyAttributeModifiers` setItemMeta-ja
+   (`ProfessionRecipeBookListener.java:392-396`) törli; csak a tooltip kerül vissza, a RARITY
+   nem. Mérve: **40 recept** ad meg együtt `affix-tier`-t és `result.attributes`-t — mindnél.
+   KÉZZEL MEGERŐSÍTVE. → RARITY újra-alkalmazás az attribútum-ág után.
+9. ✅ KÉSZ (0. fázis) — **Kick-rés két ItemStack-tartó mapen.** `RelicPvpTransferListener.keptRelics` (`:47`) és
+   `CatalystProtectionListener.keptOnDeath` (`:35`) csak quit/respawn-on ürül; a projekt 9 másik
+   listenere (+ a PlayerSessionCleanupListener) külön kezeli a `PlayerKickEvent`-et, dokumentált
+   indokkal. Halál→respawn előtti kicknél a bejegyzés örökre bent marad. KÉZZEL MEGERŐSÍTVE.
+10. ✅ KÉSZ (0. fázis) — **`/faction set` tab-complete nélkül.** `FactionSetSubcommand` nem override-olja a
+    `tabComplete`-et (default üres lista), pedig játékosnév + frakciónév argumentumot vár —
+    a testvér-parancsok (join, currency set) adnak kitöltést. KÉZZEL MEGERŐSÍTVE.
+11. ✅ KÉSZ (0. fázis) — **`/afk` hiányzik a parancs-referenciából.** A parancs regisztrálva
+    (`IceSMPCore.java:1353`), de a `docs/player-guide/14-parancsok.md`-ben 0 találat — csak a
+    PLAYTEST.md említi. KÉZZEL MEGERŐSÍTVE. → sor a 14-parancsok.md-be (+ Guides-tükör).
+
+### 🟢 Alacsony (konvenció / apró szivárgás)
+
+- ⬜ `HudListener` és `ParkourListener` nem kezel kicket (HUD/tablist 7 cache-mapje, ill.
+  `ParkourManager.activeRuns` bent ragadhat); `ReportManager.lastReportAt` és
+  `InvseeGUIListener.refreshDebounce` sosem purge-ölődik.
+- ⬜ `claims.block-in-*` booleanok (general.yml:134-136) nem az `allow-<szabály>` sémát
+  követik, `allow-*` megfelelő nélkül — a javadoc maga is legacynek hívja.
+- ⬜ GUI-réteg: 12 `gui/*.java` fájlban ~65 hardcode-olt magyar `Component.text(...)` szöveg
+  MessageManager-kulcs nélkül (a commands/ réteg ezzel szemben következetes).
+- ⬜ `FactionDonateSubcommand` üres tab-complete (a Caravan preset-összegeket ad);
+  `KronikaCommand`/`AfkCommand` nem override-olja a `suggest()`-et.
+
+### Ami tiszta (ellenőrizve)
+
+Tiltott scheduler-API (`Bukkit.getScheduler`/`BukkitRunnable`): 0 találat. Sima `.teleport(`:
+0 — mindenhol `teleportAsync`. A megosztott manager-állapotok (CommunityGoal/Season/Party stb.)
+monitor vagy concurrent szerkezet alatt. A player-guide numerikus állításai (30+ mintavétel az
+economy/factions/world/relics/professions configok ellen) mind egyeznek. A Guides #7 PR
+(Bingulus-doksi) tartalma a #39-es egyszerűsítés után is helytálló (pity/pending/
+`reward-interval-seconds` mind él).
+
+### Külső mélyaudit feldolgozása (10403f8, 2026-07-27 — leletek kézzel visszaigazolva)
+
+A tulaj által kapott külső audit 14 leletéből 12 a kódban megerősítve; a már nálunk
+dokumentált tételeket nem duplikáljuk (H-ECON-001 = perzisztencia-atomicitás blokkoló —
+a szinkron-commit kísérlet PR-review-ra visszavonva [teljes snapshot-írás régió-szálon
++ nem-atomi két-fájlos írás], NYITVA; az elfogadott irány a szűk WAL/pending-record;
+M-FOLIA-001 = pozíció-alapú jutalom-megosztás; M-PERSIST-002 = save()-szinkron;
+L-PERF-001 = CrateManager O23). Az új, igazolt tételek:
+
+12. 🔕 TULAJ-DÖNTÉSRE FÉLRETÉVE (2026-07-28: „egyelőre ignoráljuk") — **H-FOLIA-001:
+    a HUD-oldalsáv + tablist a Folia által hivatalosan töröttnek jelölt scoreboard API-ra
+    épül.** A Folia README kimondja: „ALL scoreboard API is considered broken"; a
+    `HudManager.ownBoard` (`:224-232`) saját boardot/objective-et épít, a TablistManager
+    teameket, a sidebar alapból be van kapcsolva, `folia-supported: true` mellett.
+    Javasolt irány (ha újra elővesszük): Folia-detektáláskor a scoreboard-réteg
+    alapértelmezett kikapcsolása, a meglévő Adventure/PAPI-rétegek megtartásával.
+13. ✅ KÉSZ (0. fázis: onDisable try/finally + fázisonkénti shutdownStep + totem crash-sweep) — **H-LIFE-001: a leállítási lánc nem hibaszigetelt.** Az `IceSMP.onDisable`-ben nincs
+    try/finally (egy dobó `core.disable()` után a `TransientEntities.shutdown()` kimarad),
+    az `IceSMPCore.disable()` törzsében 0 try/catch. Árnyalat: a store-mentési hurok a
+    koordinátorban MÁR per-store hibagyűjtéses — a rés a manager-leállítás/UI-takarítás
+    szigeteletlensége, plusz a 14. tétel.
+14. ✅ KÉSZ (0. fázis + két PR-review kör: 22 void-szerződésű store rethrow; a 4 boolean-szerződésű strict író a kritikus-write Errort IS false-ként jelzi [a rollback-ágak minden hibaútra lefutnak, a write-circuit közben tilt], a void save() wrapperük pedig false-nál dob, így a koordinátor autosave/shutdown alatt is lát) — **M-PERSIST-001: több store elnyeli az írási hibát.** Pl. `FactionManager.save()`
+    catch-eli az IOException-t és csak logol → a koordinátor per-store hibagyűjtése vakon
+    marad. → logolás után dobjuk tovább (UncheckedIOException), a koordinátor a gyűjtő.
+15. ✅ RÉSZBEN KÉSZ (0. fázis: factions.yml + kings.yml fail-closed; a claims.yml loader külön kört vár) — **M-PERSIST-003: szemantikai hibát a loader átugrik, a következő mentés véglegesít.**
+    Pl. `FactionManager.load()` a rossz UUID-t warninggal kihagyja, a save memóriából
+    újraír → a kézzel javítható rekord elvész. → a wallet fail-closed/karantén mintája.
+16. ✅ KÉSZ (0. fázis: electionLock) — **M-POL-001: királyválasztás versenyhelyzet.** A `KingManager`-ben nulla
+    `synchronized`; a lejárat→szavazat→összeszámlálás→koronázás összetett átmenetet csak
+    ConcurrentHashMap-ek védik → dupla koronázás / elvesző szavazat lehetséges.
+    → frakciónkénti lock a kritikus szakaszra.
+17. ✅ KÉSZ (0. fázis + PR-review kör: fogyasztás induláskor, sikertelen teleportnál refund + nincs cooldown; a teleport közbeni kilépés/leállás tulaj-döntésre elfogadott, nem blokkoló edge case — a reservation-réteg egyszerűség okán visszavéve) — **M-GAME-001: a hazatérés-rituálé a teleport eredménye előtt fogyaszt.** A `tryHome`
+    (`RitualManager.java:349-379`) a `teleportAsync` future-jét eldobja és azonnal true-t
+    ad → sikertelen teleportnál is elfogy az áldozat + indul a cooldown. → completion-alapú
+    fogyasztás a HOME ágon.
+18. ✅ KÉSZ (0. fázis: MONITOR + ignoreCancelled) — **M-GAME-002: a GameModeCache cancelelt eventből is frissül.** Csupasz
+    `@EventHandler` (`PlayerSessionCleanupListener.onGameModeChange`) — másik plugin
+    MONITOR-cancelje után a cache és a valós gamemode széttart, a kill-jutalom előszűrő
+    a cache-ből dolgozik. → `priority = MONITOR, ignoreCancelled = true`.
+19. ✅ KÉSZ (0. fázis: isFinite-guard) — **M-CONFIG-001: a `/icesmp config set` elfogadja a NaN/Infinity értéket.**
+    `Double.parseDouble` isFinite-guard nélkül (`IceSMPCommand.java:423`); a
+    `ShopManager.buy`-ban `NaN > 0` hamis → a levonás kimarad, de az item kiadódik
+    (admin-jogot igényel). → `Double.isFinite` guard a parserben + ár/súly-határokon.
+20. ✅ KÉSZ (0. fázis: allowlist-betöltés) — **M-CONFIG-002: a ConfigManager MINDEN .yml-t merge-öl a config-könyvtárból.**
+    A `CONFIG_FILES` allowlist csak a kicsomagoláshoz használt; betöltéskor
+    `listFiles(*.yml)` fut → egy bemásolt backup észrevétlenül felülír kulcsokat.
+    → az allowlist legyen a betöltési lista is; ismeretlen fájl = warning.
+    ELŐFELTÉTELE a live-ops preset iránynak.
+
+**Téves lelet (nem vezetjük):** L-DOC-001 „a teaser 31 specet ír" — a repo `TEASER.md`-je
+35-öt ír (az auditor egy régebbi, feltöltött teaserrel dolgozott); az `[IP]`/`[DÁTUM]`
+placeholder a fájl saját fejléce szerint szándékos, launchkor töltendő.
+
+---
+
+## P2 — Teljes gameplay-audit, 2. kör (2026-07-21, 14 szempont, több-agentes mélyvizsgálat)
 
 > 18 párhuzamos szempont (14 fő + 4 záró): játékos-életút • gazdaság • frakció/PvP • világesemények+loot •
 > quest-konzisztencia • spell/kaszt-balansz • szakmák+itemek+relikviák • claim/grief-védelem •

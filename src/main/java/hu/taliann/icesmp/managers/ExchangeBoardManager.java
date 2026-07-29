@@ -92,7 +92,7 @@ public final class ExchangeBoardManager implements PersistentStore {
         }
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             for (final Board board : boards) {
@@ -101,6 +101,7 @@ public final class ExchangeBoardManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save exchange-boards.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save exchange-boards.yml", exception);
         }
     }
 

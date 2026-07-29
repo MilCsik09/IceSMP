@@ -28,7 +28,7 @@ public final class MessageManager {
     /** Bundled per-subsystem message files under messages/ (extracted on first run). */
     private static final String[] MESSAGE_GROUPS = {
             "afk", "claim", "currency", "faction", "job", "market", "party", "pet", "profession",
-            "quest", "relic", "spec", "spell", "system", "territory", "world", "devitem"
+            "quest", "relic", "sit", "spec", "spell", "system", "territory", "world", "devitem", "moderation"
     };
 
     private final JavaPlugin plugin;

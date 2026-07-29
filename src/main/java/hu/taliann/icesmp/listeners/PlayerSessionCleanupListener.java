@@ -29,6 +29,10 @@ public final class PlayerSessionCleanupListener implements Listener {
     private final List<PlayerStateCleanup> stateOwners;
     /** Spells are cleaned via the registry, so a new stateful spell needs no change here. */
     private final SpellRegistry spellRegistry;
+    private final hu.taliann.icesmp.managers.InvseeManager invseeManager;
+    private final hu.taliann.icesmp.managers.ModerationManager moderationManager;
+    /** Join-time durable crate key recovery runs on the joining player owner thread. */
+    private final hu.taliann.icesmp.managers.CrateManager crateManager;
 
     public PlayerSessionCleanupListener(final AbilityCatalystListener abilityCatalystListener,
                                         final JobManager jobManager,
@@ -46,7 +50,10 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.ProfessionManager professionManager,
                                         final hu.taliann.icesmp.managers.AfkManager afkManager,
                                         final hu.taliann.icesmp.managers.SitManager sitManager,
+                                        final hu.taliann.icesmp.managers.CrateManager crateManager,
                                         final hu.taliann.icesmp.managers.ModerationManager moderationManager,
+                                        final hu.taliann.icesmp.managers.VanishManager vanishManager,
+                                        final hu.taliann.icesmp.managers.InvseeManager invseeManager,
                                         final hu.taliann.icesmp.managers.WhisperManager whisperManager,
                                         final hu.taliann.icesmp.managers.GuildManager guildManager,
                                         final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager,
@@ -59,9 +66,12 @@ public final class PlayerSessionCleanupListener implements Listener {
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 metelytepoManager, relicManager, craftingRestrictionManager, resourceManager, partyManager,
                 claimManager, territoryManager, petManager, ritualManager, professionManager,
-                afkManager, sitManager, moderationManager, whisperManager, guildManager,
+                afkManager, sitManager, crateManager, moderationManager, vanishManager, invseeManager, whisperManager, guildManager,
                 honorDuelManager, spyManager, combatTagManager, classHealthService, lowHealthBorderListener);
         this.spellRegistry = spellRegistry;
+        this.invseeManager = invseeManager;
+        this.moderationManager = moderationManager;
+        this.crateManager = crateManager;
     }
 
     /**
@@ -72,10 +82,35 @@ public final class PlayerSessionCleanupListener implements Listener {
     @EventHandler
     public void onPlayerJoin(final PlayerJoinEvent event) {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer());
+        hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(),
+                event.getPlayer().getLocation());
+        moderationManager.openReplySession(event.getPlayer().getUniqueId());
+        invseeManager.restorePending(event.getPlayer());
+        crateManager.restorePendingRecovery(event.getPlayer());
     }
 
-    /** A váltás az ÚJ értékkel érkezik, ezért nem a játékosból olvassuk, hanem az eventből. */
-    @EventHandler
+    /**
+     * Pozíció-tükör a kereszt-régiós közelség-döntésekhez: a move a játékos saját szálán fut,
+     * innen biztonságos a tükörbe írni. Blokk-váltásra szűrve a frissítések zöme kiesik.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMove(final org.bukkit.event.player.PlayerMoveEvent event) {
+        if (event.hasChangedBlock()) {
+            hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(), event.getTo());
+        }
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(final org.bukkit.event.player.PlayerTeleportEvent event) {
+        hu.taliann.icesmp.utils.PositionCache.update(event.getPlayer().getUniqueId(), event.getTo());
+    }
+
+    /**
+     * A váltás az ÚJ értékkel érkezik, ezért nem a játékosból olvassuk, hanem az eventből.
+     * MONITOR + ignoreCancelled: egy későbbi listener cancelje után a tükör nem térhet el a
+     * tényleges játékmódtól — a kill-jutalom előszűrő ebből a tükörből dolgozik.
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onGameModeChange(final PlayerGameModeChangeEvent event) {
         hu.taliann.icesmp.utils.GameModeCache.update(event.getPlayer().getUniqueId(), event.getNewGameMode());
     }
@@ -85,8 +120,9 @@ public final class PlayerSessionCleanupListener implements Listener {
         cleanupPlayerState(event.getPlayer().getUniqueId());
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerKick(final PlayerKickEvent event) {
+        // Cancelelt kicknél a játékos online marad — a session-állapot nem takarítható el.
         cleanupPlayerState(event.getPlayer().getUniqueId());
     }
 
@@ -94,6 +130,7 @@ public final class PlayerSessionCleanupListener implements Listener {
         final Player player = Bukkit.getPlayer(playerId);
 
         hu.taliann.icesmp.utils.GameModeCache.remove(playerId);
+        hu.taliann.icesmp.utils.PositionCache.remove(playerId);
 
         for (final PlayerStateCleanup owner : stateOwners) {
             owner.clearPlayerState(playerId);

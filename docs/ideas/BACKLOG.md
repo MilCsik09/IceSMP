@@ -21,7 +21,7 @@ Jelölés: 🟢/🟡/🔴 = munka (kicsi/közepes/nagy) • ⭐–⭐⭐⭐ = é
   quest-ponton kötelező!), **4 territory-id** (`dark-capital`, `erdei-szentely`,
   `karhozat-kapuja`, `radicora`), a 4 királyság-spawn (`/territory setspawn`), a `kezdo_parkour`
   pálya, a rituálé-oltár helyszínek, az üres `hidden-spots.spots` feltöltése és a
-  **kazamata-belsők + loot** megépítése. Részletek: `P2-gameplay-audit.md` világépítő-checklist.
+  **kazamata-belsők + loot** megépítése. Részletek: `PROJEKT-AUDIT.md` világépítő-checklist.
 - **A17 HP-rendszer** — az 1.+2. ütem megépítve, de **alapból kikapcsolva** (`health.enabled`).
   Nyitva: pajzs/abszorpció-források közös szabálya + playtest-hangolás (PvP TTK, PvE
   mob-damage). 🟡⭐⭐⭐

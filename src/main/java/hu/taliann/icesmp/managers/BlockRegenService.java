@@ -758,7 +758,7 @@ public final class BlockRegenService implements PersistentStore, Listener {
     }
 
     @Override
-    public void save() {
+    public synchronized void save() {
         try {
             journal.checkpoint(queue);
         } catch (final IOException failure) {

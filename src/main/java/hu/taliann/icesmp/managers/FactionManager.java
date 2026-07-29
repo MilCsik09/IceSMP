@@ -69,7 +69,10 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
                     final FactionType faction = FactionType.fromString(factionName);
                     playerFactions.put(uuid, faction);
                 } catch (final IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid UUID in factions.yml: " + uuidKey);
+                    // Fail-closed: a hibás rekord átugrása után a következő teljes-snapshot
+                    // mentés VÉGLEG eltüntetné a kézzel még javítható bejegyzést.
+                    YamlStore.failCorrupt(storageFile, plugin.getLogger(),
+                            "Érvénytelen UUID a factions.yml-ben: " + uuidKey);
                 }
             }
 
@@ -91,6 +94,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
             plugin.getLogger().info("Saved " + playerFactions.size() + " faction assignments.");
         } catch (final IOException e) {
             plugin.getLogger().severe("Failed to save factions: " + e.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save factions", e);
         }
     }
 

@@ -1,0 +1,111 @@
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Any
+
+from .models import Evidence, Finding
+from .util import iter_files, posix, read_text
+
+MARKER = re.compile(r"<!--\s*icesmp-doc-id:\s*([^\s>]+)\s*-->")
+
+
+def marker_index(root: Path) -> dict[str, list[dict[str, Any]]]:
+    result: dict[str, list[dict[str, Any]]] = {}
+    docs = root / "docs"
+    if not docs.exists(): return result
+    for path in sorted(iter_files(docs, ("*.md",))):
+        text = read_text(path)
+        for match in MARKER.finditer(text):
+            result.setdefault(match.group(1), []).append({"file": posix(path, root), "line": text.count("\n", 0, match.start()) + 1})
+    return result
+
+
+def _entry_docs(entry: Any) -> list[str]:
+    return entry.get("docs", []) if isinstance(entry, dict) else []
+
+
+def check_coverage(root: Path, inventory: dict[str, Any], manifest: dict[str, Any], mode: str) -> dict[str, Any]:
+    findings: list[Finding] = []
+    markers = marker_index(root)
+    required: dict[str, tuple[str, dict[str, Any]]] = {}
+    for command in inventory.get("commands", []):
+        required[command["id"]] = ("commands", command)
+        for alias in command.get("aliases", []):
+            alias_id = f"alias.{command['name']}.{alias}"
+            required[alias_id] = ("commands", {"id": alias_id})
+    for command in inventory.get("subcommands", []): required[command["id"]] = ("commands", command)
+    for permission in inventory.get("permissions", []): required[permission["id"]] = ("permissions", permission)
+    for feature in inventory.get("features", []):
+        if set(feature.get("audience", [])) & {"PLAYER", "MODERATOR", "ADMIN", "TESTER"}:
+            required[feature["id"]] = ("features", feature)
+    for key in inventory.get("config_keys", []):
+        section_id = f"config.{key['section']}"
+        required.setdefault(section_id, ("config-sections", {"id": section_id}))
+    for component in inventory.get("components", []):
+        if component.get("audience") != ["OUT_OF_SCOPE"]:
+            required[component["id"]] = ("components", component)
+
+    undocumented: list[str] = []
+    missing_markers: list[str] = []
+    bad_paths: list[str] = []
+    for stable_id, (section, _) in sorted(required.items()):
+        entry = manifest.get(section, {}).get(stable_id)
+        docs = _entry_docs(entry)
+        if not entry:
+            severity = "FAIL" if mode == "strict" else ("REVIEW_REQUIRED" if section in ("features", "components") else "WARN")
+            findings.append(Finding(severity, "UNDOCUMENTED_INVENTORY_ITEM",
+                                    f"{stable_id} has no {section} manifest entry.", stable_id))
+            undocumented.append(stable_id)
+            continue
+        for doc in docs:
+            if not (root / doc).is_file():
+                findings.append(Finding("FAIL" if mode == "strict" else "WARN", "DOC_PATH_MISSING",
+                                        f"Manifest path does not exist: {doc}", stable_id, (Evidence(doc, 1, stable_id),)))
+                bad_paths.append(doc)
+        if docs and stable_id not in markers:
+            findings.append(Finding("FAIL" if mode == "strict" else "WARN", "DOC_MARKER_MISSING",
+                                    f"No icesmp-doc-id marker found for {stable_id}.", stable_id))
+            missing_markers.append(stable_id)
+        if stable_id in markers and docs:
+            marker_files = {x["file"] for x in markers[stable_id]}
+            if not marker_files.intersection(docs):
+                findings.append(Finding("FAIL" if mode == "strict" else "WARN", "DOC_MARKER_WRONG_FILE",
+                                        f"Marker for {stable_id} is not in a manifest-listed file.", stable_id))
+
+    inventory_ids = set(required)
+    for section in ("commands", "features", "permissions", "config-sections", "components"):
+        for stable_id in manifest.get(section, {}):
+            if stable_id not in inventory_ids:
+                findings.append(Finding("FAIL" if mode == "strict" else "WARN", "STALE_MANIFEST_ENTRY",
+                                        f"Manifest entry {stable_id} no longer exists in inventory.", stable_id))
+    for stable_id, locations in markers.items():
+        if len(locations) > 1:
+            findings.append(Finding("FAIL" if mode == "strict" else "WARN", "DUPLICATE_DOC_MARKER",
+                                    f"Documentation marker {stable_id} appears in multiple locations.", stable_id,
+                                    tuple(Evidence(x["file"], x["line"], stable_id) for x in locations)))
+
+    def percentage(documented: int, total: int) -> float:
+        return 100.0 if total == 0 else round(documented * 100.0 / total, 2)
+    command_ids = [x["id"] for x in inventory.get("commands", [])]
+    sub_ids = [x["id"] for x in inventory.get("subcommands", [])]
+    alias_ids = [f"alias.{x['name']}.{a}" for x in inventory.get("commands", []) for a in x.get("aliases", [])]
+    player_features = [x["id"] for x in inventory.get("features", []) if "PLAYER" in x.get("audience", [])]
+    admin_features = [x["id"] for x in inventory.get("features", []) if set(x.get("audience", [])) & {"ADMIN", "MODERATOR"}]
+    permission_ids = [x["id"] for x in inventory.get("permissions", [])]
+    def doc_count(ids: list[str], section: str) -> int:
+        return sum(1 for stable_id in ids if manifest.get(section, {}).get(stable_id) and stable_id in markers)
+    metrics = {
+        "commands_documented": percentage(doc_count(command_ids, "commands"), len(command_ids)),
+        "subcommands_documented": percentage(doc_count(sub_ids, "commands"), len(sub_ids)),
+        "aliases_documented": percentage(doc_count(alias_ids, "commands"), len(alias_ids)),
+        "player_features_documented": percentage(doc_count(player_features, "features"), len(player_features)),
+        "admin_features_documented": percentage(doc_count(admin_features, "features"), len(admin_features)),
+        "permissions_documented": percentage(doc_count(permission_ids, "permissions"), len(permission_ids)),
+        "config_sections_classified": percentage(sum(1 for x in {f"config.{k['section']}" for k in inventory.get('config_keys', [])} if x in manifest.get("config-sections", {})), len({k['section'] for k in inventory.get('config_keys', [])})),
+        "unclassified_components": sum(1 for x in inventory.get("components", []) if x.get("confidence") == "REVIEW_REQUIRED"),
+        "review_required_findings": sum(1 for x in [*inventory.get("findings", []), *[f.to_dict() for f in findings]] if x.get("severity") == "REVIEW_REQUIRED"),
+    }
+    finding_dicts = [item.to_dict() for item in findings]
+    return {"mode": mode, "metrics": metrics, "undocumented": undocumented, "missing_markers": missing_markers,
+            "bad_paths": sorted(set(bad_paths)), "markers": markers, "findings": finding_dicts}

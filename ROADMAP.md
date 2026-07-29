@@ -14,6 +14,174 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 
 ---
 
+## Összesített kivitelezési terv (2026-07-28)
+
+Három forrás egyesítése: a saját 2026-07-28-i audit-kör + a külső mélyaudit kézzel
+visszaigazolt leletei (mindkettő tételesen: `docs/ideas/PROJEKT-AUDIT.md`, 2026-07-28-as
+szekció, 1–20. tétel), valamint a tulaj által kapott, kód ellen validált feature-terv
+(34 tétel, 6 csomag). A sorrend elve: **előbb stabilitás, aztán láthatóság, aztán tartalom** —
+minden fázisnak explicit kilépési feltétele van. A scoreboard-lelet (PROJEKT-AUDIT 12.)
+tulaj-döntésre FÉLRETÉVE, egyik fázisnak sem része.
+
+### 0. fázis — Stabilitási kör (minden más előfeltétele)
+
+> **Státusz 2026-07-28: LEFUTOTT.** A Folia-kritikusok, a gyors javítások, a
+> reload-teljesség, a perzisztencia-szerződés (26 store hibapropagálás + 14 synchronized
+> save + király-lock + factions/kings fail-closed), az M-CONFIG-002 allowlist, a
+> leállítás-szigetelés, a totem crash-sweep és a PositionCache-alapú jutalom-megosztás
+> KÉSZ (✅-jelölések: PROJEKT-AUDIT; összefoglaló: CHANGELOG). A TransientEntities-blokkoló
+> érdemi részét már a 2026-07-26-i P0-F kör lezárta (heartbeat + fail-closed liveness +
+> watchdog) — a 0. fázis a maradékot pótolta. A **H-ECON-001 szinkron-commit kísérlete
+> PR-review alapján VISSZAVONVA** (a teljes wallet/claim snapshot szinkron írása
+> régió-szálon nem elfogadható költség, és a két-fájlos írást amúgy sem tette atomivá) —
+> a blokkoló NYITVA, az elfogadott irány: szűk pending-record/WAL a market-journal
+> mintájára (op-rekord az irreverzibilis lépés előtt + idempotens boot-recovery),
+> region-szálon kívüli commit-protokollal. **Maradék, külön körre:** a H-ECON-001 WAL,
+> a claims.yml loader fail-closed átállása és az alacsony súlyú sáv (HUD/Parkour kick,
+> purge-nélküli mapek, GUI-szövegek, claims allow-séma).
+
+Kód-javítások, új feature nélkül. Tétel-hivatkozások: PROJEKT-AUDIT 2026-07-28-as szekció.
+
+- ⬜ **Folia-kritikusok:** TotemManager pulzus (1.) és PetManager célpont-kezelés (2.) —
+  a meglévő `isOwnedByCurrentRegion` + scheduler-hop mintára igazítás; velük együtt a
+  kimaradt kapuk: WorldBoss ZONE-telegráf (3.), DungeonGate párttag-szűrés (4.).
+- ⬜ **TransientEntities-életciklus** (ismert kiadásblokkoló): induláskori stale-entity
+  sweep (PDC-tag alapú, régió-helyes) + a shutdown-út rendezése a H-LIFE-001 (13.)
+  javaslattal együtt: `onDisable` try/finally, a `disable()` fázisonkénti
+  `try/catch(Throwable)` hibagyűjtéssel.
+- ⬜ **Pozíció-alapú jutalom-megosztás** (ismert kiadásblokkoló, = külső M-FOLIA-001):
+  párt-XP / Vad Hajsza personal loot — a tagok pozícióját a saját schedulerükön vett
+  immutable snapshotból számoljuk, ne az áldozat szálán. (A C. fázis contribution-ledgere
+  hosszabb távon kiváltja; addig is javítandó.)
+- ⬜ **Gyors, kis javítások:** GameModeCache `MONITOR + ignoreCancelled` (18.);
+  NaN/Infinity-guard a config-parserben + ár/súly-határokon (19.); hazatérés-rituálé
+  completion-alapú fogyasztása (17.); relikvia `setOwner` ITEM_MODEL-újraalkalmazás (7.);
+  affix-roll utáni RARITY-visszaállítás (8.); kick-rés a két ItemStack-tartó mapen (9.);
+  `/faction set` tab-complete (10.); `/afk` a 14-parancsok.md-be (11.).
+- ⬜ **Reload-teljesség:** `professionRecipeCatalog.load()` a reload-hookba (5.);
+  `spell-vfx.*` újraolvasás reloadkor (6.).
+- ⬜ **Perzisztencia-szerződés:** store `save()` hibapropagálás (14., UncheckedIOException),
+  szemantikai fail-closed a loaderekben a wallet-minta szerint (15.), királyválasztás
+  frakciónkénti lock (16.), save-writer lock az érintett store-okon (ismert
+  „save()-szinkron” tétel).
+- ⬜ **M-CONFIG-002 (20.):** a `CONFIG_FILES` allowlist legyen a betöltési lista is —
+  a G. fázis (presetek) kemény előfeltétele, de itt javítjuk.
+
+**Kilépési feltétel:** zöld valódi build + `check_consistency` 0 FAIL/0 WARN + playtest-konzol
+`region`/`scheduler`/`IllegalStateException`-mentes a javított utakon; a bank/claim
+crash-ablak tételhez (H-ECON-001, ismert blokkoló) legalább a pending-record terv leírva.
+
+### A. fázis — Production Visibility (feature-terv Release A)
+
+Cél: az éles szerver megfigyelhetősége, mielőtt tartalom épül rá.
+
+- ⬜ **`/icesmp health`** (#81): read-only operátori pillanatkép manager-snapshotokból
+  (storage/WAL-állapot, autosave-kor, MajorEventGate, transient-entity szám, integrációk,
+  online-szám) — GREEN/AMBER/RED szintek, szinkron fájlolvasás nélkül.
+- ⬜ **Strukturált content-validálás** (#82): a meglévő `ConfigValidator` + CI-checkek
+  egységes Diagnostic-modellbe (severity/code/path/suggestion), `/icesmp validate`
+  parancs; új ellenőrzések: halott spell-ID, elérhetetlen recept, üres loot-tábla,
+  quest-előfeltétel ciklus.
+- ⬜ **`/bugreport`** (#89): kategória + automatikus kontextus (verzió, világ/koordináta,
+  kaszt/spec, aktív event/GUI), rate-limit, fingerprint-dedup; SOHA: chat-előzmény, más
+  játékos adata, IP.
+- ⬜ **AdminAuditLog** (közös alap): append-only, bounded — preset/flag/report/inbox
+  admin-műveletek naplója (a G. fázis is erre épül).
+
+### B. fázis — Inbox & Retention alap (Release B)
+
+- ⬜ **PlayerInboxService** (#75, P0): a szétszórt pending-store-ok (szakma-heti cél,
+  report-feedback, szezon offline-jutalom) fokozatos migrálása egy központi, idempotens
+  claim-ű inboxba — ez zárja a jutalom-kézbesítési crash-ablakok osztályát is.
+- ⬜ **NotificationRouter** (közös alap) + **értesítési preferenciák** (#77): kategória →
+  csatorna (chat/action bar/bossbar/inbox-only); kritikus üzenet nem némítható.
+- ⬜ **Achievement-láncok** (#72): a meglévő 5-metrikás lapos engine bővítése group/tier/
+  prerequisite/hidden mezőkkel — a wealth-tételek pénznyomda-védelme marad.
+- ⬜ **Visszatérési összefoglaló** (#74) + **gyorsmenü** (#79) + **szervernaptár**: a
+  meglévő Krónika/szezon/inbox adatokból, 24-48h távollét-küszöbbel.
+
+### C. fázis — PvE Depth (Release C)
+
+- ⬜ **Elit-affixek** (#9): a `MobScalingManager` ritka-variáns rétegének általánosítása
+  (MVP: 6 affix, max 2/mob, PDC-döntés spawnkor, spawner/breeding kizárva). KÖTELEZŐ:
+  minden aura/Falkavezér/halál-zóna hatás a 0. fázisban javított kapu+hop mintával;
+  minden idézett entity `TransientEntities`-regisztrált, bounded élettartammal.
+- ⬜ **Boss contribution ledger** (#11): event-vezérelt (sebzés/gyógyítás/tank/mechanika),
+  SOSEM periodikus pozíció-olvasás; tier-jutalom (bronz→legendás) pénz-semlegesen;
+  offline jogosult jutalma az inboxba. Közös API — később Vad Hajsza/invázió is használja.
+- ⬜ **Harci összefoglaló** (recap): a ledger személyes nézete; nyilvános DPS-rangsor NEM.
+- ⬜ **Bestiárium 2.0** (#60): többszintű kutatás a meglévő BestiaryManager-en; a tudás
+  információ/kozmetika, nem harci erő.
+
+### D. fázis — Profession & Item Economy (Release D)
+
+- ⬜ **Profession-spec hatás-réteg** (#45): a kiválasztás (SpecCommand/SpecGUI/PDC) MÁR
+  KÉSZ — a munka a 16 spec tényleges passzívái/előnyei + fizetős respec (kisebb, mint a
+  feature-terv M becslése).
+- ⬜ **Salvage** (#38): veszteséges bontás tiltólistával (Lélekkapocs, DEV-item, quest-item,
+  relikvia, kulcs, valuta); nagy értéknél a TransactionJournal mintája.
+- ⬜ **Item history** (#43) + **ItemIdentityService** (közös alap): csak mérföldkő-események,
+  max ~20/item, aggregálással; dupe-detektálás admin-oldalon.
+- ⬜ **Rúna 2.0** (#40): a kész egy-rúna/tárgy rendszer köré UX (előnézet, kódex,
+  rúnapor-salvage) — TÖBB foglalat NEM.
+- ⬜ **Crafting order piactér** (kiegészítő): escrow + journal; a 438 receptes katalógusra épül.
+- 🔬 *Telemetria után:* setek (#41), tárgyfejlődés (#42), crafting stance (#46).
+
+### E. fázis — Living World Director (Release E)
+
+- ⬜ **EventOutcome** (közös alap): minden esemény strukturált záró-eredménye.
+- ⬜ **Event Director** (#85): starvation-súlyos, fair rotáció a meglévő MajorEventGate
+  FELETT (nem helyette); az esemény-mechanika a saját managerében marad.
+- ⬜ **Eseményláncok** (#53, max 3 lépés, ciklus-tiltás) + **kudarc-következmények** (#54,
+  mindig időzített és visszafordítható) + **aftershock** (#55, max 1/parent).
+- 🔬 *Második hullám:* mágikus időjárás (#56), anomáliák (#57), kincstérképek (#58),
+  Aetrinita-világállapot, procedurális contractok.
+- KÖTELEZŐ minden új esemény-típusra: `EventSpawnGuard`-hívás + új
+  `world-events.spawn-rules` mátrix-sor + pénz-semleges jutalom (meglévő elv).
+
+### F. fázis — Whisper War (Release F)
+
+- ⬜ Titkos küldetések (#35) + Suttogó-befolyás hálózat (#36) + kontraspionázs (#37) —
+  csak stabil inbox (titkos kategória!) és EventOutcome után; anti-leak követelmények
+  (PAPI, Krónika, achievement-toast nem szivárogtathat).
+
+### G. fázis — LiveOps & Balance (Release G)
+
+- ⬜ **Feature flags** (#83): a meglévő `enabled` kulcsok FÖLÉ, determinisztikus
+  UUID-hash rollouttal; gazdasági tranzakcióra/itemformátumra százalékos rollout TILOS.
+- ⬜ **Live-ops presetek** (#84): overlay a meglévő `ConfigManager.applyOverride` útra
+  (dry-run diff, lejárat, rollback, auditlog) — előfeltétele a 0. fázisban javított
+  M-CONFIG-002.
+- ⬜ **Balansztelemetria** (#86) + **heti balanszriport** (#87): aggregált, bounded,
+  60-90 nap retention; a rendszer CSAK jelez, sosem balanszol automatikusan.
+- ⬜ **Moderációs workflow 2.0** (#88): a meglévő ReportManager-séma migrálása
+  (státuszgép, assignee, notes) — új párhuzamos CaseManager NEM készül.
+
+### Közös alapok (melyik fázis hozza létre)
+
+| Szolgáltatás | Létrehozza | Használja |
+|---|---|---|
+| AdminAuditLog | A | A, G |
+| NotificationRouter | B | B, F, G, bugreport-feedback |
+| PlayerInboxService | B | B, C (boss-jutalom), F (titkos), G |
+| EventOutcome | E | E, G (telemetria) |
+| TelemetryService | C-től fokozatosan | C, D második hullám, G |
+| ItemIdentityService | D | D (history, salvage, order) |
+| FeatureFlagService | G | G, későbbi rolloutok |
+
+### Átfogó szabályok (minden fázisra)
+
+- **Definition of Done teljes költsége beárazva:** minden új parancs (inbox, health,
+  validate, bugreport, calendar…) → tab-complete + `/menu` csempe + jog-node a
+  Permissions-mapben + `14-parancsok.md` + Guides-tükör — a checker kikényszeríti.
+- Minden új config-kulcs use-site olvasással (élő-config); admin-hangolandó → ConfigMenuGUI.
+- Minden új mechanika: Folia-minta (kapu+hop), pénz-semleges vagy sink jutalom,
+  `PlayerSessionCleanupListener`-takarítás az új UUID-mapekre (kick-re is!).
+- Tesztelési minimum fázisonként: fordítás + `check_consistency` + célzott fault-injection
+  (inbox-claim, salvage, preset-expiry) + két-régiós Folia playtest-blokk a PLAYTEST.md-be.
+
+---
+
 ## Nyitott fejlesztések
 
 ### Ismert hibák / technikai kockázatok
@@ -25,18 +193,25 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   Lezárult továbbá a piac/wallet/inventory tartós tranzakció (`storage/TransactionJournal`) és a
   tile-entity block-regen write-ahead journal (`storage/BlockRegenJournal`), valamint a
   `MobKillUtil` immutable `KillContext` átterve a FAUCET/PROGRESSION jutalom-utakon.
-  **Még nyitott:** a `TransientEntities`-re épülő world-event életciklus (a naiv fail-open
-  változat vissza lett vonva, mert esemény-deadlockot okozott — a feltételek a
-  `docs/ideas/P2-gameplay-audit.md`-ben), és a pozíció-alapú jutalom-megosztás (párt-XP, Vad
-  Hajsza personal loot), ami még az áldozat szálán olvas pozíciót. Playtesten figyeljétek a
-  konzolt `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
+  **2026-07-28-i kód-validálás:** a `TransientEntities`-életciklus a 07-26-i P0-F körben
+  lezárult (heartbeat-alapú Handle + fail-closed liveness + MajorEventGate-watchdog; a 0.
+  fázis a shutdown-szigetelést és a totem crash-sweepet pótolta), a pozíció-alapú
+  jutalom-megosztás pedig a `PartyRewardResolver` (07-26) + a `PositionCache`-alapú
+  közelség-számítás (0. fázis) párossal zárult — e két korábbi blokkoló már NEM nyitott.
+  **Még nyitott kiadásblokkoló:** a bank/claim/adomány több-tartományos crash-ablak
+  (H-ECON-001) — a szinkron-commit kísérlet review-ra visszavonva, az elfogadott irány
+  a szűk WAL/pending-record (részletek a kivitelezési terv 0. fázis-státuszában). A 2026-07-28-i saját
+  audit-kör és a feldolgozott külső mélyaudit további igazolt tételei (Folia-kapuk,
+  perzisztencia-szerződés, config-guardok) szintén a `PROJEKT-AUDIT.md`-ben élnek — a
+  javítási sorrend fent, az Összesített kivitelezési terv 0. fázisában. Playtesten
+  figyeljétek a konzolt `region`/`scheduler`/`IllegalStateException` stacktrace-ekre.
 - **Technikai adósság (az átfogó code review nem-blokkoló leletei; működést nem érintenek):**
   - Az esemény-managerek közös mintái (véletlen horgony-játékos választás, perc→millis konverzió,
     enabled-enum sorsolás, mulandó entity biztonságos eltávolítása) 5-8 helyen duplikáltak — egy
     közös `WorldEventUtil`/`TransientEntityHandle` helperbe emelés esedékes (BACKLOG O6/O27).
     Ugyanez a duplikáció-osztály: `prefixAt` 20 fájlban (O4), kill-jutalom előszűrő 19 listenerben
     (O24), napi keret 5+ helyen (O25), hibakulcs→default switch 11+ osztályban (O26). A `utils/`
-    csomag már létezik (12 osztály, pl. `SpellTargetingUtil` — O5 így zárult le), tehát ez tisztán
+    csomag már létezik (22 osztály, pl. `SpellTargetingUtil` — O5 így zárult le), tehát ez tisztán
     mechanikus munka, nem architektúra-döntés.
   - ✅ MEGOLDVA — `ClaimManager` már debounce-ol: a 8 mutációs pont mind a `requestSave()`-et hívja
     (2 mp-es async coalescing flush a CurrencyManager mintájára), a szinkron teljes-fájl írás
@@ -59,9 +234,9 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
   frakciónként (`/territory setspawn <frakció>`); új játékos a Semleges Királyság spawnján
   jelenik meg, frakcióválasztáskor teleport az új királyság spawnjára, ágy/horgony nélkül a
   saját frakció spawnján éledsz újra. **Frakciót váltani (join ÉS leave) csak a semleges
-  fővárosban lehet** (fail-open, amíg nincs kijelölve), a `/faction leave` fizetős váltásnak
-  szánt (a leave+join ingyenes kerülőút azonban a frakciórekord törlése miatt MÉG NYITOTT — lásd a
-  kiadásblokkolókat), és `/npcbind <npc> faction`
+  fővárosban lehet** (fail-open, amíg nincs kijelölve). A `/faction leave` a joinnal AZONOS
+  főváros-kapun, szezon-szabályon és váltás-díjon megy át — a korábbi leave+join ingyenes
+  kerülőút ZÁRVA (2026-07-28-i kód-validálás). `/npcbind <npc> faction`
   királyság-választó hírnök-NPC-t köt. További ötlet: váltás-megerősítő GUI a hírnöknél.
 - 💡 **Világesemények — bővítve („élőbb világ"):** a vérhold / világboss / invázió / szezon mellé
   bekerült **11 új esemény**, mind config-vezérelt és **pénz-semleges** (tárgy/effekt/XP, sosem valuta),
@@ -139,14 +314,17 @@ Jelölés: ⬜ tervezett • 🔨 folyamatban • 💡 ötlet (nincs elkötelez�
 A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erőfeszítés sorrendben:
 
 1. **Plugin-beolvasztás folytatása** (kevesebb külső függőség):
-   - 🟢 gyors: **FarmProtect** (termés-taposás, ~30 sor), **minimotd** (MOTD), **ICEsmpadditions**
-     (saját 2 KB-os mini-plugin — a forrása kell hozzá);
+   - ✅ KÉSZ (2026-07-16/17-i körök, kód-validálva 2026-07-28): **ICEsmpadditions**
+     (world-tweaks.warden-death-xp), **FarmProtect** (crop-trample-protection),
+     **MiniMOTD** (motd.yml), **TAB** (natív tablist: header/footer, nevek,
+     nametag+rendezés, ping), **CrazyCrates** (natív crate), továbbá AFK/ülés plugin
+     és **InvSee++/SModeration** (natív moderáció + inspektor) — az új build
+     telepítésekor ezek a pluginok eltávolítandók a szerverről;
    - 🟡 közepes: **economist + service-io** (ha semmi nem függ tőlük → törölhetők; vagy IceSMP
      gazdaság-szolgáltató híd), **FancyHolograms** (általános `/hologram` admin-parancs a meglévő
      TextDisplay-infrára), **AuMenus** (config-vezérelt hub-menü), **VillagerTradeEdit** (statikus
      trade-módosítások configból);
-   - 🟠 nagy: **TAB** (header/footer + LP-prefix sorrend a saját HUD-ba), **WorldGuard**
-     (admin-zóna flagek a TerritoryManagerbe) — csak alapos playtest után.
+   - 🟠 nagy: **WorldGuard** (admin-zóna flagek a TerritoryManagerbe) — csak alapos playtest után.
 2. **Végjáték-progresszió:** presztízs/paragon szintek a max kaszt után, relikvia-fejlesztés
    (reforge), szezon-emléktárgyak.
 3. **Egyedi dungeonök (PvE):** kézzel készített helyszínek megnevezett bossokkal, mechanikákkal,

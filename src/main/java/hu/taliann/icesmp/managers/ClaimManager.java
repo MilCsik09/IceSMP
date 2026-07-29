@@ -907,7 +907,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
      * off the region threads (mirrors the CurrencyManager pattern).
      */
     @Override
-    public void save() {
+    public synchronized void save() {
         flushToDisk();
     }
 

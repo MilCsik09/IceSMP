@@ -78,7 +78,7 @@ public final class EconomyEventManager implements PersistentStore {
         }
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             if (isActive()) {
@@ -94,6 +94,7 @@ public final class EconomyEventManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save economy-event.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save economy-event.yml", exception);
         }
     }
 

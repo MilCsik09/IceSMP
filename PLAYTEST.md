@@ -51,7 +51,8 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 | **ViaVersion/Backwards** | Régi kliens-verziók a HUD unicode-jeleit (👑 ❤ ▮) és a hosszú oldalsáv-sorokat csonkíthatják — kozmetikai, nem hiba. |
 | **FarmProtect** | Együttműködik: az IceSMP termés-listenerei `ignoreCancelled`-del futnak, a FarmProtect által tiltott esemény nem ad bónuszt. |
 | **economist** | Külön gazdaság: az IceSMP saját frakció-valutát használ (nincs Vault-híd) — a két rendszer nem keveredik. |
-| LuckPerms, GSit, CrazyCrates, FancyHolograms, AuMenus, voicechat, SModeration, minimotd, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert ütközés. |
+| LuckPerms, FancyHolograms, AuMenus, voicechat, ImageFrame, Axiom/FAWE/goBrush/VoxelSniper, packetevents/ProtocolLib | Nincs ismert közvetlen ütközés. |
+| GSit, CrazyCrates, SModeration, MiniMOTD, AxAFKZone | Replacement alatt állnak; azonos parancs/event felelősség miatt nem tekinthetők konfliktusmentesnek. Jar nélkül csak a megfelelő scope draft PR-jének buildje és kézi playtestje után tesztelendők. |
 
 ### Permissionök tesztelőknek
 A legegyszerűbb, ha a tesztelő admin **OP** (minden node megvan), vagy egyetlen sorral:
@@ -926,25 +927,28 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (`world-tweaks.warden-death-xp`, configolható).
   - [ ] **Termés-taposás** (FarmProtect helyett): szántóföldre ugrás (játékos ÉS mob) nem töri
         fel a földet (`world-tweaks.crop-trample-protection`).
-  - [ ] **MOTD** (MiniMOTD helyett): a szerverlistában gradient-es Ice SMP MOTD, ami ~10 mp-enként
-        vált a variánsok közt (frissítsd a listát többször); `motd.yml`-ből szerkeszthető.
-  - [ ] **AFK-rendszer** (AxAFKZone helyett): állíts be zónát az `afk.yml`-ben → a zónába lépve
-        üzenet + bossbar-visszaszámláló; az intervallum leteltével (default 10 perc) kis
-        valuta-jutalom; kilépéskor a haladás NULLÁZÓDIK (nincs bankolás). 3 perc tétlenség
-        után (bárhol) a tablistában szürke „⌚ ᴀꜰᴋ" jelenik meg a név után, mozgásra eltűnik.
-  - [ ] **Crate-rendszer** (CrazyCrates helyett): admin: `/crate set koznapi` a nézett blokkra,
-        `/crate give <név> koznapi 3`; kulccsal jobb-katt → kulcs fogy + súlyozott jutalom
-        (hang+részecske+üzenet); kulcs nélkül info az árról; `/crate buy koznapi` levonja a
-        25 NEUTRAL-t (sink); `/crate info` esély-táblát mutat; a kulcs NEM craftolható be;
-        restart után a crate-blokkok megmaradnak. ⚠️ **Folia:** `/crate give` távoli (másik
-        régióban lévő) játékosnak is hibamentes.
-  - [ ] **Ülés** (GSit helyett): `/sit` a földön állva leültet (ArmorStand-ülés), újra `/sit`
-        vagy sneak = felállás; jobb-katt lépcsőre/fél-lapra ÜRES kézzel leültet; halál/teleport/
-        kilépés/blokk-törés alóla → korrekt felállás, nem marad árva ArmorStand.
-  - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5 teszt` → a némított nem tud
-        chatelni ÉS /msg-t sem küldeni (üzenetet kap a hátralévő idővel); restart után is él;
-        `/unmute` felold; `/mute list`; chat-szűrő: tiltott szó CENSOR-módban csillagozva,
-        BLOCK-módban elnyelve; spam: 1,5 mp-en belüli két üzenet / ismételt üzenet blokkolva.
+  - [ ] **MOTD** (MiniMOTD helyett): a completion branch buildelt; eltávolítás csak az alábbi valódi Folia ping/reload tesztek után;
+        idő/random rotáció, eseményprioritás, 64×64 ikonok, vanish-count és reload külön ellenőrzendő.
+  - [ ] **Globális AFK:** az automatikus AFK-észlelés, `/afk`, tablistajelzés és meglévő
+        exploitvédelmi lifecycle változatlanul működik. Jutalmazó AFK-zóna nincs és nem készül;
+        AxAFKZone/AxAPI jar nem része a deploymentnek.
+  - [ ] **Crate-rendszer** (CrazyCrates helyett): a code-review-zott lifecycle buildelt és regressziózott,
+        de a jar eltávolítása csak valódi Folia/fault-injection átvételi teszt után engedhető. Ellenőrizd:
+        - main-hand működik, off-hand és gyors dupla katt nem indít második openinget;
+        - required key több inventory stackből pontosan fogy, partial mass-open csak teljesen finanszírozott nyitásokat indít;
+        - full inventorynál az item reward a játékos owner-szálán a helyére esik;
+        - currency write/rollback hiba, command submit exception/null/rejection, `dispatchCommand == false` és command exception nem kap hamis completed/success állapotot;
+        - két gyors reload, crate/world/definition cseréje finalize előtt, valamint quit/kick/disable minden lifecycle ponton;
+        - spin/reveal entity és GUI cleanup, konkurens auditrotáció, stats-reset race;
+        - restart recovery: egyszeri key refund vagy dokumentált `MANUAL_REVIEW`, jutalomduplikáció nélkül.
+  - [ ] **Sit-only ülés** (GSit helyett): `/sit`, `/sit fel`, click-to-sit, üres kéz,
+        stairs/slabs/carpets/moss carpet/pale moss carpet/snow pozíció, világ- és materialpolicy,
+        unsafe/folyadék/clearance, namespaced tiltott parancs, konkurens reservation és minden
+        damage/sneak/break/teleport/world-change/death/quit/kick/dismount/reload/disable cleanup.
+        Lay, crawl, stacking és player/NPC sitting nincs a termékscope-ban.
+  - [ ] **Moderáció** (SModeration helyett): `/mute <név> 5m teszt` → chat és natív `/msg`
+        blokkolva; restart után is él; `/unmute`, `/history <név>`, `/punishments <név>` ugyanazt
+        az autoritatív ledgert olvassa. Külön tempban/login, SocialSpy és corrupt-state teszt kell.
   - [ ] **Bejelentés:** `/report <név> <ok min 3 szó>` → az online moderátorok
         (icesmp.admin.moderation) azonnal értesülnek; 60 mp-en belül második report
         rate-limitbe fut; `/reports` lista → `/reports resolve <id>`; restart-álló.
@@ -952,8 +956,9 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         (frakció/kaszt+XP/spec/erőforrás/egyenlegek/statok/bűn/claim/questek/cooldownok);
         offline névre korlátozott riport. ⚠️ **Folia:** távoli (másik régiós) célpontra is
         hibamentes (a riport a célpont szálán épül).
-  - [ ] **Invsee** (InvSee++ helyett, csak olvasás): `/invsee <név>` → pillanatkép-GUI a fő
-        inventoryról (páncél+offhand sorral) + ender-láda nézet gombbal; SEMMI nem vehető ki.
+  - [ ] **Invsee** (InvSee++ helyett): `/invsee <név> read main|ender` élő read-only nézet;
+        `/invsee <név> edit main|ender` csak külön edit permissionnel. Target/admin quit/kick,
+        reload és reconnect közbeni escrow-visszaadás két eltérő Folia-régióban is ellenőrzendő.
 - [ ] **QoL-kör (A43–A52, ÚJ):**
   - [ ] **Relációs háború-szín:** raid alatt a szemben álló fél tagjai PIROSAK a tablistádban
         és a fejük fölött — a raidben nem érintett harmadik frakciónak viszont NEM; a raid vége
@@ -1002,13 +1007,28 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
         entitás-szemét (relog/restart után sem). Kapcsoló: `display-fx.crate-reveal.enabled: false`.
         ⚠️ Folia: a pörgetés az ikon saját szálán fut, régióhatár-közeli ládánál is hibamentes.
   - [ ] **Kombó-kiemelés:** kombó/lánc-finisher utáni 3 mp-ben a sebzés-szám nagyobb, arany, "!"-lel.
-  - [ ] **Fekvés:** `/sit fekves` (LibsDisguises-szel) fekvő póz; mozgásra/újra kiadva felállás;
-        LD nélkül udvarias hibaüzenet. ⚠️ GrimAC false-positive playtest kötelező!
   - [ ] **Mute-eszkaláció:** `/mute <név>` perc NÉLKÜL → 1. alkalom 5 perc, majd 30/180/1440
         (moderation.escalation-minutes); a blokkolt/cenzúrázott üzenetek a
         logs/chat-moderation.log-ba kerülnek (5 MB-nál forgatás).
   - [ ] **Esemény-MOTD:** vérhold indítása után a szerverlista MOTD-ja a vérhold-variánsra vált
         (frissítsd a listát), utána vissza a normál rotációra.
+- [ ] **Natív MOTD completion — `feature/native-motd-completion`:**
+  - [x] **AUTOMATED:** `motdRegressionTest` — TIME floor-mod, időablakon belül stabil RANDOM, seed-érzékenység és pool-lefedés.
+  - [x] **AUTOMATED:** teljes signed-`long` parser (`2^53` fölött, MIN/MAX, kétirányú overflow, string, tört/NaN/Infinity) és minden MOTD boolean típushű validációja.
+  - [x] **AUTOMATED:** kizárólag `{online}`/`{max}` placeholder; MiniMessage-only és vegyes MiniMessage/token szöveg változatlanul érvényes.
+  - [x] **AUTOMATED:** vérhold > világboss > szezonzárás prioritás és milliszekundum-pontos szezonzáró küszöb.
+  - [x] **AUTOMATED:** secure icon-root/köztes/fájl no-follow, traversal tiltás, helyes/hibás méret, sérült/túl nagy PNG és a hét bundled 64×64 ikon.
+  - [x] **AUTOMATED:** két reload, scheduler rejection/null handle, task–fallback single-winner és disable utáni késői callback nem publikál cache-t.
+  - [ ] **REAL FOLIA REQUIRED / MANUAL:** párhuzamos server-list pingek TIME és RANDOM módban, hiba és region-thread stacktrace nélkül.
+  - [ ] **REAL FOLIA REQUIRED:** vérhold, világboss és szezonzárás egymásra fedése; a prioritás pontosan ebben a sorrendben érvényes.
+  - [ ] **PERMISSION TEST / MANUAL:** vanished admin megjelenik vagy kimarad az online countból az `exclude-vanished-from-online-count` kapcsoló szerint; nem készül második vanish-state.
+  - [ ] **RELOAD TEST:** ikonfájl csere közben két gyors `/icesmp reload`; a régi async generáció nem írja vissza a régi ikonkészletet.
+  - [ ] **RELOAD TEST:** `/icesmp config set motd.selection-mode random`, `rotation-seconds`, vanish toggle és `icons.mode` azonnal új snapshotot ad.
+  - [ ] **NEGATIVE TEST:** sérült, nem PNG, 32×32, 65×64, root/köztes/fájl symlink és 1 MiB feletti fájl kihagyása; a plugin többi része működik.
+  - [ ] **NEGATIVE TEST:** ismeretlen enum, hibás típusú boolean, lebegőpontos/overflow integer, nulla max-player override, üres/65 elemű pool, ismeretlen placeholder, duplikált normalizált ID és hibás strict MiniMessage a MOTD-t fail-safe letiltja.
+  - [ ] **MANUAL:** `{online}`/`{max}`, max-player override és NONE/DEFAULT/VARIANT/RANDOM ikonmód a kliens szerverlistájában.
+  - [ ] **MANUAL / NEGATIVE:** MiniMOTD jar nélkül teljes átvételi teszt; proxy/vhost és upstream configkompatibilitás nincs és nem cél.
+
 - [ ] **QoL-kör 2 (A53–A62, ÚJ):**
   - [ ] **`/afk`:** azonnali ⌚-jelölés + hátrasorolás + jutalomkapu; bármilyen mozgás/üzenet törli
         (a parancs kiadása maga NEM törli — a toggle megmarad).
@@ -2736,3 +2756,51 @@ Gyorsítás teszthez:
 - [ ] A vanilla, `unique:`, `recipe:` és `blueprint:` jutalmak működnek.
 - [ ] Két másolt Bingulus sem gyorsítja a jutalmazást; a manager egy hiteles példányt hagy meg.
 - [ ] Restart után megmarad a rész-progressz, a pending jutalom és a pity-számláló.
+
+## 0. stabilitási fázis — két-régiós Folia ellenőrzés (2026-07-28)
+
+Két teszter álljon egymástól távol (külön régió, ~200+ blokk), egy pedig a jelenség
+helyszínén. A konzolt végig figyeld `region`/`scheduler`/`IllegalStateException` stacktrace-re.
+
+- [ ] **Totem régióhatáron:** sámán rakjon totemet régióhatár közelébe úgy, hogy a
+      hatósugárba eső mob/játékos a szomszéd régióban áll — a buff/sebzés megérkezik,
+      konzol-hiba nélkül. Crash-teszt: aktív totemnél öld meg a szervert (kill -9),
+      restart után a totem-állvány NEM marad a világban.
+- [ ] **Pet távoli célponton:** a gazdi lövedékkel sebezzen távoli (másik régiós) mobot —
+      a pet nem dob hibát; ha a cél átfut a határon, a következő tickben újra felveszi.
+- [ ] **Világboss ZONE-special:** a bossnál a zóna-telegráf régióhatáron álló játékossal
+      is hibamentes.
+- [ ] **Párt-jutalom régióhatáron:** két párttag KÜLÖN régióban, sugáron belül — kincs
+      nyitásakor / mob-ölésnél MINDKETTEN kapnak (a korábbi néma kimaradás megszűnt).
+- [ ] **Hazatérés-rituálé kudarca:** érvénytelen fővárosnál / tiltott teleportnál a
+      2 ender pearl és a cooldown MEGMARAD, hibaüzenettel; sikeres útnál egyszer fogy.
+- [ ] **Reload-teljesség:** recept-ár módosítás + `/icesmp reload` → a recept-könyv az
+      új árat mutatja restart nélkül; `spell-vfx.enabled: false` + reload → a spell-VFX
+      azonnal eltűnik.
+- [ ] **Config-őrök:** `/icesmp config set` NaN-ra hibatűrő (nem lesz ingyen bolt-item);
+      egy bemásolt `zz-backup.yml` reload után warningot ad és NEM ír felül kulcsot.
+- [ ] **Sérült állapotfájl:** egy kézzel elrontott UUID a factions.yml-ben → az indulás
+      MEGÁLL, a fájl karanténba kerül, semmi nem íródik felül.
+- [ ] **Gazdasági crash-teszt (H-ECON-001 — a WAL-kör átvételi tesztje, addig VÁRHATÓAN BUKIK):** `/bank kivet 100` után AZONNAL öld meg a
+      szervert (kill -9) — restart után az egyenleg a levont érték, dupla pénz nincs
+      (a veret a crash miatt veszhet el, de nem duplázódik). Ugyanez befizetésre:
+      a beadott veret vagy a számlán van, vagy visszakerült — sosem tűnik el nyomtalanul.
+- [ ] **Fizetős claim crash-teszt:** claim-vásárlás után azonnali kill — restart után a
+      levonás ÉS a claim együtt van meg (vagy együtt hiányzik), félkész állapot nincs.
+
+## Natív moderáció — replacement scope (2026-07-28)
+
+- [x] **AUTOMATED:** `./gradlew moderationRegressionTest` — ledger restart/expiry/revocation/history/invariánsok; invsee restart snapshot, count-preserving single-claim, claim utáni törlés, corrupt/partial/schema/count state; scheduler submit exception/null/retirement single-winner; repeating-task publish race; `/reply` quit–reconnect generációvédelem.
+- [x] **AUTOMATED:** `./gradlew clean build --no-daemon --stacktrace` — teljes fordítás és regressziós lifecycle.
+- [ ] **REAL FOLIA REQUIRED / RESTART TEST:** tempmute és tempban mentése, restart előtti/utáni enforcement, lejárat.
+- [ ] **NEGATIVE TEST / RESTART TEST:** hibás, részleges, duplikált és ellentmondó `moderation-data.yml` fail-closed karantén.
+- [ ] **NEGATIVE TEST:** írásvédett data könyvtár / lemezhiba — mutáció rollback, nincs hamis sikerüzenet, plugin fail-closed.
+- [ ] **REAL FOLIA REQUIRED:** `/msg` két eltérő régióban; sender/recipient quit–reconnect a kézbesítési hop közben; a régi callback nem épít `/reply` linket az új sessionhez; SocialSpy státuszok.
+- [ ] **PERMISSION TEST:** minden akció, GUI-gomb és tab completion külön permissionnel; invsee read/edit szétválasztás.
+- [ ] **REAL FOLIA REQUIRED / RELOAD TEST:** vanish relog, world change, reload, tablist viewer-filter, nametag, online/MOTD count.
+- [ ] **NEGATIVE TEST:** vanished admin mob target, item pickup, incoming/outgoing damage és interaction kapcsolók.
+- [ ] **REAL FOLIA REQUIRED:** invsee fő/ender read és edit eltérő régiókban; target és admin quit/kick minden scheduler-hopnál; azonnal retired/null submit fault-injectionnél nincs elvesző vagy duplikált stack és nincs stale refresh task.
+- [ ] **RELOAD TEST:** aktív invsee session reload/disable alatt bezár; admission lezárás után minden befogadott transfer drainelődik; final save után restart/reconnect restore; sikeres return utáni kontrollált újraindítás nem adja vissza ismét a rekordot.
+- [ ] **NEGATIVE TEST:** `/offlinetp` hiányzó adat, nem betöltött vagy UUID-ben eltérő világ; nincs szinkron world/chunk load.
+
+A fenti kézi pontok teljesítése előtt az SModeration/InvSee++ eltávolíthatósága **nem végleges**.

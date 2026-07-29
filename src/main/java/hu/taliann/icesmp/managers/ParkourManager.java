@@ -83,7 +83,7 @@ public final class ParkourManager implements PersistentStore {
         }
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             for (final Map.Entry<String, Course> entry : courses.entrySet()) {
@@ -98,6 +98,7 @@ public final class ParkourManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save parkour.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save parkour.yml", exception);
         }
     }
 

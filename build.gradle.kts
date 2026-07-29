@@ -44,7 +44,7 @@ tasks {
 
 val regressionTest by sourceSets.creating {
     java.srcDir("src/regression/java")
-    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     runtimeClasspath += output + compileClasspath
 }
 
@@ -64,6 +64,39 @@ val devItemRewardRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.DevItemRewardRegressionSuite")
 }
 
+val moderationRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native moderation plus review concurrency and visibility regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.moderation.ModerationReviewRegressionSuite")
+}
+
+val motdRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs deterministic MOTD rotation, event-priority and icon regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.motd.MotdRegressionSuite")
+}
+
+val sitRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native sit-only policy, reservation and lifecycle regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.SitRegressionSuite")
+}
+
+val crateRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs native crate validation, settlement, recovery and scheduler regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.crates.CrateRegressionSuite")
+}
+
 tasks.check {
-    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest)
+    dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
+        motdRegressionTest, sitRegressionTest, crateRegressionTest)
 }

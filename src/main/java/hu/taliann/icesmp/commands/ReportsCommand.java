@@ -133,6 +133,9 @@ public final class ReportsCommand implements BasicCommand {
 
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
+        if (!commandSourceStack.getSender().hasPermission(PERMISSION)) {
+            return List.of();
+        }
         if (args.length <= 1) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             return List.of(RESOLVE, ALL).stream().filter(option -> option.startsWith(prefix)).toList();

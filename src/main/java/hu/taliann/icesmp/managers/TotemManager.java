@@ -25,12 +25,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Shaman totems: a placed, short-lived {@link ArmorStand} that pulses a themed effect to nearby
- * entities (heal/buff allies, or damage/debuff hostiles) on its OWN region scheduler, so the whole
- * thing is Folia-correct — the totem ticks and despawns on its region thread, and the pulse only
- * touches region-local nearby entities. Active totems are tracked and removed on plugin disable so
- * none survive a reload as orphans.
+ * entities (heal/buff allies, or damage/debuff hostiles) on its OWN region scheduler — the totem
+ * ticks and despawns on its region thread. A nearby entity can belong to a NEIGHBOURING region
+ * (the pulse radius may cross the border), so the pulse only touches owned entities directly and
+ * hops to the target's scheduler otherwise. Active totems are tracked and removed on plugin
+ * disable so none survive a reload as orphans.
  */
-public final class TotemManager {
+public final class TotemManager implements org.bukkit.event.Listener {
 
     /** The totem roster: who it affects, the effect/damage it pulses, and its look. */
     public enum TotemType {
@@ -127,6 +128,22 @@ public final class TotemManager {
     }
 
     /**
+     * Crash-árva takarítás: a totem-állvány persistent (nem despawnol magától), az
+     * élettartam-órája és a pulzusa viszont a memóriával együtt vész el crashkor. A
+     * betöltéskor nem követett, taggelt állványt a saját régió-szálán eltávolítjuk.
+     */
+    @org.bukkit.event.EventHandler
+    public void onEntitiesLoad(final org.bukkit.event.world.EntitiesLoadEvent event) {
+        for (final Entity entity : event.getEntities()) {
+            if (entity instanceof ArmorStand stand
+                    && stand.getPersistentDataContainer().has(totemKey, PersistentDataType.BYTE)
+                    && !activeTotems.contains(stand.getUniqueId())) {
+                stand.remove();
+            }
+        }
+    }
+
+    /**
      * Places a totem of the given type at the caster's feet. Must be called on the caster's region
      * thread (the spell system already runs spell execution there), so the spawn is region-local.
      *
@@ -175,7 +192,12 @@ public final class TotemManager {
                 return;
             }
             for (final Entity nearby : totem.getNearbyEntities(radius, radius, radius)) {
-                type.affect(nearby, durationTicks);
+                // A pulzus-sugár átnyúlhat régióhatáron — idegen entitást csak a saját szálán érintünk.
+                if (Bukkit.isOwnedByCurrentRegion(nearby)) {
+                    type.affect(nearby, durationTicks);
+                } else {
+                    nearby.getScheduler().run(plugin, hop -> type.affect(nearby, durationTicks), null);
+                }
             }
             totem.getWorld().spawnParticle(type.particle, totem.getLocation().add(0.0D, 1.0D, 0.0D),
                     10, 0.5D, 0.5D, 0.5D, 0.01D);

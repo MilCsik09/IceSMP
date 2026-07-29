@@ -225,6 +225,7 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Failed to save profession-weekly.yml: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save profession-weekly.yml", exception);
         }
     }
 }

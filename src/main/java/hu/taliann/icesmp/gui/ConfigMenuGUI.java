@@ -83,6 +83,13 @@ public final class ConfigMenuGUI {
                 Entry.toggle("factions.council.enabled", "Vének Tanácsa (NEUTRAL)"),
                 Entry.number("factions.council.withdraw-daily-cap", "Tanácsi kassza-keret/nap", 50, 0, 100000),
                 Entry.integer("factions.council.market-week-minutes", "Vásár-hét hossza (perc)", 15, 5, 10080))));
+        categories.put("motd", new Category("motd", "Szerverlista és MOTD", Material.OAK_SIGN, List.of(
+                Entry.toggle("motd.enabled", "Natív MOTD bekapcsolva"),
+                Entry.cycle("motd.selection-mode", "Variáns-választás", List.of("time", "random")),
+                Entry.integer("motd.rotation-seconds", "Rotációs ablak (mp)", 5, 2, 86400),
+                Entry.toggle("motd.exclude-vanished-from-online-count", "Vanish játékosok kihagyása"),
+                Entry.cycle("motd.icons.mode", "Ikonmód", List.of("none", "default", "variant", "random"))
+        )));
         categories.put("esemenyek", new Category("esemenyek", "Világesemények", Material.DRAGON_HEAD, List.of(
                 Entry.toggle("world-events.spawn-rules-enabled", "Spawn-védelem mester-kapcsoló"),
                 Entry.toggle("world-events.orchestration.enabled", "Esemény-orchestráció (1 nagy esemény egyszerre)"),
@@ -207,6 +214,15 @@ public final class ConfigMenuGUI {
                 Entry.toggle("spy.enabled", "Kém-álca"),
                 Entry.integer("spy.duration-seconds", "Álca hossza (mp)", 10, 10, 3600),
                 Entry.integer("spy.cooldown-minutes", "Álca cooldown (perc)", 1, 1, 100000))));
+        categories.put("ules", new Category("ules", "Ülés", Material.OAK_STAIRS, List.of(
+                Entry.toggle("sit.enabled", "Natív ülés"),
+                Entry.toggle("sit.click-to-sit", "Kattintásos ülés"),
+                Entry.toggle("sit.empty-hand-only", "Csak üres főkézzel"),
+                Entry.number("sit.max-click-distance", "Max. kattintási távolság", 0.5, 1, 16),
+                Entry.toggle("sit.allow-unsafe-locations", "Veszélyes hely engedélyezése"),
+                Entry.toggle("sit.stand-up.damage", "Sebzésre feláll"),
+                Entry.toggle("sit.stand-up.sneak", "Lopakodásra feláll"),
+                Entry.toggle("sit.stand-up.block-break", "Blokktörésre feláll"))));
         categories.put("borze", new Category("borze", "Börze és városi őrség", Material.EMERALD, List.of(
                 Entry.toggle("market.allow-relic-listing", "Relikvia listázható (börze)"),
                 Entry.number("market.relic-auction.recommended-min-bid", "Börze ajánlott minimuma", 25, 0, 1000000),

@@ -4,7 +4,7 @@
 > de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
 > kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
 > életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
-> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 477 Java-fájl / 87 manager.
+> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 541 Java-fájl / 90 manager.
 
 ## ⚔ Kasztok és képességek
 
@@ -233,9 +233,12 @@
   loot-források; passzív relikvia halálnál "elveszett" státuszba kerül (reclaim-
   rituáléval visszaidézhető), fegyver-relikvia PvP-ben gazdát cserél; inaktivitás-
   lejárat; relikvia-aukció.
-- **Láda-rendszer (natív crate)**: fizikai láda-pontok + kulcs-itemek (köznapi/
-  ritka), /crate buy (valuta-sink), pörgős reveal-animáció, súlyozott loot-táblák
-  (sosem pénz); kulcs quest-jutalomból is.
+- **Láda-rendszer (natív crate)**: tartós fizikai crate-helyek, PDC-kulcsok és `/crate buy`;
+  read-only browser/preview, permission- és world-policy, required key, cooldown, statisztika,
+  bounded mass-open, pörgős reveal és súlyozott reward batch. A code-review-zott settlement
+  single-claim lifecycle-t, durable currency mutationt, ellenőrzött command dispatch-et és
+  restart recovery/manual-review határt használ. A CrazyCrates csak valódi Folia/fault-injection
+  átvételi teszt után távolítható el.
 - **Pénz-itemek**: erszények (mob-drop, súlyozott), Opálos Emlékszilánk (talent/
   respec-valuta), lélekkövek (soulforge-fejlesztés).
 

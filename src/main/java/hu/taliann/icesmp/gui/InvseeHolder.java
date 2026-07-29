@@ -3,69 +3,37 @@ package hu.taliann.icesmp.gui;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
 
-/**
- * Read-only {@code /invsee} snapshot holder (InvSee++ kiváltás első lépcsője): a
- * célpont fő inventoryjáról/páncéljáról/off-handjéről/ender-ládájáról a CÉLPONT szálán készült
- * {@link ItemStack#clone()} pillanatkép — NEM élő nézet, a GUI bezárása után eldobódik. A holder
- * hordozza mindkét aloldalhoz (fő nézet + ender-láda nézet) szükséges adatot, hogy a "vissza"/
- * "ender-láda" gomb új entitás-hozzáférés (és újabb Folia scheduler-hop) nélkül válthasson nézetet.
- */
+import java.util.Objects;
+import java.util.UUID;
+
+/** Holder for one live online inventory inspection session. */
 public final class InvseeHolder implements InventoryHolder {
 
-    /** Which aloldal is currently rendered from this holder's snapshot. */
     public enum View { MAIN, ENDER }
+    public enum Mode { READ_ONLY, EDIT }
 
+    private final UUID sessionId;
+    private final UUID targetId;
     private final String targetName;
-    private final ItemStack[] mainSnapshot;
-    private final ItemStack[] armorSnapshot;
-    private final ItemStack offHandSnapshot;
-    private final ItemStack[] enderSnapshot;
-    /** {@link System#currentTimeMillis()} at which this snapshot was captured (for the refresh button/age display). */
-    private final long snapshotAtMillis;
     private final View view;
+    private final Mode mode;
     private Inventory inventory;
 
-    public InvseeHolder(final String targetName, final ItemStack[] mainSnapshot, final ItemStack[] armorSnapshot,
-                        final ItemStack offHandSnapshot, final ItemStack[] enderSnapshot, final long snapshotAtMillis,
-                        final View view) {
-        this.targetName = targetName;
-        this.mainSnapshot = mainSnapshot;
-        this.armorSnapshot = armorSnapshot;
-        this.offHandSnapshot = offHandSnapshot;
-        this.enderSnapshot = enderSnapshot;
-        this.snapshotAtMillis = snapshotAtMillis;
-        this.view = view;
+    public InvseeHolder(final UUID sessionId, final UUID targetId, final String targetName,
+                        final View view, final Mode mode) {
+        this.sessionId = Objects.requireNonNull(sessionId, "sessionId");
+        this.targetId = Objects.requireNonNull(targetId, "targetId");
+        this.targetName = Objects.requireNonNull(targetName, "targetName");
+        this.view = Objects.requireNonNull(view, "view");
+        this.mode = Objects.requireNonNull(mode, "mode");
     }
 
-    public String getTargetName() {
-        return targetName;
-    }
-
-    public ItemStack[] getMainSnapshot() {
-        return mainSnapshot;
-    }
-
-    public ItemStack[] getArmorSnapshot() {
-        return armorSnapshot;
-    }
-
-    public ItemStack getOffHandSnapshot() {
-        return offHandSnapshot;
-    }
-
-    public ItemStack[] getEnderSnapshot() {
-        return enderSnapshot;
-    }
-
-    public long getSnapshotAtMillis() {
-        return snapshotAtMillis;
-    }
-
-    public View getView() {
-        return view;
-    }
+    public UUID sessionId() { return sessionId; }
+    public UUID targetId() { return targetId; }
+    public String targetName() { return targetName; }
+    public View view() { return view; }
+    public Mode mode() { return mode; }
 
     public void setInventory(final Inventory inventory) {
         this.inventory = inventory;

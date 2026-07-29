@@ -14,7 +14,7 @@
 ```
 IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
   └─ IceSMPCore                ← a teljes rendszer összeszerelése
-       ├─ konstruktor          → ~87 manager felépítése (szigorú sorrend), registerSpells()
+       ├─ konstruktor          → ~90 manager felépítése (szigorú sorrend), registerSpells()
        ├─ enable()             → config + perzisztens store-ok betöltése, listenerek + parancsok
        │                         regisztrálása, ütemezett feladatok indítása
        └─ disable()            → perzisztens store-ok mentése, majd futó rendszerek leállítása
@@ -35,18 +35,19 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 111 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 114 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
+| `managers/` | 116 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 119 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 84 (55 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
-| `gui/` | 42 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `gui/` | 46 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
+| `crates/` | 13 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
-| `items/` | 11 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
+| `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 21 | `MessageManager`, `ExperienceUtil`, egyebek. |
-| `integration/` | 7 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
+| `utils/` | 22 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
 
@@ -78,6 +79,35 @@ tartományban vannak-e, a `…-minutes/-hours/-seconds/-ticks/-millis` kulcsok n
 admin-elgépelések (rossz item-név, kilógó százalék) tiszta log-figyelmeztetésként jelennek meg
 ahelyett, hogy némán az alapértékre esnének vissza.
 
+#### 3.1.1 Natív szerverlista-MOTD — immutable snapshot + generációkapu
+
+A `MotdListener` nem olvas fájlt és nem járja be a konfigurációt a server-list ping szálán.
+A `/icesmp reload`, a `motd.*` config-parancs és a config GUI ugyanazon célzott reload-hookot
+hívja: a listener előbb szigorúan felépít egy immutable snapshotot, azonnal üríti a korábbi
+ikoncache-t, majd külön async taskban csomagolja ki és olvassa a `plugins/IceSMP/icons/*.png`
+fájlokat. A könyvtár és minden fájl `SecureDirectoryStream` handle-en, `NOFOLLOW_LINKS` mellett
+nyílik meg; a méretellenőrzés és a dekódolás ugyanazon fájldescriptoron fut. A Bukkit
+`CachedServerIcon` létrehozása a global-region scheduleren történik.
+
+- választási mód: időalapú vagy seedelt, időablakon belül stabil random;
+- eseményprioritás: vérhold → világboss → szezonzárás → normál pool;
+- tokenek: kizárólag `{online}` és `{max}`; minden más brace-token config hiba; opcionális max-player override;
+- a vanished count kizárólag a moderációs `VanishManager` thread-safe UUID-cache-ét használja;
+- ikonmód: `NONE`, `DEFAULT`, `VARIANT`, `RANDOM`;
+- ikonkapuk: symlinkmentes root/köztes/fájl útvonal, jóváhagyott data-rooton belüli secure open,
+  legfeljebb 1 MiB és 64 fájl, valódi PNG, pontosan 64×64;
+- a reload-generáció és a `SchedulerCallbackGate`-et újrahasznosító `MotdGenerationGate`
+  megakadályozza, hogy régi, visszautasított vagy disable után befejeződő callback publikáljon;
+  az ikonmap és a rendezett ID-lista egyetlen volatile immutable cache;
+- hiányzó scalar a dokumentált defaultot használja; jelen lévő hibás boolean, lebegőpontos vagy
+  tartományon kívüli egész, hibás enum, üres/túl nagy pool, duplikált normalizált ID és hibás
+  strict MiniMessage csak a MOTD feature-t tiltja le, nem a teljes plugint.
+
+A dependency-free `MotdSelector` tesztelhetővé teszi a rotációt és eseményprioritást. A
+`motdRegressionTest` a negatív epoch floor-mod viselkedést, a random stabilitást/pool-lefedést,
+a teljes signed-`long` és strict boolean szabályokat, a placeholder whitelistet, a symlink/TOCTOU
+ikonvédelmet, a generációs interleavinget és a jarban szállított ikonok 64×64 dekódolását is ellenőrzi. Ez nem helyettesíti a valódi Folia ping/reload és proxy nélküli runtime playtestet.
+
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
 majd a fő `messages.yml`-t override-ként. Rendering: a `get`/`getMessage`/`getComponent` **mind**
@@ -87,7 +117,7 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 33 fájlt-író store implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 34 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
 - **`storage/PersistentStoreCoordinator`**: az enable során **fail-closed** tölti be a teljes
@@ -416,9 +446,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 477 Java-fájl, ~82 000 sor; 87 `*Manager` osztály (a `managers/` csomag 111 fájl).
-  Csomag-megoszlás: listeners 114, managers 111, commands 84, spells 56, gui 42, utils 21, data 12,
-  items 11, relics 9, integration 7.
+- **Méret:** 543 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 116 fájl).
+  Csomag-megoszlás: listeners 119, managers 116, commands 94, spells 56, gui 46, crates 13, utils 22, data 12,
+  items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   `PersistentStoreCoordinatorRegressionTest` és a `DevItemRewardRegressionSuite` main osztályokat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
@@ -430,3 +460,37 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 - **Garanciahatár:** a statikus, dependency-free és build-integrált regressziók nem helyettesítik a
   valódi Folia multi-region, process-kill, ENOSPC vagy permission-denied fault-injectiont.
 - **Nyitott fejlesztések:** `ROADMAP.md`.
+
+## Natív moderációs alrendszer
+
+A moderáció egyetlen autoritatív `ModerationManager` store-ra épül. A dependency-free `PunishmentLedger` tartja az invariánsokat; a Paper/Folia adapterek csak parancsot, eventet, GUI-t és scheduler ownershipot kezelnek. A state a közös `PersistentStoreCoordinator` lifecycle-ban, `YamlStore.saveAtomic` mentéssel működik. Sikertelen mutációs mentésnél a manager visszagörgeti a memóriasnapshotot, kritikus írási hibánál fail-closed leállást kér.
+
+A kereszt-entitásos live inventory két owner thread között halad: target scheduler → tesztelt `InventoryEscrowGate` → tartós, count-preserving `InventoryEscrowQueue` → viewer scheduler. A target completion csak a return queue publikálása után válik láthatóvá. A nullable entity-submitokat dependency-free single-winner gate és vékony Paper adapter kezeli; a repeating refresh handle race-biztos `TaskLease`-ben él. A `/reply` linket `ReplyPartnerRegistry` join-session generációval keríti el. A vanish viewer-owned visibility API-t használ. Az async pre-login gate kizárólag szálbiztos immutable/synchronized read modellt olvas. Részletes szerződés: [`MODERATION.md`](MODERATION.md).
+
+## Natív sit-only lifecycle
+
+A `SitManager` egy Bukkit-független, atomi `SitState` ledgerben foglalja a world+block
+ülőhelyet, majd PDC-azonosított, nem persistent ArmorStand seat entityt hoz létre a régió
+tulajdonos-szálán. A player/entity scheduler submit exception, null handle és retirement ugyanazon
+`PaperEntityTaskSubmission` single-winner fallbacken fut; a reload/disable cleanup rövid, korlátos
+drainnel követi az entity eltávolításokat. A scope kizárólag `/sit`, `/sit fel` és click-to-sit: lay,
+crawl, stacking és player/NPC sitting nincs runtime wiringban.
+
+## Natív crate settlement és recovery
+
+A `CrateManager` egy dependency-free domainrétegre épül. A `CrateOpeningLifecycle` CAS-alapú
+`RESERVED → PERSISTED → GRANTING → COMPLETED` állapotgépe biztosítja, hogy egy grant legfeljebb
+egyszer legyen claimelhető, a finalize és rollback pedig kölcsönösen kizárja egymást. A stat/cooldown
+mutation token csak sikeres reward-settlement után kerül az autoritatív `CrateLedger` állapotba.
+
+A schema 2 recovery rekord `ROLLBACK_ONLY`, `REFUND_KEYS`, `REFUND_CLAIMED` és `MANUAL_REVIEW`
+állapotokkal teszi explicitté a kompenzációs határt. A currency batch durable save + exact snapshot
+rollback tokent használ; a command batch csak global-scheduler elfogadás, tényleges futás és sikeres
+`dispatchCommand` után tekinthető sikeresnek. Már nem kompenzálható külső side effect esetén nincs
+automatikus key refund, hanem auditálható részleges hiba marad. Ez nem distributed transaction és
+nem process-crash exactly-once garancia.
+
+A config snapshot generationhöz kötött: a key purchase ugyanabból a generationből számít árat és
+készít kulcsot, opening finalize előtt pedig újraellenőrzi a world/location/crate-ID/definition/policy
+invariánsokat. Audit append és rotáció egyetlen sorosított writeren fut; a scheduler task/rejection
+single-winner gate-et és race-biztos task lease-t használ. Részletes szerződés: [`CRATES.md`](CRATES.md).
