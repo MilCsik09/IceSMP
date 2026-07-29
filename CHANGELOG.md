@@ -7,6 +7,14 @@
 
 ---
 
+## Unreleased — globális AFK scope-helyreállítás (2026-07-30)
+
+- A jutalmazó AFK-zóna teljes runtime-, scheduler-, config-, üzenet-, bossbar- és kifizetési útja törölve; a globális tétlenségészlelés és a `/afk` megmaradt.
+- A `/afk` most kézi és automatikus AFK-ból is valóban aktív állapotba kapcsol vissza, friss tétlenségi időablakkal.
+- A natív tablista HUD nélkül is elindul, az AFK-játékost garantáltan a saját rangja végére rendezi, kikapcsoláskor pedig eltakarítja a natív kimenetet.
+- A boss/event és kazamata-miniboss loot ugyanazt az AFK-jutalomkaput használja; a miniboss lifecycle jutalomtiltás mellett is lezárul.
+- Bizonyíték: `afkRegressionTest`, AFK product-boundary consistency guard és teljes Java 21 build. Valódi Folia átvételi teszt továbbra is szükséges.
+
 ## Unreleased — natív crate code-review hardening (2026-07-29)
 
 - Atomi opening lifecycle: `RESERVED → PERSISTED → GRANTING → COMPLETED`, kizárólagos rollback/finalize és single-claim grant.
@@ -23,9 +31,10 @@
 
 ### 1. Külső pluginok eltávolíthatósági állapota
 
-> A buildelt natív alap önmagában nem runtime-garancia. A MiniMOTD, AxAFKZone, GSit,
-> CrazyCrates, SModeration és InvSee++ csak a replacement-mátrix kötelező scope-jainak
-> és kézi Folia-playtestjeinek lezárása után törölhető biztonságosan.
+> A buildelt natív alap önmagában nem runtime-garancia. A MiniMOTD, GSit, CrazyCrates,
+> SModeration és InvSee++ csak a replacement-mátrix kézi Folia-kapui után törölhető.
+> Az AxAFKZone/AxAPI külön eset: jutalmazó AFK-zóna nincs a termékscope-ban, ezért nem
+> deployment-függőség; az éles jar/adat és remap-cache eltávolítása operátori lépés.
 
 | Régi plugin | Natív kiváltás |
 |---|---|
@@ -34,7 +43,7 @@
 | `MiniMOTD` | **FELTÉTELES** — a natív completion buildelt és regressziózott; valódi Folia ping/ikon/reload és jar nélküli átvételi playtest még kell |
 | `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
 | `CrazyCrates` | **FELTÉTELES** — a natív crate lifecycle code-review-zott és regressziózott; valódi Folia/fault-injection átvételi teszt még kell |
-| `AxAFKZone` / `AxAPI` | **NEM KELL** — a jutalmazó AFK-zóna termékscope törölve; a meglévő globális `/afk` változatlanul megmarad |
+| `AxAFKZone` / `AxAPI` | **NEM KELL** — a jutalmazó AFK-zóna törölve; a natív globális AFK külön regresszióval védett. Éles jar/adat/remap-cache eltávolítandó, migráció nincs |
 | `GSit` | **FELTÉTELES** — a natív sit-only lifecycle buildelt és regressziózott; valódi Folia seat/cleanup átvételi playtest még kell |
 | `InvSee++` / `SModeration` | **FELTÉTELES** — a natív suite buildelt; valódi Folia/restart/fault-injection playtest még kell |
 
@@ -91,8 +100,8 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
   infósor, prioritás-kiszorítás, party-szekció.
 - **Natív moderáció**: `/report` rendszer (perzisztens, offline-feedbackkel), mute +
   chat-szűrő + spam-fék, eszkaláció + chat-napló; **admin-inspektor** + read-only `/invsee`.
-- **Natív AFK-, crate- és ülés-alapok**; ezek a szerverhez szükséges magfunkciókat elindították,
-  de a teljes replacement-completion és valódi Folia-playtest ebben a fejlesztési programban készül.
+- **Natív globális AFK, crate- és sit-only alapok**. Az AFK-zóna jutalmazó scope-ja elvetett;
+  a crate és ülés külső pluginjának leváltása továbbra is valódi Folia átvételi kapuhoz kötött.
 - **DisplayFx + SpellVfx réteg**: display-entity effektek, formázott spell-VFX kaszt/spec-
   palettákkal és per-spell override-dal, 3D crate-feltárás, boss-AoE padló-telegraph,
   aurora fény-fátyol; particle-diéta (FLASH-korlát, konfetti-mérséklés).

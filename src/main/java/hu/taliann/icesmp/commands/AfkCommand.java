@@ -8,10 +8,8 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
 /**
- * /afk — önkéntes AFK-jelölés. Azonnal él a tablist ⌚-jelölés, a rangon belüli
- * hátrasorolás és a jutalomkapu; bármilyen aktivitás (mozgás/chat/parancs) törli.
- * (A parancs-kiadás maga is aktivitás-eseményt vált ki, de az ELŐBB fut le, mint a toggle,
- * így a bekapcsolás megmarad.)
+ * {@code /afk} toggles the player's overall AFK state. Invoking it while automatically or
+ * manually AFK returns the player to active state and starts a fresh inactivity window.
  */
 public final class AfkCommand implements BasicCommand {
 
@@ -26,12 +24,14 @@ public final class AfkCommand implements BasicCommand {
     @Override
     public void execute(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (!(commandSourceStack.getSender() instanceof Player player)) {
-            commandSourceStack.getSender().sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
+            commandSourceStack.getSender().sendMessage(messageManager.get("messages.player-only",
+                    "&cEzt a parancsot csak játékos használhatja."));
             return;
         }
-        final boolean nowAfk = afkManager.toggleManualAfk(player.getUniqueId());
+        final boolean nowAfk = afkManager.toggleAfk(player.getUniqueId());
         player.sendMessage(nowAfk
-                ? messageManager.get("afk-on", "&7⌚ Mostantól &fAFK&7 vagy — bármilyen mozgás/üzenet visszahoz.")
+                ? messageManager.get("afk-on",
+                        "&7⌚ Mostantól &fAFK&7 vagy — aktivitás vagy egy újabb /afk visszahoz.")
                 : messageManager.get("afk-off", "&aÜdv újra! Az AFK-jelölésed törölve."));
     }
 }

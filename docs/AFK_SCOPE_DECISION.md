@@ -17,3 +17,10 @@ The existing simple global AFK system remains in IceSMP. This includes the globa
 ## Deployment consequence
 
 This decision does not remove or replace the simple global AFK system. It only rejects the separate rewarded-zone product scope. No `AxAFKZone` or `AxAPI` plugin JAR is required for the retained global AFK behaviour.
+
+## Enforced implementation boundary
+
+The `afkRegressionTest` and `scripts/check_consistency.py` retain the automatic/manual global
+state, tab-list signal and shared reward gates while rejecting zone state, payout, bossbar and
+periodic AFK scheduler wiring. Existing live Ax files are not migrated; deployment must archive or
+remove them and rebuild Paper's remap cache.

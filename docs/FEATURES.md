@@ -4,7 +4,7 @@
 > de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
 > kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
 > életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
-> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 541 Java-fájl / 90 manager.
+> Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 545 Java-fájl / 90 manager.
 
 ## ⚔ Kasztok és képességek
 
@@ -78,7 +78,7 @@
   3% váltási díj, árfolyam-tábla NPC (exchange board), gazdasági események
   (konjunktúra/dekonjunktúra ablakok, tanácsi Vásár-hét).
 - **Pénz-források napi plafonnal**: mob-drop erszények (300/nap), horgász-lelet
-  (150/nap), felvásárló NPC (250/nap), lélekkő-drop (DARK-út); questek, AFK-jutalom.
+  (150/nap), felvásárló NPC (250/nap), lélekkő-drop (DARK-út) és questek.
 - **Nyelők**: boltok (általános/kellék/feketepiac/karaván), láda-kulcsok, komp-díj,
   piac/aukció-díj (10%, boom alatt 5%), váltási díj, frakció-váltás, spec-respec,
   claim-vétel, céh-alapítás, adó.
@@ -262,7 +262,9 @@
 - **Kazamaták**: kulcs-kapus DUNGEON zónák (melyseg/csontkripta kulcs-receptek,
   ITEM_MODEL-es kulcsok), futam-passz, heti pecsét, +5 mob-szint; belső tartalom kézi építés.
 - **Krónika**: heti szerver-összefoglaló broadcast + /kronika visszaolvasás.
-- **AFK-rendszer**: AFK-jelölés, (kis) AFK-jutalom nappal, esemény-kizárások.
+- **Globális AFK-rendszer**: automatikus tétlenségészlelés, valódi ki/be kapcsoló `/afk`,
+  tablistajelzés és rangon belüli hátrasorolás, valamint közös exploitvédelmi jutalomkapu.
+  Jutalmazó AFK-zóna, bossbar és időzített AFK-kifizetés nincs.
 - **Moderáció**: /report rendszer (30 napos retenció), mute, spam-szűrő, chat-log.
 - **Frakció-ételek (honvágy)**: hazai étel-kötelezettség puha debuff-fal, signature
   ételek buffokkal (pisztráng, rántotta, hamukenyér, ünnepi fogások).

@@ -56,7 +56,7 @@
     "command.npcbind": {"audience": ["ADMIN"], "docs": ["docs/player-guide/14-parancsok.md"]}
   },
   "features": {
-    "feature.afk": {"audience": ["PLAYER", "ADMIN"], "description": "Native AFK tracking and reward zones.", "docs": ["docs/FEATURES.md"]},
+    "feature.afk": {"audience": ["PLAYER", "ADMIN"], "description": "Native global inactivity/manual AFK tracking, tab-list indication and reward gates; no rewarded zones.", "docs": ["docs/FEATURES.md"]},
     "feature.sit": {"audience": ["PLAYER"], "description": "Native sitting and pose entry points.", "docs": ["docs/FEATURES.md"]},
     "feature.crate": {"audience": ["PLAYER", "ADMIN"], "description": "Native crate keys, blocks, rewards and spin GUI.", "docs": ["docs/FEATURES.md"]},
     "feature.moderation": {"audience": ["MODERATOR", "ADMIN"], "description": "Reports, mute and moderation persistence.", "docs": ["docs/FEATURES.md"]},

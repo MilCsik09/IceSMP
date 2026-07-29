@@ -9,6 +9,7 @@ Azokat a konzisztencia-osztályokat ellenőrzi, amiket kézzel könnyű elfelejt
      Permissions.java-ban (FAIL — az icesmp.admin.all csak a regisztrált node-okat adja meg)
   5. /menu akció-célok (RUN:/OPEN:) létező parancsra mutatnak
   6. tükör-repo drift (ha a IceSMPGuides checkout elérhető)
+  7. globális AFK product-boundary (jutalmazó zóna/scheduler/payout nem térhet vissza)
 
 Kilépési kód: 0 = zöld (warningok lehetnek), 1 = legalább egy FAIL.
 """
@@ -575,6 +576,45 @@ try:
             fail(f"/lore alias '{_target}'-ra mutat, de nincs ilyen szocikk — a parancs csendben mast adna")
 except Exception as e:
     warn(f"/lore tema-ellenorzes kihagyva: {e}")
+
+
+# ===== AFK product boundary: global tracking only, no rewarded zones =====
+try:
+    _afk = configs.get("afk.yml", {}) or {}
+    _afk_root = _afk.get("afk", {}) if isinstance(_afk, dict) else {}
+    if not isinstance(_afk_root, dict):
+        fail("AFK product-boundary: config/afk.yml afk gyökere nem mapping")
+        _afk_root = {}
+    for _removed_key in ("enabled", "refresh-ticks", "zones", "reward", "bossbar"):
+        if _removed_key in _afk_root:
+            fail(f"AFK product-boundary: tiltott afk.{_removed_key} kulcs visszatért")
+    if "afk-after-seconds" not in _afk_root or "block-rewards" not in _afk_root:
+        fail("AFK product-boundary: a globális timeout vagy jutalomkapu configja hiányzik")
+
+    _afk_messages_doc = yaml.safe_load(read(os.path.join(
+        REPO, "src/main/resources/messages/afk.yml"))) or {}
+    _afk_messages = (_afk_messages_doc.get("messages", {})
+                     if isinstance(_afk_messages_doc, dict) else {})
+    for _required_message in ("afk-on", "afk-off", "afk-reward-blocked"):
+        if _required_message not in _afk_messages:
+            fail(f"AFK product-boundary: {_required_message} üzenet hiányzik")
+    for _removed_message in ("afk-zone-enter", "afk-zone-leave", "afk-reward-received"):
+        if _removed_message in _afk_messages:
+            fail(f"AFK product-boundary: tiltott {_removed_message} üzenet visszatért")
+
+    _afk_manager_source = read(os.path.join(
+        JAVA, "hu/taliann/icesmp/managers/AfkManager.java"))
+    _core_source = read(os.path.join(
+        JAVA, "hu/taliann/icesmp/core/IceSMPCore.java"))
+    for _token in ("CurrencyManager", "payOutTokens", "BossBar", "currentZone",
+                   "zoneProgress", "bossBars", "record Zone"):
+        if _token in _afk_manager_source:
+            fail(f"AFK product-boundary: tiltott runtime token az AfkManagerben: {_token}")
+    for _token in ("afkTask", "afkManager.tick()", "\"afk.refresh-ticks\""):
+        if _token in _core_source:
+            fail(f"AFK product-boundary: tiltott scheduler token az IceSMPCore-ban: {_token}")
+except Exception as e:
+    fail(f"AFK product-boundary ellenőrzés hibája: {e}")
 
 for w in warns:
     print(f"⚠ WARN: {w}")

@@ -14,7 +14,7 @@ The release head must be the final full SHA of `master`; do not use an assumed o
 
 ## Procedure
 
-1. Merge every approved implementation pull request for native moderation, AFK zones, sitting/poses, MOTD, crates and any other release scope.
+1. Merge every approved retained implementation pull request for native moderation, global AFK, sit-only, MOTD, crates and any other release scope; rewarded AFK zones and unsupported poses must remain absent.
 2. Record the final `master` SHA.
 3. Open **Actions → Repository Docs Inventory → Run workflow**.
 4. Set `base_ref` to `49cb32740629f3d91a08b753436f3e16d33a494d`.

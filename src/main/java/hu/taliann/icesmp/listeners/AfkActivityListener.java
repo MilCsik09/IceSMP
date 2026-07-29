@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.AfkManager;
+import hu.taliann.icesmp.managers.GlobalAfkTracker;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
@@ -12,11 +13,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * Feeds {@link AfkManager#recordActivity(java.util.UUID)} from every input-like event — a bare
- * map-write per event, nothing else, so this listener stays cheap on the hot paths (move, chat).
- *
- * <p>{@link AsyncChatEvent} runs OFF the region threads (Paper async chat), so its handler is
- * restricted to exactly that one map-write; touching the player/world there would break Folia.
+ * Feeds the global AFK state from input-like events. Every handler is a map-only state update;
+ * async chat therefore never touches player or world state off its owning thread.
  */
 public final class AfkActivityListener implements Listener {
 
@@ -26,7 +24,6 @@ public final class AfkActivityListener implements Listener {
         this.afkManager = afkManager;
     }
 
-    /** Only counts as activity if the player actually moved a block or turned — not a jitter tick. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
         final Location from = event.getFrom();
@@ -43,7 +40,6 @@ public final class AfkActivityListener implements Listener {
         afkManager.recordActivity(event.getPlayer().getUniqueId());
     }
 
-    /** Async (off the region threads): record-only, no other AfkManager/player access here. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onChat(final AsyncChatEvent event) {
         afkManager.recordActivity(event.getPlayer().getUniqueId());
@@ -51,7 +47,9 @@ public final class AfkActivityListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCommand(final PlayerCommandPreprocessEvent event) {
-        afkManager.recordActivity(event.getPlayer().getUniqueId());
+        if (!GlobalAfkTracker.isAfkToggleCommand(event.getMessage())) {
+            afkManager.recordActivity(event.getPlayer().getUniqueId());
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

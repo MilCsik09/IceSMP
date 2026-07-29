@@ -317,9 +317,10 @@ A szétszórt „További ötlet" sorok konszolidálva, nagyjából érték/erő
    - ✅ KÉSZ (2026-07-16/17-i körök, kód-validálva 2026-07-28): **ICEsmpadditions**
      (world-tweaks.warden-death-xp), **FarmProtect** (crop-trample-protection),
      **MiniMOTD** (motd.yml), **TAB** (natív tablist: header/footer, nevek,
-     nametag+rendezés, ping), **CrazyCrates** (natív crate), továbbá AFK/ülés plugin
-     és **InvSee++/SModeration** (natív moderáció + inspektor) — az új build
-     telepítésekor ezek a pluginok eltávolítandók a szerverről;
+     nametag+rendezés, ping), **CrazyCrates** (natív crate), sit-only és
+     **InvSee++/SModeration** (natív moderáció + inspektor). Ezek külső jarjai csak a
+     replacement-mátrix runtime kapui után távolíthatók el. Az **AxAFKZone/AxAPI** nem
+     cél-dependency: jutalmazó zóna nincs, a natív globális AFK külön marad;
    - 🟡 közepes: **economist + service-io** (ha semmi nem függ tőlük → törölhetők; vagy IceSMP
      gazdaság-szolgáltató híd), **FancyHolograms** (általános `/hologram` admin-parancs a meglévő
      TextDisplay-infrára), **AuMenus** (config-vezérelt hub-menü), **VillagerTradeEdit** (statikus
