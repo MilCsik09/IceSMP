@@ -25,7 +25,8 @@ public final class AfkZoneCatalog {
     public static final int MAX_ROLL_COUNT = 16;
     public static final double MAX_WEIGHT = 1_000_000.0D;
     public static final long MAX_CONFIGURED_ZONE_VOLUME = 100_000_000L;
-    public static final long MAX_CONFIGURED_CURRENCY_REWARD = 1_000_000L;
+    /** Physical token rewards are materialized into stacks; keep one roll region-thread bounded. */
+    public static final long MAX_CONFIGURED_CURRENCY_REWARD = 1_000L;
     public static final int MAX_CONFIGURED_ITEM_AMOUNT = 64;
     private static final Set<String> COMMAND_PLACEHOLDERS = Set.of("player", "uuid", "zone");
 
@@ -243,7 +244,7 @@ public final class AfkZoneCatalog {
             if (raw.indexOf('{', cursor + 1) >= 0 && raw.indexOf('{', cursor + 1) < close) {
                 return "egymásba ágyazott placeholder";
             }
-            final String placeholder = raw.substring(cursor + 1, close).toLowerCase(Locale.ROOT);
+            final String placeholder = raw.substring(cursor + 1, close);
             if (!COMMAND_PLACEHOLDERS.contains(placeholder)) {
                 return "nem engedélyezett placeholder: {" + placeholder + "}";
             }
@@ -253,7 +254,7 @@ public final class AfkZoneCatalog {
     }
 
     static List<Reward> parseRewards(final List<Map<?, ?>> maps, final long maxCurrency,
-                                              final int maxItemAmount, final List<String> problems) {
+                                      final int maxItemAmount, final List<String> problems) {
         final List<Reward> rewards = new ArrayList<>();
         for (int index = 0; index < maps.size(); index++) {
             final Map<?, ?> map = maps.get(index);
