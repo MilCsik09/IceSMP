@@ -792,6 +792,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `/invsee <játékos> edit <main|ender>` | csak bizonyítékkal és escrow/recovery ismeretében |
 | `/offlinetp <játékos>` | a staff teleportál a cél utolsó ismert helyére; nem a célt mozgatja |
 | `/crate set <id>` / `/crate remove` | csak stagingen ellenőrzött blokk- és világkötéshez |
+| `/territory setcapital <frakció> selection [név...]` | a `/claim pos1` + `/claim pos2` pontos X/Y/Z dobozát teszi védett fővárossá; előbb ellenőrizd a személyes claim-konfliktust és utána a `/territory show` rajzot |
 | `/icesmp reload` | configmentés és validáció után; strukturális változásnál restart kellhet |
 | `/faction set`, `/currency set`, `/relic give`, `/iceitem` | gazdasági vagy progressionmutáció; mindig jegyezd fel |
 
