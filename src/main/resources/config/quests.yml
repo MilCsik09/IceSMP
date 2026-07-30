@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — quests (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — quests (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 #
 # Egy quest "rewards" blokkjában elérhető opcionális mező (IDEAS A48):
 #   crate-key: "<ládaId>:<darab>"  — pl. "koznapi:1" — a config/crates.yml-ben
