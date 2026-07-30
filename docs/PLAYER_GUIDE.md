@@ -16,8 +16,6 @@ jegyzel meg, ez legyen:
 
 > **`/menu`** — innen a legtöbb fontos rendszer kattintással elérhető.
 
-> Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
->
 > A számokat és az elérhető tartalmakat a szerver aktuális beállítása
 > módosíthatja. Egy világhelyszín, NPC, kazamata vagy történeti kapu csak akkor
 > tekinthető elérhetőnek, ha az adott szezon világában ténylegesen ki van
@@ -883,3 +881,7 @@ vagy kérdezd meg, hogy a kapu ki van-e építve és aktiválva.
 
 *Aetrinita alatt mindenki ugyanúgy ébred. Onnantól azonban nincs két egyforma
 út. Válassz olyat, amelyről egyszer érdemes lesz krónikát írni.*
+
+---
+
+<sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>

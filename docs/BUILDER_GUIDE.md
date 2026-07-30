@@ -2,15 +2,14 @@
 
 <!-- icesmp-doc-id: guide.builder-and-world-designer -->
 
-> Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
->
-> Audit dátuma: 2026-07-30
->
-> Deployed baseline: `IceSMP-1.0-TESTING.jar`
-> (`da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`,
-> valószínű forrásállapot:
-> `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12,
-> `HIGH_CONFIDENCE`, nem `EXACT`)
+<details>
+<summary>Dokumentum-forrásállapot (HEAD, audit dátuma, futó baseline)</summary>
+
+- Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
+- Audit dátuma: 2026-07-30
+- Deployed baseline: `IceSMP-1.0-TESTING.jar` (`da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`); valószínű forrásállapot: `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12, `HIGH_CONFIDENCE`, nem `EXACT`)
+
+</details>
 
 Egy IceSMP-helyszín akkor kész, amikor nemcsak szép, hanem **él is**. A kapu a megfelelő világba vezet, az NPC felismeri a küldetést, a crate nem nyeli el a jutalmat, és a bossnak marad helye megmozdulni.
 

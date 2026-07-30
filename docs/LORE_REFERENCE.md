@@ -223,3 +223,12 @@ build-döntés; a generikus Rúnavért bármelyik mellett fér.
 | **Thanaopolis** | a DARK főváros MAI neve (a Holtak Városa) — minden jelen-idejű szöveg/zóna ezt használja; zóna-id: `thanaopolis` |
 | **Olethropyla** | a Kárhozat Kapuja ŐSI neve (görög: olethros = pusztulás + pylé = kapu) — csak a kódex/krónikák használják; a játékos-szövegek a népi „Kárhozat Kapuja" nevet mondják; zóna-id: `karhozat-kapuja` (quest-kötés!) |
 | **Mortengrad** | a bukás ELŐTTI (történelmi) név — csak a kódex múlt-idejű szövegében és a régi receptek nevében él (Mortengradi Hamukenyér, Mortengradi Árnygomba — az item-id-k és signature-ök változatlanok!) |
+
+## Publikálási döntés — a Suttogók rejtve maradnak
+
+A Suttogó-réteg (Sötét Rítus, titkos csatorna, gyanú- és vádrendszer, lelepleződés)
+**tulajdonosi döntésre nem szerepel a publikus dokumentációban** — sem a
+játékoskézikönyvben, sem a funkciókatalógusban, sem a kampányanyagban. Az álca a
+mechanika lényege: egy nyilvánosan leírt rejtett frakciónak nincs tétje. A rendszer
+kódszinten aktív; a megismerés útja a játék, nem a kézikönyv. Ez tudatos kihagyás,
+nem dokumentációs hiány — audit ne jelentse hiányzó tartalomként.
