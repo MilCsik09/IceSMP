@@ -82,7 +82,7 @@ A commandref 286 funkcionális route-ot és 93 route-aliast sorol. Beletartozik:
 - GUI-ból is elérhető parancs;
 - csak adminnak vagy konzolnak használható ág.
 
-Feloldatlan dynamic route: **0**.  
+Feloldatlan dynamic route: **0**.
 Feloldatlan nested parent: **0**.
 
 ## Alias inventory

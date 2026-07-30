@@ -11,11 +11,11 @@ csapattagoknak készült.
 
 Három külön kérdésre külön dokumentum válaszol:
 
-1. **Mi változik a jelenleg futó szerverbuildhez képest?**  
+1. **Mi változik a jelenleg futó szerverbuildhez képest?**
    [Deployed build → release changelog](DEPLOYED_BUILD_TO_RELEASE_CHANGELOG.md)
-2. **Mi változott a rögzített Git-fejlesztési baseline óta?**  
+2. **Mi változott a rögzített Git-fejlesztési baseline óta?**
    [Teljes fejlesztési changelog](ICESMP_FULL_DEVELOPMENT_CHANGELOG.md)
-3. **Mit tud a végleges integrált plugin?**  
+3. **Mit tud a végleges integrált plugin?**
    Ez a kézikönyv és a [teljes funkciókatalógus](../reference/FEATURE_CATALOGUE.md).
 
 A „release” ebben a csomagban **tesztelhető kiadási alapot** jelent. A zöld

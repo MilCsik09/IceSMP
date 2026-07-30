@@ -2,8 +2,8 @@
 
 <!-- icesmp-doc-id: release.print-pack -->
 
-> Nyomtatható és PDF-be exportálható, továbbítható összefoglaló.  
-> Dokumentált release: `master@4643ab53586f0c1ee7352df16dcd477013e6fad4`  
+> Nyomtatható és PDF-be exportálható, továbbítható összefoglaló.
+> Dokumentált release: `master@4643ab53586f0c1ee7352df16dcd477013e6fad4`
 > Audit: 2026-07-30
 
 ## Dokumentumhasználat

@@ -1,6 +1,6 @@
 # IceSMP teljes parancsreferencia
 
-> Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`  
+> Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
 > Deployed baseline: `IceSMP-1.0-TESTING.jar` (`da039f…95a05`, source mapping: `BINARY_ONLY`).
 
 Ez a referencia a tényleges bootstrap-regisztrációból és az oda bekötött végrehajtási ágakból készült. A forrásban található, de nem regisztrált parancsosztály nem számít aktív parancsnak. A `<…>` kötelező, a `[…]` opcionális argumentum.
