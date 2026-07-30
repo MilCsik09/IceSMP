@@ -38,8 +38,9 @@ class ResourcePackToolingTest(unittest.TestCase):
             json.dumps({"parent": "minecraft:item/generated"}),
             encoding="utf-8",
         )
+        (root / "README.md").write_text("repository-only documentation\n", encoding="utf-8")
 
-    def test_deterministic_zip_ignores_mtime_and_has_pack_at_root(self) -> None:
+    def test_deterministic_zip_ignores_mtime_and_source_only_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "source"
             self.make_pack(root)
@@ -47,6 +48,7 @@ class ResourcePackToolingTest(unittest.TestCase):
             second = Path(temp) / "second.zip"
 
             first_hash, _ = resource_pack.build_pack(root, first)
+            (root / "README.md").write_text("edited repository documentation\n", encoding="utf-8")
             for path in root.rglob("*"):
                 os.utime(path, (1_900_000_000, 1_900_000_000))
             second_hash, _ = resource_pack.build_pack(root, second)
