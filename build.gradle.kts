@@ -112,6 +112,14 @@ val afkRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.managers.AfkRegressionSuite")
 }
 
+val worldGuardBridgeRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs WorldGuard/WorldEdit bridge and fail-direction regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.integration.ProtectionBridgeRegressionSuite")
+}
+
 val territoryCapitalRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs exact 3D-capital geometry, wiring and consumer regressions."
@@ -131,5 +139,5 @@ val hudRegressionTest by tasks.registering(JavaExec::class) {
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        afkRegressionTest, territoryCapitalRegressionTest, hudRegressionTest)
+        afkRegressionTest, worldGuardBridgeRegressionTest, territoryCapitalRegressionTest, hudRegressionTest)
 }
