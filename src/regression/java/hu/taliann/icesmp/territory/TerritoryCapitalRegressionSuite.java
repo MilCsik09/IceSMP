@@ -19,6 +19,7 @@ public final class TerritoryCapitalRegressionSuite {
     public static void main(final String[] args) throws Exception {
         normalizesInclusiveSelection();
         preservesOuterBlockEdgesAndYBounds();
+        keepsOperationalCenterInsideNegativeSingleton();
         rejectsFootprintOverflow();
         verifiesProductionWiring();
         System.out.println("3D territory-capital regression suite passed.");
@@ -57,6 +58,17 @@ public final class TerritoryCapitalRegressionSuite {
                 "cross-world point is inside");
     }
 
+    private static void keepsOperationalCenterInsideNegativeSingleton() {
+        final BlockCuboid cuboid = BlockCuboid.between("world",
+                -2, 5, -3, -2, 5, -3);
+        final Territory territory = territory(cuboid);
+        check(territory.x() == -2 && territory.z() == -3,
+                "negative singleton centre escaped the selected block");
+        check(territory.contains("world",
+                        territory.x() + 0.5D, 5.5D, territory.z() + 0.5D),
+                "operational centre is outside the negative singleton cuboid");
+    }
+
     private static void rejectsFootprintOverflow() {
         final BlockCuboid edge = new BlockCuboid("world",
                 Integer.MAX_VALUE, 0, 0,
@@ -66,14 +78,8 @@ public final class TerritoryCapitalRegressionSuite {
 
     private static Territory territory(final BlockCuboid cuboid) {
         final List<int[]> points = cuboid.footprintPolygon();
-        long sumX = 0L;
-        long sumZ = 0L;
-        for (final int[] point : points) {
-            sumX += point[0];
-            sumZ += point[1];
-        }
-        final int centerX = Math.toIntExact(sumX / points.size());
-        final int centerZ = Math.toIntExact(sumZ / points.size());
+        final int centerX = cuboid.centerX();
+        final int centerZ = cuboid.centerZ();
         int radius = 1;
         for (final int[] point : points) {
             final long dx = (long) point[0] - centerX;
@@ -89,6 +95,7 @@ public final class TerritoryCapitalRegressionSuite {
     private static void verifiesProductionWiring() throws IOException {
         final String command = source("src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java");
         final String claims = source("src/main/java/hu/taliann/icesmp/managers/ClaimManager.java");
+        final String territories = source("src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java");
         final String core = source("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
         final String territoryListener = source(
                 "src/main/java/hu/taliann/icesmp/listeners/TerritoryListener.java");
@@ -108,6 +115,9 @@ public final class TerritoryCapitalRegressionSuite {
                 "selection clears before the capital is persisted");
         check(core.contains("new TerritoryCommand(plugin, territoryManager, claimManager, messageManager)"),
                 "ClaimManager is not injected into /territory");
+        check(territories.contains("final int centroidX = bounds.centerX()")
+                        && territories.contains("final int centroidZ = bounds.centerZ()"),
+                "cuboid operational centre is not derived from a selected block");
         check(claims.contains("selection.y1") && claims.contains("selection.y2")
                         && claims.contains("return BlockCuboid.between"),
                 "claim selection snapshot lost its Y coordinates");
