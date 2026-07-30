@@ -9,6 +9,8 @@ ellenőrzött, részletes 2D változatot tartják meg.
 Ez a könyvtár a pack **kicsomagolt, szerkeszthető forrása**. Kész ZIP-et ne commitolj ide.
 A `scripts/resource_pack.py` validálja a JSON/MCMeta- és PNG-fejléceket, majd rendezett
 fájllistából, rögzített timestamp- és jogosultságadatokkal determinisztikus ZIP-et készít.
+Ez a README repository-dokumentáció, ezért szándékosan kimarad a kliensnek készülő ZIP-ből,
+és a módosítása önmagában nem változtatja meg a kiadási hash-t.
 
 A `Publish resource pack to R2` workflow masterre kerülés után:
 
