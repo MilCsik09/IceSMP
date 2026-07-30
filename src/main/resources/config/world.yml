@@ -5,6 +5,7 @@ mob-scaling:
   enabled: true
   blocks-per-level: 1000
   max-level: 10
+  hard-cap-level: 15
   # Zóna-rámpa (tulaj-kérés): a biztonságos territórium-zónák (városok) PEREMÉTŐL
   # kifelé a szint 0-ról nő egyenletesen (zone-ramp.blocks-per-level blokkonként +1),
   # amíg el nem éri a spawn-táv szerinti normál szintet — így a messzi fővárosok
@@ -83,6 +84,7 @@ world-events:
   # (az admin /events ... parancsok mindig átmennek). Élő kulcsok.
   orchestration:
     enabled: true
+    max-active-minutes: 60
     major-events: [ "world-boss", "invasion", "wild-hunt", "escort", "cultists" ]
   # B19 — Évszakos világ-modifikátorok: a VALÓS naptári évszak finom esély-szorzói a
   # világesemények sorsolására (1.0 = nincs módosítás; a plafon mindig 100%). Évszakok:
