@@ -109,14 +109,18 @@ public final class CrateRegressionSuite {
     }
 
     private static void resolvesBundledAndInstalledSoundNames() {
-        check(CrateSoundResolver.resolve("ENTITY_PLAYER_LEVELUP") != null,
-                "installed enum-style crate sound must remain compatible");
-        check(CrateSoundResolver.resolve("minecraft:entity.player.levelup") != null,
-                "canonical player-levelup sound must resolve");
-        check(CrateSoundResolver.resolve("UI_TOAST_CHALLENGE_COMPLETE") != null,
-                "installed enum-style toast sound must remain compatible");
-        check(CrateSoundResolver.resolve("minecraft:ui.toast.challenge_complete") != null,
-                "canonical toast sound must resolve");
+        check("ENTITY_PLAYER_LEVELUP".equals(
+                        CrateSoundResolver.enumName("ENTITY_PLAYER_LEVELUP")),
+                "installed enum-style crate sound changed");
+        check("ENTITY_PLAYER_LEVELUP".equals(
+                        CrateSoundResolver.enumName("minecraft:entity.player.levelup")),
+                "canonical player-levelup sound normalized incorrectly");
+        check("UI_TOAST_CHALLENGE_COMPLETE".equals(
+                        CrateSoundResolver.enumName("UI_TOAST_CHALLENGE_COMPLETE")),
+                "installed enum-style toast sound changed");
+        check("UI_TOAST_CHALLENGE_COMPLETE".equals(
+                        CrateSoundResolver.enumName("minecraft:ui.toast.challenge_complete")),
+                "canonical toast sound normalized incorrectly");
 
         final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                 Path.of("src/main/resources/config/crates.yml").toFile());
@@ -125,8 +129,25 @@ public final class CrateRegressionSuite {
                 "bundled crate definitions missing");
         for (final String crateId : crates.getKeys(false)) {
             final String sound = crates.getString(crateId + ".opening-sound.sound", "");
-            check(CrateSoundResolver.resolve(sound) != null,
+            check(hasSoundField(sound),
                     "bundled crate has invalid opening sound: " + crateId + " -> " + sound);
+        }
+    }
+
+    /**
+     * Reflection inspects the API field table without reading a static Sound value,
+     * so the dependency-free suite does not initialize Paper's server-only RegistryAccess.
+     */
+    private static boolean hasSoundField(final String configured) {
+        final String enumName = CrateSoundResolver.enumName(configured);
+        if (enumName == null) {
+            return false;
+        }
+        try {
+            org.bukkit.Sound.class.getField(enumName);
+            return true;
+        } catch (final NoSuchFieldException missing) {
+            return false;
         }
     }
 
