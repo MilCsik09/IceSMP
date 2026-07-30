@@ -110,7 +110,7 @@ public final class ConfigStartupRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/listeners/FactionSpawnListener.java"));
         check(listener.contains("AsyncPlayerSpawnLocationEvent")
                         && listener.contains("event.isNewPlayer()")
-                        && !listener.contains("PlayerSpawnLocationEvent")
+                        && !listener.contains("org.spigotmc.event.player.PlayerSpawnLocationEvent")
                         && !listener.contains("hasPlayedBefore()"),
                 "first join must use the supported configuration-phase spawn event");
     }
