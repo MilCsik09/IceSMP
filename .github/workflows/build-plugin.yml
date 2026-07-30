@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - fix/runtime-config-startup
 
 permissions:
   contents: read
