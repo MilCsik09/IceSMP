@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - "resource-pack/**"
+      - "!resource-pack/README.md"
       - "scripts/resource_pack.py"
       - "scripts/test_resource_pack.py"
       - ".github/workflows/resource-pack-r2.yml"
