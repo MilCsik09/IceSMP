@@ -173,7 +173,7 @@ profession-materials:
       - "&cCsak szörnyekből esik"
   # --- Tartalombővítés (3. hullám): szakma-gyártott köztes anyagok ---
   holdezust_huzal:
-    material: CHAIN
+    material: IRON_CHAIN
     display-name: "&fHoldezüst Huzal"
     item-model: "icesmp:holdezust_huzal"
     lore:
