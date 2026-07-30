@@ -123,6 +123,8 @@ public final class TerritoryCapitalRegressionSuite {
         check(ritual.contains("capital.minY()") && ritual.contains("capital.maxY()"),
                 "capital home destination is not clamped to its Y bounds");
         check(messages.contains("territory-setcapital-selection-success")
+                        && messages.contains("territory-setcapital-selection-usage")
+                        && messages.contains("territory-help-setcapital-selection")
                         && messages.contains("<sugár|selection>"),
                 "selection messages are missing");
         check(builderGuide.contains("/territory setcapital <frakció> selection [név...]"),
