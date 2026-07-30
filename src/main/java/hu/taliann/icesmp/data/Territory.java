@@ -79,7 +79,10 @@ public record Territory(
     /** Full 3D containment test — the column test plus the optional Y band. */
     public boolean contains(final String worldName, final double blockX, final double blockY,
                             final double blockZ) {
-        return blockY >= minY && blockY <= maxY && contains(worldName, blockX, blockZ);
+        // Bounds are persisted as inclusive BLOCK coordinates. Flooring keeps the
+        // whole selected top/bottom block inside instead of cutting it at Y+.0.
+        final int y = (int) Math.floor(blockY);
+        return y >= minY && y <= maxY && contains(worldName, blockX, blockZ);
     }
 
     /** Even-odd ray casting against the vertex ring. */
