@@ -1,5 +1,9 @@
 # IceSMP külsőplugin-kiváltási mátrix
 
+> **Történeti integrációs munkalap.** A jelenlegi release autoritatív
+> plugin-döntései és rollout-kapui:
+> [EXTERNAL_PLUGIN_STATUS.md](releases/EXTERNAL_PLUGIN_STATUS.md).
+>
 **Mérvadó base:** `claude/projekt-audit-u0hkcz` @ `f4e82263d35c645a053eccac09a3ad254a36ed90`
 **Ellenőrzés:** 2026-07-28
 **Elv:** az `Other/plugins/` csak funkcionális követelményforrás. Nincs production adat, ezért nincs legacy dekóder vagy migráció.

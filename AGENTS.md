@@ -29,7 +29,9 @@
 ./gradlew build      # plugin jar -> build/libs
 ./gradlew runServer  # local test server (run/ directory)
 ```
-- Nincs teszt-suite; az ellenőrzés = hibátlan fordítás + kézi playtest (`PLAYTEST.md`).
+- A `check` task dependency-free regressziós suite-okat futtat a persistence,
+  DEV-item, moderáció, MOTD, sit, crate és globális AFK területén. Ezek mellett
+  a hibátlan build, a consistency gate és a kézi playtest (`PLAYTEST.md`) is kötelező.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve): a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss: `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van megadva, azt is lehet használni, de ne feltételezz fix `/opt/gradle` útvonalat.
 - In sandboxed environments where Gradle cannot reach the repos, compile against the cached server libraries instead: `javac -d <out> -cp "$(find run/libraries -iname '*.jar' | tr '\n' ':')" <sources>` — exclude `integration/IceSMPPlaceholders.java` if the PlaceholderAPI jar is unavailable locally (it compiles in the real build). Treat this as a rough preflight only; the full source set must still produce 0 errors in the real build before pushing.
 - **Before every push:** compile-verify AND run `python3 scripts/check_consistency.py` (quest refs, ITEM_MODEL regression guard, permission registration, /menu targets, mirror drift) — 0 FAIL required.

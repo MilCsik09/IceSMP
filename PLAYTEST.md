@@ -18,10 +18,13 @@ pipálni egy másolt példányban.
 - **Opcionális függőség:** **LibsDisguises** (soft-depend). Ha telepítve van, a **Druida formák**
   vizuálisan is átalakítják a játékost; nélküle a forma csak stat-szinten vált. Érdemes mindkét
   állapotot tesztelni (telepítve / nélküle).
-- **Scoreboard / tablist:** a teljes tablist-réteg (header/footer, nevek, nametag+rendezés,
-  ping-oszlop, oldalsáv) **natív** — TAB vagy más scoreboard-plugin NEM kell, sőt ütközik
-  (induláskor konzol-figyelmeztetés). Beállítások: `config/tablist.yml` + `general.yml` →
-  `hud.sidebar`. Ha mégis külső plugint használnál: `tablist.enabled: false` +
+- **Scoreboard / tablist:** az IceSMP számára szükséges tablist-réteg
+  (header/footer, nevek, nametag+rendezés, ping-oszlop, oldalsáv) **natív**, de
+  nem cél a TAB teljes upstream-paritása. A TAB csak külön runtime
+  összehasonlítás és az átvételi döntés után távolítható el. Párhuzamos
+  használatnál kapcsold ki az egyik megjelenítési réteget, mert ütközhetnek.
+  Beállítások: `config/tablist.yml` + `general.yml` → `hud.sidebar`.
+  Külső plugin megtartásakor: `tablist.enabled: false` +
   `hud.sidebar-enabled: false`, és az IceSMP-adatok `%icesmp_...%` placeholderekkel
   érhetők el (PlaceholderAPI-val, lásd docs/SERVER_INTEGRATION.md).
 - **Telepítés:** a jar a `plugins/` mappába, indítás, majd a `plugins/IceSMP/config/*.yml`
@@ -31,8 +34,10 @@ pipálni egy másolt példányban.
   játékon belülről (a `config.yml`-be íródik, azonnali reload + validátor); `get`/`find` a
   kulcsok felderítéséhez (tab-complete a teljes kulcstérből), `unset`/`list` a felülbírálások
   kezeléséhez. Spell-mana példa: `/icesmp config set spell-balance.hide.resource-cost 25`.
-- **FRISSÍTÉS régi jar-ról:** az éles szerveren futó `IceSMP-1.0-SNAPSHOT` (áprilisi, ~200 KiB) óta a
-  plugin sokszorosára nőtt — az új jar feltöltése után az **új config/üzenet-fájlok maguktól
+- **FRISSÍTÉS a deployed baseline-ról:** az autoritatív futó baseline a csatolt
+  `IceSMP-1.0-TESTING.jar` (`da039f0…a05`). A JAR nem hordoz Git SHA-t, ezért
+  konkrét forráscommithoz nem rendelhető (`BINARY_ONLY`). Az új jar feltöltése után az
+  **új config/üzenet-fájlok maguktól
   kicsomagolódnak** első indításkor, a régiek megmaradnak (a hiányzó kulcsok biztonságos
   alapértékre esnek, a ConfigValidator a konzolon jelzi az elgépeléseket).
 
@@ -41,10 +46,10 @@ Az IceSMP-t úgy készítettük, hogy az éles plugin-listával együtt fusson. 
 
 | Plugin | Mit kell tudni / beállítani |
 |---|---|
-| **TAB** | ⚠️ **Kiváltva a natív tablist-réteggel** (`config/tablist.yml` + `hud.sidebar`) — header/footer, LP-prefixes tab-nevek, nametag+rendezés, ping-oszlop, animációk mind house-ban. **A TAB.jar törölhető**; ha fent marad, a konzol induláskor figyelmeztet és a két rendszer ütközik. (Visszaút: `tablist.enabled: false` + `hud.sidebar-enabled: false` → `%icesmp_...%` placeholderek, lásd docs/SERVER_INTEGRATION.md.) |
+| **TAB** | ⚠️ Az IceSMP-hez szükséges natív subset elérhető (`config/tablist.yml` + `hud.sidebar`), de ez nem teljes TAB-klón. **A TAB.jar csak runtime összehasonlítás és elfogadott rollout-döntés után törölhető.** Együtt futtatáskor az egyik tablista/sidebar réteget kapcsold ki. (Külső TAB megtartása: `tablist.enabled: false` + `hud.sidebar-enabled: false` → `%icesmp_...%` placeholderek, lásd docs/SERVER_INTEGRATION.md.) |
 | **WorldGuard** | ✅ Automatikus: a blokkot helyező események (**meteor, kincs**) reflexiós hídon át **kerülik a WG-régiókat** (spawn/városok). Induláskor a konzol jelzi, ha a híd él. WG-régióban a mob-spawn flag blokkolhatja az esemény-mobokat (invázió/hajsza) — ez nem hiba, az esemény kecsesen kezeli. |
-| **SimpleClaimSystem** | ⚠️ **Kiváltva a natív `/claim` rendszerrel** — az SCS ezután feleslegessé válik. **Migrálás:** a régi SCS-claimek **nem konvertálódnak automatikusan** — a játékosoknak újra kell claimelniük a területüket (vagy admin kézzel pótolja), utána az SCS jar **törölhető** a szerverről. |
-| **LuckPermsChatFormatterFolia** | ⚠️ **Kiváltva a natív chat-formázóval** (`chat.format-enabled` a `general.yml`-ben) — a jar **törölhető**. Amíg mindkettő fent van, kapcsold ki az egyiket, különben dupla formázás történik a chatben. |
+| **SimpleClaimSystem** | ⚠️ A natív `/claim` képesség rendelkezésre áll, de a régi SCS-claimek **nem konvertálódnak automatikusan**. Az SCS csak külön live-adatinventory, újraclaimelési/migrációs terv, runtime átvétel és rollback után távolítható el. |
+| **LuckPermsChatFormatterFolia** | ⚠️ Natív chat-formázás elérhető (`chat.format-enabled`), de eltávolítás előtt élő formátum-, placeholder-, permission- és kompatibilitási teszt kell. Amíg mindkettő fent van, kapcsold ki az egyiket, különben dupla formázás történhet. |
 | **GrimAC** | 🔎 Playtesten figyelni: a mozgató spellek (Villanás, Árnyéklépés, Hősi Szökellés, Dupla Ugrás, Fázisugrás…), az invázió-bajnok földcsapás-lökése és a frakció-elytrák okozhatnak fals riasztást. Ha igen: Grim-oldali exempt/enyhítés a jelzett check-re. |
 | **CoreProtect** | A plugin által lehelyezett/visszaállított blokkok (meteor-kráter, kincsesláda) nem játékos-akciók, a CoreProtect nem naplózza őket — egy nagy területű **rollback a kráter-visszaállítás után** felesleges (magától visszaáll). |
 | **VillagerTradeEdit** | A karaván-NPC (WanderingTrader) natív trade-GUI-ját az IceSMP letiltja és a saját boltját nyitja — a VTE a karaván-kereskedőt így nem érinti. Playtesten egyszer ellenőrizd. |
@@ -144,8 +149,10 @@ mob-scaling:
 A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami tesztelhető:
 
 - **Frakciók** (4): Piros/Kék/Semleges/Sötét, passzív bónuszokkal és valutával.
-- **Kasztok** (13) + **specializációk** (31), egy kaszt/játékos (végleges, admin-reset van), 50-es max szint.
-- **Képességek** (390+): Lélekkapocs-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
+- **Kasztok** (13) + **specializációk** (35), egy kaszt/játékos (végleges, admin-reset van), 50-es max szint.
+- **Képességek**: 419 konfigurált unlock-ID és 420 balanszprofil; ez
+  konfigurációs képesség, nem automatikus bizonyíték 420 külön runtime spellre.
+  Lélekkapocs-tárgy, **hibrid költségrendszer** (Erő-csík + HP/XP/éhség),
   cooldown, kombók, spell-mesterség.
 - [ ] **Közelharci Lélekkapocs**: melee kaszttal (pl. Harcos) a kézben tartott kard/balta is
       Lélekkapocs — jobb katt cast, SHIFT+jobb katt varázskönyv, SHIFT+ütés spell-váltás; a balta
@@ -348,7 +355,7 @@ A teljes leírás a [PLAYER_GUIDE.md](PLAYER_GUIDE.md)-ban; röviden, ami teszte
       dream_breath, primal_roar**) → **kúp** a nézési irányban; dobott (**mana_dart, toxin_dart**) →
       **ív**. A többi marad a célzás-alapon (célzott→sugár, körzet→gyűrű, önmagad→hélix). Per-spell
       felülírás: `spell-vfx.shapes.<spell-id>`.
-- [ ] **Hero-ultimate szín:** a 31 spec-csúcsspell (lvl 45) kiemelt palettát kap — pl. az
+- [ ] **Hero-ultimate szín:** a 35 spec-csúcsspell (lvl 45) kiemelt palettát kap — pl. az
       **ascendance_flame** (elemental sámán) TŰZ-színű a spec kék-fehér helyett, a **serenity**
       (windwalker) ARANY. A színek a `spell-vfx.overrides`-ban hangolhatók.
 - [ ] ⚠️ **Folia:** kasztolj **régióhatárra / messzi célpontra** → a sugár/forma hibamentesen

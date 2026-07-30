@@ -5,6 +5,10 @@ fantasy "királyságos" SMP szerver teljes játékmenet-rendszerét adja: frakci
 specializációk, talentek, szakmák, Lélekkapocs-alapú képességek, legendás relikviák,
 dinamikus gazdaság, távolság-alapú nehézség és frakcióterületek.
 
+> 📦 **Aktuális release- és csapatdokumentáció:** [docs/README.md](docs/README.md) —
+> deployed-build changelog, teljes funkció-, command-, permission-, config- és
+> GUI-referencia, admin/builder guide, pluginstátusz és acceptance checklist.
+>
 > 🎮 **Játékos tájékoztató:** [PLAYER_GUIDE.md](PLAYER_GUIDE.md) — mit hogyan használj a játékban
 > (frakciók, kasztok, spellek, talentek, szakmák, gazdaság, világesemények) + mi a WIP.
 > A részletes, oldalankénti kézikönyv (minden spell-lel): [docs/player-guide/](docs/player-guide/README.md)
@@ -110,8 +114,10 @@ Minden kaszt a saját, tematikus **Lélekkapocsával** használja a képességei
 - **Közelharci kasztoknak** (Harcos, Paplovag, Halállovag, Szerzetes, Démonvadász) a kézben tartott
   **kard/balta is Lélekkapocs** — nem kell tárgyat váltani harc közben.
 
-Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. Több mint 390 képesség van a
-rendszerben — kasztonként és specializációnként legalább 10 —, és **minden kaszt és specializáció saját, egyedi képességeket tanul**: nincs
+Minden képességnek költsége (hibrid: a legtöbb az osztály-erőforrás, a vér/rituálé/fizikai spellek HP/XP/éhség) és visszatöltési ideje van. A bundled release
+**419 feloldási ID-t és 420 balanszprofilt** tartalmaz; ez a két szám konfigurációs
+lefedettséget jelent, nem önmagában production runtime-bizonyítékot. A kasztok és
+specializációk saját képességeket tanulnak: nincs
 átfedés a kasztok között. A képességek **ereje a kaszt-szinttel és talentekkel skálázódik**
 (a spell-mesterség fölött), a **balansz pedig config-vezérelt** (`spells-balance.yml`).
 
@@ -255,8 +261,12 @@ külső tablist-plugin (TAB) nem szükséges.
 | `/icesmp reload` | `ismp` | Konfiguráció újratöltése (admin) |
 | `/icesmp config get/set/unset/list/find` | `ismp config` | Bármely config-kulcs ingame lekérése/felülbírálása (admin) |
 
-A teljes parancs-referencia: [docs/player-guide/14-parancsok.md](docs/player-guide/14-parancsok.md);
-a jogosultság-node-ok listája a [PLAYTEST.md](PLAYTEST.md)-ben.
+A teljes, géppel lefedett parancsreferencia:
+[docs/reference/COMMAND_REFERENCE.md](docs/reference/COMMAND_REFERENCE.md);
+a játékosoknak szánt gyorslista a
+[docs/player-guide/14-parancsok.md](docs/player-guide/14-parancsok.md).
+A teljes permissionlista:
+[docs/reference/PERMISSION_REFERENCE.md](docs/reference/PERMISSION_REFERENCE.md).
 
 ---
 
@@ -280,7 +290,9 @@ adatmappájában — minden játékmeneti érték és üzenet ott testreszabhat�
   LibsDisguises (Druida-formák vizuálja), FancyNpcs (NPC-s kaszt-mester próbák),
   WorldGuard (a meteor/kincs események kerülik a WG-régiókat), LuckPerms (chat
   prefix/suffix a natív chat-formázóban) — mindegyik nélkül is teljes értékűen fut
-- Minden fő rendszer elkészült: frakciók (passzívokkal), 13 kaszt / 35 spec / 390+ spell,
+- A fő rendszerek kódszinten és CI alapján elérhetők, de a release acceptance
+  checklist szerinti runtime tesztek még szükségesek: frakciók (passzívokkal),
+  13 kaszt / 35 spec / 419 feloldási ID,
   hibrid erőforrás-költség, talentek, szakmák, gazdaság + piac, relikviák + rituálék,
   világesemények (vérhold / világbossok / inváziók), király/raid/szezon, küldetések, pet-rendszer.
 - A hátralévő irányok: [ROADMAP.md](ROADMAP.md)

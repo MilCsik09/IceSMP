@@ -174,5 +174,6 @@ esik több. A spawner-mobok sosem ejtenek lélekkövet (nem skálázódnak).
   kézbe** zajlik (átadod a tokent / az itemet), vagy a **piacon**.
 - **Banki ügyintézés** (befizetés, kivét, **valutaváltás**) **csak a fővárosokban** lehetséges —
   keresd fel valamelyik város bankját.
-- **Közvetlen utalás (`/currency pay`) nincs** — a bankszámla a player–szerver ügyletekhez van
-  (boltok, piac, claimek ára onnan megy).
+- **Közvetlen utalás (`/currency pay`) alapból ki van kapcsolva** — a
+  bankszámla default deploymentben a player–szerver ügyletekhez van (boltok,
+  piac, claimek ára onnan megy). Admin termékdöntéssel engedélyezheti.

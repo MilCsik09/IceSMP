@@ -1,12 +1,22 @@
 # Éles szerver — plugin-integráció és ütközések
 
+> **Történeti élő-plugin snapshot, nem eltávolítási engedély.** A release
+> mérvadó pluginállapota az
+> [EXTERNAL_PLUGIN_STATUS.md](releases/EXTERNAL_PLUGIN_STATUS.md), a kötelező
+> átvételi kapuk pedig a
+> [RELEASE_ACCEPTANCE_CHECKLIST.md](releases/RELEASE_ACCEPTANCE_CHECKLIST.md)
+> dokumentumban vannak. Külső JAR-t csak az ott előírt runtime teszt és
+> visszaállítható mentés után szabad eltávolítani.
+
 A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzése alapján.
 (Frissítve az ütközések felszámolásakor.)
 
-## 1. TAB → IceSMP natív tablist — jelenlegi IceSMP-igényre READY
+## 1. TAB → IceSMP natív tablist — kódszintű IceSMP-scope, runtime kapuval
 
-**Új állapot:** a teljes TAB-funkcionalitás, amit a szerver használt, natívan megy
-(`managers/TablistManager` + `HudManager` + `config/tablist.yml`):
+**Új állapot:** az IceSMP-hez bizonyított natív tablista/HUD subset elérhető
+(`managers/TablistManager` + `HudManager` + `config/tablist.yml`). Ez nem
+állítás teljes TAB upstream-paritásról; az élő szerveren használt funkciók
+egyenkénti runtime összevetése kötelező:
 
 | TAB-funkció | Natív megfelelő |
 |---|---|
@@ -17,11 +27,13 @@ A master branch `Other/plugins/` mappájában lévő éles szerver-dump elemzés
 | Scoreboard-oldalsáv (IceSMP-adatokkal) | `hud.sidebar-enabled: true` + `hud.sidebar.title` — TAB-dizájn portolva (elválasztó-animáció, small-caps címkék) |
 | Animációk (animations.yml) | `tablist.animations.<név>` — időalapú frame-váltás, minimum 250 ms (a TAB 50 ms-os marquee-i ritkított frame-ekkel portolva) |
 
-**Éles átállás:** (1) frissítsd a plugint; (2) töröld a `TAB v6.0.0.jar`-t; (3) kész — a
-repo-defaultok már a natív rétegre állnak (`hud.sidebar-enabled: true`,
-`tablist.enabled: true`). Ha a TAB fent marad, a konzol induláskor figyelmeztet, és a két
-rendszer a neveken/teameken verekedni fog. A ㍿/㍐ glyph-ek a resource packből jönnek —
-RP nélküli teszthez cseréld őket a configban sima szövegre.
+**Átvételi sorrend:** stagingen frissítsd a plugint, teszteld külön a natív
+tablistát/HUD-ot és a teljes élő permission/resource-pack környezetet, majd csak
+zöld acceptance után távolítsd el a `TAB v6.0.0.jar`-t. A repo-defaultok a natív
+rétegre állnak (`hud.sidebar-enabled: true`, `tablist.enabled: true`), de ez nem
+helyettesíti a production runtime bizonyítékot. Együttfutáskor a két rendszer a
+neveken és scoreboard-teameken ütközhet. A ㍿/㍐ glyph-ek a resource packből
+jönnek; RP nélküli teszthez cseréld őket a configban sima szövegre.
 
 **PlaceholderAPI-híd megmarad** más pluginok kedvéért (`integration/IceSMPPlaceholders`):
 
@@ -42,14 +54,17 @@ külső megjelenítőknek, pl. BlueMap/Discord-hidaknak kellenek.)*
 
 Mindkét plugin regisztrálja a `/claim` parancsot; amelyik később tölt be, az nyer, a másiké
 némán elérhetetlen. Az IceSMP `claims.enabled: true` óta a natív claim-rendszer él —
-**a SimpleClaimSystem.jar eltávolítása javasolt** az éles szerverről. (A SCS gazdagabb
+A SimpleClaimSystem csak live claim-inventory, migrációs/újraclaimelési terv,
+runtime átvétel és visszaállítható backup után távolítható el. (A SCS gazdagabb
 GUI/claim-piac funkcióit a claim-rework roadmap-tétel fedheti le.)
 
 ## 3. LuckPermsChatFormatterFolia ↔ IceSMP chat-formázó — DUPLA FORMÁZÁS
 
 Az IceSMP `chat.format-enabled: true` ÉS a LuckPermsChatFormatterFolia is telepítve van —
 a general.yml kommentje szerint a natív formázó pont ezt a plugint váltja ki.
-**A LuckPermsChatFormatterFolia-1.1.1.jar eltávolítása javasolt.**
+A LuckPermsChatFormatterFolia csak élő formátum-, placeholder-, permission- és
+kompatibilitási teszt után távolítható el; addig az egyik formázóréteget kapcsold
+ki a dupla formázás elkerülésére.
 
 ## 4. FancyNpcs — explicit NPC-kötések (`/npcbind`)
 
@@ -87,7 +102,7 @@ A táblázatban csak a **READY** és kézzel igazolt sor tekinthető törölhet�
 
 | Plugin | Natív megfelelő | Teendő törlés előtt |
 |---|---|---|
-| **TAB v6.0.0** | TablistManager + `config/tablist.yml` + oldalsáv (lásd §1) | — |
+| **TAB v6.0.0** | TablistManager + `config/tablist.yml` + oldalsáv (lásd §1) | Natív tablista/HUD, permission, resource-pack és ütközési runtime acceptance |
 | **SimpleClaimSystem** | natív `/claim` | régi claimek újrafoglalása (nem konvertálódik) |
 | **LuckPermsChatFormatterFolia** | natív chat-formázó (`chat.format-enabled`) | — |
 | **ICEsmpadditions** | `WorldTweaksListener` — Warden-halál XP (`world-tweaks.warden-death-xp`, default 80–125, most már configolható) | — |
@@ -122,8 +137,9 @@ FancyNpcs, ImageFrame, VillagerTradeEdit, bStats/faststats/FancyAnalytics (metri
 **Orebfuscator** (X-ray védelem — csak az építési fázis alatt inaktív, éles indulásra
 visszakapcsolandó).
 
-**Mérleg:** a ✅+🗑 lépések után a plugin-lista ~35-ről **~24-re** csökken — kevesebb
-Folia-kockázat, gyorsabb indulás, kevesebb frissítés-függés.
+**Történeti becslés:** az audit idején a lehetséges végállapot ~35-ről ~24
+pluginre csökkent volna. Ez nem aktuális eltávolítási lista; a tényleges döntést
+az élő plugininventory és az acceptance checklist alapján kell meghozni.
 
 ## 6. Vanilla Locator Bar (1.21.6+) — „pötty az XP-sávon"
 

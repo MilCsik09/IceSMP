@@ -88,8 +88,10 @@ magasabb szintű a recept, annál többet. De vigyázz: a **rég kinőtt recepte
 ha a szinted 10+ szinttel a recept felett jár, már csak fél XP-t, 20+ felett semmit sem ad.
 Mindig a szintedhez közeli recepteket készítsd a leggyorsabb fejlődésért!
 
-**Szintlétra:** minden szakmának **50 receptje** van, az 1. szinttől az 50.-ig elosztva —
-mindig van mit megnyitni. A magasabb receptek bolti kellékeket és ritka unique anyagokat
+**Szintlétra:** a bundled katalógusban **438 recept** van: a Bányász, Gyógynövényész,
+Favágó, Alkimista és Halász 50-50, a Kovács 54, a Bűvölő 62, a Szakács 72
+receptet kap. A receptek az 1–50. szint között oszlanak el. A magasabb receptek
+bolti kellékeket és ritka unique anyagokat
 kérnek, az 50. szintű **céh-mesterművek** (pl. *A Mélység Szíve*, *A Bokic Áldása*, *A Kapu
 Lakomája*, *Az Erdő Szíve*) pedig az *Első Csend Szilánkját* is.
 

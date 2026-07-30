@@ -1,9 +1,14 @@
 # IceSMP — Changelog és telepítési útmutató
 
-> **Cél-kiadás:** a jelenleg futó `IceSMP1.0TESTING.jar` (2026-07-14-i állapot, `49cb327`,
-> PR #16 merge) leváltása a friss builddel. A futó jar azonosítása bináris-elemzéssel
-> történt (osztálykészlet + config-tartalom egyezés). A lemaradás: **176 commit**
-> (2026-07-14 → 2026-07-27, `10403f8`) + a 0. stabilitási fázis javításai.
+> **Történeti changelog.** A jelenleg futó autoritatív baseline a csatolt
+> `IceSMP-1.0-TESTING.jar`, SHA-256
+> `da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`.
+> A bináris nem tartalmaz Git SHA-t, és reprodukálható exact egyezés nem
+> bizonyított, ezért a forrásmapping **`BINARY_ONLY`**. A végleges deployed →
+> release változáslistához lásd:
+> [`docs/releases/DEPLOYED_BUILD_TO_RELEASE_CHANGELOG.md`](docs/releases/DEPLOYED_BUILD_TO_RELEASE_CHANGELOG.md).
+> Az alábbi régi szakaszok fejlesztéstörténeti háttérként maradnak meg; bennük
+> szereplő korábbi commitmennyiség vagy rollout-státusz nem autoritatív.
 
 ---
 
@@ -41,7 +46,7 @@
 | `ICEsmpadditions.jar` | `world-tweaks.warden-death-xp` (general.yml, élőben hangolható) |
 | `FarmProtect.jar` | `world-tweaks.crop-trample-protection` |
 | `MiniMOTD` | **FELTÉTELES** — a natív completion buildelt és regressziózott; valódi Folia ping/ikon/reload és jar nélküli átvételi playtest még kell |
-| `TAB` | natív tablist: header/footer, nevek, nametag+rendezés, ping (`tablist.yml`) |
+| `TAB` | **FELTÉTELES** — az IceSMP-hez szükséges natív subset elérhető, de nem teljes TAB-klón; runtime összehasonlítás és rollout-döntés kell |
 | `CrazyCrates` | **FELTÉTELES** — a natív crate lifecycle code-review-zott és regressziózott; valódi Folia/fault-injection átvételi teszt még kell |
 | `AxAFKZone` / `AxAPI` | **NEM KELL** — a jutalmazó AFK-zóna törölve; a natív globális AFK külön regresszióval védett. Éles jar/adat/remap-cache eltávolítandó, migráció nincs |
 | `GSit` | **FELTÉTELES** — a natív sit-only lifecycle buildelt és regressziózott; valódi Folia seat/cleanup átvételi playtest még kell |
@@ -96,7 +101,7 @@ textúrát; az új pack manifestje: `docs/RESOURCE_PACK_CMD.md`.
 
 ### Új rendszerek
 
-- **Natív tablist** (a TAB teljes kiváltása) + **dinamikus HUD**: harc-fókusz, rotáló
+- **Natív tablist** (az IceSMP-hez szükséges subset; nem teljes TAB-klón) + **dinamikus HUD**: harc-fókusz, rotáló
   infósor, prioritás-kiszorítás, party-szekció.
 - **Natív moderáció**: `/report` rendszer (perzisztens, offline-feedbackkel), mute +
   chat-szűrő + spam-fék, eszkaláció + chat-napló; **admin-inspektor** + read-only `/invsee`.

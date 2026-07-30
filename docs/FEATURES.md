@@ -1,16 +1,18 @@
 # IceSMP — Teljes funkció-leltár (belső bemutató)
 
-> Minden rendszer és mechanika egy helyen, belső "mutogatásra". Technikai mélységű,
-> de teljes. **Állapot: funkcionálisan teljes, de NEM launch-kész** — a legutóbbi audit nyitott
-> kiadásblokkolókat talált (perzisztencia-atomicitás, gazdasági tranzakció, Folia entitás-
-> életciklus). A nyitott tételek és sorrendjük a `ROADMAP.md`-ben élnek.
+> Történeti, belső feature-bemutató. A release autoritatív állapotát, pontos
+> darabszámait és runtime kapuit a [release-dokumentációs
+> index](README.md) tartalmazza. **Állapot: kódszinten és CI alapján leltározott,
+> de NEM production runtime-elfogadott.**
 > Alap: Folia (régió-szálas Paper), MC 1.21.11, Java 21, 545 Java-fájl / 90 manager.
 
 ## ⚔ Kasztok és képességek
 
 - **13 frakció-független kaszt** (Varázsló, Harcos, Íjász, Orgyilkos, Druida, Paplovag,
   Halállovag, Sámán, Szerzetes, Pap, Boszorkánymester, Démonvadász, Sárkányidéző) +
-  **35 specializáció** (25. szinttől) + **~390 spell** (config-vezérelt katalógus).
+  **35 specializáció** (25. szinttől) + **419 feloldási ID / 420
+  balanszprofil** (config-vezérelt katalógus; nem azonos egy runtime-regisztrációs
+  garanciával).
 - **Lélekkapocs**: a cast-eszköz — jobb-klikk cast, sneak-klikk spell-váltás, kedvencek,
   spellkönyv-GUI. A kaszt-választás VÉGLEGES (admin-only reset: /class admin resetclass).
 - **Hibrid erőforrás-modell**: kasztonként saját Erő-csík (Mana/Düh/Energia…, lazy-regen,
@@ -219,8 +221,8 @@
 - **8 szakma** (bányász, füvész, favágó, halász, szakács, kovács, alkimista,
   bűvölő) — 1 gyűjtő + 1 készítő választható, halász+szakács alap; szintek 50-ig,
   fokozat-címek, szakma-XP minden releváns cselekvésből.
-- **410 recept** a katalógusban (recept-könyv GUI, kereső), szint-kapukkal;
-  recept-tárgyak (megtanulható), tervrajzok, unique köztes-anyagok (72 db,
+- **438 recept** a katalógusban (recept-könyv GUI, kereső), szint-kapukkal;
+  recept-tárgyak (megtanulható), 54 blueprint, unique köztes-anyagok (81 db,
   loot/bolt/craft forrásokkal).
 - **Szignatúra-rendszer**: a mestermunka a készítő nevét viseli; craft-affixok
   (tier-alapú tulajdonság-roll), tárgy-raritás rendszer, mestermű-esély.
@@ -276,7 +278,8 @@
 - **/menu hub**: kattintós főmenü minden rendszerhez (MENU/RUN/OPEN/CLOSE akciók),
   admin-gombok jog-kapuzva; **/profile karakterlap** (kaszt/spec/szakma/talent/
   képesség-fa almenük); 18 dedikált GUI (piac, aukció, talent, recept, config…),
-  dupe-biztos holder+listener mintával.
+  dupe-biztos holder+listener mintával. A végleges forrásleltár **22
+  GUI-felületet** azonosít.
 - **HUD**: oldalsáv (frakció, kaszt+szint, erőforrás-sáv, forgó infósor, valuta,
   party-HP), harc-fókusz mód, célpont-sor; **natív tablist** (fejléc/lábléc,
   rang-rendezés, háború-színek, színkódolt ping); **lebegő sebzés-számok**;
@@ -294,7 +297,8 @@
 - **Alacsony-HP piros vignetta**: a küszöb alatt (alap 30%) a képernyő szélén vörös
   vészköd (per-player világperem-vészjel, játékmenet-hatás nélkül); tisztán vizuális,
   a HP-skálázástól független, kikapcsolható (`hud.low-hp-vignette`).
-- **Parancsok**: ~60 parancs magyar tab-complete-tel és hibaüzenetekkel;
+- **Parancsok**: 68 regisztrált root, 286 funkcionális route, 79 root alias és
+  93 routing alias, magyar tab-complete-tel és hibaüzenetekkel;
   ranglisták (/leaderboard), /lore kódex-lapozó (frakciók/helyek történetei,
   alias-okkal), /kronika, /adomany közösségi láda.
 - **NPC-integráció**: /npcbind — NPC-hez köthető bolt, bank, váltó, frakció-választó,
@@ -318,7 +322,7 @@
 - **Resource pack**: a `docs/RESOURCE_PACK_CMD.md` modern ITEM_MODEL manifest és
   textúra-generálási specifikáció; magát a packet külön forrásban állítják elő.
 - **Integrációk** (mind opcionális, reflexiós híd): PlaceholderAPI (%icesmp_%
-  placeholderek), LibsDisguises (druida-forma, kém, fekvés), FancyNpcs (quest-NPC-k),
+  placeholderek), LibsDisguises (druida-forma, kém), FancyNpcs (quest-NPC-k),
   WorldGuard (spawn-guard), LuckPerms (chat-prefix, tablist-rang).
 - **Folia-natív**: minden feladat régió/entitás-schedulereken, cross-entity
   scheduler-hop minta, concurrent állapot-kezelés — 50-60 fős célra méretezve.

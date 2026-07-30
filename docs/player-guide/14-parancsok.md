@@ -57,7 +57,6 @@ jelenti, hogy **elhagyható**.
 | `/kronika` | `chronicle` | Az utolsó Heti Krónika visszaolvasása (liga-állás, toplisták) |
 | `/profession join <szakma>` / `/profession info` | `prof`, `szakma` | Szakmák |
 | `/profession recipes` | `prof`, `szakma` | **Recept-könyv** — tanult/zárolt receptek, 1 kattintásos craft |
-| `/class givecatalyst` | `kaszt`, `job` | Elveszett Lélekkapocs pótlása |
 | `/quest list` / `/quest accept <id>` / `/quest info` | `quests`, `kuldetes` | Küldetések |
 | `/quest talk <npc-név>` | `quests`, `kuldetes` | NPC-tartalék-út: küldetés-beszélgetés/átadás NPC-plugin nélkül (csak ha a mesélők nem elérhetők) |
 | `/quest log` | `gui`, `naplo` | **Küldetésnapló GUI** — Aktív / Felvehető / Teljesített fülek, lapozható |
