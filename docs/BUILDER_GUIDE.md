@@ -1,4 +1,4 @@
-# IceSMP builder- és world designer kézikönyv
+# IceSMP builder kézikönyv
 
 <!-- icesmp-doc-id: guide.builder-and-world-designer -->
 
@@ -8,7 +8,9 @@
 >
 > Deployed baseline: `IceSMP-1.0-TESTING.jar`
 > (`da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`,
-> source mapping: `BINARY_ONLY`)
+> valószínű forrásállapot:
+> `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12,
+> `HIGH_CONFIDENCE`, nem `EXACT`)
 
 Ez a kézikönyv a végleges integrált IceSMP-forrás alapján írja le, hogyan
 kapcsolódik össze a világépítés a plugin tényleges runtime-rendszereivel.
@@ -21,22 +23,22 @@ A csomaghoz adott `LORE.md` és `TEASER.md` kreatív világépítési és
 kommunikációs forrás. Nem runtime-registry: egy lore-ban szereplő város,
 NPC, kazamata vagy mechanika önmagában nem bizonyítja, hogy a release-ben
 aktív. A tényleges azonosítókat mindig az
-[adatvezérelt tartalomkatalógusból](../reference/DATA_CONTENT_CATALOGUE.md),
+[adatvezérelt tartalomkatalógusból](FEATURES.md),
 a pontos parancsokat a
-[parancsreferenciából](../reference/COMMAND_REFERENCE.md), a beállításokat
+[parancsreferenciából](ADMIN_GUIDE.md#teljes-parancsreferencia), a beállításokat
 pedig a
-[konfigurációs referenciából](../reference/CONFIGURATION_REFERENCE.md)
+[konfigurációs referenciából](ADMIN_GUIDE.md#konfiguráció-és-reload)
 vedd át.
 
 Kapcsolódó dokumentumok:
 
-- [teljes parancsreferencia](../reference/COMMAND_REFERENCE.md);
-- [permissionreferencia](../reference/PERMISSION_REFERENCE.md);
-- [konfigurációs referencia](../reference/CONFIGURATION_REFERENCE.md);
-- [GUI-referencia](../reference/GUI_REFERENCE.md);
-- [adatvezérelt tartalomkatalógus](../reference/DATA_CONTENT_CATALOGUE.md);
-- [külső pluginok státusza](../releases/EXTERNAL_PLUGIN_STATUS.md);
-- [release acceptance checklist](../releases/RELEASE_ACCEPTANCE_CHECKLIST.md).
+- [teljes parancsreferencia](ADMIN_GUIDE.md#teljes-parancsreferencia);
+- [permissionreferencia](ADMIN_GUIDE.md#permissionreferencia);
+- [konfigurációs referencia](ADMIN_GUIDE.md#konfiguráció-és-reload);
+- [GUI-referencia](ADMIN_GUIDE.md#gui-referencia);
+- [adatvezérelt tartalomkatalógus](FEATURES.md);
+- [külső pluginok státusza](LATEST_CHANGES.md#külső-pluginok-rollout-státusza);
+- [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
 
 ## 1. A buildermunka alapszabálya
 
@@ -1040,7 +1042,7 @@ helyettesíti a listázást és a játékosoldali próbát.
 | Profession item model | profession resource-ok + resource pack | Azonos verzióban | Packkel/pack nélkül és item-azonosság |
 
 A teljes típus-, alapérték-, hibakezelési és reloadmátrixot a
-[konfigurációs referencia](../reference/CONFIGURATION_REFERENCE.md)
+[konfigurációs referencia](ADMIN_GUIDE.md#konfiguráció-és-reload)
 tartalmazza. Ha az adott kulcs reloadviselkedése nincs bizonyítva,
 kontrollált teljes restarttal számolj.
 
@@ -1150,7 +1152,7 @@ kezelhető.
 ## 19. Deployment előtti builder playtest
 
 A teljes pipálható csapatfolyamat a
-[release acceptance checklistben](../releases/RELEASE_ACCEPTANCE_CHECKLIST.md)
+[release acceptance checklistben](ADMIN_GUIDE.md#release-acceptance-checklist)
 található. Builder szempontból minimum:
 
 1. friss staging világmásolat;

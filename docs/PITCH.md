@@ -82,6 +82,6 @@ közben nyílik ki, akkor, amikor beleütközöl.
 
 ---
 
-*Ha a hangulat is érdekel: [TEASER.md](TEASER.md). Ha játszani jössz:
-a játékos-kézikönyv 1. oldala ([Kezdő lépések](player-guide/01-kezdes.md)) mindent
-végigvezet.*
+*Ha a hangulat is érdekel: [TEASER.md](TEASER.md). Ha játszani jössz, a
+[játékos-kézikönyv kezdő lépései](PLAYER_GUIDE.md#1-kezdő-lépések)
+mindent végigvezetnek.*

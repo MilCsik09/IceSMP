@@ -68,9 +68,9 @@
 10. ✅ KÉSZ (0. fázis) — **`/faction set` tab-complete nélkül.** `FactionSetSubcommand` nem override-olja a
     `tabComplete`-et (default üres lista), pedig játékosnév + frakciónév argumentumot vár —
     a testvér-parancsok (join, currency set) adnak kitöltést. KÉZZEL MEGERŐSÍTVE.
-11. ✅ KÉSZ (0. fázis) — **`/afk` hiányzik a parancs-referenciából.** A parancs regisztrálva
-    (`IceSMPCore.java:1353`), de a `docs/player-guide/14-parancsok.md`-ben 0 találat — csak a
-    PLAYTEST.md említi. KÉZZEL MEGERŐSÍTVE. → sor a 14-parancsok.md-be (+ Guides-tükör).
+11. ✅ KÉSZ (0. fázis) — **`/afk` hiányzott a parancs-referenciából.** A parancs regisztrálva
+    volt (`IceSMPCore.java:1353`); az összevont `docs/PLAYER_GUIDE.md` és
+    `docs/ADMIN_GUIDE.md` már dokumentálja, a Guides-tükörrel együtt.
 
 ### 🟢 Alacsony (konvenció / apró szivárgás)
 

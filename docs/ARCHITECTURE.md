@@ -465,7 +465,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 
 A moderáció egyetlen autoritatív `ModerationManager` store-ra épül. A dependency-free `PunishmentLedger` tartja az invariánsokat; a Paper/Folia adapterek csak parancsot, eventet, GUI-t és scheduler ownershipot kezelnek. A state a közös `PersistentStoreCoordinator` lifecycle-ban, `YamlStore.saveAtomic` mentéssel működik. Sikertelen mutációs mentésnél a manager visszagörgeti a memóriasnapshotot, kritikus írási hibánál fail-closed leállást kér.
 
-A kereszt-entitásos live inventory két owner thread között halad: target scheduler → tesztelt `InventoryEscrowGate` → tartós, count-preserving `InventoryEscrowQueue` → viewer scheduler. A target completion csak a return queue publikálása után válik láthatóvá. A nullable entity-submitokat dependency-free single-winner gate és vékony Paper adapter kezeli; a repeating refresh handle race-biztos `TaskLease`-ben él. A `/reply` linket `ReplyPartnerRegistry` join-session generációval keríti el. A vanish viewer-owned visibility API-t használ. Az async pre-login gate kizárólag szálbiztos immutable/synchronized read modellt olvas. Részletes szerződés: [`MODERATION.md`](MODERATION.md).
+A kereszt-entitásos live inventory két owner thread között halad: target scheduler → tesztelt `InventoryEscrowGate` → tartós, count-preserving `InventoryEscrowQueue` → viewer scheduler. A target completion csak a return queue publikálása után válik láthatóvá. A nullable entity-submitokat dependency-free single-winner gate és vékony Paper adapter kezeli; a repeating refresh handle race-biztos `TaskLease`-ben él. A `/reply` linket `ReplyPartnerRegistry` join-session generációval keríti el. A vanish viewer-owned visibility API-t használ. Az async pre-login gate kizárólag szálbiztos immutable/synchronized read modellt olvas. Az üzemeltetési szerződés az [admin kézikönyvben](ADMIN_GUIDE.md#11-audit-és-persistence) található.
 
 ## Natív sit-only lifecycle
 
@@ -493,4 +493,7 @@ nem process-crash exactly-once garancia.
 A config snapshot generationhöz kötött: a key purchase ugyanabból a generationből számít árat és
 készít kulcsot, opening finalize előtt pedig újraellenőrzi a world/location/crate-ID/definition/policy
 invariánsokat. Audit append és rotáció egyetlen sorosított writeren fut; a scheduler task/rejection
-single-winner gate-et és race-biztos task lease-t használ. Részletes szerződés: [`CRATES.md`](CRATES.md).
+single-winner gate-et és race-biztos task lease-t használ. Az üzemeltetési
+és recovery-szerződést az
+[admin kézikönyv crate acceptance szakasza](ADMIN_GUIDE.md#natív-crate)
+foglalja össze.

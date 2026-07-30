@@ -32,7 +32,8 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 ```
 - A `check` task dependency-free regressziós suite-okat futtat a persistence,
   DEV-item, moderáció, MOTD, sit, crate és globális AFK területén. Ezek mellett
-  a hibátlan build, a consistency gate és a kézi playtest (`PLAYTEST.md`) is kötelező.
+  a hibátlan build, a consistency gate és az
+  `docs/ADMIN_GUIDE.md#release-acceptance-checklist` szerinti kézi playtest is kötelező.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve):
   a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss:
   `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van
@@ -57,7 +58,7 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 - **Verzió-bump ellenőrzés:** MC/Paper-frissítésnél az ELSŐ törési pont a bootstrap
   (unstable registry-API) — a védőháló catch-el és logol, de bumpnál kötelező ellenőrizni:
   a bootstrap fordul, a damage-type-ok és enchantok regisztrálódnak (log), a resist/stamp él.
-- **Tükör-repo (IceSMPGuides):** az aktív, kanonikus szabály az `AGENTS.md` „Docs and IceSMPGuides mirror” szekciójában él. A docs egy része a `MilCsik09/IceSMPGuides` repóba is átmásolandó minden változtatásnál. Térkép: `PLAYTEST.md` ↔ gyökér; `docs/player-guide/NN-*.md` ↔ gyökér számozott fájlok (a 🔜 tesztelői jelölés-réteg 2026-07-28-án kivezetve tulaj-döntésre — a tükrözés szó szerinti másolás a kanonikus IceSMP-oldalról, a checker tartalomra ellenőrzi); `docs/RESOURCE_PACK_CMD.md` ↔ gyökér; `docs/EPITESZ_UTMUTATO.md` ↔ gyökér; `docs/TEASER.md` ↔ gyökér; `docs/PITCH.md` ↔ gyökér; `docs/FEATURES.md` ↔ gyökér; `docs/LORE.md` + `docs/LORE_REFERENCE.md` ↔ `lore/`; `docs/ideas/*` ↔ `ideas/`; `docs/IDEAS.md` ↔ `ideas/README.md`. Mindkét repót ugyanarra a célágra pushold (alapértelmezés: masterből nyitott tool-semleges feature ág; owner-kérésre közvetlen master).
+- **Tükör-repo (IceSMPGuides):** az aktív, kanonikus szabály az `AGENTS.md` „Docs and IceSMPGuides mirror” szekciójában él. Az öt kézikönyvet (`FEATURES.md`, `LATEST_CHANGES.md`, `PLAYER_GUIDE.md`, `BUILDER_GUIDE.md`, `ADMIN_GUIDE.md`) szó szerint tükrözni kell a `MilCsik09/IceSMPGuides` repó gyökerébe, ugyanarra a célágra.
 
 ## Mi ez a projekt
 Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 545 Java-fájl / 90 manager. Minden játékos-szöveg **magyar**.
@@ -94,17 +95,18 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   A config-YAML kommentjei kivételek: ott a komment a dokumentáció.
 - **MD-politika:** új .md fájl CSAK kifejezett tulaj-kérésre születhet. Auditok a meglévő
   `docs/ideas/PROJEKT-AUDIT.md`-t frissítik HELYBEN (nem új fájl körönként); ötletek
-  egyetlen helyre mennek: `docs/ideas/BACKLOG.md`. A `PLAYER_GUIDE.md` csak index — az
-  egyetlen igazságforrás a `docs/player-guide/` oldalak.
+  egyetlen helyre mennek: `docs/ideas/BACKLOG.md`. Embernek szánt új feature/reference/release
+  oldal helyett az öt kanonikus kézikönyv egyikét kell frissíteni.
 - **Definition of Done — minden változás UGYANABBAN a commitban propagál:**
-  - új parancs → tab-complete + `/menu` csempe (CommandMenus) + `14-parancsok.md` + jog-node
+  - új parancs → tab-complete + `/menu` csempe (CommandMenus) +
+    `docs/PLAYER_GUIDE.md` érintett része + `docs/ADMIN_GUIDE.md` parancsreferenciája + jog-node
   - új jog-node → `Permissions.java` canonical map (különben az admin.all nem adja meg!)
   - új config-kulcs → use-site olvasás (élő-config) + ha admin-hangolandó: ConfigMenuGUI
   - új custom item → **ITEM_MODEL** (modern; `item-model:`/`ItemDataFactory.applyItemModel`) +
     `docs/RESOURCE_PACK_CMD.md` manifest-sor. (ÚJ itemnél már NEM adunk régi numerikus modelladatot.)
   - új quest-NPC / territory-id → a PROJEKT-AUDIT.md világépítő-checklistjére is fel kell kerülnie
-  - új rendszer/mechanika → érintett `docs/player-guide/` oldal + PLAYTEST-blokk +
-    `LORE_REFERENCE.md` sor (ha lore-kötött) + README feature-lista, ha ott is szerepel
+  - új rendszer/mechanika → `docs/FEATURES.md` + érintett szerepköri kézikönyv +
+    acceptance-eset a `docs/ADMIN_GUIDE.md`-ban + `LORE_REFERENCE.md` sor, ha lore-kötött
   - minden doksi-szám a configból származik, nem fejből
   - záráskor: fordítás-ellenőrzés + `scripts/check_consistency.py` + tükör-push
 - Játékos-szöveg magyarul, `MessageManager` + `messages.yml` kulccsal és inline defaulttal.
@@ -115,7 +117,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   vagy `ItemDataFactory.applyItemModel(item, "icesmp:<id>")` a factoryban (a setItemMeta UTÁN!), és
   fel KELL venni a `docs/RESOURCE_PACK_CMD.md` manifestbe (a pack-készítő az
   `assets/icesmp/items/<id>.json`-t szállítja). A resource pack manifest a modern modell-id-ket sorolja.
-- Minden gameplay-változásnál frissítsd a docsot: a megfelelő `docs/player-guide/` oldal (a `PLAYER_GUIDE.md` csak index, nem kell bővíteni), `PLAYTEST.md` checklist, feature-listánál `README.md`. A számszerű állítások egyezzenek a config-fájlokkal.
+- Minden gameplay-változásnál frissítsd az öt kanonikus kézikönyv érintett részeit. A számszerű állítások egyezzenek a config-fájlokkal.
 - Commit-üzenet: magyar, tömör tárgysor + felsorolásos törzs; a repo-history kompatibilitás miatt a meglévő `Co-Authored-By` + `Claude-Session` trailerekkel zárul, amíg a tulaj nem vált trailer-politikát. Csak a kijelölt feature-branchre pusholj.
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).
 - **Lore/tartalom-referencia:** `docs/LORE.md` — a kanonikus kódex, TISZTA világon-belüli szöveg (ne

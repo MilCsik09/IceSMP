@@ -245,6 +245,18 @@ jobs:
               echo "Repository inventory summary was not generated."
             fi
             echo
+            echo "## Human-facing documentation"
+            echo
+            echo "The canonical guide set contains exactly five files:"
+            echo
+            echo "- \`docs/FEATURES.md\`"
+            echo "- \`docs/LATEST_CHANGES.md\`"
+            echo "- \`docs/PLAYER_GUIDE.md\`"
+            echo "- \`docs/BUILDER_GUIDE.md\`"
+            echo "- \`docs/ADMIN_GUIDE.md\`"
+            echo
+            echo "Detailed interface inventories remain in this workflow artifact."
+            echo
             echo "## Compared refs"
             echo
             echo "- Release inventory base: \`${{ steps.refs.outputs.base_sha }}\`"
@@ -280,7 +292,7 @@ jobs:
           name: repository-docs-inventory-${{ github.run_id }}-${{ github.run_attempt }}
           path: build/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
       - name: Enforce blocking policy
         if: always()
