@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - feature/mod-menu-pagination
 
 permissions:
   contents: read
