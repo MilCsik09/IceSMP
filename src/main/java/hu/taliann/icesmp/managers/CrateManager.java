@@ -8,6 +8,7 @@ import hu.taliann.icesmp.crates.CrateOpeningLifecycle;
 import hu.taliann.icesmp.crates.CrateRecoveryLedger;
 import hu.taliann.icesmp.crates.CrateRewardProgress;
 import hu.taliann.icesmp.crates.CrateTaskSubmission;
+import hu.taliann.icesmp.crates.CrateSoundResolver;
 import hu.taliann.icesmp.crates.CrateRules;
 import hu.taliann.icesmp.crates.KeyConsumption;
 import hu.taliann.icesmp.crates.WeightedSelector;
@@ -27,7 +28,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -394,10 +394,7 @@ public final class CrateManager implements PersistentStore, PlayerStateCleanup {
 
         final String soundName = requiredText(section.getString("opening-sound.sound",
                 "ENTITY_PLAYER_LEVELUP"), "opening-sound.sound");
-        final NamespacedKey soundKey = NamespacedKey.fromString(soundName.contains(":")
-                ? soundName.toLowerCase(Locale.ROOT)
-                : "minecraft:" + soundName.toLowerCase(Locale.ROOT));
-        final Sound openingSound = soundKey == null ? null : Registry.SOUNDS.get(soundKey);
+        final Sound openingSound = CrateSoundResolver.resolve(soundName);
         if (openingSound == null) {
             throw new IllegalArgumentException("ismeretlen opening-sound: " + soundName);
         }
