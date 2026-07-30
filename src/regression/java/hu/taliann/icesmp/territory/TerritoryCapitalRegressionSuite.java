@@ -181,6 +181,10 @@ public final class TerritoryCapitalRegressionSuite {
                         && destination.contains("world.getBlockAt(x, feetY + 1, z).isPassable()")
                         && destination.contains("territory.contains(world.getName()"),
                 "territory teleports do not require a safe in-zone standing space");
+        final int teleportCompletion = command.indexOf(".thenAccept(successful ->");
+        final int teleportSuccessMessage = command.indexOf("\\\"territory-tp-success\\\"");
+        check(teleportCompletion >= 0 && teleportSuccessMessage > teleportCompletion,
+                "territory teleport reports success before teleport completion");
         check(messages.contains("territory-setcapital-selection-success")
                         && messages.contains("territory-setcapital-selection-usage")
                         && messages.contains("territory-help-setcapital-selection")
