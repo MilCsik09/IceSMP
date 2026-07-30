@@ -406,12 +406,19 @@ Pontos 3D téglatest-főváros a natív claim-kijelöléssel:
 /territory setcapital <frakció> selection [név...]
 ```
 
-A claim-kijelölő pálca két sarka ugyanígy használható. A `selection` mód
-mindhárom tengelyen blokkpontosan a két sarok közti, inkluzív
-`minX..maxX`, `minY..maxY`, `minZ..maxZ` dobozt menti. Siker után a
-kijelölés törlődik; hiba esetén megmarad javításra. Meglévő személyes
+A claim-kijelölő pálcát a `/claim wand` adja; annak két sarka ugyanígy
+használható. A `selection` mód mindhárom tengelyen blokkpontosan a két
+sarok közti, inkluzív `minX..maxX`, `minY..maxY`, `minZ..maxZ` dobozt
+menti. Mindkét saroknak és a parancsot kiadó adminnak ugyanabban a világban
+kell lennie; az X/Z kiterjedés legfeljebb 1025×1025 blokk lehet. Siker után
+a kijelölés törlődik; hiba esetén megmarad javításra. Meglévő személyes
 claimet fedő kijelölést előbb a dokumentált `/claim admin unclaim`
 folyamattal kell rendezni.
+
+A doboz operatív középoszlopában legyen szilárd talaj és két blokk járható
+hely a kijelölt Y-sávon belül. A `/territory tp` és a home rituálé csak
+ilyen biztonságos célra teleportál; enélkül a művelet meghiúsul, a home
+rituálé áldozata pedig visszajár.
 
 Mindkét forma pontos aktív szintaxis. A régi builderleírásban szereplő
 `/territory setcapital <frakció> <id>` forma stale, ne használd. A
