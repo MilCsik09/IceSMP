@@ -7,6 +7,9 @@ on:
       - master
     paths:
       - "resource-pack/**"
+      - "scripts/resource_pack.py"
+      - "scripts/test_resource_pack.py"
+      - ".github/workflows/resource-pack-r2.yml"
 
 permissions:
   contents: write
@@ -18,43 +21,38 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       PACK_DIR: resource-pack
-      CONFIG_FILE: src/main/resources/config.yml
+      PACK_OUTPUT: build/resource-pack/icesmp.zip
+      METADATA_FILE: src/main/resources/resource-pack.properties
       PUBLIC_BASE_URL: https://icesmp.taliann.dev
+      OBJECT_PREFIX: resource-packs
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.RESOURCE_PACK_PUSH_TOKEN || github.token }}
 
-      - name: Validate resource pack source
-        run: |
-          test -f "$PACK_DIR/pack.mcmeta" || {
-            echo "Missing $PACK_DIR/pack.mcmeta. Store the unpacked pack under resource-pack/." >&2
-            exit 1
-          }
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test pack tooling
+        run: python3 scripts/test_resource_pack.py
 
       - name: Build deterministic ZIP and SHA-1
         id: pack
-        shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p build/resource-pack
-          find "$PACK_DIR" -exec touch -d '@0' {} +
-          (
-            cd "$PACK_DIR"
-            find . -type f -print0 \
-              | LC_ALL=C sort -z \
-              | xargs -0 zip -X -q "../build/resource-pack/icesmp.zip"
-          )
-          SHA1="$(sha1sum build/resource-pack/icesmp.zip | awk '{print $1}')"
-          FILE_NAME="icesmp-${SHA1}.zip"
-          mv build/resource-pack/icesmp.zip "build/resource-pack/${FILE_NAME}"
-          echo "sha1=${SHA1}" >> "$GITHUB_OUTPUT"
-          echo "file_name=${FILE_NAME}" >> "$GITHUB_OUTPUT"
-          echo "url=${PUBLIC_BASE_URL}/${FILE_NAME}" >> "$GITHUB_OUTPUT"
+          python3 scripts/resource_pack.py build \
+            --source "$PACK_DIR" \
+            --output "$PACK_OUTPUT" \
+            --public-base-url "$PUBLIC_BASE_URL" \
+            --object-prefix "$OBJECT_PREFIX" \
+            --github-output "$GITHUB_OUTPUT"
 
       - name: Configure AWS CLI for Cloudflare R2
         uses: aws-actions/configure-aws-credentials@v4
@@ -63,59 +61,82 @@ jobs:
           aws-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           aws-region: auto
 
-      - name: Upload to R2
+      - name: Upload immutable version and latest alias
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-          FILE_NAME: ${{ steps.pack.outputs.file_name }}
+          OBJECT_KEY: ${{ steps.pack.outputs.object_key }}
         run: |
-          aws s3 cp "build/resource-pack/${FILE_NAME}" "s3://${R2_BUCKET_NAME}/${FILE_NAME}" \
-            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+          # Content-addressed object: never overwritten with different bytes and safe to cache forever.
+          aws s3 cp "$PACK_OUTPUT" "s3://${R2_BUCKET_NAME}/${OBJECT_KEY}" \
+            --endpoint-url "$ENDPOINT" \
             --content-type application/zip \
             --cache-control "public,max-age=31536000,immutable"
 
-      - name: Update plugin URL and SHA-1
+          # Human-friendly alias only. The plugin deliberately never uses this cache-unstable URL.
+          aws s3 cp "$PACK_OUTPUT" "s3://${R2_BUCKET_NAME}/${OBJECT_PREFIX}/latest.zip" \
+            --endpoint-url "$ENDPOINT" \
+            --content-type application/zip \
+            --cache-control "no-cache,max-age=0,must-revalidate"
+
+      - name: Publish machine-readable manifest
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          PACK_URL: ${{ steps.pack.outputs.url }}
+          PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
+          PACK_SIZE: ${{ steps.pack.outputs.size }}
+        run: |
+          set -euo pipefail
+          MANIFEST="build/resource-pack/manifest.json"
+          python3 scripts/resource_pack.py manifest \
+            --output "$MANIFEST" \
+            --url "$PACK_URL" \
+            --sha1 "$PACK_SHA1" \
+            --size "$PACK_SIZE" \
+            --commit "$GITHUB_SHA"
+
+          aws s3 cp "$MANIFEST" "s3://${R2_BUCKET_NAME}/${OBJECT_PREFIX}/manifest.json" \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            --content-type application/json \
+            --cache-control "no-cache,max-age=0,must-revalidate"
+
+      - name: Verify the public immutable URL end to end
         env:
           PACK_URL: ${{ steps.pack.outputs.url }}
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
         run: |
-          python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 6 --retry-all-errors --retry-delay 5 \
+            "$PACK_URL" --output build/resource-pack/public-copy.zip
+          echo "${PACK_SHA1}  build/resource-pack/public-copy.zip" | sha1sum --check --strict
 
-          path = Path(os.environ.get("CONFIG_FILE", "src/main/resources/config.yml"))
-          text = path.read_text(encoding="utf-8")
-          url = os.environ["PACK_URL"]
-          sha1 = os.environ["PACK_SHA1"]
+      - name: Update bundled plugin fallback metadata
+        env:
+          PACK_URL: ${{ steps.pack.outputs.url }}
+          PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
+        run: |
+          python3 scripts/resource_pack.py update-metadata \
+            --metadata "$METADATA_FILE" \
+            --url "$PACK_URL" \
+            --sha1 "$PACK_SHA1"
 
-          text, url_count = re.subn(
-              r'(?m)^(  url: )"[^"]*"$',
-              lambda match: f'{match.group(1)}"{url}"',
-              text,
-              count=1,
-          )
-          text, hash_count = re.subn(
-              r'(?m)^(  sha1: )"[0-9a-fA-F]*"$',
-              lambda match: f'{match.group(1)}"{sha1}"',
-              text,
-              count=1,
-          )
-          if url_count != 1 or hash_count != 1:
-              raise SystemExit("Could not uniquely update resource-pack.url and resource-pack.sha1")
-          path.write_text(text, encoding="utf-8")
-          PY
-
-      - name: Commit generated pack metadata
+      - name: Commit generated fallback metadata
         env:
           PACK_SHA1: ${{ steps.pack.outputs.sha1 }}
         run: |
-          if git diff --quiet -- "$CONFIG_FILE"; then
-            echo "Plugin metadata already points at this pack."
+          set -euo pipefail
+          if git diff --quiet -- "$METADATA_FILE"; then
+            echo "Bundled plugin metadata already points at this immutable pack."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$CONFIG_FILE"
+          git add "$METADATA_FILE"
           git commit -m "Update resource pack to ${PACK_SHA1}"
           git push
