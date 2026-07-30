@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — spells (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — spells (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Talentek =====
 # Két ponttár: a kaszt tár a kaszt szintekből, a szakma tár az összes szakma
 # szintjéből termel pontot (points-per-levels szintenként 1 pont).
