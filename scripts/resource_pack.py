@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate, build and publish metadata for the IceSMP resource pack.
 
-The ZIP builder is intentionally deterministic: identical repository contents produce identical
+The ZIP builder is intentionally deterministic: identical client-facing contents produce identical
 bytes, SHA-1 values and R2 object names regardless of file mtimes, operating system or zlib
 version. Pack files are stored without a second compression pass because PNG assets are already
 compressed and the small size difference is worth the stronger reproducibility guarantee.
@@ -24,6 +24,8 @@ MAX_FILES = 20_000
 MAX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SHA1_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+# Repository documentation belongs beside the source pack but must not affect client bytes/hash.
+SOURCE_ONLY_PATHS = frozenset({"README.md"})
 
 
 class PackError(RuntimeError):
@@ -45,6 +47,8 @@ def iter_pack_files(root: Path) -> list[tuple[PurePosixPath, Path]]:
             continue
 
         relative = PurePosixPath(path.relative_to(root).as_posix())
+        if str(relative) in SOURCE_ONLY_PATHS:
+            continue
         if relative.is_absolute() or ".." in relative.parts or "\\" in str(relative):
             raise PackError(f"Unsafe resource-pack path: {relative}")
         if any(ord(character) < 32 for character in str(relative)):
@@ -110,7 +114,7 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
 
     total_size = sum(path.stat().st_size for _, path in files)
     print(
-        f"Validated resource pack: {len(files)} files, {json_count} JSON/MCMeta, "
+        f"Validated resource pack: {len(files)} client files, {json_count} JSON/MCMeta, "
         f"{png_count} PNG, {total_size} bytes"
     )
     return files
