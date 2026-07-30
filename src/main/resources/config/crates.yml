@@ -24,7 +24,7 @@ crates:
       enabled: true
       max-openings: 10
     opening-sound:
-      sound: ENTITY_PLAYER_LEVELUP
+      sound: minecraft:entity.player.levelup
       volume: 1.0
       pitch: 1.2
     broadcast:
@@ -69,7 +69,7 @@ crates:
       enabled: true
       max-openings: 5
     opening-sound:
-      sound: UI_TOAST_CHALLENGE_COMPLETE
+      sound: minecraft:ui.toast.challenge_complete
       volume: 0.8
       pitch: 1.1
     broadcast:
