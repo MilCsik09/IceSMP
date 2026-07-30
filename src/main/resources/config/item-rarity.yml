@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — item-rarity (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — item-rarity (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Egyedi tárgy-raritás + affix rendszer (rolled loot) =====
 # Az affixelhető tárgyak (szakma-craft ÉS mob/boss loot) craftoláskor/dropkor VÉLETLEN raritást
 # (Ócska->Ereklye) és random attribútum-affixeket kapnak — minden darab egyedi. NEM csak a

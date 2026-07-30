@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — pets (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — pets (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Idézett társak (pet/minion) =====
 # max-active: hány aktív idézett társa lehet egyszerre egy játékosnak (spam-védelem);
 # talent-health-share: a gazda kaszt "max-health" talentjeinek hányada száll a minionra.

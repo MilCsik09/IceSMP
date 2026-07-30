@@ -63,7 +63,7 @@
 - Server-owner rebalancing without recompiling: `config/spells-balance.yml` overrides core numeric fields (damage, cooldown, cost-amount, range, radius, knockback, ignite-ticks, freeze-ticks, self-damage, heal-self, feed-self) per spell id — read at CAST TIME by both declarative (`ConfiguredSpell` live accessors) and bespoke (`BaseSpell.balance()`) spells, so `/icesmp reload` applies them without a restart. `IceSMPCore.applySpellBalanceOverrides()` runs once at startup only for the boot log and the unknown-spell-id warning; a restart is needed for spell REGISTRATION (new spells/unlock lists), not for values.
 - Item mechanics ride on PDC tags via the `items/*ItemFactory` classes, guarded by craft-safety listeners.
 - Spell cooldowns ≥ 60s persist via `cd_*` PDC keys; shorter ones are in-memory (`AbilityCatalystListener`).
-- Config lives in `src/main/resources/config/*.yml` (ConfigManager merges all of them); numeric guide claims (XP rates, thresholds) must match those files.
+- Config lives in `src/main/resources/config/*.yml` (ConfigManager merges only the supported files named in `CONFIG_FILES`; unlisted `.yml` files are ignored with a warning); numeric guide claims (XP rates, thresholds) must match those files.
 
 ## When adding features
 - Wire through `IceSMPCore` (construct → `load()` in `enable()` → `save()` in `disable()` for persistent stores).

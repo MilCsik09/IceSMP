@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — professions (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — professions (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Szakmák (WoW-szerű: 1 gyűjtögető + 1 készítő főszakma + másodlagosak) =====
 # Gyűjtögető: miner (Bányász), herbalist (Gyógynövényész), lumberjack (Favágó)
 # Készítő: armorer (Kovács), alchemist (Alkimista), enchanter (Bűvölő)

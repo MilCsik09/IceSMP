@@ -1,9 +1,11 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -37,6 +39,17 @@ public final class ConfigValidator {
             return;
         }
 
+        final int problems = validateConfiguration(config, logger);
+        if (problems == 0) {
+            logger.info("Konfiguráció ellenőrizve: nem található elgépelés.");
+        } else {
+            logger.warning("Konfiguráció-ellenőrzés: " + problems
+                    + " lehetséges hiba (a plugin nem módosítja automatikusan a hibás értékeket — "
+                    + "javítsd a fenti sorokat).");
+        }
+    }
+
+    static int validateConfiguration(final FileConfiguration config, final Logger logger) {
         int problems = 0;
         for (final String key : config.getKeys(true)) {
             if (config.isConfigurationSection(key)) {
@@ -44,7 +57,9 @@ public final class ConfigValidator {
             }
             final String leaf = leafOf(key);
 
-            if (leaf.equals("material")) {
+            if ("pakt.material".equals(key)) {
+                problems += checkUniqueMaterialReference(config, logger, key, config.getString(key));
+            } else if (leaf.equals("material")) {
                 problems += checkMaterial(logger, key, config.getString(key));
             } else if (leaf.equals("materials") && config.isList(key)) {
                 for (final String value : config.getStringList(key)) {
@@ -62,17 +77,23 @@ public final class ConfigValidator {
                 problems += checkNonNegative(logger, key, config.get(key));
             }
         }
+        return problems;
+    }
 
-        if (problems == 0) {
-            logger.info("Konfiguráció ellenőrizve: nem található elgépelés.");
-        } else {
-            logger.warning("Konfiguráció-ellenőrzés: " + problems
-                    + " lehetséges hiba (a plugin a biztonságos alapértékekkel indul — javítsd a fenti sorokat).");
+    private static int checkUniqueMaterialReference(final FileConfiguration config, final Logger logger,
+                                                    final String key, final String value) {
+        final String reference = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        if (reference.isEmpty()
+                || !config.isConfigurationSection("profession-materials." + reference)) {
+            logger.warning("Config: ismeretlen profession-material hivatkozás a(z) '" + key
+                    + "' kulcsnál: '" + value + "'.");
+            return 1;
         }
+        return 0;
     }
 
     private static int checkMaterial(final Logger logger, final String key, final String value) {
-        if (value == null || value.isBlank() || Material.matchMaterial(value) == null) {
+        if (value == null || value.isBlank() || ConfigMaterialResolver.match(value) == null) {
             logger.warning("Config: ismeretlen Material a(z) '" + key + "' kulcsnál: '" + value
                     + "' — ellenőrizd a nevet (pl. DIAMOND, ENCHANTED_GOLDEN_APPLE).");
             return 1;

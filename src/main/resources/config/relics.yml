@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — relics (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — relics (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 relics:
   enabled: true
   # Inaktivitás-kezelés: a megadott számú nap után a relikvia törlődik
@@ -76,6 +76,15 @@ relics:
         - "&7Megkövült, éjfekete csepp; a Néma Királynő"
         - "&7első suttogása hozta létre, magába zárva"
         - "&7a Fa kínjait és a magányt."
+    sarkany_tojas:
+      display-name: "Sárkánytojás-töredék"
+      display-color: "&d"
+      material: "DRAGON_EGG"
+      item-model: "icesmp:relic_sarkany_tojas"
+      lore:
+        - "&7Egy sosem kelt sárkány álma, kőbe zárva."
+        - "&7A Sárkányidéző kezében az Eszencia"
+        - "&7medre kitágul — másnak csak hideg kő."
     bone_wing:
       display-name: "Csontszárny"
       display-color: "&8"

@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — classes (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — classes (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Kasztok: progresszió és szint-alapú skill feloldás =====
 # Az XP mob ölésből érkezik; a skálázott (mob_level) mobok bónusz XP-t adnak.
 # A spell-unlocks térkép szerint a kaszt adott szintjén a varázslat automatikusan feloldódik.

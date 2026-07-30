@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — general (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — general (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== IceSMP Teljes Konfiguráció =====
 # Beállítások, HUD, Valuta és Lokalizáció
 
@@ -25,11 +25,6 @@ settings:
 # Csak indításkor olvasott.
 advancements:
   enabled: true
-
-# Ülés (a GSit plugin kiváltása): /sit parancs + jobb-katt a lépcsőre/fél-lapra üres kézzel.
-sit:
-  enabled: true
-  click-to-sit: true
 
 # Apró világ-szabályok (a leszedett mini-pluginok natív kiváltása).
 world-tweaks:

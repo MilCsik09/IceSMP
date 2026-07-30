@@ -96,6 +96,14 @@ val crateRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.crates.CrateRegressionSuite")
 }
 
+val configStartupRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs packaged config, material compatibility and profession parser regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.ConfigStartupRegressionSuite")
+}
+
 val afkRegressionTest by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Runs global AFK state, display ordering and product-boundary regressions."
@@ -106,5 +114,6 @@ val afkRegressionTest by tasks.registering(JavaExec::class) {
 
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
-        motdRegressionTest, sitRegressionTest, crateRegressionTest, afkRegressionTest)
+        motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
+        afkRegressionTest)
 }

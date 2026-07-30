@@ -37,18 +37,18 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
 | `core/` | 2 | `IceSMPCore` — összeszerelés, életciklus, ütemezés. |
-| `managers/` | 118 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `managers/` | 119 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 119 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem). |
 | `spells/` | 56 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 94 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `gui/` | 46 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer. |
-| `crates/` | 13 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
+| `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `data/` | 12 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`…). |
 | `relics/` | 9 (6 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek. |
 | `items/` | 12 | Item-gyárak (katalizátor, befogó item, tervrajz, egyedi alapanyag…). |
 | `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
-| `utils/` | 22 | `MessageManager`, `ExperienceUtil`, egyebek. |
+| `utils/` | 23 | `MessageManager`, `ExperienceUtil`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
 
 ---
@@ -448,11 +448,11 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 545 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 118 fájl).
-  Csomag-megoszlás: listeners 119, managers 118, commands 94, spells 56, gui 46, crates 13, utils 22, data 12,
+- **Méret:** 548 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 119 fájl).
+  Csomag-megoszlás: listeners 119, managers 119, commands 94, spells 56, gui 46, crates 14, utils 23, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
-  a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate- és AFK-regressziós suite-okat.
+  a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup- és AFK-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
   `python3 scripts/check_consistency.py`. Pull requesten a `scripts/check_consistency_delta.py`
   hasonlítja a base/head eredményt.

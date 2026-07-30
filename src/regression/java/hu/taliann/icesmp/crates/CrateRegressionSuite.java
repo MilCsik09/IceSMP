@@ -2,6 +2,8 @@ package hu.taliann.icesmp.crates;
 
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
 import java.io.IOException;
@@ -27,6 +29,7 @@ public final class CrateRegressionSuite {
     public static void main(final String[] args) throws Exception {
         validatesWeightsAmountsAndExactIntegers();
         validatesStrictBooleanAndWorldLists();
+        resolvesBundledAndInstalledSoundNames();
         validatesCommandTemplates();
         consumesExactKeysAcrossStacks();
         boundsPartialMassOpen();
@@ -103,6 +106,49 @@ public final class CrateRegressionSuite {
                 () -> CrateRules.strictStringList(List.of("world", 2), "worlds"));
         expectThrows(IllegalArgumentException.class,
                 () -> CrateRules.strictStringList(List.of(""), "worlds"));
+    }
+
+    private static void resolvesBundledAndInstalledSoundNames() {
+        check("ENTITY_PLAYER_LEVELUP".equals(
+                        CrateSoundResolver.enumName("ENTITY_PLAYER_LEVELUP")),
+                "installed enum-style crate sound changed");
+        check("ENTITY_PLAYER_LEVELUP".equals(
+                        CrateSoundResolver.enumName("minecraft:entity.player.levelup")),
+                "canonical player-levelup sound normalized incorrectly");
+        check("UI_TOAST_CHALLENGE_COMPLETE".equals(
+                        CrateSoundResolver.enumName("UI_TOAST_CHALLENGE_COMPLETE")),
+                "installed enum-style toast sound changed");
+        check("UI_TOAST_CHALLENGE_COMPLETE".equals(
+                        CrateSoundResolver.enumName("minecraft:ui.toast.challenge_complete")),
+                "canonical toast sound normalized incorrectly");
+
+        final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/crates.yml").toFile());
+        final ConfigurationSection crates = defaults.getConfigurationSection("crates");
+        check(crates != null && !crates.getKeys(false).isEmpty(),
+                "bundled crate definitions missing");
+        for (final String crateId : crates.getKeys(false)) {
+            final String sound = crates.getString(crateId + ".opening-sound.sound", "");
+            check(hasSoundField(sound),
+                    "bundled crate has invalid opening sound: " + crateId + " -> " + sound);
+        }
+    }
+
+    /**
+     * Reflection inspects the API field table without reading a static Sound value,
+     * so the dependency-free suite does not initialize Paper's server-only RegistryAccess.
+     */
+    private static boolean hasSoundField(final String configured) {
+        final String enumName = CrateSoundResolver.enumName(configured);
+        if (enumName == null) {
+            return false;
+        }
+        try {
+            org.bukkit.Sound.class.getField(enumName);
+            return true;
+        } catch (final NoSuchFieldException missing) {
+            return false;
+        }
     }
 
     private static void validatesCommandTemplates() {
@@ -470,6 +516,8 @@ public final class CrateRegressionSuite {
                 "command result/exception is not part of settlement outcome");
         check(manager.contains("CrateRules.strictStringList(section.get(\"worlds\")"),
                 "malformed worlds config can still fail open");
+        check(manager.contains("CrateSoundResolver.resolve(soundName)"),
+                "crate opening sounds must use the compatibility-aware resolver");
         check(manager.contains("CrateRules.exactLong(section.get(rawId)"),
                 "persistent counts/cooldowns still pass through double");
         check(command.contains("crateManager.accessibleCrateIds(player)"),
