@@ -390,7 +390,13 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         // The highest-block lookup reads the capital's chunk — it must run on the DESTINATION region's
         // thread (Folia), not the altar's. Hop there, resolve the safe Y, then teleportAsync.
         plugin.getServer().getRegionScheduler().run(plugin, world, capital.x() >> 4, capital.z() >> 4, task -> {
-            final int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
+            int y = world.getHighestBlockYAt(capital.x(), capital.z()) + 1;
+            if (capital.minY() != Territory.NO_MIN_Y) {
+                y = Math.max(y, capital.minY());
+            }
+            if (capital.maxY() != Territory.NO_MAX_Y) {
+                y = Math.min(y, capital.maxY());
+            }
             player.teleportAsync(new Location(world, capital.x() + 0.5D, y, capital.z() + 0.5D, yaw, pitch))
                     .whenComplete((success, failure) -> player.getScheduler().run(plugin, done -> {
                         homeInFlight.remove(player.getUniqueId());
