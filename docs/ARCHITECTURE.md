@@ -448,11 +448,11 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 545 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 118 fájl).
-  Csomag-megoszlás: listeners 119, managers 118, commands 94, spells 56, gui 46, crates 13, utils 22, data 12,
+- **Méret:** 548 Java-fájl, ~85 000 sor; 90 `*Manager` osztály (a `managers/` csomag 119 fájl).
+  Csomag-megoszlás: listeners 119, managers 119, commands 94, spells 56, gui 46, crates 14, utils 23, data 12,
   items 12, relics 9, integration 7.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
-  a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate- és AFK-regressziós suite-okat.
+  a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup- és AFK-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és
   `python3 scripts/check_consistency.py`. Pull requesten a `scripts/check_consistency_delta.py`
   hasonlítja a base/head eredményt.
