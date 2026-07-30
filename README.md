@@ -33,6 +33,7 @@ Kiegészítő belső források:
 - [architektúra](docs/ARCHITECTURE.md);
 - [resource pack modelljegyzék](docs/RESOURCE_PACK_CMD.md);
 - [lore-kódex](docs/LORE.md) és [technikai lore-megfeleltetés](docs/LORE_REFERENCE.md);
+- [teljes quest- és NPC-builder leltár](docs/QUESTS.md);
 - [fejlesztési roadmap és ötletbank](ROADMAP.md);
 - [Discord- és képi teaser-csomag](docs/TEASER.md).
 
