@@ -5,7 +5,7 @@
 <details>
 <summary>Dokumentum-forrásállapot (HEAD, audit dátuma, futó baseline)</summary>
 
-- Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
+- Dokumentált HEAD: `73508dfa1bb40e6be54ab215bbe02dd0ae003e54`
 - Audit dátuma: 2026-07-30
 - Deployed baseline: `IceSMP-1.0-TESTING.jar` (`da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`); valószínű forrásállapot: `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12, `HIGH_CONFIDENCE`, nem `EXACT`)
 
@@ -24,6 +24,7 @@ Kapcsolódó dokumentumok:
 - [konfigurációs referencia](ADMIN_GUIDE.md#konfiguráció-és-reload);
 - [GUI-referencia](ADMIN_GUIDE.md#gui-referencia);
 - [adatvezérelt tartalomkatalógus](FEATURES.md);
+- [teljes quest-, dialógus- és NPC-elhelyezési leltár](QUESTS.md);
 - [külső pluginok státusza](LATEST_CHANGES.md#külső-pluginok-rövid-státusza);
 - [release acceptance checklist](ADMIN_GUIDE.md#release-acceptance-checklist).
 
