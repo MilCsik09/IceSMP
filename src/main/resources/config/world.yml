@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — world (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — world (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Távolság-alapú mob szintezés =====
 # A spawn ponttól távolodva a mobok erősödnek: szint = távolság / blocks-per-level.
 mob-scaling:
