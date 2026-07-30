@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — loot (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — loot (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== WoW-szerű mob loot (súlyozott loot-tábla) =====
 # A megölt szörnyek eséllyel dobnak egy plusz tárgyat a 'table' súlyozott listájából. Egy dobás
 # EGY táblasort választ (weight szerint). Sortípusok:
