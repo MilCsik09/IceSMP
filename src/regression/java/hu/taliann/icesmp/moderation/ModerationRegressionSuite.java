@@ -433,8 +433,10 @@ public final class ModerationRegressionSuite {
         check(moderationGuiHolder.contains("record PlayerTarget")
                         && moderationGui.contains("holder.playerAt(slot)")
                         && moderationGui.contains("holder.ownerId().equals(viewer.getUniqueId())")
-                        && moderationGui.contains("!viewer.canSee(target)"),
-                "moderation clicks must use owner-bound UUID targets and re-check visibility");
+                        && moderationGui.contains("target == null || !visibleTo(viewer, target)")
+                        && moderationGui.contains("target != null && !visibleTo(viewer, target)")
+                        && moderationGui.contains("target == null ? holder.targetName() : target.getName()"),
+                "moderation clicks must use owner-bound UUID targets and re-check both list and detail visibility");
         check(vanishCommand.contains("enabled ? \"bekapcsolva\" : \"kikapcsolva\""),
                 "vanish self feedback must supply the configured format argument");
         check(moderationMessages.contains("disconnect: '&c%s\\n&7Ok: &f%s'"),
