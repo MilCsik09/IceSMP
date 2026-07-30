@@ -27,6 +27,7 @@ public final class CrateRegressionSuite {
     public static void main(final String[] args) throws Exception {
         validatesWeightsAmountsAndExactIntegers();
         validatesStrictBooleanAndWorldLists();
+        resolvesBundledAndInstalledSoundNames();
         validatesCommandTemplates();
         consumesExactKeysAcrossStacks();
         boundsPartialMassOpen();
@@ -103,6 +104,21 @@ public final class CrateRegressionSuite {
                 () -> CrateRules.strictStringList(List.of("world", 2), "worlds"));
         expectThrows(IllegalArgumentException.class,
                 () -> CrateRules.strictStringList(List.of(""), "worlds"));
+    }
+
+    private static void resolvesBundledAndInstalledSoundNames() throws IOException {
+        check(CrateSoundResolver.resolve("ENTITY_PLAYER_LEVELUP") != null,
+                "installed enum-style crate sound must remain compatible");
+        check(CrateSoundResolver.resolve("minecraft:entity.player.levelup") != null,
+                "canonical player-levelup sound must resolve");
+        check(CrateSoundResolver.resolve("UI_TOAST_CHALLENGE_COMPLETE") != null,
+                "installed enum-style toast sound must remain compatible");
+        check(CrateSoundResolver.resolve("minecraft:ui.toast.challenge_complete") != null,
+                "canonical toast sound must resolve");
+        final String defaults = source("src/main/resources/config/crates.yml");
+        check(defaults.contains("minecraft:entity.player.levelup")
+                        && defaults.contains("minecraft:ui.toast.challenge_complete"),
+                "bundled crate sounds must use canonical registry keys");
     }
 
     private static void validatesCommandTemplates() {
@@ -470,6 +486,8 @@ public final class CrateRegressionSuite {
                 "command result/exception is not part of settlement outcome");
         check(manager.contains("CrateRules.strictStringList(section.get(\"worlds\")"),
                 "malformed worlds config can still fail open");
+        check(manager.contains("CrateSoundResolver.resolve(soundName)"),
+                "crate opening sounds must use the compatibility-aware resolver");
         check(manager.contains("CrateRules.exactLong(section.get(rawId)"),
                 "persistent counts/cooldowns still pass through double");
         check(command.contains("crateManager.accessibleCrateIds(player)"),
