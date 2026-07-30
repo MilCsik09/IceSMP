@@ -1428,7 +1428,7 @@ profession-recipes:
       - "&8Üllőn vihető mellvértre. (Káoszmágia ellen.)"
     category: "Rúnaírnok (tervrajz)"
     result: { material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:kaosz_zabla:1", item-model: "icesmp:kaosz_zabla_tekercs" }
-    ingredients: [ "BOOK:1", "CHAIN:8", "MAGMA_CREAM:8", "unique:karhozat_parazs:1" ]
+    ingredients: [ "BOOK:1", "IRON_CHAIN:8", "MAGMA_CREAM:8", "unique:karhozat_parazs:1" ]
   # ===== K6 — frakció-ételek (a kódex "konyhái"; a fogyasztási kötelezettséget a
   # factions.food-duty vezérli — a hazai étel evése nullázza a honvágy-visszaszámlálót) =====
   fagyasztott_pisztrang:
@@ -1965,7 +1965,7 @@ profession-recipes:
     learn: level
     display-name: "Tárnalánc"
     category: "Építkezés"
-    result: { material: CHAIN, amount: 8 }
+    result: { material: IRON_CHAIN, amount: 8 }
     ingredients: [ "IRON_INGOT:2", "IRON_NUGGET:4" ]
   vasracs:
     profession: miner
@@ -2729,7 +2729,7 @@ profession-recipes:
     learn: level
     display-name: "Láncszem-köteg"
     category: "Alapanyag"
-    result: { material: CHAIN, amount: 6 }
+    result: { material: IRON_CHAIN, amount: 6 }
     ingredients: [ "IRON_NUGGET:18", "unique:fujtatobor:1" ]
   lancing:
     profession: armorer
@@ -2738,7 +2738,7 @@ profession-recipes:
     display-name: "Fonott Gyűrűing"
     category: "Páncél"
     result: { material: CHAINMAIL_CHESTPLATE, affix-tier: crafted, item-model: "icesmp:lancing", attributes: [ "armor:1" ] }
-    ingredients: [ "CHAIN:8", "IRON_INGOT:3", "unique:nyelbor:1" ]
+    ingredients: [ "IRON_CHAIN:8", "IRON_INGOT:3", "unique:nyelbor:1" ]
   lancnadrag:
     profession: armorer
     level: 13
@@ -2746,7 +2746,7 @@ profession-recipes:
     display-name: "Fonott Gyűrűnadrág"
     category: "Páncél"
     result: { material: CHAINMAIL_LEGGINGS, affix-tier: crafted, item-model: "icesmp:lancnadrag", attributes: [ "armor:1" ] }
-    ingredients: [ "CHAIN:7", "IRON_INGOT:2", "unique:nyelbor:1" ]
+    ingredients: [ "IRON_CHAIN:7", "IRON_INGOT:2", "unique:nyelbor:1" ]
   vas_lopancel:
     profession: armorer
     level: 17
@@ -2814,7 +2814,7 @@ profession-recipes:
     display-name: "Rostélyos Csatasisak"
     category: "Páncél"
     result: { material: DIAMOND_HELMET, affix-tier: crafted, item-model: "icesmp:pancelozott_sisakrostely", attributes: [ "armor:1", "armor_toughness:1" ] }
-    ingredients: [ "DIAMOND:5", "CHAIN:2", "unique:edzoolaj:1", "unique:nyelbor:1" ]
+    ingredients: [ "DIAMOND:5", "IRON_CHAIN:2", "unique:edzoolaj:1", "unique:nyelbor:1" ]
   kovacsmesteri_sablon:
     profession: armorer
     level: 47
