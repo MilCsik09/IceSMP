@@ -2,6 +2,8 @@ package hu.taliann.icesmp.crates;
 
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
 import java.io.IOException;
@@ -106,7 +108,7 @@ public final class CrateRegressionSuite {
                 () -> CrateRules.strictStringList(List.of(""), "worlds"));
     }
 
-    private static void resolvesBundledAndInstalledSoundNames() throws IOException {
+    private static void resolvesBundledAndInstalledSoundNames() {
         check(CrateSoundResolver.resolve("ENTITY_PLAYER_LEVELUP") != null,
                 "installed enum-style crate sound must remain compatible");
         check(CrateSoundResolver.resolve("minecraft:entity.player.levelup") != null,
@@ -115,10 +117,17 @@ public final class CrateRegressionSuite {
                 "installed enum-style toast sound must remain compatible");
         check(CrateSoundResolver.resolve("minecraft:ui.toast.challenge_complete") != null,
                 "canonical toast sound must resolve");
-        final String defaults = source("src/main/resources/config/crates.yml");
-        check(defaults.contains("minecraft:entity.player.levelup")
-                        && defaults.contains("minecraft:ui.toast.challenge_complete"),
-                "bundled crate sounds must use canonical registry keys");
+
+        final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config/crates.yml").toFile());
+        final ConfigurationSection crates = defaults.getConfigurationSection("crates");
+        check(crates != null && !crates.getKeys(false).isEmpty(),
+                "bundled crate definitions missing");
+        for (final String crateId : crates.getKeys(false)) {
+            final String sound = crates.getString(crateId + ".opening-sound.sound", "");
+            check(CrateSoundResolver.resolve(sound) != null,
+                    "bundled crate has invalid opening sound: " + crateId + " -> " + sound);
+        }
     }
 
     private static void validatesCommandTemplates() {
