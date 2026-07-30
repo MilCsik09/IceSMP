@@ -190,6 +190,7 @@ MIRROR = [
     ("docs/ARCHITECTURE.md", "docs/ARCHITECTURE.md"),
     ("docs/LORE.md", "docs/LORE.md"),
     ("docs/LORE_REFERENCE.md", "docs/LORE_REFERENCE.md"),
+    ("docs/QUESTS.md", "docs/QUESTS.md"),
     ("docs/RESOURCE_PACK_CMD.md", "docs/RESOURCE_PACK_CMD.md"),
     ("docs/TEASER.md", "docs/TEASER.md"),
 ]
