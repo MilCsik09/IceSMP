@@ -5,10 +5,12 @@
 
 # A plugin Paper addResourcePack API-val adja hozzá a packot, ezért nem írja felül a
 # server.properties vagy más plugin által kiküldött resource packokat.
+# A kiadott URL és SHA-1 a JAR resource-pack.properties fájljából jön, amelyet a
+# publikáló GitHub Action frissít. Az override mezőket csak staginghez vagy rollbackhez töltsd ki.
 resource-pack:
   enabled: true
   required: true
   id: "7c847f1e-d942-3c8f-bd46-5c43bb1a3e67"
-  url: "https://icesmp.taliann.dev/icesmp-38cc39433b566cd018380fa3de36ad7e003ee36c.zip"
-  sha1: "38cc39433b566cd018380fa3de36ad7e003ee36c"
+  override-url: ""
+  override-sha1: ""
   prompt: "&bAz IceSMP egyedi modelljeihez és felületéhez szükséges resource pack."
