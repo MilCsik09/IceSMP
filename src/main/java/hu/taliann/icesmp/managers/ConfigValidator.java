@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -92,7 +93,7 @@ public final class ConfigValidator {
     }
 
     private static int checkMaterial(final Logger logger, final String key, final String value) {
-        if (value == null || value.isBlank() || Material.matchMaterial(value) == null) {
+        if (value == null || value.isBlank() || ConfigMaterialResolver.match(value) == null) {
             logger.warning("Config: ismeretlen Material a(z) '" + key + "' kulcsnál: '" + value
                     + "' — ellenőrizd a nevet (pl. DIAMOND, ENCHANTED_GOLDEN_APPLE).");
             return 1;
