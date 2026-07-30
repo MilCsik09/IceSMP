@@ -306,7 +306,7 @@ public final class TerritoryCommand implements BasicCommand {
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(messageManager.get("territory-setcapital-usage",
+            sender.sendMessage(messageManager.get("territory-setcapital-selection-usage",
                     "&cHasználat: /territory setcapital <frakció> <sugár|selection> [név...]"));
             return;
         }
@@ -951,7 +951,9 @@ public final class TerritoryCommand implements BasicCommand {
         sender.sendMessage(messageManager.get("territory-help-circle",
                 "&e/territory circle <típus> <frakció> <id> <sugár> [név...] &7- Kör-terület."));
         sender.sendMessage(messageManager.get("territory-help-setcapital",
-                "&e/territory setcapital <frakció> <sugár|selection> [név...] &7- Főváros körből vagy claim-kijelölésből."));
+                "&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros (kör)."));
+        sender.sendMessage(messageManager.get("territory-help-setcapital-selection",
+                "&e/territory setcapital <frakció> selection [név...] &7- Pontos 3D főváros claim-kijelölésből."));
         sender.sendMessage(messageManager.get("territory-help-setspawn",
                 "&e/territory setspawn <frakció> &7- Királyság-spawn az aktuális pozíciódra."));
         sender.sendMessage(messageManager.get("territory-help-edit",
