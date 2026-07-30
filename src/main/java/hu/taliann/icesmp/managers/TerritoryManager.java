@@ -349,14 +349,11 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         final List<int[]> points = bounds.footprintPolygon();
         final String normalizedId = id.toLowerCase(Locale.ROOT);
 
-        long sumX = 0L;
-        long sumZ = 0L;
-        for (final int[] point : points) {
-            sumX += point[0];
-            sumZ += point[1];
-        }
-        final int centroidX = Math.toIntExact(sumX / points.size());
-        final int centroidZ = Math.toIntExact(sumZ / points.size());
+        // Use an actual selected block as the operational centre. Averaging the
+        // outer polygon edges with integer division rounds negative half-block
+        // centres toward zero and can place a one-block cuboid's centre outside.
+        final int centroidX = bounds.centerX();
+        final int centroidZ = bounds.centerZ();
         int boundingRadius = 1;
         for (final int[] point : points) {
             final long dx = (long) point[0] - centroidX;
