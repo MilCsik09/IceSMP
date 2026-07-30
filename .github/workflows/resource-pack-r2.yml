@@ -7,7 +7,6 @@ on:
       - master
     paths:
       - "resource-pack/**"
-      - ".github/workflows/resource-pack-r2.yml"
 
 permissions:
   contents: write
@@ -48,7 +47,7 @@ jobs:
             cd "$PACK_DIR"
             find . -type f -print0 \
               | LC_ALL=C sort -z \
-              | xargs -0 zip -X -q "../resource-pack/icesmp.zip"
+              | xargs -0 zip -X -q "../build/resource-pack/icesmp.zip"
           )
           SHA1="$(sha1sum build/resource-pack/icesmp.zip | awk '{print $1}')"
           FILE_NAME="icesmp-${SHA1}.zip"
