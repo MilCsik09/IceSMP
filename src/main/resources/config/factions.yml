@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — factions (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — factions (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # A nevek KANONIKUSAK (docs/LORE.md): a rövid alak a HUD/tab-on, a teljes a /faction info-ban.
 # A tényleges forrás a FactionType enum — ez a blokk dokumentáció, tartsd szinkronban.
 factions:
