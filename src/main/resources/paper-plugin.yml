@@ -19,8 +19,11 @@ authors: [ Taliann ]
 #    frakciót, kasztot, party-HUD-ot). load: BEFORE, hogy a regisztrációkor már elérhető legyen.
 #  - FancyNpcs: a TALK_TO_NPC quest-objektívák (kaszt-mester próbák). A reflexiós híd
 #    (FancyNpcsQuestBridge) join-classpath-tal éri el az API-ját futásidőben.
-#  - WorldGuard: a blokkot helyező események (meteor, kincs) kerülik a WG-régiókat. A
-#    reflexiós híd (ProtectionBridge) join-classpath-tal éri el az API-ját futásidőben.
+#  - WorldEdit/FastAsyncWorldEdit: a WorldGuard-híd Bukkit-adapterét és vektortípusait
+#    adja. A FAWE a WorldEdit nevet provides-aliasként biztosítja.
+#  - WorldGuard: a blokkot helyező események (meteor, kincs) kerülik a WG-régiókat, a
+#    személyes claimek pedig nem metszhetnek WG-régiót. A ProtectionBridge mindkét
+#    plugint opcionális, csatlakoztatott classpathon éri el.
 #  - LuckPerms: a natív chat-formázó a LP prefix/suffix-et jeleníti meg. A reflexiós híd
 #    (LuckPermsBridge) join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
 #  - TAB: csak load-order (az indulási kompatibilitás-tanácsadó megbízhatóan észlelje);
@@ -38,6 +41,10 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    WorldEdit:
+      load: BEFORE
+      required: false
+      join-classpath: true
     WorldGuard:
       load: BEFORE
       required: false
@@ -49,4 +56,3 @@ dependencies:
     TAB:
       load: BEFORE
       required: false
-
