@@ -90,6 +90,31 @@ def scan_components_and_features(root: Path, index: JavaIndex, commands: list[di
             if command: feature["commands"].append(command["id"])
 
     manifest_features = manifest.get("features", {})
+    # A deliberately componentless feature is still a valid documentation
+    # concept (for example, a lore-only plan explicitly classified as not
+    # implemented). Requiring an opt-in flag preserves stale-entry detection:
+    # arbitrary old manifest features are not silently promoted into inventory.
+    for feature_id, entry in manifest_features.items():
+        if feature_id in features or not isinstance(entry, dict) or entry.get("componentless") is not True:
+            continue
+        features[feature_id] = {
+            "id": feature_id,
+            "name": feature_id.split("feature.", 1)[-1],
+            "technical_description": entry.get(
+                "description",
+                "Explicitly documented componentless feature.",
+            ),
+            "sources": [],
+            "commands": [],
+            "permissions": [],
+            "config_sections": [],
+            "guis": [],
+            "message_keys": [],
+            "persistence": [],
+            "documentation": entry.get("docs", []),
+            "audience": entry.get("audience", ["INTERNAL"]),
+            "confidence": "HIGH",
+        }
     for feature_id, feature in features.items():
         entry = manifest_features.get(feature_id, {})
         if isinstance(entry, dict):

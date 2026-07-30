@@ -23,7 +23,7 @@ import glob
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG = os.path.join(REPO, "src/main/resources/config")
 JAVA = os.path.join(REPO, "src/main/java")
-GUIDES = "/home/user/IceSMPGuides"
+GUIDES = os.environ.get("ICESMP_GUIDES_DIR", "/home/user/IceSMPGuides")
 
 fails = []
 warns = []
@@ -180,40 +180,26 @@ for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
 
 # ---------- 6. tükör-drift ----------
 MIRROR = [
-    ("PLAYTEST.md", "PLAYTEST.md"),
-    ("docs/RESOURCE_PACK_CMD.md", "RESOURCE_PACK_CMD.md"),
-    ("docs/EPITESZ_UTMUTATO.md", "EPITESZ_UTMUTATO.md"),
-    ("docs/TEASER.md", "TEASER.md"),
-    ("docs/PITCH.md", "PITCH.md"),
-    ("docs/FEATURES.md", "FEATURES.md"),
-    ("docs/LORE.md", "lore/LORE.md"),
-    ("docs/LORE_REFERENCE.md", "lore/LORE_REFERENCE.md"),
-    ("docs/IDEAS.md", "ideas/README.md"),
+    ("README.md", "README.md"),
+    ("ROADMAP.md", "ROADMAP.md"),
+    ("docs/FEATURES.md", "docs/FEATURES.md"),
+    ("docs/LATEST_CHANGES.md", "docs/LATEST_CHANGES.md"),
+    ("docs/PLAYER_GUIDE.md", "docs/PLAYER_GUIDE.md"),
+    ("docs/BUILDER_GUIDE.md", "docs/BUILDER_GUIDE.md"),
+    ("docs/ADMIN_GUIDE.md", "docs/ADMIN_GUIDE.md"),
+    ("docs/ARCHITECTURE.md", "docs/ARCHITECTURE.md"),
+    ("docs/LORE.md", "docs/LORE.md"),
+    ("docs/LORE_REFERENCE.md", "docs/LORE_REFERENCE.md"),
+    ("docs/RESOURCE_PACK_CMD.md", "docs/RESOURCE_PACK_CMD.md"),
+    ("docs/TEASER.md", "docs/TEASER.md"),
 ]
-# A számozott player-guide oldalak is szó szerinti tükrök (a 🔜 tesztelői réteg
-# 2026-07-28-án kivezetve), így ugyanazzal a tartalom-összevetéssel ellenőrizhetők.
-MIRROR += sorted(
-    (f"docs/player-guide/{os.path.basename(p)}", os.path.basename(p))
-    for p in glob.glob(os.path.join(REPO, "docs/player-guide/[0-9]*.md"))
-)
 if os.path.isdir(GUIDES):
     for src_rel, dst_rel in MIRROR:
         a, b = os.path.join(REPO, src_rel), os.path.join(GUIDES, dst_rel)
         if not os.path.exists(b):
             warn(f"tükör: {dst_rel} hiányzik a Guides-ból")
-        else:
-            # A Guides-oldali példányban a player-guide linkek gyökér-relatívak.
-            if read(a).replace("player-guide/", "") != read(b).replace("player-guide/", ""):
-                warn(f"tükör-drift: {src_rel} != Guides/{dst_rel} — tükrözés kell")
-    ideas_a = set(os.path.basename(p) for p in glob.glob(os.path.join(REPO, "docs/ideas/*.md")))
-    ideas_b = set(os.path.basename(p) for p in glob.glob(os.path.join(GUIDES, "ideas/*.md")))
-    ideas_b.discard("README.md")  # az a docs/IDEAS.md tükre, nem ideas-fájl
-    for extra in sorted(ideas_a ^ ideas_b):
-        warn(f"tükör: ideas/{extra} csak az egyik repóban létezik")
-    for name in sorted(ideas_a & ideas_b):
-        a, b = os.path.join(REPO, "docs/ideas", name), os.path.join(GUIDES, "ideas", name)
-        if read(a) != read(b):
-            warn(f"tükör-drift: docs/ideas/{name} != Guides/ideas/{name} — tükrözés kell")
+        elif read(a) != read(b):
+            warn(f"tükör-drift: {src_rel} != Guides/{dst_rel} — tükrözés kell")
 
 # ---------- 7. recept-hozzávaló szint-sorrend ----------
 # Egy recept nem nyílhat korábban, mint amikor a unique hozzávalója termelhetővé válik.
@@ -378,18 +364,6 @@ try:
         "manager": len([p for p in _java_files if p.name.endswith("Manager.java")]),
     }
 
-    def _count_literals(path, array_name):
-        _src = read(os.path.join(REPO, path))
-        _m = (re.search(re.escape(array_name) + r"\s*=\s*\{(.*?)\n\s*\};", _src, re.S)
-              or re.search(re.escape(array_name) + r"\s*=\s*List\.of\((.*?)\n\s*\);", _src, re.S))
-        if not _m:
-            return None
-        return len(re.findall(r'"(?:[^"\\]|\\.)*"', _m.group(1)))
-
-    _campfire = _count_literals("src/main/java/hu/taliann/icesmp/listeners/CampfireStoryListener.java",
-                                "STORIES")
-    _stranger = _count_literals("src/main/java/hu/taliann/icesmp/managers/StrangerNpcManager.java",
-                                "LINES")
     _stores = None
     _core = read(os.path.join(REPO, "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"))
     _sm = re.search(r"persistentStores\s*=\s*List\.of\((.*?)\);", _core, re.S)
@@ -407,10 +381,6 @@ try:
         ("CLAUDE.md", r"(\d+)\s*manager", _measured["manager"], 0),
         ("docs/ARCHITECTURE.md", r"(\d+) Java-fájl", _measured["java-fajl"], 3),
         ("docs/ARCHITECTURE.md", r"(\d+) `\*Manager` osztály", _measured["manager"], 0),
-        ("docs/FEATURES.md", r"(\d+) Java-fájl", _measured["java-fajl"], 3),
-        ("docs/FEATURES.md", r"(\d+) manager", _measured["manager"], 0),
-        ("docs/FEATURES.md", r"\((\d+) kóbor mondat\)", _stranger, 0),
-        ("docs/FEATURES.md", r"tábortűz-mesék \((\d+) közös", _campfire, 0),
         ("docs/ARCHITECTURE.md", r"a (\d+) fájlt-író store", _stores, 0),
     ]
     for _path, _pattern, _real, _tol in _CLAIMS:

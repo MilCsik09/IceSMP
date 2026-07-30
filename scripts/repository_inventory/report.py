@@ -16,7 +16,11 @@ def write_repository_reports(output: Path, inventory: dict[str, Any]) -> None:
     output.mkdir(parents=True, exist_ok=True)
     dump_json(output / "repository-inventory.json", inventory)
     mapping = {
-        "commands.json": inventory.get("commands", []), "permissions.json": inventory.get("permissions", []),
+        "commands.json": inventory.get("commands", []),
+        "routes.json": inventory.get("routes", inventory.get("subcommands", [])),
+        "root-aliases.json": inventory.get("root_aliases", []),
+        "routing-aliases.json": inventory.get("routing_aliases", []),
+        "permissions.json": inventory.get("permissions", []),
         "config-keys.json": inventory.get("config_keys", []), "message-keys.json": inventory.get("message_keys", []),
         "features.json": inventory.get("features", []), "components.json": inventory.get("components", []),
         "documentation-coverage.json": inventory.get("documentation_coverage", {}),
@@ -26,7 +30,7 @@ def write_repository_reports(output: Path, inventory: dict[str, Any]) -> None:
                          ["Path", "Audience", "Permission", "Aliases", "Implementation", "Confidence"],
                          (("/" + x["path"].replace(".", " "), ", ".join(x.get("audience", [])), ", ".join(x.get("permission", [])),
                            ", ".join(x.get("aliases", [])), x.get("implementation") or x.get("implementation_method", ""), x.get("confidence"))
-                          for x in [*inventory.get("commands", []), *inventory.get("subcommands", [])]))
+                          for x in [*inventory.get("commands", []), *inventory.get("routes", inventory.get("subcommands", []))]))
     write_markdown_table(output / "permissions.md", "Permission inventory",
                          ["Node", "Audience", "Commands", "GUI", "Listeners", "Confidence"],
                          ((x["node"], x["audience"], ", ".join(x["commands"]), ", ".join(x["guis"]), ", ".join(x["listeners"]), x["confidence"])
@@ -54,8 +58,9 @@ def write_repository_reports(output: Path, inventory: dict[str, Any]) -> None:
     result = "FAIL" if severities["FAIL"] else ("WARN" if severities["WARN"] or severities["REVIEW_REQUIRED"] else "PASS")
     lines = ["# Repository Documentation Inventory", "", f"**Result: {result}**", "", "```text",
              f"Root commands:          {counts.get('root_commands', 0)}",
-             f"Subcommands:            {counts.get('subcommands', 0)}",
-             f"Aliases:                {counts.get('aliases', 0)}",
+             f"Functional routes:      {counts.get('functional_routes', counts.get('subcommands', 0))}",
+             f"Root aliases:           {counts.get('root_aliases', counts.get('aliases', 0))}",
+             f"Routing aliases:        {counts.get('routing_aliases', 0)}",
              f"Permissions:            {counts.get('permissions', 0)}",
              f"Player features:        {counts.get('player_features', 0)}",
              f"Admin features:         {counts.get('admin_features', 0)}",

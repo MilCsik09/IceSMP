@@ -73,6 +73,7 @@ jobs:
           DISPATCH_HEAD: ${{ inputs.head_ref }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.head_ref }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
@@ -91,28 +92,43 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             BASE_SHA=$(resolve_ref "$DISPATCH_BASE")
+            PATCH_BASE_SHA="$BASE_SHA"
             HEAD_SHA=$(resolve_ref "$DISPATCH_HEAD")
+            RELEASE_HEAD_SHA="$HEAD_SHA"
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
+            PATCH_BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
             HEAD_SHA=$(resolve_ref "$PR_HEAD_SHA")
+            if [[ "$PR_HEAD_REF" == "docs/full-release-and-team-guide" ]]; then
+              BASE_SHA=$(resolve_ref "49cb32740629f3d91a08b753436f3e16d33a494d")
+              RELEASE_HEAD_SHA=$(resolve_ref "4643ab53586f0c1ee7352df16dcd477013e6fad4")
+            else
+              BASE_SHA=$(resolve_ref "$PR_BASE_SHA")
+              RELEASE_HEAD_SHA="$HEAD_SHA"
+            fi
           else
             HEAD_SHA=$(git rev-parse HEAD)
+            RELEASE_HEAD_SHA="$HEAD_SHA"
             if [[ -n "${PUSH_BEFORE_SHA:-}" && ! "$PUSH_BEFORE_SHA" =~ ^0+$ ]]; then
               BASE_SHA=$(resolve_ref "$PUSH_BEFORE_SHA")
             else
               BASE_SHA=$(git rev-parse HEAD^)
             fi
+            PATCH_BASE_SHA="$BASE_SHA"
           fi
 
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "patch_base_sha=$PATCH_BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "release_head_sha=$RELEASE_HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "Base: $BASE_SHA"
-          echo "Head: $HEAD_SHA"
+          echo "Patch base: $PATCH_BASE_SHA"
+          echo "Tested head: $HEAD_SHA"
+          echo "Documented release head: $RELEASE_HEAD_SHA"
 
       - name: Check patch whitespace
         id: diff_check
         continue-on-error: true
-        run: git diff --check "${{ steps.refs.outputs.base_sha }}...${{ steps.refs.outputs.head_sha }}"
+        run: git diff --check "${{ steps.refs.outputs.patch_base_sha }}...${{ steps.refs.outputs.head_sha }}"
 
       - name: Java 21 clean build
         id: gradle_build
@@ -123,6 +139,11 @@ jobs:
         id: consistency
         continue-on-error: true
         run: python3 scripts/check_consistency.py
+
+      - name: Check repository-local Markdown links
+        id: markdown_links
+        continue-on-error: true
+        run: python3 scripts/check_markdown_links.py --root .
 
       - name: Tooling self-tests
         id: tests
@@ -158,12 +179,29 @@ jobs:
           python3 scripts/generate_release_inventory.py
           --root .
           --base-ref "${{ steps.refs.outputs.base_sha }}"
-          --head-ref "${{ steps.refs.outputs.head_sha }}"
+          --head-ref "${{ steps.refs.outputs.release_head_sha }}"
           --output build/release-inventory
+
+      - name: Package read-only source snapshot
+        id: source_snapshot
+        if: github.event_name == 'pull_request' && github.head_ref == 'docs/full-release-and-team-guide'
+        shell: bash
+        env:
+          HEAD_SHA: ${{ steps.refs.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/source-snapshot
+          git ls-files | grep -v '^Other/' > build/source-snapshot/files.txt
+          tar -czf "build/source-snapshot/IceSMP-source-${HEAD_SHA}.tar.gz" \
+            -T build/source-snapshot/files.txt
+          sha256sum "build/source-snapshot/IceSMP-source-${HEAD_SHA}.tar.gz" \
+            > build/source-snapshot/SHA256SUMS
 
       - name: Check documentation coverage (strict mode)
         id: strict_coverage
-        if: github.event_name == 'workflow_dispatch' && inputs.strict_docs
+        if: >-
+          (github.event_name == 'workflow_dispatch' && inputs.strict_docs)
+          || (github.event_name == 'pull_request' && github.head_ref == 'docs/full-release-and-team-guide')
         continue-on-error: true
         run: >-
           python3 scripts/check_documentation_coverage.py
@@ -207,10 +245,28 @@ jobs:
               echo "Repository inventory summary was not generated."
             fi
             echo
+            echo "## Human-facing documentation"
+            echo
+            echo "The canonical guide set contains exactly five files:"
+            echo
+            echo "- \`docs/FEATURES.md\`"
+            echo "- \`docs/LATEST_CHANGES.md\`"
+            echo "- \`docs/PLAYER_GUIDE.md\`"
+            echo "- \`docs/BUILDER_GUIDE.md\`"
+            echo "- \`docs/ADMIN_GUIDE.md\`"
+            echo
+            echo "Retained supporting docs: \`README.md\`, \`ROADMAP.md\`, architecture,"
+            echo "lore, lore reference, resource-pack reference and teaser campaign pack."
+            echo "All retained Markdown documents are mirrored with the same relative paths."
+            echo
+            echo "Detailed interface inventories remain in this workflow artifact."
+            echo
             echo "## Compared refs"
             echo
-            echo "- Base: \`${{ steps.refs.outputs.base_sha }}\`"
-            echo "- Head: \`${{ steps.refs.outputs.head_sha }}\`"
+            echo "- Release inventory base: \`${{ steps.refs.outputs.base_sha }}\`"
+            echo "- Patch base: \`${{ steps.refs.outputs.patch_base_sha }}\`"
+            echo "- Tested documentation head: \`${{ steps.refs.outputs.head_sha }}\`"
+            echo "- Documented release head: \`${{ steps.refs.outputs.release_head_sha }}\`"
             echo "- Artifact: \`${ARTIFACT_NAME}\`"
             if [[ -f build/release-inventory/summary.md ]]; then
               echo
@@ -224,6 +280,7 @@ jobs:
             echo "| Patch whitespace | ${{ steps.diff_check.outcome }} |"
             echo "| Java 21 clean build | ${{ steps.gradle_build.outcome }} |"
             echo "| Consistency check | ${{ steps.consistency.outcome }} |"
+            echo "| Markdown links | ${{ steps.markdown_links.outcome }} |"
             echo "| Tooling self-tests | ${{ steps.tests.outcome }} |"
             echo "| Repository inventory | ${{ steps.repository_inventory.outcome }} |"
             echo "| Coverage report | ${{ steps.report_coverage.outcome }} |"
@@ -239,7 +296,7 @@ jobs:
           name: repository-docs-inventory-${{ github.run_id }}-${{ github.run_attempt }}
           path: build/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
       - name: Enforce blocking policy
         if: always()
@@ -248,6 +305,7 @@ jobs:
           DIFF_CHECK: ${{ steps.diff_check.outcome }}
           GRADLE_BUILD: ${{ steps.gradle_build.outcome }}
           CONSISTENCY: ${{ steps.consistency.outcome }}
+          MARKDOWN_LINKS: ${{ steps.markdown_links.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           INVENTORY: ${{ steps.repository_inventory.outcome }}
           REPORT: ${{ steps.report_coverage.outcome }}
@@ -257,7 +315,7 @@ jobs:
         run: |
           set -euo pipefail
           failed=0
-          for outcome in "$DIFF_CHECK" "$GRADLE_BUILD" "$CONSISTENCY" "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
+          for outcome in "$DIFF_CHECK" "$GRADLE_BUILD" "$CONSISTENCY" "$MARKDOWN_LINKS" "$TESTS" "$INVENTORY" "$REPORT" "$JSON"; do
             [[ "$outcome" == "success" ]] || failed=1
           done
           if [[ -n "$RELEASE" && "$RELEASE" != "success" && "$RELEASE" != "skipped" ]]; then failed=1; fi

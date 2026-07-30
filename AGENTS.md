@@ -5,7 +5,7 @@
 - **Folia-compatible:** `folia-supported: true` in `paper-plugin.yml`; every task runs on region/entity schedulers (never `Bukkit.getScheduler()`, never async entity access).
 - Entry points: `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader` (declared in `paper-plugin.yml`); runtime orchestration in `core/IceSMPCore.java` (manager construction → `load()` → listeners → commands → schedulers; `save()`/cleanup in `disable()`).
 - Soft dependencies — **all five are runtime-optional reflective bridges in `integration/`; the plugin runs fully without any of them** (declared in `paper-plugin.yml` under `dependencies.server`, `required: false`): **PlaceholderAPI** (`IceSMPPlaceholders`, `compileOnly`, registered reflectively from `IceSMPCore.registerPlaceholders()`; exposes `%icesmp_...%`), **LibsDisguises** (`DruidDisguise`, `compileOnly` with `isTransitive = false`, for Druid form visuals), **FancyNpcs** (`FancyNpcsQuestBridge`, pure reflection — no build dependency — feeding TALK_TO_NPC quest objectives), **WorldGuard** (`ProtectionBridge`, pure reflection — meteor/treasure block-placing events skip WG regions) and **LuckPerms** (`LuckPermsBridge`, pure reflection — the native chat formatter shows LP prefix/suffix). Only PlaceholderAPI and LibsDisguises are build-time (`compileOnly`) dependencies; the other three are reached purely via reflection + `join-classpath`.
-- Docs: `README.md` (overview) • `docs/player-guide/` (player manual — the single source of truth; `PLAYER_GUIDE.md` is just an index) • `PLAYTEST.md` (tester handbook incl. permission nodes and admin triggers) • `docs/ARCHITECTURE.md` (technical reference, **Folia rules in section 4**) • `ROADMAP.md` (planned work) • `docs/ideas/BACKLOG.md` (consolidated open ideas) • `docs/ideas/PROJEKT-AUDIT.md` (live audit, updated in place). Prefer source files for exact current behavior.
+- Human-facing docs have exactly five canonical guides: `docs/FEATURES.md`, `docs/LATEST_CHANGES.md`, `docs/PLAYER_GUIDE.md`, `docs/BUILDER_GUIDE.md` and `docs/ADMIN_GUIDE.md`. `README.md` is only their project index. `docs/ARCHITECTURE.md`, `docs/RESOURCE_PACK_CMD.md`, `docs/LORE*.md`, `docs/TEASER.md` and `ROADMAP.md` are supporting sources, not competing operational guides. `ROADMAP.md` is the single home for open findings and uncommitted ideas. Exact interface inventories are CI artifacts; prefer source files for exact runtime behavior.
 
 ## Domain snapshot (current, verified against code)
 - **13 classes** (`data/JobType`), **35 specializations** (`data/SpecializationType`), ~390 spells. **One class per player** (the secondary-class system was removed); the choice is permanent — admin reset via `/class admin resetclass <player>` (wipes class + spec + unlocked spells; also clears legacy `job_secondary*` PDC).
@@ -29,24 +29,26 @@
 ./gradlew build      # plugin jar -> build/libs
 ./gradlew runServer  # local test server (run/ directory)
 ```
-- Nincs teszt-suite; az ellenőrzés = hibátlan fordítás + kézi playtest (`PLAYTEST.md`).
+- A `check` task dependency-free regressziós suite-okat futtat a persistence,
+  DEV-item, moderáció, MOTD, sit, crate és globális AFK területén. Ezek mellett
+  a hibátlan build, a consistency gate és az
+  `docs/ADMIN_GUIDE.md#release-acceptance-checklist` szerinti kézi playtest is kötelező.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve): a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss: `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van megadva, azt is lehet használni, de ne feltételezz fix `/opt/gradle` útvonalat.
 - In sandboxed environments where Gradle cannot reach the repos, compile against the cached server libraries instead: `javac -d <out> -cp "$(find run/libraries -iname '*.jar' | tr '\n' ':')" <sources>` — exclude `integration/IceSMPPlaceholders.java` if the PlaceholderAPI jar is unavailable locally (it compiles in the real build). Treat this as a rough preflight only; the full source set must still produce 0 errors in the real build before pushing.
 - **Before every push:** compile-verify AND run `python3 scripts/check_consistency.py` (quest refs, ITEM_MODEL regression guard, permission registration, /menu targets, mirror drift) — 0 FAIL required.
 
 ## Docs and IceSMPGuides mirror
-- **MD policy:** create a new `.md` file only on explicit owner request. Update live audits in `docs/ideas/PROJEKT-AUDIT.md` in place; consolidate new ideas in `docs/ideas/BACKLOG.md`. `PLAYER_GUIDE.md` is only an index; the source of truth is `docs/player-guide/`.
+- **MD policy:** create a new `.md` file only on explicit owner request. Update one of the five canonical guides instead of creating another feature/reference/release page. Put verified open findings and not-yet-committed ideas in the appropriate section of the single `ROADMAP.md`; do not create parallel audit diaries or backlog pages.
 - **Definition of Done — every gameplay change propagates in the same commit:**
-  - new command → tab-complete + `/menu` tile (`CommandMenus`) + `docs/player-guide/14-parancsok.md` + permission node;
+  - new command → tab-complete + `/menu` tile (`CommandMenus`) + the relevant player section in `docs/PLAYER_GUIDE.md` + the command reference in `docs/ADMIN_GUIDE.md` + permission node;
   - new permission node → `Permissions.java` canonical map, otherwise `icesmp.admin.all` will not grant it;
   - new config key → use-site read for live reload + ConfigMenuGUI when admin-tunable;
   - new custom item → modern `ITEM_MODEL` (`item-model:` or `ItemDataFactory.applyItemModel`) + `docs/RESOURCE_PACK_CMD.md` manifest row; never add legacy numeric model data for new items;
-  - new quest NPC or territory id → add it to the P2 audit worldbuilding checklist;
-  - new system/mechanic → relevant `docs/player-guide/` page + `PLAYTEST.md` block + `docs/LORE_REFERENCE.md` row when lore-bound + README feature list if that list mentions it;
+  - new quest NPC or territory id → add it to `docs/BUILDER_GUIDE.md` and the applicable builder gate in `ROADMAP.md`;
+  - new system/mechanic → `docs/FEATURES.md` + the relevant role guide + an acceptance case in `docs/ADMIN_GUIDE.md` + `docs/LORE_REFERENCE.md` row when lore-bound;
   - every numeric docs claim must match `src/main/resources/config/*.yml`;
   - before closing: compile verification + `python3 scripts/check_consistency.py` + IceSMPGuides mirror sync/check.
-- **IceSMPGuides mirror:** the public guide repo is `MilCsik09/IceSMPGuides`. Mirror the relevant docs after every affected docs change. Mapping: `PLAYTEST.md` ↔ guide root; `docs/player-guide/NN-*.md` ↔ guide root numbered files; `docs/RESOURCE_PACK_CMD.md`, `docs/EPITESZ_UTMUTATO.md`, `docs/TEASER.md`, `docs/PITCH.md`, `docs/FEATURES.md` ↔ guide root; `docs/LORE.md` + `docs/LORE_REFERENCE.md` ↔ `lore/`; `docs/ideas/*` ↔ `ideas/`; `docs/IDEAS.md` ↔ `ideas/README.md`.
-- Mirroring is a **verbatim copy from the canonical IceSMP side** — the former guide-side tester-marker (🔜) layer was retired by owner decision on 2026-07-28, so no content merge is needed (the checker still tolerates the root-relative `player-guide/` link difference). `scripts/check_consistency.py` content-checks every mirrored file — including the numbered player-guide pages, `docs/IDEAS.md` and `ideas/*` — when the IceSMPGuides checkout is available at its configured path (currently `/home/user/IceSMPGuides` in the checker).
+- **IceSMPGuides mirror:** the public guide repo is `MilCsik09/IceSMPGuides`. Mirror every retained Markdown document verbatim with the same relative path: `README.md`, `ROADMAP.md`, the five canonical guides, `docs/ARCHITECTURE.md`, `docs/LORE.md`, `docs/LORE_REFERENCE.md`, `docs/RESOURCE_PACK_CMD.md` and `docs/TEASER.md`. Do not keep duplicate root-level guide copies. `scripts/check_consistency.py` content-checks the mirror when the checkout is available through `ICESMP_GUIDES_DIR` (fallback: `/home/user/IceSMPGuides`).
 
 ## Folia rules (CRITICAL — see docs/ARCHITECTURE.md §4)
 - Events fire on the event entity's region thread. **Mutating (or reading PDC/inventory of) any OTHER entity — including `killer.sendMessage` — requires hopping to that entity's scheduler:** `target.getScheduler().run(plugin, task -> {...}, null)`. The kill-reward listeners, admin target-player subcommands, MarketGUI seller notice and SiegeWeapon remote explosion all follow this pattern — copy it.

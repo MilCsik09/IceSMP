@@ -27,14 +27,22 @@ def generate_inventory(root: Path, mode: str = "report") -> dict[str, Any]:
     else:
         manifest_error = None
     index = JavaIndex(root)
-    commands, subcommands, command_findings = scan_commands(root, index, manifest)
+    commands, routes, root_aliases, routing_aliases, command_findings = scan_commands(root, index, manifest)
+    subcommands = routes  # Backward-compatible key for release delta and feature scanners.
     permissions, permission_findings = scan_permissions(root, index, commands, subcommands, manifest)
     config_keys, config_findings = scan_config(root, index, manifest)
     message_keys, message_findings = scan_messages(root, index)
     features, components, component_findings = scan_components_and_features(root, index, commands, permissions, manifest)
     findings = [*command_findings, *permission_findings, *config_findings, *message_findings, *component_findings]
     if manifest_error: findings.insert(0, manifest_error)
-    ids = [x["id"] for group in (commands, subcommands, permissions, config_keys, message_keys, features, components) for x in group]
+    ids = [
+        x["id"]
+        for group in (
+            commands, routes, root_aliases, routing_aliases, permissions,
+            config_keys, message_keys, features, components,
+        )
+        for x in group
+    ]
     for stable_id in sorted(set(ids)):
         if ids.count(stable_id) > 1:
             findings.append(Finding("FAIL", "DUPLICATE_STABLE_ID", f"Duplicate stable ID across inventory: {stable_id}", stable_id))
@@ -46,7 +54,9 @@ def generate_inventory(root: Path, mode: str = "report") -> dict[str, Any]:
         "schema_version": 1, "tool_version": TOOL_VERSION,
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "repository_root": ".", "git_sha": sha,
-        "commands": commands, "subcommands": subcommands, "permissions": permissions,
+        "commands": commands, "routes": routes, "subcommands": subcommands,
+        "root_aliases": root_aliases, "routing_aliases": routing_aliases,
+        "permissions": permissions,
         "config_keys": config_keys, "message_keys": message_keys, "features": features, "components": components,
         "findings": [item.to_dict() for item in sorted(findings)],
     }
@@ -55,13 +65,17 @@ def generate_inventory(root: Path, mode: str = "report") -> dict[str, Any]:
     inventory["findings"].extend(coverage["findings"])
     inventory["findings"] = sorted(inventory["findings"], key=lambda x: (x["severity"], x["code"], x.get("stable_id", ""), x["message"]))
     counts = {
-        "root_commands": len(commands), "subcommands": len(subcommands),
-        "aliases": sum(len(x.get("aliases", [])) for x in commands), "permissions": len(permissions),
+        "root_commands": len(commands), "functional_routes": len(routes), "subcommands": len(subcommands),
+        "root_aliases": len(root_aliases), "routing_aliases": len(routing_aliases),
+        "aliases": len(root_aliases), "permissions": len(permissions),
         "config_keys": len(config_keys), "message_keys": len(message_keys), "features": len(features), "components": len(components),
         "player_features": sum(1 for x in features if "PLAYER" in x.get("audience", [])),
         "admin_features": sum(1 for x in features if set(x.get("audience", [])) & {"ADMIN", "MODERATOR"}),
         "unclassified": sum(1 for x in components if x.get("confidence") == "REVIEW_REQUIRED"),
-        "undocumented_commands": sum(1 for x in coverage["undocumented"] if x.startswith("command.") or x.startswith("alias.")),
+        "undocumented_commands": sum(
+            1 for x in coverage["undocumented"]
+            if x.startswith(("command.", "alias.", "route.", "route-alias."))
+        ),
         "undocumented_features": sum(1 for x in coverage["undocumented"] if x.startswith("feature.")),
     }
     counts.update({f"findings_{k.lower()}": v for k, v in finding_counts(inventory["findings"]).items()})

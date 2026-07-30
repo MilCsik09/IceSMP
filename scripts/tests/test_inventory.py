@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -12,6 +13,11 @@ sys.path.insert(0, str(SCRIPTS))
 
 from repository_inventory.delta import compare_inventories
 from repository_inventory.inventory import generate_inventory
+from repository_inventory.command_scanner import (
+    root_alias_stable_id,
+    route_stable_id,
+    routing_alias_stable_id,
+)
 
 
 class InventoryFixtureTest(unittest.TestCase):
@@ -37,7 +43,8 @@ class InventoryFixtureTest(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
 
     def manifest(self, extra: dict | None = None) -> None:
-        data = {"version": 1, "commands": {}, "features": {}, "permissions": {},
+        data = {"version": 1, "documentation-policy": {"artifact-backed-sections": []},
+                "commands": {}, "features": {}, "permissions": {},
                 "config-sections": {}, "components": {}, "explicit-ignores": {}}
         if extra:
             for key, value in extra.items(): data[key].update(value)
@@ -191,6 +198,36 @@ public final class Core { void r(){ plugin.registerCommand(COMMAND_NAME, "x", al
         self.assertIn("DOC_MARKER_MISSING", codes)
         self.assertIn("STALE_MANIFEST_ENTRY", codes)
 
+    def test_explicit_componentless_feature_is_inventory_backed(self) -> None:
+        self.base_sources()
+        marker = "<!-- icesmp-doc-id: feature.planning.lore-only -->\n"
+        self.write("docs/features.md", marker)
+        self.manifest({"features": {
+            "feature.planning.lore-only": {
+                "audience": ["INTERNAL"],
+                "description": "Planned, but not implemented.",
+                "docs": ["docs/features.md"],
+                "componentless": True,
+            },
+            "feature.stale": {
+                "audience": ["INTERNAL"],
+                "description": "Old manifest residue.",
+                "docs": ["docs/features.md"],
+            },
+        }})
+        self.commit()
+        inventory = generate_inventory(self.root)
+        feature_ids = {feature["id"] for feature in inventory["features"]}
+        self.assertIn("feature.planning.lore-only", feature_ids)
+        self.assertNotIn("feature.stale", feature_ids)
+        stale_ids = {
+            finding.get("stable_id")
+            for finding in inventory["findings"]
+            if finding.get("code") == "STALE_MANIFEST_ENTRY"
+        }
+        self.assertNotIn("feature.planning.lore-only", stale_ids)
+        self.assertIn("feature.stale", stale_ids)
+
     def test_repository_cli_writes_complete_artifact_set(self) -> None:
         self.base_sources(); self.manifest(); self.commit()
         output = self.root / "build/repository-inventory"
@@ -198,7 +235,8 @@ public final class Core { void r(){ plugin.registerCommand(COMMAND_NAME, "x", al
                                     "--root", str(self.root), "--output", str(output), "--mode", "report"],
                                    cwd=self.root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertIn(completed.returncode, (0, 1), completed.stderr)
-        expected = {"repository-inventory.json", "commands.json", "commands.md", "permissions.json",
+        expected = {"repository-inventory.json", "commands.json", "routes.json",
+                    "root-aliases.json", "routing-aliases.json", "commands.md", "permissions.json",
                     "permissions.md", "config-keys.json", "config-keys.md", "message-keys.json",
                     "message-keys.md", "features.json", "features.md", "components.json",
                     "documentation-coverage.json", "documentation-coverage.md", "review-required.md",
@@ -210,6 +248,151 @@ public final class Core { void r(){ plugin.registerCommand(COMMAND_NAME, "x", al
         one = generate_inventory(self.root)
         two = generate_inventory(self.root)
         self.assertEqual(one["deterministic_fingerprint"], two["deterministic_fingerprint"])
+
+    def exact_command_fixture(self) -> tuple[str, str]:
+        self.write("src/main/java/example/core/Core.java", '''package example.core;
+import java.util.List;
+public final class Core {
+  void register() {
+    plugin.registerCommand("root", "Root", List.of("r"), new example.commands.RootCommand());
+  }
+}''')
+        self.write("src/main/java/example/commands/RootCommand.java", '''package example.commands;
+public final class RootCommand implements BasicCommand {
+  public void execute(CommandSourceStack stack, String[] args) {
+    if (args.length > 0) helper(stack, args);
+  }
+  private void helper(CommandSourceStack stack, String[] args) {}
+}''')
+        root_route = route_stable_id("root", "/root")
+        nested_route = route_stable_id("root", "/root nested <value>")
+        route_alias = routing_alias_stable_id(nested_route, "n")
+        entries = {
+            "command.root": {
+                "kind": "root", "name": "root", "aliases": ["r"], "description": "Root",
+                "implementation": "RootCommand", "registration_file": "src/main/java/example/core/Core.java",
+                "registration_line": 4, "docs": ["docs/commands.md"],
+            },
+            root_alias_stable_id("root", "r"): {
+                "kind": "root-alias", "root": "root", "alias": "r",
+                "source": "src/main/java/example/core/Core.java", "line": 4, "docs": ["docs/commands.md"],
+            },
+            root_route: {
+                "kind": "route", "root": "root", "syntax": "/root", "purpose": "Help",
+                "executor": "Player", "permission": "—", "tab_completion": "nincs",
+                "gui_alternative": "—", "limitation": "—", "present_in_deployed": False,
+                "deployed_status": "Új", "route_aliases": [],
+                "source": "src/main/java/example/commands/RootCommand.java", "line": 1,
+                "docs": ["docs/commands.md"],
+            },
+            nested_route: {
+                "kind": "route", "root": "root", "syntax": "/root nested <value>",
+                "purpose": "Nested action", "executor": "Player", "permission": "—",
+                "tab_completion": "nested", "gui_alternative": "—", "limitation": "—",
+                "present_in_deployed": False, "deployed_status": "Új", "route_aliases": ["n"],
+                "source": "src/main/java/example/commands/RootCommand.java", "line": 1,
+                "docs": ["docs/commands.md"],
+            },
+            route_alias: {
+                "kind": "routing-alias", "root": "root", "route": nested_route, "alias": "n",
+                "source": "src/main/java/example/commands/RootCommand.java", "line": 1,
+                "docs": ["docs/commands.md"],
+            },
+        }
+        source_hashes = {
+            relative: hashlib.sha256((self.root / relative).read_bytes()).hexdigest()
+            for relative in (
+                "src/main/java/example/core/Core.java",
+                "src/main/java/example/commands/RootCommand.java",
+            )
+        }
+        entries_hash = hashlib.sha256(
+            json.dumps(entries, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        contract = {
+            "_contract": {
+                "version": 1,
+                "entries_sha256": entries_hash,
+                "expected_counts": {
+                    "root_commands": 1, "functional_routes": 2,
+                    "root_aliases": 1, "routing_aliases": 1,
+                },
+                "source_sha256": source_hashes,
+            },
+            **entries,
+        }
+        self.write(
+            "docs/commands.md",
+            "\n".join(f"<!-- icesmp-doc-id: {stable_id} -->" for stable_id in entries),
+        )
+        self.manifest({"commands": contract})
+        self.commit()
+        return nested_route, route_alias
+
+    def test_exact_command_contract_resolves_routes_and_both_alias_kinds(self) -> None:
+        nested_route, route_alias = self.exact_command_fixture()
+        inventory = generate_inventory(self.root)
+        self.assertEqual(inventory["counts"]["root_commands"], 1)
+        self.assertEqual(inventory["counts"]["functional_routes"], 2)
+        self.assertEqual(inventory["counts"]["root_aliases"], 1)
+        self.assertEqual(inventory["counts"]["routing_aliases"], 1)
+        self.assertIn(nested_route, {item["id"] for item in inventory["routes"]})
+        self.assertIn(route_alias, {item["id"] for item in inventory["routing_aliases"]})
+        codes = {item["code"] for item in inventory["findings"]}
+        self.assertNotIn("DYNAMIC_COMMAND_ROUTING", codes)
+        self.assertNotIn("NESTED_PARENT_UNRESOLVED", codes)
+        self.assertEqual(inventory["documentation_coverage"]["metrics"]["routing_aliases_documented"], 100.0)
+
+    def test_exact_command_contract_fails_closed_on_route_source_change(self) -> None:
+        self.exact_command_fixture()
+        path = self.root / "src/main/java/example/commands/RootCommand.java"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "if (args.length > 0) helper(stack, args);",
+                'if (args.length > 0) helper(stack, args); if ("new".equals(args[0])) helper(stack, args);',
+            ),
+            encoding="utf-8",
+        )
+        inventory = generate_inventory(self.root)
+        failures = {item["code"] for item in inventory["findings"] if item["severity"] == "FAIL"}
+        self.assertIn("COMMAND_CONTRACT_SOURCE_DRIFT", failures)
+
+    def test_artifact_backed_commands_do_not_need_inline_marker_dump(self) -> None:
+        self.exact_command_fixture()
+        manifest_path = self.root / "docs/documentation-manifest.yml"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["documentation-policy"] = {"artifact-backed-sections": ["commands"]}
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        self.write("docs/commands.md", "# Human command guide\n")
+
+        inventory = generate_inventory(self.root)
+        coverage = inventory["documentation_coverage"]
+        codes = {item["code"] for item in coverage["findings"]}
+        self.assertNotIn("DOC_MARKER_MISSING", codes)
+        self.assertEqual(coverage["metrics"]["commands_documented"], 100.0)
+        self.assertEqual(coverage["metrics"]["subcommands_documented"], 100.0)
+        self.assertEqual(coverage["metrics"]["aliases_documented"], 100.0)
+        self.assertEqual(coverage["artifact_backed_sections"], ["commands"])
+
+    def test_all_exact_reference_sections_can_be_artifact_backed(self) -> None:
+        self.exact_command_fixture()
+        manifest_path = self.root / "docs/documentation-manifest.yml"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["documentation-policy"] = {
+            "artifact-backed-sections": [
+                "commands", "permissions", "config-sections", "components"
+            ]
+        }
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        self.write("docs/commands.md", "# Human-readable workflows\n")
+
+        coverage = generate_inventory(self.root)["documentation_coverage"]
+        codes = {item["code"] for item in coverage["findings"]}
+        self.assertNotIn("DOC_MARKER_MISSING", codes)
+        self.assertEqual(
+            coverage["artifact_backed_sections"],
+            ["commands", "components", "config-sections", "permissions"],
+        )
 
     def test_delta(self) -> None:
         base = {"commands": [{"id": "command.a", "name": "a"}], "subcommands": [], "permissions": [], "config_keys": [], "message_keys": [], "features": [], "components": []}
