@@ -1213,6 +1213,7 @@ jelölje: az alatta megadott bizonyítékhelyet is töltse ki.
 |---|---|---|---|---|---|---|
 | [ ] | WORLD-01 Crate helyek | Builder/admin | minden final crate block és világ | location, block és world policy egyezik | hely újrakötése | `world/WORLD-01/` |
 | [ ] | WORLD-02 Territórium/claim | Builder/admin | határpontok és bypass profil | védelem, trust és zónaszabály helyes | építés stop | `world/WORLD-02/` |
+| [ ] | WORLD-02B 3D főváros | Builder/admin | radiusos és claim-kijelöléses főváros stagingen | radius mód változatlan; a hat XYZ-határ, vertikális/világváltás, restart, `/territory show`, claim-konfliktus, kijelölés-életciklus és biztonságos tp/home helyes | rollout stop; hibánál kijelölés megtartása | `world/WORLD-02B/` |
 | [ ] | WORLD-03 Quest/NPC | Builder/eventes | minden használt NPC és questhely | FancyNpcs-kötés és fallback út működik | kötés újraépítése | `world/WORLD-03/` |
 | [ ] | WORLD-04 Boss/event anchor | Eventes | minden fix spawnhely | biztonságos, nem WG/claim-konfliktusos | anchor eltávolítása | `world/WORLD-04/` |
 | [ ] | WORLD-05 WorldEdit/világcsere | Builder | staging másolat utáni bejárás | crate, territory, NPC, ritual, dungeon ép | rollback snapshot | `world/WORLD-05/` |
