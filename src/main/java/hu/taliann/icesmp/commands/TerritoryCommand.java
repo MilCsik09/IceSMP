@@ -740,10 +740,17 @@ public final class TerritoryCommand implements BasicCommand {
                         return;
                     }
                     player.teleportAsync(new Location(
-                            world, zone.x() + 0.5D, safeY, zone.z() + 0.5D, yaw, pitch));
+                                    world, zone.x() + 0.5D, safeY, zone.z() + 0.5D, yaw, pitch))
+                            .thenAccept(successful -> {
+                                if (!successful) {
+                                    return;
+                                }
+                                player.getScheduler().run(plugin, completed -> player.sendMessage(messageManager.get(
+                                        "territory-tp-success",
+                                        "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…",
+                                        zone.name(), zone.x(), zone.z())), null);
+                            });
                 }));
-        sender.sendMessage(messageManager.get("territory-tp-success",
-                "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…", zone.name(), zone.x(), zone.z()));
     }
 
     /**
