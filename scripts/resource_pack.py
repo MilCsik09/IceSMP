@@ -2,7 +2,9 @@
 """Validate, build and publish metadata for the IceSMP resource pack.
 
 The ZIP builder is intentionally deterministic: identical repository contents produce identical
-bytes, SHA-1 values and R2 object names regardless of file mtimes or the runner machine.
+bytes, SHA-1 values and R2 object names regardless of file mtimes, operating system or zlib
+version. Pack files are stored without a second compression pass because PNG assets are already
+compressed and the small size difference is worth the stronger reproducibility guarantee.
 """
 
 from __future__ import annotations
@@ -10,7 +12,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import struct
 import sys
@@ -52,12 +53,10 @@ def iter_pack_files(root: Path) -> list[tuple[PurePosixPath, Path]]:
             raise PackError(f"Generated/editor artifact must not be committed into the source pack: {relative}")
 
         folded = str(relative).casefold()
-        previous = casefolded.put(folded, str(relative)) if hasattr(casefolded, "put") else None
-        if previous is None:
-            previous = casefolded.get(folded)
-            casefolded[folded] = str(relative)
+        previous = casefolded.get(folded)
         if previous is not None and previous != str(relative):
             raise PackError(f"Case-colliding paths are not portable: {previous} / {relative}")
+        casefolded[folded] = str(relative)
 
         total_size += path.stat().st_size
         files.append((relative, path))
@@ -72,7 +71,8 @@ def iter_pack_files(root: Path) -> list[tuple[PurePosixPath, Path]]:
 
 
 def validate_png(path: Path, relative: PurePosixPath) -> None:
-    header = path.read_bytes()[:24]
+    with path.open("rb") as handle:
+        header = handle.read(24)
     if len(header) < 24 or header[:8] != PNG_SIGNATURE or header[12:16] != b"IHDR":
         raise PackError(f"Invalid PNG header: {relative}")
     width, height = struct.unpack(">II", header[16:24])
@@ -126,17 +126,16 @@ def build_pack(root: Path, output: Path) -> tuple[str, int]:
         with zipfile.ZipFile(
             temporary,
             mode="w",
-            compression=zipfile.ZIP_DEFLATED,
-            compresslevel=9,
+            compression=zipfile.ZIP_STORED,
             strict_timestamps=True,
         ) as archive:
             for relative, path in files:
                 info = zipfile.ZipInfo(str(relative), date_time=DOS_EPOCH)
-                info.compress_type = zipfile.ZIP_DEFLATED
+                info.compress_type = zipfile.ZIP_STORED
                 info.create_system = 3
                 info.external_attr = 0o100644 << 16
                 info.flag_bits |= 0x800
-                archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                archive.writestr(info, path.read_bytes())
         temporary.replace(output)
     finally:
         temporary.unlink(missing_ok=True)
