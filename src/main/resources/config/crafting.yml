@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — crafting (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — crafting (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Kaszt/szakma-alapú craftolási korlátozások =====
 # required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
 # required-profession: szakma azonosító (pl. "armorer") + required-profession-level.
