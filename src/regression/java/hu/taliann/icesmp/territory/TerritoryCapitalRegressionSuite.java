@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
+import hu.taliann.icesmp.utils.TerritoryDestination;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,6 +21,8 @@ public final class TerritoryCapitalRegressionSuite {
         normalizesInclusiveSelection();
         preservesOuterBlockEdgesAndYBounds();
         keepsOperationalCenterInsideNegativeSingleton();
+        keepsOperationalCentersInsideSelections();
+        findsSafeStandingYWithin3dBounds();
         rejectsFootprintOverflow();
         verifiesProductionWiring();
         System.out.println("3D territory-capital regression suite passed.");
@@ -69,6 +72,41 @@ public final class TerritoryCapitalRegressionSuite {
                 "operational centre is outside the negative singleton cuboid");
     }
 
+    private static void keepsOperationalCentersInsideSelections() {
+        for (final int min : List.of(-100, -3, -2, -1, 0, 1, 100)) {
+            for (int width = 1; width <= 5; width++) {
+                final BlockCuboid cuboid = BlockCuboid.between(
+                        "world", min, 0, min, min + width - 1, 2, min + width - 1);
+                check(cuboid.centerX() >= cuboid.minX() && cuboid.centerX() <= cuboid.maxX()
+                                && cuboid.centerZ() >= cuboid.minZ() && cuboid.centerZ() <= cuboid.maxZ(),
+                        "operational centre escaped an inclusive selection");
+                final Territory territory = territory(cuboid);
+                check(territory.contains("world",
+                                territory.x() + 0.5D, 1.0D, territory.z() + 0.5D),
+                        "operational centre is outside its territory");
+            }
+        }
+    }
+
+    private static void findsSafeStandingYWithin3dBounds() {
+        final Integer safe = TerritoryDestination.findSafeStandingYWithinBounds(
+                -64, 320, 5, 7, 20, y -> y == 6);
+        check(Integer.valueOf(6).equals(safe),
+                "bounded destination did not find the only safe two-block space");
+        check(TerritoryDestination.findSafeStandingYWithinBounds(
+                        -64, 320, 5, 7, 20, y -> y == 7) == null,
+                "destination allowed the player's head above maxY");
+        check(TerritoryDestination.findSafeStandingYWithinBounds(
+                        -64, 320, 5, 5, 5, y -> true) == null,
+                "one-block-high territory cannot hold a standing player");
+        check(Integer.valueOf(98).equals(TerritoryDestination.findSafeStandingYWithinBounds(
+                        -64, 320, Territory.NO_MIN_Y, Territory.NO_MAX_Y, 100, y -> y == 98)),
+                "unbounded destination search did not scan down from the preferred surface");
+        check(TerritoryDestination.findSafeStandingYWithinBounds(
+                        10, 10, Territory.NO_MIN_Y, Territory.NO_MAX_Y, 10, y -> true) == null,
+                "invalid world height range must fail closed");
+    }
+
     private static void rejectsFootprintOverflow() {
         final BlockCuboid edge = new BlockCuboid("world",
                 Integer.MAX_VALUE, 0, 0,
@@ -103,6 +141,8 @@ public final class TerritoryCapitalRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/listeners/CapitalLawListener.java");
         final String raid = source("src/main/java/hu/taliann/icesmp/managers/RaidManager.java");
         final String ritual = source("src/main/java/hu/taliann/icesmp/managers/RitualManager.java");
+        final String destination = source(
+                "src/main/java/hu/taliann/icesmp/utils/TerritoryDestination.java");
         final String messages = source("src/main/resources/messages/territory.yml");
         final String builderGuide = source("docs/BUILDER_GUIDE.md");
 
@@ -110,6 +150,10 @@ public final class TerritoryCapitalRegressionSuite {
                         && command.contains("claimManager.snapshotSelection")
                         && command.contains("territoryManager.defineCuboid"),
                 "selection command path is not wired");
+        check(command.contains("final Integer radius = parseRadius(sender, args[2])")
+                        && command.contains("territory-setcapital-success")
+                        && command.contains("TerritoryType.CAPITAL, player.getLocation(), radius"),
+                "legacy radius setcapital path changed or disappeared");
         check(command.indexOf("territoryManager.defineCuboid")
                         < command.indexOf("claimManager.clearSelection"),
                 "selection clears before the capital is persisted");
@@ -121,20 +165,26 @@ public final class TerritoryCapitalRegressionSuite {
         check(claims.contains("selection.y1") && claims.contains("selection.y2")
                         && claims.contains("return BlockCuboid.between"),
                 "claim selection snapshot lost its Y coordinates");
-        check(territoryListener.contains("first.getBlockY() == second.getBlockY()")
+        check(territoryListener.contains("if (sameBlock(from, to))")
+                        && territoryListener.contains("first.getBlockY() == second.getBlockY()")
                         && territoryListener.contains("first.getWorld() == second.getWorld()"),
                 "territory border gate is not 3D/world-aware");
-        check(capitalLaw.contains("first.getBlockY() == second.getBlockY()")
+        check(capitalLaw.contains("if (sameBlock(from, to))")
+                        && capitalLaw.contains("first.getBlockY() == second.getBlockY()")
                         && capitalLaw.contains("first.getWorld() == second.getWorld()"),
                 "capital-law border gate is not 3D/world-aware");
         check(raid.contains("location.getX(), location.getY(), location.getZ()")
                         && raid.contains("deathLocation.getX(), deathLocation.getY(), deathLocation.getZ()"),
                 "raid scoring still ignores territory Y bounds");
-        check(ritual.contains("capital.minY()") && ritual.contains("capital.maxY()"),
-                "capital home destination is not clamped to its Y bounds");
+        check(command.contains("TerritoryDestination.findSafeStandingY(world, zone)")
+                        && ritual.contains("TerritoryDestination.findSafeStandingY(world, capital)")
+                        && destination.contains("world.getBlockAt(x, feetY + 1, z).isPassable()")
+                        && destination.contains("territory.contains(world.getName()"),
+                "territory teleports do not require a safe in-zone standing space");
         check(messages.contains("territory-setcapital-selection-success")
                         && messages.contains("territory-setcapital-selection-usage")
                         && messages.contains("territory-help-setcapital-selection")
+                        && messages.contains("territory-setcapital-usage: '&cHasználat: /territory setcapital <frakció> <sugár>")
                         && messages.contains("<sugár|selection>"),
                 "selection messages are missing");
         check(builderGuide.contains("/territory setcapital <frakció> selection [név...]"),
