@@ -127,7 +127,8 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).
 - **Lore/tartalom-referencia:** `docs/LORE.md` — a kanonikus kódex, TISZTA világon-belüli szöveg (ne
   írj bele mechanika-jegyzetet, táblát, config-kulcsot!). A technikai megfeleltetés a
-  `docs/LORE_REFERENCE.md`-ben él: frakció↔kód (`RED`=Perinfernicitas, `BLUE`=Cryghaliris,
+  `docs/LORE_REFERENCE.md`-ben él; a teljes builder-oldali quest-, dialógus- és NPC-leltár a
+  `docs/QUESTS.md`-ben található. A referencia frakció↔kód (`RED`=Perinfernicitas, `BLUE`=Cryghaliris,
   `NEUTRAL`=Ryanora/Caldestera, `DARK`=Kitaszítottak), lore-elem→mechanika tábla, unique-item
   tervkatalógus, elnevezési irányelvek. Minden új tartalom (item-nevek, ételek, valuta, mob-drop,
   zóna, quest) a kódexhez illeszkedjen — a kód-kötést a referencia-fájlban vezesd.
