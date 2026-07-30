@@ -1,4 +1,4 @@
-# IceSMP — teaser- és képi kampánycsomag V2
+# IceSMP — teaser- és képi kampánycsomag
 
 > *Két mondat rombolta le a régi világot. A harmadikat senki élő nem akarja hallani.*
 
@@ -126,7 +126,7 @@ extra words, symbols, logos, frames, UI or watermarks.
 
 ---
 
-# 3. Publikus kampányszövegek — feljavított változatok
+# 3. Publikus kampányszövegek
 
 ## 3.1. Fő kampányteaser
 
@@ -257,7 +257,7 @@ Hanem mindazoké, akik alakítják.
 
 ---
 
-# 4. Frakcióteaserek — feljavított változatok
+# 4. Frakcióteaserek
 
 ## 4.1. Perinfernicitas — A Láng népe
 
@@ -377,7 +377,7 @@ Mégis minden út egyszer felé fordul.
 
 ---
 
-# 5. Képgenerálási promptcsomag V2
+# 5. Képgenerálási promptcsomag
 
 ## Prompt-összeállítás
 
@@ -930,7 +930,7 @@ Use the approved Menedék artwork as the fixed base. Add only:
 
 A MENEDÉK
 RYANORA ÉS CALDESTERA
-A béke naponta meghozott döntés.
+Fegyvertelen föld — de nem védtelen.
 
 Place the title and subtitle in open sky above the water, and the motto smaller below.
 Use elegant ivory serif lettering with restrained leaf-gold details. Keep Radicora,
@@ -1026,7 +1026,7 @@ readability. Keep the exile and central road unobstructed. Add no other text.
 
 ---
 
-# 6. Bónusz — világáttekintő „master poster” V2
+# 6. Bónusz — világáttekintő „master poster”
 
 A régi, sok információt egyetlen képre zsúfoló poszterek látványosak voltak, de
 mobilon olvashatatlanná és gyorsan elavulóvá váltak. Az új master poster legyen

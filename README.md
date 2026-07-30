@@ -1,6 +1,12 @@
 # IceSMP
 
-Az **IceSMP** egy Folia-alapú Minecraft 1.21.11 plugin Java 21-hez. Egy
+> *Két mondat rombolta le a régi világot. A harmadikat senki élő nem akarja hallani.*
+
+Egy megrepedt Élet Fája, négy egymásnak feszülő hatalom és üresen álló trónok:
+az **IceSMP** egy magyar nyelvű, történetvezérelt fantasy SMP, ahol a következő
+korszakot a játékosok írják. Ez a repó a világot működtető plugin forrása.
+
+Technikailag: Folia-alapú Minecraft 1.21.11 plugin Java 21-hez. Egy
 fantasy SMP szerver játékmenet-rendszereit fogja össze: frakciók, kasztok,
 specializációk, képességek, szakmák, gazdaság, küldetések, események,
 területek, relikviák, társak és adminisztráció.

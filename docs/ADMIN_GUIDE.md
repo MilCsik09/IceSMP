@@ -2,15 +2,14 @@
 
 <!-- icesmp-doc-id: guide.admin-and-moderator -->
 
-> Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
->
-> Audit dátuma: 2026-07-30
->
-> Deployed baseline: `IceSMP-1.0-TESTING.jar`
-> (`da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`);
-> valószínű forrásállapot:
-> `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12,
-> `HIGH_CONFIDENCE`, nem `EXACT`)
+<details>
+<summary>Dokumentum-forrásállapot (HEAD, audit dátuma, futó baseline)</summary>
+
+- Dokumentált HEAD: `4643ab53586f0c1ee7352df16dcd477013e6fad4`
+- Audit dátuma: 2026-07-30
+- Deployed baseline: `IceSMP-1.0-TESTING.jar` (`da039f0e2bdf0e67b216ce82d7d3fe3b6da0af6e18f6fa175762c37493795a05`); valószínű forrásállapot: `775d9e247be675db1c7c9beaaecf4a90349bfcd3` (2026-07-12, `HIGH_CONFIDENCE`, nem `EXACT`)
+
+</details>
 
 Az adminfelület nem varázspálca. Minden kattintás mögött egy játékos története, egy tartós állapot és gyakran egy visszaállítási kötelezettség áll.
 Ez a kézikönyv azért készült, hogy a csapat gyorsan tudjon cselekedni, de ugyanilyen gyorsan meg is tudja mondani, **ki, mit és miért tett**.
