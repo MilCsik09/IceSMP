@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — relics (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — relics (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 relics:
   enabled: true
   # Inaktivitás-kezelés: a megadott számú nap után a relikvia törlődik
