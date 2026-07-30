@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — profession-materials (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — profession-materials (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== Egyedi (unique) szakma-alapanyagok =====
 # A szakmák egyedi, PDC-jelölt köztes alapanyagokat gyártanak/szereznek, amiket más receptek
 # igényelnek (mint WoW-ban a "Spirit Dust" / Terrariában a köztes bárok). Ezek NEM sima itemek: a
