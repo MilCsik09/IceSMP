@@ -118,8 +118,9 @@ public final class ModerationReviewRegressionSuite {
                 "private-message completion must not disclose viewer-hidden players");
         check(moderationGui.contains("viewer.canSee(target)")
                         && moderationGuiCommand.contains("viewer.canSee(target)")
-                        && moderationGuiListener.contains("!viewer.canSee(target)"),
-                "moderation GUI list, click, direct open and completion must preserve viewer visibility");
+                        && moderationGuiListener.contains("target == null || !visibleTo(viewer, target)")
+                        && moderationGuiListener.contains("target != null && !visibleTo(viewer, target)"),
+                "moderation GUI list, detail actions, direct open and completion must preserve viewer visibility");
         check(invseeCommand.contains("!viewer.canSee(target)")
                         && invseeCommand.contains("viewer.canSee(target)"),
                 "invsee direct open and completion must not grant implicit vanish visibility");
