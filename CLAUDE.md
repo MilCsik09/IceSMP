@@ -32,7 +32,7 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
 ./gradlew runServer  # helyi tesztszerver (run/ könyvtár, 1.21.11)
 ```
 - A `check` task dependency-free regressziós suite-okat futtat a persistence,
-  DEV-item, moderáció, MOTD, sit, crate, globális AFK és territory-capital területén. Ezek mellett
+  DEV-item, moderáció, MOTD, sit, crate, config-startup, globális AFK és territory-capital területén. Ezek mellett
   a hibátlan build, a consistency gate és az
   `docs/ADMIN_GUIDE.md#release-acceptance-checklist` szerinti kézi playtest is kötelező.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve):
@@ -65,14 +65,14 @@ This file is a Claude Code compatibility shim. The project is currently Codex-fi
   `MilCsik09/IceSMPGuides` repóba; ne maradjon külön gyökérszintű guide-másolat.
 
 ## Mi ez a projekt
-Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 547 Java-fájl / 90 manager. Minden játékos-szöveg **magyar**.
+Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-rendszerekkel: **13 frakció-független kaszt + 35 specializáció**, hibrid kaszt-erőforrás, 4 frakció (passzívokkal, király/raid/szezon), szakmák + recept-katalógus, talentek, tárgy-raritás + loot, questek + közösségi célok, dinamikus árfolyamú gazdaság (bank/piac/aukció), relikviák + rituálé-oltárok, claimek, territórium-zónák, pet-rendszer és világesemények. A dokumentált release 551 Java-fájl / 90 manager. Minden játékos-szöveg **magyar**.
 
 ## Architektúra (nagy kép)
 - **Belépési pontok** (`paper-plugin.yml`): `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader`. A tényleges élet a `core/IceSMPCore`-ban van: konstruktorban épül fel az ÖSSZES manager (kézi DI, sorrend számít), majd `enable()`: `load()` a `persistentStores` listán → listener-regisztráció → parancs-regisztráció (kódból, nem manifestből!) → schedulerek; `disable()`: `save()` + cleanup.
 - **Manager-réteg** (`managers/`): egy manager = egy rendszer állapota + perzisztenciája. Perzisztencia YAML-ba (`YamlStore.saveAtomic`, a `PersistentStore` interfészen át) vagy player-PDC-be. Per-player volatilis állapotot a `PlayerSessionCleanupListener`-ben kell takarítani (UUID-kulcsú map nem szivároghat).
 - **GUI-minta** (`gui/` + `listeners/*GUIListener`): statikus GUI-osztály építi az inventoryt egy dedikált `InventoryHolder`-rel; a holder hordozza az owner-UUID-t és a slot→akció kötéseket; a listener a holder típusára szűr, mindent cancel-el, és drag+close eventet is kezel. A `/menu` hub (`CommandMenus` + `CommandMenuHolder`) akció-stringekkel dolgozik: `MENU:<almenü>` / `RUN:<parancs, menü-refresh-sel>` / `OPEN:<saját GUI-t nyitó parancs>` / `CLOSE` — a gameplay-logika MINDIG a parancsokban marad, a menü csak delegál. Admin-gombot mindig a mögöttes parancs tényleges jogosultság-node-jára kapuzz.
 - **Parancsok** (`commands/`): Paper Brigadier `BasicCommand`-ok; nagyobb domainekhez router+subcommand felosztás (`commands/job|faction|currency|bank`), egyébként egy vékony osztály. Mindig adj tab-complete-et. Regisztráció: `IceSMPCore.registerCommands()`.
-- **Config**: `src/main/resources/config/*.yml` — a `ConfigManager` az összeset egybefésüli (ÚJ fájlt a `CONFIG_FILES` listába is fel KELL venni!); üzenetek a `MessageManager`-en át (`messages.yml` kulcsok inline defaultokkal).
+- **Config**: `src/main/resources/config/*.yml` — a `ConfigManager` kizárólag a `CONFIG_FILES` allowlist támogatott fájljait fésüli egybe (ÚJ fájlt a listába is fel KELL venni; az ismeretlen `.yml` kimarad és figyelmeztetést kap); üzenetek a `MessageManager`-en át (`messages.yml` kulcsok inline defaultokkal).
 - **Élő-config konvenció**: MINDEN új kulcsot híváskor olvass (`configManager.getX` a use-site-on, ne konstruktorban) → `/icesmp reload` restart nélkül él. Ingame felülbírálás: `/icesmp config get|set|unset|list|find|menu` + kattintható GUI (`ConfigMenuGUI`, jog: `icesmp.admin.config`) — az írás EGYETLEN útja a szerializált `ConfigManager.applyOverride` (data-folder config.yml, utolsóként merge-ölve). Boolean-kulcsok egyértelműek: `allow-<szabály>` séma (true=SZABAD), legacy invertált kulcsok fallbackként olvasva.
 - **Esemény-spawnok**: minden világesemény-spawn az `EventSpawnGuard`-on megy át (`isBlocked(eventKey, loc)` — territory/claim/WG per `world-events.spawn-rules.<event>` mátrix; `isUnsafeSurface`; statikus `prepare(Mob)` zombisodás/nappali égés ellen). Új eseménynél új mátrix-sor + guard-hívás kötelező.
 - **Admin item-adás**: `/iceitem <unique|recept|relikvia|tervrajz> <id> [darab] [játékos]` (`ItemGiveCommand`, jog: `icesmp.admin.item`) — a recept-út a `ProfessionRecipeBookListener.buildResult` teljes stamp-láncát használja.
@@ -127,7 +127,8 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
 - Részletes projekt-tudás: `AGENTS.md` (domain-számok, spell-költség hibrid, HUD, faction-passzívák), `docs/ARCHITECTURE.md` (technikai referencia), `ROADMAP.md` (nyitott munkák).
 - **Lore/tartalom-referencia:** `docs/LORE.md` — a kanonikus kódex, TISZTA világon-belüli szöveg (ne
   írj bele mechanika-jegyzetet, táblát, config-kulcsot!). A technikai megfeleltetés a
-  `docs/LORE_REFERENCE.md`-ben él: frakció↔kód (`RED`=Perinfernicitas, `BLUE`=Cryghaliris,
+  `docs/LORE_REFERENCE.md`-ben él; a teljes builder-oldali quest-, dialógus- és NPC-leltár a
+  `docs/QUESTS.md`-ben található. A referencia frakció↔kód (`RED`=Perinfernicitas, `BLUE`=Cryghaliris,
   `NEUTRAL`=Ryanora/Caldestera, `DARK`=Kitaszítottak), lore-elem→mechanika tábla, unique-item
   tervkatalógus, elnevezési irányelvek. Minden új tartalom (item-nevek, ételek, valuta, mob-drop,
   zóna, quest) a kódexhez illeszkedjen — a kód-kötést a referencia-fájlban vezesd.
