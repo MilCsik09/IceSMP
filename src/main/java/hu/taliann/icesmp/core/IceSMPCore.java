@@ -1509,7 +1509,7 @@ public final class IceSMPCore {
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"), new ProfessionCommand(plugin, professionManager, messageManager, professionRecipeBookListener, professionRecipeCatalog, blueprintItemFactory));
         plugin.registerCommand("spec", "Specializáció parancsok", List.of("specialization", "specializacio"), new SpecCommand(plugin, specializationManager, jobManager, professionManager, currencyManager, messageManager, respecService));
         plugin.registerCommand("talent", "Talent-fa parancsok", List.of("talents", "talentfa"), new TalentCommand(talentManager, messageManager));
-        final TerritoryCommand territoryCommand = new TerritoryCommand(plugin, territoryManager, messageManager);
+        final TerritoryCommand territoryCommand = new TerritoryCommand(plugin, territoryManager, claimManager, messageManager);
         territoryCommand.setDungeonLootService(dungeonLootService);
         plugin.registerCommand("territory", "Frakció terület parancsok", List.of("terulet"), territoryCommand);
         plugin.registerCommand("quest", "Küldetés parancsok", List.of("quests", "kuldetes"), new QuestCommand(plugin, questManager, configManager, messageManager, questBuilderListener));
