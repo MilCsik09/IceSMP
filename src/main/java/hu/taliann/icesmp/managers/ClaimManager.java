@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.storage.PersistentStore;
@@ -137,7 +138,10 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
     }
 
     /** A completed selection's summary for previews and the area-claim flow. */
-    public record SelectionInfo(int width, int depth, int columns, boolean overlaps, double cost) { }
+    public record SelectionInfo(long width, long depth, long columns, boolean overlaps, double cost) { }
+
+    /** Existing personal claim that conflicts with an admin selection footprint. */
+    public record ClaimConflict(UUID owner, String ownerName) { }
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -458,7 +462,7 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
                 selection.hasSecond = true;
             }
         }
-        return new int[] {location.getBlockX(), location.getBlockZ()};
+        return new int[] {location.getBlockX(), location.getBlockY(), location.getBlockZ()};
     }
 
     /** Summary of the player's completed selection, or null when incomplete. */
@@ -475,12 +479,55 @@ public final class ClaimManager implements PersistentStore, hu.taliann.icesmp.se
             final int maxX = Math.max(selection.x1, selection.x2);
             final int minZ = Math.min(selection.z1, selection.z2);
             final int maxZ = Math.max(selection.z1, selection.z2);
-            final int width = maxX - minX + 1;
-            final int depth = maxZ - minZ + 1;
+            final long width = (long) maxX - minX + 1L;
+            final long depth = (long) maxZ - minZ + 1L;
+            final long columns = Math.multiplyExact(width, depth);
             final boolean overlaps = findFootprintOverlap(selection.world, minX, minZ, maxX, maxZ) != null;
-            return new SelectionInfo(width, depth, width * depth, overlaps,
-                    priceFor(countColumns(playerId), width * depth));
+            final long owned = countColumns(playerId);
+            final long free = freeColumns();
+            final long paidBefore = Math.max(0L, owned - free);
+            final long paidAfter = Math.max(0L, Math.addExact(owned, columns) - free);
+            final double cost = Math.ceil((paidAfter - paidBefore) * columnCost() * 100.0D) / 100.0D;
+            return new SelectionInfo(width, depth, columns, overlaps, cost);
         }
+    }
+
+    /**
+     * Immutable snapshot of the player's exact X/Y/Z selection, or {@code null}
+     * while either corner is missing. The volatile selection remains owned by this
+     * manager; callers cannot mutate it.
+     */
+    public BlockCuboid snapshotSelection(final UUID playerId) {
+        final Selection selection = selections.get(playerId);
+        if (selection == null) {
+            return null;
+        }
+        synchronized (selection) {
+            if (!selection.hasFirst || !selection.hasSecond) {
+                return null;
+            }
+            return BlockCuboid.between(selection.world,
+                    selection.x1, selection.y1, selection.z1,
+                    selection.x2, selection.y2, selection.z2);
+        }
+    }
+
+    /** Clears a completed selection only after its caller has persisted the result. */
+    public void clearSelection(final UUID playerId) {
+        selections.remove(playerId);
+    }
+
+    /**
+     * Personal claims are column-exclusive, so a protected capital must not be
+     * layered above or below an existing footprint either.
+     */
+    public ClaimConflict findFootprintConflict(final BlockCuboid bounds) {
+        if (bounds == null) {
+            return null;
+        }
+        final Claim claim = findFootprintOverlap(bounds.world(),
+                bounds.minX(), bounds.minZ(), bounds.maxX(), bounds.maxZ());
+        return claim == null ? null : new ClaimConflict(claim.owner, claim.ownerName);
     }
 
     /**

@@ -385,7 +385,8 @@ public final class RaidManager implements PersistentStore {
                 }
 
                 final Location location = fighter.getLocation();
-                if (!territory.world().equals(location.getWorld().getName())) {
+                if (!territory.contains(location.getWorld().getName(),
+                        location.getX(), location.getY(), location.getZ())) {
                     return;
                 }
 
@@ -428,7 +429,8 @@ public final class RaidManager implements PersistentStore {
         if (raid.territoryId() != null) {
             final Territory territory = territoryManager.getById(raid.territoryId());
             if (territory != null && (deathLocation == null || deathLocation.getWorld() == null
-                    || !territory.contains(deathLocation.getWorld().getName(), deathLocation.getX(), deathLocation.getZ()))) {
+                    || !territory.contains(deathLocation.getWorld().getName(),
+                            deathLocation.getX(), deathLocation.getY(), deathLocation.getZ()))) {
                 return false;
             }
         }

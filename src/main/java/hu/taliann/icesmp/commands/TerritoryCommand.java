@@ -1,11 +1,14 @@
 package hu.taliann.icesmp.commands;
 
 import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
+import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
+import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.utils.TerritoryDestination;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Location;
@@ -26,6 +29,8 @@ import java.util.Locale;
  * <ul>
  *   <li>CIRCLE — {@code /territory circle <típus> <frakció> <id> <sugár> [név...]}
  *       and the shortcut {@code /territory setcapital <frakció> <sugár> [név...]};</li>
+ *   <li>CUBOID — a completed claim-wand/pos1+pos2 selection via
+ *       {@code /territory setcapital <frakció> selection [név...]};</li>
  *   <li>POLYGON — walk the boundary placing points with {@code /territory pos}
  *       (undo / clear / points to manage the buffer), then seal it with
  *       {@code /territory create <típus> <frakció> <id> [név...]}.</li>
@@ -37,6 +42,7 @@ public final class TerritoryCommand implements BasicCommand {
     private static final String PERMISSION = "icesmp.admin.territory";
     private static final int MAX_RADIUS = 512;
     private static final int MAX_POINTS = 64;
+    private static final long MAX_SELECTION_SPAN = (long) MAX_RADIUS * 2L + 1L;
 
     private static final List<String> SUBCOMMANDS = List.of(
             "pos", "wand", "undo", "clearpoints", "points", "create", "circle",
@@ -47,12 +53,14 @@ public final class TerritoryCommand implements BasicCommand {
 
     private final JavaPlugin plugin;
     private final TerritoryManager territoryManager;
+    private final ClaimManager claimManager;
     private final MessageManager messageManager;
 
     public TerritoryCommand(final JavaPlugin plugin, final TerritoryManager territoryManager,
-                            final MessageManager messageManager) {
+                            final ClaimManager claimManager, final MessageManager messageManager) {
         this.plugin = plugin;
         this.territoryManager = territoryManager;
+        this.claimManager = claimManager;
         this.messageManager = messageManager;
     }
 
@@ -299,8 +307,8 @@ public final class TerritoryCommand implements BasicCommand {
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(messageManager.get("territory-setcapital-usage",
-                    "&cHasználat: /territory setcapital <frakció> <sugár> [név...]"));
+            sender.sendMessage(messageManager.get("territory-setcapital-selection-usage",
+                    "&cHasználat: /territory setcapital <frakció> <sugár|selection> [név...]"));
             return;
         }
 
@@ -308,17 +316,62 @@ public final class TerritoryCommand implements BasicCommand {
         if (faction == null) {
             return;
         }
+        final String name = args.length > 3
+                ? String.join(" ", Arrays.copyOfRange(args, 3, args.length))
+                : faction.getDisplayName() + " főváros";
+        final String id = faction.name().toLowerCase(Locale.ROOT) + "-capital";
+
+        if ("selection".equalsIgnoreCase(args[2])) {
+            final BlockCuboid bounds = claimManager.snapshotSelection(player.getUniqueId());
+            if (bounds == null) {
+                sender.sendMessage(messageManager.get("territory-setcapital-selection-incomplete",
+                        "&cElőbb jelöld ki a 3D főváros két sarkát: &e/claim pos1 &cés &e/claim pos2&c."));
+                return;
+            }
+            if (!player.getWorld().getName().equals(bounds.world())) {
+                sender.sendMessage(messageManager.get("territory-setcapital-selection-cross-world",
+                        "&cA kijelölés másik világban van (&f%s&c) — jelöld ki újra ebben a világban.", bounds.world()));
+                return;
+            }
+            if (bounds.width() > MAX_SELECTION_SPAN || bounds.depth() > MAX_SELECTION_SPAN) {
+                sender.sendMessage(messageManager.get("territory-setcapital-selection-too-large",
+                        "&cA kijelölés túl széles: legfeljebb &f%s×%s &cblokk lehet X/Z irányban.",
+                        MAX_SELECTION_SPAN, MAX_SELECTION_SPAN));
+                return;
+            }
+            final ClaimManager.ClaimConflict conflict = claimManager.findFootprintConflict(bounds);
+            if (conflict != null) {
+                sender.sendMessage(messageManager.get("territory-setcapital-selection-claim-conflict",
+                        "&cA kijelölés meglévő személyes claimet fed (&f%s&c). Előbb oldd fel: &e/claim admin unclaim&c.",
+                        conflict.ownerName()));
+                return;
+            }
+
+            final Territory territory;
+            try {
+                territory = territoryManager.defineCuboid(
+                        id, faction, name, TerritoryType.CAPITAL, bounds);
+            } catch (final IllegalArgumentException | ArithmeticException invalidBounds) {
+                sender.sendMessage(messageManager.get("territory-setcapital-selection-invalid",
+                        "&cA 3D kijelölés koordinátái nem alakíthatók biztonságos fővárossá."));
+                return;
+            }
+            claimManager.clearSelection(player.getUniqueId());
+            sender.sendMessage(messageManager.get("territory-setcapital-selection-success",
+                    "&a3D főváros kijelölve: &f%s &7(%s; X: %s..%s, Y: %s..%s, Z: %s..%s; %s×%s×%s blokk)",
+                    territory.name(), faction.getDisplayName(),
+                    bounds.minX(), bounds.maxX(), bounds.minY(), bounds.maxY(), bounds.minZ(), bounds.maxZ(),
+                    bounds.width(), bounds.height(), bounds.depth()));
+            return;
+        }
+
+        // Backward-compatible radius mode: same centre, full-height disc and messages.
         final Integer radius = parseRadius(sender, args[2]);
         if (radius == null) {
             return;
         }
-
-        final String name = args.length > 3
-                ? String.join(" ", Arrays.copyOfRange(args, 3, args.length))
-                : faction.getDisplayName() + " főváros";
         final Territory territory = territoryManager.define(
-                faction.name().toLowerCase(Locale.ROOT) + "-capital",
-                faction, name, TerritoryType.CAPITAL, player.getLocation(), radius);
+                id, faction, name, TerritoryType.CAPITAL, player.getLocation(), radius);
         sender.sendMessage(messageManager.get("territory-setcapital-success",
                 "&aFőváros kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)",
                 territory.name(), faction.getDisplayName(), territory.radius(), territory.x(), territory.z()));
@@ -557,12 +610,25 @@ public final class TerritoryCommand implements BasicCommand {
                 drawRing(player, world, buffer, y, Particle.COMPOSTER, true);
             }
             if (here != null) {
-                if (here.isPolygon()) {
-                    drawRing(player, world, here.polygon(), y,
-                            here.type().isProtectedZone() ? Particle.FLAME : Particle.HAPPY_VILLAGER, false);
+                final Particle particle = here.type().isProtectedZone()
+                        ? Particle.FLAME : Particle.HAPPY_VILLAGER;
+                if (hasFiniteYBounds(here)) {
+                    final double lowerY = here.minY() + 0.05D;
+                    final double upperY = here.maxY() + 0.95D;
+                    if (here.isPolygon()) {
+                        drawRingAtHeight(player, world, here.polygon(), lowerY, particle);
+                        drawRingAtHeight(player, world, here.polygon(), upperY, particle);
+                        drawVerticalEdges(player, world, here.polygon(), lowerY, upperY, particle);
+                    } else {
+                        drawCircleAtHeight(player, world, here.x(), here.z(), here.radius(), lowerY, particle);
+                        drawCircleAtHeight(player, world, here.x(), here.z(), here.radius(), upperY, particle);
+                        drawCircleVerticalEdges(player, world, here.x(), here.z(), here.radius(),
+                                lowerY, upperY, particle);
+                    }
+                } else if (here.isPolygon()) {
+                    drawRing(player, world, here.polygon(), y, particle, false);
                 } else {
-                    drawCircle(player, world, here.x(), here.z(), here.radius(), y,
-                            here.type().isProtectedZone() ? Particle.FLAME : Particle.HAPPY_VILLAGER);
+                    drawCircle(player, world, here.x(), here.z(), here.radius(), y, particle);
                 }
             }
         }, null, 1L, 20L);
@@ -666,13 +732,25 @@ public final class TerritoryCommand implements BasicCommand {
         final int cz = zone.z() >> 4;
         world.getChunkAtAsync(cx, cz).thenRun(() ->
                 org.bukkit.Bukkit.getRegionScheduler().run(plugin, world, cx, cz, task -> {
-                    final int baseY = zone.minY() != Territory.NO_MIN_Y
-                            ? zone.minY() + 1
-                            : world.getHighestBlockYAt(zone.x(), zone.z()) + 1;
-                    player.teleportAsync(new Location(world, zone.x() + 0.5D, baseY, zone.z() + 0.5D, yaw, pitch));
+                    final Integer safeY = TerritoryDestination.findSafeStandingY(world, zone);
+                    if (safeY == null) {
+                        player.getScheduler().run(plugin, failed -> player.sendMessage(messageManager.get(
+                                "territory-tp-no-safe-destination",
+                                "&cA zóna középpontjában nincs biztonságos, zónán belüli érkezési hely.")), null);
+                        return;
+                    }
+                    player.teleportAsync(new Location(
+                                    world, zone.x() + 0.5D, safeY, zone.z() + 0.5D, yaw, pitch))
+                            .thenAccept(successful -> {
+                                if (!successful) {
+                                    return;
+                                }
+                                player.getScheduler().run(plugin, completed -> player.sendMessage(messageManager.get(
+                                        "territory-tp-success",
+                                        "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…",
+                                        zone.name(), zone.x(), zone.z())), null);
+                            });
                 }));
-        sender.sendMessage(messageManager.get("territory-tp-success",
-                "&aTeleportálás a(z) &f%s &azónához (&f%s, %s&a)…", zone.name(), zone.x(), zone.z()));
     }
 
     /**
@@ -719,6 +797,72 @@ public final class TerritoryCommand implements BasicCommand {
             final double pz = cz + Math.sin(angle) * radius + 0.5D;
             drawGroundPoint(player, world, px, pz, y, particle);
         }
+    }
+
+    private static boolean hasFiniteYBounds(final Territory territory) {
+        return territory.minY() != Territory.NO_MIN_Y && territory.maxY() != Territory.NO_MAX_Y;
+    }
+
+    /** Fixed-height ring used for the lower/upper faces of a 3D territory. */
+    private void drawRingAtHeight(final Player player, final World world, final List<int[]> ring,
+                                  final double y, final Particle particle) {
+        for (int i = 0; i < ring.size(); i++) {
+            final int[] a = ring.get(i);
+            final int[] b = ring.get((i + 1) % ring.size());
+            final double distance = Math.hypot((double) b[0] - a[0], (double) b[1] - a[1]);
+            final int steps = Math.max(1, (int) Math.ceil(distance / 2.0D));
+            for (int step = 0; step <= steps; step++) {
+                final double t = (double) step / steps;
+                spawnFixedParticle(player, world,
+                        a[0] + ((double) b[0] - a[0]) * t,
+                        y,
+                        a[1] + ((double) b[1] - a[1]) * t,
+                        particle);
+            }
+        }
+    }
+
+    private void drawCircleAtHeight(final Player player, final World world, final int cx, final int cz,
+                                    final int radius, final double y, final Particle particle) {
+        final int segments = Math.min(120, Math.max(24, radius * 2));
+        for (int i = 0; i < segments; i++) {
+            final double angle = 2.0D * Math.PI * i / segments;
+            spawnFixedParticle(player, world,
+                    cx + Math.cos(angle) * radius + 0.5D, y,
+                    cz + Math.sin(angle) * radius + 0.5D, particle);
+        }
+    }
+
+    private void drawVerticalEdges(final Player player, final World world, final List<int[]> ring,
+                                   final double lowerY, final double upperY, final Particle particle) {
+        for (final int[] point : ring) {
+            drawVerticalEdge(player, world, point[0], point[1], lowerY, upperY, particle);
+        }
+    }
+
+    private void drawCircleVerticalEdges(final Player player, final World world,
+                                         final int cx, final int cz, final int radius,
+                                         final double lowerY, final double upperY, final Particle particle) {
+        drawVerticalEdge(player, world, cx + radius + 0.5D, cz + 0.5D, lowerY, upperY, particle);
+        drawVerticalEdge(player, world, cx - radius + 0.5D, cz + 0.5D, lowerY, upperY, particle);
+        drawVerticalEdge(player, world, cx + 0.5D, cz + radius + 0.5D, lowerY, upperY, particle);
+        drawVerticalEdge(player, world, cx + 0.5D, cz - radius + 0.5D, lowerY, upperY, particle);
+    }
+
+    private void drawVerticalEdge(final Player player, final World world,
+                                  final double x, final double z,
+                                  final double lowerY, final double upperY, final Particle particle) {
+        final int steps = Math.min(128, Math.max(1, (int) Math.ceil((upperY - lowerY) / 2.0D)));
+        for (int step = 0; step <= steps; step++) {
+            final double y = lowerY + (upperY - lowerY) * step / steps;
+            spawnFixedParticle(player, world, x, y, z, particle);
+        }
+    }
+
+    private void spawnFixedParticle(final Player player, final World world,
+                                    final double x, final double y, final double z,
+                                    final Particle particle) {
+        player.spawnParticle(particle, new Location(world, x, y, z), 1, 0, 0, 0, 0);
     }
 
     /** Egy terep-követő határ-pont (a közös ParticleUtil.markerY magasság-forrással). */
@@ -817,6 +961,8 @@ public final class TerritoryCommand implements BasicCommand {
                 "&e/territory circle <típus> <frakció> <id> <sugár> [név...] &7- Kör-terület."));
         sender.sendMessage(messageManager.get("territory-help-setcapital",
                 "&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros (kör)."));
+        sender.sendMessage(messageManager.get("territory-help-setcapital-selection",
+                "&e/territory setcapital <frakció> selection [név...] &7- Pontos 3D főváros claim-kijelölésből."));
         sender.sendMessage(messageManager.get("territory-help-setspawn",
                 "&e/territory setspawn <frakció> &7- Királyság-spawn az aktuális pozíciódra."));
         sender.sendMessage(messageManager.get("territory-help-edit",
@@ -852,6 +998,11 @@ public final class TerritoryCommand implements BasicCommand {
         }
         if (("setcapital".equals(subcommand) || "setspawn".equals(subcommand)) && args.length == 2) {
             return factionSuggestions(prefixAt(args, 1));
+        }
+        if ("setcapital".equals(subcommand) && args.length == 3) {
+            return List.of("selection").stream()
+                    .filter(option -> option.startsWith(prefixAt(args, 2)))
+                    .toList();
         }
         // Edit/remove/tp/show commands take an existing zone id at arg1.
         if (args.length == 2 && List.of("remove", "rename", "resize", "settype", "sety", "tp", "show").contains(subcommand)) {
