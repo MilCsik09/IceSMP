@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — profession-recipes (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — profession-recipes (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== WoW-szerű szakma recept-lista =====
 # Minden recept egy szakmához tartozik, szintet igényel, és vagy szintre nyílik meg
 # (learn: level), vagy tervrajzból tanulható (learn: blueprint — NPC-bolt / mob-drop / admin).
