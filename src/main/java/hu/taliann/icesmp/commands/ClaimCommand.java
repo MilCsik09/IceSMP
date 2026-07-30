@@ -177,7 +177,7 @@ public final class ClaimCommand implements BasicCommand {
 
     private void handleCorner(final Player player, final boolean first) {
         final int[] corner = claimManager.setCorner(player, first);
-        player.sendMessage(messageManager.get(first ? "claim-pos1-set" : "claim-pos2-set",
+        player.sendMessage(messageManager.get(first ? "claim-pos1-set-3d" : "claim-pos2-set-3d",
                 first ? "&aKijelölés 1. sarka: &f%s, %s, %s &7(X/Y/Z blokk)"
                         : "&aKijelölés 2. sarka: &f%s, %s, %s &7(X/Y/Z blokk)",
                 corner[0], corner[1], corner[2]));
