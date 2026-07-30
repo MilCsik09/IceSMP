@@ -71,7 +71,7 @@ public final class CapitalLawListener implements Listener {
     public void onVehicleMove(final org.bukkit.event.vehicle.VehicleMoveEvent event) {
         final Location from = event.getFrom();
         final Location to = event.getTo();
-        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+        if (sameBlock(from, to)) {
             return;
         }
         if (!configManager.getBoolean("territory.capital-law.enabled", true)
@@ -112,7 +112,7 @@ public final class CapitalLawListener implements Listener {
     private void handleBorderCross(final PlayerMoveEvent event) {
         final Location from = event.getFrom();
         final Location to = event.getTo();
-        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) {
+        if (sameBlock(from, to)) {
             return;
         }
         if (!configManager.getBoolean("territory.capital-law.enabled", true) || !isNeutralCapital(to)) {
@@ -215,6 +215,13 @@ public final class CapitalLawListener implements Listener {
         final String name = material.name();
         return name.endsWith("_SWORD") || name.endsWith("_AXE")
                 || name.equals("TRIDENT") || name.equals("BOW") || name.equals("CROSSBOW") || name.equals("MACE");
+    }
+
+    private static boolean sameBlock(final Location first, final Location second) {
+        return first.getWorld() == second.getWorld()
+                && first.getBlockX() == second.getBlockX()
+                && first.getBlockY() == second.getBlockY()
+                && first.getBlockZ() == second.getBlockZ();
     }
 
     private boolean isNeutralCapital(final Location location) {
