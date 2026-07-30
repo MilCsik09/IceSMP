@@ -1,4 +1,4 @@
-# IceSMP konfiguráció — general (a ConfigManager az összes config/*.yml-t betölti)
+# IceSMP konfiguráció — general (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
 # ===== IceSMP Teljes Konfiguráció =====
 # Beállítások, HUD, Valuta és Lokalizáció
 
