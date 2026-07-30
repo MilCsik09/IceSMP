@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -48,7 +49,7 @@ public final class UniqueMaterialFactory {
         if (section == null) {
             return null;
         }
-        final Material icon = Material.matchMaterial(section.getString("material", "").toUpperCase(Locale.ROOT));
+        final Material icon = ConfigMaterialResolver.match(section.getString("material", ""));
         if (icon == null) {
             return null;
         }
