@@ -102,6 +102,8 @@ public final class ModerationReviewRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java"));
         final String moderationGui = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java"));
+        final String moderationGuiListener = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java"));
         final String moderationGuiCommand = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java"));
         final String invseeCommand = Files.readString(Path.of(
@@ -115,8 +117,10 @@ public final class ModerationReviewRegressionSuite {
         check(privateMessage.contains("sender.canSee(target)"),
                 "private-message completion must not disclose viewer-hidden players");
         check(moderationGui.contains("viewer.canSee(target)")
-                        && moderationGuiCommand.contains("viewer.canSee(target)"),
-                "moderation GUI list, direct open and completion must preserve viewer visibility");
+                        && moderationGuiCommand.contains("viewer.canSee(target)")
+                        && moderationGuiListener.contains("target == null || !visibleTo(viewer, target)")
+                        && moderationGuiListener.contains("target != null && !visibleTo(viewer, target)"),
+                "moderation GUI list, detail actions, direct open and completion must preserve viewer visibility");
         check(invseeCommand.contains("!viewer.canSee(target)")
                         && invseeCommand.contains("viewer.canSee(target)"),
                 "invsee direct open and completion must not grant implicit vanish visibility");

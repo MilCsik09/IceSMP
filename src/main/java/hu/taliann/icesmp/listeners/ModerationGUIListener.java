@@ -32,34 +32,43 @@ public final class ModerationGUIListener implements Listener {
         }
         event.setCancelled(true);
         final int slot = event.getRawSlot();
-        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) {
+        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()
+                || !holder.ownerId().equals(viewer.getUniqueId())) {
             return;
         }
+
+        final ModerationGuiHolder.Action action = holder.actionAt(slot);
+        if (action != null) {
+            handleAction(viewer, holder, action);
+            return;
+        }
+
         if (holder.page() == ModerationGuiHolder.Page.PLAYERS) {
-            if (slot == 49) {
-                viewer.closeInventory();
+            final ModerationGuiHolder.PlayerTarget selected = holder.playerAt(slot);
+            if (selected == null) {
                 return;
             }
-            final String targetName = event.getCurrentItem() == null || event.getCurrentItem().getItemMeta() == null
-                    ? null : net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                    .serialize(event.getCurrentItem().getItemMeta().displayName());
-            final Player target = targetName == null ? null : Bukkit.getPlayerExact(targetName);
-            if (target != null) {
-                ModerationGUI.openPlayer(viewer, target, messages);
+            final Player target = Bukkit.getPlayer(selected.uniqueId());
+            if (target == null || !visibleTo(viewer, target)) {
+                viewer.sendMessage(messages.get("moderation.player-offline",
+                        "&cA játékos nincs online: &f%s", selected.name()));
+                ModerationGUI.openPlayers(viewer, messages, holder.listPage());
+                return;
             }
+            ModerationGUI.openPlayer(viewer, target, messages, holder.listPage());
             return;
         }
+
         final Player target = Bukkit.getPlayer(holder.targetId());
-        if (slot == 49) {
-            ModerationGUI.openPlayers(viewer, messages);
-            return;
-        }
-        if (slot == 53) {
-            viewer.closeInventory();
+        if (target != null && !visibleTo(viewer, target)) {
+            viewer.sendMessage(messages.get("moderation.player-offline",
+                    "&cA játékos nincs online: &f%s", holder.targetName()));
+            ModerationGUI.openPlayers(viewer, messages, holder.listPage());
             return;
         }
         if (target == null && slot != 29) {
-            viewer.sendMessage(messages.get("moderation.player-offline", "&cA játékos nincs online: &f%s", holder.targetName()));
+            viewer.sendMessage(messages.get("moderation.player-offline",
+                    "&cA játékos nincs online: &f%s", holder.targetName()));
             viewer.closeInventory();
             return;
         }
@@ -69,7 +78,7 @@ public final class ModerationGUIListener implements Listener {
                     "&cNincs jogod ehhez a moderációs művelethez."));
             return;
         }
-        final String name = holder.targetName();
+        final String name = target == null ? holder.targetName() : target.getName();
         switch (slot) {
             case 10 -> viewer.performCommand("warn " + name + " Moderációs GUI");
             case 11 -> viewer.performCommand("mute " + name + " 30m Moderációs GUI");
@@ -90,6 +99,20 @@ public final class ModerationGUIListener implements Listener {
             case 31 -> viewer.performCommand("vanish " + name);
             default -> { }
         }
+    }
+
+    private void handleAction(final Player viewer, final ModerationGuiHolder holder,
+                              final ModerationGuiHolder.Action action) {
+        switch (action) {
+            case PREVIOUS_PAGE -> ModerationGUI.openPlayers(viewer, messages, holder.listPage() - 1);
+            case NEXT_PAGE -> ModerationGUI.openPlayers(viewer, messages, holder.listPage() + 1);
+            case BACK -> ModerationGUI.openPlayers(viewer, messages, holder.listPage());
+            case CLOSE -> viewer.closeInventory();
+        }
+    }
+
+    private static boolean visibleTo(final Player viewer, final Player target) {
+        return target.getUniqueId().equals(viewer.getUniqueId()) || viewer.canSee(target);
     }
 
     private static String permissionForSlot(final int slot) {

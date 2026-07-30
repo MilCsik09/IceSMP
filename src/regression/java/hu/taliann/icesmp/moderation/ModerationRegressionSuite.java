@@ -39,6 +39,7 @@ public final class ModerationRegressionSuite {
         unicodeFilterDoesNotMisalignIndices();
         locationRejectsUnsafeCoordinates();
         durationParserRejectsOverflowWithoutTurningItIntoAReason();
+        playerPagesCoverEveryEntry();
         sourceInvariants();
         System.out.println("Moderation regression suite passed.");
     }
@@ -310,6 +311,37 @@ public final class ModerationRegressionSuite {
     }
 
     /** Supplementary integration guards; behavior is covered above rather than only by source search. */
+    private static void playerPagesCoverEveryEntry() {
+        for (final int itemCount : List.of(0, 1, 44, 45, 46, 89, 90, 91, 137)) {
+            final ModerationPlayerPage first = ModerationPlayerPage.of(0, itemCount);
+            int cursor = 0;
+            for (int pageIndex = 0; pageIndex < first.pageCount(); pageIndex++) {
+                final ModerationPlayerPage page = ModerationPlayerPage.of(pageIndex, itemCount);
+                check(page.index() == pageIndex, "requested moderation page must be preserved");
+                check(page.fromInclusive() == cursor, "moderation pages must be contiguous");
+                check(page.toExclusive() >= page.fromInclusive()
+                                && page.toExclusive() - page.fromInclusive() <= ModerationPlayerPage.PAGE_SIZE,
+                        "moderation page size must stay within the inventory capacity");
+                cursor = page.toExclusive();
+            }
+            check(cursor == itemCount, "moderation pages must cover every visible player exactly once");
+            check(ModerationPlayerPage.of(-1, itemCount).index() == 0,
+                    "negative moderation page must clamp to the first page");
+            check(ModerationPlayerPage.of(Integer.MAX_VALUE, itemCount).index() == first.pageCount() - 1,
+                    "oversized moderation page must clamp to the last page");
+        }
+        check(ModerationPlayerPage.of(0, 0).pageCount() == 1,
+                "empty moderation list must still render page 1/1");
+        check(!ModerationPlayerPage.of(0, 45).hasNext(),
+                "exactly 45 players must fit on one moderation page");
+        check(ModerationPlayerPage.of(0, 46).pageCount() == 2,
+                "46 players must produce exactly two moderation pages");
+        final ModerationPlayerPage maximum = ModerationPlayerPage.of(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        check(maximum.toExclusive() == Integer.MAX_VALUE,
+                "maximum moderation list size must not overflow its final slice");
+        expectThrows(IllegalArgumentException.class, () -> ModerationPlayerPage.of(0, -1));
+    }
+
     private static void sourceInvariants() throws Exception {
         final String manager = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/ModerationManager.java"));
@@ -329,6 +361,10 @@ public final class ModerationRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java"));
         final String moderationGui = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java"));
+        final String moderationGuiRenderer = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java"));
+        final String moderationGuiHolder = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/ModerationGuiHolder.java"));
         final String vanishCommand = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java"));
         final String moderationMessages = Files.readString(Path.of(
@@ -390,6 +426,17 @@ public final class ModerationRegressionSuite {
         check(moderationGui.contains("permissionForSlot(slot)")
                         && moderationGui.contains("!viewer.hasPermission(requiredPermission)"),
                 "GUI actions must re-check the same permission even when a filler slot is clicked");
+        check(!moderationGuiRenderer.contains(".limit(45)")
+                        && moderationGuiRenderer.contains("ModerationPlayerPage.of")
+                        && moderationGuiRenderer.contains("holder.bindPlayer"),
+                "moderation GUI must slice the full visible list and bind scalar player identities");
+        check(moderationGuiHolder.contains("record PlayerTarget")
+                        && moderationGui.contains("holder.playerAt(slot)")
+                        && moderationGui.contains("holder.ownerId().equals(viewer.getUniqueId())")
+                        && moderationGui.contains("target == null || !visibleTo(viewer, target)")
+                        && moderationGui.contains("target != null && !visibleTo(viewer, target)")
+                        && moderationGui.contains("target == null ? holder.targetName() : target.getName()"),
+                "moderation clicks must use owner-bound UUID targets and re-check both list and detail visibility");
         check(vanishCommand.contains("enabled ? \"bekapcsolva\" : \"kikapcsolva\""),
                 "vanish self feedback must supply the configured format argument");
         check(moderationMessages.contains("disconnect: '&c%s\\n&7Ok: &f%s'"),
