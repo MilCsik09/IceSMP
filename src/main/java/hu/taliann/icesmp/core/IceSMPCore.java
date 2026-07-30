@@ -185,6 +185,7 @@ import java.util.List;
 public final class IceSMPCore {
 
     private final JavaPlugin plugin;
+    private final Runnable resourcePackReloadHook;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final CurrencyManager currencyManager;
@@ -323,7 +324,12 @@ public final class IceSMPCore {
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask moderationExpiryTask;
 
     public IceSMPCore(final JavaPlugin plugin) {
+        this(plugin, () -> { });
+    }
+
+    public IceSMPCore(final JavaPlugin plugin, final Runnable resourcePackReloadHook) {
         this.plugin = plugin;
+        this.resourcePackReloadHook = resourcePackReloadHook == null ? () -> { } : resourcePackReloadHook;
         this.configManager = new ConfigManager(plugin);
         // A config MÁR A KONSTRUKTOR-LÁNC ELŐTT betöltődik: több world-event manager a saját
         // konstruktorában számol első időablakot (nextAttemptAt) config-kulcsból — betöltés
@@ -1404,6 +1410,7 @@ public final class IceSMPCore {
             vanishManager.refreshAll();
             motdListener.reload();
             sitManager.reload();
+            resourcePackReloadHook.run();
         });
         final java.util.function.Consumer<String> configChangeHook = key -> {
             if (key == null) {
@@ -1417,6 +1424,9 @@ public final class IceSMPCore {
             }
             if (key.startsWith("crates.")) {
                 crateManager.reloadConfig();
+            }
+            if (key.startsWith("resource-pack.")) {
+                resourcePackReloadHook.run();
             }
         };
         iceSMPCommand.setConfigChangeHook(configChangeHook);

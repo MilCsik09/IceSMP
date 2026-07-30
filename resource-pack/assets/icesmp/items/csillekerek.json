@@ -1,0 +1,26 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": [
+          "ground",
+          "fixed",
+          "on_shelf"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/3d/csillekerek"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "icesmp:item/csillekerek"
+    }
+  },
+  "hand_animation_on_swap": true,
+  "oversized_in_gui": false,
+  "swap_animation_scale": 1.0
+}

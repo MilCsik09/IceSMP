@@ -120,8 +120,16 @@ val territoryCapitalRegressionTest by tasks.registering(JavaExec::class) {
     mainClass.set("hu.taliann.icesmp.territory.TerritoryCapitalRegressionSuite")
 }
 
+val hudRegressionTest by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs editable native HUD layout and Paper team-colour regressions."
+    dependsOn(tasks.named(regressionTest.classesTaskName))
+    classpath = regressionTest.runtimeClasspath
+    mainClass.set("hu.taliann.icesmp.managers.HudRegressionSuite")
+}
+
 tasks.check {
     dependsOn(persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest, configStartupRegressionTest,
-        afkRegressionTest, territoryCapitalRegressionTest)
+        afkRegressionTest, territoryCapitalRegressionTest, hudRegressionTest)
 }

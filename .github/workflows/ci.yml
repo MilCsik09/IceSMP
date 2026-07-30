@@ -71,6 +71,18 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate deterministic resource pack build
+        run: |
+          python3 scripts/test_resource_pack.py
+          python3 scripts/resource_pack.py build \
+            --source resource-pack \
+            --output build/resource-pack/ci-pack.zip
+
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
@@ -99,6 +111,7 @@ jobs:
           grep -F "PersistentStoreCoordinator regression tests passed." gradle-build.log
           grep -F "DEV-item reward regression suite passed." gradle-build.log
           grep -F "AFK regression suite passed." gradle-build.log
+          grep -F "HUD regression suite passed." gradle-build.log
 
       - name: Run targeted DEV regression driver
         run: python3 scripts/test_dev_item_state.py

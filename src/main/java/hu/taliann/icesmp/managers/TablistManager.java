@@ -415,7 +415,16 @@ public final class TablistManager {
         if (!suffix.equals(team.suffix())) {
             team.suffix(suffix);
         }
-        if (team.color() != color) {
+        syncTeamColor(team, color);
+    }
+
+    /**
+     * Paper/Folia 1.21.11 throws from {@link Team#color()} while a newly created team is still
+     * uncoloured. The short-circuited {@link Team#hasColor()} check is therefore part of the
+     * correctness contract, not merely an optimization.
+     */
+    static void syncTeamColor(final Team team, final NamedTextColor color) {
+        if (!team.hasColor() || !color.equals(team.color())) {
             team.color(color);
         }
     }

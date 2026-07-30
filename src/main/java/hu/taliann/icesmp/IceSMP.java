@@ -1,6 +1,7 @@
 package hu.taliann.icesmp;
 
 import hu.taliann.icesmp.core.IceSMPCore;
+import hu.taliann.icesmp.listeners.ResourcePackListener;
 import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -8,15 +9,22 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class IceSMP extends JavaPlugin {
 
     private IceSMPCore core;
+    private ResourcePackListener resourcePackListener;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        // Must precede manager construction/spawns: CUSTOM entities publish an ownership-safe
-        // lifecycle handle before any global world-event tick can observe their UUID.
+
+        resourcePackListener = new ResourcePackListener(this);
+        getServer().getPluginManager().registerEvents(resourcePackListener, this);
+
         TransientEntities.install(this);
-        core = new IceSMPCore(this);
+        core = new IceSMPCore(this, resourcePackListener::reloadAndResend);
         core.enable();
+
+        // Hot plugin reloads may enable while players are already online. Every actual call is
+        // scheduled onto the player's owning region thread by the listener.
+        resourcePackListener.reloadAndResend();
     }
 
     @Override
@@ -26,9 +34,6 @@ public final class IceSMP extends JavaPlugin {
                 core.disable();
             }
         } finally {
-            // Manager shutdowns requested their known entities first; finish any remaining registered
-            // custom entity while schedulers are still available, then release all strong references.
-            // finally: a core.disable() bármely hibája sem hagyhat élő entity-referenciákat hátra.
             TransientEntities.shutdown();
         }
     }
