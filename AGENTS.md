@@ -30,7 +30,7 @@
 ./gradlew runServer  # local test server (run/ directory)
 ```
 - A `check` task dependency-free regressziós suite-okat futtat a persistence,
-  DEV-item, moderáció, MOTD, sit, crate és globális AFK területén. Ezek mellett
+  DEV-item, moderáció, MOTD, sit, crate, globális AFK és territory-capital területén. Ezek mellett
   a hibátlan build, a consistency gate és az
   `docs/ADMIN_GUIDE.md#release-acceptance-checklist` szerinti kézi playtest is kötelező.
 - **HA a Gradle eléri a repókat (repo.papermc.io + extendedclip + md-5.net engedélyezve): a VALÓDI build a mérvadó, NEM a sandbox-javac.** Elsőként a wrapperrel fuss: `./gradlew build --console=plain --no-daemon`. Ha a környezetben külön rendszer-Gradle van megadva, azt is lehet használni, de ne feltételezz fix `/opt/gradle` útvonalat.
